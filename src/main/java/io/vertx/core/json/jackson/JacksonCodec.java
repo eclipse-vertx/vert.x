@@ -39,6 +39,11 @@ import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -47,6 +52,11 @@ import java.util.Map;
 import static io.vertx.core.json.impl.JsonUtil.BASE64_ENCODER;
 import static io.vertx.core.json.impl.JsonUtil.BASE64_DECODER;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
+import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
+import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+import static java.time.format.DateTimeFormatter.ISO_LOCAL_TIME;
+import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+import static java.time.format.DateTimeFormatter.ISO_ZONED_DATE_TIME;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -314,6 +324,18 @@ public class JacksonCodec implements JsonCodec {
       } else if (json instanceof Instant) {
         // RFC-7493
         generator.writeString((ISO_INSTANT.format((Instant)json)));
+      } else if (json instanceof LocalTime) {
+        // RFC-7493
+        generator.writeString((ISO_LOCAL_TIME.format((LocalTime)json)));
+      } else if (json instanceof LocalDate) {
+        // RFC-7493
+        generator.writeString(ISO_LOCAL_DATE.format((LocalDate)json));
+      } else if (json instanceof LocalDateTime) {
+        // RFC-7493
+        generator.writeString(ISO_LOCAL_DATE_TIME.format((LocalDateTime)json));
+      } else if (json instanceof OffsetDateTime) {
+        // RFC-7493
+        generator.writeString(ISO_OFFSET_DATE_TIME.format((OffsetDateTime)json));
       } else if (json instanceof byte[]) {
         // RFC-7493
         generator.writeString(BASE64_ENCODER.encodeToString((byte[]) json));
@@ -371,6 +393,14 @@ public class JacksonCodec implements JsonCodec {
         o = Buffer.buffer(BASE64_DECODER.decode(str));
       } else if (clazz == Instant.class) {
         o = Instant.from(ISO_INSTANT.parse(str));
+      } else if (clazz == LocalTime.class) {
+        o = LocalTime.from(ISO_LOCAL_TIME.parse(str));
+      } else if (clazz == LocalDate.class) {
+        o = LocalDate.from(ISO_LOCAL_DATE.parse(str));
+      } else if (clazz == LocalDateTime.class) {
+        o = LocalDateTime.from(ISO_LOCAL_DATE_TIME.parse(str));
+      } else if (clazz == OffsetDateTime.class) {
+        o = OffsetDateTime.from(ISO_OFFSET_DATE_TIME.parse(str));
       } else if (!clazz.isAssignableFrom(String.class)) {
         throw new DecodeException("Failed to decode");
       }

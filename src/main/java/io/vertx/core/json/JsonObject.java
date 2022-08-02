@@ -15,12 +15,20 @@ import io.vertx.core.shareddata.ClusterSerializable;
 import io.vertx.core.shareddata.Shareable;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static io.vertx.core.json.impl.JsonUtil.*;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
+import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
+import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+import static java.time.format.DateTimeFormatter.ISO_LOCAL_TIME;
+import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
 /**
  * A representation of a <a href="http://json.org/">JSON</a> object in Java.
@@ -133,6 +141,8 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
 
     if (val instanceof Instant) {
       return ISO_INSTANT.format((Instant) val);
+    } else if (val instanceof LocalTime) {
+      return ISO_LOCAL_TIME.format((LocalTime) val);
     } else if (val instanceof byte[]) {
       return BASE64_ENCODER.encodeToString((byte[]) val);
     } else if (val instanceof Buffer) {
@@ -373,11 +383,128 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   /**
+   * Get the local time value with the specified key.
+   *
+   * JSON itself has no notion of a temporal types, this extension allows ISO 8601 string formatted local times
+   * without timezone or offset information. This extension complies to the RFC-7493 with all the restrictions
+   * mentioned before. The method will then decode and return a local time value.
+   *
+   * @param key the key to return the value for
+   * @return the value or null if no value for that key
+   * @throws java.lang.ClassCastException            if the value is not a String
+   * @throws java.time.format.DateTimeParseException if the String value is not a legal ISO 8601 encoded value
+   */
+  public LocalTime getLocalTime(String key) {
+    Objects.requireNonNull(key);
+    Object val = map.get(key);
+    // no-op
+    if (val == null) {
+      return null;
+    }
+    // no-op if value is already a LocalTime
+    if (val instanceof LocalTime) {
+      return (LocalTime) val;
+    }
+    // assume that the value is in String format as per RFC
+    String encoded = (String) val;
+    // parse to proper type
+    return LocalTime.from(ISO_LOCAL_TIME.parse(encoded));
+  }
+
+  /**
+   * Get the local date value with the specified key.
+   *
+   * JSON itself has no notion of a temporal types, this extension allows ISO 8601 string formatted local dates
+   * without timezone or offset information. This extension complies to the RFC-7493 with all the restrictions
+   * mentioned before. The method will then decode and return a local date value.
+   *
+   * @param key the key to return the value for
+   * @return the value or null if no value for that key
+   * @throws java.lang.ClassCastException            if the value is not a String
+   * @throws java.time.format.DateTimeParseException if the String value is not a legal ISO 8601 encoded value
+   */
+  public LocalDate getLocalDate(String key) {
+    Objects.requireNonNull(key);
+    Object val = map.get(key);
+    // no-op
+    if (val == null) {
+      return null;
+    }
+    // no-op if value is already correct type
+    if (val instanceof LocalDate) {
+      return (LocalDate) val;
+    }
+    // assume that the value is in String format as per RFC
+    String encoded = (String) val;
+    // parse to proper type
+    return LocalDate.from(ISO_LOCAL_DATE.parse(encoded));
+  }
+
+  /**
+   * Get the local date time value with the specified key.
+   *
+   * JSON itself has no notion of a temporal types, this extension allows ISO 8601 string formatted local date
+   * times without timezone or offset information. This extension complies to the RFC-7493 with all the restrictions
+   * mentioned before. The method will then decode and return a local date time value.
+   *
+   * @param key the key to return the value for
+   * @return the value or null if no value for that key
+   * @throws java.lang.ClassCastException            if the value is not a String
+   * @throws java.time.format.DateTimeParseException if the String value is not a legal ISO 8601 encoded value
+   */
+  public LocalDateTime getLocalDateTime(String key) {
+    Objects.requireNonNull(key);
+    Object val = map.get(key);
+    // no-op
+    if (val == null) {
+      return null;
+    }
+    // no-op if value is already correct type
+    if (val instanceof LocalDateTime) {
+      return (LocalDateTime) val;
+    }
+    // assume that the value is in String format as per RFC
+    String encoded = (String) val;
+    // parse to proper type
+    return LocalDateTime.from(ISO_LOCAL_DATE_TIME.parse(encoded));
+  }
+
+  /**
+   * Get the offset date time value with the specified key.
+   *
+   * JSON itself has no notion of a temporal types, this extension allows ISO 8601 string formatted offset date
+   * times without timezone information. This extension complies to the RFC-7493 with all the restrictions
+   * mentioned before. The method will then decode and return a date time value with offset.
+   *
+   * @param key the key to return the value for
+   * @return the value or null if no value for that key
+   * @throws java.lang.ClassCastException            if the value is not a String
+   * @throws java.time.format.DateTimeParseException if the String value is not a legal ISO 8601 encoded value
+   */
+  public OffsetDateTime getOffsetDateTime(String key) {
+    Objects.requireNonNull(key);
+    Object val = map.get(key);
+    // no-op
+    if (val == null) {
+      return null;
+    }
+    // no-op if value is already correct type
+    if (val instanceof OffsetDateTime) {
+      return (OffsetDateTime) val;
+    }
+    // assume that the value is in String format as per RFC
+    String encoded = (String) val;
+    // parse to proper type
+    return OffsetDateTime.from(ISO_OFFSET_DATE_TIME.parse(encoded));
+  }
+
+  /**
    * Get the value with the specified key, as an Object with types respecting the limitations of JSON.
    * <ul>
    *   <li>{@code Map} will be wrapped to {@code JsonObject}</li>
    *   <li>{@code List} will be wrapped to {@code JsonArray}</li>
    *   <li>{@code Instant} will be converted to {@code String}</li>
+   *   <li>{@code LocalTime} will be converted to {@code String}</li>
    *   <li>{@code byte[]} will be converted to {@code String}</li>
    *   <li>{@code Enum} will be converted to {@code String}</li>
    * </ul>
@@ -577,6 +704,70 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     Objects.requireNonNull(key);
     if (map.containsKey(key)) {
       return getInstant(key);
+    } else {
+      return def;
+    }
+  }
+
+  /**
+   * Like {@link #getLocalTime(String)} but specifying a default value to return if there is no entry.
+   *
+   * @param key the key to lookup
+   * @param def the default value to use if the entry is not present
+   * @return the value or {@code def} if no entry present
+   */
+  public LocalTime getLocalTime(String key, LocalTime def) {
+    Objects.requireNonNull(key);
+    if (map.containsKey(key)) {
+      return getLocalTime(key);
+    } else {
+      return def;
+    }
+  }
+
+  /**
+   * Like {@link #getLocalDate(String)} but specifying a default value to return if there is no entry.
+   *
+   * @param key the key to lookup
+   * @param def the default value to use if the entry is not present
+   * @return the value or {@code def} if no entry present
+   */
+  public LocalDate getLocalDate(String key, LocalDate def) {
+    Objects.requireNonNull(key);
+    if (map.containsKey(key)) {
+      return getLocalDate(key);
+    } else {
+      return def;
+    }
+  }
+
+  /**
+   * Like {@link #getLocalDateTime(String)} but specifying a default value to return if there is no entry.
+   *
+   * @param key the key to lookup
+   * @param def the default value to use if the entry is not present
+   * @return the value or {@code def} if no entry present
+   */
+  public LocalDateTime getLocalDateTime(String key, LocalDateTime def) {
+    Objects.requireNonNull(key);
+    if (map.containsKey(key)) {
+      return getLocalDateTime(key);
+    } else {
+      return def;
+    }
+  }
+
+  /**
+   * Like {@link #getOffsetDateTime(String)} but specifying a default value to return if there is no entry.
+   *
+   * @param key the key to lookup
+   * @param def the default value to use if the entry is not present
+   * @return the value or {@code def} if no entry present
+   */
+  public OffsetDateTime getOffsetDateTime(String key, OffsetDateTime def) {
+    Objects.requireNonNull(key);
+    if (map.containsKey(key)) {
+      return getOffsetDateTime(key);
     } else {
       return def;
     }

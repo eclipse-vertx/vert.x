@@ -13,6 +13,11 @@ package io.vertx.core.json;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import io.vertx.core.buffer.Buffer;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import org.hamcrest.MatcherAssert;
 import org.junit.Test;
 
 import java.time.Instant;
@@ -22,7 +27,6 @@ import java.util.HashMap;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 
 /**
@@ -87,6 +91,7 @@ public class JsonPOJOMapperTest {
 
   public static class MyType2 {
     public Instant isodate = Instant.now();
+    public LocalTime localTime = LocalTime.NOON;
     public byte[] base64 = "Hello World!".getBytes();
   }
 
@@ -140,20 +145,61 @@ public class JsonPOJOMapperTest {
     testInvalidValueToPOJO("base64");
   }
 
-  private void testInvalidValueToPOJO(String key) {
-    try {
-      new JsonObject().put(key, "1").mapTo(MyType2.class);
-      fail();
-    } catch (IllegalArgumentException e) {
-      assertThat(e.getCause(), is(instanceOf(InvalidFormatException.class)));
-      InvalidFormatException ife = (InvalidFormatException) e.getCause();
-      assertEquals("1", ife.getValue());
-    }
-  }
-
   @Test
   public void testNullPOJO() {
     assertNull(JsonObject.mapFrom(null));
   }
 
+  @Test
+  public void testJavaTimesToObjectMapping() {
+    JavaTimeTypes j = new JsonObject()
+      .put("localTime", LocalTime.NOON)
+      .put("localDate", LocalDate.parse("2022-02-22"))
+      .put("localDateTime", LocalDateTime.parse("2022-02-22T01:02:03.123456000"))
+      .put("offsetDateTime", OffsetDateTime.parse("2022-02-22T01:02:03.123456000+02:00"))
+      .mapTo(JavaTimeTypes.class);
+    assertEquals(LocalTime.NOON, j.localTime);
+    assertEquals(LocalDate.parse("2022-02-22"), j.localDate);
+    assertEquals(LocalDateTime.parse("2022-02-22T01:02:03.123456000"), j.localDateTime);
+    assertEquals(OffsetDateTime.parse("2022-02-22T01:02:03.123456000+02:00"), j.offsetDateTime);
+  }
+
+  @Test
+  public void testJavaTimesFromObjectMapping() {
+    JsonObject json = JsonObject.mapFrom(new JavaTimeTypes());
+    assertEquals(LocalTime.NOON, json.getLocalTime("localTime"));
+    assertEquals(LocalDate.parse("2022-02-22"), json.getLocalDate("localDate"));
+    assertEquals(LocalDateTime.parse("2022-02-22T01:02:03.123456000"), json.getLocalDateTime("localDateTime"));
+    assertEquals(OffsetDateTime.parse("2022-02-22T01:02:03.123456000+02:00"), json.getOffsetDateTime("offsetDateTime"));
+  }
+
+  @Test
+  public void testInvalidJavaTimeTypes() {
+    testInvalidValueToPOJO("localTime", JavaTimeTypes.class);
+    testInvalidValueToPOJO("localDate", JavaTimeTypes.class);
+    testInvalidValueToPOJO("localDateTime", JavaTimeTypes.class);
+    testInvalidValueToPOJO("offsetDateTime", JavaTimeTypes.class);
+  }
+
+  public static class JavaTimeTypes {
+    public LocalTime localTime = LocalTime.NOON;
+    public LocalDate localDate = LocalDate.parse("2022-02-22");
+    public LocalDateTime localDateTime = LocalDateTime.parse("2022-02-22T01:02:03.123456000");
+    public OffsetDateTime offsetDateTime = OffsetDateTime.parse("2022-02-22T01:02:03.123456000+02:00");
+  }
+
+  private void testInvalidValueToPOJO(String key) {
+    testInvalidValueToPOJO(key, MyType2.class);
+  }
+
+  private void testInvalidValueToPOJO(String key, Class<?> clazz) {
+    try {
+      new JsonObject().put(key, "1").mapTo(clazz);
+      fail();
+    } catch (IllegalArgumentException e) {
+      MatcherAssert.assertThat(e.getCause(), instanceOf(InvalidFormatException.class));
+      InvalidFormatException ife = (InvalidFormatException) e.getCause();
+      assertEquals("1", ife.getValue());
+    }
+  }
 }
