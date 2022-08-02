@@ -28,6 +28,7 @@ public class NetSocket {
   private final SocketChannel channel;
   private boolean readInProgress;
   private boolean needsFlush;
+  private boolean writable;
   private Handler<Object> messageHandler;
   private Handler<Void> closeHandler;
   private ChannelHandlerContext channelHandlerContext;
@@ -83,7 +84,7 @@ public class NetSocket {
 
   private void writeMessage(Object msg, PromiseInternal<Void> promise) {
     io.netty5.util.concurrent.Future<Void> fut;
-    if (readInProgress) {
+    if (readInProgress || !writable) {
       needsFlush = true;
       fut = channelHandlerContext.write(msg);
     } else {
@@ -104,41 +105,65 @@ public class NetSocket {
     return this;
   }
 
-  final ChannelHandler handler = new ChannelHandler() {
-    @Override
-    public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
-      channelHandlerContext = ctx;
-    }
-    @Override
-    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
-      channelHandlerContext = null;
-    }
-    @Override
-    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-      readInProgress = false;
-      if (needsFlush) {
-        needsFlush = false;
-        ctx.flush();
-      }
-    }
-    @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) {
-      readInProgress = true;
-      Handler<Object> handler = messageHandler;
-      if (handler == null) {
-        handler = DEFAULT_MSG_HANDLER;
-      }
-      context.emit(msg, handler);
+  static class ChannelHandlerImpl implements ChannelHandler {
+
+    private final NetSocket netSocket;
+
+    public ChannelHandlerImpl(NetSocket netSocket) {
+      this.netSocket = netSocket;
     }
 
     @Override
-    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-      context.emit(v -> {
-        Handler<Void> handler = closeHandler;
+    public void channelActive(ChannelHandlerContext ctx) {
+      netSocket.writable = ctx.channel().isWritable();
+    }
+
+    @Override
+    public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
+      boolean writable = !netSocket.writable;
+      netSocket.writable = writable;
+      if (writable && netSocket.needsFlush) {
+        ctx.flush();
+      }
+    }
+
+    @Override
+    public void handlerAdded(ChannelHandlerContext ctx) {
+      netSocket.channelHandlerContext = ctx;
+    }
+
+    @Override
+    public void handlerRemoved(ChannelHandlerContext ctx) {
+      netSocket.channelHandlerContext = null;
+    }
+
+    @Override
+    public void channelReadComplete(ChannelHandlerContext ctx) {
+      netSocket.readInProgress = false;
+      if (netSocket.needsFlush) {
+        netSocket.needsFlush = false;
+        ctx.flush();
+      }
+    }
+
+    @Override
+    public void channelRead(ChannelHandlerContext ctx, Object msg) {
+      netSocket.readInProgress = true;
+      Handler<Object> handler = netSocket.messageHandler;
+      if (handler == null) {
+        handler = DEFAULT_MSG_HANDLER;
+      }
+      netSocket.context.emit(msg, handler);
+    }
+
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) {
+      netSocket.context.emit(v -> {
+        Handler<Void> handler = netSocket.closeHandler;
         if (handler != null) {
           handler.handle(null);
         }
       });
     }
-  };
+  }
 }

@@ -23,6 +23,9 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 @RunWith(Parameterized.class)
 public class VertxTest {
@@ -329,5 +332,45 @@ public class VertxTest {
       }
     });
     test.await();
+  }
+
+  @Test
+  public void testDelayFlush() throws Exception {
+    Buffer buffer = Buffer.buffer(new byte[1024]);
+    TestResult bind = new TestResult();
+    CompletableFuture<Integer> readLatch = new CompletableFuture<>();
+    NetServer server = vertx.createNetServer();
+    server.connectHandler(stream -> {
+      int extra = 16;
+      int written = 0;
+      while (true) {
+        if (!stream.channelHandlerContext().channel().isWritable()) {
+          if (extra == 0) {
+            break;
+          }
+          extra--;
+        }
+        stream.write(buffer);
+        written++;
+      }
+      readLatch.complete(written * 1024);
+    });
+    bind.assertSuccess(server.listen(1234, "localhost"), addr -> {
+      bind.complete();
+    });
+    bind.await();
+    Socket so = new Socket("localhost", 1234);
+    OutputStream out = so.getOutputStream();
+    InputStream in = so.getInputStream();
+    int toRead = readLatch.get(20, TimeUnit.SECONDS);
+    int read = 0;
+    byte[] buff = new byte[1024];
+    int amount = 0;
+    while ((amount = in.read(buff)) != -1) {
+      read += amount;
+      if (read == toRead) {
+        break;
+      }
+    }
   }
 }

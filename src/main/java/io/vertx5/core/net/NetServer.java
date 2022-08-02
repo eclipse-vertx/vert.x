@@ -2,6 +2,7 @@ package io.vertx5.core.net;
 
 import io.netty5.bootstrap.ServerBootstrap;
 import io.netty5.channel.Channel;
+import io.netty5.channel.ChannelHandlerContext;
 import io.netty5.channel.ChannelInitializer;
 import io.netty5.channel.MultithreadEventLoopGroup;
 import io.netty5.channel.socket.SocketChannel;
@@ -51,8 +52,13 @@ public class NetServer {
           return;
         }
         NetSocket so = new NetSocket(context, ch);
-        ch.pipeline().addLast("vertx", so.handler);
-        context.emit(so, handler);
+        ch.pipeline().addLast("vertx", new NetSocket.ChannelHandlerImpl(so) {
+          @Override
+          public void channelActive(ChannelHandlerContext ctx) {
+            super.channelActive(ctx);
+            context.emit(so, handler);
+          }
+        });
       }
     });
     io.netty5.util.concurrent.Future<Channel> res = bootstrap.bind(host, port);
