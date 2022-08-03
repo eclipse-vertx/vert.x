@@ -93,9 +93,11 @@ public class ClusteredEventBus extends EventBusImpl {
       Promise<Void> setPromise = Promise.promise();
       clusterManager.setNodeInfo(nodeInfo, setPromise);
       return setPromise.future();
-    }).onSuccess(v -> {
-      started = true;
-      nodeSelector.eventBusStarted();
+    }).andThen(ar -> {
+      if (ar.succeeded()) {
+        started = true;
+        nodeSelector.eventBusStarted();
+      }
     }).onComplete(promise);
   }
 
