@@ -132,6 +132,15 @@ public class CoreExamples {
     Future<String> greeting = promise.future();
   }
 
+  public void promiseCallbackOrder(Future<Void> future) {
+    future.onComplete(ar -> {
+      // Do something
+    });
+    future.onComplete(ar -> {
+      // May be invoked first
+    });
+  }
+
   private void legacyGreetAsync(Handler<AsyncResult<String>> promise) {
   }
 

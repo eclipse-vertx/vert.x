@@ -34,6 +34,20 @@ However, if, in your codebase, you have legacy methods which use callbacks, you 
 ----
 ====
 
+[CAUTION]
+====
+Terminal operations like `onSuccess`, `onFailure` and `onComplete` provide no guarantee whatsoever regarding the invocation order of callbacks.
+
+Consider a future on which 2 callbacks are registered:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#promiseCallbackOrder}
+----
+
+It is possible that the second callback is invoked before the first one.
+====
+
 [#_future_composition]
 == Future composition
 
@@ -57,7 +71,7 @@ In this example, 3 operations are chained together:
 When these 3 steps are successful, the final future (`future`) will succeed.
 However, if one of the steps fails, the final future will fail.
 
-Beyond this, {@link io.vertx.core.Future} offers more: `map`, `recover`, `otherwise` and even a `flatMap` which is an alias of `compose`
+Beyond this, {@link io.vertx.core.Future} offers more: `map`, `recover`, `otherwise`, `andThen` and even a `flatMap` which is an alias of `compose`
 
 [#_future_coordination]
 == Future coordination
