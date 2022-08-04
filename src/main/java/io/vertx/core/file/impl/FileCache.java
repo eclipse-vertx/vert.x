@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
@@ -214,19 +215,9 @@ class FileCache {
   }
 
   private void fileNameCheck(File file) throws IOException {
-    String fileName = file.getCanonicalPath();
-    String cachePath = getCacheDir().getPath();
-    if (fileName.startsWith(cachePath)) {
-      int cachePathLen = cachePath.length();
-      if (fileName.length() == cachePathLen) {
-        return;
-      } else {
-        if (fileName.charAt(cachePathLen) == File.separatorChar) {
-          return;
-        }
-      }
+    if (!file.getCanonicalFile().toPath().startsWith(getCacheDir().toPath())) {
+      throw new VertxException("File is outside of the cacheDir dir: " + file);
     }
-    throw new VertxException("File is outside of the cacheDir dir: " + file);
   }
 
   private File getCacheDir() {
