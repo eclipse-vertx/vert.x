@@ -1630,7 +1630,6 @@ public class FutureTest extends FutureTestBase {
   }
 
   @Test
-  @Repeat(times = 50)
   public void testAndThenComplete() {
     waitFor(4);
     Throwable throwable = new NoStackTraceThrowable("test");
