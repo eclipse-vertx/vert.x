@@ -357,9 +357,15 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return eventBus;
   }
 
+  @Override
   public long setPeriodic(long delay, Handler<Long> handler) {
+    return setPeriodic(delay, 0, handler);
+  }
+
+  @Override
+  public long setPeriodic(long delay, long initialDelay, Handler<Long> handler) {
     ContextInternal ctx = getOrCreateContext();
-    return scheduleTimeout(ctx, true, delay, TimeUnit.MILLISECONDS, ctx.isDeployment(), handler);
+    return scheduleTimeout(ctx, true, delay, initialDelay, TimeUnit.MILLISECONDS, ctx.isDeployment(), handler);
   }
 
   @Override
@@ -517,14 +523,18 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return new DnsClientImpl(this, options);
   }
 
-  public long scheduleTimeout(ContextInternal context,
-                                              boolean periodic,
-                                              long delay,
-                                              TimeUnit timeUnit,
-                                              boolean addCloseHook,
-                                              Handler<Long> handler) {
+  private long scheduleTimeout(ContextInternal context,
+                              boolean periodic,
+                              long delay,
+                              long initialDelay,
+                              TimeUnit timeUnit,
+                              boolean addCloseHook,
+                              Handler<Long> handler) {
     if (delay < 1) {
       throw new IllegalArgumentException("Cannot schedule a timer with delay < 1 ms");
+    }
+    if (initialDelay < 0) {
+      throw new IllegalArgumentException("Cannot schedule a timer with initialDelay < 0");
     }
     long timerId = timeoutCounter.getAndIncrement();
     InternalTimerHandler task = new InternalTimerHandler(timerId, handler, periodic, context);
@@ -534,11 +544,20 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
     EventLoop el = context.nettyEventLoop();
     if (periodic) {
-      task.future = el.scheduleAtFixedRate(task, delay, delay, timeUnit);
+      task.future = el.scheduleAtFixedRate(task, initialDelay + delay, delay, timeUnit);
     } else {
       task.future = el.schedule(task, delay, timeUnit);
     }
     return task.id;
+  }
+
+  public long scheduleTimeout(ContextInternal context,
+                                              boolean periodic,
+                                              long delay,
+                                              TimeUnit timeUnit,
+                                              boolean addCloseHook,
+                                              Handler<Long> handler) {
+    return scheduleTimeout(context, periodic, delay,0, timeUnit, addCloseHook, handler);
   }
 
   public ContextInternal getContext() {

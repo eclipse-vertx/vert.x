@@ -282,12 +282,22 @@ public interface Vertx extends Measured {
    * Set a periodic timer to fire every {@code delay} milliseconds, at which point {@code handler} will be called with
    * the id of the timer.
    *
-   *
    * @param delay  the delay in milliseconds, after which the timer will fire
    * @param handler  the handler that will be called with the timer ID when the timer fires
    * @return the unique ID of the timer
    */
   long setPeriodic(long delay, Handler<Long> handler);
+
+  /**
+   * Set a periodic timer to fire every {@code delay} milliseconds with initial delay, at which point {@code handler} will be called with
+   * the id of the timer.
+   *
+   * @param delay  the delay in milliseconds, after which the timer will fire
+   * @param initialDelay the initial delay
+   * @param handler  the handler that will be called with the timer ID when the timer fires
+   * @return the unique ID of the timer
+   */
+  long setPeriodic(long delay, long initialDelay, Handler<Long> handler);
 
   /**
    * Returns a periodic timer as a read stream. The timer will be fired every {@code delay} milliseconds after
