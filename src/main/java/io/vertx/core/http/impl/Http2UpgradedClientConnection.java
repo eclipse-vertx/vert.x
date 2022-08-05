@@ -688,8 +688,18 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
   }
 
   @Override
+  public SocketAddress remoteAddress(boolean real) {
+    return current.remoteAddress(real);
+  }
+
+  @Override
   public SocketAddress localAddress() {
     return current.localAddress();
+  }
+
+  @Override
+  public SocketAddress localAddress(boolean real) {
+    return current.localAddress(real);
   }
 
   @Override

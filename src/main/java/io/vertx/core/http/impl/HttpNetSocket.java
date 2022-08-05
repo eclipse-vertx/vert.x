@@ -267,8 +267,18 @@ class HttpNetSocket implements NetSocket {
   }
 
   @Override
+  public SocketAddress remoteAddress(boolean real) {
+    return conn.remoteAddress(real);
+  }
+
+  @Override
   public SocketAddress localAddress() {
     return conn.localAddress();
+  }
+
+  @Override
+  public SocketAddress localAddress(boolean real) {
+    return conn.localAddress(real);
   }
 
   @Override
