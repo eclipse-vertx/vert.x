@@ -267,11 +267,21 @@ public interface HttpConnection {
   SocketAddress remoteAddress();
 
   /**
+   * Like {@link #remoteAddress()} but returns the proxy remote address when {@code real} is {@code true}
+   */
+  SocketAddress remoteAddress(boolean real);
+
+  /**
    * @return the local address for this connection, possibly {@code null} (e.g a server bound on a domain socket)
    * If {@code useProxyProtocol} is set to {@code true}, the address returned will be of the proxy.
    */
   @CacheReturn
   SocketAddress localAddress();
+
+  /**
+   * Like {@link #localAddress()} ()} but returns the server local address when {@code real} is {@code true}
+   */
+  SocketAddress localAddress(boolean real);
 
   /**
    * @return true if this {@link io.vertx.core.http.HttpConnection} is encrypted via SSL/TLS.

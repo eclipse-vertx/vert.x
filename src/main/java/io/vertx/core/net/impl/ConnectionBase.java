@@ -77,7 +77,9 @@ public abstract class ConnectionBase {
   private int writeInProgress;
   private Object metric;
   private SocketAddress remoteAddress;
+  private SocketAddress realRemoteAddress;
   private SocketAddress localAddress;
+  private SocketAddress realLocalAddress;
   private ChannelPromise closePromise;
   private Future<Void> closeFuture;
   private long remainingBytesRead;
@@ -569,40 +571,77 @@ public abstract class ConnectionBase {
     return null;
   }
 
+  private SocketAddress channelRemoteAddress() {
+    java.net.SocketAddress addr = chctx.channel().remoteAddress();
+    return addr != null ? vertx.transport().convert(addr) : null;
+  }
+
+  private SocketAddress socketAdressOverride(AttributeKey<SocketAddress> key) {
+    Channel ch = chctx.channel();
+    return ch.hasAttr(key) ? ch.attr(key).getAndSet(null) : null;
+  }
+
   public SocketAddress remoteAddress() {
     SocketAddress address = remoteAddress;
     if (address == null) {
-      if (chctx.channel().hasAttr(REMOTE_ADDRESS_OVERRIDE)) {
-        address = chctx.channel().attr(REMOTE_ADDRESS_OVERRIDE).getAndSet(null);
-      } else {
-        java.net.SocketAddress addr = chctx.channel().remoteAddress();
-        if (addr != null) {
-          address = vertx.transport().convert(addr);
-        }
+      address = socketAdressOverride(REMOTE_ADDRESS_OVERRIDE);
+      if (address == null) {
+        address = channelRemoteAddress();
       }
-
-      if (address != null)
+      if (address != null) {
         remoteAddress = address;
+      }
     }
     return address;
+  }
+
+  public SocketAddress remoteAddress(boolean real) {
+    if (real) {
+      SocketAddress address = realRemoteAddress;
+      if (address == null) {
+        address = channelRemoteAddress();
+      }
+      if (address != null) {
+        realRemoteAddress = address;
+      }
+      return address;
+    } else {
+      return remoteAddress();
+    }
+  }
+
+  private SocketAddress channelLocalAddress() {
+    java.net.SocketAddress addr = chctx.channel().localAddress();
+    return addr != null ? vertx.transport().convert(addr) : null;
   }
 
   public SocketAddress localAddress() {
     SocketAddress address = localAddress;
     if (address == null) {
-      if (chctx.channel().hasAttr(LOCAL_ADDRESS_OVERRIDE)) {
-        address = chctx.channel().attr(LOCAL_ADDRESS_OVERRIDE).getAndSet(null);
-      } else {
-        java.net.SocketAddress addr = chctx.channel().localAddress();
-        if (addr != null) {
-          address = vertx.transport().convert(addr);
-        }
+      address = socketAdressOverride(LOCAL_ADDRESS_OVERRIDE);
+      if (address == null) {
+        address = channelLocalAddress();
       }
-
-      if (address != null)
+      if (address != null) {
         localAddress = address;
+      }
     }
     return address;
+  }
+
+  public SocketAddress localAddress(boolean real) {
+    if (real) {
+      SocketAddress address = realLocalAddress;
+      if (address == null) {
+        address = channelLocalAddress();
+      }
+      if (address != null) {
+        realLocalAddress = address;
+      }
+      return address;
+    } else {
+      return localAddress();
+    }
   }
 
   protected void handleMessage(Object msg) {

@@ -4099,7 +4099,11 @@ public class NetTest extends VertxTestBase {
     server = vertx.createNetServer(options)
       .connectHandler(event -> {
         assertAddresses(remote, event.remoteAddress());
+        assertAddresses(remote, event.remoteAddress(false));
+        assertAddresses(proxy.getConnectionLocalAddress(), event.remoteAddress(true));
         assertAddresses(local, event.localAddress());
+        assertAddresses(local, event.localAddress(false));
+        assertAddresses(USE_DOMAIN_SOCKETS ? null : SocketAddress.inetSocketAddress(server.actualPort(), "127.0.0.1"), event.localAddress(true));
         complete();
       });
 
