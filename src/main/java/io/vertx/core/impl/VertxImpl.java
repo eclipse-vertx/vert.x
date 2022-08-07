@@ -557,7 +557,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
                                               TimeUnit timeUnit,
                                               boolean addCloseHook,
                                               Handler<Long> handler) {
-    return scheduleTimeout(context, periodic, delay,0, timeUnit, addCloseHook, handler);
+    return scheduleTimeout(context, periodic, delay, delay, timeUnit, addCloseHook, handler);
   }
 
   public ContextInternal getContext() {
