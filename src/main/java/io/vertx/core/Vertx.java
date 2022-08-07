@@ -293,7 +293,7 @@ public interface Vertx extends Measured {
    * the id of the timer.
    *
    * @param delay  the delay in milliseconds, after which the timer will fire
-   * @param initialDelay the initial delay
+   * @param initialDelay the initial delay， the default initial delay is {@code delay}
    * @param handler  the handler that will be called with the timer ID when the timer fires
    * @return the unique ID of the timer
    */

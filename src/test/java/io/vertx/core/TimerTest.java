@@ -40,6 +40,11 @@ public class TimerTest extends VertxTestBase {
     periodic(10);
   }
 
+  @Test
+  public void testPeriodicWithInitialDelay() {
+    periodic(10, 20);
+  }
+
   /**
    * Test the timers fire with approximately the correct delay
    */
@@ -77,6 +82,12 @@ public class TimerTest extends VertxTestBase {
             testComplete();
           }
         });
+        vertx.setPeriodic(3, 4, id -> {
+          assertSame(thr, Thread.currentThread());
+          if (cnt.incrementAndGet() == 5) {
+            testComplete();
+          }
+        });
       }
     }
     MyVerticle verticle = new MyVerticle();
@@ -88,6 +99,27 @@ public class TimerTest extends VertxTestBase {
     final int numFires = 10;
     final AtomicLong id = new AtomicLong(-1);
     id.set(vertx.setPeriodic(delay, new Handler<Long>() {
+      int count;
+
+      public void handle(Long timerID) {
+        assertEquals(id.get(), timerID.longValue());
+        count++;
+        if (count == numFires) {
+          vertx.cancelTimer(timerID);
+          setEndTimer();
+        }
+        if (count > numFires) {
+          fail("Fired too many times");
+        }
+      }
+    }));
+    await();
+  }
+
+  private void periodic(long initialDelay, long delay) {
+    final int numFires = 10;
+    final AtomicLong id = new AtomicLong(-1);
+    id.set(vertx.setPeriodic(initialDelay, delay, new Handler<Long>() {
       int count;
 
       public void handle(Long timerID) {

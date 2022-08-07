@@ -359,7 +359,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public long setPeriodic(long delay, Handler<Long> handler) {
-    return setPeriodic(delay, 0, handler);
+    return setPeriodic(delay, delay, handler);
   }
 
   @Override
@@ -544,7 +544,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
     EventLoop el = context.nettyEventLoop();
     if (periodic) {
-      task.future = el.scheduleAtFixedRate(task, initialDelay + delay, delay, timeUnit);
+      task.future = el.scheduleAtFixedRate(task, initialDelay, delay, timeUnit);
     } else {
       task.future = el.schedule(task, delay, timeUnit);
     }
