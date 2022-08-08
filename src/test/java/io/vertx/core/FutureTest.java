@@ -14,6 +14,7 @@ package io.vertx.core;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.NoStackTraceThrowable;
 import io.vertx.core.impl.future.PromiseInternal;
+import io.vertx.test.core.Repeat;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
@@ -1626,5 +1627,91 @@ public class FutureTest extends FutureTestBase {
       }
     });
     waitUntil(() -> caught.size() == 1 && caught.get(0) == failure);
+  }
+
+  @Test
+  public void testAndThenComplete() {
+    waitFor(4);
+    Throwable throwable = new NoStackTraceThrowable("test");
+
+    testAndThen(Future.succeededFuture(), null, null);
+
+    testAndThen(Future.failedFuture(throwable), null, throwable);
+
+    Promise<Void> promiseToComplete = Promise.promise();
+    testAndThen(promiseToComplete.future(), null, null);
+    promiseToComplete.complete();
+
+    Promise<Void> promiseToFail = Promise.promise();
+    testAndThen(promiseToFail.future(), null, throwable);
+    promiseToFail.fail(throwable);
+
+    await();
+  }
+
+  @Test
+  @Repeat(times = 50)
+  public void testAndThenCompleteContextual() {
+    waitFor(4);
+    Throwable throwable = new NoStackTraceThrowable("test");
+
+    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+
+    testAndThen(context.succeededFuture(), context, null);
+
+    testAndThen(context.failedFuture(throwable), context, throwable);
+
+    Promise<Void> promiseToComplete = context.promise();
+    testAndThen(promiseToComplete.future(), context, null);
+    promiseToComplete.complete();
+
+    Promise<Void> promiseToFail = context.promise();
+    testAndThen(promiseToFail.future(), context, throwable);
+    promiseToFail.fail(throwable);
+
+    await();
+  }
+
+  private void testAndThen(Future<Void> fut, ContextInternal context, Throwable throwable) {
+    AtomicBoolean invoked = new AtomicBoolean();
+    fut.andThen(ar -> {
+      assertTrue(invoked.compareAndSet(false, true));
+      assertTrue(context == null || Vertx.currentContext() == context);
+      assertTrue(throwable == null || (ar.failed() && ar.cause() == throwable));
+    }).onComplete(ar -> {
+      assertTrue(invoked.get());
+      assertTrue(context == null || Vertx.currentContext() == context);
+      assertTrue(throwable == null || (ar.failed() && ar.cause() == throwable));
+      complete();
+    });
+  }
+
+  @Test
+  public void testAndThenCompleteHandlerWithError() {
+    waitFor(4);
+    RuntimeException runtimeException = new RuntimeException("test");
+
+    Handler<AsyncResult<Object>> callback = ar -> {
+      throw runtimeException;
+    };
+
+    Handler<AsyncResult<Object>> completion = ar -> {
+      assertTrue(ar.failed() && ar.cause() == runtimeException);
+      complete();
+    };
+
+    Future.succeededFuture().andThen(callback).onComplete(completion);
+
+    Future.failedFuture(new Throwable()).andThen(callback).onComplete(completion);
+
+    Promise<Object> promiseToComplete = Promise.promise();
+    promiseToComplete.future().andThen(callback).onComplete(completion);
+    promiseToComplete.complete();
+
+    Promise<Object> promiseToFail = Promise.promise();
+    promiseToFail.future().andThen(callback).onComplete(completion);
+    promiseToFail.fail(new Throwable());
+
+    await();
   }
 }

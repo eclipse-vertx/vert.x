@@ -104,7 +104,10 @@ public interface Future<T> extends AsyncResult<T> {
 
   /**
    * Add a handler to be notified of the result.
-   * <br/>
+   * <p>
+   * <em><strong>WARNING</strong></em>: this is a terminal operation.
+   * If several {@code handler}s are registered, there is no guarantee that they will be invoked in order of registration.
+   *
    * @param handler the handler that will be called with the result
    * @return a reference to this, so it can be used fluently
    */
@@ -113,7 +116,10 @@ public interface Future<T> extends AsyncResult<T> {
 
   /**
    * Add a handler to be notified of the succeeded result.
-   * <br/>
+   * <p>
+   * <em><strong>WARNING</strong></em>: this is a terminal operation.
+   * If several {@code handler}s are registered, there is no guarantee that they will be invoked in order of registration.
+   *
    * @param handler the handler that will be called with the succeeded result
    * @return a reference to this, so it can be used fluently
    */
@@ -128,7 +134,10 @@ public interface Future<T> extends AsyncResult<T> {
 
   /**
    * Add a handler to be notified of the failed result.
-   * <br/>
+   * <p>
+   * <em><strong>WARNING</strong></em>: this is a terminal operation.
+   * If several {@code handler}s are registered, there is no guarantee that they will be invoked in order of registration.
+   *
    * @param handler the handler that will be called with the failed result
    * @return a reference to this, so it can be used fluently
    */
@@ -343,6 +352,21 @@ public interface Future<T> extends AsyncResult<T> {
    */
   default Future<T> otherwiseEmpty() {
     return (Future<T>) AsyncResult.super.otherwiseEmpty();
+  }
+
+  /**
+   * Invokes the given {@code handler} upon completion.
+   * <p>
+   * If the {@code handler} throws an exception, the returned future will be failed with this exception.
+   *
+   * @param handler invoked upon completion of this future
+   * @return a future completed after the {@code handler} has been invoked
+   */
+  default Future<T> andThen(Handler<AsyncResult<T>> handler) {
+    return transform(ar -> {
+      handler.handle(ar);
+      return (Future<T>) ar;
+    });
   }
 
   /**
