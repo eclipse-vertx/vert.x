@@ -93,6 +93,26 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   }
 
   /**
+   * Create a JsonArray containing an arbitrary number of values.
+   *
+   * @param values The objects into JsonArray.
+   * @throws NullPointerException if the args is null.
+   */
+  public static JsonArray of(Object... values) {
+    // implicit nullcheck of values
+    if (values.length == 0) {
+      return new JsonArray();
+    }
+
+    JsonArray arr = new JsonArray(new ArrayList<>(values.length));
+    for(int i = 0; i< values.length; ++i) {
+      arr.add(values[i]);
+    }
+
+    return arr;
+  }
+
+  /**
    * Get the String at position {@code pos} in the array,
    *
    * @param pos the position in the array

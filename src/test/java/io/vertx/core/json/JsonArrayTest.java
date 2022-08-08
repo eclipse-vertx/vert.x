@@ -1407,4 +1407,46 @@ public class JsonArrayTest {
       assertTrue(o instanceof TimeUnit);
     }
   }
+
+  @Test
+  public void testJsonArrayOfArgs() {
+    // test Integer
+    Integer i = 1;
+
+    // test string
+    String s = "a string";
+
+    // test boolean
+    boolean b = true;
+
+    // test JsonObject
+    String jk = "json key";
+    String jv = "json value";
+    JsonObject j = new JsonObject().put(jk, jv);
+
+    // test JsonArray
+    String v1 = "json array value 1";
+    String v2 = "json array value 2";
+    JsonArray a = new JsonArray().add(v1).add(v2);
+    JsonArray a2 = JsonArray.of(v1, v2);
+
+    // test null
+    JsonObject n = null;
+
+    JsonArray jarr = JsonArray.of(i, s, b, j, a, a2, n);
+
+    assertEquals(i, jarr.getInteger(0));
+    assertEquals(s, jarr.getString(1));
+    assertEquals(b, jarr.getBoolean(2));
+    assertEquals(j, jarr.getJsonObject(3));
+    assertEquals(a, jarr.getJsonArray(4));
+    // a2 is also equals to a, different object with same value
+    assertEquals(a, jarr.getJsonArray(5));
+    assertEquals(n, jarr.getJsonObject(6));
+  }
+
+  @Test
+  public void testJsonArrayOfEmpty() {
+    assertEquals(new JsonArray(), JsonArray.of());
+  }
 }

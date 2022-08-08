@@ -89,6 +89,312 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   /**
+   * Create a JsonObject containing zero mappings.
+   *
+   * @return an empty JsonObject.
+   */
+  public static JsonObject of() {
+    return new JsonObject();
+  }
+
+  /**
+   * Create a JsonObject containing a single mapping.
+   *
+   * @param k1 the mapping's key
+   * @param v1 the mapping's value
+   * @return a JsonObject containing the specified mapping.
+   */
+  public static JsonObject of(String k1, Object v1) {
+    JsonObject obj = new JsonObject(new LinkedHashMap<>(1));
+
+    obj.put(k1, v1);
+
+    return obj;
+  }
+
+  /**
+   * Create a JsonObject containing two mappings.
+   *
+   * @param k1 the first mapping's key
+   * @param v1 the first mapping's value
+   * @param k2 the second mapping's key
+   * @param v2 the second mapping's value
+   * @return a JsonObject containing the specified mappings.
+   */
+  public static JsonObject of(String k1, Object v1, String k2, Object v2) {
+    JsonObject obj = new JsonObject(new LinkedHashMap<>(2));
+
+    obj.put(k1, v1);
+    obj.put(k2, v2);
+
+    return obj;
+  }
+
+  /**
+   * Create a JsonObject containing three mappings.
+   *
+   * @param k1 the first mapping's key
+   * @param v1 the first mapping's value
+   * @param k2 the second mapping's key
+   * @param v2 the second mapping's value
+   * @param k3 the third mapping's key
+   * @param v3 the third mapping's value
+   * @return a JsonObject containing the specified mappings.
+   */
+  public static JsonObject of(String k1, Object v1, String k2, Object v2, String k3, Object v3) {
+    JsonObject obj = new JsonObject(new LinkedHashMap<>(3));
+
+    obj.put(k1, v1);
+    obj.put(k2, v2);
+    obj.put(k3, v3);
+
+    return obj;
+  }
+
+  /**
+   * Create a JsonObject containing four mappings.
+   *
+   * @param k1 the first mapping's key
+   * @param v1 the first mapping's value
+   * @param k2 the second mapping's key
+   * @param v2 the second mapping's value
+   * @param k3 the third mapping's key
+   * @param v3 the third mapping's value
+   * @param k4 the fourth mapping's key
+   * @param v4 the fourth mapping's value
+   * @return a JsonObject containing the specified mappings.
+   */
+  public static JsonObject of(String k1, Object v1, String k2, Object v2, String k3, Object v3,
+                              String k4, Object v4) {
+    JsonObject obj = new JsonObject(new LinkedHashMap<>(4));
+
+    obj.put(k1, v1);
+    obj.put(k2, v2);
+    obj.put(k3, v3);
+    obj.put(k4, v4);
+
+    return obj;
+  }
+
+  /**
+   * Create a JsonObject containing five mappings.
+   *
+   * @param k1 the first mapping's key
+   * @param v1 the first mapping's value
+   * @param k2 the second mapping's key
+   * @param v2 the second mapping's value
+   * @param k3 the third mapping's key
+   * @param v3 the third mapping's value
+   * @param k4 the fourth mapping's key
+   * @param v4 the fourth mapping's value
+   * @param k5 the fifth mapping's key
+   * @param v5 the fifth mapping's value
+   * @return a JsonObject containing the specified mappings.
+   */
+  public static JsonObject of(String k1, Object v1, String k2, Object v2, String k3, Object v3,
+                              String k4, Object v4, String k5, Object v5) {
+    JsonObject obj = new JsonObject(new LinkedHashMap<>(5));
+
+    obj.put(k1, v1);
+    obj.put(k2, v2);
+    obj.put(k3, v3);
+    obj.put(k4, v4);
+    obj.put(k5, v5);
+
+    return obj;
+  }
+
+  /**
+   * Create a JsonObject containing six mappings.
+   *
+   * @param k1 the first mapping's key
+   * @param v1 the first mapping's value
+   * @param k2 the second mapping's key
+   * @param v2 the second mapping's value
+   * @param k3 the third mapping's key
+   * @param v3 the third mapping's value
+   * @param k4 the fourth mapping's key
+   * @param v4 the fourth mapping's value
+   * @param k5 the fifth mapping's key
+   * @param v5 the fifth mapping's value
+   * @param k6 the sixth mapping's key
+   * @param v6 the sixth mapping's value
+   * @return a JsonObject containing the specified mappings.
+   */
+  public static JsonObject of(String k1, Object v1, String k2, Object v2, String k3, Object v3,
+                              String k4, Object v4, String k5, Object v5, String k6, Object v6) {
+    JsonObject obj = new JsonObject(new LinkedHashMap<>(6));
+
+    obj.put(k1, v1);
+    obj.put(k2, v2);
+    obj.put(k3, v3);
+    obj.put(k4, v4);
+    obj.put(k5, v5);
+    obj.put(k6, v6);
+
+    return obj;
+  }
+
+  /**
+   * Create a JsonObject containing seven mappings.
+   *
+   * @param k1 the first mapping's key
+   * @param v1 the first mapping's value
+   * @param k2 the second mapping's key
+   * @param v2 the second mapping's value
+   * @param k3 the third mapping's key
+   * @param v3 the third mapping's value
+   * @param k4 the fourth mapping's key
+   * @param v4 the fourth mapping's value
+   * @param k5 the fifth mapping's key
+   * @param v5 the fifth mapping's value
+   * @param k6 the sixth mapping's key
+   * @param v6 the sixth mapping's value
+   * @param k7 the seventh mapping's key
+   * @param v7 the seventh mapping's value
+   * @return a JsonObject containing the specified mappings.
+   */
+  public static JsonObject of(String k1, Object v1, String k2, Object v2, String k3, Object v3,
+                              String k4, Object v4, String k5, Object v5, String k6, Object v6,
+                              String k7, Object v7) {
+    JsonObject obj = new JsonObject(new LinkedHashMap<>(7));
+
+    obj.put(k1, v1);
+    obj.put(k2, v2);
+    obj.put(k3, v3);
+    obj.put(k4, v4);
+    obj.put(k5, v5);
+    obj.put(k6, v6);
+    obj.put(k7, v7);
+
+    return obj;
+  }
+
+  /**
+   * Create a JsonObject containing eight mappings.
+   *
+   * @param k1 the first mapping's key
+   * @param v1 the first mapping's value
+   * @param k2 the second mapping's key
+   * @param v2 the second mapping's value
+   * @param k3 the third mapping's key
+   * @param v3 the third mapping's value
+   * @param k4 the fourth mapping's key
+   * @param v4 the fourth mapping's value
+   * @param k5 the fifth mapping's key
+   * @param v5 the fifth mapping's value
+   * @param k6 the sixth mapping's key
+   * @param v6 the sixth mapping's value
+   * @param k7 the seventh mapping's key
+   * @param v7 the seventh mapping's value
+   * @param k8 the eighth mapping's key
+   * @param v8 the eighth mapping's value
+   * @return a JsonObject containing the specified mappings.
+   */
+  public static JsonObject of(String k1, Object v1, String k2, Object v2, String k3, Object v3,
+                              String k4, Object v4, String k5, Object v5, String k6, Object v6,
+                              String k7, Object v7, String k8, Object v8) {
+    JsonObject obj = new JsonObject(new LinkedHashMap<>(8));
+
+    obj.put(k1, v1);
+    obj.put(k2, v2);
+    obj.put(k3, v3);
+    obj.put(k4, v4);
+    obj.put(k5, v5);
+    obj.put(k6, v6);
+    obj.put(k7, v7);
+    obj.put(k8, v8);
+
+    return obj;
+  }
+
+  /**
+   * Create a JsonObject containing nine mappings.
+   *
+   * @param k1 the first mapping's key
+   * @param v1 the first mapping's value
+   * @param k2 the second mapping's key
+   * @param v2 the second mapping's value
+   * @param k3 the third mapping's key
+   * @param v3 the third mapping's value
+   * @param k4 the fourth mapping's key
+   * @param v4 the fourth mapping's value
+   * @param k5 the fifth mapping's key
+   * @param v5 the fifth mapping's value
+   * @param k6 the sixth mapping's key
+   * @param v6 the sixth mapping's value
+   * @param k7 the seventh mapping's key
+   * @param v7 the seventh mapping's value
+   * @param k8 the eighth mapping's key
+   * @param v8 the eighth mapping's value
+   * @param k9 the ninth mapping's key
+   * @param v9 the ninth mapping's value
+   * @return a JsonObject containing the specified mappings.
+   */
+  public static JsonObject of(String k1, Object v1, String k2, Object v2, String k3, Object v3,
+                              String k4, Object v4, String k5, Object v5, String k6, Object v6,
+                              String k7, Object v7, String k8, Object v8, String k9, Object v9) {
+    JsonObject obj = new JsonObject(new LinkedHashMap<>(9));
+
+    obj.put(k1, v1);
+    obj.put(k2, v2);
+    obj.put(k3, v3);
+    obj.put(k4, v4);
+    obj.put(k5, v5);
+    obj.put(k6, v6);
+    obj.put(k7, v7);
+    obj.put(k8, v8);
+    obj.put(k9, v9);
+
+    return obj;
+  }
+
+  /**
+   * Create a JsonObject containing ten mappings.
+   *
+   * @param k1 the first mapping's key
+   * @param v1 the first mapping's value
+   * @param k2 the second mapping's key
+   * @param v2 the second mapping's value
+   * @param k3 the third mapping's key
+   * @param v3 the third mapping's value
+   * @param k4 the fourth mapping's key
+   * @param v4 the fourth mapping's value
+   * @param k5 the fifth mapping's key
+   * @param v5 the fifth mapping's value
+   * @param k6 the sixth mapping's key
+   * @param v6 the sixth mapping's value
+   * @param k7 the seventh mapping's key
+   * @param v7 the seventh mapping's value
+   * @param k8 the eighth mapping's key
+   * @param v8 the eighth mapping's value
+   * @param k9 the ninth mapping's key
+   * @param v9 the ninth mapping's value
+   * @param k10 the tenth mapping's key
+   * @param v10 the tenth mapping's value
+   * @return a JsonObject containing the specified mappings.
+   */
+  public static JsonObject of(String k1, Object v1, String k2, Object v2, String k3, Object v3,
+                              String k4, Object v4, String k5, Object v5, String k6, Object v6,
+                              String k7, Object v7, String k8, Object v8, String k9, Object v9,
+                              String k10, Object v10) {
+    JsonObject obj = new JsonObject(new LinkedHashMap<>(10));
+
+    obj.put(k1, v1);
+    obj.put(k2, v2);
+    obj.put(k3, v3);
+    obj.put(k4, v4);
+    obj.put(k5, v5);
+    obj.put(k6, v6);
+    obj.put(k7, v7);
+    obj.put(k8, v8);
+    obj.put(k9, v9);
+    obj.put(k10, v10);
+
+    return obj;
+  }
+
+  /**
    * Create a JsonObject from the fields of a Java object.
    * Faster than calling `new JsonObject(Json.encode(obj))`.
    * <p/
