@@ -47,7 +47,7 @@ Consider a future on which 2 callbacks are registered:
 
 It is possible that the second callback is invoked before the first one.
 
-If you need such guarantee, consider using <<_future_composition>> with {@link io.vertx.core.Future.andThen}.
+If you need such guarantee, consider using <<_future_composition>> with {@link io.vertx.core.Future#andThen}.
 ====
 
 [#_future_composition]
