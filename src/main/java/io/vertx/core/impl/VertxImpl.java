@@ -361,7 +361,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   public long setPeriodic(long delay, Handler<Long> handler) {
     return setPeriodic(delay, delay, handler);
   }
-  }
 
   @Override
   public long setPeriodic(long initialDelay, long delay, Handler<Long> handler) {
