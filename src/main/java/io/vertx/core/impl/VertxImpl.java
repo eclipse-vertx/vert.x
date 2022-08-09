@@ -359,13 +359,20 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public long setPeriodic(long delay, Handler<Long> handler) {
-    return setPeriodic(delay, delay, handler);
+    ContextInternal ctx = getOrCreateContext();
+    return scheduleTimeout(ctx, true, delay, delay, TimeUnit.MILLISECONDS, ctx.isDeployment(), handler);
+  }
   }
 
   @Override
-  public long setPeriodic(long delay, long initialDelay, Handler<Long> handler) {
+  public long setPeriodic(long initialDelay, long delay, Handler<Long> handler) {
     ContextInternal ctx = getOrCreateContext();
-    return scheduleTimeout(ctx, true, delay, initialDelay, TimeUnit.MILLISECONDS, ctx.isDeployment(), handler);
+    return scheduleTimeout(ctx, true, initialDelay, delay, TimeUnit.MILLISECONDS, ctx.isDeployment(), handler);
+  }
+
+  @Override
+  publish TimeoutStream periodicStream(long initialDelay, long delay) {
+    return new TimeoutStreamImpl(initialDelay, delay, true);
   }
 
   @Override
@@ -525,8 +532,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   private long scheduleTimeout(ContextInternal context,
                               boolean periodic,
-                              long delay,
                               long initialDelay,
+                              long delay,
                               TimeUnit timeUnit,
                               boolean addCloseHook,
                               Handler<Long> handler) {
@@ -975,6 +982,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
    */
   private class TimeoutStreamImpl implements TimeoutStream, Handler<Long> {
 
+    private final long initialDelay;
     private final long delay;
     private final boolean periodic;
 
@@ -984,6 +992,14 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     private long demand;
 
     public TimeoutStreamImpl(long delay, boolean periodic) {
+      this.initialDelay = delay;
+      this.delay = delay;
+      this.periodic = periodic;
+      this.demand = Long.MAX_VALUE;
+    }
+
+    public TimeoutStreamImpl(long initialDelay, long delay, boolean periodic) {
+      this.initialDelay = initialDelay;
       this.delay = delay;
       this.periodic = periodic;
       this.demand = Long.MAX_VALUE;
@@ -1032,7 +1048,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         }
         ContextInternal ctx = getOrCreateContext();
         this.handler = handler;
-        this.id = scheduleTimeout(ctx, periodic, delay, TimeUnit.MILLISECONDS, ctx.isDeployment(), this);
+        this.id = scheduleTimeout(ctx, periodic, delay, initialDelay, TimeUnit.MILLISECONDS, ctx.isDeployment(), this);
       } else {
         cancel();
       }
