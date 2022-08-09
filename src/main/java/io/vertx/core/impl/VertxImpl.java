@@ -369,7 +369,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  publish TimeoutStream periodicStream(long initialDelay, long delay) {
+  public TimeoutStream periodicStream(long initialDelay, long delay) {
     return new TimeoutStreamImpl(initialDelay, delay, true);
   }
 
