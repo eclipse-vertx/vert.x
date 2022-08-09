@@ -1048,7 +1048,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         }
         ContextInternal ctx = getOrCreateContext();
         this.handler = handler;
-        this.id = scheduleTimeout(ctx, periodic, delay, initialDelay, TimeUnit.MILLISECONDS, ctx.isDeployment(), this);
+        this.id = scheduleTimeout(ctx, periodic, initialDelay, delay, TimeUnit.MILLISECONDS, ctx.isDeployment(), this);
       } else {
         cancel();
       }

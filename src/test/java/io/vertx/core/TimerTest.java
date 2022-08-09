@@ -292,6 +292,31 @@ public class TimerTest extends VertxTestBase {
   }
 
   @Test
+  public void testPeriodicStreamHandlerWithInitialDelay() {
+    TimeoutStream timer = vertx.periodicStream(10, 20);
+    AtomicInteger count = new AtomicInteger();
+    timer.handler(l -> {
+      int value = count.incrementAndGet();
+      switch (value) {
+        case 0:
+          break;
+        case 1:
+          throw new RuntimeException();
+        case 2:
+          timer.cancel();
+          testComplete();
+          break;
+        default:
+          fail();
+      }
+    });
+    timer.endHandler(v -> {
+      fail();
+    });
+    await();
+  }
+
+  @Test
   public void testPeriodicSetHandlerTwice() {
     vertx.runOnContext(v -> {
       ReadStream<Long> timer = vertx.periodicStream(200);
