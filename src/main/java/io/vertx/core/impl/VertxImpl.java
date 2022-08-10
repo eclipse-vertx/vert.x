@@ -357,9 +357,20 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return eventBus;
   }
 
+  @Override
   public long setPeriodic(long delay, Handler<Long> handler) {
+    return setPeriodic(delay, delay, handler);
+  }
+
+  @Override
+  public long setPeriodic(long initialDelay, long delay, Handler<Long> handler) {
     ContextInternal ctx = getOrCreateContext();
-    return scheduleTimeout(ctx, true, delay, TimeUnit.MILLISECONDS, ctx.isDeployment(), handler);
+    return scheduleTimeout(ctx, true, initialDelay, delay, TimeUnit.MILLISECONDS, ctx.isDeployment(), handler);
+  }
+
+  @Override
+  public TimeoutStream periodicStream(long initialDelay, long delay) {
+    return new TimeoutStreamImpl(initialDelay, delay, true);
   }
 
   @Override
@@ -517,14 +528,18 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return new DnsClientImpl(this, options);
   }
 
-  public long scheduleTimeout(ContextInternal context,
-                                              boolean periodic,
-                                              long delay,
-                                              TimeUnit timeUnit,
-                                              boolean addCloseHook,
-                                              Handler<Long> handler) {
+  private long scheduleTimeout(ContextInternal context,
+                              boolean periodic,
+                              long initialDelay,
+                              long delay,
+                              TimeUnit timeUnit,
+                              boolean addCloseHook,
+                              Handler<Long> handler) {
     if (delay < 1) {
       throw new IllegalArgumentException("Cannot schedule a timer with delay < 1 ms");
+    }
+    if (initialDelay < 0) {
+      throw new IllegalArgumentException("Cannot schedule a timer with initialDelay < 0");
     }
     long timerId = timeoutCounter.getAndIncrement();
     InternalTimerHandler task = new InternalTimerHandler(timerId, handler, periodic, context);
@@ -534,11 +549,20 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
     EventLoop el = context.nettyEventLoop();
     if (periodic) {
-      task.future = el.scheduleAtFixedRate(task, delay, delay, timeUnit);
+      task.future = el.scheduleAtFixedRate(task, initialDelay, delay, timeUnit);
     } else {
       task.future = el.schedule(task, delay, timeUnit);
     }
     return task.id;
+  }
+
+  public long scheduleTimeout(ContextInternal context,
+                                              boolean periodic,
+                                              long delay,
+                                              TimeUnit timeUnit,
+                                              boolean addCloseHook,
+                                              Handler<Long> handler) {
+    return scheduleTimeout(context, periodic, delay, delay, timeUnit, addCloseHook, handler);
   }
 
   public ContextInternal getContext() {
@@ -956,6 +980,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
    */
   private class TimeoutStreamImpl implements TimeoutStream, Handler<Long> {
 
+    private final long initialDelay;
     private final long delay;
     private final boolean periodic;
 
@@ -965,6 +990,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     private long demand;
 
     public TimeoutStreamImpl(long delay, boolean periodic) {
+      this(delay, delay, periodic);
+    }
+
+    public TimeoutStreamImpl(long initialDelay, long delay, boolean periodic) {
+      this.initialDelay = initialDelay;
       this.delay = delay;
       this.periodic = periodic;
       this.demand = Long.MAX_VALUE;
@@ -1013,7 +1043,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         }
         ContextInternal ctx = getOrCreateContext();
         this.handler = handler;
-        this.id = scheduleTimeout(ctx, periodic, delay, TimeUnit.MILLISECONDS, ctx.isDeployment(), this);
+        this.id = scheduleTimeout(ctx, periodic, initialDelay, delay, TimeUnit.MILLISECONDS, ctx.isDeployment(), this);
       } else {
         cancel();
       }
