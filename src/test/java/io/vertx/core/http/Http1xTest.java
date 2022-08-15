@@ -2063,7 +2063,7 @@ public class Http1xTest extends HttpTest {
   @Test
   public void testContexts() throws Exception {
     int numReqs = 4;
-    Buffer data = randomBuffer(1024);
+    Buffer data = randomBuffer(1024 * 16);
     AtomicInteger cnt = new AtomicInteger();
     // Server connect handler should always be called with same context
     Context serverCtx = vertx.getOrCreateContext();
@@ -2111,17 +2111,16 @@ public class Http1xTest extends HttpTest {
     });
     awaitLatch(latch);
     CountDownLatch latch2 = new CountDownLatch(1);
-    int numConns = 4;
     client.close();
     client = null;
     Context clientCtx = vertx.getOrCreateContext();
     clientCtx.runOnContext(v -> {
-      client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(numConns));
+      client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(numReqs));
     });
     waitUntil(() -> client != null);
     // There should be a context per request
     List<EventLoopContext> contexts = Stream.generate(() -> ((VertxInternal) vertx).createEventLoopContext())
-      .limit(4)
+      .limit(numReqs)
       .collect(Collectors.toList());
     Set<Thread> expectedThreads = new HashSet<>();
     for (Context ctx : contexts) {
