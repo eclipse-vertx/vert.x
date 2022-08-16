@@ -4973,7 +4973,7 @@ public class Http1xTest extends HttpTest {
   @Test
   public void testHttpServerWithIdleTimeoutSendChunkedFile() throws Exception {
     // Does not pass reliably in CI (timeout)
-    Assume.assumeFalse(vertx.isNativeTransportEnabled() && !Utils.isWindows());
+    Assume.assumeTrue(!vertx.isNativeTransportEnabled() && !Utils.isWindows());
     int expected = 64 * 1024 * 1024; // We estimate this will take more than 200ms to transfer with a 1ms pause in chunks
     File sent = TestUtils.tmpFile(".dat", expected);
     server.close();
