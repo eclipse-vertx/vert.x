@@ -28,6 +28,7 @@ import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
+import io.vertx.core.impl.Utils;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -4972,7 +4973,7 @@ public class Http1xTest extends HttpTest {
   @Test
   public void testHttpServerWithIdleTimeoutSendChunkedFile() throws Exception {
     // Does not pass reliably in CI (timeout)
-    Assume.assumeFalse(vertx.isNativeTransportEnabled());
+    Assume.assumeFalse(vertx.isNativeTransportEnabled() && !Utils.isWindows());
     int expected = 64 * 1024 * 1024; // We estimate this will take more than 200ms to transfer with a 1ms pause in chunks
     File sent = TestUtils.tmpFile(".dat", expected);
     server.close();
