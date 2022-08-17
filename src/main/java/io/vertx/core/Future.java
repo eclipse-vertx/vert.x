@@ -370,6 +370,39 @@ public interface Future<T> extends AsyncResult<T> {
   }
 
   /**
+   * Invokes the given {@code handler} upon successful completion.
+   * <p>
+   * If the {@code handler} throws an exception, the returned future will be failed with this exception.
+   *
+   * @param handler invoked upon successful completion of this future
+   * @return a future completed after the {@code handler} has been invoked
+   */
+  default Future<T> thenOnSuccess(Handler<T> handler) {
+    return transform(ar -> {
+      if (ar.succeeded())
+        handler.handle(ar.result());
+      return (Future<T>) ar;
+    });
+  }
+
+  /**
+   * Invokes the given {@code handler} upon failure to complete.
+   * <p>
+   * If the {@code handler} throws an exception, the returned future will be failed with this exception
+   * instead of the original exception.
+   *
+   * @param handler invoked upon failure of this future
+   * @return a failed future after the {@code handler} has been invoked, with either the original cause or a new exception
+   */
+  default Future<T> thenOnFailure(Handler<Throwable> handler) {
+    return transform(ar -> {
+      if (ar.failed())
+        handler.handle(ar.cause());
+      return (Future<T>) ar;
+    });
+  }
+
+  /**
    * Bridges this Vert.x future to a {@link CompletionStage} instance.
    * <p>
    * The {@link CompletionStage} handling methods will be called from the thread that resolves this future.
