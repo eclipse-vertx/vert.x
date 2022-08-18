@@ -32,6 +32,9 @@ public class LoggerFactory {
 
   static {
     initialise();
+    // Do not log before being fully initialized (a logger extension may use Vert.x classes)
+    LogDelegate log = delegateFactory.createDelegate(LoggerFactory.class.getName());
+    log.debug("Using " + delegateFactory.getClass().getName());
   }
 
   public static synchronized void initialise() {
@@ -56,14 +59,12 @@ public class LoggerFactory {
   }
 
   private static boolean configureWith(String name, boolean shortName, ClassLoader loader) {
-    String loggerName = LoggerFactory.class.getName();
     try {
       Class<?> clazz = Class.forName(shortName ? "io.vertx.core.logging." + name + "LogDelegateFactory" : name, true, loader);
       LogDelegateFactory factory = (LogDelegateFactory) clazz.newInstance();
       if (!factory.isAvailable()) {
         return false;
       }
-      factory.createDelegate(loggerName).debug("Using " + factory.getClass().getName());
       delegateFactory = factory;
       return true;
     } catch (Throwable ignore) {
