@@ -1013,4 +1013,37 @@ public class ContextTest extends VertxTestBase {
     assertSame(current, thread.getContextClassLoader());
     assertEquals(2, exec.get());
   }
+
+  @Test
+  public void testNotifyListenersOutOfOrder() {
+    Context context = vertx.getOrCreateContext();
+    int num = 100_000;
+    context.runOnContext(v1 -> {
+      AtomicInteger cnt = new AtomicInteger();
+      Future<Void> fut = context.executeBlocking(p -> {
+        try {
+          Thread.sleep(10);
+        } catch (InterruptedException e) {
+          throw new RuntimeException(e);
+        }
+        p.complete();
+      });
+      int[] order = new int[num];
+      for (int i = 0;i < num;i++) {
+        int val = i;
+        fut.onSuccess(v2 -> {
+          int c = cnt.getAndIncrement();
+          order[c] = val;
+          if (c == num - 1) {
+            for (int j = 0;j < num;j++) {
+              assertEquals(j, order[j]);
+            }
+            testComplete();
+          }
+        });
+      }
+    });
+    await();
+  }
+
 }
