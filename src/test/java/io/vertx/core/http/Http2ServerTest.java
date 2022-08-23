@@ -213,8 +213,8 @@ public class Http2ServerTest extends Http2TestBase {
       return new ChannelInitializer<Channel>() {
         @Override
         protected void initChannel(Channel ch) throws Exception {
-          SSLHelper sslHelper = new SSLHelper(new HttpClientOptions().setUseAlpn(true).setSsl(true), null, Trust.SERVER_JKS.get());
-          SslHandler sslHandler = new SslHandler(sslHelper.setApplicationProtocols(Arrays.asList(HttpVersion.HTTP_2.alpnName(), HttpVersion.HTTP_1_1.alpnName())).createEngine((VertxInternal) vertx, host, port));
+          SSLHelper sslHelper = new SSLHelper(new HttpClientOptions().setUseAlpn(true).setSsl(true), null, Trust.SERVER_JKS.get(), Arrays.asList(HttpVersion.HTTP_2.alpnName(), HttpVersion.HTTP_1_1.alpnName()));
+          SslHandler sslHandler = new SslHandler(sslHelper.createEngine((VertxInternal) vertx, host, port));
           ch.pipeline().addLast(sslHandler);
           ch.pipeline().addLast(new ApplicationProtocolNegotiationHandler("whatever") {
             @Override

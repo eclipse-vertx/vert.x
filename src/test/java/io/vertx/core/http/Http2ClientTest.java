@@ -1151,8 +1151,8 @@ public class Http2ClientTest extends Http2TestBase {
     bootstrap.childHandler(new ChannelInitializer<Channel>() {
       @Override
       protected void initChannel(Channel ch) throws Exception {
-        SSLHelper sslHelper = new SSLHelper(serverOptions, Cert.SERVER_JKS.get(), null);
-        SslHandler sslHandler = new SslHandler(sslHelper.setApplicationProtocols(Arrays.asList(HttpVersion.HTTP_2.alpnName(), HttpVersion.HTTP_1_1.alpnName())).createEngine((VertxInternal) vertx, DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT));
+        SSLHelper sslHelper = new SSLHelper(serverOptions, Cert.SERVER_JKS.get(), null, Arrays.asList(HttpVersion.HTTP_2.alpnName(), HttpVersion.HTTP_1_1.alpnName()));
+        SslHandler sslHandler = new SslHandler(sslHelper.createEngine((VertxInternal) vertx, DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT));
         ch.pipeline().addLast(sslHandler);
         ch.pipeline().addLast(new ApplicationProtocolNegotiationHandler("whatever") {
           @Override

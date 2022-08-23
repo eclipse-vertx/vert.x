@@ -43,7 +43,8 @@ public class SSLHelperTest extends VertxTestBase {
     String[] expected = engine.getEnabledCipherSuites();
     SSLHelper helper = new SSLHelper(new HttpClientOptions(),
         Cert.CLIENT_JKS.get(),
-        Trust.SERVER_JKS.get());
+        Trust.SERVER_JKS.get(),
+        null);
     SslContext ctx = helper.getContext((VertxInternal) vertx);
     assertEquals(new HashSet<>(Arrays.asList(expected)), new HashSet<>(ctx.cipherSuites()));
   }
@@ -54,7 +55,8 @@ public class SSLHelperTest extends VertxTestBase {
     SSLHelper helper = new SSLHelper(
         new HttpClientOptions().setOpenSslEngineOptions(new OpenSSLEngineOptions()),
         Cert.CLIENT_PEM.get(),
-        Trust.SERVER_PEM.get());
+        Trust.SERVER_PEM.get(),
+        null);
     SslContext ctx = helper.getContext((VertxInternal) vertx);
     assertEquals(expected, new HashSet<>(ctx.cipherSuites()));
   }
@@ -78,7 +80,8 @@ public class SSLHelperTest extends VertxTestBase {
 
     SSLHelper defaultHelper = new SSLHelper(httpServerOptions,
             Cert.SERVER_PEM.get(),
-            Trust.SERVER_PEM.get());
+            Trust.SERVER_PEM.get(),
+            null);
 
     SslContext ctx = defaultHelper.getContext((VertxInternal) vertx);
     assertTrue(ctx instanceof OpenSslServerContext);
@@ -104,7 +107,7 @@ public class SSLHelperTest extends VertxTestBase {
     assertEquals(new ArrayList<>(new HttpServerOptions(options).getEnabledCipherSuites()), Arrays.asList(engine.getEnabledCipherSuites()));
     JsonObject json = options.toJson();
     assertEquals(new ArrayList<>(new HttpServerOptions(json).getEnabledCipherSuites()), Arrays.asList(engine.getEnabledCipherSuites()));
-    SSLHelper helper = new SSLHelper(options, Cert.SERVER_JKS.get(), null);
+    SSLHelper helper = new SSLHelper(options, Cert.SERVER_JKS.get(), null, null);
     assertEquals(Arrays.asList(helper.createEngine((VertxInternal) vertx).getEnabledCipherSuites()), Arrays.asList(engine.getEnabledCipherSuites()));
   }
 

@@ -10,6 +10,7 @@
  */
 package io.vertx.core.http.impl;
 
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.handler.codec.compression.CompressionOptions;
@@ -19,6 +20,7 @@ import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SniHandler;
+import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleState;
@@ -138,8 +140,7 @@ public class HttpServerWorker implements Handler<Channel> {
         SniHandler sniHandler = new SniHandler(sslHelper.serverNameMapper(vertx));
         pipeline.addLast(sniHandler);
       } else {
-        SslHandler handler = new SslHandler(sslHelper.createEngine(vertx));
-        handler.setHandshakeTimeout(sslHelper.getSslHandshakeTimeout(), sslHelper.getSslHandshakeTimeoutUnit());
+        SslHandler handler = sslHelper.createSslHandler(vertx, null);
         pipeline.addLast("ssl", handler);
       }
       ChannelPromise p = ch.newPromise();

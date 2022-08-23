@@ -82,7 +82,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
     this.vertx = vertx;
     this.channelGroup = new DefaultChannelGroup(vertx.getAcceptorEventLoopGroup().next());
     this.options = new NetClientOptions(options);
-    this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions()).setApplicationProtocols(options.getApplicationLayerProtocols());
+    this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions(), options.getApplicationLayerProtocols());
     this.metrics = metrics;
     this.logEnabled = options.getLogActivity();
     this.idleTimeout = options.getIdleTimeout();
