@@ -229,10 +229,6 @@ public class SSLHelper {
    * Must be called before createEngine()
    */
   public void setSuppliedSslContext(SSLContext suppliedSslContext) {
-    if (this.suppliedSslContext != null) {
-      throw new IllegalArgumentException("suppliedSslContext already set");
-    }
-    Objects.requireNonNull(suppliedSslContext, "suppliedSslContext should not be null");
     this.suppliedSslContext = suppliedSslContext;
   }
 
@@ -407,22 +403,7 @@ public class SSLHelper {
     };
   }
 
-  public Mapping<? super String, ? extends SslContext> serverNameMapper(VertxInternal vertx) {
-    return serverName -> {
-      SslContext ctx = getContext(vertx, serverName);
-      if (ctx != null) {
-        ctx = new DelegatingSslContext(ctx) {
-          @Override
-          protected void initEngine(SSLEngine engine) {
-            configureEngine(engine, serverName);
-          }
-        };
-      }
-      return ctx;
-    };
-  }
-
-  public void configureEngine(SSLEngine engine, String serverName) {
+  private void configureEngine(SSLEngine engine, String serverName) {
     if (enabledCipherSuites != null && !enabledCipherSuites.isEmpty()) {
       String[] toUse = enabledCipherSuites.toArray(new String[enabledCipherSuites.size()]);
       engine.setEnabledCipherSuites(toUse);
@@ -461,15 +442,37 @@ public class SSLHelper {
     }
   }
 
+  // This is called to validate some of the SSL params as that only happens when the context is created
+  public synchronized void validate(VertxInternal vertx) {
+    if (ssl) {
+      getContext(vertx, null);
+    }
+  }
+
+  public Mapping<? super String, ? extends SslContext> serverNameMapper(VertxInternal vertx) {
+    return serverName -> {
+      SslContext ctx = getContext(vertx, serverName);
+      if (ctx != null) {
+        ctx = new DelegatingSslContext(ctx) {
+          @Override
+          protected void initEngine(SSLEngine engine) {
+            configureEngine(engine, serverName);
+          }
+        };
+      }
+      return ctx;
+    };
+  }
+
   public SslContext getContext(VertxInternal vertx) {
     return getContext(vertx, null);
   }
 
-  public SslContext getContext(VertxInternal vertx, String serverName) {
+  private SslContext getContext(VertxInternal vertx, String serverName) {
     return getContext(vertx, serverName, useAlpn);
   }
 
-  public SslContext getContext(VertxInternal vertx, String serverName, boolean useAlpn) {
+  private SslContext getContext(VertxInternal vertx, String serverName, boolean useAlpn) {
     int idx = useAlpn ? 0 : 1;
     if (serverName == null) {
       if (sslContexts[idx] == null) {
@@ -501,19 +504,6 @@ public class SSLHelper {
     }
   }
 
-  // This is called to validate some of the SSL params as that only happens when the context is created
-  public synchronized void validate(VertxInternal vertx) {
-    if (ssl) {
-      getContext(vertx, null);
-    }
-  }
-
-  public SSLEngine createEngine(SslContext sslContext) {
-    SSLEngine engine = sslContext.newEngine(ByteBufAllocator.DEFAULT);
-    configureEngine(engine, null);
-    return engine;
-  }
-
   public SSLEngine createEngine(VertxInternal vertx, SocketAddress socketAddress, String serverName, boolean useAlpn) {
     if (suppliedSslContext == null) {
       SslContext context = getContext(vertx, null, useAlpn);
@@ -543,12 +533,6 @@ public class SSLHelper {
       return engine;
 
     }
-  }
-
-  public SSLEngine createEngine(VertxInternal vertx, String host, int port, boolean forceSNI) {
-    SSLEngine engine = getContext(vertx, null).newEngine(ByteBufAllocator.DEFAULT, host, port);
-    configureEngine(engine, forceSNI ? host : null);
-    return engine;
   }
 
   public SSLEngine createEngine(VertxInternal vertx, String host, int port) {
