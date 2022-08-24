@@ -45,7 +45,7 @@ public class SSLHelperTest extends VertxTestBase {
         Cert.CLIENT_JKS.get(),
         Trust.SERVER_JKS.get(),
         null);
-    SslContext ctx = helper.getContext((VertxInternal) vertx);
+    SslContext ctx = helper.createContext((VertxInternal) vertx);
     assertEquals(new HashSet<>(Arrays.asList(expected)), new HashSet<>(ctx.cipherSuites()));
   }
 
@@ -57,7 +57,7 @@ public class SSLHelperTest extends VertxTestBase {
         Cert.CLIENT_PEM.get(),
         Trust.SERVER_PEM.get(),
         null);
-    SslContext ctx = helper.getContext((VertxInternal) vertx);
+    SslContext ctx = helper.createContext((VertxInternal) vertx);
     assertEquals(expected, new HashSet<>(ctx.cipherSuites()));
   }
 
@@ -83,7 +83,7 @@ public class SSLHelperTest extends VertxTestBase {
             Trust.SERVER_PEM.get(),
             null);
 
-    SslContext ctx = defaultHelper.getContext((VertxInternal) vertx);
+    SslContext ctx = defaultHelper.createContext((VertxInternal) vertx);
     assertTrue(ctx instanceof OpenSslServerContext);
 
     SSLSessionContext sslSessionContext = ctx.sessionContext();

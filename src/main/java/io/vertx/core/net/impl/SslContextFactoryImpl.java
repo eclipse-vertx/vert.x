@@ -30,7 +30,6 @@ import io.vertx.core.net.TrustOptions;
 import io.vertx.core.spi.tls.SslContextFactory;
 
 import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSessionContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
@@ -53,12 +52,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- *
- * This is a pretty sucky class - could do with a refactoring
+ * The default implementation of {@link SslContextFactory} that creates and configures a Netty {@link SslContext} with
+ * the provided options.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class SSLProviderImpl implements SslContextFactory {
+public class SslContextFactoryImpl implements SslContextFactory {
 
   /**
    * Resolve the ssl engine options to use for properly running the configured options.
@@ -110,14 +109,9 @@ public class SSLProviderImpl implements SslContextFactory {
   private boolean openSsl;
   private List<String> applicationProtocols;
 
-  private SslContext[] sslContexts = new SslContext[2];
-  private Map<Certificate, SslContext>[] sslContextMaps = new Map[] {
-    new ConcurrentHashMap<>(), new ConcurrentHashMap<>()
-  };
   private boolean openSslSessionCacheEnabled = true;
-  private volatile SSLContext suppliedSslContext;
 
-  public SSLProviderImpl(TCPSSLOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions, List<String> applicationProtocols) {
+  public SslContextFactoryImpl(TCPSSLOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions, List<String> applicationProtocols) {
     SSLEngineOptions sslEngineOptions = resolveEngineOptions(options);
     this.keyCertOptions = keyCertOptions;
     this.trustOptions = trustOptions;
@@ -132,7 +126,7 @@ public class SSLProviderImpl implements SslContextFactory {
   /**
    * Copy constructor, only configuration field are copied.
    */
-  public SSLProviderImpl(SSLProviderImpl that) {
+  public SslContextFactoryImpl(SslContextFactoryImpl that) {
     this.keyCertOptions = that.keyCertOptions;
     this.trustOptions = that.trustOptions;
     this.crlPaths = that.crlPaths;
@@ -141,7 +135,6 @@ public class SSLProviderImpl implements SslContextFactory {
     this.openSsl = that.openSsl;
     this.applicationProtocols = that.applicationProtocols;
     this.openSslSessionCacheEnabled = that.openSslSessionCacheEnabled;
-    this.suppliedSslContext = that.suppliedSslContext;
   }
 
   /*
@@ -315,19 +308,15 @@ public class SSLProviderImpl implements SslContextFactory {
     };
   }
 
-  public SslContext getContext(VertxInternal vertx, String serverName, boolean useAlpn, boolean client, boolean trustAll) {
-    int idx = useAlpn ? 0 : 1;
+  public SslContext createContext(VertxInternal vertx, String serverName, boolean useAlpn, boolean client, boolean trustAll) {
     if (serverName == null) {
-      if (sslContexts[idx] == null) {
-        TrustManagerFactory trustMgrFactory;
-        try {
-          trustMgrFactory = getTrustMgrFactory(vertx, null, trustAll);
-        } catch (Exception e) {
-          throw new VertxException(e);
-        }
-        sslContexts[idx] = createContext(vertx, useAlpn, client, null, trustMgrFactory);
+      TrustManagerFactory trustMgrFactory;
+      try {
+        trustMgrFactory = getTrustMgrFactory(vertx, null, trustAll);
+      } catch (Exception e) {
+        throw new VertxException(e);
       }
-      return sslContexts[idx];
+      return createContext(vertx, useAlpn, client, null, trustMgrFactory);
     } else {
       X509KeyManager mgr;
       try {
@@ -336,11 +325,12 @@ public class SSLProviderImpl implements SslContextFactory {
         throw new RuntimeException(e);
       }
       if (mgr == null) {
-        return sslContexts[idx];
+        // Could it return null ???
+        return createContext(vertx, null, useAlpn, client, trustAll);
       }
       try {
         TrustManagerFactory trustMgrFactory = getTrustMgrFactory(vertx, serverName, trustAll);
-        return sslContextMaps[idx].computeIfAbsent(mgr.getCertificateChain(null)[0], s -> createContext(vertx, useAlpn, client, mgr, trustMgrFactory));
+        return createContext(vertx, useAlpn, client, mgr, trustMgrFactory);
       } catch (Exception e) {
         throw new VertxException(e);
       }

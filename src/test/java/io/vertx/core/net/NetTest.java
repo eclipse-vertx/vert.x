@@ -21,6 +21,10 @@ import io.netty.channel.ConnectTimeoutException;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.*;
+import io.netty.handler.ssl.ApplicationProtocolConfig;
+import io.netty.handler.ssl.IdentityCipherSuiteFilter;
+import io.netty.handler.ssl.JdkSslContext;
+import io.netty.handler.ssl.SslContext;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.*;
@@ -36,10 +40,13 @@ import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
+import io.vertx.core.net.impl.NetClientBuilder;
 import io.vertx.core.net.impl.NetClientImpl;
 import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.NetSocketInternal;
 import io.vertx.core.net.impl.VertxHandler;
+import io.vertx.core.spi.tls.SslContextFactory;
+import io.vertx.core.spi.tls.SslProvider;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.CheckingSender;
 import io.vertx.test.core.TestUtils;
@@ -65,7 +72,6 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.net.InetSocketAddress;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -3508,7 +3514,6 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testNetClientInternalTLSWithSuppliedSSLContext() throws Exception {
     client.close();
-    client = vertx.createNetClient(new NetClientOptions().setSsl(true));
     Path tsPath = Paths.get(this.getClass().getClassLoader().getResource(Trust.SERVER_JKS.get().getPath()).toURI());
 
     TrustManagerFactory tmFactory;
@@ -3525,7 +3530,28 @@ public class NetTest extends VertxTestBase {
       tmFactory.getTrustManagers(),
       null
     );
-    ((NetClientImpl)client).setSuppliedSSLContext(sslContext);
+
+    NetClientBuilder builder = ((VertxInternal) vertx).createNetClientBuilder(new NetClientOptions().setSsl(true));
+    builder.sslProvider(new SslProvider() {
+      @Override
+      public SslContextFactory contextFactory(TCPSSLOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions, List<String> applicationProtocols) {
+        return new SslContextFactory() {
+          @Override
+          public SslContext createContext(VertxInternal vertx, String serverName, boolean useAlpn, boolean client, boolean trustAll) {
+            return new JdkSslContext(
+              sslContext,
+              client,
+              null,
+              IdentityCipherSuiteFilter.INSTANCE,
+              ApplicationProtocolConfig.DISABLED,
+              io.netty.handler.ssl.ClientAuth.NONE,
+              null,
+              false);
+          }
+        };
+      }
+    });
+    client = builder.build();
 
     testNetClientInternal_(new HttpServerOptions()
       .setHost("localhost")

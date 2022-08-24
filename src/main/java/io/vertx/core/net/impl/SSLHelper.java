@@ -34,13 +34,12 @@ import io.vertx.core.spi.tls.SslContextFactory;
 
 import javax.net.ssl.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
- *
- * This is a pretty sucky class - could do with a refactoring
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
+ * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class SSLHelper {
 
@@ -99,8 +98,10 @@ public class SSLHelper {
   private boolean useAlpn;
   private Set<String> enabledProtocols;
   private String endpointIdentificationAlgorithm = "";
-
-  private volatile SSLContext suppliedSslContext;
+  private SslContext[] sslContexts = new SslContext[2];
+  private Map<String, SslContext>[] sslContextMaps = new Map[] {
+    new ConcurrentHashMap<>(), new ConcurrentHashMap<>()
+  };
 
   private SSLHelper(TCPSSLOptions options) {
     this.ssl = options.isSsl();
@@ -118,13 +119,13 @@ public class SSLHelper {
 
   public SSLHelper(HttpClientOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions, List<String> applicationProtocols) {
     this(options);
-    this.sslContextFactory = new SSLProviderImpl(options, keyCertOptions, trustOptions, applicationProtocols);
+    this.sslContextFactory = new SslContextFactoryImpl(options, keyCertOptions, trustOptions, applicationProtocols);
   }
 
-  public SSLHelper(NetClientOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions, List<String> applicationProtocols) {
+  public SSLHelper(NetClientOptions options, SslContextFactory sslContextFactory) {
     this(options);
     this.endpointIdentificationAlgorithm = options.getHostnameVerificationAlgorithm();
-    this.sslContextFactory = new SSLProviderImpl(options, keyCertOptions, trustOptions, applicationProtocols);
+    this.sslContextFactory = sslContextFactory;
   }
 
   public SSLHelper(NetServerOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions, List<String> applicationProtocols) {
@@ -132,7 +133,7 @@ public class SSLHelper {
     this.clientAuth = options.getClientAuth();
     this.client = false;
     this.sni = options.isSni();
-    this.sslContextFactory = new SSLProviderImpl(options, keyCertOptions, trustOptions, applicationProtocols);
+    this.sslContextFactory = new SslContextFactoryImpl(options, keyCertOptions, trustOptions, applicationProtocols);
   }
 
   /**
@@ -149,8 +150,7 @@ public class SSLHelper {
     this.useAlpn = that.useAlpn;
     this.enabledProtocols = that.enabledProtocols;
     this.endpointIdentificationAlgorithm = that.endpointIdentificationAlgorithm;
-    this.suppliedSslContext = that.suppliedSslContext;
-    this.sslContextFactory = new SSLProviderImpl((SSLProviderImpl) that.sslContextFactory);
+    this.sslContextFactory = new SslContextFactoryImpl((SslContextFactoryImpl) that.sslContextFactory);
   }
 
   public boolean isSSL() {
@@ -159,13 +159,6 @@ public class SSLHelper {
 
   public boolean isSNI() {
     return sni;
-  }
-
-  /**
-   * Must be called before createEngine()
-   */
-  public void setSuppliedSslContext(SSLContext suppliedSslContext) {
-    this.suppliedSslContext = suppliedSslContext;
   }
 
   private void configureEngine(SSLEngine engine, String serverName) {
@@ -206,13 +199,13 @@ public class SSLHelper {
   // This is called to validate some of the SSL params as that only happens when the context is created
   public synchronized void validate(VertxInternal vertx) {
     if (ssl) {
-      sslContextFactory.getContext(vertx, null, useAlpn, client, trustAll);
+      createContext(vertx, null, useAlpn, client, trustAll);
     }
   }
 
   public Mapping<? super String, ? extends SslContext> serverNameMapper(VertxInternal vertx) {
     return serverName -> {
-      SslContext ctx = sslContextFactory.getContext(vertx, serverName, useAlpn, client, trustAll);
+      SslContext ctx = createContext(vertx, serverName, useAlpn, client, trustAll);
       if (ctx != null) {
         ctx = new DelegatingSslContext(ctx) {
           @Override
@@ -225,12 +218,20 @@ public class SSLHelper {
     };
   }
 
-  public SslContext getContext(VertxInternal vertx) {
-    return getContext(vertx, null);
+  public SslContext createContext(VertxInternal vertx) {
+    return createContext(vertx, null, useAlpn, client, trustAll);
   }
 
-  private SslContext getContext(VertxInternal vertx, String serverName) {
-    return sslContextFactory.getContext(vertx, serverName, useAlpn, client, trustAll);
+  public SslContext createContext(VertxInternal vertx, String serverName, boolean useAlpn, boolean client, boolean trustAll) {
+    int idx = useAlpn ? 0 : 1;
+    if (serverName == null) {
+      if (sslContexts[idx] == null) {
+        sslContexts[idx] = sslContextFactory.createContext(vertx, serverName, useAlpn, client, trustAll);
+      }
+      return sslContexts[idx];
+    } else {
+      return sslContextMaps[idx].computeIfAbsent(serverName, s -> sslContextFactory.createContext(vertx, serverName, useAlpn, client, trustAll));
+    }
   }
 
   public SslHandler createSslHandler(VertxInternal vertx, String serverName) {
@@ -254,7 +255,7 @@ public class SSLHelper {
   }
 
   public SslContext sslContext(VertxInternal vertx, String serverName, boolean useAlpn) {
-    SslContext context = sslContextFactory.getContext(vertx, null, useAlpn, client, trustAll);
+    SslContext context = createContext(vertx, null, useAlpn, client, trustAll);
     return new DelegatingSslContext(context) {
       @Override
       protected void initEngine(SSLEngine engine) {
@@ -264,13 +265,13 @@ public class SSLHelper {
   }
 
   public SSLEngine createEngine(VertxInternal vertx, String host, int port) {
-    SSLEngine engine = getContext(vertx, null).newEngine(ByteBufAllocator.DEFAULT, host, port);
+    SSLEngine engine = createContext(vertx).newEngine(ByteBufAllocator.DEFAULT, host, port);
     configureEngine(engine, null);
     return engine;
   }
 
   public SSLEngine createEngine(VertxInternal vertx) {
-    SSLEngine engine = getContext(vertx, null).newEngine(ByteBufAllocator.DEFAULT);
+    SSLEngine engine = createContext(vertx).newEngine(ByteBufAllocator.DEFAULT);
     configureEngine(engine, null);
     return engine;
   }

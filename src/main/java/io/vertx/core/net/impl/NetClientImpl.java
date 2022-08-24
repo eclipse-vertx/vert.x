@@ -43,6 +43,8 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TCPMetrics;
+import io.vertx.core.spi.tls.SslContextFactory;
+import io.vertx.core.spi.tls.SslProvider;
 
 import javax.net.ssl.SSLContext;
 import java.io.FileNotFoundException;
@@ -74,15 +76,14 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
   private final CloseFuture closeFuture;
   private final Predicate<SocketAddress> proxyFilter;
 
-  public NetClientImpl(VertxInternal vertx, NetClientOptions options, CloseFuture closeFuture) {
-    this(vertx, vertx.metricsSPI() != null ? vertx.metricsSPI().createNetClientMetrics(options) : null, options, closeFuture);
-  }
+  public NetClientImpl(VertxInternal vertx, TCPMetrics metrics, NetClientOptions options, SslProvider sslProvider, CloseFuture closeFuture) {
 
-  public NetClientImpl(VertxInternal vertx, TCPMetrics metrics, NetClientOptions options, CloseFuture closeFuture) {
+    SslContextFactory sslContextFactory = sslProvider.contextFactory(options, options.getKeyCertOptions(), options.getTrustOptions(), options.getApplicationLayerProtocols());
+
     this.vertx = vertx;
     this.channelGroup = new DefaultChannelGroup(vertx.getAcceptorEventLoopGroup().next());
     this.options = new NetClientOptions(options);
-    this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions(), options.getApplicationLayerProtocols());
+    this.sslHelper = new SSLHelper(options, sslContextFactory);
     this.metrics = metrics;
     this.logEnabled = options.getLogActivity();
     this.idleTimeout = options.getIdleTimeout();
@@ -175,13 +176,6 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
   @Override
   public boolean isMetricsEnabled() {
     return metrics != null;
-  }
-
-  /**
-   * Must be called before calling connect().
-   */
-  public void setSuppliedSSLContext(SSLContext suppliedSSLContext) {
-    sslHelper.setSuppliedSslContext(suppliedSSLContext);
   }
 
   @Override
