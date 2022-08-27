@@ -8,9 +8,59 @@ The Vert.x Core library has the capability of accepting a reloadable ssl configu
     <artifactId>sslcontext-kickstart</artifactId>
 </dependency>
 ```
-### Usage
+## Usage
 Below are two examples of reloading the SSL configuration for a client. Same configuration can be applied for a server.
 See here also for a working demo: [Instant Server SSL Reloading with Vert.x](https://github.com/Hakky54/java-tutorials/tree/main/instant-server-ssl-reloading-with-vertx/vertx-server)
+
+### Server
+#### Scheduled reload
+```java
+public class MainVerticle extends AbstractVerticle {
+
+    @Override
+    public void start() {
+        Router router = Router.router(vertx);
+        router.route().handler(context -> context.json(
+                new JsonObject().put("message", "Hello World!")
+        ));
+
+        SSLFactory baseSslFactory = SSLFactory.builder()
+                .withDummyIdentityMaterial()
+                .withDummyTrustMaterial()
+                .withSwappableIdentityMaterial()
+                .withSwappableTrustMaterial()
+                .build();
+
+        Runnable sslUpdater = () -> {
+            SSLFactory updatedSslFactory = SSLFactory.builder()
+                    .withIdentityMaterial(Paths.get("/path/to/your/identity.jks"), "password".toCharArray())
+                    .withTrustMaterial(Paths.get("/path/to/your/truststore.jks"), "password".toCharArray())
+                    .build();
+
+            SSLFactoryUtils.reload(baseSslFactory, updatedSslFactory);
+        };
+
+        // initial update of ssl material to replace the dummies
+        sslUpdater.run();
+
+        // update ssl material every hour
+        Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(sslUpdater, 1, 1, TimeUnit.HOURS);
+
+        HttpServerOptions serverOptions = new HttpServerOptions()
+                .setSsl(true)
+                .setClientAuth(ClientAuth.REQUIRED)
+                .setKeyCertOptions(KeyCertOptions.wrap(baseSslFactory.getKeyManager().orElseThrow()))
+                .setTrustOptions(TrustOptions.wrap(baseSslFactory.getTrustManager().orElseThrow()));
+
+        vertx.createHttpServer(serverOptions)
+                .requestHandler(router)
+                .listen(8443)
+                .onSuccess(server -> System.out.println("HTTP server started on port " + server.actualPort()));
+    }
+
+}
+```
+### WebClient
 #### Reload on demand
 ```java
 SSLFactory baseSslFactory = SSLFactory.builder()
