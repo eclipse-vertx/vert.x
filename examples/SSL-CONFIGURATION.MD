@@ -7,6 +7,10 @@ The Vert.x Core library has the capability of accepting a reloadable ssl configu
     <groupId>io.github.hakky54</groupId>
     <artifactId>sslcontext-kickstart</artifactId>
 </dependency>
+<dependency>
+    <groupId>io.github.hakky54</groupId>
+    <artifactId>sslcontext-kickstart-for-pem</artifactId>
+</dependency>
 ```
 ## Usage
 Below are two examples of reloading the SSL configuration for a client. Same configuration can be applied for a server.
@@ -33,8 +37,8 @@ public class MainVerticle extends AbstractVerticle {
 
         Runnable sslUpdater = () -> {
             SSLFactory updatedSslFactory = SSLFactory.builder()
-                    .withIdentityMaterial(Paths.get("/path/to/your/identity.jks"), "password".toCharArray())
-                    .withTrustMaterial(Paths.get("/path/to/your/truststore.jks"), "password".toCharArray())
+                    .withIdentityMaterial(Paths.get("/path/to/your/identity.p12"), "password".toCharArray())
+                    .withTrustMaterial(Paths.get("/path/to/your/truststore.p12"), "password".toCharArray())
                     .build();
 
             SSLFactoryUtils.reload(baseSslFactory, updatedSslFactory);
@@ -64,8 +68,8 @@ public class MainVerticle extends AbstractVerticle {
 #### Reload on demand
 ```java
 SSLFactory baseSslFactory = SSLFactory.builder()
-  .withIdentityMaterial(Paths.get("/path/to/your/identity.jks"), "password".toCharArray())
-  .withTrustMaterial(Paths.get("/path/to/your/truststore.jks"), "password".toCharArray())
+  .withIdentityMaterial(Paths.get("/path/to/your/identity.p12"), "password".toCharArray())
+  .withTrustMaterial(Paths.get("/path/to/your/truststore.p12"), "password".toCharArray())
   .withSwappableIdentityMaterial()
   .withSwappableTrustMaterial()
   .build();
@@ -86,8 +90,8 @@ WebClient webClient = WebClient.create(Vertx.vertx(), clientOptions);
 // can be executed to reload the ssl configuration
 
 SSLFactory updatedSslFactory = SSLFactory.builder()
-  .withIdentityMaterial(Paths.get("/path/to/your/identity.jks"), "password".toCharArray())
-  .withTrustMaterial(Paths.get("/path/to/your/truststore.jks"), "password".toCharArray())
+  .withIdentityMaterial(Paths.get("/path/to/your/identity.p12"), "password".toCharArray())
+  .withTrustMaterial(Paths.get("/path/to/your/truststore.p12"), "password".toCharArray())
   .build();
 
 SSLFactoryUtils.reload(baseSslFactory, updatedSslFactory);
@@ -115,8 +119,8 @@ WebClient webClient = WebClient.create(Vertx.vertx(), clientOptions);
 
 Runnable sslUpdater = () -> {
   SSLFactory updatedSslFactory = SSLFactory.builder()
-    .withIdentityMaterial(Paths.get("/path/to/your/identity.jks"), "password".toCharArray())
-    .withTrustMaterial(Paths.get("/path/to/your/truststore.jks"), "password".toCharArray())
+    .withIdentityMaterial(Paths.get("/path/to/your/identity.p12"), "password".toCharArray())
+    .withTrustMaterial(Paths.get("/path/to/your/truststore.p12"), "password".toCharArray())
     .build();
 
     SSLFactoryUtils.reload(baseSslFactory, updatedSslFactory);
@@ -127,4 +131,20 @@ sslUpdater.run();
 
 // update ssl material every hour
 Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(sslUpdater, 1, 1, TimeUnit.HOURS);
+```
+### Using PEM files
+It is also possible to have ssl reloading based on PEM files instead of p12 files with a similar setup as shown on the other examples.
+Just call the PemUtils to generate a KeyManager and TrustManager for the SSLFactory as shown below:
+```java
+Runnable sslUpdater = () -> {
+  X509ExtendedKeyManager keyManager = PemUtils.loadIdentityMaterial(Paths.get("/path/to/your/identity.pem"), "password".toCharArray());
+  X509ExtendedTrustManager trustManager = PemUtils.loadTrustMaterial(Paths.get("/path/to/your/some-trusted-certificate.pem"));
+
+  SSLFactory updatedSslFactory = SSLFactory.builder()
+    .withIdentityMaterial(keyManager)
+    .withTrustMaterial(trustManager)
+    .build();
+
+    SSLFactoryUtils.reload(baseSslFactory, updatedSslFactory);
+};
 ```
