@@ -16,6 +16,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.DefaultHttpContent;
+import io.netty.handler.codec.http.DefaultLastHttpContent;
 import io.netty.handler.codec.http.EmptyHttpHeaders;
 import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpRequest;
@@ -48,7 +49,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.Map;
 import java.util.Set;
 
 import static io.vertx.core.http.HttpHeaders.SET_COOKIE;
@@ -406,9 +406,9 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
         // if the head was not written yet we can write out everything in one go
         // which is cheaper.
         prepareHeaders(bytesWritten);
-        msg = new AssembledFullHttpResponse(head, version, status, headers, data, trailingHeaders);
+        msg = new VertxFullHttpResponse(head, version, status, headers, data, trailingHeaders);
       } else {
-        msg = new AssembledLastHttpContent(data, trailingHeaders);
+        msg = new DefaultLastHttpContent(data, trailingHeaders);
       }
       conn.writeToChannel(msg, listener);
       written = true;
@@ -551,7 +551,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
       RandomAccessFile raf = null;
       try {
         raf = new RandomAccessFile(file, "r");
-        conn.writeToChannel(new AssembledHttpResponse(head, version, status, headers));
+        conn.writeToChannel(new VertxHttpResponse(head, version, status, headers));
         channelFuture = conn.sendFile(raf, Math.min(offset, file.length()), contentLength);
       } catch (IOException e) {
         try {
@@ -745,14 +745,14 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
         }
       }
       bytesWritten += chunk.readableBytes();
-      HttpObject msg;
       if (!headWritten) {
         prepareHeaders(-1);
-        msg = new AssembledHttpResponse(head, version, status, headers, chunk);
+        conn.writeToChannel(new VertxHttpResponse(head, version, status, headers));
+        conn.writeToChannel(chunk, promise);
       } else {
-        msg = new DefaultHttpContent(chunk);
+        conn.writeToChannel(new DefaultHttpContent(chunk), promise);
       }
-      conn.writeToChannel(msg, promise);
+
       return this;
     }
   }
@@ -769,7 +769,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
         status = requestMethod == HttpMethod.CONNECT ? HttpResponseStatus.OK : HttpResponseStatus.SWITCHING_PROTOCOLS;
         prepareHeaders(-1);
         PromiseInternal<Void> upgradePromise = context.promise();
-        conn.writeToChannel(new AssembledHttpResponse(head, version, status, headers), upgradePromise);
+        conn.writeToChannel(new VertxHttpResponse(head, version, status, headers), upgradePromise);
         written = true;
         Promise<NetSocket> promise = context.promise();
         netSocket = promise.future();
