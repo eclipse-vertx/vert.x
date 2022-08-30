@@ -41,7 +41,6 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
 import io.vertx.core.net.impl.NetClientBuilder;
-import io.vertx.core.net.impl.NetClientImpl;
 import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.NetSocketInternal;
 import io.vertx.core.net.impl.VertxHandler;
@@ -1042,7 +1041,7 @@ public class NetTest extends VertxTestBase {
     await();
   }
 
-  void serverCloseHandlers(boolean closeFromServer, Handler<AsyncResult<NetServer>> listenHandler) {
+  void serverCloseHandlers(boolean closeFromServer, Handler<NetServer> listenHandler) {
     server.connectHandler((sock) -> {
       AtomicInteger counter = new AtomicInteger(0);
       sock.endHandler(v -> assertEquals(1, counter.incrementAndGet()));
@@ -1053,7 +1052,7 @@ public class NetTest extends VertxTestBase {
       if (closeFromServer) {
         sock.close();
       }
-    }).listen(testAddress, listenHandler);
+    }).listen(testAddress, onSuccess(listenHandler::handle));
   }
 
   @Test

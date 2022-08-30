@@ -93,7 +93,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
     this.closeFuture = closeFuture;
     this.proxyFilter = options.getNonProxyHosts() != null ? ProxyFilter.nonProxyHosts(options.getNonProxyHosts()) : ProxyFilter.DEFAULT_PROXY_FILTER;
 
-    sslHelper.validate(vertx);
+    // sslHelper.validate(vertx);
   }
 
   protected void initChannel(ChannelPipeline pipeline) {
@@ -220,6 +220,25 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
   }
 
   public void connectInternal(ProxyOptions proxyOptions,
+                                SocketAddress remoteAddress,
+                                SocketAddress peerAddress,
+                                String serverName,
+                                boolean ssl,
+                                boolean useAlpn,
+                                boolean registerWriteHandlers,
+                                Promise<NetSocket> connectHandler,
+                                ContextInternal context,
+                                int remainingAttempts) {
+    sslHelper.validate(context).onComplete(ar -> {
+      if (ar.succeeded()) {
+        connectInternal2(proxyOptions, remoteAddress, peerAddress, serverName, ssl, useAlpn, registerWriteHandlers, connectHandler, context, remainingAttempts);
+      } else {
+        connectHandler.fail(ar.cause());
+      }
+    });
+  }
+
+  private void connectInternal2(ProxyOptions proxyOptions,
                               SocketAddress remoteAddress,
                               SocketAddress peerAddress,
                               String serverName,
@@ -266,7 +285,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
         }
       });
     } else {
-      eventLoop.execute(() -> connectInternal(proxyOptions, remoteAddress, peerAddress, serverName, ssl, useAlpn, registerWriteHandlers, connectHandler, context, remainingAttempts));
+      eventLoop.execute(() -> connectInternal2(proxyOptions, remoteAddress, peerAddress, serverName, ssl, useAlpn, registerWriteHandlers, connectHandler, context, remainingAttempts));
     }
   }
 

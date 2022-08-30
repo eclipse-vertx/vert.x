@@ -14,10 +14,14 @@ package io.vertx.core.net.impl;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.ssl.*;
 import io.netty.util.Mapping;
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.ClientOptionsBase;
@@ -102,6 +106,7 @@ public class SSLHelper {
   private Map<String, SslContext>[] sslContextMaps = new Map[] {
     new ConcurrentHashMap<>(), new ConcurrentHashMap<>()
   };
+  private Future<Void> loaded;
 
   private SSLHelper(TCPSSLOptions options) {
     this.ssl = options.isSsl();
@@ -196,10 +201,24 @@ public class SSLHelper {
     }
   }
 
-  // This is called to validate some of the SSL params as that only happens when the context is created
-  public synchronized void validate(VertxInternal vertx) {
-    if (ssl) {
-      createContext(vertx, null, useAlpn, client, trustAll);
+  public synchronized Future<Void> validate(ContextInternal ctx) {
+    if (loaded == null) {
+      if (ssl) {
+        Promise<Void> promise = Promise.promise();
+        loaded = promise.future();
+        Future<Void> res = ctx.executeBlockingInternal(p -> {
+          createContext(ctx.owner(), null, useAlpn, client, trustAll);
+          p.complete();
+        });
+        res.onComplete(promise);
+      } else {
+        loaded = Future.succeededFuture();
+      }
+      return loaded;
+    } else {
+      PromiseInternal<Void> promise = ctx.promise();
+      loaded.onComplete(promise);
+      return promise.future();
     }
   }
 

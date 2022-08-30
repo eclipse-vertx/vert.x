@@ -131,64 +131,69 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
       }
       PromiseInternal<Channel> promise = listenContext.promise();
       if (main == null) {
-        try {
-          actualServer = this;
-          bindFuture = promise;
-          sslHelper = createSSLHelper();
-          sslHelper.validate(vertx);
-          worker =  childHandler(listenContext, localAddress, sslHelper);
-          servers = new HashSet<>();
-          servers.add(this);
-          channelBalancer = new ServerChannelLoadBalancer(vertx.getAcceptorEventLoopGroup().next());
-          channelBalancer.addWorker(eventLoop, worker);
+        actualServer = this;
+        bindFuture = promise;
+        sslHelper = createSSLHelper();
+        worker =  childHandler(listenContext, localAddress, sslHelper);
+        servers = new HashSet<>();
+        servers.add(this);
+        channelBalancer = new ServerChannelLoadBalancer(vertx.getAcceptorEventLoopGroup().next());
 
-          ServerBootstrap bootstrap = new ServerBootstrap();
-          bootstrap.group(vertx.getAcceptorEventLoopGroup(), channelBalancer.workers());
-          if (sslHelper.isSSL()) {
-            bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
-          } else {
-            bootstrap.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
-          }
-
-          bootstrap.childHandler(channelBalancer);
-          applyConnectionOptions(localAddress.isDomainSocket(), bootstrap);
-
-          io.netty.util.concurrent.Future<Channel> bindFuture = AsyncResolveConnectHelper.doBind(vertx, bindAddress, bootstrap);
-          bindFuture.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) res -> {
-            if (res.isSuccess()) {
-              Channel ch = res.getNow();
-              log.trace("Net server listening on " + hostOrPath + ":" + ch.localAddress());
-              if (shared) {
-                ch.closeFuture().addListener((ChannelFutureListener) channelFuture -> {
-                  synchronized (sharedNetServers) {
-                    sharedNetServers.remove(id);
-                  }
-                });
-              }
-              // Update port to actual port when it is not a domain socket as wildcard port 0 might have been used
-              if (bindAddress.isInetSocket()) {
-                actualPort = ((InetSocketAddress)ch.localAddress()).getPort();
-              }
-              listenContext.addCloseHook(this);
-              metrics = createMetrics(localAddress);
-              promise.complete(ch);
-            } else {
-              if (shared) {
-                synchronized (sharedNetServers) {
-                  sharedNetServers.remove(id);
-                }
-              }
-              listening  = false;
-              promise.fail(res.cause());
-            }
-          });
-          if (shared) {
-            sharedNetServers.put(id, this);
-          }
-        } catch (Throwable t) {
-          listening = false;
-          promise.fail(t);
+        if (shared) {
+          sharedNetServers.put(id, this);
         }
+
+        sslHelper.validate(listenContext).onComplete(ar -> {
+          if (ar.succeeded()) {
+            channelBalancer.addWorker(eventLoop, worker);
+            ServerBootstrap bootstrap = new ServerBootstrap();
+            bootstrap.group(vertx.getAcceptorEventLoopGroup(), channelBalancer.workers());
+            if (sslHelper.isSSL()) {
+              bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
+            } else {
+              bootstrap.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+            }
+
+            bootstrap.childHandler(channelBalancer);
+            applyConnectionOptions(localAddress.isDomainSocket(), bootstrap);
+
+            io.netty.util.concurrent.Future<Channel> bindFuture = AsyncResolveConnectHelper.doBind(vertx, bindAddress, bootstrap);
+            bindFuture.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) res -> {
+              if (res.isSuccess()) {
+                Channel ch = res.getNow();
+                log.trace("Net server listening on " + hostOrPath + ":" + ch.localAddress());
+                if (shared) {
+                  ch.closeFuture().addListener((ChannelFutureListener) channelFuture -> {
+                    synchronized (sharedNetServers) {
+                      sharedNetServers.remove(id);
+                    }
+                  });
+                }
+                // Update port to actual port when it is not a domain socket as wildcard port 0 might have been used
+                if (bindAddress.isInetSocket()) {
+                  actualPort = ((InetSocketAddress)ch.localAddress()).getPort();
+                }
+                listenContext.addCloseHook(this);
+                metrics = createMetrics(localAddress);
+                promise.complete(ch);
+              } else {
+                promise.fail(res.cause());
+              }
+            });
+          } else {
+            promise.fail(ar.cause());
+          }
+        });
+
+        bindFuture.onFailure(err -> {
+          if (shared) {
+            synchronized (sharedNetServers) {
+              sharedNetServers.remove(id);
+            }
+          }
+          listening = false;
+        });
+
         return bindFuture;
       } else {
         // Server already exists with that host/port - we will use that

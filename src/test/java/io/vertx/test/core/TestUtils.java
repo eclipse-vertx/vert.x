@@ -531,4 +531,13 @@ public class TestUtils {
       return false;
     }
   }
+
+  public static Throwable rootCause(Throwable t) {
+    Throwable root = t;
+    while (root.getCause() != null) {
+      root = root.getCause();
+    }
+    return root;
+  }
+
 }
