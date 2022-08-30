@@ -858,4 +858,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     return (TCPSSLOptions) super.setReusePort(reusePort);
   }
 
+  @Override
+  public TCPSSLOptions setPcapCaptureFile(String pcapCaptureFile) {
+    return (TCPSSLOptions) super.setPcapCaptureFile(pcapCaptureFile);
+  }
 }

@@ -59,6 +59,11 @@ public abstract class NetworkOptions {
    */
   public static final ByteBufFormat DEFAULT_LOG_ACTIVITY_FORMAT = ByteBufFormat.HEX_DUMP;
 
+  /**
+   * Default pcap file name where capturing of HTTP traffic is recorded. When no file is set, capturing is disabled.
+   */
+  public static final String DEFAULT_PCAP_CAPTURE_FILE = "";
+
   private int sendBufferSize;
   private int receiveBufferSize;
   private int trafficClass;
@@ -66,6 +71,7 @@ public abstract class NetworkOptions {
   private boolean logActivity;
   private ByteBufFormat activityLogDataFormat;
   private boolean reusePort;
+  private String pcapCaptureFile;
 
   /**
    * Default constructor
@@ -78,6 +84,7 @@ public abstract class NetworkOptions {
     logActivity = DEFAULT_LOG_ENABLED;
     activityLogDataFormat = DEFAULT_LOG_ACTIVITY_FORMAT;
     reusePort = DEFAULT_REUSE_PORT;
+    pcapCaptureFile = DEFAULT_PCAP_CAPTURE_FILE;
   }
 
   /**
@@ -93,6 +100,7 @@ public abstract class NetworkOptions {
     this.trafficClass = other.getTrafficClass();
     this.logActivity = other.logActivity;
     this.activityLogDataFormat = other.activityLogDataFormat;
+    this.pcapCaptureFile = other.pcapCaptureFile;
   }
 
   /**
@@ -249,6 +257,18 @@ public abstract class NetworkOptions {
    */
   public NetworkOptions setReusePort(boolean reusePort) {
     this.reusePort = reusePort;
+    return this;
+  }
+
+  /**
+   * @return the name of the PCAP file where the HTTP traffic will be written to.
+   */
+  public String getPcapCaptureFile() {
+    return pcapCaptureFile;
+  }
+
+  public NetworkOptions setPcapCaptureFile(String pcapCaptureFile) {
+    this.pcapCaptureFile = pcapCaptureFile;
     return this;
   }
 }

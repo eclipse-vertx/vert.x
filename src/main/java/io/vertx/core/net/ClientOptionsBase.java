@@ -367,6 +367,11 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   }
 
   @Override
+  public ClientOptionsBase setPcapCaptureFile(String pcapCaptureFile) {
+    return (ClientOptionsBase) super.setPcapCaptureFile(pcapCaptureFile);
+  }
+
+  @Override
   public ClientOptionsBase setTrafficClass(int trafficClass) {
     return (ClientOptionsBase) super.setTrafficClass(trafficClass);
   }

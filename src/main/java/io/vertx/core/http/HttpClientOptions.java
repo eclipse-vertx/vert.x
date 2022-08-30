@@ -414,6 +414,12 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   @Override
+  public HttpClientOptions setPcapCaptureFile(String pcapCaptureFile) {
+    super.setPcapCaptureFile(pcapCaptureFile);
+    return this;
+  }
+
+  @Override
   public HttpClientOptions setTrafficClass(int trafficClass) {
     super.setTrafficClass(trafficClass);
     return this;

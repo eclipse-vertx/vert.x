@@ -38,6 +38,10 @@ import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -61,6 +65,7 @@ public class HttpServerWorker implements Handler<Channel> {
   private final String serverOrigin;
   private final boolean logEnabled;
   private final boolean disableH2C;
+  private final boolean enablePcapCapture;
   final Handler<HttpServerConnection> connectionHandler;
   private final Handler<Throwable> exceptionHandler;
   private final CompressionOptions[] compressionOptions;
@@ -97,6 +102,7 @@ public class HttpServerWorker implements Handler<Channel> {
     this.serverOrigin = serverOrigin;
     this.logEnabled = options.getLogActivity();
     this.disableH2C = disableH2C;
+    this.enablePcapCapture = (options.getPcapCaptureFile() != null) && !options.getPcapCaptureFile().isEmpty();
     this.connectionHandler = connectionHandler;
     this.exceptionHandler = exceptionHandler;
     this.compressionOptions = compressionOptions;
@@ -272,6 +278,9 @@ public class HttpServerWorker implements Handler<Channel> {
   private void configureHttp1OrH2C(ChannelPipeline pipeline) {
     if (logEnabled) {
       pipeline.addLast("logging", new LoggingHandler(options.getActivityLogDataFormat()));
+    }
+    if (enablePcapCapture) {
+      pipeline.addLast("pcapCapturing", new VertxPcapWriteHandler(options.getPcapCaptureFile()));
     }
     if (HttpServerImpl.USE_FLASH_POLICY_HANDLER) {
       pipeline.addLast("flashpolicy", new FlashPolicyHandler());

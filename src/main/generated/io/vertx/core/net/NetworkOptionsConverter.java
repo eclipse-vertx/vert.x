@@ -30,6 +30,11 @@ public class NetworkOptionsConverter {
             obj.setLogActivity((Boolean)member.getValue());
           }
           break;
+        case "pcapCaptureFile":
+          if (member.getValue() instanceof String) {
+            obj.setPcapCaptureFile((String)member.getValue());
+          }
+          break;
         case "receiveBufferSize":
           if (member.getValue() instanceof Number) {
             obj.setReceiveBufferSize(((Number)member.getValue()).intValue());
@@ -68,6 +73,9 @@ public class NetworkOptionsConverter {
       json.put("activityLogDataFormat", obj.getActivityLogDataFormat().name());
     }
     json.put("logActivity", obj.getLogActivity());
+    if (obj.getPcapCaptureFile() != null) {
+      json.put("pcapCaptureFile", obj.getPcapCaptureFile());
+    }
     json.put("receiveBufferSize", obj.getReceiveBufferSize());
     json.put("reuseAddress", obj.isReuseAddress());
     json.put("reusePort", obj.isReusePort());

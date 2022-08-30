@@ -30,6 +30,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
+import io.vertx.core.http.impl.VertxPcapWriteHandler;
 import io.vertx.core.impl.AddressResolver;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.CloseFuture;
@@ -81,6 +82,9 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
     context.nettyEventLoop().register(channel);
     if (options.getLogActivity()) {
       channel.pipeline().addLast("logging", new LoggingHandler(options.getActivityLogDataFormat()));
+    }
+    if ((options.getPcapCaptureFile() != null) && !options.getPcapCaptureFile().isEmpty()) {
+      channel.pipeline().addLast("pcapCapturing", new VertxPcapWriteHandler(options.getPcapCaptureFile()));
     }
     VertxMetrics metrics = vertx.metricsSPI();
     this.metrics = metrics != null ? metrics.createDatagramSocketMetrics(options) : null;

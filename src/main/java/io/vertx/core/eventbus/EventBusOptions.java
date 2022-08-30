@@ -451,6 +451,12 @@ public class EventBusOptions extends TCPSSLOptions {
   }
 
   @Override
+  public EventBusOptions setPcapCaptureFile(String pcapCaptureFile) {
+    super.setPcapCaptureFile(pcapCaptureFile);
+    return this;
+  }
+
+  @Override
   public EventBusOptions setSendBufferSize(int sendBufferSize) {
     super.setSendBufferSize(sendBufferSize);
     return this;

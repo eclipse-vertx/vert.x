@@ -153,6 +153,12 @@ public class NetServerOptions extends TCPSSLOptions {
   }
 
   @Override
+  public NetServerOptions setPcapCaptureFile(String pcapCaptureFile) {
+    super.setPcapCaptureFile(pcapCaptureFile);
+    return this;
+  }
+
+  @Override
   public NetServerOptions setTrafficClass(int trafficClass) {
     super.setTrafficClass(trafficClass);
     return this;

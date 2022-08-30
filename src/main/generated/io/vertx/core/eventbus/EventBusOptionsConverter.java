@@ -134,6 +134,11 @@ public class EventBusOptionsConverter {
             obj.setOpenSslEngineOptions(new io.vertx.core.net.OpenSSLEngineOptions((io.vertx.core.json.JsonObject)member.getValue()));
           }
           break;
+        case "pcapCaptureFile":
+          if (member.getValue() instanceof String) {
+            obj.setPcapCaptureFile((String)member.getValue());
+          }
+          break;
         case "pemKeyCertOptions":
           if (member.getValue() instanceof JsonObject) {
             obj.setPemKeyCertOptions(new io.vertx.core.net.PemKeyCertOptions((io.vertx.core.json.JsonObject)member.getValue()));
@@ -331,6 +336,9 @@ public class EventBusOptionsConverter {
     json.put("logActivity", obj.getLogActivity());
     if (obj.getOpenSslEngineOptions() != null) {
       json.put("openSslEngineOptions", obj.getOpenSslEngineOptions().toJson());
+    }
+    if (obj.getPcapCaptureFile() != null) {
+      json.put("pcapCaptureFile", obj.getPcapCaptureFile());
     }
     if (obj.getPemKeyCertOptions() != null) {
       json.put("pemKeyCertOptions", obj.getPemKeyCertOptions().toJson());
