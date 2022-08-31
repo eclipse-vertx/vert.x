@@ -21,11 +21,9 @@ import io.netty.handler.ssl.SslProvider;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.JdkSSLEngineOptions;
 import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.core.net.SSLEngineOptions;
-import io.vertx.core.net.TCPSSLOptions;
 import io.vertx.core.net.TrustOptions;
 import io.vertx.core.spi.tls.SslContextFactory;
 
@@ -36,8 +34,8 @@ import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 import java.io.ByteArrayInputStream;
+import java.security.KeyStore;
 import java.security.cert.CRL;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -45,9 +43,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -94,25 +90,19 @@ public class SslContextFactoryImpl implements SslContextFactory {
     If you don't specify a key store, and don't specify a system property no key store will be used
     You can override this by specifying the javax.echo.ssl.keyStore system property
      */
-  private SslContext createContext(VertxInternal vertx, boolean useAlpn, boolean client, X509KeyManager mgr, TrustManagerFactory trustMgrFactory) {
+  private SslContext createContext(boolean useAlpn, boolean client, KeyManagerFactory kmf, TrustManagerFactory tmf) {
     try {
       SslContextBuilder builder;
       if (client) {
         builder = SslContextBuilder.forClient();
-        KeyManagerFactory keyMgrFactory = getKeyMgrFactory(vertx);
-        if (keyMgrFactory != null) {
-          builder.keyManager(keyMgrFactory);
+        if (kmf != null) {
+          builder.keyManager(kmf);
         }
       } else {
-        if (mgr != null) {
-          builder = SslContextBuilder.forServer(mgr.getPrivateKey(null), null, mgr.getCertificateChain(null));
-        } else {
-          KeyManagerFactory keyMgrFactory = getKeyMgrFactory(vertx);
-          if (keyMgrFactory == null) {
-            throw new VertxException("Key/certificate is mandatory for SSL");
-          }
-          builder = SslContextBuilder.forServer(keyMgrFactory);
+        if (kmf == null) {
+          throw new VertxException("Key/certificate is mandatory for SSL");
         }
+        builder = SslContextBuilder.forServer(kmf);
       }
       Collection<String> cipherSuites = enabledCipherSuites;
       if (openSsl) {
@@ -126,8 +116,8 @@ public class SslContextFactoryImpl implements SslContextFactory {
           cipherSuites = DefaultJDKCipherSuite.get();
         }
       }
-      if (trustMgrFactory != null) {
-        builder.trustManager(trustMgrFactory);
+      if (tmf != null) {
+        builder.trustManager(tmf);
       }
       if (cipherSuites != null && cipherSuites.size() > 0) {
         builder.ciphers(cipherSuites);
@@ -151,6 +141,26 @@ public class SslContextFactoryImpl implements SslContextFactory {
     } catch (Exception e) {
       throw new VertxException(e);
     }
+  }
+
+  private KeyManagerFactory getKeyMgrFactory(VertxInternal vertx, String serverName) throws Exception {
+    KeyManagerFactory kmf = null;
+    if (serverName != null) {
+      X509KeyManager mgr = keyCertOptions.keyManagerMapper(vertx).apply(serverName);
+      if (mgr != null) {
+        String keyStoreType = KeyStore.getDefaultType();
+        KeyStore ks = KeyStore.getInstance(keyStoreType);
+        ks.load(null, null);
+        ks.setKeyEntry("key", mgr.getPrivateKey(null), new char[0], mgr.getCertificateChain(null));
+        String keyAlgorithm = KeyManagerFactory.getDefaultAlgorithm();
+        kmf = KeyManagerFactory.getInstance(keyAlgorithm);
+        kmf.init(ks, new char[0]);
+      }
+    }
+    if (kmf == null) {
+      kmf = getKeyMgrFactory(vertx);
+    }
+    return kmf;
   }
 
   private KeyManagerFactory getKeyMgrFactory(VertxInternal vertx) throws Exception {
@@ -258,22 +268,14 @@ public class SslContextFactoryImpl implements SslContextFactory {
   }
 
   public SslContext createContext(VertxInternal vertx, String serverName, boolean useAlpn, boolean client, boolean trustAll) {
-    TrustManagerFactory trustMgrFactory;
+    TrustManagerFactory tmf;
+    KeyManagerFactory kmf;
     try {
-      trustMgrFactory = getTrustMgrFactory(vertx, serverName, trustAll);
+      tmf = getTrustMgrFactory(vertx, serverName, trustAll);
+      kmf = getKeyMgrFactory(vertx, serverName);
     } catch (Exception e) {
       throw new VertxException(e);
     }
-    X509KeyManager mgr;
-    if (serverName == null) {
-      mgr = null;
-    } else {
-      try {
-        mgr = keyCertOptions.keyManagerMapper(vertx).apply(serverName);
-      } catch (Exception e) {
-        throw new VertxException(e);
-      }
-    }
-    return createContext(vertx, useAlpn, client, mgr, trustMgrFactory);
+    return createContext(useAlpn, client, kmf, tmf);
   }
 }

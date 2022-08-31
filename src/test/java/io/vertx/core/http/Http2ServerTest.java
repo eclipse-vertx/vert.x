@@ -13,6 +13,7 @@ package io.vertx.core.http;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
@@ -41,8 +42,11 @@ import io.netty.handler.codec.http2.Http2FrameAdapter;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.codec.http2.Http2Stream;
+import io.netty.handler.ssl.ApplicationProtocolConfig;
 import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslHandler;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
@@ -55,8 +59,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.Http1xOrH2CHandler;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.impl.Utils;
-import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 import io.vertx.test.core.DetectFileDescriptorLeaks;
@@ -213,8 +215,16 @@ public class Http2ServerTest extends Http2TestBase {
       return new ChannelInitializer<Channel>() {
         @Override
         protected void initChannel(Channel ch) throws Exception {
-          SSLHelper sslHelper = new SSLHelper(new HttpClientOptions().setUseAlpn(true).setSsl(true), null, Trust.SERVER_JKS.get(), Arrays.asList(HttpVersion.HTTP_2.alpnName(), HttpVersion.HTTP_1_1.alpnName()));
-          SslHandler sslHandler = new SslHandler(sslHelper.createEngine((VertxInternal) vertx, host, port));
+          SslContext sslContext = SslContextBuilder
+            .forClient()
+            .applicationProtocolConfig(new ApplicationProtocolConfig(
+              ApplicationProtocolConfig.Protocol.ALPN,
+              ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE,
+              ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT,
+              HttpVersion.HTTP_2.alpnName(), HttpVersion.HTTP_1_1.alpnName()
+            )).trustManager(Trust.SERVER_JKS.get().getTrustManagerFactory(vertx))
+            .build();
+          SslHandler sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, host, port);
           ch.pipeline().addLast(sslHandler);
           ch.pipeline().addLast(new ApplicationProtocolNegotiationHandler("whatever") {
             @Override

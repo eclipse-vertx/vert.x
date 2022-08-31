@@ -297,12 +297,6 @@ public class SSLHelper {
     };
   }
 
-  public SSLEngine createEngine(VertxInternal vertx, String host, int port) {
-    SSLEngine engine = createContext(vertx).newEngine(ByteBufAllocator.DEFAULT, host, port);
-    configureEngine(engine, null);
-    return engine;
-  }
-
   public SSLEngine createEngine(VertxInternal vertx) {
     SSLEngine engine = createContext(vertx).newEngine(ByteBufAllocator.DEFAULT);
     configureEngine(engine, null);
