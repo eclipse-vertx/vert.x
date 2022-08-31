@@ -101,15 +101,14 @@ public class SslContextFactoryImpl implements SslContextFactory {
     return engineOptions;
   }
 
-  private KeyCertOptions keyCertOptions;
-  private TrustOptions trustOptions;
-  private ArrayList<String> crlPaths;
-  private ArrayList<Buffer> crlValues;
-  private Set<String> enabledCipherSuites;
-  private boolean openSsl;
-  private List<String> applicationProtocols;
-
-  private boolean openSslSessionCacheEnabled = true;
+  private final KeyCertOptions keyCertOptions;
+  private final TrustOptions trustOptions;
+  private final ArrayList<String> crlPaths;
+  private final ArrayList<Buffer> crlValues;
+  private final Set<String> enabledCipherSuites;
+  private final boolean openSsl;
+  private final List<String> applicationProtocols;
+  private final boolean openSslSessionCacheEnabled;
 
   public SslContextFactoryImpl(TCPSSLOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions, List<String> applicationProtocols) {
     SSLEngineOptions sslEngineOptions = resolveEngineOptions(options);
