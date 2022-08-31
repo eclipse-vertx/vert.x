@@ -86,20 +86,6 @@ public class SslContextFactoryImpl implements SslContextFactory {
     this.applicationProtocols = applicationProtocols;
   }
 
-  /**
-   * Copy constructor, only configuration field are copied.
-   */
-  public SslContextFactoryImpl(SslContextFactoryImpl that) {
-    this.keyCertOptions = that.keyCertOptions;
-    this.trustOptions = that.trustOptions;
-    this.crlPaths = that.crlPaths;
-    this.crlValues = that.crlValues;
-    this.enabledCipherSuites = that.enabledCipherSuites;
-    this.openSsl = that.openSsl;
-    this.applicationProtocols = that.applicationProtocols;
-    this.openSslSessionCacheEnabled = that.openSslSessionCacheEnabled;
-  }
-
   /*
     If you don't specify a trust store, and you haven't set system properties, the system will try to use either a file
     called jsssecacerts or cacerts in the JDK/JRE security directory.

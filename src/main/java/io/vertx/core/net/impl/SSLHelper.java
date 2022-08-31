@@ -12,11 +12,15 @@
 package io.vertx.core.net.impl;
 
 import io.netty.buffer.ByteBufAllocator;
-import io.netty.handler.ssl.*;
+import io.netty.handler.ssl.DelegatingSslContext;
+import io.netty.handler.ssl.OpenSsl;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslHandler;
 import io.netty.util.Mapping;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.impl.ContextInternal;
@@ -35,6 +39,7 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.TCPSSLOptions;
 import io.vertx.core.net.TrustOptions;
 import io.vertx.core.spi.tls.SslContextFactory;
+import io.vertx.core.spi.tls.SslProvider;
 
 import javax.net.ssl.*;
 import java.util.*;
@@ -91,7 +96,16 @@ public class SSLHelper {
 
   private static final Logger log = LoggerFactory.getLogger(SSLHelper.class);
 
-  private SslContextFactory sslContextFactory;
+  private SslProvider sslProvider;
+  private SSLEngineOptions sslEngineOptions;
+  private KeyCertOptions keyCertOptions;
+  private TrustOptions trustOptions;
+  private ArrayList<String> crlPaths;
+  private ArrayList<Buffer> crlValues;
+  private Set<String> enabledCipherSuites;
+  private List<String> applicationProtocols;
+  private Future<SslContextFactory> sslContextFactory;
+
   private final boolean ssl;
   private boolean sni;
   private final long sslHandshakeTimeout;
@@ -106,9 +120,12 @@ public class SSLHelper {
   private Map<String, SslContext>[] sslContextMaps = new Map[] {
     new ConcurrentHashMap<>(), new ConcurrentHashMap<>()
   };
-  private Future<Void> loaded;
 
   private SSLHelper(TCPSSLOptions options) {
+    this.sslEngineOptions = resolveEngineOptions(options);
+    this.crlPaths = new ArrayList<>(options.getCrlPaths());
+    this.crlValues = new ArrayList<>(options.getCrlValues());
+    this.enabledCipherSuites = new HashSet<>(options.getEnabledCipherSuites());
     this.ssl = options.isSsl();
     this.sslHandshakeTimeout = options.getSslHandshakeTimeout();
     this.sslHandshakeTimeoutUnit = options.getSslHandshakeTimeoutUnit();
@@ -124,13 +141,19 @@ public class SSLHelper {
 
   public SSLHelper(HttpClientOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions, List<String> applicationProtocols) {
     this(options);
-    this.sslContextFactory = new SslContextFactoryImpl(resolveEngineOptions(options), keyCertOptions, trustOptions, options.getCrlPaths(), options.getCrlValues(), options.getEnabledCipherSuites(), applicationProtocols);
+    this.sslProvider = new SslProviderImpl();
+    this.keyCertOptions = keyCertOptions;
+    this.trustOptions = trustOptions;
+    this.applicationProtocols = applicationProtocols;
   }
 
-  public SSLHelper(NetClientOptions options, SslContextFactory sslContextFactory) {
+  public SSLHelper(NetClientOptions options, SslProvider sslProvider) {
     this(options);
     this.endpointIdentificationAlgorithm = options.getHostnameVerificationAlgorithm();
-    this.sslContextFactory = sslContextFactory;
+    this.sslProvider = sslProvider;
+    this.keyCertOptions = options.getKeyCertOptions();
+    this.trustOptions = options.getTrustOptions();
+    this.applicationProtocols = options.getApplicationLayerProtocols();
   }
 
   public SSLHelper(NetServerOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions, List<String> applicationProtocols) {
@@ -138,24 +161,10 @@ public class SSLHelper {
     this.clientAuth = options.getClientAuth();
     this.client = false;
     this.sni = options.isSni();
-    this.sslContextFactory = new SslContextFactoryImpl(resolveEngineOptions(options), keyCertOptions, trustOptions, options.getCrlPaths(), options.getCrlValues(), options.getEnabledCipherSuites(), applicationProtocols);
-  }
-
-  /**
-   * Copy constructor, only configuration field are copied.
-   */
-  public SSLHelper(SSLHelper that) {
-    this.ssl = that.ssl;
-    this.sni = that.sni;
-    this.sslHandshakeTimeout = that.sslHandshakeTimeout;
-    this.sslHandshakeTimeoutUnit = that.sslHandshakeTimeoutUnit;
-    this.trustAll = that.trustAll;
-    this.clientAuth = that.clientAuth;
-    this.client = that.client;
-    this.useAlpn = that.useAlpn;
-    this.enabledProtocols = that.enabledProtocols;
-    this.endpointIdentificationAlgorithm = that.endpointIdentificationAlgorithm;
-    this.sslContextFactory = new SslContextFactoryImpl((SslContextFactoryImpl) that.sslContextFactory);
+    this.sslProvider = new SslProviderImpl();
+    this.keyCertOptions = keyCertOptions;
+    this.trustOptions = trustOptions;
+    this.applicationProtocols = applicationProtocols;
   }
 
   public boolean isSSL() {
@@ -202,22 +211,27 @@ public class SSLHelper {
   }
 
   public synchronized Future<Void> validate(ContextInternal ctx) {
-    if (loaded == null) {
-      if (ssl) {
-        Promise<Void> promise = Promise.promise();
-        loaded = promise.future();
-        Future<Void> res = ctx.executeBlockingInternal(p -> {
+    if (sslContextFactory == null) {
+      if (keyCertOptions != null || trustOptions != null || trustAll || ssl) {
+        Promise<SslContextFactory> promise = Promise.promise();
+        sslContextFactory = promise.future();
+        Future<SslContextFactory> res = ctx.executeBlockingInternal(p -> {
+          SslContextFactory scf = sslProvider.contextFactory(sslEngineOptions, keyCertOptions, trustOptions, crlPaths, crlValues, enabledCipherSuites, applicationProtocols);
+          p.complete(scf);
+        });
+        // TEMPORARY!!!!!
+        res.onComplete(promise);
+        return res.compose(s -> ctx.executeBlockingInternal(p -> {
           createContext(ctx.owner(), null, useAlpn, client, trustAll);
           p.complete();
-        });
-        res.onComplete(promise);
+        }));
       } else {
-        loaded = Future.succeededFuture();
+        sslContextFactory = Future.succeededFuture(); // NOT SURE
+        return sslContextFactory.mapEmpty();
       }
-      return loaded;
     } else {
       PromiseInternal<Void> promise = ctx.promise();
-      loaded.onComplete(promise);
+      sslContextFactory.<Void>mapEmpty().onComplete(promise);
       return promise.future();
     }
   }
@@ -245,11 +259,11 @@ public class SSLHelper {
     int idx = useAlpn ? 0 : 1;
     if (serverName == null) {
       if (sslContexts[idx] == null) {
-        sslContexts[idx] = sslContextFactory.createContext(vertx, serverName, useAlpn, client, trustAll);
+        sslContexts[idx] = sslContextFactory.result().createContext(vertx, serverName, useAlpn, client, trustAll);
       }
       return sslContexts[idx];
     } else {
-      return sslContextMaps[idx].computeIfAbsent(serverName, s -> sslContextFactory.createContext(vertx, serverName, useAlpn, client, trustAll));
+      return sslContextMaps[idx].computeIfAbsent(serverName, s -> sslContextFactory.result().createContext(vertx, serverName, useAlpn, client, trustAll));
     }
   }
 
