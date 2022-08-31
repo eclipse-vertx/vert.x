@@ -258,31 +258,22 @@ public class SslContextFactoryImpl implements SslContextFactory {
   }
 
   public SslContext createContext(VertxInternal vertx, String serverName, boolean useAlpn, boolean client, boolean trustAll) {
+    TrustManagerFactory trustMgrFactory;
+    try {
+      trustMgrFactory = getTrustMgrFactory(vertx, serverName, trustAll);
+    } catch (Exception e) {
+      throw new VertxException(e);
+    }
+    X509KeyManager mgr;
     if (serverName == null) {
-      TrustManagerFactory trustMgrFactory;
-      try {
-        trustMgrFactory = getTrustMgrFactory(vertx, null, trustAll);
-      } catch (Exception e) {
-        throw new VertxException(e);
-      }
-      return createContext(vertx, useAlpn, client, null, trustMgrFactory);
+      mgr = null;
     } else {
-      X509KeyManager mgr;
       try {
         mgr = keyCertOptions.keyManagerMapper(vertx).apply(serverName);
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
-      if (mgr == null) {
-        // Could it return null ???
-        return createContext(vertx, null, useAlpn, client, trustAll);
-      }
-      try {
-        TrustManagerFactory trustMgrFactory = getTrustMgrFactory(vertx, serverName, trustAll);
-        return createContext(vertx, useAlpn, client, mgr, trustMgrFactory);
       } catch (Exception e) {
         throw new VertxException(e);
       }
     }
+    return createContext(vertx, useAlpn, client, mgr, trustMgrFactory);
   }
 }
