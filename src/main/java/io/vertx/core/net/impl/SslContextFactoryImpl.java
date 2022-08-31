@@ -43,6 +43,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -59,48 +60,6 @@ import java.util.stream.Stream;
  */
 public class SslContextFactoryImpl implements SslContextFactory {
 
-  /**
-   * Resolve the ssl engine options to use for properly running the configured options.
-   */
-  public static SSLEngineOptions resolveEngineOptions(TCPSSLOptions options) {
-    SSLEngineOptions engineOptions = options.getSslEngineOptions();
-    if (engineOptions == null) {
-      if (options.isUseAlpn()) {
-        if (JdkSSLEngineOptions.isAlpnAvailable()) {
-          engineOptions = new JdkSSLEngineOptions();
-        } else if (OpenSSLEngineOptions.isAlpnAvailable()) {
-          engineOptions = new OpenSSLEngineOptions();
-        }
-      }
-    }
-    if (engineOptions == null) {
-      engineOptions = new JdkSSLEngineOptions();
-    } else if (engineOptions instanceof OpenSSLEngineOptions) {
-      if (!OpenSsl.isAvailable()) {
-        VertxException ex = new VertxException("OpenSSL is not available");
-        Throwable cause = OpenSsl.unavailabilityCause();
-        if (cause != null) {
-          ex.initCause(cause);
-        }
-        throw ex;
-      }
-    }
-
-    if (options.isUseAlpn()) {
-      if (engineOptions instanceof JdkSSLEngineOptions) {
-        if (!JdkSSLEngineOptions.isAlpnAvailable()) {
-          throw new VertxException("ALPN not available for JDK SSL/TLS engine");
-        }
-      }
-      if (engineOptions instanceof OpenSSLEngineOptions) {
-        if (!OpenSSLEngineOptions.isAlpnAvailable()) {
-          throw new VertxException("ALPN is not available for OpenSSL SSL/TLS engine");
-        }
-      }
-    }
-    return engineOptions;
-  }
-
   private final KeyCertOptions keyCertOptions;
   private final TrustOptions trustOptions;
   private final ArrayList<String> crlPaths;
@@ -110,13 +69,18 @@ public class SslContextFactoryImpl implements SslContextFactory {
   private final List<String> applicationProtocols;
   private final boolean openSslSessionCacheEnabled;
 
-  public SslContextFactoryImpl(TCPSSLOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions, List<String> applicationProtocols) {
-    SSLEngineOptions sslEngineOptions = resolveEngineOptions(options);
+  public SslContextFactoryImpl(SSLEngineOptions sslEngineOptions,
+                               KeyCertOptions keyCertOptions,
+                               TrustOptions trustOptions,
+                               List<String> crltPaths,
+                               List<Buffer> crlValues,
+                               Set<String> enabledCipherSuites,
+                               List<String> applicationProtocols) {
     this.keyCertOptions = keyCertOptions;
     this.trustOptions = trustOptions;
-    this.crlPaths = new ArrayList<>(options.getCrlPaths());
-    this.crlValues = new ArrayList<>(options.getCrlValues());
-    this.enabledCipherSuites = options.getEnabledCipherSuites();
+    this.crlPaths = new ArrayList<>(crltPaths);
+    this.crlValues = new ArrayList<>(crlValues);
+    this.enabledCipherSuites = new HashSet<>(enabledCipherSuites);
     this.openSsl = sslEngineOptions instanceof OpenSSLEngineOptions;
     this.openSslSessionCacheEnabled = (sslEngineOptions instanceof OpenSSLEngineOptions) && ((OpenSSLEngineOptions) sslEngineOptions).isSessionCacheEnabled();
     this.applicationProtocols = applicationProtocols;

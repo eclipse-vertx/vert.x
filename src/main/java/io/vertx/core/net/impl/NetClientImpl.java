@@ -78,7 +78,14 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
 
   public NetClientImpl(VertxInternal vertx, TCPMetrics metrics, NetClientOptions options, SslProvider sslProvider, CloseFuture closeFuture) {
 
-    SslContextFactory sslContextFactory = sslProvider.contextFactory(options, options.getKeyCertOptions(), options.getTrustOptions(), options.getApplicationLayerProtocols());
+    SslContextFactory sslContextFactory = sslProvider.contextFactory(
+      SSLHelper.resolveEngineOptions(options),
+      options.getKeyCertOptions(),
+      options.getTrustOptions(),
+      options.getCrlPaths(),
+      options.getCrlValues(),
+      options.getEnabledCipherSuites(),
+      options.getApplicationLayerProtocols());
 
     this.vertx = vertx;
     this.channelGroup = new DefaultChannelGroup(vertx.getAcceptorEventLoopGroup().next());

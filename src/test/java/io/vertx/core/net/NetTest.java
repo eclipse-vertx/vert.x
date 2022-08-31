@@ -3533,7 +3533,7 @@ public class NetTest extends VertxTestBase {
     NetClientBuilder builder = ((VertxInternal) vertx).createNetClientBuilder(new NetClientOptions().setSsl(true));
     builder.sslProvider(new SslProvider() {
       @Override
-      public SslContextFactory contextFactory(TCPSSLOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions, List<String> applicationProtocols) {
+      public SslContextFactory contextFactory(SSLEngineOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions, List<String> crltPaths, List<Buffer> crlValues, Set<String> enabledCipherSuites, List<String> applicationProtocols) {
         return new SslContextFactory() {
           @Override
           public SslContext createContext(VertxInternal vertx, String serverName, boolean useAlpn, boolean client, boolean trustAll) {

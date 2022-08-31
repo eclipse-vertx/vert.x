@@ -16,6 +16,7 @@ import io.netty.handler.ssl.*;
 import io.netty.util.Mapping;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.VertxException;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.impl.ContextInternal;
@@ -24,9 +25,12 @@ import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.ClientOptionsBase;
+import io.vertx.core.net.JdkSSLEngineOptions;
 import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.OpenSSLEngineOptions;
+import io.vertx.core.net.SSLEngineOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.TCPSSLOptions;
 import io.vertx.core.net.TrustOptions;
@@ -42,6 +46,48 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class SSLHelper {
+
+  /**
+   * Resolve the ssl engine options to use for properly running the configured options.
+   */
+  public static SSLEngineOptions resolveEngineOptions(TCPSSLOptions options) {
+    SSLEngineOptions engineOptions = options.getSslEngineOptions();
+    if (engineOptions == null) {
+      if (options.isUseAlpn()) {
+        if (JdkSSLEngineOptions.isAlpnAvailable()) {
+          engineOptions = new JdkSSLEngineOptions();
+        } else if (OpenSSLEngineOptions.isAlpnAvailable()) {
+          engineOptions = new OpenSSLEngineOptions();
+        }
+      }
+    }
+    if (engineOptions == null) {
+      engineOptions = new JdkSSLEngineOptions();
+    } else if (engineOptions instanceof OpenSSLEngineOptions) {
+      if (!OpenSsl.isAvailable()) {
+        VertxException ex = new VertxException("OpenSSL is not available");
+        Throwable cause = OpenSsl.unavailabilityCause();
+        if (cause != null) {
+          ex.initCause(cause);
+        }
+        throw ex;
+      }
+    }
+
+    if (options.isUseAlpn()) {
+      if (engineOptions instanceof JdkSSLEngineOptions) {
+        if (!JdkSSLEngineOptions.isAlpnAvailable()) {
+          throw new VertxException("ALPN not available for JDK SSL/TLS engine");
+        }
+      }
+      if (engineOptions instanceof OpenSSLEngineOptions) {
+        if (!OpenSSLEngineOptions.isAlpnAvailable()) {
+          throw new VertxException("ALPN is not available for OpenSSL SSL/TLS engine");
+        }
+      }
+    }
+    return engineOptions;
+  }
 
   private static final Logger log = LoggerFactory.getLogger(SSLHelper.class);
 
@@ -78,7 +124,7 @@ public class SSLHelper {
 
   public SSLHelper(HttpClientOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions, List<String> applicationProtocols) {
     this(options);
-    this.sslContextFactory = new SslContextFactoryImpl(options, keyCertOptions, trustOptions, applicationProtocols);
+    this.sslContextFactory = new SslContextFactoryImpl(resolveEngineOptions(options), keyCertOptions, trustOptions, options.getCrlPaths(), options.getCrlValues(), options.getEnabledCipherSuites(), applicationProtocols);
   }
 
   public SSLHelper(NetClientOptions options, SslContextFactory sslContextFactory) {
@@ -92,7 +138,7 @@ public class SSLHelper {
     this.clientAuth = options.getClientAuth();
     this.client = false;
     this.sni = options.isSni();
-    this.sslContextFactory = new SslContextFactoryImpl(options, keyCertOptions, trustOptions, applicationProtocols);
+    this.sslContextFactory = new SslContextFactoryImpl(resolveEngineOptions(options), keyCertOptions, trustOptions, options.getCrlPaths(), options.getCrlValues(), options.getEnabledCipherSuites(), applicationProtocols);
   }
 
   /**
