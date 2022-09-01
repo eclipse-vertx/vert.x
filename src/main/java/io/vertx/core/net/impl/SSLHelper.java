@@ -113,32 +113,36 @@ public class SSLHelper {
 
   private static final Logger log = LoggerFactory.getLogger(SSLHelper.class);
 
-  private SslProvider sslProvider;
-  private SSLEngineOptions sslEngineOptions;
-  private KeyCertOptions keyCertOptions;
-  private TrustOptions trustOptions;
-  private ArrayList<String> crlPaths;
-  private ArrayList<Buffer> crlValues;
-  private Set<String> enabledCipherSuites;
-  private List<String> applicationProtocols;
-  private Future<Void> valid;
-
   private final boolean ssl;
-  private boolean sni;
+  private final boolean sni;
   private final long sslHandshakeTimeout;
   private final TimeUnit sslHandshakeTimeoutUnit;
-  private boolean trustAll;
-  private ClientAuth clientAuth = ClientAuth.NONE;
-  private boolean client;
-  private boolean useAlpn;
-  private Set<String> enabledProtocols;
-  private String endpointIdentificationAlgorithm = "";
+  private final boolean trustAll;
+  private final ClientAuth clientAuth;
+  private final boolean client;
+  private final boolean useAlpn;
+  private final Set<String> enabledProtocols;
+  private final String endpointIdentificationAlgorithm;
+  private final SslProvider sslProvider;
+  private final SSLEngineOptions sslEngineOptions;
+  private final KeyCertOptions keyCertOptions;
+  private final TrustOptions trustOptions;
+  private final ArrayList<String> crlPaths;
+  private final ArrayList<Buffer> crlValues;
+  private final Set<String> enabledCipherSuites;
+  private final List<String> applicationProtocols;
+
+  private Future<Void> valid;
   private SslContext[] sslContexts = new SslContext[2];
   private Map<String, SslContext>[] sslContextMaps = new Map[] {
     new ConcurrentHashMap<>(), new ConcurrentHashMap<>()
   };
 
-  private SSLHelper(TCPSSLOptions options) {
+  public SSLHelper(TCPSSLOptions options, List<String> applicationProtocols) {
+    this(options, new SslProviderImpl(), applicationProtocols);
+  }
+
+  public SSLHelper(TCPSSLOptions options, SslProvider sslProvider, List<String> applicationProtocols) {
     this.sslEngineOptions = resolveEngineOptions(options);
     this.crlPaths = new ArrayList<>(options.getCrlPaths());
     this.crlValues = new ArrayList<>(options.getCrlValues());
@@ -148,40 +152,15 @@ public class SSLHelper {
     this.sslHandshakeTimeoutUnit = options.getSslHandshakeTimeoutUnit();
     this.useAlpn = options.isUseAlpn();
     this.enabledProtocols = options.getEnabledSecureTransportProtocols();
-  }
-
-  private SSLHelper(ClientOptionsBase options) {
-    this((TCPSSLOptions) options);
-    this.client = true;
-    this.trustAll = options.isTrustAll();
-  }
-
-  public SSLHelper(HttpClientOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions, List<String> applicationProtocols) {
-    this(options);
-    this.sslProvider = new SslProviderImpl();
-    this.keyCertOptions = keyCertOptions;
-    this.trustOptions = trustOptions;
+    this.client = options instanceof ClientOptionsBase;
+    this.trustAll = options instanceof ClientOptionsBase && ((ClientOptionsBase)options).isTrustAll();
+    this.keyCertOptions = options.getKeyCertOptions() != null ? options.getKeyCertOptions().copy() : null;
+    this.trustOptions = options.getTrustOptions() != null ? options.getTrustOptions().copy() : null;
+    this.clientAuth = options instanceof NetServerOptions ? ((NetServerOptions)options).getClientAuth() : ClientAuth.NONE;
+    this.endpointIdentificationAlgorithm = options instanceof NetClientOptions ? ((NetClientOptions)options).getHostnameVerificationAlgorithm() : "";
+    this.sni = options instanceof NetServerOptions && ((NetServerOptions) options).isSni();
     this.applicationProtocols = applicationProtocols;
-  }
-
-  public SSLHelper(NetClientOptions options, SslProvider sslProvider) {
-    this(options);
-    this.endpointIdentificationAlgorithm = options.getHostnameVerificationAlgorithm();
     this.sslProvider = sslProvider;
-    this.keyCertOptions = options.getKeyCertOptions();
-    this.trustOptions = options.getTrustOptions();
-    this.applicationProtocols = options.getApplicationLayerProtocols();
-  }
-
-  public SSLHelper(NetServerOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions, List<String> applicationProtocols) {
-    this(options);
-    this.clientAuth = options.getClientAuth();
-    this.client = false;
-    this.sni = options.isSni();
-    this.sslProvider = new SslProviderImpl();
-    this.keyCertOptions = keyCertOptions;
-    this.trustOptions = trustOptions;
-    this.applicationProtocols = applicationProtocols;
   }
 
   public boolean isSSL() {
