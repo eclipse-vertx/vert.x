@@ -14,6 +14,7 @@ import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.SslContext;
 
 import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.TrustManagerFactory;
 
 /**
@@ -41,6 +42,6 @@ public interface SslContextFactory {
     return this;
   }
 
-  SslContext create();
+  SslContext create() throws SSLException;
 
 }

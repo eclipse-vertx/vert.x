@@ -255,27 +255,25 @@ public class SSLHelper {
   }
 
   private SslContext createContext2(VertxInternal vertx, String serverName, boolean useAlpn, boolean client, boolean trustAll) {
-    TrustManagerFactory tmf;
-    KeyManagerFactory kmf;
     try {
-      tmf = getTrustMgrFactory(vertx, serverName, trustAll);
-      kmf = getKeyMgrFactory(vertx, serverName);
+      TrustManagerFactory tmf = getTrustMgrFactory(vertx, serverName, trustAll);
+      KeyManagerFactory kmf = getKeyMgrFactory(vertx, serverName);
+      SslContextFactory factory = sslProvider.contextFactory(enabledCipherSuites, applicationProtocols)
+        .useAlpn(useAlpn)
+        .forClient(client);
+      if (!client) {
+        factory.clientAuth(CLIENT_AUTH_MAPPING.get(clientAuth));
+      }
+      if (kmf != null) {
+        factory.keyMananagerFactory(kmf);
+      }
+      if (tmf != null) {
+        factory.trustManagerFactory(tmf);
+      }
+      return factory.create();
     } catch (Exception e) {
       throw new VertxException(e);
     }
-    SslContextFactory factory = sslProvider.contextFactory(enabledCipherSuites, applicationProtocols)
-      .useAlpn(useAlpn)
-      .forClient(client);
-    if (!client) {
-      factory.clientAuth(CLIENT_AUTH_MAPPING.get(clientAuth));
-    }
-    if (kmf != null) {
-      factory.keyMananagerFactory(kmf);
-    }
-    if (tmf != null) {
-      factory.trustManagerFactory(tmf);
-    }
-    return factory.create();
   }
 
   public SslHandler createSslHandler(VertxInternal vertx, String serverName) {

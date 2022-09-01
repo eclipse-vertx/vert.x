@@ -23,6 +23,7 @@ import io.vertx.core.VertxException;
 import io.vertx.core.spi.tls.SslContextFactory;
 
 import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSessionContext;
 import javax.net.ssl.TrustManagerFactory;
 import java.util.Collection;
@@ -90,7 +91,7 @@ public class SslContextFactoryImpl implements SslContextFactory {
   }
 
   @Override
-  public SslContext create() {
+  public SslContext create() throws SSLException {
     return createContext(useAlpn, forClient, kmf, tmf);
   }
 
@@ -102,61 +103,57 @@ public class SslContextFactoryImpl implements SslContextFactory {
       If you don't specify a key store, and don't specify a system property no key store will be used
       You can override this by specifying the javax.echo.ssl.keyStore system property
        */
-  private SslContext createContext(boolean useAlpn, boolean client, KeyManagerFactory kmf, TrustManagerFactory tmf) {
-    try {
-      SslContextBuilder builder;
-      if (client) {
-        builder = SslContextBuilder.forClient();
-        if (kmf != null) {
-          builder.keyManager(kmf);
-        }
-      } else {
-        builder = SslContextBuilder.forServer(kmf);
+  private SslContext createContext(boolean useAlpn, boolean client, KeyManagerFactory kmf, TrustManagerFactory tmf) throws SSLException {
+    SslContextBuilder builder;
+    if (client) {
+      builder = SslContextBuilder.forClient();
+      if (kmf != null) {
+        builder.keyManager(kmf);
       }
-      Collection<String> cipherSuites = enabledCipherSuites;
-      switch (sslProvider) {
-        case OPENSSL:
-          builder.sslProvider(SslProvider.OPENSSL);
-          if (cipherSuites == null || cipherSuites.isEmpty()) {
-            cipherSuites = OpenSsl.availableOpenSslCipherSuites();
-          }
-          break;
-        case JDK:
-          builder.sslProvider(SslProvider.JDK);
-          if (cipherSuites == null || cipherSuites.isEmpty()) {
-            cipherSuites = DefaultJDKCipherSuite.get();
-          }
-          break;
-        default:
-          throw new UnsupportedOperationException();
-      }
-      if (tmf != null) {
-        builder.trustManager(tmf);
-      }
-      if (cipherSuites != null && cipherSuites.size() > 0) {
-        builder.ciphers(cipherSuites);
-      }
-      if (useAlpn && applicationProtocols != null && applicationProtocols.size() > 0) {
-        builder.applicationProtocolConfig(new ApplicationProtocolConfig(
-            ApplicationProtocolConfig.Protocol.ALPN,
-            ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE,
-            ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT,
-            applicationProtocols
-        ));
-      }
-      if (clientAuth != null) {
-        builder.clientAuth(clientAuth);
-      }
-      SslContext ctx = builder.build();
-      if (ctx instanceof OpenSslServerContext){
-        SSLSessionContext sslSessionContext = ctx.sessionContext();
-        if (sslSessionContext instanceof OpenSslServerSessionContext){
-          ((OpenSslServerSessionContext)sslSessionContext).setSessionCacheEnabled(sslSessionCacheEnabled);
-        }
-      }
-      return ctx;
-    } catch (Exception e) {
-      throw new VertxException(e);
+    } else {
+      builder = SslContextBuilder.forServer(kmf);
     }
+    Collection<String> cipherSuites = enabledCipherSuites;
+    switch (sslProvider) {
+      case OPENSSL:
+        builder.sslProvider(SslProvider.OPENSSL);
+        if (cipherSuites == null || cipherSuites.isEmpty()) {
+          cipherSuites = OpenSsl.availableOpenSslCipherSuites();
+        }
+        break;
+      case JDK:
+        builder.sslProvider(SslProvider.JDK);
+        if (cipherSuites == null || cipherSuites.isEmpty()) {
+          cipherSuites = DefaultJDKCipherSuite.get();
+        }
+        break;
+      default:
+        throw new UnsupportedOperationException();
+    }
+    if (tmf != null) {
+      builder.trustManager(tmf);
+    }
+    if (cipherSuites != null && cipherSuites.size() > 0) {
+      builder.ciphers(cipherSuites);
+    }
+    if (useAlpn && applicationProtocols != null && applicationProtocols.size() > 0) {
+      builder.applicationProtocolConfig(new ApplicationProtocolConfig(
+        ApplicationProtocolConfig.Protocol.ALPN,
+        ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE,
+        ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT,
+        applicationProtocols
+      ));
+    }
+    if (clientAuth != null) {
+      builder.clientAuth(clientAuth);
+    }
+    SslContext ctx = builder.build();
+    if (ctx instanceof OpenSslServerContext){
+      SSLSessionContext sslSessionContext = ctx.sessionContext();
+      if (sslSessionContext instanceof OpenSslServerSessionContext){
+        ((OpenSslServerSessionContext)sslSessionContext).setSessionCacheEnabled(sslSessionCacheEnabled);
+      }
+    }
+    return ctx;
   }
 }
