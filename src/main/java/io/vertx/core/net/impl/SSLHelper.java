@@ -71,10 +71,9 @@ public class SSLHelper {
   /**
    * Resolve the ssl engine options to use for properly running the configured options.
    */
-  public static SSLEngineOptions resolveEngineOptions(TCPSSLOptions options) {
-    SSLEngineOptions engineOptions = options.getSslEngineOptions();
+  public static SSLEngineOptions resolveEngineOptions(SSLEngineOptions engineOptions, boolean useAlpn) {
     if (engineOptions == null) {
-      if (options.isUseAlpn()) {
+      if (useAlpn) {
         if (JdkSSLEngineOptions.isAlpnAvailable()) {
           engineOptions = new JdkSSLEngineOptions();
         } else if (OpenSSLEngineOptions.isAlpnAvailable()) {
@@ -95,7 +94,7 @@ public class SSLHelper {
       }
     }
 
-    if (options.isUseAlpn()) {
+    if (useAlpn) {
       if (engineOptions instanceof JdkSSLEngineOptions) {
         if (!JdkSSLEngineOptions.isAlpnAvailable()) {
           throw new VertxException("ALPN not available for JDK SSL/TLS engine");
@@ -122,7 +121,6 @@ public class SSLHelper {
   private final boolean useAlpn;
   private final Set<String> enabledProtocols;
   private final String endpointIdentificationAlgorithm;
-  private final SslProvider sslProvider;
   private final SSLEngineOptions sslEngineOptions;
   private final KeyCertOptions keyCertOptions;
   private final TrustOptions trustOptions;
@@ -131,14 +129,14 @@ public class SSLHelper {
   private final Set<String> enabledCipherSuites;
   private final List<String> applicationProtocols;
 
-  private Future<Void> valid;
+  private Future<SslProvider> sslProvider;
   private SslContext[] sslContexts = new SslContext[2];
   private Map<String, SslContext>[] sslContextMaps = new Map[] {
     new ConcurrentHashMap<>(), new ConcurrentHashMap<>()
   };
 
   public SSLHelper(TCPSSLOptions options, List<String> applicationProtocols) {
-    this.sslEngineOptions = resolveEngineOptions(options);
+    this.sslEngineOptions = options.getSslEngineOptions();
     this.crlPaths = new ArrayList<>(options.getCrlPaths());
     this.crlValues = new ArrayList<>(options.getCrlValues());
     this.enabledCipherSuites = new HashSet<>(options.getEnabledCipherSuites());
@@ -155,7 +153,6 @@ public class SSLHelper {
     this.endpointIdentificationAlgorithm = options instanceof NetClientOptions ? ((NetClientOptions)options).getHostnameVerificationAlgorithm() : "";
     this.sni = options instanceof NetServerOptions && ((NetServerOptions) options).isSni();
     this.applicationProtocols = applicationProtocols;
-    this.sslProvider = sslEngineOptions.provider();
   }
 
   public boolean isSSL() {
@@ -192,10 +189,11 @@ public class SSLHelper {
    * @return a future resolved when the helper is initialized
    */
   public synchronized Future<Void> init(ContextInternal ctx) {
-    if (valid == null) {
+    Future<SslProvider> fut = sslProvider;
+    if (fut == null) {
       if (keyCertOptions != null || trustOptions != null || trustAll || ssl) {
-        Promise<Void> promise = Promise.promise();
-        valid = promise.future();
+        Promise<SslProvider> promise = Promise.promise();
+        fut = promise.future();
         ctx.<Void>executeBlockingInternal(p -> {
           KeyManagerFactory kmf;
           try {
@@ -210,17 +208,25 @@ public class SSLHelper {
           } else {
             p.fail("Key/certificate is mandatory for SSL");
           }
-        }).onComplete(promise);
-        return valid;
+        }).compose(v2 -> ctx.<SslProvider>executeBlockingInternal(p -> {
+          SslProvider sslProvider;
+          try {
+            SSLEngineOptions resolvedEngineOptions = resolveEngineOptions(sslEngineOptions, useAlpn);
+            sslProvider = resolvedEngineOptions.provider();
+          } catch (Exception e) {
+            p.fail(e);
+            return;
+          }
+          p.complete(sslProvider);
+        })).onComplete(promise);
       } else {
-        valid = Future.succeededFuture(); // NOT SURE
-        return valid;
+        fut = Future.succeededFuture();
       }
-    } else {
-      PromiseInternal<Void> promise = ctx.promise();
-      valid.onComplete(promise);
-      return promise.future();
+      sslProvider = fut;
     }
+    PromiseInternal<Void> promise = ctx.promise();
+    fut.<Void>mapEmpty().onComplete(promise);
+    return promise.future();
   }
 
   public Mapping<? super String, ? extends SslContext> serverNameMapper(VertxInternal vertx) {
@@ -258,7 +264,7 @@ public class SSLHelper {
     try {
       TrustManagerFactory tmf = getTrustMgrFactory(vertx, serverName, trustAll);
       KeyManagerFactory kmf = getKeyMgrFactory(vertx, serverName);
-      SslContextFactory factory = sslProvider.contextFactory(enabledCipherSuites, applicationProtocols)
+      SslContextFactory factory = sslProvider.result().contextFactory(enabledCipherSuites, applicationProtocols)
         .useAlpn(useAlpn)
         .forClient(client);
       if (!client) {
