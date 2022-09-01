@@ -11,27 +11,31 @@
 package io.vertx.core.spi.tls;
 
 import io.netty.handler.ssl.SslContext;
-import io.vertx.core.impl.VertxInternal;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.TrustManagerFactory;
 
 /**
- * A factory for Netty {@link SslContext}.
+ * A factory for a Netty {@link SslContext}.
  */
 public interface SslContextFactory {
 
-  /**
-   * Create and configure a Netty {@link SslContext}.
-   *
-   * @param vertx the vertx instance
-   * @param serverName the server name
-   * @param useAlpn whether to use ALPN
-   * @param client {@literal true} client or server
-   * @param trustAll whether to trust all servers (only for client)
-   * @return the created {@link SslContext}
-   */
-  SslContext createContext(VertxInternal vertx,
-                           String serverName,
-                           boolean useAlpn,
-                           boolean client,
-                           boolean trustAll);
+  default SslContextFactory useAlpn(boolean useAlpn) {
+    return this;
+  }
+
+  default SslContextFactory forClient(boolean forClient) {
+    return this;
+  }
+
+  default SslContextFactory keyMananagerFactory(KeyManagerFactory kmf) {
+    return this;
+  }
+
+  default SslContextFactory trustManagerFactory(TrustManagerFactory tmf) {
+    return this;
+  }
+
+  SslContext create();
 
 }

@@ -1487,9 +1487,9 @@ public abstract class HttpTLSTest extends HttpTestBase {
     AtomicReference<Throwable> failure = new AtomicReference<>();
     server.listen(onFailure(failure::set));
     assertWaitUntil(() -> failure.get() != null);
-    Throwable cause = failure.get().getCause();
+    Throwable cause = failure.get();
     String exceptionMessage = cause.getMessage();
-    if(expectedSuffix == null) {
+    if (expectedSuffix == null) {
       boolean ok = expectedPossiblePrefixes.isEmpty();
       for (String expectedPossiblePrefix : expectedPossiblePrefixes) {
         ok |= expectedPossiblePrefix.equals(exceptionMessage);

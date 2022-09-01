@@ -59,6 +59,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
@@ -1616,9 +1617,8 @@ public class NetTest extends VertxTestBase {
       .clientTrustAll(true);
     test.setupServer(true);
     server.listen(test.bindAddress, onFailure(t -> {
-      assertThat(t, is(instanceOf(VertxException.class)));
-      assertThat(t.getCause(), is(instanceOf(IllegalArgumentException.class)));
-      assertThat(t.getCause().getMessage(), containsString("alias does not exist in the keystore"));
+      assertThat(t, is(instanceOf(IllegalArgumentException.class)));
+      assertThat(t.getMessage(), containsString("alias does not exist in the keystore"));
       testComplete();
     }));
     await();
@@ -3533,13 +3533,13 @@ public class NetTest extends VertxTestBase {
     NetClientBuilder builder = ((VertxInternal) vertx).createNetClientBuilder(new NetClientOptions().setSsl(true));
     builder.sslProvider(new SslProvider() {
       @Override
-      public SslContextFactory contextFactory(SSLEngineOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions, List<String> crltPaths, List<Buffer> crlValues, Set<String> enabledCipherSuites, List<String> applicationProtocols) {
+      public SslContextFactory contextFactory(SSLEngineOptions options, Set<String> enabledCipherSuites, List<String> applicationProtocols) {
         return new SslContextFactory() {
           @Override
-          public SslContext createContext(VertxInternal vertx, String serverName, boolean useAlpn, boolean client, boolean trustAll) {
+          public SslContext create() {
             return new JdkSslContext(
               sslContext,
-              client,
+              true,
               null,
               IdentityCipherSuiteFilter.INSTANCE,
               ApplicationProtocolConfig.DISABLED,
