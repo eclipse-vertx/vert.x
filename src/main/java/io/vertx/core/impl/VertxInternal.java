@@ -87,14 +87,6 @@ public interface VertxInternal extends Vertx {
   Transport transport();
 
   /**
-   * Create a TCP/SSL client builder using the specified options and configured with this Vert.x instance
-   *
-   * @param options  the options to use
-   * @return the client builder
-   */
-  NetClientBuilder createNetClientBuilder(NetClientOptions options);
-
-  /**
    * Create a HTTP/HTTPS client using the specified options and close future
    *
    * @param options  the options to use

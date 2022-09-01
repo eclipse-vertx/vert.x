@@ -14,6 +14,8 @@ package io.vertx.core.net;
 import io.netty.handler.ssl.OpenSsl;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.impl.SslProviderImpl;
+import io.vertx.core.spi.tls.SslProvider;
 
 /**
  * Configures a {@link TCPSSLOptions} to use OpenSsl.
@@ -85,5 +87,10 @@ public class OpenSSLEngineOptions extends SSLEngineOptions {
   @Override
   public OpenSSLEngineOptions copy() {
     return new OpenSSLEngineOptions(this);
+  }
+
+  @Override
+  public SslProvider provider() {
+    return new SslProviderImpl(io.netty.handler.ssl.SslProvider.OPENSSL, sessionCacheEnabled);
   }
 }

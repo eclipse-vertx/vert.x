@@ -40,7 +40,6 @@ import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
-import io.vertx.core.net.impl.NetClientBuilder;
 import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.NetSocketInternal;
 import io.vertx.core.net.impl.VertxHandler;
@@ -59,7 +58,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
@@ -3530,27 +3528,31 @@ public class NetTest extends VertxTestBase {
       null
     );
 
-    NetClientBuilder builder = ((VertxInternal) vertx).createNetClientBuilder(new NetClientOptions().setSsl(true));
-    builder.sslProvider(new SslProvider() {
-      @Override
-      public SslContextFactory contextFactory(SSLEngineOptions options, Set<String> enabledCipherSuites, List<String> applicationProtocols) {
-        return new SslContextFactory() {
-          @Override
-          public SslContext create() {
-            return new JdkSslContext(
-              sslContext,
-              true,
-              null,
-              IdentityCipherSuiteFilter.INSTANCE,
-              ApplicationProtocolConfig.DISABLED,
-              io.netty.handler.ssl.ClientAuth.NONE,
-              null,
-              false);
-          }
-        };
-      }
-    });
-    client = builder.build();
+    client = vertx.createNetClient(new NetClientOptions().setSsl(true)
+      .setSslEngineOptions(new JdkSSLEngineOptions() {
+        @Override
+        public SslProvider provider() {
+          return new SslProvider() {
+            @Override
+            public SslContextFactory contextFactory(Set<String> enabledCipherSuites, List<String> applicationProtocols) {
+              return new SslContextFactory() {
+                @Override
+                public SslContext create() {
+                  return new JdkSslContext(
+                    sslContext,
+                    true,
+                    null,
+                    IdentityCipherSuiteFilter.INSTANCE,
+                    ApplicationProtocolConfig.DISABLED,
+                    io.netty.handler.ssl.ClientAuth.NONE,
+                    null,
+                    false);
+                }
+              };
+            }
+          };
+        }
+      }));
 
     testNetClientInternal_(new HttpServerOptions()
       .setHost("localhost")

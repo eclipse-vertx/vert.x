@@ -20,8 +20,6 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslProvider;
 import io.vertx.core.VertxException;
-import io.vertx.core.net.OpenSSLEngineOptions;
-import io.vertx.core.net.SSLEngineOptions;
 import io.vertx.core.spi.tls.SslContextFactory;
 
 import javax.net.ssl.KeyManagerFactory;
@@ -41,16 +39,17 @@ import java.util.Set;
 public class SslContextFactoryImpl implements SslContextFactory {
 
   private final Set<String> enabledCipherSuites;
-  private final boolean openSsl;
+  private final SslProvider sslProvider;
   private final List<String> applicationProtocols;
-  private final boolean openSslSessionCacheEnabled;
+  private final boolean sslSessionCacheEnabled;
 
-  public SslContextFactoryImpl(SSLEngineOptions sslEngineOptions,
+  public SslContextFactoryImpl(SslProvider sslProvider,
+                               boolean sslSessionCacheEnabled,
                                Set<String> enabledCipherSuites,
                                List<String> applicationProtocols) {
     this.enabledCipherSuites = new HashSet<>(enabledCipherSuites);
-    this.openSsl = sslEngineOptions instanceof OpenSSLEngineOptions;
-    this.openSslSessionCacheEnabled = (sslEngineOptions instanceof OpenSSLEngineOptions) && ((OpenSSLEngineOptions) sslEngineOptions).isSessionCacheEnabled();
+    this.sslProvider = sslProvider;
+    this.sslSessionCacheEnabled = sslSessionCacheEnabled;
     this.applicationProtocols = applicationProtocols;
   }
 
@@ -115,16 +114,21 @@ public class SslContextFactoryImpl implements SslContextFactory {
         builder = SslContextBuilder.forServer(kmf);
       }
       Collection<String> cipherSuites = enabledCipherSuites;
-      if (openSsl) {
-        builder.sslProvider(SslProvider.OPENSSL);
-        if (cipherSuites == null || cipherSuites.isEmpty()) {
-          cipherSuites = OpenSsl.availableOpenSslCipherSuites();
-        }
-      } else {
-        builder.sslProvider(SslProvider.JDK);
-        if (cipherSuites == null || cipherSuites.isEmpty()) {
-          cipherSuites = DefaultJDKCipherSuite.get();
-        }
+      switch (sslProvider) {
+        case OPENSSL:
+          builder.sslProvider(SslProvider.OPENSSL);
+          if (cipherSuites == null || cipherSuites.isEmpty()) {
+            cipherSuites = OpenSsl.availableOpenSslCipherSuites();
+          }
+          break;
+        case JDK:
+          builder.sslProvider(SslProvider.JDK);
+          if (cipherSuites == null || cipherSuites.isEmpty()) {
+            cipherSuites = DefaultJDKCipherSuite.get();
+          }
+          break;
+        default:
+          throw new UnsupportedOperationException();
       }
       if (tmf != null) {
         builder.trustManager(tmf);
@@ -147,7 +151,7 @@ public class SslContextFactoryImpl implements SslContextFactory {
       if (ctx instanceof OpenSslServerContext){
         SSLSessionContext sslSessionContext = ctx.sessionContext();
         if (sslSessionContext instanceof OpenSslServerSessionContext){
-          ((OpenSslServerSessionContext)sslSessionContext).setSessionCacheEnabled(openSslSessionCacheEnabled);
+          ((OpenSslServerSessionContext)sslSessionContext).setSessionCacheEnabled(sslSessionCacheEnabled);
         }
       }
       return ctx;

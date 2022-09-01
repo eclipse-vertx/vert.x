@@ -82,7 +82,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
   protected abstract Handler<Channel> childHandler(ContextInternal context, SocketAddress socketAddress, SSLHelper sslHelper);
 
   protected SSLHelper createSSLHelper() {
-    return new SSLHelper(options, new SslProviderImpl(), null);
+    return new SSLHelper(options, null);
   }
 
   public synchronized SSLHelper sslHelper() {

@@ -297,19 +297,14 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return new NetServerImpl(this, options);
   }
 
-  @Override
-  public NetClientBuilder createNetClientBuilder(NetClientOptions options) {
+  public NetClient createNetClient(NetClientOptions options) {
     CloseFuture closeFuture = new CloseFuture(log);
     CloseFuture fut = resolveCloseFuture();
     fut.add(closeFuture);
     NetClientBuilder builder = new NetClientBuilder(this, options);
     builder.metrics(metricsSPI() != null ? metricsSPI().createNetClientMetrics(options) : null);
     builder.closeFuture(closeFuture);
-    return builder;
-  }
-
-  public NetClient createNetClient(NetClientOptions options) {
-    return createNetClientBuilder(options).build();
+    return builder.build();
   }
 
   @Override

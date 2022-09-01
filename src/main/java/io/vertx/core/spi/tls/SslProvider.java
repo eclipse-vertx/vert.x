@@ -10,8 +10,6 @@
  */
 package io.vertx.core.spi.tls;
 
-import io.vertx.core.net.SSLEngineOptions;
-
 import java.util.List;
 import java.util.Set;
 
@@ -22,8 +20,7 @@ import java.util.Set;
  */
 public interface SslProvider {
 
-  SslContextFactory contextFactory(SSLEngineOptions options,
-                                   Set<String> enabledCipherSuites,
+  SslContextFactory contextFactory(Set<String> enabledCipherSuites,
                                    List<String> applicationProtocols);
 
 }

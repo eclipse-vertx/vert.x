@@ -24,7 +24,6 @@ public class NetClientBuilder {
 
   private VertxInternal vertx;
   private CloseFuture closeFuture;
-  private SslProvider sslProvider;
   private NetClientOptions options;
   private TCPMetrics metrics;
 
@@ -38,22 +37,13 @@ public class NetClientBuilder {
     return this;
   }
 
-  public NetClientBuilder sslProvider(SslProvider sslProvider) {
-    this.sslProvider = sslProvider;
-    return this;
-  }
-
   public NetClientBuilder metrics(TCPMetrics metrics) {
     this.metrics = metrics;
     return this;
   }
 
   public NetClient build() {
-    SslProvider sslProvider = this.sslProvider;
-    if (sslProvider == null) {
-      sslProvider = new SslProviderImpl();
-    }
-    NetClientImpl client = new NetClientImpl(vertx, metrics, options, sslProvider, closeFuture);
+    NetClientImpl client = new NetClientImpl(vertx, metrics, options, closeFuture);
     closeFuture.add(client);
     return client;
   }

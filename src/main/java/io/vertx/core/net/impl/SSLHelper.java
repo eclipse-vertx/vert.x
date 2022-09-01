@@ -22,7 +22,6 @@ import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
-import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.future.PromiseInternal;
@@ -139,10 +138,6 @@ public class SSLHelper {
   };
 
   public SSLHelper(TCPSSLOptions options, List<String> applicationProtocols) {
-    this(options, new SslProviderImpl(), applicationProtocols);
-  }
-
-  public SSLHelper(TCPSSLOptions options, SslProvider sslProvider, List<String> applicationProtocols) {
     this.sslEngineOptions = resolveEngineOptions(options);
     this.crlPaths = new ArrayList<>(options.getCrlPaths());
     this.crlValues = new ArrayList<>(options.getCrlValues());
@@ -160,7 +155,7 @@ public class SSLHelper {
     this.endpointIdentificationAlgorithm = options instanceof NetClientOptions ? ((NetClientOptions)options).getHostnameVerificationAlgorithm() : "";
     this.sni = options instanceof NetServerOptions && ((NetServerOptions) options).isSni();
     this.applicationProtocols = applicationProtocols;
-    this.sslProvider = sslProvider;
+    this.sslProvider = sslEngineOptions.provider();
   }
 
   public boolean isSSL() {
@@ -268,7 +263,7 @@ public class SSLHelper {
     } catch (Exception e) {
       throw new VertxException(e);
     }
-    SslContextFactory factory = sslProvider.contextFactory(sslEngineOptions, enabledCipherSuites, applicationProtocols)
+    SslContextFactory factory = sslProvider.contextFactory(enabledCipherSuites, applicationProtocols)
       .useAlpn(useAlpn)
       .forClient(client);
     if (!client) {

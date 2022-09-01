@@ -11,6 +11,8 @@
 
 package io.vertx.core.net;
 
+import io.vertx.core.spi.tls.SslProvider;
+
 /**
  * The SSL engine implementation to use in a Vert.x server or client.
  *
@@ -19,5 +21,7 @@ package io.vertx.core.net;
 public abstract class SSLEngineOptions {
 
   public abstract SSLEngineOptions copy();
+
+  public abstract SslProvider provider();
 
 }

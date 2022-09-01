@@ -200,7 +200,7 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
 
   @Override
   protected SSLHelper createSSLHelper() {
-    return new SSLHelper(options, new SslProviderImpl(), options
+    return new SSLHelper(options, options
       .getAlpnVersions()
       .stream()
       .map(HttpVersion::alpnName)
