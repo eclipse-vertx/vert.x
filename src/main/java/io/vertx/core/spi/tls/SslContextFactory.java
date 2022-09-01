@@ -18,7 +18,8 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.TrustManagerFactory;
 
 /**
- * A factory for a Netty {@link SslContext}.
+ * A factory for a Netty {@link SslContext}, the factory is configured with the fluent setters until {@link #create()}
+ * to obtain a properly configured {@link SslContext}.
  */
 public interface SslContextFactory {
 
@@ -42,6 +43,9 @@ public interface SslContextFactory {
     return this;
   }
 
+  /**
+   * @return a configured {@link SslContext}
+   */
   SslContext create() throws SSLException;
 
 }

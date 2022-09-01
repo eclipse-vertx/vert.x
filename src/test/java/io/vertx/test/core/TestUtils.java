@@ -532,12 +532,14 @@ public class TestUtils {
     }
   }
 
-  public static Throwable rootCause(Throwable t) {
-    Throwable root = t;
+  /**
+   * @return the most inner root cause of {@code throwable}
+   */
+  public static Throwable rootCause(Throwable throwable) {
+    Throwable root = throwable;
     while (root.getCause() != null) {
       root = root.getCause();
     }
     return root;
   }
-
 }
