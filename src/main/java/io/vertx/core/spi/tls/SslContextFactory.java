@@ -10,6 +10,7 @@
  */
 package io.vertx.core.spi.tls;
 
+import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.SslContext;
 
 import javax.net.ssl.KeyManagerFactory;
@@ -21,6 +22,10 @@ import javax.net.ssl.TrustManagerFactory;
 public interface SslContextFactory {
 
   default SslContextFactory useAlpn(boolean useAlpn) {
+    return this;
+  }
+
+  default SslContextFactory clientAuth(ClientAuth clientAuth) {
     return this;
   }
 

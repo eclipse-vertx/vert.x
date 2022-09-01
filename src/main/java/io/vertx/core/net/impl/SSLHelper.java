@@ -61,6 +61,14 @@ import java.util.stream.Stream;
  */
 public class SSLHelper {
 
+  private static final EnumMap<ClientAuth, io.netty.handler.ssl.ClientAuth> CLIENT_AUTH_MAPPING = new EnumMap<>(ClientAuth.class);
+
+  static {
+    CLIENT_AUTH_MAPPING.put(ClientAuth.REQUIRED, io.netty.handler.ssl.ClientAuth.REQUIRE);
+    CLIENT_AUTH_MAPPING.put(ClientAuth.REQUEST, io.netty.handler.ssl.ClientAuth.OPTIONAL);
+    CLIENT_AUTH_MAPPING.put(ClientAuth.NONE, io.netty.handler.ssl.ClientAuth.NONE);
+  }
+
   /**
    * Resolve the ssl engine options to use for properly running the configured options.
    */
@@ -185,29 +193,13 @@ public class SSLHelper {
   }
 
   private void configureEngine(SSLEngine engine, String serverName) {
-    engine.setUseClientMode(client);
     Set<String> protocols = new LinkedHashSet<>(enabledProtocols);
     protocols.retainAll(Arrays.asList(engine.getSupportedProtocols()));
     if (protocols.isEmpty()) {
       log.warn("no SSL/TLS protocols are enabled due to configuration restrictions");
     }
     engine.setEnabledProtocols(protocols.toArray(new String[protocols.size()]));
-    if (!client) {
-      switch (clientAuth) {
-        case REQUEST: {
-          engine.setWantClientAuth(true);
-          break;
-        }
-        case REQUIRED: {
-          engine.setNeedClientAuth(true);
-          break;
-        }
-        case NONE: {
-          engine.setNeedClientAuth(false);
-          break;
-        }
-      }
-    } else if (!endpointIdentificationAlgorithm.isEmpty()) {
+    if (client && !endpointIdentificationAlgorithm.isEmpty()) {
       SSLParameters sslParameters = engine.getSSLParameters();
       sslParameters.setEndpointIdentificationAlgorithm(endpointIdentificationAlgorithm);
       engine.setSSLParameters(sslParameters);
@@ -219,7 +211,13 @@ public class SSLHelper {
     }
   }
 
-  public synchronized Future<Void> validate(ContextInternal ctx) {
+  /**
+   * Initialize the helper, this loads and validates the configuration.
+   *
+   * @param ctx the context
+   * @return a future resolved when the helper is initialized
+   */
+  public synchronized Future<Void> init(ContextInternal ctx) {
     if (valid == null) {
       if (keyCertOptions != null || trustOptions != null || trustAll || ssl) {
         Promise<Void> promise = Promise.promise();
@@ -294,6 +292,9 @@ public class SSLHelper {
     SslContextFactory factory = sslProvider.contextFactory(sslEngineOptions, enabledCipherSuites, applicationProtocols)
       .useAlpn(useAlpn)
       .forClient(client);
+    if (!client) {
+      factory.clientAuth(CLIENT_AUTH_MAPPING.get(clientAuth));
+    }
     if (kmf != null) {
       factory.keyMananagerFactory(kmf);
     }

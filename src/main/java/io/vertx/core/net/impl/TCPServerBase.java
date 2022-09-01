@@ -143,7 +143,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
           sharedNetServers.put(id, this);
         }
 
-        sslHelper.validate(listenContext).onComplete(ar -> {
+        sslHelper.init(listenContext).onComplete(ar -> {
           if (ar.succeeded()) {
             channelBalancer.addWorker(eventLoop, worker);
             ServerBootstrap bootstrap = new ServerBootstrap();

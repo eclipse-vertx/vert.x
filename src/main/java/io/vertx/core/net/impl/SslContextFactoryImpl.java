@@ -12,6 +12,7 @@
 package io.vertx.core.net.impl;
 
 import io.netty.handler.ssl.ApplicationProtocolConfig;
+import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.OpenSsl;
 import io.netty.handler.ssl.OpenSslServerContext;
 import io.netty.handler.ssl.OpenSslServerSessionContext;
@@ -54,6 +55,7 @@ public class SslContextFactoryImpl implements SslContextFactory {
   }
 
   private boolean useAlpn;
+  private ClientAuth clientAuth;
   private boolean forClient;
   private KeyManagerFactory kmf;
   private TrustManagerFactory tmf;
@@ -61,6 +63,12 @@ public class SslContextFactoryImpl implements SslContextFactory {
   @Override
   public SslContextFactory useAlpn(boolean useAlpn) {
     this.useAlpn = useAlpn;
+    return this;
+  }
+
+  @Override
+  public SslContextFactory clientAuth(ClientAuth clientAuth) {
+    this.clientAuth = clientAuth;
     return this;
   }
 
@@ -131,6 +139,9 @@ public class SslContextFactoryImpl implements SslContextFactory {
             ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT,
             applicationProtocols
         ));
+      }
+      if (clientAuth != null) {
+        builder.clientAuth(clientAuth);
       }
       SslContext ctx = builder.build();
       if (ctx instanceof OpenSslServerContext){
