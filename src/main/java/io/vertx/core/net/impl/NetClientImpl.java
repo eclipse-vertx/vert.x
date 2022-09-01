@@ -224,6 +224,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
                                 Promise<NetSocket> connectHandler,
                                 ContextInternal context,
                                 int remainingAttempts) {
+    checkClosed();
     sslHelper.init(context).onComplete(ar -> {
       if (ar.succeeded()) {
         connectInternal2(proxyOptions, remoteAddress, peerAddress, serverName, ssl, useAlpn, registerWriteHandlers, connectHandler, context, remainingAttempts);
@@ -243,8 +244,6 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
                               Promise<NetSocket> connectHandler,
                               ContextInternal context,
                               int remainingAttempts) {
-    checkClosed();
-
     EventLoop eventLoop = context.nettyEventLoop();
 
     if (eventLoop.inEventLoop()) {
