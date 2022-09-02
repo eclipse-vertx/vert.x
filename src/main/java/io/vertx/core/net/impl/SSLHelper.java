@@ -12,8 +12,10 @@
 package io.vertx.core.net.impl;
 
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.channel.ChannelHandler;
 import io.netty.handler.ssl.DelegatingSslContext;
 import io.netty.handler.ssl.OpenSsl;
+import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.Mapping;
@@ -244,6 +246,12 @@ public class SSLHelper {
     };
   }
 
+  public SSLEngine createEngine(VertxInternal vertx) {
+    SSLEngine engine = createContext(vertx).newEngine(ByteBufAllocator.DEFAULT);
+    configureEngine(engine, null);
+    return engine;
+  }
+
   public SslContext createContext(VertxInternal vertx) {
     return createContext(vertx, null, useAlpn, client, trustAll);
   }
@@ -258,6 +266,16 @@ public class SSLHelper {
     } else {
       return sslContextMaps[idx].computeIfAbsent(serverName, s -> createContext2(vertx, serverName, useAlpn, client, trustAll));
     }
+  }
+
+  public SslContext sslContext(VertxInternal vertx, String serverName, boolean useAlpn) {
+    SslContext context = createContext(vertx, null, useAlpn, client, trustAll);
+    return new DelegatingSslContext(context) {
+      @Override
+      protected void initEngine(SSLEngine engine) {
+        configureEngine(engine, serverName);
+      }
+    };
   }
 
   private SslContext createContext2(VertxInternal vertx, String serverName, boolean useAlpn, boolean client, boolean trustAll) {
@@ -307,20 +325,16 @@ public class SSLHelper {
     return sslHandler;
   }
 
-  public SslContext sslContext(VertxInternal vertx, String serverName, boolean useAlpn) {
-    SslContext context = createContext(vertx, null, useAlpn, client, trustAll);
-    return new DelegatingSslContext(context) {
-      @Override
-      protected void initEngine(SSLEngine engine) {
-        configureEngine(engine, serverName);
-      }
-    };
+  public SniHandler createSniHandler(VertxInternal vertx) {
+    return new SniHandler(serverNameMapper(vertx));
   }
 
-  public SSLEngine createEngine(VertxInternal vertx) {
-    SSLEngine engine = createContext(vertx).newEngine(ByteBufAllocator.DEFAULT);
-    configureEngine(engine, null);
-    return engine;
+  public ChannelHandler createHandler(VertxInternal vertx) {
+    if (sni) {
+      return createSniHandler(vertx);
+    } else {
+      return createSslHandler(vertx, null);
+    }
   }
 
   private KeyManagerFactory getKeyMgrFactory(VertxInternal vertx, String serverName) throws Exception {

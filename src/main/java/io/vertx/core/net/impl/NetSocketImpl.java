@@ -339,7 +339,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
   @Override
   public NetSocket upgradeToSsl(String serverName, Handler<AsyncResult<Void>> handler) {
-    ChannelOutboundHandler sslHandler = (ChannelOutboundHandler) chctx.pipeline().get("ssl");
+    ChannelHandler sslHandler = chctx.pipeline().get("ssl");
     if (sslHandler == null) {
       ChannelPromise p = chctx.newPromise();
       chctx.pipeline().addFirst("handshaker", new SslHandshakeCompletionHandler(p));
@@ -357,11 +357,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
       if (remoteAddress != null) {
         sslHandler = helper.createSslHandler(vertx, remoteAddress, serverName, false);
       } else {
-        if (helper.isSNI()) {
-          sslHandler = new SniHandler(helper.serverNameMapper(vertx));
-        } else {
-          sslHandler = helper.createSslHandler(vertx, null, null);
-        }
+        sslHandler = helper.createHandler(vertx);
       }
       chctx.pipeline().addFirst("ssl", sslHandler);
     }

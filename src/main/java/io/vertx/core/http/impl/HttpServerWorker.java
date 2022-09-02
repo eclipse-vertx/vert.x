@@ -136,13 +136,7 @@ public class HttpServerWorker implements Handler<Channel> {
   private void configurePipeline(Channel ch) {
     ChannelPipeline pipeline = ch.pipeline();
     if (sslHelper.isSSL()) {
-      if (options.isSni()) {
-        SniHandler sniHandler = new SniHandler(sslHelper.serverNameMapper(vertx));
-        pipeline.addLast(sniHandler);
-      } else {
-        SslHandler handler = sslHelper.createSslHandler(vertx, null);
-        pipeline.addLast("ssl", handler);
-      }
+      pipeline.addLast("ssl", sslHelper.createHandler(vertx));
       ChannelPromise p = ch.newPromise();
       pipeline.addLast("handshaker", new SslHandshakeCompletionHandler(p));
       p.addListener(future -> {
