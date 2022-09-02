@@ -10,6 +10,7 @@
  */
 package io.vertx.core;
 
+import io.netty.channel.EventLoop;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.VertxThread;
@@ -132,7 +133,7 @@ public class ContextTaskTest extends VertxTestBase {
   private void testOpFromSameEventLoop(Op op, Supplier<ContextInternal> contextSupplier) {
     waitFor(2);
     ContextInternal ctx = contextSupplier.get();
-    ctx.nettyEventLoop().execute(() -> {
+    ctx.<EventLoop>nettyEventLoop().execute(() -> {
       assertNull(Vertx.currentContext());
       AtomicBoolean flag = new AtomicBoolean(true);
       op.exec(ctx, v2 -> {
@@ -177,7 +178,7 @@ public class ContextTaskTest extends VertxTestBase {
   private void testOpFromAnotherEventLoop(BiConsumer<ContextInternal, Handler<Void>> op, Supplier<ContextInternal> contextSupplier, boolean isSchedule) {
     waitFor(2);
     ContextInternal ctx = contextSupplier.get();
-    createEventLoopContext().nettyEventLoop().execute(() -> {
+    createEventLoopContext().<EventLoop>nettyEventLoop().execute(() -> {
       AtomicBoolean flag = new AtomicBoolean(true);
       op.accept(ctx, v2 -> {
         if (isSchedule) {

@@ -1537,7 +1537,7 @@ public class DeploymentTest extends VertxTestBase {
 
     MyAsyncVerticle verticle = new MyAsyncVerticle(startPromise -> {
       Context parentVerticleContext = Vertx.currentContext();
-      parentVerticleContext.owner().deployVerticle(childVerticle, onFailure(t -> {
+      parentVerticleContext.<Vertx>owner().deployVerticle(childVerticle, onFailure(t -> {
         assertSame(parentVerticleContext, Vertx.currentContext());
         testComplete();
       }));

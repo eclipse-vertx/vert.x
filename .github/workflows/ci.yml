@@ -17,16 +17,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         profile: [""]
-        jdk: [8]
-        include:
-          - os: ubuntu-latest
-            jdk: 17
-          - os: ubuntu-latest
-            jdk: 8
-            profile: '-PtestNativeTransport'
-          - os: ubuntu-latest
-            jdk: 8
-            profile: '-PtestDomainSockets'
+        jdk: [11]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout

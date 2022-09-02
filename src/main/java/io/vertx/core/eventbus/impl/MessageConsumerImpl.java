@@ -11,6 +11,7 @@
 
 package io.vertx.core.eventbus.impl;
 
+import io.netty.channel.EventLoop;
 import io.vertx.core.*;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
@@ -187,7 +188,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
   private synchronized void checkNextTick() {
     // Check if there are more pending messages in the queue that can be processed next time around
     if (!pending.isEmpty() && demand > 0L) {
-      context.nettyEventLoop().execute(() -> {
+      context.<EventLoop>nettyEventLoop().execute(() -> {
         Message<T> message;
         Handler<Message<T>> theHandler;
         synchronized (MessageConsumerImpl.this) {

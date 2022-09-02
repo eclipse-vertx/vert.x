@@ -52,7 +52,7 @@ public class CheckingSender {
             return;
           }
         }
-        context.owner().setTimer(1, id -> send());
+        context.<Vertx>owner().setTimer(1, id -> send());
       }
     } else {
       context.runOnContext(v -> send());

@@ -137,7 +137,7 @@ public class CustomerLauncherLowMemoryTest {
       }, ar1 -> {
         if (ar1.succeeded()) {
           arrays = ar1.result();
-          context.owner().close();
+          context.<Vertx>owner().close();
         } else {
           ar1.cause().printStackTrace();
         }

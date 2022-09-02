@@ -253,7 +253,7 @@ public interface Context {
   /**
    * @return The Vertx instance that created the context
    */
-  Vertx owner();
+  <T> T owner();
 
   /**
    * @return  the number of instances of the verticle that were deployed in the deployment (if any) related

@@ -12,21 +12,16 @@
 package io.vertx.core.impl;
 
 
-import io.netty.channel.EventLoop;
-import io.netty.channel.EventLoopGroup;
-import io.netty.resolver.AddressResolverGroup;
 import io.vertx.core.*;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.impl.HttpServerImpl;
+import io.vertx.core.http.HttpServer;
 import io.vertx.core.impl.btc.BlockedThreadChecker;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.impl.NetServerImpl;
+import io.vertx.core.net.NetServer;
 import io.vertx.core.net.impl.ServerID;
-import io.vertx.core.net.impl.TCPServerBase;
-import io.vertx.core.net.impl.transport.Transport;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.spi.metrics.VertxMetrics;
@@ -34,9 +29,8 @@ import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.io.File;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -67,23 +61,21 @@ public interface VertxInternal extends Vertx {
   @Override
   ContextInternal getOrCreateContext();
 
-  EventLoopGroup getEventLoopGroup();
+  <T> T getEventLoopGroup();
 
-  EventLoopGroup getAcceptorEventLoopGroup();
+  <T> T getAcceptorEventLoopGroup();
 
   WorkerPool getWorkerPool();
 
   WorkerPool getInternalWorkerPool();
 
-  Map<ServerID, HttpServerImpl> sharedHttpServers();
+  Map<ServerID, HttpServer> sharedHttpServers();
 
-  Map<ServerID, NetServerImpl> sharedNetServers();
+  Map<ServerID, NetServer> sharedNetServers();
 
-  <S extends TCPServerBase> Map<ServerID, S> sharedTCPServers(Class<S> type);
+  <S> Map<ServerID, S> sharedTCPServers(Class<S> type);
 
   VertxMetrics metricsSPI();
-
-  Transport transport();
 
   /**
    * Create a TCP/SSL client using the specified options and close future
@@ -118,7 +110,7 @@ public interface VertxInternal extends Vertx {
    */
   EventLoopContext createEventLoopContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl);
 
-  EventLoopContext createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl);
+  EventLoopContext createEventLoopContext(Executor eventLoop, WorkerPool workerPool, ClassLoader tccl);
 
   EventLoopContext createEventLoopContext();
 
@@ -189,11 +181,6 @@ public interface VertxInternal extends Vertx {
    * @return the file resolver
    */
   FileResolver fileResolver();
-
-  /**
-   * @return the Netty {@code AddressResolverGroup} to use in a Netty {@code Bootstrap}
-   */
-  AddressResolverGroup<InetSocketAddress> nettyAddressResolverGroup();
 
   BlockedThreadChecker blockedThreadChecker();
 

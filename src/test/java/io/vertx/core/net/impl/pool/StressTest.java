@@ -11,6 +11,7 @@
 
 package io.vertx.core.net.impl.pool;
 
+import io.netty.channel.EventLoop;
 import io.vertx.core.*;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.ContextInternal;
@@ -135,7 +136,7 @@ public class StressTest extends VertxTestBase {
         throw new IllegalStateException();
       }
       status = CONNECTING;
-      context.nettyEventLoop().execute(() -> {
+      context.<EventLoop>nettyEventLoop().execute(() -> {
         synchronized (FakeConnection.this) {
           status = CONNECTED;
           future.complete(new ConnectResult<>(this, concurrency, 0));
@@ -145,7 +146,7 @@ public class StressTest extends VertxTestBase {
     }
 
     void fail(Throwable err) {
-      context.nettyEventLoop().execute(() -> future.tryFail(err));
+      context.<EventLoop>nettyEventLoop().execute(() -> future.tryFail(err));
     }
   }
 

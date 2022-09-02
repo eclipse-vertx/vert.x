@@ -30,6 +30,7 @@ import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.Utils;
+import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -3993,7 +3994,7 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testUnresolvedSocketAddress() {
     InetSocketAddress a = InetSocketAddress.createUnresolved("localhost", 8080);
-    SocketAddress converted = ((VertxInternal) vertx).transport().convert(a);
+    SocketAddress converted = ((VertxImpl) vertx).transport().convert(a);
     assertEquals(8080, converted.port());
     assertEquals("localhost", converted.host());
   }

@@ -17,6 +17,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoop;
+import io.netty.channel.EventLoopGroup;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Closeable;
@@ -27,6 +28,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
@@ -152,7 +154,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
           worker =  childHandler(listenContext, localAddress, sslHelper);
           servers = new HashSet<>();
           servers.add(this);
-          channelBalancer = new ServerChannelLoadBalancer(vertx.getAcceptorEventLoopGroup().next());
+          channelBalancer = new ServerChannelLoadBalancer(vertx.<EventLoopGroup>getAcceptorEventLoopGroup().next());
           channelBalancer.addWorker(eventLoop, worker);
 
           ServerBootstrap bootstrap = new ServerBootstrap();
@@ -195,7 +197,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
           });
         } catch (Throwable t) {
           listening = false;
-          return vertx.getAcceptorEventLoopGroup().next().newFailedFuture(t);
+          return vertx.<EventLoopGroup>getAcceptorEventLoopGroup().next().newFailedFuture(t);
         }
         if (shared) {
           sharedNetServers.put(id, this);
@@ -231,7 +233,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
    * @param bootstrap the Netty server bootstrap
    */
   private void applyConnectionOptions(boolean domainSocket, ServerBootstrap bootstrap) {
-    vertx.transport().configure(options, domainSocket, bootstrap);
+    ((VertxImpl)vertx).transport().configure(options, domainSocket, bootstrap);
   }
 
 

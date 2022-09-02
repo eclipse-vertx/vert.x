@@ -326,9 +326,9 @@ public class HostnameResolutionTest extends VertxTestBase {
       AtomicReference<Thread> channelThread = new AtomicReference<>();
       CountDownLatch connectLatch = new CountDownLatch(1);
       Bootstrap bootstrap = new Bootstrap();
-      bootstrap.channelFactory(((VertxInternal)vertx).transport().channelFactory(false));
+      bootstrap.channelFactory(((VertxImpl)vertx).transport().channelFactory(false));
       bootstrap.group(vertx.nettyEventLoopGroup());
-      bootstrap.resolver(((VertxInternal) vertx).nettyAddressResolverGroup());
+      bootstrap.resolver(((VertxImpl) vertx).nettyAddressResolverGroup());
       bootstrap.handler(new ChannelInitializer<Channel>() {
         @Override
         protected void initChannel(Channel ch) throws Exception {

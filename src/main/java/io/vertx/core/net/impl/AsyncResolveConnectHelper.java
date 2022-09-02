@@ -14,10 +14,12 @@ package io.vertx.core.net.impl;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.EventLoopGroup;
 import io.netty.util.concurrent.Promise;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.SocketAddress;
 
@@ -32,15 +34,15 @@ public class AsyncResolveConnectHelper {
   public static io.netty.util.concurrent.Future<Channel> doBind(VertxInternal vertx,
                                                                 SocketAddress socketAddress,
                                                                 ServerBootstrap bootstrap) {
-    Promise<Channel> promise = vertx.getAcceptorEventLoopGroup().next().newPromise();
+    Promise<Channel> promise = vertx.<EventLoopGroup>getAcceptorEventLoopGroup().next().newPromise();
     try {
-      bootstrap.channelFactory(vertx.transport().serverChannelFactory(socketAddress.isDomainSocket()));
+      bootstrap.channelFactory(((VertxImpl)vertx).transport().serverChannelFactory(socketAddress.isDomainSocket()));
     } catch (Exception e) {
       promise.setFailure(e);
       return promise;
     }
     if (socketAddress.isDomainSocket()) {
-      java.net.SocketAddress converted = vertx.transport().convert(socketAddress);
+      java.net.SocketAddress converted = ((VertxImpl)vertx).transport().convert(socketAddress);
       ChannelFuture future = bootstrap.bind(converted);
       future.addListener(f -> {
         if (f.isSuccess()) {

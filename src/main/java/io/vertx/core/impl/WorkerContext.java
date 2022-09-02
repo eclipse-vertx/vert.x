@@ -11,6 +11,7 @@
 
 package io.vertx.core.impl;
 
+import io.netty.channel.EventLoopGroup;
 import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.spi.metrics.PoolMetrics;
@@ -30,7 +31,7 @@ public class WorkerContext extends ContextBase {
                 Deployment deployment,
                 CloseFuture closeFuture,
                 ClassLoader tccl) {
-    super(vertx, vertx.getEventLoopGroup().next(), internalBlockingPool, workerPool, deployment, closeFuture, tccl);
+    super(vertx, vertx.<EventLoopGroup>getEventLoopGroup().next(), internalBlockingPool, workerPool, deployment, closeFuture, tccl);
   }
 
   @Override

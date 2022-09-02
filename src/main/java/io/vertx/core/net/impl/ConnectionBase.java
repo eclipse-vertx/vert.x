@@ -22,6 +22,7 @@ import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.*;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
@@ -573,7 +574,7 @@ public abstract class ConnectionBase {
 
   private SocketAddress channelRemoteAddress() {
     java.net.SocketAddress addr = chctx.channel().remoteAddress();
-    return addr != null ? vertx.transport().convert(addr) : null;
+    return addr != null ? ((VertxImpl)vertx).transport().convert(addr) : null;
   }
 
   private SocketAddress socketAdressOverride(AttributeKey<SocketAddress> key) {
@@ -584,9 +585,13 @@ public abstract class ConnectionBase {
   public SocketAddress remoteAddress() {
     SocketAddress address = remoteAddress;
     if (address == null) {
-      address = socketAdressOverride(REMOTE_ADDRESS_OVERRIDE);
-      if (address == null) {
-        address = channelRemoteAddress();
+      if (chctx.channel().hasAttr(REMOTE_ADDRESS_OVERRIDE)) {
+        address = chctx.channel().attr(REMOTE_ADDRESS_OVERRIDE).getAndSet(null);
+      } else {
+        java.net.SocketAddress addr = chctx.channel().remoteAddress();
+        if (addr != null) {
+          address = ((VertxImpl)vertx).transport().convert(addr);
+        }
       }
       if (address != null) {
         remoteAddress = address;
@@ -612,7 +617,7 @@ public abstract class ConnectionBase {
 
   private SocketAddress channelLocalAddress() {
     java.net.SocketAddress addr = chctx.channel().localAddress();
-    return addr != null ? vertx.transport().convert(addr) : null;
+    return addr != null ? ((VertxImpl)vertx).transport().convert(addr) : null;
   }
 
   public SocketAddress localAddress() {
