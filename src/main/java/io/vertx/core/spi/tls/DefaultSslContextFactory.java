@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.net.impl;
+package io.vertx.core.spi.tls;
 
 import io.netty.handler.ssl.ApplicationProtocolConfig;
 import io.netty.handler.ssl.ClientAuth;
@@ -19,31 +19,29 @@ import io.netty.handler.ssl.OpenSslServerSessionContext;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslProvider;
-import io.vertx.core.VertxException;
-import io.vertx.core.spi.tls.SslContextFactory;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSessionContext;
 import javax.net.ssl.TrustManagerFactory;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 /**
- * The default implementation of {@link SslContextFactory} that creates and configures a Netty {@link SslContext} with
- * the provided options.
+ * The default implementation of {@link SslContextFactory} that creates and configures a Netty {@link SslContext} using a
+ * {@link SslContextBuilder}.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
+ * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class SslContextFactoryImpl implements SslContextFactory {
+public class DefaultSslContextFactory implements SslContextFactory {
 
   private final SslProvider sslProvider;
   private final boolean sslSessionCacheEnabled;
 
-  public SslContextFactoryImpl(SslProvider sslProvider,
-                               boolean sslSessionCacheEnabled) {
+  public DefaultSslContextFactory(SslProvider sslProvider,
+                                  boolean sslSessionCacheEnabled) {
     this.sslProvider = sslProvider;
     this.sslSessionCacheEnabled = sslSessionCacheEnabled;
   }

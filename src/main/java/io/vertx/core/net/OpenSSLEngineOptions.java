@@ -14,7 +14,7 @@ package io.vertx.core.net;
 import io.netty.handler.ssl.OpenSsl;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.impl.SslProviderImpl;
+import io.vertx.core.spi.tls.DefaultSslProvider;
 import io.vertx.core.spi.tls.SslProvider;
 
 /**
@@ -91,6 +91,6 @@ public class OpenSSLEngineOptions extends SSLEngineOptions {
 
   @Override
   public SslProvider provider() {
-    return new SslProviderImpl(io.netty.handler.ssl.SslProvider.OPENSSL, sessionCacheEnabled);
+    return new DefaultSslProvider(io.netty.handler.ssl.SslProvider.OPENSSL, sessionCacheEnabled);
   }
 }

@@ -278,6 +278,9 @@ public class SSLHelper {
       if (tmf != null) {
         factory.trustManagerFactory(tmf);
       }
+      if (serverName != null) {
+        factory.serverName(serverName);
+      }
       return factory.create();
     } catch (Exception e) {
       throw new VertxException(e);
