@@ -16,6 +16,8 @@ import io.netty.handler.ssl.SslContext;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.TrustManagerFactory;
+import java.util.List;
+import java.util.Set;
 
 /**
  * A factory for a Netty {@link SslContext}, the factory is configured with the fluent setters until {@link #create()}
@@ -40,6 +42,14 @@ public interface SslContextFactory {
   }
 
   default SslContextFactory trustManagerFactory(TrustManagerFactory tmf) {
+    return this;
+  }
+
+  default SslContextFactory enabledCipherSuites(Set<String> enabledCipherSuites) {
+    return this;
+  }
+
+  default SslContextFactory applicationProtocols(List<String> applicationProtocols) {
     return this;
   }
 

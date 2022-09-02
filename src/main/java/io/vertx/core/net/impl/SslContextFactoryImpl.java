@@ -39,21 +39,17 @@ import java.util.Set;
  */
 public class SslContextFactoryImpl implements SslContextFactory {
 
-  private final Set<String> enabledCipherSuites;
   private final SslProvider sslProvider;
-  private final List<String> applicationProtocols;
   private final boolean sslSessionCacheEnabled;
 
   public SslContextFactoryImpl(SslProvider sslProvider,
-                               boolean sslSessionCacheEnabled,
-                               Set<String> enabledCipherSuites,
-                               List<String> applicationProtocols) {
-    this.enabledCipherSuites = new HashSet<>(enabledCipherSuites);
+                               boolean sslSessionCacheEnabled) {
     this.sslProvider = sslProvider;
     this.sslSessionCacheEnabled = sslSessionCacheEnabled;
-    this.applicationProtocols = applicationProtocols;
   }
 
+  private Set<String> enabledCipherSuites;
+  private List<String> applicationProtocols;
   private boolean useAlpn;
   private ClientAuth clientAuth;
   private boolean forClient;
@@ -95,14 +91,26 @@ public class SslContextFactoryImpl implements SslContextFactory {
     return createContext(useAlpn, forClient, kmf, tmf);
   }
 
-  /*
-      If you don't specify a trust store, and you haven't set system properties, the system will try to use either a file
-      called jsssecacerts or cacerts in the JDK/JRE security directory.
-      You can override this by specifying the javax.echo.ssl.trustStore system property
+  @Override
+  public SslContextFactory enabledCipherSuites(Set<String> enabledCipherSuites) {
+    this.enabledCipherSuites = enabledCipherSuites;
+    return this;
+  }
 
-      If you don't specify a key store, and don't specify a system property no key store will be used
-      You can override this by specifying the javax.echo.ssl.keyStore system property
-       */
+  @Override
+  public SslContextFactory applicationProtocols(List<String> applicationProtocols) {
+    this.applicationProtocols = applicationProtocols;
+    return this;
+  }
+
+  /*
+        If you don't specify a trust store, and you haven't set system properties, the system will try to use either a file
+        called jsssecacerts or cacerts in the JDK/JRE security directory.
+        You can override this by specifying the javax.echo.ssl.trustStore system property
+
+        If you don't specify a key store, and don't specify a system property no key store will be used
+        You can override this by specifying the javax.echo.ssl.keyStore system property
+         */
   private SslContext createContext(boolean useAlpn, boolean client, KeyManagerFactory kmf, TrustManagerFactory tmf) throws SSLException {
     SslContextBuilder builder;
     if (client) {

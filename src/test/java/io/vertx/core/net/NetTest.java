@@ -3532,25 +3532,15 @@ public class NetTest extends VertxTestBase {
       .setSslEngineOptions(new JdkSSLEngineOptions() {
         @Override
         public SslProvider provider() {
-          return new SslProvider() {
-            @Override
-            public SslContextFactory contextFactory(Set<String> enabledCipherSuites, List<String> applicationProtocols) {
-              return new SslContextFactory() {
-                @Override
-                public SslContext create() {
-                  return new JdkSslContext(
-                    sslContext,
-                    true,
-                    null,
-                    IdentityCipherSuiteFilter.INSTANCE,
-                    ApplicationProtocolConfig.DISABLED,
-                    io.netty.handler.ssl.ClientAuth.NONE,
-                    null,
-                    false);
-                }
-              };
-            }
-          };
+          return () -> (SslContextFactory) () -> new JdkSslContext(
+            sslContext,
+            true,
+            null,
+            IdentityCipherSuiteFilter.INSTANCE,
+            ApplicationProtocolConfig.DISABLED,
+            io.netty.handler.ssl.ClientAuth.NONE,
+            null,
+            false);
         }
       }));
 

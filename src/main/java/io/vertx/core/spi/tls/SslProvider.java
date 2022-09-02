@@ -10,9 +10,6 @@
  */
 package io.vertx.core.spi.tls;
 
-import java.util.List;
-import java.util.Set;
-
 /**
  * Provides an {@link SslContextFactory} based on Vert.x options.
  *
@@ -21,11 +18,8 @@ import java.util.Set;
 public interface SslProvider {
 
   /**
-   * @param enabledCipherSuites the enabled cipher suites
-   * @param applicationProtocols the application protocols
-   * @return a new {@link SslContextFactory}, ready to be configured 
+   * @return a new {@link SslContextFactory}, ready to be configured
    */
-  SslContextFactory contextFactory(Set<String> enabledCipherSuites,
-                                   List<String> applicationProtocols);
+  SslContextFactory contextFactory();
 
 }

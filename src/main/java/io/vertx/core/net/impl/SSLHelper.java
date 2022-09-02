@@ -264,9 +264,11 @@ public class SSLHelper {
     try {
       TrustManagerFactory tmf = getTrustMgrFactory(vertx, serverName, trustAll);
       KeyManagerFactory kmf = getKeyMgrFactory(vertx, serverName);
-      SslContextFactory factory = sslProvider.result().contextFactory(enabledCipherSuites, applicationProtocols)
+      SslContextFactory factory = sslProvider.result().contextFactory()
         .useAlpn(useAlpn)
-        .forClient(client);
+        .forClient(client)
+        .enabledCipherSuites(enabledCipherSuites)
+        .applicationProtocols(applicationProtocols);
       if (!client) {
         factory.clientAuth(CLIENT_AUTH_MAPPING.get(clientAuth));
       }
