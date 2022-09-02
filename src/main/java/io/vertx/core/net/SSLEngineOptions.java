@@ -22,6 +22,9 @@ public abstract class SSLEngineOptions {
 
   public abstract SSLEngineOptions copy();
 
+  /**
+   * @return a provider that will be used to produce the Netty {@code SslContext}
+   */
   public abstract SslProvider provider();
 
 }

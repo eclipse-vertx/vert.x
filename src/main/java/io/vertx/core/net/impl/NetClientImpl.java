@@ -87,8 +87,6 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
     this.idleTimeoutUnit = options.getIdleTimeoutUnit();
     this.closeFuture = closeFuture;
     this.proxyFilter = options.getNonProxyHosts() != null ? ProxyFilter.nonProxyHosts(options.getNonProxyHosts()) : ProxyFilter.DEFAULT_PROXY_FILTER;
-
-    // sslHelper.validate(vertx);
   }
 
   protected void initChannel(ChannelPipeline pipeline) {
