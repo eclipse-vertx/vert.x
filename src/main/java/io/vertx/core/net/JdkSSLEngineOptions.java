@@ -11,10 +11,11 @@
 
 package io.vertx.core.net;
 
+import io.netty.handler.ssl.SslProvider;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.spi.tls.DefaultSslProvider;
-import io.vertx.core.spi.tls.SslProvider;
+import io.vertx.core.spi.tls.DefaultSslContextFactory;
+import io.vertx.core.spi.tls.SslContextFactory;
 
 import javax.net.ssl.SSLEngine;
 
@@ -73,7 +74,7 @@ public class JdkSSLEngineOptions extends SSLEngineOptions {
   }
 
   @Override
-  public SslProvider provider() {
-    return new DefaultSslProvider(io.netty.handler.ssl.SslProvider.JDK, false);
+  public SslContextFactory sslContextFactory() {
+    return new DefaultSslContextFactory(SslProvider.JDK, false);
   }
 }

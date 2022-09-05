@@ -40,7 +40,6 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.TCPSSLOptions;
 import io.vertx.core.net.TrustOptions;
 import io.vertx.core.spi.tls.SslContextFactory;
-import io.vertx.core.spi.tls.SslProvider;
 
 import javax.net.ssl.*;
 import java.io.ByteArrayInputStream;
@@ -53,6 +52,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -131,7 +131,7 @@ public class SSLHelper {
   private final Set<String> enabledCipherSuites;
   private final List<String> applicationProtocols;
 
-  private Future<SslProvider> sslProvider;
+  private Future<Supplier<SslContextFactory>> sslProvider;
   private SslContext[] sslContexts = new SslContext[2];
   private Map<String, SslContext>[] sslContextMaps = new Map[] {
     new ConcurrentHashMap<>(), new ConcurrentHashMap<>()
@@ -191,10 +191,10 @@ public class SSLHelper {
    * @return a future resolved when the helper is initialized
    */
   public synchronized Future<Void> init(ContextInternal ctx) {
-    Future<SslProvider> fut = sslProvider;
+    Future<Supplier<SslContextFactory>> fut = sslProvider;
     if (fut == null) {
       if (keyCertOptions != null || trustOptions != null || trustAll || ssl) {
-        Promise<SslProvider> promise = Promise.promise();
+        Promise<Supplier<SslContextFactory>> promise = Promise.promise();
         fut = promise.future();
         ctx.<Void>executeBlockingInternal(p -> {
           KeyManagerFactory kmf;
@@ -210,11 +210,11 @@ public class SSLHelper {
           } else {
             p.fail("Key/certificate is mandatory for SSL");
           }
-        }).compose(v2 -> ctx.<SslProvider>executeBlockingInternal(p -> {
-          SslProvider sslProvider;
+        }).compose(v2 -> ctx.<Supplier<SslContextFactory>>executeBlockingInternal(p -> {
+          Supplier<SslContextFactory> sslProvider;
           try {
             SSLEngineOptions resolvedEngineOptions = resolveEngineOptions(sslEngineOptions, useAlpn);
-            sslProvider = resolvedEngineOptions.provider();
+            sslProvider = resolvedEngineOptions::sslContextFactory;
           } catch (Exception e) {
             p.fail(e);
             return;
@@ -282,7 +282,7 @@ public class SSLHelper {
     try {
       TrustManagerFactory tmf = getTrustMgrFactory(vertx, serverName, trustAll);
       KeyManagerFactory kmf = getKeyMgrFactory(vertx, serverName);
-      SslContextFactory factory = sslProvider.result().contextFactory()
+      SslContextFactory factory = sslProvider.result().get()
         .useAlpn(useAlpn)
         .forClient(client)
         .enabledCipherSuites(enabledCipherSuites)

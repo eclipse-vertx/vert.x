@@ -44,7 +44,6 @@ import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.NetSocketInternal;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.tls.SslContextFactory;
-import io.vertx.core.spi.tls.SslProvider;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.CheckingSender;
 import io.vertx.test.core.TestUtils;
@@ -3531,16 +3530,21 @@ public class NetTest extends VertxTestBase {
     client = vertx.createNetClient(new NetClientOptions().setSsl(true)
       .setSslEngineOptions(new JdkSSLEngineOptions() {
         @Override
-        public SslProvider provider() {
-          return () -> (SslContextFactory) () -> new JdkSslContext(
-            sslContext,
-            true,
-            null,
-            IdentityCipherSuiteFilter.INSTANCE,
-            ApplicationProtocolConfig.DISABLED,
-            io.netty.handler.ssl.ClientAuth.NONE,
-            null,
-            false);
+        public SslContextFactory sslContextFactory() {
+          return new SslContextFactory() {
+            @Override
+            public SslContext create() {
+              return new JdkSslContext(
+                sslContext,
+                true,
+                null,
+                IdentityCipherSuiteFilter.INSTANCE,
+                ApplicationProtocolConfig.DISABLED,
+                io.netty.handler.ssl.ClientAuth.NONE,
+                null,
+                false);
+            }
+          };
         }
       }));
 

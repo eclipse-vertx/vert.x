@@ -11,7 +11,7 @@
 
 package io.vertx.core.net;
 
-import io.vertx.core.spi.tls.SslProvider;
+import io.vertx.core.spi.tls.SslContextFactory;
 
 /**
  * The SSL engine implementation to use in a Vert.x server or client.
@@ -23,8 +23,8 @@ public abstract class SSLEngineOptions {
   public abstract SSLEngineOptions copy();
 
   /**
-   * @return a provider that will be used to produce the Netty {@code SslContext}
+   * @return a {@link SslContextFactory} that will be used to produce the Netty {@code SslContext}
    */
-  public abstract SslProvider provider();
+  public abstract SslContextFactory sslContextFactory();
 
 }

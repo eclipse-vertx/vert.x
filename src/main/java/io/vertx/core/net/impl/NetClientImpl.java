@@ -43,7 +43,6 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TCPMetrics;
-import io.vertx.core.spi.tls.SslProvider;
 
 import java.io.FileNotFoundException;
 import java.net.ConnectException;

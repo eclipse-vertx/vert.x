@@ -15,7 +15,6 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.spi.metrics.TCPMetrics;
-import io.vertx.core.spi.tls.SslProvider;
 
 /**
  * A builder to configure NetClient plugins.
