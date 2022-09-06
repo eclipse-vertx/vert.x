@@ -287,7 +287,7 @@ public interface Vertx extends Measured {
    * @return the unique ID of the timer
    */
   default long setPeriodic(long delay, Handler<Long> handler) {
-    return setPeriodic(0, delay, handler);
+    return setPeriodic(delay, delay, handler);
   }
 
   /**
