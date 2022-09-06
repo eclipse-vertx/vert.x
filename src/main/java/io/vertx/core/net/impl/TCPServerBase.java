@@ -131,6 +131,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
       }
       PromiseInternal<Channel> promise = listenContext.promise();
       if (main == null) {
+        // The first server binds the socket
         actualServer = this;
         bindFuture = promise;
         sslHelper = createSSLHelper();
@@ -139,12 +140,16 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
         servers.add(this);
         channelBalancer = new ServerChannelLoadBalancer(vertx.getAcceptorEventLoopGroup().next());
 
+        // Register the server in the shared server list
         if (shared) {
           sharedNetServers.put(id, this);
         }
 
+        // Initialize SSL before binding
         sslHelper.init(listenContext).onComplete(ar -> {
           if (ar.succeeded()) {
+
+            // Socket bind
             channelBalancer.addWorker(eventLoop, worker);
             ServerBootstrap bootstrap = new ServerBootstrap();
             bootstrap.group(vertx.getAcceptorEventLoopGroup(), channelBalancer.workers());
@@ -157,6 +162,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
             bootstrap.childHandler(channelBalancer);
             applyConnectionOptions(localAddress.isDomainSocket(), bootstrap);
 
+            // Actual bind
             io.netty.util.concurrent.Future<Channel> bindFuture = AsyncResolveConnectHelper.doBind(vertx, bindAddress, bootstrap);
             bindFuture.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) res -> {
               if (res.isSuccess()) {

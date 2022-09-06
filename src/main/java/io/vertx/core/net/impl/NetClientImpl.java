@@ -211,6 +211,20 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
     connectInternal(proxyOptions, remoteAddress, peerAddress, serverName, options.isSsl(), options.isUseAlpn(), true, connectHandler, ctx, options.getReconnectAttempts());
   }
 
+  /**
+   * Open a socket to the {@code remoteAddress} server.
+   *
+   * @param proxyOptions optional proxy configuration
+   * @param remoteAddress the server address
+   * @param peerAddress the peer address (along with SSL)
+   * @param serverName the SNI server name (along with SSL)
+   * @param ssl whether to use SSL
+   * @param useAlpn wether to use ALPN (along with SSL)
+   * @param registerWriteHandlers whether to register event-bus write handlers
+   * @param connectHandler the promise to resolve with the connect result
+   * @param context the socket context
+   * @param remainingAttempts how many times reconnection is reattempted
+   */
   public void connectInternal(ProxyOptions proxyOptions,
                                 SocketAddress remoteAddress,
                                 SocketAddress peerAddress,
