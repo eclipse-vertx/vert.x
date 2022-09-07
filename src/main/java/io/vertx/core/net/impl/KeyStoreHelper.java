@@ -354,7 +354,7 @@ public class KeyStoreHelper {
         } else {
           String content = pem.substring(beginMatcher.end(), endMatcher.start());
           content = content.replaceAll("\\s", "");
-          if (content.length() == 0) {
+          if (content.isEmpty()) {
             throw new RuntimeException("Empty pem file");
           }
           Collection<P> pemItems = pemFact.apply(endDelimiter, Base64.getDecoder().decode(content));
