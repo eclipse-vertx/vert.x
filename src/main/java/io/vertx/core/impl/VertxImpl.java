@@ -147,10 +147,14 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     if (Vertx.currentContext() != null) {
       log.warn("You're already on a Vert.x context, are you sure you want to create a new Vertx instance?");
     }
+
     closeFuture = new CloseFuture(log);
     maxEventLoopExecTime = options.getMaxEventLoopExecuteTime();
     maxEventLoopExecTimeUnit = options.getMaxEventLoopExecuteTimeUnit();
     checker = new BlockedThreadChecker(options.getBlockedThreadCheckInterval(), options.getBlockedThreadCheckIntervalUnit(), options.getWarningExceptionTime(), options.getWarningExceptionTimeUnit());
+    // Set the thread factories before calling createThreadFactory, as that method reference the threadFactory
+    // field and so can lead to an NPE
+    this.threadFactory = threadFactory;
     eventLoopThreadFactory = createThreadFactory(maxEventLoopExecTime, maxEventLoopExecTimeUnit, "vert.x-eventloop-thread-", false);
     eventLoopGroup = transport.eventLoopGroup(Transport.IO_EVENT_LOOP_GROUP, options.getEventLoopPoolSize(), eventLoopThreadFactory, NETTY_IO_RATIO);
     ThreadFactory acceptorEventLoopThreadFactory = createThreadFactory(options.getMaxEventLoopExecuteTime(), options.getMaxEventLoopExecuteTimeUnit(), "vert.x-acceptor-thread-", false);
@@ -174,7 +178,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     disableTCCL = options.getDisableTCCL();
 
     this.executorServiceFactory = executorServiceFactory;
-    this.threadFactory = threadFactory;
     this.metrics = metrics;
     this.transport = transport;
     this.fileResolver = fileResolver;
