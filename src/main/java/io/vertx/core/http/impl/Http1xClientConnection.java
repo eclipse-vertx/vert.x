@@ -102,7 +102,9 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   private int keepAliveTimeout;
   private long expirationTimestamp;
   private int seq = 1;
-  private long bytesWindow;
+  private long readWindow;
+  private long writeWindow;
+  private boolean writeOverflow;
 
   private long lastResponseReceivedTimestamp;
 
@@ -120,7 +122,8 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     this.server = server;
     this.metrics = metrics;
     this.version = version;
-    this.bytesWindow = 0;
+    this.readWindow = 0L;
+    this.writeWindow = 0L;
     this.highWaterMark = channel.channel().config().getWriteBufferHighWaterMark();
     this.lowWaterMark = channel.channel().config().getWriteBufferLowWaterMark();
     this.keepAliveTimeout = options.getKeepAliveTimeout();
@@ -308,9 +311,9 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   }
 
   private void receiveBytes(int len) {
-    boolean le = bytesWindow <= highWaterMark;
-    bytesWindow += len;
-    boolean gt = bytesWindow > highWaterMark;
+    boolean le = readWindow <= highWaterMark;
+    readWindow += len;
+    boolean gt = readWindow > highWaterMark;
     if (le && gt) {
       doPause();
     }
@@ -319,9 +322,9 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   private void ackBytes(int len) {
     EventLoop eventLoop = context.nettyEventLoop();
     if (eventLoop.inEventLoop()) {
-      boolean gt = bytesWindow > lowWaterMark;
-      bytesWindow -= len;
-      boolean le = bytesWindow <= lowWaterMark;
+      boolean gt = readWindow > lowWaterMark;
+      readWindow -= len;
+      boolean le = readWindow <= lowWaterMark;
       if (gt && le) {
         doResume();
       }
@@ -373,7 +376,6 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     private final Http1xClientConnection conn;
     private final InboundBuffer<Object> queue;
     private boolean reset;
-    private boolean writable;
     private boolean closed;
     private HttpRequestHead request;
     private Handler<HttpResponseHead> headHandler;
@@ -387,7 +389,6 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     StreamImpl(ContextInternal context, Http1xClientConnection conn, int id) {
       super(context, id);
 
-      this.writable = !conn.isNotWritable();
       this.conn = conn;
       this.queue = new InboundBuffer<>(context, 5)
         .handler(item -> {
@@ -510,11 +511,41 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     }
 
     private void writeBuffer(ByteBuf buff, boolean end, FutureListener<Void> listener) {
+      FutureListener<Void> l;
+      if (buff != null) {
+        int size = buff.readableBytes();
+        l = future -> {
+          Handler<Void> drain;
+          synchronized (conn) {
+            conn.writeWindow -= size;
+            if (conn.writeOverflow && conn.writeWindow < conn.lowWaterMark) {
+              drain = drainHandler;
+              conn.writeOverflow = false;
+            } else {
+              drain = null;
+            }
+          }
+          if (drain != null) {
+            drain.handle(null);
+          }
+          if (listener != null) {
+            listener.operationComplete(future);
+          }
+        };
+        synchronized (conn) {
+          conn.writeWindow += size;
+          if (conn.writeWindow > conn.highWaterMark) {
+            conn.writeOverflow = true;
+          }
+        }
+      } else {
+        l = listener;
+      }
       EventLoop eventLoop = conn.context.nettyEventLoop();
       if (eventLoop.inEventLoop()) {
-        conn.writeBuffer(this, buff, end, listener);
+        conn.writeBuffer(this, buff, end, l);
       } else {
-        eventLoop.execute(() -> writeBuffer(buff, end, listener));
+        eventLoop.execute(() -> writeBuffer(buff, end, l));
       }
     }
 
@@ -531,7 +562,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     @Override
     public boolean isNotWritable() {
       synchronized (conn) {
-        return !writable;
+        return conn.writeWindow > conn.highWaterMark;
       }
     }
 
@@ -580,16 +611,6 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
 
     @Override
     void handleWritabilityChanged(boolean writable) {
-      Handler<Void> handler;
-      boolean drain;
-      synchronized (conn) {
-        drain = !this.writable && writable;
-        this.writable = writable;
-        handler = drainHandler;
-      }
-      if (drain && handler != null) {
-        handler.handle(null);
-      }
     }
 
     void handleContinue() {

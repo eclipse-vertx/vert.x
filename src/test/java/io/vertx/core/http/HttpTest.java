@@ -6190,6 +6190,38 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
+  @Test
+  public void testClientRequestFlowControlDifferentEventLoops() throws Exception {
+    server.requestHandler(req -> {
+      req.end(v -> {
+        req.response().end();
+      });
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1));
+    Buffer chunk = Buffer.buffer(TestUtils.randomAlphaString(1024));
+    client.request(requestOptions).onComplete(onSuccess(req1 -> {
+      assertTrue(req1.reset());
+      new Thread(() -> {
+        client.request(requestOptions).onComplete(onSuccess(req2 -> {
+          req2.setChunked(true);
+          while (!req2.writeQueueFull()) {
+            req2.write(chunk);
+          }
+          req2.drainHandler(v -> {
+            req2.end();
+          });
+          req2.response(onSuccess(resp -> {
+            resp.end(onSuccess(v -> {
+              testComplete();
+            }));
+          }));
+        }));
+      }).start();
+    }));
+    await();
+  }
 
   @Test
   public void testHAProxyProtocolIdleTimeout() throws Exception {
