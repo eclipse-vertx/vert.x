@@ -31,6 +31,7 @@ import io.vertx.core.eventbus.impl.EventBusInternal;
 import io.vertx.core.eventbus.impl.clustered.ClusteredEventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.impl.btc.BlockedThreadChecker;
+import io.vertx.core.net.impl.NetClientBuilder;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.file.impl.FileSystemImpl;
 import io.vertx.core.file.impl.WindowsFileSystem;
@@ -296,19 +297,14 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return new NetServerImpl(this, options);
   }
 
-  @Override
-  public NetClient createNetClient(NetClientOptions options, CloseFuture closeFuture) {
-    NetClientImpl client = new NetClientImpl(this, options, closeFuture);
-    closeFuture.add(client);
-    return client;
-  }
-
   public NetClient createNetClient(NetClientOptions options) {
     CloseFuture closeFuture = new CloseFuture(log);
-    NetClient client = createNetClient(options, closeFuture);
     CloseFuture fut = resolveCloseFuture();
     fut.add(closeFuture);
-    return client;
+    NetClientBuilder builder = new NetClientBuilder(this, options);
+    builder.metrics(metricsSPI() != null ? metricsSPI().createNetClientMetrics(options) : null);
+    builder.closeFuture(closeFuture);
+    return builder.build();
   }
 
   @Override

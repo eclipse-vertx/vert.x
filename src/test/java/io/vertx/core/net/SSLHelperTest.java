@@ -17,6 +17,7 @@ import io.netty.handler.ssl.OpenSslServerSessionContext;
 import io.netty.handler.ssl.SslContext;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.impl.SSLHelper;
@@ -41,22 +42,30 @@ public class SSLHelperTest extends VertxTestBase {
     context.init(null, null, null);
     SSLEngine engine = context.createSSLEngine();
     String[] expected = engine.getEnabledCipherSuites();
-    SSLHelper helper = new SSLHelper(new HttpClientOptions(),
-        Cert.CLIENT_JKS.get(),
-        Trust.SERVER_JKS.get());
-    SslContext ctx = helper.getContext((VertxInternal) vertx);
-    assertEquals(new HashSet<>(Arrays.asList(expected)), new HashSet<>(ctx.cipherSuites()));
+    SSLHelper helper = new SSLHelper(new HttpClientOptions().setKeyStoreOptions(Cert.CLIENT_JKS.get()).setTrustOptions(Trust.SERVER_JKS.get()),
+      null);
+    helper
+      .init((ContextInternal) vertx.getOrCreateContext())
+      .onComplete(onSuccess(v -> {
+        SslContext ctx = helper.createContext((VertxInternal) vertx);
+        assertEquals(new HashSet<>(Arrays.asList(expected)), new HashSet<>(ctx.cipherSuites()));
+        testComplete();
+    }));
+    await();
   }
 
   @Test
   public void testUseOpenSSLCiphersWhenNotSpecified() throws Exception {
     Set<String> expected = OpenSsl.availableOpenSslCipherSuites();
     SSLHelper helper = new SSLHelper(
-        new HttpClientOptions().setOpenSslEngineOptions(new OpenSSLEngineOptions()),
-        Cert.CLIENT_PEM.get(),
-        Trust.SERVER_PEM.get());
-    SslContext ctx = helper.getContext((VertxInternal) vertx);
-    assertEquals(expected, new HashSet<>(ctx.cipherSuites()));
+        new HttpClientOptions().setOpenSslEngineOptions(new OpenSSLEngineOptions()).setPemKeyCertOptions(Cert.CLIENT_PEM.get()).setTrustOptions(Trust.SERVER_PEM.get()),
+      null);
+    helper.init((ContextInternal) vertx.getOrCreateContext()).onComplete(onSuccess(v -> {
+      SslContext ctx = helper.createContext((VertxInternal) vertx);
+      assertEquals(expected, new HashSet<>(ctx.cipherSuites()));
+      testComplete();
+    }));
+    await();
   }
 
   @Test
@@ -76,19 +85,25 @@ public class SSLHelperTest extends VertxTestBase {
       httpServerOptions.setOpenSslEngineOptions(new OpenSSLEngineOptions().setSessionCacheEnabled(false));
     }
 
-    SSLHelper defaultHelper = new SSLHelper(httpServerOptions,
-            Cert.SERVER_PEM.get(),
-            Trust.SERVER_PEM.get());
+    SSLHelper defaultHelper = new SSLHelper(httpServerOptions.setPemKeyCertOptions(Cert.SERVER_PEM.get()).setTrustOptions(Trust.SERVER_PEM.get()),
+      null);
 
-    SslContext ctx = defaultHelper.getContext((VertxInternal) vertx);
-    assertTrue(ctx instanceof OpenSslServerContext);
+    defaultHelper
+      .init((ContextInternal) vertx.getOrCreateContext())
+      .onComplete(onSuccess(v -> {
+        SslContext ctx = defaultHelper.createContext((VertxInternal) vertx);
+        assertTrue(ctx instanceof OpenSslServerContext);
 
-    SSLSessionContext sslSessionContext = ctx.sessionContext();
-    assertTrue(sslSessionContext instanceof OpenSslServerSessionContext);
+        SSLSessionContext sslSessionContext = ctx.sessionContext();
+        assertTrue(sslSessionContext instanceof OpenSslServerSessionContext);
 
-    if (sslSessionContext instanceof OpenSslServerSessionContext) {
-      assertEquals(testDefault, ((OpenSslServerSessionContext) sslSessionContext).isSessionCacheEnabled());
-    }
+        if (sslSessionContext instanceof OpenSslServerSessionContext) {
+          assertEquals(testDefault, ((OpenSslServerSessionContext) sslSessionContext).isSessionCacheEnabled());
+        }
+      testComplete();
+    }));
+
+    await();
   }
 
   @Test
@@ -104,8 +119,14 @@ public class SSLHelperTest extends VertxTestBase {
     assertEquals(new ArrayList<>(new HttpServerOptions(options).getEnabledCipherSuites()), Arrays.asList(engine.getEnabledCipherSuites()));
     JsonObject json = options.toJson();
     assertEquals(new ArrayList<>(new HttpServerOptions(json).getEnabledCipherSuites()), Arrays.asList(engine.getEnabledCipherSuites()));
-    SSLHelper helper = new SSLHelper(options, Cert.SERVER_JKS.get(), null);
-    assertEquals(Arrays.asList(helper.createEngine((VertxInternal) vertx).getEnabledCipherSuites()), Arrays.asList(engine.getEnabledCipherSuites()));
+    SSLHelper helper = new SSLHelper(options.setKeyCertOptions(Cert.SERVER_JKS.get()), null);
+    helper
+      .init((ContextInternal) vertx.getOrCreateContext())
+      .onComplete(onSuccess(v -> {
+        assertEquals(new HashSet<>(Arrays.asList(helper.createEngine((VertxInternal) vertx).getEnabledCipherSuites())), new HashSet<>(Arrays.asList(engine.getEnabledCipherSuites())));
+        testComplete();
+      }));
+    await();
   }
 
   @Test

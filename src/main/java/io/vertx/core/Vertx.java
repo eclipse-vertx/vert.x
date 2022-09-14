@@ -63,6 +63,7 @@ import java.util.function.Supplier;
  * Please see the user manual for more detailed usage information.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
+ * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @VertxGen
 public interface Vertx extends Measured {

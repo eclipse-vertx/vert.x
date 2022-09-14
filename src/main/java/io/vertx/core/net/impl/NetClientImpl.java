@@ -44,7 +44,6 @@ import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TCPMetrics;
 
-import javax.net.ssl.SSLContext;
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
 import java.util.Objects;
@@ -74,15 +73,11 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
   private final CloseFuture closeFuture;
   private final Predicate<SocketAddress> proxyFilter;
 
-  public NetClientImpl(VertxInternal vertx, NetClientOptions options, CloseFuture closeFuture) {
-    this(vertx, vertx.metricsSPI() != null ? vertx.metricsSPI().createNetClientMetrics(options) : null, options, closeFuture);
-  }
-
   public NetClientImpl(VertxInternal vertx, TCPMetrics metrics, NetClientOptions options, CloseFuture closeFuture) {
     this.vertx = vertx;
     this.channelGroup = new DefaultChannelGroup(vertx.getAcceptorEventLoopGroup().next());
     this.options = new NetClientOptions(options);
-    this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions()).setApplicationProtocols(options.getApplicationLayerProtocols());
+    this.sslHelper = new SSLHelper(options, options.getApplicationLayerProtocols());
     this.metrics = metrics;
     this.logEnabled = options.getLogActivity();
     this.idleTimeout = options.getIdleTimeout();
@@ -91,8 +86,6 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
     this.idleTimeoutUnit = options.getIdleTimeoutUnit();
     this.closeFuture = closeFuture;
     this.proxyFilter = options.getNonProxyHosts() != null ? ProxyFilter.nonProxyHosts(options.getNonProxyHosts()) : ProxyFilter.DEFAULT_PROXY_FILTER;
-
-    sslHelper.validate(vertx);
   }
 
   protected void initChannel(ChannelPipeline pipeline) {
@@ -177,13 +170,6 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
     return metrics != null;
   }
 
-  /**
-   * Must be called before calling connect().
-   */
-  public void setSuppliedSSLContext(SSLContext suppliedSSLContext) {
-    sslHelper.setSuppliedSslContext(suppliedSSLContext);
-  }
-
   @Override
   public Metrics getMetrics() {
     return metrics;
@@ -225,7 +211,41 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
     connectInternal(proxyOptions, remoteAddress, peerAddress, serverName, options.isSsl(), options.isUseAlpn(), true, connectHandler, ctx, options.getReconnectAttempts());
   }
 
+  /**
+   * Open a socket to the {@code remoteAddress} server.
+   *
+   * @param proxyOptions optional proxy configuration
+   * @param remoteAddress the server address
+   * @param peerAddress the peer address (along with SSL)
+   * @param serverName the SNI server name (along with SSL)
+   * @param ssl whether to use SSL
+   * @param useAlpn wether to use ALPN (along with SSL)
+   * @param registerWriteHandlers whether to register event-bus write handlers
+   * @param connectHandler the promise to resolve with the connect result
+   * @param context the socket context
+   * @param remainingAttempts how many times reconnection is reattempted
+   */
   public void connectInternal(ProxyOptions proxyOptions,
+                                SocketAddress remoteAddress,
+                                SocketAddress peerAddress,
+                                String serverName,
+                                boolean ssl,
+                                boolean useAlpn,
+                                boolean registerWriteHandlers,
+                                Promise<NetSocket> connectHandler,
+                                ContextInternal context,
+                                int remainingAttempts) {
+    checkClosed();
+    sslHelper.init(context).onComplete(ar -> {
+      if (ar.succeeded()) {
+        connectInternal2(proxyOptions, remoteAddress, peerAddress, serverName, ssl, useAlpn, registerWriteHandlers, connectHandler, context, remainingAttempts);
+      } else {
+        connectHandler.fail(ar.cause());
+      }
+    });
+  }
+
+  private void connectInternal2(ProxyOptions proxyOptions,
                               SocketAddress remoteAddress,
                               SocketAddress peerAddress,
                               String serverName,
@@ -235,8 +255,6 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
                               Promise<NetSocket> connectHandler,
                               ContextInternal context,
                               int remainingAttempts) {
-    checkClosed();
-
     EventLoop eventLoop = context.nettyEventLoop();
 
     if (eventLoop.inEventLoop()) {
@@ -272,7 +290,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
         }
       });
     } else {
-      eventLoop.execute(() -> connectInternal(proxyOptions, remoteAddress, peerAddress, serverName, ssl, useAlpn, registerWriteHandlers, connectHandler, context, remainingAttempts));
+      eventLoop.execute(() -> connectInternal2(proxyOptions, remoteAddress, peerAddress, serverName, ssl, useAlpn, registerWriteHandlers, connectHandler, context, remainingAttempts));
     }
   }
 

@@ -18,9 +18,7 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoop;
 import io.netty.util.concurrent.GenericFutureListener;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Closeable;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -37,12 +35,9 @@ import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TCPMetrics;
 
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Base class for TCP servers
@@ -68,7 +63,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
   // Main
   private SSLHelper sslHelper;
   private ServerChannelLoadBalancer channelBalancer;
-  private io.netty.util.concurrent.Future<Channel> bindFuture;
+  private Future<Channel> bindFuture;
   private Set<TCPServerBase> servers;
   private TCPMetrics<?> metrics;
   private volatile int actualPort;
@@ -87,7 +82,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
   protected abstract Handler<Channel> childHandler(ContextInternal context, SocketAddress socketAddress, SSLHelper sslHelper);
 
   protected SSLHelper createSSLHelper() {
-    return new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions());
+    return new SSLHelper(options, null);
   }
 
   public synchronized SSLHelper sslHelper() {
@@ -96,21 +91,10 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
 
   public Future<TCPServerBase> bind(SocketAddress address) {
     ContextInternal listenContext = vertx.getOrCreateContext();
-
-    io.netty.util.concurrent.Future<Channel> bindFuture = listen(address, listenContext);
-
-    Promise<TCPServerBase> promise = listenContext.promise();
-    bindFuture.addListener(res -> {
-      if (res.isSuccess()) {
-        promise.complete(this);
-      } else {
-        promise.fail(res.cause());
-      }
-    });
-    return promise.future();
+    return listen(address, listenContext).map(this);
   }
 
-  private synchronized io.netty.util.concurrent.Future<Channel> listen(SocketAddress localAddress, ContextInternal context) {
+  private synchronized Future<Channel> listen(SocketAddress localAddress, ContextInternal context) {
     if (listening) {
       throw new IllegalStateException("Listen already called");
     }
@@ -145,62 +129,78 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
           bindAddress = localAddress;
         }
       }
+      PromiseInternal<Channel> promise = listenContext.promise();
       if (main == null) {
-        try {
-          sslHelper = createSSLHelper();
-          sslHelper.validate(vertx);
-          worker =  childHandler(listenContext, localAddress, sslHelper);
-          servers = new HashSet<>();
-          servers.add(this);
-          channelBalancer = new ServerChannelLoadBalancer(vertx.getAcceptorEventLoopGroup().next());
-          channelBalancer.addWorker(eventLoop, worker);
+        // The first server binds the socket
+        actualServer = this;
+        bindFuture = promise;
+        sslHelper = createSSLHelper();
+        worker =  childHandler(listenContext, localAddress, sslHelper);
+        servers = new HashSet<>();
+        servers.add(this);
+        channelBalancer = new ServerChannelLoadBalancer(vertx.getAcceptorEventLoopGroup().next());
 
-          ServerBootstrap bootstrap = new ServerBootstrap();
-          bootstrap.group(vertx.getAcceptorEventLoopGroup(), channelBalancer.workers());
-          if (sslHelper.isSSL()) {
-            bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
-          } else {
-            bootstrap.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
-          }
-
-          bootstrap.childHandler(channelBalancer);
-          applyConnectionOptions(localAddress.isDomainSocket(), bootstrap);
-
-          bindFuture = AsyncResolveConnectHelper.doBind(vertx, bindAddress, bootstrap);
-          bindFuture.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) res -> {
-            if (res.isSuccess()) {
-              Channel ch = res.getNow();
-              log.trace("Net server listening on " + hostOrPath + ":" + ch.localAddress());
-              if (shared) {
-                ch.closeFuture().addListener((ChannelFutureListener) channelFuture -> {
-                  synchronized (sharedNetServers) {
-                    sharedNetServers.remove(id);
-                  }
-                });
-              }
-              // Update port to actual port when it is not a domain socket as wildcard port 0 might have been used
-              if (bindAddress.isInetSocket()) {
-                actualPort = ((InetSocketAddress)ch.localAddress()).getPort();
-              }
-              listenContext.addCloseHook(this);
-              metrics = createMetrics(localAddress);
-            } else {
-              if (shared) {
-                synchronized (sharedNetServers) {
-                  sharedNetServers.remove(id);
-                }
-              }
-              listening  = false;
-            }
-          });
-        } catch (Throwable t) {
-          listening = false;
-          return vertx.getAcceptorEventLoopGroup().next().newFailedFuture(t);
-        }
+        // Register the server in the shared server list
         if (shared) {
           sharedNetServers.put(id, this);
         }
-        actualServer = this;
+
+        // Initialize SSL before binding
+        sslHelper.init(listenContext).onComplete(ar -> {
+          if (ar.succeeded()) {
+
+            // Socket bind
+            channelBalancer.addWorker(eventLoop, worker);
+            ServerBootstrap bootstrap = new ServerBootstrap();
+            bootstrap.group(vertx.getAcceptorEventLoopGroup(), channelBalancer.workers());
+            if (sslHelper.isSSL()) {
+              bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
+            } else {
+              bootstrap.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+            }
+
+            bootstrap.childHandler(channelBalancer);
+            applyConnectionOptions(localAddress.isDomainSocket(), bootstrap);
+
+            // Actual bind
+            io.netty.util.concurrent.Future<Channel> bindFuture = AsyncResolveConnectHelper.doBind(vertx, bindAddress, bootstrap);
+            bindFuture.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) res -> {
+              if (res.isSuccess()) {
+                Channel ch = res.getNow();
+                log.trace("Net server listening on " + hostOrPath + ":" + ch.localAddress());
+                if (shared) {
+                  ch.closeFuture().addListener((ChannelFutureListener) channelFuture -> {
+                    synchronized (sharedNetServers) {
+                      sharedNetServers.remove(id);
+                    }
+                  });
+                }
+                // Update port to actual port when it is not a domain socket as wildcard port 0 might have been used
+                if (bindAddress.isInetSocket()) {
+                  actualPort = ((InetSocketAddress)ch.localAddress()).getPort();
+                }
+                listenContext.addCloseHook(this);
+                metrics = createMetrics(localAddress);
+                promise.complete(ch);
+              } else {
+                promise.fail(res.cause());
+              }
+            });
+          } else {
+            promise.fail(ar.cause());
+          }
+        });
+
+        bindFuture.onFailure(err -> {
+          if (shared) {
+            synchronized (sharedNetServers) {
+              sharedNetServers.remove(id);
+            }
+          }
+          listening = false;
+        });
+
+        return bindFuture;
       } else {
         // Server already exists with that host/port - we will use that
         actualServer = main;
@@ -210,10 +210,10 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
         actualServer.servers.add(this);
         actualServer.channelBalancer.addWorker(eventLoop, worker);
         listenContext.addCloseHook(this);
+        main.bindFuture.onComplete(promise);
+        return promise.future();
       }
     }
-
-    return actualServer.bindFuture;
   }
 
   public boolean isListening() {
@@ -268,9 +268,9 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
 
   private void actualClose(Promise<Void> done) {
     channelBalancer.close();
-    bindFuture.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) fut -> {
-      if (fut.isSuccess()) {
-        Channel channel = fut.getNow();
+    bindFuture.onComplete(ar -> {
+      if (ar.succeeded()) {
+        Channel channel = ar.result();
         ChannelFuture a = channel.close();
         if (metrics != null) {
           a.addListener(cg -> metrics.close());

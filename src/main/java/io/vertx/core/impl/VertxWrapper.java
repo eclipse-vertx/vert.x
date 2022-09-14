@@ -415,11 +415,6 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public NetClient createNetClient(NetClientOptions options, CloseFuture closeFuture) {
-    return delegate.createNetClient(options, closeFuture);
-  }
-
-  @Override
   public HttpClient createHttpClient(HttpClientOptions options, CloseFuture closeFuture) {
     return delegate.createHttpClient(options, closeFuture);
   }

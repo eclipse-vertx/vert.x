@@ -12,9 +12,11 @@
 package io.vertx.core.net.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.handler.ssl.SniHandler;
+import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.CharsetUtil;
 import io.netty.util.ReferenceCounted;
@@ -337,7 +339,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
   @Override
   public NetSocket upgradeToSsl(String serverName, Handler<AsyncResult<Void>> handler) {
-    ChannelOutboundHandler sslHandler = (ChannelOutboundHandler) chctx.pipeline().get("ssl");
+    ChannelHandler sslHandler = chctx.pipeline().get("ssl");
     if (sslHandler == null) {
       ChannelPromise p = chctx.newPromise();
       chctx.pipeline().addFirst("handshaker", new SslHandshakeCompletionHandler(p));
@@ -353,15 +355,9 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
         }
       });
       if (remoteAddress != null) {
-        sslHandler = new SslHandler(helper.createEngine(vertx, remoteAddress, serverName, false));
-        ((SslHandler) sslHandler).setHandshakeTimeout(helper.getSslHandshakeTimeout(), helper.getSslHandshakeTimeoutUnit());
+        sslHandler = helper.createSslHandler(vertx, remoteAddress, serverName, false);
       } else {
-        if (helper.isSNI()) {
-          sslHandler = new SniHandler(helper.serverNameMapper(vertx));
-        } else {
-          sslHandler = new SslHandler(helper.createEngine(vertx));
-          ((SslHandler) sslHandler).setHandshakeTimeout(helper.getSslHandshakeTimeout(), helper.getSslHandshakeTimeoutUnit());
-        }
+        sslHandler = helper.createHandler(vertx);
       }
       chctx.pipeline().addFirst("ssl", sslHandler);
     }

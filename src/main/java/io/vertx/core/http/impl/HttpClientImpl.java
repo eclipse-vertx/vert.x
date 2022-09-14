@@ -19,6 +19,7 @@ import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.*;
+import io.vertx.core.net.impl.NetClientBuilder;
 import io.vertx.core.net.impl.NetClientImpl;
 import io.vertx.core.net.impl.ProxyFilter;
 import io.vertx.core.net.impl.pool.ConnectionManager;
@@ -146,17 +147,16 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider, Clos
       throw new IllegalStateException("Cannot have pipelining with no keep alive");
     }
     this.proxyFilter = options.getNonProxyHosts() != null ? ProxyFilter.nonProxyHosts(options.getNonProxyHosts()) : ProxyFilter.DEFAULT_PROXY_FILTER;
-    this.netClient = new NetClientImpl(
-      vertx,
-      metrics,
-      new NetClientOptions(options)
-        .setHostnameVerificationAlgorithm(options.isVerifyHost() ? "HTTPS": "")
-        .setProxyOptions(null)
-        .setApplicationLayerProtocols(alpnVersions
-          .stream()
-          .map(HttpVersion::alpnName)
-          .collect(Collectors.toList())),
-      closeFuture);
+    this.netClient = (NetClientImpl) new NetClientBuilder(vertx, new NetClientOptions(options)
+      .setHostnameVerificationAlgorithm(options.isVerifyHost() ? "HTTPS": "")
+      .setProxyOptions(null)
+      .setApplicationLayerProtocols(alpnVersions
+        .stream()
+        .map(HttpVersion::alpnName)
+        .collect(Collectors.toList())))
+      .metrics(metrics)
+      .closeFuture(closeFuture)
+      .build();
     webSocketCM = webSocketConnectionManager();
     httpCM = httpConnectionManager();
     if (options.getPoolCleanerPeriod() > 0 && (options.getKeepAliveTimeout() > 0L || options.getHttp2KeepAliveTimeout() > 0L)) {

@@ -1487,9 +1487,9 @@ public abstract class HttpTLSTest extends HttpTestBase {
     AtomicReference<Throwable> failure = new AtomicReference<>();
     server.listen(onFailure(failure::set));
     assertWaitUntil(() -> failure.get() != null);
-    Throwable cause = failure.get().getCause();
+    Throwable cause = failure.get();
     String exceptionMessage = cause.getMessage();
-    if(expectedSuffix == null) {
+    if (expectedSuffix == null) {
       boolean ok = expectedPossiblePrefixes.isEmpty();
       for (String expectedPossiblePrefix : expectedPossiblePrefixes) {
         ok |= expectedPossiblePrefix.equals(exceptionMessage);
@@ -1510,18 +1510,17 @@ public abstract class HttpTLSTest extends HttpTestBase {
   }
 
   @Test
-  public void testCrlInvalidPath() throws Exception {
+  public void testCrlInvalidPath() {
     HttpClientOptions clientOptions = new HttpClientOptions();
     clientOptions.setTrustOptions(Trust.SERVER_PEM_ROOT_CA.get());
     clientOptions.setSsl(true);
     clientOptions.addCrlPath("/invalid.pem");
-    try {
-      vertx.createHttpClient(clientOptions);
-      fail("Was expecting a failure");
-    } catch (VertxException e) {
-      assertNotNull(e.getCause());
-      assertEquals(NoSuchFileException.class, e.getCause().getCause().getClass());
-    }
+    HttpClient client = vertx.createHttpClient(clientOptions);
+    client.request(HttpMethod.GET, 9292, "localhost", "/", onFailure(err -> {
+      assertEquals(NoSuchFileException.class, TestUtils.rootCause(err).getClass());
+      testComplete();
+    }));
+    await();
   }
 
   // Proxy tests
