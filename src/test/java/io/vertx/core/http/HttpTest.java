@@ -6192,10 +6192,13 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testClientRequestFlowControlDifferentEventLoops() throws Exception {
+    Promise<Void> resume = Promise.promise();
     server.requestHandler(req -> {
+      req.pause();
       req.end(v -> {
         req.response().end();
       });
+      resume.future().onComplete(ar -> req.resume());
     });
     startServer(testAddress);
     client.close();
@@ -6209,6 +6212,7 @@ public abstract class HttpTest extends HttpTestBase {
           while (!req2.writeQueueFull()) {
             req2.write(chunk);
           }
+          resume.complete();
           req2.drainHandler(v -> {
             req2.end();
           });
