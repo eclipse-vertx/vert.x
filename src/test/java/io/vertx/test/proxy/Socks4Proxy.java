@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://oss.lehmann.cx/">Alexander Lehmann</a>
  */
-public class Socks4Proxy extends TestProxyBase {
+public class Socks4Proxy extends TestProxyBase<Socks4Proxy> {
 
   private static final Logger log = LoggerFactory.getLogger(Socks4Proxy.class);
 
@@ -45,12 +45,13 @@ public class Socks4Proxy extends TestProxyBase {
   private static final Buffer connectResponse = Buffer.buffer(new byte[] { 0, 90, 0, 0, 0, 0, 0, 0 });
   private static final Buffer errorResponse = Buffer.buffer(new byte[] { 0, 91, 0, 0, 0, 0, 0, 0 });
 
-  private static final int PORT = 11080;
+  public static final int DEFAULT_PORT = 11080;
 
   private NetServer server;
 
-  public Socks4Proxy(String username) {
-    super(username);
+  @Override
+  public int defaultPort() {
+    return DEFAULT_PORT;
   }
 
   /**
@@ -62,7 +63,7 @@ public class Socks4Proxy extends TestProxyBase {
   @Override
   public Socks4Proxy start(Vertx vertx) throws Exception {
     NetServerOptions options = new NetServerOptions();
-    options.setHost("localhost").setPort(PORT);
+    options.setHost("localhost").setPort(port);
     server = vertx.createNetServer(options);
     server.connectHandler(socket -> {
       socket.handler(buffer -> {
@@ -75,7 +76,7 @@ public class Socks4Proxy extends TestProxyBase {
         String ip = getByte4(buffer.getBuffer(4, 8));
 
         String authUsername = getString(buffer.getBuffer(8, buffer.length()));
-
+        String username = nextUserName();
         if (username != null && !authUsername.equals(username)) {
           log.debug("auth failed");
           log.debug("writing: " + toHex(errorResponse));
@@ -101,6 +102,7 @@ public class Socks4Proxy extends TestProxyBase {
           NetClient netClient = vertx.createNetClient(new NetClientOptions());
           netClient.connect(port, host, result -> {
             if (result.succeeded()) {
+              localAddresses.add(result.result().localAddress().toString());
               log.debug("writing: " + toHex(connectResponse));
               socket.write(connectResponse);
               log.debug("connected, starting pump");
@@ -161,10 +163,5 @@ public class Socks4Proxy extends TestProxyBase {
       server.close();
       server = null;
     }
-  }
-
-  @Override
-  public int getPort() {
-    return PORT;
   }
 }

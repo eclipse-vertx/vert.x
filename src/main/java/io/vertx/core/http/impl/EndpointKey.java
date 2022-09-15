@@ -13,6 +13,8 @@ package io.vertx.core.http.impl;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.SocketAddress;
 
+import java.util.Objects;
+
 final class EndpointKey {
 
   final boolean ssl;
@@ -38,7 +40,7 @@ final class EndpointKey {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     EndpointKey that = (EndpointKey) o;
-    return ssl == that.ssl && serverAddr.equals(that.serverAddr) && peerAddr.equals(that.peerAddr);
+    return ssl == that.ssl && serverAddr.equals(that.serverAddr) && peerAddr.equals(that.peerAddr) && equals(proxyOptions, that.proxyOptions);
   }
 
   @Override
@@ -46,6 +48,31 @@ final class EndpointKey {
     int result = ssl ? 1 : 0;
     result = 31 * result + peerAddr.hashCode();
     result = 31 * result + serverAddr.hashCode();
+    if (proxyOptions != null) {
+      result = 31 * result + hashCode(proxyOptions);
+    }
     return result;
+  }
+
+  private static boolean equals(ProxyOptions options1, ProxyOptions options2) {
+    if (options1 == options2) {
+      return true;
+    }
+    if (options1 != null && options2 != null) {
+      return Objects.equals(options1.getHost(), options2.getHost()) &&
+        options1.getPort() == options2.getPort() &&
+        Objects.equals(options1.getUsername(), options2.getUsername()) &&
+        Objects.equals(options1.getPassword(), options2.getPassword());
+    }
+    return false;
+  }
+
+  private static int hashCode(ProxyOptions options) {
+    if (options.getUsername() != null && options.getPassword() != null) {
+      return Objects.hash(options.getHost(), options.getPort(), options.getType(), options.getUsername(), options.getPassword());
+    } else {
+      Objects.hash(options.getHost(), options.getPort(), options.getType());
+    }
+    return 0;
   }
 }

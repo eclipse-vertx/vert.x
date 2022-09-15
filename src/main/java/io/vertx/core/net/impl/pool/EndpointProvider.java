@@ -17,15 +17,15 @@ import io.vertx.core.impl.ContextInternal;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface EndpointProvider<K, C> {
+public interface EndpointProvider<C> {
 
   /**
    * Create an endpoint tracked by the {@link ConnectionManager}.
    *
+   * @param ctx     the creating context
    * @param dispose the callback to signal this endpoint should be destroyed
-   * @param ctx the creating context
    * @return the created endpoint
    */
-  Endpoint<C> create(K key, ContextInternal ctx, Runnable dispose);
+  Endpoint<C> create(ContextInternal ctx, Runnable dispose);
 
 }
