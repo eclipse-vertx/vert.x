@@ -526,7 +526,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
             }
           }
           if (drain != null) {
-            drain.handle(null);
+            context.emit(drain);
           }
           if (listener != null) {
             listener.operationComplete(future);

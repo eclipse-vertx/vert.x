@@ -6207,17 +6207,22 @@ public abstract class HttpTest extends HttpTestBase {
     client.request(requestOptions).onComplete(onSuccess(req1 -> {
       assertTrue(req1.reset());
       new Thread(() -> {
+        Context ctx = vertx.getOrCreateContext();
         client.request(requestOptions).onComplete(onSuccess(req2 -> {
+          assertSame(ctx, vertx.getOrCreateContext());
           req2.setChunked(true);
           while (!req2.writeQueueFull()) {
             req2.write(chunk);
           }
           resume.complete();
           req2.drainHandler(v -> {
+            assertSame(ctx, vertx.getOrCreateContext());
             req2.end();
           });
           req2.response(onSuccess(resp -> {
+            assertSame(ctx, vertx.getOrCreateContext());
             resp.end(onSuccess(v -> {
+              assertSame(ctx, vertx.getOrCreateContext());
               testComplete();
             }));
           }));
