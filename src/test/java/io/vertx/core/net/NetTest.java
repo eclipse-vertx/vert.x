@@ -2991,7 +2991,7 @@ public class NetTest extends VertxTestBase {
     server.connectHandler(sock -> {
 
     });
-    proxy = new SocksProxy(null);
+    proxy = new SocksProxy();
     proxy.start(vertx);
     server.listen(1234, "localhost", ar -> {
       assertTrue(ar.succeeded());
@@ -3020,7 +3020,7 @@ public class NetTest extends VertxTestBase {
     server.connectHandler(sock -> {
 
     });
-    proxy = new SocksProxy("username");
+    proxy = new SocksProxy().username("username");
     proxy.start(vertx);
     server.listen(1234, "localhost", ar -> {
       assertTrue(ar.succeeded());
@@ -3054,7 +3054,7 @@ public class NetTest extends VertxTestBase {
     server.connectHandler(sock -> {
 
     });
-    proxy = new SocksProxy(null);
+    proxy = new SocksProxy();
     proxy.start(vertx);
     server.listen(ar -> {
       assertTrue(ar.succeeded());
@@ -3088,7 +3088,7 @@ public class NetTest extends VertxTestBase {
     server.connectHandler(sock -> {
 
     });
-    proxy = new SocksProxy(null);
+    proxy = new SocksProxy();
     proxy.start(vertx);
     server.listen(ar -> {
       assertTrue(ar.succeeded());
@@ -3116,7 +3116,7 @@ public class NetTest extends VertxTestBase {
     server.connectHandler(sock -> {
 
     });
-    proxy = new HttpProxy(null);
+    proxy = new HttpProxy();
     proxy.start(vertx);
     server.listen(1234, "localhost", ar -> {
       assertTrue(ar.succeeded());
@@ -3144,7 +3144,7 @@ public class NetTest extends VertxTestBase {
     server.connectHandler(sock -> {
 
     });
-    proxy = new Socks4Proxy(null);
+    proxy = new Socks4Proxy();
     proxy.start(vertx);
     server.listen(1234, "localhost", ar -> {
       assertTrue(ar.succeeded());
@@ -3173,7 +3173,7 @@ public class NetTest extends VertxTestBase {
     server.connectHandler(sock -> {
 
     });
-    proxy = new Socks4Proxy("username");
+    proxy = new Socks4Proxy().username("username");
     proxy.start(vertx);
     server.listen(1234, "localhost", ar -> {
       assertTrue(ar.succeeded());
@@ -3201,7 +3201,7 @@ public class NetTest extends VertxTestBase {
     server.connectHandler(sock -> {
 
     });
-    proxy = new Socks4Proxy(null).start(vertx);
+    proxy = new Socks4Proxy().start(vertx);
     server.listen(1234, "localhost", ar -> {
       assertTrue(ar.succeeded());
       client.connect(1234, "127.0.0.1", ar2 -> {
@@ -3226,7 +3226,7 @@ public class NetTest extends VertxTestBase {
     server.connectHandler(sock -> {
 
     });
-    proxy = new HttpProxy(null);
+    proxy = new HttpProxy();
     proxy.start(vertx);
     server.listen(1234, "localhost", onSuccess(s -> {
       client.connect(1234, "example.com", onSuccess(so -> {

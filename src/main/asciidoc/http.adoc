@@ -1941,8 +1941,8 @@ Proxy options can also be set per request:
 {@link examples.HTTPExamples#perRequestProxyOptions}
 ----
 
-NOTE: A given host should always use the same proxy options: as HTTP requests are pooled, per request proxy
-options are used when establishing the connection
+NOTE: client connection pooling is aware of proxies (including authentication), consequently two requests to the same host through different proxies
+do not share the same pooled connection
 
 You can use {@link io.vertx.core.http.HttpClientOptions#setNonProxyHosts} to configure a list of host bypassing
 the proxy. The lists accept `*` wildcard for matching domains:

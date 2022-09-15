@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://oss.lehmann.cx/">Alexander Lehmann</a>
  */
-public class SocksProxy extends TestProxyBase {
+public class SocksProxy extends TestProxyBase<SocksProxy> {
 
   private static final Logger log = LoggerFactory.getLogger(SocksProxy.class);
 
@@ -53,12 +53,13 @@ public class SocksProxy extends TestProxyBase {
   private static final Buffer authSuccess = Buffer.buffer(new byte[] { 1, 0 });
   private static final Buffer authFailed = Buffer.buffer(new byte[] { 1, 1 });
 
-  private static final int PORT = 11080;
+  public static final int DEFAULT_PORT = 11080;
 
   private NetServer server;
 
-  public SocksProxy(String username) {
-    super(username);
+  @Override
+  public int defaultPort() {
+    return DEFAULT_PORT;
   }
 
   /**
@@ -70,10 +71,11 @@ public class SocksProxy extends TestProxyBase {
   @Override
   public SocksProxy start(Vertx vertx) throws Exception {
     NetServerOptions options = new NetServerOptions();
-    options.setHost("localhost").setPort(PORT);
+    options.setHost("localhost").setPort(port);
     server = vertx.createNetServer(options);
     server.connectHandler(socket -> {
       socket.handler(buffer -> {
+        String username = nextUserName();
         Buffer expectedInit = username == null ? clientInit : clientInitAuth;
         if (!buffer.equals(expectedInit)) {
           throw new IllegalStateException("expected " + toHex(expectedInit) + ", got " + toHex(buffer));
@@ -121,6 +123,7 @@ public class SocksProxy extends TestProxyBase {
           NetClient netClient = vertx.createNetClient(new NetClientOptions());
           netClient.connect(port, host, result -> {
             if (result.succeeded()) {
+              localAddresses.add(result.result().localAddress().toString());
               log.debug("writing: " + toHex(connectResponse));
               socket.write(connectResponse);
               log.debug("connected, starting pump");
@@ -200,10 +203,5 @@ public class SocksProxy extends TestProxyBase {
       server.close();
       server = null;
     }
-  }
-
-  @Override
-  public int getPort() {
-    return PORT;
   }
 }

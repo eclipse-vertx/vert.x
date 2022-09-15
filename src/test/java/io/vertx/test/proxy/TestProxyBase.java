@@ -14,19 +14,69 @@ package io.vertx.test.proxy;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.net.SocketAddress;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * @author <a href="http://oss.lehmann.cx/">Alexander Lehmann</a>
  *
  */
-public abstract class TestProxyBase {
+public abstract class TestProxyBase<P extends TestProxyBase<P>> {
 
-  protected final String username;
+  private Supplier<String> username;
+  protected int port;
   protected String lastUri;
   protected String forceUri;
+  protected List<String> localAddresses = Collections.synchronizedList(new ArrayList<>());
 
-  public TestProxyBase(String username) {
+  public TestProxyBase() {
+    port = defaultPort();
+  }
+
+  public P username(String username) {
+    this.username = () -> username;
+    return (P) this;
+  }
+
+  public P username(Supplier<String> username) {
     this.username = username;
+    return (P) this;
+  }
+
+  public P username(Collection<String> username) {
+    Iterator<String> it = username.iterator();
+    this.username = () -> it.hasNext() ? it.next() : null;
+    return (P) this;
+  }
+
+  public String nextUserName() {
+    return username != null ? username.get() : null;
+  }
+
+  public P port(int port) {
+    this.port = port;
+    return (P)this;
+  }
+
+  public int port() {
+    return port;
+  }
+
+  public abstract int defaultPort();
+
+  public String lastLocalAddress() {
+    int idx = localAddresses.size();
+    return idx == 0 ? null : localAddresses.get(idx - 1);
+  }
+
+  public List<String> localAddresses() {
+    return localAddresses;
   }
 
   /**
@@ -58,8 +108,6 @@ public abstract class TestProxyBase {
   public MultiMap getLastRequestHeaders() {
     throw new UnsupportedOperationException();
   }
-
-  public abstract int getPort();
 
   public abstract TestProxyBase start(Vertx vertx) throws Exception;
   public abstract void stop();
