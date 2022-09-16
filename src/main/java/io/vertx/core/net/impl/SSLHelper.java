@@ -18,6 +18,7 @@ import io.netty.handler.ssl.OpenSsl;
 import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.handler.ssl.SslProvider;
 import io.netty.util.Mapping;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -39,6 +40,7 @@ import io.vertx.core.net.SSLEngineOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.TCPSSLOptions;
 import io.vertx.core.net.TrustOptions;
+import io.vertx.core.spi.tls.DefaultSslContextFactory;
 import io.vertx.core.spi.tls.SslContextFactory;
 
 import javax.net.ssl.*;
@@ -222,7 +224,7 @@ public class SSLHelper {
           p.complete(sslProvider);
         })).onComplete(promise);
       } else {
-        fut = Future.succeededFuture();
+        fut = Future.succeededFuture(() -> new DefaultSslContextFactory(SslProvider.JDK, false));
       }
       sslProvider = fut;
     }

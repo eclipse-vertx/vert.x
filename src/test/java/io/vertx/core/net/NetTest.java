@@ -3293,6 +3293,23 @@ public class NetTest extends VertxTestBase {
     await();
   }
 
+  /**
+   * Test that NetSocket.upgradeToSsl() should fail the handler if no TLS configuration was set.
+   */
+  @Test
+  public void testUpgradeToSSLIncorrectClientOptions() {
+    server.close();
+    server = vertx.createNetServer(new NetServerOptions().setSsl(true).setPort(4043)
+      .setKeyCertOptions(Cert.SERVER_JKS_ROOT_CA.get()));
+    NetClient client = vertx.createNetClient();
+    server.connectHandler(ns -> {}).listen(onSuccess(v -> {
+      client.connect(4043, "127.0.0.1", onSuccess(ns -> {
+        ns.upgradeToSsl(onFailure(err -> client.close(onSuccess(s -> testComplete()))));
+      }));
+    }));
+    await();
+  }
+
   @Test
   public void testClientLocalAddress() {
     String expectedAddress = TestUtils.loopbackAddress();
