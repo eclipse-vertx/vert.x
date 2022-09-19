@@ -5030,6 +5030,31 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testSendFileWithConnectionCloseHeader() throws Exception {
+    String content = TestUtils.randomUnicodeString(1024 * 1024 * 2);
+    sendFile("test-send-file.html", content, false,
+      () -> client.request(requestOptions).map(req -> req.putHeader(HttpHeaders.CONNECTION, "close")));
+  }
+
+  @Test
+  public void testResponseEndHandlersConnectionClose() {
+    waitFor(2);
+    server.requestHandler(req -> {
+      req.response().endHandler(v -> complete());
+      req.response().end();
+    }).listen(testAddress, onSuccess(server ->
+      client.request(requestOptions)
+        .onComplete(onSuccess(req -> {
+          req.putHeader(HttpHeaders.CONNECTION, "close");
+          req.send(onSuccess(res -> {
+            assertEquals(200, res.statusCode());
+            complete();
+          }));
+        }))));
+    await();
+  }
+
+  @Test
   public void testUnsolicitedHttpResponse() throws Exception {
     waitFor(2);
     NetServer server = vertx.createNetServer().connectHandler(so -> {

@@ -694,24 +694,6 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testResponseEndHandlersConnectionClose() {
-    waitFor(2);
-    server.requestHandler(req -> {
-      req.response().endHandler(v -> complete());
-      req.response().end();
-    }).listen(testAddress, onSuccess(server ->
-      client.request(requestOptions)
-      .onComplete(onSuccess(req -> {
-        req.putHeader(HttpHeaders.CONNECTION, "close");
-        req.send(onSuccess(res -> {
-          assertEquals(200, res.statusCode());
-          complete();
-        }));
-      }))));
-    await();
-  }
-
-  @Test
   public void testAbsoluteURI() {
     testURIAndPath("http://localhost:" + DEFAULT_HTTP_PORT + "/this/is/a/path/foo.html", "/this/is/a/path/foo.html");
   }
@@ -1996,14 +1978,7 @@ public abstract class HttpTest extends HttpTestBase {
       () -> client.request(requestOptions));
   }
 
-  @Test
-  public void testSendFileWithConnectionCloseHeader() throws Exception {
-    String content = TestUtils.randomUnicodeString(1024 * 1024 * 2);
-    sendFile("test-send-file.html", content, false,
-      () -> client.request(requestOptions).map(req -> req.putHeader(HttpHeaders.CONNECTION, "close")));
-  }
-
-  private void sendFile(String fileName, String contentExpected, boolean useHandler, Supplier<Future<HttpClientRequest>> requestFact) throws Exception {
+  protected void sendFile(String fileName, String contentExpected, boolean useHandler, Supplier<Future<HttpClientRequest>> requestFact) throws Exception {
     waitFor(2);
     File fileToSend = setupFile(fileName, contentExpected);
     server.requestHandler(req -> {
