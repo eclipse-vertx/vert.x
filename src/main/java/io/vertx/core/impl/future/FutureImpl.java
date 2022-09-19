@@ -17,7 +17,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.NoStackTraceThrowable;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Objects;
 
 /**
@@ -177,12 +177,11 @@ class FutureImpl<T> extends FutureBase<T> {
           ListenerArray<T> listeners;
           if (this.listener instanceof FutureImpl.ListenerArray) {
             listeners = (ListenerArray<T>) this.listener;
+            listeners.add(listener);
           } else {
-            listeners = new ListenerArray<>();
-            listeners.add(this.listener);
+            listeners = new ListenerArray<>(this.listener, listener);
             this.listener = listeners;
           }
-          listeners.add(listener);
         }
         return;
       }
@@ -255,16 +254,37 @@ class FutureImpl<T> extends FutureBase<T> {
     sb.append(value);
   }
 
-  private static class ListenerArray<T> extends ArrayList<Listener<T>> implements Listener<T> {
+  private static class ListenerArray<T> implements Listener<T> {
+
+    Object[] elements;
+    int size; // actual number of listeners in elements array
+
+    ListenerArray(Listener<T> first, Listener<T> second) {
+      elements = new Object[]{first, second, null, null};
+      size = 2;
+    }
+
+    void add(Listener<T> listener) {
+      if (size == elements.length) {
+        elements = Arrays.copyOf(elements, size + (size >> 1));
+      }
+      elements[size++] = listener;
+    }
+
     @Override
+    @SuppressWarnings("unchecked")
     public void onSuccess(T value) {
-      for (Listener<T> handler : this) {
+      for (int i = 0; i < size; i++) {
+        Listener<T> handler = (Listener<T>) elements[i];
         handler.onSuccess(value);
       }
     }
+
     @Override
+    @SuppressWarnings("unchecked")
     public void onFailure(Throwable failure) {
-      for (Listener<T> handler : this) {
+      for (int i = 0; i < size; i++) {
+        Listener<T> handler = (Listener<T>) elements[i];
         handler.onFailure(failure);
       }
     }
