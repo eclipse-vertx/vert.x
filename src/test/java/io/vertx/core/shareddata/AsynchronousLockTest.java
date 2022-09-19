@@ -209,24 +209,23 @@ public class AsynchronousLockTest extends VertxTestBase {
   }
 
   @Test
-  public void testReleaseTwice() {
-    waitFor(3);
+  public void testReleaseTwice() throws Exception {
+    CountDownLatch latch = new CountDownLatch(2);
     AtomicInteger count = new AtomicInteger(); // success lock count
     getVertx().sharedData().getLock("foo", onSuccess(lock1 -> {
       count.incrementAndGet();
-      complete();
       for (int i = 0; i < 2; i++) {
         getVertx().sharedData().getLockWithTimeout("foo", 10, ar -> {
           if (ar.succeeded()) {
             count.incrementAndGet();
           }
-          complete();
+          latch.countDown();
         });
       }
       lock1.release();
       lock1.release();
     }));
-    await();
+    awaitLatch(latch);
     assertEquals(2, count.get());
   }
 
