@@ -71,8 +71,7 @@ final class EndpointKey {
     if (options.getUsername() != null && options.getPassword() != null) {
       return Objects.hash(options.getHost(), options.getPort(), options.getType(), options.getUsername(), options.getPassword());
     } else {
-      Objects.hash(options.getHost(), options.getPort(), options.getType());
+      return Objects.hash(options.getHost(), options.getPort(), options.getType());
     }
-    return 0;
   }
 }
