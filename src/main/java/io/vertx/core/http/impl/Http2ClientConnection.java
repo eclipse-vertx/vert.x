@@ -255,21 +255,15 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     @Override
     void doWriteData(ByteBuf chunk, boolean end, Handler<AsyncResult<Void>> handler) {
       super.doWriteData(chunk, end, handler);
-      if (end) {
-        endRequest();
-      }
     }
 
     @Override
     void doWriteHeaders(Http2Headers headers, boolean end, Handler<AsyncResult<Void>> handler) {
       isConnect = "CONNECT".contentEquals(headers.method());
       super.doWriteHeaders(headers, end, handler);
-      if (end) {
-        endRequest();
-      }
     }
 
-    protected void endRequest() {
+    protected void endWritten() {
       requestEnded = true;
       if (conn.metrics != null) {
         conn.metrics.requestEnd(metric, bytesWritten());

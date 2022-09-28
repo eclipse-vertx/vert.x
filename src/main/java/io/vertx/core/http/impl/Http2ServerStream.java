@@ -35,6 +35,8 @@ abstract class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection>
   protected final String host;
   protected final Http2ServerResponse response;
   private Object metric;
+  private boolean requestEnded;
+  private boolean responseEnded;
 
   Http2ServerStream(Http2ServerConnection conn,
                     ContextInternal context,
@@ -96,6 +98,7 @@ abstract class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection>
 
   @Override
   void onEnd(MultiMap trailers) {
+    requestEnded = true;
     if (Metrics.METRICS_ENABLED) {
       HttpServerMetrics metrics = conn.metrics();
       if (metrics != null) {
@@ -130,18 +133,24 @@ abstract class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection>
   }
 
   @Override
+  protected void endWritten() {
+    responseEnded = true;
+    if (METRICS_ENABLED) {
+      HttpServerMetrics metrics = conn.metrics();
+      if (metrics != null) {
+        metrics.responseEnd(metric, response, bytesWritten());
+      }
+    }
+  }
+
+  @Override
   void handleClose(HttpClosedException ex) {
     super.handleClose(ex);
     if (METRICS_ENABLED) {
       HttpServerMetrics metrics = conn.metrics();
-      if (metrics != null) {
-        // Null in case of push response : handle this case
-        boolean failed = !response.ended();
-        if (failed) {
-          metrics.requestReset(metric);
-        } else {
-          metrics.responseEnd(metric, response, bytesWritten());
-        }
+      // Null in case of push response : handle this case
+      if (metrics != null && (!requestEnded || !responseEnded)) {
+        metrics.requestReset(metric);
       }
     }
   }
@@ -151,9 +160,9 @@ abstract class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection>
   }
 
   HttpServerRequest routed(String route) {
-    if (METRICS_ENABLED && !response.ended()) {
+    if (METRICS_ENABLED) {
       HttpServerMetrics metrics = conn.metrics();
-      if (metrics != null) {
+      if (metrics != null && !responseEnded) {
         metrics.requestRouted(metric, route);
       }
     }
