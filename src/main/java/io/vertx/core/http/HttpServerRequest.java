@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
 public interface HttpServerRequest extends ReadStream<Buffer> {
 
   /**
-   * The default invalid request handler, it uses uses the {@link #decoderResult()} cause and the request information
+   * The default invalid request handler, it uses the {@link #decoderResult()} cause and the request information
    * to determine the status code of the response to be sent.
    *
    * <ul>
