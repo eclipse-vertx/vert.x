@@ -145,6 +145,8 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
           sharedNetServers.put(id, this);
         }
 
+        listenContext.addCloseHook(this);
+
         // Initialize SSL before binding
         sslHelper.init(listenContext).onComplete(ar -> {
           if (ar.succeeded()) {
@@ -179,7 +181,6 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
                 if (bindAddress.isInetSocket()) {
                   actualPort = ((InetSocketAddress)ch.localAddress()).getPort();
                 }
-                listenContext.addCloseHook(this);
                 metrics = createMetrics(localAddress);
                 promise.complete(ch);
               } else {

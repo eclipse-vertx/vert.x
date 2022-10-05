@@ -28,6 +28,8 @@ import io.vertx.core.net.JdkSSLEngineOptions;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.SocketAddress;
+import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakemetrics.*;
@@ -1208,4 +1210,31 @@ public class MetricsTest extends VertxTestBase {
     awaitLatch(latch);
     assertEquals(0, metrics.connectionCount());
   }
+
+  @Test
+  public void testServerLifecycle() {
+    AtomicInteger lifecycle = new AtomicInteger();
+    Vertx vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(new MetricsOptions()
+      .setEnabled(true)
+      .setFactory(options -> new VertxMetrics() {
+      @Override
+      public HttpServerMetrics<?, ?, ?> createHttpServerMetrics(HttpServerOptions options, SocketAddress localAddress) {
+        lifecycle.compareAndSet(0, 1);
+        return new HttpServerMetrics<Object, Object, Object>() {
+          @Override
+          public void close() {
+            lifecycle.compareAndSet(1, 2);
+            HttpServerMetrics.super.close();
+          }
+        };
+      }
+    })));
+    vertx.createHttpServer().requestHandler(req -> {}).listen(8080, "localhost");
+    vertx.close().onComplete(onSuccess(v -> {
+      assertEquals(2, lifecycle.get());
+      testComplete();
+    }));
+    await();
+  }
+
 }
