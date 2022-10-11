@@ -175,12 +175,6 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
     return metrics;
   }
 
-  private void checkClosed() {
-    if (closeFuture.isClosed()) {
-      throw new IllegalStateException("Client is closed");
-    }
-  }
-
   @Override
   public NetClient connect(SocketAddress remoteAddress, String serverName, Handler<AsyncResult<NetSocket>> connectHandler) {
     Objects.requireNonNull(connectHandler, "No null connectHandler accepted");
@@ -197,6 +191,9 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
   }
 
   private void connect(SocketAddress remoteAddress, String serverName, Promise<NetSocket> connectHandler, ContextInternal ctx) {
+    if (closeFuture.isClosed()) {
+      throw new IllegalStateException("Client is closed");
+    }
     SocketAddress peerAddress = remoteAddress;
     String peerHost = peerAddress.host();
     if (peerHost != null && peerHost.endsWith(".")) {
@@ -235,14 +232,17 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
                                 Promise<NetSocket> connectHandler,
                                 ContextInternal context,
                                 int remainingAttempts) {
-    checkClosed();
-    sslHelper.init(context).onComplete(ar -> {
-      if (ar.succeeded()) {
-        connectInternal2(proxyOptions, remoteAddress, peerAddress, serverName, ssl, useAlpn, registerWriteHandlers, connectHandler, context, remainingAttempts);
-      } else {
-        connectHandler.fail(ar.cause());
-      }
-    });
+    if (closeFuture.isClosed()) {
+      connectHandler.fail(new IllegalStateException("Client is closed"));
+    } else {
+      sslHelper.init(context).onComplete(ar -> {
+        if (ar.succeeded()) {
+          connectInternal2(proxyOptions, remoteAddress, peerAddress, serverName, ssl, useAlpn, registerWriteHandlers, connectHandler, context, remainingAttempts);
+        } else {
+          connectHandler.fail(ar.cause());
+        }
+      });
+    }
   }
 
   private void connectInternal2(ProxyOptions proxyOptions,
