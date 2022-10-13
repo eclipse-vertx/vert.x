@@ -14,6 +14,7 @@ package io.vertx.core.http;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.handler.codec.TooLongFrameException;
+import io.netty.handler.codec.http.TooLongHttpHeaderException;
 import io.vertx.core.*;
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
@@ -3684,7 +3685,7 @@ public class Http1xTest extends HttpTest {
       }
     }, errors -> {
       assertEquals(2, errors.size());
-      assertEquals(TooLongFrameException.class, errors.get(0).getClass());
+      assertEquals(TooLongHttpHeaderException.class, errors.get(0).getClass());
     });
   }
 
@@ -4887,6 +4888,32 @@ public class Http1xTest extends HttpTest {
         });
       }).end();
     }
+    await();
+  }
+
+  @Test
+  public void testSendFileWithConnectionCloseHeader() throws Exception {
+    String content = TestUtils.randomUnicodeString(1024 * 1024 * 2);
+    sendFile("test-send-file.html", content, false,
+      handler -> client
+        .request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, handler)
+        .putHeader(HttpHeaders.CONNECTION, "close"));
+  }
+
+  @Test
+  public void testResponseEndHandlersConnectionClose() {
+    waitFor(2);
+    server.requestHandler(req -> {
+      req.response().endHandler(v -> complete());
+      req.response().end();
+    }).listen(onSuccess(server ->
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", res -> {
+          assertEquals(200, res.statusCode());
+          complete();
+        })
+        .exceptionHandler(this::fail)
+        .putHeader(HttpHeaders.CONNECTION, "close")
+        .end()));
     await();
   }
 
