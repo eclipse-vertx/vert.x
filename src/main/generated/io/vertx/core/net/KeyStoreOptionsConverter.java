@@ -30,6 +30,11 @@ public class KeyStoreOptionsConverter {
             obj.setAliasPassword((String)member.getValue());
           }
           break;
+        case "certRefreshRateInSeconds":
+          if (member.getValue() instanceof Number) {
+            obj.setCertRefreshRateInSeconds(((Number)member.getValue()).longValue());
+          }
+          break;
         case "password":
           if (member.getValue() instanceof String) {
             obj.setPassword((String)member.getValue());
@@ -43,6 +48,11 @@ public class KeyStoreOptionsConverter {
         case "provider":
           if (member.getValue() instanceof String) {
             obj.setProvider((String)member.getValue());
+          }
+          break;
+        case "reloadCerts":
+          if (member.getValue() instanceof Boolean) {
+            obj.setReloadCerts((Boolean)member.getValue());
           }
           break;
         case "type":
@@ -70,6 +80,9 @@ public class KeyStoreOptionsConverter {
     if (obj.getAliasPassword() != null) {
       json.put("aliasPassword", obj.getAliasPassword());
     }
+    if (obj.getCertRefreshRateInSeconds() != null) {
+      json.put("certRefreshRateInSeconds", obj.getCertRefreshRateInSeconds());
+    }
     if (obj.getPassword() != null) {
       json.put("password", obj.getPassword());
     }
@@ -78,6 +91,9 @@ public class KeyStoreOptionsConverter {
     }
     if (obj.getProvider() != null) {
       json.put("provider", obj.getProvider());
+    }
+    if (obj.getReloadCerts() != null) {
+      json.put("reloadCerts", obj.getReloadCerts());
     }
     if (obj.getType() != null) {
       json.put("type", obj.getType());

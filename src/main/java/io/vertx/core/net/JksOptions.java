@@ -83,6 +83,16 @@ public class JksOptions extends KeyStoreOptionsBase {
   }
 
   @Override
+  public JksOptions setReloadCerts(Boolean reloadCerts) {
+    return (JksOptions) super.setReloadCerts(reloadCerts);
+  }
+
+  @Override
+  public JksOptions setCertRefreshRateInSeconds(Long certRefreshRateInSeconds) {
+    return (JksOptions) super.setCertRefreshRateInSeconds(certRefreshRateInSeconds);
+  }
+
+  @Override
   public JksOptions copy() {
     return new JksOptions(this);
   }

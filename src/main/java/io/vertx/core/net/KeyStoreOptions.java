@@ -137,6 +137,16 @@ public class KeyStoreOptions extends KeyStoreOptionsBase {
   }
 
   @Override
+  public KeyStoreOptions setReloadCerts(Boolean reloadCerts) {
+    return (KeyStoreOptions) super.setReloadCerts(reloadCerts);
+  }
+
+  @Override
+  public KeyStoreOptions setCertRefreshRateInSeconds(Long certRefreshRateInSeconds) {
+    return (KeyStoreOptions) super.setCertRefreshRateInSeconds(certRefreshRateInSeconds);
+  }
+
+  @Override
   public KeyStoreOptions copy() {
     return new KeyStoreOptions(this);
   }

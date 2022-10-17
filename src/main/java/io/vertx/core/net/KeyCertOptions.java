@@ -11,10 +11,12 @@
 
 package io.vertx.core.net;
 
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.Vertx;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.X509KeyManager;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 /**
@@ -38,6 +40,35 @@ public interface KeyCertOptions {
    * @return the key manager factory
    */
   KeyManagerFactory getKeyManagerFactory(Vertx vertx) throws Exception;
+
+  /**
+   * This method is used to check if context reloading is enabled.
+   */
+  default Boolean getReloadCerts() {
+    return Boolean.FALSE;
+  }
+
+  /**
+   * This method is used by {@link io.vertx.core.net.impl.SSLHelper} to check if context reloading is needed.
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  default boolean isReloadNeeded() {
+    return false;
+  }
+
+  /**
+   * This method returns default certificate refresh rate. By default, set to 5 hrs.
+   */
+  default Long getCertRefreshRateInSeconds() {
+    return TimeUnit.HOURS.toSeconds(5);
+  }
+
+  /**
+   * This method is used by {@link io.vertx.core.net.impl.SSLHelper} for reloading certs present in cert/keystore paths.
+   */
+  default void reload() {
+    throw new UnsupportedOperationException("Default reload no-op method called");
+  }
 
   /**
    * Returns a function that maps SNI server names to {@link X509KeyManager} instance.

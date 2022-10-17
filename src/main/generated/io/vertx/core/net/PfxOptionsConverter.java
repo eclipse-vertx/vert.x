@@ -30,6 +30,11 @@ public class PfxOptionsConverter {
             obj.setAliasPassword((String)member.getValue());
           }
           break;
+        case "certRefreshRateInSeconds":
+          if (member.getValue() instanceof Number) {
+            obj.setCertRefreshRateInSeconds(((Number)member.getValue()).longValue());
+          }
+          break;
         case "password":
           if (member.getValue() instanceof String) {
             obj.setPassword((String)member.getValue());
@@ -38,6 +43,11 @@ public class PfxOptionsConverter {
         case "path":
           if (member.getValue() instanceof String) {
             obj.setPath((String)member.getValue());
+          }
+          break;
+        case "reloadCerts":
+          if (member.getValue() instanceof Boolean) {
+            obj.setReloadCerts((Boolean)member.getValue());
           }
           break;
         case "value":
@@ -60,11 +70,17 @@ public class PfxOptionsConverter {
     if (obj.getAliasPassword() != null) {
       json.put("aliasPassword", obj.getAliasPassword());
     }
+    if (obj.getCertRefreshRateInSeconds() != null) {
+      json.put("certRefreshRateInSeconds", obj.getCertRefreshRateInSeconds());
+    }
     if (obj.getPassword() != null) {
       json.put("password", obj.getPassword());
     }
     if (obj.getPath() != null) {
       json.put("path", obj.getPath());
+    }
+    if (obj.getReloadCerts() != null) {
+      json.put("reloadCerts", obj.getReloadCerts());
     }
     if (obj.getValue() != null) {
       json.put("value", BASE64_ENCODER.encodeToString(obj.getValue().getBytes()));

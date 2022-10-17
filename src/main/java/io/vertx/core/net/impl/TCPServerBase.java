@@ -29,6 +29,7 @@ import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.MetricsProvider;
@@ -38,6 +39,7 @@ import java.net.InetSocketAddress;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Base class for TCP servers
@@ -82,7 +84,29 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
   protected abstract Handler<Channel> childHandler(ContextInternal context, SocketAddress socketAddress, SSLHelper sslHelper);
 
   protected SSLHelper createSSLHelper() {
-    return new SSLHelper(options, null);
+    KeyCertOptions keyCertOptions = options.getKeyCertOptions();
+    SSLHelper sslHelper = new SSLHelper(options, null);
+    startPeriodicSSLContextReload(keyCertOptions, sslHelper);
+    return sslHelper;
+  }
+
+  protected void startPeriodicSSLContextReload(KeyCertOptions keyCertOptions, SSLHelper sslHelper) {
+    if (keyCertOptions == null) {
+      return;
+    }
+
+    // start periodic context reload
+    if (keyCertOptions.getReloadCerts() != null && keyCertOptions.getReloadCerts()) {
+      vertx.setPeriodic(TimeUnit.SECONDS.toMillis(keyCertOptions.getCertRefreshRateInSeconds()), handle -> {
+        vertx.executeBlocking(future -> {
+          try {
+            sslHelper.reloadContext();
+          } catch (Exception e) {
+            log.warn("SSL context reloading failed with exception {}", e);
+          }
+        });
+      });
+    }
   }
 
   public synchronized SSLHelper sslHelper() {

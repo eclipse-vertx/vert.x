@@ -22,9 +22,14 @@ import io.vertx.core.net.impl.KeyStoreHelper;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.X509KeyManager;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 /**
@@ -102,6 +107,10 @@ public class PemKeyCertOptions implements KeyCertOptions {
   private List<Buffer> keyValues;
   private List<String> certPaths;
   private List<Buffer> certValues;
+  private Boolean reloadCerts;
+  private Long certRefreshRateInSeconds;
+  private Map<String, Long> keyFilesLastModifiedTimestamps;
+  private Map<String, Long> certFilesLastModifiedTimestamps;
 
   /**
    * Default constructor
@@ -116,6 +125,8 @@ public class PemKeyCertOptions implements KeyCertOptions {
     keyValues = new ArrayList<>();
     certPaths = new ArrayList<>();
     certValues = new ArrayList<>();
+    keyFilesLastModifiedTimestamps = new HashMap<>();
+    certFilesLastModifiedTimestamps = new HashMap<>();
   }
 
   /**
@@ -129,6 +140,14 @@ public class PemKeyCertOptions implements KeyCertOptions {
     this.keyValues = other.keyValues != null ? new ArrayList<>(other.keyValues) : new ArrayList<>();
     this.certPaths = other.certPaths != null ? new ArrayList<>(other.certPaths) : new ArrayList<>();
     this.certValues = other.certValues != null ? new ArrayList<>(other.certValues) : new ArrayList<>();
+    this.reloadCerts = other.reloadCerts;
+    this.certRefreshRateInSeconds = other.certRefreshRateInSeconds;
+    this.keyFilesLastModifiedTimestamps = other.keyFilesLastModifiedTimestamps != null
+                                          ? new HashMap<>(other.keyFilesLastModifiedTimestamps)
+                                          : new HashMap<>();
+    this.certFilesLastModifiedTimestamps = other.certFilesLastModifiedTimestamps != null
+                                           ? new HashMap<>(other.certFilesLastModifiedTimestamps)
+                                           : new HashMap<>();
   }
 
   /**
@@ -171,8 +190,11 @@ public class PemKeyCertOptions implements KeyCertOptions {
    */
   public PemKeyCertOptions setKeyPath(String keyPath) {
     keyPaths.clear();
+    keyFilesLastModifiedTimestamps.clear();
     if (keyPath != null) {
       keyPaths.add(keyPath);
+      long recentLastModifiedTimestamp = getLastModifiedTimestamp(keyPath);
+      keyFilesLastModifiedTimestamps.put(keyPath, recentLastModifiedTimestamp);
     }
     return this;
   }
@@ -194,7 +216,12 @@ public class PemKeyCertOptions implements KeyCertOptions {
    */
   public PemKeyCertOptions setKeyPaths(List<String> keyPaths) {
     this.keyPaths.clear();
+    this.keyFilesLastModifiedTimestamps.clear();
     this.keyPaths.addAll(keyPaths);
+    keyPaths.forEach(keyPath -> {
+      long recentLastModifiedTimestamp = getLastModifiedTimestamp(keyPath);
+      this.keyFilesLastModifiedTimestamps.put(keyPath, recentLastModifiedTimestamp);
+    });
     return this;
   }
 
@@ -208,6 +235,8 @@ public class PemKeyCertOptions implements KeyCertOptions {
   public PemKeyCertOptions addKeyPath(String keyPath) {
     Arguments.require(keyPath != null, "Null keyPath");
     keyPaths.add(keyPath);
+    long recentLastModifiedTimestamp = getLastModifiedTimestamp(keyPath);
+    keyFilesLastModifiedTimestamps.put(keyPath, recentLastModifiedTimestamp);
     return this;
   }
 
@@ -287,8 +316,11 @@ public class PemKeyCertOptions implements KeyCertOptions {
    */
   public PemKeyCertOptions setCertPath(String certPath) {
     certPaths.clear();
+    certFilesLastModifiedTimestamps.clear();
     if (certPath != null) {
       certPaths.add(certPath);
+      long recentLastModifiedTimestamp = getLastModifiedTimestamp(certPath);
+      certFilesLastModifiedTimestamps.put(certPath, recentLastModifiedTimestamp);
     }
     return this;
   }
@@ -310,7 +342,12 @@ public class PemKeyCertOptions implements KeyCertOptions {
    */
   public PemKeyCertOptions setCertPaths(List<String> certPaths) {
     this.certPaths.clear();
+    this.certFilesLastModifiedTimestamps.clear();
     this.certPaths.addAll(certPaths);
+    certPaths.forEach(certPath -> {
+      long recentLastModifiedTimestamp = getLastModifiedTimestamp(certPath);
+      this.certFilesLastModifiedTimestamps.put(certPath, recentLastModifiedTimestamp);
+    });
     return this;
   }
 
@@ -324,7 +361,20 @@ public class PemKeyCertOptions implements KeyCertOptions {
   public PemKeyCertOptions addCertPath(String certPath) {
     Arguments.require(certPath != null, "Null certPath");
     certPaths.add(certPath);
+    long recentLastModifiedTimestamp = getLastModifiedTimestamp(certPath);
+    certFilesLastModifiedTimestamps.put(certPath, recentLastModifiedTimestamp);
     return this;
+  }
+
+  private long getLastModifiedTimestamp(String path) {
+    if (path == null) {
+      return 0;
+    }
+    try {
+      return Files.getLastModifiedTime(Paths.get(path)).toMillis();
+    } catch (IOException e) {
+      return 0;
+    }
   }
 
   /**
@@ -385,6 +435,64 @@ public class PemKeyCertOptions implements KeyCertOptions {
     return this;
   }
 
+  /**
+   * Set whether certificates should be reloaded from their path.
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  public PemKeyCertOptions setReloadCerts(Boolean reloadCerts) {
+    this.reloadCerts = reloadCerts;
+    return this;
+  }
+
+  /**
+   * Set certificate refresh rate in seconds.
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  public PemKeyCertOptions setCertRefreshRateInSeconds(Long certRefreshRateInSeconds) {
+    this.certRefreshRateInSeconds = certRefreshRateInSeconds;
+    return this;
+  }
+
+  /**
+   * @return certificate refresh rate.
+   */
+  public Long getCertRefreshRateInSeconds() {
+    return this.certRefreshRateInSeconds;
+  }
+
+  /**
+   * This method is used to check if context reloading is enabled.
+   */
+  public Boolean getReloadCerts() {
+    return this.reloadCerts;
+  }
+
+  /**
+   * @return {@code boolean} indicating whether certificates/keys should be reloaded or not.
+   */
+  @Override
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  public boolean isReloadNeeded() {
+    boolean reloadNeeded = false;
+    for (String path : keyPaths) {
+      long recentLastModifiedTimestamp = getLastModifiedTimestamp(path);
+      if (keyFilesLastModifiedTimestamps.get(path) != recentLastModifiedTimestamp) {
+        reloadNeeded = true;
+        keyFilesLastModifiedTimestamps.put(path, recentLastModifiedTimestamp);
+      }
+    }
+    for (String path : certPaths) {
+      long recentLastModifiedTimestamp = getLastModifiedTimestamp(path);
+      if (certFilesLastModifiedTimestamps.get(path) != recentLastModifiedTimestamp) {
+        reloadNeeded = true;
+        certFilesLastModifiedTimestamps.put(path, recentLastModifiedTimestamp);
+      }
+    }
+    return reloadNeeded;
+  }
+
   @Override
   public PemKeyCertOptions copy() {
     return new PemKeyCertOptions(this);
@@ -405,6 +513,11 @@ public class PemKeyCertOptions implements KeyCertOptions {
       helper = new KeyStoreHelper(KeyStoreHelper.loadKeyCert(keys, certs), KeyStoreHelper.DUMMY_PASSWORD, null);
     }
     return helper;
+  }
+
+  @Override
+  public void reload() {
+    this.helper = null;
   }
 
   /**

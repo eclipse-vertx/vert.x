@@ -270,6 +270,16 @@ public class SSLHelper {
     }
   }
 
+  public void reloadContext() {
+    if (this.keyCertOptions.isReloadNeeded()) {
+      this.keyCertOptions.reload();
+      this.sslContexts = new SslContext[2];
+      this.sslContextMaps = new Map[] {
+        new ConcurrentHashMap<>(), new ConcurrentHashMap<>()
+      };
+    }
+  }
+
   public SslContext sslContext(VertxInternal vertx, String serverName, boolean useAlpn) {
     SslContext context = createContext(vertx, null, useAlpn, client, trustAll);
     return new DelegatingSslContext(context) {

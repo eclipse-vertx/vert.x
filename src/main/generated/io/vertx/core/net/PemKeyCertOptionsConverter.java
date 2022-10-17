@@ -35,6 +35,11 @@ public class PemKeyCertOptionsConverter {
             obj.setCertPaths(list);
           }
           break;
+        case "certRefreshRateInSeconds":
+          if (member.getValue() instanceof Number) {
+            obj.setCertRefreshRateInSeconds(((Number)member.getValue()).longValue());
+          }
+          break;
         case "certValue":
           if (member.getValue() instanceof String) {
             obj.setCertValue(io.vertx.core.buffer.Buffer.buffer(BASE64_DECODER.decode((String)member.getValue())));
@@ -80,6 +85,11 @@ public class PemKeyCertOptionsConverter {
             obj.setKeyValues(list);
           }
           break;
+        case "reloadCerts":
+          if (member.getValue() instanceof Boolean) {
+            obj.setReloadCerts((Boolean)member.getValue());
+          }
+          break;
       }
     }
   }
@@ -93,6 +103,9 @@ public class PemKeyCertOptionsConverter {
       JsonArray array = new JsonArray();
       obj.getCertPaths().forEach(item -> array.add(item));
       json.put("certPaths", array);
+    }
+    if (obj.getCertRefreshRateInSeconds() != null) {
+      json.put("certRefreshRateInSeconds", obj.getCertRefreshRateInSeconds());
     }
     if (obj.getCertValues() != null) {
       JsonArray array = new JsonArray();
@@ -108,6 +121,9 @@ public class PemKeyCertOptionsConverter {
       JsonArray array = new JsonArray();
       obj.getKeyValues().forEach(item -> array.add(BASE64_ENCODER.encodeToString(item.getBytes())));
       json.put("keyValues", array);
+    }
+    if (obj.getReloadCerts() != null) {
+      json.put("reloadCerts", obj.getReloadCerts());
     }
   }
 }

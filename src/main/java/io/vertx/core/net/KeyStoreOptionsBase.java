@@ -11,6 +11,7 @@
 
 package io.vertx.core.net;
 
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.VertxInternal;
@@ -20,6 +21,9 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509KeyManager;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -40,6 +44,9 @@ public abstract class KeyStoreOptionsBase implements KeyCertOptions, TrustOption
   private Buffer value;
   private String alias;
   private String aliasPassword;
+  private Boolean reloadCerts;
+  private Long certRefreshRateInSeconds;
+  private long keystoreLastModifiedTimestamp;
 
   /**
    * Default constructor
@@ -61,6 +68,8 @@ public abstract class KeyStoreOptionsBase implements KeyCertOptions, TrustOption
     this.value = other.value;
     this.alias = other.alias;
     this.aliasPassword = other.aliasPassword;
+    this.reloadCerts = other.reloadCerts;
+    this.certRefreshRateInSeconds = other.certRefreshRateInSeconds;
   }
 
   protected String getType() {
@@ -109,6 +118,62 @@ public abstract class KeyStoreOptionsBase implements KeyCertOptions, TrustOption
   }
 
   /**
+   * Set whether certificates should be reloaded from their path.
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  public KeyStoreOptionsBase setReloadCerts(Boolean reloadCerts) {
+    this.reloadCerts = reloadCerts;
+    return this;
+  }
+
+  /**
+   * Set certificate refresh rate in seconds.
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  public KeyStoreOptionsBase setCertRefreshRateInSeconds(Long certRefreshRateInSeconds) {
+    this.certRefreshRateInSeconds = certRefreshRateInSeconds;
+    return this;
+  }
+
+  /**
+   * @return certificate refresh rate.
+   */
+  public Long getCertRefreshRateInSeconds() {
+    return this.certRefreshRateInSeconds;
+  }
+
+  /**
+   * This method is used to check if context reloading is enabled.
+   */
+  public Boolean getReloadCerts() {
+    return this.reloadCerts;
+  }
+
+  /**
+   * @return {@code boolean} indicating whether certificates should be reloaded or not.
+   */
+  @Override
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  public boolean isReloadNeeded() {
+    long previousTimestamp = this.keystoreLastModifiedTimestamp;
+    this.keystoreLastModifiedTimestamp = getLastModifiedTimestamp(this.path);
+    return previousTimestamp != this.keystoreLastModifiedTimestamp;
+  }
+
+  private long getLastModifiedTimestamp(String path) {
+    if (path == null) {
+      return 0;
+    }
+    try {
+      return Files.getLastModifiedTime(Paths.get(path)).toMillis();
+    } catch (IOException e) {
+      return 0;
+    }
+  }
+
+  /**
    * Set the path to the key store
    *
    * @param path  the path
@@ -116,6 +181,7 @@ public abstract class KeyStoreOptionsBase implements KeyCertOptions, TrustOption
    */
   public KeyStoreOptionsBase setPath(String path) {
     this.path = path;
+    this.keystoreLastModifiedTimestamp = getLastModifiedTimestamp(path);
     return this;
   }
 
@@ -187,6 +253,11 @@ public abstract class KeyStoreOptionsBase implements KeyCertOptions, TrustOption
       helper = new KeyStoreHelper(KeyStoreHelper.loadKeyStore(type, provider, password, value, getAlias()), password, getAliasPassword());
     }
     return helper;
+  }
+
+  @Override
+  public void reload() {
+    this.helper = null;
   }
 
   /**

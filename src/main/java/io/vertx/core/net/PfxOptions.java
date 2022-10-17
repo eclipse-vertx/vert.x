@@ -80,6 +80,16 @@ public class PfxOptions extends KeyStoreOptionsBase {
   }
 
   @Override
+  public PfxOptions setReloadCerts(Boolean reloadCerts) {
+    return (PfxOptions) super.setReloadCerts(reloadCerts);
+  }
+
+  @Override
+  public PfxOptions setCertRefreshRateInSeconds(Long certRefreshRateInSeconds) {
+    return (PfxOptions) super.setCertRefreshRateInSeconds(certRefreshRateInSeconds);
+  }
+
+  @Override
   public PfxOptions copy() {
     return new PfxOptions(this);
   }

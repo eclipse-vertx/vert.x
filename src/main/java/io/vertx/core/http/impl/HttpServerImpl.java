@@ -21,6 +21,7 @@ import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.*;
 import io.vertx.core.spi.metrics.MetricsProvider;
@@ -200,11 +201,13 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
 
   @Override
   protected SSLHelper createSSLHelper() {
-    return new SSLHelper(options, options
-      .getAlpnVersions()
-      .stream()
-      .map(HttpVersion::alpnName)
-      .collect(Collectors.toList()));
+    KeyCertOptions keyCertOptions = options.getKeyCertOptions();
+    SSLHelper sslHelper = new SSLHelper(options, options.getAlpnVersions()
+                                                        .stream()
+                                                        .map(HttpVersion::alpnName)
+                                                        .collect(Collectors.toList()));
+    startPeriodicSSLContextReload(keyCertOptions, sslHelper);
+    return sslHelper;
   }
 
   @Override
