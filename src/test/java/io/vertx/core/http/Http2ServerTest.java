@@ -2239,6 +2239,55 @@ public class Http2ServerTest extends Http2TestBase {
   }
 
   @Test
+  public void test103EarlyHints() throws Exception {
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.putHeader("wibble", "wibble-value");
+      resp.writeEarlyHints();
+      req.bodyHandler(body -> {
+        assertEquals("the-body", body.toString());
+        resp.end();
+      });
+    });
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
+      int id = request.nextStreamId();
+      request.decoder.frameListener(new Http2EventAdapter() {
+        int count = 0;
+        @Override
+        public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+          switch (count++) {
+            case 0:
+              vertx.runOnContext(v -> {
+                assertEquals("103", headers.status().toString());
+                assertEquals("wibble-value", headers.get("wibble").toString());
+              });
+              request.encoder.writeData(request.context, id, Buffer.buffer("the-body").getByteBuf(), 0, true, request.context.newPromise());
+              request.context.flush();
+              break;
+            case 1:
+              vertx.runOnContext(v -> {
+                assertEquals("200", headers.status().toString());
+                assertEquals("wibble-value", headers.get("wibble").toString());
+                testComplete();
+              });
+              break;
+            default:
+              vertx.runOnContext(v -> {
+                fail();
+              });
+          }
+        }
+      });
+      request.encoder.writeHeaders(request.context, id, GET("/"), 0, false, request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
   public void testNetSocketConnect() throws Exception {
     waitFor(2);
     List<Integer> callbacks = Collections.synchronizedList(new ArrayList<>());

@@ -363,6 +363,12 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
+  public HttpServerResponse writeEarlyHints() {
+    conn.write103EarlyHints(headers);
+    return this;
+  }
+
+  @Override
   public Future<Void> end(String chunk) {
     return end(Buffer.buffer(chunk));
   }

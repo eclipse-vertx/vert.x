@@ -324,6 +324,18 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
+  public HttpServerResponse writeEarlyHints() {
+    synchronized (conn) {
+      checkHeadWritten();
+      DefaultHttp2Headers headers = new DefaultHttp2Headers();
+      headers.add(this.headers);
+      headers.status("103");
+      stream.writeHeaders(headers, false, null);
+      return this;
+    }
+  }
+
+  @Override
   public Future<Void> write(Buffer chunk) {
     ByteBuf buf = chunk.getByteBuf();
     Promise<Void> promise = stream.context.promise();
