@@ -110,6 +110,11 @@ public class VertxOptionsConverter {
             obj.setTracingOptions(new io.vertx.core.tracing.TracingOptions((io.vertx.core.json.JsonObject)member.getValue()));
           }
           break;
+        case "useDaemonThread":
+          if (member.getValue() instanceof Boolean) {
+            obj.setUseDaemonThread((Boolean)member.getValue());
+          }
+          break;
         case "warningExceptionTime":
           if (member.getValue() instanceof Number) {
             obj.setWarningExceptionTime(((Number)member.getValue()).longValue());
@@ -169,6 +174,9 @@ public class VertxOptionsConverter {
     json.put("quorumSize", obj.getQuorumSize());
     if (obj.getTracingOptions() != null) {
       json.put("tracingOptions", obj.getTracingOptions().toJson());
+    }
+    if (obj.getUseDaemonThread() != null) {
+      json.put("useDaemonThread", obj.getUseDaemonThread());
     }
     json.put("warningExceptionTime", obj.getWarningExceptionTime());
     if (obj.getWarningExceptionTimeUnit() != null) {

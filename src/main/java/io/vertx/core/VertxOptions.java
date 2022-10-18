@@ -113,6 +113,13 @@ public class VertxOptions {
 
   public static final boolean DEFAULT_DISABLE_TCCL = Boolean.getBoolean(DISABLE_TCCL_PROP_NAME);
 
+  /**
+   * Set default value to false for aligning with the old behavior
+   * By default, Vert.x threads are NOT daemons - we want them to prevent JVM exit so embedded user
+   * doesn't have to explicitly prevent JVM from exiting.
+   */
+  public static final boolean DEFAULT_USE_DAEMON_THREAD = false;
+
   private int eventLoopPoolSize = DEFAULT_EVENT_LOOP_POOL_SIZE;
   private int workerPoolSize = DEFAULT_WORKER_POOL_SIZE;
   private int internalBlockingPoolSize = DEFAULT_INTERNAL_BLOCKING_POOL_SIZE;
@@ -135,6 +142,7 @@ public class VertxOptions {
   private TimeUnit warningExceptionTimeUnit = DEFAULT_WARNING_EXCEPTION_TIME_UNIT;
   private TimeUnit blockedThreadCheckIntervalUnit = DEFAULT_BLOCKED_THREAD_CHECK_INTERVAL_UNIT;
   private boolean disableTCCL = DEFAULT_DISABLE_TCCL;
+  private Boolean useDaemonThread = DEFAULT_USE_DAEMON_THREAD;
 
   /**
    * Default constructor
@@ -169,6 +177,7 @@ public class VertxOptions {
     this.blockedThreadCheckIntervalUnit = other.blockedThreadCheckIntervalUnit;
     this.tracingOptions = other.tracingOptions != null ? other.tracingOptions.copy() : null;
     this.disableTCCL = other.disableTCCL;
+    this.useDaemonThread = other.useDaemonThread;
   }
 
   /**
@@ -675,6 +684,29 @@ public class VertxOptions {
     return this;
   }
 
+  /**
+   * Returns whether we want to use daemon vertx thread.
+   *
+   * @return {@code true} means daemon, {@code false} means not daemon(user), {@code null} means do
+   *         not change the daemon option of the created vertx thread.
+   */
+  public Boolean getUseDaemonThread() {
+    return useDaemonThread;
+  }
+
+  /**
+   * Mark the vertx thread as daemon thread or user thread.
+   * <p/>
+   * For keeping the old behavior, the default value is {@code false} instead of {@code null}.
+   *
+   * @param daemon {@code true} means daemon, {@code false} means not daemon(user), {@code null}
+   *        means do not change the daemon option of the created vertx thread.
+   */
+  public VertxOptions setUseDaemonThread(Boolean daemon) {
+    this.useDaemonThread = daemon;
+    return this;
+  }
+
   public JsonObject toJson() {
     JsonObject json = new JsonObject();
     VertxOptionsConverter.toJson(this, json);
@@ -706,6 +738,7 @@ public class VertxOptions {
         ", warningExceptionTimeUnit=" + warningExceptionTimeUnit +
         ", warningExceptionTime=" + warningExceptionTime +
         ", disableTCCL=" + disableTCCL +
+        ", useDaemonThread=" + useDaemonThread +
         '}';
   }
 }
