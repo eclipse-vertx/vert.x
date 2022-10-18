@@ -139,6 +139,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final VertxTracer tracer;
   private final ThreadLocal<WeakReference<ContextInternal>> stickyContext = new ThreadLocal<>();
   private final boolean disableTCCL;
+  private final Boolean useDaemonThread;
 
   VertxImpl(VertxOptions options, ClusterManager clusterManager, NodeSelector nodeSelector, VertxMetrics metrics,
             VertxTracer<?, ?> tracer, Transport transport, FileResolver fileResolver, VertxThreadFactory threadFactory,
@@ -172,6 +173,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     maxWorkerExecTime = options.getMaxWorkerExecuteTime();
     maxWorkerExecTimeUnit = options.getMaxWorkerExecuteTimeUnit();
     disableTCCL = options.getDisableTCCL();
+    useDaemonThread = options.getUseDaemonThread();
 
     this.executorServiceFactory = executorServiceFactory;
     this.threadFactory = threadFactory;
@@ -1126,9 +1128,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return runnable -> {
       VertxThread thread = threadFactory.newVertxThread(runnable, prefix + threadCount.getAndIncrement(), worker, maxExecuteTime, maxExecuteTimeUnit);
       checker.registerThread(thread, thread);
-      // Vert.x threads are NOT daemons - we want them to prevent JVM exit so embedded user doesn't
-      // have to explicitly prevent JVM from exiting.
-      thread.setDaemon(false);
+      if (useDaemonThread != null && thread.isDaemon() != useDaemonThread) {
+        thread.setDaemon(useDaemonThread);
+      }
       return thread;
     };
   }
