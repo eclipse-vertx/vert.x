@@ -2622,6 +2622,7 @@ public abstract class HttpTest extends HttpTestBase {
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
       resp.setStatusCode(sc);
+      reqHeaders.remove("transfer-encoding");
       resp.headers().addAll(reqHeaders);
       resp.end();
     });

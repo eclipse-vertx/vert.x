@@ -98,7 +98,11 @@ public class Http1xUpgradeToH2CHandler extends ChannelInboundHandlerAdapter {
                 headers.scheme("http");
                 request.headers().remove("http2-settings");
                 request.headers().remove("host");
-                request.headers().forEach(header -> headers.set(header.getKey().toLowerCase(), header.getValue()));
+                request.headers().forEach(header -> {
+                  if (!HttpHeaderValidationUtil.isConnectionHeader(header.getKey(), true)) {
+                    headers.set(header.getKey().toLowerCase(), header.getValue());
+                  }
+                });
                 ctx.fireChannelRead(new DefaultHttp2HeadersFrame(headers, false));
               } else {
                 HttpServerImpl.log.warn("Cannot perform HTTP/2 upgrade in a worker verticle");
