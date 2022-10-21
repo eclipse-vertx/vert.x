@@ -2039,7 +2039,7 @@ public class Http1xTest extends HttpTest {
     Buffer toSend = TestUtils.randomBuffer(1000);
 
     server.requestHandler(req -> {
-      req.response().headers().set("HTTP/1.1", "101 Upgrade");
+      req.response().setStatusCode(101);
       req.bodyHandler(data -> {
         assertEquals(toSend, data);
         req.response().end("somecontent");
