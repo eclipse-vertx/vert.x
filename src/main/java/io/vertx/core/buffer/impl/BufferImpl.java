@@ -537,7 +537,7 @@ public class BufferImpl implements Buffer {
   }
 
   public ByteBuf getByteBuf() {
-    ByteBuf duplicate = buffer.duplicate();
+    ByteBuf duplicate = buffer.slice();
     if (buffer.getClass() != VertxHeapByteBuf.class && buffer.getClass() != VertxUnsafeHeapByteBuf.class) {
       duplicate = Unpooled.unreleasableBuffer(duplicate);
     }
