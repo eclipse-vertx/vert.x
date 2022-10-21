@@ -1360,7 +1360,6 @@ public abstract class HttpTest extends HttpTestBase {
           int padding = 5;
           for (int i = 0;i < times;i++) {
             Buffer paddedChunk = TestUtils.leftPad(padding, chunk);
-            assertEquals(paddedChunk.getByteBuf().readerIndex(), padding);
             req.write(paddedChunk);
           }
           req.end();

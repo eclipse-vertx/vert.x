@@ -1026,6 +1026,17 @@ public class BufferTest {
     assertEquals(rand, buff.getLong(0));
     buff.appendString(TestUtils.randomUnicodeString(100));
     assertEquals(100, sliced.length());
+    ByteBuf duplicate = sliced.getByteBuf();
+    assertEquals(0, duplicate.readerIndex());
+    assertEquals(100, duplicate.readableBytes());
+    for (int i = 0; i < 100; i++) {
+      assertEquals(buff.getByte(i), duplicate.getByte(i));
+    }
+    try {
+      duplicate.writeByte(0);
+      fail();
+    } catch (IndexOutOfBoundsException ignore) {
+    }
   }
 
   @Test
@@ -1040,6 +1051,17 @@ public class BufferTest {
     assertEquals(rand, buff.getLong(10));
     buff.appendString(TestUtils.randomUnicodeString(100));
     assertEquals(10, sliced.length());
+    ByteBuf duplicate = sliced.getByteBuf();
+    assertEquals(0, duplicate.readerIndex());
+    assertEquals(10, duplicate.readableBytes());
+    for (int i = 0; i < 10; i++) {
+      assertEquals(buff.getByte(10 + i), duplicate.getByte(i));
+    }
+    try {
+      duplicate.writeByte(0);
+      fail();
+    } catch (IndexOutOfBoundsException ignore) {
+    }
   }
 
   @Test
