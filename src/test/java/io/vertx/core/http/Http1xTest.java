@@ -28,6 +28,7 @@ import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
+import io.vertx.core.impl.Utils;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -2063,7 +2064,7 @@ public class Http1xTest extends HttpTest {
   @Test
   public void testContexts() throws Exception {
     int numReqs = 4;
-    Buffer data = randomBuffer(1024);
+    Buffer data = randomBuffer(1024 * 16);
     AtomicInteger cnt = new AtomicInteger();
     // Server connect handler should always be called with same context
     Context serverCtx = vertx.getOrCreateContext();
@@ -2111,17 +2112,16 @@ public class Http1xTest extends HttpTest {
     });
     awaitLatch(latch);
     CountDownLatch latch2 = new CountDownLatch(1);
-    int numConns = 4;
     client.close();
     client = null;
     Context clientCtx = vertx.getOrCreateContext();
     clientCtx.runOnContext(v -> {
-      client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(numConns));
+      client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(numReqs));
     });
     waitUntil(() -> client != null);
     // There should be a context per request
     List<EventLoopContext> contexts = Stream.generate(() -> ((VertxInternal) vertx).createEventLoopContext())
-      .limit(4)
+      .limit(numReqs)
       .collect(Collectors.toList());
     Set<Thread> expectedThreads = new HashSet<>();
     for (Context ctx : contexts) {
@@ -4973,7 +4973,7 @@ public class Http1xTest extends HttpTest {
   @Test
   public void testHttpServerWithIdleTimeoutSendChunkedFile() throws Exception {
     // Does not pass reliably in CI (timeout)
-    Assume.assumeFalse(vertx.isNativeTransportEnabled());
+    Assume.assumeTrue(!vertx.isNativeTransportEnabled() && !Utils.isWindows());
     int expected = 64 * 1024 * 1024; // We estimate this will take more than 200ms to transfer with a 1ms pause in chunks
     File sent = TestUtils.tmpFile(".dat", expected);
     server.close();
@@ -5026,6 +5026,31 @@ public class Http1xTest extends HttpTest {
           complete();
         }));
     }
+    await();
+  }
+
+  @Test
+  public void testSendFileWithConnectionCloseHeader() throws Exception {
+    String content = TestUtils.randomUnicodeString(1024 * 1024 * 2);
+    sendFile("test-send-file.html", content, false,
+      () -> client.request(requestOptions).map(req -> req.putHeader(HttpHeaders.CONNECTION, "close")));
+  }
+
+  @Test
+  public void testResponseEndHandlersConnectionClose() {
+    waitFor(2);
+    server.requestHandler(req -> {
+      req.response().endHandler(v -> complete());
+      req.response().end();
+    }).listen(testAddress, onSuccess(server ->
+      client.request(requestOptions)
+        .onComplete(onSuccess(req -> {
+          req.putHeader(HttpHeaders.CONNECTION, "close");
+          req.send(onSuccess(res -> {
+            assertEquals(200, res.statusCode());
+            complete();
+          }));
+        }))));
     await();
   }
 

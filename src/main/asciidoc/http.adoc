@@ -388,10 +388,12 @@ You need to have Brotli4j on the classpath to decompress Brotli:
 [source,groovy]
 ----
 dependencies {
-  compile 'com.aayushatharva.brotli4j:brotli4j:${brotli4j.version}'
+  implementation 'com.aayushatharva.brotli4j:brotli4j:${brotli4j.version}'
+  runtimeOnly 'com.aayushatharva.brotli4j:native-$system-and-arch:${brotli4j.version}'
 }
 ----
 
+When using Gradle, you need to add the runtime native library manually depending on your OS and architecture. See https://github.com/hyperxpro/Brotli4j#gradle[the Gradle section of Brotli4j] for more details.
 
 By default, decompression is disabled.
 
@@ -786,10 +788,13 @@ Brotli and zstandard libraries need to be added to the classpath.
 [source,groovy]
 ----
 dependencies {
-  compile 'com.aayushatharva.brotli4j:brotli4j:${brotli4j.version}'
-  compile 'com.github.luben:zstd-jni:${zstd-jini.version}'
+  implementation 'com.aayushatharva.brotli4j:brotli4j:${brotli4j.version}'
+  runtimeOnly 'com.aayushatharva.brotli4j:native-$system-and-arch:${brotli4j.version}'
+  implementation 'com.github.luben:zstd-jni:${zstd-jini.version}'
 }
 ----
+
+When using Gradle, you need to add the runtime native library manually depending on your OS and architecture. See https://github.com/hyperxpro/Brotli4j#gradle[the Gradle section of Brotli4j] for more details.
 
 You can configure compressors according to your needs
 
@@ -1941,8 +1946,8 @@ Proxy options can also be set per request:
 {@link examples.HTTPExamples#perRequestProxyOptions}
 ----
 
-NOTE: A given host should always use the same proxy options: as HTTP requests are pooled, per request proxy
-options are used when establishing the connection
+NOTE: client connection pooling is aware of proxies (including authentication), consequently two requests to the same host through different proxies
+do not share the same pooled connection
 
 You can use {@link io.vertx.core.http.HttpClientOptions#setNonProxyHosts} to configure a list of host bypassing
 the proxy. The lists accept `*` wildcard for matching domains:

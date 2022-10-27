@@ -48,6 +48,7 @@ public class FileResolverImpl implements FileResolver {
   public static final String DISABLE_CP_RESOLVING_PROP_NAME = "vertx.disableFileCPResolving";
   public static final String CACHE_DIR_BASE_PROP_NAME = "vertx.cacheDirBase";
   private static final boolean NON_UNIX_FILE_SEP = File.separatorChar != '/';
+  private static final String JAR_URL_SEP = "!/";
 
   private final File cwd;
   private final boolean enableCaching;
@@ -295,17 +296,29 @@ public class FileResolverImpl implements FileResolver {
         zip = new ZipFile(file);
       }
 
+      String inJarPath = path.substring(idx1 + 6);
+      StringBuilder prefixBuilder = new StringBuilder();
+      int first = 0;
+      int second;
+      int len = JAR_URL_SEP.length();
+      while ((second = inJarPath.indexOf(JAR_URL_SEP, first)) >= 0) {
+        prefixBuilder.append(inJarPath, first, second).append("/");
+        first = second + len;
+      }
+      String prefix = prefixBuilder.toString();
       Enumeration<? extends ZipEntry> entries = zip.entries();
+      String prefixCheck = prefix.isEmpty() ? fileName : prefix + fileName;
       while (entries.hasMoreElements()) {
         ZipEntry entry = entries.nextElement();
         String name = entry.getName();
-        if (name.startsWith(fileName)) {
+        if (name.startsWith(prefixCheck)) {
+          String p = prefix.isEmpty() ? name : name.substring(prefix.length());
           if (name.endsWith("/")) {
             // Directory
-            cache.cacheDir(name);
+            cache.cacheDir(p);
           } else {
             try (InputStream is = zip.getInputStream(entry)) {
-              cache.cacheFile(name, is, !enableCaching);
+              cache.cacheFile(p, is, !enableCaching);
             }
           }
 

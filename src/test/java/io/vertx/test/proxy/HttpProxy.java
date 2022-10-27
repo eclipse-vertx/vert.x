@@ -13,7 +13,9 @@ package io.vertx.test.proxy;
 
 import java.net.UnknownHostException;
 import java.util.Base64;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import io.vertx.core.MultiMap;
@@ -44,21 +46,23 @@ import io.vertx.core.streams.Pump;
  * <p>
  * @author <a href="http://oss.lehmann.cx/">Alexander Lehmann</a>
  */
-public class HttpProxy extends TestProxyBase {
+public class HttpProxy extends TestProxyBase<HttpProxy> {
 
-  private static final int PORT = 13128;
+  public static final int DEFAULT_PORT = 13128;
 
   private static final Logger log = LoggerFactory.getLogger(HttpProxy.class);
 
   private HttpServer server;
+  private Map<HttpConnection, HttpClient> clientMap = new ConcurrentHashMap<>();
 
   private int error = 0;
 
   private MultiMap lastRequestHeaders = null;
   private HttpMethod lastMethod;
 
-  public HttpProxy(String username) {
-    super(username);
+  @Override
+  public int defaultPort() {
+    return DEFAULT_PORT;
   }
 
   /**
@@ -70,11 +74,12 @@ public class HttpProxy extends TestProxyBase {
   @Override
   public HttpProxy start(Vertx vertx) throws Exception {
     HttpServerOptions options = new HttpServerOptions();
-    options.setHost("localhost").setPort(PORT);
+    options.setHost("localhost").setPort(port);
     server = vertx.createHttpServer(options);
     server.requestHandler(request -> {
       HttpMethod method = request.method();
       String uri = request.uri();
+      String username = nextUserName();
       if (username != null) {
         String auth = request.getHeader("Proxy-Authorization");
         String expected = "Basic " + Base64.getEncoder().encodeToString((username + ":" + username).getBytes());
@@ -113,6 +118,7 @@ public class HttpProxy extends TestProxyBase {
           NetClient netClient = vertx.createNetClient(netOptions);
           netClient.connect(port, host, ar1 -> {
             if (ar1.succeeded()) {
+              localAddresses.add(ar1.result().localAddress().toString());
               request.toNetSocket().onComplete(ar2 -> {
                 if (ar2.succeeded()) {
                   NetSocket serverSocket = ar2.result();
@@ -136,9 +142,16 @@ public class HttpProxy extends TestProxyBase {
         if (forceUri != null) {
           uri = forceUri;
         }
-        HttpClient client = vertx.createHttpClient();
         RequestOptions opts = new RequestOptions();
         opts.setAbsoluteURI(uri);
+        HttpConnection serverConn = request.connection();
+        HttpClient client = clientMap.get(serverConn);
+        if (client == null) {
+          client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(1));
+          client.connectionHandler(conn -> localAddresses.add(conn.localAddress().toString()));
+          clientMap.put(serverConn, client);
+          serverConn.closeHandler(v -> clientMap.remove(serverConn));
+        }
         client.request(opts).compose(req -> {
           for (String name : request.headers().names()) {
             if (!name.equals("Proxy-Authorization")) {
@@ -198,11 +211,6 @@ public class HttpProxy extends TestProxyBase {
       server.close();
       server = null;
     }
-  }
-
-  @Override
-  public int getPort() {
-    return PORT;
   }
 
   @Override

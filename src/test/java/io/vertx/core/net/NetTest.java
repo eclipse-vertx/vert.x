@@ -21,6 +21,10 @@ import io.netty.channel.ConnectTimeoutException;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.*;
+import io.netty.handler.ssl.ApplicationProtocolConfig;
+import io.netty.handler.ssl.IdentityCipherSuiteFilter;
+import io.netty.handler.ssl.JdkSslContext;
+import io.netty.handler.ssl.SslContext;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.*;
@@ -36,10 +40,10 @@ import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
-import io.vertx.core.net.impl.NetClientImpl;
 import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.NetSocketInternal;
 import io.vertx.core.net.impl.VertxHandler;
+import io.vertx.core.spi.tls.SslContextFactory;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.CheckingSender;
 import io.vertx.test.core.TestUtils;
@@ -65,7 +69,6 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.net.InetSocketAddress;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -1036,7 +1039,7 @@ public class NetTest extends VertxTestBase {
     await();
   }
 
-  void serverCloseHandlers(boolean closeFromServer, Handler<AsyncResult<NetServer>> listenHandler) {
+  void serverCloseHandlers(boolean closeFromServer, Handler<NetServer> listenHandler) {
     server.connectHandler((sock) -> {
       AtomicInteger counter = new AtomicInteger(0);
       sock.endHandler(v -> assertEquals(1, counter.incrementAndGet()));
@@ -1047,7 +1050,7 @@ public class NetTest extends VertxTestBase {
       if (closeFromServer) {
         sock.close();
       }
-    }).listen(testAddress, listenHandler);
+    }).listen(testAddress, onSuccess(listenHandler::handle));
   }
 
   @Test
@@ -1611,9 +1614,8 @@ public class NetTest extends VertxTestBase {
       .clientTrustAll(true);
     test.setupServer(true);
     server.listen(test.bindAddress, onFailure(t -> {
-      assertThat(t, is(instanceOf(VertxException.class)));
-      assertThat(t.getCause(), is(instanceOf(IllegalArgumentException.class)));
-      assertThat(t.getCause().getMessage(), containsString("alias does not exist in the keystore"));
+      assertThat(t, is(instanceOf(IllegalArgumentException.class)));
+      assertThat(t.getMessage(), containsString("alias does not exist in the keystore"));
       testComplete();
     }));
     await();
@@ -2989,7 +2991,7 @@ public class NetTest extends VertxTestBase {
     server.connectHandler(sock -> {
 
     });
-    proxy = new SocksProxy(null);
+    proxy = new SocksProxy();
     proxy.start(vertx);
     server.listen(1234, "localhost", ar -> {
       assertTrue(ar.succeeded());
@@ -3018,7 +3020,7 @@ public class NetTest extends VertxTestBase {
     server.connectHandler(sock -> {
 
     });
-    proxy = new SocksProxy("username");
+    proxy = new SocksProxy().username("username");
     proxy.start(vertx);
     server.listen(1234, "localhost", ar -> {
       assertTrue(ar.succeeded());
@@ -3052,7 +3054,7 @@ public class NetTest extends VertxTestBase {
     server.connectHandler(sock -> {
 
     });
-    proxy = new SocksProxy(null);
+    proxy = new SocksProxy();
     proxy.start(vertx);
     server.listen(ar -> {
       assertTrue(ar.succeeded());
@@ -3086,7 +3088,7 @@ public class NetTest extends VertxTestBase {
     server.connectHandler(sock -> {
 
     });
-    proxy = new SocksProxy(null);
+    proxy = new SocksProxy();
     proxy.start(vertx);
     server.listen(ar -> {
       assertTrue(ar.succeeded());
@@ -3114,7 +3116,7 @@ public class NetTest extends VertxTestBase {
     server.connectHandler(sock -> {
 
     });
-    proxy = new HttpProxy(null);
+    proxy = new HttpProxy();
     proxy.start(vertx);
     server.listen(1234, "localhost", ar -> {
       assertTrue(ar.succeeded());
@@ -3142,7 +3144,7 @@ public class NetTest extends VertxTestBase {
     server.connectHandler(sock -> {
 
     });
-    proxy = new Socks4Proxy(null);
+    proxy = new Socks4Proxy();
     proxy.start(vertx);
     server.listen(1234, "localhost", ar -> {
       assertTrue(ar.succeeded());
@@ -3171,7 +3173,7 @@ public class NetTest extends VertxTestBase {
     server.connectHandler(sock -> {
 
     });
-    proxy = new Socks4Proxy("username");
+    proxy = new Socks4Proxy().username("username");
     proxy.start(vertx);
     server.listen(1234, "localhost", ar -> {
       assertTrue(ar.succeeded());
@@ -3199,7 +3201,7 @@ public class NetTest extends VertxTestBase {
     server.connectHandler(sock -> {
 
     });
-    proxy = new Socks4Proxy(null).start(vertx);
+    proxy = new Socks4Proxy().start(vertx);
     server.listen(1234, "localhost", ar -> {
       assertTrue(ar.succeeded());
       client.connect(1234, "127.0.0.1", ar2 -> {
@@ -3224,7 +3226,7 @@ public class NetTest extends VertxTestBase {
     server.connectHandler(sock -> {
 
     });
-    proxy = new HttpProxy(null);
+    proxy = new HttpProxy();
     proxy.start(vertx);
     server.listen(1234, "localhost", onSuccess(s -> {
       client.connect(1234, "example.com", onSuccess(so -> {
@@ -3288,6 +3290,23 @@ public class NetTest extends VertxTestBase {
       });
     });
 
+    await();
+  }
+
+  /**
+   * Test that NetSocket.upgradeToSsl() should fail the handler if no TLS configuration was set.
+   */
+  @Test
+  public void testUpgradeToSSLIncorrectClientOptions() {
+    server.close();
+    server = vertx.createNetServer(new NetServerOptions().setSsl(true).setPort(4043)
+      .setKeyCertOptions(Cert.SERVER_JKS_ROOT_CA.get()));
+    NetClient client = vertx.createNetClient();
+    server.connectHandler(ns -> {}).listen(onSuccess(v -> {
+      client.connect(4043, "127.0.0.1", onSuccess(ns -> {
+        ns.upgradeToSsl(onFailure(err -> client.close(onSuccess(s -> testComplete()))));
+      }));
+    }));
     await();
   }
 
@@ -3508,7 +3527,6 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testNetClientInternalTLSWithSuppliedSSLContext() throws Exception {
     client.close();
-    client = vertx.createNetClient(new NetClientOptions().setSsl(true));
     Path tsPath = Paths.get(this.getClass().getClassLoader().getResource(Trust.SERVER_JKS.get().getPath()).toURI());
 
     TrustManagerFactory tmFactory;
@@ -3525,7 +3543,27 @@ public class NetTest extends VertxTestBase {
       tmFactory.getTrustManagers(),
       null
     );
-    ((NetClientImpl)client).setSuppliedSSLContext(sslContext);
+
+    client = vertx.createNetClient(new NetClientOptions().setSsl(true)
+      .setSslEngineOptions(new JdkSSLEngineOptions() {
+        @Override
+        public SslContextFactory sslContextFactory() {
+          return new SslContextFactory() {
+            @Override
+            public SslContext create() {
+              return new JdkSslContext(
+                sslContext,
+                true,
+                null,
+                IdentityCipherSuiteFilter.INSTANCE,
+                ApplicationProtocolConfig.DISABLED,
+                io.netty.handler.ssl.ClientAuth.NONE,
+                null,
+                false);
+            }
+          };
+        }
+      }));
 
     testNetClientInternal_(new HttpServerOptions()
       .setHost("localhost")

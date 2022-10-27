@@ -31,6 +31,7 @@ import io.vertx.core.eventbus.impl.EventBusInternal;
 import io.vertx.core.eventbus.impl.clustered.ClusteredEventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.impl.btc.BlockedThreadChecker;
+import io.vertx.core.net.impl.NetClientBuilder;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.file.impl.FileSystemImpl;
 import io.vertx.core.file.impl.WindowsFileSystem;
@@ -49,7 +50,6 @@ import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.net.impl.NetClientImpl;
 import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.net.impl.TCPServerBase;
@@ -296,19 +296,14 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return new NetServerImpl(this, options);
   }
 
-  @Override
-  public NetClient createNetClient(NetClientOptions options, CloseFuture closeFuture) {
-    NetClientImpl client = new NetClientImpl(this, options, closeFuture);
-    closeFuture.add(client);
-    return client;
-  }
-
   public NetClient createNetClient(NetClientOptions options) {
     CloseFuture closeFuture = new CloseFuture(log);
-    NetClient client = createNetClient(options, closeFuture);
     CloseFuture fut = resolveCloseFuture();
     fut.add(closeFuture);
-    return client;
+    NetClientBuilder builder = new NetClientBuilder(this, options);
+    builder.metrics(metricsSPI() != null ? metricsSPI().createNetClientMetrics(options) : null);
+    builder.closeFuture(closeFuture);
+    return builder.build();
   }
 
   @Override
@@ -357,14 +352,15 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return eventBus;
   }
 
-  public long setPeriodic(long delay, Handler<Long> handler) {
+  @Override
+  public long setPeriodic(long initialDelay, long delay, Handler<Long> handler) {
     ContextInternal ctx = getOrCreateContext();
-    return scheduleTimeout(ctx, true, delay, TimeUnit.MILLISECONDS, ctx.isDeployment(), handler);
+    return scheduleTimeout(ctx, true, initialDelay, delay, TimeUnit.MILLISECONDS, ctx.isDeployment(), handler);
   }
 
   @Override
-  public TimeoutStream periodicStream(long delay) {
-    return new TimeoutStreamImpl(delay, true);
+  public TimeoutStream periodicStream(long initialDelay, long delay) {
+    return new TimeoutStreamImpl(initialDelay, delay, true);
   }
 
   public long setTimer(long delay, Handler<Long> handler) {
@@ -517,14 +513,18 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return new DnsClientImpl(this, options);
   }
 
-  public long scheduleTimeout(ContextInternal context,
-                                              boolean periodic,
-                                              long delay,
-                                              TimeUnit timeUnit,
-                                              boolean addCloseHook,
-                                              Handler<Long> handler) {
+  private long scheduleTimeout(ContextInternal context,
+                              boolean periodic,
+                              long initialDelay,
+                              long delay,
+                              TimeUnit timeUnit,
+                              boolean addCloseHook,
+                              Handler<Long> handler) {
     if (delay < 1) {
       throw new IllegalArgumentException("Cannot schedule a timer with delay < 1 ms");
+    }
+    if (initialDelay < 0) {
+      throw new IllegalArgumentException("Cannot schedule a timer with initialDelay < 0");
     }
     long timerId = timeoutCounter.getAndIncrement();
     InternalTimerHandler task = new InternalTimerHandler(timerId, handler, periodic, context);
@@ -534,11 +534,20 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
     EventLoop el = context.nettyEventLoop();
     if (periodic) {
-      task.future = el.scheduleAtFixedRate(task, delay, delay, timeUnit);
+      task.future = el.scheduleAtFixedRate(task, initialDelay, delay, timeUnit);
     } else {
       task.future = el.schedule(task, delay, timeUnit);
     }
     return task.id;
+  }
+
+  public long scheduleTimeout(ContextInternal context,
+                                              boolean periodic,
+                                              long delay,
+                                              TimeUnit timeUnit,
+                                              boolean addCloseHook,
+                                              Handler<Long> handler) {
+    return scheduleTimeout(context, periodic, delay, delay, timeUnit, addCloseHook, handler);
   }
 
   public ContextInternal getContext() {
@@ -956,6 +965,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
    */
   private class TimeoutStreamImpl implements TimeoutStream, Handler<Long> {
 
+    private final long initialDelay;
     private final long delay;
     private final boolean periodic;
 
@@ -965,6 +975,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     private long demand;
 
     public TimeoutStreamImpl(long delay, boolean periodic) {
+      this(delay, delay, periodic);
+    }
+
+    public TimeoutStreamImpl(long initialDelay, long delay, boolean periodic) {
+      this.initialDelay = initialDelay;
       this.delay = delay;
       this.periodic = periodic;
       this.demand = Long.MAX_VALUE;
@@ -1013,7 +1028,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         }
         ContextInternal ctx = getOrCreateContext();
         this.handler = handler;
-        this.id = scheduleTimeout(ctx, periodic, delay, TimeUnit.MILLISECONDS, ctx.isDeployment(), this);
+        this.id = scheduleTimeout(ctx, periodic, initialDelay, delay, TimeUnit.MILLISECONDS, ctx.isDeployment(), this);
       } else {
         cancel();
       }

@@ -694,24 +694,6 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testResponseEndHandlersConnectionClose() {
-    waitFor(2);
-    server.requestHandler(req -> {
-      req.response().endHandler(v -> complete());
-      req.response().end();
-    }).listen(testAddress, onSuccess(server ->
-      client.request(requestOptions)
-      .onComplete(onSuccess(req -> {
-        req.putHeader(HttpHeaders.CONNECTION, "close");
-        req.send(onSuccess(res -> {
-          assertEquals(200, res.statusCode());
-          complete();
-        }));
-      }))));
-    await();
-  }
-
-  @Test
   public void testAbsoluteURI() {
     testURIAndPath("http://localhost:" + DEFAULT_HTTP_PORT + "/this/is/a/path/foo.html", "/this/is/a/path/foo.html");
   }
@@ -1378,7 +1360,6 @@ public abstract class HttpTest extends HttpTestBase {
           int padding = 5;
           for (int i = 0;i < times;i++) {
             Buffer paddedChunk = TestUtils.leftPad(padding, chunk);
-            assertEquals(paddedChunk.getByteBuf().readerIndex(), padding);
             req.write(paddedChunk);
           }
           req.end();
@@ -1996,14 +1977,7 @@ public abstract class HttpTest extends HttpTestBase {
       () -> client.request(requestOptions));
   }
 
-  @Test
-  public void testSendFileWithConnectionCloseHeader() throws Exception {
-    String content = TestUtils.randomUnicodeString(1024 * 1024 * 2);
-    sendFile("test-send-file.html", content, false,
-      () -> client.request(requestOptions).map(req -> req.putHeader(HttpHeaders.CONNECTION, "close")));
-  }
-
-  private void sendFile(String fileName, String contentExpected, boolean useHandler, Supplier<Future<HttpClientRequest>> requestFact) throws Exception {
+  protected void sendFile(String fileName, String contentExpected, boolean useHandler, Supplier<Future<HttpClientRequest>> requestFact) throws Exception {
     waitFor(2);
     File fileToSend = setupFile(fileName, contentExpected);
     server.requestHandler(req -> {
@@ -2647,6 +2621,7 @@ public abstract class HttpTest extends HttpTestBase {
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
       resp.setStatusCode(sc);
+      reqHeaders.remove("transfer-encoding");
       resp.headers().addAll(reqHeaders);
       resp.end();
     });
@@ -6190,6 +6165,47 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
+  @Test
+  public void testClientRequestFlowControlDifferentEventLoops() throws Exception {
+    Promise<Void> resume = Promise.promise();
+    server.requestHandler(req -> {
+      req.pause();
+      req.end(v -> {
+        req.response().end();
+      });
+      resume.future().onComplete(ar -> req.resume());
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1));
+    Buffer chunk = Buffer.buffer(TestUtils.randomAlphaString(1024));
+    client.request(requestOptions).onComplete(onSuccess(req1 -> {
+      assertTrue(req1.reset());
+      new Thread(() -> {
+        Context ctx = vertx.getOrCreateContext();
+        client.request(requestOptions).onComplete(onSuccess(req2 -> {
+          assertSame(ctx, vertx.getOrCreateContext());
+          req2.setChunked(true);
+          while (!req2.writeQueueFull()) {
+            req2.write(chunk);
+          }
+          resume.complete();
+          req2.drainHandler(v -> {
+            assertSame(ctx, vertx.getOrCreateContext());
+            req2.end();
+          });
+          req2.response(onSuccess(resp -> {
+            assertSame(ctx, vertx.getOrCreateContext());
+            resp.end(onSuccess(v -> {
+              assertSame(ctx, vertx.getOrCreateContext());
+              testComplete();
+            }));
+          }));
+        }));
+      }).start();
+    }));
+    await();
+  }
 
   @Test
   public void testHAProxyProtocolIdleTimeout() throws Exception {

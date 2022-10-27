@@ -21,8 +21,8 @@ import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.impl.btc.BlockedThreadChecker;
 import io.vertx.core.impl.future.PromiseInternal;
-import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.impl.NetClientBuilder;
 import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.net.impl.TCPServerBase;
@@ -46,6 +46,7 @@ import java.util.function.Function;
  * developers creating vert.x applications
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
+ * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public interface VertxInternal extends Vertx {
 
@@ -84,15 +85,6 @@ public interface VertxInternal extends Vertx {
   VertxMetrics metricsSPI();
 
   Transport transport();
-
-  /**
-   * Create a TCP/SSL client using the specified options and close future
-   *
-   * @param options  the options to use
-   * @param closeFuture  the close future
-   * @return the client
-   */
-  NetClient createNetClient(NetClientOptions options, CloseFuture closeFuture);
 
   /**
    * Create a HTTP/HTTPS client using the specified options and close future

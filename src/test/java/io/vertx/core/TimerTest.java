@@ -23,6 +23,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -36,8 +39,23 @@ public class TimerTest extends VertxTestBase {
   }
 
   @Test
-  public void testPeriodic() {
-    periodic(10);
+  public void testPeriodic1() {
+    periodic(new PeriodicArg(100, 100), (delay, handler) -> vertx.setPeriodic(delay.delay, handler));
+  }
+
+  @Test
+  public void testPeriodic2() {
+    periodic(new PeriodicArg(100, 100), (delay, handler) -> vertx.setPeriodic(delay.delay, delay.delay, handler));
+  }
+
+  @Test
+  public void testPeriodicWithInitialDelay1() {
+    periodic(new PeriodicArg(0, 100), (delay, handler) -> vertx.setPeriodic(delay.initialDelay, delay.delay, handler));
+  }
+
+  @Test
+  public void testPeriodicWithInitialDelay2() {
+    periodic(new PeriodicArg(100, 200), (delay, handler) -> vertx.setPeriodic(delay.initialDelay, delay.delay, handler));
   }
 
   /**
@@ -77,6 +95,12 @@ public class TimerTest extends VertxTestBase {
             testComplete();
           }
         });
+        vertx.setPeriodic(3, 4, id -> {
+          assertSame(thr, Thread.currentThread());
+          if (cnt.incrementAndGet() == 5) {
+            testComplete();
+          }
+        });
       }
     }
     MyVerticle verticle = new MyVerticle();
@@ -84,13 +108,23 @@ public class TimerTest extends VertxTestBase {
     await();
   }
 
-  private void periodic(long delay) {
+  static class PeriodicArg {
+    final long initialDelay;
+    final long delay;
+    PeriodicArg(long initialDelay, long delay) {
+      this.initialDelay = initialDelay;
+      this.delay = delay;
+    }
+  }
+
+  private void periodic(PeriodicArg delay, BiFunction<PeriodicArg, Handler<Long>, Long> abc) {
     final int numFires = 10;
     final AtomicLong id = new AtomicLong(-1);
-    id.set(vertx.setPeriodic(delay, new Handler<Long>() {
+    long now = System.currentTimeMillis();
+    id.set(abc.apply(delay, new Handler<Long>() {
       int count;
-
       public void handle(Long timerID) {
+        assertTrue( System.currentTimeMillis() - now >= delay.initialDelay + count * delay.delay);
         assertEquals(id.get(), timerID.longValue());
         count++;
         if (count == numFires) {
@@ -237,6 +271,31 @@ public class TimerTest extends VertxTestBase {
   @Test
   public void testPeriodicStreamHandler() {
     TimeoutStream timer = vertx.periodicStream(10);
+    AtomicInteger count = new AtomicInteger();
+    timer.handler(l -> {
+      int value = count.incrementAndGet();
+      switch (value) {
+        case 0:
+          break;
+        case 1:
+          throw new RuntimeException();
+        case 2:
+          timer.cancel();
+          testComplete();
+          break;
+        default:
+          fail();
+      }
+    });
+    timer.endHandler(v -> {
+      fail();
+    });
+    await();
+  }
+
+  @Test
+  public void testPeriodicStreamHandlerWithInitialDelay() {
+    TimeoutStream timer = vertx.periodicStream(10, 20);
     AtomicInteger count = new AtomicInteger();
     timer.handler(l -> {
       int value = count.incrementAndGet();

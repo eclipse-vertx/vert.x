@@ -17,13 +17,19 @@ import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.test.proxy.HttpProxy;
+import io.vertx.test.proxy.SocksProxy;
+import io.vertx.test.proxy.TestProxyBase;
 import io.vertx.test.tls.Cert;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 public class Http1xProxyTest extends HttpTestBase {
@@ -46,7 +52,7 @@ public class Http1xProxyTest extends HttpTestBase {
     startProxy(null, ProxyType.HTTP);
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions()
-      .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.getPort())));
+      .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.port())));
     testHttpProxyRequest(() -> client.request(new RequestOptions()
       .setHost(DEFAULT_HTTP_HOST)
       .setPort(DEFAULT_HTTP_PORT)
@@ -62,7 +68,7 @@ public class Http1xProxyTest extends HttpTestBase {
   public void testHttpProxyRequest2() throws Exception {
     startProxy(null, ProxyType.HTTP);
     testHttpProxyRequest(() -> client.request(new RequestOptions()
-      .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.getPort()))
+      .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.port()))
       .setHost(DEFAULT_HTTP_HOST)
       .setPort(DEFAULT_HTTP_PORT)
       .setURI("/")
@@ -87,7 +93,7 @@ public class Http1xProxyTest extends HttpTestBase {
     startProxy(null, ProxyType.HTTP);
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions()
-      .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.getPort())));
+      .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.port())));
     Set<SocketAddress> filtered = Collections.synchronizedSet(new HashSet<>());
     ((HttpClientImpl)client).proxyFilter(so -> {
       filtered.add(so);
@@ -132,7 +138,7 @@ public class Http1xProxyTest extends HttpTestBase {
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions()
       .setNonProxyHosts(nonProxyHosts)
-      .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.getPort())));
+      .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.port())));
     testHttpProxyRequest(() -> client.request(new RequestOptions()
       .setHost(host)
       .setPort(DEFAULT_HTTP_PORT)
@@ -151,7 +157,7 @@ public class Http1xProxyTest extends HttpTestBase {
     startProxy(null, ProxyType.HTTP);
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions()
-      .setSsl(true).setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.getPort())));
+      .setSsl(true).setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.port())));
     testHttpProxyRequest(() -> client
       .request(new RequestOptions().setSsl(false).setHost("localhost").setPort(8080))
       .compose(HttpClientRequest::send)).onComplete(onSuccess(v -> {
@@ -189,7 +195,7 @@ public class Http1xProxyTest extends HttpTestBase {
 
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions()
-      .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.getPort())
+      .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.port())
         .setUsername("user").setPassword("user")));
 
     server.requestHandler(req -> {
@@ -218,7 +224,7 @@ public class Http1xProxyTest extends HttpTestBase {
     startProxy(null, ProxyType.HTTP);
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions()
-      .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.getPort())));
+      .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.port())));
     final String url = "ftp://ftp.gnu.org/gnu/";
     proxy.setForceUri("http://localhost:8080/");
     server.requestHandler(req -> {
@@ -244,7 +250,7 @@ public class Http1xProxyTest extends HttpTestBase {
 
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions()
-      .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5).setHost("localhost").setPort(proxy.getPort())));
+      .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5).setHost("localhost").setPort(proxy.port())));
 
     server.requestHandler(req -> req.response().end());
 
@@ -269,7 +275,7 @@ public class Http1xProxyTest extends HttpTestBase {
 
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions()
-      .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5).setHost("localhost").setPort(proxy.getPort())
+      .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5).setHost("localhost").setPort(proxy.port())
         .setUsername("user").setPassword("user")));
 
     server.requestHandler(req -> {
@@ -292,6 +298,178 @@ public class Http1xProxyTest extends HttpTestBase {
   }
 
   @Test
+  public void testHttpProxyPooling() throws Exception {
+    HttpProxy proxy1 = new HttpProxy().port(HttpProxy.DEFAULT_PORT);
+    HttpProxy proxy2 = new HttpProxy().port(HttpProxy.DEFAULT_PORT + 1);
+    ProxyOptions req1 = new ProxyOptions()
+      .setType(ProxyType.HTTP)
+      .setHost("localhost")
+      .setPort(proxy1.port());
+    ProxyOptions req2 = new ProxyOptions()
+      .setType(ProxyType.HTTP)
+      .setHost("localhost")
+      .setPort(proxy2.port());
+    List<String> res = testPooling(req1, req2, proxy1, proxy2);
+    assertEquals(Arrays.asList(proxy1.lastLocalAddress(), proxy2.lastLocalAddress()), res);
+  }
+
+  @Test
+  public void testHttpProxyPooling2() throws Exception {
+    HttpProxy proxy = new HttpProxy().port(HttpProxy.DEFAULT_PORT);
+    ProxyOptions req = new ProxyOptions()
+      .setType(ProxyType.HTTP)
+      .setHost("localhost")
+      .setPort(proxy.port());
+    List<String> res = testPooling(req, req, proxy);
+    assertEquals(Arrays.asList(proxy.lastLocalAddress(), proxy.lastLocalAddress()), res);
+  }
+
+  @Test
+  public void testHttpProxyAuthPooling1() throws Exception {
+    HttpProxy proxy = new HttpProxy().port(SocksProxy.DEFAULT_PORT).username(Arrays.asList("user1", "user2"));
+    ProxyOptions req1 = new ProxyOptions()
+      .setUsername("user1")
+      .setPassword("user1")
+      .setType(ProxyType.HTTP)
+      .setHost("localhost")
+      .setPort(proxy.port());
+    ProxyOptions req2 = new ProxyOptions()
+      .setUsername("user2")
+      .setPassword("user2")
+      .setType(ProxyType.HTTP)
+      .setHost("localhost")
+      .setPort(proxy.port());
+    List<String> res = testPooling(req1, req2, proxy);
+    assertEquals(proxy.localAddresses(), res);
+  }
+
+  @Test
+  public void testHttpProxyAuthPooling2() throws Exception {
+    HttpProxy proxy = new HttpProxy().port(SocksProxy.DEFAULT_PORT).username(Arrays.asList("user1"));
+    ProxyOptions req1 = new ProxyOptions()
+      .setUsername("user1")
+      .setPassword("user1")
+      .setType(ProxyType.HTTP)
+      .setHost("localhost")
+      .setPort(proxy.port());
+    ProxyOptions req2 = new ProxyOptions()
+      .setUsername("user1")
+      .setPassword("user1")
+      .setType(ProxyType.HTTP)
+      .setHost("localhost")
+      .setPort(proxy.port());
+    List<String> res = testPooling(req1, req2, proxy);
+    assertEquals(1, proxy.localAddresses().size());
+    assertEquals(Arrays.asList(proxy.localAddresses().get(0), proxy.localAddresses().get(0)), res);
+  }
+
+  @Test
+  public void testSocksProxyPooling1() throws Exception {
+    SocksProxy proxy1 = new SocksProxy().port(SocksProxy.DEFAULT_PORT);
+    SocksProxy proxy2 = new SocksProxy().port(SocksProxy.DEFAULT_PORT + 1);
+    ProxyOptions req1 = new ProxyOptions()
+      .setType(ProxyType.SOCKS5)
+      .setHost("localhost")
+      .setPort(proxy1.port());
+    ProxyOptions req2 = new ProxyOptions()
+      .setType(ProxyType.SOCKS5)
+      .setHost("localhost")
+      .setPort(proxy2.port());
+    List<String> res = testPooling(req1, req2, proxy1, proxy2);
+    assertEquals(Arrays.asList(proxy1.lastLocalAddress(), proxy2.lastLocalAddress()), res);
+  }
+
+  @Test
+  public void testSocksProxyPooling2() throws Exception {
+    SocksProxy proxy = new SocksProxy().port(SocksProxy.DEFAULT_PORT);
+    ProxyOptions req = new ProxyOptions()
+      .setType(ProxyType.SOCKS5)
+      .setHost("localhost")
+      .setPort(proxy.port());
+    List<String> res = testPooling(req, req, proxy);
+    assertEquals(Arrays.asList(proxy.lastLocalAddress(), proxy.lastLocalAddress()), res);
+  }
+
+  @Test
+  public void testSocksProxyAuthPooling1() throws Exception {
+    SocksProxy proxy = new SocksProxy().port(SocksProxy.DEFAULT_PORT).username(Arrays.asList("user1", "user2"));
+    ProxyOptions req1 = new ProxyOptions()
+      .setUsername("user1")
+      .setPassword("user1")
+      .setType(ProxyType.SOCKS5)
+      .setHost("localhost")
+      .setPort(proxy.port());
+    ProxyOptions req2 = new ProxyOptions()
+      .setUsername("user2")
+      .setPassword("user2")
+      .setType(ProxyType.SOCKS5)
+      .setHost("localhost")
+      .setPort(proxy.port());
+    List<String> res = testPooling(req1, req2, proxy);
+    assertEquals(proxy.localAddresses(), res);
+  }
+
+  @Test
+  public void testSocksProxyAuthPooling2() throws Exception {
+    SocksProxy proxy = new SocksProxy().port(SocksProxy.DEFAULT_PORT).username(Arrays.asList("user1"));
+    ProxyOptions req1 = new ProxyOptions()
+      .setUsername("user1")
+      .setPassword("user1")
+      .setType(ProxyType.SOCKS5)
+      .setHost("localhost")
+      .setPort(proxy.port());
+    ProxyOptions req2 = new ProxyOptions()
+      .setUsername("user1")
+      .setPassword("user1")
+      .setType(ProxyType.SOCKS5)
+      .setHost("localhost")
+      .setPort(proxy.port());
+    List<String> res = testPooling(req1, req2, proxy);
+    assertEquals(1, proxy.localAddresses().size());
+    assertEquals(Arrays.asList(proxy.localAddresses().get(0), proxy.localAddresses().get(0)), res);
+  }
+
+  public List<String> testPooling(ProxyOptions request1, ProxyOptions request2, TestProxyBase... proxies) throws Exception {
+    for (TestProxyBase proxy : proxies) {
+      proxy.start(vertx);
+    }
+
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(1).setKeepAlive(true));
+
+    CompletableFuture<List<String>> ret = new CompletableFuture<>();
+
+    try {
+      server.requestHandler(req -> {
+        SocketAddress addr = req.connection().remoteAddress();
+        req.response().end("" + addr);
+      }).listen(onSuccess(s -> {
+        RequestOptions baseOptions = new RequestOptions()
+          .setHost(DEFAULT_HTTP_HOST)
+          .setPort(DEFAULT_HTTP_PORT)
+          .setURI("/");
+        client.request(new RequestOptions(baseOptions).setProxyOptions(request1))
+          .compose(HttpClientRequest::send)
+          .compose(HttpClientResponse::body)
+          .onComplete(onSuccess(res1 -> {
+            client.request(new RequestOptions(baseOptions).setProxyOptions(request2))
+              .compose(HttpClientRequest::send)
+              .compose(HttpClientResponse::body)
+              .onComplete(onSuccess(res2 -> {
+                ret.complete(Arrays.asList(res1.toString(), res2.toString()));
+              }));
+          }));
+      }));
+
+      return ret.get(40, TimeUnit.SECONDS);
+    } finally {
+      for (TestProxyBase proxy : proxies) {
+        proxy.stop();
+      }
+    }
+  }
+
+  @Test
   public void testWssHttpProxy() throws Exception {
     startProxy(null, ProxyType.HTTP);
     testWebSocket(createBaseServerOptions().setSsl(true)
@@ -301,7 +479,7 @@ public class Http1xProxyTest extends HttpTestBase {
       .setProxyOptions(new ProxyOptions()
         .setType(ProxyType.HTTP)
         .setHost(DEFAULT_HTTP_HOST)
-        .setPort(proxy.getPort())), true);
+        .setPort(proxy.port())), true);
   }
 
   @Test
@@ -311,7 +489,7 @@ public class Http1xProxyTest extends HttpTestBase {
       .setProxyOptions(new ProxyOptions()
         .setType(ProxyType.HTTP)
         .setHost(DEFAULT_HTTP_HOST)
-        .setPort(proxy.getPort())), true);
+        .setPort(proxy.port())), true);
   }
 
   @Test
@@ -324,7 +502,7 @@ public class Http1xProxyTest extends HttpTestBase {
       .setProxyOptions(new ProxyOptions()
         .setType(ProxyType.SOCKS5)
         .setHost(DEFAULT_HTTP_HOST)
-        .setPort(proxy.getPort())), true);
+        .setPort(proxy.port())), true);
   }
 
   @Test
@@ -334,7 +512,7 @@ public class Http1xProxyTest extends HttpTestBase {
       .setProxyOptions(new ProxyOptions()
         .setType(ProxyType.SOCKS5)
         .setHost(DEFAULT_HTTP_HOST)
-        .setPort(proxy.getPort())), true);
+        .setPort(proxy.port())), true);
   }
 
   @Test
@@ -345,7 +523,7 @@ public class Http1xProxyTest extends HttpTestBase {
       .setProxyOptions(new ProxyOptions()
         .setType(ProxyType.HTTP)
         .setHost(DEFAULT_HTTP_HOST)
-        .setPort(proxy.getPort())), false);
+        .setPort(proxy.port())), false);
   }
 
   private void testWebSocket(HttpServerOptions serverOptions, HttpClientOptions clientOptions, boolean proxied) throws Exception {

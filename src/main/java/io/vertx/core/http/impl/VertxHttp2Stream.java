@@ -187,6 +187,12 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   void doWriteHeaders(Http2Headers headers, boolean end, Handler<AsyncResult<Void>> handler) {
     FutureListener<Void> promise = handler == null ? null : context.promise(handler);
     conn.handler.writeHeaders(stream, headers, end, priority.getDependency(), priority.getWeight(), priority.isExclusive(), promise);
+    if (end) {
+      endWritten();
+    }
+  }
+
+  protected void endWritten() {
   }
 
   private void writePriorityFrame(StreamPriority priority) {
@@ -215,6 +221,9 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     conn.reportBytesWritten(numOfBytes);
     FutureListener<Void> promise = handler == null ? null : context.promise(handler);
     conn.handler.writeData(stream, chunk, end, promise);
+    if (end) {
+      endWritten();
+    }
   }
 
   final void writeReset(long code) {

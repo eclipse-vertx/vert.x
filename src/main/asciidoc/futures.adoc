@@ -93,6 +93,9 @@ The operations run concurrently, the {@link io.vertx.core.Handler} attached to t
 When one of the operation fails (one of the passed future is marked as a failure), the resulting future is marked as failed too.
 When all the operations succeed, the resulting future is completed with a success.
 
+On success, the `resultAt` method guarantees the results in the same order specified in the call to `CompositeFuture.all`. In the example above, regardless of which
+item completed first, the `httpServer` result can be accessed using `resultAt(0)` and the `netServer` result can be accessed using `resultAt(1)`.
+
 Alternatively, you can pass a list (potentially empty) of futures:
 
 [source,$lang]

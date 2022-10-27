@@ -232,11 +232,14 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     protected Handler<Throwable> exceptionHandler;
     protected Handler<HttpClientPush> pushHandler;
     protected Handler<Void> closeHandler;
+    protected long writeWindow;
+    protected final long windowSize;
 
     Stream(Http2ClientConnection conn, ContextInternal context, boolean push) {
       super(conn, context);
 
       this.push = push;
+      this.windowSize = conn.getWindowSize();
     }
 
     void onContinue() {
@@ -252,21 +255,15 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     @Override
     void doWriteData(ByteBuf chunk, boolean end, Handler<AsyncResult<Void>> handler) {
       super.doWriteData(chunk, end, handler);
-      if (end) {
-        endRequest();
-      }
     }
 
     @Override
     void doWriteHeaders(Http2Headers headers, boolean end, Handler<AsyncResult<Void>> handler) {
       isConnect = "CONNECT".contentEquals(headers.method());
       super.doWriteHeaders(headers, end, handler);
-      if (end) {
-        endRequest();
-      }
     }
 
-    protected void endRequest() {
+    protected void endWritten() {
       requestEnded = true;
       if (conn.metrics != null) {
         conn.metrics.requestEnd(metric, bytesWritten());
@@ -404,7 +401,12 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
     @Override
     public boolean writeQueueFull() {
-      return isNotWritable();
+      return !isNotWritable();
+    }
+
+    @Override
+    public synchronized boolean isNotWritable() {
+      return writeWindow > windowSize;
     }
 
     @Override
@@ -463,9 +465,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
     @Override
     void handleWritabilityChanged(boolean writable) {
-      if (writable && drainHandler != null) {
-        drainHandler.handle(null);
-      }
     }
 
     @Override
@@ -574,6 +573,31 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
     @Override
     public void writeBuffer(ByteBuf buf, boolean end, Handler<AsyncResult<Void>> listener) {
+      if (buf != null) {
+        int size = buf.readableBytes();
+        synchronized (this) {
+          writeWindow += size;
+        }
+        if (listener != null) {
+          Handler<AsyncResult<Void>> prev = listener;
+          listener = ar -> {
+            Handler<Void> drainHandler;
+            synchronized (this) {
+              boolean full = writeWindow > windowSize;
+              writeWindow -= size;
+              if (full && writeWindow <= windowSize) {
+                drainHandler = this.drainHandler;
+              } else {
+                drainHandler = null;
+              }
+            }
+            if (drainHandler != null) {
+              drainHandler.handle(null);
+            }
+            prev.handle(ar);
+          };
+        }
+      }
       writeData(buf, end, listener);
     }
 

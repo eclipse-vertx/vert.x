@@ -20,6 +20,7 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.impl.NetClientBuilder;
 import io.vertx.test.core.AsyncTestBase;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.RepeatRule;
@@ -197,7 +198,7 @@ public class VertxTest extends AsyncTestBase {
       awaitLatch(latch);
       AtomicBoolean closed = new AtomicBoolean();
       CloseFuture closeFuture = new CloseFuture();
-      NetClient client = vertx.createNetClient(new NetClientOptions(), closeFuture);
+      NetClient client = new NetClientBuilder(vertx, new NetClientOptions()).closeFuture(closeFuture).build();
       vertx.addCloseHook(closeFuture);
       closeFuture.future().onComplete(ar -> closed.set(true));
       closeFuture = null;

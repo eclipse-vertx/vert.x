@@ -187,7 +187,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     if (handler != null) {
       checkEnded();
     }
-    checkEnded();
     drainHandler = handler;
     return this;
   }

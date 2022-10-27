@@ -1065,8 +1065,7 @@ public class FileSystemImpl implements FileSystem {
         try {
           Path target = vertx.resolveFile(path).toPath();
           byte[] bytes = Files.readAllBytes(target);
-          Buffer buff = Buffer.buffer(bytes);
-          return buff;
+          return Buffer.buffer(bytes);
         } catch (IOException e) {
           throw new FileSystemException(getFileAccessErrorMessage("read", path), e);
         }
@@ -1158,7 +1157,7 @@ public class FileSystemImpl implements FileSystem {
 
     protected final ContextInternal context;
 
-    public BlockingAction() {
+    protected BlockingAction() {
       this.context = vertx.getOrCreateContext();
     }
 

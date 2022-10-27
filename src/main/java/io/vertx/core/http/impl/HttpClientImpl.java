@@ -19,11 +19,13 @@ import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.*;
+import io.vertx.core.net.impl.NetClientBuilder;
 import io.vertx.core.net.impl.NetClientImpl;
 import io.vertx.core.net.impl.ProxyFilter;
 import io.vertx.core.net.impl.pool.ConnectionManager;
 import io.vertx.core.net.impl.pool.ConnectionPool;
 import io.vertx.core.net.impl.pool.Endpoint;
+import io.vertx.core.net.impl.pool.EndpointProvider;
 import io.vertx.core.net.impl.pool.Lease;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
@@ -146,17 +148,16 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider, Clos
       throw new IllegalStateException("Cannot have pipelining with no keep alive");
     }
     this.proxyFilter = options.getNonProxyHosts() != null ? ProxyFilter.nonProxyHosts(options.getNonProxyHosts()) : ProxyFilter.DEFAULT_PROXY_FILTER;
-    this.netClient = new NetClientImpl(
-      vertx,
-      metrics,
-      new NetClientOptions(options)
-        .setHostnameVerificationAlgorithm(options.isVerifyHost() ? "HTTPS": "")
-        .setProxyOptions(null)
-        .setApplicationLayerProtocols(alpnVersions
-          .stream()
-          .map(HttpVersion::alpnName)
-          .collect(Collectors.toList())),
-      closeFuture);
+    this.netClient = (NetClientImpl) new NetClientBuilder(vertx, new NetClientOptions(options)
+      .setHostnameVerificationAlgorithm(options.isVerifyHost() ? "HTTPS": "")
+      .setProxyOptions(null)
+      .setApplicationLayerProtocols(alpnVersions
+        .stream()
+        .map(HttpVersion::alpnName)
+        .collect(Collectors.toList())))
+      .metrics(metrics)
+      .closeFuture(closeFuture)
+      .build();
     webSocketCM = webSocketConnectionManager();
     httpCM = httpConnectionManager();
     if (options.getPoolCleanerPeriod() > 0 && (options.getKeepAliveTimeout() > 0L || options.getHttp2KeepAliveTimeout() > 0L)) {
@@ -216,28 +217,11 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider, Clos
   }
 
   private ConnectionManager<EndpointKey, Lease<HttpClientConnection>> httpConnectionManager() {
-    int maxPoolSize = Math.max(options.getMaxPoolSize(), options.getHttp2MaxPoolSize());
-    return new ConnectionManager<>((key, ctx, dispose) -> {
-      ClientMetrics metrics = this.metrics != null ? this.metrics.createEndpointMetrics(key.serverAddr, maxPoolSize) : null;
-      HttpChannelConnector connector = new HttpChannelConnector(this, netClient, key.proxyOptions, metrics, options.getProtocolVersion(), key.ssl, options.isUseAlpn(), key.peerAddr, key.serverAddr);
-      return new SharedClientHttpStreamEndpoint(
-        this,
-        metrics,
-        options.getMaxWaitQueueSize(),
-        options.getMaxPoolSize(),
-        options.getHttp2MaxPoolSize(),
-        connector,
-        dispose);
-    });
+    return new ConnectionManager<>();
   }
 
   private ConnectionManager<EndpointKey, HttpClientConnection> webSocketConnectionManager() {
-    int maxPoolSize = options.getMaxWebSockets();
-    return new ConnectionManager<>((key, ctx, dispose) -> {
-      ClientMetrics metrics = this.metrics != null ? this.metrics.createEndpointMetrics(key.serverAddr, maxPoolSize) : null;
-      HttpChannelConnector connector = new HttpChannelConnector(this, netClient, key.proxyOptions, metrics, HttpVersion.HTTP_1_1, key.ssl, false, key.peerAddr, key.serverAddr);
-      return new WebSocketEndpoint(null, maxPoolSize, connector, dispose);
-    });
+    return new ConnectionManager<>();
   }
 
   Function<ContextInternal, EventLoopContext> contextProvider() {
@@ -275,6 +259,16 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider, Clos
     return options.getDefaultHost();
   }
 
+  private ProxyOptions resolveProxyOptions(ProxyOptions proxyOptions, SocketAddress addr) {
+    proxyOptions = getProxyOptions(proxyOptions);
+    if (proxyFilter != null) {
+      if (!proxyFilter.test(addr)) {
+        proxyOptions = null;
+      }
+    }
+    return proxyOptions;
+  }
+
   HttpClientMetrics metrics() {
     return metrics;
   }
@@ -303,15 +297,10 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider, Clos
   }
 
   private void webSocket(WebSocketConnectOptions connectOptions, PromiseInternal<WebSocket> promise) {
-    ProxyOptions proxyOptions = getProxyOptions(connectOptions.getProxyOptions());
     int port = getPort(connectOptions);
     String host = getHost(connectOptions);
     SocketAddress addr = SocketAddress.inetSocketAddress(port, host);
-    if (proxyFilter != null) {
-      if (!proxyFilter.test(addr)) {
-        proxyOptions = null;
-      }
-    }
+    ProxyOptions proxyOptions = resolveProxyOptions(connectOptions.getProxyOptions(), addr);
     EndpointKey key = new EndpointKey(connectOptions.isSsl() != null ? connectOptions.isSsl() : options.isSsl(), proxyOptions, addr, addr);
     ContextInternal ctx = promise.context();
     EventLoopContext eventLoopContext;
@@ -320,9 +309,19 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider, Clos
     } else {
       eventLoopContext = vertx.createEventLoopContext(ctx.nettyEventLoop(), ctx.workerPool(), ctx.classLoader());
     }
+    EndpointProvider<HttpClientConnection> provider = new EndpointProvider<HttpClientConnection>() {
+      @Override
+      public Endpoint<HttpClientConnection> create(ContextInternal ctx, Runnable dispose) {
+        int maxPoolSize = options.getMaxWebSockets();
+        ClientMetrics metrics = HttpClientImpl.this.metrics != null ? HttpClientImpl.this.metrics.createEndpointMetrics(key.serverAddr, maxPoolSize) : null;
+        HttpChannelConnector connector = new HttpChannelConnector(HttpClientImpl.this, netClient, proxyOptions, metrics, HttpVersion.HTTP_1_1, key.ssl, false, key.peerAddr, key.serverAddr);
+        return new WebSocketEndpoint(null, maxPoolSize, connector, dispose);
+      }
+    };
     webSocketCM.getConnection(
       eventLoopContext,
       key,
+      provider,
       ar -> {
         if (ar.succeeded()) {
           Http1xClientConnection conn = (Http1xClientConnection) ar.result();
@@ -550,7 +549,6 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider, Clos
     if (server == null) {
       server = SocketAddress.inetSocketAddress(port, host);
     }
-    ProxyOptions proxyOptions = getProxyOptions(request.getProxyOptions());
     HttpMethod method = request.getMethod();
     String requestURI = request.getURI();
     Boolean ssl = request.isSsl();
@@ -566,37 +564,36 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider, Clos
       throw new IllegalArgumentException("Must enable ALPN when using H2");
     }
     checkClosed();
-    if (proxyFilter != null) {
-      if (!proxyFilter.test(server)) {
-        proxyOptions = null;
-      }
-    }
-    if (proxyOptions != null) {
-      if (!useSSL && proxyOptions.getType() == ProxyType.HTTP) {
-        // If the requestURI is as not absolute URI then we do not recompute one for the proxy
-        if (!ABS_URI_START_PATTERN.matcher(requestURI).find()) {
-          int defaultPort = 80;
-          String addPort = (port != -1 && port != defaultPort) ? (":" + port) : "";
-          requestURI = (ssl == Boolean.TRUE ? "https://" : "http://") + host + addPort + requestURI;
-        }
-        if (proxyOptions.getUsername() != null && proxyOptions.getPassword() != null) {
-          if (headers == null) {
-            headers = HttpHeaders.headers();
-          }
-          headers.add("Proxy-Authorization", "Basic " + Base64.getEncoder()
-            .encodeToString((proxyOptions.getUsername() + ":" + proxyOptions.getPassword()).getBytes()));
-        }
-        server = SocketAddress.inetSocketAddress(proxyOptions.getPort(), proxyOptions.getHost());
-        proxyOptions = null;
-      }
-    }
+    ProxyOptions proxyOptions = resolveProxyOptions(request.getProxyOptions(), server);
 
     String peerHost = host;
     if (peerHost.endsWith(".")) {
       peerHost = peerHost.substring(0, peerHost.length() -  1);
     }
     SocketAddress peerAddress = SocketAddress.inetSocketAddress(port, peerHost);
-    doRequest(method, peerAddress, server, host, port, useSSL, requestURI, headers, request.getTraceOperation(), timeout, followRedirects, proxyOptions, promise);
+
+    EndpointKey key;
+    if (proxyOptions != null && !useSSL && proxyOptions.getType() == ProxyType.HTTP) {
+      // If the requestURI is as not absolute URI then we do not recompute one for the proxy
+      if (!ABS_URI_START_PATTERN.matcher(requestURI).find()) {
+        int defaultPort = 80;
+        String addPort = (port != -1 && port != defaultPort) ? (":" + port) : "";
+        requestURI = (ssl == Boolean.TRUE ? "https://" : "http://") + host + addPort + requestURI;
+      }
+      if (proxyOptions.getUsername() != null && proxyOptions.getPassword() != null) {
+        if (headers == null) {
+          headers = HttpHeaders.headers();
+        }
+        headers.add("Proxy-Authorization", "Basic " + Base64.getEncoder()
+          .encodeToString((proxyOptions.getUsername() + ":" + proxyOptions.getPassword()).getBytes()));
+      }
+      server = SocketAddress.inetSocketAddress(proxyOptions.getPort(), proxyOptions.getHost());
+      key = new EndpointKey(useSSL, proxyOptions, server, peerAddress);
+      proxyOptions = null;
+    } else {
+      key = new EndpointKey(useSSL, proxyOptions, server, peerAddress);
+    }
+    doRequest(method, peerAddress, server, host, port, useSSL, requestURI, headers, request.getTraceOperation(), timeout, followRedirects, proxyOptions, key, promise);
   }
 
   private void doRequest(
@@ -612,10 +609,26 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider, Clos
     long timeout,
     Boolean followRedirects,
     ProxyOptions proxyOptions,
+    EndpointKey key,
     PromiseInternal<HttpClientRequest> requestPromise) {
     ContextInternal ctx = requestPromise.context();
-    EndpointKey key = new EndpointKey(useSSL, proxyOptions, server, peerAddress);
-    httpCM.getConnection(ctx, key, timeout, ar1 -> {
+    EndpointProvider<Lease<HttpClientConnection>> provider = new EndpointProvider<Lease<HttpClientConnection>>() {
+      @Override
+      public Endpoint<Lease<HttpClientConnection>> create(ContextInternal ctx, Runnable dispose) {
+        int maxPoolSize = Math.max(options.getMaxPoolSize(), options.getHttp2MaxPoolSize());
+        ClientMetrics metrics = HttpClientImpl.this.metrics != null ? HttpClientImpl.this.metrics.createEndpointMetrics(key.serverAddr, maxPoolSize) : null;
+        HttpChannelConnector connector = new HttpChannelConnector(HttpClientImpl.this, netClient, proxyOptions, metrics, options.getProtocolVersion(), key.ssl, options.isUseAlpn(), key.peerAddr, key.serverAddr);
+        return new SharedClientHttpStreamEndpoint(
+          HttpClientImpl.this,
+          metrics,
+          options.getMaxWaitQueueSize(),
+          options.getMaxPoolSize(),
+          options.getHttp2MaxPoolSize(),
+          connector,
+          dispose);
+      }
+    };
+    httpCM.getConnection(ctx, key, provider, timeout, ar1 -> {
       if (ar1.succeeded()) {
         Lease<HttpClientConnection> lease = ar1.result();
         HttpClientConnection conn = lease.get();

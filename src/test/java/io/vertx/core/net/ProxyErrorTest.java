@@ -69,7 +69,7 @@ public class ProxyErrorTest extends VertxTestBase {
   // we don't start http/https servers, due to the error, they will not be queried
 
   private void startProxy(int error, String username) throws Exception {
-    proxy = new HttpProxy(username);
+    proxy = new HttpProxy().username(username);
     proxy.setError(error);
     proxy.start(vertx);
   }
@@ -128,7 +128,7 @@ public class ProxyErrorTest extends VertxTestBase {
         .setProxyOptions(new ProxyOptions()
             .setType(ProxyType.HTTP)
             .setHost("localhost")
-            .setPort(proxy.getPort()));
+            .setPort(proxy.port()));
     HttpClient client = vertx.createHttpClient(options);
 
     client.request(new RequestOptions().setAbsoluteURI(url), ar -> {

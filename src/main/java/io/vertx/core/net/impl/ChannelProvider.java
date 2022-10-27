@@ -12,8 +12,10 @@
 package io.vertx.core.net.impl;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.handler.proxy.*;
+import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.SslHandshakeCompletionEvent;
 import io.netty.resolver.NoopAddressResolverGroup;
@@ -107,8 +109,7 @@ public final class ChannelProvider {
 
   private void initSSL(Handler<Channel> handler, SocketAddress peerAddress, String serverName, boolean ssl, boolean useAlpn, Channel ch, Promise<Channel> channelHandler) {
     if (ssl) {
-      SslHandler sslHandler = new SslHandler(sslHelper.createEngine(context.owner(), peerAddress, serverName, useAlpn));
-      sslHandler.setHandshakeTimeout(sslHelper.getSslHandshakeTimeout(), sslHelper.getSslHandshakeTimeoutUnit());
+      SslHandler sslHandler = sslHelper.createSslHandler(context.owner(), peerAddress, serverName, useAlpn);
       ChannelPipeline pipeline = ch.pipeline();
       pipeline.addLast("ssl", sslHandler);
       pipeline.addLast(new ChannelInboundHandlerAdapter() {

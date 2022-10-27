@@ -138,10 +138,11 @@ public class HttpTestBase extends VertxTestBase {
 
   protected void startProxy(String username, ProxyType proxyType) throws Exception {
     if (proxyType == ProxyType.HTTP) {
-      proxy = new HttpProxy(username);
+      proxy = new HttpProxy();
     } else {
-      proxy = new SocksProxy(username);
+      proxy = new SocksProxy();
     }
+    proxy.username(username);
     proxy.start(vertx);
   }
 }
