@@ -304,14 +304,20 @@ the verticle(s).
 
 Verticle names can have a prefix - which is a string followed by a colon, which if present will be used to look-up the factory, e.g.
 
+[source]
+----
  js:foo.js // Use the JavaScript verticle factory
  groovy:com.mycompany.SomeGroovyCompiledVerticle // Use the Groovy verticle factory
  service:com.mycompany:myorderservice // Uses the service verticle factory
+----
 
 If no prefix is present, Vert.x will look for a suffix and use that to lookup the factory, e.g.
 
+[source]
+----
  foo.js // Will also use the JavaScript verticle factory
  SomeScript.groovy // Will use the Groovy verticle factory
+----
 
 If no prefix or suffix is present, Vert.x will assume it's a Java fully qualified class name (FQCN) and try
 and instantiate that.
