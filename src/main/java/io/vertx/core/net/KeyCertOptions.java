@@ -69,4 +69,9 @@ public interface KeyCertOptions {
     return new KeyManagerFactoryOptions(keyManager);
   }
 
+  /**
+   * @return a boolean to indicate that the provided SSL material has been updated
+   */
+  boolean isUpdated();
+
 }

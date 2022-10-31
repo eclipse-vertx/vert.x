@@ -843,6 +843,12 @@ public abstract class HttpTLSTest extends HttpTestBase {
       public Function<String, TrustManager[]> trustManagerMapper(Vertx vertx) throws Exception {
         return null;
       }
+
+      @Override
+      public boolean isUpdated() {
+        return false;
+      }
+
       @Override
       public TrustManagerFactory getTrustManagerFactory(Vertx v) throws Exception {
         return new TrustManagerFactory(new TrustManagerFactorySpi() {
@@ -884,6 +890,11 @@ public abstract class HttpTLSTest extends HttpTestBase {
       @Override
       public Function<String, TrustManager[]> trustManagerMapper(Vertx v) throws Exception {
         return (serverName) -> new TrustManager[]{TrustAllTrustManager.INSTANCE};
+      }
+
+      @Override
+      public boolean isUpdated() {
+        return false;
       }
 
       @Override
@@ -941,6 +952,12 @@ public abstract class HttpTLSTest extends HttpTestBase {
       public Function<String, TrustManager[]> trustManagerMapper(Vertx vertx) throws Exception {
         return null;
       }
+
+      @Override
+      public boolean isUpdated() {
+        return false;
+      }
+
       @Override
       public TrustManagerFactory getTrustManagerFactory(Vertx v) throws Exception {
         return new TrustManagerFactory(new TrustManagerFactorySpi() {

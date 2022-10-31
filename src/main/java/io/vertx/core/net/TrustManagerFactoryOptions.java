@@ -80,4 +80,9 @@ class TrustManagerFactoryOptions implements TrustOptions {
     return serverName -> trustManagerFactory.getTrustManagers();
   }
 
+  @Override
+  public boolean isUpdated() {
+    return false;
+  }
+
 }

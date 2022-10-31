@@ -80,4 +80,9 @@ class KeyManagerFactoryOptions implements KeyCertOptions {
     return keyManagerFactory.getKeyManagers()[0] instanceof X509KeyManager ? serverName -> (X509KeyManager) keyManagerFactory.getKeyManagers()[0] : null;
   }
 
+  @Override
+  public boolean isUpdated() {
+    return false;
+  }
+
 }

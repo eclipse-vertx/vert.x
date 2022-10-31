@@ -63,4 +63,9 @@ public interface TrustOptions {
     return new TrustManagerFactoryOptions(trustManager);
   }
 
+  /**
+   * @return a boolean to indicate that the provided SSL material has been updated
+   */
+  boolean isUpdated();
+
 }

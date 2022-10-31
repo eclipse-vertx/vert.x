@@ -37,11 +37,15 @@ import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.core.net.SSLEngineOptions;
+import io.vertx.core.net.SSLRefreshOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.TCPSSLOptions;
 import io.vertx.core.net.TrustOptions;
 import io.vertx.core.spi.tls.DefaultSslContextFactory;
 import io.vertx.core.spi.tls.SslContextFactory;
+import nl.altindag.ssl.util.KeyManagerUtils;
+import nl.altindag.ssl.util.SSLSessionUtils;
+import nl.altindag.ssl.util.TrustManagerUtils;
 
 import javax.net.ssl.*;
 import java.io.ByteArrayInputStream;
@@ -51,8 +55,10 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -61,6 +67,7 @@ import java.util.stream.Stream;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ * @author <a href="mailto:hakangoudberg@hotmail.com">Hakan Altindag</a>
  */
 public class SSLHelper {
 
@@ -128,6 +135,7 @@ public class SSLHelper {
   private final SSLEngineOptions sslEngineOptions;
   private final KeyCertOptions keyCertOptions;
   private final TrustOptions trustOptions;
+  private final SSLRefreshOptions sslRefreshOptions;
   private final ArrayList<String> crlPaths;
   private final ArrayList<Buffer> crlValues;
   private final Set<String> enabledCipherSuites;
@@ -138,6 +146,8 @@ public class SSLHelper {
   private Map<String, SslContext>[] sslContextMaps = new Map[] {
     new ConcurrentHashMap<>(), new ConcurrentHashMap<>()
   };
+  private X509ExtendedKeyManager swappableKeyManager;
+  private X509ExtendedTrustManager swappableTrustManager;
 
   public SSLHelper(TCPSSLOptions options, List<String> applicationProtocols) {
     this.sslEngineOptions = options.getSslEngineOptions();
@@ -153,6 +163,7 @@ public class SSLHelper {
     this.trustAll = options instanceof ClientOptionsBase && ((ClientOptionsBase)options).isTrustAll();
     this.keyCertOptions = options.getKeyCertOptions() != null ? options.getKeyCertOptions().copy() : null;
     this.trustOptions = options.getTrustOptions() != null ? options.getTrustOptions().copy() : null;
+    this.sslRefreshOptions = options.getSslRefreshOptions() != null ? options.getSslRefreshOptions() : null;
     this.clientAuth = options instanceof NetServerOptions ? ((NetServerOptions)options).getClientAuth() : ClientAuth.NONE;
     this.endpointIdentificationAlgorithm = options instanceof NetClientOptions ? ((NetClientOptions)options).getHostnameVerificationAlgorithm() : "";
     this.sni = options instanceof NetServerOptions && ((NetServerOptions) options).isSni();
@@ -293,13 +304,29 @@ public class SSLHelper {
         factory.clientAuth(CLIENT_AUTH_MAPPING.get(clientAuth));
       }
       if (kmf != null) {
-        factory.keyMananagerFactory(kmf);
+        createSwappableManagerIfEnabled(kmf, KeyManagerUtils::getKeyManager, km -> {
+          swappableKeyManager = KeyManagerUtils.createSwappableKeyManager(km);
+          factory.keyMananagerFactory(KeyManagerUtils.createKeyManagerFactory(swappableKeyManager));
+        }, factory::keyMananagerFactory);
       }
       if (tmf != null) {
-        factory.trustManagerFactory(tmf);
+        createSwappableManagerIfEnabled(tmf, TrustManagerUtils::getTrustManager, tm -> {
+          swappableTrustManager = TrustManagerUtils.createSwappableTrustManager(tm);
+          factory.trustManagerFactory(TrustManagerUtils.createTrustManagerFactory(swappableTrustManager));
+        }, factory::trustManagerFactory);
       }
       if (serverName != null) {
         factory.serverName(serverName);
+      }
+
+      if (sslRefreshOptions != null) {
+        vertx.setPeriodic(
+          sslRefreshOptions.getSslRefreshTimeUnit().toMillis(sslRefreshOptions.getSslRefreshTimeout()),
+          handler -> vertx.executeBlocking(aPromise -> reloadCertificates(
+            () -> getKeyMgrFactory(vertx, serverName),
+            () -> getTrustMgrFactory(vertx, serverName, trustAll)
+          ))
+        );
       }
       return factory.create();
     } catch (Exception e) {
@@ -366,7 +393,7 @@ public class SSLHelper {
   private TrustManagerFactory getTrustMgrFactory(VertxInternal vertx, String serverName, boolean trustAll) throws Exception {
     TrustManager[] mgrs = null;
     if (trustAll) {
-      mgrs = new TrustManager[]{createTrustAllTrustManager()};
+      mgrs = new TrustManager[]{TrustManagerUtils.createUnsafeTrustManager()};
     } else if (trustOptions != null) {
       if (serverName != null) {
         Function<String, TrustManager[]> mapper = trustOptions.trustManagerMapper(vertx);
@@ -445,21 +472,54 @@ public class SSLHelper {
     return trustMgrs;
   }
 
-  // Create a TrustManager which trusts everything
-  private static TrustManager createTrustAllTrustManager() {
-    return new X509TrustManager() {
-      @Override
-      public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+  private <T, U> void createSwappableManagerIfEnabled(T factoryManager,
+                                                      Function<T, U> factoryManagerMapper,
+                                                      Consumer<U> managerConsumer,
+                                                      Consumer<T> managerConsumerFallback) {
+
+    if (sslRefreshOptions != null) {
+      U manager = factoryManagerMapper.apply(factoryManager);
+      managerConsumer.accept(manager);
+    } else {
+      managerConsumerFallback.accept(factoryManager);
+    }
+  }
+
+  private void reloadCertificates(Callable<KeyManagerFactory> keyManagerFactorySupplier, Callable<TrustManagerFactory> trustManagerFactorySupplier) {
+    boolean keyCertOptionsUpdated = keyCertOptions.isUpdated();
+    boolean trustOptionsUpdated = trustOptions.isUpdated();
+
+    if (!keyCertOptionsUpdated && !trustOptionsUpdated) {
+      return;
+    }
+
+    log.info("Changes detected on the SSL material, attempting to update the SSL configuration...");
+
+    try {
+      if (keyCertOptionsUpdated) {
+        KeyManagerFactory kmf = keyManagerFactorySupplier.call();
+        if (kmf != null) {
+          X509ExtendedKeyManager km = KeyManagerUtils.getKeyManager(kmf);
+          KeyManagerUtils.swapKeyManager(swappableKeyManager, km);
+        }
       }
 
-      @Override
-      public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+      if (trustOptionsUpdated) {
+        TrustManagerFactory tmf = trustManagerFactorySupplier.call();
+        if (tmf != null) {
+          X509ExtendedTrustManager tm = TrustManagerUtils.getTrustManager(tmf);
+          TrustManagerUtils.swapTrustManager(swappableTrustManager, tm);
+        }
       }
 
-      @Override
-      public X509Certificate[] getAcceptedIssuers() {
-        return new X509Certificate[0];
-      }
-    };
+      Arrays.stream(sslContexts)
+        .filter(Objects::nonNull)
+        .map(SslContext::sessionContext)
+        .forEach(SSLSessionUtils::invalidateCaches);
+
+      log.info("SSL configuration has been updated with the new SSL material");
+    } catch (Exception e) {
+      throw new VertxException(e);
+    }
   }
 }
