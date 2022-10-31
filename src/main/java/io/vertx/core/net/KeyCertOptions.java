@@ -72,6 +72,8 @@ public interface KeyCertOptions {
   /**
    * @return a boolean to indicate that the provided SSL material has been updated
    */
-  boolean isUpdated();
+  default boolean isUpdated() {
+    return false;
+  }
 
 }
