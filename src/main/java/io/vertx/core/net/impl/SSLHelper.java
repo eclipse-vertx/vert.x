@@ -37,7 +37,7 @@ import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.core.net.SSLEngineOptions;
-import io.vertx.core.net.SSLRefreshOptions;
+import io.vertx.core.net.SslRefreshOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.TCPSSLOptions;
 import io.vertx.core.net.TrustOptions;
@@ -135,7 +135,7 @@ public class SSLHelper {
   private final SSLEngineOptions sslEngineOptions;
   private final KeyCertOptions keyCertOptions;
   private final TrustOptions trustOptions;
-  private final SSLRefreshOptions sslRefreshOptions;
+  private final SslRefreshOptions sslRefreshOptions;
   private final ArrayList<String> crlPaths;
   private final ArrayList<Buffer> crlValues;
   private final Set<String> enabledCipherSuites;

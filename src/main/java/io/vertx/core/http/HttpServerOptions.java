@@ -393,8 +393,8 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
-  public HttpServerOptions setSSLRefreshOptions(TimeUnit sslRefreshTimeUnit, long sslRefreshTimeout) {
-    return (HttpServerOptions) super.setSSLRefreshOptions(sslRefreshTimeUnit, sslRefreshTimeout);
+  public HttpServerOptions setSslRefreshOptions(TimeUnit sslRefreshTimeUnit, long sslRefreshTimeout) {
+    return (HttpServerOptions) super.setSslRefreshOptions(sslRefreshTimeUnit, sslRefreshTimeout);
   }
 
   @Override

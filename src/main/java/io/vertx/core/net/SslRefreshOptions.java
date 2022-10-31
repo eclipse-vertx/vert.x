@@ -19,12 +19,12 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="mailto:hakangoudberg@hotmail.com">Hakan Altindag</a>
  */
-public final class SSLRefreshOptions {
+public final class SslRefreshOptions {
 
   private final TimeUnit sslRefreshTimeUnit;
   private final long sslRefreshTimeout;
 
-  public SSLRefreshOptions(TimeUnit sslRefreshTimeUnit, long sslRefreshTimeout) {
+  public SslRefreshOptions(TimeUnit sslRefreshTimeUnit, long sslRefreshTimeout) {
     this.sslRefreshTimeUnit = sslRefreshTimeUnit;
     this.sslRefreshTimeout = sslRefreshTimeout;
   }

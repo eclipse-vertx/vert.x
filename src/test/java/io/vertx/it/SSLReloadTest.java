@@ -124,7 +124,7 @@ public class SSLReloadTest extends HttpTestBase {
       .setHost(DEFAULT_HTTP_HOST)
       .setKeyCertOptions(keyCertOptions)
       .setTrustOptions(trustOptions)
-      .setSSLRefreshOptions(TimeUnit.MILLISECONDS, 500)
+      .setSslRefreshOptions(TimeUnit.MILLISECONDS, 500)
       .setSsl(true);
     server = vertx.createHttpServer(options);
     server.requestHandler(req -> {

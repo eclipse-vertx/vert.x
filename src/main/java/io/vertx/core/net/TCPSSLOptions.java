@@ -131,7 +131,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   private TimeUnit sslHandshakeTimeoutUnit;
   private KeyCertOptions keyCertOptions;
   private TrustOptions trustOptions;
-  private SSLRefreshOptions sslRefreshOptions;
+  private SslRefreshOptions sslRefreshOptions;
   private Set<String> enabledCipherSuites;
   private ArrayList<String> crlPaths;
   private ArrayList<Buffer> crlValues;
@@ -552,8 +552,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @param sslRefreshTimeout the refresh option containing the amount
    * @return a reference to this, so the API can be used fluently
    */
-  public TCPSSLOptions setSSLRefreshOptions(TimeUnit sslRefreshTimeUnit, long sslRefreshTimeout) {
-    this.sslRefreshOptions = new SSLRefreshOptions(sslRefreshTimeUnit, sslRefreshTimeout);
+  public TCPSSLOptions setSslRefreshOptions(TimeUnit sslRefreshTimeUnit, long sslRefreshTimeout) {
+    this.sslRefreshOptions = new SslRefreshOptions(sslRefreshTimeUnit, sslRefreshTimeout);
     return this;
   }
 
@@ -561,7 +561,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * Get the refresh option for the ssl configuration
    * @return the refresh option for the ssl configuration
    */
-  public SSLRefreshOptions getSslRefreshOptions() {
+  public SslRefreshOptions getSslRefreshOptions() {
     return sslRefreshOptions;
   }
 
