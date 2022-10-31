@@ -393,7 +393,7 @@ public class SSLHelper {
   private TrustManagerFactory getTrustMgrFactory(VertxInternal vertx, String serverName, boolean trustAll) throws Exception {
     TrustManager[] mgrs = null;
     if (trustAll) {
-      mgrs = new TrustManager[]{TrustManagerUtils.createUnsafeTrustManager()};
+      mgrs = new TrustManager[]{createTrustAllTrustManager()};
     } else if (trustOptions != null) {
       if (serverName != null) {
         Function<String, TrustManager[]> mapper = trustOptions.trustManagerMapper(vertx);
@@ -470,6 +470,24 @@ public class SSLHelper {
       }
     }
     return trustMgrs;
+  }
+
+  // Create a TrustManager which trusts everything
+  private static TrustManager createTrustAllTrustManager() {
+    return new X509TrustManager() {
+      @Override
+      public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+      }
+
+      @Override
+      public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+      }
+
+      @Override
+      public X509Certificate[] getAcceptedIssuers() {
+        return new X509Certificate[0];
+      }
+    };
   }
 
   private <T, U> void createSwappableManagerIfEnabled(T factoryManager,
