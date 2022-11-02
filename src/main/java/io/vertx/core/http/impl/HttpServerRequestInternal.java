@@ -19,16 +19,16 @@ import io.vertx.core.spi.observability.HttpRequest;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface HttpServerRequestInternal extends HttpServerRequest {
+public abstract class HttpServerRequestInternal implements HttpServerRequest {
 
   /**
    * @return the Vert.x context associated with this server request
    */
-  Context context();
+  public abstract Context context();
 
   /**
    * @return the metric object returned by the {@link io.vertx.core.spi.metrics.HttpServerMetrics#requestBegin(Object, HttpRequest)} call
    */
-  Object metric();
+  public abstract Object metric();
 
 }
