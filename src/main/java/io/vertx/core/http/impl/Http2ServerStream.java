@@ -16,7 +16,9 @@ import io.netty.handler.codec.http2.Http2Headers;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClosedException;
+import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.StreamPriority;
@@ -27,20 +29,19 @@ import io.vertx.core.spi.observability.HttpRequest;
 
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
-abstract class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
+class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
 
   protected final Http2Headers headers;
   protected final HttpMethod method;
   protected final String uri;
   protected final String host;
-  protected final Http2ServerResponse response;
   private Object metric;
   private boolean requestEnded;
   private boolean responseEnded;
+  Http2ServerStreamHandler request;
 
   Http2ServerStream(Http2ServerConnection conn,
                     ContextInternal context,
-                    String contentEncoding,
                     HttpMethod method,
                     String uri) {
     super(conn, context);
@@ -49,10 +50,9 @@ abstract class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection>
     this.method = method;
     this.uri = uri;
     this.host = null;
-    this.response = new Http2ServerResponse(conn, this, true, contentEncoding, null);
   }
 
-  Http2ServerStream(Http2ServerConnection conn, ContextInternal context, Http2Headers headers, String contentEncoding, String serverOrigin) {
+  Http2ServerStream(Http2ServerConnection conn, ContextInternal context, Http2Headers headers, String serverOrigin) {
     super(conn, context);
 
     String host = headers.get(":authority") != null ? headers.get(":authority").toString() : null;
@@ -65,17 +65,16 @@ abstract class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection>
     this.host = host;
     this.uri = headers.get(":path") != null ? headers.get(":path").toString() : null;
     this.method = headers.get(":method") != null ? HttpMethod.valueOf(headers.get(":method").toString()) : null;
-    this.response = new Http2ServerResponse(conn, this, false, contentEncoding, host);
   }
 
   void registerMetrics() {
     if (METRICS_ENABLED) {
       HttpServerMetrics metrics = conn.metrics();
       if (metrics != null) {
-        if (response.isPush()) {
-          metric = metrics.responsePushed(conn.metric(), method(), uri, response);
+        if (request.response().isPush()) {
+          metric = metrics.responsePushed(conn.metric(), method(), uri, request.response());
         } else {
-          metric = metrics.requestBegin(conn.metric(), (HttpRequest) this);
+          metric = metrics.requestBegin(conn.metric(), (HttpRequest) request);
         }
       }
     }
@@ -91,9 +90,9 @@ abstract class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection>
     if (conn.options.isHandle100ContinueAutomatically() &&
       ((value != null && HttpHeaderValues.CONTINUE.equals(value)) ||
         headers.contains(HttpHeaderNames.EXPECT, HttpHeaderValues.CONTINUE))) {
-      response.writeContinue();
+      request.response().writeContinue();
     }
-    dispatch(conn.requestHandler);
+    request.dispatch(conn.requestHandler);
   }
 
   @Override
@@ -102,20 +101,18 @@ abstract class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection>
     if (Metrics.METRICS_ENABLED) {
       HttpServerMetrics metrics = conn.metrics();
       if (metrics != null) {
-        metrics.requestEnd(metric, (HttpRequest) this, bytesRead());
+        metrics.requestEnd(metric, (HttpRequest) request, bytesRead());
       }
     }
     super.onEnd(trailers);
   }
-
-  abstract void dispatch(Handler<HttpServerRequest> handler);
 
   @Override
   void doWriteHeaders(Http2Headers headers, boolean end, Handler<AsyncResult<Void>> handler) {
     if (Metrics.METRICS_ENABLED && !end) {
       HttpServerMetrics metrics = conn.metrics();
       if (metrics != null) {
-        metrics.responseBegin(metric, response);
+        metrics.responseBegin(metric, request.response());
       }
     }
     super.doWriteHeaders(headers, end, handler);
@@ -123,9 +120,7 @@ abstract class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection>
 
   @Override
   void handleWritabilityChanged(boolean writable) {
-    if (response != null) {
-      response.handlerWritabilityChanged(writable);
-    }
+    request.response().handlerWritabilityChanged(writable);
   }
 
   public HttpMethod method() {
@@ -138,7 +133,7 @@ abstract class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection>
     if (METRICS_ENABLED) {
       HttpServerMetrics metrics = conn.metrics();
       if (metrics != null) {
-        metrics.responseEnd(metric, response, bytesWritten());
+        metrics.responseEnd(metric, request.response(), bytesWritten());
       }
     }
   }
@@ -153,13 +148,50 @@ abstract class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection>
         metrics.requestReset(metric);
       }
     }
+    request.handleClose(ex);
+  }
+
+  @Override
+  void handleReset(long errorCode) {
+    request.handleReset(errorCode);
+  }
+
+  @Override
+  void handleException(Throwable cause) {
+    request.handleException(cause);
+  }
+
+  @Override
+  void handleCustomFrame(HttpFrame frame) {
+    request.handleCustomFrame(frame);
+  }
+
+  @Override
+  void handlePriorityChange(StreamPriority newPriority) {
+    request.handlePriorityChange(newPriority);
+  }
+
+  @Override
+  void handleData(Buffer buf) {
+    request.handleData(buf);
+  }
+
+  @Override
+  void handleEnd(MultiMap trailers) {
+    request.handleEnd(trailers);
+  }
+
+  @Override
+  void onClose(HttpClosedException ex) {
+    request.onClose(ex);
+    super.onClose(ex);
   }
 
   public Object metric() {
     return metric;
   }
 
-  HttpServerRequest routed(String route) {
+  public HttpServerRequest routed(String route) {
     if (METRICS_ENABLED) {
       HttpServerMetrics metrics = conn.metrics();
       if (metrics != null && !responseEnded) {

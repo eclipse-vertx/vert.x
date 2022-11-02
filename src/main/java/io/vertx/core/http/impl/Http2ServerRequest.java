@@ -60,10 +60,13 @@ import java.util.Set;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http2ServerRequest extends Http2ServerStream implements HttpServerRequestInternal, io.vertx.core.spi.observability.HttpRequest {
+public class Http2ServerRequest implements HttpServerRequestInternal, Http2ServerStreamHandler, io.vertx.core.spi.observability.HttpRequest {
 
   private static final Logger log = LoggerFactory.getLogger(Http1xServerRequest.class);
 
+  protected final ContextInternal context;
+  protected final Http2ServerStream stream;
+  protected final Http2ServerResponse response;
   private final String serverOrigin;
   private final MultiMap headersMap;
   private final String scheme;
@@ -85,21 +88,21 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
   private Handler<HttpFrame> customFrameHandler;
   private Handler<StreamPriority> streamPriorityHandler;
 
-  Http2ServerRequest(Http2ServerConnection conn,
-                     TracingPolicy tracingPolicy,
-                     ContextInternal context,
+  Http2ServerRequest(Http2ServerStream stream,
                      String serverOrigin,
+                     TracingPolicy tracingPolicy,
                      Http2Headers headers,
                      String contentEncoding,
                      boolean streamEnded) {
-    super(conn, context, headers, contentEncoding, serverOrigin);
-
     String scheme = headers.get(":scheme") != null ? headers.get(":scheme").toString() : null;
     headers.remove(":method");
     headers.remove(":scheme");
     headers.remove(":path");
     headers.remove(":authority");
 
+    this.context = stream.context;
+    this.stream = stream;
+    this.response = new Http2ServerResponse(stream.conn, stream, false, contentEncoding);
     this.serverOrigin = serverOrigin;
     this.streamEnded = streamEnded;
     this.scheme = scheme;
@@ -114,7 +117,7 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
     return eventHandler;
   }
 
-  void dispatch(Handler<HttpServerRequest> handler) {
+  public void dispatch(Handler<HttpServerRequest> handler) {
     VertxTracer tracer = context.tracer();
     if (tracer != null) {
       trace = tracer.receiveRequest(context, SpanKind.RPC, tracingPolicy, this, method().name(), headers(), HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
@@ -123,14 +126,9 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
   }
 
   @Override
-  void handleWritabilityChanged(boolean writable) {
-    response.handlerWritabilityChanged(writable);
-  }
-
-  @Override
-  void handleException(Throwable cause) {
+  public void handleException(Throwable cause) {
     boolean notify;
-    synchronized (conn) {
+    synchronized (stream.conn) {
       notify = !ended;
     }
     if (notify) {
@@ -142,7 +140,7 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
   private void notifyException(Throwable failure) {
     InterfaceHttpData upload = null;
     HttpEventHandler handler;
-    synchronized (conn) {
+    synchronized (stream.conn) {
       if (postRequestDecoder != null) {
         upload = postRequestDecoder.currentPartialHttpData();
       }
@@ -157,12 +155,12 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
   }
 
   @Override
-  void onClose(HttpClosedException ex) {
+  public void onClose(HttpClosedException ex) {
     VertxTracer tracer = context.tracer();
     Object trace = this.trace;
     if (tracer != null && trace != null) {
       Throwable failure;
-      synchronized (conn) {
+      synchronized (stream.conn) {
         if (!streamEnded && (!ended || !response.ended())) {
           failure = ex;
         } else {
@@ -171,14 +169,12 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
       }
       tracer.sendResponse(context, failure == null ? response : null, trace, failure, HttpUtils.SERVER_RESPONSE_TAG_EXTRACTOR);
     }
-    super.onClose(ex);
   }
 
   @Override
-  void handleClose(HttpClosedException ex) {
-    super.handleClose(ex);
+  public void handleClose(HttpClosedException ex) {
     boolean notify;
-    synchronized (conn) {
+    synchronized (stream.conn) {
       notify = !streamEnded;
     }
     if (notify) {
@@ -188,13 +184,13 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
   }
 
   @Override
-  void handleCustomFrame(HttpFrame frame) {
+  public void handleCustomFrame(HttpFrame frame) {
     if (customFrameHandler != null) {
       customFrameHandler.handle(frame);
     }
   }
 
-  void handleData(Buffer data) {
+  public void handleData(Buffer data) {
     if (postRequestDecoder != null) {
       try {
         postRequestDecoder.offer(new DefaultHttpContent(data.getByteBuf()));
@@ -208,9 +204,9 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
     }
   }
 
-  void handleEnd(MultiMap trailers) {
+  public void handleEnd(MultiMap trailers) {
     HttpEventHandler handler;
-    synchronized (conn) {
+    synchronized (stream.conn) {
       streamEnded = true;
       ended = true;
       if (postRequestDecoder != null) {
@@ -246,9 +242,9 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
   }
 
   @Override
-  void handleReset(long errorCode) {
+  public void handleReset(long errorCode) {
     boolean notify;
-    synchronized (conn) {
+    synchronized (stream.conn) {
       notify = !ended;
       ended = true;
     }
@@ -265,13 +261,28 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
   }
 
   @Override
+  public HttpMethod method() {
+    return stream.method;
+  }
+
+  @Override
+  public int id() {
+    return stream.id();
+  }
+
+  @Override
+  public Object metric() {
+    return stream.metric();
+  }
+
+  @Override
   public Context context() {
     return context;
   }
 
   @Override
   public HttpServerRequest exceptionHandler(Handler<Throwable> handler) {
-    synchronized (conn) {
+    synchronized (stream.conn) {
       HttpEventHandler eventHandler = eventHandler(handler != null);
       if (eventHandler != null) {
         eventHandler.exceptionHandler(handler);
@@ -282,7 +293,7 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
 
   @Override
   public HttpServerRequest handler(Handler<Buffer> handler) {
-    synchronized (conn) {
+    synchronized (stream.conn) {
       if (handler != null) {
         checkEnded();
       }
@@ -296,9 +307,9 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
 
   @Override
   public HttpServerRequest pause() {
-    synchronized (conn) {
+    synchronized (stream.conn) {
       checkEnded();
-      doPause();
+      stream.doPause();
     }
     return this;
   }
@@ -310,16 +321,16 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
 
   @Override
   public HttpServerRequest fetch(long amount) {
-    synchronized (conn) {
+    synchronized (stream.conn) {
       checkEnded();
-      doFetch(amount);
+      stream.doFetch(amount);
     }
     return this;
   }
 
   @Override
   public HttpServerRequest endHandler(Handler<Void> handler) {
-    synchronized (conn) {
+    synchronized (stream.conn) {
       if (handler != null) {
         checkEnded();
       }
@@ -338,20 +349,20 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
 
   @Override
   public String uri() {
-    return uri;
+    return stream.uri;
   }
 
   @Override
   public String path() {
-    synchronized (conn) {
-      return uri != null ? HttpUtils.parsePath(uri) : null;
+    synchronized (stream.conn) {
+      return stream.uri != null ? HttpUtils.parsePath(stream.uri) : null;
     }
   }
 
   @Override
   public String query() {
-    synchronized (conn) {
-      return uri != null ? HttpUtils.parseQuery(uri) : null;
+    synchronized (stream.conn) {
+      return stream.uri != null ? HttpUtils.parseQuery(stream.uri) : null;
     }
   }
 
@@ -362,12 +373,12 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
 
   @Override
   public String host() {
-    return host;
+    return stream.host;
   }
 
   @Override
   public long bytesRead() {
-    return super.bytesRead();
+    return stream.bytesRead();
   }
 
   @Override
@@ -397,7 +408,7 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
   }
   @Override
   public MultiMap params() {
-    synchronized (conn) {
+    synchronized (stream.conn) {
       if (params == null) {
         params = HttpUtils.params(uri(), paramsCharset);
       }
@@ -407,20 +418,20 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
 
   @Override
   public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
-    return conn.peerCertificateChain();
+    return stream.conn.peerCertificateChain();
   }
 
   @Override
   public SocketAddress remoteAddress() {
-    return conn.remoteAddress();
+    return stream.conn.remoteAddress();
   }
 
   @Override
   public String absoluteURI() {
-    if (method == HttpMethod.CONNECT) {
+    if (stream.method == HttpMethod.CONNECT) {
       return null;
     }
-    synchronized (conn) {
+    synchronized (stream.conn) {
       if (absoluteURI == null) {
         try {
           absoluteURI = HttpUtils.absoluteURI(serverOrigin, this);
@@ -439,7 +450,7 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
 
   @Override
   public HttpServerRequest setExpectMultipart(boolean expect) {
-    synchronized (conn) {
+    synchronized (stream.conn) {
       checkEnded();
       if (expect) {
         if (postRequestDecoder == null) {
@@ -450,16 +461,16 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
           if (!HttpUtils.isValidMultipartContentType(contentType)) {
             throw new IllegalStateException("Request must have a valid content-type header to decode a multipart request");
           }
-          if (!HttpUtils.isValidMultipartMethod(method.toNetty())) {
+          if (!HttpUtils.isValidMultipartMethod(stream.method.toNetty())) {
             throw new IllegalStateException("Request method must be one of POST, PUT, PATCH or DELETE to decode a multipart request");
           }
           HttpRequest req = new DefaultHttpRequest(
             io.netty.handler.codec.http.HttpVersion.HTTP_1_1,
-            method.toNetty(),
-            uri);
+            stream.method.toNetty(),
+            stream.uri);
           req.headers().add(HttpHeaderNames.CONTENT_TYPE, contentType);
           NettyFileUploadDataFactory factory = new NettyFileUploadDataFactory(context, this, () -> uploadHandler);
-          factory.setMaxLimit(conn.options.getMaxFormAttributeSize());
+          factory.setMaxLimit(stream.conn.options.getMaxFormAttributeSize());
           postRequestDecoder = new HttpPostRequestDecoder(factory, req);
         }
       } else {
@@ -471,14 +482,14 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
 
   @Override
   public boolean isExpectMultipart() {
-    synchronized (conn) {
+    synchronized (stream.conn) {
       return postRequestDecoder != null;
     }
   }
 
   @Override
   public HttpServerRequest uploadHandler(@Nullable Handler<HttpServerFileUpload> handler) {
-    synchronized (conn) {
+    synchronized (stream.conn) {
       if (handler != null) {
         checkEnded();
       }
@@ -489,7 +500,7 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
 
   @Override
   public MultiMap formAttributes() {
-    synchronized (conn) {
+    synchronized (stream.conn) {
       // Create it lazily
       if (attributes == null) {
         attributes = MultiMap.caseInsensitiveMultiMap();
@@ -515,14 +526,14 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
 
   @Override
   public boolean isEnded() {
-    synchronized (conn) {
+    synchronized (stream.conn) {
       return ended;
     }
   }
 
   @Override
   public HttpServerRequest customFrameHandler(Handler<HttpFrame> handler) {
-    synchronized (conn) {
+    synchronized (stream.conn) {
       customFrameHandler = handler;
     }
     return this;
@@ -530,7 +541,7 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
 
   @Override
   public HttpConnection connection() {
-    return conn;
+    return stream.conn;
   }
 
   @Override
@@ -546,12 +557,12 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
   }
 
   public StreamPriority streamPriority() {
-    return priority();
+    return stream.priority();
   }
 
   @Override
   public HttpServerRequest streamPriorityHandler(Handler<StreamPriority> handler) {
-    synchronized (conn) {
+    synchronized (stream.conn) {
       streamPriorityHandler = handler;
     }
     return this;
@@ -563,9 +574,9 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
   }
 
   @Override
-  void handlePriorityChange(StreamPriority streamPriority) {
+  public void handlePriorityChange(StreamPriority streamPriority) {
     Handler<StreamPriority> handler;
-    synchronized (conn) {
+    synchronized (stream.conn) {
       handler = streamPriorityHandler;
     }
     if (handler != null) {
@@ -597,7 +608,7 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
 
   @Override
   public HttpServerRequest routed(String route) {
-    super.routed(route);
+    stream.routed(route);
     return this;
   }
 }
