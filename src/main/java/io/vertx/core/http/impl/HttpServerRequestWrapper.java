@@ -43,7 +43,7 @@ import java.util.Set;
  */
 public class HttpServerRequestWrapper extends HttpServerRequestInternal {
 
-  private HttpServerRequestInternal delegate;
+  protected final HttpServerRequestInternal delegate;
 
   public HttpServerRequestWrapper(HttpServerRequestInternal delegate) {
     if (delegate == null) {
