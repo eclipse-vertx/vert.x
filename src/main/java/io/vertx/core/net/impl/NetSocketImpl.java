@@ -244,8 +244,18 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   }
 
   @Override
+  public int getWriteQueueMaxSize() {
+    return this.getWriteQueueMaxSize();
+  }
+
+  @Override
   public boolean writeQueueFull() {
     return isNotWritable();
+  }
+
+  @Override
+  public int getWriteQueueSize() {
+    return this.getWriteQueueSize();
   }
 
   private synchronized Handler<Void> endHandler() {
@@ -436,4 +446,3 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
     }
   }
 }
-

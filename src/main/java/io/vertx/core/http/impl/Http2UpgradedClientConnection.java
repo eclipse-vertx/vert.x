@@ -408,6 +408,7 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
     @Override
     public WriteStream<Buffer> setWriteQueueMaxSize(int maxSize) {
       if (upgradedStream != null) {
+
         upgradedStream.setWriteQueueMaxSize(maxSize);
       } else {
 

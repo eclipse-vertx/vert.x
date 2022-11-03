@@ -156,6 +156,11 @@ class HttpNetSocket implements NetSocket {
   }
 
   @Override
+  public int getWriteQueueMaxSize() {
+    return writeStream.getWriteQueueMaxSize();
+  }
+
+  @Override
   public NetSocket drainHandler(Handler<Void> handler) {
     writeStream.drainHandler(handler);
     return this;
@@ -164,6 +169,11 @@ class HttpNetSocket implements NetSocket {
   @Override
   public boolean writeQueueFull() {
     return writeStream.writeQueueFull();
+  }
+
+  @Override
+  public int getWriteQueueSize() {
+    return writeStream.getWriteQueueSize();
   }
 
   @Override
@@ -248,12 +258,12 @@ class HttpNetSocket implements NetSocket {
         file.pipe()
           .endOnComplete(false)
           .to(this, ar1 -> file.close(ar2 -> {
-          Throwable failure = ar1.failed() ? ar1.cause() : ar2.failed() ? ar2.cause() : null;
-          if(failure == null)
-            h.handle(ar1);
-          else
-            h.handle(Future.failedFuture(failure));
-        }));
+            Throwable failure = ar1.failed() ? ar1.cause() : ar2.failed() ? ar2.cause() : null;
+            if(failure == null)
+              h.handle(ar1);
+            else
+              h.handle(Future.failedFuture(failure));
+          }));
       } else {
         h.handle(ar.mapEmpty());
       }

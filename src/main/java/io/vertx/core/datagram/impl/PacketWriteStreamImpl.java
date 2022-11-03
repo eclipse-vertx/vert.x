@@ -21,8 +21,8 @@ import io.vertx.core.streams.WriteStream;
 /**
  * A write stream for packets.
  *
-* @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
-*/
+ * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ */
 class PacketWriteStreamImpl implements WriteStream<Buffer>, Handler<AsyncResult<Void>> {
 
   private DatagramSocketImpl datagramSocket;
@@ -72,8 +72,18 @@ class PacketWriteStreamImpl implements WriteStream<Buffer>, Handler<AsyncResult<
   }
 
   @Override
+  public int getWriteQueueMaxSize() {
+    return this.getWriteQueueMaxSize();
+  }
+
+  @Override
   public boolean writeQueueFull() {
     return false;
+  }
+
+  @Override
+  public int getWriteQueueSize() {
+    return this.getWriteQueueSize();
   }
 
   @Override

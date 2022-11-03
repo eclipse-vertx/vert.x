@@ -433,8 +433,18 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     }
 
     @Override
+    public int getWriteQueueMaxSize() {
+      return this.getWriteQueueMaxSize();
+    }
+
+    @Override
     public boolean writeQueueFull() {
       return false;
+    }
+
+    @Override
+    public int getWriteQueueSize() {
+      return this.getWriteQueueSize();
     }
 
     @Override
@@ -808,10 +818,10 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
 
       if (isConnect) {
         if ((request.method == HttpMethod.CONNECT &&
-             response.statusCode == 200) || (
-             request.method == HttpMethod.GET &&
-             request.headers != null && request.headers.contains(CONNECTION, UPGRADE, true) &&
-             response.statusCode == 101)) {
+          response.statusCode == 200) || (
+          request.method == HttpMethod.GET &&
+            request.headers != null && request.headers.contains(CONNECTION, UPGRADE, true) &&
+            response.statusCode == 101)) {
           removeChannelHandlers();
         } else {
           isConnect = false;
@@ -900,8 +910,8 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
         wsuri = new URI((ssl ? "https:" : "http:") + "//" + server.host() + ":" + server.port() + requestURI);
       }
       WebSocketVersion version =
-         WebSocketVersion.valueOf((vers == null ?
-           WebSocketVersion.V13 : vers).toString());
+        WebSocketVersion.valueOf((vers == null ?
+          WebSocketVersion.V13 : vers).toString());
       HttpHeaders nettyHeaders;
       if (headers != null) {
         nettyHeaders = new DefaultHttpHeaders();

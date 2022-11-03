@@ -126,6 +126,8 @@ public interface WriteStream<T> extends StreamBase {
   @Fluent
   WriteStream<T> setWriteQueueMaxSize(int maxSize);
 
+  int getWriteQueueMaxSize();
+
   /**
    * This will return {@code true} if there are more bytes in the write queue than the value set using {@link
    * #setWriteQueueMaxSize}
@@ -133,6 +135,8 @@ public interface WriteStream<T> extends StreamBase {
    * @return {@code true} if write queue is full
    */
   boolean writeQueueFull();
+
+  int getWriteQueueSize();
 
   /**
    * Set a drain handler on the stream. If the write queue is full, then the handler will be called when the write
