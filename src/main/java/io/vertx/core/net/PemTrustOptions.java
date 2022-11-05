@@ -22,9 +22,6 @@ import io.vertx.core.net.impl.KeyStoreHelper;
 
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.List;
@@ -188,7 +185,7 @@ public class PemTrustOptions implements TrustOptions, Cloneable {
 
   KeyStoreHelper getHelper(Vertx vertx) throws Exception {
     if (isUpdated() || helper == null) {
-      lastModifiedTimeInMillis = getLastModifiedTimestamp();
+      lastModifiedTimeInMillis = FileUtils.getLastModifiedTimestamp(certPaths);
       Stream<Buffer> certValues = certPaths.
         stream().
         map(path -> ((VertxInternal)vertx).resolveFile(path).getAbsolutePath()).
@@ -202,26 +199,7 @@ public class PemTrustOptions implements TrustOptions, Cloneable {
   @Override
   @GenIgnore
   public boolean isUpdated() {
-    return false;
-  }
-
-  private long getLastModifiedTimestamp() {
-    if (certPaths.isEmpty()) {
-      return 0;
-    }
-
-    return certPaths.stream()
-      .map(this::getLastModifiedTimestamp)
-      .max(Long::compareTo)
-      .orElse(0L);
-  }
-
-  private long getLastModifiedTimestamp(String path) {
-    try {
-      return Files.getLastModifiedTime(Paths.get(path)).toMillis();
-    } catch (IOException e) {
-      return 0;
-    }
+    return FileUtils.getLastModifiedTimestamp(certPaths) > lastModifiedTimeInMillis;
   }
 
 }

@@ -21,9 +21,6 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509KeyManager;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -181,7 +178,7 @@ public abstract class KeyStoreOptionsBase implements KeyCertOptions, TrustOption
 
   KeyStoreHelper getHelper(Vertx vertx) throws Exception {
     if (isUpdated() || helper == null) {
-      lastModifiedTimeInMillis = getLastModifiedTimestamp();
+      lastModifiedTimeInMillis = FileUtils.getLastModifiedTimestamp(path);
       Supplier<Buffer> value;
       if (this.path != null) {
         value = () -> vertx.fileSystem().readFileBlocking(path);
@@ -237,18 +234,7 @@ public abstract class KeyStoreOptionsBase implements KeyCertOptions, TrustOption
   @Override
   @GenIgnore
   public boolean isUpdated() {
-    return getLastModifiedTimestamp() > lastModifiedTimeInMillis;
+    return FileUtils.getLastModifiedTimestamp(path) > lastModifiedTimeInMillis;
   }
 
-  private long getLastModifiedTimestamp() {
-    if (path == null) {
-      return 0;
-    }
-
-    try {
-      return Files.getLastModifiedTime(Paths.get(path)).toMillis();
-    } catch (IOException e) {
-      return 0;
-    }
-  }
 }

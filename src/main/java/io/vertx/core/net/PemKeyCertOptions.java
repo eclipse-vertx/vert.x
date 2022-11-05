@@ -22,14 +22,10 @@ import io.vertx.core.net.impl.KeyStoreHelper;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.X509KeyManager;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 /**
  * Key store options configuring a list of private key and its certificate based on
@@ -398,7 +394,7 @@ public class PemKeyCertOptions implements KeyCertOptions {
 
   KeyStoreHelper getHelper(Vertx vertx) throws Exception {
     if (isUpdated() || helper == null) {
-      lastModifiedTimeInMillis = getLastModifiedTimestamp();
+      lastModifiedTimeInMillis = FileUtils.getLastModifiedTimestamp(certPaths, keyPaths);
       List<Buffer> keys = new ArrayList<>();
       for (String keyPath : keyPaths) {
         keys.add(vertx.fileSystem().readFileBlocking(((VertxInternal)vertx).resolveFile(keyPath).getAbsolutePath()));
@@ -440,25 +436,7 @@ public class PemKeyCertOptions implements KeyCertOptions {
   @Override
   @GenIgnore
   public boolean isUpdated() {
-    return getLastModifiedTimestamp() > lastModifiedTimeInMillis;
+    return FileUtils.getLastModifiedTimestamp(certPaths, keyPaths) > lastModifiedTimeInMillis;
   }
 
-  private long getLastModifiedTimestamp() {
-    if (certPaths.isEmpty() && keyPaths.isEmpty()) {
-      return 0;
-    }
-
-    return Stream.concat(keyPaths.stream(), certPaths.stream())
-      .map(this::getLastModifiedTimestamp)
-      .max(Long::compareTo)
-      .orElse(0L);
-  }
-
-  private long getLastModifiedTimestamp(String path) {
-    try {
-      return Files.getLastModifiedTime(Paths.get(path)).toMillis();
-    } catch (IOException e) {
-      return 0;
-    }
-  }
 }
