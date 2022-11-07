@@ -39,7 +39,11 @@ import java.util.function.Function;
  *
  * As this class is not available because it is part of the internal api the proper usage would be:
  * <pre>
+ * // with a KeyManager
  * options.setKeyCertOptions(KeyCertOptions.wrap(keyManager));
+ *
+ * // with a KeyManagerFactory
+ * options.setKeyCertOptions(KeyCertOptions.wrap(keyManagerFactory));
  * </pre>
  *
  * @author <a href="mailto:hakangoudberg@hotmail.com">Hakan Altindag</a>

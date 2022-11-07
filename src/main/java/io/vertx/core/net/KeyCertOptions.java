@@ -69,4 +69,13 @@ public interface KeyCertOptions {
     return new KeyManagerFactoryOptions(keyManager);
   }
 
+  /**
+   * Returns a {@link KeyCertOptions} from the provided {@link KeyManagerFactory}
+   *
+   * @param keyManagerFactory the keyManagerFactory instance
+   * @return the {@link KeyCertOptions}
+   */
+  static KeyCertOptions wrap(KeyManagerFactory keyManagerFactory) {
+    return new KeyManagerFactoryOptions(keyManagerFactory);
+  }
 }
