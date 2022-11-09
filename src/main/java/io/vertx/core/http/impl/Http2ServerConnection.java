@@ -95,7 +95,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
         return true;
       }
     } else {
-      if (headers.method() == null || headers.scheme() == null || headers.path() == null) {
+      if (headers.method() == null || headers.scheme() == null || headers.path() == null || headers.path().length() == 0) {
         return true;
       }
     }
