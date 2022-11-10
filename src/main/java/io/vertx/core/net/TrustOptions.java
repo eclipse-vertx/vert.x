@@ -63,4 +63,13 @@ public interface TrustOptions {
     return new TrustManagerFactoryOptions(trustManager);
   }
 
+  /**
+   * Returns a {@link TrustOptions} from the provided {@link TrustManagerFactory}
+   *
+   * @param trustManagerFactory the trustManagerFactory instance
+   * @return the {@link TrustOptions}
+   */
+  static TrustOptions wrap(TrustManagerFactory trustManagerFactory) {
+    return new TrustManagerFactoryOptions(trustManagerFactory);
+  }
 }
