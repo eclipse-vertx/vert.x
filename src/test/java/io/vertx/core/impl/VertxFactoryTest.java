@@ -14,7 +14,9 @@ import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.net.impl.transport.Transport;
+import io.vertx.core.spi.ExecutorServiceFactory;
 import io.vertx.core.spi.VertxMetricsFactory;
+import io.vertx.core.spi.VertxThreadFactory;
 import io.vertx.core.spi.VertxTracerFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.tracing.VertxTracer;
@@ -34,6 +36,9 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
@@ -152,6 +157,34 @@ public class VertxFactoryTest {
     factory.init();
     Vertx vertx = factory.vertx();
     assertSame(override, ((VertxInternal)vertx).transport());
+  }
+
+  @Test
+  public void testThatThreadFactoryCanCreateThreadsDuringTheirInitialization() {
+    VertxBuilder factory = new VertxBuilder();
+    VertxThreadFactory tf = new VertxThreadFactory() {
+      @Override
+      public VertxThread newVertxThread(Runnable target, String name, boolean worker, long maxExecTime, TimeUnit maxExecTimeUnit) {
+        return VertxThreadFactory.INSTANCE.newVertxThread(target, name, worker, maxExecTime, maxExecTimeUnit);
+      }
+    };
+    factory
+      .threadFactory(tf)
+      .executorServiceFactory(new CustomExecutorServiceFactory())
+      .init()
+      .vertx()
+      .close().toCompletionStage().toCompletableFuture().join();
+  }
+
+  private class CustomExecutorServiceFactory implements ExecutorServiceFactory {
+
+    @Override
+    public ExecutorService createExecutor(ThreadFactory threadFactory, Integer concurrency, Integer maxConcurrency) {
+      // Simulate the behavior of the JBoss enhanced queue executor.
+      // It uses the thread factory to create a thread used to as scheduler thread.
+      threadFactory.newThread(() -> {});
+      return Executors.newCachedThreadPool();
+    }
   }
 
   private void runWithServiceFromMetaInf(Class<?> service, String implementationName, Runnable runnable) {
