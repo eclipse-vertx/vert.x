@@ -19,18 +19,31 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.AddressHelper;
 import io.vertx.core.eventbus.EventBusOptions;
 import io.vertx.core.eventbus.MessageCodec;
-import io.vertx.core.eventbus.impl.*;
+import io.vertx.core.eventbus.impl.CodecManager;
+import io.vertx.core.eventbus.impl.EventBusImpl;
+import io.vertx.core.eventbus.impl.HandlerHolder;
+import io.vertx.core.eventbus.impl.HandlerRegistration;
+import io.vertx.core.eventbus.impl.MessageImpl;
+import io.vertx.core.eventbus.impl.OutboundDeliveryContext;
+import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.impl.utils.ConcurrentCyclicSequence;
-import io.vertx.core.net.*;
+import io.vertx.core.net.NetClient;
+import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.NetServer;
+import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.impl.NetClientBuilder;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeInfo;
 import io.vertx.core.spi.cluster.NodeSelector;
 import io.vertx.core.spi.cluster.RegistrationInfo;
+import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.util.Iterator;
 import java.util.Objects;
@@ -57,6 +70,8 @@ public class ClusteredEventBus extends EventBusImpl {
   private final NetClient client;
 
   private final ConcurrentMap<String, ConnectionHolder> connections = new ConcurrentHashMap<>();
+  private final CloseFuture closeFuture;
+  private final EventLoopContext ebContext;
 
   private NodeInfo nodeInfo;
   private String nodeId;
@@ -67,7 +82,19 @@ public class ClusteredEventBus extends EventBusImpl {
     this.options = options.getEventBusOptions();
     this.clusterManager = clusterManager;
     this.nodeSelector = nodeSelector;
-    this.client = vertx.createNetClient(new NetClientOptions(this.options.toJson()));
+    closeFuture = new CloseFuture(log);
+    ebContext = vertx.createEventLoopContext(null, closeFuture, null, Thread.currentThread().getContextClassLoader());
+    this.client = createNetClient(vertx, new NetClientOptions(this.options.toJson()), closeFuture);
+  }
+
+  private NetClient createNetClient(VertxInternal vertx, NetClientOptions clientOptions, CloseFuture closeFuture) {
+    NetClientBuilder builder = new NetClientBuilder(vertx, clientOptions);
+    VertxMetrics metricsSPI = vertx.metricsSPI();
+    if (metricsSPI != null) {
+      builder.metrics(metricsSPI.createNetClientMetrics(clientOptions));
+    }
+    builder.closeFuture(closeFuture);
+    return builder.build();
   }
 
   NetClient client() {
@@ -85,42 +112,39 @@ public class ClusteredEventBus extends EventBusImpl {
     server.connectHandler(getServerHandler());
     int port = getClusterPort();
     String host = getClusterHost();
-    server.listen(port, host).flatMap(v -> {
-      int publicPort = getClusterPublicPort(server.actualPort());
-      String publicHost = getClusterPublicHost(host);
-      nodeInfo = new NodeInfo(publicHost, publicPort, options.getClusterNodeMetadata());
-      nodeId = clusterManager.getNodeId();
-      Promise<Void> setPromise = Promise.promise();
-      clusterManager.setNodeInfo(nodeInfo, setPromise);
-      return setPromise.future();
-    }).andThen(ar -> {
-      if (ar.succeeded()) {
-        started = true;
-        nodeSelector.eventBusStarted();
-      }
-    }).onComplete(promise);
+    ebContext.runOnContext(v -> {
+      server.listen(port, host).flatMap(v2 -> {
+        int publicPort = getClusterPublicPort(server.actualPort());
+        String publicHost = getClusterPublicHost(host);
+        nodeInfo = new NodeInfo(publicHost, publicPort, options.getClusterNodeMetadata());
+        nodeId = clusterManager.getNodeId();
+        Promise<Void> setPromise = Promise.promise();
+        clusterManager.setNodeInfo(nodeInfo, setPromise);
+        return setPromise.future();
+      }).andThen(ar -> {
+        if (ar.succeeded()) {
+          started = true;
+          nodeSelector.eventBusStarted();
+        }
+      }).onComplete(promise);
+    });
   }
 
   @Override
   public void close(Promise<Void> promise) {
     Promise<Void> parentClose = Promise.promise();
     super.close(parentClose);
-    parentClose.future().onComplete(ar -> {
-      if (server != null) {
-        server.close(serverClose -> {
-          if (serverClose.failed()) {
-            log.error("Failed to close server", serverClose.cause());
-          }
+    parentClose.future()
+      .transform(ar -> closeFuture.close())
+      .andThen(ar -> {
+        if (server != null) {
           // Close all outbound connections explicitly - don't rely on context hooks
           for (ConnectionHolder holder : connections.values()) {
             holder.close();
           }
-          promise.handle(serverClose);
-        });
-      } else {
-        promise.handle(ar);
-      }
-    });
+        }
+      })
+      .onComplete(promise);
   }
 
   @Override

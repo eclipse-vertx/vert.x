@@ -11,9 +11,18 @@
 
 package io.vertx.core.eventbus;
 
-import io.vertx.core.*;
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
+import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.shareddata.AsyncMapTest;
-import io.vertx.core.spi.cluster.*;
+import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.spi.cluster.NodeSelector;
+import io.vertx.core.spi.cluster.RegistrationUpdateEvent;
+import io.vertx.core.spi.cluster.WrappedClusterManager;
+import io.vertx.core.spi.cluster.WrappedNodeSelector;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
@@ -24,8 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.*;
 
 
 /**
@@ -268,6 +276,53 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
         testComplete();
       }));
     }));
+    await();
+  }
+
+  @Test
+  public void testMessagingInStopMethod() throws Exception {
+    startNodes(2);
+
+    AtomicInteger count = new AtomicInteger();
+
+    class MyVerticle extends AbstractVerticle {
+
+      final String pingServerAddress;
+      final String pingClientAddress;
+
+      MyVerticle(String pingServerAddress, String pingClientAddress) {
+        this.pingServerAddress = pingServerAddress;
+        this.pingClientAddress = pingClientAddress;
+      }
+
+      @Override
+      public void start(Promise<Void> startPromise) throws Exception {
+        vertx.eventBus().consumer(pingServerAddress, msg -> msg.reply("pong")).completionHandler(startPromise);
+      }
+
+      @Override
+      public void stop(Promise<Void> stopPromise) throws Exception {
+        vertx.eventBus().<String>request(pingClientAddress, "ping", onSuccess(msg -> {
+          assertEquals("pong", msg.body());
+          count.incrementAndGet();
+          vertx.setPeriodic(10, l -> {
+            if (count.get() == 2) {
+              stopPromise.complete();
+            }
+          });
+        }));
+      }
+    }
+
+    waitFor(2);
+
+    vertices[0].deployVerticle(new MyVerticle("foo", "bar"), onSuccess(id1 -> {
+      vertices[1].deployVerticle(new MyVerticle("bar", "foo"), onSuccess(id2 -> {
+        vertices[0].close(onSuccess(v -> complete()));
+        vertices[1].close(onSuccess(v -> complete()));
+      }));
+    }));
+
     await();
   }
 }
