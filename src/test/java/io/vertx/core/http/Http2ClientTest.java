@@ -16,6 +16,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -39,6 +40,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.impl.Http2UpgradeClientConnection;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
@@ -58,6 +60,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -1691,29 +1694,40 @@ public class Http2ClientTest extends Http2TestBase {
     try {
       server.close();
       server = vertx.createHttpServer(serverOptions.setUseAlpn(false).setSsl(false));
+      AtomicBoolean first = new AtomicBoolean(true);
       server.requestHandler(req -> {
         MultiMap headers = req.headers();
         String upgrade = headers.get("upgrade");
-        assertEquals(DEFAULT_HTTPS_HOST + ":" + DEFAULT_HTTPS_PORT, req.host());
-        if ("h2c".equals(upgrade)) {
-          req.response().setStatusCode(400).end();
+        if (first.getAndSet(false)) {
+          assertEquals("h2c", upgrade);
         } else {
-          req.response().end("wibble");
+          assertNull(upgrade);
         }
+        assertEquals(DEFAULT_HTTPS_HOST + ":" + DEFAULT_HTTPS_PORT, req.host());
+        req.response().end("wibble");
         assertEquals(HttpVersion.HTTP_1_1, req.version());
       });
       startServer(testAddress);
       client.close();
-      client = vertx.createHttpClient(clientOptions.setUseAlpn(false).setSsl(false));
-      client.request(requestOptions).onComplete(onSuccess(req -> {
-        req.send(onSuccess(resp -> {
-          assertEquals(400, resp.statusCode());
-          assertEquals(HttpVersion.HTTP_1_1, resp.version());
-          resp.bodyHandler(body -> {
-            testComplete();
-          });
+      client = vertx.createHttpClient(clientOptions.setUseAlpn(false).setSsl(false).setMaxPoolSize(1));
+      waitFor(5);
+      for (int i = 0;i < 5;i++) {
+        client.request(requestOptions).onComplete(onSuccess(req -> {
+          req.send(onSuccess(resp -> {
+            Http2UpgradeClientConnection connection = (Http2UpgradeClientConnection) resp.request().connection();
+            Channel ch = connection.channel();
+            ChannelPipeline pipeline = ch.pipeline();
+            for (Map.Entry<String, ?> entry : pipeline) {
+              assertTrue("Was not expecting pipeline handler " + entry.getValue().getClass(), entry.getKey().equals("codec") || entry.getKey().equals("handler"));
+            }
+            assertEquals(200, resp.statusCode());
+            assertEquals(HttpVersion.HTTP_1_1, resp.version());
+            resp.bodyHandler(body -> {
+              complete();
+            });
+          }));
         }));
-      }));
+      }
       await();
     } finally {
       System.clearProperty("vertx.disableH2c");
