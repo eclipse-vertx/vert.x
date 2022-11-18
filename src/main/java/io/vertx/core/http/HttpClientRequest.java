@@ -248,7 +248,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
 
   /**
    * If you send an HTTP request with the header {@code Expect} set to the value {@code 100-continue}
-   * and the server responds with an interim HTTP response with a status code of {@code 100} and a continue handler
+   * and the server responds with an interim HTTP response with a status code of {@code 100} and a Continue handler
    * has been set using this method, then the {@code handler} will be called.
    * <p>
    * You can then continue to write data to the request body and later end it. This is normally used in conjunction with
@@ -258,6 +258,15 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    */
   @Fluent
   HttpClientRequest continueHandler(@Nullable Handler<Void> handler);
+
+  /**
+   * If the server responds with an interim HTTP response with a status code of {@code 103} and a Early Hints handler
+   * has been set using this method, then the {@code handler} will be called.
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpClientRequest earlyHintsHandler(@Nullable Handler<MultiMap> handler);
 
   /**
    * Forces the head of the request to be written before {@link #end()} is called on the request or any data is

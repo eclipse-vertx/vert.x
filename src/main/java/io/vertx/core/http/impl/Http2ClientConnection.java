@@ -24,6 +24,7 @@ import io.netty.handler.timeout.IdleStateEvent;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.ContextInternal;
@@ -34,6 +35,7 @@ import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.streams.WriteStream;
 
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.function.BiConsumer;
 
 /**
@@ -228,6 +230,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     protected Handler<StreamPriority> priorityHandler;
     protected Handler<Void> drainHandler;
     protected Handler<Void> continueHandler;
+    protected Handler<MultiMap> earlyHintsHandler;
     protected Handler<HttpFrame> unknownFrameHandler;
     protected Handler<Throwable> exceptionHandler;
     protected Handler<HttpClientPush> pushHandler;
@@ -246,7 +249,13 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       context.emit(null, v -> handleContinue());
     }
 
+    void onEarlyHints(MultiMap headers) {
+      context.emit(null, v -> handleEarlyHints(headers));
+    }
+
     abstract void handleContinue();
+
+    abstract void handleEarlyHints(MultiMap headers);
 
     public Object metric() {
       return metric;
@@ -303,6 +312,13 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         }
         if (status == 100) {
           onContinue();
+          return;
+        } else if (status == 103) {
+          MultiMap headersMultiMap = HeadersMultiMap.httpHeaders();
+          for (Entry<CharSequence, CharSequence> header : headers) {
+            headersMultiMap.add(header.getKey(), header.getValue());
+          }
+          onEarlyHints(headersMultiMap);
           return;
         }
         response = new HttpResponseHead(
@@ -370,6 +386,11 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     @Override
     public void continueHandler(Handler<Void> handler) {
       continueHandler = handler;
+    }
+
+    @Override
+    public void earlyHintsHandler(Handler<MultiMap> handler) {
+      earlyHintsHandler = handler;
     }
 
     @Override
@@ -485,6 +506,12 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     void handleContinue() {
       if (continueHandler != null) {
         continueHandler.handle(null);
+      }
+    }
+
+    void handleEarlyHints(MultiMap headers) {
+      if (earlyHintsHandler != null) {
+        earlyHintsHandler.handle(headers);
       }
     }
 

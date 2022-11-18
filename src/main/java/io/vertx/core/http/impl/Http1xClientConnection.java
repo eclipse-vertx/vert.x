@@ -383,6 +383,8 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     private Handler<MultiMap> endHandler;
     private Handler<Void> drainHandler;
     private Handler<Void> continueHandler;
+
+    private Handler<MultiMap> earlyHintsHandler;
     private Handler<Throwable> exceptionHandler;
     private Handler<Void> closeHandler;
 
@@ -413,6 +415,11 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     @Override
     public void continueHandler(Handler<Void> handler) {
       continueHandler = handler;
+    }
+
+    @Override
+    public void earlyHintsHandler(Handler<MultiMap> handler) {
+      earlyHintsHandler = handler;
     }
 
     @Override
@@ -616,6 +623,12 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     void handleContinue() {
       if (continueHandler != null) {
         continueHandler.handle(null);
+      }
+    }
+
+    void handleEarlyHints(MultiMap headers) {
+      if (earlyHintsHandler != null) {
+        earlyHintsHandler.handle(headers);
       }
     }
 

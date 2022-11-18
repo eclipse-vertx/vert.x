@@ -4299,6 +4299,8 @@ public abstract class HttpTest extends HttpTestBase {
       public void write(String chunk, Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
       public void write(String chunk, String enc, Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
       public HttpClientRequest continueHandler(@Nullable Handler<Void> handler) { throw new UnsupportedOperationException(); }
+
+      public HttpClientRequest earlyHintsHandler(@Nullable Handler<MultiMap> handler) { throw new UnsupportedOperationException(); }
       public Future<Void> sendHead() { throw new UnsupportedOperationException(); }
       public HttpClientRequest sendHead(Handler<AsyncResult<Void>> completionHandler) { throw new UnsupportedOperationException(); }
       public Future<HttpClientResponse> connect() { throw new UnsupportedOperationException(); }

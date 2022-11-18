@@ -57,6 +57,7 @@ public interface HttpClientStream extends WriteStream<Buffer> {
   void writeFrame(int type, int flags, ByteBuf payload);
 
   void continueHandler(Handler<Void> handler);
+  void earlyHintsHandler(Handler<MultiMap> handler);
   void pushHandler(Handler<HttpClientPush> handler);
   void unknownFrameHandler(Handler<HttpFrame> handler);
 
