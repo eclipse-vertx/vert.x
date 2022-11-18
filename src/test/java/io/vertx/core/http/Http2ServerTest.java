@@ -58,6 +58,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.Http1xOrH2CHandler;
 import io.vertx.core.http.impl.HttpUtils;
+import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
@@ -2242,8 +2243,7 @@ public class Http2ServerTest extends Http2TestBase {
   public void test103EarlyHints() throws Exception {
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
-      resp.putHeader("wibble", "wibble-value");
-      resp.writeEarlyHints();
+      resp.writeEarlyHints(HeadersMultiMap.httpHeaders().add("wibble", "wibble-value"));
       req.bodyHandler(body -> {
         assertEquals("the-body", body.toString());
         resp.end();

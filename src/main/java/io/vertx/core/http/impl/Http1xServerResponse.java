@@ -363,8 +363,16 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public HttpServerResponse writeEarlyHints() {
-    conn.write103EarlyHints(headers);
+  public HttpServerResponse writeEarlyHints(MultiMap headers) {
+    HeadersMultiMap headersMultiMap;
+    if (headers instanceof HeadersMultiMap) {
+      headersMultiMap = (HeadersMultiMap) headers;
+    } else {
+      headersMultiMap = HeadersMultiMap.httpHeaders();
+      headersMultiMap.addAll(headers);
+    }
+    // Write the headers
+    conn.write103EarlyHints(headersMultiMap);
     return this;
   }
 
