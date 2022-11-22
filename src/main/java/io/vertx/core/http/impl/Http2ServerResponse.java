@@ -53,7 +53,6 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   private final ChannelHandlerContext ctx;
   private final Http2ServerConnection conn;
   private final boolean push;
-  private final String host;
   private final String contentEncoding;
   private final Http2Headers headers = new DefaultHttp2Headers();
   private Http2HeadersAdaptor headersMap;
@@ -77,13 +76,11 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   public Http2ServerResponse(Http2ServerConnection conn,
                              Http2ServerStream stream,
                              boolean push,
-                             String contentEncoding,
-                             String host) {
+                             String contentEncoding) {
     this.stream = stream;
     this.ctx = conn.handlerContext;
     this.conn = conn;
     this.push = push;
-    this.host = host;
     this.contentEncoding = contentEncoding;
   }
 
@@ -421,7 +418,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
           netSocket = stream.context.failedFuture("Response for CONNECT already sent");
         } else {
           ctx.flush();
-          HttpNetSocket ns = HttpNetSocket.netSocket(conn, stream.context, (ReadStream<Buffer>) stream, this);
+          HttpNetSocket ns = HttpNetSocket.netSocket(conn, stream.context, (ReadStream<Buffer>) stream.request, this);
           netSocket = Future.succeededFuture(ns);
         }
       }
@@ -695,7 +692,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       throw new IllegalStateException("A push response cannot promise another push");
     }
     if (host == null) {
-      host = this.host;
+      host = stream.host;
     }
     synchronized (conn) {
       checkValid();

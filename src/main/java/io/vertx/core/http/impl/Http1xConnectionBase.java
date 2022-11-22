@@ -12,9 +12,13 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.FileRegion;
+import io.netty.handler.codec.http.FullHttpMessage;
 import io.netty.handler.codec.http.HttpContent;
+import io.netty.handler.codec.http.HttpMessage;
+import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.ContinuationWebSocketFrame;
@@ -189,11 +193,26 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
   }
 
   static long sizeOf(Object obj) {
+    // https://github.com/netty/netty/issues/12708
+    // try first Netty HTTP singleton types, without any instanceof/checkcast bytecodes
+    if (obj == Unpooled.EMPTY_BUFFER || obj == LastHttpContent.EMPTY_LAST_CONTENT) {
+      return 0;
+    }
+    // try known vertx (non-interface) types: bi-morphic
+    if (obj instanceof AssembledHttpResponse) {
+      return ((AssembledHttpResponse) obj).content().readableBytes();
+    }
     if (obj instanceof Buffer) {
       return ((Buffer) obj).length();
     } else if (obj instanceof ByteBuf) {
       return ((ByteBuf) obj).readableBytes();
-    } else if (obj instanceof HttpContent) {
+      // see Netty's HttpObjectEncoder::acceptOutboundMessage:
+      // the order of checks is the same!
+    } else if (obj instanceof FullHttpMessage) {
+      return ((FullHttpMessage) obj).content().readableBytes();
+    } else if (obj instanceof LastHttpContent) {
+      return ((LastHttpContent) obj).content().readableBytes();
+    } else if (obj instanceof  HttpContent) {
       return ((HttpContent) obj).content().readableBytes();
     } else if (obj instanceof WebSocketFrame) {
       return sizeOf((WebSocketFrame) obj);

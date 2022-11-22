@@ -226,6 +226,7 @@ public class VertxOptionsTest extends VertxTestBase {
     boolean haEnabled = rand.nextBoolean();
     boolean fileResolverCachingEnabled = rand.nextBoolean();
     boolean metricsEnabled = rand.nextBoolean();
+    boolean useDaemonThread = rand.nextBoolean();
     int quorumSize = 51214;
     String haGroup = TestUtils.randomAlphaString(100);
     long warningExceptionTime = TestUtils.randomPositiveLong();
@@ -259,6 +260,7 @@ public class VertxOptionsTest extends VertxTestBase {
     options.setMaxWorkerExecuteTimeUnit(maxWorkerExecuteTimeUnit);
     options.setWarningExceptionTimeUnit(warningExceptionTimeUnit);
     options.setBlockedThreadCheckIntervalUnit(blockedThreadCheckIntervalUnit);
+    options.setUseDaemonThread(useDaemonThread);
 
     options = new VertxOptions(options);
     assertEquals(clusterPort, options.getEventBusOptions().getPort());
@@ -287,6 +289,7 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(maxWorkerExecuteTimeUnit, options.getMaxWorkerExecuteTimeUnit());
     assertEquals(warningExceptionTimeUnit, options.getWarningExceptionTimeUnit());
     assertEquals(blockedThreadCheckIntervalUnit, options.getBlockedThreadCheckIntervalUnit());
+    assertEquals(useDaemonThread, options.getUseDaemonThread());
   }
 
   @Test
@@ -312,6 +315,7 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(def.getMaxWorkerExecuteTimeUnit(), json.getMaxWorkerExecuteTimeUnit());
     assertEquals(def.getWarningExceptionTimeUnit(), json.getWarningExceptionTimeUnit());
     assertEquals(def.getBlockedThreadCheckIntervalUnit(), json.getBlockedThreadCheckIntervalUnit());
+    assertEquals(def.getUseDaemonThread(), json.getUseDaemonThread());
   }
 
   @Test
@@ -375,6 +379,7 @@ public class VertxOptionsTest extends VertxTestBase {
     TimeUnit maxWorkerExecuteTimeUnit = TimeUnit.MILLISECONDS;
     TimeUnit warningExceptionTimeUnit = TimeUnit.MINUTES;
     TimeUnit blockedThreadCheckIntervalUnit = TimeUnit.MINUTES;
+    boolean useDaemonThread = rand.nextBoolean();
     options = new VertxOptions(new JsonObject().
         put("eventBusOptions", new JsonObject().
           put("port", clusterPort).
@@ -406,7 +411,8 @@ public class VertxOptionsTest extends VertxTestBase {
         put("maxEventLoopExecuteTimeUnit", maxEventLoopExecuteTimeUnit).
         put("maxWorkerExecuteTimeUnit", maxWorkerExecuteTimeUnit).
         put("warningExceptionTimeUnit", warningExceptionTimeUnit).
-        put("blockedThreadCheckIntervalUnit", blockedThreadCheckIntervalUnit)
+        put("blockedThreadCheckIntervalUnit", blockedThreadCheckIntervalUnit).
+        put("useDaemonThread", useDaemonThread)
     );
     assertEquals(clusterPort, options.getEventBusOptions().getPort());
     assertEquals(clusterPublicPort, options.getEventBusOptions().getClusterPublicPort());
@@ -435,5 +441,6 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(maxWorkerExecuteTimeUnit, options.getMaxWorkerExecuteTimeUnit());
     assertEquals(warningExceptionTimeUnit, options.getWarningExceptionTimeUnit());
     assertEquals(blockedThreadCheckIntervalUnit, options.getBlockedThreadCheckIntervalUnit());
+    assertEquals(useDaemonThread, options.getUseDaemonThread());
   }
 }

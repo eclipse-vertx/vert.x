@@ -298,7 +298,6 @@ public class Http2Test extends HttpTest {
         }
         case "/1": {
           req.bodyHandler(v -> {
-            assertEquals(v, buffer);
             req.response().end();
           });
           break;
@@ -333,26 +332,25 @@ public class Http2Test extends HttpTest {
             .setChunked(true);
           assertFalse(req2.writeQueueFull());
           req2.sendHead();
-          waitUntil(req2::writeQueueFull);
-          resumeLatch.complete(null);
-          waitUntil(() -> !req2.writeQueueFull(), () -> {
-            req1.end();
-            req2.end(buffer);
+          vertx.setPeriodic(1, id1 -> {
+            if (req2.writeQueueFull()) {
+              vertx.cancelTimer(id1);
+              resumeLatch.complete(null);
+              vertx.setPeriodic(1, id2 -> {
+                if (!req2.writeQueueFull()) {
+                  vertx.cancelTimer(id2);
+                  req1.end();
+                  req2.end();
+                }
+              });
+            } else {
+              req2.write(buffer);
+            }
           });
         }));
       }));
     }));
     await();
-  }
-
-  private void waitUntil(BooleanSupplier pred, Runnable cont) {
-    if (pred.getAsBoolean()) {
-      cont.run();
-    } else {
-      vertx.setTimer(1, id -> {
-        waitUntil(pred, cont);
-      });
-    }
   }
 
   @Test

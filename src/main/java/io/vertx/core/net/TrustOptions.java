@@ -64,6 +64,16 @@ public interface TrustOptions {
   }
 
   /**
+   * Returns a {@link TrustOptions} from the provided {@link TrustManagerFactory}
+   *
+   * @param trustManagerFactory the trustManagerFactory instance
+   * @return the {@link TrustOptions}
+   */
+  static TrustOptions wrap(TrustManagerFactory trustManagerFactory) {
+    return new TrustManagerFactoryOptions(trustManagerFactory);
+  }
+  
+  /**
    * @return a boolean to indicate that the provided SSL material has been updated
    */
   default boolean isUpdated() {

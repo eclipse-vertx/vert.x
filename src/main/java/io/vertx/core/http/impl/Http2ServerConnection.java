@@ -95,7 +95,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
         return true;
       }
     } else {
-      if (headers.method() == null || headers.scheme() == null || headers.path() == null) {
+      if (headers.method() == null || headers.scheme() == null || headers.path() == null || headers.path().length() == 0) {
         return true;
       }
     }
@@ -134,13 +134,15 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     return null;
   }
 
-  private Http2ServerRequest createRequest(int streamId, Http2Headers headers, boolean streamEnded) {
+  private Http2ServerStream createRequest(int streamId, Http2Headers headers, boolean streamEnded) {
     Http2Stream stream = handler.connection().stream(streamId);
     String contentEncoding = options.isCompressionSupported() ? determineContentEncoding(headers) : null;
-    Http2ServerRequest request = new Http2ServerRequest(this, options.getTracingPolicy(), streamContextSupplier.get(), serverOrigin, headers, contentEncoding, streamEnded);
-    request.isConnect = request.method() == HttpMethod.CONNECT;
-    request.init(stream);
-    return request;
+    Http2ServerStream vertxStream = new Http2ServerStream(this, streamContextSupplier.get(), headers, serverOrigin);
+    Http2ServerRequest request = new Http2ServerRequest(vertxStream, serverOrigin, options.getTracingPolicy(), headers, contentEncoding, streamEnded);
+    vertxStream.request = request;
+    vertxStream.isConnect = request.method() == HttpMethod.CONNECT;
+    vertxStream.init(stream);
+    return vertxStream;
   }
 
   @Override
@@ -188,9 +190,11 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
           int promisedStreamId = future.getNow();
           String contentEncoding = determineContentEncoding(headers_);
           Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
-          Push push = new Push(context, contentEncoding, method, path, promise);
-          push.priority(streamPriority);
-          push.init(promisedStream);
+          Http2ServerStream vertxStream = new Http2ServerStream(this, context, method, path);
+          Push push = new Push(vertxStream, contentEncoding, promise);
+          vertxStream.request = push;
+          push.stream.priority(streamPriority);
+          push.stream.init(promisedStream);
           int maxConcurrentStreams = handler.maxConcurrentStreams();
           if (concurrentStreams < maxConcurrentStreams) {
             concurrentStreams++;
@@ -210,46 +214,48 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     super.updateSettings(settingsUpdate, completionHandler);
   }
 
-  private class Push extends Http2ServerStream {
+  private class Push implements Http2ServerStreamHandler {
 
+    protected final ContextInternal context;
+    protected final Http2ServerStream stream;
+    protected final Http2ServerResponse response;
     private final Promise<HttpServerResponse> promise;
 
-    public Push(ContextInternal context,
+    public Push(Http2ServerStream stream,
                 String contentEncoding,
-                HttpMethod method,
-                String uri,
                 Promise<HttpServerResponse> promise) {
-      super(Http2ServerConnection.this, context, contentEncoding, method, uri);
+      this.context = stream.context;
+      this.stream = stream;
+      this.response = new Http2ServerResponse(stream.conn, stream, true, contentEncoding);
       this.promise = promise;
     }
 
     @Override
-    void dispatch(Handler<HttpServerRequest> handler) {
+    public Http2ServerResponse response() {
+      return response;
+    }
+
+    @Override
+    public  void dispatch(Handler<HttpServerRequest> handler) {
       throw new UnsupportedOperationException();
     }
 
     @Override
-    void handleWritabilityChanged(boolean writable) {
-      response.handlerWritabilityChanged(writable);
-    }
-
-    @Override
-    void handleReset(long errorCode) {
+    public void handleReset(long errorCode) {
       if (!promise.tryFail(new StreamResetException(errorCode))) {
         response.handleReset(errorCode);
       }
     }
 
     @Override
-    void handleException(Throwable cause) {
+    public  void handleException(Throwable cause) {
       if (response != null) {
         response.handleException(cause);
       }
     }
 
     @Override
-    void handleClose(HttpClosedException ex) {
-      super.handleClose(ex);
+    public  void handleClose(HttpClosedException ex) {
       if (pendingPushes.remove(this)) {
         promise.fail("Push reset by client");
       } else {
@@ -265,7 +271,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     }
 
     void complete() {
-      registerMetrics();
+      stream.registerMetrics();
       promise.complete(response);
     }
   }

@@ -196,7 +196,7 @@ public class HttpChannelConnector {
     });
     clientHandler.addHandler(conn -> {
       if (upgrade) {
-        future.complete(new Http2UpgradedClientConnection(client, conn));
+        future.complete(new Http2UpgradeClientConnection(client, conn));
       } else {
         future.complete(conn);
       }

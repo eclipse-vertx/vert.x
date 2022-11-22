@@ -70,6 +70,16 @@ public interface KeyCertOptions {
   }
 
   /**
+   * Returns a {@link KeyCertOptions} from the provided {@link KeyManagerFactory}
+   *
+   * @param keyManagerFactory the keyManagerFactory instance
+   * @return the {@link KeyCertOptions}
+   */
+  static KeyCertOptions wrap(KeyManagerFactory keyManagerFactory) {
+    return new KeyManagerFactoryOptions(keyManagerFactory);
+  }
+  
+  /**
    * @return a boolean to indicate that the provided SSL material has been updated
    */
   default boolean isUpdated() {

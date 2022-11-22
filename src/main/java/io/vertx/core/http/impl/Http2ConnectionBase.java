@@ -147,7 +147,11 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   void onStreamClosed(Http2Stream s) {
     VertxHttp2Stream stream = s.getProperty(streamKey);
     if (stream != null) {
-      stream.onClose(new HttpClosedException(goAwayStatus));
+      if (goAwayStatus != null) {
+        stream.onClose(new HttpClosedException(goAwayStatus));
+      } else {
+        stream.onClose(HttpUtils.CLOSED_EXCEPTION);
+      }
     }
     checkShutdown();
   }
