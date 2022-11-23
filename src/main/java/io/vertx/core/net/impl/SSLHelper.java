@@ -37,7 +37,6 @@ import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.core.net.SSLEngineOptions;
-import io.vertx.core.net.SSLRefreshOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.TCPSSLOptions;
 import io.vertx.core.net.TrustOptions;
@@ -58,7 +57,6 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -135,7 +133,6 @@ public class SSLHelper {
   private final SSLEngineOptions sslEngineOptions;
   private final KeyCertOptions keyCertOptions;
   private final TrustOptions trustOptions;
-  private final SSLRefreshOptions sslRefreshOptions;
   private final ArrayList<String> crlPaths;
   private final ArrayList<Buffer> crlValues;
   private final Set<String> enabledCipherSuites;
@@ -148,6 +145,8 @@ public class SSLHelper {
   };
   private X509ExtendedKeyManager swappableKeyManager;
   private X509ExtendedTrustManager swappableTrustManager;
+  private Callable<KeyManagerFactory> keyManagerFactorySupplier;
+  private Callable<TrustManagerFactory> trustManagerFactorySupplier;
 
   public SSLHelper(TCPSSLOptions options, List<String> applicationProtocols) {
     this.sslEngineOptions = options.getSslEngineOptions();
@@ -163,7 +162,6 @@ public class SSLHelper {
     this.trustAll = options instanceof ClientOptionsBase && ((ClientOptionsBase)options).isTrustAll();
     this.keyCertOptions = options.getKeyCertOptions() != null ? options.getKeyCertOptions().copy() : null;
     this.trustOptions = options.getTrustOptions() != null ? options.getTrustOptions().copy() : null;
-    this.sslRefreshOptions = options.getSslRefreshOptions() != null ? options.getSslRefreshOptions() : null;
     this.clientAuth = options instanceof NetServerOptions ? ((NetServerOptions)options).getClientAuth() : ClientAuth.NONE;
     this.endpointIdentificationAlgorithm = options instanceof NetClientOptions ? ((NetClientOptions)options).getHostnameVerificationAlgorithm() : "";
     this.sni = options instanceof NetServerOptions && ((NetServerOptions) options).isSni();
@@ -293,8 +291,11 @@ public class SSLHelper {
 
   private SslContext createContext2(VertxInternal vertx, String serverName, boolean useAlpn, boolean client, boolean trustAll) {
     try {
-      TrustManagerFactory tmf = getTrustMgrFactory(vertx, serverName, trustAll);
-      KeyManagerFactory kmf = getKeyMgrFactory(vertx, serverName);
+      trustManagerFactorySupplier = () -> getTrustMgrFactory(vertx, serverName, trustAll);
+      keyManagerFactorySupplier = () -> getKeyMgrFactory(vertx, serverName);
+
+      TrustManagerFactory tmf = trustManagerFactorySupplier.call();
+      KeyManagerFactory kmf = keyManagerFactorySupplier.call();
       SslContextFactory factory = sslProvider.result().get()
         .useAlpn(useAlpn)
         .forClient(client)
@@ -304,30 +305,19 @@ public class SSLHelper {
         factory.clientAuth(CLIENT_AUTH_MAPPING.get(clientAuth));
       }
       if (kmf != null) {
-        createSwappableManagerIfEnabled(kmf, KeyManagerUtils::getKeyManager, km -> {
-          swappableKeyManager = KeyManagerUtils.createSwappableKeyManager(km);
-          factory.keyMananagerFactory(KeyManagerUtils.createKeyManagerFactory(swappableKeyManager));
-        }, factory::keyMananagerFactory);
+        X509ExtendedKeyManager keyManager = KeyManagerUtils.getKeyManager(kmf);
+        swappableKeyManager = KeyManagerUtils.createSwappableKeyManager(keyManager);
+        factory.keyMananagerFactory(KeyManagerUtils.createKeyManagerFactory(swappableKeyManager));
       }
       if (tmf != null) {
-        createSwappableManagerIfEnabled(tmf, TrustManagerUtils::getTrustManager, tm -> {
-          swappableTrustManager = TrustManagerUtils.createSwappableTrustManager(tm);
-          factory.trustManagerFactory(TrustManagerUtils.createTrustManagerFactory(swappableTrustManager));
-        }, factory::trustManagerFactory);
+        X509ExtendedTrustManager trustManager = TrustManagerUtils.getTrustManager(tmf);
+        swappableTrustManager = TrustManagerUtils.createSwappableTrustManager(trustManager);
+        factory.trustManagerFactory(TrustManagerUtils.createTrustManagerFactory(swappableTrustManager));
       }
       if (serverName != null) {
         factory.serverName(serverName);
       }
 
-      if (sslRefreshOptions != null) {
-        vertx.setPeriodic(
-          sslRefreshOptions.getSslRefreshTimeUnit().toMillis(sslRefreshOptions.getSslRefreshTimeout()),
-          handler -> vertx.executeBlocking(aPromise -> reloadCertificates(
-            () -> getKeyMgrFactory(vertx, serverName),
-            () -> getTrustMgrFactory(vertx, serverName, trustAll)
-          ))
-        );
-      }
       return factory.create();
     } catch (Exception e) {
       throw new VertxException(e);
@@ -490,24 +480,12 @@ public class SSLHelper {
     };
   }
 
-  private <T, U> void createSwappableManagerIfEnabled(T factoryManager,
-                                                      Function<T, U> factoryManagerMapper,
-                                                      Consumer<U> managerConsumer,
-                                                      Consumer<T> managerConsumerFallback) {
-
-    if (sslRefreshOptions != null) {
-      U manager = factoryManagerMapper.apply(factoryManager);
-      managerConsumer.accept(manager);
-    } else {
-      managerConsumerFallback.accept(factoryManager);
-    }
-  }
-
-  private void reloadCertificates(Callable<KeyManagerFactory> keyManagerFactorySupplier, Callable<TrustManagerFactory> trustManagerFactorySupplier) {
+  public void reloadCertificates() {
     boolean keyCertOptionsUpdated = keyCertOptions.isUpdated();
     boolean trustOptionsUpdated = trustOptions.isUpdated();
 
     if (!keyCertOptionsUpdated && !trustOptionsUpdated) {
+      log.info("No changes detected on the SSL material, update of the SSL Configuration is being skipped.");
       return;
     }
 

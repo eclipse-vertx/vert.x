@@ -247,6 +247,11 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
     }
   }
 
+  @Override
+  public void reloadSsl() {
+    sslHelper().reloadCertificates();
+  }
+
   public synchronized void close(Promise<Void> completion) {
     if (wsStream.endHandler() != null || requestStream.endHandler() != null) {
       Handler<Void> wsEndHandler = wsStream.endHandler();

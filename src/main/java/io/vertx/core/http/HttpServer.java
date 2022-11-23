@@ -218,4 +218,10 @@ public interface HttpServer extends Measured {
    * @return the actual port the server is listening on.
    */
   int actualPort();
+
+  /**
+   * Attempts to reload the ssl configuration if the server has been configured with ssl
+   */
+  void reloadSsl();
+
 }

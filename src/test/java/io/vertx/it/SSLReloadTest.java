@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
@@ -124,7 +123,6 @@ public class SSLReloadTest extends HttpTestBase {
       .setHost(DEFAULT_HTTP_HOST)
       .setKeyCertOptions(keyCertOptions)
       .setTrustOptions(trustOptions)
-      .setSslRefreshOptions(TimeUnit.MILLISECONDS, 500)
       .setSsl(true);
     server = vertx.createHttpServer(options);
     server.requestHandler(req -> {
@@ -142,7 +140,7 @@ public class SSLReloadTest extends HttpTestBase {
     assertEquals("2024-10-30T01:32:48Z", certificateCollector.get(0).getNotAfter().toInstant().toString());
 
     replaceCertificateOnTheFileSystem.call();
-    TimeUnit.SECONDS.sleep(1);
+    server.reloadSsl();
 
     urlsToCertificates = CertificateUtils.getCertificate(SERVER_URL);
     certificateCollector = urlsToCertificates.get(SERVER_URL);

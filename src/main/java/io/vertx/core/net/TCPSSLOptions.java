@@ -131,7 +131,6 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   private TimeUnit sslHandshakeTimeoutUnit;
   private KeyCertOptions keyCertOptions;
   private TrustOptions trustOptions;
-  private SSLRefreshOptions sslRefreshOptions;
   private Set<String> enabledCipherSuites;
   private ArrayList<String> crlPaths;
   private ArrayList<Buffer> crlValues;
@@ -170,7 +169,6 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     this.sslHandshakeTimeoutUnit = other.getSslHandshakeTimeoutUnit() != null ? other.getSslHandshakeTimeoutUnit() : DEFAULT_SSL_HANDSHAKE_TIMEOUT_TIME_UNIT;
     this.keyCertOptions = other.getKeyCertOptions() != null ? other.getKeyCertOptions().copy() : null;
     this.trustOptions = other.getTrustOptions() != null ? other.getTrustOptions().copy() : null;
-    this.sslRefreshOptions = other.getSslRefreshOptions() != null ? other.getSslRefreshOptions() : null;
     this.enabledCipherSuites = other.getEnabledCipherSuites() == null ? new LinkedHashSet<>() : new LinkedHashSet<>(other.getEnabledCipherSuites());
     this.crlPaths = new ArrayList<>(other.getCrlPaths());
     this.crlValues = new ArrayList<>(other.getCrlValues());
@@ -544,25 +542,6 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   public TCPSSLOptions setPemTrustOptions(PemTrustOptions options) {
     this.trustOptions = options;
     return this;
-  }
-
-  /**
-   * Set the refresh option for the ssl configuration
-   * @param sslRefreshTimeUnit the refresh option containing the timeunit
-   * @param sslRefreshTimeout the refresh option containing the amount
-   * @return a reference to this, so the API can be used fluently
-   */
-  public TCPSSLOptions setSslRefreshOptions(TimeUnit sslRefreshTimeUnit, long sslRefreshTimeout) {
-    this.sslRefreshOptions = new SSLRefreshOptions(sslRefreshTimeUnit, sslRefreshTimeout);
-    return this;
-  }
-
-  /**
-   * Get the refresh option for the ssl configuration
-   * @return the refresh option for the ssl configuration
-   */
-  public SSLRefreshOptions getSslRefreshOptions() {
-    return sslRefreshOptions;
   }
 
   /**

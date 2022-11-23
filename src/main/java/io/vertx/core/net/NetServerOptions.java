@@ -273,11 +273,6 @@ public class NetServerOptions extends TCPSSLOptions {
   }
 
   @Override
-  public NetServerOptions setSslRefreshOptions(TimeUnit sslRefreshTimeUnit, long sslRefreshTimeout) {
-    return (NetServerOptions) super.setSslRefreshOptions(sslRefreshTimeUnit, sslRefreshTimeout);
-  }
-
-  @Override
   public NetServerOptions addEnabledCipherSuite(String suite) {
     super.addEnabledCipherSuite(suite);
     return this;
