@@ -2904,8 +2904,8 @@ public class NetTest extends VertxTestBase {
     server.listen(ar -> {
       assertTrue(ar.succeeded());
       client.connect(1234, "localhost", ar2 -> {
-        //Should not be able to connect
-        assertTrue(ar2.failed());
+        //Should be able to connect because client trusts anyone
+        assertTrue(ar2.succeeded());
         testComplete();
       });
     });
