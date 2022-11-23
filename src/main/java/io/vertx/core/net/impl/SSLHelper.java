@@ -485,11 +485,11 @@ public class SSLHelper {
     boolean trustOptionsUpdated = trustOptions.isUpdated();
 
     if (!keyCertOptionsUpdated && !trustOptionsUpdated) {
-      log.info("No changes detected on the SSL material, update of the SSL Configuration is being skipped.");
+      log.debug("No changes detected on the SSL material, update of the SSL Configuration is being skipped.");
       return;
     }
 
-    log.info("Changes detected on the SSL material, attempting to update the SSL configuration...");
+    log.debug("Changes detected on the SSL material, attempting to update the SSL configuration...");
 
     try {
       if (keyCertOptionsUpdated) {
@@ -513,7 +513,7 @@ public class SSLHelper {
         .map(SslContext::sessionContext)
         .forEach(SSLSessionUtils::invalidateCaches);
 
-      log.info("SSL configuration has been updated with the new SSL material");
+      log.debug("SSL configuration has been updated with the new SSL material");
     } catch (Exception e) {
       throw new VertxException(e);
     }
