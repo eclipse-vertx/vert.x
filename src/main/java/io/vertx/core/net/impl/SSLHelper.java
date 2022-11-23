@@ -463,8 +463,13 @@ public class SSLHelper {
   }
 
   public void reloadCertificates() {
-    boolean keyCertOptionsUpdated = keyCertOptions.isUpdated();
-    boolean trustOptionsUpdated = trustOptions.isUpdated();
+    boolean keyCertOptionsUpdated = Optional.ofNullable(keyCertOptions)
+      .map(KeyCertOptions::isUpdated)
+      .orElse(false);
+
+    boolean trustOptionsUpdated = Optional.ofNullable(trustOptions)
+      .map(TrustOptions::isUpdated)
+      .orElse(false);
 
     if (!keyCertOptionsUpdated && !trustOptionsUpdated) {
       log.debug("No changes detected on the SSL material, update of the SSL Configuration is being skipped.");

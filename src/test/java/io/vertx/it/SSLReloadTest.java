@@ -116,6 +116,27 @@ public class SSLReloadTest extends HttpTestBase {
     }
   }
 
+  @Test
+  public void reloadServerCertificatesForNonSslServerDoesNothing() throws Exception {
+    server.close();
+    HttpServerOptions options = new HttpServerOptions()
+      .setPort(DEFAULT_HTTPS_PORT)
+      .setHost(DEFAULT_HTTP_HOST);
+    server = vertx.createHttpServer(options);
+    server.requestHandler(req -> {
+      assertFalse(req.isSSL());
+      req.response().end();
+    });
+
+    startServer();
+
+    try {
+      server.reloadSsl();
+    } catch (Exception e) {
+      fail("reloadSsl method should not throw any exception when the server is not configured with ssl");
+    }
+  }
+
   private void assertReloadServerCertificates(KeyCertOptions keyCertOptions, TrustOptions trustOptions, Callable<Void> replaceCertificateOnTheFileSystem) throws Exception {
     server.close();
     HttpServerOptions options = new HttpServerOptions()
