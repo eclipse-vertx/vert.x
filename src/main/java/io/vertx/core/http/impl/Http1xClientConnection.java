@@ -358,6 +358,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     }
 
     abstract void handleContinue();
+    abstract void handleEarlyHints(MultiMap headers);
     abstract void handleHead(HttpResponseHead response);
     abstract void handleChunk(Buffer buff);
     abstract void handleEnd(LastHttpContent trailer);
@@ -780,8 +781,11 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   }
 
   private void handleResponseBegin(Stream stream, HttpResponseHead response) {
-    if (response.statusCode == 100) {
+    // How can we handle future undefined 1xx informational response codes?
+    if (response.statusCode == HttpResponseStatus.CONTINUE.code()) {
       stream.context.execute(null, v -> stream.handleContinue());
+    } else if (response.statusCode == HttpResponseStatus.EARLY_HINTS.code()) {
+      stream.context.execute(null, v -> stream.handleEarlyHints(response.headers));
     } else {
       HttpRequestHead request;
       synchronized (this) {
