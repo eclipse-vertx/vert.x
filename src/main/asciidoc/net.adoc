@@ -698,7 +698,8 @@ Protocol versions can be specified on the {@link io.vertx.core.net.NetServerOpti
 ==== SSL engine
 
 The engine implementation can be configured to use https://www.openssl.org[OpenSSL] instead of the JDK implementation.
-OpenSSL provides better performances and CPU usage than the JDK engine, as well as JDK version independence.
+Before JDK started to use hardware intrinsics (CPU instructions) for AES in Java 8 and for RSA in Java 9,
+OpenSSL provided much better performances and CPU usage than the JDK engine.
 
 The engine options to use is
 
