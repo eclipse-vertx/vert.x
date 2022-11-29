@@ -78,6 +78,53 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testWriteFromWorker() {
+//    int numRequests = 16 * 10;
+//    waitFor(numRequests);
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(1).setPipelining(true).setPipeliningLimit(16));
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start(Promise<Void> p) {
+        server.requestHandler(req -> {
+//          try {
+//            Thread.sleep(2000);
+//          } catch (InterruptedException e) {
+//            throw new RuntimeException(e);
+//          }
+          HttpServerResponse resp = req.response();
+          resp.end("hello world");
+        }).listen(testAddress).<Void>mapEmpty().onComplete(p);
+      }
+    }, new DeploymentOptions().setWorker(true), onSuccess(id -> {
+      NetClient client = vertx.createNetClient();
+      Buffer buffer = Buffer.buffer();
+      for (int i = 0;i < 5;i++) {
+        buffer.appendString("GET / HTTP/1.1\r\n" +
+          "content-length: 0\r\n");
+        if (i == 4 - 1) {
+          buffer.appendString("connection: close\r\n");
+        }
+        buffer.appendString("\r\n");
+//        client.request(requestOptions, onSuccess(req -> {
+//          req.send(onSuccess(resp -> {
+//            resp.body().onSuccess(body -> {
+//              complete();
+//            });
+//          }));
+//        }));
+      }
+      client.connect(testAddress, onSuccess(so -> {
+        so.write(buffer);
+        so.endHandler(v -> {
+          testComplete();
+        });
+      }));
+    }));
+    await();
+  }
+
+  @Test
   public void testClientOptions() {
     HttpClientOptions options = new HttpClientOptions();
 
