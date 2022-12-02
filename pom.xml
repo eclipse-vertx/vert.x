@@ -53,7 +53,7 @@
     <vertx.testNativeTransport>false</vertx.testNativeTransport>
     <vertx.testDomainSockets>false</vertx.testDomainSockets>
     <jar.manifest>${project.basedir}/src/main/resources/META-INF/MANIFEST.MF</jar.manifest>
-    <netty.iouring.version>0.0.14.Final</netty.iouring.version>
+    <netty.iouring.version>0.0.16.Final</netty.iouring.version>
   </properties>
 
   <dependencyManagement>
