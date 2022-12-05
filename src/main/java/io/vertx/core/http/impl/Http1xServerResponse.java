@@ -36,8 +36,8 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
@@ -48,10 +48,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.Map;
 import java.util.Set;
 
-import static io.vertx.core.http.HttpHeaders.SET_COOKIE;
+import static io.vertx.core.http.HttpHeaders.*;
 
 /**
  *
@@ -399,6 +398,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
       if (written) {
         throw new IllegalStateException(RESPONSE_WRITTEN);
       }
+      written = true;
       ByteBuf data = chunk.getByteBuf();
       bytesWritten += data.readableBytes();
       HttpObject msg;
@@ -411,7 +411,6 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
         msg = new AssembledLastHttpContent(data, trailingHeaders);
       }
       conn.writeToChannel(msg, listener);
-      written = true;
       conn.responseComplete();
       if (bodyEndHandler != null) {
         bodyEndHandler.handle(null);
