@@ -150,9 +150,7 @@ public class SSLHelperTest extends VertxTestBase {
   public void testDefaultVersions() {
     testTLSVersions(new HttpServerOptions(), engine -> {
       List<String> protocols = Arrays.asList(engine.getEnabledProtocols());
-      assertEquals(4, protocols.size());
-      assertTrue(protocols.contains("TLSv1"));
-      assertTrue(protocols.contains("TLSv1.1"));
+      assertEquals(2, protocols.size());
       assertTrue(protocols.contains("TLSv1.2"));
       assertTrue(protocols.contains("TLSv1.3"));
     });
