@@ -85,7 +85,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * <p/>
    * "SSLv2Hello" is NOT enabled since it's disabled by default since JDK7
    */
-  public static final List<String> DEFAULT_ENABLED_SECURE_TRANSPORT_PROTOCOLS = Collections.unmodifiableList(Arrays.asList("TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"));
+  public static final List<String> DEFAULT_ENABLED_SECURE_TRANSPORT_PROTOCOLS = Collections.unmodifiableList(Arrays.asList("TLSv1.2", "TLSv1.3"));
 
   /**
    * The default TCP_FASTOPEN value = false

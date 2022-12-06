@@ -529,14 +529,19 @@ public class NetExamples {
     NetServer server = vertx.createNetServer(options);
   }
 
-  /**
-   * The default protocols are defined in {@link io.vertx.core.net.TCPSSLOptions#DEFAULT_ENABLED_SECURE_TRANSPORT_PROTOCOLS}, but you can change them.
-   */
-  public void example45(Vertx vertx, JksOptions keyStoreOptions) {
+  public void addEnabledTLSPrococol(Vertx vertx, JksOptions keyStoreOptions) {
     NetServerOptions options = new NetServerOptions().
       setSsl(true).
       setKeyStoreOptions(keyStoreOptions).
-      removeEnabledSecureTransportProtocol("TLSv1");
+      addEnabledSecureTransportProtocol("TLSv1.1");
+    NetServer server = vertx.createNetServer(options);
+  }
+
+  public void removeEnabledTLSPrococol(Vertx vertx, JksOptions keyStoreOptions) {
+    NetServerOptions options = new NetServerOptions().
+      setSsl(true).
+      setKeyStoreOptions(keyStoreOptions).
+      removeEnabledSecureTransportProtocol("TLSv1.2");
     NetServer server = vertx.createNetServer(options);
   }
 
