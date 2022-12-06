@@ -685,7 +685,7 @@ Cipher suite can be specified on the {@link io.vertx.core.net.NetServerOptions} 
 
 ==== Configuring TLS protocol versions
 
-By default, the TLS configuration will use the following protocol versions: SSLv2Hello, TLSv1, TLSv1.1 and TLSv1.2. Protocol versions can be
+By default, the TLS configuration will use the following protocol versions: TLSv1, TLSv1.1, TLSv1.2 and TLSv1.3. Protocol versions can be
 configured by explicitly adding enabled protocols:
 
 [source,$lang]
@@ -694,6 +694,8 @@ configured by explicitly adding enabled protocols:
 ----
 
 Protocol versions can be specified on the {@link io.vertx.core.net.NetServerOptions} or {@link io.vertx.core.net.NetClientOptions} configuration.
+
+NOTE: TLS 1.0 (TLSv1) and TLS 1.1 (TLSv1.1) are widely deprecated and will disabled by default in future Vert.x versions.
 
 ==== SSL engine
 

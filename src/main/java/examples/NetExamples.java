@@ -536,8 +536,7 @@ public class NetExamples {
     NetServerOptions options = new NetServerOptions().
       setSsl(true).
       setKeyStoreOptions(keyStoreOptions).
-      removeEnabledSecureTransportProtocol("TLSv1").
-      addEnabledSecureTransportProtocol("TLSv1.3");
+      removeEnabledSecureTransportProtocol("TLSv1");
     NetServer server = vertx.createNetServer(options);
   }
 

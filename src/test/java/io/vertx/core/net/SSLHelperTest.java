@@ -30,6 +30,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLSessionContext;
 import java.util.*;
+import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -143,5 +144,48 @@ public class SSLHelperTest extends VertxTestBase {
     assertEquals(new ArrayList<>(new HttpServerOptions(options).getEnabledSecureTransportProtocols()), expectedProtocols);
     JsonObject json = options.toJson();
     assertEquals(new ArrayList<>(new HttpServerOptions(json).getEnabledSecureTransportProtocols()), expectedProtocols);
+  }
+
+  @Test
+  public void testDefaultVersions() {
+    testTLSVersions(new HttpServerOptions(), engine -> {
+      List<String> protocols = Arrays.asList(engine.getEnabledProtocols());
+      assertEquals(4, protocols.size());
+      assertTrue(protocols.contains("TLSv1"));
+      assertTrue(protocols.contains("TLSv1.1"));
+      assertTrue(protocols.contains("TLSv1.2"));
+      assertTrue(protocols.contains("TLSv1.3"));
+    });
+  }
+
+  @Test
+  public void testSetVersion() {
+    testTLSVersions(new HttpServerOptions().setEnabledSecureTransportProtocols(new HashSet<>(Arrays.asList("TLSv1.3"))), engine -> {
+      List<String> protocols = Arrays.asList(engine.getEnabledProtocols());
+      assertEquals(1, protocols.size());
+      assertTrue(protocols.contains("TLSv1.3"));
+    });
+  }
+
+  @Test
+  public void testSetVersions() {
+    testTLSVersions(new HttpServerOptions().setEnabledSecureTransportProtocols(new HashSet<>(Arrays.asList("TLSv1", "TLSv1.3"))), engine -> {
+      List<String> protocols = Arrays.asList(engine.getEnabledProtocols());
+      assertEquals(2, protocols.size());
+      assertTrue(protocols.contains("TLSv1"));
+      assertTrue(protocols.contains("TLSv1.3"));
+    });
+  }
+
+  private void testTLSVersions(HttpServerOptions options, Consumer<SSLEngine> check) {
+    SSLHelper helper = new SSLHelper(options.setSsl(true).setKeyCertOptions(Cert.SERVER_JKS.get()), null);
+    helper
+      .init((ContextInternal) vertx.getOrCreateContext())
+      .onComplete(onSuccess(v -> {
+        SSLEngine engine = helper.createEngine((VertxInternal) vertx);
+        check.accept(engine);
+        testComplete();
+      }));
+    await();
   }
 }
