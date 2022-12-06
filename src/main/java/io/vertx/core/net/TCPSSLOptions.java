@@ -79,13 +79,13 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   public static final SSLEngineOptions DEFAULT_SSL_ENGINE = null;
 
   /**
-   * The default ENABLED_SECURE_TRANSPORT_PROTOCOLS value = { "TLSv1", "TLSv1.1", "TLSv1.2" }
+   * The default ENABLED_SECURE_TRANSPORT_PROTOCOLS value = { "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3" }
    * <p/>
    * SSLv3 is NOT enabled due to POODLE vulnerability http://en.wikipedia.org/wiki/POODLE
    * <p/>
    * "SSLv2Hello" is NOT enabled since it's disabled by default since JDK7
    */
-  public static final List<String> DEFAULT_ENABLED_SECURE_TRANSPORT_PROTOCOLS = Collections.unmodifiableList(Arrays.asList("TLSv1", "TLSv1.1", "TLSv1.2"));
+  public static final List<String> DEFAULT_ENABLED_SECURE_TRANSPORT_PROTOCOLS = Collections.unmodifiableList(Arrays.asList("TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"));
 
   /**
    * The default TCP_FASTOPEN value = false

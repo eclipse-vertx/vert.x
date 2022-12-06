@@ -28,6 +28,7 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.*;
+import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
@@ -1866,81 +1867,76 @@ public class NetTest extends VertxTestBase {
           clientOptions.addEnabledSecureTransportProtocol(protocol);
         }
         client = vertx.createNetClient(clientOptions);
-        client.connect(connectAddress, serverName, ar2 -> {
-          if (ar2.succeeded()) {
-            if (!startTLS && !shouldPass) {
-              fail("Should not connect");
-              return;
-            }
-            final int numChunks = 100;
-            final int chunkSize = 100;
-            final List<Buffer> toSend = new ArrayList<>();
-            final Buffer expected = Buffer.buffer();
-            for (int i = 0; i< numChunks;i++) {
-              Buffer chunk = TestUtils.randomBuffer(chunkSize);
-              toSend.add(chunk);
-              expected.appendBuffer(chunk);
-            }
-            final Buffer received = Buffer.buffer();
-            final NetSocket socket = ar2.result();
+        Future<Void> f = client.connect(connectAddress, serverName).compose(socket -> {
+          Promise<Void> result = Promise.promise();
+          final int numChunks = 100;
+          final int chunkSize = 100;
+          final List<Buffer> toSend = new ArrayList<>();
+          final Buffer expected = Buffer.buffer();
+          for (int i = 0; i< numChunks;i++) {
+            Buffer chunk = TestUtils.randomBuffer(chunkSize);
+            toSend.add(chunk);
+            expected.appendBuffer(chunk);
+          }
+          final Buffer received = Buffer.buffer();
 
-            if (socket.isSsl()) {
-              try {
-                clientPeerCert = socket.peerCertificates().get(0);
-              } catch (SSLPeerUnverifiedException ignore) {
-              }
-            }
-
-            final AtomicBoolean upgradedClient = new AtomicBoolean();
-            socket.handler(buffer -> {
-              received.appendBuffer(buffer);
-              if (received.length() == expected.length()) {
-                assertEquals(expected, received);
-                complete();
-              }
-              if (startTLS && !upgradedClient.get()) {
-                upgradedClient.set(true);
-                assertFalse(socket.isSsl());
-                Handler<AsyncResult<Void>> handler;
-                if (shouldPass) {
-                  handler = onSuccess(v -> {
-                    assertTrue(socket.isSsl());
-                    try {
-                      clientPeerCert = socket.peerCertificates().get(0);
-                    } catch (SSLPeerUnverifiedException ignore) {
-                    }
-                    // Now send the rest
-                    for (int i = 1; i < numChunks; i++) {
-                      socket.write(toSend.get(i));
-                    }
-                  });
-                } else {
-                  handler = onFailure(err -> complete());
-                }
-                if (serverName != null) {
-                  socket.upgradeToSsl(serverName, handler);
-                } else {
-                  socket.upgradeToSsl(handler);
-                }
-              } else {
-                assertTrue(socket.isSsl());
-              }
-            });
-
-            //Now send some data
-            int numToSend = startTLS ? 1 : numChunks;
-            for (int i = 0; i < numToSend; i++) {
-              socket.write(toSend.get(i));
-            }
-          } else {
-            if (shouldPass) {
-              ar2.cause().printStackTrace();
-              fail("Should not fail to connect");
-            } else {
-              complete();
+          if (socket.isSsl()) {
+            try {
+              clientPeerCert = socket.peerCertificates().get(0);
+            } catch (SSLPeerUnverifiedException ignore) {
             }
           }
+
+          final AtomicBoolean upgradedClient = new AtomicBoolean();
+          socket.exceptionHandler(result::tryFail);
+          socket.handler(buffer -> {
+            received.appendBuffer(buffer);
+            if (received.length() == expected.length()) {
+              assertEquals(expected, received);
+              complete();
+            }
+            if (startTLS && !upgradedClient.get()) {
+              upgradedClient.set(true);
+              assertFalse(socket.isSsl());
+              Future<Void> fut;
+              if (serverName != null) {
+                fut = socket.upgradeToSsl(serverName);
+              } else {
+                fut = socket.upgradeToSsl();
+              }
+              if (shouldPass) {
+                fut.onSuccess(v -> {
+                  assertTrue(socket.isSsl());
+                  try {
+                    clientPeerCert = socket.peerCertificates().get(0);
+                  } catch (SSLPeerUnverifiedException ignore) {
+                  }
+                  // Now send the rest
+                  for (int i = 1; i < numChunks; i++) {
+                    socket.write(toSend.get(i));
+                  }
+                });
+              }
+              fut.onFailure(result::tryFail);
+            } else {
+              assertTrue(socket.isSsl());
+            }
+          });
+
+          //Now send some data
+          int numToSend = startTLS ? 1 : numChunks;
+          for (int i = 0; i < numToSend; i++) {
+            socket.write(toSend.get(i));
+          }
+
+          return result.future();
         });
+
+        if (shouldPass) {
+          f.onComplete(onSuccess(v -> complete()));
+        } else {
+          f.onComplete(onFailure(v -> complete()));
+        }
       }));
     }
   }

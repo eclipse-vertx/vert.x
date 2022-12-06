@@ -1279,47 +1279,40 @@ public abstract class HttpTLSTest extends HttpTestBase {
         } else {
           httpHost = DEFAULT_HTTP_HOST;
         }
-        requestProvider.apply(client).onComplete(ar_ -> {
-          if (ar_.succeeded()) {
-            HttpClientRequest req = ar_.result();
-            req.setFollowRedirects(followRedirects);
-            req.send("foo", ar2 -> {
-              if (ar2.succeeded()) {
-                HttpClientResponse response = ar2.result();
-                HttpConnection conn = response.request().connection();
-                if (conn.isSsl()) {
-                  try {
-                    clientPeerCert = conn.peerCertificates().get(0);
-                  } catch (SSLPeerUnverifiedException ignore) {
-                  }
-                }
-                if (shouldPass) {
-                  response.version();
-                  HttpMethod method = response.request().getMethod();
-                  if (method == HttpMethod.GET || method == HttpMethod.HEAD) {
-                    complete();
-                  } else {
-                    response.bodyHandler(data -> {
-                      assertEquals("bar", data.toString());
-                      complete();
-                    });
-                  }
-                } else {
-                  HttpTLSTest.this.fail("Should not get a response");
-                }
-              } else {
-                System.out.println("HANDLE ME");
+        Future<Void> fut = requestProvider.apply(client).compose(req -> {
+          req.setFollowRedirects(followRedirects);
+          return req.send("foo").compose(resp -> {
+            HttpConnection conn = resp.request().connection();
+            if (conn.isSsl()) {
+              try {
+                clientPeerCert = conn.peerCertificates().get(0);
+              } catch (SSLPeerUnverifiedException ignore) {
               }
-            });
-          } else {
-            Throwable t = ar_.cause();
-            if (shouldPass) {
-              t.printStackTrace();
-              HttpTLSTest.this.fail("Should not throw exception");
-            } else {
-              complete();
             }
-          }
+            if (shouldPass) {
+              resp.version();
+              HttpMethod method = resp.request().getMethod();
+              if (method == HttpMethod.GET || method == HttpMethod.HEAD) {
+                return resp.end();
+              } else {
+                return resp.body().map(body -> {
+                  assertEquals("bar", body.toString());
+                  return null;
+                });
+              }
+            } else {
+              HttpTLSTest.this.fail("Should not get a response");
+              return null;
+            }
+          });
+        });
+        fut.onSuccess(v -> {
+          assertTrue(shouldPass);
+          complete();
+        });
+        fut.onFailure(err -> {
+          assertFalse("Should not fail " + err.getMessage(), shouldPass);
+          complete();
         });
       });
       await();
