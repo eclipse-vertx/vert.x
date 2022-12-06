@@ -3878,31 +3878,53 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
-  public void testSslHandshakeTimeoutHappened() throws Exception {
+  public void testSslHandshakeTimeoutHappenedOnServer() throws Exception {
+    testSslHandshakeTimeoutHappened(false, false);
+  }
+
+  @Test
+  public void testSslHandshakeTimeoutHappenedOnSniServer() throws Exception {
+    testSslHandshakeTimeoutHappened(false, true);
+  }
+
+  public void testSslHandshakeTimeoutHappened(boolean onClient, boolean sni) throws Exception {
     server.close();
     client.close();
 
     // set up a normal server to force the SSL handshake time out in client
     NetServerOptions serverOptions = new NetServerOptions()
-      .setSsl(false);
+      .setSsl(!onClient)
+      .setSslHandshakeTimeout(200)
+      .setKeyStoreOptions(Cert.SERVER_JKS.get())
+      .setSni(sni)
+      .setSslHandshakeTimeoutUnit(TimeUnit.MILLISECONDS);
     server = vertx.createNetServer(serverOptions);
 
     NetClientOptions clientOptions = new NetClientOptions()
-      .setSsl(true)
+      .setSsl(onClient)
       .setTrustAll(true)
       .setSslHandshakeTimeout(200)
       .setSslHandshakeTimeoutUnit(TimeUnit.MILLISECONDS);
     client = vertx.createNetClient(clientOptions);
 
+    Consumer<Throwable> checker = err -> {
+      assertTrue(err instanceof SSLException);
+      assertEquals("handshake timed out after 200ms", err.getMessage());
+      testComplete();
+    };
+
+    if (!onClient) {
+      server.exceptionHandler(checker::accept);
+    }
     server.connectHandler(s -> {
-    }).listen(testAddress, ar -> {
-      assertTrue(ar.succeeded());
-      client.connect(testAddress, onFailure(err -> {
-        assertTrue(err instanceof SSLHandshakeException);
-        assertEquals("handshake timed out after 200ms", err.getCause().getMessage());
-        testComplete();
-      }));
-    });
+    }).listen(testAddress, onSuccess(s -> {
+      client.connect(testAddress, ar -> {
+        if (onClient) {
+          assertTrue(ar.failed());
+          checker.accept(ar.cause());
+        }
+      });
+    }));
     await();
   }
 
