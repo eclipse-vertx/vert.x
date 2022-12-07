@@ -40,7 +40,7 @@ class VertxSniHandler extends SniHandler {
 
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
-    if (handshakeTimeoutMillis >= 0) {
+    if (handshakeTimeoutMillis > 0) {
       // We assume to always be added in an active channel
       assert(ctx.channel().isActive());
       timeoutFuture = ctx.executor().schedule(() -> {
