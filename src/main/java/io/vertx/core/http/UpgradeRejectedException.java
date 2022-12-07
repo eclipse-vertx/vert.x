@@ -11,7 +11,9 @@
 
 package io.vertx.core.http;
 
+import io.vertx.core.MultiMap;
 import io.vertx.core.VertxException;
+import io.vertx.core.buffer.Buffer;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -19,10 +21,14 @@ import io.vertx.core.VertxException;
 public class UpgradeRejectedException extends VertxException {
 
   private final int status;
+  private final MultiMap headers;
+  private final Buffer body;
 
-  public UpgradeRejectedException(String message, int status) {
+  public UpgradeRejectedException(String message, int status, MultiMap headers, Buffer content) {
     super(message);
     this.status = status;
+    this.headers = headers;
+    this.body = content;
   }
 
   /**
@@ -30,5 +36,19 @@ public class UpgradeRejectedException extends VertxException {
    */
   public int getStatus() {
     return status;
+  }
+
+  /**
+   * @return the headers of the response that rejected the upgrade
+   */
+  public MultiMap getHeaders() {
+    return headers;
+  }
+
+  /**
+   * @return the body of the response that rejected the upgrade
+   */
+  public Buffer getBody() {
+    return body;
   }
 }
