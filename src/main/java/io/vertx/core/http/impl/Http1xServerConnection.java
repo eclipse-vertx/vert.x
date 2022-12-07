@@ -72,7 +72,6 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocketImpl> implements HttpServerConnection {
 
   private static final Logger log = LoggerFactory.getLogger(Http1xServerConnection.class);
-  private static final HttpResponseStatus EARLY_HINTS = HttpResponseStatus.valueOf(103, "Early Hints");
 
   private final String serverOrigin;
   private final Supplier<ContextInternal> streamContextSupplier;
@@ -437,13 +436,13 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     chctx.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
   }
 
-  void write103EarlyHints(HttpHeaders headers) {
+  void write103EarlyHints(HttpHeaders headers, PromiseInternal<Void> promise) {
     chctx.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1,
-      EARLY_HINTS,
+      HttpResponseStatus.EARLY_HINTS,
       Unpooled.buffer(0),
       headers,
       EmptyHttpHeaders.INSTANCE
-    ));
+    )).addListener(promise);
   }
 
   protected void handleClosed() {

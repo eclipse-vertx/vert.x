@@ -363,7 +363,14 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public HttpServerResponse writeEarlyHints(MultiMap headers) {
+  public Future<Void> writeEarlyHints(MultiMap headers) {
+    PromiseInternal<Void> promise = context.promise();
+    writeEarlyHints(headers, promise);
+    return promise.future();
+  }
+
+  @Override
+  public void writeEarlyHints(MultiMap headers, Handler<AsyncResult<Void>> handler) {
     HeadersMultiMap headersMultiMap;
     if (headers instanceof HeadersMultiMap) {
       headersMultiMap = (HeadersMultiMap) headers;
@@ -371,9 +378,10 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
       headersMultiMap = HeadersMultiMap.httpHeaders();
       headersMultiMap.addAll(headers);
     }
-    // Write the headers
-    conn.write103EarlyHints(headersMultiMap);
-    return this;
+    synchronized (conn) {
+      checkHeadWritten();
+      conn.write103EarlyHints(headersMultiMap, context.promise(handler));
+    }
   }
 
   @Override

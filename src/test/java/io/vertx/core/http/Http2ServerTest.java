@@ -2243,10 +2243,16 @@ public class Http2ServerTest extends Http2TestBase {
   public void test103EarlyHints() throws Exception {
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
-      resp.writeEarlyHints(HeadersMultiMap.httpHeaders().add("wibble", "wibble-value"));
-      req.bodyHandler(body -> {
-        assertEquals("the-body", body.toString());
-        resp.end();
+      resp.writeEarlyHints(HeadersMultiMap.httpHeaders().add("wibble", "wibble-103-value"), result -> {
+        if (result.failed()) {
+          fail(result.cause());
+        } else {
+          resp.putHeader("wibble", "wibble-200-value");
+          req.bodyHandler(body -> {
+            assertEquals("the-body", body.toString());
+            resp.end();
+          });
+        }
       });
     });
     startServer();
@@ -2261,7 +2267,7 @@ public class Http2ServerTest extends Http2TestBase {
             case 0:
               vertx.runOnContext(v -> {
                 assertEquals("103", headers.status().toString());
-                assertEquals("wibble-value", headers.get("wibble").toString());
+                assertEquals("wibble-103-value", headers.get("wibble").toString());
               });
               request.encoder.writeData(request.context, id, Buffer.buffer("the-body").getByteBuf(), 0, true, request.context.newPromise());
               request.context.flush();
@@ -2269,7 +2275,7 @@ public class Http2ServerTest extends Http2TestBase {
             case 1:
               vertx.runOnContext(v -> {
                 assertEquals("200", headers.status().toString());
-                assertEquals("wibble-value", headers.get("wibble").toString());
+                assertEquals("wibble-200-value", headers.get("wibble").toString());
                 testComplete();
               });
               break;

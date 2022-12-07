@@ -36,6 +36,7 @@ import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.spi.observability.HttpResponse;
 import io.vertx.core.streams.ReadStream;
@@ -325,7 +326,14 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public HttpServerResponse writeEarlyHints(MultiMap headers) {
+  public Future<Void> writeEarlyHints(MultiMap headers) {
+    PromiseInternal<Void> promise = stream.context.promise();
+    writeEarlyHints(headers, promise);
+    return promise.future();
+  }
+
+  @Override
+  public void writeEarlyHints(MultiMap headers, Handler<AsyncResult<Void>> handler) {
     synchronized (conn) {
       checkHeadWritten();
       DefaultHttp2Headers http2Headers = new DefaultHttp2Headers();
@@ -333,8 +341,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
         http2Headers.add(header.getKey(), header.getValue());
       }
       http2Headers.status(HttpResponseStatus.EARLY_HINTS.codeAsText());
-      stream.writeHeaders(http2Headers, false, null);
-      return this;
+      stream.writeHeaders(http2Headers, false, handler);
     }
   }
 
