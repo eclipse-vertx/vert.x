@@ -12,6 +12,7 @@ package io.vertx.core.net.impl;
 
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.ssl.SniCompletionEvent;
 import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
@@ -45,7 +46,7 @@ class VertxSniHandler extends SniHandler {
       assert(ctx.channel().isActive());
       timeoutFuture = ctx.executor().schedule(() -> {
         SSLException exception = new SSLException("handshake timed out after " + handshakeTimeoutMillis + "ms");
-        ctx.fireUserEventTriggered(new SslHandshakeCompletionEvent(exception));
+        ctx.fireUserEventTriggered(new SniCompletionEvent(exception));
         ctx.close();
       }, handshakeTimeoutMillis, TimeUnit.MILLISECONDS);
     }

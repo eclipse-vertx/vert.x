@@ -39,10 +39,13 @@ public class SslHandshakeCompletionHandler extends ChannelInboundHandlerAdapter 
   @Override
   public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
     if (evt instanceof SniCompletionEvent) {
-      // Shall we care ?
       SniCompletionEvent completion = (SniCompletionEvent) evt;
-      Attribute<String> val = ctx.channel().attr(SERVER_NAME_ATTR);
-      val.set(completion.hostname());
+      if (completion.isSuccess()) {
+        Attribute<String> val = ctx.channel().attr(SERVER_NAME_ATTR);
+        val.set(completion.hostname());
+      } else {
+        promise.tryFailure(completion.cause());
+      }
     } else if (evt instanceof SslHandshakeCompletionEvent) {
       SslHandshakeCompletionEvent completion = (SslHandshakeCompletionEvent) evt;
       if (completion.isSuccess()) {
