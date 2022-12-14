@@ -46,7 +46,7 @@
   <properties>
     <slf4j.version>1.7.21</slf4j.version>
     <log4j2.version>2.17.1</log4j2.version>
-    <sslcontext-kickstart.version>7.4.8</sslcontext-kickstart.version>
+    <sslcontext-kickstart.version>7.4.9</sslcontext-kickstart.version>
     <junit.version>4.13.1</junit.version>
     <assertj.version>3.4.1</assertj.version>
     <apacheds-protocol-dns.version>1.5.7</apacheds-protocol-dns.version>

@@ -30,7 +30,6 @@ import java.nio.file.Paths;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 
@@ -153,22 +152,20 @@ public class SSLReloadTest extends HttpTestBase {
 
     startServer();
 
-    Map<String, List<X509Certificate>> urlsToCertificates = CertificateUtils.getCertificate(SERVER_URL);
-    List<X509Certificate> certificateCollector = urlsToCertificates.get(SERVER_URL);
+    List<X509Certificate> certificates = CertificateUtils.getCertificatesFromExternalSource(SERVER_URL);
 
-    assertEquals(1, certificateCollector.size());
-    assertEquals("CN=Vertx-server,OU=Eclipse,O=Eclipse,C=NL", certificateCollector.get(0).getSubjectX500Principal().getName());
-    assertEquals("2024-10-30T01:32:48Z", certificateCollector.get(0).getNotAfter().toInstant().toString());
+    assertEquals(1, certificates.size());
+    assertEquals("CN=Vertx-server,OU=Eclipse,O=Eclipse,C=NL", certificates.get(0).getSubjectX500Principal().getName());
+    assertEquals("2024-10-30T01:32:48Z", certificates.get(0).getNotAfter().toInstant().toString());
 
     replaceCertificateOnTheFileSystem.call();
     server.reloadSsl();
 
-    urlsToCertificates = CertificateUtils.getCertificate(SERVER_URL);
-    certificateCollector = urlsToCertificates.get(SERVER_URL);
+    certificates = CertificateUtils.getCertificatesFromExternalSource(SERVER_URL);
 
-    assertEquals(1, certificateCollector.size());
-    assertEquals("CN=Vertx-server,OU=Eclipse,O=Eclipse,C=NL", certificateCollector.get(0).getSubjectX500Principal().getName());
-    assertEquals("2032-10-27T20:37:43Z", certificateCollector.get(0).getNotAfter().toInstant().toString());
+    assertEquals(1, certificates.size());
+    assertEquals("CN=Vertx-server,OU=Eclipse,O=Eclipse,C=NL", certificates.get(0).getSubjectX500Principal().getName());
+    assertEquals("2032-10-27T20:37:43Z", certificates.get(0).getNotAfter().toInstant().toString());
   }
 
   private static Path copyFileToHomeDirectory(String fileName) throws IOException {
