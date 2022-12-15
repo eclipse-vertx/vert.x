@@ -13,16 +13,14 @@ package io.vertx.core.http;
 
 import io.netty.buffer.ByteBufUtil;
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.VertxOptions;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.net.NetServer;
-import io.vertx.core.net.NetServerOptions;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 import org.junit.Assume;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -30,8 +28,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -203,7 +201,13 @@ public class Http1xTLSTest extends HttpTLSTest {
     int num = VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE;
     Assume.assumeTrue(num > 1);
     List<String> expected = Arrays.asList("chunk-1", "chunk-2", "chunk-3");
-    client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(num).setSsl(true).setTrustAll(true));
+    HttpClientOptions options = new HttpClientOptions()
+      .setEnabledSecureTransportProtocols(Collections.singleton("TLSv1.2"))
+      .setMaxPoolSize(num)
+      .setSsl(true)
+      .setTrustAll(true);
+    client.close();
+    client = vertx.createHttpClient(options);
     AtomicInteger connCount = new AtomicInteger();
     List<String> sessionIds = Collections.synchronizedList(new ArrayList<>());
     client.connectionHandler(conn -> {

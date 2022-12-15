@@ -345,7 +345,7 @@ public class SSLHelper {
   }
 
   public SniHandler createSniHandler(VertxInternal vertx) {
-    return new SniHandler(serverNameMapper(vertx));
+    return new VertxSniHandler(serverNameMapper(vertx), sslHandshakeTimeoutUnit.toMillis(sslHandshakeTimeout));
   }
 
   public ChannelHandler createHandler(VertxInternal vertx) {

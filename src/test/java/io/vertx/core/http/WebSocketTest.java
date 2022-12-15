@@ -129,17 +129,17 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testRejectHybi00() throws Exception {
-    testReject(WebsocketVersion.V00, null, 502);
+    testReject(WebsocketVersion.V00, null, 502, "Bad Gateway");
   }
 
   @Test
   public void testRejectHybi08() throws Exception {
-    testReject(WebsocketVersion.V08, null, 502);
+    testReject(WebsocketVersion.V08, null, 502, "Bad Gateway");
   }
 
   @Test
   public void testRejectWithStatusCode() throws Exception {
-    testReject(WebsocketVersion.V08, 404, 404);
+    testReject(WebsocketVersion.V08, 404, 404, "Not Found");
   }
 
   @Test
@@ -1351,7 +1351,7 @@ public class WebSocketTest extends VertxTestBase {
     }));
   }
 
-  private void testReject(WebsocketVersion version, Integer rejectionStatus, int expectedRejectionStatus) throws Exception {
+  private void testReject(WebsocketVersion version, Integer rejectionStatus, int expectedRejectionStatus, String expectedBody) throws Exception {
 
     String path = "/some/path";
 
@@ -1373,7 +1373,10 @@ public class WebSocketTest extends VertxTestBase {
       client = vertx.createHttpClient();
       client.webSocket(options, onFailure(t -> {
         assertTrue(t instanceof UpgradeRejectedException);
-        assertEquals(expectedRejectionStatus, ((UpgradeRejectedException)t).getStatus());
+        UpgradeRejectedException rejection = (UpgradeRejectedException) t;
+        assertEquals(expectedRejectionStatus, rejection.getStatus());
+        assertEquals("" + expectedBody.length(), rejection.getHeaders().get(HttpHeaders.CONTENT_LENGTH));
+        assertEquals(expectedBody, rejection.getBody().toString());
         testComplete();
       }));
     }));
