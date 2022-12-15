@@ -248,8 +248,11 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
   }
 
   @Override
-  public void reloadSsl() {
-    sslHelper().reloadCertificates();
+  public Future<Void> reloadSsl() {
+    return Future.future(promise -> {
+      sslHelper().reloadCertificates();
+      promise.complete();
+    });
   }
 
   public synchronized void close(Promise<Void> completion) {

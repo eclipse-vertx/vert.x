@@ -151,21 +151,19 @@ public class SSLReloadTest extends HttpTestBase {
     });
 
     startServer();
-
-    List<X509Certificate> certificates = CertificateUtils.getCertificatesFromExternalSource(SERVER_URL);
-
-    assertEquals(1, certificates.size());
-    assertEquals("CN=Vertx-server,OU=Eclipse,O=Eclipse,C=NL", certificates.get(0).getSubjectX500Principal().getName());
-    assertEquals("2024-10-30T01:32:48Z", certificates.get(0).getNotAfter().toInstant().toString());
+    assertExpirationDate("2024-10-30T01:32:48Z");
 
     replaceCertificateOnTheFileSystem.call();
-    server.reloadSsl();
 
-    certificates = CertificateUtils.getCertificatesFromExternalSource(SERVER_URL);
+    server.reloadSsl()
+      .onComplete(promise -> assertExpirationDate("2032-10-27T20:37:43Z"))
+      .onFailure(err -> fail());
+  }
 
+  private void assertExpirationDate(String expirationDateTime) {
+    List<X509Certificate> certificates = CertificateUtils.getCertificatesFromExternalSource(SERVER_URL);
     assertEquals(1, certificates.size());
-    assertEquals("CN=Vertx-server,OU=Eclipse,O=Eclipse,C=NL", certificates.get(0).getSubjectX500Principal().getName());
-    assertEquals("2032-10-27T20:37:43Z", certificates.get(0).getNotAfter().toInstant().toString());
+    assertEquals(expirationDateTime, certificates.get(0).getNotAfter().toInstant().toString());
   }
 
   private static Path copyFileToHomeDirectory(String fileName) throws IOException {

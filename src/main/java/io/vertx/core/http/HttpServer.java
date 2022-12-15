@@ -221,7 +221,8 @@ public interface HttpServer extends Measured {
 
   /**
    * Attempts to reload the ssl configuration if the server has been configured with ssl
+   * @return a future completed with the result
    */
-  void reloadSsl();
+  Future<Void> reloadSsl();
 
 }
