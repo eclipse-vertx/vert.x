@@ -20,6 +20,7 @@ import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.future.PromiseInternal;
+import io.vertx.core.net.SSLOptions;
 
 import java.util.List;
 import java.util.function.Function;
@@ -140,6 +141,11 @@ public class SharedHttpClient implements HttpClientInternal {
   @Override
   public Future<WebSocket> webSocketAbs(String url, MultiMap headers, WebsocketVersion version, List<String> subProtocols) {
     return delegate.webSocketAbs(url, headers, version, subProtocols);
+  }
+
+  @Override
+  public Future<Void> updateSSLOptions(SSLOptions options) {
+    return delegate.updateSSLOptions(options);
   }
 
   @Override

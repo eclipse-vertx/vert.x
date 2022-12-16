@@ -114,4 +114,27 @@ public interface NetClient extends Measured {
    */
   Future<Void> close();
 
+  /**
+   * Update the client SSL options.
+   *
+   * Update only happens if the SSL options is valid.
+   *
+   * @param options the new SSL options
+   * @return a future signaling the update success
+   */
+  Future<Void> updateSSLOptions(SSLOptions options);
+
+  /**
+   * Like {@link #updateSSLOptions(SSLOptions)}  but supplying a handler that will be called when the update
+   * happened (or has failed).
+   *
+   * @param options the new SSL options
+   * @param handler the update handler
+   */
+  default void updateSSLOptions(SSLOptions options, Handler<AsyncResult<Void>> handler) {
+    Future<Void> fut = updateSSLOptions(options);
+    if (handler != null) {
+      fut.onComplete(handler);
+    }
+  }
 }

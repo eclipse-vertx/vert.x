@@ -69,9 +69,9 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   public static final int DEFAULT_WRITE_IDLE_TIMEOUT = 0;
 
   /**
-   * Default use alpn = false
+   * See {@link SSLOptions#DEFAULT_USE_ALPN}
    */
-  public static final boolean DEFAULT_USE_ALPN = false;
+  public static final boolean DEFAULT_USE_ALPN = SSLOptions.DEFAULT_USE_ALPN;
 
   /**
    * The default SSL engine options = null (autoguess)
@@ -79,13 +79,9 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   public static final SSLEngineOptions DEFAULT_SSL_ENGINE = null;
 
   /**
-   * The default ENABLED_SECURE_TRANSPORT_PROTOCOLS value = { "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3" }
-   * <p/>
-   * SSLv3 is NOT enabled due to POODLE vulnerability http://en.wikipedia.org/wiki/POODLE
-   * <p/>
-   * "SSLv2Hello" is NOT enabled since it's disabled by default since JDK7
+   * See {@link SSLOptions#DEFAULT_ENABLED_SECURE_TRANSPORT_PROTOCOLS}
    */
-  public static final List<String> DEFAULT_ENABLED_SECURE_TRANSPORT_PROTOCOLS = Collections.unmodifiableList(Arrays.asList("TLSv1.2", "TLSv1.3"));
+  public static final List<String> DEFAULT_ENABLED_SECURE_TRANSPORT_PROTOCOLS = SSLOptions.DEFAULT_ENABLED_SECURE_TRANSPORT_PROTOCOLS;
 
   /**
    * The default TCP_FASTOPEN value = false
@@ -110,14 +106,14 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   public static final int DEFAULT_TCP_USER_TIMEOUT = 0;
 
   /**
-   * The default value of SSL handshake timeout = 10
+   * See {@link SSLOptions#DEFAULT_SSL_HANDSHAKE_TIMEOUT}
    */
-  public static final long DEFAULT_SSL_HANDSHAKE_TIMEOUT = 10L;
+  public static final long DEFAULT_SSL_HANDSHAKE_TIMEOUT = SSLOptions.DEFAULT_SSL_HANDSHAKE_TIMEOUT;
 
   /**
-   * Default SSL handshake time unit = SECONDS
+   * See {@link SSLOptions#DEFAULT_SSL_HANDSHAKE_TIMEOUT_TIME_UNIT}
    */
-  public static final TimeUnit DEFAULT_SSL_HANDSHAKE_TIMEOUT_TIME_UNIT = TimeUnit.SECONDS;
+  public static final TimeUnit DEFAULT_SSL_HANDSHAKE_TIMEOUT_TIME_UNIT = SSLOptions.DEFAULT_SSL_HANDSHAKE_TIMEOUT_TIME_UNIT;
 
   private boolean tcpNoDelay;
   private boolean tcpKeepAlive;
@@ -127,16 +123,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   private int writeIdleTimeout;
   private TimeUnit idleTimeoutUnit;
   private boolean ssl;
-  private long sslHandshakeTimeout;
-  private TimeUnit sslHandshakeTimeoutUnit;
-  private KeyCertOptions keyCertOptions;
-  private TrustOptions trustOptions;
-  private Set<String> enabledCipherSuites;
-  private ArrayList<String> crlPaths;
-  private ArrayList<Buffer> crlValues;
-  private boolean useAlpn;
   private SSLEngineOptions sslEngineOptions;
-  private Set<String> enabledSecureTransportProtocols;
+  private SSLOptions sslOptions;
   private boolean tcpFastOpen;
   private boolean tcpCork;
   private boolean tcpQuickAck;
@@ -165,20 +153,12 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     this.readIdleTimeout = other.getReadIdleTimeout();
     this.writeIdleTimeout = other.getWriteIdleTimeout();
     this.ssl = other.isSsl();
-    this.sslHandshakeTimeout = other.sslHandshakeTimeout;
-    this.sslHandshakeTimeoutUnit = other.getSslHandshakeTimeoutUnit() != null ? other.getSslHandshakeTimeoutUnit() : DEFAULT_SSL_HANDSHAKE_TIMEOUT_TIME_UNIT;
-    this.keyCertOptions = other.getKeyCertOptions() != null ? other.getKeyCertOptions().copy() : null;
-    this.trustOptions = other.getTrustOptions() != null ? other.getTrustOptions().copy() : null;
-    this.enabledCipherSuites = other.getEnabledCipherSuites() == null ? new LinkedHashSet<>() : new LinkedHashSet<>(other.getEnabledCipherSuites());
-    this.crlPaths = new ArrayList<>(other.getCrlPaths());
-    this.crlValues = new ArrayList<>(other.getCrlValues());
-    this.useAlpn = other.useAlpn;
     this.sslEngineOptions = other.sslEngineOptions != null ? other.sslEngineOptions.copy() : null;
-    this.enabledSecureTransportProtocols = other.getEnabledSecureTransportProtocols() == null ? new LinkedHashSet<>() : new LinkedHashSet<>(other.getEnabledSecureTransportProtocols());
     this.tcpFastOpen = other.isTcpFastOpen();
     this.tcpCork = other.isTcpCork();
     this.tcpQuickAck = other.isTcpQuickAck();
     this.tcpUserTimeout = other.getTcpUserTimeout();
+    this.sslOptions = new SSLOptions(other.sslOptions);
   }
 
   /**
@@ -212,18 +192,17 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     writeIdleTimeout = DEFAULT_WRITE_IDLE_TIMEOUT;
     idleTimeoutUnit = DEFAULT_IDLE_TIMEOUT_TIME_UNIT;
     ssl = DEFAULT_SSL;
-    sslHandshakeTimeout = DEFAULT_SSL_HANDSHAKE_TIMEOUT;
-    sslHandshakeTimeoutUnit = DEFAULT_SSL_HANDSHAKE_TIMEOUT_TIME_UNIT;
-    enabledCipherSuites = new LinkedHashSet<>();
-    crlPaths = new ArrayList<>();
-    crlValues = new ArrayList<>();
-    useAlpn = DEFAULT_USE_ALPN;
     sslEngineOptions = DEFAULT_SSL_ENGINE;
-    enabledSecureTransportProtocols = new LinkedHashSet<>(DEFAULT_ENABLED_SECURE_TRANSPORT_PROTOCOLS);
     tcpFastOpen = DEFAULT_TCP_FAST_OPEN;
     tcpCork = DEFAULT_TCP_CORK;
     tcpQuickAck = DEFAULT_TCP_QUICKACK;
     tcpUserTimeout = DEFAULT_TCP_USER_TIMEOUT;
+    sslOptions = new SSLOptions();
+  }
+
+  @GenIgnore
+  public SSLOptions getSslOptions() {
+    return sslOptions;
   }
 
   /**
@@ -398,7 +377,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    */
   @GenIgnore
   public KeyCertOptions getKeyCertOptions() {
-    return keyCertOptions;
+    return sslOptions.getKeyCertOptions();
   }
 
   /**
@@ -409,7 +388,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    */
   @GenIgnore
   public TCPSSLOptions setKeyCertOptions(KeyCertOptions options) {
-    this.keyCertOptions = options;
+    sslOptions.setKeyCertOptions(options);
     return this;
   }
 
@@ -419,6 +398,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return the key/cert options in jks format, aka Java keystore.
    */
   public JksOptions getKeyStoreOptions() {
+    KeyCertOptions keyCertOptions = sslOptions.getKeyCertOptions();
     return keyCertOptions instanceof JksOptions ? (JksOptions) keyCertOptions : null;
   }
 
@@ -428,8 +408,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public TCPSSLOptions setKeyStoreOptions(JksOptions options) {
-    this.keyCertOptions = options;
-    return this;
+    return setKeyCertOptions(options);
   }
 
   /**
@@ -438,6 +417,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return the key/cert options in pfx format.
    */
   public PfxOptions getPfxKeyCertOptions() {
+    KeyCertOptions keyCertOptions = sslOptions.getKeyCertOptions();
     return keyCertOptions instanceof PfxOptions ? (PfxOptions) keyCertOptions : null;
   }
 
@@ -447,8 +427,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public TCPSSLOptions setPfxKeyCertOptions(PfxOptions options) {
-    this.keyCertOptions = options;
-    return this;
+    return setKeyCertOptions(options);
   }
 
   /**
@@ -457,6 +436,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return the key/cert store options in pem format.
    */
   public PemKeyCertOptions getPemKeyCertOptions() {
+    KeyCertOptions keyCertOptions = sslOptions.getKeyCertOptions();
     return keyCertOptions instanceof PemKeyCertOptions ? (PemKeyCertOptions) keyCertOptions : null;
   }
 
@@ -466,15 +446,14 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public TCPSSLOptions setPemKeyCertOptions(PemKeyCertOptions options) {
-    this.keyCertOptions = options;
-    return this;
+    return setKeyCertOptions(options);
   }
 
   /**
    * @return the trust options
    */
   public TrustOptions getTrustOptions() {
-    return trustOptions;
+    return sslOptions.getTrustOptions();
   }
 
   /**
@@ -483,7 +462,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public TCPSSLOptions setTrustOptions(TrustOptions options) {
-    this.trustOptions = options;
+    sslOptions.setTrustOptions(options);
     return this;
   }
 
@@ -493,6 +472,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return the trust options in jks format, aka Java truststore
    */
   public JksOptions getTrustStoreOptions() {
+    TrustOptions trustOptions = sslOptions.getTrustOptions();
     return trustOptions instanceof JksOptions ? (JksOptions) trustOptions : null;
   }
 
@@ -502,8 +482,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public TCPSSLOptions setTrustStoreOptions(JksOptions options) {
-    this.trustOptions = options;
-    return this;
+    return setTrustOptions(options);
   }
 
   /**
@@ -512,6 +491,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return the trust options in pfx format
    */
   public PfxOptions getPfxTrustOptions() {
+    TrustOptions trustOptions = sslOptions.getTrustOptions();
     return trustOptions instanceof PfxOptions ? (PfxOptions) trustOptions : null;
   }
 
@@ -521,8 +501,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public TCPSSLOptions setPfxTrustOptions(PfxOptions options) {
-    this.trustOptions = options;
-    return this;
+    return setTrustOptions(options);
   }
 
   /**
@@ -531,6 +510,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return the trust options in pem format
    */
   public PemTrustOptions getPemTrustOptions() {
+    TrustOptions trustOptions = sslOptions.getTrustOptions();
     return trustOptions instanceof PemTrustOptions ? (PemTrustOptions) trustOptions : null;
   }
 
@@ -540,8 +520,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public TCPSSLOptions setPemTrustOptions(PemTrustOptions options) {
-    this.trustOptions = options;
-    return this;
+    return setTrustOptions(options);
   }
 
   /**
@@ -552,7 +531,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @see #getEnabledCipherSuites()
    */
   public TCPSSLOptions addEnabledCipherSuite(String suite) {
-    enabledCipherSuites.add(suite);
+    sslOptions.addEnabledCipherSuite(suite);
     return this;
   }
 
@@ -563,7 +542,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public TCPSSLOptions removeEnabledCipherSuite(String suite) {
-    enabledCipherSuites.remove(suite);
+    sslOptions.removeEnabledCipherSuite(suite);
     return this;
   }
 
@@ -578,7 +557,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return the enabled cipher suites
    */
   public Set<String> getEnabledCipherSuites() {
-    return enabledCipherSuites;
+    return sslOptions.getEnabledCipherSuites();
   }
 
   /**
@@ -586,7 +565,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return the CRL (Certificate revocation list) paths
    */
   public List<String> getCrlPaths() {
-    return crlPaths;
+    return sslOptions.getCrlPaths();
   }
 
   /**
@@ -596,8 +575,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @throws NullPointerException
    */
   public TCPSSLOptions addCrlPath(String crlPath) throws NullPointerException {
-    Objects.requireNonNull(crlPath, "No null crl accepted");
-    crlPaths.add(crlPath);
+    sslOptions.addCrlPath(crlPath);
     return this;
   }
 
@@ -607,7 +585,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return the list of values
    */
   public List<Buffer> getCrlValues() {
-    return crlValues;
+    return sslOptions.getCrlValues();
   }
 
   /**
@@ -618,8 +596,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @throws NullPointerException
    */
   public TCPSSLOptions addCrlValue(Buffer crlValue) throws NullPointerException {
-    Objects.requireNonNull(crlValue, "No null crl accepted");
-    crlValues.add(crlValue);
+    sslOptions.addCrlValue(crlValue);
     return this;
   }
 
@@ -627,7 +604,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return whether to use or not Application-Layer Protocol Negotiation
    */
   public boolean isUseAlpn() {
-    return useAlpn;
+    return sslOptions.isUseAlpn();
   }
 
   /**
@@ -636,7 +613,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @param useAlpn true when Application-Layer Protocol Negotiation should be used
    */
   public TCPSSLOptions setUseAlpn(boolean useAlpn) {
-    this.useAlpn = useAlpn;
+    sslOptions.setUseAlpn(useAlpn);
     return this;
   }
 
@@ -681,7 +658,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public TCPSSLOptions setEnabledSecureTransportProtocols(Set<String> enabledSecureTransportProtocols) {
-    this.enabledSecureTransportProtocols = enabledSecureTransportProtocols;
+    sslOptions.setEnabledSecureTransportProtocols(enabledSecureTransportProtocols);
     return this;
   }
 
@@ -692,7 +669,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public TCPSSLOptions addEnabledSecureTransportProtocol(String protocol) {
-    enabledSecureTransportProtocols.add(protocol);
+    sslOptions.addEnabledSecureTransportProtocol(protocol);
     return this;
   }
 
@@ -703,7 +680,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public TCPSSLOptions removeEnabledSecureTransportProtocol(String protocol) {
-    enabledSecureTransportProtocols.remove(protocol);
+    sslOptions.removeEnabledSecureTransportProtocol(protocol);
     return this;
   }
 
@@ -781,14 +758,14 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return the enabled protocols
    */
   public Set<String> getEnabledSecureTransportProtocols() {
-    return new LinkedHashSet<>(enabledSecureTransportProtocols);
+    return sslOptions.getEnabledSecureTransportProtocols();
   }
 
   /**
    * @return the SSL handshake timeout, in time unit specified by {@link #getSslHandshakeTimeoutUnit()}.
    */
   public long getSslHandshakeTimeout() {
-    return sslHandshakeTimeout;
+    return sslOptions.getSslHandshakeTimeout();
   }
 
   /**
@@ -798,10 +775,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public TCPSSLOptions setSslHandshakeTimeout(long sslHandshakeTimeout) {
-    if (sslHandshakeTimeout < 0) {
-      throw new IllegalArgumentException("sslHandshakeTimeout must be >= 0");
-    }
-    this.sslHandshakeTimeout = sslHandshakeTimeout;
+    sslOptions.setSslHandshakeTimeout(sslHandshakeTimeout);
     return this;
   }
 
@@ -812,7 +786,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public TCPSSLOptions setSslHandshakeTimeoutUnit(TimeUnit sslHandshakeTimeoutUnit) {
-    this.sslHandshakeTimeoutUnit = sslHandshakeTimeoutUnit;
+    sslOptions.setSslHandshakeTimeoutUnit(sslHandshakeTimeoutUnit);
     return this;
   }
 
@@ -820,7 +794,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return the SSL handshake timeout unit.
    */
   public TimeUnit getSslHandshakeTimeoutUnit() {
-    return sslHandshakeTimeoutUnit;
+    return sslOptions.getSslHandshakeTimeoutUnit();
   }
 
   @Override

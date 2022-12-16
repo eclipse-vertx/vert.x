@@ -10,7 +10,6 @@
  */
 package io.vertx.core.http.impl;
 
-import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.handler.codec.compression.CompressionOptions;
@@ -19,8 +18,6 @@ import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
 import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.logging.LoggingHandler;
-import io.netty.handler.ssl.SniHandler;
-import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleState;
@@ -34,15 +31,15 @@ import io.vertx.core.http.impl.cgbystrom.FlashPolicyHandler;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.impl.SSLHelper;
+import io.vertx.core.net.impl.SslContextProvider;
 import io.vertx.core.net.impl.SslHandshakeCompletionHandler;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -52,13 +49,12 @@ import java.util.function.Supplier;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class HttpServerWorker implements Handler<Channel> {
+public class HttpServerWorker implements BiConsumer<Channel, SslContextProvider> {
 
   final EventLoopContext context;
   private final Supplier<ContextInternal> streamContextSupplier;
   private final VertxInternal vertx;
   private final HttpServerImpl server;
-  private final SSLHelper sslHelper;
   private final HttpServerOptions options;
   private final String serverOrigin;
   private final boolean logEnabled;
@@ -72,7 +68,6 @@ public class HttpServerWorker implements Handler<Channel> {
                           Supplier<ContextInternal> streamContextSupplier,
                           HttpServerImpl server,
                           VertxInternal vertx,
-                          SSLHelper sslHelper,
                           HttpServerOptions options,
                           String serverOrigin,
                           boolean disableH2C,
@@ -94,7 +89,6 @@ public class HttpServerWorker implements Handler<Channel> {
     this.streamContextSupplier = streamContextSupplier;
     this.server = server;
     this.vertx = vertx;
-    this.sslHelper = sslHelper;
     this.options = options;
     this.serverOrigin = serverOrigin;
     this.logEnabled = options.getLogActivity();
@@ -106,7 +100,7 @@ public class HttpServerWorker implements Handler<Channel> {
   }
 
   @Override
-  public void handle(Channel ch) {
+  public void accept(Channel ch, SslContextProvider sslContextProvider) {
     if (HAProxyMessageCompletionHandler.canUseProxyProtocol(options.isUseProxyProtocol())) {
       IdleStateHandler idle;
       io.netty.util.concurrent.Promise<Channel> p = ch.eventLoop().newPromise();
@@ -122,21 +116,21 @@ public class HttpServerWorker implements Handler<Channel> {
           if (idle != null) {
             ch.pipeline().remove(idle);
           }
-          configurePipeline(future.getNow());
+          configurePipeline(future.getNow(), sslContextProvider);
         } else {
           //No need to close the channel.HAProxyMessageDecoder already did
           handleException(future.cause());
         }
       });
     } else {
-      configurePipeline(ch);
+      configurePipeline(ch, sslContextProvider);
     }
   }
 
-  private void configurePipeline(Channel ch) {
+  private void configurePipeline(Channel ch, SslContextProvider sslContextProvider) {
     ChannelPipeline pipeline = ch.pipeline();
-    if (sslHelper.isSSL()) {
-      pipeline.addLast("ssl", sslHelper.createHandler(vertx));
+    if (sslContextProvider.isSsl()) {
+      pipeline.addLast("ssl", sslContextProvider.createHandler(vertx));
       ChannelPromise p = ch.newPromise();
       pipeline.addLast("handshaker", new SslHandshakeCompletionHandler(p));
       p.addListener(future -> {
@@ -147,10 +141,10 @@ public class HttpServerWorker implements Handler<Channel> {
             if ("h2".equals(protocol)) {
               handleHttp2(ch);
             } else {
-              handleHttp1(ch);
+              handleHttp1(ch, sslContextProvider);
             }
           } else {
-            handleHttp1(ch);
+            handleHttp1(ch, sslContextProvider);
           }
         } else {
           handleException(future.cause());
@@ -158,7 +152,7 @@ public class HttpServerWorker implements Handler<Channel> {
       });
     } else {
       if (disableH2C) {
-        handleHttp1(ch);
+        handleHttp1(ch, sslContextProvider);
       } else {
         IdleStateHandler idle;
         int idleTimeout = options.getIdleTimeout();
@@ -182,7 +176,7 @@ public class HttpServerWorker implements Handler<Channel> {
             if (h2c) {
               handleHttp2(ctx.channel());
             } else {
-              handleHttp1(ch);
+              handleHttp1(ch, sslContextProvider);
             }
           }
 
@@ -207,8 +201,8 @@ public class HttpServerWorker implements Handler<Channel> {
     context.emit(cause, exceptionHandler);
   }
 
-  private void handleHttp1(Channel ch) {
-    configureHttp1OrH2C(ch.pipeline());
+  private void handleHttp1(Channel ch, SslContextProvider sslContextProvider) {
+    configureHttp1OrH2C(ch.pipeline(), sslContextProvider);
   }
 
   private void sendServiceUnavailable(Channel ch) {
@@ -264,7 +258,7 @@ public class HttpServerWorker implements Handler<Channel> {
     return handler;
   }
 
-  private void configureHttp1OrH2C(ChannelPipeline pipeline) {
+  private void configureHttp1OrH2C(ChannelPipeline pipeline, SslContextProvider sslContextProvider) {
     if (logEnabled) {
       pipeline.addLast("logging", new LoggingHandler(options.getActivityLogDataFormat()));
     }
@@ -279,7 +273,7 @@ public class HttpServerWorker implements Handler<Channel> {
     if (options.isCompressionSupported()) {
       pipeline.addLast("deflater", new HttpChunkContentCompressor(compressionOptions));
     }
-    if (sslHelper.isSSL() || options.isCompressionSupported()) {
+    if (sslContextProvider.isSsl() || options.isCompressionSupported()) {
       // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
       pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
     }
@@ -290,13 +284,13 @@ public class HttpServerWorker implements Handler<Channel> {
       pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, options.getIdleTimeoutUnit()));
     }
     if (disableH2C) {
-      configureHttp1(pipeline);
+      configureHttp1(pipeline, sslContextProvider);
     } else {
-      pipeline.addLast("h2c", new Http1xUpgradeToH2CHandler(this, options.isCompressionSupported(), options.isDecompressionSupported()));
+      pipeline.addLast("h2c", new Http1xUpgradeToH2CHandler(this, sslContextProvider, options.isCompressionSupported(), options.isDecompressionSupported()));
     }
   }
 
-  void configureHttp1(ChannelPipeline pipeline) {
+  void configureHttp1(ChannelPipeline pipeline, SslContextProvider sslContextProvider) {
     if (!server.requestAccept()) {
       sendServiceUnavailable(pipeline.channel());
       return;
@@ -305,7 +299,7 @@ public class HttpServerWorker implements Handler<Channel> {
     VertxHandler<Http1xServerConnection> handler = VertxHandler.create(chctx -> {
       Http1xServerConnection conn = new Http1xServerConnection(
         streamContextSupplier,
-        sslHelper,
+        sslContextProvider,
         options,
         chctx,
         context,

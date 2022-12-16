@@ -18,6 +18,7 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoop;
 import io.netty.util.concurrent.GenericFutureListener;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Closeable;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
@@ -30,6 +31,7 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.SSLOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TCPMetrics;
@@ -38,6 +40,8 @@ import java.net.InetSocketAddress;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 
 /**
  * Base class for TCP servers
@@ -55,6 +59,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
 
   // Per server
   private EventLoop eventLoop;
+  private BiConsumer<Channel, SslContextProvider> childHandler;
   private Handler<Channel> worker;
   private volatile boolean listening;
   private ContextInternal listenContext;
@@ -62,6 +67,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
 
   // Main
   private SSLHelper sslHelper;
+  private AtomicReference<SslContextProvider> sslContextProvider;
   private ServerChannelLoadBalancer channelBalancer;
   private Future<Channel> bindFuture;
   private Set<TCPServerBase> servers;
@@ -72,6 +78,11 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
     this.vertx = vertx;
     this.options = new NetServerOptions(options);
     this.creatingContext = vertx.getContext();
+    this.sslContextProvider = new AtomicReference<>();
+  }
+
+  public SslContextProvider sslContextProvider() {
+    return sslContextProvider.get();
   }
 
   public int actualPort() {
@@ -79,14 +90,18 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
     return server != null ? server.actualPort : actualPort;
   }
 
-  protected abstract Handler<Channel> childHandler(ContextInternal context, SocketAddress socketAddress, SSLHelper sslHelper);
+  protected abstract BiConsumer<Channel, SslContextProvider> childHandler(ContextInternal context, SocketAddress socketAddress);
 
   protected SSLHelper createSSLHelper() {
     return new SSLHelper(options, null);
   }
 
-  public synchronized SSLHelper sslHelper() {
-    return sslHelper;
+  public Future<Void> updateSSLOptions(SSLOptions options) {
+    return sslHelper.init(new SSLOptions(options), listenContext).andThen(ar -> {
+      if (ar.succeeded()) {
+        TCPServerBase.this.sslContextProvider.set(ar.result());
+      }
+    }).<Void>mapEmpty();
   }
 
   public Future<TCPServerBase> bind(SocketAddress address) {
@@ -135,7 +150,8 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
         actualServer = this;
         bindFuture = promise;
         sslHelper = createSSLHelper();
-        worker =  childHandler(listenContext, localAddress, sslHelper);
+        childHandler =  childHandler(listenContext, localAddress);
+        worker = ch -> childHandler.accept(ch, sslContextProvider.get());
         servers = new HashSet<>();
         servers.add(this);
         channelBalancer = new ServerChannelLoadBalancer(vertx.getAcceptorEventLoopGroup().next());
@@ -148,8 +164,11 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
         listenContext.addCloseHook(this);
 
         // Initialize SSL before binding
-        sslHelper.init(listenContext).onComplete(ar -> {
+        sslHelper.init(options.getSslOptions(), listenContext).onComplete(ar -> {
           if (ar.succeeded()) {
+
+            //
+            sslContextProvider.set(ar.result());
 
             // Socket bind
             channelBalancer.addWorker(eventLoop, worker);
@@ -206,8 +225,9 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
         // Server already exists with that host/port - we will use that
         actualServer = main;
         metrics = main.metrics;
-        sslHelper = main.sslHelper;
-        worker =  childHandler(listenContext, localAddress, sslHelper);
+        sslContextProvider = main.sslContextProvider;
+        childHandler =  childHandler(listenContext, localAddress);
+        worker = ch -> childHandler.accept(ch, sslContextProvider.get());
         actualServer.servers.add(this);
         actualServer.channelBalancer.addWorker(eventLoop, worker);
         listenContext.addCloseHook(this);

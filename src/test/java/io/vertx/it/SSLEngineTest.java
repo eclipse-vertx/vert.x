@@ -25,6 +25,7 @@ import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.core.net.SSLEngineOptions;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.http.HttpTestBase;
+import io.vertx.core.net.impl.SslContextProvider;
 import io.vertx.test.tls.Cert;
 import org.junit.Test;
 
@@ -104,8 +105,8 @@ public class SSLEngineTest extends HttpTestBase {
         return;
       }
     }
-    SSLHelper sslHelper = ((HttpServerImpl)server).sslHelper();
-    SslContext ctx = sslHelper.createContext((VertxInternal) vertx);
+    SslContextProvider provider = ((HttpServerImpl)server).sslContextProvider();
+    SslContext ctx = provider.createContext((VertxInternal) vertx);
     switch (expectedSslContext != null ? expectedSslContext : "jdk") {
       case "jdk":
         assertTrue(ctx instanceof JdkSslContext);

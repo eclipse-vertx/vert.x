@@ -39,6 +39,7 @@ import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.ProxyOptions;
+import io.vertx.core.net.SSLOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
@@ -48,6 +49,7 @@ import java.io.FileNotFoundException;
 import java.net.ConnectException;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 /**
@@ -68,6 +70,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
   private final VertxInternal vertx;
   private final NetClientOptions options;
   private final SSLHelper sslHelper;
+  private final AtomicReference<Future<SslContextProvider>> sslContextProvider = new AtomicReference<>();
   private final ChannelGroup channelGroup;
   private final TCPMetrics metrics;
   private final CloseFuture closeFuture;
@@ -176,6 +179,13 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
   }
 
   @Override
+  public Future<Void> updateSSLOptions(SSLOptions options) {
+    Future<SslContextProvider> fut = sslHelper.init(new SSLOptions(options), vertx.getOrCreateContext());
+    fut.onSuccess(v -> sslContextProvider.set(fut));
+    return fut.mapEmpty();
+  }
+
+  @Override
   public NetClient connect(SocketAddress remoteAddress, String serverName, Handler<AsyncResult<NetSocket>> connectHandler) {
     Objects.requireNonNull(connectHandler, "No null connectHandler accepted");
     ContextInternal ctx = vertx.getOrCreateContext();
@@ -235,9 +245,21 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
     if (closeFuture.isClosed()) {
       connectHandler.fail(new IllegalStateException("Client is closed"));
     } else {
-      sslHelper.init(context).onComplete(ar -> {
+      Future<SslContextProvider> fut;
+      while (true) {
+        fut = sslContextProvider.get();
+        if (fut == null) {
+          fut = sslHelper.init(options.getSslOptions(), context);
+          if (sslContextProvider.compareAndSet(null, fut)) {
+            break;
+          }
+        } else {
+          break;
+        }
+      }
+      fut.onComplete(ar -> {
         if (ar.succeeded()) {
-          connectInternal2(proxyOptions, remoteAddress, peerAddress, serverName, ssl, useAlpn, registerWriteHandlers, connectHandler, context, remainingAttempts);
+          connectInternal2(proxyOptions, remoteAddress, peerAddress, ar.result(), serverName, ssl, useAlpn, registerWriteHandlers, connectHandler, context, remainingAttempts);
         } else {
           connectHandler.fail(ar.cause());
         }
@@ -248,6 +270,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
   private void connectInternal2(ProxyOptions proxyOptions,
                               SocketAddress remoteAddress,
                               SocketAddress peerAddress,
+                              SslContextProvider sslContextProvider,
                               String serverName,
                               boolean ssl,
                               boolean useAlpn,
@@ -265,10 +288,10 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
 
       vertx.transport().configure(options, remoteAddress.isDomainSocket(), bootstrap);
 
-      ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslHelper, context)
+      ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslContextProvider, context)
         .proxyOptions(proxyOptions);
 
-      channelProvider.handler(ch -> connected(context, ch, connectHandler, remoteAddress, channelProvider.applicationProtocol(), registerWriteHandlers));
+      channelProvider.handler(ch -> connected(context, ch, connectHandler, remoteAddress, sslContextProvider, channelProvider.applicationProtocol(), registerWriteHandlers));
 
       io.netty.util.concurrent.Future<Channel> fut = channelProvider.connect(remoteAddress, peerAddress, serverName, ssl, useAlpn);
       fut.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) future -> {
@@ -290,14 +313,14 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
         }
       });
     } else {
-      eventLoop.execute(() -> connectInternal2(proxyOptions, remoteAddress, peerAddress, serverName, ssl, useAlpn, registerWriteHandlers, connectHandler, context, remainingAttempts));
+      eventLoop.execute(() -> connectInternal2(proxyOptions, remoteAddress, peerAddress, sslContextProvider, serverName, ssl, useAlpn, registerWriteHandlers, connectHandler, context, remainingAttempts));
     }
   }
 
-  private void connected(ContextInternal context, Channel ch, Promise<NetSocket> connectHandler, SocketAddress remoteAddress, String applicationLayerProtocol, boolean registerWriteHandlers) {
+  private void connected(ContextInternal context, Channel ch, Promise<NetSocket> connectHandler, SocketAddress remoteAddress, SslContextProvider sslContextProvider, String applicationLayerProtocol, boolean registerWriteHandlers) {
     channelGroup.add(ch);
     initChannel(ch.pipeline());
-    VertxHandler<NetSocketImpl> handler = VertxHandler.create(ctx -> new NetSocketImpl(context, ctx, remoteAddress, sslHelper, metrics, applicationLayerProtocol));
+    VertxHandler<NetSocketImpl> handler = VertxHandler.create(ctx -> new NetSocketImpl(context, ctx, remoteAddress, sslContextProvider, metrics, applicationLayerProtocol));
     if (registerWriteHandlers) {
       handler.removeHandler(NetSocketImpl::unregisterEventBusHandler);
     }

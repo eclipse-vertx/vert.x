@@ -14,9 +14,11 @@ package examples;
 import io.netty.handler.logging.ByteBufFormat;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
+import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.net.*;
 
@@ -499,6 +501,14 @@ public class NetExamples {
       setSsl(true).
       setPemKeyCertOptions(pemOptions);
     NetClient client = vertx.createNetClient(options);
+  }
+
+  public void updateSSLOptions(HttpServer server) {
+    Future<Void> fut = server.updateSSLOptions(new SSLOptions()
+      .setKeyCertOptions(
+        new JksOptions()
+          .setPath("/path/to/your/server-keystore.jks").
+          setPassword("password-of-your-keystore")));
   }
 
   public void example42(Vertx vertx, JksOptions trustOptions) {

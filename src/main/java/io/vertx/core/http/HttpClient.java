@@ -20,6 +20,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.metrics.Measured;
+import io.vertx.core.net.SSLOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.streams.ReadStream;
 
@@ -187,6 +188,30 @@ public interface HttpClient extends Measured {
    * Like {@link #webSocketAbs(String, MultiMap, WebsocketVersion, List, Handler)} but returns a {@code Future} of the asynchronous result
    */
   Future<WebSocket> webSocketAbs(String url, MultiMap headers, WebsocketVersion version, List<String> subProtocols);
+
+  /**
+   * Update the client SSL options.
+   *
+   * Update only happens if the SSL options is valid.
+   *
+   * @param options the new SSL options
+   * @return a future signaling the update success
+   */
+  Future<Void> updateSSLOptions(SSLOptions options);
+
+  /**
+   * Like {@link #updateSSLOptions(SSLOptions)}  but supplying a handler that will be called when the update
+   * happened (or has failed).
+   *
+   * @param options the new SSL options
+   * @param handler the update handler
+   */
+  default void updateSSLOptions(SSLOptions options, Handler<AsyncResult<Void>> handler) {
+    Future<Void> fut = updateSSLOptions(options);
+    if (handler != null) {
+      fut.onComplete(handler);
+    }
+  }
 
   /**
    * Set a connection handler for the client. This handler is called when a new connection is established.

@@ -12,10 +12,8 @@
 package io.vertx.core.net.impl;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.handler.proxy.*;
-import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.SslHandshakeCompletionEvent;
 import io.netty.resolver.NoopAddressResolverGroup;
@@ -44,18 +42,18 @@ import java.net.InetSocketAddress;
 public final class ChannelProvider {
 
   private final Bootstrap bootstrap;
-  private final SSLHelper sslHelper;
+  private final SslContextProvider sslContextProvider;
   private final ContextInternal context;
   private ProxyOptions proxyOptions;
   private String applicationProtocol;
   private Handler<Channel> handler;
 
   public ChannelProvider(Bootstrap bootstrap,
-                         SSLHelper sslHelper,
+                         SslContextProvider sslContextProvider,
                          ContextInternal context) {
     this.bootstrap = bootstrap;
     this.context = context;
-    this.sslHelper = sslHelper;
+    this.sslContextProvider = sslContextProvider;
   }
 
   /**
@@ -109,7 +107,7 @@ public final class ChannelProvider {
 
   private void initSSL(Handler<Channel> handler, SocketAddress peerAddress, String serverName, boolean ssl, boolean useAlpn, Channel ch, Promise<Channel> channelHandler) {
     if (ssl) {
-      SslHandler sslHandler = sslHelper.createSslHandler(context.owner(), peerAddress, serverName, useAlpn);
+      SslHandler sslHandler = sslContextProvider.createSslHandler(context.owner(), peerAddress, serverName, useAlpn);
       ChannelPipeline pipeline = ch.pipeline();
       pipeline.addLast("ssl", sslHandler);
       pipeline.addLast(new ChannelInboundHandlerAdapter() {
