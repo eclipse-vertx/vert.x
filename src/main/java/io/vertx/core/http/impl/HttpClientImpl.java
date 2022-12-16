@@ -504,6 +504,11 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider, Clos
   }
 
   @Override
+  public Future<Void> updateSSLOptions(SSLOptions options) {
+    return netClient.updateSSLOptions(options);
+  }
+
+  @Override
   public HttpClient connectionHandler(Handler<HttpConnection> handler) {
     connectionHandler = handler;
     return this;

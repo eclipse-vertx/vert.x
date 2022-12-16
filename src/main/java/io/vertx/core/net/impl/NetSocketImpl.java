@@ -12,12 +12,8 @@
 package io.vertx.core.net.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
-import io.netty.handler.ssl.SniHandler;
-import io.netty.handler.ssl.SslContext;
-import io.netty.handler.ssl.SslHandler;
 import io.netty.util.CharsetUtil;
 import io.netty.util.ReferenceCounted;
 import io.vertx.core.AsyncResult;
@@ -56,7 +52,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   private static final Logger log = LoggerFactory.getLogger(NetSocketImpl.class);
 
   private final String writeHandlerID;
-  private final SSLHelper helper;
+  private final SslContextProvider sslContextProvider;
   private final SocketAddress remoteAddress;
   private final TCPMetrics metrics;
   private final InboundBuffer<Object> pending;
@@ -68,18 +64,18 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   private Handler<Object> messageHandler;
   private Handler<Object> eventHandler;
 
-  public NetSocketImpl(ContextInternal context, ChannelHandlerContext channel, SSLHelper helper, TCPMetrics metrics) {
-    this(context, channel, null, helper, metrics, null);
+  public NetSocketImpl(ContextInternal context, ChannelHandlerContext channel, SslContextProvider sslContextProvider, TCPMetrics metrics) {
+    this(context, channel, null, sslContextProvider, metrics, null);
   }
 
   public NetSocketImpl(ContextInternal context,
                        ChannelHandlerContext channel,
                        SocketAddress remoteAddress,
-                       SSLHelper helper,
+                       SslContextProvider sslContextProvider,
                        TCPMetrics metrics,
                        String negotiatedApplicationLayerProtocol) {
     super(context, channel);
-    this.helper = helper;
+    this.sslContextProvider = sslContextProvider;
     this.writeHandlerID = "__vertx.net." + UUID.randomUUID().toString();
     this.remoteAddress = remoteAddress;
     this.metrics = metrics;
@@ -355,9 +351,9 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
         }
       });
       if (remoteAddress != null) {
-        sslHandler = helper.createSslHandler(vertx, remoteAddress, serverName, false);
+        sslHandler = sslContextProvider.createSslHandler(vertx, remoteAddress, serverName, false);
       } else {
-        sslHandler = helper.createHandler(vertx);
+        sslHandler = sslContextProvider.createHandler(vertx);
       }
       chctx.pipeline().addFirst("ssl", sslHandler);
     }

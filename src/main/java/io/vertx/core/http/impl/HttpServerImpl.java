@@ -28,6 +28,7 @@ import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.streams.ReadStream;
 
+import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -173,7 +174,7 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
   }
 
   @Override
-  protected Handler<Channel> childHandler(ContextInternal context, SocketAddress address, SSLHelper sslHelper) {
+  protected BiConsumer<Channel, SslContextProvider> childHandler(ContextInternal context, SocketAddress address) {
     EventLoopContext connContext;
     if (context instanceof EventLoopContext) {
       connContext = (EventLoopContext) context;
@@ -190,7 +191,6 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
       streamContextSupplier,
       this,
       vertx,
-      sslHelper,
       options,
       serverOrigin,
       disableH2c,

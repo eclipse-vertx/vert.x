@@ -618,6 +618,18 @@ Buffer configuration is also supported:
 
 Keep in mind that pem configuration, the private key is not crypted.
 
+==== Updating SSL/TLS configuration
+
+You can use the `updateSSLOptions` method to update the key/certifications or trust on a TCP server or client (e.g. to
+implement certificate rotation).
+
+[source,$lang]
+----
+{@link examples.NetExamples#updateSSLOptions}
+----
+
+When the update succeeds the new SSL configuration is used, otherwise the previous configuration is kept.
+
 ==== Self-signed certificates for testing and development purposes
 
 CAUTION: Do not use this in production settings, and note that the generated keys are very insecure.

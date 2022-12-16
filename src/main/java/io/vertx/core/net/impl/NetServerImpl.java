@@ -37,6 +37,8 @@ import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.streams.ReadStream;
 
+import java.util.function.BiConsumer;
+
 /**
  *
  * This class is thread-safe
@@ -143,8 +145,8 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
   }
 
   @Override
-  protected Handler<Channel> childHandler(ContextInternal context, SocketAddress socketAddress, SSLHelper sslHelper) {
-    return new NetServerWorker(context, sslHelper, handler, exceptionHandler);
+  protected BiConsumer<Channel, SslContextProvider> childHandler(ContextInternal context, SocketAddress socketAddress) {
+    return new NetServerWorker(context, handler, exceptionHandler);
   }
 
   @Override
@@ -206,23 +208,21 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
     return !isListening();
   }
 
-  private class NetServerWorker implements Handler<Channel> {
+  private class NetServerWorker implements BiConsumer<Channel, SslContextProvider> {
 
     private final ContextInternal context;
-    private SSLHelper sslHelper;
     private final Handler<NetSocket> connectionHandler;
     private final Handler<Throwable> exceptionHandler;
 
-    NetServerWorker(ContextInternal context, SSLHelper sslHelper, Handler<NetSocket> connectionHandler, Handler<Throwable> exceptionHandler) {
+    NetServerWorker(ContextInternal context, Handler<NetSocket> connectionHandler, Handler<Throwable> exceptionHandler) {
       this.context = context;
-      this.sslHelper = sslHelper;
       this.connectionHandler = connectionHandler;
       this.exceptionHandler = exceptionHandler;
     }
 
     @Override
-    public void handle(Channel ch) {
-      if (!accept()) {
+    public void accept(Channel ch, SslContextProvider sslContextProvider) {
+      if (!NetServerImpl.this.accept()) {
         ch.close();
         return;
       }
@@ -241,31 +241,31 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
             if (idle != null) {
               ch.pipeline().remove(idle);
             }
-            configurePipeline(future.getNow());
+            configurePipeline(future.getNow(), sslContextProvider);
           } else {
             //No need to close the channel.HAProxyMessageDecoder already did
             handleException(future.cause());
           }
         });
       } else {
-        configurePipeline(ch);
+        configurePipeline(ch, sslContextProvider);
       }
     }
 
-    private void configurePipeline(Channel ch) {
-      if (sslHelper.isSSL()) {
-        ch.pipeline().addLast("ssl", sslHelper.createHandler(vertx));
+    private void configurePipeline(Channel ch, SslContextProvider sslContextProvider) {
+      if (sslContextProvider.isSsl()) {
+        ch.pipeline().addLast("ssl", sslContextProvider.createHandler(vertx));
         ChannelPromise p = ch.newPromise();
         ch.pipeline().addLast("handshaker", new SslHandshakeCompletionHandler(p));
         p.addListener(future -> {
           if (future.isSuccess()) {
-            connected(ch);
+            connected(ch, sslContextProvider);
           } else {
             handleException(future.cause());
           }
         });
       } else {
-        connected(ch);
+        connected(ch, sslContextProvider);
       }
     }
 
@@ -275,10 +275,10 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
       }
     }
 
-    private void connected(Channel ch) {
-      NetServerImpl.this.initChannel(ch.pipeline(), sslHelper.isSSL());
+    private void connected(Channel ch, SslContextProvider sslContextProvider) {
+      NetServerImpl.this.initChannel(ch.pipeline(), sslContextProvider.isSsl());
       TCPMetrics<?> metrics = getMetrics();
-      VertxHandler<NetSocketImpl> handler = VertxHandler.create(ctx -> new NetSocketImpl(context, ctx, sslHelper, metrics));
+      VertxHandler<NetSocketImpl> handler = VertxHandler.create(ctx -> new NetSocketImpl(context, ctx, sslContextProvider, metrics));
       handler.removeHandler(NetSocketImpl::unregisterEventBusHandler);
       handler.addHandler(conn -> {
         if (metrics != null) {

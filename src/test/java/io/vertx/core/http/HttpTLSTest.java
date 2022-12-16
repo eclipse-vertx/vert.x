@@ -29,6 +29,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import javax.net.ssl.ManagerFactoryParameters;
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -36,6 +37,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.TrustManagerFactorySpi;
 
+import io.vertx.core.net.SSLOptions;
 import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
@@ -44,7 +46,6 @@ import org.junit.rules.TemporaryFolder;
 import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.core.VertxException;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.JdkSSLEngineOptions;
@@ -1637,5 +1638,30 @@ public abstract class HttpTLSTest extends HttpTestBase {
     } finally {
       proxy.stop();
     }
+  }
+
+  @Test
+  public void testReloadSSLOptions() throws Exception {
+    server = createHttpServer(createBaseServerOptions().setSsl(true).setKeyCertOptions(Cert.SERVER_JKS.get()))
+      .requestHandler(req -> {
+        req.response().end("Hello World");
+    });
+    startServer(testAddress);
+    Supplier<Future<Buffer>> request = () -> client.request(requestOptions).compose(req -> req.send().compose(HttpClientResponse::body));
+    client = createHttpClient(new HttpClientOptions().setKeepAlive(false).setSsl(true).setTrustOptions(Trust.SERVER_JKS.get()));
+    request.get().onComplete(onSuccess(body1 -> {
+      assertEquals("Hello World", body1.toString());
+      server.updateSSLOptions(new SSLOptions().setKeyCertOptions(Cert.SERVER_JKS_ROOT_CA.get()), onSuccess(v -> {
+        request.get().onComplete(onFailure(err -> {
+          client.updateSSLOptions(new SSLOptions().setTrustOptions(Trust.SERVER_JKS_ROOT_CA.get()), onSuccess(v2 -> {
+            request.get().onComplete(onSuccess(body2 -> {
+              assertEquals("Hello World", body2.toString());
+              testComplete();
+            }));
+          }));
+        }));
+      }));
+    }));
+    await();
   }
 }

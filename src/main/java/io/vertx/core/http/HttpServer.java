@@ -19,6 +19,7 @@ import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.metrics.Measured;
+import io.vertx.core.net.SSLOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.streams.ReadStream;
 
@@ -117,6 +118,30 @@ public interface HttpServer extends Measured {
    */
   @GenIgnore
   Handler<ServerWebSocket> webSocketHandler();
+
+  /**
+   * Update the server SSL options.
+   *
+   * Update only happens if the SSL options is valid.
+   *
+   * @param options the new SSL options
+   * @return a future signaling the update success
+   */
+  Future<Void> updateSSLOptions(SSLOptions options);
+
+  /**
+   * Like {@link #updateSSLOptions(SSLOptions)}  but supplying a handler that will be called when the update
+   * happened (or has failed).
+   *
+   * @param options the new SSL options
+   * @param handler the update handler
+   */
+  default void updateSSLOptions(SSLOptions options, Handler<AsyncResult<Void>> handler) {
+    Future<Void> fut = updateSSLOptions(options);
+    if (handler != null) {
+      fut.onComplete(handler);
+    }
+  }
 
   /**
    * Tell the server to start listening. The server will listen on the port and host specified in the
