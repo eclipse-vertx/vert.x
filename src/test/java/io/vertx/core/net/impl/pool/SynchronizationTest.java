@@ -12,15 +12,33 @@ package io.vertx.core.net.impl.pool;
 
 import io.vertx.test.core.AsyncTestBase;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+@RunWith(Parameterized.class)
 public class SynchronizationTest extends AsyncTestBase {
+
+  @Parameterized.Parameters
+  public static Collection<Object[]> data() {
+    return Arrays.asList(new Object[][]{
+      {null},
+      {CombinerExecutor.YieldCondition.withMaxDuration(Duration.ofNanos(1))},
+      {CombinerExecutor.YieldCondition.withMaxCount(1)}
+    });
+  }
+
+  @Parameterized.Parameter
+  public CombinerExecutor.YieldCondition condition;
 
   static long iterationsForOneMilli;
 
@@ -39,7 +57,7 @@ public class SynchronizationTest extends AsyncTestBase {
   public void testActionReentrancy() throws Exception {
     AtomicBoolean isReentrant1 = new AtomicBoolean();
     AtomicBoolean isReentrant2 = new AtomicBoolean();
-    Executor<Object> sync = new CombinerExecutor<>(new Object());
+    Executor<Object> sync = new CombinerExecutor<>(new Object(), condition);
     CountDownLatch latch = new CountDownLatch(2);
     sync.submit(state1 -> {
       AtomicBoolean inCallback = new AtomicBoolean();
@@ -72,7 +90,7 @@ public class SynchronizationTest extends AsyncTestBase {
 
     int numThreads = 8;
     int numIter = 1_000 * 100;
-    Executor<Object> sync = new CombinerExecutor<>(new Object());
+    Executor<Object> sync = new CombinerExecutor<>(new Object(), condition);
     Executor.Action action = s -> {
       burnCPU(10);
       return null;
@@ -146,7 +164,7 @@ public class SynchronizationTest extends AsyncTestBase {
 
   @Test
   public void testOrdering() throws Exception {
-    Executor<Object> sync = new CombinerExecutor<>(new Object());
+    Executor<Object> sync = new CombinerExecutor<>(new Object(), condition);
     AtomicInteger order = new AtomicInteger();
     sync.submit(s -> {
       sync.submit(s_ -> new Task() {

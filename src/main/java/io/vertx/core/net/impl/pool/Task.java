@@ -12,8 +12,23 @@ package io.vertx.core.net.impl.pool;
 
 public abstract class Task {
 
-  Task prev;
-  Task next;
+  private Task next;
+
+  public Task next(Task next) {
+    this.next = next;
+    return next;
+  }
+
+  public void runNextTasks() {
+    Task task = this;
+    while (task != null) {
+      task.run();
+      final Task next = task.next;
+      // help GC :P
+      task.next = null;
+      task = next;
+    }
+  }
 
   public abstract void run();
 }

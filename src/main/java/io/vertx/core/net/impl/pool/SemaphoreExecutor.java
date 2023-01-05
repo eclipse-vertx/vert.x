@@ -23,7 +23,7 @@ public class SemaphoreExecutor<S> implements Executor<S> {
   }
 
   @Override
-  public void submit(Action<S> action) {
+  public Continuation submitAndContinue(Action<S> action) {
     lock.lock();
     Task post = null;
     try {
@@ -34,5 +34,6 @@ public class SemaphoreExecutor<S> implements Executor<S> {
         post.run();
       }
     }
+    return null;
   }
 }

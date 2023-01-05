@@ -18,6 +18,7 @@ import io.vertx.core.http.ConnectionPoolTooBusyException;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
 
+import java.time.Duration;
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -26,6 +27,7 @@ import java.util.NoSuchElementException;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 /**
  * <p> The pool is a state machine that maintains a queue of waiters and a list of connections.
@@ -78,6 +80,11 @@ import java.util.function.Predicate;
  * a request.
  */
 public class SimpleConnectionPool<C> implements ConnectionPool<C> {
+
+  private static final long DEFAULT_EXECUTE_ACTIONS_TIMEOUT_MS = Integer.getInteger("combiner.execute.timeout.ms", 100);
+  private static final Supplier<CombinerExecutor.YieldCondition> DEFAULT_YIELD_CONDITION_FACTORY = DEFAULT_EXECUTE_ACTIONS_TIMEOUT_MS <= 0 ?
+    () -> null :
+    () -> CombinerExecutor.YieldCondition.withMaxDuration(Duration.ofMillis(DEFAULT_EXECUTE_ACTIONS_TIMEOUT_MS));
 
   private static final Future POOL_CLOSED = Future.failedFuture("Pool closed");
 
@@ -194,11 +201,14 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
   private final Waiters<C> waiters;
   private int requests;
 
-  SimpleConnectionPool(PoolConnector<C> connector, int[] maxSizes) {
-    this(connector, maxSizes, -1);
+  private final java.util.concurrent.Executor resumeExecutor;
+
+  SimpleConnectionPool(PoolConnector<C> connector, int[] maxSizes, java.util.concurrent.Executor resumeExecutor) {
+    this(connector, maxSizes, -1, resumeExecutor, null);
   }
 
-  SimpleConnectionPool(PoolConnector<C> connector, int[] maxSizes, int maxWaiters) {
+  SimpleConnectionPool(PoolConnector<C> connector, int[] maxSizes, int maxWaiters,
+                       java.util.concurrent.Executor resumeExecutor, CombinerExecutor.YieldCondition yieldCondition) {
 
     int[] capacities = new int[maxSizes.length];
     int maxCapacity = 1;
@@ -222,11 +232,23 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
     this.maxWaiters = maxWaiters;
     this.capacity = 0;
     this.maxCapacity = maxCapacity;
-    this.sync = new CombinerExecutor<>(this);
+    this.sync = new CombinerExecutor<>(this, validYieldCondition(resumeExecutor, yieldCondition));
     this.selector = (BiFunction) SAME_EVENT_LOOP_SELECTOR;
     this.fallbackSelector = (BiFunction) FIRST_AVAILABLE_SELECTOR;
     this.contextProvider = EVENT_LOOP_CONTEXT_PROVIDER;
     this.waiters = new Waiters<>();
+    this.resumeExecutor = resumeExecutor;
+  }
+
+  private static CombinerExecutor.YieldCondition validYieldCondition(java.util.concurrent.Executor resumeExecutor,
+                                                                     CombinerExecutor.YieldCondition yieldCondition) {
+    if (resumeExecutor == null) {
+      return null;
+    }
+    if (yieldCondition != null) {
+      return yieldCondition;
+    }
+    return DEFAULT_YIELD_CONDITION_FACTORY.get();
   }
 
   @Override
@@ -242,7 +264,27 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
   }
 
   private void execute(Executor.Action<SimpleConnectionPool<C>> action) {
-    sync.submit(action);
+    if (resumeExecutor == null) {
+      sync.submit(action);
+    } else {
+      final Executor.Continuation continuation = sync.submitAndContinue(action);
+      if (continuation != null) {
+        // single threaded
+        resumeExecutor.execute(() -> resumeAndContinue(continuation));
+      }
+    }
+  }
+
+  private void resumeAndContinue(final Executor.Continuation continuation) {
+    assert continuation != null;
+    assert resumeExecutor != null;
+    //single threaded
+    final Executor.Continuation furtherContinue = continuation.resume();
+    if (furtherContinue == null) {
+      return;
+    }
+    //single threaded
+    resumeExecutor.execute(() -> resumeAndContinue(furtherContinue));
   }
 
   public int size() {
@@ -860,9 +902,12 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
 
     List<PoolWaiter<C>> clear() {
       List<PoolWaiter<C>> lst = new ArrayList<>(size);
-      this.forEach(lst::add);
-      size = 0;
-      head.next = head.prev = head;
+      PoolWaiter<C> waiter;
+      // polling implies removing -> save from GC nepotism
+      while ((waiter = poll()) != null) {
+        lst.add(waiter);
+      }
+      assert size == 0;
       return lst;
     }
 

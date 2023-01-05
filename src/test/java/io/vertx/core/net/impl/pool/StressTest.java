@@ -16,21 +16,43 @@ import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
+@RunWith(Parameterized.class)
 public class StressTest extends VertxTestBase {
+
+  @Parameterized.Parameters
+  public static Collection<Object[]> data() {
+    return Arrays.asList(new Object[][]{
+      {null},
+      {CombinerExecutor.YieldCondition.withMaxDuration(Duration.ofNanos(1))},
+      {CombinerExecutor.YieldCondition.withMaxCount(1)}
+    });
+  }
+
+  @Parameterized.Parameter
+  public CombinerExecutor.YieldCondition condition;
 
   class FakeConnectionPool implements PoolConnector<FakeConnection> {
 
     private ConnectionPool<FakeConnection> pool;
 
-    FakeConnectionPool(int queueMaxSize, int poolMaxSize) {
-      this.pool = ConnectionPool.pool(this, new int[]{ poolMaxSize }, queueMaxSize);
+    FakeConnectionPool(int queueMaxSize, int poolMaxSize,
+                       java.util.concurrent.Executor resumeExecutor, CombinerExecutor.YieldCondition yieldCondition) {
+      this.pool = ConnectionPool.pool(this, new int[]{ poolMaxSize },
+        queueMaxSize, resumeExecutor, yieldCondition);
     }
 
     void getConnection(FakeWaiter waiter) {
@@ -150,11 +172,12 @@ public class StressTest extends VertxTestBase {
   }
 
   @Test
-  public void testStress() throws InterruptedException {
+  public void testStress() throws InterruptedException, ExecutionException {
     int numActors = 16;
     int numConnections = 1000;
 
-    FakeConnectionPool mgr = new FakeConnectionPool(-1, numActors);
+    java.util.concurrent.ExecutorService resumeExecutor = condition == null ? null : Executors.newSingleThreadExecutor();
+    FakeConnectionPool mgr = new FakeConnectionPool(-1, numActors, resumeExecutor, condition);
 
     Thread[] actors = new Thread[numActors];
     for (int i = 0; i < numActors; i++) {
@@ -201,7 +224,6 @@ public class StressTest extends VertxTestBase {
         e.printStackTrace();
       }
     }
-
     // This is synchronous
     CountDownLatch latch = new CountDownLatch(1);
     mgr.pool.close(ar -> {
@@ -218,6 +240,14 @@ public class StressTest extends VertxTestBase {
       latch.countDown();
     });
     awaitLatch(latch);
+    if (resumeExecutor != null) {
+      // maybe there's still a suspended continuation waiting to be resumed:
+      // given that's a single threaded executor we just need to enqueue past to it
+      // and no new continuations should be in-flights, because after closing the pool
+      // there won't be any submitted actions
+      resumeExecutor.submit(() -> {}).get();
+      resumeExecutor.shutdownNow();
+    }
 
     // Check state at the end
 //    mgr.pool.checkInvariants();

@@ -42,11 +42,24 @@ public interface ConnectionPool<C> {
   };
 
   static <C> ConnectionPool<C> pool(PoolConnector<C> connector, int[] maxSizes) {
-    return new SimpleConnectionPool<>(connector, maxSizes);
+    return new SimpleConnectionPool<>(connector, maxSizes, null);
+  }
+
+  static <C> ConnectionPool<C> pool(PoolConnector<C> connector, int[] maxSizes, java.util.concurrent.Executor resumeExecutor) {
+    return new SimpleConnectionPool<>(connector, maxSizes, resumeExecutor);
   }
 
   static <C> ConnectionPool<C> pool(PoolConnector<C> connector, int[] maxSizes, int maxWaiters) {
-    return new SimpleConnectionPool<>(connector, maxSizes, maxWaiters);
+    return new SimpleConnectionPool<>(connector, maxSizes, maxWaiters, null, null);
+  }
+
+  static <C> ConnectionPool<C> pool(PoolConnector<C> connector, int[] maxSizes, int maxWaiters, java.util.concurrent.Executor resumeExecutor) {
+    return new SimpleConnectionPool<>(connector, maxSizes, maxWaiters, resumeExecutor, null);
+  }
+
+  static <C> ConnectionPool<C> pool(PoolConnector<C> connector, int[] maxSizes, int maxWaiters,
+                                    java.util.concurrent.Executor resumeExecutor, CombinerExecutor.YieldCondition yieldCondition) {
+    return new SimpleConnectionPool<>(connector, maxSizes, maxWaiters, resumeExecutor, yieldCondition);
   }
 
   /**
