@@ -24,8 +24,6 @@ import java.util.concurrent.Executor;
  * A context that forwards most operations to a delegate. This context
  *
  * <ul>
- *   <li>maintains its own ordered task queue, ordered execute blocking are ordered on this
- *  context instead of the delegate.</li>
  *  <li>maintains its own local data instead of the delegate.</li>
  * </ul>
  *
