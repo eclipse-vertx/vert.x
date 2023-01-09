@@ -154,6 +154,16 @@ public class SSLHelper {
     }
   }
 
+  private static class EngineConfig {
+    private final Supplier<SslContextFactory> supplier;
+    private final boolean useWorkerPool;
+
+    public EngineConfig(Supplier<SslContextFactory> supplier, boolean useWorkerPool) {
+      this.supplier = supplier;
+      this.useWorkerPool = useWorkerPool;
+    }
+  }
+
   /**
    * Initialize the helper, this loads and validates the configuration.
    *
@@ -161,11 +171,11 @@ public class SSLHelper {
    * @return a future resolved when the helper is initialized
    */
   public Future<SslContextProvider> init(SSLOptions sslOptions, ContextInternal ctx) {
-    Future<Supplier<SslContextFactory>> sslContextFactorySupplier;
+    Future<EngineConfig> sslContextFactorySupplier;
     KeyCertOptions keyCertOptions = sslOptions.getKeyCertOptions();
     TrustOptions trustOptions = sslOptions.getTrustOptions();
     if (keyCertOptions != null || trustOptions != null || trustAll || ssl) {
-      Promise<Supplier<SslContextFactory>> promise = Promise.promise();
+      Promise<EngineConfig> promise = Promise.promise();
       sslContextFactorySupplier = promise.future();
       ctx.<Void>executeBlockingInternal(p -> {
         KeyManagerFactory kmf;
@@ -181,21 +191,23 @@ public class SSLHelper {
         } else {
           p.fail("Key/certificate is mandatory for SSL");
         }
-      }).compose(v2 -> ctx.<Supplier<SslContextFactory>>executeBlockingInternal(p -> {
+      }).compose(v2 -> ctx.<EngineConfig>executeBlockingInternal(p -> {
         Supplier<SslContextFactory> supplier;
+        boolean useWorkerPool;
         try {
           SSLEngineOptions resolvedEngineOptions = resolveEngineOptions(sslEngineOptions, useAlpn);
           supplier = resolvedEngineOptions::sslContextFactory;
+          useWorkerPool = resolvedEngineOptions.getUseWorkerThread();
         } catch (Exception e) {
           p.fail(e);
           return;
         }
-        p.complete(supplier);
+        p.complete(new EngineConfig(supplier, useWorkerPool));
       })).onComplete(promise);
     } else {
-      sslContextFactorySupplier = Future.succeededFuture(() -> new DefaultSslContextFactory(SslProvider.JDK, false));
+      sslContextFactorySupplier = Future.succeededFuture(new EngineConfig(() -> new DefaultSslContextFactory(SslProvider.JDK, false), SSLEngineOptions.DEFAULT_USE_WORKER_POOL));
     }
-    return sslContextFactorySupplier.map(sslp -> new SslContextProvider(this, sslOptions, sslp));
+    return sslContextFactorySupplier.map(sslp -> new SslContextProvider(this, sslOptions, sslp.useWorkerPool, sslp.supplier));
   }
 
   static KeyManagerFactory getKeyMgrFactory(VertxInternal vertx, KeyCertOptions keyCertOptions, String serverName) throws Exception {

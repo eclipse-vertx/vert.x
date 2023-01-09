@@ -17,6 +17,7 @@ import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.Mapping;
+import io.netty.util.concurrent.ImmediateExecutor;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.VertxInternal;
@@ -34,6 +35,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
@@ -58,8 +60,9 @@ public class SslContextProvider {
   private final Map<String, SslContext>[] sslContextMaps = new Map[]{
     new ConcurrentHashMap<>(), new ConcurrentHashMap<>()
   };
+  private final boolean useWorkerPool;
 
-  public SslContextProvider(SSLHelper sslHelper, SSLOptions options, Supplier<SslContextFactory> provider) {
+  public SslContextProvider(SSLHelper sslHelper, SSLOptions options, boolean useWorkerPool, Supplier<SslContextFactory> provider) {
     this.sslHelper = sslHelper;
     this.provider = provider;
     this.crlPaths = new ArrayList<>(options.getCrlPaths());
@@ -70,6 +73,7 @@ public class SslContextProvider {
     this.enabledProtocols = options.getEnabledSecureTransportProtocols();
     this.keyCertOptions = options.getKeyCertOptions() != null ? options.getKeyCertOptions().copy() : null;
     this.trustOptions = options.getTrustOptions() != null ? options.getTrustOptions().copy() : null;
+    this.useWorkerPool = useWorkerPool;
   }
 
   public boolean isSsl() {
@@ -161,10 +165,11 @@ public class SslContextProvider {
   public SslHandler createSslHandler(VertxInternal vertx, SocketAddress remoteAddress, String serverName, boolean useAlpn) {
     SslContext sslContext = sslContext(vertx, serverName, useAlpn);
     SslHandler sslHandler;
+    Executor delegatedTaskExec = useWorkerPool ? vertx.getInternalWorkerPool().executor() : ImmediateExecutor.INSTANCE;
     if (remoteAddress == null || remoteAddress.isDomainSocket()) {
-      sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT);
+      sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, delegatedTaskExec);
     } else {
-      sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, remoteAddress.host(), remoteAddress.port());
+      sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, remoteAddress.host(), remoteAddress.port(), delegatedTaskExec);
     }
     sslHandler.setHandshakeTimeout(sslHandshakeTimeout, sslHandshakeTimeoutUnit);
     return sslHandler;
