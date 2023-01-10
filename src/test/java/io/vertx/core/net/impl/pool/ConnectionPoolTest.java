@@ -23,17 +23,18 @@ import io.vertx.test.core.VertxTestBase;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.IntConsumer;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public class ConnectionPoolTest extends VertxTestBase {
 
@@ -917,6 +918,50 @@ public class ConnectionPoolTest extends VertxTestBase {
     assertEquals(1, pool.requests());
     ConnectionRequest request = mgr.assertRequest();
     assertSame(context.nettyEventLoop(), request.context.nettyEventLoop());
+  }
+
+  @Test
+  public void testPostTasksTrampoline() throws Exception {
+    int numAcquires = 5;
+    AtomicReference<ConnectionPool<Connection>> ref = new AtomicReference<>();
+    EventLoopContext ctx = vertx.createEventLoopContext();
+    List<Integer> res = Collections.synchronizedList(new LinkedList<>());
+    AtomicInteger seq = new AtomicInteger();
+    CountDownLatch latch = new CountDownLatch(numAcquires);
+    ConnectionPool<Connection> pool = ConnectionPool.pool(new PoolConnector<Connection>() {
+      int count = 0;
+      int reentrancy = 0;
+      @Override
+      public void connect(EventLoopContext context, Listener listener, Handler<AsyncResult<ConnectResult<Connection>>> handler) {
+        assertEquals(0, reentrancy++);
+        try {
+          int val = count++;
+          if (val == 0) {
+            // Queue extra requests
+            for (int i = 0;i < numAcquires;i++) {
+              int num = seq.getAndIncrement();
+              ref.get().acquire(ctx, 0, onFailure(err -> {
+                res.add(num);
+                latch.countDown();
+              }));
+            }
+          }
+          handler.handle(Future.failedFuture("failure"));
+        } finally {
+          reentrancy--;
+        }
+      }
+      @Override
+      public boolean isValid(Connection connection) {
+        return true;
+      }
+    }, new int[]{1}, 1 + numAcquires);
+    ref.set(pool);
+    int num = seq.getAndIncrement();
+    pool.acquire(ctx, 0, onFailure(err -> res.add(num)));
+    awaitLatch(latch);
+    List<Integer> expected = IntStream.range(0, numAcquires + 1).boxed().collect(Collectors.toList());
+    assertEquals(expected, res);
   }
 
   static class Connection {

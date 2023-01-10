@@ -27,6 +27,7 @@ public class CombinerExecutor<S> implements Executor<S> {
   private final Queue<Action<S>> q = PlatformDependent.newMpscQueue();
   private final AtomicInteger s = new AtomicInteger();
   private final S state;
+  private final ThreadLocal<Task> current = new ThreadLocal<>();
 
   public CombinerExecutor(S state) {
     this.state = state;
@@ -46,27 +47,43 @@ public class CombinerExecutor<S> implements Executor<S> {
         s.set(0);
       }
     } while (!q.isEmpty() && s.compareAndSet(0, 1));
-    while (head != null) {
-      head.run();
-      head = head.next;
+    if (head != null) {
+      Task inProgress = current.get();
+      if (inProgress == null) {
+        current.set(head);
+        try {
+          while (head != null) {
+            head.run();
+            head = head.next;
+          }
+        } finally {
+          current.remove();
+        }
+      } else {
+        merge(inProgress, head);
+      }
     }
   }
 
   private Task pollAndExecute(Task head) {
-    Action<S> a;
-    while ((a = q.poll()) != null) {
-      Task action = a.execute(state);
-      if (action != null) {
+    Action<S> action;
+    while ((action = q.poll()) != null) {
+      Task task = action.execute(state);
+      if (task != null) {
         if (head == null) {
-          head = action;
-          head.prev = head;
+          head = task;
         } else {
-          action.prev = head.prev;
-          head.prev.next = action;
-          head.prev = action;
+          merge(head, task);
         }
       }
     }
     return head;
+  }
+
+  private static void merge(Task head, Task tail) {
+    Task tmp = tail.prev;
+    tail.prev = head.prev;
+    head.prev.next = tail;
+    head.prev = tmp;
   }
 }
