@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2023 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -25,6 +25,8 @@ import static org.slf4j.spi.LocationAwareLogger.*;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class SLF4JLogDelegate implements LogDelegate {
+
+  private static final Object[] EMPTY_PARAMETERS = {};
 
   @SuppressWarnings("deprecation")
   private static final String FQCN = io.vertx.core.logging.Logger.class.getCanonicalName();
@@ -167,13 +169,21 @@ public class SLF4JLogDelegate implements LogDelegate {
     // If we have both parameters and an error, we need to build a new array [params, t]
     // If we don't have parameters, we need to build a new array [t]
     // If we don't have error, it's just params.
-    Object[] parameters = params;
-    if (params != null  && t != null) {
-      parameters = new Object[params.length + 1];
-      System.arraycopy(params, 0, parameters, 0, params.length);
-      parameters[params.length] = t;
-    } else if (params == null  && t != null) {
-      parameters = new Object[] {t};
+    Object[] parameters;
+    if (params == null) {
+      if (t == null) {
+        parameters = EMPTY_PARAMETERS;
+      } else {
+        parameters = new Object[]{t};
+      }
+    } else {
+      if (t == null) {
+        parameters = params;
+      } else {
+        parameters = new Object[params.length + 1];
+        System.arraycopy(params, 0, parameters, 0, params.length);
+        parameters[params.length] = t;
+      }
     }
 
     if (logger instanceof LocationAwareLogger) {
