@@ -86,9 +86,21 @@ public abstract class ConnectionBase {
   private long remainingBytesWritten;
 
   // State accessed exclusively from the event loop thread
-  private boolean read;
+  private final MessageQueue mq = new MessageQueue() {
+    @Override
+    public void handleMessage(Object msg) {
+      // TODO
+      handleMessage2(msg);
+    }
+    @Override
+    public void handleDrain() {
+      doResume();
+    }
+  };
   private boolean needsFlush;
   private boolean closed;
+  private boolean paused;
+  private boolean halted;
 
   protected ConnectionBase(ContextInternal context, ChannelHandlerContext chctx) {
     this.vertx = context.owner();
@@ -137,8 +149,7 @@ public abstract class ConnectionBase {
    * This method is exclusively called by {@code VertxHandler} to signal read completion on the event-loop thread.
    */
   final void endReadAndFlush() {
-    if (read) {
-      read = false;
+    if (mq.processing == null) {
       if (needsFlush) {
         needsFlush = false;
         chctx.flush();
@@ -150,11 +161,14 @@ public abstract class ConnectionBase {
    * This method is exclusively called by {@code VertxHandler} to read a message on the event-loop thread.
    */
   final void read(Object msg) {
-    read = true;
     if (METRICS_ENABLED) {
       reportBytesRead(msg);
     }
-    handleMessage(msg);
+    if (mq.read(msg)) {
+
+    } else {
+      doPause();
+    }
   }
 
   /**
@@ -170,7 +184,12 @@ public abstract class ConnectionBase {
     }
     boolean writeAndFlush;
     if (flush == null) {
-      writeAndFlush = !read;
+      if (msg == Unpooled.EMPTY_BUFFER && !needsFlush) {
+        promise.setSuccess();
+        return;
+      } else {
+        writeAndFlush = mq.processing == null || halted;
+      }
     } else {
       writeAndFlush = flush;
     }
@@ -223,7 +242,7 @@ public abstract class ConnectionBase {
         // two "sequential" calls to writeToChannel (we can say that as it is synchronized) should preserve
         // the message order independently of the thread. To achieve this we need to reschedule messages
         // not on the event loop or if there are pending async message for the channel.
-        queueForWrite(msg, forceFlush, promise);
+        queueForWrite(msg, promise);
         return;
       }
     }
@@ -231,18 +250,10 @@ public abstract class ConnectionBase {
     write(msg, forceFlush ? true : null, promise);
   }
 
-  private void queueForWrite(Object msg, boolean forceFlush, ChannelPromise promise) {
+  private void queueForWrite(Object msg, ChannelPromise promise) {
     writeInProgress++;
     chctx.executor().execute(() -> {
-      boolean flush;
-      if (forceFlush) {
-        flush = true;
-      } else {
-        synchronized (this) {
-          flush = --writeInProgress == 0;
-        }
-      }
-      write(msg, flush, promise);
+      write(msg, null, promise);
     });
   }
 
@@ -307,10 +318,18 @@ public abstract class ConnectionBase {
   }
 
   public void doPause() {
+    if (paused) {
+      return;
+    }
+    paused = true;
     chctx.channel().config().setAutoRead(false);
   }
 
   public void doResume() {
+    if (!paused) {
+      return;
+    }
+    paused = false;
     chctx.channel().config().setAutoRead(true);
   }
 
@@ -404,6 +423,14 @@ public abstract class ConnectionBase {
   protected void handleIdle(IdleStateEvent event) {
     log.debug("The connection will be closed due to timeout");
     chctx.close();
+  }
+
+  void channelWritabilityChanged() {
+    if (needsFlush && isNotWritable()) {
+      needsFlush = false;
+      chctx.flush();
+    }
+    handleInterestedOpsChanged();
   }
 
   protected abstract void handleInterestedOpsChanged();
@@ -644,6 +671,41 @@ public abstract class ConnectionBase {
     }
   }
 
+  public final void ack(Object msg) {
+    if (!chctx.executor().inEventLoop()) {
+      chctx.executor().execute(() -> ack(msg));
+    } else {
+      halted = false;
+      mq.ack(msg);
+      if (mq.processing == null && !mq.handling) {
+        if (needsFlush) {
+          needsFlush = false;
+          chctx.flush();
+        }
+      }
+    }
+  }
+
+  public final void halt(Object msg) {
+    if (!chctx.executor().inEventLoop()) {
+      chctx.executor().execute(() -> halt(msg));
+    } else {
+      if (mq.processing == msg && !halted) {
+        halted = true;
+        if (needsFlush) {
+          needsFlush = false;
+          chctx.flush();
+        }
+      }
+    }
+  }
+
+  protected void handleMessage2(Object msg) {
+    handleMessage(msg);
+    ack(msg);
+  }
+
   protected void handleMessage(Object msg) {
+    ReferenceCountUtil.release(msg);
   }
 }

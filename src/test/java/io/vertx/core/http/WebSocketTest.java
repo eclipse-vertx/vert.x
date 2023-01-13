@@ -2980,6 +2980,7 @@ public class WebSocketTest extends VertxTestBase {
         soi.channelHandlerContext().pipeline().addBefore("handler", "decoder", new WebSocket13FrameDecoder(true, false, 1000));
         Deque<Object> received = new ArrayDeque<>();
         soi.messageHandler(msg -> {
+          System.out.println(msg);
           received.add(msg);
           if (msg instanceof CloseWebSocketFrame) {
             so.close();

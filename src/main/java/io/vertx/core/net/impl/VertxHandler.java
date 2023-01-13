@@ -126,7 +126,7 @@ public final class VertxHandler<C extends ConnectionBase> extends ChannelDuplexH
   @Override
   public void channelWritabilityChanged(ChannelHandlerContext ctx) {
     C conn = getConnection();
-    conn.handleInterestedOpsChanged();
+    conn.channelWritabilityChanged();
   }
 
   @Override

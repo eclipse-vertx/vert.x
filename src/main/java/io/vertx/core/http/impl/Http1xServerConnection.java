@@ -22,14 +22,11 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.SslContextProvider;
@@ -71,8 +68,6 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
  */
 public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocketImpl> implements HttpServerConnection {
 
-  private static final Logger log = LoggerFactory.getLogger(Http1xServerConnection.class);
-
   private final String serverOrigin;
   private final Supplier<ContextInternal> streamContextSupplier;
   private final SslContextProvider sslContextProvider ;
@@ -81,7 +76,6 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
 
   private Http1xServerRequest requestInProgress;
   private Http1xServerRequest responseInProgress;
-  private boolean channelPaused;
   private boolean writable;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<HttpServerRequest> invalidRequestHandler;
@@ -129,20 +123,20 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     return metrics;
   }
 
-  public void handleMessage(Object msg) {
+  public void handleMessage2(Object msg) {
     if (msg instanceof HttpRequest) {
       DefaultHttpRequest request = (DefaultHttpRequest) msg;
       ContextInternal requestCtx = streamContextSupplier.get();
       Http1xServerRequest req = new Http1xServerRequest(this, request, requestCtx);
       requestInProgress = req;
       if (responseInProgress != null) {
-        enqueueRequest(req);
         return;
       }
       responseInProgress = requestInProgress;
       req.handleBegin(writable);
       Handler<HttpServerRequest> handler = request.decoderResult().isSuccess() ? requestHandler : invalidRequestHandler;
       req.context.emit(req, handler);
+      ack(msg);
     } else if (msg == LastHttpContent.EMPTY_LAST_CONTENT) {
       onEnd();
     } else {
@@ -150,17 +144,14 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     }
   }
 
-  private void enqueueRequest(Http1xServerRequest req) {
-    // Deferred until the current response completion
-    responseInProgress.enqueue(req);
-    req.pause();
-  }
-
   private void handleOther(Object msg) {
     if (msg instanceof HttpContent) {
       onContent(msg);
-    } else if (msg instanceof WebSocketFrame) {
-      handleWsFrame((WebSocketFrame) msg);
+    } else {
+      if (msg instanceof WebSocketFrame) {
+        handleWsFrame((WebSocketFrame) msg);
+      }
+      ack(msg);
     }
   }
 
@@ -168,18 +159,14 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     HttpContent content = (HttpContent) msg;
     if (!content.decoderResult().isSuccess()) {
       handleError(content);
+      ack(content);
       return;
     }
-    Buffer buffer = Buffer.buffer(VertxHandler.safeBuffer(content.content()));
     Http1xServerRequest request;
     synchronized (this) {
       request = requestInProgress;
     }
-    request.context.execute(buffer, request::handleContent);
-    //TODO chunk trailers
-    if (content instanceof LastHttpContent) {
-      onEnd();
-    }
+    request.handleContent(content);
   }
 
   private void onEnd() {
@@ -188,7 +175,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       request = requestInProgress;
       requestInProgress = null;
     }
-    request.context.execute(request, Http1xServerRequest::handleEnd);
+    request.handleContent(LastHttpContent.EMPTY_LAST_CONTENT);
   }
 
   void responseComplete() {
@@ -201,10 +188,15 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       responseInProgress = null;
       DecoderResult result = request.decoderResult();
       if (result.isSuccess()) {
-        Http1xServerRequest next = request.next();
-        if (next != null) {
-          // Handle pipelined request
-          handleNext(next);
+        Http1xServerRequest next = requestInProgress;
+        if (next != null && next != request) {
+          responseInProgress = next;
+          next.handleBegin(writable);
+          Handler<HttpServerRequest> handler = request.decoderResult().isSuccess() ? requestHandler : invalidRequestHandler;
+          next.context.emit(next, bilto -> {
+            handler.handle(bilto);
+            ack(next.nettyRequest());
+          });
         }
       } else {
         ChannelPromise channelFuture = channelFuture();
@@ -213,32 +205,6 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       }
     } else {
       eventLoop.execute(this::responseComplete);
-    }
-  }
-
-  private void handleNext(Http1xServerRequest next) {
-    responseInProgress = next;
-    next.handleBegin(writable);
-    next.context.emit(next, next_ -> {
-      next_.resume();
-      Handler<HttpServerRequest> handler = next_.nettyRequest().decoderResult().isSuccess() ? requestHandler : invalidRequestHandler;
-      handler.handle(next_);
-    });
-  }
-
-  @Override
-  public void doPause() {
-    if (!channelPaused) {
-      channelPaused = true;
-      super.doPause();
-    }
-  }
-
-  @Override
-  public void doResume() {
-    if (channelPaused) {
-      channelPaused = false;
-      super.doResume();
     }
   }
 
