@@ -39,6 +39,16 @@ public final class URIDecoder {
     return decodeURIComponent(s, true);
   }
 
+  private static int indexOfPercentOrPlus(String s) {
+    for (int i = 0, size = s.length(); i < size; i++) {
+      final char c = s.charAt(i);
+      if (c == '%' || c == '+') {
+        return i;
+      }
+    }
+    return -1;
+  }
+
   /**
    * Decodes a segment of an URI encoded by a browser.
    *
@@ -55,23 +65,18 @@ public final class URIDecoder {
     if (s == null) {
       return null;
     }
-
-    final int size = s.length();
-    boolean modified = false;
-    int i;
-    for (i = 0; i < size; i++) {
-      final char c = s.charAt(i);
-      if (c == '%' || (plus && c == '+')) {
-        modified = true;
-        break;
-      }
-    }
-    if (!modified) {
+    int i = !plus ? s.indexOf('%') : indexOfPercentOrPlus(s);
+    if (i == -1) {
       return s;
     }
+    // pack the slowest path away
+    return decodeAndTransformURIComponent(s, i, plus);
+  }
+
+  private static String decodeAndTransformURIComponent(String s, int i, boolean plus) {
     final byte[] buf = s.getBytes(StandardCharsets.UTF_8);
     int pos = i;  // position in `buf'.
-    for (; i < size; i++) {
+    for (int size = s.length(); i < size; i++) {
       char c = s.charAt(i);
       if (c == '%') {
         if (i == size - 1) {
