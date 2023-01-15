@@ -234,33 +234,55 @@ public final class HttpUtils {
     }
 
     // add trailing slash if not set
-    if (pathname.length() == 0) {
+    if (pathname.isEmpty()) {
       return "/";
     }
 
-    StringBuilder ibuf = new StringBuilder(pathname.length() + 1);
+    int indexOfFirstPercent = pathname.indexOf('%');
+    if (indexOfFirstPercent == -1) {
+      // no need to removeDots nor replace double slashes
+      if (pathname.indexOf('.') == -1 && pathname.indexOf("//") == -1) {
+        if (pathname.charAt(0) == '/') {
+          return pathname;
+        }
+        // See https://bugs.openjdk.org/browse/JDK-8085796
+        return "/" + pathname;
+      }
+    }
+    return normalizePathSlow(pathname, indexOfFirstPercent);
+  }
 
+  private static String normalizePathSlow(String pathname, int indexOfFirstPercent) {
+    final StringBuilder ibuf;
     // Not standard!!!
     if (pathname.charAt(0) != '/') {
+      ibuf = new StringBuilder(pathname.length() + 1);
       ibuf.append('/');
-    }
-
-    ibuf.append(pathname);
-    int i = 0;
-
-    while (i < ibuf.length()) {
-      // decode unreserved chars described in
-      // http://tools.ietf.org/html/rfc3986#section-2.4
-      if (ibuf.charAt(i) == '%') {
-        decodeUnreserved(ibuf, i);
+      if (indexOfFirstPercent != -1) {
+        indexOfFirstPercent++;
       }
-
-      i++;
+    } else {
+      ibuf = new StringBuilder(pathname.length());
     }
-
+    ibuf.append(pathname);
+    if (indexOfFirstPercent != -1) {
+      decodeUnreservedChars(ibuf, indexOfFirstPercent);
+    }
     // remove dots as described in
     // http://tools.ietf.org/html/rfc3986#section-5.2.4
     return removeDots(ibuf);
+  }
+
+  private static void decodeUnreservedChars(StringBuilder path, int start) {
+    while (start < path.length()) {
+      // decode unreserved chars described in
+      // http://tools.ietf.org/html/rfc3986#section-2.4
+      if (path.charAt(start) == '%') {
+        decodeUnreserved(path, start);
+      }
+
+      start++;
+    }
   }
 
   private static void decodeUnreserved(StringBuilder path, int start) {
