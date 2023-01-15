@@ -481,6 +481,9 @@ public final class HttpUtils {
     int queryStart = uri.indexOf('?', i);
     if (queryStart == -1) {
       queryStart = uri.length();
+      if (i == 0) {
+        return uri;
+      }
     }
     return uri.substring(i, queryStart);
   }
