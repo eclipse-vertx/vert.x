@@ -44,7 +44,6 @@
   </scm>
 
   <properties>
-    <slf4j.version>1.7.21</slf4j.version>
     <log4j2.version>2.17.1</log4j2.version>
     <junit.version>4.13.1</junit.version>
     <assertj.version>3.4.1</assertj.version>
@@ -151,7 +150,6 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
-      <version>${slf4j.version}</version>
       <scope>provided</scope>
     </dependency>
 
@@ -189,7 +187,6 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-simple</artifactId>
-      <version>${slf4j.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -704,7 +701,7 @@
           <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>${slf4j.version}</version>
+            <version>1.7.21</version>
           </dependency>
         </dependencies>
       </plugin>
