@@ -20,6 +20,7 @@ import io.netty.handler.codec.http.HttpResponseEncoder;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.CompilerControl;
+import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
@@ -31,6 +32,12 @@ import static io.vertx.benchmarks.HeadersUtils.setBaseHeaders;
  */
 @State(Scope.Thread)
 public class HeadersEncodeBenchmark extends BenchmarkBase {
+
+  @Param({"true", "false"})
+  public boolean asciiNames;
+
+  @Param({"true", "false"})
+  public boolean asciiValues;
 
   @CompilerControl(CompilerControl.Mode.DONT_INLINE)
   public static void consume(final ByteBuf buf) {
@@ -58,8 +65,8 @@ public class HeadersEncodeBenchmark extends BenchmarkBase {
     emptyHeaders = EmptyHttpHeaders.INSTANCE;
     nettySmallHeaders = new DefaultHttpHeaders();
     vertxSmallHeaders = HeadersMultiMap.httpHeaders();
-    setBaseHeaders(nettySmallHeaders);
-    setBaseHeaders(vertxSmallHeaders);
+    setBaseHeaders(nettySmallHeaders, asciiNames, asciiValues);
+    setBaseHeaders(vertxSmallHeaders, asciiNames, asciiValues);
   }
 
   @Benchmark
