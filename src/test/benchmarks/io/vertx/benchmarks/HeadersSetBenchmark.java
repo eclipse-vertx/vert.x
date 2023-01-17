@@ -13,12 +13,18 @@ package io.vertx.benchmarks;
 
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
+import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.CompilerControl;
+import org.openjdk.jmh.annotations.Measurement;
+import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
+
+import java.util.concurrent.TimeUnit;
 
 import static io.vertx.benchmarks.HeadersUtils.setBaseHeaders;
 
@@ -26,7 +32,15 @@ import static io.vertx.benchmarks.HeadersUtils.setBaseHeaders;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @State(Scope.Thread)
+@Warmup(iterations = 10, time = 1, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 5, time = 400, timeUnit = TimeUnit.MILLISECONDS)
 public class HeadersSetBenchmark extends BenchmarkBase {
+
+  @Param({"true", "false"})
+  public boolean validate;
+
+  @Param({"true", "false"})
+  public boolean asciiNames;
 
   @CompilerControl(CompilerControl.Mode.DONT_INLINE)
   public static void consume(final HttpHeaders headers) {
@@ -37,21 +51,21 @@ public class HeadersSetBenchmark extends BenchmarkBase {
 
   @Setup
   public void setup() {
-    nettySmallHeaders = new DefaultHttpHeaders();
-    vertxSmallHeaders = HeadersMultiMap.httpHeaders();
+    nettySmallHeaders = new DefaultHttpHeaders(validate);
+    vertxSmallHeaders = new HeadersMultiMap(validate? HttpUtils::validateHeader : null);
   }
 
   @Benchmark
-  public void nettySmall() throws Exception {
+  public void nettySmall() {
     nettySmallHeaders.clear();
-    setBaseHeaders(nettySmallHeaders);
+    setBaseHeaders(nettySmallHeaders, asciiNames, true);
     consume(nettySmallHeaders);
   }
 
   @Benchmark
-  public void vertxSmall() throws Exception {
+  public void vertxSmall() {
     vertxSmallHeaders.clear();
-    setBaseHeaders(vertxSmallHeaders);
+    setBaseHeaders(vertxSmallHeaders, asciiNames, true);
     consume(vertxSmallHeaders);
   }
 }
