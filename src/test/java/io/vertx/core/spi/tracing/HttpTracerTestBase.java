@@ -12,7 +12,10 @@ package io.vertx.core.spi.tracing;
 
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
-import io.vertx.core.http.*;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.http.HttpTestBase;
+import io.vertx.core.http.RequestOptions;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.observability.HttpRequest;
 import io.vertx.core.spi.observability.HttpResponse;
@@ -20,6 +23,7 @@ import io.vertx.core.tracing.TracingPolicy;
 import io.vertx.test.core.TestUtils;
 import org.junit.Test;
 
+import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -162,12 +166,13 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     String key = TestUtils.randomAlphaString(10);
     Object val = new Object();
     AtomicInteger seq = new AtomicInteger();
+    String traceId = UUID.randomUUID().toString();
     tracer = new VertxTracer() {
       @Override
       public Object sendRequest(Context context, SpanKind kind, TracingPolicy policy, Object request, String operation, BiConsumer headers, TagExtractor tagExtractor) {
         assertSame(val, context.getLocal(key));
         assertTrue(seq.compareAndSet(0, 1));
-        headers.accept("header-key","header-value");
+        headers.accept("X-B3-TraceId", traceId);
         assertNotNull(request);
         assertTrue(request instanceof HttpRequest);
         assertEquals(expectedOperation, operation);
@@ -185,7 +190,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     };
     CountDownLatch latch = new CountDownLatch(1);
     server.requestHandler(req -> {
-      assertEquals("header-value", req.getHeader("header-key"));
+      assertEquals(traceId, req.getHeader("X-B3-TraceId"));
       req.response().end();
     }).listen(8080, "localhost", onSuccess(v -> {
       latch.countDown();
@@ -216,12 +221,13 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     String key = TestUtils.randomAlphaString(10);
     Object val = new Object();
     AtomicInteger seq = new AtomicInteger();
+    String traceId = UUID.randomUUID().toString();
     tracer = new VertxTracer() {
       @Override
       public Object sendRequest(Context context, SpanKind kind, TracingPolicy policy, Object request, String operation, BiConsumer headers, TagExtractor tagExtractor) {
         assertSame(val, context.getLocal(key));
         assertTrue(seq.compareAndSet(0, 1));
-        headers.accept("header-key","header-value");
+        headers.accept("X-B3-TraceId", traceId);
         return request;
       }
       @Override
@@ -235,7 +241,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     };
     CountDownLatch latch = new CountDownLatch(1);
     server.requestHandler(req -> {
-      assertEquals("header-value", req.getHeader("header-key"));
+      assertEquals(traceId, req.getHeader("X-B3-TraceId"));
       req.connection().close();
     }).listen(8080, "localhost", onSuccess(v -> {
       latch.countDown();

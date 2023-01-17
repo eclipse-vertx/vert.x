@@ -21,19 +21,30 @@ import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.handler.timeout.IdleStateEvent;
-import io.vertx.core.*;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
+import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.*;
+import io.vertx.core.http.GoAway;
+import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpClosedException;
+import io.vertx.core.http.HttpFrame;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
-import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.streams.WriteStream;
 
-import java.util.*;
+import java.util.Map;
 import java.util.function.BiConsumer;
 
 /**
@@ -562,7 +573,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       }
       VertxTracer tracer = context.tracer();
       if (tracer != null) {
-        BiConsumer<String, String> headers_ = headers::add;
+        BiConsumer<String, String> headers_ = (key, val) -> new Http2HeadersAdaptor(headers).add(key, val);
         String operation = head.traceOperation;
         if (operation == null) {
           operation = headers.method().toString();
