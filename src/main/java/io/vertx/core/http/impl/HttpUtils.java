@@ -15,9 +15,7 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
-import io.netty.handler.codec.compression.ZlibWrapper;
 import io.netty.handler.codec.http.*;
-import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.util.AsciiString;
 import io.netty.util.CharsetUtil;
@@ -44,6 +42,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -822,43 +821,65 @@ public final class HttpUtils {
     return state;
   }
 
+  private static final boolean[] VALID_H_NAME_ASCII_CHARS;
+
+  static {
+    VALID_H_NAME_ASCII_CHARS = new boolean[Byte.MAX_VALUE + 1];
+    Arrays.fill(VALID_H_NAME_ASCII_CHARS, true);
+    VALID_H_NAME_ASCII_CHARS[' '] = false;
+    VALID_H_NAME_ASCII_CHARS['"'] = false;
+    VALID_H_NAME_ASCII_CHARS['('] = false;
+    VALID_H_NAME_ASCII_CHARS[')'] = false;
+    VALID_H_NAME_ASCII_CHARS[','] = false;
+    VALID_H_NAME_ASCII_CHARS['/'] = false;
+    VALID_H_NAME_ASCII_CHARS[':'] = false;
+    VALID_H_NAME_ASCII_CHARS[';'] = false;
+    VALID_H_NAME_ASCII_CHARS['<'] = false;
+    VALID_H_NAME_ASCII_CHARS['>'] = false;
+    VALID_H_NAME_ASCII_CHARS['='] = false;
+    VALID_H_NAME_ASCII_CHARS['?'] = false;
+    VALID_H_NAME_ASCII_CHARS['@'] = false;
+    VALID_H_NAME_ASCII_CHARS['['] = false;
+    VALID_H_NAME_ASCII_CHARS[']'] = false;
+    VALID_H_NAME_ASCII_CHARS['\\'] = false;
+    VALID_H_NAME_ASCII_CHARS['{'] = false;
+    VALID_H_NAME_ASCII_CHARS['}'] = false;
+    VALID_H_NAME_ASCII_CHARS[0x7f] = false;
+    // control characters are not valid
+    for (int i = 0; i < 0x20; i++) {
+      VALID_H_NAME_ASCII_CHARS[i] = false;
+    }
+  }
+
   public static void validateHeaderName(CharSequence value) {
-    for (int i = 0;i < value.length();i++) {
-      char c = value.charAt(i);
-      switch (c) {
-        // The RFC allows only : "!" / "#" / "$" / "%" / "&" / "'" / "*" / "+" / "-" / "." /
-        //                       "^" / "_" / "`" / "|" / "~" / DIGIT / ALPHA
-        // Where DIGIT is 0x30-0x39, and ALPHA : 0x41-0x5A and 0x61-0x7A
-        case ' ':
-        case '"':
-        case '(':
-        case ')':
-        case ',':
-        case '/':
-        case ':':
-        case ';':
-        case '<':
-        case '>':
-        case '=':
-        case '?':
-        case '@':
-        case '[':
-        case ']':
-        case '\\':
-        case '{':
-        case '}':
-        case 0x7f: // DEL
-          throw new IllegalArgumentException(
-            "a header name cannot contain some prohibited characters, such as : " + value);
-        default:
-          // Check to see if the character is a control character
-          if (c < 0x20) {
-            throw new IllegalArgumentException("a header name cannot contain control characters: " + value);
-          }
-          // Check to see if the character is not an ASCII character, or invalid
-          if (c > 0x7f) {
-            throw new IllegalArgumentException("a header name cannot contain non-ASCII character: " + value);
-          }
+    if (value instanceof AsciiString) {
+      // no need to check for ASCII-ness anymore
+      validateHeaderName((AsciiString) value);
+    } else {
+      validateHeaderName0(value);
+    }
+  }
+
+  private static void validateHeaderName(AsciiString value) {
+    final int len = value.length();
+    final int off = value.arrayOffset();
+    final byte[] asciiChars = value.array();
+    for (int i = 0; i < len; i++) {
+      if (!VALID_H_NAME_ASCII_CHARS[asciiChars[off + i] & 0x7F]) {
+        throw new IllegalArgumentException("a header name cannot contain some prohibited characters, such as : " + value);
+      }
+    }
+  }
+
+  private static void validateHeaderName0(CharSequence value) {
+    for (int i = 0; i < value.length(); i++) {
+      final char c = value.charAt(i);
+      // Check to see if the character is not an ASCII character, or invalid
+      if (c > 0x7f) {
+        throw new IllegalArgumentException("a header name cannot contain non-ASCII character: " + value);
+      }
+      if (!VALID_H_NAME_ASCII_CHARS[c & 0x7F]) {
+        throw new IllegalArgumentException("a header name cannot contain some prohibited characters, such as : " + value);
       }
     }
   }
