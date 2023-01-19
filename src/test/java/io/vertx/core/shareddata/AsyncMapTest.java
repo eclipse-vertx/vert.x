@@ -954,6 +954,9 @@ public abstract class AsyncMapTest extends VertxTestBase {
 
   public static final class SomeClusterSerializableObject implements ClusterSerializable {
     private String str;
+    // Trick smart data grid marshallers: make sure ClusterSerializable methods are the only way to serialize and deserialize this class
+    @SuppressWarnings("unused")
+    private final Object object = new Object();
 
     public SomeClusterSerializableObject() {
     }
@@ -993,6 +996,9 @@ public abstract class AsyncMapTest extends VertxTestBase {
   @Deprecated
   public static final class SomeClusterSerializableImplObject implements io.vertx.core.shareddata.impl.ClusterSerializable {
     private String str;
+    // Trick smart data grid marshallers: make sure ClusterSerializable methods are the only way to serialize and deserialize this class
+    @SuppressWarnings("unused")
+    private final Object object = new Object();
 
     public SomeClusterSerializableImplObject() {
     }
