@@ -194,7 +194,7 @@
     <dependency>
       <groupId>com.aayushatharva.brotli4j</groupId>
       <artifactId>brotli4j</artifactId>
-      <version>1.7.1</version>
+      <version>1.8.0</version>
       <scope>test</scope>
     </dependency>
 
