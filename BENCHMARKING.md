@@ -16,7 +16,7 @@ done in a lab.
 Package the JMH microbenchmarks
 
 ```
-> mvn package -DskipTests -Pbenchmarks
+./mvnw package -DskipTests -Pbenchmarks
 ```
 
 Run them all

@@ -37,7 +37,7 @@ jobs:
           java-version: ${{ matrix.jdk }}
           distribution: temurin
       - name: Run tests
-        run: mvn -s .github/maven-ci-settings.xml -q clean verify -B ${{ matrix.profile }}
+        run: ./mvnw -s .github/maven-ci-settings.xml -q clean verify -B ${{ matrix.profile }}
   Deploy:
     name: Deploy to OSSRH
     if: ${{ github.repository_owner == 'eclipse-vertx' && (github.event_name == 'push' || github.event_name == 'schedule') }}
@@ -58,4 +58,4 @@ jobs:
         run: echo "PROJECT_VERSION=$(mvn org.apache.maven.plugins:maven-help-plugin:evaluate -Dexpression=project.version -B | grep -v '\[')" >> $GITHUB_ENV
       - name: Maven deploy
         if: ${{ endsWith(env.PROJECT_VERSION, '-SNAPSHOT') }}
-        run: mvn deploy -s .github/maven-cd-settings.xml -DskipTests -B
+        run: ./mvnw deploy -s .github/maven-cd-settings.xml -DskipTests -B
