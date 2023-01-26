@@ -83,9 +83,6 @@ public class VertxTestBase extends AsyncTestBase {
   }
 
   protected void tearDown() throws Exception {
-    if (vertx != null) {
-      close(vertx);
-    }
     if (created != null) {
       closeClustered(created);
     }
@@ -118,7 +115,7 @@ public class VertxTestBase extends AsyncTestBase {
    */
   protected Vertx vertx(VertxOptions options) {
     if (created == null) {
-      created = new ArrayList<>();
+      created = Collections.synchronizedList(new ArrayList<>());
     }
     Vertx vertx = Vertx.vertx(options);
     created.add(vertx);
