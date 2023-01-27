@@ -11,6 +11,7 @@
 
 package io.vertx.core.net;
 
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.tls.SslContextFactory;
 
 /**
@@ -20,11 +21,47 @@ import io.vertx.core.spi.tls.SslContextFactory;
  */
 public abstract class SSLEngineOptions {
 
+  /**
+   * The default thread pool type for SSL blocking operations.
+   */
+  public static final boolean DEFAULT_USE_WORKER_POOL = false;
+
+  private boolean useWorkerThread;
+
   public abstract SSLEngineOptions copy();
+
+  public SSLEngineOptions() {
+    this.useWorkerThread = DEFAULT_USE_WORKER_POOL;
+  }
+
+  public SSLEngineOptions(SSLEngineOptions that) {
+    this.useWorkerThread = that.useWorkerThread;
+  }
+
+  public SSLEngineOptions(JsonObject json) {
+    this.useWorkerThread = json.getBoolean("useWorkerThread", DEFAULT_USE_WORKER_POOL);
+  }
 
   /**
    * @return a {@link SslContextFactory} that will be used to produce the Netty {@code SslContext}
    */
   public abstract SslContextFactory sslContextFactory();
 
+  /**
+   * @return whether to use the worker pool for SSL blocking operationsg
+   */
+  public boolean getUseWorkerThread() {
+    return useWorkerThread;
+  }
+
+  /**
+   * Set the thread pool to use for SSL blocking operations.
+   *
+   * @param useWorkerThread whether to use the vertx internal worker pool for SSL blocking operations
+   * @return a reference to this, so the API can be used fluently
+   */
+  public SSLEngineOptions setUseWorkerThread(boolean useWorkerThread) {
+    this.useWorkerThread = useWorkerThread;
+    return this;
+  }
 }
