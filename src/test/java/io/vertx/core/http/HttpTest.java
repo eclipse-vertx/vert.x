@@ -11,18 +11,24 @@
 
 package io.vertx.core.http;
 
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ConnectTimeoutException;
 import io.netty.handler.codec.compression.DecompressionException;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http2.Http2EventAdapter;
 import io.netty.handler.codec.http2.Http2Exception;
+import io.netty.handler.codec.http2.Http2Headers;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
+import io.vertx.core.http.Http2ServerTest.TestClient;
 import io.vertx.core.http.impl.HttpServerRequestInternal;
 import io.vertx.core.http.impl.ServerCookie;
+import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
@@ -2272,6 +2278,46 @@ public abstract class HttpTest extends HttpTestBase {
           .continueHandler(v -> complete())
           .send(onFailure(err -> complete()));
     }));
+    await();
+  }
+
+  @Test
+  public void test103EarlyHints() throws Exception {
+
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.writeEarlyHints(HeadersMultiMap.httpHeaders().add("wibble", "wibble-103-value"), result -> {
+        if (result.failed()) {
+          fail(result.cause());
+        } else {
+          resp.putHeader("wibble", "wibble-200-value");
+          req.bodyHandler(body -> {
+            assertEquals("request-body", body.toString());
+            resp.end("response-body");
+          });
+        }
+      });
+    });
+
+    AtomicBoolean earlyHintsHandled = new AtomicBoolean();
+
+    startServer(testAddress);
+    client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.PUT))
+      .onComplete(onSuccess(req -> {
+        req
+          .earlyHintsHandler(earlyHintsHeaders -> {
+            assertEquals("wibble-103-value", earlyHintsHeaders.get("wibble"));
+            earlyHintsHandled.set(true);
+          })
+          .send("request-body", onSuccess(resp -> {
+            assertEquals(200, resp.statusCode());
+            assertEquals("wibble-200-value", resp.headers().get("wibble"));
+            resp.endHandler(v -> {
+              assertEquals("Early hints handle check", true, earlyHintsHandled.get());
+              testComplete();
+            }).bodyHandler(body -> assertEquals(body, Buffer.buffer("response-body")));
+          }));
+      }));
     await();
   }
 

@@ -315,6 +315,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
           return;
         } else if (status == 103) {
           MultiMap headersMultiMap = HeadersMultiMap.httpHeaders();
+          removeStatusHeaders(headers);
           for (Entry<CharSequence, CharSequence> header : headers) {
             headersMultiMap.add(header.getKey(), header.getValue());
           }
@@ -326,7 +327,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
           status,
           statusMessage,
           new Http2HeadersAdaptor(headers));
-        headers.remove(":status");
+        removeStatusHeaders(headers);
 
         if (conn.metrics != null) {
           conn.metrics.responseBegin(metric, response);
@@ -336,6 +337,10 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
           context.emit(response, headHandler);
         }
       }
+    }
+
+    private void removeStatusHeaders(Http2Headers headers) {
+      headers.remove(":status");
     }
 
     @Override
