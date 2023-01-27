@@ -13,29 +13,27 @@ package io.vertx.core.http;
 
 import static org.hamcrest.core.StringEndsWith.endsWith;
 
-import java.io.IOException;
+import java.io.*;
+import java.lang.reflect.UndeclaredThrowableException;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.KeyPairGenerator;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
+import java.security.*;
 import java.security.cert.Certificate;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.security.cert.CertificateException;
+import java.security.interfaces.RSAPrivateKey;
+import java.util.*;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
-import javax.net.ssl.ManagerFactoryParameters;
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.TrustManagerFactorySpi;
+import javax.net.ssl.*;
 
+import io.vertx.core.impl.VertxThread;
+import io.vertx.core.net.impl.KeyStoreHelper;
 import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
@@ -1643,6 +1641,202 @@ public abstract class HttpTLSTest extends HttpTestBase {
         .pass();
     } finally {
       proxy.stop();
+    }
+  }
+
+  @Test
+  public void testUseEventLoopThread() throws Exception {
+    testUseThreadPool(true);
+  }
+
+  @Test
+  public void testUseWorkerThreads() throws Exception {
+    testUseThreadPool(false);
+  }
+
+  private void testUseThreadPool(boolean useWorkerThreads) throws Exception {
+    JksOptions jksOptions = Cert.SERVER_JKS.get();
+    KeyStore ks = KeyStore.getInstance("JKS");
+    ks.load(new ByteArrayInputStream(vertx.fileSystem().readFileBlocking(jksOptions.getPath()).getBytes()), jksOptions.getPassword().toCharArray());
+    final Set<Thread> engineThreads = Collections.synchronizedSet(new HashSet<>());
+    class TestKeyStoreSpi extends KeyStoreSpi {
+      @Override
+      public Key engineGetKey(String alias, char[] password) throws NoSuchAlgorithmException, UnrecoverableKeyException {
+        try {
+          RSAPrivateKey key = (RSAPrivateKey) ks.getKey(alias, password);
+          return new RSAPrivateKey() {
+            private void addThread() {
+              engineThreads.add(Thread.currentThread());
+            }
+            @Override
+            public BigInteger getPrivateExponent() {
+              addThread();
+              return key.getPrivateExponent();
+            }
+            @Override
+            public String getAlgorithm() {
+              addThread();
+              return key.getAlgorithm();
+            }
+            @Override
+            public String getFormat() {
+              addThread();
+              return key.getFormat();
+            }
+            @Override
+            public byte[] getEncoded() {
+              addThread();
+              return key.getEncoded();
+            }
+            @Override
+            public BigInteger getModulus() {
+              addThread();
+              return key.getModulus();
+            }
+          };
+        } catch (KeyStoreException e) {
+          throw new UndeclaredThrowableException(e);
+        }
+      }
+      @Override
+      public Certificate[] engineGetCertificateChain(String alias) {
+        try {
+          return ks.getCertificateChain(alias);
+        } catch (KeyStoreException e) {
+          throw new UndeclaredThrowableException(e);
+        }
+      }
+      @Override
+      public Certificate engineGetCertificate(String alias) {
+        try {
+          return ks.getCertificate(alias);
+        } catch (KeyStoreException e) {
+          throw new UndeclaredThrowableException(e);
+        }
+      }
+      @Override
+      public Date engineGetCreationDate(String alias) {
+        try {
+          return ks.getCreationDate(alias);
+        } catch (KeyStoreException e) {
+          throw new UndeclaredThrowableException(e);
+        }
+      }
+      @Override
+      public void engineSetKeyEntry(String alias, Key key, char[] password, Certificate[] chain) throws KeyStoreException {
+        throw new UnsupportedOperationException();
+      }
+      @Override
+      public void engineSetKeyEntry(String alias, byte[] key, Certificate[] chain) throws KeyStoreException {
+        throw new UnsupportedOperationException();
+      }
+      @Override
+      public void engineSetCertificateEntry(String alias, Certificate cert) throws KeyStoreException {
+        throw new UnsupportedOperationException();
+      }
+      @Override
+      public void engineDeleteEntry(String alias) throws KeyStoreException {
+        throw new UnsupportedOperationException();
+      }
+      @Override
+      public Enumeration<String> engineAliases() {
+        try {
+          return ks.aliases();
+        } catch (KeyStoreException e) {
+          throw new UndeclaredThrowableException(e);
+        }
+      }
+      @Override
+      public boolean engineContainsAlias(String alias) {
+        try {
+          return ks.containsAlias(alias);
+        } catch (KeyStoreException e) {
+          throw new UndeclaredThrowableException(e);
+        }
+      }
+      @Override
+      public int engineSize() {
+        try {
+          return ks.size();
+        } catch (KeyStoreException e) {
+          throw new UndeclaredThrowableException(e);
+        }
+      }
+      @Override
+      public boolean engineIsKeyEntry(String alias) {
+        try {
+          return ks.isKeyEntry(alias);
+        } catch (KeyStoreException e) {
+          throw new UndeclaredThrowableException(e);
+        }
+      }
+      @Override
+      public boolean engineIsCertificateEntry(String alias) {
+        try {
+          return ks.isCertificateEntry(alias);
+        } catch (KeyStoreException e) {
+          throw new UndeclaredThrowableException(e);
+        }
+      }
+      @Override
+      public String engineGetCertificateAlias(Certificate cert) {
+        throw new UnsupportedOperationException();
+      }
+      @Override
+      public void engineStore(OutputStream stream, char[] password) throws IOException, NoSuchAlgorithmException, CertificateException {
+        throw new UnsupportedOperationException();
+      }
+      @Override
+      public void engineLoad(InputStream stream, char[] password) throws IOException, NoSuchAlgorithmException, CertificateException {
+        // NOOP
+      }
+    }
+
+    KeyStore testKs = new KeyStore(new TestKeyStoreSpi(), ks.getProvider(), ks.getType()) {
+
+    };
+    testKs.load(new ByteArrayInputStream(new byte[0]), new char[0]);
+    KeyCertOptions testOptions = new KeyCertOptions() {
+      @Override
+      public KeyCertOptions copy() {
+        return this;
+      }
+      @Override
+      public KeyManagerFactory getKeyManagerFactory(Vertx vertx) throws Exception {
+        return new KeyStoreHelper(testKs, jksOptions.getPassword(), null).getKeyMgrFactory();
+      }
+      @Override
+      public Function<String, X509KeyManager> keyManagerMapper(Vertx vertx) throws Exception {
+        throw new UnsupportedEncodingException();
+      }
+    };
+
+    server = createHttpServer(createBaseServerOptions()
+      .setJdkSslEngineOptions(new JdkSSLEngineOptions().setUseWorkerThread(useWorkerThreads))
+      .setSsl(true)
+      .setKeyCertOptions(testOptions)
+    )
+      .requestHandler(req -> {
+        req.response().end("Hello World");
+      });
+    startServer(testAddress);
+    Supplier<Future<Buffer>> request = () -> client.request(requestOptions).compose(req -> req.send().compose(HttpClientResponse::body));
+    CountDownLatch latch = new CountDownLatch(1);
+    client = createHttpClient(new HttpClientOptions().setKeepAlive(false).setSsl(true).setTrustOptions(Trust.SERVER_JKS.get()));
+    request.get().onComplete(onSuccess(body1 -> {
+      assertEquals("Hello World", body1.toString());
+      latch.countDown();
+    }));
+    awaitLatch(latch);
+    assertTrue(engineThreads.size() > 0);
+    long numWorkers = engineThreads.stream()
+      .map(thread -> (VertxThread) thread)
+      .filter(VertxThread::isWorker)
+      .count();
+    if (useWorkerThreads) {
+      assertTrue(numWorkers > 0);
+    } else {
+      assertEquals(0, numWorkers);
     }
   }
 }

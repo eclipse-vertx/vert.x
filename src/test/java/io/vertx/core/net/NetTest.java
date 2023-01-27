@@ -489,7 +489,9 @@ public class NetTest extends VertxTestBase {
     } else {
       sslEngine = "openSslEngineOptions";
       boolean sessionCacheEnabled = rand.nextBoolean();
-      sslEngineOptions = new JsonObject().put("sessionCacheEnabled", sessionCacheEnabled);
+      sslEngineOptions = new JsonObject()
+        .put("sessionCacheEnabled", sessionCacheEnabled)
+        .put("useWorkerThread", SSLEngineOptions.DEFAULT_USE_WORKER_POOL);
     }
     long sslHandshakeTimeout = TestUtils.randomPositiveLong();
 

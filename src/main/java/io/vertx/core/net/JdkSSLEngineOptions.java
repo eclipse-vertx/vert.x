@@ -62,6 +62,12 @@ public class JdkSSLEngineOptions extends SSLEngineOptions {
   }
 
   public JdkSSLEngineOptions(JdkSSLEngineOptions that) {
+    super(that);
+  }
+
+  @Override
+  public JdkSSLEngineOptions setUseWorkerThread(boolean useWorkerThread) {
+    return (JdkSSLEngineOptions) super.setUseWorkerThread(useWorkerThread);
   }
 
   public JsonObject toJson() {
@@ -70,7 +76,7 @@ public class JdkSSLEngineOptions extends SSLEngineOptions {
 
   @Override
   public JdkSSLEngineOptions copy() {
-    return new JdkSSLEngineOptions();
+    return new JdkSSLEngineOptions(this);
   }
 
   @Override

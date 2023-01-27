@@ -79,6 +79,11 @@ public class OpenSSLEngineOptions extends SSLEngineOptions {
     return sessionCacheEnabled;
   }
 
+  @Override
+  public OpenSSLEngineOptions setUseWorkerThread(boolean useWorkerThread) {
+    return (OpenSSLEngineOptions) super.setUseWorkerThread(useWorkerThread);
+  }
+
   public JsonObject toJson() {
     JsonObject json = new JsonObject();
     OpenSSLEngineOptionsConverter.toJson(this, json);

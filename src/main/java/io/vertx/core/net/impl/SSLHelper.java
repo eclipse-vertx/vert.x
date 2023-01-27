@@ -20,6 +20,7 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.SslProvider;
 import io.netty.util.Mapping;
+import io.netty.util.concurrent.ImmediateExecutor;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
@@ -52,6 +53,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -132,6 +134,7 @@ public class SSLHelper {
   private final ArrayList<Buffer> crlValues;
   private final Set<String> enabledCipherSuites;
   private final List<String> applicationProtocols;
+  private final boolean useWorkerPool;
 
   private Future<Supplier<SslContextFactory>> sslProvider;
   private SslContext[] sslContexts = new SslContext[2];
@@ -157,6 +160,7 @@ public class SSLHelper {
     this.endpointIdentificationAlgorithm = options instanceof NetClientOptions ? ((NetClientOptions)options).getHostnameVerificationAlgorithm() : "";
     this.sni = options instanceof NetServerOptions && ((NetServerOptions) options).isSni();
     this.applicationProtocols = applicationProtocols;
+    this.useWorkerPool = sslEngineOptions == null ? SSLEngineOptions.DEFAULT_USE_WORKER_POOL : sslEngineOptions.getUseWorkerThread();
   }
 
   public boolean isSSL() {
@@ -318,10 +322,11 @@ public class SSLHelper {
   public SslHandler createSslHandler(VertxInternal vertx, SocketAddress remoteAddress, String serverName, boolean useAlpn) {
     SslContext sslContext = sslContext(vertx, serverName, useAlpn);
     SslHandler sslHandler;
+    Executor delegatedTaskExec = useWorkerPool ? vertx.getInternalWorkerPool().executor() : ImmediateExecutor.INSTANCE;
     if (remoteAddress == null || remoteAddress.isDomainSocket()) {
-      sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT);
+      sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, delegatedTaskExec);
     } else {
-      sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, remoteAddress.host(), remoteAddress.port());
+      sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, remoteAddress.host(), remoteAddress.port(), delegatedTaskExec);
     }
     sslHandler.setHandshakeTimeout(sslHandshakeTimeout, sslHandshakeTimeoutUnit);
     return sslHandler;
