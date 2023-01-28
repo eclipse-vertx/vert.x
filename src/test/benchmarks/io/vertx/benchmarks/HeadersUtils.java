@@ -28,10 +28,22 @@ public abstract class HeadersUtils {
   public static final CharSequence CONTENT_LENGTH_HEADER = io.vertx.core.http.HttpHeaders.createOptimized("20");
   public static final CharSequence DATE_HEADER = io.vertx.core.http.HttpHeaders.createOptimized(DATE_FORMAT.format(new Date()));
 
-  public static void setBaseHeaders(HttpHeaders headers) {
-    headers.add(io.vertx.core.http.HttpHeaders.CONTENT_TYPE, TEXT_PLAIN_HEADER);
-    headers.add(io.vertx.core.http.HttpHeaders.CONTENT_LENGTH, CONTENT_LENGTH_HEADER);
-    headers.add(io.vertx.core.http.HttpHeaders.SERVER, VERTX_HEADER);
-    headers.add(io.vertx.core.http.HttpHeaders.DATE, DATE_HEADER);
+  public static void setBaseHeaders(HttpHeaders headers, boolean asciiNames, boolean asciiValues) {
+    headers.add(toString(io.vertx.core.http.HttpHeaders.CONTENT_TYPE, !asciiNames),
+      toString(TEXT_PLAIN_HEADER, !asciiValues));
+    headers.add(toString(io.vertx.core.http.HttpHeaders.CONTENT_LENGTH, !asciiNames),
+      toString(CONTENT_LENGTH_HEADER, !asciiValues));
+    headers.add(toString(io.vertx.core.http.HttpHeaders.SERVER, !asciiNames),
+      toString(VERTX_HEADER, !asciiValues));
+    headers.add(toString(io.vertx.core.http.HttpHeaders.DATE, !asciiNames),
+      toString(DATE_HEADER, !asciiValues));
   }
+
+  private static CharSequence toString(CharSequence chars, boolean toString) {
+    if (!toString) {
+      return chars;
+    }
+    return chars.toString();
+  }
+
 }

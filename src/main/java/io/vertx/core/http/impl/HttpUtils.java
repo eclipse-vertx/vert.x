@@ -15,9 +15,7 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
-import io.netty.handler.codec.compression.ZlibWrapper;
 import io.netty.handler.codec.http.*;
-import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.util.AsciiString;
 import io.netty.util.CharsetUtil;
@@ -44,6 +42,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -234,33 +233,55 @@ public final class HttpUtils {
     }
 
     // add trailing slash if not set
-    if (pathname.length() == 0) {
+    if (pathname.isEmpty()) {
       return "/";
     }
 
-    StringBuilder ibuf = new StringBuilder(pathname.length() + 1);
+    int indexOfFirstPercent = pathname.indexOf('%');
+    if (indexOfFirstPercent == -1) {
+      // no need to removeDots nor replace double slashes
+      if (pathname.indexOf('.') == -1 && pathname.indexOf("//") == -1) {
+        if (pathname.charAt(0) == '/') {
+          return pathname;
+        }
+        // See https://bugs.openjdk.org/browse/JDK-8085796
+        return "/" + pathname;
+      }
+    }
+    return normalizePathSlow(pathname, indexOfFirstPercent);
+  }
 
+  private static String normalizePathSlow(String pathname, int indexOfFirstPercent) {
+    final StringBuilder ibuf;
     // Not standard!!!
     if (pathname.charAt(0) != '/') {
+      ibuf = new StringBuilder(pathname.length() + 1);
       ibuf.append('/');
-    }
-
-    ibuf.append(pathname);
-    int i = 0;
-
-    while (i < ibuf.length()) {
-      // decode unreserved chars described in
-      // http://tools.ietf.org/html/rfc3986#section-2.4
-      if (ibuf.charAt(i) == '%') {
-        decodeUnreserved(ibuf, i);
+      if (indexOfFirstPercent != -1) {
+        indexOfFirstPercent++;
       }
-
-      i++;
+    } else {
+      ibuf = new StringBuilder(pathname.length());
     }
-
+    ibuf.append(pathname);
+    if (indexOfFirstPercent != -1) {
+      decodeUnreservedChars(ibuf, indexOfFirstPercent);
+    }
     // remove dots as described in
     // http://tools.ietf.org/html/rfc3986#section-5.2.4
     return removeDots(ibuf);
+  }
+
+  private static void decodeUnreservedChars(StringBuilder path, int start) {
+    while (start < path.length()) {
+      // decode unreserved chars described in
+      // http://tools.ietf.org/html/rfc3986#section-2.4
+      if (path.charAt(start) == '%') {
+        decodeUnreserved(path, start);
+      }
+
+      start++;
+    }
   }
 
   private static void decodeUnreserved(StringBuilder path, int start) {
@@ -460,6 +481,9 @@ public final class HttpUtils {
     int queryStart = uri.indexOf('?', i);
     if (queryStart == -1) {
       queryStart = uri.length();
+      if (i == 0) {
+        return uri;
+      }
     }
     return uri.substring(i, queryStart);
   }
@@ -822,43 +846,65 @@ public final class HttpUtils {
     return state;
   }
 
+  private static final boolean[] VALID_H_NAME_ASCII_CHARS;
+
+  static {
+    VALID_H_NAME_ASCII_CHARS = new boolean[Byte.MAX_VALUE + 1];
+    Arrays.fill(VALID_H_NAME_ASCII_CHARS, true);
+    VALID_H_NAME_ASCII_CHARS[' '] = false;
+    VALID_H_NAME_ASCII_CHARS['"'] = false;
+    VALID_H_NAME_ASCII_CHARS['('] = false;
+    VALID_H_NAME_ASCII_CHARS[')'] = false;
+    VALID_H_NAME_ASCII_CHARS[','] = false;
+    VALID_H_NAME_ASCII_CHARS['/'] = false;
+    VALID_H_NAME_ASCII_CHARS[':'] = false;
+    VALID_H_NAME_ASCII_CHARS[';'] = false;
+    VALID_H_NAME_ASCII_CHARS['<'] = false;
+    VALID_H_NAME_ASCII_CHARS['>'] = false;
+    VALID_H_NAME_ASCII_CHARS['='] = false;
+    VALID_H_NAME_ASCII_CHARS['?'] = false;
+    VALID_H_NAME_ASCII_CHARS['@'] = false;
+    VALID_H_NAME_ASCII_CHARS['['] = false;
+    VALID_H_NAME_ASCII_CHARS[']'] = false;
+    VALID_H_NAME_ASCII_CHARS['\\'] = false;
+    VALID_H_NAME_ASCII_CHARS['{'] = false;
+    VALID_H_NAME_ASCII_CHARS['}'] = false;
+    VALID_H_NAME_ASCII_CHARS[0x7f] = false;
+    // control characters are not valid
+    for (int i = 0; i < 0x20; i++) {
+      VALID_H_NAME_ASCII_CHARS[i] = false;
+    }
+  }
+
   public static void validateHeaderName(CharSequence value) {
-    for (int i = 0;i < value.length();i++) {
-      char c = value.charAt(i);
-      switch (c) {
-        // The RFC allows only : "!" / "#" / "$" / "%" / "&" / "'" / "*" / "+" / "-" / "." /
-        //                       "^" / "_" / "`" / "|" / "~" / DIGIT / ALPHA
-        // Where DIGIT is 0x30-0x39, and ALPHA : 0x41-0x5A and 0x61-0x7A
-        case ' ':
-        case '"':
-        case '(':
-        case ')':
-        case ',':
-        case '/':
-        case ':':
-        case ';':
-        case '<':
-        case '>':
-        case '=':
-        case '?':
-        case '@':
-        case '[':
-        case ']':
-        case '\\':
-        case '{':
-        case '}':
-        case 0x7f: // DEL
-          throw new IllegalArgumentException(
-            "a header name cannot contain some prohibited characters, such as : " + value);
-        default:
-          // Check to see if the character is a control character
-          if (c < 0x20) {
-            throw new IllegalArgumentException("a header name cannot contain control characters: " + value);
-          }
-          // Check to see if the character is not an ASCII character, or invalid
-          if (c > 0x7f) {
-            throw new IllegalArgumentException("a header name cannot contain non-ASCII character: " + value);
-          }
+    if (value instanceof AsciiString) {
+      // no need to check for ASCII-ness anymore
+      validateHeaderName((AsciiString) value);
+    } else {
+      validateHeaderName0(value);
+    }
+  }
+
+  private static void validateHeaderName(AsciiString value) {
+    final int len = value.length();
+    final int off = value.arrayOffset();
+    final byte[] asciiChars = value.array();
+    for (int i = 0; i < len; i++) {
+      if (!VALID_H_NAME_ASCII_CHARS[asciiChars[off + i] & 0x7F]) {
+        throw new IllegalArgumentException("a header name cannot contain some prohibited characters, such as : " + value);
+      }
+    }
+  }
+
+  private static void validateHeaderName0(CharSequence value) {
+    for (int i = 0; i < value.length(); i++) {
+      final char c = value.charAt(i);
+      // Check to see if the character is not an ASCII character, or invalid
+      if (c > 0x7f) {
+        throw new IllegalArgumentException("a header name cannot contain non-ASCII character: " + value);
+      }
+      if (!VALID_H_NAME_ASCII_CHARS[c & 0x7F]) {
+        throw new IllegalArgumentException("a header name cannot contain some prohibited characters, such as : " + value);
       }
     }
   }
