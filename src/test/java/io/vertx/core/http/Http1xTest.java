@@ -38,6 +38,7 @@ import io.vertx.core.streams.WriteStream;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.CheckingSender;
 import io.vertx.test.tls.Cert;
+import io.vertx.test.tls.Trust;
 import io.vertx.test.verticles.SimpleServer;
 import io.vertx.test.core.TestUtils;
 import org.junit.Assume;
@@ -173,7 +174,8 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testSpecialCase4() throws Exception {
-    waitFor(2 );
+    int numRequests = 5;
+    waitFor(numRequests);
     server.requestHandler(req -> {
       req.endHandler(v -> {
         req.pause();
@@ -183,7 +185,7 @@ public class Http1xTest extends HttpTest {
     startServer(testAddress);
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1).setPipelining(true));
-    for (int i = 0;i < 2;i++) {
+    for (int i = 0;i < numRequests;i++) {
       client.request(requestOptions, onSuccess(req -> {
         req.end();
         req.response(onSuccess(resp -> {
@@ -196,8 +198,9 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testSpecialCase5() throws Exception {
+    int numRequests = 5;
     Buffer chunk = Buffer.buffer(TestUtils.randomAlphaString(1024));
-    waitFor(2 );
+    waitFor(numRequests);
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
       resp.setChunked(true);
@@ -209,7 +212,7 @@ public class Http1xTest extends HttpTest {
     startServer(testAddress);
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1).setPipelining(true));
-    for (int i = 0;i < 2;i++) {
+    for (int i = 0;i < numRequests;i++) {
       client.request(requestOptions, onSuccess(req -> {
         req.send(onSuccess(resp -> {
           resp.endHandler(v -> {
@@ -5154,19 +5157,49 @@ public class Http1xTest extends HttpTest {
     await();
   }
 
-  @Ignore
   @Test
-  public void testSendFilePipelined() throws Exception {
+  public void testSendFilePipelinedSmall() throws Exception {
+    testSendFilePipelined(16 * 1024, false);
+  }
+
+  @Test
+  public void testSendFilePipelinedSmallWithSsl() throws Exception {
+    testSendFilePipelined(16 * 1024, true);
+  }
+
+  @Test
+  public void testSendFilePipelinedLarge() throws Exception {
+    testSendFilePipelined(1024 * 1024 * 4, false);
+  }
+
+  @Test
+  public void testSendFilePipelinedLargeWithSsl() throws Exception {
+    testSendFilePipelined(1024 * 1024 * 4, true);
+  }
+
+  private void testSendFilePipelined(int length, boolean ssl) throws Exception {
     int n = 4;
     waitFor(n);
-    File sent = TestUtils.tmpFile(".dat", 16 * 1024);
+    File sent = TestUtils.tmpFile(".dat", length);
+    server.close();
+    HttpServerOptions serverOptions = createBaseServerOptions();
+    if (ssl) {
+      serverOptions.setSsl(ssl);
+      serverOptions.setKeyCertOptions(Cert.SERVER_JKS.get());
+    }
+    server = vertx.createHttpServer(serverOptions);
     server.requestHandler(
       req -> {
         req.response().sendFile(sent.getAbsolutePath());
       });
     startServer(testAddress);
     client.close();
-    client = vertx.createHttpClient(createBaseClientOptions().setPipelining(true).setMaxPoolSize(1));
+    HttpClientOptions clientOptions = createBaseClientOptions();
+    if (ssl) {
+      clientOptions.setSsl(ssl);
+      clientOptions.setTrustOptions(Trust.SERVER_JKS.get());
+    }
+    client = vertx.createHttpClient(clientOptions.setPipelining(true).setMaxPoolSize(1));
     for (int i = 0;i < n;i++) {
       client.request(requestOptions)
         .compose(req -> req.send().compose(HttpClientResponse::body))

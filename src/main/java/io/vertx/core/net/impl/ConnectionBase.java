@@ -508,14 +508,14 @@ public abstract class ConnectionBase {
    */
   private void sendFileRegion(RandomAccessFile file, long offset, long length, ChannelPromise writeFuture) {
     if (length < MAX_REGION_SIZE) {
-      writeToChannel(new DefaultFileRegion(file.getChannel(), offset, length), writeFuture);
+      writeToChannel(new DefaultFileRegion(file.getChannel(), offset, length), true, writeFuture);
     } else {
       ChannelPromise promise = chctx.newPromise();
       FileRegion region = new DefaultFileRegion(file.getChannel(), offset, MAX_REGION_SIZE);
       // Retain explicitly this file region so the underlying channel is not closed by the NIO channel when it
       // as been sent as we need it again
       region.retain();
-      writeToChannel(region, promise);
+      writeToChannel(region, true, promise);
       promise.addListener(future -> {
         if (future.isSuccess()) {
           sendFileRegion(file, offset + MAX_REGION_SIZE, length - MAX_REGION_SIZE, writeFuture);
@@ -532,7 +532,7 @@ public abstract class ConnectionBase {
     ChannelPromise writeFuture = chctx.newPromise();
     if (!supportsFileRegion()) {
       // Cannot use zero-copy
-      writeToChannel(new ChunkedFile(raf, offset, length, 8192), writeFuture);
+      writeToChannel(new ChunkedFile(raf, offset, length, 8192), true, writeFuture);
     } else {
       // No encryption - use zero-copy.
       sendFileRegion(raf, offset, length, writeFuture);
