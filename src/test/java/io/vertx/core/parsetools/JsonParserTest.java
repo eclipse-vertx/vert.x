@@ -114,6 +114,35 @@ public class JsonParserTest {
   }
 
   @Test
+  public void testParseWithErrors() {
+    Buffer data = Buffer.buffer("{\"foo\":\"foo_value\"},{\"bar\":\"bar_value\"},{\"juu\":\"juu_value\"}");
+    JsonParser parser = JsonParser.newParser();
+    List<JsonObject> objects = new ArrayList<>();
+    List<Throwable> errors = new ArrayList<>();
+    AtomicInteger endCount = new AtomicInteger();
+    parser.objectValueMode()
+      .handler(event -> objects.add(event.objectValue()))
+      .exceptionHandler(errors::add)
+      .endHandler(v -> endCount.incrementAndGet());
+    parser.write(data);
+    assertEquals(3, objects.size());
+    List<JsonObject> expected = Arrays.asList(
+      new JsonObject().put("foo", "foo_value"),
+      new JsonObject().put("bar", "bar_value"),
+      new JsonObject().put("juu", "juu_value")
+    );
+    assertEquals(expected, objects);
+    assertEquals(2, errors.size());
+    assertEquals(0, endCount.get());
+    objects.clear();
+    errors.clear();
+    parser.end();
+    assertEquals(Collections.emptyList(), objects);
+    assertEquals(Collections.emptyList(), errors);
+    assertEquals(1, endCount.get());
+  }
+
+  @Test
   public void parseNumberFormatException() {
     Buffer data = Buffer.buffer(Long.MAX_VALUE + "0");
     try {

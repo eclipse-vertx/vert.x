@@ -12,6 +12,7 @@
 package io.vertx.core.parsetools.impl;
 
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonLocation;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.ObjectCodec;
 import com.fasterxml.jackson.core.base.ParserBase;
@@ -31,10 +32,7 @@ import io.vertx.core.parsetools.JsonParser;
 import io.vertx.core.streams.ReadStream;
 
 import java.io.IOException;
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -54,6 +52,7 @@ public class JsonParserImpl implements JsonParser {
   private final ReadStream<Buffer> stream;
   private boolean emitting;
   private final Deque<JsonEventImpl> pending = new ArrayDeque<>();
+  private List<IOException> collectedExceptions;
 
   public JsonParserImpl(ReadStream<Buffer> stream) {
     this.stream = stream;
@@ -143,21 +142,24 @@ public class JsonParserImpl implements JsonParser {
     }
   }
 
+  private void handle(IOException ioe) {
+    if (collectedExceptions == null) {
+      collectedExceptions = new ArrayList<>();
+    }
+    collectedExceptions.add(ioe);
+  }
+
   @Override
   public void handle(Buffer data) {
     byte[] bytes = data.getBytes();
     try {
       parser.feedInput(bytes, 0, bytes.length);
-      checkTokens();
     } catch (IOException e) {
-      if (exceptionHandler != null) {
-        exceptionHandler.handle(e);
-        return;
-      } else {
-        throw new DecodeException(e.getMessage(), e);
-      }
+      handle(e);
     }
+    checkTokens();
     checkPending();
+    checkExceptions();
   }
 
   @Override
@@ -167,25 +169,33 @@ public class JsonParserImpl implements JsonParser {
     }
     ended = true;
     parser.endOfInput();
-    try {
-      checkTokens();
-    } catch (IOException e) {
-      if (exceptionHandler != null) {
-        exceptionHandler.handle(e);
-        return;
-      } else {
-        throw new DecodeException(e.getMessage(), e);
-      }
-    }
+    checkTokens();
     checkPending();
+    checkExceptions();
   }
 
-  private void checkTokens() throws IOException {
+  private void checkTokens() {
+    JsonLocation prevLocation = null;
     while (true) {
-      JsonToken token = parser.nextToken();
+      JsonToken token;
+      try {
+        token = parser.nextToken();
+      } catch (IOException e) {
+        JsonLocation location = parser.currentLocation();
+        if (prevLocation != null) {
+          if (location.equals(prevLocation)) {
+            // If we haven't done any progress, give up
+            return;
+          }
+        }
+        prevLocation = location;
+        handle(e);
+        continue;
+      }
       if (token == null || token == JsonToken.NOT_AVAILABLE) {
         break;
       }
+      prevLocation = null;
       String field = currentField;
       currentField = null;
       JsonEventImpl event;
@@ -199,11 +209,20 @@ public class JsonParserImpl implements JsonParser {
           break;
         }
         case FIELD_NAME: {
-          currentField = parser.getCurrentName();
+          try {
+            currentField = parser.getCurrentName();
+          } catch (IOException e) {
+            handle(e);
+          }
           continue;
         }
         case VALUE_STRING: {
-          event = new JsonEventImpl(token, JsonEventType.VALUE, field, parser.getText());
+          try {
+            event = new JsonEventImpl(token, JsonEventType.VALUE, field, parser.getText());
+          } catch (IOException e) {
+            handle(e);
+            continue;
+          }
           break;
         }
         case VALUE_TRUE: {
@@ -219,11 +238,21 @@ public class JsonParserImpl implements JsonParser {
           break;
         }
         case VALUE_NUMBER_INT: {
-          event = new JsonEventImpl(token, JsonEventType.VALUE, field, parser.getLongValue());
+          try {
+            event = new JsonEventImpl(token, JsonEventType.VALUE, field, parser.getLongValue());
+          } catch (IOException e) {
+            handle(e);
+            continue;
+          }
           break;
         }
         case VALUE_NUMBER_FLOAT: {
-          event = new JsonEventImpl(token, JsonEventType.VALUE, field, parser.getDoubleValue());
+          try {
+            event = new JsonEventImpl(token, JsonEventType.VALUE, field, parser.getDoubleValue());
+          } catch (IOException e) {
+            handle(e);
+            continue;
+          }
           break;
         }
         case END_OBJECT: {
@@ -284,6 +313,21 @@ public class JsonParserImpl implements JsonParser {
         }
       } finally {
         emitting = false;
+      }
+    }
+  }
+
+  private void checkExceptions() {
+    List<IOException> exceptions = collectedExceptions;
+    collectedExceptions = null;
+    if (exceptions != null && exceptions.size() > 0) {
+      if (exceptionHandler != null) {
+        for (IOException ioe : exceptions) {
+          exceptionHandler.handle(ioe);
+        }
+      } else {
+        IOException ioe = exceptions.get(0);
+        throw new DecodeException(ioe.getMessage(), ioe);
       }
     }
   }
