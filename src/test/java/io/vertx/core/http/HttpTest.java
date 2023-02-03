@@ -6770,4 +6770,15 @@ public abstract class HttpTest extends HttpTestBase {
       .onComplete(onSuccess(nothing -> complete()));
     await();
   }
+
+  @Test
+  public void testInvalidPort() {
+    try {
+      server.requestHandler(req -> {
+
+      }).listen(65536);
+      fail();
+    } catch (IllegalArgumentException ignore) {
+    }
+  }
 }

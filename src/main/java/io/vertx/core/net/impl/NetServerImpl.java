@@ -11,15 +11,11 @@
 
 package io.vertx.core.net.impl;
 
-import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
 import io.netty.handler.logging.LoggingHandler;
-import io.netty.handler.ssl.SniHandler;
-import io.netty.handler.ssl.SslContext;
-import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.GenericFutureListener;
@@ -123,32 +119,15 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
   }
 
   @Override
-  public Future<NetServer> listen(int port, String host) {
-    return listen(SocketAddress.inetSocketAddress(port, host));
-  }
-
-  @Override
-  public NetServer listen(int port, String host, Handler<AsyncResult<NetServer>> listenHandler) {
-    return listen(SocketAddress.inetSocketAddress(port, host), listenHandler);
-  }
-
-  @Override
-  public Future<NetServer> listen(int port) {
-    return listen(port, "0.0.0.0");
-  }
-
-  @Override
-  public NetServer listen(int port, Handler<AsyncResult<NetServer>> listenHandler) {
-    return listen(port, "0.0.0.0", listenHandler);
-  }
-
-  @Override
   protected Handler<Channel> childHandler(ContextInternal context, SocketAddress socketAddress, SSLHelper sslHelper) {
     return new NetServerWorker(context, sslHelper, handler, exceptionHandler);
   }
 
   @Override
   public synchronized Future<NetServer> listen(SocketAddress localAddress) {
+    if (localAddress == null) {
+      throw new NullPointerException("No null bind local address");
+    }
     if (handler == null) {
       throw new IllegalStateException("Set connect handler first");
     }
@@ -156,27 +135,8 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
   }
 
   @Override
-  public synchronized NetServer listen(SocketAddress localAddress, Handler<AsyncResult<NetServer>> listenHandler) {
-    if (listenHandler == null) {
-      listenHandler = res -> {
-        if (res.failed()) {
-          // No handler - log so user can see failure
-          log.error("Failed to listen", res.cause());
-        }
-      };
-    }
-    listen(localAddress).onComplete(listenHandler);
-    return this;
-  }
-
-  @Override
-  public synchronized Future<NetServer> listen() {
+  public Future<NetServer> listen() {
     return listen(options.getPort(), options.getHost());
-  }
-
-  @Override
-  public synchronized NetServer listen(Handler<AsyncResult<NetServer>> listenHandler) {
-    return listen(options.getPort(), options.getHost(), listenHandler);
   }
 
   @Override

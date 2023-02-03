@@ -19,6 +19,7 @@ import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.metrics.Measured;
+import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.streams.ReadStream;
 
 /**
@@ -67,7 +68,13 @@ public interface NetServer extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  NetServer listen(Handler<AsyncResult<NetServer>> listenHandler);
+  default NetServer listen(Handler<AsyncResult<NetServer>> listenHandler) {
+    Future<NetServer> fut = listen();
+    if (listenHandler != null) {
+      fut.onComplete(listenHandler);
+    }
+    return this;
+  }
 
   /**
    * Start listening on the specified port and host, ignoring port and host configured in the {@link io.vertx.core.net.NetServerOptions} used when
@@ -81,7 +88,10 @@ public interface NetServer extends Measured {
    *
    * @return a future completed with the listen operation result
    */
-  Future<NetServer> listen(int port, String host);
+  default Future<NetServer> listen(int port, String host) {
+
+    return listen(new SocketAddressImpl(port, host));
+  }
 
   /**
    * Like {@link #listen(int, String)} but providing a handler that will be notified when the server is listening, or fails.
@@ -92,7 +102,13 @@ public interface NetServer extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  NetServer listen(int port, String host, Handler<AsyncResult<NetServer>> listenHandler);
+  default NetServer listen(int port, String host, Handler<AsyncResult<NetServer>> listenHandler) {
+    Future<NetServer> fut = listen(port, host);
+    if (listenHandler != null) {
+      fut.onComplete(listenHandler);
+    }
+    return this;
+  }
 
   /**
    * Start listening on the specified port and host "0.0.0.0", ignoring port and host configured in the
@@ -104,7 +120,9 @@ public interface NetServer extends Measured {
    *
    * @return a future completed with the listen operation result
    */
-  Future<NetServer> listen(int port);
+  default Future<NetServer> listen(int port) {
+    return listen(port, "0.0.0.0");
+  }
 
   /**
    * Like {@link #listen(int)} but providing a handler that will be notified when the server is listening, or fails.
@@ -114,7 +132,9 @@ public interface NetServer extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  NetServer listen(int port, Handler<AsyncResult<NetServer>> listenHandler);
+  default NetServer listen(int port, Handler<AsyncResult<NetServer>> listenHandler) {
+    return listen(port, "0.0.0.0", listenHandler);
+  }
 
   /**
    * Start listening on the specified local address, ignoring port and host configured in the {@link io.vertx.core.net.NetServerOptions} used when
@@ -135,7 +155,13 @@ public interface NetServer extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  NetServer listen(SocketAddress localAddress, Handler<AsyncResult<NetServer>> listenHandler);
+  default NetServer listen(SocketAddress localAddress, Handler<AsyncResult<NetServer>> listenHandler) {
+    Future<NetServer> fut = listen(localAddress);
+    if (listenHandler != null) {
+      fut.onComplete(listenHandler);
+    }
+    return this;
+  }
 
   /**
    * Set an exception handler called for socket errors happening before the connection
