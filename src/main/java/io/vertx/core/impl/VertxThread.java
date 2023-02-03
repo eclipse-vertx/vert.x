@@ -12,27 +12,24 @@
 package io.vertx.core.impl;
 
 import io.netty.util.concurrent.FastThreadLocalThread;
-import io.vertx.core.impl.btc.BlockedThreadChecker;
+import io.vertx.core.impl.btc.ThreadInfo;
 
 import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public class VertxThread extends FastThreadLocalThread implements BlockedThreadChecker.Task {
+public class VertxThread extends FastThreadLocalThread {
 
   private final boolean worker;
-  private final long maxExecTime;
-  private final TimeUnit maxExecTimeUnit;
-  private long execStart;
+  final ThreadInfo info;
   ContextInternal context;
   ClassLoader topLevelTCCL;
 
   public VertxThread(Runnable target, String name, boolean worker, long maxExecTime, TimeUnit maxExecTimeUnit) {
     super(target, name);
     this.worker = worker;
-    this.maxExecTime = maxExecTime;
-    this.maxExecTimeUnit = maxExecTimeUnit;
+    this.info = new ThreadInfo(maxExecTimeUnit, maxExecTime);
   }
 
   /**
@@ -44,32 +41,30 @@ public class VertxThread extends FastThreadLocalThread implements BlockedThreadC
 
   void executeStart() {
     if (context == null) {
-      execStart = System.nanoTime();
+      info.startTime = System.nanoTime();
     }
   }
 
   void executeEnd() {
     if (context == null) {
-      execStart = 0;
+      info.startTime = 0;
     }
   }
 
   public long startTime() {
-    return execStart;
+    return info.startTime;
   }
 
   public boolean isWorker() {
     return worker;
   }
 
-  @Override
   public long maxExecTime() {
-    return maxExecTime;
+    return info.maxExecTime;
   }
 
-  @Override
   public TimeUnit maxExecTimeUnit() {
-    return maxExecTimeUnit;
+    return info.maxExecTimeUnit;
   }
 
 }
