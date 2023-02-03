@@ -1135,7 +1135,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     AtomicInteger threadCount = new AtomicInteger(0);
     return runnable -> {
       VertxThread thread = threadFactory.newVertxThread(runnable, prefix + threadCount.getAndIncrement(), worker, maxExecuteTime, maxExecuteTimeUnit);
-      checker.registerThread(thread, thread);
+      checker.registerThread(thread, thread.info);
       if (useDaemonThread != null && thread.isDaemon() != useDaemonThread) {
         thread.setDaemon(useDaemonThread);
       }

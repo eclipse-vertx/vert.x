@@ -29,19 +29,10 @@ import java.util.concurrent.TimeUnit;
  */
 public class BlockedThreadChecker {
 
-  /**
-   * A checked task.
-   */
-  public interface Task {
-    long startTime();
-    long maxExecTime();
-    TimeUnit maxExecTimeUnit();
-  }
-
   public static final String LOGGER_NAME = "io.vertx.core.impl.BlockedThreadChecker";
   private static final Logger log = LoggerFactory.getLogger(LOGGER_NAME);
 
-  private final Map<Thread, Task> threads = new WeakHashMap<>();
+  private final Map<Thread, ThreadInfo> threads = new WeakHashMap<>();
   private final Timer timer; // Need to use our own timer - can't use event loop for this
 
   private Handler<BlockedThreadEvent> blockedThreadHandler;
@@ -57,11 +48,12 @@ public class BlockedThreadChecker {
         synchronized (BlockedThreadChecker.this) {
           handler = blockedThreadHandler;
           long now = System.nanoTime();
-          for (Map.Entry<Thread, Task> entry : threads.entrySet()) {
-            long execStart = entry.getValue().startTime();
+          for (Map.Entry<Thread, ThreadInfo> entry : threads.entrySet()) {
+            ThreadInfo task = entry.getValue();
+            long execStart = task.startTime;
             long dur = now - execStart;
-            final long timeLimit = entry.getValue().maxExecTime();
-            TimeUnit maxExecTimeUnit = entry.getValue().maxExecTimeUnit();
+            final long timeLimit = task.maxExecTime;
+            TimeUnit maxExecTimeUnit = task.maxExecTimeUnit;
             long maxExecTimeInNanos = TimeUnit.NANOSECONDS.convert(timeLimit, maxExecTimeUnit);
             long warningExceptionTimeInNanos = TimeUnit.NANOSECONDS.convert(warningExceptionTime, warningExceptionTimeUnit);
             if (execStart != 0 && dur >= maxExecTimeInNanos) {
@@ -84,7 +76,7 @@ public class BlockedThreadChecker {
     this.blockedThreadHandler = handler == null ? BlockedThreadChecker::defaultBlockedThreadHandler : handler;
   }
 
-  public synchronized void registerThread(Thread thread, BlockedThreadChecker.Task checked) {
+  public synchronized void registerThread(Thread thread, ThreadInfo checked) {
     threads.put(thread, checked);
   }
 
