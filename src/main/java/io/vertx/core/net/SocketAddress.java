@@ -31,10 +31,28 @@ import java.net.InetSocketAddress;
 public interface SocketAddress {
 
   /**
-   * Create a inet socket address, {@code host} must be non {@code null} and {@code port} must be between {@code 0}
+   * Create an inet socket address that binds to a shared random port identified by {@code id}.
+   * <br/>
+   * The {@code host} string can be a host name or a host address.
+   * <br/>
+   * No name resolution will be attempted.
+   *
+   * @param id the shared random port id
+   * @param host the host
+   * @return the created socket address
+   */
+  static SocketAddress sharedRandomPort(int id, String host) {
+    if (id < 1) {
+      throw new IllegalArgumentException("Shared random port ID " + id + " must be > 0");
+    }
+    return new SocketAddressImpl(-id, host);
+  }
+
+  /**
+   * Create an inet socket address, {@code host} must be non {@code null} and {@code port} must be between {@code 0}
    * and {@code 65536}.
    * <br/>
-   * The {@code host} string can be an host name or an host address.
+   * The {@code host} string can be a host name or a host address.
    * <br/>
    * No name resolution will be attempted.
    *
