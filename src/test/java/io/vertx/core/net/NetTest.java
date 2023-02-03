@@ -4396,4 +4396,15 @@ public class NetTest extends VertxTestBase {
       }));
     await();
   }
+
+  @Test
+  public void testInvalidPort() {
+    try {
+      server.connectHandler(so -> {
+
+      }).listen(65536);
+      fail();
+    } catch (IllegalArgumentException ignore) {
+    }
+  }
 }

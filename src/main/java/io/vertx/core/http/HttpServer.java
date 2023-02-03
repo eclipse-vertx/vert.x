@@ -20,6 +20,7 @@ import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.metrics.Measured;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.streams.ReadStream;
 
 /**
@@ -139,7 +140,9 @@ public interface HttpServer extends Measured {
    *
    * @return a future completed with the listen operation result
    */
-  Future<HttpServer> listen(int port, String host);
+  default Future<HttpServer> listen(int port, String host) {
+    return listen(new SocketAddressImpl(port, host));
+  }
 
   /**
    * Like {@link #listen(int, String)} but supplying a handler that will be called when the server is actually
@@ -150,7 +153,13 @@ public interface HttpServer extends Measured {
    * @param listenHandler  the listen handler
    */
   @Fluent
-  HttpServer listen(int port, String host, Handler<AsyncResult<HttpServer>> listenHandler);
+  default HttpServer listen(int port, String host, Handler<AsyncResult<HttpServer>> listenHandler) {
+    Future<HttpServer> fut = listen(port, host);
+    if (listenHandler != null) {
+      fut.onComplete(listenHandler);
+    }
+    return this;
+  }
 
   /**
    * Tell the server to start listening on the given address supplying
@@ -161,7 +170,13 @@ public interface HttpServer extends Measured {
    * @param listenHandler  the listen handler
    */
   @Fluent
-  HttpServer listen(SocketAddress address, Handler<AsyncResult<HttpServer>> listenHandler);
+  default HttpServer listen(SocketAddress address, Handler<AsyncResult<HttpServer>> listenHandler) {
+    Future<HttpServer> fut = listen(address);
+    if (listenHandler != null) {
+      fut.onComplete(listenHandler);
+    }
+    return this;
+  }
 
   /**
    * Like {@link #listen(SocketAddress, Handler)} but returns a {@code Future} of the asynchronous result
@@ -176,7 +191,9 @@ public interface HttpServer extends Measured {
    *
    * @return a future completed with the listen operation result
    */
-  Future<HttpServer> listen(int port);
+  default Future<HttpServer> listen(int port) {
+    return listen(port, "0.0.0.0");
+  }
 
   /**
    * Like {@link #listen(int)} but supplying a handler that will be called when the server is actually listening (or has failed).
@@ -185,7 +202,13 @@ public interface HttpServer extends Measured {
    * @param listenHandler  the listen handler
    */
   @Fluent
-  HttpServer listen(int port, Handler<AsyncResult<HttpServer>> listenHandler);
+  default HttpServer listen(int port, Handler<AsyncResult<HttpServer>> listenHandler) {
+    Future<HttpServer> fut = listen(port);
+    if (listenHandler != null) {
+      fut.onComplete(listenHandler);
+    }
+    return this;
+  }
 
   /**
    * Like {@link #listen} but supplying a handler that will be called when the server is actually listening (or has failed).
@@ -193,7 +216,13 @@ public interface HttpServer extends Measured {
    * @param listenHandler  the listen handler
    */
   @Fluent
-  HttpServer listen(Handler<AsyncResult<HttpServer>> listenHandler);
+  default HttpServer listen(Handler<AsyncResult<HttpServer>> listenHandler) {
+    Future<HttpServer> fut = listen();
+    if (listenHandler != null) {
+      fut.onComplete(listenHandler);
+    }
+    return this;
+  }
 
   /**
    * Close the server. Any open HTTP connections will be closed.
