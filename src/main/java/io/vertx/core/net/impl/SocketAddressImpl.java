@@ -52,6 +52,9 @@ public class SocketAddressImpl implements SocketAddress{
   }
 
   public SocketAddressImpl(int port, String host) {
+    if (port > 65535) {
+      throw new IllegalArgumentException("port p must be < 65535");
+    }
     this.path = null;
     this.port = port;
     if (NetUtil.isValidIpV4Address(host)) {

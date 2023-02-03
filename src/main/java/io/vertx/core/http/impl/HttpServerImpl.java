@@ -137,43 +137,6 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
   }
 
   @Override
-  public HttpServer listen(Handler<AsyncResult<HttpServer>> listenHandler) {
-    Future<HttpServer> fut = listen();
-    if (listenHandler != null) {
-      fut.onComplete(listenHandler);
-    }
-    return this;
-  }
-
-  @Override
-  public Future<HttpServer> listen(int port, String host) {
-    return listen(new SocketAddressImpl(port, host));
-  }
-
-  @Override
-  public HttpServer listen(int port, String host, Handler<AsyncResult<HttpServer>> listenHandler) {
-    Future<HttpServer> fut = listen(port, host);
-    if (listenHandler != null) {
-      fut.onComplete(listenHandler);
-    }
-    return this;
-  }
-
-  @Override
-  public Future<HttpServer> listen(int port) {
-    return listen(port, "0.0.0.0");
-  }
-
-  @Override
-  public HttpServer listen(int port, Handler<AsyncResult<HttpServer>> listenHandler) {
-    Future<HttpServer> fut = listen(port);
-    if (listenHandler != null) {
-      fut.onComplete(listenHandler);
-    }
-    return this;
-  }
-
-  @Override
   protected BiConsumer<Channel, SslContextProvider> childHandler(ContextInternal context, SocketAddress address) {
     EventLoopContext connContext;
     if (context instanceof EventLoopContext) {
@@ -208,25 +171,11 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
   }
 
   @Override
-  public Future<HttpServer> listen(SocketAddress address) {
+  public synchronized Future<HttpServer> listen(SocketAddress address) {
     if (requestStream.handler() == null && wsStream.handler() == null) {
       throw new IllegalStateException("Set request or WebSocket handler first");
     }
     return bind(address).map(this);
-  }
-
-  @Override
-  public HttpServer listen(SocketAddress address, Handler<AsyncResult<HttpServer>> listenHandler) {
-    if (listenHandler == null) {
-      listenHandler = res -> {
-        if (res.failed()) {
-          // No handler - log so user can see failure
-          log.error("Failed to listen", res.cause());
-        }
-      };
-    }
-    listen(address).onComplete(listenHandler);
-    return this;
   }
 
   @Override
