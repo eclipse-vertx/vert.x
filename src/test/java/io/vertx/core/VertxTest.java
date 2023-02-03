@@ -351,4 +351,29 @@ public class VertxTest extends AsyncTestBase {
       vertx.close();
     }
   }
+
+  @Test
+  public void testThreadLeak() throws Exception {
+    Vertx vertx = Vertx.vertx();
+    try {
+      WorkerExecutor exec = vertx.createSharedWorkerExecutor("pool");
+      WeakReference<Thread> ref = exec.<WeakReference<Thread>>executeBlocking(p -> {
+        p.complete(new WeakReference<>(Thread.currentThread()));
+      }).toCompletionStage().toCompletableFuture().get();
+      exec.close().toCompletionStage().toCompletableFuture().get();
+      long now = System.currentTimeMillis();
+      while (true) {
+        assertTrue(System.currentTimeMillis() - now < 20_000);
+        runGC();
+        if (ref.get() == null) {
+          break;
+        }
+      }
+    } finally {
+      vertx.close(ar -> {
+        testComplete();
+      });
+    }
+    await();
+  }
 }
