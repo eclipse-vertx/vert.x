@@ -11,16 +11,12 @@
 package io.vertx.core.net.impl;
 
 import io.netty.buffer.ByteBufAllocator;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.ssl.SniCompletionEvent;
 import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
-import io.netty.handler.ssl.SslHandshakeCompletionEvent;
-import io.netty.util.Mapping;
-import io.netty.util.concurrent.ScheduledFuture;
+import io.netty.util.AsyncMapping;
 
-import javax.net.ssl.SSLException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -30,35 +26,19 @@ import java.util.concurrent.TimeUnit;
  */
 class VertxSniHandler extends SniHandler {
 
+  private final Executor delegatedTaskExec;
   private final long handshakeTimeoutMillis;
-  private ScheduledFuture<?> timeoutFuture;
 
-  public VertxSniHandler(Mapping<? super String, ? extends SslContext> mapping, long handshakeTimeoutMillis) {
-    super(mapping);
+  public VertxSniHandler(AsyncMapping<? super String, ? extends SslContext> mapping, Executor delegatedTaskExec, long handshakeTimeoutMillis) {
+    super(mapping, handshakeTimeoutMillis);
 
+    this.delegatedTaskExec = delegatedTaskExec;
     this.handshakeTimeoutMillis = handshakeTimeoutMillis;
   }
 
   @Override
-  public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
-    if (handshakeTimeoutMillis > 0) {
-      // We assume to always be added in an active channel
-      assert(ctx.channel().isActive());
-      timeoutFuture = ctx.executor().schedule(() -> {
-        SSLException exception = new SSLException("handshake timed out after " + handshakeTimeoutMillis + "ms");
-        ctx.fireUserEventTriggered(new SniCompletionEvent(exception));
-        ctx.close();
-      }, handshakeTimeoutMillis, TimeUnit.MILLISECONDS);
-    }
-    super.handlerAdded(ctx);
-  }
-
-  @Override
   protected SslHandler newSslHandler(SslContext context, ByteBufAllocator allocator) {
-    if (timeoutFuture != null) {
-      timeoutFuture.cancel(false);
-    }
-    SslHandler sslHandler = super.newSslHandler(context, allocator);
+    SslHandler sslHandler = context.newHandler(allocator, delegatedTaskExec);
     sslHandler.setHandshakeTimeout(handshakeTimeoutMillis, TimeUnit.MILLISECONDS);
     return sslHandler;
   }
