@@ -1664,15 +1664,15 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
   @Test
   public void testEngineUseEventLoopThread() throws Exception {
-    testUseThreadPool(false);
+    testUseThreadPool(false, false);
   }
 
   @Test
   public void testEngineUseWorkerThreads() throws Exception {
-    testUseThreadPool(true);
+    testUseThreadPool(true, true);
   }
 
-  private void testUseThreadPool(boolean useWorkerThreads) throws Exception {
+  private void testUseThreadPool(boolean useWorkerThreads, boolean useSni) throws Exception {
     JksOptions jksOptions = Cert.SERVER_JKS.get();
     KeyStore ks = KeyStore.getInstance("JKS");
     ks.load(new ByteArrayInputStream(vertx.fileSystem().readFileBlocking(jksOptions.getPath()).getBytes()), jksOptions.getPassword().toCharArray());
@@ -1832,6 +1832,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
     server = createHttpServer(createBaseServerOptions()
       .setJdkSslEngineOptions(new JdkSSLEngineOptions().setUseWorkerThread(useWorkerThreads))
       .setSsl(true)
+      .setSni(useSni)
       .setKeyCertOptions(testOptions)
     )
       .requestHandler(req -> {

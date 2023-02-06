@@ -184,6 +184,7 @@ public class SslContextProvider {
   }
 
   public SniHandler createSniHandler(VertxInternal vertx) {
-    return new VertxSniHandler(serverNameMapper(vertx), sslHandshakeTimeoutUnit.toMillis(sslHandshakeTimeout));
+    Executor delegatedTaskExec = useWorkerPool ? vertx.getInternalWorkerPool().executor() : ImmediateExecutor.INSTANCE;
+    return new VertxSniHandler(serverNameMapper(vertx), sslHandshakeTimeoutUnit.toMillis(sslHandshakeTimeout), delegatedTaskExec);
   }
 }

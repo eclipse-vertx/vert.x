@@ -21,6 +21,7 @@ import io.netty.util.Mapping;
 import io.netty.util.concurrent.ScheduledFuture;
 
 import javax.net.ssl.SSLException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -32,11 +33,13 @@ class VertxSniHandler extends SniHandler {
 
   private final long handshakeTimeoutMillis;
   private ScheduledFuture<?> timeoutFuture;
+  private final Executor delegatedTaskExec;
 
-  public VertxSniHandler(Mapping<? super String, ? extends SslContext> mapping, long handshakeTimeoutMillis) {
+  public VertxSniHandler(Mapping<? super String, ? extends SslContext> mapping, long handshakeTimeoutMillis, Executor delegatedTaskExec) {
     super(mapping);
 
     this.handshakeTimeoutMillis = handshakeTimeoutMillis;
+    this.delegatedTaskExec = delegatedTaskExec;
   }
 
   @Override
@@ -58,7 +61,7 @@ class VertxSniHandler extends SniHandler {
     if (timeoutFuture != null) {
       timeoutFuture.cancel(false);
     }
-    SslHandler sslHandler = super.newSslHandler(context, allocator);
+    SslHandler sslHandler = context.newHandler(allocator, delegatedTaskExec);
     sslHandler.setHandshakeTimeout(handshakeTimeoutMillis, TimeUnit.MILLISECONDS);
     return sslHandler;
   }
