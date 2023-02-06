@@ -343,7 +343,8 @@ public class SSLHelper {
   }
 
   public SniHandler createSniHandler(ContextInternal ctx) {
-    return new VertxSniHandler(serverNameMapper(ctx), sslHandshakeTimeoutUnit.toMillis(sslHandshakeTimeout));
+    Executor delegatedTaskExec = useWorkerPool ? ctx.owner().getInternalWorkerPool().executor() : ImmediateExecutor.INSTANCE;
+    return new VertxSniHandler(serverNameMapper(ctx), delegatedTaskExec, sslHandshakeTimeoutUnit.toMillis(sslHandshakeTimeout));
   }
 
   public ChannelHandler createHandler(ContextInternal ctx) {
