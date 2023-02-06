@@ -171,6 +171,16 @@ public class SSLHelper {
    * @return a future resolved when the helper is initialized
    */
   public Future<SslContextProvider> init(SSLOptions sslOptions, ContextInternal ctx) {
+    return initInternal(new SSLOptions(sslOptions), ctx);
+  }
+
+  /**
+   * Initialize the helper, this loads and validates the configuration.
+   *
+   * @param ctx the context
+   * @return a future resolved when the helper is initialized
+   */
+  private Future<SslContextProvider> initInternal(SSLOptions sslOptions, ContextInternal ctx) {
     Future<EngineConfig> sslContextFactorySupplier;
     KeyCertOptions keyCertOptions = sslOptions.getKeyCertOptions();
     TrustOptions trustOptions = sslOptions.getTrustOptions();

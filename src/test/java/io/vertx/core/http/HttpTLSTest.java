@@ -1663,13 +1663,13 @@ public abstract class HttpTLSTest extends HttpTestBase {
   }
 
   @Test
-  public void testUseEventLoopThread() throws Exception {
-    testUseThreadPool(true);
+  public void testEngineUseEventLoopThread() throws Exception {
+    testUseThreadPool(false);
   }
 
   @Test
-  public void testUseWorkerThreads() throws Exception {
-    testUseThreadPool(false);
+  public void testEngineUseWorkerThreads() throws Exception {
+    testUseThreadPool(true);
   }
 
   private void testUseThreadPool(boolean useWorkerThreads) throws Exception {

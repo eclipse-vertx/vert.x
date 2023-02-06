@@ -71,8 +71,8 @@ public class SslContextProvider {
     this.sslHandshakeTimeout = options.getSslHandshakeTimeout();
     this.sslHandshakeTimeoutUnit = options.getSslHandshakeTimeoutUnit();
     this.enabledProtocols = options.getEnabledSecureTransportProtocols();
-    this.keyCertOptions = options.getKeyCertOptions() != null ? options.getKeyCertOptions().copy() : null;
-    this.trustOptions = options.getTrustOptions() != null ? options.getTrustOptions().copy() : null;
+    this.keyCertOptions = options.getKeyCertOptions();
+    this.trustOptions = options.getTrustOptions();
     this.useWorkerPool = useWorkerPool;
   }
 
