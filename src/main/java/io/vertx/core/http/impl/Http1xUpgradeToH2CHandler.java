@@ -21,7 +21,7 @@ import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http2.*;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
-import io.vertx.core.net.impl.SslContextProvider;
+import io.vertx.core.net.impl.SslChannelProvider;
 import io.vertx.core.net.impl.VertxHandler;
 
 import java.util.Map;
@@ -33,14 +33,14 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 public class Http1xUpgradeToH2CHandler extends ChannelInboundHandlerAdapter {
 
   private final HttpServerWorker initializer;
-  private final SslContextProvider sslContextProvider;
+  private final SslChannelProvider sslChannelProvider;
   private VertxHttp2ConnectionHandler<Http2ServerConnection> handler;
   private final boolean isCompressionSupported;
   private final boolean isDecompressionSupported;
 
-  Http1xUpgradeToH2CHandler(HttpServerWorker initializer, SslContextProvider sslContextProvider, boolean isCompressionSupported, boolean isDecompressionSupported) {
+  Http1xUpgradeToH2CHandler(HttpServerWorker initializer, SslChannelProvider sslChannelProvider, boolean isCompressionSupported, boolean isDecompressionSupported) {
     this.initializer = initializer;
-    this.sslContextProvider = sslContextProvider;
+    this.sslChannelProvider = sslChannelProvider;
     this.isCompressionSupported = isCompressionSupported;
     this.isDecompressionSupported = isDecompressionSupported;
   }
@@ -118,7 +118,7 @@ public class Http1xUpgradeToH2CHandler extends ChannelInboundHandlerAdapter {
           ctx.writeAndFlush(res);
         }
       } else {
-        initializer.configureHttp1(ctx.pipeline(), sslContextProvider);
+        initializer.configureHttp1(ctx.pipeline(), sslChannelProvider);
         ctx.fireChannelRead(msg);
         ctx.pipeline().remove(this);
       }

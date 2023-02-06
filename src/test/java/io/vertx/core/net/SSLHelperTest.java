@@ -11,16 +11,14 @@
 
 package io.vertx.core.net;
 
-import io.netty.handler.ssl.OpenSsl;
-import io.netty.handler.ssl.OpenSslServerContext;
-import io.netty.handler.ssl.OpenSslServerSessionContext;
-import io.netty.handler.ssl.SslContext;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.handler.ssl.*;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.impl.SSLHelper;
+import io.vertx.core.net.impl.SslContextProvider;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
@@ -46,9 +44,9 @@ public class SSLHelperTest extends VertxTestBase {
     SSLHelper helper = new SSLHelper(new HttpClientOptions().setKeyStoreOptions(Cert.CLIENT_JKS.get()).setTrustOptions(Trust.SERVER_JKS.get()),
       null);
     helper
-      .init(new SSLOptions().setKeyCertOptions(Cert.CLIENT_JKS.get()).setTrustOptions(Trust.SERVER_JKS.get()), (ContextInternal) vertx.getOrCreateContext())
+      .buildContextProvider(new SSLOptions().setKeyCertOptions(Cert.CLIENT_JKS.get()).setTrustOptions(Trust.SERVER_JKS.get()), (ContextInternal) vertx.getOrCreateContext())
       .onComplete(onSuccess(provider -> {
-        SslContext ctx = provider.createContext((VertxInternal) vertx);
+        SslContext ctx = provider.createClientContext(null, false, false);
         assertEquals(new HashSet<>(Arrays.asList(expected)), new HashSet<>(ctx.cipherSuites()));
         testComplete();
     }));
@@ -61,8 +59,8 @@ public class SSLHelperTest extends VertxTestBase {
     SSLHelper helper = new SSLHelper(
         new HttpClientOptions().setOpenSslEngineOptions(new OpenSSLEngineOptions()).setPemKeyCertOptions(Cert.CLIENT_PEM.get()).setTrustOptions(Trust.SERVER_PEM.get()),
       null);
-    helper.init(new SSLOptions().setKeyCertOptions(Cert.CLIENT_PEM.get()).setTrustOptions(Trust.SERVER_PEM.get()), (ContextInternal) vertx.getOrCreateContext()).onComplete(onSuccess(provider -> {
-      SslContext ctx = provider.createContext((VertxInternal) vertx);
+    helper.buildContextProvider(new SSLOptions().setKeyCertOptions(Cert.CLIENT_PEM.get()).setTrustOptions(Trust.SERVER_PEM.get()), (ContextInternal) vertx.getOrCreateContext()).onComplete(onSuccess(provider -> {
+      SslContext ctx = provider.createClientContext(null, false, false);
       assertEquals(expected, new HashSet<>(ctx.cipherSuites()));
       testComplete();
     }));
@@ -90,10 +88,9 @@ public class SSLHelperTest extends VertxTestBase {
       null);
 
     defaultHelper
-      .init(httpServerOptions.getSslOptions(), (ContextInternal) vertx.getOrCreateContext())
+      .buildContextProvider(httpServerOptions.getSslOptions(), (ContextInternal) vertx.getOrCreateContext())
       .onComplete(onSuccess(provider -> {
-        SslContext ctx = provider.createContext((VertxInternal) vertx);
-        assertTrue(ctx instanceof OpenSslServerContext);
+        SslContext ctx = provider.createServerContext(false);
 
         SSLSessionContext sslSessionContext = ctx.sessionContext();
         assertTrue(sslSessionContext instanceof OpenSslServerSessionContext);
@@ -122,9 +119,9 @@ public class SSLHelperTest extends VertxTestBase {
     assertEquals(new ArrayList<>(new HttpServerOptions(json).getEnabledCipherSuites()), Arrays.asList(engine.getEnabledCipherSuites()));
     SSLHelper helper = new SSLHelper(options.setKeyCertOptions(Cert.SERVER_JKS.get()), null);
     helper
-      .init(options.getSslOptions(), (ContextInternal) vertx.getOrCreateContext())
+      .buildContextProvider(options.getSslOptions(), (ContextInternal) vertx.getOrCreateContext())
       .onComplete(onSuccess(sslContextProvider -> {
-        assertEquals(new HashSet<>(Arrays.asList(sslContextProvider.createEngine((VertxInternal) vertx).getEnabledCipherSuites())), new HashSet<>(Arrays.asList(engine.getEnabledCipherSuites())));
+        assertEquals(new HashSet<>(Arrays.asList(createEngine(sslContextProvider).getEnabledCipherSuites())), new HashSet<>(Arrays.asList(engine.getEnabledCipherSuites())));
         testComplete();
       }));
     await();
@@ -178,12 +175,16 @@ public class SSLHelperTest extends VertxTestBase {
   private void testTLSVersions(HttpServerOptions options, Consumer<SSLEngine> check) {
     SSLHelper helper = new SSLHelper(options.setSsl(true).setKeyCertOptions(Cert.SERVER_JKS.get()), null);
     helper
-      .init(options.getSslOptions(), (ContextInternal) vertx.getOrCreateContext())
+      .buildContextProvider(options.getSslOptions(), (ContextInternal) vertx.getOrCreateContext())
       .onComplete(onSuccess(sslContextProvider -> {
-        SSLEngine engine = sslContextProvider.createEngine((VertxInternal) vertx);
+        SSLEngine engine = createEngine(sslContextProvider);
         check.accept(engine);
         testComplete();
       }));
     await();
+  }
+
+  public SSLEngine createEngine(SslContextProvider provider) {
+    return provider.createClientContext(null, false, false).newEngine(ByteBufAllocator.DEFAULT);
   }
 }

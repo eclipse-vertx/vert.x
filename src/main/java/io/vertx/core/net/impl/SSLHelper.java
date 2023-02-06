@@ -19,9 +19,6 @@ import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.ClientOptionsBase;
 import io.vertx.core.net.JdkSSLEngineOptions;
 import io.vertx.core.net.KeyCertOptions;
@@ -37,16 +34,12 @@ import io.vertx.core.spi.tls.SslContextFactory;
 
 import javax.net.ssl.*;
 import java.io.ByteArrayInputStream;
-import java.security.KeyStore;
 import java.security.cert.CRL;
-import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -103,17 +96,20 @@ public class SSLHelper {
     return engineOptions;
   }
 
-  private static final Logger log = LoggerFactory.getLogger(SSLHelper.class);
-
   private final boolean ssl;
-  final boolean sni;
-  final boolean trustAll;
-  final ClientAuth clientAuth;
-  final boolean client;
-  final boolean useAlpn;
+  private final boolean sni;
+  private final boolean trustAll;
+  private final ClientAuth clientAuth;
+  private final boolean client;
+  private final boolean useAlpn;
   private final String endpointIdentificationAlgorithm;
   private final SSLEngineOptions sslEngineOptions;
-  final List<String> applicationProtocols;
+  private final List<String> applicationProtocols;
+  private KeyManagerFactory keyManagerFactory;
+  private TrustManagerFactory trustManagerFactory;
+  private Function<String, X509KeyManager> keyManagerMapper;
+  private Function<String, TrustManager[]> trustManagerMapper;
+  private List<CRL> crls;
 
   public SSLHelper(TCPSSLOptions options, List<String> applicationProtocols) {
     this.sslEngineOptions = options.getSslEngineOptions();
@@ -127,40 +123,31 @@ public class SSLHelper {
     this.applicationProtocols = applicationProtocols;
   }
 
-  public boolean isSSL() {
-    return ssl;
-  }
+  private class EngineConfig {
 
-  public boolean isSNI() {
-    return sni;
-  }
-
-  void configureEngine(SSLEngine engine, Set<String> enabledProtocols, String serverName) {
-    Set<String> protocols = new LinkedHashSet<>(enabledProtocols);
-    protocols.retainAll(Arrays.asList(engine.getSupportedProtocols()));
-    if (protocols.isEmpty()) {
-      log.warn("no SSL/TLS protocols are enabled due to configuration restrictions");
-    }
-    engine.setEnabledProtocols(protocols.toArray(new String[protocols.size()]));
-    if (client && !endpointIdentificationAlgorithm.isEmpty()) {
-      SSLParameters sslParameters = engine.getSSLParameters();
-      sslParameters.setEndpointIdentificationAlgorithm(endpointIdentificationAlgorithm);
-      engine.setSSLParameters(sslParameters);
-    }
-    if (serverName != null) {
-      SSLParameters sslParameters = engine.getSSLParameters();
-      sslParameters.setServerNames(Collections.singletonList(new SNIHostName(serverName)));
-      engine.setSSLParameters(sslParameters);
-    }
-  }
-
-  private static class EngineConfig {
+    private final SSLOptions sslOptions;
     private final Supplier<SslContextFactory> supplier;
     private final boolean useWorkerPool;
 
-    public EngineConfig(Supplier<SslContextFactory> supplier, boolean useWorkerPool) {
+    public EngineConfig(SSLOptions sslOptions, Supplier<SslContextFactory> supplier, boolean useWorkerPool) {
+      this.sslOptions = sslOptions;
       this.supplier = supplier;
       this.useWorkerPool = useWorkerPool;
+    }
+
+    SslContextProvider sslContextProvider() {
+      return new SslContextProvider(
+        clientAuth,
+        endpointIdentificationAlgorithm,
+        applicationProtocols,
+        sslOptions.getEnabledCipherSuites(),
+        sslOptions.getEnabledSecureTransportProtocols(),
+        keyManagerFactory,
+        keyManagerMapper,
+        trustManagerFactory,
+        trustManagerMapper,
+        crls,
+        supplier);
     }
   }
 
@@ -170,8 +157,8 @@ public class SSLHelper {
    * @param ctx the context
    * @return a future resolved when the helper is initialized
    */
-  public Future<SslContextProvider> init(SSLOptions sslOptions, ContextInternal ctx) {
-    return initInternal(new SSLOptions(sslOptions), ctx);
+  public Future<SslContextProvider> buildContextProvider(SSLOptions sslOptions, ContextInternal ctx) {
+    return build(new SSLOptions(sslOptions), ctx).map(EngineConfig::sslContextProvider);
   }
 
   /**
@@ -180,7 +167,23 @@ public class SSLHelper {
    * @param ctx the context
    * @return a future resolved when the helper is initialized
    */
-  private Future<SslContextProvider> initInternal(SSLOptions sslOptions, ContextInternal ctx) {
+  public Future<SslChannelProvider> buildChannelProvider(SSLOptions sslOptions, ContextInternal ctx) {
+    return build(new SSLOptions(sslOptions), ctx).map(c -> new SslChannelProvider(
+      c.sslContextProvider(), c.sslOptions.getSslHandshakeTimeout(), c.sslOptions.getSslHandshakeTimeoutUnit(), sni,
+      trustAll,
+      useAlpn,
+      ctx.owner().getInternalWorkerPool().executor(),
+      c.useWorkerPool
+    ));
+  }
+
+  /**
+   * Initialize the helper, this loads and validates the configuration.
+   *
+   * @param ctx the context
+   * @return a future resolved when the helper is initialized
+   */
+  private Future<EngineConfig> build(SSLOptions sslOptions, ContextInternal ctx) {
     Future<EngineConfig> sslContextFactorySupplier;
     KeyCertOptions keyCertOptions = sslOptions.getKeyCertOptions();
     TrustOptions trustOptions = sslOptions.getTrustOptions();
@@ -188,15 +191,36 @@ public class SSLHelper {
       Promise<EngineConfig> promise = Promise.promise();
       sslContextFactorySupplier = promise.future();
       ctx.<Void>executeBlockingInternal(p -> {
-        KeyManagerFactory kmf;
         try {
-          getTrustMgrFactory(ctx.owner(), sslOptions.getTrustOptions(), sslOptions.getCrlPaths(), sslOptions.getCrlValues(), null, false);
-          kmf = getKeyMgrFactory(ctx.owner(), sslOptions.getKeyCertOptions());
+          if (sslOptions.getKeyCertOptions() != null) {
+            keyManagerFactory = sslOptions.getKeyCertOptions().getKeyManagerFactory(ctx.owner());
+            keyManagerMapper = sslOptions.getKeyCertOptions().keyManagerMapper(ctx.owner());
+          }
+          if (sslOptions.getTrustOptions() != null) {
+            trustManagerFactory = sslOptions.getTrustOptions().getTrustManagerFactory(ctx.owner());
+            trustManagerMapper = sslOptions.getTrustOptions().trustManagerMapper(ctx.owner());
+          }
+          crls = new ArrayList<>();
+          List<Buffer> tmp = new ArrayList<>();
+          if (sslOptions.getCrlPaths() != null) {
+            tmp.addAll(sslOptions.getCrlPaths()
+              .stream()
+              .map(path -> ctx.owner().resolveFile(path).getAbsolutePath())
+              .map(ctx.owner().fileSystem()::readFileBlocking)
+              .collect(Collectors.toList()));
+          }
+          if (sslOptions.getCrlValues() != null) {
+            tmp.addAll(sslOptions.getCrlValues());
+          }
+          CertificateFactory certificatefactory = CertificateFactory.getInstance("X.509");
+          for (Buffer crlValue : tmp) {
+            crls.addAll(certificatefactory.generateCRLs(new ByteArrayInputStream(crlValue.getBytes())));
+          }
         } catch (Exception e) {
           p.fail(e);
           return;
         }
-        if (client || kmf != null) {
+        if (client || sslOptions.getKeyCertOptions() != null) {
           p.complete();
         } else {
           p.fail("Key/certificate is mandatory for SSL");
@@ -212,135 +236,11 @@ public class SSLHelper {
           p.fail(e);
           return;
         }
-        p.complete(new EngineConfig(supplier, useWorkerPool));
+        p.complete(new EngineConfig(sslOptions, supplier, useWorkerPool));
       })).onComplete(promise);
     } else {
-      sslContextFactorySupplier = Future.succeededFuture(new EngineConfig(() -> new DefaultSslContextFactory(SslProvider.JDK, false), SSLEngineOptions.DEFAULT_USE_WORKER_POOL));
+      sslContextFactorySupplier = Future.succeededFuture(new EngineConfig(sslOptions, () -> new DefaultSslContextFactory(SslProvider.JDK, false), SSLEngineOptions.DEFAULT_USE_WORKER_POOL));
     }
-    return sslContextFactorySupplier.map(sslp -> new SslContextProvider(this, sslOptions, sslp.useWorkerPool, sslp.supplier));
-  }
-
-  static KeyManagerFactory getKeyMgrFactory(VertxInternal vertx, KeyCertOptions keyCertOptions, String serverName) throws Exception {
-    KeyManagerFactory kmf = null;
-    if (serverName != null) {
-      X509KeyManager mgr = keyCertOptions.keyManagerMapper(vertx).apply(serverName);
-      if (mgr != null) {
-        String keyStoreType = KeyStore.getDefaultType();
-        KeyStore ks = KeyStore.getInstance(keyStoreType);
-        ks.load(null, null);
-        ks.setKeyEntry("key", mgr.getPrivateKey(null), new char[0], mgr.getCertificateChain(null));
-        String keyAlgorithm = KeyManagerFactory.getDefaultAlgorithm();
-        kmf = KeyManagerFactory.getInstance(keyAlgorithm);
-        kmf.init(ks, new char[0]);
-      }
-    }
-    if (kmf == null) {
-      kmf = getKeyMgrFactory(vertx, keyCertOptions);
-    }
-    return kmf;
-  }
-
-  private static KeyManagerFactory getKeyMgrFactory(VertxInternal vertx, KeyCertOptions keyCertOptions) throws Exception {
-    return keyCertOptions == null ? null : keyCertOptions.getKeyManagerFactory(vertx);
-  }
-
-  static TrustManagerFactory getTrustMgrFactory(VertxInternal vertx, TrustOptions trustOptions, List<String> crlPaths, List<Buffer> crlValues, String serverName, boolean trustAll) throws Exception {
-    TrustManager[] mgrs = null;
-    if (trustAll) {
-      mgrs = new TrustManager[]{createTrustAllTrustManager()};
-    } else if (trustOptions != null) {
-      if (serverName != null) {
-        Function<String, TrustManager[]> mapper = trustOptions.trustManagerMapper(vertx);
-        if (mapper != null) {
-          mgrs = mapper.apply(serverName);
-        }
-        if (mgrs == null) {
-          TrustManagerFactory fact = trustOptions.getTrustManagerFactory(vertx);
-          if (fact != null) {
-            mgrs = fact.getTrustManagers();
-          }
-        }
-      } else {
-        TrustManagerFactory fact = trustOptions.getTrustManagerFactory(vertx);
-        if (fact != null) {
-          mgrs = fact.getTrustManagers();
-        }
-      }
-    }
-    if (mgrs == null) {
-      return null;
-    }
-    if (crlPaths != null && crlValues != null && (crlPaths.size() > 0 || crlValues.size() > 0)) {
-      Stream<Buffer> tmp = crlPaths.
-        stream().
-        map(path -> vertx.resolveFile(path).getAbsolutePath()).
-        map(vertx.fileSystem()::readFileBlocking);
-      tmp = Stream.concat(tmp, crlValues.stream());
-      CertificateFactory certificatefactory = CertificateFactory.getInstance("X.509");
-      ArrayList<CRL> crls = new ArrayList<>();
-      for (Buffer crlValue : tmp.collect(Collectors.toList())) {
-        crls.addAll(certificatefactory.generateCRLs(new ByteArrayInputStream(crlValue.getBytes())));
-      }
-      mgrs = createUntrustRevokedCertTrustManager(mgrs, crls);
-    }
-    return new VertxTrustManagerFactory(mgrs);
-  }
-
-  /*
-  Proxy the specified trust managers with an implementation checking first the provided certificates
-  against the Certificate Revocation List (crl) before delegating to the original trust managers.
-   */
-  static TrustManager[] createUntrustRevokedCertTrustManager(TrustManager[] trustMgrs, ArrayList<CRL> crls) {
-    trustMgrs = trustMgrs.clone();
-    for (int i = 0;i < trustMgrs.length;i++) {
-      TrustManager trustMgr = trustMgrs[i];
-      if (trustMgr instanceof X509TrustManager) {
-        X509TrustManager x509TrustManager = (X509TrustManager) trustMgr;
-        trustMgrs[i] = new X509TrustManager() {
-          @Override
-          public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-            checkRevoked(x509Certificates);
-            x509TrustManager.checkClientTrusted(x509Certificates, s);
-          }
-          @Override
-          public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-            checkRevoked(x509Certificates);
-            x509TrustManager.checkServerTrusted(x509Certificates, s);
-          }
-          private void checkRevoked(X509Certificate[] x509Certificates) throws CertificateException {
-            for (X509Certificate cert : x509Certificates) {
-              for (CRL crl : crls) {
-                if (crl.isRevoked(cert)) {
-                  throw new CertificateException("Certificate revoked");
-                }
-              }
-            }
-          }
-          @Override
-          public X509Certificate[] getAcceptedIssuers() {
-            return x509TrustManager.getAcceptedIssuers();
-          }
-        };
-      }
-    }
-    return trustMgrs;
-  }
-
-  // Create a TrustManager which trusts everything
-  private static TrustManager createTrustAllTrustManager() {
-    return new X509TrustManager() {
-      @Override
-      public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-      }
-
-      @Override
-      public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-      }
-
-      @Override
-      public X509Certificate[] getAcceptedIssuers() {
-        return new X509Certificate[0];
-      }
-    };
+    return sslContextFactorySupplier;
   }
 }

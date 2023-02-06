@@ -18,7 +18,6 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoop;
 import io.netty.util.concurrent.GenericFutureListener;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Closeable;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
@@ -59,7 +58,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
 
   // Per server
   private EventLoop eventLoop;
-  private BiConsumer<Channel, SslContextProvider> childHandler;
+  private BiConsumer<Channel, SslChannelProvider> childHandler;
   private Handler<Channel> worker;
   private volatile boolean listening;
   private ContextInternal listenContext;
@@ -67,7 +66,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
 
   // Main
   private SSLHelper sslHelper;
-  private AtomicReference<SslContextProvider> sslContextProvider;
+  private AtomicReference<SslChannelProvider> sslChannelProvider;
   private ServerChannelLoadBalancer channelBalancer;
   private Future<Channel> bindFuture;
   private Set<TCPServerBase> servers;
@@ -78,11 +77,12 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
     this.vertx = vertx;
     this.options = new NetServerOptions(options);
     this.creatingContext = vertx.getContext();
-    this.sslContextProvider = new AtomicReference<>();
+    this.sslChannelProvider = new AtomicReference<>();
   }
 
   public SslContextProvider sslContextProvider() {
-    return sslContextProvider.get();
+    SslChannelProvider ref = sslChannelProvider.get();
+    return ref != null ? ref.sslContextProvider() : null;
   }
 
   public int actualPort() {
@@ -90,16 +90,16 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
     return server != null ? server.actualPort : actualPort;
   }
 
-  protected abstract BiConsumer<Channel, SslContextProvider> childHandler(ContextInternal context, SocketAddress socketAddress);
+  protected abstract BiConsumer<Channel, SslChannelProvider> childHandler(ContextInternal context, SocketAddress socketAddress);
 
   protected SSLHelper createSSLHelper() {
     return new SSLHelper(options, null);
   }
 
   public Future<Void> updateSSLOptions(SSLOptions options) {
-    return sslHelper.init(new SSLOptions(options), listenContext).andThen(ar -> {
+    return sslHelper.buildChannelProvider(new SSLOptions(options), listenContext).andThen(ar -> {
       if (ar.succeeded()) {
-        TCPServerBase.this.sslContextProvider.set(ar.result());
+        TCPServerBase.this.sslChannelProvider.set(ar.result());
       }
     }).<Void>mapEmpty();
   }
@@ -151,7 +151,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
         bindFuture = promise;
         sslHelper = createSSLHelper();
         childHandler =  childHandler(listenContext, localAddress);
-        worker = ch -> childHandler.accept(ch, sslContextProvider.get());
+        worker = ch -> childHandler.accept(ch, sslChannelProvider.get());
         servers = new HashSet<>();
         servers.add(this);
         channelBalancer = new ServerChannelLoadBalancer(vertx.getAcceptorEventLoopGroup().next());
@@ -164,17 +164,17 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
         listenContext.addCloseHook(this);
 
         // Initialize SSL before binding
-        sslHelper.init(options.getSslOptions(), listenContext).onComplete(ar -> {
+        sslHelper.buildChannelProvider(options.getSslOptions(), listenContext).onComplete(ar -> {
           if (ar.succeeded()) {
 
             //
-            sslContextProvider.set(ar.result());
+            sslChannelProvider.set(ar.result());
 
             // Socket bind
             channelBalancer.addWorker(eventLoop, worker);
             ServerBootstrap bootstrap = new ServerBootstrap();
             bootstrap.group(vertx.getAcceptorEventLoopGroup(), channelBalancer.workers());
-            if (sslHelper.isSSL()) {
+            if (options.isSsl()) {
               bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
             } else {
               bootstrap.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
@@ -225,9 +225,9 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
         // Server already exists with that host/port - we will use that
         actualServer = main;
         metrics = main.metrics;
-        sslContextProvider = main.sslContextProvider;
+        sslChannelProvider = main.sslChannelProvider;
         childHandler =  childHandler(listenContext, localAddress);
-        worker = ch -> childHandler.accept(ch, sslContextProvider.get());
+        worker = ch -> childHandler.accept(ch, sslChannelProvider.get());
         actualServer.servers.add(this);
         actualServer.channelBalancer.addWorker(eventLoop, worker);
         listenContext.addCloseHook(this);
