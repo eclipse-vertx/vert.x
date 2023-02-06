@@ -16,7 +16,7 @@ import io.netty.handler.ssl.SniCompletionEvent;
 import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
-import io.netty.handler.ssl.SslHandshakeCompletionEvent;
+import io.netty.util.AsyncMapping;
 import io.netty.util.Mapping;
 import io.netty.util.concurrent.ScheduledFuture;
 
@@ -35,7 +35,7 @@ class VertxSniHandler extends SniHandler {
   private ScheduledFuture<?> timeoutFuture;
   private final Executor delegatedTaskExec;
 
-  public VertxSniHandler(Mapping<? super String, ? extends SslContext> mapping, long handshakeTimeoutMillis, Executor delegatedTaskExec) {
+  public VertxSniHandler(AsyncMapping<? super String, ? extends SslContext> mapping, long handshakeTimeoutMillis, Executor delegatedTaskExec) {
     super(mapping);
 
     this.handshakeTimeoutMillis = handshakeTimeoutMillis;

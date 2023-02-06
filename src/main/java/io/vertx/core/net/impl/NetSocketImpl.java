@@ -353,7 +353,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
       if (remoteAddress != null) {
         sslHandler = sslContextProvider.createSslHandler(vertx, remoteAddress, serverName, false);
       } else {
-        sslHandler = sslContextProvider.createHandler(vertx);
+        sslHandler = sslContextProvider.createHandler(vertx, context);
       }
       chctx.pipeline().addFirst("ssl", sslHandler);
     }

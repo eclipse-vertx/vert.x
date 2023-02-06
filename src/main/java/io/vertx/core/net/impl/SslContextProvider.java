@@ -16,10 +16,14 @@ import io.netty.handler.ssl.DelegatingSslContext;
 import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.util.AsyncMapping;
 import io.netty.util.Mapping;
+import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.ImmediateExecutor;
+import io.netty.util.concurrent.Promise;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.SSLOptions;
@@ -133,18 +137,27 @@ public class SslContextProvider {
     };
   }
 
-  public Mapping<? super String, ? extends SslContext> serverNameMapper(VertxInternal vertx) {
-    return serverName -> {
-      SslContext ctx = createContext(vertx, serverName, sslHelper.useAlpn, sslHelper.client, sslHelper.trustAll);
-      if (ctx != null) {
-        ctx = new DelegatingSslContext(ctx) {
-          @Override
-          protected void initEngine(SSLEngine engine) {
-            sslHelper.configureEngine(engine, enabledProtocols, serverName);
-          }
-        };
-      }
-      return ctx;
+  public AsyncMapping<? super String, ? extends SslContext> serverNameMapper(VertxInternal vertx, ContextInternal ctx) {
+    return (AsyncMapping<String, SslContext>) (serverName, promise) -> {
+      ctx.<SslContext>executeBlockingInternal(p -> {
+        SslContext sslContext = createContext(vertx, serverName, sslHelper.useAlpn, sslHelper.client, sslHelper.trustAll);
+        if (sslContext != null) {
+          sslContext = new DelegatingSslContext(sslContext) {
+            @Override
+            protected void initEngine(SSLEngine engine) {
+              sslHelper.configureEngine(engine, enabledProtocols, serverName);
+            }
+          };
+        }
+        p.complete(sslContext);
+      }, ar -> {
+        if (ar.succeeded()) {
+          promise.setSuccess(ar.result());
+        } else {
+          promise.setFailure(ar.cause());
+        }
+      });
+      return promise;
     };
   }
 
@@ -175,16 +188,16 @@ public class SslContextProvider {
     return sslHandler;
   }
 
-  public ChannelHandler createHandler(VertxInternal vertx) {
+  public ChannelHandler createHandler(VertxInternal vertx, ContextInternal ctx) {
     if (sslHelper.sni) {
-      return createSniHandler(vertx);
+      return createSniHandler(vertx, ctx);
     } else {
       return createSslHandler(vertx, null);
     }
   }
 
-  public SniHandler createSniHandler(VertxInternal vertx) {
+  public SniHandler createSniHandler(VertxInternal vertx, ContextInternal ctx) {
     Executor delegatedTaskExec = useWorkerPool ? vertx.getInternalWorkerPool().executor() : ImmediateExecutor.INSTANCE;
-    return new VertxSniHandler(serverNameMapper(vertx), sslHandshakeTimeoutUnit.toMillis(sslHandshakeTimeout), delegatedTaskExec);
+    return new VertxSniHandler(serverNameMapper(vertx, ctx), sslHandshakeTimeoutUnit.toMillis(sslHandshakeTimeout), delegatedTaskExec);
   }
 }
