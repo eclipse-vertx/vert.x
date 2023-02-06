@@ -19,6 +19,7 @@ import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.SslProvider;
+import io.netty.util.AsyncMapping;
 import io.netty.util.Mapping;
 import io.netty.util.concurrent.ImmediateExecutor;
 import io.vertx.core.Future;
@@ -237,18 +238,27 @@ public class SSLHelper {
     return promise.future();
   }
 
-  public Mapping<? super String, ? extends SslContext> serverNameMapper(VertxInternal vertx) {
-    return serverName -> {
-      SslContext ctx = createContext(vertx, serverName, useAlpn, client, trustAll);
-      if (ctx != null) {
-        ctx = new DelegatingSslContext(ctx) {
-          @Override
-          protected void initEngine(SSLEngine engine) {
-            configureEngine(engine, serverName);
-          }
-        };
-      }
-      return ctx;
+  public AsyncMapping<? super String, ? extends SslContext> serverNameMapper(ContextInternal ctx) {
+    return (serverName, promise) -> {
+      ctx.<SslContext>executeBlockingInternal(p -> {
+        SslContext sslContext = createContext(ctx.owner(), serverName, useAlpn, client, trustAll);
+        if (sslContext != null) {
+          sslContext = new DelegatingSslContext(sslContext) {
+            @Override
+            protected void initEngine(SSLEngine engine) {
+              configureEngine(engine, serverName);
+            }
+          };
+        }
+        p.complete(sslContext);
+      }, ar -> {
+        if (ar.succeeded()) {
+          promise.setSuccess(ar.result());
+        } else {
+          promise.setFailure(ar.cause());
+        }
+      });
+      return promise;
     };
   }
 
@@ -332,15 +342,15 @@ public class SSLHelper {
     return sslHandler;
   }
 
-  public SniHandler createSniHandler(VertxInternal vertx) {
-    return new VertxSniHandler(serverNameMapper(vertx), sslHandshakeTimeoutUnit.toMillis(sslHandshakeTimeout));
+  public SniHandler createSniHandler(ContextInternal ctx) {
+    return new VertxSniHandler(serverNameMapper(ctx), sslHandshakeTimeoutUnit.toMillis(sslHandshakeTimeout));
   }
 
-  public ChannelHandler createHandler(VertxInternal vertx) {
+  public ChannelHandler createHandler(ContextInternal ctx) {
     if (sni) {
-      return createSniHandler(vertx);
+      return createSniHandler(ctx);
     } else {
-      return createSslHandler(vertx, null);
+      return createSslHandler(ctx.owner(), null);
     }
   }
 
