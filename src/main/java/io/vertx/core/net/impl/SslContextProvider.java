@@ -10,7 +10,6 @@
  */
 package io.vertx.core.net.impl;
 
-import io.netty.handler.ssl.DelegatingSslContext;
 import io.netty.handler.ssl.SslContext;
 import io.vertx.core.VertxException;
 import io.vertx.core.http.ClientAuth;
@@ -68,7 +67,7 @@ public class SslContextProvider {
     this.crls = crls;
   }
 
-  public SslContext createClientContext(String serverName, boolean useAlpn, boolean trustAll) {
+  public VertxSslContext createClientContext(String serverName, boolean useAlpn, boolean trustAll) {
     try {
       SslContextFactory factory = provider.get()
         .useAlpn(useAlpn)
@@ -89,7 +88,7 @@ public class SslContextProvider {
         factory.trustManagerFactory(tmf);
       }
       SslContext context = factory.create();
-      return new DelegatingSslContext(context) {
+      return new VertxSslContext(context) {
         @Override
         protected void initEngine(SSLEngine engine) {
           configureEngine(engine, enabledProtocols, serverName, true);
@@ -100,11 +99,11 @@ public class SslContextProvider {
     }
   }
 
-  public SslContext createServerContext(boolean useAlpn) {
+  public VertxSslContext createServerContext(boolean useAlpn) {
     return createServerContext(keyManagerFactory, trustManagerFactory != null ? trustManagerFactory.getTrustManagers() : null, null, useAlpn);
   }
 
-  public SslContext createServerContext(KeyManagerFactory keyManagerFactory,
+  public VertxSslContext createServerContext(KeyManagerFactory keyManagerFactory,
                                         TrustManager[] trustManagers,
                                         String serverName,
                                         boolean useAlpn) {
@@ -126,7 +125,7 @@ public class SslContextProvider {
         factory.trustManagerFactory(tmf);
       }
       SslContext context = factory.create();
-      return new DelegatingSslContext(context) {
+      return new VertxSslContext(context) {
         @Override
         protected void initEngine(SSLEngine engine) {
           configureEngine(engine, enabledProtocols, serverName, false);
