@@ -52,7 +52,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   private static final Logger log = LoggerFactory.getLogger(NetSocketImpl.class);
 
   private final String writeHandlerID;
-  private final SslContextProvider sslContextProvider;
+  private final SslChannelProvider sslChannelProvider;
   private final SocketAddress remoteAddress;
   private final TCPMetrics metrics;
   private final InboundBuffer<Object> pending;
@@ -64,18 +64,18 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   private Handler<Object> messageHandler;
   private Handler<Object> eventHandler;
 
-  public NetSocketImpl(ContextInternal context, ChannelHandlerContext channel, SslContextProvider sslContextProvider, TCPMetrics metrics) {
-    this(context, channel, null, sslContextProvider, metrics, null);
+  public NetSocketImpl(ContextInternal context, ChannelHandlerContext channel, SslChannelProvider sslChannelProvider, TCPMetrics metrics) {
+    this(context, channel, null, sslChannelProvider, metrics, null);
   }
 
   public NetSocketImpl(ContextInternal context,
                        ChannelHandlerContext channel,
                        SocketAddress remoteAddress,
-                       SslContextProvider sslContextProvider,
+                       SslChannelProvider sslChannelProvider,
                        TCPMetrics metrics,
                        String negotiatedApplicationLayerProtocol) {
     super(context, channel);
-    this.sslContextProvider = sslContextProvider;
+    this.sslChannelProvider = sslChannelProvider;
     this.writeHandlerID = "__vertx.net." + UUID.randomUUID().toString();
     this.remoteAddress = remoteAddress;
     this.metrics = metrics;
@@ -351,9 +351,9 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
         }
       });
       if (remoteAddress != null) {
-        sslHandler = sslContextProvider.createSslHandler(vertx, remoteAddress, serverName, false);
+        sslHandler = sslChannelProvider.createClientSslHandler(remoteAddress, serverName, false);
       } else {
-        sslHandler = sslContextProvider.createHandler(vertx);
+        sslHandler = sslChannelProvider.createServerHandler();
       }
       chctx.pipeline().addFirst("ssl", sslHandler);
     }

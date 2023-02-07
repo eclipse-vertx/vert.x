@@ -13,17 +13,16 @@ package io.vertx.it;
 
 import io.netty.handler.ssl.JdkSslContext;
 import io.netty.handler.ssl.OpenSslContext;
+import io.netty.handler.ssl.OpenSslSessionContext;
 import io.netty.handler.ssl.SslContext;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.HttpServerImpl;
-import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.JdkSSLEngineOptions;
 import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.core.net.SSLEngineOptions;
-import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.http.HttpTestBase;
 import io.vertx.core.net.impl.SslContextProvider;
 import io.vertx.test.tls.Cert;
@@ -106,13 +105,13 @@ public class SSLEngineTest extends HttpTestBase {
       }
     }
     SslContextProvider provider = ((HttpServerImpl)server).sslContextProvider();
-    SslContext ctx = provider.createContext((VertxInternal) vertx);
+    SslContext ctx = provider.createClientContext(null, false, false);
     switch (expectedSslContext != null ? expectedSslContext : "jdk") {
       case "jdk":
-        assertTrue(ctx instanceof JdkSslContext);
+        assertTrue(ctx.sessionContext().getClass().getName().equals("sun.security.ssl.SSLSessionContextImpl"));
         break;
       case "openssl":
-        assertTrue(ctx instanceof OpenSslContext);
+        assertTrue(ctx.sessionContext() instanceof OpenSslSessionContext);
         break;
     }
     client = vertx.createHttpClient(new HttpClientOptions()

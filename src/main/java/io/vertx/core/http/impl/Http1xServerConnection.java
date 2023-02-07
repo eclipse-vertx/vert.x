@@ -32,7 +32,7 @@ import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.NetSocketImpl;
-import io.vertx.core.net.impl.SslContextProvider;
+import io.vertx.core.net.impl.SslChannelProvider;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
@@ -75,7 +75,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
 
   private final String serverOrigin;
   private final Supplier<ContextInternal> streamContextSupplier;
-  private final SslContextProvider sslContextProvider ;
+  private final SslChannelProvider sslChannelProvider;
   private final TracingPolicy tracingPolicy;
   private boolean requestFailed;
 
@@ -91,7 +91,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   final HttpServerOptions options;
 
   public Http1xServerConnection(Supplier<ContextInternal> streamContextSupplier,
-                                SslContextProvider sslContextProvider,
+                                SslChannelProvider sslChannelProvider,
                                 HttpServerOptions options,
                                 ChannelHandlerContext chctx,
                                 ContextInternal context,
@@ -101,7 +101,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     this.serverOrigin = serverOrigin;
     this.streamContextSupplier = streamContextSupplier;
     this.options = options;
-    this.sslContextProvider = sslContextProvider;
+    this.sslChannelProvider = sslChannelProvider;
     this.metrics = metrics;
     this.handle100ContinueAutomatically = options.isHandle100ContinueAutomatically();
     this.tracingPolicy = options.getTracingPolicy();
@@ -382,7 +382,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       }
 
       pipeline.replace("handler", "handler", VertxHandler.create(ctx -> {
-        NetSocketImpl socket = new NetSocketImpl(context, ctx, sslContextProvider, metrics) {
+        NetSocketImpl socket = new NetSocketImpl(context, ctx, sslChannelProvider, metrics) {
           @Override
           protected void handleClosed() {
             if (metrics != null) {

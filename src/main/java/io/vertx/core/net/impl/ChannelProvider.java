@@ -26,7 +26,6 @@ import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
 
-import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLHandshakeException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -42,14 +41,14 @@ import java.net.InetSocketAddress;
 public final class ChannelProvider {
 
   private final Bootstrap bootstrap;
-  private final SslContextProvider sslContextProvider;
+  private final SslChannelProvider sslContextProvider;
   private final ContextInternal context;
   private ProxyOptions proxyOptions;
   private String applicationProtocol;
   private Handler<Channel> handler;
 
   public ChannelProvider(Bootstrap bootstrap,
-                         SslContextProvider sslContextProvider,
+                         SslChannelProvider sslContextProvider,
                          ContextInternal context) {
     this.bootstrap = bootstrap;
     this.context = context;
@@ -107,7 +106,7 @@ public final class ChannelProvider {
 
   private void initSSL(Handler<Channel> handler, SocketAddress peerAddress, String serverName, boolean ssl, boolean useAlpn, Channel ch, Promise<Channel> channelHandler) {
     if (ssl) {
-      SslHandler sslHandler = sslContextProvider.createSslHandler(context.owner(), peerAddress, serverName, useAlpn);
+      SslHandler sslHandler = sslContextProvider.createClientSslHandler(peerAddress, serverName, useAlpn);
       ChannelPipeline pipeline = ch.pipeline();
       pipeline.addLast("ssl", sslHandler);
       pipeline.addLast(new ChannelInboundHandlerAdapter() {

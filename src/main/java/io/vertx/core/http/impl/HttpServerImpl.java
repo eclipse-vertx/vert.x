@@ -137,7 +137,7 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
   }
 
   @Override
-  protected BiConsumer<Channel, SslContextProvider> childHandler(ContextInternal context, SocketAddress address) {
+  protected BiConsumer<Channel, SslChannelProvider> childHandler(ContextInternal context, SocketAddress address) {
     EventLoopContext connContext;
     if (context instanceof EventLoopContext) {
       connContext = (EventLoopContext) context;

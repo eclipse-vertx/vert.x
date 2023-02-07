@@ -121,7 +121,7 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
   }
 
   @Override
-  protected BiConsumer<Channel, SslContextProvider> childHandler(ContextInternal context, SocketAddress socketAddress) {
+  protected BiConsumer<Channel, SslChannelProvider> childHandler(ContextInternal context, SocketAddress socketAddress) {
     return new NetServerWorker(context, handler, exceptionHandler);
   }
 
@@ -168,7 +168,7 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
     return !isListening();
   }
 
-  private class NetServerWorker implements BiConsumer<Channel, SslContextProvider> {
+  private class NetServerWorker implements BiConsumer<Channel, SslChannelProvider> {
 
     private final ContextInternal context;
     private final Handler<NetSocket> connectionHandler;
@@ -181,7 +181,7 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
     }
 
     @Override
-    public void accept(Channel ch, SslContextProvider sslContextProvider) {
+    public void accept(Channel ch, SslChannelProvider sslChannelProvider) {
       if (!NetServerImpl.this.accept()) {
         ch.close();
         return;
@@ -201,31 +201,31 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
             if (idle != null) {
               ch.pipeline().remove(idle);
             }
-            configurePipeline(future.getNow(), sslContextProvider);
+            configurePipeline(future.getNow(), sslChannelProvider);
           } else {
             //No need to close the channel.HAProxyMessageDecoder already did
             handleException(future.cause());
           }
         });
       } else {
-        configurePipeline(ch, sslContextProvider);
+        configurePipeline(ch, sslChannelProvider);
       }
     }
 
-    private void configurePipeline(Channel ch, SslContextProvider sslContextProvider) {
-      if (sslContextProvider.isSsl()) {
-        ch.pipeline().addLast("ssl", sslContextProvider.createHandler(vertx));
+    private void configurePipeline(Channel ch, SslChannelProvider sslChannelProvider) {
+      if (options.isSsl()) {
+        ch.pipeline().addLast("ssl", sslChannelProvider.createServerHandler());
         ChannelPromise p = ch.newPromise();
         ch.pipeline().addLast("handshaker", new SslHandshakeCompletionHandler(p));
         p.addListener(future -> {
           if (future.isSuccess()) {
-            connected(ch, sslContextProvider);
+            connected(ch, sslChannelProvider);
           } else {
             handleException(future.cause());
           }
         });
       } else {
-        connected(ch, sslContextProvider);
+        connected(ch, sslChannelProvider);
       }
     }
 
@@ -235,10 +235,10 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
       }
     }
 
-    private void connected(Channel ch, SslContextProvider sslContextProvider) {
-      NetServerImpl.this.initChannel(ch.pipeline(), sslContextProvider.isSsl());
+    private void connected(Channel ch, SslChannelProvider sslChannelProvider) {
+      NetServerImpl.this.initChannel(ch.pipeline(), options.isSsl());
       TCPMetrics<?> metrics = getMetrics();
-      VertxHandler<NetSocketImpl> handler = VertxHandler.create(ctx -> new NetSocketImpl(context, ctx, sslContextProvider, metrics));
+      VertxHandler<NetSocketImpl> handler = VertxHandler.create(ctx -> new NetSocketImpl(context, ctx, sslChannelProvider, metrics));
       handler.removeHandler(NetSocketImpl::unregisterEventBusHandler);
       handler.addHandler(conn -> {
         if (metrics != null) {

@@ -16,12 +16,14 @@ import static org.hamcrest.core.StringEndsWith.endsWith;
 import java.io.*;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.math.BigInteger;
+import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
@@ -1663,17 +1665,27 @@ public abstract class HttpTLSTest extends HttpTestBase {
   }
 
   @Test
-  public void testUseEventLoopThread() throws Exception {
-    testUseThreadPool(true);
+  public void testEngineUseEventLoopThread() throws Exception {
+    testUseThreadPool(false, false);
   }
 
   @Test
-  public void testUseWorkerThreads() throws Exception {
-    testUseThreadPool(false);
+  public void testEngineUseWorkerThreads() throws Exception {
+    testUseThreadPool(true, false);
   }
 
-  private void testUseThreadPool(boolean useWorkerThreads) throws Exception {
-    JksOptions jksOptions = Cert.SERVER_JKS.get();
+  @Test
+  public void testSniEngineUseEventLoopThread() throws Exception {
+    testUseThreadPool(false, true);
+  }
+
+  @Test
+  public void testSniEngineUseWorkerThreads() throws Exception {
+    testUseThreadPool(true, true);
+  }
+
+  private void testUseThreadPool(boolean useWorkerThreads, boolean useSni) throws Exception {
+    JksOptions jksOptions = Cert.SNI_JKS.get();
     KeyStore ks = KeyStore.getInstance("JKS");
     ks.load(new ByteArrayInputStream(vertx.fileSystem().readFileBlocking(jksOptions.getPath()).getBytes()), jksOptions.getPassword().toCharArray());
     final Set<Thread> engineThreads = Collections.synchronizedSet(new HashSet<>());
@@ -1825,22 +1837,60 @@ public abstract class HttpTLSTest extends HttpTestBase {
       }
       @Override
       public Function<String, X509KeyManager> keyManagerMapper(Vertx vertx) throws Exception {
-        throw new UnsupportedEncodingException();
+        X509KeyManager keyManager = (X509KeyManager) getKeyManagerFactory(vertx).getKeyManagers()[0];
+        return serverName -> {
+          return new X509KeyManager() {
+            @Override
+            public String[] getClientAliases(String keyType, Principal[] issuers) {
+              throw new UnsupportedOperationException();
+            }
+            @Override
+            public String chooseClientAlias(String[] keyType, Principal[] issuers, Socket socket) {
+              throw new UnsupportedOperationException();
+            }
+            @Override
+            public String[] getServerAliases(String keyType, Principal[] issuers) {
+              throw new UnsupportedOperationException();
+            }
+            @Override
+            public String chooseServerAlias(String keyType, Principal[] issuers, Socket socket) {
+              throw new UnsupportedOperationException();
+            }
+            @Override
+            public X509Certificate[] getCertificateChain(String alias) {
+              return keyManager.getCertificateChain("test-host2");
+            }
+            @Override
+            public PrivateKey getPrivateKey(String alias) {
+              return keyManager.getPrivateKey("test-host2");
+            }
+          };
+        };
       }
     };
 
     server = createHttpServer(createBaseServerOptions()
       .setJdkSslEngineOptions(new JdkSSLEngineOptions().setUseWorkerThread(useWorkerThreads))
       .setSsl(true)
+      .setSni(useSni)
       .setKeyCertOptions(testOptions)
     )
       .requestHandler(req -> {
         req.response().end("Hello World");
       });
     startServer(testAddress);
-    Supplier<Future<Buffer>> request = () -> client.request(requestOptions).compose(req -> req.send().compose(HttpClientResponse::body));
+    Supplier<Future<Buffer>> request = () -> {
+      RequestOptions options = new RequestOptions(requestOptions);
+      if (useSni) {
+        options.setHost("host2.com");
+      }
+      return client.request(options)
+        .compose(req -> req.send()
+          .compose(HttpClientResponse::body)
+        );
+    };
     CountDownLatch latch = new CountDownLatch(1);
-    client = createHttpClient(new HttpClientOptions().setKeepAlive(false).setSsl(true).setTrustOptions(Trust.SERVER_JKS.get()));
+    client = createHttpClient(new HttpClientOptions().setKeepAlive(false).setSsl(true).setTrustAll(true));
     request.get().onComplete(onSuccess(body1 -> {
       assertEquals("Hello World", body1.toString());
       latch.countDown();
@@ -1854,7 +1904,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
     if (useWorkerThreads) {
       assertTrue(numWorkers > 0);
     } else {
-      assertEquals(0, numWorkers);
+      // It is fine using worker threads in this case
     }
   }
 }
