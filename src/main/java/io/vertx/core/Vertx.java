@@ -324,6 +324,55 @@ public interface Vertx extends Measured {
   TimeoutStream periodicStream(long initialDelay, long delay);
 
   /**
+   * Set a interval timer to fire after {@code delay} milliseconds and after initial delay and after
+   * every of the previous handler finished, at which point {@code handler} will be called with
+   * the id of the timer.
+   *
+   * @param delay  the delay in milliseconds, after which the timer will fire
+   * @param handler  the handler that will be called with the timer ID when the timer fires
+   * @return the unique ID of the timer
+   */
+  default long setInterval(long delay, Handler<Long> handler) {
+    return setInterval(delay, delay, handler);
+  }
+
+  /**
+   * Set a interval timer to fire after {@code delay} milliseconds and after initial delay and after
+   * every of the previous handler finished, at which point {@code handler} will be called with
+   * the id of the timer.
+   *
+   * @param initialDelay the initial delay in milliseconds
+   * @param delay        the delay in milliseconds, after which the timer will
+   *                     fire
+   * @param handler      the handler that will be called with the timer ID when
+   *                     the timer fires
+   * @return the unique ID of the timer
+   */
+  long setInterval(long initialDelay, long delay, Handler<Long> handler);
+
+  /**
+   * Returns a intervallic timer as a read stream. The timer will be fired after {@code delay} milliseconds after
+   * every previous handler finished, after the {@link ReadStream#handler} has been called.
+   *
+   * @param delay  the delay in milliseconds, after which the timer will fire
+   * @return the interval stream
+   */
+  default TimeoutStream intervalStream(long delay) {
+    return intervalStream(0, delay);
+  }
+
+  /**
+   * Returns a intervallic timer as a read stream. The timer will be fired after {@code delay} milliseconds after
+   * every previous handler finished, after the {@link ReadStream#handler} has been called.
+   *
+   * @param initialDelay the initial delay in milliseconds
+   * @param delay        the delay in milliseconds, after which the timer will
+   *                     fire
+   * @return the interval stream
+   */
+  TimeoutStream intervalStream(long initialDelay, long delay);
+
+  /**
    * Cancels the timer with the specified {@code id}.
    *
    * @param id  The id of the timer to cancel
