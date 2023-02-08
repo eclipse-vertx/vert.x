@@ -35,6 +35,7 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.StreamResetException;
+import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
@@ -239,6 +240,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     protected Handler<StreamPriority> priorityHandler;
     protected Handler<Void> drainHandler;
     protected Handler<Void> continueHandler;
+    protected Handler<MultiMap> earlyHintsHandler;
     protected Handler<HttpFrame> unknownFrameHandler;
     protected Handler<Throwable> exceptionHandler;
     protected Handler<HttpClientPush> pushHandler;
@@ -257,7 +259,13 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       context.emit(null, v -> handleContinue());
     }
 
+    void onEarlyHints(MultiMap headers) {
+      context.emit(null, v -> handleEarlyHints(headers));
+    }
+
     abstract void handleContinue();
+
+    abstract void handleEarlyHints(MultiMap headers);
 
     public Object metric() {
       return metric;
@@ -315,13 +323,21 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         if (status == 100) {
           onContinue();
           return;
+        } else if (status == 103) {
+          MultiMap headersMultiMap = HeadersMultiMap.httpHeaders();
+          removeStatusHeaders(headers);
+          for (Map.Entry<CharSequence, CharSequence> header : headers) {
+            headersMultiMap.add(header.getKey(), header.getValue());
+          }
+          onEarlyHints(headersMultiMap);
+          return;
         }
         response = new HttpResponseHead(
           HttpVersion.HTTP_2,
           status,
           statusMessage,
           new Http2HeadersAdaptor(headers));
-        headers.remove(":status");
+        removeStatusHeaders(headers);
 
         if (conn.metrics != null) {
           conn.metrics.responseBegin(metric, response);
@@ -331,6 +347,10 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
           context.emit(response, headHandler);
         }
       }
+    }
+
+    private void removeStatusHeaders(Http2Headers headers) {
+      headers.remove(":status");
     }
 
     @Override
@@ -381,6 +401,11 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     @Override
     public void continueHandler(Handler<Void> handler) {
       continueHandler = handler;
+    }
+
+    @Override
+    public void earlyHintsHandler(Handler<MultiMap> handler) {
+      earlyHintsHandler = handler;
     }
 
     @Override
@@ -496,6 +521,12 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     void handleContinue() {
       if (continueHandler != null) {
         continueHandler.handle(null);
+      }
+    }
+
+    void handleEarlyHints(MultiMap headers) {
+      if (earlyHintsHandler != null) {
+        earlyHintsHandler.handle(headers);
       }
     }
 

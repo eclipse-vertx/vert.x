@@ -154,6 +154,11 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
+    public void earlyHintsHandler(Handler<MultiMap> handler) {
+      delegate.earlyHintsHandler(handler);
+    }
+
+    @Override
     public void pushHandler(Handler<HttpClientPush> handler) {
       delegate.pushHandler(handler);
     }
@@ -264,6 +269,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     private Handler<Throwable> exceptionHandler;
     private Handler<Void> drainHandler;
     private Handler<Void> continueHandler;
+    private Handler<MultiMap> earlyHintsHandler;
     private Handler<HttpClientPush> pushHandler;
     private Handler<HttpFrame> unknownFrameHandler;
     private Handler<Void> closeHandler;
@@ -356,6 +362,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
                 upgradedStream.exceptionHandler(exceptionHandler);
                 upgradedStream.drainHandler(drainHandler);
                 upgradedStream.continueHandler(continueHandler);
+                upgradedStream.earlyHintsHandler(earlyHintsHandler);
                 upgradedStream.pushHandler(pushHandler);
                 upgradedStream.unknownFrameHandler(unknownFrameHandler);
                 upgradedStream.closeHandler(closeHandler);
@@ -366,6 +373,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
                 upgradingStream.exceptionHandler(null);
                 upgradingStream.drainHandler(null);
                 upgradingStream.continueHandler(null);
+                upgradingStream.earlyHintsHandler(null);
                 upgradingStream.pushHandler(null);
                 upgradingStream.unknownFrameHandler(null);
                 upgradingStream.closeHandler(null);
@@ -376,6 +384,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
                 exceptionHandler = null;
                 drainHandler = null;
                 continueHandler = null;
+                earlyHintsHandler = null;
                 pushHandler = null;
                 closeHandler = null;
                 upgradedConnection.current = conn;
@@ -532,6 +541,16 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
       } else {
         upgradingStream.continueHandler(handler);
         continueHandler = handler;
+      }
+    }
+
+    @Override
+    public void earlyHintsHandler(Handler<MultiMap> handler) {
+      if (upgradedStream != null) {
+        upgradedStream.earlyHintsHandler(handler);
+      } else {
+        upgradingStream.earlyHintsHandler(handler);
+        earlyHintsHandler = handler;
       }
     }
 

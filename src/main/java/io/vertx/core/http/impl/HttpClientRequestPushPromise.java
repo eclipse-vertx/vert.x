@@ -160,6 +160,11 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
+  public HttpClientRequest earlyHintsHandler(@Nullable Handler<MultiMap> handler) {
+    throw new IllegalStateException();
+  }
+
+  @Override
   public Future<Void> sendHead() {
     throw new IllegalStateException();
   }

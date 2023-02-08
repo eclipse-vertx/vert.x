@@ -12,6 +12,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
@@ -46,6 +47,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private final Future<Void> endFuture;
   private boolean chunked;
   private Handler<Void> continueHandler;
+  private Handler<MultiMap> earlyHintsHandler;
   private Handler<Void> drainHandler;
   private Handler<Throwable> exceptionHandler;
   private boolean ended;
@@ -68,6 +70,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
     //
     stream.continueHandler(this::handleContinue);
+    stream.earlyHintsHandler(this::handleEarlyHints);
     stream.drainHandler(this::handleDrained);
     stream.exceptionHandler(this::handleException);
   }
@@ -201,6 +204,15 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   @Override
+  public HttpClientRequest earlyHintsHandler(@Nullable Handler<MultiMap> handler) {
+    if (handler != null) {
+      checkEnded();
+    }
+    this.earlyHintsHandler = handler;
+    return this;
+  }
+
+  @Override
   public Future<Void> sendHead() {
     Promise<Void> promise = context.promise();
     sendHead(promise);
@@ -311,6 +323,16 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     }
     if (handler != null) {
       handler.handle(null);
+    }
+  }
+
+  private void handleEarlyHints(MultiMap headers) {
+    Handler<MultiMap> handler;
+    synchronized (this) {
+      handler = earlyHintsHandler;
+    }
+    if (handler != null) {
+      handler.handle(headers);
     }
   }
 

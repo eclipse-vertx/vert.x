@@ -436,6 +436,15 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     chctx.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
   }
 
+  void write103EarlyHints(HttpHeaders headers, PromiseInternal<Void> promise) {
+    chctx.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1,
+      HttpResponseStatus.EARLY_HINTS,
+      Unpooled.buffer(0),
+      headers,
+      EmptyHttpHeaders.INSTANCE
+    )).addListener(promise);
+  }
+
   protected void handleClosed() {
     Http1xServerRequest responseInProgress;
     Http1xServerRequest requestInProgress;

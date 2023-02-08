@@ -36,10 +36,12 @@ import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.spi.observability.HttpResponse;
 import io.vertx.core.streams.ReadStream;
 
+import java.util.Map.Entry;
 import java.util.Set;
 
 import static io.vertx.core.http.HttpHeaders.SET_COOKIE;
@@ -318,9 +320,29 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   public HttpServerResponse writeContinue() {
     synchronized (conn) {
       checkHeadWritten();
-      stream.writeHeaders(new DefaultHttp2Headers().status("100"), false, null);
+      stream.writeHeaders(new DefaultHttp2Headers().status(HttpResponseStatus.CONTINUE.codeAsText()), false, null);
       return this;
     }
+  }
+
+  @Override
+  public Future<Void> writeEarlyHints(MultiMap headers) {
+    PromiseInternal<Void> promise = stream.context.promise();
+    writeEarlyHints(headers, promise);
+    return promise.future();
+  }
+
+  @Override
+  public void writeEarlyHints(MultiMap headers, Handler<AsyncResult<Void>> handler) {
+    DefaultHttp2Headers http2Headers = new DefaultHttp2Headers();
+    for (Entry<String, String> header : headers) {
+      http2Headers.add(header.getKey(), header.getValue());
+    }
+    http2Headers.status(HttpResponseStatus.EARLY_HINTS.codeAsText());
+    synchronized (conn) {
+      checkHeadWritten();
+    }
+    stream.writeHeaders(http2Headers, false, handler);
   }
 
   @Override

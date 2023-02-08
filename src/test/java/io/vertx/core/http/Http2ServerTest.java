@@ -58,6 +58,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.Http1xOrH2CHandler;
 import io.vertx.core.http.impl.HttpUtils;
+import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;

@@ -33,6 +33,7 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpUtil;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.websocketx.WebSocket07FrameDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocket08FrameDecoder;
@@ -395,6 +396,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     }
 
     abstract void handleContinue();
+    abstract void handleEarlyHints(MultiMap headers);
     abstract void handleHead(HttpResponseHead response);
     abstract void handleChunk(Buffer buff);
     abstract void handleEnd(LastHttpContent trailer);
@@ -420,6 +422,8 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     private Handler<MultiMap> endHandler;
     private Handler<Void> drainHandler;
     private Handler<Void> continueHandler;
+
+    private Handler<MultiMap> earlyHintsHandler;
     private Handler<Throwable> exceptionHandler;
     private Handler<Void> closeHandler;
 
@@ -450,6 +454,11 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     @Override
     public void continueHandler(Handler<Void> handler) {
       continueHandler = handler;
+    }
+
+    @Override
+    public void earlyHintsHandler(Handler<MultiMap> handler) {
+      earlyHintsHandler = handler;
     }
 
     @Override
@@ -656,6 +665,12 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       }
     }
 
+    void handleEarlyHints(MultiMap headers) {
+      if (earlyHintsHandler != null) {
+        earlyHintsHandler.handle(headers);
+      }
+    }
+
     @Override
     void handleHead(HttpResponseHead response) {
       Handler<HttpResponseHead> handler = headHandler;
@@ -804,8 +819,11 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   }
 
   private void handleResponseBegin(Stream stream, HttpResponseHead response) {
-    if (response.statusCode == 100) {
+    // How can we handle future undefined 1xx informational response codes?
+    if (response.statusCode == HttpResponseStatus.CONTINUE.code()) {
       stream.context.execute(null, v -> stream.handleContinue());
+    } else if (response.statusCode == HttpResponseStatus.EARLY_HINTS.code()) {
+      stream.context.execute(null, v -> stream.handleEarlyHints(response.headers));
     } else {
       HttpRequestHead request;
       synchronized (this) {

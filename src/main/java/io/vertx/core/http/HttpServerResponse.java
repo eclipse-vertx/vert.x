@@ -242,6 +242,21 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   HttpServerResponse writeContinue();
 
   /**
+   * Used to write an interim 103 Early Hints response to return some HTTP headers before the final HTTP message.
+   *
+   * @param headers  headers to write
+   * @return a future
+   */
+  Future<Void> writeEarlyHints(MultiMap headers);
+
+  /**
+   * Same as {@link #writeEarlyHints(MultiMap)} but with an {@code handler} called when the operation completes
+   *
+   * @param headers  headers to write
+   */
+  void writeEarlyHints(MultiMap headers, Handler<AsyncResult<Void>> handler);
+
+  /**
    * Same as {@link #end(Buffer)} but writes a String in UTF-8 encoding before ending the response.
    *
    * @param chunk  the string to write before ending the response
