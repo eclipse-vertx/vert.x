@@ -59,6 +59,7 @@ public class JdkSSLEngineOptions extends SSLEngineOptions {
   }
 
   public JdkSSLEngineOptions(JsonObject json) {
+    super(json);
   }
 
   public JdkSSLEngineOptions(JdkSSLEngineOptions that) {
