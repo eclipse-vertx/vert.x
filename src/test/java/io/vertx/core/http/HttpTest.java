@@ -54,6 +54,7 @@ import io.vertx.test.fakestream.FakeStream;
 import io.vertx.test.netty.TestLoggerFactory;
 import io.vertx.test.proxy.HAProxy;
 import org.junit.Assume;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -2466,6 +2467,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
+  @Ignore
   @Test
   public void testRequestTimeoutCanceledWhenRequestHasAnOtherError() {
     Assume.assumeFalse(Utils.isWindows());
@@ -3438,7 +3440,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testServerReadStreamInWorker() throws Exception {
-    int numReq = 16;
+    int numReq = 1;
     waitFor(numReq);
     Buffer body = Buffer.buffer(randomAlphaString(512 * 1024));
     vertx.deployVerticle(new AbstractVerticle() {

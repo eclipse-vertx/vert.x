@@ -270,6 +270,22 @@ public class TestUtils {
   }
 
   /**
+   * Creates a random string of ascii alpha characters
+   *
+   * @param length the length of the string to create
+   * @return a String of random ascii alpha characters
+   */
+  public static String patternString(String pattern, int length) {
+    StringBuilder builder = new StringBuilder(length);
+    int times = length / pattern.length();
+    for (int i = 0; i < times; i++) {
+      builder.append(pattern);
+    }
+    builder.append(pattern, 0, length % pattern.length());
+    return builder.toString();
+  }
+
+  /**
    * Create random {@link Http2Settings} with valid values.
    *
    * @return the random settings

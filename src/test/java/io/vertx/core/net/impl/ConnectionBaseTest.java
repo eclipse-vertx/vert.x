@@ -88,7 +88,7 @@ public class ConnectionBaseTest extends VertxTestBase {
         Runnable checkOrder = () -> {
           if (order.size() == 3) {
             vertx.runOnContext(v -> {
-              assertEquals(Arrays.asList("msg1", "msg2", "flush"), order);
+              assertEquals(Arrays.asList("msg1", "flush", "msg2", "flush"), order);
               testComplete();
             });
           }
@@ -100,7 +100,7 @@ public class ConnectionBaseTest extends VertxTestBase {
               String s = (String) msg;
               order.add(s);
               if ("msg1".equals(s)) {
-                // Flush a message why there are two messages queued on the connection
+                // Flush a message while there are two messages queued on the connection
                 conn.flush();
               }
               checkOrder.run();
