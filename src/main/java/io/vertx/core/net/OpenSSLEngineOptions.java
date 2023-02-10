@@ -52,10 +52,12 @@ public class OpenSSLEngineOptions extends SSLEngineOptions {
   }
 
   public OpenSSLEngineOptions(JsonObject json) {
+    super(json);
     OpenSSLEngineOptionsConverter.fromJson(json, this);
   }
 
   public OpenSSLEngineOptions(OpenSSLEngineOptions other) {
+    super(other);
     this.sessionCacheEnabled = other.isSessionCacheEnabled();
   }
 
