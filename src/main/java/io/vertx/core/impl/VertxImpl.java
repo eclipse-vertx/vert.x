@@ -80,6 +80,8 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -105,7 +107,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final FileSystem fileSystem = getFileSystem();
   private final SharedData sharedData;
   private final VertxMetrics metrics;
-  private final ConcurrentMap<Long, InternalTimerHandler> timeouts = new ConcurrentHashMap<>();
+  private final ConcurrentMap<Long, Cancelable> timeouts = new ConcurrentHashMap<>();
   private final AtomicLong timeoutCounter = new AtomicLong(0);
   private final ClusterManager clusterManager;
   private final NodeSelector nodeSelector;
@@ -365,33 +367,31 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public long setPeriodic(long initialDelay, long delay, Handler<Long> handler) {
     ContextInternal ctx = getOrCreateContext();
-    return scheduleTimeout(ctx, true, false, initialDelay, delay, TimeUnit.MILLISECONDS, ctx.isDeployment(), handler);
+    return scheduleTimeout(ctx, true, initialDelay, delay, TimeUnit.MILLISECONDS, ctx.isDeployment(), handler);
   }
 
   @Override
   public TimeoutStream periodicStream(long initialDelay, long delay) {
-    return new TimeoutStreamImpl(initialDelay, delay, true, false);
+    return new TimeoutStreamImpl(initialDelay, delay, true);
   }
 
   @Override
-  public long setInterval(long initialDelay, long delay, Handler<Long> handler) {
+  public <T> long setInterval(long initialDelay, long delay, Function<Long, Future<T>> handler) {
     ContextInternal ctx = getOrCreateContext();
-    return scheduleTimeout(ctx, false, true, initialDelay, delay, TimeUnit.MILLISECONDS, ctx.isDeployment(), handler);
-  }
-
-  @Override
-  public TimeoutStream intervalStream(long initialDelay, long delay) {
-    return new TimeoutStreamImpl(initialDelay, delay, false, true);
+    long timerId = timeoutCounter.getAndIncrement();
+    IntervalTimerHandlerHolder<T> task = new IntervalTimerHandlerHolder<>(timerId, handler, initialDelay, delay, ctx);
+    timeouts.put(timerId, task);
+    return timerId;
   }
 
   public long setTimer(long delay, Handler<Long> handler) {
     ContextInternal ctx = getOrCreateContext();
-    return scheduleTimeout(ctx, false, false, delay, TimeUnit.MILLISECONDS, ctx.isDeployment(), handler);
+    return scheduleTimeout(ctx, false, delay, TimeUnit.MILLISECONDS, ctx.isDeployment(), handler);
   }
 
   @Override
   public TimeoutStream timerStream(long delay) {
-    return new TimeoutStreamImpl(delay, false, false);
+    return new TimeoutStreamImpl(delay, false);
   }
 
   @Override
@@ -476,7 +476,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public boolean cancelTimer(long id) {
-    InternalTimerHandler handler = timeouts.get(id);
+    Cancelable handler = timeouts.get(id);
     if (handler != null) {
       return handler.cancel();
     } else {
@@ -536,7 +536,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   private long scheduleTimeout(ContextInternal context,
                               boolean periodic,
-                              boolean interval,
                               long initialDelay,
                               long delay,
                               TimeUnit timeUnit,
@@ -557,8 +556,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     EventLoop el = context.nettyEventLoop();
     if (periodic) {
       task.future = el.scheduleAtFixedRate(task, initialDelay, delay, timeUnit);
-    } else if (interval) {
-      task.future = el.scheduleWithFixedDelay(task, initialDelay, delay, timeUnit);
     } else {
       task.future = el.schedule(task, delay, timeUnit);
     }
@@ -567,12 +564,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   public long scheduleTimeout(ContextInternal context,
                                               boolean periodic,
-                                              boolean interval,
                                               long delay,
                                               TimeUnit timeUnit,
                                               boolean addCloseHook,
                                               Handler<Long> handler) {
-    return scheduleTimeout(context, periodic, interval, delay, delay, timeUnit, addCloseHook, handler);
+    return scheduleTimeout(context, periodic, delay, delay, timeUnit, addCloseHook, handler);
   }
 
   public ContextInternal getContext() {
@@ -906,6 +902,53 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   /**
+   * Cancelable timeouts.
+   */
+  interface Cancelable {
+    boolean cancel();
+  }
+
+  class IntervalTimerHandlerHolder<T> implements Cancelable {
+    private final Function<Long, Future<T>> handler;
+    private final long id;
+    private final ContextInternal context;
+    private final AtomicBoolean disposed = new AtomicBoolean();
+
+    private final AtomicLong timerId = new AtomicLong();
+    private final long delay;
+
+    IntervalTimerHandlerHolder(long id, Function<Long, Future<T>> runnable, long initialDelay, long delay, ContextInternal context) {
+      this.context = context;
+      this.id = id;
+      this.handler = runnable;
+      this.delay = delay;
+      timerId.set(scheduleTimeout(context, false, initialDelay, delay, TimeUnit.MILLISECONDS, context.isDeployment(), wrapHandler()));
+    }
+
+    private Handler<Long> wrapHandler() {
+      return tid -> {
+        handler.apply(tid).onComplete(v->{
+            // TODO handle error
+            if(!disposed.get()) {
+              timerId.set(scheduleTimeout(context, false, delay, delay, TimeUnit.MILLISECONDS, context.isDeployment(), wrapHandler()));
+            }
+          });
+      };
+    }
+
+    @Override
+    public boolean cancel() {
+      if (disposed.compareAndSet(false, true)) {
+        timeouts.remove(id);
+        cancelTimer(timerId.get());
+        return true;
+      } else {
+        return false;
+      }
+    }
+  }
+
+  /**
    * Timers are stored in the {@link #timeouts} map at creation time.
    * <p/>
    * Timers are removed from the {@link #timeouts} map when they are cancelled or are fired. The thread
@@ -915,7 +958,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
    * This class does not rely on the internal {@link #future} for the termination to handle the worker case
    * since the actual timer {@link #handler} execution is scheduled when the {@link #future} executes.
    */
-  class InternalTimerHandler implements Handler<Void>, Closeable, Runnable {
+  class InternalTimerHandler implements Handler<Void>, Closeable, Runnable, Cancelable {
 
     private final Handler<Long> handler;
     private final boolean periodic;
@@ -936,6 +979,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       context.emit(this);
     }
 
+    @Override
     public void handle(Void v) {
       if (periodic) {
         if (!disposed.get()) {
@@ -952,7 +996,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       }
     }
 
-    private boolean cancel() {
+    @Override
+    public boolean cancel() {
       boolean cancelled = tryCancel();
       if (cancelled) {
         if (context.isDeployment()) {
@@ -973,6 +1018,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
 
     // Called via Context close hook when Verticle is undeployed
+    @Override
     public void close(Promise<Void> completion) {
       tryCancel();
       completion.complete();
@@ -993,22 +1039,20 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     private final long initialDelay;
     private final long delay;
     private final boolean periodic;
-    private final boolean interval;
 
     private Long id;
     private Handler<Long> handler;
     private Handler<Void> endHandler;
     private long demand;
 
-    public TimeoutStreamImpl(long delay, boolean periodic, boolean interval) {
-      this(delay, delay, periodic, interval);
+    public TimeoutStreamImpl(long delay, boolean periodic) {
+      this(delay, delay, periodic);
     }
 
-    public TimeoutStreamImpl(long initialDelay, long delay, boolean periodic, boolean interval) {
+    public TimeoutStreamImpl(long initialDelay, long delay, boolean periodic) {
       this.initialDelay = initialDelay;
       this.delay = delay;
       this.periodic = periodic;
-      this.interval = interval;
       this.demand = Long.MAX_VALUE;
     }
 
@@ -1055,8 +1099,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         }
         ContextInternal ctx = getOrCreateContext();
         this.handler = handler;
-        this.id = scheduleTimeout(ctx, periodic, interval, initialDelay, delay,
-                                  TimeUnit.MILLISECONDS, ctx.isDeployment(), this);
+        this.id = scheduleTimeout(ctx, periodic, initialDelay, delay, TimeUnit.MILLISECONDS, ctx.isDeployment(), this);
       } else {
         cancel();
       }
