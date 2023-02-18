@@ -16,7 +16,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -1452,15 +1451,7 @@ public class Http2ClientTest extends Http2TestBase {
 
   @Test
   public void testNetSocketConnect() throws Exception {
-    waitFor(2);
-    final AtomicInteger writeHandlerCounter = new AtomicInteger(0);
-    Handler<AsyncResult<Void>> writeHandler = (result) -> {
-      if(result.succeeded()) {
-        assertTrue(writeHandlerCounter.incrementAndGet() >= 1);
-      } else {
-        fail(result.cause());
-      }
-    };
+    waitFor(4);
 
     server.requestHandler(req -> {
       req.toNetSocket(onSuccess(socket -> {
@@ -1469,7 +1460,7 @@ public class Http2ClientTest extends Http2TestBase {
           switch (status.getAndIncrement()) {
             case 0:
               assertEquals(Buffer.buffer("some-data"), buff);
-              socket.write(buff, writeHandler);
+              socket.write(buff, onSuccess(v -> complete()));
               break;
             case 1:
               assertEquals(Buffer.buffer("last-data"), buff);
@@ -1481,12 +1472,11 @@ public class Http2ClientTest extends Http2TestBase {
         });
         socket.endHandler(v -> {
           assertEquals(2, status.getAndIncrement());
-          socket.write(Buffer.buffer("last-data"), writeHandler);
+          socket.end(Buffer.buffer("last-data"), onSuccess(v2 -> complete()));
         });
         socket.closeHandler(v -> {
           assertEquals(3, status.getAndIncrement());
           complete();
-          assertEquals(2, writeHandlerCounter.get());
         });
       }));
     });
@@ -1500,7 +1490,7 @@ public class Http2ClientTest extends Http2TestBase {
           AtomicInteger count = new AtomicInteger();
           socket.handler(buff -> {
             if (buff.length() > 0) {
-              received.append(buff.toString());
+              received.append(buff);
               if (received.toString().equals("some-data")) {
                 received.setLength(0);
                 socket.end(Buffer.buffer("last-data"));
