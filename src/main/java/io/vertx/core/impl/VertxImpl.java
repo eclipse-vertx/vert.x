@@ -87,6 +87,13 @@ import java.util.function.Supplier;
  */
 public class VertxImpl implements VertxInternal, MetricsProvider {
 
+  /**
+   * Context dispatch info for context running with non vertx threads (Loom).
+   */
+  static final ThreadLocal<ContextDispatch> nonVertxContextDispatch = new ThreadLocal<>();
+  // We need to initialize nonVertxContextDispatch before log because log may use the context on startup.
+  // https://github.com/eclipse-vertx/vert.x/issues/4611
+
   private static final Logger log = LoggerFactory.getLogger(VertxImpl.class);
 
   private static final String CLUSTER_MAP_NAME = "__vertx.haInfo";
@@ -1202,11 +1209,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     ContextInternal context;
     ClassLoader topLevelTCCL;
   }
-
-  /**
-   * Context dispatch info for context running with non vertx threads (Loom).
-   */
-  static final ThreadLocal<ContextDispatch> nonVertxContextDispatch = new ThreadLocal<>();
 
   /**
    * Begin the emission of a context event.
