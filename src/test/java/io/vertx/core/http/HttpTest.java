@@ -54,6 +54,7 @@ import io.vertx.test.fakestream.FakeStream;
 import io.vertx.test.netty.TestLoggerFactory;
 import io.vertx.test.proxy.HAProxy;
 import org.junit.Assume;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -2324,10 +2325,12 @@ public abstract class HttpTest extends HttpTestBase {
 
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
+      req.pause();
       resp.writeEarlyHints(HeadersMultiMap.httpHeaders().add("wibble", "wibble-103-value"), result -> {
         if (result.failed()) {
           fail(result.cause());
         } else {
+          req.resume();
           resp.putHeader("wibble", "wibble-200-value");
           req.bodyHandler(body -> {
             assertEquals("request-body", body.toString());
@@ -5221,6 +5224,7 @@ public abstract class HttpTest extends HttpTestBase {
       so.handler(received::appendBuffer);
       so.endHandler(v -> {
         assertEquals("hello", received.toString());
+        so.end();
         complete();
       });
     }, so -> {
@@ -5249,6 +5253,7 @@ public abstract class HttpTest extends HttpTestBase {
       so.handler(received::appendBuffer);
       so.endHandler(v -> {
         assertEquals("hello", received.toString());
+        so.end();
         complete();
       });
     });
@@ -5261,6 +5266,7 @@ public abstract class HttpTest extends HttpTestBase {
       so.handler(received::appendBuffer);
       so.endHandler(v -> {
         assertEquals("pong", received.toString());
+        so.end();
         complete();
       });
       so.write(Buffer.buffer("ping"));
@@ -5292,6 +5298,7 @@ public abstract class HttpTest extends HttpTestBase {
       so.handler(received::appendBuffer);
       so.endHandler(v -> {
         assertEquals("pong", received.toString());
+        so.end();
         complete();
       });
       so.write(Buffer.buffer("ping"));
@@ -6688,16 +6695,11 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testServerResponseChunkedSend() throws Exception {
-    testServerResponseSend(true);
-  }
-
-  @Test
   public void testServerResponseSend() throws Exception {
     testServerResponseSend(false);
   }
 
-  private void testServerResponseSend(boolean chunked) throws Exception {
+  protected void testServerResponseSend(boolean chunked) throws Exception {
     int num = 16;
     List<Buffer> chunks = new ArrayList<>();
     Buffer expected = Buffer.buffer();

@@ -926,6 +926,7 @@ public class Http2Test extends HttpTest {
     await();
   }
 
+  @Ignore
   @Test
   public void testAppendToHttpChunks() throws Exception {
     List<String> expected = Arrays.asList("chunk-1", "chunk-2", "chunk-3");

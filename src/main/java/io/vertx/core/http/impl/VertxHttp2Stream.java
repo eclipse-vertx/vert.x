@@ -133,9 +133,6 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   void onEnd(MultiMap trailers) {
     conn.flushBytesRead();
     context.emit(trailers, pending::write);
-    if (isConnect) {
-      doWriteData(Unpooled.EMPTY_BUFFER, true, null);
-    }
   }
 
   public int id() {

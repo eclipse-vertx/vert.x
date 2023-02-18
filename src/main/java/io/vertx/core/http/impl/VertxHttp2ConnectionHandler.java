@@ -134,7 +134,7 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
     // super call writes the connection preface
     // we need to flush to send it
     // this is called only on the client
-    ctx.flush();
+    checkFlush();
   }
 
   @Override
@@ -220,7 +220,7 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   void writeHeaders(Http2Stream stream, Http2Headers headers, boolean end, int streamDependency, short weight, boolean exclusive, FutureListener<Void> listener) {
     ChannelPromise promise = listener == null ? chctx.voidPromise() : chctx.newPromise().addListener(listener);
     encoder().writeHeaders(chctx, stream.id(), headers, streamDependency, weight, exclusive, 0, end, promise);
-    chctx.channel().flush();
+    checkFlush();
   }
 
   void writeData(Http2Stream stream, ByteBuf chunk, boolean end, FutureListener<Void> listener) {
@@ -234,7 +234,13 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
         onError(chctx, true, e);
       }
     }
-    chctx.channel().flush();
+    checkFlush();
+  }
+
+  private void checkFlush() {
+    if (!read) {
+      chctx.channel().flush();
+    }
   }
 
   ChannelFuture writePing(long data) {
@@ -252,7 +258,7 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
 
   private void _writePing(long data, ChannelPromise promise) {
     encoder().writePing(chctx, false, data, promise);
-    chctx.channel().flush();
+    checkFlush();
   }
 
   /**
@@ -262,7 +268,7 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
     try {
       boolean windowUpdateSent = decoder().flowController().consumeBytes(stream, numBytes);
       if (windowUpdateSent) {
-        chctx.channel().flush();
+        checkFlush();
       }
     } catch (Http2Exception e) {
       onError(chctx, true, e);
@@ -271,12 +277,12 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
 
   void writeFrame(Http2Stream stream, byte type, short flags, ByteBuf payload) {
     encoder().writeFrame(chctx, type, stream.id(), new Http2Flags(flags), payload, chctx.newPromise());
-    chctx.flush();
+    checkFlush();
   }
 
   void writeReset(int streamId, long code) {
     encoder().writeRstStream(chctx, streamId, code, chctx.newPromise());
-    chctx.flush();
+    checkFlush();
   }
 
   void writeGoAway(long errorCode, int lastStreamId, ByteBuf debugData) {
@@ -292,7 +298,7 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
 
   private void _writeGoAway(long errorCode, int lastStreamId, ByteBuf debugData) {
     encoder().writeGoAway(chctx, lastStreamId, errorCode, debugData, chctx.newPromise());
-    chctx.flush();
+    checkFlush();
   }
 
   ChannelFuture writeSettings(Http2Settings settingsUpdate) {
@@ -310,7 +316,7 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
 
   private void _writeSettings(Http2Settings settingsUpdate, ChannelPromise promise) {
     encoder().writeSettings(chctx, settingsUpdate, promise);
-    chctx.flush();
+    checkFlush();
   }
 
   io.netty.util.concurrent.Future<Integer> writePushPromise(int streamId, Http2Headers headers) {
@@ -390,8 +396,11 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
     connectFuture.setSuccess(connection);
   }
 
+  private boolean read;
+
   @Override
   public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+    read = true;
     if (msg instanceof Http2StreamFrame) {
       // Handle HTTP/2 clear text upgrade request
       if (msg instanceof Http2HeadersFrame) {
@@ -407,6 +416,13 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
     } else {
       super.channelRead(ctx, msg);
     }
+  }
+
+  @Override
+  public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+    read = false;
+    // Super will flush
+    super.channelReadComplete(ctx);
   }
 
   @Override

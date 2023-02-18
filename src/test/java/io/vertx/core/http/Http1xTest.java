@@ -5357,4 +5357,9 @@ public class Http1xTest extends HttpTest {
     }));
     await();
   }
+
+  @Test
+  public void testServerResponseChunkedSend() throws Exception {
+    testServerResponseSend(true);
+  }
 }
