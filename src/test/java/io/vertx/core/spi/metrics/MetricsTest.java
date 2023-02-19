@@ -29,7 +29,6 @@ import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakemetrics.*;
@@ -1007,7 +1006,7 @@ public class MetricsTest extends VertxTestBase {
 
     assertWaitUntil(() -> metrics.numberOfSubmittedTask() == 100);
     assertWaitUntil(() -> metrics.numberOfCompletedTasks() == 100);
-    assertTrue(hadIdle.get());
+    assertWaitUntil(() -> hadIdle.get());
     assertTrue(hadWaitingQueue.get());
     assertTrue(hadRunning.get());
 
