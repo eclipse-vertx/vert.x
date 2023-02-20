@@ -96,21 +96,30 @@ public class JsonParserTest {
   }
 
   @Test
-  public void parseUnfinished() {
-    Buffer data = Buffer.buffer("{\"un\":\"finished\"");
+  public void parseUnfinishedThrowingException() {
+    StringBuilder events = new StringBuilder();
+    JsonParser parser = JsonParser.newParser();
+    parser.handler(e -> events.append("json,"));
+    parser.endHandler(v -> events.append("end,"));
+    parser.handle(Buffer.buffer("{\"un\":\"finished\""));
     try {
-      JsonParser parser = JsonParser.newParser();
-      parser.handle(data);
       parser.end();
       fail();
     } catch (DecodeException expected) {
     }
+    assertEquals("json,json,", events.toString());
+  }
+
+  @Test
+  public void parseUnfinishedExceptionHandler() {
+    StringBuilder events = new StringBuilder();
     JsonParser parser = JsonParser.newParser();
-    List<Throwable> errors = new ArrayList<>();
-    parser.exceptionHandler(errors::add);
-    parser.handle(data);
+    parser.handler(e -> events.append("json,"));
+    parser.endHandler(v -> events.append("end,"));
+    parser.exceptionHandler(e -> events.append("exception,"));
+    parser.handle(Buffer.buffer("{\"un\":\"finished\""));
     parser.end();
-    assertEquals(1, errors.size());
+    assertEquals("json,json,exception,end,", events.toString());
   }
 
   @Test

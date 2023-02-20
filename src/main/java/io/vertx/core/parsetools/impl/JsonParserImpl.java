@@ -288,6 +288,7 @@ public class JsonParserImpl implements JsonParser {
         }
         if (ended) {
           if (pending.isEmpty()) {
+            checkExceptions();
             Handler<Void> handler = endHandler;
             endHandler = null;
             if (handler != null) {
