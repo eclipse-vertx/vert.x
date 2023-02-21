@@ -2803,13 +2803,16 @@ public class Http1xTest extends HttpTest {
 
     awaitLatch(serverLatch);
 
+    int poolSize = 5;
+
     HttpClientOptions clientOptions = new HttpClientOptions()
+        .setMaxPoolSize(poolSize)
         .setDefaultHost("localhost")
         .setKeepAlive(true)
         .setPipelining(false);
     client = vertx.createHttpClient(clientOptions);
 
-    int requests = 11;
+    int requests = poolSize * 2 + 1;
     AtomicInteger count = new AtomicInteger(requests);
 
     for (int i = 0; i < requests; i++) {
