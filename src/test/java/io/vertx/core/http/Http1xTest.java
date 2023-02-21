@@ -4767,7 +4767,6 @@ public class Http1xTest extends HttpTest {
       boolean[] positions = { true, false };
       for (boolean position : positions) {
         for (String invalid : chars) {
-          System.out.println("char : " + invalid.codePointAt(0) + " - position : " + position);
           int current = invalidRequests.get();
           CountDownLatch latch = new CountDownLatch(1);
           client.connect(testAddress, onSuccess(so -> {

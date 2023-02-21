@@ -19,12 +19,11 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static io.vertx.core.http.HttpUtilsTest.HEADER_NAME_ALLOWED_CHARS;
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -289,5 +288,27 @@ public class VertxHttpHeadersTest extends HeadersTestBase {
     assertTrue(mmap.containsValue("foo", "val3", true));
     assertFalse(mmap.containsValue("foo", "val4", true));
     assertFalse(mmap.containsValue("foo", "helloworld", true));
+  }
+
+  @Test
+  public void testInvalidChars() {
+    HeadersMultiMap mmap = HeadersMultiMap.httpHeaders();
+    testInvalidChars(cs -> mmap.set(cs, "header_value"), AsciiString::new);
+    testInvalidChars(cs -> mmap.set(cs, "header_value"), Object::toString);
+  }
+
+  public void testInvalidChars(Consumer<CharSequence> consumer, Function<byte[], CharSequence> b) {
+    for (int i = 9;i < 10;i++) {
+      CharSequence val = b.apply(new byte[]{(byte) i});
+      if (!HEADER_NAME_ALLOWED_CHARS.contains((byte)i)) {
+        try {
+          consumer.accept(val);
+          fail("Was not expecting " + i + " to pass");
+        } catch (IllegalArgumentException expected) {
+        }
+      } else {
+        consumer.accept(val);
+      }
+    }
   }
 }
