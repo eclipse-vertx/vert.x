@@ -890,7 +890,12 @@ public final class HttpUtils {
     final int off = value.arrayOffset();
     final byte[] asciiChars = value.array();
     for (int i = 0; i < len; i++) {
-      if (!VALID_H_NAME_ASCII_CHARS[asciiChars[off + i] & 0x7F]) {
+      // Check to see if the character is not an ASCII character, or invalid
+      byte c = asciiChars[off + i];
+      if (c < 0) {
+        throw new IllegalArgumentException("a header name cannot contain non-ASCII character: " + value);
+      }
+      if (!VALID_H_NAME_ASCII_CHARS[c & 0x7F]) {
         throw new IllegalArgumentException("a header name cannot contain some prohibited characters, such as : " + value);
       }
     }
