@@ -1823,17 +1823,21 @@ public class NetTest extends VertxTestBase {
               indicatedServerName = socket.indicatedServerName();
               assertFalse(socket.isSsl());
               Context ctx = Vertx.currentContext();
-              socket.upgradeToSsl(ar -> {
-                assertSame(ctx, Vertx.currentContext());
-                assertEquals(shouldPass, ar.succeeded());
-                if (ar.succeeded()) {
+              Handler<AsyncResult<Void>> handler;
+              if (shouldPass) {
+                handler = onSuccess(v -> {
+                  assertSame(ctx, Vertx.currentContext());
                   certificateChainChecker.accept(socket);
                   upgradedServerCount.incrementAndGet();
                   assertTrue(socket.isSsl());
-                } else {
+                });
+              } else {
+                handler = onFailure(err -> {
+                  assertSame(ctx, Vertx.currentContext());
                   complete();
-                }
-              });
+                });
+              }
+              socket.upgradeToSsl(handler);
             } else {
               assertTrue(socket.isSsl());
               assertEquals(1, upgradedServerCount.get());
