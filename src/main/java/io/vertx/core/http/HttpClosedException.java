@@ -11,6 +11,7 @@
 package io.vertx.core.http;
 
 import io.vertx.core.VertxException;
+import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.net.impl.ConnectionBase;
 
 /**
@@ -20,16 +21,16 @@ public class HttpClosedException extends VertxException {
 
   private static String formatErrorMessage(GoAway goAway) {
     if (goAway == null) {
-      return ConnectionBase.CLOSED_EXCEPTION.getMessage();
+      return "Connection was closed";
     } else {
-      return ConnectionBase.CLOSED_EXCEPTION.getMessage() + " (GOAWAY error code = " + goAway.getErrorCode() + ")";
+      return "Stream was closed (GOAWAY error code = " + goAway.getErrorCode() + ")";
     }
   }
 
   private final GoAway goAway;
 
-  public HttpClosedException() {
-    super(ConnectionBase.CLOSED_EXCEPTION.getMessage(), true);
+  public HttpClosedException(String message) {
+    super(message, true);
     this.goAway = null;
   }
 

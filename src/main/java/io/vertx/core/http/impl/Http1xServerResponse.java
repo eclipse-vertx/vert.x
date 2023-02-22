@@ -688,7 +688,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
       closedHandler = this.closeHandler;
     }
     if (exceptionHandler != null) {
-      context.dispatch(HttpUtils.CLOSED_EXCEPTION, exceptionHandler);
+      context.dispatch(HttpUtils.CONNECTION_CLOSED_EXCEPTION, exceptionHandler);
     }
     if (endHandler != null) {
       context.dispatch(null, endHandler);

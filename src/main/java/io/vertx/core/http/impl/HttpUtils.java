@@ -61,7 +61,8 @@ import static io.vertx.core.http.Http2Settings.*;
  */
 public final class HttpUtils {
 
-  static final HttpClosedException CLOSED_EXCEPTION = new HttpClosedException();
+  static final HttpClosedException CONNECTION_CLOSED_EXCEPTION = new HttpClosedException("Connection was closed");
+  static final HttpClosedException STREAM_CLOSED_EXCEPTION = new HttpClosedException("Stream was closed");
   static final int SC_SWITCHING_PROTOCOLS = 101;
   static final int SC_BAD_GATEWAY = 502;
 

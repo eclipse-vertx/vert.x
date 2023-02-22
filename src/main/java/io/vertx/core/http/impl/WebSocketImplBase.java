@@ -511,7 +511,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
       textConsumer.unregister();
     }
     if (exceptionHandler != null && !graceful) {
-      context.dispatch(HttpUtils.CLOSED_EXCEPTION, exceptionHandler);
+      context.dispatch(HttpUtils.CONNECTION_CLOSED_EXCEPTION, exceptionHandler);
     }
     if (closeHandler != null) {
       context.dispatch(null, closeHandler);

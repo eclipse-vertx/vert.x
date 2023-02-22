@@ -150,7 +150,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
       if (goAwayStatus != null) {
         stream.onClose(new HttpClosedException(goAwayStatus));
       } else {
-        stream.onClose(HttpUtils.CLOSED_EXCEPTION);
+        stream.onClose(HttpUtils.STREAM_CLOSED_EXCEPTION);
       }
     }
     checkShutdown();
