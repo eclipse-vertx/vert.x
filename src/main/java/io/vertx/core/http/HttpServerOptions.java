@@ -12,17 +12,31 @@
 package io.vertx.core.http;
 
 import io.netty.handler.codec.compression.CompressionOptions;
+import io.netty.handler.logging.ByteBufFormat;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.Unstable;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.*;
+import io.vertx.core.net.JdkSSLEngineOptions;
+import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.KeyCertOptions;
+import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.OpenSSLEngineOptions;
+import io.vertx.core.net.PemKeyCertOptions;
+import io.vertx.core.net.PemTrustOptions;
+import io.vertx.core.net.PfxOptions;
+import io.vertx.core.net.SSLEngineOptions;
+import io.vertx.core.net.TrustOptions;
 import io.vertx.core.tracing.TracingPolicy;
-import io.netty.handler.logging.ByteBufFormat;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -149,6 +163,11 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public static final TracingPolicy DEFAULT_TRACING_POLICY = TracingPolicy.ALWAYS;
 
+  /**
+   * Whether write-handlers for server websockets should be registered by default = false.
+   */
+  public static final boolean DEFAULT_REGISTER_WEBSOCKET_WRITE_HANDLERS = false;
+
   private boolean compressionSupported;
   private int compressionLevel;
   private List<CompressionOptions> compressors;
@@ -173,6 +192,7 @@ public class HttpServerOptions extends NetServerOptions {
   private boolean webSocketPreferredClientNoContext;
   private int webSocketClosingTimeout;
   private TracingPolicy tracingPolicy;
+  private boolean registerWebSocketWriteHandlers;
 
   /**
    * Default constructor
@@ -214,6 +234,7 @@ public class HttpServerOptions extends NetServerOptions {
     this.webSocketAllowServerNoContext = other.webSocketAllowServerNoContext;
     this.webSocketClosingTimeout = other.webSocketClosingTimeout;
     this.tracingPolicy = other.tracingPolicy;
+    this.registerWebSocketWriteHandlers = other.registerWebSocketWriteHandlers;
   }
 
   /**
@@ -262,6 +283,7 @@ public class HttpServerOptions extends NetServerOptions {
     webSocketAllowServerNoContext = DEFAULT_WEBSOCKET_ALLOW_SERVER_NO_CONTEXT;
     webSocketClosingTimeout = DEFAULT_WEBSOCKET_CLOSING_TIMEOUT;
     tracingPolicy = DEFAULT_TRACING_POLICY;
+    registerWebSocketWriteHandlers = DEFAULT_REGISTER_WEBSOCKET_WRITE_HANDLERS;
   }
 
   @Override
@@ -1028,6 +1050,44 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public HttpServerOptions setTracingPolicy(TracingPolicy tracingPolicy) {
     this.tracingPolicy = tracingPolicy;
+    return this;
+  }
+
+  /**
+   * @return {@code false}, does not apply to HTTP servers
+   */
+  @Override
+  public boolean isRegisterWriteHandler() {
+    return false;
+  }
+
+  /**
+   * Has no effect on HTTP server options.
+   */
+  @Override
+  public HttpServerOptions setRegisterWriteHandler(boolean registerWriteHandler) {
+    return this;
+  }
+
+  /**
+   * @return {@code true} if write-handlers for server websockets should be registered on the {@link io.vertx.core.eventbus.EventBus}, otherwise {@code false}
+   */
+  public boolean isRegisterWebSocketWriteHandlers() {
+    return registerWebSocketWriteHandlers;
+  }
+
+  /**
+   * Whether write-handlers for server websockets should be registered on the {@link io.vertx.core.eventbus.EventBus}.
+   * <p>
+   * Defaults to {@code false}.
+   *
+   * @param registerWebSocketWriteHandlers true to register write-handlers
+   * @return a reference to this, so the API can be used fluently
+   * @see WebSocketBase#textHandlerID()
+   * @see WebSocketBase#binaryHandlerID()
+   */
+  public HttpServerOptions setRegisterWebSocketWriteHandlers(boolean registerWebSocketWriteHandlers) {
+    this.registerWebSocketWriteHandlers = registerWebSocketWriteHandlers;
     return this;
   }
 }

@@ -110,6 +110,11 @@ public class HttpServerOptionsConverter {
             obj.setPerMessageWebSocketCompressionSupported((Boolean)member.getValue());
           }
           break;
+        case "registerWebSocketWriteHandlers":
+          if (member.getValue() instanceof Boolean) {
+            obj.setRegisterWebSocketWriteHandlers((Boolean)member.getValue());
+          }
+          break;
         case "tracingPolicy":
           if (member.getValue() instanceof String) {
             obj.setTracingPolicy(io.vertx.core.tracing.TracingPolicy.valueOf((String)member.getValue()));
@@ -177,6 +182,7 @@ public class HttpServerOptionsConverter {
     json.put("maxWebSocketMessageSize", obj.getMaxWebSocketMessageSize());
     json.put("perFrameWebSocketCompressionSupported", obj.getPerFrameWebSocketCompressionSupported());
     json.put("perMessageWebSocketCompressionSupported", obj.getPerMessageWebSocketCompressionSupported());
+    json.put("registerWebSocketWriteHandlers", obj.isRegisterWebSocketWriteHandlers());
     if (obj.getTracingPolicy() != null) {
       json.put("tracingPolicy", obj.getTracingPolicy().name());
     }

@@ -31,8 +31,8 @@ import io.vertx.core.Promise;
 import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetClient;
@@ -215,7 +215,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
         proxyOptions = null;
       }
     }
-    connectInternal(proxyOptions, remoteAddress, peerAddress, serverName, options.isSsl(), options.isUseAlpn(), true, connectHandler, ctx, options.getReconnectAttempts());
+    connectInternal(proxyOptions, remoteAddress, peerAddress, serverName, options.isSsl(), options.isUseAlpn(), options.isRegisterWriteHandler(), connectHandler, ctx, options.getReconnectAttempts());
   }
 
   /**
@@ -320,17 +320,13 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
   private void connected(ContextInternal context, Channel ch, Promise<NetSocket> connectHandler, SocketAddress remoteAddress, SslChannelProvider sslChannelProvider, String applicationLayerProtocol, boolean registerWriteHandlers) {
     channelGroup.add(ch);
     initChannel(ch.pipeline());
-    VertxHandler<NetSocketImpl> handler = VertxHandler.create(ctx -> new NetSocketImpl(context, ctx, remoteAddress, sslChannelProvider, metrics, applicationLayerProtocol));
-    if (registerWriteHandlers) {
-      handler.removeHandler(NetSocketImpl::unregisterEventBusHandler);
-    }
+    VertxHandler<NetSocketImpl> handler = VertxHandler.create(ctx -> new NetSocketImpl(context, ctx, remoteAddress, sslChannelProvider, metrics, applicationLayerProtocol, registerWriteHandlers));
+    handler.removeHandler(NetSocketImpl::unregisterEventBusHandler);
     handler.addHandler(sock -> {
       if (metrics != null) {
         sock.metric(metrics.connected(sock.remoteAddress(), sock.remoteName()));
       }
-      if (registerWriteHandlers) {
-        sock.registerEventBusHandler();
-      }
+      sock.registerEventBusHandler();
       connectHandler.complete(sock);
     });
     ch.pipeline().addLast("handler", handler);

@@ -19,24 +19,15 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
-import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.SSLSession;
-import javax.security.cert.X509Certificate;
-
-import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
-
-import static io.netty.handler.codec.http.HttpResponseStatus.SWITCHING_PROTOCOLS;
-import static io.vertx.core.http.impl.HttpUtils.SC_SWITCHING_PROTOCOLS;
-import static io.vertx.core.http.impl.HttpUtils.SC_BAD_GATEWAY;
-import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
+import static io.netty.handler.codec.http.HttpResponseStatus.*;
+import static io.vertx.core.http.impl.HttpUtils.*;
+import static io.vertx.core.spi.metrics.Metrics.*;
 
 /**
  * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
@@ -68,8 +59,9 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
                       Http1xServerRequest request,
                       WebSocketServerHandshaker handshaker,
                       int maxWebSocketFrameSize,
-                      int maxWebSocketMessageSize) {
-    super(context, conn, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize);
+                      int maxWebSocketMessageSize,
+                      boolean registerWebSocketWriteHandlers) {
+    super(context, conn, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize, registerWebSocketWriteHandlers);
     this.conn = conn;
     this.closingTimeoutMS = closingTimeout >= 0 ? closingTimeout * 1000L : -1L;
     this.scheme = request.scheme();

@@ -22,10 +22,10 @@ import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Promise;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
@@ -48,7 +48,7 @@ import java.security.cert.Certificate;
 import java.util.List;
 import java.util.UUID;
 
-import static io.vertx.core.net.impl.VertxHandler.safeBuffer;
+import static io.vertx.core.net.impl.VertxHandler.*;
 
 /**
  * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
@@ -89,10 +89,14 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   private MultiMap headers;
 
   WebSocketImplBase(ContextInternal context, Http1xConnectionBase conn, boolean supportsContinuation,
-                              int maxWebSocketFrameSize, int maxWebSocketMessageSize) {
+                    int maxWebSocketFrameSize, int maxWebSocketMessageSize, boolean registerWebSocketWriteHandlers) {
     this.supportsContinuation = supportsContinuation;
-    this.textHandlerID = "__vertx.ws." + UUID.randomUUID().toString();
-    this.binaryHandlerID = "__vertx.ws." + UUID.randomUUID().toString();
+    if (registerWebSocketWriteHandlers) {
+      textHandlerID = "__vertx.ws." + UUID.randomUUID();
+      binaryHandlerID = "__vertx.ws." + UUID.randomUUID();
+    } else {
+      textHandlerID = binaryHandlerID = null;
+    }
     this.conn = conn;
     this.context = context;
     this.maxWebSocketFrameSize = maxWebSocketFrameSize;
@@ -106,10 +110,12 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   void registerHandler(EventBus eventBus) {
-    Handler<Message<Buffer>> binaryHandler = msg -> writeBinaryFrameInternal(msg.body());
-    Handler<Message<String>> textHandler = msg -> writeTextFrameInternal(msg.body());
-    binaryHandlerRegistration = eventBus.<Buffer>localConsumer(binaryHandlerID).handler(binaryHandler);
-    textHandlerRegistration = eventBus.<String>localConsumer(textHandlerID).handler(textHandler);
+    if (binaryHandlerID != null) {
+      Handler<Message<Buffer>> binaryHandler = msg -> writeBinaryFrameInternal(msg.body());
+      Handler<Message<String>> textHandler = msg -> writeTextFrameInternal(msg.body());
+      binaryHandlerRegistration = eventBus.<Buffer>localConsumer(binaryHandlerID).handler(binaryHandler);
+      textHandlerRegistration = eventBus.<String>localConsumer(textHandlerID).handler(textHandler);
+    }
   }
 
   @Override

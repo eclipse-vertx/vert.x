@@ -32,8 +32,8 @@ import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.websocketx.WebSocket07FrameDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocket08FrameDecoder;
@@ -190,7 +190,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
    */
   public NetSocketInternal toNetSocket() {
     removeChannelHandlers();
-    NetSocketImpl socket = new NetSocketImpl(context, chctx, null, metrics());
+    NetSocketImpl socket = new NetSocketImpl(context, chctx, null, metrics(), false);
     socket.metric(metric());
     evictionHandler.handle(null);
     chctx.pipeline().replace("handler", "handler", VertxHandler.create(ctx -> socket));
@@ -946,6 +946,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     WebsocketVersion vers,
     List<String> subProtocols,
     long handshakeTimeout,
+    boolean registerWriteHandlers,
     int maxWebSocketFrameSize,
     Promise<WebSocket> promise) {
     try {
@@ -1008,7 +1009,8 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
             version != WebSocketVersion.V00,
             options.getWebSocketClosingTimeout(),
             options.getMaxWebSocketFrameSize(),
-            options.getMaxWebSocketMessageSize());
+            options.getMaxWebSocketMessageSize(),
+            registerWriteHandlers);
           w.subProtocol(handshaker.actualSubprotocol());
           return w;
         });

@@ -48,16 +48,23 @@ public class WebSocketConnectOptions extends RequestOptions {
    */
   public static final boolean DEFAULT_ALLOW_ORIGIN_HEADER = true;
 
+  /**
+   * Whether write-handlers should be registered by default = false.
+   */
+  public static final boolean DEFAULT_REGISTER_WRITE_HANDLERS = false;
+
   private ProxyOptions proxyOptions;
   private WebsocketVersion version;
   private List<String> subProtocols;
   private boolean allowOriginHeader;
+  private boolean registerWriteHandlers;
 
   public WebSocketConnectOptions() {
     proxyOptions = DEFAULT_PROXY_OPTIONS;
     version = DEFAULT_VERSION;
     subProtocols = DEFAULT_SUB_PROTOCOLS;
     allowOriginHeader = DEFAULT_ALLOW_ORIGIN_HEADER;
+    registerWriteHandlers = DEFAULT_REGISTER_WRITE_HANDLERS;
   }
 
   public WebSocketConnectOptions(WebSocketConnectOptions other) {
@@ -66,6 +73,7 @@ public class WebSocketConnectOptions extends RequestOptions {
     this.version = other.version;
     this.subProtocols = other.subProtocols;
     this.allowOriginHeader = other.allowOriginHeader;
+    this.registerWriteHandlers = other.registerWriteHandlers;
   }
 
   public WebSocketConnectOptions(JsonObject json) {
@@ -234,5 +242,27 @@ public class WebSocketConnectOptions extends RequestOptions {
     JsonObject json = super.toJson();
     WebSocketConnectOptionsConverter.toJson(this, json);
     return json;
+  }
+
+  /**
+   * @return {@code true} if write-handlers should be registered on the {@link io.vertx.core.eventbus.EventBus}, otherwise {@code false}
+   */
+  public boolean isRegisterWriteHandlers() {
+    return registerWriteHandlers;
+  }
+
+  /**
+   * Whether write-handlers should be registered on the {@link io.vertx.core.eventbus.EventBus}.
+   * <p>
+   * Defaults to {@code false}.
+   *
+   * @param registerWriteHandlers true to register write-handlers
+   * @return a reference to this, so the API can be used fluently
+   * @see WebSocketBase#textHandlerID()
+   * @see WebSocketBase#binaryHandlerID()
+   */
+  public WebSocketConnectOptions setRegisterWriteHandlers(boolean registerWriteHandlers) {
+    this.registerWriteHandlers = registerWriteHandlers;
+    return this;
   }
 }

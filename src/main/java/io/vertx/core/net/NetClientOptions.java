@@ -11,10 +11,10 @@
 
 package io.vertx.core.net;
 
+import io.netty.handler.logging.ByteBufFormat;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
-import io.netty.handler.logging.ByteBufFormat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,13 +45,18 @@ public class NetClientOptions extends ClientOptionsBase {
    */
   public static final String DEFAULT_HOSTNAME_VERIFICATION_ALGORITHM = "";
 
+  /**
+   * Whether a write-handler should be registered by default = false.
+   */
+  public static final boolean DEFAULT_REGISTER_WRITE_HANDLER = false;
 
   private int reconnectAttempts;
   private long reconnectInterval;
   private String hostnameVerificationAlgorithm;
   private List<String> applicationLayerProtocols;
+  private boolean registerWriteHandler;
 
-    /**
+  /**
    * The default constructor
    */
   public NetClientOptions() {
@@ -70,6 +75,7 @@ public class NetClientOptions extends ClientOptionsBase {
     this.reconnectInterval = other.getReconnectInterval();
     this.hostnameVerificationAlgorithm = other.getHostnameVerificationAlgorithm();
     this.applicationLayerProtocols = other.applicationLayerProtocols != null ? new ArrayList<>(other.applicationLayerProtocols) : null;
+    this.registerWriteHandler = other.registerWriteHandler;
   }
 
   /**
@@ -96,6 +102,7 @@ public class NetClientOptions extends ClientOptionsBase {
     this.reconnectAttempts = DEFAULT_RECONNECT_ATTEMPTS;
     this.reconnectInterval = DEFAULT_RECONNECT_INTERVAL;
     this.hostnameVerificationAlgorithm = DEFAULT_HOSTNAME_VERIFICATION_ALGORITHM;
+    this.registerWriteHandler = DEFAULT_REGISTER_WRITE_HANDLER;
   }
 
   @Override
@@ -434,5 +441,26 @@ public class NetClientOptions extends ClientOptionsBase {
     JsonObject json = super.toJson();
     NetClientOptionsConverter.toJson(this, json);
     return json;
+  }
+
+  /**
+   * @return {@code true} if a write-handler should be registered on the {@link io.vertx.core.eventbus.EventBus}, otherwise {@code false}
+   */
+  public boolean isRegisterWriteHandler() {
+    return registerWriteHandler;
+  }
+
+  /**
+   * Whether a write-handler should be registered on the {@link io.vertx.core.eventbus.EventBus}.
+   * <p>
+   * Defaults to {@code false}.
+   *
+   * @param registerWriteHandler true to register a write-handler
+   * @return a reference to this, so the API can be used fluently
+   * @see NetSocket#writeHandlerID()
+   */
+  public NetClientOptions setRegisterWriteHandler(boolean registerWriteHandler) {
+    this.registerWriteHandler = registerWriteHandler;
+    return this;
   }
 }

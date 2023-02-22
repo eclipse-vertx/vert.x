@@ -11,11 +11,11 @@
 
 package io.vertx.core.net;
 
+import io.netty.handler.logging.ByteBufFormat;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.json.JsonObject;
-import io.netty.handler.logging.ByteBufFormat;
 
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -70,6 +70,11 @@ public class NetServerOptions extends TCPSSLOptions {
    */
   public static final TimeUnit DEFAULT_PROXY_PROTOCOL_TIMEOUT_TIME_UNIT = TimeUnit.SECONDS;
 
+  /**
+   * Whether a write-handler should be registered by default = false.
+   */
+  public static final boolean DEFAULT_REGISTER_WRITE_HANDLER = false;
+
   private int port;
   private String host;
   private int acceptBacklog;
@@ -78,6 +83,7 @@ public class NetServerOptions extends TCPSSLOptions {
   private boolean useProxyProtocol;
   private long proxyProtocolTimeout;
   private TimeUnit proxyProtocolTimeoutUnit;
+  private boolean registerWriteHandler;
 
   /**
    * Default constructor
@@ -104,6 +110,7 @@ public class NetServerOptions extends TCPSSLOptions {
     this.proxyProtocolTimeoutUnit = other.getProxyProtocolTimeoutUnit() != null ?
       other.getProxyProtocolTimeoutUnit() :
       DEFAULT_PROXY_PROTOCOL_TIMEOUT_TIME_UNIT;
+    this.registerWriteHandler = other.registerWriteHandler;
   }
 
   /**
@@ -500,5 +507,27 @@ public class NetServerOptions extends TCPSSLOptions {
     this.useProxyProtocol = DEFAULT_USE_PROXY_PROTOCOL;
     this.proxyProtocolTimeout = DEFAULT_PROXY_PROTOCOL_TIMEOUT;
     this.proxyProtocolTimeoutUnit = DEFAULT_PROXY_PROTOCOL_TIMEOUT_TIME_UNIT;
+    this.registerWriteHandler = DEFAULT_REGISTER_WRITE_HANDLER;
+  }
+
+  /**
+   * @return {@code true} if a write-handler should be registered on the {@link io.vertx.core.eventbus.EventBus}, otherwise {@code false}
+   */
+  public boolean isRegisterWriteHandler() {
+    return registerWriteHandler;
+  }
+
+  /**
+   * Whether a write-handler should be registered on the {@link io.vertx.core.eventbus.EventBus}.
+   * <p>
+   * Defaults to {@code false}.
+   *
+   * @param registerWriteHandler true to register a write-handler
+   * @return a reference to this, so the API can be used fluently
+   * @see NetSocket#writeHandlerID()
+   */
+  public NetServerOptions setRegisterWriteHandler(boolean registerWriteHandler) {
+    this.registerWriteHandler = registerWriteHandler;
+    return this;
   }
 }

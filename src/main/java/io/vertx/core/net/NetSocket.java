@@ -11,7 +11,11 @@
 
 package io.vertx.core.net;
 
-import io.vertx.codegen.annotations.*;
+import io.vertx.codegen.annotations.CacheReturn;
+import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.codegen.annotations.Nullable;
+import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -72,14 +76,18 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
   NetSocket drainHandler(Handler<Void> handler);
 
   /**
-   * When a {@code NetSocket} is created it automatically registers an event handler with the event bus, the ID of that
+   * When a {@code NetSocket} is created, it may register an event handler with the event bus, the ID of that
    * handler is given by {@code writeHandlerID}.
+   * <p>
+   * By default, no handler is registered, the feature must be enabled via {@link NetClientOptions#setRegisterWriteHandler(boolean)} or {@link NetServerOptions#setRegisterWriteHandler(boolean)}.
    * <p>
    * Given this ID, a different event loop can send a buffer to that event handler using the event bus and
    * that buffer will be received by this instance in its own event loop and written to the underlying connection. This
    * allows you to write data to other connections which are owned by different event loops.
    *
    * @return the write handler ID
+   * @see NetClientOptions#setRegisterWriteHandler(boolean)
+   * @see NetServerOptions#setRegisterWriteHandler(boolean)
    */
   String writeHandlerID();
 

@@ -12,10 +12,29 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.Unpooled;
-import io.netty.channel.*;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.ChannelPromise;
+import io.netty.channel.EventLoop;
 import io.netty.handler.codec.DecoderResult;
-import io.netty.handler.codec.http.*;
-import io.netty.handler.codec.http.websocketx.*;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.DefaultHttpRequest;
+import io.netty.handler.codec.http.EmptyHttpHeaders;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.HttpContent;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpObject;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.http.websocketx.WebSocketDecoderConfig;
+import io.netty.handler.codec.http.websocketx.WebSocketFrame;
+import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
+import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
+import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
+import io.netty.handler.codec.http.websocketx.WebSocketVersion;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -40,12 +59,9 @@ import io.vertx.core.tracing.TracingPolicy;
 
 import java.util.function.Supplier;
 
-import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
-import static io.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
-import static io.netty.handler.codec.http.HttpResponseStatus.METHOD_NOT_ALLOWED;
-import static io.netty.handler.codec.http.HttpResponseStatus.UPGRADE_REQUIRED;
-import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
-import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
+import static io.netty.handler.codec.http.HttpResponseStatus.*;
+import static io.netty.handler.codec.http.HttpVersion.*;
+import static io.vertx.core.spi.metrics.Metrics.*;
 
 /**
  *
@@ -292,7 +308,8 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
           request,
           handshaker,
           options.getMaxWebSocketFrameSize(),
-          options.getMaxWebSocketMessageSize());
+          options.getMaxWebSocketMessageSize(),
+          options.isRegisterWebSocketWriteHandlers());
         if (METRICS_ENABLED && metrics != null) {
           webSocket.setMetric(metrics.connected(metric(), request.metric(), webSocket));
         }
@@ -382,7 +399,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       }
 
       pipeline.replace("handler", "handler", VertxHandler.create(ctx -> {
-        NetSocketImpl socket = new NetSocketImpl(context, ctx, sslChannelProvider, metrics) {
+        NetSocketImpl socket = new NetSocketImpl(context, ctx, sslChannelProvider, metrics, false) {
           @Override
           protected void handleClosed() {
             if (metrics != null) {
@@ -391,6 +408,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
             }
             super.handleClosed();
           }
+
           @Override
           public synchronized void handleMessage(Object msg) {
             if (msg instanceof HttpContent) {
