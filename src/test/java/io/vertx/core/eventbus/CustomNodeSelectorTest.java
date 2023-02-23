@@ -92,7 +92,7 @@ public class CustomNodeSelectorTest extends VertxTestBase {
   protected void tearDown() throws Exception {
     try {
       if (vertices != null) {
-        closeClustered(vertices);
+        close(vertices);
       }
     } finally {
       super.tearDown();

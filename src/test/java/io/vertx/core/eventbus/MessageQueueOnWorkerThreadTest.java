@@ -71,7 +71,7 @@ public class MessageQueueOnWorkerThreadTest extends VertxTestBase {
   protected void tearDown() throws Exception {
     try {
       if (vertx != null) {
-        closeClustered(Collections.singletonList(vertx));
+        close(Collections.singletonList(vertx));
       }
     } finally {
       super.tearDown();

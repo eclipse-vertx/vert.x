@@ -19,6 +19,7 @@ import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingOptions;
 import io.vertx.test.fakecluster.FakeClusterManager;
+import org.junit.Assert;
 import org.junit.Rule;
 
 import javax.net.ssl.SSLContext;
@@ -84,15 +85,15 @@ public class VertxTestBase extends AsyncTestBase {
 
   protected void tearDown() throws Exception {
     if (created != null) {
-      closeClustered(created);
+      close(created);
     }
     FakeClusterManager.reset(); // Bit ugly
     super.tearDown();
   }
 
-  protected void closeClustered(List<Vertx> clustered) throws Exception {
-    CountDownLatch latch = new CountDownLatch(clustered.size());
-    for (Vertx clusteredVertx : clustered) {
+  protected void close(List<Vertx> instances) throws Exception {
+    CountDownLatch latch = new CountDownLatch(instances.size());
+    for (Vertx clusteredVertx : instances) {
       clusteredVertx.close(ar -> {
         if (ar.failed()) {
           log.error("Failed to shutdown vert.x", ar.cause());
@@ -100,7 +101,7 @@ public class VertxTestBase extends AsyncTestBase {
         latch.countDown();
       });
     }
-    assertTrue(latch.await(180, TimeUnit.SECONDS));
+    Assert.assertTrue(latch.await(180, TimeUnit.SECONDS));
   }
 
   /**
