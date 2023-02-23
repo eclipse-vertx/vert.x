@@ -31,10 +31,14 @@ import java.util.concurrent.ThreadFactory;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class KQueueTransport extends Transport {
+class KQueueTransport implements Transport {
 
   KQueueTransport() {
-    super(true);
+  }
+
+  @Override
+  public boolean supportsDomainSockets() {
+    return true;
   }
 
   @Override
@@ -42,7 +46,7 @@ class KQueueTransport extends Transport {
     if (address.isDomainSocket()) {
       return new DomainSocketAddress(address.path());
     } else {
-      return super.convert(address);
+      return Transport.super.convert(address);
     }
   }
 
@@ -51,7 +55,7 @@ class KQueueTransport extends Transport {
     if (address instanceof DomainSocketAddress) {
       return new SocketAddressImpl(((DomainSocketAddress) address).path());
     }
-    return super.convert(address);
+    return Transport.super.convert(address);
   }
 
   @Override
@@ -104,12 +108,12 @@ class KQueueTransport extends Transport {
     if (!domainSocket) {
       bootstrap.option(KQueueChannelOption.SO_REUSEPORT, options.isReusePort());
     }
-    super.configure(options, domainSocket, bootstrap);
+    Transport.super.configure(options, domainSocket, bootstrap);
   }
 
   @Override
   public void configure(DatagramChannel channel, DatagramSocketOptions options) {
     channel.config().setOption(KQueueChannelOption.SO_REUSEPORT, options.isReusePort());
-    super.configure(channel, options);
+    Transport.super.configure(channel, options);
   }
 }

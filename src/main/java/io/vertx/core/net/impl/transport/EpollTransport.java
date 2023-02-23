@@ -36,7 +36,7 @@ import java.util.concurrent.ThreadFactory;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class EpollTransport extends Transport {
+class EpollTransport implements Transport {
 
   private static volatile int pendingFastOpenRequestsThreshold = 256;
 
@@ -62,7 +62,11 @@ class EpollTransport extends Transport {
   }
 
   EpollTransport() {
-    super(true);
+  }
+
+  @Override
+  public boolean supportsDomainSockets() {
+    return true;
   }
 
   @Override
@@ -70,7 +74,7 @@ class EpollTransport extends Transport {
     if (address.isDomainSocket()) {
       return new DomainSocketAddress(address.path());
     } else {
-      return super.convert(address);
+      return Transport.super.convert(address);
     }
   }
 
@@ -79,7 +83,7 @@ class EpollTransport extends Transport {
     if (address instanceof DomainSocketAddress) {
       return new SocketAddressImpl(((DomainSocketAddress) address).path());
     }
-    return super.convert(address);
+    return Transport.super.convert(address);
   }
 
   @Override
@@ -128,7 +132,7 @@ class EpollTransport extends Transport {
   @Override
   public void configure(DatagramChannel channel, DatagramSocketOptions options) {
     channel.config().setOption(EpollChannelOption.SO_REUSEPORT, options.isReusePort());
-    super.configure(channel, options);
+    Transport.super.configure(channel, options);
   }
 
   @Override
@@ -141,7 +145,7 @@ class EpollTransport extends Transport {
       bootstrap.childOption(EpollChannelOption.TCP_QUICKACK, options.isTcpQuickAck());
       bootstrap.childOption(EpollChannelOption.TCP_CORK, options.isTcpCork());
     }
-    super.configure(options, domainSocket, bootstrap);
+    Transport.super.configure(options, domainSocket, bootstrap);
   }
 
   @Override
@@ -154,6 +158,6 @@ class EpollTransport extends Transport {
       bootstrap.option(EpollChannelOption.TCP_QUICKACK, options.isTcpQuickAck());
       bootstrap.option(EpollChannelOption.TCP_CORK, options.isTcpCork());
     }
-    super.configure(options, domainSocket, bootstrap);
+    Transport.super.configure(options, domainSocket, bootstrap);
   }
 }

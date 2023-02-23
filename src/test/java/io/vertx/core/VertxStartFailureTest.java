@@ -13,6 +13,7 @@ package io.vertx.core;
 
 import io.netty.channel.EventLoopGroup;
 import io.vertx.core.impl.VertxBuilder;
+import io.vertx.core.net.impl.transport.JDKTransport;
 import io.vertx.core.net.impl.transport.Transport;
 import io.vertx.core.spi.cluster.NodeListener;
 import io.vertx.test.core.AsyncTestBase;
@@ -102,7 +103,7 @@ public class VertxStartFailureTest extends AsyncTestBase {
   private Throwable failStart(VertxOptions options) throws Exception {
     List<EventLoopGroup> loops = new ArrayList<>();
     CountDownLatch latch = new CountDownLatch(1);
-    Transport transport = new Transport() {
+    Transport transport = new JDKTransport() {
       @Override
       public EventLoopGroup eventLoopGroup(int type, int nThreads, ThreadFactory threadFactory, int ioRatio) {
         EventLoopGroup eventLoop = super.eventLoopGroup(type, nThreads, threadFactory, ioRatio);

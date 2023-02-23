@@ -33,7 +33,7 @@ import io.vertx.core.net.ClientOptionsBase;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.impl.SocketAddressImpl;
 
-public class IOUringTransport extends Transport {
+public class IOUringTransport implements Transport {
 
   private static volatile int pendingFastOpenRequestsThreshold = 256;
 
@@ -59,7 +59,11 @@ public class IOUringTransport extends Transport {
   }
 
   IOUringTransport() {
-    super(false);
+  }
+
+  @Override
+  public boolean supportsDomainSockets() {
+    return true;
   }
 
   @Override
@@ -72,7 +76,7 @@ public class IOUringTransport extends Transport {
     if (address.isDomainSocket()) {
       throw new IllegalArgumentException("Domain socket not supported by IOUring transport");
     }
-    return super.convert(address);
+    return Transport.super.convert(address);
   }
 
   @Override
@@ -80,7 +84,7 @@ public class IOUringTransport extends Transport {
     if (address instanceof DomainSocketAddress) {
       return new SocketAddressImpl(((DomainSocketAddress) address).path());
     }
-    return super.convert(address);
+    return Transport.super.convert(address);
   }
 
   @Override
@@ -128,7 +132,7 @@ public class IOUringTransport extends Transport {
   @Override
   public void configure(DatagramChannel channel, DatagramSocketOptions options) {
     channel.config().setOption(IOUringChannelOption.SO_REUSEPORT, options.isReusePort());
-    super.configure(channel, options);
+    Transport.super.configure(channel, options);
   }
 
   @Override
@@ -142,7 +146,7 @@ public class IOUringTransport extends Transport {
     }
     bootstrap.childOption(IOUringChannelOption.TCP_QUICKACK, options.isTcpQuickAck());
     bootstrap.childOption(IOUringChannelOption.TCP_CORK, options.isTcpCork());
-    super.configure(options, false, bootstrap);
+    Transport.super.configure(options, false, bootstrap);
   }
 
   @Override
@@ -155,6 +159,6 @@ public class IOUringTransport extends Transport {
     }
     bootstrap.option(IOUringChannelOption.TCP_QUICKACK, options.isTcpQuickAck());
     bootstrap.option(IOUringChannelOption.TCP_CORK, options.isTcpCork());
-    super.configure(options, false, bootstrap);
+    Transport.super.configure(options, false, bootstrap);
   }
 }

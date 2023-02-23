@@ -32,6 +32,7 @@ import io.vertx.core.eventbus.impl.clustered.ClusteredEventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.impl.btc.BlockedThreadChecker;
 import io.vertx.core.net.impl.NetClientBuilder;
+import io.vertx.core.net.impl.transport.JDKTransport;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.file.impl.FileSystemImpl;
 import io.vertx.core.file.impl.WindowsFileSystem;
@@ -323,7 +324,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public boolean isNativeTransportEnabled() {
-    return transport != Transport.JDK;
+    return !(transport instanceof JDKTransport);
   }
 
   @Override
