@@ -15,7 +15,6 @@ import io.netty.channel.*;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
 import io.netty.handler.codec.dns.*;
-import io.netty.handler.logging.ByteBufFormat;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.collection.LongObjectHashMap;
 import io.netty.util.collection.LongObjectMap;
@@ -28,7 +27,7 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
-import io.vertx.core.net.impl.transport.Transport;
+import io.vertx.core.spi.transport.Transport;
 
 import java.net.Inet4Address;
 import java.net.InetAddress;

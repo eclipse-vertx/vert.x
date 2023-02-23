@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.net.impl.transport;
+package io.vertx.core.impl.transports;
 
 import java.net.SocketAddress;
 import java.util.concurrent.ThreadFactory;
@@ -32,6 +32,7 @@ import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.net.ClientOptionsBase;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.impl.SocketAddressImpl;
+import io.vertx.core.spi.transport.Transport;
 
 public class IOUringTransport implements Transport {
 
@@ -58,7 +59,7 @@ public class IOUringTransport implements Transport {
     pendingFastOpenRequestsThreshold = value;
   }
 
-  IOUringTransport() {
+  public IOUringTransport() {
   }
 
   @Override

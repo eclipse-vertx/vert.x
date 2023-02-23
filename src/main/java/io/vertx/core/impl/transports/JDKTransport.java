@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.net.impl.transport;
+package io.vertx.core.impl.transports;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFactory;
@@ -20,6 +20,7 @@ import io.netty.channel.socket.InternetProtocolFamily;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.vertx.core.spi.transport.Transport;
 
 import java.util.concurrent.ThreadFactory;
 

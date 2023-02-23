@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.net.impl.transport;
+package io.vertx.core.spi.transport;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
@@ -21,6 +21,7 @@ import io.vertx.core.net.ClientOptionsBase;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.SocketAddressImpl;
+import io.vertx.core.impl.transports.JDKTransport;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -39,57 +40,6 @@ public interface Transport {
 
   int ACCEPTOR_EVENT_LOOP_GROUP = 0;
   int IO_EVENT_LOOP_GROUP = 1;
-
-  /**
-   * The native transport, it may be {@code null} or failed.
-   */
-  static Transport nativeTransport() {
-    Transport transport = null;
-    try {
-      Transport epoll = new EpollTransport();
-      if (epoll.isAvailable()) {
-        return epoll;
-      } else {
-        transport = epoll;
-      }
-    } catch (Throwable ignore) {
-      // Jar not here
-    }
-    try {
-      Transport ioUring = new IOUringTransport();
-      if (ioUring.isAvailable()) {
-        return ioUring;
-      } else {
-        transport = ioUring;
-      }
-    } catch (Throwable ignore) {
-      // Jar not here
-    }
-    try {
-      Transport kqueue = new KQueueTransport();
-      if (kqueue.isAvailable()) {
-        return kqueue;
-      } else if (transport == null) {
-        transport = kqueue;
-      }
-    } catch (Throwable ignore) {
-      // Jar not here
-    }
-    return transport;
-  }
-
-  static Transport transport(boolean preferNative) {
-    if (preferNative) {
-      Transport nativeTransport = Transport.nativeTransport();
-      if (nativeTransport != null && nativeTransport.isAvailable()) {
-        return nativeTransport;
-      } else {
-        return JDKTransport.INSTANCE;
-      }
-    } else {
-      return JDKTransport.INSTANCE;
-    }
-  }
 
   default boolean supportsDomainSockets() {
     return false;

@@ -12,13 +12,17 @@
 package io.vertx.core.impl;
 
 import io.vertx.core.*;
+import io.vertx.core.impl.transports.EpollTransport;
+import io.vertx.core.impl.transports.IOUringTransport;
+import io.vertx.core.impl.transports.JDKTransport;
+import io.vertx.core.impl.transports.KQueueTransport;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.file.impl.FileResolverImpl;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.metrics.MetricsOptions;
-import io.vertx.core.net.impl.transport.Transport;
+import io.vertx.core.spi.transport.Transport;
 import io.vertx.core.spi.ExecutorServiceFactory;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.VertxServiceProvider;
@@ -84,7 +88,7 @@ public class VertxBuilder {
   /**
    * @return the transport to use
    */
-  public Transport transport() {
+  public Transport findTransport() {
     return transport;
   }
 
@@ -93,7 +97,7 @@ public class VertxBuilder {
    * @param transport the transport
    * @return this builder instance
    */
-  public VertxBuilder transport(Transport transport) {
+  public VertxBuilder findTransport(Transport transport) {
     this.transport = transport;
     return this;
   }
@@ -324,7 +328,7 @@ public class VertxBuilder {
     if (transport != null) {
       return;
     }
-    transport = Transport.transport(options.getPreferNativeTransport());
+    transport = findTransport(options.getPreferNativeTransport());
   }
 
   private void initFileResolver() {
@@ -366,6 +370,57 @@ public class VertxBuilder {
       log.warn("Metrics options are configured but no metrics object is instantiated. " +
         "Make sure you have the VertxMetricsFactory in your classpath and META-INF/services/io.vertx.core.spi.VertxServiceProvider " +
         "contains the factory FQCN, or metricsOptions.getFactory() returns a non null value");
+    }
+  }
+
+  /**
+   * The native transport, it may be {@code null} or failed.
+   */
+  static Transport nativeTransport() {
+    Transport transport = null;
+    try {
+      Transport epoll = new EpollTransport();
+      if (epoll.isAvailable()) {
+        return epoll;
+      } else {
+        transport = epoll;
+      }
+    } catch (Throwable ignore) {
+      // Jar not here
+    }
+    try {
+      Transport ioUring = new IOUringTransport();
+      if (ioUring.isAvailable()) {
+        return ioUring;
+      } else {
+        transport = ioUring;
+      }
+    } catch (Throwable ignore) {
+      // Jar not here
+    }
+    try {
+      Transport kqueue = new KQueueTransport();
+      if (kqueue.isAvailable()) {
+        return kqueue;
+      } else if (transport == null) {
+        transport = kqueue;
+      }
+    } catch (Throwable ignore) {
+      // Jar not here
+    }
+    return transport;
+  }
+
+  static Transport findTransport(boolean preferNative) {
+    if (preferNative) {
+      Transport nativeTransport = nativeTransport();
+      if (nativeTransport != null && nativeTransport.isAvailable()) {
+        return nativeTransport;
+      } else {
+        return JDKTransport.INSTANCE;
+      }
+    } else {
+      return JDKTransport.INSTANCE;
     }
   }
 }

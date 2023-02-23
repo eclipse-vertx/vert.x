@@ -39,7 +39,7 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.VertxHandler;
-import io.vertx.core.net.impl.transport.Transport;
+import io.vertx.core.spi.transport.Transport;
 import io.vertx.core.spi.metrics.*;
 import io.vertx.core.streams.WriteStream;
 

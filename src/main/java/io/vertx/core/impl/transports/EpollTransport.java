@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.net.impl.transport;
+package io.vertx.core.impl.transports;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
@@ -29,6 +29,7 @@ import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.net.ClientOptionsBase;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.impl.SocketAddressImpl;
+import io.vertx.core.spi.transport.Transport;
 
 import java.net.SocketAddress;
 import java.util.concurrent.ThreadFactory;
@@ -36,7 +37,7 @@ import java.util.concurrent.ThreadFactory;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class EpollTransport implements Transport {
+public class EpollTransport implements Transport {
 
   private static volatile int pendingFastOpenRequestsThreshold = 256;
 
@@ -61,7 +62,7 @@ class EpollTransport implements Transport {
     pendingFastOpenRequestsThreshold = value;
   }
 
-  EpollTransport() {
+  public EpollTransport() {
   }
 
   @Override

@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.net.impl.transport;
+package io.vertx.core.impl.transports;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -23,17 +23,17 @@ import io.netty.channel.unix.DomainSocketAddress;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.impl.SocketAddressImpl;
+import io.vertx.core.spi.transport.Transport;
 
-import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.concurrent.ThreadFactory;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class KQueueTransport implements Transport {
+public class KQueueTransport implements Transport {
 
-  KQueueTransport() {
+  public KQueueTransport() {
   }
 
   @Override
