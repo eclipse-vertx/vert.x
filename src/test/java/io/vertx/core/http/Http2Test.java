@@ -1047,4 +1047,37 @@ public class Http2Test extends HttpTest {
     }));
     await();
   }
+
+  /**
+   * Test to reproduce "HTTP/2 upgrade only happens once per connection"
+   * @see <a href="https://github.com/eclipse-vertx/vert.x/issues/4618">#4618</a>
+   */
+  @Test
+  public void testUpgradeIsDoneInAllRequestsUsingSameConnection() throws Exception {
+    client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2));
+    // Server always return "Ok"
+    server = vertx.createHttpServer();
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.end("Ok");
+    });
+    startServer(testAddress);
+    // we're going to send two requests
+    waitFor(2);
+    // We're using `.setURI("")` to reproduce the issue because empty path are not allowed in HTTP/2.
+    // In the first request, the upgrade operation will adapt the empty URI to contain a "/"
+    client.request(requestOptions.setURI("")).onSuccess(request -> {
+      request.send().onSuccess(response -> {
+        complete();
+      });
+    });
+    // In the second request, the upgrade operation is not done, so this request is rejected by the logic in:
+    // {@link io.vertx.core.http.impl.Http2ServerConnection#isMalformedRequest}.
+    client.request(requestOptions.setURI("")).onSuccess(request -> {
+      request.send().onSuccess(response -> {
+        complete();
+      });
+    });
+    await();
+  }
 }
