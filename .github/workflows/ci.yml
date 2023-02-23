@@ -40,7 +40,7 @@ jobs:
           java-version: ${{ matrix.jdk }}
           distribution: temurin
       - name: Run tests
-        run: mvn -s .github/maven-ci-settings.xml -q clean verify -B ${{ matrix.profile }} -Dtest=NetTest#testStartTLSClientTrustAll
+        run: mvn -s .github/maven-ci-settings.xml -q clean verify -B ${{ matrix.profile }} -Dtest=NetTest#startTLS
   Deploy:
     name: Deploy to OSSRH
     if: ${{ github.repository_owner == 'eclipse-vertx' && (github.event_name == 'push' || github.event_name == 'schedule') }}
