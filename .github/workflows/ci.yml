@@ -26,9 +26,6 @@ jobs:
             profile: '-PtestNativeTransport'
           - os: ubuntu-latest
             jdk: 8
-            profile: '-PtestIoUringTransport'
-          - os: ubuntu-latest
-            jdk: 8
             profile: '-PtestDomainSockets'
     runs-on: ${{ matrix.os }}
     steps:

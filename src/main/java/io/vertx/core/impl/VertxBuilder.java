@@ -13,7 +13,6 @@ package io.vertx.core.impl;
 
 import io.vertx.core.*;
 import io.vertx.core.impl.transports.EpollTransport;
-import io.vertx.core.impl.transports.IOUringTransport;
 import io.vertx.core.impl.transports.JDKTransport;
 import io.vertx.core.impl.transports.KQueueTransport;
 import io.vertx.core.spi.file.FileResolver;
@@ -37,6 +36,7 @@ import io.vertx.core.tracing.TracingOptions;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 
 /**
  * Vertx builder for creating vertx instances with SPI overrides.
@@ -389,16 +389,6 @@ public class VertxBuilder {
       // Jar not here
     }
     try {
-      Transport ioUring = new IOUringTransport();
-      if (ioUring.isAvailable()) {
-        return ioUring;
-      } else {
-        transport = ioUring;
-      }
-    } catch (Throwable ignore) {
-      // Jar not here
-    }
-    try {
       Transport kqueue = new KQueueTransport();
       if (kqueue.isAvailable()) {
         return kqueue;
@@ -413,6 +403,11 @@ public class VertxBuilder {
 
   static Transport findTransport(boolean preferNative) {
     if (preferNative) {
+      Collection<Transport> transports = ServiceHelper.loadFactories(Transport.class);
+      Iterator<Transport> it = transports.iterator();
+      if (it.hasNext()) {
+        return it.next();
+      }
       Transport nativeTransport = nativeTransport();
       if (nativeTransport != null && nativeTransport.isAvailable()) {
         return nativeTransport;
