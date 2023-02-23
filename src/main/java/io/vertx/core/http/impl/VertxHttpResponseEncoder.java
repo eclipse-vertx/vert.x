@@ -13,10 +13,15 @@ package io.vertx.core.http.impl;
 
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.DefaultFileRegion;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseEncoder;
+import io.netty.handler.codec.http.LastHttpContent;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 
 /**
@@ -34,6 +39,29 @@ final class VertxHttpResponseEncoder extends HttpResponseEncoder {
     } else {
       super.encodeHeaders(headers, buf);
     }
+  }
+
+  @Override
+  public boolean acceptOutboundMessage(Object msg) throws Exception {
+    // fast-path singleton(s)
+    if (msg == Unpooled.EMPTY_BUFFER || msg == LastHttpContent.EMPTY_LAST_CONTENT) {
+      return true;
+    }
+    // fast-path exact class matches: we cannot use a (concrete) class type check
+    // here because the contract of HttpResponseEncoder::acceptOutboundMessage
+    // enforces msg to NOT implement HttpRequest and we don't know if users extends vertx/netty types to
+    // implement it.
+    final Class<?> msgClazz = msg.getClass();
+    if (msgClazz == AssembledFullHttpResponse.class ||
+      msgClazz == DefaultFullHttpResponse.class ||
+      msgClazz == AssembledHttpResponse.class ||
+      msgClazz == DefaultHttpContent.class ||
+      msgClazz == AssembledLastHttpContent.class ||
+      msgClazz == DefaultFileRegion.class) {
+      return true;
+    }
+    // Netty slow-path
+    return super.acceptOutboundMessage(msg);
   }
 
   @Override
