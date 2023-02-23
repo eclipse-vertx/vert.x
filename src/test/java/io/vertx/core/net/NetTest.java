@@ -63,11 +63,7 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManagerFactory;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -3528,10 +3524,10 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testNetClientInternalTLSWithSuppliedSSLContext() throws Exception {
     client.close();
-    Path tsPath = Paths.get(this.getClass().getClassLoader().getResource(Trust.SERVER_JKS.get().getPath()).toURI());
+    Buffer trust = vertx.fileSystem().readFileBlocking(Trust.SERVER_JKS.get().getPath());
 
     TrustManagerFactory tmFactory;
-    try (InputStream trustStoreStream = Files.newInputStream(tsPath, StandardOpenOption.READ)){
+    try (InputStream trustStoreStream = new ByteArrayInputStream(trust.getBytes())){
       KeyStore trustStore = KeyStore.getInstance("jks");
       trustStore.load(trustStoreStream, Trust.SERVER_JKS.get().getPassword().toCharArray());
       tmFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
