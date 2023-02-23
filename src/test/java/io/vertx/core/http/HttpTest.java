@@ -39,6 +39,7 @@ import io.vertx.core.http.impl.HttpServerRequestInternal;
 import io.vertx.core.http.impl.ServerCookie;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.impl.Utils;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
@@ -176,6 +177,7 @@ public abstract class HttpTest extends HttpTestBase {
   public void testListenDomainSocketAddress() throws Exception {
     Vertx vx = Vertx.vertx(new VertxOptions().setPreferNativeTransport(true));
     Assume.assumeTrue("Native transport must be enabled", vx.isNativeTransportEnabled());
+    Assume.assumeTrue("Transport must support domain sockets", ((VertxInternal) vx).transport().supportsDomainSockets());
     int len = 3;
     waitFor(len * len);
     List<SocketAddress> addresses = new ArrayList<>();

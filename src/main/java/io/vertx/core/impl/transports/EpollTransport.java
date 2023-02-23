@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.net.impl.transport;
+package io.vertx.core.impl.transports;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
@@ -29,6 +29,7 @@ import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.net.ClientOptionsBase;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.impl.SocketAddressImpl;
+import io.vertx.core.spi.transport.Transport;
 
 import java.net.SocketAddress;
 import java.util.concurrent.ThreadFactory;
@@ -36,7 +37,7 @@ import java.util.concurrent.ThreadFactory;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class EpollTransport extends Transport {
+public class EpollTransport implements Transport {
 
   private static volatile int pendingFastOpenRequestsThreshold = 256;
 
@@ -61,7 +62,12 @@ class EpollTransport extends Transport {
     pendingFastOpenRequestsThreshold = value;
   }
 
-  EpollTransport() {
+  public EpollTransport() {
+  }
+
+  @Override
+  public boolean supportsDomainSockets() {
+    return true;
   }
 
   @Override
@@ -69,7 +75,7 @@ class EpollTransport extends Transport {
     if (address.isDomainSocket()) {
       return new DomainSocketAddress(address.path());
     } else {
-      return super.convert(address);
+      return Transport.super.convert(address);
     }
   }
 
@@ -78,7 +84,7 @@ class EpollTransport extends Transport {
     if (address instanceof DomainSocketAddress) {
       return new SocketAddressImpl(((DomainSocketAddress) address).path());
     }
-    return super.convert(address);
+    return Transport.super.convert(address);
   }
 
   @Override
@@ -127,7 +133,7 @@ class EpollTransport extends Transport {
   @Override
   public void configure(DatagramChannel channel, DatagramSocketOptions options) {
     channel.config().setOption(EpollChannelOption.SO_REUSEPORT, options.isReusePort());
-    super.configure(channel, options);
+    Transport.super.configure(channel, options);
   }
 
   @Override
@@ -140,7 +146,7 @@ class EpollTransport extends Transport {
       bootstrap.childOption(EpollChannelOption.TCP_QUICKACK, options.isTcpQuickAck());
       bootstrap.childOption(EpollChannelOption.TCP_CORK, options.isTcpCork());
     }
-    super.configure(options, domainSocket, bootstrap);
+    Transport.super.configure(options, domainSocket, bootstrap);
   }
 
   @Override
@@ -153,6 +159,6 @@ class EpollTransport extends Transport {
       bootstrap.option(EpollChannelOption.TCP_QUICKACK, options.isTcpQuickAck());
       bootstrap.option(EpollChannelOption.TCP_CORK, options.isTcpCork());
     }
-    super.configure(options, domainSocket, bootstrap);
+    Transport.super.configure(options, domainSocket, bootstrap);
   }
 }

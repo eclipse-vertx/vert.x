@@ -13,7 +13,8 @@ package io.vertx.core.impl;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.metrics.MetricsOptions;
-import io.vertx.core.net.impl.transport.Transport;
+import io.vertx.core.impl.transports.JDKTransport;
+import io.vertx.core.spi.transport.Transport;
 import io.vertx.core.spi.ExecutorServiceFactory;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.VertxThreadFactory;
@@ -151,9 +152,9 @@ public class VertxFactoryTest {
   public void testFactoryTransportOverridesDefault() {
     VertxBuilder factory = new VertxBuilder();
     // JDK transport
-    Transport override = new Transport() {
+    Transport override = new JDKTransport() {
     };
-    factory.transport(override);
+    factory.findTransport(override);
     factory.init();
     Vertx vertx = factory.vertx();
     assertSame(override, ((VertxInternal)vertx).transport());

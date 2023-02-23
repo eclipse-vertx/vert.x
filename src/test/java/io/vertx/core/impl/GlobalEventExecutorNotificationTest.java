@@ -17,7 +17,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
-import io.vertx.core.net.impl.transport.Transport;
+import io.vertx.core.impl.transports.JDKTransport;
 import io.vertx.test.core.AsyncTestBase;
 import org.junit.After;
 import org.junit.Test;
@@ -53,7 +53,7 @@ public class GlobalEventExecutorNotificationTest extends AsyncTestBase {
 
   private void testConnectErrorNotifiesOnEventLoop(NetClientOptions options) {
     RuntimeException cause = new RuntimeException();
-    vertx = new VertxBuilder().transport(new Transport() {
+    vertx = new VertxBuilder().findTransport(new JDKTransport() {
       @Override
       public ChannelFactory<? extends Channel> channelFactory(boolean domainSocket) {
         return (ChannelFactory<Channel>) () -> {
@@ -76,7 +76,7 @@ public class GlobalEventExecutorNotificationTest extends AsyncTestBase {
   @Test
   public void testNetBindError() {
     RuntimeException cause = new RuntimeException();
-    vertx = new VertxBuilder().transport(new Transport() {
+    vertx = new VertxBuilder().findTransport(new JDKTransport() {
       @Override
       public ChannelFactory<? extends ServerChannel> serverChannelFactory(boolean domainSocket) {
         return (ChannelFactory<ServerChannel>) () -> {
@@ -96,7 +96,7 @@ public class GlobalEventExecutorNotificationTest extends AsyncTestBase {
   @Test
   public void testHttpBindError() {
     RuntimeException cause = new RuntimeException();
-    vertx = new VertxBuilder().transport(new Transport() {
+    vertx = new VertxBuilder().findTransport(new JDKTransport() {
       @Override
       public ChannelFactory<? extends ServerChannel> serverChannelFactory(boolean domainSocket) {
         return (ChannelFactory<ServerChannel>) () -> {

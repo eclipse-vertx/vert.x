@@ -32,6 +32,7 @@ import io.vertx.core.eventbus.impl.clustered.ClusteredEventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.impl.btc.BlockedThreadChecker;
 import io.vertx.core.net.impl.NetClientBuilder;
+import io.vertx.core.impl.transports.JDKTransport;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.file.impl.FileSystemImpl;
 import io.vertx.core.file.impl.WindowsFileSystem;
@@ -53,7 +54,7 @@ import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.net.impl.TCPServerBase;
-import io.vertx.core.net.impl.transport.Transport;
+import io.vertx.core.spi.transport.Transport;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.shareddata.impl.SharedDataImpl;
 import io.vertx.core.spi.ExecutorServiceFactory;
@@ -323,7 +324,15 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public boolean isNativeTransportEnabled() {
-    return transport != Transport.JDK;
+    return !(transport instanceof JDKTransport);
+  }
+
+  @Override
+  public Throwable unavailableNativeTransportCause() {
+    if (isNativeTransportEnabled()) {
+      return null;
+    }
+    return transport.unavailabilityCause();
   }
 
   public FileSystem fileSystem() {

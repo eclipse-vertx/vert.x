@@ -42,7 +42,7 @@ import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.net.impl.TCPServerBase;
-import io.vertx.core.net.impl.transport.Transport;
+import io.vertx.core.spi.transport.Transport;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.cluster.ClusterManager;

@@ -60,7 +60,6 @@ import org.junit.rules.TemporaryFolder;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManagerFactory;
@@ -1823,17 +1822,21 @@ public class NetTest extends VertxTestBase {
               indicatedServerName = socket.indicatedServerName();
               assertFalse(socket.isSsl());
               Context ctx = Vertx.currentContext();
-              socket.upgradeToSsl(ar -> {
-                assertSame(ctx, Vertx.currentContext());
-                assertEquals(shouldPass, ar.succeeded());
-                if (ar.succeeded()) {
+              Handler<AsyncResult<Void>> handler;
+              if (shouldPass) {
+                handler = onSuccess(v -> {
+                  assertSame(ctx, Vertx.currentContext());
                   certificateChainChecker.accept(socket);
                   upgradedServerCount.incrementAndGet();
                   assertTrue(socket.isSsl());
-                } else {
+                });
+              } else {
+                handler = onFailure(err -> {
+                  assertSame(ctx, Vertx.currentContext());
                   complete();
-                }
-              });
+                });
+              }
+              socket.upgradeToSsl(handler);
             } else {
               assertTrue(socket.isSsl());
               assertEquals(1, upgradedServerCount.get());
@@ -1945,8 +1948,8 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testListenDomainSocketAddress() throws Exception {
-    Vertx vx = Vertx.vertx(new VertxOptions().setPreferNativeTransport(true));
-    Assume.assumeTrue("Native transport must be enabled", vx.isNativeTransportEnabled());
+    VertxInternal vx = (VertxInternal) Vertx.vertx(new VertxOptions().setPreferNativeTransport(true));
+    Assume.assumeTrue("Transport must support domain sockets", vx.transport().supportsDomainSockets());
     int len = 3;
     waitFor(len * len);
     List<SocketAddress> addresses = new ArrayList<>();

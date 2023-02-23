@@ -78,14 +78,16 @@ public class Http1xUpgradeToH2CHandler extends ChannelInboundHandlerAdapter {
             if (settings != null) {
               if (initializer.context.isEventLoopContext()) {
                 ChannelPipeline pipeline = ctx.pipeline();
+                if (pipeline.get("chunkedWriter") != null) {
+                  pipeline.remove("chunkedWriter");
+                }
                 DefaultFullHttpResponse res = new DefaultFullHttpResponse(HTTP_1_1, SWITCHING_PROTOCOLS, Unpooled.EMPTY_BUFFER, false);
                 res.headers().add(HttpHeaderNames.CONNECTION, HttpHeaderValues.UPGRADE);
                 res.headers().add(HttpHeaderNames.UPGRADE, Http2CodecUtil.HTTP_UPGRADE_PROTOCOL_NAME);
-                ctx.writeAndFlush(res);
+                ctx.write(res);
                 pipeline.remove("httpEncoder");
                 if (isCompressionSupported) {
                   pipeline.remove("deflater");
-                  pipeline.remove("chunkedWriter");
                 }
                 if (isDecompressionSupported) {
                   pipeline.remove("inflater");

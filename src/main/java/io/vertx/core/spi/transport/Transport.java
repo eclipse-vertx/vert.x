@@ -9,22 +9,19 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.net.impl.transport;
+package io.vertx.core.spi.transport;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
-import io.netty.channel.socket.nio.NioDatagramChannel;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.channel.socket.nio.NioSocketChannel;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.net.ClientOptionsBase;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.SocketAddressImpl;
+import io.vertx.core.impl.transports.JDKTransport;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -39,75 +36,34 @@ import java.util.concurrent.ThreadFactory;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Transport {
+public interface Transport {
 
-  public static final int ACCEPTOR_EVENT_LOOP_GROUP = 0;
-  public static final int IO_EVENT_LOOP_GROUP = 1;
+  int ACCEPTOR_EVENT_LOOP_GROUP = 0;
+  int IO_EVENT_LOOP_GROUP = 1;
 
-  /**
-   * The JDK transport, always there.
-   */
-  public static Transport JDK = new Transport();
-
-  /**
-   * The native transport, it may be {@code null} or failed.
-   */
-  public static Transport nativeTransport() {
-    Transport transport = null;
-    try {
-      Transport epoll = new EpollTransport();
-      if (epoll.isAvailable()) {
-        return epoll;
-      } else {
-        transport = epoll;
-      }
-    } catch (Throwable ignore) {
-      // Jar not here
-    }
-    try {
-      Transport kqueue = new KQueueTransport();
-      if (kqueue.isAvailable()) {
-        return kqueue;
-      } else if (transport == null) {
-        transport = kqueue;
-      }
-    } catch (Throwable ignore) {
-      // Jar not here
-    }
-    return transport;
+  default boolean supportsDomainSockets() {
+    return false;
   }
 
-  public static Transport transport(boolean preferNative) {
-    if (preferNative) {
-      Transport nativeTransport = Transport.nativeTransport();
-      if (nativeTransport != null && nativeTransport.isAvailable()) {
-        return nativeTransport;
-      } else {
-        return Transport.JDK;
-      }
-    } else {
-      return Transport.JDK;
-    }
-  }
-
-  protected Transport() {
+  default boolean supportFileRegion() {
+    return true;
   }
 
   /**
    * @return true when the transport is available.
    */
-  public boolean isAvailable() {
+  default boolean isAvailable() {
     return true;
   }
 
   /**
    * @return the error that cause the unavailability when {@link #isAvailable()} returns {@code null}.
    */
-  public Throwable unavailabilityCause() {
+  default Throwable unavailabilityCause() {
     return null;
   }
 
-  public SocketAddress convert(io.vertx.core.net.SocketAddress address) {
+  default SocketAddress convert(io.vertx.core.net.SocketAddress address) {
     if (address.isDomainSocket()) {
       throw new IllegalArgumentException("Domain socket are not supported by JDK transport, you need to use native transport to use them");
     } else {
@@ -120,23 +76,12 @@ public class Transport {
     }
   }
 
-  public io.vertx.core.net.SocketAddress convert(SocketAddress address) {
+  default io.vertx.core.net.SocketAddress convert(SocketAddress address) {
     if (address instanceof InetSocketAddress) {
       return io.vertx.core.net.SocketAddress.inetSocketAddress((InetSocketAddress) address);
     } else {
       return null;
     }
-  }
-
-  /**
-   * Return a channel option for given {@code name} or null if that options does not exist
-   * for this transport.
-   *
-   * @param name the option name
-   * @return the channel option
-   */
-  ChannelOption<?> channelOption(String name) {
-    return null;
   }
 
   /**
@@ -147,56 +92,31 @@ public class Transport {
    *
    * @return a new event loop group
    */
-  public EventLoopGroup eventLoopGroup(int type, int nThreads, ThreadFactory threadFactory, int ioRatio) {
-    NioEventLoopGroup eventLoopGroup = new NioEventLoopGroup(nThreads, threadFactory);
-    eventLoopGroup.setIoRatio(ioRatio);
-    return eventLoopGroup;
-  }
+  EventLoopGroup eventLoopGroup(int type, int nThreads, ThreadFactory threadFactory, int ioRatio);
 
   /**
    * @return a new datagram channel
    */
-  public DatagramChannel datagramChannel() {
-    return new NioDatagramChannel();
-  }
+  DatagramChannel datagramChannel();
 
   /**
    * @return a new datagram channel
    */
-  public DatagramChannel datagramChannel(InternetProtocolFamily family) {
-    switch (family) {
-      case IPv4:
-        return new NioDatagramChannel(InternetProtocolFamily.IPv4);
-      case IPv6:
-        return new NioDatagramChannel(InternetProtocolFamily.IPv6);
-      default:
-        throw new UnsupportedOperationException();
-    }
-  }
+  DatagramChannel datagramChannel(InternetProtocolFamily family);
 
   /**
    * @return the type for channel
    * @param domainSocket whether to create a unix domain channel or a socket channel
    */
-  public ChannelFactory<? extends Channel> channelFactory(boolean domainSocket) {
-    if (domainSocket) {
-      throw new IllegalArgumentException("The Vertx instance must be created with the preferNativeTransport option set to true to create domain sockets");
-    }
-    return NioSocketChannel::new;
-  }
+  ChannelFactory<? extends Channel> channelFactory(boolean domainSocket);
 
   /**
    * @return the type for server channel
    * @param domainSocket whether to create a server unix domain channel or a regular server socket channel
    */
-  public ChannelFactory<? extends ServerChannel> serverChannelFactory(boolean domainSocket) {
-    if (domainSocket) {
-      throw new IllegalArgumentException();
-    }
-    return NioServerSocketChannel::new;
-  }
+  ChannelFactory<? extends ServerChannel> serverChannelFactory(boolean domainSocket);
 
-  public void configure(DatagramChannel channel, DatagramSocketOptions options) {
+  default void configure(DatagramChannel channel, DatagramSocketOptions options) {
     channel.config().setAllocator(PartialPooledByteBufAllocator.INSTANCE);
     if (options.getSendBufferSize() != -1) {
       channel.config().setSendBufferSize(options.getSendBufferSize());
@@ -210,7 +130,7 @@ public class Transport {
       channel.config().setTrafficClass(options.getTrafficClass());
     }
     channel.config().setBroadcast(options.isBroadcast());
-    if (this == Transport.JDK) {
+    if (this instanceof JDKTransport) {
       channel.config().setLoopbackModeDisabled(options.isLoopbackModeDisabled());
       if (options.getMulticastTimeToLive() != -1) {
         channel.config().setTimeToLive(options.getMulticastTimeToLive());
@@ -225,7 +145,7 @@ public class Transport {
     }
   }
 
-  public void configure(ClientOptionsBase options, boolean domainSocket, Bootstrap bootstrap) {
+  default void configure(ClientOptionsBase options, boolean domainSocket, Bootstrap bootstrap) {
     if (!domainSocket) {
       bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
       bootstrap.option(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
@@ -250,7 +170,7 @@ public class Transport {
     bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, options.getConnectTimeout());
   }
 
-  public void configure(NetServerOptions options, boolean domainSocket, ServerBootstrap bootstrap) {
+  default void configure(NetServerOptions options, boolean domainSocket, ServerBootstrap bootstrap) {
     bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
     if (!domainSocket) {
       bootstrap.childOption(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
