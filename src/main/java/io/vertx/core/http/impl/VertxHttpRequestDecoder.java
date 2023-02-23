@@ -37,4 +37,19 @@ public class VertxHttpRequestDecoder extends HttpRequestDecoder {
       initialLine[1],
       HeadersMultiMap.httpHeaders());
   }
+
+  @Override
+  protected boolean isContentAlwaysEmpty(HttpMessage msg) {
+    if (msg == null) {
+      return false;
+    }
+    // we are forced to perform exact type check here because
+    // users can override createMessage with a DefaultHttpRequest implements HttpResponse
+    // and we have to enforce
+    // if (msg instance HttpResponse) return super.isContentAlwaysEmpty(msg)
+    if (msg.getClass() == DefaultHttpRequest.class) {
+      return false;
+    }
+    return super.isContentAlwaysEmpty(msg);
+  }
 }
