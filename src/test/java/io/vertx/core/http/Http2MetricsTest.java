@@ -20,25 +20,16 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@RunWith(Parameterized.class)
 public class Http2MetricsTest extends HttpMetricsTestBase {
-
-  @Parameterized.Parameters
-  public static Collection<Object[]> params() {
-    ArrayList<Object[]> params = new ArrayList<>();
-    // h2
-    params.add(new Object[] { Http2TestBase.createHttp2ClientOptions(), Http2TestBase.createHttp2ServerOptions(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST) });
-    // h2c with upgrade
-    params.add(new Object[] { new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2).setHttp2ClearTextUpgrade(true), new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST) });
-    // h2c direct
-    params.add(new Object[] { new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2).setHttp2ClearTextUpgrade(false), new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST) });
-    return params;
-  }
 
   private HttpClientOptions clientOptions;
   private HttpServerOptions serverOptions;
 
-  public Http2MetricsTest(HttpClientOptions clientOptions, HttpServerOptions serverOptions) {
+  public Http2MetricsTest() {
+    this(Http2TestBase.createHttp2ClientOptions(), Http2TestBase.createHttp2ServerOptions(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST));
+  }
+
+  private Http2MetricsTest(HttpClientOptions clientOptions, HttpServerOptions serverOptions) {
     super(HttpVersion.HTTP_2);
 
     this.clientOptions = clientOptions;
