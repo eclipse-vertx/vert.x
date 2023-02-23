@@ -9,26 +9,31 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.benchmarks;
+package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.DefaultHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpMessage;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpResponseEncoder;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.AsciiString;
 import io.netty.util.CharsetUtil;
+import io.netty.util.ReferenceCountUtil;
+import io.vertx.benchmarks.BenchmarkBase;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
@@ -36,9 +41,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.http.impl.Http1xServerConnection;
-import io.vertx.core.http.impl.VertxHttpRequestDecoder;
-import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.VertxHandler;
@@ -206,14 +208,7 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
     HttpServerOptions options = new HttpServerOptions();
     vertxChannel = new EmbeddedChannel(
         new VertxHttpRequestDecoder(options),
-        // We don't use the VertxHttpResponseDecoder because it will use the PartialPooledByteBufAllocator
-        new HttpResponseEncoder() {
-          @Override
-          protected void encodeHeaders(HttpHeaders headers, ByteBuf buf) {
-            ((HeadersMultiMap)headers).encode(buf);
-          }
-        }
-    );
+        new VertxHttpResponseEncoder());
     vertxChannel.config().setAllocator(new Alloc());
 
     ContextInternal context = vertx.createEventLoopContext(vertxChannel.eventLoop(), null, Thread.currentThread().getContextClassLoader());
@@ -246,8 +241,21 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
         options.getMaxHeaderSize(),
         options.getMaxChunkSize(),
         false,
-        options.getDecoderInitialBufferSize()),
-        new HttpResponseEncoder(), new SimpleChannelInboundHandler<HttpRequest>() {
+        options.getDecoderInitialBufferSize()) {
+      @Override
+      protected boolean isContentAlwaysEmpty(HttpMessage msg) {
+        return false;
+      }
+    },
+        new HttpResponseEncoder() {
+          @Override
+          public boolean acceptOutboundMessage(Object msg) throws Exception {
+            if (msg.getClass() == DefaultFullHttpResponse.class) {
+              return true;
+            }
+            return super.acceptOutboundMessage(msg);
+          }
+        }, new ChannelInboundHandlerAdapter() {
 
       private final byte[] STATIC_PLAINTEXT = "Hello, World!".getBytes(CharsetUtil.UTF_8);
       private final int STATIC_PLAINTEXT_LEN = STATIC_PLAINTEXT.length;
@@ -265,8 +273,22 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
       private final CharSequence date = new AsciiString(FORMAT.format(new Date()));
 
       @Override
-      protected void channelRead0(ChannelHandlerContext ctx, HttpRequest msg) throws Exception {
-        writeResponse(ctx, msg, PLAINTEXT_CONTENT_BUFFER.duplicate(), TYPE_PLAIN, PLAINTEXT_CLHEADER_VALUE);
+      public void channelRead(ChannelHandlerContext ctx, Object o) {
+        if (o == LastHttpContent.EMPTY_LAST_CONTENT) {
+          return;
+        }
+        if (o.getClass() == DefaultHttpRequest.class) {
+          writeResponse(ctx, (DefaultHttpRequest) o, PLAINTEXT_CONTENT_BUFFER.duplicate(), TYPE_PLAIN, PLAINTEXT_CLHEADER_VALUE);
+        } else if (o instanceof HttpRequest) {
+          try {
+            // slow path
+            writeResponse(ctx, (HttpRequest) o, PLAINTEXT_CONTENT_BUFFER.duplicate(), TYPE_PLAIN, PLAINTEXT_CLHEADER_VALUE);
+          } finally {
+            ReferenceCountUtil.release(o);
+          }
+        } else {
+          ReferenceCountUtil.release(o);
+        }
       }
 
       @Override
@@ -298,11 +320,10 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
   }
 
   @Benchmark
-  public void vertx() {
+  public Object vertx() {
     GET.setIndex(readerIndex, writeIndex);
     vertxChannel.writeInbound(GET);
-    ByteBuf result = (ByteBuf) vertxChannel.outboundMessages().poll();
-    consume(result);
+    return vertxChannel.outboundMessages().poll();
   }
 
   @Fork(value = 1, jvmArgsAppend = {
@@ -310,20 +331,33 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
       "-Dvertx.disableContextTimings=true",
       "-Dvertx.disableTCCL=true",
       "-Dvertx.disableHttpHeadersValidation=true",
+      "-Dvertx.disableMetrics=true"
   })
   @Benchmark
-  public void vertxOpt() {
+  public Object vertxOpt() {
     GET.setIndex(readerIndex, writeIndex);
     vertxChannel.writeInbound(GET);
-    ByteBuf result = (ByteBuf) vertxChannel.outboundMessages().poll();
-    consume(result);
+    return vertxChannel.outboundMessages().poll();
+  }
+
+  @Fork(value = 1, jvmArgsAppend = {
+    "-Dvertx.threadChecks=false",
+    "-Dvertx.disableContextTimings=true",
+    "-Dvertx.disableTCCL=true",
+    "-Dvertx.disableHttpHeadersValidation=true",
+    "-Dvertx.disableMetrics=false"
+  })
+  @Benchmark
+  public Object vertxOptMetricsOn() {
+    GET.setIndex(readerIndex, writeIndex);
+    vertxChannel.writeInbound(GET);
+    return vertxChannel.outboundMessages().poll();
   }
 
   @Benchmark
-  public void netty() {
+  public Object netty() {
     GET.setIndex(readerIndex, writeIndex);
     nettyChannel.writeInbound(GET);
-    ByteBuf result = (ByteBuf) nettyChannel.outboundMessages().poll();
-    consume(result);
+    return nettyChannel.outboundMessages().poll();
   }
 }
