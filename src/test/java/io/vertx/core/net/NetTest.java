@@ -94,7 +94,7 @@ import static org.hamcrest.CoreMatchers.*;
 public class NetTest extends VertxTestBase {
 
   static {
-    // System.setProperty("org.slf4j.simpleLogger.log.io.netty.handler.logging.LoggingHandler", "debug");
+    System.setProperty("org.slf4j.simpleLogger.log.io.netty.handler.logging.LoggingHandler", "debug");
     System.setProperty("org.slf4j.simpleLogger.log.io.netty.handler.ssl.SslHandler", "trace");
   }
 
@@ -173,7 +173,7 @@ public class NetTest extends VertxTestBase {
       });
     });
     client.close();
-    client = vertx.createNetClient(new NetClientOptions().setTrustStoreOptions(Trust.SERVER_JKS.get()));
+    client = vertx.createNetClient(new NetClientOptions().setTrustStoreOptions(Trust.SERVER_JKS.get()).setLogActivity(true));
     server
       .listen(1234, "localhost")
       .onComplete(onSuccess(v -> {
