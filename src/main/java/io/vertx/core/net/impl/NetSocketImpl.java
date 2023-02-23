@@ -14,8 +14,10 @@ package io.vertx.core.net.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
+import io.netty.handler.ssl.SslHandler;
 import io.netty.util.CharsetUtil;
 import io.netty.util.ReferenceCounted;
+import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -335,27 +337,37 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
   @Override
   public NetSocket upgradeToSsl(String serverName, Handler<AsyncResult<Void>> handler) {
-    ChannelHandler sslHandler = chctx.pipeline().get("ssl");
-    if (sslHandler == null) {
-      ChannelPromise p = chctx.newPromise();
-      chctx.pipeline().addFirst("handshaker", new SslHandshakeCompletionHandler(p));
-      p.addListener(future -> {
-        if (handler != null) {
-          AsyncResult<Void> res;
-          if (future.isSuccess()) {
-            res = Future.succeededFuture();
+    if (chctx.pipeline().get("ssl") == null) {
+      ChannelPromise flush = chctx.newPromise();
+      flush(flush);
+      flush.addListener(fut -> {
+        if (fut.isSuccess()) {
+          ChannelPromise p = chctx.newPromise();
+          chctx.pipeline().addFirst("handshaker", new SslHandshakeCompletionHandler(p));
+          p.addListener(future -> {
+            if (handler != null) {
+              AsyncResult<Void> res;
+              if (future.isSuccess()) {
+                res = Future.succeededFuture();
+              } else {
+                res = Future.failedFuture(future.cause());
+              }
+              context.emit(res, handler);
+            }
+          });
+          ChannelHandler sslHandler;
+          if (remoteAddress != null) {
+            sslHandler = sslChannelProvider.createClientSslHandler(remoteAddress, serverName, false);
           } else {
-            res = Future.failedFuture(future.cause());
+            sslHandler = sslChannelProvider.createServerHandler();
           }
-          context.emit(res, handler);
+          chctx.pipeline().addFirst("ssl", sslHandler);
+        } else {
+          if (handler != null) {
+            context.emit(Future.failedFuture(fut.cause()), handler);
+          }
         }
       });
-      if (remoteAddress != null) {
-        sslHandler = sslChannelProvider.createClientSslHandler(remoteAddress, serverName, false);
-      } else {
-        sslHandler = sslChannelProvider.createServerHandler();
-      }
-      chctx.pipeline().addFirst("ssl", sslHandler);
     }
     return this;
   }
