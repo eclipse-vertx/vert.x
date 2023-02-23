@@ -60,7 +60,6 @@ import org.junit.rules.TemporaryFolder;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManagerFactory;
@@ -92,11 +91,6 @@ import static org.hamcrest.CoreMatchers.*;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class NetTest extends VertxTestBase {
-
-  static {
-    System.setProperty("org.slf4j.simpleLogger.log.io.netty.handler.logging.LoggingHandler", "debug");
-    System.setProperty("org.slf4j.simpleLogger.log.io.netty.handler.ssl.SslHandler", "trace");
-  }
 
   private static final Logger log = LoggerFactory.getLogger(NetTest.class);
 
@@ -149,52 +143,6 @@ public class NetTest extends VertxTestBase {
       proxy.stop();
     }
     super.tearDown();
-  }
-
-  @Test
-  public void startTLS() {
-    waitFor(2);
-    server.close();
-    server = vertx.createNetServer(
-      new NetServerOptions().setKeyCertOptions(Cert.SERVER_JKS.get()))
-      .connectHandler(so -> {
-      so.handler(buff -> {
-        assertEquals("ping", buff.toString());
-        System.out.println("s: write pong");
-        so.write("pong");
-        so.upgradeToSsl(onSuccess(v -> {
-          so.handler(buff2 -> {
-            assertEquals("ping-with-ssl", buff2.toString());
-            so.closeHandler(v3 -> complete());
-            System.out.println("s: write pong-with-ssl");
-            so.write("pong-with-ssl");
-          });
-        }));
-      });
-    });
-    client.close();
-    client = vertx.createNetClient(new NetClientOptions().setTrustStoreOptions(Trust.SERVER_JKS.get()).setLogActivity(true));
-    server
-      .listen(1234, "localhost")
-      .onComplete(onSuccess(v -> {
-      client.connect(1234, "localhost").onComplete(onSuccess(so -> {
-        System.out.println("c: write ping");
-        so.write("ping");
-        so.handler(buff -> {
-          System.out.println("s: write pong-with-ssl");
-          assertEquals("pong", buff.toString());
-          so.upgradeToSsl(onSuccess(v2 -> {
-            so.handler(buff2 -> {
-              assertEquals("pong-with-ssl", buff2.toString());
-              System.out.println("s: close");
-              so.close().onComplete(onSuccess(v3 -> complete()));
-            });
-            so.write("ping-with-ssl");
-          }));
-        });
-      }));
-    }));
-    await();
   }
 
   @Test

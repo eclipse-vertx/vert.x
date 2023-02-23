@@ -26,6 +26,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
@@ -318,15 +319,32 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
   @Override
   public Future<Void> upgradeToSsl() {
-    Promise<Void> promise = context.promise();
-    upgradeToSsl(promise);
-    return promise.future();
+    return upgradeToSsl((String) null);
   }
 
   @Override
   public Future<Void> upgradeToSsl(String serverName) {
-    Promise<Void> promise = context.promise();
-    upgradeToSsl(serverName, promise);
+    PromiseInternal<Void> promise = context.promise();
+    if (chctx.pipeline().get("ssl") == null) {
+      ChannelPromise flush = chctx.newPromise();
+      flush(flush);
+      flush.addListener(fut -> {
+        if (fut.isSuccess()) {
+          ChannelPromise channelPromise = chctx.newPromise();
+          chctx.pipeline().addFirst("handshaker", new SslHandshakeCompletionHandler(channelPromise));
+          channelPromise.addListener(promise);
+          ChannelHandler sslHandler;
+          if (remoteAddress != null) {
+            sslHandler = sslChannelProvider.createClientSslHandler(remoteAddress, serverName, false);
+          } else {
+            sslHandler = sslChannelProvider.createServerHandler();
+          }
+          chctx.pipeline().addFirst("ssl", sslHandler);
+        } else {
+          promise.fail(fut.cause());
+        }
+      });
+    }
     return promise.future();
   }
 
@@ -337,37 +355,9 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
   @Override
   public NetSocket upgradeToSsl(String serverName, Handler<AsyncResult<Void>> handler) {
-    if (chctx.pipeline().get("ssl") == null) {
-      ChannelPromise flush = chctx.newPromise();
-      flush(flush);
-      flush.addListener(fut -> {
-        if (fut.isSuccess()) {
-          ChannelPromise p = chctx.newPromise();
-          chctx.pipeline().addFirst("handshaker", new SslHandshakeCompletionHandler(p));
-          p.addListener(future -> {
-            if (handler != null) {
-              AsyncResult<Void> res;
-              if (future.isSuccess()) {
-                res = Future.succeededFuture();
-              } else {
-                res = Future.failedFuture(future.cause());
-              }
-              context.emit(res, handler);
-            }
-          });
-          ChannelHandler sslHandler;
-          if (remoteAddress != null) {
-            sslHandler = sslChannelProvider.createClientSslHandler(remoteAddress, serverName, false);
-          } else {
-            sslHandler = sslChannelProvider.createServerHandler();
-          }
-          chctx.pipeline().addFirst("ssl", sslHandler);
-        } else {
-          if (handler != null) {
-            context.emit(Future.failedFuture(fut.cause()), handler);
-          }
-        }
-      });
+    Future<Void> fut = upgradeToSsl(serverName);
+    if (handler != null) {
+      fut.onComplete(handler);
     }
     return this;
   }
