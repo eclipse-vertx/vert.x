@@ -742,33 +742,43 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testAbsoluteURI() {
-    testURIAndPath("http://localhost:" + DEFAULT_HTTP_PORT + "/this/is/a/path/foo.html", "/this/is/a/path/foo.html");
+    String uri = "http://localhost:" + DEFAULT_HTTP_PORT + "/this/is/a/path/foo.html";
+    testURIAndPath(uri, uri, "/this/is/a/path/foo.html");
   }
 
   @Test
   public void testRelativeURI() {
-    testURIAndPath("/this/is/a/path/foo.html", "/this/is/a/path/foo.html");
+    String uri = "/this/is/a/path/foo.html";
+    testURIAndPath(uri, uri, uri);
   }
 
   @Test
   public void testAbsoluteURIWithHttpSchemaInQuery() {
-    testURIAndPath("http://localhost:" + DEFAULT_HTTP_PORT + "/correct/path?url=http://localhost:8008/wrong/path", "/correct/path");
+    String uri = "http://localhost:" + DEFAULT_HTTP_PORT + "/correct/path?url=http://localhost:8008/wrong/path";
+    testURIAndPath(uri, uri, "/correct/path");
   }
 
   @Test
   public void testRelativeURIWithHttpSchemaInQuery() {
-    testURIAndPath("/correct/path?url=http://localhost:8008/wrong/path", "/correct/path");
+    String uri = "/correct/path?url=http://localhost:8008/wrong/path";
+    testURIAndPath(uri, uri, "/correct/path");
   }
 
   @Test
   public void testAbsoluteURIEmptyPath() {
-    testURIAndPath("http://localhost:" + DEFAULT_HTTP_PORT + "/", "/");
+    String uri = "http://localhost:" + DEFAULT_HTTP_PORT + "/";
+    testURIAndPath(uri, uri, "/");
   }
 
-  private void testURIAndPath(String uri, String path) {
+  @Test
+  public void testEmptyURI() {
+    testURIAndPath("", "/", "/");
+  }
+
+  private void testURIAndPath(String uri, String expectedUri, String expectedPath) {
     server.requestHandler(req -> {
-      assertEquals(uri, req.uri());
-      assertEquals(path, req.path());
+      assertEquals(expectedUri, req.uri());
+      assertEquals(expectedPath, req.path());
       req.response().end();
     });
 
