@@ -494,6 +494,9 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     if (writeHead) {
       HttpMethod method = getMethod();
       String uri = getURI();
+      if (uri.isEmpty()) {
+        uri = "/";
+      }
       HttpRequestHead head = new HttpRequestHead(method, uri, headers, authority(), absoluteURI(), traceOperation);
       stream.writeHead(head, chunked, buff, writeEnd, priority, connect, completionHandler);
     } else {

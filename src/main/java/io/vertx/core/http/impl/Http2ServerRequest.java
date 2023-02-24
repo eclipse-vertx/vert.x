@@ -362,7 +362,11 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   @Override
   public String query() {
     synchronized (stream.conn) {
-      return stream.uri != null ? HttpUtils.parseQuery(stream.uri) : null;
+      if (stream.uri == null) {
+        return null;
+      } else {
+        return HttpUtils.parseQuery(stream.uri);
+      }
     }
   }
 

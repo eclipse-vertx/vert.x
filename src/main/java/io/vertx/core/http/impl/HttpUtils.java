@@ -490,14 +490,14 @@ public final class HttpUtils {
   }
 
   /**
-   * Extract the query out of a uri or returns {@code null} if no query was found.
+   * Extract the query out of a uri or returns the empty string if no query was found.
    */
   static String parseQuery(String uri) {
     int i = uri.indexOf('?');
     if (i == -1) {
       return null;
     } else {
-      return uri.substring(i + 1 , uri.length());
+      return uri.substring(i + 1);
     }
   }
 
