@@ -416,16 +416,20 @@ public abstract class ConnectionBase {
   public final void reportBytesRead(Object msg) {
     NetworkMetrics metrics = metrics();
     if (metrics != null) {
-      long bytes = remainingBytesRead;
-      long numberOfBytes = sizeof(msg);
-      bytes += numberOfBytes;
-      long val = bytes & METRICS_REPORTED_BYTES_HIGH_MASK;
-      if (val > 0) {
-        bytes &= METRICS_REPORTED_BYTES_LOW_MASK;
-        metrics.bytesRead(metric(), remoteAddress(), val);
-      }
-      remainingBytesRead = bytes;
+      doReportBytesRead(msg, metrics);
     }
+  }
+
+  private void doReportBytesRead(Object msg, NetworkMetrics metrics) {
+    long bytes = remainingBytesRead;
+    long numberOfBytes = sizeof(msg);
+    bytes += numberOfBytes;
+    long val = bytes & METRICS_REPORTED_BYTES_HIGH_MASK;
+    if (val > 0) {
+      bytes &= METRICS_REPORTED_BYTES_LOW_MASK;
+      metrics.bytesRead(metric(), remoteAddress(), val);
+    }
+    remainingBytesRead = bytes;
   }
 
   protected long sizeof(Object msg) {
