@@ -11,6 +11,7 @@
 
 package io.vertx.core.net.impl;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.handler.ssl.SslHandler;
@@ -412,59 +413,96 @@ public abstract class ConnectionBase {
     return vertx.transport().supportFileRegion() && !isSsl();
   }
 
-  protected void reportBytesRead(Object msg) {
+  public final void reportBytesRead(Object msg) {
+    NetworkMetrics metrics = metrics();
+    if (metrics != null) {
+      long bytes = remainingBytesRead;
+      long numberOfBytes = sizeof(msg);
+      bytes += numberOfBytes;
+      long val = bytes & METRICS_REPORTED_BYTES_HIGH_MASK;
+      if (val > 0) {
+        bytes &= METRICS_REPORTED_BYTES_LOW_MASK;
+        metrics.bytesRead(metric(), remoteAddress(), val);
+      }
+      remainingBytesRead = bytes;
+    }
   }
 
-  public void reportBytesRead(long numberOfBytes) {
+  protected long sizeof(Object msg) {
+    if (msg instanceof ByteBuf) {
+      return ((ByteBuf)msg).readableBytes();
+    }
+    return 0L;
+  }
+
+  public final void reportBytesRead(long numberOfBytes) {
     if (numberOfBytes < 0L) {
       throw new IllegalArgumentException();
     }
-    long bytes = remainingBytesRead;
-    bytes += numberOfBytes;
     NetworkMetrics metrics = metrics();
-    long val = bytes & METRICS_REPORTED_BYTES_HIGH_MASK;
-    if (metrics != null && val > 0) {
-      bytes &= METRICS_REPORTED_BYTES_LOW_MASK;
-      metrics.bytesRead(metric(), remoteAddress(), val);
+    if (metrics != null) {
+      long bytes = remainingBytesRead;
+      bytes += numberOfBytes;
+      long val = bytes & METRICS_REPORTED_BYTES_HIGH_MASK;
+      if (val > 0) {
+        bytes &= METRICS_REPORTED_BYTES_LOW_MASK;
+        metrics.bytesRead(metric(), remoteAddress(), val);
+      }
+      remainingBytesRead = bytes;
     }
-    remainingBytesRead = bytes;
   }
 
-  protected void reportsBytesWritten(Object msg) {
+  public final void reportsBytesWritten(Object msg) {
+    NetworkMetrics metrics = metrics();
+    if (metrics != null) {
+      long numberOfBytes = sizeof(msg);
+      long bytes = remainingBytesWritten;
+      bytes += numberOfBytes;
+      long val = bytes & METRICS_REPORTED_BYTES_HIGH_MASK;
+      if (val > 0) {
+        bytes &= METRICS_REPORTED_BYTES_LOW_MASK;
+        metrics.bytesWritten(metric, remoteAddress(), val);
+      }
+      remainingBytesWritten = bytes;
+    }
   }
 
-  public void reportBytesWritten(long numberOfBytes) {
+  public final void reportBytesWritten(long numberOfBytes) {
     if (numberOfBytes < 0L) {
       throw new IllegalArgumentException();
     }
-    long bytes = remainingBytesWritten;
-    bytes += numberOfBytes;
     NetworkMetrics metrics = metrics();
-    long val = bytes & METRICS_REPORTED_BYTES_HIGH_MASK;
-    if (metrics != null && val > 0) {
-      bytes &= METRICS_REPORTED_BYTES_LOW_MASK;
-      metrics.bytesWritten(metric, remoteAddress(), val);
+    if (metrics != null) {
+      long bytes = remainingBytesWritten;
+      bytes += numberOfBytes;
+      long val = bytes & METRICS_REPORTED_BYTES_HIGH_MASK;
+      if (val > 0) {
+        bytes &= METRICS_REPORTED_BYTES_LOW_MASK;
+        metrics.bytesWritten(metric, remoteAddress(), val);
+      }
+      remainingBytesWritten = bytes;
     }
-    remainingBytesWritten = bytes;
   }
 
   public void flushBytesRead() {
-    long val = remainingBytesRead;
-    if (val > 0L) {
-      NetworkMetrics metrics = metrics();
-      remainingBytesRead = 0L;
-      if (metrics != null)
+    NetworkMetrics metrics = metrics();
+    if (metrics != null) {
+      long val = remainingBytesRead;
+      if (val > 0L) {
+        remainingBytesRead = 0L;
         metrics.bytesRead(metric(), remoteAddress(), val);
+      }
     }
   }
 
   public void flushBytesWritten() {
-    long val = remainingBytesWritten;
-    if (val > 0L) {
-      NetworkMetrics metrics = metrics();
-      remainingBytesWritten = 0L;
-      if (metrics != null)
+    NetworkMetrics metrics = metrics();
+    if (metrics != null) {
+      long val = remainingBytesWritten;
+      if (val > 0L) {
+        remainingBytesWritten = 0L;
         metrics.bytesWritten(metric(), remoteAddress(), val);
+      }
     }
   }
 

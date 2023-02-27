@@ -139,20 +139,6 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   }
 
   @Override
-  protected void reportsBytesWritten(Object msg) {
-    if (msg instanceof ByteBuf) {
-      reportBytesWritten(((ByteBuf)msg).readableBytes());
-    }
-  }
-
-  @Override
-  protected void reportBytesRead(Object msg) {
-    if (msg instanceof ByteBuf) {
-      reportBytesRead(((ByteBuf)msg).readableBytes());
-    }
-  }
-
-  @Override
   public String applicationLayerProtocol() {
     return negotiatedApplicationLayerProtocol;
   }

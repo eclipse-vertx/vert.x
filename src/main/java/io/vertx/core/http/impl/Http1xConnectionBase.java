@@ -177,22 +177,7 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
   }
 
   @Override
-  protected void reportsBytesWritten(Object msg) {
-    long size = sizeOf(msg);
-    reportBytesWritten(size);
-  }
-
-  @Override
-  protected void reportBytesRead(Object msg) {
-    long size = sizeOf(msg);
-    reportBytesRead(size);
-  }
-
-  static long sizeOf(WebSocketFrame obj) {
-    return obj.content().readableBytes();
-  }
-
-  static long sizeOf(Object obj) {
+  protected long sizeof(Object obj) {
     // https://github.com/netty/netty/issues/12708
     // try first Netty HTTP singleton types, without any instanceof/checkcast bytecodes
     if (obj == Unpooled.EMPTY_BUFFER || obj == LastHttpContent.EMPTY_LAST_CONTENT) {
@@ -215,7 +200,7 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
     } else if (obj instanceof  HttpContent) {
       return ((HttpContent) obj).content().readableBytes();
     } else if (obj instanceof WebSocketFrame) {
-      return sizeOf((WebSocketFrame) obj);
+      return ((WebSocketFrame) obj).content().readableBytes();
     } else if (obj instanceof FileRegion) {
       return ((FileRegion) obj).count();
     } else if (obj instanceof ChunkedFile) {
