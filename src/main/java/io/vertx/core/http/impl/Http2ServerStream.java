@@ -119,6 +119,13 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
   }
 
   @Override
+  protected void doWriteReset(long code) {
+    if (!requestEnded || !responseEnded) {
+      super.doWriteReset(code);
+    }
+  }
+
+  @Override
   void handleWritabilityChanged(boolean writable) {
     request.response().handlerWritabilityChanged(writable);
   }

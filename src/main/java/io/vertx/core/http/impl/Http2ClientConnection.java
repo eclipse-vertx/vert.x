@@ -282,6 +282,13 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       super.doWriteHeaders(headers, end, handler);
     }
 
+    @Override
+    protected void doWriteReset(long code) {
+      if (!requestEnded || !responseEnded) {
+        super.doWriteReset(code);
+      }
+    }
+
     protected void endWritten() {
       requestEnded = true;
       if (conn.metrics != null) {
