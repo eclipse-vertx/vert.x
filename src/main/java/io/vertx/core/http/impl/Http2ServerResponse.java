@@ -700,11 +700,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public boolean reset(long code) {
-    if (ended) {
-      return false;
-    }
     stream.writeReset(code);
-    ctx.flush();
     return true;
   }
 

@@ -232,7 +232,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     }
   }
 
-  private void doWriteReset(long code) {
+  protected void doWriteReset(long code) {
     int streamId;
     synchronized (this) {
       streamId = stream != null ? stream.id() : -1;

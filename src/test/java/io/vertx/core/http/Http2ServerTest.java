@@ -94,6 +94,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.LongConsumer;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
@@ -915,12 +916,46 @@ public class Http2ServerTest extends Http2TestBase {
   }
 
   @Test
-  public void testServerResetClientStream() throws Exception {
+  public void testServerResetClientStream1() throws Exception {
     server.requestHandler(req -> {
       req.handler(buf -> {
         req.response().reset(8);
       });
     });
+    testServerResetClientStream(code -> {
+      assertEquals(8, code);
+      testComplete();
+    }, false);
+  }
+
+  @Test
+  public void testServerResetClientStream2() throws Exception {
+    server.requestHandler(req -> {
+      req.handler(buf -> {
+        req.response().end();
+        req.response().reset(8);
+      });
+    });
+    testServerResetClientStream(code -> {
+      assertEquals(8, code);
+      testComplete();
+    }, false);
+  }
+
+  @Test
+  public void testServerResetClientStream3() throws Exception {
+    server.requestHandler(req -> {
+      req.endHandler(buf -> {
+        req.response().reset(8);
+      });
+    });
+    testServerResetClientStream(code -> {
+      assertEquals(8, code);
+      testComplete();
+    }, true);
+  }
+
+  private void testServerResetClientStream(LongConsumer resetHandler, boolean end) throws Exception {
     startServer();
 
     TestClient client = new TestClient();
@@ -930,14 +965,13 @@ public class Http2ServerTest extends Http2TestBase {
         @Override
         public void onRstStreamRead(ChannelHandlerContext ctx, int streamId, long errorCode) throws Http2Exception {
           vertx.runOnContext(v -> {
-            assertEquals(8, errorCode);
-            testComplete();
+            resetHandler.accept(errorCode);
           });
         }
       });
       Http2ConnectionEncoder encoder = request.encoder;
       encoder.writeHeaders(request.context, id, GET("/"), 0, false, request.context.newPromise());
-      encoder.writeData(request.context, id, Buffer.buffer("hello").getByteBuf(), 0, false, request.context.newPromise());
+      encoder.writeData(request.context, id, Buffer.buffer("hello").getByteBuf(), 0, end, request.context.newPromise());
     });
 
     fut.sync();

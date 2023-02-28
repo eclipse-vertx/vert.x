@@ -14,6 +14,7 @@ package io.vertx.core.http;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
@@ -54,6 +55,7 @@ import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.net.ConnectException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -754,76 +756,55 @@ public class Http2ClientTest extends Http2TestBase {
   }
 
   @Test
-  public void testClientResetServerStreamDuringRequest() throws Exception {
-    waitFor(2);
-    Promise<Void> bufReceived = Promise.promise();
-    server.requestHandler(req -> {
-      req.handler(buf -> {
-        bufReceived.complete();
-      });
-      AtomicBoolean errored = new AtomicBoolean();
-      req.exceptionHandler(err -> {
-        if (errored.compareAndSet(false, true)) {
-          assertEquals(err.getClass(), StreamResetException.class);
-        }
-      });
-      AtomicLong reset = new AtomicLong();
-      req.response().exceptionHandler(err -> {
-        if (err instanceof StreamResetException) {
-          reset.set(((StreamResetException) err).getCode());
-        }
-      });
-      req.response().closeHandler(v -> {
-        assertEquals(10L, reset.get());
-        complete();
-      });
-    });
-    startServer(testAddress);
-    client.request(requestOptions).onComplete(onSuccess(req -> {
-      req
-        .response(onFailure(err -> {
-          complete();
-        }))
-        .setChunked(true);
-      req.write(Buffer.buffer("hello"));
-      bufReceived.future().onComplete(ar -> {
-        req.reset(10);
-      });
-    }));
-    await();
+  public void testClientResetServerStream1() throws Exception {
+    testClientResetServerStream(false, false);
   }
 
   @Test
-  public void testClientResetServerStreamDuringResponse() throws Exception {
-    waitFor(3);
-    server.requestHandler(req -> {
-      req.exceptionHandler(err -> {
-        assertEquals(err.getClass(), StreamResetException.class);
-      });
-      AtomicLong reset = new AtomicLong();
-      req.response().exceptionHandler(err -> {
-        if (err instanceof StreamResetException) {
-          reset.set(((StreamResetException) err).getCode());
-        }
-      });
-      req.response().closeHandler(v -> {
-        assertEquals(10L, reset.get());
-        complete();
-      });
-      req.response().setChunked(true).write(Buffer.buffer("some-data"));
+  public void testClientResetServerStream2() throws Exception {
+    testClientResetServerStream(true, false);
+  }
+
+  @Test
+  public void testClientResetServerStream3() throws Exception {
+    testClientResetServerStream(false, true);
+  }
+
+  private void testClientResetServerStream(boolean endClient, boolean endServer) throws Exception {
+    waitFor(1);
+    ServerBootstrap bootstrap = createH2Server((decoder, encoder) -> new Http2EventAdapter() {
+      @Override
+      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+        encoder.writeHeaders(ctx, streamId, new DefaultHttp2Headers().status("200"), 0, false, ctx.newPromise());
+        ctx.flush();
+      }
+      @Override
+      public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+        encoder.writeData(ctx, streamId, Unpooled.copiedBuffer("pong", 0, 4, StandardCharsets.UTF_8), 0, endServer, ctx.newPromise());
+        ctx.flush();
+        return super.onDataRead(ctx, streamId, data, padding, endOfStream);
+      }
+      @Override
+      public void onRstStreamRead(ChannelHandlerContext ctx, int streamId, long errorCode) {
+        vertx.runOnContext(v -> {
+          assertEquals(10L, errorCode);
+          complete();
+        });
+      }
     });
-    startServer();
-    client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.PUT)).onComplete(onSuccess(req -> {
-      req.send(Buffer.buffer("hello"), onSuccess(resp -> {
-        resp.request().reset(10);
-        resp.request().write(Buffer.buffer()).onComplete(onFailure(err -> {
-          assertEquals(IllegalStateException.class, err.getClass());
-          complete();
-        }));
-        resp.request().end().onComplete(onFailure(err -> {
-          assertEquals(IllegalStateException.class, err.getClass());
-          complete();
-        }));
+    ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      if (endClient) {
+        req.end(Buffer.buffer("ping"));
+      } else {
+        req.setChunked(true).write(Buffer.buffer("ping"));
+      }
+      req.response(onSuccess(resp -> {
+        if (endServer) {
+          resp.endHandler(v -> req.reset(10));
+        } else {
+          resp.handler(v -> req.reset(10));
+        }
       }));
     }));
     await();
