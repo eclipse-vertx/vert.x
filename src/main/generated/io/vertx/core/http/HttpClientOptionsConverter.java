@@ -55,6 +55,11 @@ public class HttpClientOptionsConverter {
             obj.setHttp2ClearTextUpgrade((Boolean)member.getValue());
           }
           break;
+        case "http2ClearTextUpgradeWithPreflightRequest":
+          if (member.getValue() instanceof Boolean) {
+            obj.setHttp2ClearTextUpgradeWithPreflightRequest((Boolean)member.getValue());
+          }
+          break;
         case "http2ConnectionWindowSize":
           if (member.getValue() instanceof Number) {
             obj.setHttp2ConnectionWindowSize(((Number)member.getValue()).intValue());
@@ -243,6 +248,7 @@ public class HttpClientOptionsConverter {
     json.put("defaultPort", obj.getDefaultPort());
     json.put("forceSni", obj.isForceSni());
     json.put("http2ClearTextUpgrade", obj.isHttp2ClearTextUpgrade());
+    json.put("http2ClearTextUpgradeWithPreflightRequest", obj.isHttp2ClearTextUpgradeWithPreflightRequest());
     json.put("http2ConnectionWindowSize", obj.getHttp2ConnectionWindowSize());
     json.put("http2KeepAliveTimeout", obj.getHttp2KeepAliveTimeout());
     json.put("http2MaxPoolSize", obj.getHttp2MaxPoolSize());

@@ -151,6 +151,11 @@ public class HttpClientOptions extends ClientOptionsBase {
   public static final boolean DEFAULT_HTTP2_CLEAR_TEXT_UPGRADE = true;
 
   /**
+   * Default to use a preflight OPTIONS request for <i>h2C</i> without prior knowledge connection = {@code false}
+   */
+  public static final boolean DEFAULT_HTTP2_CLEAR_TEXT_UPGRADE_WITH_PREFLIGHT_REQUEST = false;
+
+  /**
    * Default WebSocket masked bit is true as depicted by RFC = {@code false}
    */
   public static final boolean DEFAULT_SEND_UNMASKED_FRAMES = false;
@@ -252,6 +257,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private Http2Settings initialSettings;
   private List<HttpVersion> alpnVersions;
   private boolean http2ClearTextUpgrade;
+  private boolean http2ClearTextUpgradeWithPreflightRequest;
   private boolean sendUnmaskedFrames;
   private int maxRedirects;
   private boolean forceSni;
@@ -308,6 +314,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.initialSettings = other.initialSettings != null ? new Http2Settings(other.initialSettings) : null;
     this.alpnVersions = other.alpnVersions != null ? new ArrayList<>(other.alpnVersions) : null;
     this.http2ClearTextUpgrade = other.http2ClearTextUpgrade;
+    this.http2ClearTextUpgradeWithPreflightRequest = other.http2ClearTextUpgradeWithPreflightRequest;
     this.sendUnmaskedFrames = other.isSendUnmaskedFrames();
     this.maxRedirects = other.maxRedirects;
     this.forceSni = other.forceSni;
@@ -372,6 +379,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     initialSettings = new Http2Settings();
     alpnVersions = new ArrayList<>(DEFAULT_ALPN_VERSIONS);
     http2ClearTextUpgrade = DEFAULT_HTTP2_CLEAR_TEXT_UPGRADE;
+    http2ClearTextUpgradeWithPreflightRequest = DEFAULT_HTTP2_CLEAR_TEXT_UPGRADE_WITH_PREFLIGHT_REQUEST;
     sendUnmaskedFrames = DEFAULT_SEND_UNMASKED_FRAMES;
     maxRedirects = DEFAULT_MAX_REDIRECTS;
     forceSni = DEFAULT_FORCE_SNI;
@@ -1140,6 +1148,26 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public HttpClientOptions setHttp2ClearTextUpgrade(boolean value) {
     this.http2ClearTextUpgrade = value;
+    return this;
+  }
+
+  /**
+   * @return {@code true} when an <i>h2c</i> connection established using an HTTP/1.1 upgrade request should perform
+   *         a preflight {@code OPTIONS} request to the origin server to establish the <i>h2c</i> connection
+   */
+  public boolean isHttp2ClearTextUpgradeWithPreflightRequest() {
+    return http2ClearTextUpgradeWithPreflightRequest;
+  }
+
+  /**
+   * Set to {@code true} when an <i>h2c</i> connection established using an HTTP/1.1 upgrade request should perform
+   * a preflight {@code OPTIONS} request to the origin server to establish the <i>h2c</i> connection.
+   *
+   * @param value the upgrade value
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setHttp2ClearTextUpgradeWithPreflightRequest(boolean value) {
+    this.http2ClearTextUpgradeWithPreflightRequest = value;
     return this;
   }
 

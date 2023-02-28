@@ -68,6 +68,10 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     this.current = connection;
   }
 
+  public HttpClientConnection unwrap() {
+    return current;
+  }
+
   @Override
   public long concurrency() {
     return upgradeProcessed ? current.concurrency() : 1L;
