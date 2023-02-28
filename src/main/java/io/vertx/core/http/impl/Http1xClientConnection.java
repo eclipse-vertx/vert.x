@@ -398,6 +398,10 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       return metric;
     }
 
+    Object trace() {
+      return trace;
+    }
+
     abstract void handleContinue();
     abstract void handleEarlyHints(MultiMap headers);
     abstract void handleHead(HttpResponseHead response);
@@ -521,6 +525,11 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     @Override
     public Object metric() {
       return super.metric();
+    }
+
+    @Override
+    public Object trace() {
+      return super.trace();
     }
 
     @Override

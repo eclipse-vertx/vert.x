@@ -38,6 +38,8 @@ public interface HttpClientStream extends WriteStream<Buffer> {
 
   Object metric();
 
+  Object trace();
+
   /**
    * @return the stream version or null if it's not yet determined
    */
