@@ -15,11 +15,7 @@ import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPipeline;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpHeaderNames;
@@ -49,6 +45,7 @@ import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.test.core.AsyncTestBase;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.tls.Cert;
+import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -1165,7 +1162,7 @@ public class Http2ClientTest extends Http2TestBase {
     return bootstrap;
   }
 
-  private ServerBootstrap createH2CServer(BiFunction<Http2ConnectionDecoder, Http2ConnectionEncoder, Http2FrameListener> handler, boolean upgrade) {
+  private ServerBootstrap createH2CServer(BiFunction<Http2ConnectionDecoder, Http2ConnectionEncoder, Http2FrameListener> handler, Handler<HttpServerUpgradeHandler.UpgradeEvent> upgradeHandler, boolean upgrade) {
     ServerBootstrap bootstrap = new ServerBootstrap();
     bootstrap.channel(NioServerSocketChannel.class);
     bootstrap.group(new NioEventLoopGroup());
@@ -1196,6 +1193,15 @@ public class Http2ClientTest extends Http2TestBase {
           };
           ch.pipeline().addLast(sourceCodec);
           ch.pipeline().addLast(new HttpServerUpgradeHandler(sourceCodec, upgradeCodecFactory));
+          ch.pipeline().addLast(new ChannelInboundHandlerAdapter() {
+            @Override
+            public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+              if (evt instanceof HttpServerUpgradeHandler.UpgradeEvent) {
+                upgradeHandler.handle((HttpServerUpgradeHandler.UpgradeEvent) evt);
+              }
+              super.userEventTriggered(ctx, evt);
+            }
+          });
         } else {
           Http2ConnectionHandler clientHandler = createHttpConnectionHandler(handler);
           ch.pipeline().addLast("handler", clientHandler);
@@ -1620,27 +1626,43 @@ public class Http2ClientTest extends Http2TestBase {
 
   @Test
   public void testClearTextUpgrade() throws Exception {
-    testClearText(true);
+    List<String> requests = testClearText(true, false);
+    Assert.assertEquals(Arrays.asList("GET", "GET"), requests);
+  }
+
+  @Test
+  public void testClearTextUpgradeWithPreflightRequest() throws Exception {
+    List<String> requests = testClearText(true, true);
+    Assert.assertEquals(Arrays.asList("OPTIONS", "GET", "GET"), requests);
   }
 
   @Test
   public void testClearTextWithPriorKnowledge() throws Exception {
-    testClearText(false);
+    List<String> requests = testClearText(false, false);
+    Assert.assertEquals(Arrays.asList("GET", "GET"), requests);
   }
 
-  private void testClearText(boolean upgrade) throws Exception {
+  private List<String> testClearText(boolean withUpgrade, boolean withPreflightRequest) throws Exception {
     Assume.assumeTrue(testAddress.isInetSocket());
+    List<String> requests = new ArrayList<>();
     ServerBootstrap bootstrap = createH2CServer((dec, enc) -> new Http2EventAdapter() {
       @Override
       public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+        requests.add(headers.method().toString());
         enc.writeHeaders(ctx, streamId, new DefaultHttp2Headers().status("200"), 0, true, ctx.newPromise());
         ctx.flush();
       }
-    }, upgrade);
+    }, upgrade -> {
+      requests.add(upgrade.upgradeRequest().method().name());
+    }, withUpgrade);
     ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
     try {
       client.close();
-      client = vertx.createHttpClient(clientOptions.setUseAlpn(false).setSsl(false).setHttp2ClearTextUpgrade(upgrade));
+      client = vertx.createHttpClient(clientOptions
+        .setUseAlpn(false)
+        .setSsl(false)
+        .setHttp2ClearTextUpgrade(withUpgrade)
+        .setHttp2ClearTextUpgradeWithPreflightRequest(withPreflightRequest));
       client.request(requestOptions).onComplete(onSuccess(req1 -> {
         req1.send(onSuccess(resp1 -> {
           HttpConnection conn = resp1.request().connection();
@@ -1657,6 +1679,7 @@ public class Http2ClientTest extends Http2TestBase {
     } finally {
       s.channel().close().sync();
     }
+    return requests;
   }
 
   @Test

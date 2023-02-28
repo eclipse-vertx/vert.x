@@ -41,6 +41,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static io.vertx.core.http.HttpMethod.OPTIONS;
+
 /**
  * Performs the channel configuration and connection according to the client options and the protocol version.
  *
@@ -196,7 +198,31 @@ public class HttpChannelConnector {
     });
     clientHandler.addHandler(conn -> {
       if (upgrade) {
-        future.complete(new Http2UpgradeClientConnection(client, conn));
+        boolean preflightRequest = options.isHttp2ClearTextUpgradeWithPreflightRequest();
+        if (preflightRequest) {
+          Http2UpgradeClientConnection conn2 = new Http2UpgradeClientConnection(client, conn);
+          conn2.concurrencyChangeHandler(concurrency -> {
+            // Ignore
+          });
+          conn2.createStream(conn.getContext(), ar -> {
+            if (ar.succeeded()) {
+              HttpClientStream stream = ar.result();
+              stream.headHandler(resp -> {
+                Http2UpgradeClientConnection connection = (Http2UpgradeClientConnection) stream.connection();
+                HttpClientConnection unwrap = connection.unwrap();
+                future.tryComplete(unwrap);
+              });
+              stream.exceptionHandler(future::tryFail);
+              HttpRequestHead request = new HttpRequestHead(OPTIONS, "/", HttpHeaders.headers(), server.toString(),
+                "http://" + server + "/", null);
+              stream.writeHead(request, false, null, true, null, false, null);
+            } else {
+              future.fail(ar.cause());
+            }
+          });
+        } else {
+          future.complete(new Http2UpgradeClientConnection(client, conn));
+        }
       } else {
         future.complete(conn);
       }
