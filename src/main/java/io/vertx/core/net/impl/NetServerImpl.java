@@ -19,7 +19,11 @@ import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.GenericFutureListener;
-import io.vertx.core.*;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Closeable;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
@@ -238,7 +242,7 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
     private void connected(Channel ch, SslChannelProvider sslChannelProvider) {
       NetServerImpl.this.initChannel(ch.pipeline(), options.isSsl());
       TCPMetrics<?> metrics = getMetrics();
-      VertxHandler<NetSocketImpl> handler = VertxHandler.create(ctx -> new NetSocketImpl(context, ctx, sslChannelProvider, metrics));
+      VertxHandler<NetSocketImpl> handler = VertxHandler.create(ctx -> new NetSocketImpl(context, ctx, sslChannelProvider, metrics, options.isRegisterWriteHandler()));
       handler.removeHandler(NetSocketImpl::unregisterEventBusHandler);
       handler.addHandler(conn -> {
         if (metrics != null) {

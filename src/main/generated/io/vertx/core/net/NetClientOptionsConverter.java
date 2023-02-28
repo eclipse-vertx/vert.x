@@ -45,6 +45,11 @@ public class NetClientOptionsConverter {
             obj.setReconnectInterval(((Number)member.getValue()).longValue());
           }
           break;
+        case "registerWriteHandler":
+          if (member.getValue() instanceof Boolean) {
+            obj.setRegisterWriteHandler((Boolean)member.getValue());
+          }
+          break;
       }
     }
   }
@@ -64,5 +69,6 @@ public class NetClientOptionsConverter {
     }
     json.put("reconnectAttempts", obj.getReconnectAttempts());
     json.put("reconnectInterval", obj.getReconnectInterval());
+    json.put("registerWriteHandler", obj.isRegisterWriteHandler());
   }
 }

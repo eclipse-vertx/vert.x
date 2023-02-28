@@ -18,16 +18,15 @@ import io.netty.handler.codec.http.websocketx.WebSocket13FrameDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocket13FrameEncoder;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.util.ReferenceCountUtil;
-import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import io.vertx.core.MultiMap;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.Http1xClientConnection;
@@ -35,10 +34,10 @@ import io.vertx.core.http.impl.Http1xServerConnection;
 import io.vertx.core.http.impl.WebSocketInternal;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.impl.ConcurrentHashSet;
-import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.impl.NetSocketInternal;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.impl.NetSocketInternal;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.CheckingSender;
 import io.vertx.test.core.TestUtils;
@@ -48,13 +47,22 @@ import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 import org.junit.Test;
 
-import java.security.cert.Certificate;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.security.cert.Certificate;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
@@ -65,19 +73,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTPS_HOST;
-import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTPS_PORT;
-import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTP_HOST;
-import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTP_PORT;
-import static io.vertx.core.http.HttpTestBase.DEFAULT_TEST_URI;
-import static io.vertx.test.core.TestUtils.assertIllegalStateException;
-import static io.vertx.test.core.TestUtils.assertNullPointerException;
-import static io.vertx.test.core.TestUtils.randomAlphaString;
+import static io.vertx.core.http.HttpTestBase.*;
+import static io.vertx.test.core.TestUtils.*;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -3691,6 +3694,99 @@ public class WebSocketTest extends VertxTestBase {
         testComplete();
       }));
     }));
+    await();
+  }
+
+  @Test
+  public void testWriteHandlerIdNullByDefault() throws Exception {
+    String path = "/some/path";
+    Buffer hello = Buffer.buffer("hello");
+    Buffer bye = Buffer.buffer("bye");
+
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).webSocketHandler(ws -> {
+      assertNull(ws.textHandlerID());
+      assertNull(ws.binaryHandlerID());
+      ws.binaryMessageHandler(data -> {
+        assertEquals(hello, data);
+        ws.writeBinaryMessage(bye).eventually(v -> ws.close());
+      });
+    });
+
+    waitFor(2);
+
+    server.listen(onSuccess(s -> {
+      WebSocketConnectOptions options = new WebSocketConnectOptions()
+        .setPort(DEFAULT_HTTP_PORT)
+        .setHost(DEFAULT_HTTP_HOST)
+        .setURI(path);
+      client = vertx.createHttpClient();
+      client.webSocket(options, onSuccess(ws -> {
+        assertNull(ws.textHandlerID());
+        assertNull(ws.binaryHandlerID());
+        ws
+          .closeHandler(v -> complete())
+          .binaryMessageHandler(data -> {
+            assertEquals(bye, data);
+            complete();
+          })
+          .write(hello);
+      }));
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testFanoutWithBinary() throws Exception {
+    testFanout(Buffer.buffer("hello"), Buffer.buffer("bye"), WebSocketBase::binaryHandlerID, WebSocketBase::binaryMessageHandler, WebSocket::writeBinaryMessage);
+  }
+
+  @Test
+  public void testFanoutWithText() throws Exception {
+    testFanout("hello", "bye", WebSocketBase::textHandlerID, WebSocketBase::textMessageHandler, WebSocket::writeTextMessage);
+  }
+
+  private <T> void testFanout(T hello, T bye, Function<WebSocketBase, String> handlerIDGetter, BiConsumer<WebSocketBase, Handler<T>> messageHandlerSetter, BiFunction<WebSocket, T, Future<Void>> messageWriter) throws Exception {
+    String path = "/some/path";
+    int numConnections = 10;
+
+    Set<String> connections = new ConcurrentHashSet<>();
+    HttpServerOptions httpServerOptions = new HttpServerOptions()
+      .setPort(DEFAULT_HTTP_PORT)
+      .setRegisterWebSocketWriteHandlers(true);
+    server = vertx.createHttpServer(httpServerOptions).webSocketHandler(ws -> {
+      String handlerID = handlerIDGetter.apply(ws);
+      assertNotNull(handlerID);
+      messageHandlerSetter.accept(ws, data -> {
+        assertEquals(hello, data);
+        connections.add(handlerID);
+        if (connections.size() == numConnections) {
+          for (String actorID : connections) {
+            vertx.eventBus().send(actorID, bye);
+          }
+        }
+      });
+    });
+
+    waitFor(numConnections);
+
+    server.listen(onSuccess(s -> {
+      client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(numConnections));
+      for (int i = 0; i < numConnections; i++) {
+        WebSocketConnectOptions options = new WebSocketConnectOptions()
+          .setPort(DEFAULT_HTTP_PORT)
+          .setHost(DEFAULT_HTTP_HOST)
+          .setURI(path);
+        client.webSocket(options, onSuccess(ws -> {
+          messageHandlerSetter.accept(ws, data -> {
+            assertEquals(bye, data);
+            complete();
+          });
+          messageWriter.apply(ws, hello);
+        }));
+      }
+    }));
+
     await();
   }
 }

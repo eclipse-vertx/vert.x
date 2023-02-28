@@ -25,6 +25,11 @@ public class WebSocketConnectOptionsConverter {
             obj.setAllowOriginHeader((Boolean)member.getValue());
           }
           break;
+        case "registerWriteHandlers":
+          if (member.getValue() instanceof Boolean) {
+            obj.setRegisterWriteHandlers((Boolean)member.getValue());
+          }
+          break;
         case "subProtocols":
           if (member.getValue() instanceof JsonArray) {
             java.util.ArrayList<java.lang.String> list =  new java.util.ArrayList<>();
@@ -50,6 +55,7 @@ public class WebSocketConnectOptionsConverter {
 
   public static void toJson(WebSocketConnectOptions obj, java.util.Map<String, Object> json) {
     json.put("allowOriginHeader", obj.getAllowOriginHeader());
+    json.put("registerWriteHandlers", obj.isRegisterWriteHandlers());
     if (obj.getSubProtocols() != null) {
       JsonArray array = new JsonArray();
       obj.getSubProtocols().forEach(item -> array.add(item));

@@ -11,7 +11,11 @@
 
 package io.vertx.core.http;
 
-import io.vertx.codegen.annotations.*;
+import io.vertx.codegen.annotations.CacheReturn;
+import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.codegen.annotations.Nullable;
+import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -63,24 +67,34 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   WebSocketBase drainHandler(Handler<Void> handler);
 
   /**
-   * When a {@code WebSocket} is created it automatically registers an event handler with the event bus - the ID of that
+   * When a {@code WebSocket} is created, it may register an event handler with the event bus - the ID of that
    * handler is given by this method.
+   * <p>
+   * By default, no handler is registered, the feature must be enabled via {@link WebSocketConnectOptions#setRegisterWriteHandlers(boolean)} or {@link HttpServerOptions#setRegisterWebSocketWriteHandlers(boolean)}.
    * <p>
    * Given this ID, a different event loop can send a binary frame to that event handler using the event bus and
    * that buffer will be received by this instance in its own event loop and written to the underlying connection. This
    * allows you to write data to other WebSockets which are owned by different event loops.
    *
    * @return the binary handler id
+   * @see WebSocketConnectOptions#setRegisterWriteHandlers(boolean)
+   * @see HttpServerOptions#setRegisterWebSocketWriteHandlers(boolean)
    */
   String binaryHandlerID();
 
   /**
-   * When a {@code WebSocket} is created it automatically registers an event handler with the eventbus, the ID of that
+   * When a {@code WebSocket} is created, it may register an event handler with the eventbus, the ID of that
    * handler is given by {@code textHandlerID}.
+   * <p>
+   * By default, no handler is registered, the feature must be enabled via {@link WebSocketConnectOptions#setRegisterWriteHandlers(boolean)} or {@link HttpServerOptions#setRegisterWebSocketWriteHandlers(boolean)}.
    * <p>
    * Given this ID, a different event loop can send a text frame to that event handler using the event bus and
    * that buffer will be received by this instance in its own event loop and written to the underlying connection. This
    * allows you to write data to other WebSockets which are owned by different event loops.
+   *
+   * @return the text handler id
+   * @see WebSocketConnectOptions#setRegisterWriteHandlers(boolean)
+   * @see HttpServerOptions#setRegisterWebSocketWriteHandlers(boolean)
    */
   String textHandlerID();
 

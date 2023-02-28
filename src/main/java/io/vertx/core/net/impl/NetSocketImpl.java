@@ -13,11 +13,12 @@ package io.vertx.core.net.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.*;
-import io.netty.handler.ssl.SslHandler;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPromise;
 import io.netty.util.CharsetUtil;
 import io.netty.util.ReferenceCounted;
-import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -67,8 +68,8 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   private Handler<Object> messageHandler;
   private Handler<Object> eventHandler;
 
-  public NetSocketImpl(ContextInternal context, ChannelHandlerContext channel, SslChannelProvider sslChannelProvider, TCPMetrics metrics) {
-    this(context, channel, null, sslChannelProvider, metrics, null);
+  public NetSocketImpl(ContextInternal context, ChannelHandlerContext channel, SslChannelProvider sslChannelProvider, TCPMetrics metrics, boolean registerWriteHandler) {
+    this(context, channel, null, sslChannelProvider, metrics, null, registerWriteHandler);
   }
 
   public NetSocketImpl(ContextInternal context,
@@ -76,10 +77,11 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
                        SocketAddress remoteAddress,
                        SslChannelProvider sslChannelProvider,
                        TCPMetrics metrics,
-                       String negotiatedApplicationLayerProtocol) {
+                       String negotiatedApplicationLayerProtocol,
+                       boolean registerWriteHandler) {
     super(context, channel);
     this.sslChannelProvider = sslChannelProvider;
-    this.writeHandlerID = "__vertx.net." + UUID.randomUUID().toString();
+    this.writeHandlerID = registerWriteHandler ? "__vertx.net." + UUID.randomUUID() : null;
     this.remoteAddress = remoteAddress;
     this.metrics = metrics;
     this.messageHandler = new DataMessageHandler();
@@ -103,8 +105,10 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   }
 
   void registerEventBusHandler() {
-    Handler<Message<Buffer>> writeHandler = msg -> write(msg.body());
-    registration = vertx.eventBus().<Buffer>localConsumer(writeHandlerID).handler(writeHandler);
+    if (writeHandlerID != null) {
+      Handler<Message<Buffer>> writeHandler = msg -> write(msg.body());
+      registration = vertx.eventBus().<Buffer>localConsumer(writeHandlerID).handler(writeHandler);
+    }
   }
 
   void unregisterEventBusHandler() {

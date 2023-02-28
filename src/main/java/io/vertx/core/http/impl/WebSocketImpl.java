@@ -15,7 +15,7 @@ import io.vertx.core.http.WebSocket;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
-import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
+import static io.vertx.core.spi.metrics.Metrics.*;
 
 /**
  * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
@@ -36,8 +36,9 @@ public class WebSocketImpl extends WebSocketImplBase<WebSocketImpl> implements W
                        boolean supportsContinuation,
                        long closingTimeout,
                        int maxWebSocketFrameSize,
-                       int maxWebSocketMessageSize) {
-    super(context, conn, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize);
+                       int maxWebSocketMessageSize,
+                       boolean registerWebSocketWriteHandlers) {
+    super(context, conn, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize, registerWebSocketWriteHandlers);
     this.conn = conn;
     this.closingTimeoutMS = closingTimeout >= 0 ? closingTimeout * 1000L : -1L;
   }

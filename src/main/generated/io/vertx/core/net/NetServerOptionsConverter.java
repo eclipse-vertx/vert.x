@@ -50,6 +50,11 @@ public class NetServerOptionsConverter {
             obj.setProxyProtocolTimeoutUnit(java.util.concurrent.TimeUnit.valueOf((String)member.getValue()));
           }
           break;
+        case "registerWriteHandler":
+          if (member.getValue() instanceof Boolean) {
+            obj.setRegisterWriteHandler((Boolean)member.getValue());
+          }
+          break;
         case "sni":
           if (member.getValue() instanceof Boolean) {
             obj.setSni((Boolean)member.getValue());
@@ -81,6 +86,7 @@ public class NetServerOptionsConverter {
     if (obj.getProxyProtocolTimeoutUnit() != null) {
       json.put("proxyProtocolTimeoutUnit", obj.getProxyProtocolTimeoutUnit().name());
     }
+    json.put("registerWriteHandler", obj.isRegisterWriteHandler());
     json.put("sni", obj.isSni());
     json.put("useProxyProtocol", obj.isUseProxyProtocol());
   }
