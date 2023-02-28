@@ -2143,6 +2143,32 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
+  public void testWriteHandlerIdNullByDefault() throws Exception {
+    Buffer hello = Buffer.buffer("hello");
+    Buffer bye = Buffer.buffer("bye");
+    server.connectHandler(socket -> {
+      assertNull(socket.writeHandlerID());
+      socket.handler(data -> {
+        assertEquals(hello, data);
+        socket.end(bye);
+      });
+    });
+    startServer();
+    waitFor(2);
+    client.connect(testAddress, onSuccess(socket -> {
+      assertNull(socket.writeHandlerID());
+      socket
+        .closeHandler(v -> complete())
+        .handler(data -> {
+          assertEquals(bye, data);
+          complete();
+        })
+        .write(hello);
+    }));
+    await();
+  }
+
+  @Test
   // This tests using NetSocket.writeHandlerID (on the server side)
   // Send some data and make sure it is fanned out to all connections
   public void testFanout() throws Exception {
