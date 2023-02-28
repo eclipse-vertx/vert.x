@@ -376,7 +376,7 @@ public class VertxBuilder {
   /**
    * The native transport, it may be {@code null} or failed.
    */
-  static Transport nativeTransport() {
+  public static Transport nativeTransport() {
     Transport transport = null;
     try {
       Transport epoll = new EpollTransport();
