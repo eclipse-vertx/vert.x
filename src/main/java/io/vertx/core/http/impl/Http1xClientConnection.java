@@ -339,13 +339,16 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
    * @return whether the stream should be considered as closed
    */
   private boolean reset(Stream stream) {
-    boolean isInflight;
+    boolean inflight;
     synchronized (this) {
-      isInflight = responses.remove(stream) || (requests.remove(stream) && stream.responseEnded);
-      close = isInflight;
+      inflight = responses.contains(stream) || stream.responseEnded;
+      if (!inflight) {
+        requests.remove(stream);
+      }
+      close = inflight;
     }
     checkLifecycle();
-    return !isInflight;
+    return !inflight;
   }
 
   private void receiveBytes(int len) {
@@ -433,18 +436,20 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       this.conn = conn;
       this.queue = new InboundBuffer<>(context, 5)
         .handler(item -> {
-          if (item instanceof MultiMap) {
-            Handler<MultiMap> handler = endHandler;
-            if (handler != null) {
-              handler.handle((MultiMap) item);
-            }
-          } else {
-            Buffer buffer = (Buffer) item;
-            int len = buffer.length();
-            conn.ackBytes(len);
-            Handler<Buffer> handler = chunkHandler;
-            if (handler != null) {
-              handler.handle(buffer);
+          if (!reset) {
+            if (item instanceof MultiMap) {
+              Handler<MultiMap> handler = endHandler;
+              if (handler != null) {
+                handler.handle((MultiMap) item);
+              }
+            } else {
+              Buffer buffer = (Buffer) item;
+              int len = buffer.length();
+              conn.ackBytes(len);
+              Handler<Buffer> handler = chunkHandler;
+              if (handler != null) {
+                handler.handle(buffer);
+              }
             }
           }
         })

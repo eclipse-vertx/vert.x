@@ -5834,6 +5834,34 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testResetClientRequestResponseInProgress() throws Exception {
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.setChunked(true);
+      for (int i = 0;i < 16;i++) {
+        resp.write("chunk-" + i);
+      }
+      resp.end();
+    });
+    startServer(testAddress);
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req.send(onSuccess(resp -> {
+        resp.handler(buff -> {
+          fail();
+        });
+        resp.endHandler(v -> {
+          fail();
+        });
+        req.connection().close(onSuccess(v -> {
+          testComplete();
+        }));
+        req.reset();
+      }));
+    }));
+    await();
+  }
+
+  @Test
   public void testSimpleCookie() throws Exception {
     testCookies("foo=bar", req -> {
       assertEquals(1, req.cookieCount());
