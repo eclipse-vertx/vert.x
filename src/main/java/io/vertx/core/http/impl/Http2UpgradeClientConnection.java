@@ -123,6 +123,11 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
+    public Object trace() {
+      return delegate.trace();
+    }
+
+    @Override
     public HttpVersion version() {
       return delegate.version();
     }
@@ -352,7 +357,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
               return;
             }
             Http2ClientConnection conn = (Http2ClientConnection) future.getNow();
-            conn.upgradeStream(upgradingStream.metric(), upgradingStream.getContext(), ar -> {
+            conn.upgradeStream(upgradingStream.metric(), upgradingStream.trace(), upgradingStream.getContext(), ar -> {
               upgradingConnection.closeHandler(null);
               upgradingConnection.exceptionHandler(null);
               upgradingConnection.evictionHandler(null);
@@ -522,6 +527,11 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     @Override
     public Object metric() {
       return upgradingStream.metric();
+    }
+
+    @Override
+    public Object trace() {
+      return upgradingStream.trace();
     }
 
     @Override

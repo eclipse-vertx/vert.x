@@ -136,13 +136,14 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     return client.metrics();
   }
 
-  void upgradeStream(Object metric, ContextInternal context, Handler<AsyncResult<HttpClientStream>> completionHandler) {
+  void upgradeStream(Object metric, Object trace, ContextInternal context, Handler<AsyncResult<HttpClientStream>> completionHandler) {
     Future<HttpClientStream> fut;
     synchronized (this) {
       try {
         StreamImpl stream = createStream(context);
         stream.init(handler.connection().stream(1));
-        ((Stream)stream).metric = metric;
+        stream.metric = metric;
+        stream.trace = trace;
         fut = Future.succeededFuture(stream);
       } catch (Exception e) {
         fut = Future.failedFuture(e);
@@ -269,6 +270,10 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
     public Object metric() {
       return metric;
+    }
+
+    public Object trace() {
+      return trace;
     }
 
     @Override

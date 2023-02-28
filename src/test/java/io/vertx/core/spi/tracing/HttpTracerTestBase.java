@@ -35,24 +35,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
 
   @Override
   protected VertxTracer getTracer() {
-    return tracer = new VertxTracer() {
-      @Override
-      public Object receiveRequest(Context context, SpanKind kind, TracingPolicy policy, Object request, String operation, Iterable headers, TagExtractor tagExtractor) {
-        return tracer.receiveRequest(context, kind, policy, request, operation, headers, tagExtractor);
-      }
-      @Override
-      public void sendResponse(Context context, Object response, Object payload, Throwable failure, TagExtractor tagExtractor) {
-        tracer.sendResponse(context, response, payload, failure, tagExtractor);
-      }
-      @Override
-      public Object sendRequest(Context context, SpanKind kind, TracingPolicy policy, Object request, String operation, BiConsumer headers, TagExtractor tagExtractor) {
-        return tracer.sendRequest(context, kind, policy, request, operation, headers, tagExtractor);
-      }
-      @Override
-      public void receiveResponse(Context context, Object response, Object payload, Throwable failure, TagExtractor tagExtractor) {
-        tracer.receiveResponse(context, response, payload, failure, tagExtractor);
-      }
-    };
+    return tracer;
   }
 
   @Test
@@ -60,7 +43,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     String key = TestUtils.randomAlphaString(10);
     Object val = new Object();
     AtomicInteger seq = new AtomicInteger();
-    tracer = new VertxTracer() {
+    setTracer(new VertxTracer() {
       @Override
       public Object receiveRequest(Context context, SpanKind kind, TracingPolicy policy, Object request, String operation, Iterable headers, TagExtractor tagExtractor) {
         assertNull(context.getLocal(key));
@@ -77,7 +60,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
         assertSame(val, context.getLocal(key));
         assertTrue(context.removeLocal(key));
       }
-    };
+    });
     CountDownLatch latch = new CountDownLatch(1);
     server.requestHandler(req -> {
       assertEquals(1, seq.get());
@@ -106,7 +89,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     String key = TestUtils.randomAlphaString(10);
     Object val = new Object();
     AtomicInteger seq = new AtomicInteger();
-    tracer = new VertxTracer() {
+    setTracer(new VertxTracer() {
       @Override
       public Object receiveRequest(Context context, SpanKind kind, TracingPolicy policy, Object request, String operation, Iterable headers, TagExtractor tagExtractor) {
         assertNull(context.getLocal(key));
@@ -121,7 +104,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
         assertNotNull(failure);
         assertTrue(context.removeLocal(key));
       }
-    };
+    });
     CountDownLatch latch = new CountDownLatch(1);
     server.requestHandler(req -> {
       assertEquals(1, seq.get());
@@ -167,7 +150,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     Object val = new Object();
     AtomicInteger seq = new AtomicInteger();
     String traceId = UUID.randomUUID().toString();
-    tracer = new VertxTracer() {
+    setTracer(new VertxTracer() {
       @Override
       public Object sendRequest(Context context, SpanKind kind, TracingPolicy policy, Object request, String operation, BiConsumer headers, TagExtractor tagExtractor) {
         assertSame(val, context.getLocal(key));
@@ -187,7 +170,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
         assertNull(failure);
         assertTrue(seq.compareAndSet(1, 2));
       }
-    };
+    });
     CountDownLatch latch = new CountDownLatch(1);
     server.requestHandler(req -> {
       assertEquals(traceId, req.getHeader("X-B3-TraceId"));
@@ -222,7 +205,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     Object val = new Object();
     AtomicInteger seq = new AtomicInteger();
     String traceId = UUID.randomUUID().toString();
-    tracer = new VertxTracer() {
+    setTracer(new VertxTracer() {
       @Override
       public Object sendRequest(Context context, SpanKind kind, TracingPolicy policy, Object request, String operation, BiConsumer headers, TagExtractor tagExtractor) {
         assertSame(val, context.getLocal(key));
@@ -238,7 +221,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
         assertNotNull(failure);
         assertTrue(seq.compareAndSet(1, 2));
       }
-    };
+    });
     CountDownLatch latch = new CountDownLatch(1);
     server.requestHandler(req -> {
       assertEquals(traceId, req.getHeader("X-B3-TraceId"));
@@ -261,5 +244,14 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
       }));
     });
     await();
+  }
+
+  protected void setTracer(VertxTracer tracer) {
+    this.server.close();
+    this.tracer = tracer;
+    // So, the vertx options is reset with the new tracer.
+    this.vertx = vertx(getOptions());
+    this.server = this.vertx.createHttpServer(createBaseServerOptions());
+    this.client = this.vertx.createHttpClient(createBaseClientOptions());
   }
 }
