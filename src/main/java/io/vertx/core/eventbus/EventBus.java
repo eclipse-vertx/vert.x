@@ -81,6 +81,7 @@ public interface EventBus extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   default <T> EventBus request(String address, @Nullable Object message, Handler<AsyncResult<Message<T>>> replyHandler) {
     return request(address, message, new DeliveryOptions(), replyHandler);
   }
@@ -102,6 +103,7 @@ public interface EventBus extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   default <T> EventBus request(String address, @Nullable Object message, DeliveryOptions options, Handler<AsyncResult<Message<T>>> replyHandler) {
     Future<Message<T>> reply = request(address, message, options);
     reply.onComplete(replyHandler);

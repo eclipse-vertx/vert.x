@@ -94,6 +94,7 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
   /**
    * Same as {@link #write(String)} but with an {@code handler} called when the operation completes
    */
+  @Deprecated
   void write(String str, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -107,6 +108,7 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
   /**
    * Same as {@link #write(String, String)} but with an {@code handler} called when the operation completes
    */
+  @Deprecated
   void write(String str, String enc, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -122,6 +124,7 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
    * Like {@link #write(Object)} but with an {@code handler} called when the message has been written
    * or failed to be written.
    */
+  @Deprecated
   void write(Buffer message, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -167,6 +170,7 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   default NetSocket sendFile(String filename, Handler<AsyncResult<Void>> resultHandler) {
     return sendFile(filename, 0, Long.MAX_VALUE, resultHandler);
   }
@@ -181,6 +185,7 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   default NetSocket sendFile(String filename, long offset, Handler<AsyncResult<Void>> resultHandler) {
     return sendFile(filename, offset, Long.MAX_VALUE, resultHandler);
   }
@@ -196,6 +201,7 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   NetSocket sendFile(String filename, long offset, long length, Handler<AsyncResult<Void>> resultHandler);
 
   /**
@@ -234,6 +240,7 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
    * Calls {@link #end()}.
    */
   @Override
+  @Deprecated
   void end(Handler<AsyncResult<Void>> handler);
 
   /**
@@ -246,6 +253,7 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
   /**
    * Close the NetSocket and notify the {@code handler} when the operation completes.
    */
+  @Deprecated
   void close(Handler<AsyncResult<Void>> handler);
 
   /**
@@ -264,6 +272,7 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   NetSocket upgradeToSsl(Handler<AsyncResult<Void>> handler);
 
   /**
@@ -279,6 +288,7 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   NetSocket upgradeToSsl(String serverName, Handler<AsyncResult<Void>> handler);
 
   /**

@@ -130,6 +130,7 @@ public interface ReadStream<T> extends StreamBase {
    *
    * @param dst the destination write stream
    */
+  @Deprecated
   default void pipeTo(WriteStream<T> dst, Handler<AsyncResult<Void>> handler) {
     new PipeImpl<>(this).to(dst, handler);
   }

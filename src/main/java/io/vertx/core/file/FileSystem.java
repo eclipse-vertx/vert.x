@@ -52,6 +52,7 @@ public interface FileSystem {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   FileSystem copy(String from, String to, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -69,6 +70,7 @@ public interface FileSystem {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   FileSystem copy(String from, String to, CopyOptions options, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -97,6 +99,7 @@ public interface FileSystem {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   FileSystem copyRecursive(String from, String to, boolean recursive, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -121,6 +124,7 @@ public interface FileSystem {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   FileSystem move(String from, String to, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -138,6 +142,7 @@ public interface FileSystem {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   FileSystem move(String from, String to, CopyOptions options, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -162,6 +167,7 @@ public interface FileSystem {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   FileSystem truncate(String path, long len, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -187,6 +193,7 @@ public interface FileSystem {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   FileSystem chmod(String path, String perms, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -215,6 +222,7 @@ public interface FileSystem {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   FileSystem chmodRecursive(String path, String perms, String dirPerms, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -239,6 +247,7 @@ public interface FileSystem {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   FileSystem chown(String path, @Nullable String user, @Nullable String group, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -263,6 +272,7 @@ public interface FileSystem {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   FileSystem props(String path, Handler<AsyncResult<FileProps>> handler);
 
   /**
@@ -285,6 +295,7 @@ public interface FileSystem {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   FileSystem lprops(String path, Handler<AsyncResult<FileProps>> handler);
 
   /**
@@ -306,6 +317,7 @@ public interface FileSystem {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   FileSystem link(String link, String existing, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -328,6 +340,7 @@ public interface FileSystem {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   FileSystem symlink(String link, String existing, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -349,6 +362,7 @@ public interface FileSystem {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   FileSystem unlink(String link, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -370,6 +384,7 @@ public interface FileSystem {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   FileSystem readSymlink(String link, Handler<AsyncResult<String>> handler);
 
   /**
@@ -390,6 +405,7 @@ public interface FileSystem {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   FileSystem delete(String path, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -415,6 +431,7 @@ public interface FileSystem {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   FileSystem deleteRecursive(String path, boolean recursive, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -438,6 +455,7 @@ public interface FileSystem {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   FileSystem mkdir(String path, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -467,6 +485,7 @@ public interface FileSystem {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   FileSystem mkdir(String path, String perms, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -490,6 +509,7 @@ public interface FileSystem {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   FileSystem mkdirs(String path, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -519,6 +539,7 @@ public interface FileSystem {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   FileSystem mkdirs(String path, String perms, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -542,6 +563,7 @@ public interface FileSystem {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   FileSystem readDir(String path, Handler<AsyncResult<List<String>>> handler);
 
   /**
@@ -568,6 +590,7 @@ public interface FileSystem {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   FileSystem readDir(String path, String filter, Handler<AsyncResult<List<String>>> handler);
 
   /**
@@ -590,6 +613,7 @@ public interface FileSystem {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   FileSystem readFile(String path, Handler<AsyncResult<Buffer>> handler);
 
   /**
@@ -611,6 +635,7 @@ public interface FileSystem {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   FileSystem writeFile(String path, Buffer data, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -635,6 +660,7 @@ public interface FileSystem {
    *
    */
   @Fluent
+  @Deprecated
   FileSystem open(String path, OpenOptions options, Handler<AsyncResult<AsyncFile>> handler);
 
   /**
@@ -655,6 +681,7 @@ public interface FileSystem {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   FileSystem createFile(String path, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -677,6 +704,7 @@ public interface FileSystem {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   FileSystem createFile(String path, String perms, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -698,6 +726,7 @@ public interface FileSystem {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   FileSystem exists(String path, Handler<AsyncResult<Boolean>> handler);
 
   /**
@@ -718,6 +747,7 @@ public interface FileSystem {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   FileSystem fsProps(String path, Handler<AsyncResult<FileSystemProps>> handler);
 
   /**
@@ -746,6 +776,7 @@ public interface FileSystem {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   FileSystem createTempDirectory(String prefix, Handler<AsyncResult<String>> handler);
 
   /**
@@ -780,6 +811,7 @@ public interface FileSystem {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   FileSystem createTempDirectory(String prefix, String perms, Handler<AsyncResult<String>> handler);
 
   /**
@@ -815,6 +847,7 @@ public interface FileSystem {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   FileSystem createTempDirectory(String dir, String prefix, String perms, Handler<AsyncResult<String>> handler);
 
   /**
@@ -846,6 +879,7 @@ public interface FileSystem {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   FileSystem createTempFile(String prefix, String suffix, Handler<AsyncResult<String>> handler);
 
   /**
@@ -876,6 +910,7 @@ public interface FileSystem {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   FileSystem createTempFile(String prefix, String suffix, String perms, Handler<AsyncResult<String>> handler);
 
   /**
@@ -913,6 +948,7 @@ public interface FileSystem {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   FileSystem createTempFile(String dir, String prefix, String suffix, String perms, Handler<AsyncResult<String>> handler);
 
   /**

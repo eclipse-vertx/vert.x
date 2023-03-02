@@ -88,6 +88,7 @@ public interface MessageConsumer<T> extends ReadStream<Message<T>> {
    *
    * @param completionHandler the completion handler
    */
+  @Deprecated
   void completionHandler(Handler<AsyncResult<Void>> completionHandler);
 
   /**
@@ -101,5 +102,6 @@ public interface MessageConsumer<T> extends ReadStream<Message<T>> {
    * @param completionHandler the handler called when the unregister is done. For example in a cluster when all nodes of the
    * event bus have been unregistered.
    */
+  @Deprecated
   void unregister(Handler<AsyncResult<Void>> completionHandler);
 }

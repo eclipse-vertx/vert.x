@@ -49,18 +49,23 @@ public interface WebSocket extends WebSocketBase {
   WebSocket drainHandler(Handler<Void> handler);
 
   @Override
+  @Deprecated
   WebSocket writeFrame(WebSocketFrame frame, Handler<AsyncResult<Void>> handler);
 
   @Override
+  @Deprecated
   WebSocket writeFinalTextFrame(String text, Handler<AsyncResult<Void>> handler);
 
   @Override
+  @Deprecated
   WebSocket writeFinalBinaryFrame(Buffer data, Handler<AsyncResult<Void>> handler);
 
   @Override
+  @Deprecated
   WebSocket writeBinaryMessage(Buffer data, Handler<AsyncResult<Void>> handler);
 
   @Override
+  @Deprecated
   WebSocket writeTextMessage(String text, Handler<AsyncResult<Void>> handler);
 
   @Override

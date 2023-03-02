@@ -60,18 +60,23 @@ public interface ServerWebSocket extends WebSocketBase {
   ServerWebSocket drainHandler(Handler<Void> handler);
 
   @Override
+  @Deprecated
   ServerWebSocket writeFrame(WebSocketFrame frame, Handler<AsyncResult<Void>> handler);
 
   @Override
+  @Deprecated
   ServerWebSocket writeFinalTextFrame(String text, Handler<AsyncResult<Void>> handler);
 
   @Override
+  @Deprecated
   ServerWebSocket writeFinalBinaryFrame(Buffer data, Handler<AsyncResult<Void>> handler);
 
   @Override
+  @Deprecated
   ServerWebSocket writeBinaryMessage(Buffer data, Handler<AsyncResult<Void>> handler);
 
   @Override
+  @Deprecated
   ServerWebSocket writeTextMessage(String text, Handler<AsyncResult<Void>> handler);
 
   @Override
@@ -158,6 +163,7 @@ public interface ServerWebSocket extends WebSocketBase {
    * @param handler the completion handler
    * @throws IllegalStateException when the WebSocket has already an asynchronous result
    */
+  @Deprecated
   void setHandshake(Future<Integer> future, Handler<AsyncResult<Integer>> handler);
 
   /**

@@ -87,6 +87,7 @@ public interface Pipe<T> {
    * @param dst the destination write stream
    * @param completionHandler the handler called when the pipe operation completes
    */
+  @Deprecated
   void to(WriteStream<T> dst, Handler<AsyncResult<Void>> completionHandler);
 
   /**

@@ -61,6 +61,7 @@ public interface WriteStream<T> extends StreamBase {
   /**
    * Same as {@link #write(T)} but with an {@code handler} called when the operation completes
    */
+  @Deprecated
   void write(T data, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -79,6 +80,7 @@ public interface WriteStream<T> extends StreamBase {
   /**
    * Same as {@link #end()} but with an {@code handler} called when the operation completes
    */
+  @Deprecated
   void end(Handler<AsyncResult<Void>> handler);
 
   /**
@@ -98,6 +100,7 @@ public interface WriteStream<T> extends StreamBase {
   /**
    * Same as {@link #end(T)} but with an {@code handler} called when the operation completes
    */
+  @Deprecated
   default void end(T data, Handler<AsyncResult<Void>> handler) {
     if (handler != null) {
       write(data, ar -> {

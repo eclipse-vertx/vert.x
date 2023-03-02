@@ -52,6 +52,7 @@ public interface DatagramSocket extends ReadStream<DatagramPacket>, Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   DatagramSocket send(Buffer packet, int port, String host, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -80,6 +81,7 @@ public interface DatagramSocket extends ReadStream<DatagramPacket>, Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   DatagramSocket send(String str, int port, String host, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -99,6 +101,7 @@ public interface DatagramSocket extends ReadStream<DatagramPacket>, Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   DatagramSocket send(String str, String enc, int port, String host, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -112,6 +115,7 @@ public interface DatagramSocket extends ReadStream<DatagramPacket>, Measured {
    *
    * @param handler  the handler to notify once complete
    */
+  @Deprecated
   void close(Handler<AsyncResult<Void>> handler);
 
   /**
@@ -137,6 +141,7 @@ public interface DatagramSocket extends ReadStream<DatagramPacket>, Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   DatagramSocket listenMulticastGroup(String multicastAddress, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -155,6 +160,7 @@ public interface DatagramSocket extends ReadStream<DatagramPacket>, Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   DatagramSocket listenMulticastGroup(String multicastAddress, String networkInterface, @Nullable String source,
                                       Handler<AsyncResult<Void>> handler);
 
@@ -172,6 +178,7 @@ public interface DatagramSocket extends ReadStream<DatagramPacket>, Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   DatagramSocket unlistenMulticastGroup(String multicastAddress, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -190,6 +197,7 @@ public interface DatagramSocket extends ReadStream<DatagramPacket>, Measured {
    * @return  a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   DatagramSocket unlistenMulticastGroup(String multicastAddress, String networkInterface, @Nullable String source,
                                         Handler<AsyncResult<Void>> handler);
 
@@ -209,6 +217,7 @@ public interface DatagramSocket extends ReadStream<DatagramPacket>, Measured {
    * @return  a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   DatagramSocket blockMulticastGroup(String multicastAddress, String sourceToBlock,
                                      Handler<AsyncResult<Void>> handler);
 
@@ -229,6 +238,7 @@ public interface DatagramSocket extends ReadStream<DatagramPacket>, Measured {
    * @return  a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   DatagramSocket blockMulticastGroup(String multicastAddress, String networkInterface, String sourceToBlock,
                                      Handler<AsyncResult<Void>> handler);
 
@@ -246,6 +256,7 @@ public interface DatagramSocket extends ReadStream<DatagramPacket>, Measured {
    * @return  a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   DatagramSocket listen(int port, String host, Handler<AsyncResult<DatagramSocket>> handler);
 
   /**

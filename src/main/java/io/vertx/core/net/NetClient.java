@@ -42,6 +42,7 @@ public interface NetClient extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   NetClient connect(int port, String host, Handler<AsyncResult<NetSocket>> connectHandler);
 
   /**
@@ -61,6 +62,7 @@ public interface NetClient extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   NetClient connect(int port, String host, String serverName, Handler<AsyncResult<NetSocket>> connectHandler);
 
   /**
@@ -77,6 +79,7 @@ public interface NetClient extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   NetClient connect(SocketAddress remoteAddress, Handler<AsyncResult<NetSocket>> connectHandler);
 
   /**
@@ -94,6 +97,7 @@ public interface NetClient extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   NetClient connect(SocketAddress remoteAddress, String serverName, Handler<AsyncResult<NetSocket>> connectHandler);
 
   /**
@@ -107,6 +111,7 @@ public interface NetClient extends Measured {
    * Any sockets which have not been closed manually will be closed here. The close is asynchronous and may not
    * complete until some time after the method has returned.
    */
+  @Deprecated
   void close(Handler<AsyncResult<Void>> handler);
 
   /**
@@ -131,6 +136,7 @@ public interface NetClient extends Measured {
    * @param options the new SSL options
    * @param handler the update handler
    */
+  @Deprecated
   default void updateSSLOptions(SSLOptions options, Handler<AsyncResult<Void>> handler) {
     Future<Void> fut = updateSSLOptions(options);
     if (handler != null) {

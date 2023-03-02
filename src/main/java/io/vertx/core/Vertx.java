@@ -95,6 +95,7 @@ public interface Vertx extends Measured {
    * @param options  the options to use
    * @param resultHandler  the result handler that will receive the result
    */
+  @Deprecated
   static void clusteredVertx(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
     new VertxBuilder(options).init().clusteredVertx(resultHandler);
   }
@@ -355,6 +356,7 @@ public interface Vertx extends Measured {
    *
    * @param completionHandler  The handler will be notified when the close is complete.
    */
+  @Deprecated
   void close(Handler<AsyncResult<Void>> completionHandler);
 
   /**
@@ -384,6 +386,7 @@ public interface Vertx extends Measured {
    * @param completionHandler  a handler which will be notified when the deployment is complete
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @Deprecated
   void deployVerticle(Verticle verticle, Handler<AsyncResult<String>> completionHandler);
 
   /**
@@ -428,6 +431,7 @@ public interface Vertx extends Measured {
    * @param completionHandler  a handler which will be notified when the deployment is complete
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @Deprecated
   void deployVerticle(Verticle verticle, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler);
 
   /**
@@ -447,6 +451,7 @@ public interface Vertx extends Measured {
    * Note that the supplier will be invoked on the caller thread.
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @Deprecated
   void deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler);
 
   /**
@@ -474,6 +479,7 @@ public interface Vertx extends Measured {
    * @param name  The identifier
    * @param completionHandler  a handler which will be notified when the deployment is complete
    */
+  @Deprecated
   default void deployVerticle(String name, Handler<AsyncResult<String>> completionHandler) {
     deployVerticle(name, new DeploymentOptions(), completionHandler);
   }
@@ -497,6 +503,7 @@ public interface Vertx extends Measured {
    * @param options  the deployment options.
    * @param completionHandler  a handler which will be notified when the deployment is complete
    */
+  @Deprecated
   void deployVerticle(String name, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler);
 
   /**
@@ -515,6 +522,7 @@ public interface Vertx extends Measured {
    * @param deploymentID  the deployment ID
    * @param completionHandler  a handler which will be notified when the undeployment is complete
    */
+  @Deprecated
   void undeploy(String deploymentID, Handler<AsyncResult<Void>> completionHandler);
 
   /**
@@ -586,6 +594,7 @@ public interface Vertx extends Measured {
    *                 guarantees
    * @param <T> the type of the result
    */
+  @Deprecated
   default <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<@Nullable T>> resultHandler) {
     Context context = getOrCreateContext();
     context.executeBlocking(blockingCodeHandler, ordered, resultHandler);
@@ -594,6 +603,7 @@ public interface Vertx extends Measured {
   /**
    * Like {@link #executeBlocking(Handler, boolean, Handler)} called with ordered = true.
    */
+  @Deprecated
   default <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<@Nullable T>> resultHandler) {
     executeBlocking(blockingCodeHandler, true, resultHandler);
   }

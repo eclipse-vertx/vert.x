@@ -307,6 +307,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   /**
    * Same as {@link #end()} but with an {@code handler} called when the operation completes
    */
+  @Deprecated
   default void end(Handler<AsyncResult<Void>> handler) {
     end().onComplete(handler);
   }
@@ -342,6 +343,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    *
    * @param handler the completion handler
    */
+  @Deprecated
   default void toNetSocket(Handler<AsyncResult<NetSocket>> handler) {
     Future<NetSocket> fut = toNetSocket();
     if (handler != null) {
@@ -424,6 +426,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    *
    * @param handler the completion handler
    */
+  @Deprecated
   default void toWebSocket(Handler<AsyncResult<ServerWebSocket>> handler) {
     Future<ServerWebSocket> fut = toWebSocket();
     if (handler != null) {
