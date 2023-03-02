@@ -57,6 +57,7 @@ public interface AsyncFileLock {
   /**
    * Like {@link #isValid()} but the {@code handler} will be called when the operation completes or if an error occurs.
    */
+  @Deprecated
   void isValid(Handler<AsyncResult<Boolean>> handler);
 
   /**
@@ -74,5 +75,6 @@ public interface AsyncFileLock {
   /**
    * Like {@link #release()} but the {@code handler} will be called when the operation completes or if an error occurs.
    */
+  @Deprecated
   void release(Handler<AsyncResult<Void>> handler);
 }

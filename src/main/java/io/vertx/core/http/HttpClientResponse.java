@@ -137,6 +137,7 @@ public interface HttpClientResponse extends ReadStream<Buffer> {
    * Same as {@link #body()} but with an {@code handler} called when the operation completes
    */
   @Fluent
+  @Deprecated
   default HttpClientResponse body(Handler<AsyncResult<Buffer>> handler) {
     Future<Buffer> fut = body();
     fut.onComplete(handler);
@@ -156,6 +157,7 @@ public interface HttpClientResponse extends ReadStream<Buffer> {
   /**
    * Same as {@link #end()} but with an {@code handler} called when the operation completes
    */
+  @Deprecated
   default void end(Handler<AsyncResult<Void>> handler) {
     end().onComplete(handler);
   }

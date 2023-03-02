@@ -48,11 +48,13 @@ public interface WorkerExecutor extends Measured {
    *                 guarantees
    * @param <T> the type of the result
    */
+  @Deprecated
   <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<@Nullable T>> resultHandler);
 
   /**
    * Like {@link #executeBlocking(Handler, boolean, Handler)} called with ordered = true.
    */
+  @Deprecated
   default <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<@Nullable T>> resultHandler) {
     executeBlocking(blockingCodeHandler, true, resultHandler);
   }
@@ -74,6 +76,7 @@ public interface WorkerExecutor extends Measured {
    *
    * @param handler the completion handler
    */
+  @Deprecated
   void close(Handler<AsyncResult<Void>> handler);
 
   /**

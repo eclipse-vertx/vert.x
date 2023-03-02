@@ -229,6 +229,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
   /**
    * Same as {@link #write(String)} but with an {@code handler} called when the operation completes
    */
+  @Deprecated
   void write(String chunk, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -244,6 +245,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
   /**
    * Same as {@link #write(String,String)} but with an {@code handler} called when the operation completes
    */
+  @Deprecated
   void write(String chunk, String enc, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -285,6 +287,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    * the {@link HttpVersion} if it can be determined or null otherwise.<p>
    */
   @Fluent
+  @Deprecated
   HttpClientRequest sendHead(Handler<AsyncResult<Void>> completionHandler);
 
   /**
@@ -307,6 +310,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    *
    * @param handler the response completion handler
    */
+  @Deprecated
   void connect(Handler<AsyncResult<HttpClientResponse>> handler);
 
   /**
@@ -323,6 +327,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   HttpClientRequest response(Handler<AsyncResult<HttpClientResponse>> handler);
 
   /**
@@ -335,6 +340,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    *
    * @param handler the completion handler for the {@link HttpClientResponse}
    */
+  @Deprecated
   default void send(Handler<AsyncResult<HttpClientResponse>> handler) {
     response(handler);
     end();
@@ -353,6 +359,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    *
    * @param handler the completion handler for the {@link HttpClientResponse}
    */
+  @Deprecated
   default void send(String body, Handler<AsyncResult<HttpClientResponse>> handler) {
     response(handler);
     end(body);
@@ -371,6 +378,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    *
    * @param handler the completion handler for the {@link HttpClientResponse}
    */
+  @Deprecated
   default void send(Buffer body, Handler<AsyncResult<HttpClientResponse>> handler) {
     response(handler);
     end(body);
@@ -392,6 +400,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    *
    * @param handler the completion handler for the {@link HttpClientResponse}
    */
+  @Deprecated
   default void send(ReadStream<Buffer> body, Handler<AsyncResult<HttpClientResponse>> handler) {
     MultiMap headers = headers();
     if (headers == null || !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
@@ -425,6 +434,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
   /**
    * Same as {@link #end(String)} but with an {@code handler} called when the operation completes
    */
+  @Deprecated
   void end(String chunk, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -440,6 +450,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
   /**
    * Same as {@link #end(String,String)} but with an {@code handler} called when the operation completes
    */
+  @Deprecated
   void end(String chunk, String enc, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -456,6 +467,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    * Same as {@link #end(String)} but with an {@code handler} called when the operation completes
    */
   @Override
+  @Deprecated
   void end(Buffer chunk, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -474,6 +486,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    * Same as {@link #end()} but with an {@code handler} called when the operation completes
    */
   @Override
+  @Deprecated
   void end(Handler<AsyncResult<Void>> handler);
 
   /**

@@ -128,6 +128,7 @@ public interface Context {
    *                 guarantees
    * @param <T> the type of the result
    */
+  @Deprecated
   <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<@Nullable T>> resultHandler);
 
   /**
@@ -136,6 +137,7 @@ public interface Context {
    * @param resultHandler  handler that will be called when the blocking code is complete
    * @param <T> the type of the result
    */
+  @Deprecated
   default <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<@Nullable T>> resultHandler) {
     executeBlocking(blockingCodeHandler, true, resultHandler);
   }

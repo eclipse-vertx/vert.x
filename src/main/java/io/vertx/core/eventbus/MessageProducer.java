@@ -49,6 +49,7 @@ public interface MessageProducer<T> {
    * @param handler the handler called when the message has been successfully or failed to be written, this is not a delivery
    *                guarantee
    */
+  @Deprecated
   void write(T body, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -66,5 +67,6 @@ public interface MessageProducer<T> {
   /**
    * Same as {@link #close()} but with an {@code handler} called when the operation completes
    */
+  @Deprecated
   void close(Handler<AsyncResult<Void>> handler);
 }

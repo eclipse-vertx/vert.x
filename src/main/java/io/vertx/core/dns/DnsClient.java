@@ -40,6 +40,7 @@ public interface DnsClient {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   DnsClient lookup(String name, Handler<AsyncResult<@Nullable String>> handler);
 
   /**
@@ -57,6 +58,7 @@ public interface DnsClient {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   DnsClient lookup4(String name, Handler<AsyncResult<@Nullable String>> handler);
 
   /**
@@ -74,6 +76,7 @@ public interface DnsClient {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   DnsClient lookup6(String name, Handler<AsyncResult<@Nullable String>> handler);
 
   /**
@@ -92,6 +95,7 @@ public interface DnsClient {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   DnsClient resolveA(String name, Handler<AsyncResult<List<String>>> handler);
 
   /**
@@ -110,6 +114,7 @@ public interface DnsClient {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   DnsClient resolveAAAA(String name, Handler<AsyncResult<List<String>>> handler);
 
   /**
@@ -127,6 +132,7 @@ public interface DnsClient {
    * @return a reference to this, so the API can be used fluently.
    */
   @Fluent
+  @Deprecated
   DnsClient resolveCNAME(String name, Handler<AsyncResult<List<String>>> handler);
 
   /**
@@ -145,6 +151,7 @@ public interface DnsClient {
    * @return a reference to this, so the API can be used fluently.
    */
   @Fluent
+  @Deprecated
   DnsClient resolveMX(String name, Handler<AsyncResult<List<MxRecord>>> handler);
 
   /**
@@ -162,6 +169,7 @@ public interface DnsClient {
    * @return a reference to this, so the API can be used fluently.
    */
   @Fluent
+  @Deprecated
   DnsClient resolveTXT(String name, Handler<AsyncResult<List<String>>> handler);
 
   /**
@@ -179,6 +187,7 @@ public interface DnsClient {
    * @return a reference to this, so the API can be used fluently.
    */
   @Fluent
+  @Deprecated
   DnsClient resolvePTR(String name, Handler<AsyncResult<@Nullable String>> handler);
 
   /**
@@ -196,6 +205,7 @@ public interface DnsClient {
    * @return a reference to this, so the API can be used fluently.
    */
   @Fluent
+  @Deprecated
   DnsClient resolveNS(String name, Handler<AsyncResult<List<String>>> handler);
 
   /**
@@ -213,6 +223,7 @@ public interface DnsClient {
    * @return a reference to this, so the API can be used fluently.
    */
   @Fluent
+  @Deprecated
   DnsClient resolveSRV(String name, Handler<AsyncResult<List<SrvRecord>>> handler);
 
   /**
@@ -231,6 +242,7 @@ public interface DnsClient {
    * @return a reference to this, so the API can be used fluently.
    */
   @Fluent
+  @Deprecated
   DnsClient reverseLookup(String ipaddress, Handler<AsyncResult<@Nullable String>> handler);
 
   /**

@@ -100,6 +100,7 @@ public interface Message<T> {
    * @param message  the message to reply with.
    * @param replyHandler  the reply handler for the reply.
    */
+  @Deprecated
   default <R> void replyAndRequest(@Nullable Object message, Handler<AsyncResult<Message<R>>> replyHandler) {
     replyAndRequest(message, new DeliveryOptions(), replyHandler);
   }
@@ -119,6 +120,7 @@ public interface Message<T> {
    * @param options  delivery options
    * @param replyHandler  reply handler will be called when any reply from the recipient is received
    */
+  @Deprecated
   default <R> void replyAndRequest(@Nullable Object message, DeliveryOptions options, Handler<AsyncResult<Message<R>>> replyHandler) {
     this.<R>replyAndRequest(message, options).onComplete(replyHandler);
   }

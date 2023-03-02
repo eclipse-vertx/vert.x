@@ -51,6 +51,7 @@ public interface HttpServerFileUpload extends ReadStream<Buffer> {
    *
    * @param filename  the name of the file
    */
+  @Deprecated
   void streamToFileSystem(String filename, Handler<AsyncResult<Void>> handler);
 
   /**

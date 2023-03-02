@@ -131,6 +131,7 @@ public interface HttpConnection {
    *
    * @param handler the handler called when shutdown has completed
    */
+  @Deprecated
   default void shutdown(Handler<AsyncResult<Void>> handler) {
     shutdown(30000, handler);
   }
@@ -145,6 +146,7 @@ public interface HttpConnection {
   /**
    * Like {@link #shutdown(Handler)} but with a specific {@code timeout} in milliseconds.
    */
+  @Deprecated
   void shutdown(long timeout, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -173,6 +175,7 @@ public interface HttpConnection {
    *
    * @param handler the handler to be completed when the connection is closed
    */
+  @Deprecated
   default void close(Handler<AsyncResult<Void>> handler) {
     close().onComplete(handler);
   }
@@ -204,6 +207,7 @@ public interface HttpConnection {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   HttpConnection updateSettings(Http2Settings settings, Handler<AsyncResult<Void>> completionHandler);
 
   /**
@@ -232,6 +236,7 @@ public interface HttpConnection {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   HttpConnection ping(Buffer data, Handler<AsyncResult<Buffer>> pongHandler);
 
   /**

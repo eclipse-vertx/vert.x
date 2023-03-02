@@ -42,6 +42,7 @@ public interface AsyncMap<K, V> {
    * @param k  the key
    * @param resultHandler - this will be called some time later with the async result.
    */
+  @Deprecated
   default void get(K k, Handler<AsyncResult<@Nullable V>> resultHandler) {
     get(k).onComplete(resultHandler);
   }
@@ -58,6 +59,7 @@ public interface AsyncMap<K, V> {
    * @param v  the value
    * @param completionHandler - this will be called some time later to signify the value has been put
    */
+  @Deprecated
   default void put(K k, V v, Handler<AsyncResult<Void>> completionHandler) {
     put(k, v).onComplete(completionHandler);
   }
@@ -76,6 +78,7 @@ public interface AsyncMap<K, V> {
    * @param ttl  The time to live (in ms) for the entry
    * @param completionHandler  the handler
    */
+  @Deprecated
   default void put(K k, V v, long ttl, Handler<AsyncResult<Void>> completionHandler) {
     put(k, v, ttl).onComplete(completionHandler);
   }
@@ -93,6 +96,7 @@ public interface AsyncMap<K, V> {
    * @param v  the value
    * @param completionHandler  the handler
    */
+  @Deprecated
   default void putIfAbsent(K k, V v, Handler<AsyncResult<@Nullable V>> completionHandler) {
     putIfAbsent(k, v).onComplete(completionHandler);
   }
@@ -111,6 +115,7 @@ public interface AsyncMap<K, V> {
    * @param ttl  The time to live (in ms) for the entry
    * @param completionHandler  the handler
    */
+  @Deprecated
   default void putIfAbsent(K k, V v, long ttl, Handler<AsyncResult<@Nullable V>> completionHandler) {
     putIfAbsent(k, v, ttl).onComplete(completionHandler);
   }
@@ -126,6 +131,7 @@ public interface AsyncMap<K, V> {
    * @param k  the key
    * @param resultHandler - this will be called some time later to signify the value has been removed
    */
+  @Deprecated
   default void remove(K k, Handler<AsyncResult<@Nullable V>> resultHandler) {
     remove(k).onComplete(resultHandler);
   }
@@ -142,6 +148,7 @@ public interface AsyncMap<K, V> {
    * @param v  the value
    * @param resultHandler - this will be called some time later to signify the value has been removed
    */
+  @Deprecated
   default void removeIfPresent(K k, V v, Handler<AsyncResult<Boolean>> resultHandler) {
     removeIfPresent(k, v).onComplete(resultHandler);
   }
@@ -158,6 +165,7 @@ public interface AsyncMap<K, V> {
    * @param v  the new value
    * @param resultHandler  the result handler will be passed the previous value
    */
+  @Deprecated
   default void replace(K k, V v, Handler<AsyncResult<@Nullable V>> resultHandler) {
     replace(k, v).onComplete(resultHandler);
   }
@@ -175,6 +183,7 @@ public interface AsyncMap<K, V> {
    * @param ttl  The time to live (in ms) for the entry
    * @param resultHandler  the result handler will be passed the previous value
    */
+  @Deprecated
   default void replace(K k, V v, long ttl, Handler<AsyncResult<@Nullable V>> resultHandler) {
     replace(k, v, ttl).onComplete(resultHandler);
   }
@@ -196,6 +205,7 @@ public interface AsyncMap<K, V> {
    * @param newValue  the new value
    * @param resultHandler the result handler
    */
+  @Deprecated
   default void replaceIfPresent(K k, V oldValue, V newValue, Handler<AsyncResult<Boolean>> resultHandler) {
     replaceIfPresent(k, oldValue, newValue).onComplete(resultHandler);
   }
@@ -214,6 +224,7 @@ public interface AsyncMap<K, V> {
    * @param ttl  The time to live (in ms) for the entry
    * @param resultHandler the result handler
    */
+  @Deprecated
   default void replaceIfPresent(K k, V oldValue, V newValue, long ttl, Handler<AsyncResult<Boolean>> resultHandler) {
     replaceIfPresent(k, oldValue, newValue, ttl).onComplete(resultHandler);
   }
@@ -232,6 +243,7 @@ public interface AsyncMap<K, V> {
    *
    * @param resultHandler  called on completion
    */
+  @Deprecated
   default void clear(Handler<AsyncResult<Void>> resultHandler) {
     clear().onComplete(resultHandler);
   }
@@ -246,6 +258,7 @@ public interface AsyncMap<K, V> {
    *
    * @param resultHandler  handler which will receive the number of entries
    */
+  @Deprecated
   default void size(Handler<AsyncResult<Integer>> resultHandler) {
     size().onComplete(resultHandler);
   }
@@ -265,6 +278,7 @@ public interface AsyncMap<K, V> {
    * @param resultHandler invoked when the operation completes
    */
   @GenIgnore(PERMITTED_TYPE)
+  @Deprecated
   default void keys(Handler<AsyncResult<Set<K>>> resultHandler) {
     keys().onComplete(resultHandler);
   }
@@ -285,6 +299,7 @@ public interface AsyncMap<K, V> {
    * @param resultHandler invoked when the operation completes
    */
   @GenIgnore(PERMITTED_TYPE)
+  @Deprecated
   default void values(Handler<AsyncResult<List<V>>> resultHandler) {
     values().onComplete(resultHandler);
   }

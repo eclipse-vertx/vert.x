@@ -137,6 +137,7 @@ public interface HttpServer extends Measured {
    * @param options the new SSL options
    * @param handler the update handler
    */
+  @Deprecated
   default void updateSSLOptions(SSLOptions options, Handler<AsyncResult<Void>> handler) {
     Future<Void> fut = updateSSLOptions(options);
     if (handler != null) {
@@ -178,6 +179,7 @@ public interface HttpServer extends Measured {
    * @param listenHandler  the listen handler
    */
   @Fluent
+  @Deprecated
   default HttpServer listen(int port, String host, Handler<AsyncResult<HttpServer>> listenHandler) {
     Future<HttpServer> fut = listen(port, host);
     if (listenHandler != null) {
@@ -195,6 +197,7 @@ public interface HttpServer extends Measured {
    * @param listenHandler  the listen handler
    */
   @Fluent
+  @Deprecated
   default HttpServer listen(SocketAddress address, Handler<AsyncResult<HttpServer>> listenHandler) {
     Future<HttpServer> fut = listen(address);
     if (listenHandler != null) {
@@ -227,6 +230,7 @@ public interface HttpServer extends Measured {
    * @param listenHandler  the listen handler
    */
   @Fluent
+  @Deprecated
   default HttpServer listen(int port, Handler<AsyncResult<HttpServer>> listenHandler) {
     Future<HttpServer> fut = listen(port);
     if (listenHandler != null) {
@@ -241,6 +245,7 @@ public interface HttpServer extends Measured {
    * @param listenHandler  the listen handler
    */
   @Fluent
+  @Deprecated
   default HttpServer listen(Handler<AsyncResult<HttpServer>> listenHandler) {
     Future<HttpServer> fut = listen();
     if (listenHandler != null) {
@@ -263,6 +268,7 @@ public interface HttpServer extends Measured {
    *
    * @param completionHandler  the handler
    */
+  @Deprecated
   void close(Handler<AsyncResult<Void>> completionHandler);
 
   /**

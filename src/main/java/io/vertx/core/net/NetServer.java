@@ -68,6 +68,7 @@ public interface NetServer extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   default NetServer listen(Handler<AsyncResult<NetServer>> listenHandler) {
     Future<NetServer> fut = listen();
     if (listenHandler != null) {
@@ -102,6 +103,7 @@ public interface NetServer extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   default NetServer listen(int port, String host, Handler<AsyncResult<NetServer>> listenHandler) {
     Future<NetServer> fut = listen(port, host);
     if (listenHandler != null) {
@@ -132,6 +134,7 @@ public interface NetServer extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   default NetServer listen(int port, Handler<AsyncResult<NetServer>> listenHandler) {
     return listen(port, "0.0.0.0", listenHandler);
   }
@@ -155,6 +158,7 @@ public interface NetServer extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   default NetServer listen(SocketAddress localAddress, Handler<AsyncResult<NetServer>> listenHandler) {
     Future<NetServer> fut = listen(localAddress);
     if (listenHandler != null) {
@@ -187,6 +191,7 @@ public interface NetServer extends Measured {
    *
    * @param completionHandler  the handler
    */
+  @Deprecated
   void close(Handler<AsyncResult<Void>> completionHandler);
 
   /**
@@ -214,6 +219,7 @@ public interface NetServer extends Measured {
    * @param options the new SSL options
    * @param handler the update handler
    */
+  @Deprecated
   default void updateSSLOptions(SSLOptions options, Handler<AsyncResult<Void>> handler) {
     Future<Void> fut = updateSSLOptions(options);
     if (handler != null) {

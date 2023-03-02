@@ -218,6 +218,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   /**
    * Same as {@link #write(String, String)} but with an {@code handler} called when the operation completes
    */
+  @Deprecated
   void write(String chunk, String enc, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -231,6 +232,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   /**
    * Same as {@link #write(String)} but with an {@code handler} called when the operation completes
    */
+  @Deprecated
   void write(String chunk, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -254,6 +256,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    *
    * @param headers  headers to write
    */
+  @Deprecated
   void writeEarlyHints(MultiMap headers, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -267,6 +270,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   /**
    * Same as {@link #end(String)} but with an {@code handler} called when the operation completes
    */
+  @Deprecated
   void end(String chunk, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -281,6 +285,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   /**
    * Same as {@link #end(String, String)} but with an {@code handler} called when the operation completes
    */
+  @Deprecated
   void end(String chunk, String enc, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -297,6 +302,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * Same as {@link #end(Buffer)} but with an {@code handler} called when the operation completes
    */
   @Override
+  @Deprecated
   void end(Buffer chunk, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -315,6 +321,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    *
    * @param handler the completion handler
    */
+  @Deprecated
   default void send(Handler<AsyncResult<Void>> handler) {
     end(handler);
   }
@@ -331,6 +338,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    *
    * @param handler the completion handler
    */
+  @Deprecated
   default void send(String body, Handler<AsyncResult<Void>> handler) {
     end(body, handler);
   }
@@ -347,6 +355,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    *
    * @param handler the completion handler
    */
+  @Deprecated
   default void send(Buffer body, Handler<AsyncResult<Void>> handler) {
     end(body, handler);
   }
@@ -366,6 +375,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    *
    * @param handler the completion handler
    */
+  @Deprecated
   default void send(ReadStream<Buffer> body, Handler<AsyncResult<Void>> handler) {
     MultiMap headers = headers();
     if (headers == null || !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
@@ -430,6 +440,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   default HttpServerResponse sendFile(String filename, Handler<AsyncResult<Void>> resultHandler) {
     return sendFile(filename, 0, resultHandler);
   }
@@ -444,6 +455,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   default HttpServerResponse sendFile(String filename, long offset, Handler<AsyncResult<Void>> resultHandler) {
     return sendFile(filename, offset, Long.MAX_VALUE, resultHandler);
   }
@@ -459,6 +471,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   HttpServerResponse sendFile(String filename, long offset, long length, Handler<AsyncResult<Void>> resultHandler);
 
   /**
@@ -517,6 +530,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * Like {@link #push(HttpMethod, String, String, MultiMap, Handler)} with no headers.
    */
   @Fluent
+  @Deprecated
   default HttpServerResponse push(HttpMethod method, String host, String path, Handler<AsyncResult<HttpServerResponse>> handler) {
     return push(method, host, path, null, handler);
   }
@@ -532,6 +546,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * Like {@link #push(HttpMethod, String, String, MultiMap, Handler)} with the host copied from the current request.
    */
   @Fluent
+  @Deprecated
   default HttpServerResponse push(HttpMethod method, String path, MultiMap headers, Handler<AsyncResult<HttpServerResponse>> handler) {
     return push(method, null, path, headers, handler);
   }
@@ -547,6 +562,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * Like {@link #push(HttpMethod, String, String, MultiMap, Handler)} with the host copied from the current request.
    */
   @Fluent
+  @Deprecated
   default HttpServerResponse push(HttpMethod method, String path, Handler<AsyncResult<HttpServerResponse>> handler) {
     return push(method, null, path, null, handler);
   }
@@ -577,6 +593,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   default HttpServerResponse push(HttpMethod method, String host, String path, MultiMap headers, Handler<AsyncResult<HttpServerResponse>> handler) {
     Future<HttpServerResponse> fut = push(method, host, path, headers);
     if (handler != null) {

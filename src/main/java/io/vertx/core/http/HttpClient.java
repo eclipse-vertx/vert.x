@@ -66,6 +66,7 @@ public interface HttpClient extends Measured {
    * @param options    the request options
    * @param handler    the handler called when the request is ready to be sent
    */
+  @Deprecated
   void request(RequestOptions options, Handler<AsyncResult<HttpClientRequest>> handler);
 
   /**
@@ -83,6 +84,7 @@ public interface HttpClient extends Measured {
    * @param requestURI the relative URI
    * @param handler    the handler called when the request is ready to be sent
    */
+  @Deprecated
   void request(HttpMethod method, int port, String host, String requestURI, Handler<AsyncResult<HttpClientRequest>> handler);
 
   /**
@@ -99,6 +101,7 @@ public interface HttpClient extends Measured {
    * @param requestURI the relative URI
    * @param handler    the handler called when the request is ready to be sent
    */
+  @Deprecated
   void request(HttpMethod method, String host, String requestURI, Handler<AsyncResult<HttpClientRequest>> handler);
 
   /**
@@ -114,6 +117,7 @@ public interface HttpClient extends Measured {
    * @param requestURI the relative URI
    * @param handler    the handler called when the request is ready to be sent
    */
+  @Deprecated
   void request(HttpMethod method, String requestURI, Handler<AsyncResult<HttpClientRequest>> handler);
 
   /**
@@ -128,6 +132,7 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param handler  handler that will be called with the WebSocket when connected
    */
+  @Deprecated
   void webSocket(int port, String host, String requestURI, Handler<AsyncResult<WebSocket>> handler);
 
   /**
@@ -141,6 +146,7 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param handler  handler that will be called with the WebSocket when connected
    */
+  @Deprecated
   void webSocket(String host, String requestURI, Handler<AsyncResult<WebSocket>> handler);
 
   /**
@@ -153,6 +159,7 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param handler  handler that will be called with the WebSocket when connected
    */
+  @Deprecated
   void webSocket(String requestURI, Handler<AsyncResult<WebSocket>> handler);
 
   /**
@@ -165,6 +172,7 @@ public interface HttpClient extends Measured {
    *
    * @param options  the request options
    */
+  @Deprecated
   void webSocket(WebSocketConnectOptions options, Handler<AsyncResult<WebSocket>> handler);
 
   /**
@@ -182,6 +190,7 @@ public interface HttpClient extends Measured {
    * @param subProtocols   the subprotocols to use
    * @param handler handler that will be called if WebSocket connection fails
    */
+  @Deprecated
   void webSocketAbs(String url, MultiMap headers, WebsocketVersion version, List<String> subProtocols, Handler<AsyncResult<WebSocket>> handler);
 
   /**
@@ -206,6 +215,7 @@ public interface HttpClient extends Measured {
    * @param options the new SSL options
    * @param handler the update handler
    */
+  @Deprecated
   default void updateSSLOptions(SSLOptions options, Handler<AsyncResult<Void>> handler) {
     Future<Void> fut = updateSSLOptions(options);
     if (handler != null) {
@@ -253,6 +263,7 @@ public interface HttpClient extends Measured {
    * Close the client. Closing will close down any pooled connections.
    * Clients should always be closed after use.
    */
+  @Deprecated
   void close(Handler<AsyncResult<Void>> handler);
 
   /**

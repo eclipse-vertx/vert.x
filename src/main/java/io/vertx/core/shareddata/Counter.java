@@ -33,6 +33,7 @@ public interface Counter {
    *
    * @param resultHandler handler which will be passed the value
    */
+  @Deprecated
   default void get(Handler<AsyncResult<Long>> resultHandler) {
     Objects.requireNonNull(resultHandler, "resultHandler");
     get().onComplete(resultHandler);
@@ -48,6 +49,7 @@ public interface Counter {
    *
    * @param resultHandler handler which will be passed the value
    */
+  @Deprecated
   default void incrementAndGet(Handler<AsyncResult<Long>> resultHandler) {
     Objects.requireNonNull(resultHandler, "resultHandler");
     incrementAndGet().onComplete(resultHandler);
@@ -63,6 +65,7 @@ public interface Counter {
    *
    * @param resultHandler handler which will be passed the value
    */
+  @Deprecated
   default void getAndIncrement(Handler<AsyncResult<Long>> resultHandler) {
     Objects.requireNonNull(resultHandler, "resultHandler");
     getAndIncrement().onComplete(resultHandler);
@@ -78,6 +81,7 @@ public interface Counter {
    *
    * @param resultHandler handler which will be passed the value
    */
+  @Deprecated
   default void decrementAndGet(Handler<AsyncResult<Long>> resultHandler) {
     Objects.requireNonNull(resultHandler, "resultHandler");
     decrementAndGet().onComplete(resultHandler);
@@ -94,6 +98,7 @@ public interface Counter {
    * @param value  the value to add
    * @param resultHandler handler which will be passed the value
    */
+  @Deprecated
   default void addAndGet(long value, Handler<AsyncResult<Long>> resultHandler) {
     Objects.requireNonNull(resultHandler, "resultHandler");
     addAndGet(value).onComplete(resultHandler);
@@ -110,6 +115,7 @@ public interface Counter {
    * @param value  the value to add
    * @param resultHandler handler which will be passed the value
    */
+  @Deprecated
   default void getAndAdd(long value, Handler<AsyncResult<Long>> resultHandler) {
     Objects.requireNonNull(resultHandler, "resultHandler");
     getAndAdd(value).onComplete(resultHandler);
@@ -128,6 +134,7 @@ public interface Counter {
    * @param value  the new value
    * @param resultHandler  the handler will be passed true on success
    */
+  @Deprecated
   default void compareAndSet(long expected, long value, Handler<AsyncResult<Boolean>> resultHandler) {
     Objects.requireNonNull(resultHandler, "resultHandler");
     compareAndSet(expected, value).onComplete(resultHandler);

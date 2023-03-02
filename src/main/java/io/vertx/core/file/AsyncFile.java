@@ -72,6 +72,7 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
    *
    * @param handler  the handler
    */
+  @Deprecated
   void close(Handler<AsyncResult<Void>> handler);
 
   /**
@@ -89,6 +90,7 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @param position  the position in the file to write it at
    * @param handler  the handler to call when the write is complete
    */
+  @Deprecated
   void write(Buffer buffer, long position, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -114,6 +116,7 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   AsyncFile read(Buffer buffer, int offset, long position, int length, Handler<AsyncResult<Buffer>> handler);
 
   /**
@@ -136,6 +139,7 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
    * Same as {@link #flush} but the handler will be called when the flush is complete or if an error occurs
    */
   @Fluent
+  @Deprecated
   AsyncFile flush(Handler<AsyncResult<Void>> handler);
 
   /**
@@ -194,6 +198,7 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
   /**
    * Like {@link #size()} but the {@code handler} will be called when the operation is complete or if an error occurs.
    */
+  @Deprecated
   default void size(Handler<AsyncResult<Long>> handler) {
     Future<Long> future = size();
     if (handler != null) {
@@ -237,6 +242,7 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
    * Like {@link #lock()} but the {@code handler} will be called when the operation is complete or if an error occurs.
    */
   @Unstable
+  @Deprecated
   void lock(Handler<AsyncResult<AsyncFileLock>> handler);
 
   /**
@@ -254,6 +260,7 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
    * Like {@link #lock(long, long, boolean)} but the {@code handler} will be called when the operation is complete or if an error occurs.
    */
   @Unstable
+  @Deprecated
   void lock(long position, long size, boolean shared, Handler<AsyncResult<AsyncFileLock>> handler);
 
 }

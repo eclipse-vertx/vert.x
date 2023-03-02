@@ -46,6 +46,7 @@ public interface SharedData {
    * @param resultHandler  the map will be returned asynchronously in this handler
    * @throws IllegalStateException if the parent {@link io.vertx.core.Vertx} instance is not clustered
    */
+  @Deprecated
   <K, V> void getClusterWideMap(String name, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler);
 
   /**
@@ -64,6 +65,7 @@ public interface SharedData {
    * @param name the name of the map
    * @param resultHandler the map will be returned asynchronously in this handler
    */
+  @Deprecated
   <K, V> void getAsyncMap(String name, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler);
 
   /**
@@ -80,6 +82,7 @@ public interface SharedData {
    * @param name the name of the map
    * @param resultHandler the map will be returned asynchronously in this handler
    */
+  @Deprecated
   <K, V> void getLocalAsyncMap(String name, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler);
 
   /**
@@ -97,6 +100,7 @@ public interface SharedData {
    * @param name  the name of the lock
    * @param resultHandler  the handler
    */
+  @Deprecated
   void getLock(String name, Handler<AsyncResult<Lock>> resultHandler);
 
   /**
@@ -116,6 +120,7 @@ public interface SharedData {
    * @param timeout  the timeout in ms
    * @param resultHandler  the handler
    */
+  @Deprecated
   void getLockWithTimeout(String name, long timeout, Handler<AsyncResult<Lock>> resultHandler);
 
   /**
@@ -133,6 +138,7 @@ public interface SharedData {
    * @param name  the name of the lock
    * @param resultHandler  the handler
    */
+  @Deprecated
   void getLocalLock(String name, Handler<AsyncResult<Lock>> resultHandler);
 
   /**
@@ -152,6 +158,7 @@ public interface SharedData {
    * @param timeout  the timeout in ms
    * @param resultHandler  the handler
    */
+  @Deprecated
   void getLocalLockWithTimeout(String name, long timeout, Handler<AsyncResult<Lock>> resultHandler);
 
   /**
@@ -165,6 +172,7 @@ public interface SharedData {
    * @param name  the name of the counter.
    * @param resultHandler  the handler
    */
+  @Deprecated
   void getCounter(String name, Handler<AsyncResult<Counter>> resultHandler);
 
   /**
@@ -178,6 +186,7 @@ public interface SharedData {
    * @param name  the name of the counter.
    * @param resultHandler  the handler
    */
+  @Deprecated
   void getLocalCounter(String name, Handler<AsyncResult<Counter>> resultHandler);
 
   /**

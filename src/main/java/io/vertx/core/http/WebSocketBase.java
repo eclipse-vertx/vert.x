@@ -137,6 +137,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * Same as {@link #writeFrame(WebSocketFrame)} but with an {@code handler} called when the operation completes
    */
   @Fluent
+  @Deprecated
   WebSocketBase writeFrame(WebSocketFrame frame, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -151,6 +152,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * Same as {@link #writeFinalTextFrame(String, Handler)} but with an {@code handler} called when the operation completes
    */
   @Fluent
+  @Deprecated
   WebSocketBase writeFinalTextFrame(String text, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -165,6 +167,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * Same as {@link #writeFinalBinaryFrame(Buffer, Handler)} but with an {@code handler} called when the operation completes
    */
   @Fluent
+  @Deprecated
   WebSocketBase writeFinalBinaryFrame(Buffer data, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -180,6 +183,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * Same as {@link #writeBinaryMessage(Buffer)} but with an {@code handler} called when the operation completes
    */
   @Fluent
+  @Deprecated
   WebSocketBase writeBinaryMessage(Buffer data, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -195,6 +199,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * Same as {@link #writeTextMessage(String)} but with an {@code handler} called when the operation completes
    */
   @Fluent
+  @Deprecated
   WebSocketBase writeTextMessage(String text, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -210,6 +215,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @param handler called when the ping frame has been successfully written
    * @return a reference to this, so the API can be used fluently
    */
+  @Deprecated
   @Fluent
   WebSocketBase writePing(Buffer data, Handler<AsyncResult<Void>> handler);
 
@@ -234,6 +240,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
+  @Deprecated
   WebSocketBase writePong(Buffer data, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -315,6 +322,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * Calls {@link #close(Handler)}
    */
   @Override
+  @Deprecated
   void end(Handler<AsyncResult<Void>> handler);
 
   /**
@@ -329,6 +337,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   /**
    * Same as {@link #close()} but with an {@code handler} called when the operation completes
    */
+  @Deprecated
   void close(Handler<AsyncResult<Void>> handler);
 
   /**
@@ -345,6 +354,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   /**
    * Same as {@link #close(short)} but with an {@code handler} called when the operation completes
    */
+  @Deprecated
   void close(short statusCode, Handler<AsyncResult<Void>> handler);
 
   /**
@@ -362,6 +372,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   /**
    * Same as {@link #close(short, String)} but with an {@code handler} called when the operation completes
    */
+  @Deprecated
   void close(short statusCode, @Nullable String reason, Handler<AsyncResult<Void>> handler);
 
   /**
