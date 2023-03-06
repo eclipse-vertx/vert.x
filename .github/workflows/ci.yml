@@ -14,6 +14,7 @@ jobs:
   Test:
     name: Run tests
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
         profile: [""]
