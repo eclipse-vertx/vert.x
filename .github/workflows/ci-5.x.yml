@@ -1,0 +1,38 @@
+name: CI (5.x)
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  schedule:
+    - cron: '0 5 * * *'
+jobs:
+  CI:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            jdk: 8
+            profile: ''
+          - os: ubuntu-latest
+            jdk: 8
+            profile: '-PtestNativeTransport'
+          - os: ubuntu-latest
+            jdk: 8
+            profile: '-PtestDomainSockets'
+          - os: ubuntu-latest
+            jdk: 17
+            profile: ''
+          - os: windows-latest
+            jdk: 8
+            profile: ''
+    uses: ./.github/workflows/ci.yml
+    with:
+      branch: ${{ github.head_ref || github.ref_name }}
+      jdk: ${{ matrix.jdk }}
+      os: ${{ matrix.os }}
+      profile: ${{ matrix.profile }}
+      deploy: ${{ matrix.jdk == '8' && matrix.os == 'ubuntu-latest' }}
+    secrets: inherit

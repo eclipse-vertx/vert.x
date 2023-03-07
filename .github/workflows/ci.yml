@@ -1,46 +1,37 @@
 name: CI
 on:
-  push:
-    branches:
-      - master
-      - '[0-9]+.[0-9]+'
-  pull_request:
-    branches:
-      - master
-      - '[0-9]+.[0-9]+'
-  schedule:
-    - cron:  '0 4 * * *'
+  workflow_call:
+    inputs:
+      branch:
+        required: true
+        type: string
+      jdk:
+        default: 8
+        type: string
+      os:
+        default: ubuntu-latest
+        type: string
+      deploy:
+        type: boolean
 jobs:
   Test:
     name: Run tests
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-        profile: [""]
-        jdk: [8]
-        include:
-          - os: ubuntu-latest
-            jdk: 17
-          - os: ubuntu-latest
-            jdk: 8
-            profile: '-PtestNativeTransport'
-          - os: ubuntu-latest
-            jdk: 8
-            profile: '-PtestDomainSockets'
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ inputs.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          ref: ${{ inputs.branch }}
       - name: Install JDK
         uses: actions/setup-java@v2
         with:
-          java-version: ${{ matrix.jdk }}
+          java-version: ${{ inputs.jdk }}
           distribution: temurin
       - name: Run tests
-        run: mvn -s .github/maven-ci-settings.xml -q clean verify -B ${{ matrix.profile }}
+        run: mvn -s .github/maven-ci-settings.xml -q clean verify -B ${{ inputs.profile }}
   Deploy:
     name: Deploy to OSSRH
-    if: ${{ github.repository_owner == 'eclipse-vertx' && (github.event_name == 'push' || github.event_name == 'schedule') }}
+    if: ${{ inputs.deploy && github.repository_owner == 'eclipse-vertx' && (github.event_name == 'push' || github.event_name == 'schedule') }}
     needs: Test
     runs-on: ubuntu-latest
     env:
@@ -52,7 +43,7 @@ jobs:
       - name: Install JDK
         uses: actions/setup-java@v2
         with:
-          java-version: 8
+          java-version: ${{ inputs.jdk }}
           distribution: temurin
       - name: Get project version
         run: echo "PROJECT_VERSION=$(mvn org.apache.maven.plugins:maven-help-plugin:evaluate -Dexpression=project.version -B | grep -v '\[')" >> $GITHUB_ENV

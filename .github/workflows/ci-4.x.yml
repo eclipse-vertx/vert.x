@@ -1,0 +1,32 @@
+name: CI (4.x)
+on:
+  schedule:
+    - cron: '0 4 * * *'
+jobs:
+  CI:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            jdk: 8
+            profile: ''
+          - os: ubuntu-latest
+            jdk: 8
+            profile: '-PtestNativeTransport'
+          - os: ubuntu-latest
+            jdk: 8
+            profile: '-PtestDomainSockets'
+          - os: ubuntu-latest
+            jdk: 17
+            profile: ''
+          - os: windows-latest
+            jdk: 8
+            profile: ''
+    uses: ./.github/workflows/ci.yml
+    with:
+      branch: 4.x
+      jdk: ${{ matrix.jdk }}
+      os: ${{ matrix.os }}
+      profile: ${{ matrix.profile }}
+      deploy: ${{ matrix.jdk == '8' && matrix.os == 'ubuntu-latest' }}
+    secrets: inherit
