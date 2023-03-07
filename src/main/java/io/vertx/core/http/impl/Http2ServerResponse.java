@@ -597,30 +597,12 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public Future<Void> sendFile(String filename, long offset, long length) {
-    Promise<Void> promise = stream.context.promise();
-    sendFile(filename, offset, length, promise);
-    return promise.future();
-  }
-
-  @Override
-  public HttpServerResponse sendFile(String filename, long offset, long length, Handler<AsyncResult<Void>> resultHandler) {
     synchronized (conn) {
       checkValid();
     }
-    Handler<AsyncResult<Void>> h;
-    if (resultHandler != null) {
-      Context resultCtx = stream.vertx.getOrCreateContext();
-      h = ar -> {
-        resultCtx.runOnContext((v) -> {
-          resultHandler.handle(ar);
-        });
-      };
-    } else {
-      h = ar -> {};
-    }
-    HttpUtils.resolveFile(stream.vertx, filename, offset, length, ar -> {
-      if (ar.succeeded()) {
-        AsyncFile file = ar.result();
+    return HttpUtils
+      .resolveFile(stream.context, filename, offset, length)
+      .compose(file -> {
         long contentLength = Math.min(length, file.getReadLength());
         if (headers.get(HttpHeaderNames.CONTENT_LENGTH) == null) {
           putHeader(HttpHeaderNames.CONTENT_LENGTH, String.valueOf(contentLength));
@@ -632,18 +614,10 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
           }
         }
         checkSendHeaders(false);
-        file.pipeTo(this, ar1 -> file.close(ar2 -> {
-          Throwable failure = ar1.failed() ? ar1.cause() : ar2.failed() ? ar2.cause() : null;
-          if(failure == null)
-            h.handle(ar1);
-          else
-            h.handle(Future.failedFuture(failure));
-        }));
-      } else {
-        h.handle(ar.mapEmpty());
-      }
+        return file
+          .pipeTo(this)
+          .eventually(v -> file.close());
     });
-    return this;
   }
 
   @Override

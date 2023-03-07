@@ -542,21 +542,22 @@ public abstract class ConnectionBase {
     }
   }
 
-  public final ChannelFuture sendFile(RandomAccessFile raf, long offset, long length) throws IOException {
+
+  public ChannelFuture sendFile(RandomAccessFile raf, long offset, long length) {
     // Write the content.
     ChannelPromise writeFuture = chctx.newPromise();
     if (!supportsFileRegion()) {
       // Cannot use zero-copy
-      writeToChannel(new ChunkedNioFile(raf.getChannel(), offset, length, 8192), writeFuture);
+      try {
+        writeToChannel(new ChunkedNioFile(raf.getChannel(), offset, length, 8192), writeFuture);
+      } catch (IOException e) {
+        return chctx.newFailedFuture(e);
+      }
     } else {
       // No encryption - use zero-copy.
       sendFileRegion(raf, offset, length, writeFuture);
     }
-    if (writeFuture != null) {
-      writeFuture.addListener(fut -> raf.close());
-    } else {
-      raf.close();
-    }
+    writeFuture.addListener(fut -> raf.close());
     return writeFuture;
   }
 

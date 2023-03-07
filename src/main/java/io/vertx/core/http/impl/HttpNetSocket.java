@@ -223,42 +223,13 @@ class HttpNetSocket implements NetSocket {
 
   @Override
   public Future<Void> sendFile(String filename, long offset, long length) {
-    Promise<Void> promise = context.promise();
-    sendFile(filename, offset, length, promise);
-    return promise.future();
-  }
-
-  @Override
-  public NetSocket sendFile(String filename, long offset, long length, Handler<AsyncResult<Void>> resultHandler) {
-    VertxInternal vertx = conn.getContext().owner();
-    Handler<AsyncResult<Void>> h;
-    if (resultHandler != null) {
-      Context resultCtx = vertx.getOrCreateContext();
-      h = ar -> {
-        resultCtx.runOnContext((v) -> {
-          resultHandler.handle(ar);
-        });
-      };
-    } else {
-      h = ar -> {};
-    }
-    HttpUtils.resolveFile(vertx, filename, offset, length, ar -> {
-      if (ar.succeeded()) {
-        AsyncFile file = ar.result();
-        file.pipe()
-          .endOnComplete(false)
-          .to(this, ar1 -> file.close(ar2 -> {
-          Throwable failure = ar1.failed() ? ar1.cause() : ar2.failed() ? ar2.cause() : null;
-          if(failure == null)
-            h.handle(ar1);
-          else
-            h.handle(Future.failedFuture(failure));
-        }));
-      } else {
-        h.handle(ar.mapEmpty());
-      }
-    });
-    return this;
+    return HttpUtils.resolveFile(conn.getContext(), filename, offset, length)
+      .compose(file -> file
+        .pipe()
+        .endOnComplete(false)
+        .to(this)
+        .eventually(v -> file.close())
+      );
   }
 
   @Override

@@ -19,9 +19,7 @@ import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.util.AsciiString;
 import io.netty.util.CharsetUtil;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
@@ -31,6 +29,7 @@ import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.StreamPriority;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.spi.tracing.TagExtractor;
 
@@ -925,28 +924,28 @@ public final class HttpUtils {
       || method.equals(HttpMethod.DELETE);
   }
 
-  static void resolveFile(VertxInternal vertx, String filename, long offset, long length, Handler<AsyncResult<AsyncFile>> resultHandler) {
+  static Future<AsyncFile> resolveFile(ContextInternal context, String filename, long offset, long length) {
+    VertxInternal vertx = context.owner();
     File file_ = vertx.resolveFile(filename);
     if (!file_.exists()) {
-      resultHandler.handle(Future.failedFuture(new FileNotFoundException()));
-      return;
+      return context.failedFuture(new FileNotFoundException());
     }
 
     //We open the fileName using a RandomAccessFile to make sure that this is an actual file that can be read.
     //i.e is not a directory
-    try(RandomAccessFile raf = new RandomAccessFile(file_, "r")) {
+    try (RandomAccessFile raf = new RandomAccessFile(file_, "r")) {
       FileSystem fs = vertx.fileSystem();
-      fs.open(filename, new OpenOptions().setCreate(false).setWrite(false), ar -> {
-        if (ar.succeeded()) {
-          AsyncFile file = ar.result();
-          long contentLength = Math.min(length, file_.length() - offset);
-          file.setReadPos(offset);
-          file.setReadLength(contentLength);
-        }
-        resultHandler.handle(ar);
-      });
+      return fs.open(filename, new OpenOptions().setCreate(false).setWrite(false))
+        .andThen(ar -> {
+          if (ar.succeeded()) {
+            AsyncFile file = ar.result();
+            long contentLength = Math.min(length, file_.length() - offset);
+            file.setReadPos(offset);
+            file.setReadLength(contentLength);
+          }
+        });
     } catch (IOException e) {
-      resultHandler.handle(Future.failedFuture(e));
+      return context.failedFuture(e);
     }
   }
 

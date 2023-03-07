@@ -279,8 +279,11 @@ public abstract class FileResolverTestBase extends VertxTestBase {
 
   @Test
   public void testSendFileFromClasspath() {
+    waitFor(2);
     vertx.createHttpServer(new HttpServerOptions().setPort(8080)).requestHandler(res -> {
-      res.response().sendFile("webroot/somefile.html");
+      res.response()
+        .sendFile("webroot/somefile.html")
+        .onComplete(onSuccess(v -> complete()));
     }).listen(onSuccess(res -> {
       vertx.createHttpClient(new HttpClientOptions())
         .request(HttpMethod.GET, 8080, "localhost", "/")
@@ -288,7 +291,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
         .onComplete(onSuccess(resp -> {
           resp.bodyHandler(buff -> {
             assertTrue(buff.toString().startsWith("<html><body>blah</body></html>"));
-            testComplete();
+            complete();
           });
         }));
     }));

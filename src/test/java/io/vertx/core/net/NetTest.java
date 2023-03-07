@@ -85,12 +85,7 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManagerFactory;
-import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
@@ -2323,13 +2318,10 @@ public class NetTest extends VertxTestBase {
       client.connect(testAddress, result -> {
         assertTrue(result.succeeded());
         NetSocket socket = result.result();
-        try {
-          socket.sendFile(fDir.getAbsolutePath().toString());
-          // should throw exception and never hit the assert
-          fail("Should throw exception");
-        } catch (IllegalArgumentException e) {
+        socket.sendFile(fDir.getAbsolutePath()).onComplete(onFailure(err -> {
+          assertEquals(FileNotFoundException.class, err.getClass());
           testComplete();
-        }
+        }));
       });
     });
     await();

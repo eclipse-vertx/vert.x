@@ -202,7 +202,13 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
    */
   @Fluent
   @Deprecated
-  NetSocket sendFile(String filename, long offset, long length, Handler<AsyncResult<Void>> resultHandler);
+  default NetSocket sendFile(String filename, long offset, long length, Handler<AsyncResult<Void>> resultHandler) {
+    Future<Void> fut = sendFile(filename, offset, length);
+    if (resultHandler != null) {
+      fut.onComplete(resultHandler);
+    }
+    return this;
+  }
 
   /**
    * @return the remote address for this connection, possibly {@code null} (e.g a server bound on a domain socket).
