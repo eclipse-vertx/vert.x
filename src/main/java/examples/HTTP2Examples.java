@@ -88,21 +88,23 @@ public class HTTP2Examples {
     HttpServerResponse response = request.response();
 
     // Push main.js to the client
-    response.push(HttpMethod.GET, "/main.js", ar -> {
+    response
+      .push(HttpMethod.GET, "/main.js")
+      .onComplete(ar -> {
 
-      if (ar.succeeded()) {
+        if (ar.succeeded()) {
 
-        // The server is ready to push the response
-        HttpServerResponse pushedResponse = ar.result();
+          // The server is ready to push the response
+          HttpServerResponse pushedResponse = ar.result();
 
-        // Send main.js response
-        pushedResponse.
+          // Send main.js response
+          pushedResponse.
             putHeader("content-type", "application/json").
             end("alert(\"Push response hello\")");
-      } else {
-        System.out.println("Could not push client resource " + ar.cause());
-      }
-    });
+        } else {
+          System.out.println("Could not push client resource " + ar.cause());
+        }
+      });
 
     // Send the requested resource
     response.sendFile("<html><head><script src=\"/main.js\"></script></head><body></body></html>");
@@ -230,11 +232,9 @@ public class HTTP2Examples {
   }
 
   public void example21(HttpConnection connection) {
-    connection.updateSettings(new Http2Settings().setMaxConcurrentStreams(100), ar -> {
-      if (ar.succeeded()) {
-        System.out.println("The settings update has been acknowledged ");
-      }
-    });
+    connection
+      .updateSettings(new Http2Settings().setMaxConcurrentStreams(100))
+      .onSuccess(v -> System.out.println("The settings update has been acknowledged "));
   }
 
   public void example22(HttpConnection connection) {
@@ -248,9 +248,9 @@ public class HTTP2Examples {
     for (byte i = 0;i < 8;i++) {
       data.appendByte(i);
     }
-    connection.ping(data, pong -> {
-      System.out.println("Remote side replied");
-    });
+    connection
+      .ping(data)
+      .onSuccess(pong -> System.out.println("Remote side replied"));
   }
 
   public void example24(HttpConnection connection) {
