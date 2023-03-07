@@ -1,4 +1,5 @@
-[![Build Status (5.x)](https://github.com/eclipse-vertx/vert.x/actions/workflows/ci-5.x.yml/badge.svg)](https://github.com/eclipse-vertx/vert.x/actions/workflows/ci-5.x.yml) [![Build Status (4.x)](https://github.com/eclipse-vertx/vert.x/actions/workflows/ci-4.x.yml/badge.svg)](https://github.com/eclipse-vertx/vert.x/actions/workflows/ci-4.x.yml)
+[![Build Status (5.x)](https://github.com/eclipse-vertx/vert.x/actions/workflows/ci-5.x.yml/badge.svg)](https://github.com/eclipse-vertx/vert.x/actions/workflows/ci-5.x.yml)
+[![Build Status (4.x)](https://github.com/eclipse-vertx/vert.x/actions/workflows/ci-4.x.yml/badge.svg)](https://github.com/eclipse-vertx/vert.x/actions/workflows/ci-4.x.yml)
 
 ## Vert.x Core
 
