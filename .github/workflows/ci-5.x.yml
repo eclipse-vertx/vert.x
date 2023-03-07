@@ -37,8 +37,8 @@ jobs:
     secrets: inherit
   Deploy:
     if: ${{ github.repository_owner == 'eclipse-vertx' && (github.event_name == 'push' || github.event_name == 'schedule') }}
-    needs: Test
-    uses: ./.github/workflows/ci.yml
+    needs: CI
+    uses: ./.github/workflows/deploy.yml
     with:
       branch: ${{ github.head_ref || github.ref_name }}
       jdk: 8
