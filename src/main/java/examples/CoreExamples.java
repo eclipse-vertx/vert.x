@@ -71,7 +71,7 @@ public class CoreExamples {
       // Call some blocking API that takes a significant amount of time to return
       String result = someAPI.blockingMethod("hello");
       promise.complete(result);
-    }, res -> {
+    }).onComplete(res -> {
       System.out.println("The result is: " + res.result());
     });
   }
@@ -82,7 +82,7 @@ public class CoreExamples {
       // Call some blocking API that takes a significant amount of time to return
       String result = someAPI.blockingMethod("hello");
       promise.complete(result);
-    }, res -> {
+    }).onComplete(res -> {
       System.out.println("The result is: " + res.result());
     });
   }
@@ -254,23 +254,27 @@ public class CoreExamples {
   }
 
   public void example10(Vertx vertx) {
-    vertx.deployVerticle("com.mycompany.MyOrderProcessorVerticle", res -> {
-      if (res.succeeded()) {
-        System.out.println("Deployment id is: " + res.result());
-      } else {
-        System.out.println("Deployment failed!");
-      }
-    });
+    vertx
+      .deployVerticle("com.mycompany.MyOrderProcessorVerticle")
+      .onComplete(res -> {
+        if (res.succeeded()) {
+          System.out.println("Deployment id is: " + res.result());
+        } else {
+          System.out.println("Deployment failed!");
+        }
+      });
   }
 
   public void example11(Vertx vertx, String deploymentID) {
-    vertx.undeploy(deploymentID, res -> {
-      if (res.succeeded()) {
-        System.out.println("Undeployed ok");
-      } else {
-        System.out.println("Undeploy failed!");
-      }
-    });
+    vertx
+      .undeploy(deploymentID)
+      .onComplete(res -> {
+        if (res.succeeded()) {
+          System.out.println("Undeployed ok");
+        } else {
+          System.out.println("Undeploy failed!");
+        }
+      });
   }
 
   public void example12(Vertx vertx) {
@@ -412,15 +416,18 @@ public class CoreExamples {
   }
 
   public void httpServerWithDomainSockets(Vertx vertx) {
-    vertx.createHttpServer().requestHandler(req -> {
-      // Handle application
-    }).listen(SocketAddress.domainSocketAddress("/var/tmp/myservice.sock"), ar -> {
-      if (ar.succeeded()) {
-        // Bound to socket
-      } else {
-        ar.cause().printStackTrace();
-      }
-    });
+    vertx.createHttpServer()
+      .requestHandler(req -> {
+        // Handle application
+      })
+      .listen(SocketAddress.domainSocketAddress("/var/tmp/myservice.sock"))
+      .onComplete(ar -> {
+        if (ar.succeeded()) {
+          // Bound to socket
+        } else {
+          ar.cause().printStackTrace();
+        }
+      });
   }
 
   public void tcpClientWithDomainSockets(Vertx vertx) {
@@ -430,13 +437,15 @@ public class CoreExamples {
     SocketAddress addr = SocketAddress.domainSocketAddress("/var/tmp/myservice.sock");
 
     // Connect to the server
-    netClient.connect(addr, ar -> {
-      if (ar.succeeded()) {
-        // Connected
-      } else {
-        ar.cause().printStackTrace();
-      }
-    });
+    netClient
+      .connect(addr)
+      .onComplete(ar -> {
+        if (ar.succeeded()) {
+          // Connected
+        } else {
+          ar.cause().printStackTrace();
+        }
+      });
   }
 
   public void httpClientWithDomainSockets(Vertx vertx) {

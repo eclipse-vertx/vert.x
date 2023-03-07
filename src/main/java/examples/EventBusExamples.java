@@ -56,13 +56,15 @@ public class EventBusExamples {
   }
 
   public void example4(MessageConsumer<String> consumer) {
-    consumer.unregister(res -> {
-      if (res.succeeded()) {
-        System.out.println("The handler un-registration has reached all nodes");
-      } else {
-        System.out.println("Un-registration failed!");
-      }
-    });
+    consumer
+      .unregister()
+      .onComplete(res -> {
+        if (res.succeeded()) {
+          System.out.println("The handler un-registration has reached all nodes");
+        } else {
+          System.out.println("Un-registration failed!");
+        }
+      });
   }
 
   public void example5(EventBus eventBus) {
@@ -82,24 +84,28 @@ public class EventBusExamples {
   }
 
   public void example9(EventBus eventBus) {
-    eventBus.request("news.uk.sport", "Yay! Someone kicked a ball across a patch of grass", ar -> {
-      if (ar.succeeded()) {
-        System.out.println("Received reply: " + ar.result().body());
-      }
-    });
+    eventBus
+      .request("news.uk.sport", "Yay! Someone kicked a ball across a patch of grass")
+      .onComplete(ar -> {
+        if (ar.succeeded()) {
+          System.out.println("Received reply: " + ar.result().body());
+        }
+      });
   }
 
   public void example12() {
     VertxOptions options = new VertxOptions();
-    Vertx.clusteredVertx(options, res -> {
-      if (res.succeeded()) {
-        Vertx vertx = res.result();
-        EventBus eventBus = vertx.eventBus();
-        System.out.println("We now have a clustered event bus: " + eventBus);
-      } else {
-        System.out.println("Failed: " + res.cause());
-      }
-    });
+    Vertx
+      .clusteredVertx(options)
+      .onComplete(res -> {
+        if (res.succeeded()) {
+          Vertx vertx = res.result();
+          EventBus eventBus = vertx.eventBus();
+          System.out.println("We now have a clustered event bus: " + eventBus);
+        } else {
+          System.out.println("Failed: " + res.cause());
+        }
+      });
   }
 
   public void example13() {
@@ -111,15 +117,17 @@ public class EventBusExamples {
             .setClientAuth(ClientAuth.REQUIRED)
         );
 
-    Vertx.clusteredVertx(options, res -> {
-      if (res.succeeded()) {
-        Vertx vertx = res.result();
-        EventBus eventBus = vertx.eventBus();
-        System.out.println("We now have a clustered event bus: " + eventBus);
-      } else {
-        System.out.println("Failed: " + res.cause());
-      }
-    });
+    Vertx
+      .clusteredVertx(options)
+      .onComplete(res -> {
+        if (res.succeeded()) {
+          Vertx vertx = res.result();
+          EventBus eventBus = vertx.eventBus();
+          System.out.println("We now have a clustered event bus: " + eventBus);
+        } else {
+          System.out.println("Failed: " + res.cause());
+        }
+      });
   }
 
   public void example14() {
@@ -129,15 +137,17 @@ public class EventBusExamples {
             .setClusterPublicPort(1234)
         );
 
-    Vertx.clusteredVertx(options, res -> {
-      if (res.succeeded()) {
-        Vertx vertx = res.result();
-        EventBus eventBus = vertx.eventBus();
-        System.out.println("We now have a clustered event bus: " + eventBus);
-      } else {
-        System.out.println("Failed: " + res.cause());
-      }
-    });
+    Vertx
+      .clusteredVertx(options)
+      .onComplete(res -> {
+        if (res.succeeded()) {
+          Vertx vertx = res.result();
+          EventBus eventBus = vertx.eventBus();
+          System.out.println("We now have a clustered event bus: " + eventBus);
+        } else {
+          System.out.println("Failed: " + res.cause());
+        }
+      });
   }
 
 

@@ -101,13 +101,15 @@ public class StreamsExamples {
     server.connectHandler(sock -> {
 
       // Pipe the socket providing an handler to be notified of the result
-      sock.pipeTo(sock, ar -> {
-        if (ar.succeeded()) {
-          System.out.println("Pipe succeeded");
-        } else {
-          System.out.println("Pipe failed");
-        }
-      });
+      sock
+        .pipeTo(sock)
+        .onComplete(ar -> {
+          if (ar.succeeded()) {
+            System.out.println("Pipe succeeded");
+          } else {
+            System.out.println("Pipe failed");
+          }
+        });
     }).listen();
   }
 
@@ -118,15 +120,16 @@ public class StreamsExamples {
       Pipe<Buffer> pipe = sock.pipe();
 
       // Open a destination file
-      fs.open("/path/to/file", new OpenOptions(), ar -> {
-        if (ar.succeeded()) {
-          AsyncFile file = ar.result();
+      fs.open("/path/to/file", new OpenOptions())
+        .onComplete(ar -> {
+          if (ar.succeeded()) {
+            AsyncFile file = ar.result();
 
-          // Pipe the socket to the file and close the file at the end
-          pipe.to(file);
-        } else {
-          sock.close();
-        }
+            // Pipe the socket to the file and close the file at the end
+            pipe.to(file);
+          } else {
+            sock.close();
+          }
       });
     }).listen();
   }
@@ -139,29 +142,31 @@ public class StreamsExamples {
         Pipe<Buffer> pipe = request.pipe();
 
         // Open a destination file
-        fs.open("/path/to/file", new OpenOptions(), ar -> {
-          if (ar.succeeded()) {
-            AsyncFile file = ar.result();
+        fs.open("/path/to/file", new OpenOptions())
+          .onComplete(ar -> {
+            if (ar.succeeded()) {
+              AsyncFile file = ar.result();
 
-            // Pipe the socket to the file and close the file at the end
-            pipe.to(file);
-          } else {
-            // Close the pipe and resume the request, the body buffers will be discarded
-            pipe.close();
+              // Pipe the socket to the file and close the file at the end
+              pipe.to(file);
+            } else {
+              // Close the pipe and resume the request, the body buffers will be discarded
+              pipe.close();
 
-            // Send an error response
-            request.response().setStatusCode(500).end();
-          }
-        });
+              // Send an error response
+              request.response().setStatusCode(500).end();
+            }
+          });
       }).listen(8080);
   }
 
   public void pipe9(AsyncFile src, AsyncFile dst) {
     src.pipe()
       .endOnSuccess(false)
-      .to(dst, rs -> {
+      .to(dst)
+      .onComplete(rs -> {
         // Append some text and close the file
         dst.end(Buffer.buffer("done"));
-    });
+      });
   }
 }

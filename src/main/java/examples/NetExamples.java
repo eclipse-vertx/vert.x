@@ -56,25 +56,29 @@ public class NetExamples {
   public void example5(Vertx vertx) {
 
     NetServer server = vertx.createNetServer();
-    server.listen(1234, "localhost", res -> {
-      if (res.succeeded()) {
-        System.out.println("Server is now listening!");
-      } else {
-        System.out.println("Failed to bind!");
-      }
-    });
+    server
+      .listen(1234, "localhost")
+      .onComplete(res -> {
+        if (res.succeeded()) {
+          System.out.println("Server is now listening!");
+        } else {
+          System.out.println("Failed to bind!");
+        }
+      });
   }
 
   public void example5_1(Vertx vertx) {
 
     NetServer server = vertx.createNetServer();
-    server.listen(0, "localhost", res -> {
-      if (res.succeeded()) {
-        System.out.println("Server is now listening on actual port: " + server.actualPort());
-      } else {
-        System.out.println("Failed to bind!");
-      }
-    });
+    server
+      .listen(0, "localhost")
+      .onComplete(res -> {
+        if (res.succeeded()) {
+          System.out.println("Server is now listening on actual port: " + server.actualPort());
+        } else {
+          System.out.println("Failed to bind!");
+        }
+      });
   }
 
   public void example6(Vertx vertx) {
@@ -113,13 +117,15 @@ public class NetExamples {
 
   public void example9(NetServer server) {
 
-    server.close(res -> {
-      if (res.succeeded()) {
-        System.out.println("Server is now closed");
-      } else {
-        System.out.println("close failed");
-      }
-    });
+    server
+      .close()
+      .onComplete(res -> {
+        if (res.succeeded()) {
+          System.out.println("Server is now closed");
+        } else {
+          System.out.println("close failed");
+        }
+      });
   }
 
   public void example9_1(NetSocket socket) {
@@ -172,14 +178,16 @@ public class NetExamples {
 
     NetClientOptions options = new NetClientOptions().setConnectTimeout(10000);
     NetClient client = vertx.createNetClient(options);
-    client.connect(4321, "localhost", res -> {
-      if (res.succeeded()) {
-        System.out.println("Connected!");
-        NetSocket socket = res.result();
-      } else {
-        System.out.println("Failed to connect: " + res.cause().getMessage());
-      }
-    });
+    client
+      .connect(4321, "localhost")
+      .onComplete(res -> {
+        if (res.succeeded()) {
+          System.out.println("Connected!");
+          NetSocket socket = res.result();
+        } else {
+          System.out.println("Failed to connect: " + res.cause().getMessage());
+        }
+      });
   }
 
   public void example16(Vertx vertx) {
@@ -619,13 +627,15 @@ public class NetExamples {
       .setTrustOptions(certificate.trustOptions());
 
     NetClient client = vertx.createNetClient(clientOptions);
-    client.connect(1234, "localhost", ar -> {
-      if (ar.succeeded()) {
-        ar.result().handler(buffer -> System.out.println(buffer));
-      } else {
-        System.err.println("Woops: " + ar.cause().getMessage());
-      }
-    });
+    client
+      .connect(1234, "localhost")
+      .onComplete(ar -> {
+        if (ar.succeeded()) {
+          ar.result().handler(buffer -> System.out.println(buffer));
+        } else {
+          System.err.println("Woops: " + ar.cause().getMessage());
+        }
+      });
   }
 
   public void example49() {
@@ -688,13 +698,15 @@ public class NetExamples {
     );
 
     // Connect to 'localhost' and present 'server.name' server name
-    client.connect(1234, "localhost", "server.name", res -> {
-      if (res.succeeded()) {
-        System.out.println("Connected!");
-        NetSocket socket = res.result();
-      } else {
-        System.out.println("Failed to connect: " + res.cause().getMessage());
-      }
-    });
+    client
+      .connect(1234, "localhost", "server.name")
+      .onComplete(res -> {
+        if (res.succeeded()) {
+          System.out.println("Connected!");
+          NetSocket socket = res.result();
+        } else {
+          System.out.println("Failed to connect: " + res.cause().getMessage());
+        }
+      });
   }
 }
