@@ -11,6 +11,8 @@ on:
       os:
         default: ubuntu-latest
         type: string
+      profile:
+        type: string
       deploy:
         type: boolean
 jobs:
