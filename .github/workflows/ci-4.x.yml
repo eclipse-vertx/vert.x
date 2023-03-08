@@ -1,4 +1,4 @@
-name: CI (4.x)
+name: vertx-core (4.x)
 on:
   push:
     branches:
