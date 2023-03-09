@@ -13,7 +13,6 @@ package io.vertx.core;
 
 import io.netty.channel.EventLoop;
 import io.vertx.core.impl.*;
-import io.vertx.core.impl.btc.BlockedThreadChecker;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
@@ -128,11 +127,11 @@ public class ContextTest extends VertxTestBase {
     context.executeBlocking(f -> {
       assertTrue(Context.isOnWorkerThread());
       f.complete(1 + 2);
-    }, r -> {
+    }).onComplete(onSuccess(r -> {
       assertTrue(Context.isOnEventLoopThread());
-      assertEquals(r.result(), 3);
+      assertEquals(r, 3);
       testComplete();
-    });
+    }));
     await();
   }
 
@@ -140,13 +139,14 @@ public class ContextTest extends VertxTestBase {
   public void testExecuteUnorderedBlocking() throws Exception {
     Context context = vertx.getOrCreateContext();
     context.executeBlocking(f -> {
-      assertTrue(Context.isOnWorkerThread());
-      f.complete(1 + 2);
-    }, false, r -> {
-      assertTrue(Context.isOnEventLoopThread());
-      assertEquals(r.result(), 3);
-      testComplete();
-    });
+        assertTrue(Context.isOnWorkerThread());
+        f.complete(1 + 2);
+      }, false)
+      .onComplete(onSuccess(r -> {
+        assertTrue(Context.isOnEventLoopThread());
+        assertEquals(r, 3);
+        testComplete();
+      }));
     await();
   }
 
@@ -155,10 +155,10 @@ public class ContextTest extends VertxTestBase {
     Context context = vertx.getOrCreateContext();
     context.<Void>runOnContext(v -> {
       Thread expected = Thread.currentThread();
-      context.executeBlocking(Promise::complete, r -> {
+      context.executeBlocking(Promise::complete).onComplete(onSuccess(r -> {
         assertSame(expected, Thread.currentThread());
         testComplete();
-      });
+      }));
     });
     await();
   }
@@ -179,11 +179,11 @@ public class ContextTest extends VertxTestBase {
           }
           fut.complete();
         }).start();
-      }, r -> {
+      }).onComplete(onSuccess(r -> {
         assertSame(context, Vertx.currentContext());
         assertSame(expected, Thread.currentThread());
         testComplete();
-      });
+      }));
     });
     await();
   }
@@ -252,7 +252,7 @@ public class ContextTest extends VertxTestBase {
         @Override
         public void start() throws Exception {
         }
-      }, ar -> {
+      }).onComplete(ar -> {
         throw failure;
       });
     });
@@ -273,41 +273,10 @@ public class ContextTest extends VertxTestBase {
         public void start(Promise<Void> startPromise) throws Exception {
           context.runOnContext(startPromise::complete);
         }
-      }, ar -> {
+      }).onComplete(ar -> {
         throw failure;
       });
     });
-    await();
-  }
-
-  @Test
-  public void testExceptionInExecutingBlockingWithContextExceptionHandler() {
-    RuntimeException expected = new RuntimeException("test");
-    Context context = vertx.getOrCreateContext();
-    context.exceptionHandler(t -> {
-      assertSame(expected, t);
-      complete();
-    });
-    vertx.exceptionHandler(t -> {
-      fail("Should not be invoked");
-    });
-    context.executeBlocking(promise -> {
-      throw expected;
-    }, null);
-    await();
-  }
-
-  @Test
-  public void testExceptionInExecutingBlockingWithVertxExceptionHandler() {
-    RuntimeException expected = new RuntimeException("test");
-    Context context = vertx.getOrCreateContext();
-    vertx.exceptionHandler(t -> {
-      assertSame(expected, t);
-      complete();
-    });
-    context.executeBlocking(promise -> {
-      throw expected;
-    }, null);
     await();
   }
 
@@ -336,10 +305,7 @@ public class ContextTest extends VertxTestBase {
           } catch (InterruptedException e) {
             fut.fail(e);
           }
-        }, ar -> {
-          assertTrue(ar.succeeded());
-          complete();
-        });
+        }).onComplete(onSuccess(v -> complete()));
       }
     }, new DeploymentOptions().setWorker(worker));
     awaitLatch(latch1);
@@ -350,10 +316,9 @@ public class ContextTest extends VertxTestBase {
         vertx.executeBlocking(fut -> {
           latch3.countDown();
           fut.complete();
-        }, ar -> {
-          assertTrue(ar.succeeded());
+        }).onComplete(onSuccess(v -> {
           complete();
-        });
+        }));
       }
     }, new DeploymentOptions().setWorker(worker));
     awaitLatch(latch3);
@@ -511,10 +476,10 @@ public class ContextTest extends VertxTestBase {
 
     CountDownLatch latch4 = new CountDownLatch(1);
     duplicated.runOnContext(v -> {
-      vertx.executeBlocking(Promise::complete, res -> {
+      vertx.executeBlocking(Promise::complete).onComplete(onSuccess(res -> {
         assertSame(duplicated, Vertx.currentContext());
         latch4.countDown();
-      });
+      }));
     });
     awaitLatch(latch4);
   }
