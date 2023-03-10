@@ -15,15 +15,11 @@ import io.netty.handler.ssl.JdkSslContext;
 import io.netty.handler.ssl.OpenSslContext;
 import io.netty.handler.ssl.OpenSslSessionContext;
 import io.netty.handler.ssl.SslContext;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.net.JdkSSLEngineOptions;
 import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.core.net.SSLEngineOptions;
-import io.vertx.core.http.HttpTestBase;
 import io.vertx.core.net.impl.SslContextProvider;
 import io.vertx.test.tls.Cert;
 import org.junit.Test;
@@ -120,12 +116,12 @@ public class SSLEngineTest extends HttpTestBase {
       .setUseAlpn(useAlpn)
       .setTrustAll(true)
       .setProtocolVersion(version));
-    client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", onSuccess(req -> {
-      req.send(onSuccess(resp -> {
-        assertEquals(200, resp.statusCode());
-        testComplete();
-      }));
-    }));
+    client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath")
+      .compose(req -> req
+        .send()
+        .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+        .compose(HttpClientResponse::end))
+      .onComplete(onSuccess(v -> testComplete()));
     await();
   }
 }

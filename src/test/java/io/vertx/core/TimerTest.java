@@ -23,9 +23,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -444,11 +442,9 @@ public class TimerTest extends VertxTestBase {
       public void start() {
         timer.set(f.get());
       }
-    }, onSuccess(deployment -> {
-      vertx.undeploy(deployment, v -> {
-        assertFalse(vertx.cancelTimer(timer.get()));
-        testComplete();
-      });
+    }).compose(deployment -> vertx.undeploy(deployment)).onComplete(onSuccess(v -> {
+      assertFalse(vertx.cancelTimer(timer.get()));
+      testComplete();
     }));
     await();
   }
@@ -539,7 +535,7 @@ public class TimerTest extends VertxTestBase {
           complete();
         });
         context.runOnContext(v -> {
-          vertx.undeploy(context.deploymentID(), onSuccess(ar -> {
+          vertx.undeploy(context.deploymentID()).onComplete(onSuccess(ar -> {
             ((ContextInternal)context).setTimer(1, id -> {
               complete();
             });
