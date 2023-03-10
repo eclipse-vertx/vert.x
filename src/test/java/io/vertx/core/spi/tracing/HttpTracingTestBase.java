@@ -41,12 +41,11 @@ public abstract class HttpTracingTestBase extends HttpTestBase {
     ctx.runOnContext(v -> {
       Span rootSpan = tracer.newTrace();
       tracer.activate(rootSpan);
-      client.request(HttpMethod.GET, 8080, "localhost", "/1", onSuccess(req -> {
-        req.send(onSuccess(resp -> {
+      client.request(HttpMethod.GET, 8080, "localhost", "/1")
+        .compose(HttpClientRequest::send).onComplete(onSuccess(resp -> {
           assertEquals(rootSpan, tracer.activeSpan());
           assertEquals(200, resp.statusCode());
         }));
-      }));
     });
     waitUntil(() -> tracer.getFinishedSpans().size() == 2);
     assertSingleTrace(tracer.getFinishedSpans());
@@ -59,17 +58,17 @@ public abstract class HttpTracingTestBase extends HttpTestBase {
       switch (req.path()) {
         case "/1": {
           vertx.setTimer(10, id1 -> {
-            client.request(HttpMethod.GET, 8080, "localhost", "/2", onSuccess(req1 -> {
-              req1.send(onSuccess(resp1 -> {
+            client
+              .request(HttpMethod.GET, 8080, "localhost", "/2")
+              .compose(HttpClientRequest::send)
+              .onComplete(onSuccess(resp1 -> {
                 vertx.setTimer(10, id2 -> {
-                  client.request(HttpMethod.GET, 8080, "localhost", "/2", onSuccess(req2 -> {
-                    req2.send(onSuccess(resp -> {
-                      req.response().end();
-                    }));
-                  }));
+                  client
+                    .request(HttpMethod.GET, 8080, "localhost", "/2")
+                    .compose(HttpClientRequest::send)
+                    .onComplete(onSuccess(resp2 -> req.response().end()));
                 });
               }));
-            }));
           });
           break;
         }
@@ -87,14 +86,15 @@ public abstract class HttpTracingTestBase extends HttpTestBase {
     ctx.runOnContext(v -> {
       Span rootSpan = tracer.newTrace();
       tracer.activate(rootSpan);
-      client.request(HttpMethod.GET, 8080, "localhost", "/1", onSuccess(req -> {
-        req.send(onSuccess(resp -> {
-          resp.endHandler(v2 -> {
-            assertEquals(rootSpan, tracer.activeSpan());
-            assertEquals(200, resp.statusCode());
-          });
+      client
+        .request(HttpMethod.GET, 8080, "localhost", "/1")
+        .compose(req -> req
+          .send()
+          .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+          .compose(HttpClientResponse::end))
+        .onComplete(onSuccess(v2 -> {
+          assertEquals(rootSpan, tracer.activeSpan());
         }));
-      }));
     });
     // client request to /1, server request /1, client request /2, server request /2
     waitUntil(() -> tracer.getFinishedSpans().size() == 6);
@@ -108,11 +108,11 @@ public abstract class HttpTracingTestBase extends HttpTestBase {
       switch (serverReq.path()) {
         case "/1": {
           vertx.setTimer(10, id -> {
-            client.request(HttpMethod.GET, 8080, "localhost", "/2", onSuccess(clientReq -> {
-              clientReq.send(onSuccess(resp -> {
+            client.request(HttpMethod.GET, 8080, "localhost", "/2")
+              .compose(HttpClientRequest::send)
+              .onComplete(onSuccess(resp -> {
                 serverReq.response().end();
               }));
-            }));
           });
           break;
         }
@@ -131,12 +131,12 @@ public abstract class HttpTracingTestBase extends HttpTestBase {
     ctx.runOnContext(v -> {
       Span rootSpan = tracer.newTrace();
       tracer.activate(rootSpan);
-      client.request(HttpMethod.GET, 8080, "localhost", "/1", onSuccess(req -> {
-        req.send(onSuccess(resp -> {
+      client.request(HttpMethod.GET, 8080, "localhost", "/1")
+        .compose(HttpClientRequest::send)
+        .onComplete(onSuccess(resp -> {
           assertEquals(rootSpan, tracer.activeSpan());
           assertEquals(200, resp.statusCode());
         }));
-      }));
     });
 
 
