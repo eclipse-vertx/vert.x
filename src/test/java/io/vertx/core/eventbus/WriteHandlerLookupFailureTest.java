@@ -50,7 +50,7 @@ public final class WriteHandlerLookupFailureTest extends VertxTestBase {
     new VertxBuilder(options).init().clusterNodeSelector(nodeSelector).clusteredVertx(onSuccess(node -> {
       vertx = node;
       MessageProducer<String> sender = vertx.eventBus().sender("foo");
-      sender.write("the_string", onFailure(err -> {
+      sender.write("the_string").onComplete(onFailure(err -> {
         assertSame(cause, err);
         testComplete();
       }));
