@@ -34,7 +34,7 @@ public class ReplyFailureErrorTest extends VertxTestBase {
       fail("Should not receive message");
     }).completionHandler(onSuccess(v -> {
       DeliveryOptions options = new DeliveryOptions().setCodecName(codec.name());
-      vertices[0].eventBus().request("foo", new MyPOJO("bar"), options, onFailure(t -> {
+      vertices[0].eventBus().request("foo", new MyPOJO("bar"), options).onComplete(onFailure(t -> {
         assertThat(t, instanceOf(ReplyException.class));
         ReplyException e = (ReplyException) t;
         assertSame(ReplyFailure.ERROR, e.failureType());

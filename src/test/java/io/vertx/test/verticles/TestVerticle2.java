@@ -39,7 +39,7 @@ public class TestVerticle2 extends AbstractVerticle {
 
   @Override
   public void stop(Promise<Void> stopPromise) throws Exception {
-    vertx.eventBus().request("tvstopped", "stopped", reply -> {
+    vertx.eventBus().request("tvstopped", "stopped").onComplete(reply -> {
       stopPromise.complete(null);
     });
   }
