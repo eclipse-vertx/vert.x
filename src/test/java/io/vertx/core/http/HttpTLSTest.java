@@ -1271,8 +1271,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
           });
         }
       });
-      server.listen(ar -> {
-        assertTrue(ar.succeeded());
+      server.listen().onComplete(onSuccess(v -> {
         String httpHost;
         if (connectHostname != null) {
           httpHost = connectHostname;
@@ -1306,7 +1305,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
             }
           });
         });
-        fut.onSuccess(v -> {
+        fut.onSuccess(v2 -> {
           assertTrue(shouldPass);
           complete();
         });
@@ -1314,7 +1313,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
           assertFalse("Should not fail " + err.getMessage(), shouldPass);
           complete();
         });
-      });
+      }));
       await();
       return this;
     }
@@ -1478,7 +1477,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
     server.requestHandler(req -> {
     });
     AtomicReference<Throwable> failure = new AtomicReference<>();
-    server.listen(onFailure(failure::set));
+    server.listen().onComplete(onFailure(failure::set));
     assertWaitUntil(() -> failure.get() != null);
     Throwable cause = failure.get();
     String exceptionMessage = cause.getMessage();
@@ -1509,7 +1508,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
     clientOptions.setSsl(true);
     clientOptions.addCrlPath("/invalid.pem");
     HttpClient client = vertx.createHttpClient(clientOptions);
-    client.request(HttpMethod.GET, 9292, "localhost", "/", onFailure(err -> {
+    client.request(HttpMethod.GET, 9292, "localhost", "/").onComplete(onFailure(err -> {
       assertEquals(NoSuchFileException.class, TestUtils.rootCause(err).getClass());
       testComplete();
     }));
@@ -1650,9 +1649,9 @@ public abstract class HttpTLSTest extends HttpTestBase {
     client = createHttpClient(new HttpClientOptions().setKeepAlive(false).setSsl(true).setTrustOptions(Trust.SERVER_JKS.get()));
     request.get().onComplete(onSuccess(body1 -> {
       assertEquals("Hello World", body1.toString());
-      server.updateSSLOptions(new SSLOptions().setKeyCertOptions(Cert.SERVER_JKS_ROOT_CA.get()), onSuccess(v -> {
+      server.updateSSLOptions(new SSLOptions().setKeyCertOptions(Cert.SERVER_JKS_ROOT_CA.get())).onComplete(onSuccess(v -> {
         request.get().onComplete(onFailure(err -> {
-          client.updateSSLOptions(new SSLOptions().setTrustOptions(Trust.SERVER_JKS_ROOT_CA.get()), onSuccess(v2 -> {
+          client.updateSSLOptions(new SSLOptions().setTrustOptions(Trust.SERVER_JKS_ROOT_CA.get())).onComplete(onSuccess(v2 -> {
             request.get().onComplete(onSuccess(body2 -> {
               assertEquals("Hello World", body2.toString());
               testComplete();
