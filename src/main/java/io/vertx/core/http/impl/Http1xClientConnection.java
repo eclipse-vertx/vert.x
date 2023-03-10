@@ -1020,6 +1020,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
           WebSocketImpl w = new WebSocketImpl(
             context,
             Http1xClientConnection.this,
+            ar.result(),
             version != WebSocketVersion.V00,
             options.getWebSocketClosingTimeout(),
             options.getMaxWebSocketFrameSize(),
@@ -1039,15 +1040,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
             webSocket.setMetric(metrics.connected(webSocket));
           }
         }
-        getContext().emit(wsRes, res -> {
-          if (res.succeeded()) {
-            webSocket.headers(ar.result());
-          }
-          promise.handle(res);
-          if (res.succeeded()) {
-            webSocket.headers(null);
-          }
-        });
+        getContext().emit(wsRes, promise);
       });
       p.addBefore("handler", "handshakeCompleter", handshakeInboundHandler);
       handshaker.handshake(chctx.channel());
