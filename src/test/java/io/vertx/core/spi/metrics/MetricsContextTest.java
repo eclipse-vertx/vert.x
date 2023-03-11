@@ -141,7 +141,7 @@ public class MetricsContextTest extends VertxTestBase {
         response.setStatusCode(200).setChunked(true).end("bye");
         response.close();
       });
-      server.listen(8080, "localhost", onSuccess(s -> {
+      server.listen(8080, "localhost").onComplete(onSuccess(s -> {
         expectedThread.set(Thread.currentThread());
         expectedContext.set(Vertx.currentContext());
         latch.countDown();
@@ -151,7 +151,7 @@ public class MetricsContextTest extends VertxTestBase {
     HttpClient client = vertx.createHttpClient();
     client.connectionHandler(conn -> {
       conn.closeHandler(v -> {
-        vertx.close(v4 -> {
+        vertx.close().onComplete(v4 -> {
           assertTrue(requestBeginCalled.get());
           assertTrue(responseEndCalled.get());
           assertTrue(bytesReadCalled.get());
@@ -233,14 +233,14 @@ public class MetricsContextTest extends VertxTestBase {
         response.end();
       });
     });
-    server.listen(8080, "localhost", onSuccess(s -> {
+    server.listen(8080, "localhost").onComplete(onSuccess(s -> {
       latch.countDown();
     }));
     awaitLatch(latch);
     HttpClient client = vertx.createHttpClient(new HttpClientOptions().setPipelining(true).setMaxPoolSize(1));
     vertx.runOnContext(v -> {
       for (int i = 0;i < 2;i++) {
-        client.request(HttpMethod.GET, 8080, "localhost", "/" + (i + 1), onSuccess(req -> {
+        client.request(HttpMethod.GET, 8080, "localhost", "/" + (i + 1)).onComplete(onSuccess(req -> {
           req.send().compose(HttpClientResponse::body).onComplete(onSuccess(body -> {
             complete();
           }));
@@ -336,7 +336,7 @@ public class MetricsContextTest extends VertxTestBase {
           ws.write(Buffer.buffer("bye"));
         });
       });
-      server.listen(8080, "localhost", onSuccess(s -> {
+      server.listen(8080, "localhost").onComplete(onSuccess(s -> {
         expectedThread.set(Thread.currentThread());
         expectedContext.set(Vertx.currentContext());
         latch.countDown();
@@ -344,10 +344,10 @@ public class MetricsContextTest extends VertxTestBase {
     });
     awaitLatch(latch);
     HttpClient client = vertx.createHttpClient();
-    client.webSocket(8080, "localhost", "/", onSuccess(ws -> {
+    client.webSocket(8080, "localhost", "/").onComplete(onSuccess(ws -> {
       ws.handler(buf -> {
         ws.closeHandler(v -> {
-          vertx.close(v4 -> {
+          vertx.close().onComplete(v4 -> {
             assertTrue(webSocketConnected.get());
             assertTrue(webSocketDisconnected.get());
             assertTrue(bytesReadCalled.get());
@@ -436,11 +436,7 @@ public class MetricsContextTest extends VertxTestBase {
         resp.close();
       });
     });
-    CountDownLatch latch = new CountDownLatch(1);
-    server.listen(8080, "localhost", onSuccess(s -> {
-      latch.countDown();
-    }));
-    awaitLatch(latch);
+    awaitFuture(server.listen(8080, "localhost"));
     Context ctx = contextFactory.apply(vertx);
     ctx.runOnContext(v1 -> {
       expectedThread.set(Thread.currentThread());
@@ -451,7 +447,7 @@ public class MetricsContextTest extends VertxTestBase {
         .compose(req -> req.send(Buffer.buffer("hello")).onComplete(onSuccess(resp -> {
           executeInVanillaThread(() -> {
             client.close();
-            vertx.close(v2 -> {
+            vertx.close().onComplete(v2 -> {
               assertEquals("/the-uri", requestBeginCalled.get());
               assertTrue(responseEndCalled.get());
               assertTrue(socketConnectedCalled.get());
@@ -535,20 +531,16 @@ public class MetricsContextTest extends VertxTestBase {
         ws.write(Buffer.buffer("bye"));
       });
     });
-    CountDownLatch latch = new CountDownLatch(1);
-    server.listen(8080, "localhost", onSuccess(s -> {
-      latch.countDown();
-    }));
-    awaitLatch(latch);
+    awaitFuture(server.listen(8080, "localhost"));
     Context ctx = contextFactory.apply(vertx);
     ctx.runOnContext(v1 -> {
       HttpClient client = vertx.createHttpClient();
-      client.webSocket(8080, "localhost", "/", onSuccess(ws -> {
+      client.webSocket(8080, "localhost", "/").onComplete(onSuccess(ws -> {
         ws.handler(buf -> {
           ws.closeHandler(v2 -> {
             executeInVanillaThread(() -> {
               client.close();
-              vertx.close(v3 -> {
+              vertx.close().onComplete(v3 -> {
                 assertTrue(webSocketConnected.get());
                 assertTrue(webSocketDisconnected.get());
                 assertTrue(socketConnectedCalled.get());
@@ -623,7 +615,7 @@ public class MetricsContextTest extends VertxTestBase {
           so.write("bye");
         });
       });
-      server.listen(1234, "localhost", onSuccess(s -> {
+      server.listen(1234, "localhost").onComplete(onSuccess(s -> {
         expectedThread.set(Thread.currentThread());
         expectedContext.set(Vertx.currentContext());
         assertSame(expectedThread.get(), Thread.currentThread());
@@ -632,11 +624,11 @@ public class MetricsContextTest extends VertxTestBase {
     });
     awaitLatch(latch);
     NetClient client = vertx.createNetClient();
-    client.connect(1234, "localhost", onSuccess(so -> {
+    client.connect(1234, "localhost").onComplete(onSuccess(so -> {
       so.handler(buf -> {
         so.closeHandler(v -> {
           executeInVanillaThread(() -> {
-            vertx.close(v4 -> {
+            vertx.close().onComplete(v4 -> {
               assertTrue(bytesReadCalled.get());
               assertTrue(bytesWrittenCalled.get());
               assertTrue(socketConnectedCalled.get());
@@ -699,7 +691,6 @@ public class MetricsContextTest extends VertxTestBase {
         };
       }
     };
-    CountDownLatch latch = new CountDownLatch(1);
     Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)));
     Context ctx = contextFactory.apply(vertx);
     NetServer server = vertx.createNetServer().connectHandler(so -> {
@@ -707,15 +698,12 @@ public class MetricsContextTest extends VertxTestBase {
         so.write("bye");
       });
     });
-    server.listen(1234, "localhost", onSuccess(s -> {
-      latch.countDown();
-    }));
-    awaitLatch(latch);
+    awaitFuture(server.listen(1234, "localhost"));
     ctx.runOnContext(v1 -> {
       NetClient client = vertx.createNetClient();
       expectedThread.set(Thread.currentThread());
       expectedContext.set(Vertx.currentContext());
-      client.connect(1234, "localhost", onSuccess(so -> {
+      client.connect(1234, "localhost").onComplete(onSuccess(so -> {
         so.handler(buf -> {
           so.closeHandler(v -> {
             assertTrue(bytesReadCalled.get());
@@ -724,7 +712,7 @@ public class MetricsContextTest extends VertxTestBase {
             assertTrue(socketDisconnectedCalled.get());
             executeInVanillaThread(() -> {
               client.close();
-              vertx.close(v4 -> {
+              vertx.close().onComplete(v4 -> {
                 assertTrue(closeCalled.get());
                 testComplete();
               });
@@ -784,14 +772,14 @@ public class MetricsContextTest extends VertxTestBase {
       expectedThread.set(Thread.currentThread());
       expectedContext.set(Vertx.currentContext());
       DatagramSocket socket = vertx.createDatagramSocket();
-      socket.listen(1234, "localhost", onSuccess(v2 -> {
+      socket.listen(1234, "localhost").onComplete(onSuccess(v2 -> {
         socket.handler(packet -> {
           assertTrue(listening.get());
           assertTrue(bytesReadCalled.get());
           assertTrue(bytesWrittenCalled.get());
           executeInVanillaThread(socket::close);
         });
-        socket.send(Buffer.buffer("msg"), 1234, "localhost", onSuccess(v3 -> {}));
+        socket.send(Buffer.buffer("msg"), 1234, "localhost");
       }));
     });
     awaitLatch(closeCalled);
@@ -814,7 +802,7 @@ public class MetricsContextTest extends VertxTestBase {
     Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)));
     vertx.eventBus();
     executeInVanillaThread(() -> {
-      vertx.close(onSuccess(v -> {
+      vertx.close().onComplete(onSuccess(v -> {
         assertTrue(closeCalled.get());
         testComplete();
       }));
@@ -873,7 +861,7 @@ public class MetricsContextTest extends VertxTestBase {
         Thread consumerThread = Thread.currentThread();
         executeInVanillaThread(() -> {
           vertx.getOrCreateContext().runOnContext(v2 -> {
-            consumer.unregister(onSuccess(v3 -> {
+            consumer.unregister().onComplete(onSuccess(v3 -> {
               assertTrue(registeredCalled.get());
               assertSame(t, scheduleThread.get());
               assertSame(consumerThread, deliveredThread.get());
