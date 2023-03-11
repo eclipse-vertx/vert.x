@@ -244,7 +244,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
   @Test
   public void testSubsRemovedForClosedNode() throws Exception {
     testSubsRemoved(latch -> {
-      vertices[1].close(onSuccess(v -> {
+      vertices[1].close().onComplete(onSuccess(v -> {
         latch.countDown();
       }));
     });
@@ -369,7 +369,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     vertices[1].eventBus().consumer(ADDRESS1).handler(msg -> {
       msg.reply("pong", new DeliveryOptions().setLocalOnly(true));
     }).completionHandler(onSuccess(v -> {
-      vertices[0].eventBus().request(ADDRESS1, "ping", new DeliveryOptions().setSendTimeout(500), onSuccess(msg -> testComplete()));
+      vertices[0].eventBus().request(ADDRESS1, "ping", new DeliveryOptions().setSendTimeout(500)).onComplete(onSuccess(msg -> testComplete()));
     }));
     await();
   }
@@ -386,7 +386,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
       assertEquals(0, val);
     });
     consumer.handler(msg -> {});
-    consumer.unregister(onSuccess(v -> {
+    consumer.unregister().onComplete(onSuccess(v -> {
       int val = completionCount.getAndIncrement();
       assertEquals(1, val);
       testComplete();
@@ -424,7 +424,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
       .completionHandler(onSuccess(v1 -> updateLatch.countDown()));
     awaitLatch(updateLatch);
     MessageProducer<String> producer = vertices[0].eventBus().sender(ADDRESS1);
-    producer.write("body", onSuccess(v2 -> complete()));
+    producer.write("body").onComplete(onSuccess(v2 -> complete()));
     await();
   }
 
@@ -432,7 +432,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
   public void testSendWriteHandlerNoConsumer() {
     startNodes(2);
     MessageProducer<String> producer = vertices[0].eventBus().sender(ADDRESS1);
-    producer.write("body", onFailure(err -> {
+    producer.write("body").onComplete(onFailure(err -> {
       assertTrue(err instanceof ReplyException);
       ReplyException replyException = (ReplyException) err;
       assertEquals(-1, replyException.failureCode());
@@ -450,7 +450,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
       .consumer(ADDRESS1, msg -> complete())
       .completionHandler(onSuccess(v1 -> {
         MessageProducer<String> producer = vertices[0].eventBus().publisher(ADDRESS1);
-        producer.write("body", onSuccess(v -> complete()));
+        producer.write("body").onComplete(onSuccess(v -> complete()));
       }));
     await();
   }
@@ -459,7 +459,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
   public void testPublishWriteHandlerNoConsumer() {
     startNodes(2);
     MessageProducer<String> producer = vertices[0].eventBus().publisher(ADDRESS1);
-    producer.write("body", onFailure(err -> {
+    producer.write("body").onComplete(onFailure(err -> {
       assertTrue(err instanceof ReplyException);
       ReplyException replyException = (ReplyException) err;
       assertEquals(-1, replyException.failureCode());
@@ -481,7 +481,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
       .consumer(ADDRESS1, msg -> {})
       .completionHandler(onSuccess(v1 -> {
         MessageProducer<String> producer = vertices[0].eventBus().sender(ADDRESS1);
-        producer.write("body", onFailure(err -> {
+        producer.write("body").onComplete(onFailure(err -> {
           testComplete();
         }));
       }));
