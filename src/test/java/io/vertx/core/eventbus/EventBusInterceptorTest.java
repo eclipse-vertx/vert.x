@@ -218,11 +218,11 @@ public class EventBusInterceptorTest extends VertxTestBase {
       assertEquals(1, cnt.get());
       msg.reply("echidna");
     });
-    eb.request("some-address", "armadillo", reply -> {
-      assertEquals("echidna", reply.result().body());
+    eb.request("some-address", "armadillo").onComplete(onSuccess(reply -> {
+      assertEquals("echidna", reply.body());
       assertEquals(2, cnt.get());
       testComplete();
-    });
+    }));
     await();
   }
 
@@ -247,11 +247,11 @@ public class EventBusInterceptorTest extends VertxTestBase {
       assertEquals(1, cnt.get());
       msg.reply("echidna");
     });
-    eb.request("some-address", "armadillo", reply -> {
-      assertEquals("echidna", reply.result().body());
+    eb.request("some-address", "armadillo").onComplete(onSuccess(reply -> {
+      assertEquals("echidna", reply.body());
       assertEquals(2, cnt.get());
       testComplete();
-    });
+    }));
     await();
   }
 
@@ -344,7 +344,7 @@ public class EventBusInterceptorTest extends VertxTestBase {
       complete();
     });
     if (reply) {
-      eb.request("foo", "bar", ar -> {
+      eb.request("foo", "bar").onComplete(ar -> {
         assertEquals(failure, ar.failed());
         assertSame(replyCtx.get(), Vertx.currentContext());
         complete();
