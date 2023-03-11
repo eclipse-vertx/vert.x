@@ -94,7 +94,7 @@ public class VertxTestBase extends AsyncTestBase {
   protected void close(List<Vertx> instances) throws Exception {
     CountDownLatch latch = new CountDownLatch(instances.size());
     for (Vertx clusteredVertx : instances) {
-      clusteredVertx.close(ar -> {
+      clusteredVertx.close().onComplete(ar -> {
         if (ar.failed()) {
           log.error("Failed to shutdown vert.x", ar.cause());
         }
@@ -130,7 +130,7 @@ public class VertxTestBase extends AsyncTestBase {
     if (created == null) {
       created = Collections.synchronizedList(new ArrayList<>());
     }
-    Vertx.clusteredVertx(options, event -> {
+    Vertx.clusteredVertx(options).onComplete(event -> {
       if (event.succeeded()) {
         created.add(event.result());
       }
@@ -219,7 +219,7 @@ public class VertxTestBase extends AsyncTestBase {
       public void start() throws Exception {
         fut.complete(context);
       }
-    }, new DeploymentOptions().setWorker(true), ar -> {
+    }, new DeploymentOptions().setWorker(true)).onComplete(ar -> {
       if (ar.failed()) {
         fut.completeExceptionally(ar.cause());
       }
