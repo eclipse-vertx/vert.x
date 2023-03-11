@@ -834,7 +834,7 @@ public class MetricsTest extends VertxTestBase {
       .setHost(host)
       .setURI(TestUtils.randomAlphaString(16))).onComplete(onSuccess(req -> {
       FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
-      req.connect(onSuccess(resp -> {
+      req.connect().onComplete(onSuccess(resp -> {
         assertEquals(200, resp.statusCode());
         clientMetric.set(metrics.getMetric(req));
         assertNotNull(clientMetric.get());
