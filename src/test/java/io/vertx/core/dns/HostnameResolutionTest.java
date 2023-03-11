@@ -124,11 +124,11 @@ public class HostnameResolutionTest extends VertxTestBase {
     });
     try {
       CountDownLatch listenLatch = new CountDownLatch(1);
-      server.listen(1234, hostname, onSuccess(s -> {
+      server.listen(1234, hostname).onComplete(onSuccess(s -> {
         listenLatch.countDown();
       }));
       awaitLatch(listenLatch);
-      client.connect(1234, hostname, onSuccess(so -> {
+      client.connect(1234, hostname).onComplete(onSuccess(so -> {
         Buffer buffer = Buffer.buffer();
         so.handler(buffer::appendBuffer);
         so.closeHandler(v -> {
@@ -152,12 +152,12 @@ public class HostnameResolutionTest extends VertxTestBase {
     });
     try {
       CountDownLatch listenLatch = new CountDownLatch(1);
-      server.listen(8080, "vertx.io", onSuccess(s -> {
+      server.listen(8080, "vertx.io").onComplete(onSuccess(s -> {
         listenLatch.countDown();
       }));
       awaitLatch(listenLatch);
-      client.request(HttpMethod.GET, 8080, "vertx.io", "/somepath", onSuccess(req -> {
-        req.send(onSuccess(resp -> {
+      client.request(HttpMethod.GET, 8080, "vertx.io", "/somepath").onComplete(onSuccess(req -> {
+        req.send().onComplete(onSuccess(resp -> {
           Buffer buffer = Buffer.buffer();
           resp.handler(buffer::appendBuffer);
           resp.endHandler(v -> {
@@ -321,7 +321,7 @@ public class HostnameResolutionTest extends VertxTestBase {
     NetServer server = vertx.createNetServer().connectHandler(so -> {
     });
     try {
-      server.listen(1234, "localhost", onSuccess(v -> listenLatch.countDown()));
+      server.listen(1234, "localhost").onComplete(onSuccess(v -> listenLatch.countDown()));
       awaitLatch(listenLatch);
       AtomicReference<Thread> channelThread = new AtomicReference<>();
       CountDownLatch connectLatch = new CountDownLatch(1);
@@ -466,7 +466,7 @@ public class HostnameResolutionTest extends VertxTestBase {
       server.connectHandler(so -> {
         so.end(Buffer.buffer("hello"));
       });
-      server.listen(ar -> {
+      server.listen().onComplete(ar -> {
         if (ar.succeeded()) {
           test3.complete(null);
         } else {
@@ -477,7 +477,7 @@ public class HostnameResolutionTest extends VertxTestBase {
 
       CompletableFuture<Void> test4 = new CompletableFuture<>();
       NetClient client = vertx.createNetClient();
-      client.connect(1234, "localhost", ar -> {
+      client.connect(1234, "localhost").onComplete(ar -> {
         if (ar.succeeded()) {
           test4.complete(null);
         } else {

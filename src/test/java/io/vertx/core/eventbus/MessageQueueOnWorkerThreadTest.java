@@ -139,7 +139,7 @@ public class MessageQueueOnWorkerThreadTest extends VertxTestBase {
             count--;
             prom.complete();
           }
-        }, ar -> vertx.runOnContext(v -> sendMessage()));
+        }).onComplete(ar -> vertx.runOnContext(v -> sendMessage()));
       } else {
         if (count > 0) {
           vertx.eventBus().send("foo", "bar");

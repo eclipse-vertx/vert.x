@@ -31,7 +31,7 @@ public class ExecuteBlockingTest extends VertxTestBase {
       } catch (Exception ignore) {
       }
       future.complete("done!");
-    }, onSuccess(res -> {
+    }).onComplete(onSuccess(res -> {
       assertEquals("done!", res);
       testComplete();
     }));
@@ -47,7 +47,7 @@ public class ExecuteBlockingTest extends VertxTestBase {
       } catch (Exception ignore) {
       }
       future.fail("failed!");
-    }, onFailure(t -> {
+    }).onComplete(onFailure(t -> {
       assertEquals("failed!", t.getMessage());
       testComplete();
     }));
@@ -59,7 +59,7 @@ public class ExecuteBlockingTest extends VertxTestBase {
 
     vertx.executeBlocking(future -> {
       throw new RuntimeException("rte");
-    }, onFailure(t -> {
+    }).onComplete(onFailure(t -> {
       assertEquals("rte", t.getMessage());
       testComplete();
     }));
@@ -88,7 +88,7 @@ public class ExecuteBlockingTest extends VertxTestBase {
           assertTrue(Context.isOnEventLoopThread());
           future.complete("done!");
         });
-      }, onSuccess(res -> {
+      }).onComplete(onSuccess(res -> {
         assertSame(ctx, vertx.getOrCreateContext());
         assertTrue(Thread.currentThread().getName().startsWith("vert.x-eventloop-thread"));
         assertFalse(Context.isOnWorkerThread());
@@ -110,11 +110,10 @@ public class ExecuteBlockingTest extends VertxTestBase {
     vertx.<String>executeBlocking(future -> {
       future.complete("whatever");
       blockingTCCL.set(Thread.currentThread().getContextClassLoader());
-    }, ar -> {
-      assertTrue(ar.succeeded());
-      assertEquals("whatever", ar.result());
+    }).onComplete(onSuccess(res -> {
+      assertEquals("whatever", res);
       latch.countDown();
-    });
+    }));
     assertSame(cl, Thread.currentThread().getContextClassLoader());
     awaitLatch(latch);
     assertSame(cl, blockingTCCL.get());
@@ -143,14 +142,13 @@ public class ExecuteBlockingTest extends VertxTestBase {
           } catch (Exception ignore) {
           }
           future.complete("done!");
-        }, false, onSuccess(res -> {
+        }, false).onComplete(onSuccess(res -> {
           assertSame(ctx, vertx.getOrCreateContext());
           assertTrue(Thread.currentThread().getName().startsWith("vert.x-eventloop-thread"));
           assertFalse(Context.isOnWorkerThread());
           assertTrue(Context.isOnEventLoopThread());
           assertEquals("done!", res);
           latch.countDown();
-
         }));
       }
     });

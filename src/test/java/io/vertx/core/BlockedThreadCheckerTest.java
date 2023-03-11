@@ -104,7 +104,7 @@ public class BlockedThreadCheckerTest extends VertxTestBase {
             fail();
           }
           testComplete();
-        }, ar -> {});
+        });
       }
     };
     // set warning threshold to 1s and the exception threshold as well

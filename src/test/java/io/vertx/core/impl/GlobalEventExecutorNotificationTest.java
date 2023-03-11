@@ -32,7 +32,7 @@ public class GlobalEventExecutorNotificationTest extends AsyncTestBase {
   public void after() throws Exception {
     if (vertx != null) {
       CountDownLatch latch = new CountDownLatch(1);
-      vertx.close(v -> latch.countDown());
+      vertx.close().onComplete(v -> latch.countDown());
       awaitLatch(latch);
     }
   }
@@ -64,8 +64,8 @@ public class GlobalEventExecutorNotificationTest extends AsyncTestBase {
 
     vertx.createNetServer().connectHandler(so -> {
       fail();
-    }).listen(1234, "localhost", onSuccess(v -> {
-      vertx.createNetClient(options).connect(1234, "localhost", onFailure(err -> {
+    }).listen(1234, "localhost").onComplete( onSuccess(v -> {
+      vertx.createNetClient(options).connect(1234, "localhost").onComplete(onFailure(err -> {
         assertSame(err, cause);
         testComplete();
       }));
@@ -87,7 +87,7 @@ public class GlobalEventExecutorNotificationTest extends AsyncTestBase {
 
     vertx.createNetServer()
       .connectHandler(so -> fail())
-      .listen(1234, "localhost", onFailure(err -> {
+      .listen(1234, "localhost").onComplete(onFailure(err -> {
       testComplete();
     }));
     await();
@@ -107,7 +107,7 @@ public class GlobalEventExecutorNotificationTest extends AsyncTestBase {
 
     vertx.createHttpServer()
       .requestHandler(req -> fail())
-      .listen(8080, "localhost", onFailure(err -> {
+      .listen(8080, "localhost").onComplete(onFailure(err -> {
       testComplete();
     }));
     await();

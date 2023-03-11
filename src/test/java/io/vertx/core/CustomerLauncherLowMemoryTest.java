@@ -134,7 +134,7 @@ public class CustomerLauncherLowMemoryTest {
           Thread.currentThread().interrupt();
           prom.fail(e);
         }
-      }, ar1 -> {
+      }).onComplete(ar1 -> {
         if (ar1.succeeded()) {
           arrays = ar1.result();
           context.owner().close();

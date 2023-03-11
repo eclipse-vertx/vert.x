@@ -42,10 +42,9 @@ public class CreateVertxTest extends VertxTestBase {
       assertNotNull(ar.result());
       assertTrue(ar.result().isClustered());
       Vertx v = ar.result();
-      v.close(ar2 -> {
-        assertTrue(ar2.succeeded());
+      v.close().onComplete(onSuccess(v2 -> {
         testComplete();
-      });
+      }));
     });
     await();
   }

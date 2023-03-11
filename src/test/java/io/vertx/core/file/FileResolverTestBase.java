@@ -255,7 +255,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
     assertTrue(file.exists());
     File cacheDir = file.getParentFile().getParentFile();
     assertTrue(cacheDir.exists());
-    vertx2.close(onSuccess(v -> {
+    vertx2.close().onComplete(onSuccess(v -> {
       assertFalse(cacheDir.exists());
       testComplete();
     }));
@@ -284,7 +284,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
       res.response()
         .sendFile("webroot/somefile.html")
         .onComplete(onSuccess(v -> complete()));
-    }).listen(onSuccess(res -> {
+    }).listen().onComplete(onSuccess(res -> {
       vertx.createHttpClient(new HttpClientOptions())
         .request(HttpMethod.GET, 8080, "localhost", "/")
         .compose(HttpClientRequest::send)

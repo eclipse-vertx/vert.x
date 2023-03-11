@@ -120,7 +120,7 @@ public class CommandTestBase {
       return;
     }
     CountDownLatch latch = new CountDownLatch(1);
-    vertx.close(ar -> {
+    vertx.close().onComplete(ar -> {
       latch.countDown();
     });
     awaitLatch(latch);
