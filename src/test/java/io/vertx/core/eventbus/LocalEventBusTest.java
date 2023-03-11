@@ -60,10 +60,9 @@ public class LocalEventBusTest extends EventBusTestBase {
   private void closeVertx() throws Exception {
     if (running) {
       CountDownLatch latch = new CountDownLatch(1);
-      vertx.close(ar -> {
-        assertTrue(ar.succeeded());
+      vertx.close().onComplete(onSuccess(v -> {
         latch.countDown();
-      });
+      }));
       assertTrue(latch.await(30, TimeUnit.SECONDS));
       running = false;
     }
@@ -82,20 +81,13 @@ public class LocalEventBusTest extends EventBusTestBase {
   @Test
   public void testArgumentValidation() throws Exception {
     assertNullPointerException(() -> eb.send(null, ""));
-    assertNullPointerException(() -> eb.request(null, "", handler -> {}));
     assertNullPointerException(() -> eb.send(null, "", new DeliveryOptions()));
-    assertNullPointerException(() -> eb.send("", "", (DeliveryOptions) null));
-    assertNullPointerException(() -> eb.request(null, "", new DeliveryOptions(), handler -> {}));
-    assertNullPointerException(() -> eb.request("", "", null, handler -> {}));
+    assertNullPointerException(() -> eb.send("", "", null));
     assertNullPointerException(() -> eb.publish(null, ""));
     assertNullPointerException(() -> eb.publish(null, "", new DeliveryOptions()));
     assertNullPointerException(() -> eb.publish("", "", null));
     assertNullPointerException(() -> eb.consumer(null));
-    assertNullPointerException(() -> eb.consumer(null, msg -> {}));
-    assertNullPointerException(() -> eb.consumer(ADDRESS1, null));
     assertNullPointerException(() -> eb.localConsumer(null));
-    assertNullPointerException(() -> eb.localConsumer(null, msg -> {}));
-    assertNullPointerException(() -> eb.localConsumer(ADDRESS1, null));
     assertNullPointerException(() -> eb.sender(null));
     assertNullPointerException(() -> eb.sender(null, new DeliveryOptions()));
     assertNullPointerException(() -> eb.publisher("", null));
@@ -141,8 +133,8 @@ public class LocalEventBusTest extends EventBusTestBase {
         });
         consumer = eb.<String>consumer(ADDRESS1).handler(msg -> {});
       }
-    }, onSuccess(deploymentID -> {
-      vertx.undeploy(deploymentID, onSuccess(v -> {
+    }).onComplete(onSuccess(deploymentID -> {
+      vertx.undeploy(deploymentID).onComplete(onSuccess(v -> {
         vertx.setTimer(10, id -> {
           testComplete();
         });
@@ -306,8 +298,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       testComplete();
     });
     long timeout = 1000;
-    eb.request(ADDRESS1, str, new DeliveryOptions().setSendTimeout(timeout), ar -> {
-    });
+    eb.request(ADDRESS1, str, new DeliveryOptions().setSendTimeout(timeout));
     await();
   }
 
@@ -319,7 +310,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       assertEquals(str, msg.body());
       msg.reply(reply);
     });
-    eb.request(ADDRESS1, str, onSuccess((Message<String> msg) -> {
+    eb.<String>request(ADDRESS1, str).onComplete(onSuccess((Message<String> msg) -> {
       assertEquals(reply, msg.body());
       testComplete();
     }));
@@ -333,12 +324,12 @@ public class LocalEventBusTest extends EventBusTestBase {
     String replyReply = TestUtils.randomUnicodeString(1000);
     eb.<String>consumer(ADDRESS1).handler((Message<String> msg) -> {
       assertEquals(str, msg.body());
-      msg.replyAndRequest(reply, onSuccess((Message<String> rep) -> {
+      msg.<String>replyAndRequest(reply).onComplete(onSuccess((Message<String> rep) -> {
         assertEquals(replyReply, rep.body());
         testComplete();
       }));
     });
-    eb.request(ADDRESS1, str, onSuccess((Message<String>msg) -> {
+    eb.<String>request(ADDRESS1, str).onComplete(onSuccess((Message<String>msg) -> {
       assertEquals(reply, msg.body());
       msg.reply(replyReply);
     }));
@@ -353,17 +344,15 @@ public class LocalEventBusTest extends EventBusTestBase {
       assertEquals(str, msg.body());
       long start = System.currentTimeMillis();
       long timeout = 1000;
-      msg.replyAndRequest(reply, new DeliveryOptions().setSendTimeout(timeout), ar -> {
+      msg.replyAndRequest(reply, new DeliveryOptions().setSendTimeout(timeout)).onComplete(onFailure(err -> {
         long now = System.currentTimeMillis();
-        assertFalse(ar.succeeded());
-        Throwable cause = ar.cause();
-        assertTrue(cause instanceof ReplyException);
-        ReplyException re = (ReplyException) cause;
+        assertTrue(err instanceof ReplyException);
+        ReplyException re = (ReplyException) err;
         assertEquals(-1, re.failureCode());
         assertEquals(ReplyFailure.TIMEOUT, re.failureType());
         assertTrue(now - start >= timeout);
         testComplete();
-      });
+      }));
     });
     eb.request(ADDRESS1, str, onSuccess((Message<String>msg) -> {
       assertEquals(reply, msg.body());
@@ -380,13 +369,11 @@ public class LocalEventBusTest extends EventBusTestBase {
     eb.<String>consumer(ADDRESS1).handler((Message<String> msg) -> {
       assertEquals(str, msg.body());
       long timeout = 1000;
-      msg.replyAndRequest(reply, new DeliveryOptions().setSendTimeout(timeout), ar -> {
-        assertTrue(ar.succeeded());
-        assertEquals(replyReply, ar.result().body());
+      msg.replyAndRequest(reply, new DeliveryOptions().setSendTimeout(timeout)).onComplete(onSuccess(r -> {
         testComplete();
-      });
+      }));
     });
-    eb.request(ADDRESS1, str, onSuccess((Message<String>msg) -> {
+    eb.<String>request(ADDRESS1, str).onComplete(onSuccess((Message<String>msg) -> {
       assertEquals(reply, msg.body());
       msg.reply(replyReply);
     }));
@@ -401,7 +388,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       msg.reply(23);
     });
     long timeout = 1000;
-    eb.request(ADDRESS1, str, new DeliveryOptions().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
+    eb.<Integer>request(ADDRESS1, str, new DeliveryOptions().setSendTimeout(timeout)).onComplete((AsyncResult<Message<Integer>> ar) -> {
       assertTrue(ar.succeeded());
       assertEquals(23, (int) ar.result().body());
       testComplete();
@@ -417,7 +404,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     });
     long timeout = 1000;
     long start = System.currentTimeMillis();
-    eb.request(ADDRESS1, str, new DeliveryOptions().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
+    eb.<Integer>request(ADDRESS1, str, new DeliveryOptions().setSendTimeout(timeout)).onComplete((AsyncResult<Message<Integer>> ar) -> {
       long now = System.currentTimeMillis();
       assertFalse(ar.succeeded());
       Throwable cause = ar.cause();
@@ -435,7 +422,7 @@ public class LocalEventBusTest extends EventBusTestBase {
   public void testSendWithTimeoutNoHandlers() {
     String str = TestUtils.randomUnicodeString(1000);
     long timeout = 1000;
-    eb.request(ADDRESS1, str, new DeliveryOptions().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
+    eb.<Integer>request(ADDRESS1, str, new DeliveryOptions().setSendTimeout(timeout)).onComplete((AsyncResult<Message<Integer>> ar) -> {
       assertFalse(ar.succeeded());
       Throwable cause = ar.cause();
       assertTrue(cause instanceof ReplyException);
@@ -458,7 +445,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       msg.fail(failureCode, failureMsg);
     });
     long timeout = 1000;
-    eb.request(ADDRESS1, str, new DeliveryOptions().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
+    eb.<Integer>request(ADDRESS1, str, new DeliveryOptions().setSendTimeout(timeout)).onComplete((AsyncResult<Message<Integer>> ar) -> {
       assertFalse(ar.succeeded());
       Throwable cause = ar.cause();
       assertTrue(cause instanceof ReplyException);
@@ -481,7 +468,7 @@ public class LocalEventBusTest extends EventBusTestBase {
         msg.reply("too late!");
       });
     });
-    eb.request(ADDRESS1, str, new DeliveryOptions().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
+    eb.<Integer>request(ADDRESS1, str, new DeliveryOptions().setSendTimeout(timeout)).onComplete((AsyncResult<Message<Integer>> ar) -> {
       assertFalse(ar.succeeded());
       Throwable cause = ar.cause();
       assertTrue(cause instanceof ReplyException);
@@ -502,7 +489,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       msg.reply("a reply");
     });
     AtomicBoolean received = new AtomicBoolean();
-    eb.request(ADDRESS1, str, new DeliveryOptions().setSendTimeout(timeout), (AsyncResult<Message<Integer>> ar) -> {
+    eb.<Integer>request(ADDRESS1, str, new DeliveryOptions().setSendTimeout(timeout)).onComplete((AsyncResult<Message<Integer>> ar) -> {
       assertFalse(received.get());
       assertTrue(ar.succeeded());
       received.set(true);
@@ -700,7 +687,7 @@ public class LocalEventBusTest extends EventBusTestBase {
           if (!worker) {
             assertSame(thr, Thread.currentThread());
           }
-          vertx.eventBus().request(ADDRESS1, "foo", onSuccess((Message<Object> reply) -> {
+          vertx.eventBus().request(ADDRESS1, "foo").onComplete(onSuccess((Message<Object> reply) -> {
             assertSame(ctx, context);
             if (!worker) {
               assertSame(thr, Thread.currentThread());
@@ -725,7 +712,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       contexts.add(((VertxInternal) vertx).getContext());
       latch.countDown();
     });
-    vertx.eventBus().request(ADDRESS1, "foo", onSuccess((Message<Object> reply) -> {
+    vertx.eventBus().request(ADDRESS1, "foo").onComplete(onSuccess((Message<Object> reply) -> {
       assertEquals("bar", reply.body());
       contexts.add(((VertxInternal) vertx).getContext());
       latch.countDown();
@@ -985,7 +972,7 @@ public class LocalEventBusTest extends EventBusTestBase {
         msg.reply(val);
       }
     });
-    eb.request(ADDRESS1, str, onSuccess((Message<R> reply) -> {
+    eb.<R>request(ADDRESS1, str).onComplete(onSuccess((Message<R> reply) -> {
       if (consumer == null) {
         assertTrue(reply.isSend());
         assertEquals(received, reply.body());
@@ -1192,7 +1179,7 @@ public class LocalEventBusTest extends EventBusTestBase {
   public void testUnregisterThenUnsetEndHandler() {
     MessageConsumer<String> consumer = eb.consumer(ADDRESS1);
     consumer.endHandler(v -> {});
-    consumer.unregister(res -> {
+    consumer.unregister().onComplete(res -> {
       testComplete();
     });
     consumer.endHandler(null);
@@ -1286,18 +1273,8 @@ public class LocalEventBusTest extends EventBusTestBase {
   }
 
   @Test
-  public void testCloseSender2() {
-    eb.sender(ADDRESS1).close(null);
-  }
-
-  @Test
   public void testClosePublisher1() {
     eb.publisher(ADDRESS1).close();
-  }
-
-  @Test
-  public void testClosePublisher2() {
-    eb.publisher(ADDRESS1).close(null);
   }
 
   @Test
@@ -1436,14 +1413,14 @@ public class LocalEventBusTest extends EventBusTestBase {
     waitFor(2);
     eb.consumer(ADDRESS1, msg -> complete());
     MessageProducer<String> producer = eb.sender(ADDRESS1);
-    producer.write("body", onSuccess(v -> complete()));
+    producer.write("body").onComplete(onSuccess(v -> complete()));
     await();
   }
 
   @Test
   public void testSendWriteHandlerNoConsumer() {
     MessageProducer<String> producer = eb.sender(ADDRESS1);
-    producer.write("body", onFailure(err -> {
+    producer.write("body").onComplete(onFailure(err -> {
       assertTrue(err instanceof ReplyException);
       ReplyException replyException = (ReplyException) err;
       assertEquals(-1, replyException.failureCode());
@@ -1457,14 +1434,14 @@ public class LocalEventBusTest extends EventBusTestBase {
     waitFor(2);
     eb.consumer(ADDRESS1, msg -> complete());
     MessageProducer<String> producer = eb.publisher(ADDRESS1);
-    producer.write("body", onSuccess(v -> complete()));
+    producer.write("body").onComplete(onSuccess(v -> complete()));
     await();
   }
 
   @Test
   public void testPublishWriteHandlerNoConsumer() {
     MessageProducer<String> producer = eb.publisher(ADDRESS1);
-    producer.write("body", onFailure(err -> {
+    producer.write("body").onComplete(onFailure(err -> {
       assertTrue(err instanceof ReplyException);
       ReplyException replyException = (ReplyException) err;
       assertEquals(-1, replyException.failureCode());
@@ -1476,14 +1453,14 @@ public class LocalEventBusTest extends EventBusTestBase {
   @Test
   public void testClosePublisher() {
     MessageProducer<String> producer = eb.publisher(ADDRESS1);
-    producer.close(onSuccess(v -> testComplete()));
+    producer.close().onComplete(onSuccess(v -> testComplete()));
     await();
   }
 
   @Test
   public void testCloseSender() {
     MessageProducer<String> producer = eb.sender(ADDRESS1);
-    producer.close(onSuccess(v -> testComplete()));
+    producer.close().onComplete(onSuccess(v -> testComplete()));
     await();
   }
 
@@ -1513,7 +1490,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     });
     consumer.completionHandler(__ -> {
       beforeRequest.accept(consumer);
-      vertx.eventBus().request(ADDRESS1, 1, noTimeout, onFailure(err -> {
+      vertx.eventBus().request(ADDRESS1, 1, noTimeout).onComplete(onFailure(err -> {
         assertTrue(err instanceof ReplyException);
         assertEquals(ReplyFailure.TIMEOUT, ((ReplyException) err).failureType());
         testComplete();
@@ -1530,7 +1507,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     consumer.handler(message -> fail());
     consumer.completionHandler(__ -> {
       consumer.setMaxBufferedMessages(0).pause();
-      vertx.eventBus().request(ADDRESS1, 1, noTimeout, onFailure(err -> {
+      vertx.eventBus().request(ADDRESS1, 1, noTimeout).onComplete(onFailure(err -> {
         assertTrue(err instanceof ReplyException);
         assertEquals(ReplyFailure.TIMEOUT, ((ReplyException) err).failureType());
         testComplete();
@@ -1545,7 +1522,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     MessageConsumer<?> consumer = vertx.eventBus().consumer(ADDRESS1);
     consumer.handler(message -> fail());
     consumer.completionHandler(__ -> {
-      vertx.eventBus().request(ADDRESS1, 1, noTimeout, onFailure(err -> {
+      vertx.eventBus().request(ADDRESS1, 1, noTimeout).onComplete(onFailure(err -> {
         assertTrue(err instanceof ReplyException);
         assertEquals(ReplyFailure.TIMEOUT, ((ReplyException) err).failureType());
         testComplete();
