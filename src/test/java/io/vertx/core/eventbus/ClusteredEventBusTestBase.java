@@ -129,7 +129,7 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
     });
     reg.completionHandler(ar -> {
       assertTrue(ar.succeeded());
-      vertices[0].eventBus().request(ADDRESS1, str, onSuccess((Message<R> reply) -> {
+      vertices[0].eventBus().<R>request(ADDRESS1, str).onComplete(onSuccess((Message<R> reply) -> {
         if (consumer == null) {
           assertTrue(reply.isSend());
           assertEquals(received, reply.body());
@@ -256,21 +256,21 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
     startNodes(options.get(), options.get());
     MessageConsumer<Object> consumer = vertices[0].eventBus().consumer("foo", msg -> msg.reply(msg.body()));
     consumer.completionHandler(onSuccess(reg -> {
-      vertices[0].eventBus().request("foo", "echo", onSuccess(reply1 -> {
+      vertices[0].eventBus().request("foo", "echo").onComplete(onSuccess(reply1 -> {
         assertEquals("echo", reply1.body());
-        vertices[1].eventBus().request("foo", "echo", onSuccess(reply2 -> {
+        vertices[1].eventBus().request("foo", "echo").onComplete(onSuccess(reply2 -> {
           assertEquals("echo", reply1.body());
-          consumer.unregister(onSuccess(unreg -> {
+          consumer.unregister().onComplete(onSuccess(unreg -> {
             updateLatch.countDown();
           }));
         }));
       }));
     }));
     awaitLatch(updateLatch);
-    vertices[1].eventBus().request("foo", "echo", onFailure(fail1 -> {
+    vertices[1].eventBus().request("foo", "echo").onComplete(onFailure(fail1 -> {
       assertThat(fail1, is(instanceOf(ReplyException.class)));
       assertEquals(ReplyFailure.NO_HANDLERS, ((ReplyException) fail1).failureType());
-      vertices[0].eventBus().request("foo", "echo", onFailure(fail2 -> {
+      vertices[0].eventBus().request("foo", "echo").onComplete(onFailure(fail2 -> {
         assertThat(fail2, is(instanceOf(ReplyException.class)));
         assertEquals(ReplyFailure.NO_HANDLERS, ((ReplyException) fail2).failureType());
         testComplete();
@@ -302,7 +302,7 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
 
       @Override
       public void stop(Promise<Void> stopPromise) throws Exception {
-        vertx.eventBus().<String>request(pingClientAddress, "ping", onSuccess(msg -> {
+        vertx.eventBus().<String>request(pingClientAddress, "ping").onComplete(onSuccess(msg -> {
           assertEquals("pong", msg.body());
           count.incrementAndGet();
           vertx.setPeriodic(10, l -> {
@@ -316,10 +316,10 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
 
     waitFor(2);
 
-    vertices[0].deployVerticle(new MyVerticle("foo", "bar"), onSuccess(id1 -> {
-      vertices[1].deployVerticle(new MyVerticle("bar", "foo"), onSuccess(id2 -> {
-        vertices[0].close(onSuccess(v -> complete()));
-        vertices[1].close(onSuccess(v -> complete()));
+    vertices[0].deployVerticle(new MyVerticle("foo", "bar")).onComplete(onSuccess(id1 -> {
+      vertices[1].deployVerticle(new MyVerticle("bar", "foo")).onComplete(onSuccess(id2 -> {
+        vertices[0].close().onComplete(onSuccess(v -> complete()));
+        vertices[1].close().onComplete(onSuccess(v -> complete()));
       }));
     }));
 
