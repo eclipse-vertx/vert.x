@@ -153,7 +153,7 @@ public abstract class EventBusTracingTestBase extends VertxTestBase {
       if (create) {
         tracer.activate(tracer.newTrace());
       }
-      vertx1.eventBus().request("the-address", "ping", new DeliveryOptions().setTracingPolicy(policy), ar -> {
+      vertx1.eventBus().request("the-address", "ping", new DeliveryOptions().setTracingPolicy(policy)).onComplete(ar -> {
         assertEquals(fail, ar.failed());
         vertx1.runOnContext(v2 -> latch.countDown()); // make sure span is finished
       });
