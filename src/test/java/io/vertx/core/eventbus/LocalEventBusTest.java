@@ -354,7 +354,7 @@ public class LocalEventBusTest extends EventBusTestBase {
         testComplete();
       }));
     });
-    eb.request(ADDRESS1, str, onSuccess((Message<String>msg) -> {
+    eb.<String>request(ADDRESS1, str).onComplete(onSuccess((Message<String>msg) -> {
       assertEquals(reply, msg.body());
       // Now don't reply
     }));
