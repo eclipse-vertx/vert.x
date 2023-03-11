@@ -180,8 +180,8 @@ public class Http1xTLSTest extends HttpTLSTest {
     });
     startServer(server);
     client = vertx.createHttpClient(new HttpClientOptions().setSsl(true).setTrustAll(true));
-    client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, DEFAULT_TEST_URI, onSuccess(req -> {
-      req.send(onSuccess(resp -> {
+    client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, DEFAULT_TEST_URI).onComplete(onSuccess(req -> {
+      req.send().onComplete(onSuccess(resp -> {
         List<String> chunks = new ArrayList<>();
         resp.handler(chunk -> {
           chunk.appendString("-suffix");
@@ -234,7 +234,7 @@ public class Http1xTLSTest extends HttpTLSTest {
           .<Void>mapEmpty()
           .onComplete(startPromise);
       }
-    }, new DeploymentOptions().setInstances(num), onSuccess(v -> listenLatch.countDown()));
+    }, new DeploymentOptions().setInstances(num)).onComplete(onSuccess(v -> listenLatch.countDown()));
     awaitLatch(listenLatch);
     CountDownLatch connectionLatch = new CountDownLatch(num);
     for (int i = 0;i < num;i++) {
