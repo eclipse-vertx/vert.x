@@ -97,10 +97,9 @@ public class ComplexHATest extends VertxTestBase {
         config.put("foo", TestUtils.randomAlphaString(100));
         DeploymentOptions options = new DeploymentOptions().setHa(true).setConfig(config);
         String verticleName = "java:io.vertx.test.verticles.HAVerticle" + (random.nextInt(3) + 1);
-        v.deployVerticle(verticleName, options, ar -> {
-          assertTrue(ar.succeeded());
+        v.deployVerticle(verticleName, options).onComplete(onSuccess(v2 -> {
           deployCount.incrementAndGet();
-        });
+        }));
       }
     }
     int ttoDeploy = toDeploy;
@@ -122,7 +121,7 @@ public class ComplexHATest extends VertxTestBase {
         int depPos = random.nextInt(deployed.size());
         String depID = deployed.remove(depPos);
         toUndeploy++;
-        v.undeploy(depID, onSuccess(d -> {
+        v.undeploy(depID).onComplete(onSuccess(d -> {
           undeployCount.incrementAndGet();
         }));
       }
@@ -179,9 +178,7 @@ public class ComplexHATest extends VertxTestBase {
     v.executeBlocking(fut -> {
       v.simulateKill();
       fut.complete();
-    }, false, ar -> {
-      assertTrue(ar.succeeded());
-    });
+    }, false).onComplete(onSuccess(v2 -> {}));
 
   }
 
