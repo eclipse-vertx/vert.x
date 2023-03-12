@@ -60,7 +60,7 @@ public class MessageQueueOnWorkerThreadTest extends VertxTestBase {
   private void test(boolean worker) throws Exception {
     int senderInstances = 20, messagesToSend = 100, expected = senderInstances * messagesToSend;
     waitFor(expected);
-    vertx.eventBus().consumer("foo", msg -> complete()).completionHandler(onSuccess(registered -> {
+    vertx.eventBus().consumer("foo", msg -> complete()).completion().onComplete(onSuccess(registered -> {
       DeploymentOptions options = new DeploymentOptions().setWorker(worker).setInstances(senderInstances);
       vertx.deployVerticle(() -> new SenderVerticle(worker, messagesToSend), options);
     }));

@@ -177,7 +177,7 @@ public class SharedHttpClientTest extends VertxTestBase {
     public void start(Promise<Void> startPromise) throws Exception {
       context = super.context;
       client = vertx.createHttpClient(new HttpClientOptions(config().getJsonObject("httpClientOptions")).setShared(true).setName(SHARED_CLIENT_NAME));
-      vertx.eventBus().consumer(TRIGGER_ADDRESS, this).completionHandler(startPromise);
+      vertx.eventBus().consumer(TRIGGER_ADDRESS, this).completion().onComplete(startPromise);
     }
 
     @Override

@@ -117,7 +117,7 @@ public class MetricsTest extends VertxTestBase {
     AtomicInteger receiveCount = new AtomicInteger();
     for (Vertx vertx : to) {
       MessageConsumer<Object> consumer = vertx.eventBus().consumer(ADDRESS1);
-      consumer.completionHandler(onSuccess(v -> {
+      consumer.completion().onComplete(onSuccess(v -> {
         if (broadcastCount.incrementAndGet() == to.length) {
           String msg = TestUtils.randomAlphaString(10);
           if (publish) {
@@ -152,7 +152,7 @@ public class MetricsTest extends VertxTestBase {
   private void testReceiveMessageSent(Vertx from, Vertx to, boolean expectedLocal, int expectedHandlers) {
     FakeEventBusMetrics eventBusMetrics = FakeMetricsBase.getMetrics(to.eventBus());
     MessageConsumer<Object> consumer = to.eventBus().consumer(ADDRESS1);
-    consumer.completionHandler(done -> {
+    consumer.completion().onComplete(done -> {
       assertTrue(done.succeeded());
       String msg = TestUtils.randomAlphaString(10);
       from.eventBus().send(ADDRESS1, msg);
@@ -180,7 +180,7 @@ public class MetricsTest extends VertxTestBase {
     AtomicInteger count = new AtomicInteger();
     for (int i = 0; i < expectedHandlers; i++) {
       MessageConsumer<Object> consumer = to.eventBus().consumer(ADDRESS1);
-      consumer.completionHandler(done -> {
+      consumer.completion().onComplete(done -> {
         assertTrue(done.succeeded());
         if (count.incrementAndGet() == expectedHandlers) {
           String msg = TestUtils.randomAlphaString(10);
@@ -214,7 +214,7 @@ public class MetricsTest extends VertxTestBase {
     FakeEventBusMetrics toMetrics = FakeMetricsBase.getMetrics(to.eventBus());
     MessageConsumer<Object> consumer = to.eventBus().consumer(ADDRESS1);
     CountDownLatch latch = new CountDownLatch(1);
-    consumer.completionHandler(onSuccess(v -> {
+    consumer.completion().onComplete(onSuccess(v -> {
       String msg = TestUtils.randomAlphaString(10);
       from.eventBus().request(ADDRESS1, msg).onComplete(onSuccess(reply -> {
         latch.countDown();
@@ -248,7 +248,7 @@ public class MetricsTest extends VertxTestBase {
     int num = 10;
     consumer.setMaxBufferedMessages(num);
     consumer.pause();
-    consumer.completionHandler(onSuccess(v -> {
+    consumer.completion().onComplete(onSuccess(v -> {
       for (int i = 0;i < num;i++) {
         from.eventBus().send(ADDRESS1, "" + i);
       }
@@ -270,7 +270,7 @@ public class MetricsTest extends VertxTestBase {
     int num = 10;
     consumer.setMaxBufferedMessages(num);
     consumer.pause();
-    consumer.completionHandler(onSuccess(v -> {
+    consumer.completion().onComplete(onSuccess(v -> {
       for (int i = 0;i < num;i++) {
         from.eventBus().send(ADDRESS1, "" + i);
       }
@@ -290,7 +290,7 @@ public class MetricsTest extends VertxTestBase {
     FakeEventBusMetrics toMetrics = FakeMetricsBase.getMetrics(to.eventBus());
     MessageConsumer<Object> consumer = to.eventBus().consumer(ADDRESS1);
     consumer.pause();
-    consumer.completionHandler(onSuccess(v -> {
+    consumer.completion().onComplete(onSuccess(v -> {
       from.eventBus().send(ADDRESS1, "last");
     }));
     consumer.handler(msg -> fail());
@@ -325,7 +325,7 @@ public class MetricsTest extends VertxTestBase {
     MessageConsumer<Object> consumer = vertx.eventBus().consumer(ADDRESS1, msg -> {
     });
     CountDownLatch latch = new CountDownLatch(1);
-    consumer.completionHandler(ar -> {
+    consumer.completion().onComplete(ar -> {
       assertTrue(ar.succeeded());
       latch.countDown();
     });
@@ -352,7 +352,7 @@ public class MetricsTest extends VertxTestBase {
       MessageConsumer<Object> consumer = vertices[0].eventBus().consumer(ADDRESS1, ar -> {
         fail("Should not receive message");
       });
-      consumer.completionHandler(onSuccess(v2 -> {
+      consumer.completion().onComplete(onSuccess(v2 -> {
         consumer.unregister().onComplete(onSuccess(v3 -> {
           assertSame(Vertx.currentContext(), ctx);
           List<HandlerMetric> registrations = metrics.getRegistrations();
@@ -393,7 +393,7 @@ public class MetricsTest extends VertxTestBase {
         assertEquals(expectedLocalCount, registration.localScheduleCount.get());
         assertEquals(1, registration.deliveredCount.get());
         msg.reply("pong");
-      }).completionHandler(onSuccess(v2 -> {
+      }).completion().onComplete(onSuccess(v2 -> {
         to.runOnContext(v3 -> {
           latch1.countDown();
         });
@@ -435,7 +435,7 @@ public class MetricsTest extends VertxTestBase {
       assertEquals(0, registration.localDeliveredCount.get());
       replyRegistration.set(registration);
       msg.reply("pong");
-    }).completionHandler(ar -> {
+    }).completion().onComplete(ar -> {
       assertTrue(ar.succeeded());
       latch.countDown();
     });
@@ -470,7 +470,7 @@ public class MetricsTest extends VertxTestBase {
       assertTrue("Expected to have more " + encoded + " > 1000 encoded bytes", encoded > 1000);
       assertTrue("Expected to have more " + decoded + " > 1000 decoded bytes", decoded > 1000);
       testComplete();
-    }).completionHandler(ar -> {
+    }).completion().onComplete(ar -> {
       assertTrue(ar.succeeded());
       assertEquals(0, fromMetrics.getEncodedBytes(ADDRESS1));
       assertEquals(0, toMetrics.getDecodedBytes(ADDRESS1));
@@ -536,7 +536,7 @@ public class MetricsTest extends VertxTestBase {
     eb.consumer("foo", msg -> {
       replyAddress.set(msg.replyAddress());
       msg.fail(0, "whatever");
-    }).completionHandler(onSuccess(v -> {
+    }).completion().onComplete(onSuccess(v -> {
       regLatch.countDown();
     }));
     awaitLatch(regLatch);
