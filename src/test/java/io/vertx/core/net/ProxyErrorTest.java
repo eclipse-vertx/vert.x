@@ -131,10 +131,10 @@ public class ProxyErrorTest extends VertxTestBase {
             .setPort(proxy.port()));
     HttpClient client = vertx.createHttpClient(options);
 
-    client.request(new RequestOptions().setAbsoluteURI(url), ar -> {
+    client.request(new RequestOptions().setAbsoluteURI(url)).onComplete(ar -> {
       if (ar.succeeded()) {
         HttpClientRequest request = ar.result();
-        request.send(assertResponse);
+        request.send().onComplete(assertResponse);
       } else {
         assertResponse.handle(Future.failedFuture(ar.cause()));
       }

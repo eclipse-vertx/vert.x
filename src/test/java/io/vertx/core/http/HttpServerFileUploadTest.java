@@ -260,7 +260,7 @@ public abstract class HttpServerFileUploadTest extends HttpTestBase {
             });
           } else {
             uploadedFileName = new File(testDir, UUID.randomUUID().toString()).getPath();
-            upload.streamToFileSystem(uploadedFileName, ar -> {
+            upload.streamToFileSystem(uploadedFileName).onComplete(ar -> {
               if (ar.succeeded()) {
                 Buffer uploaded = vertx.fileSystem().readFileBlocking(uploadedFileName);
                 assertEquals(content.length(), uploaded.length());
@@ -316,7 +316,7 @@ public abstract class HttpServerFileUploadTest extends HttpTestBase {
       }
     });
 
-    server.listen(testAddress, onSuccess(s -> {
+    server.listen(testAddress).onComplete(onSuccess(s -> {
       client.request(new RequestOptions(requestOptions)
         .setMethod(HttpMethod.POST)
         .setURI("/form"))
@@ -343,9 +343,9 @@ public abstract class HttpServerFileUploadTest extends HttpTestBase {
             req.end(pro + contentStr + epi);
           }
           if (abortClient) {
-            req.response(onFailure(err -> complete()));
+            req.response().onComplete(onFailure(err -> complete()));
           } else {
-            req.response(onSuccess(resp -> {
+            req.response().onComplete(onSuccess(resp -> {
               assertEquals(200, resp.statusCode());
               resp.bodyHandler(body -> {
                 assertEquals(0, body.length());
@@ -398,14 +398,14 @@ public abstract class HttpServerFileUploadTest extends HttpTestBase {
       "&list=0" +
       "&list=1"
       , "UTF-8");
-    server.listen(testAddress, onSuccess(s -> {
+    server.listen(testAddress).onComplete(onSuccess(s -> {
       client.request(new RequestOptions(requestOptions)
         .setMethod(HttpMethod.POST)
-        .setURI("/form"), onSuccess(req -> {
+        .setURI("/form")).onComplete(onSuccess(req -> {
         req
           .putHeader("content-length", String.valueOf(buffer.length()))
           .putHeader("content-type", "application/x-www-form-urlencoded")
-          .send(buffer, onSuccess(resp -> {
+          .send(buffer).onComplete(onSuccess(resp -> {
             // assert the response
             assertEquals(200, resp.statusCode());
             resp.bodyHandler(body -> {
@@ -441,7 +441,7 @@ public abstract class HttpServerFileUploadTest extends HttpTestBase {
       }
     });
 
-    server.listen(testAddress, onSuccess(s -> {
+    server.listen(testAddress).onComplete(onSuccess(s -> {
       Buffer buffer = Buffer.buffer();
       buffer.appendString("origin=junit-testUserAlias&login=admin%40foo.bar&pass+word=admin");
       client.request(new RequestOptions(requestOptions)
@@ -449,7 +449,7 @@ public abstract class HttpServerFileUploadTest extends HttpTestBase {
         .setURI("/form")).onComplete(onSuccess(req -> {
         req.putHeader("content-length", String.valueOf(buffer.length()))
           .putHeader("content-type", "application/x-www-form-urlencoded")
-          .response(onSuccess(resp -> {
+          .response().onComplete(onSuccess(resp -> {
             // assert the response
             assertEquals(200, resp.statusCode());
             resp.bodyHandler(body -> {
@@ -457,7 +457,8 @@ public abstract class HttpServerFileUploadTest extends HttpTestBase {
             });
             assertEquals(3, attributeCount.get());
             testComplete();
-          })).end(buffer);
+          }));
+        req.end(buffer);
       }));
     }));
 
@@ -485,7 +486,7 @@ public abstract class HttpServerFileUploadTest extends HttpTestBase {
       }
     });
 
-    server.listen(testAddress, onSuccess(s -> {
+    server.listen(testAddress).onComplete( onSuccess(s -> {
       Buffer buffer = Buffer.buffer();
       buffer.appendString("origin=0123456789");
       client.request(new RequestOptions(requestOptions)
@@ -493,10 +494,11 @@ public abstract class HttpServerFileUploadTest extends HttpTestBase {
         .setURI("/form")).onComplete(onSuccess(req -> {
         req.putHeader("content-length", String.valueOf(buffer.length()))
           .putHeader("content-type", "application/x-www-form-urlencoded")
-          .response(onSuccess(resp -> {
+          .response().onComplete(onSuccess(resp -> {
             assertEquals(200, resp.statusCode());
             testComplete();
-          })).end(buffer);
+          }));
+        req.end(buffer);
       }));
     }));
 
@@ -527,7 +529,7 @@ public abstract class HttpServerFileUploadTest extends HttpTestBase {
       "some-content\r\n" +
       "--a4e41223-a527-49b6-ac1c-315d76be757e--\r\n";
 
-    client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST).setURI("/form"), onSuccess(req -> {
+    client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST).setURI("/form")).onComplete(onSuccess(req -> {
       req.putHeader(HttpHeaders.CONTENT_TYPE, contentType);
       req.putHeader(HttpHeaders.CONTENT_LENGTH, "" + body.length());
       req.end(body);

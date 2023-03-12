@@ -116,7 +116,7 @@ public class HttpProxy extends TestProxyBase<HttpProxy> {
           }
           NetClientOptions netOptions = new NetClientOptions();
           NetClient netClient = vertx.createNetClient(netOptions);
-          netClient.connect(port, host, ar1 -> {
+          netClient.connect(port, host).onComplete(ar1 -> {
             if (ar1.succeeded()) {
               localAddresses.add(ar1.result().localAddress().toString());
               request.toNetSocket().onComplete(ar2 -> {
@@ -165,7 +165,7 @@ public class HttpProxy extends TestProxyBase<HttpProxy> {
             for (String name : resp.headers().names()) {
               request.response().putHeader(name, resp.headers().getAll(name));
             }
-            resp.body(ar2 -> {
+            resp.body().onComplete(ar2 -> {
               if (ar2.succeeded()) {
                 request.response().end(ar2.result());
               } else {
@@ -189,7 +189,7 @@ public class HttpProxy extends TestProxyBase<HttpProxy> {
       }
     });
     CompletableFuture<Void> fut = new CompletableFuture<>();
-    server.listen(ar -> {
+    server.listen().onComplete(ar -> {
       if (ar.succeeded()) {
         fut.complete(null);
       } else {

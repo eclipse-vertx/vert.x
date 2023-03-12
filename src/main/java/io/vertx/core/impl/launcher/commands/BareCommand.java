@@ -455,7 +455,7 @@ public class BareCommand extends ClasspathHandler {
     return () -> {
       CountDownLatch latch = new CountDownLatch(1);
       if (vertx != null) {
-        vertx.close(ar -> {
+        vertx.close().onComplete(ar -> {
           if (!ar.succeeded()) {
             log.error("Failure in stopping Vert.x", ar.cause());
           }

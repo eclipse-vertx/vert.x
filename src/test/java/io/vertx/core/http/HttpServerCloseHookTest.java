@@ -25,7 +25,7 @@ public class HttpServerCloseHookTest extends VertxTestBase {
 
   @Test
   public void deployHandlerShouldGetException() {
-    vertx.deployVerticle(new TestVerticle(), onFailure(throwable -> {
+    vertx.deployVerticle(new TestVerticle()).onComplete(onFailure(throwable -> {
       complete();
     }));
     await();
@@ -41,7 +41,7 @@ public class HttpServerCloseHookTest extends VertxTestBase {
 
       vertx.createHttpServer(invalidOptions).requestHandler(req -> {
         req.response().end("Hello World!");
-      }).listen(8443, ar -> {
+      }).listen(8443).onComplete(ar -> {
         if (ar.succeeded()) {
           startPromise.complete();
         } else {

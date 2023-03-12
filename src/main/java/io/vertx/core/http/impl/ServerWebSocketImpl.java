@@ -16,10 +16,7 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
+import io.vertx.core.*;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.impl.ContextInternal;
@@ -61,7 +58,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
                       int maxWebSocketFrameSize,
                       int maxWebSocketMessageSize,
                       boolean registerWebSocketWriteHandlers) {
-    super(context, conn, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize, registerWebSocketWriteHandlers);
+    super(context, conn, request.headers(), supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize, registerWebSocketWriteHandlers);
     this.conn = conn;
     this.closingTimeoutMS = closingTimeout >= 0 ? closingTimeout * 1000L : -1L;
     this.scheme = request.scheme();
@@ -71,8 +68,6 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
     this.query = request.query();
     this.request = request;
     this.handshaker = handshaker;
-
-    headers(request.headers());
   }
 
   @Override

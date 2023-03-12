@@ -41,7 +41,7 @@ public class HAProxy {
     server.connectHandler(socket -> {
       socket.pause();
       NetClient netClient = vertx.createNetClient(new NetClientOptions());
-      netClient.connect(remoteAddress, result -> {
+      netClient.connect(remoteAddress).onComplete(result -> {
         if (result.succeeded()) {
           log.debug("connected, writing header");
           NetSocket clientSocket = result.result();
@@ -66,7 +66,7 @@ public class HAProxy {
     });
 
     CompletableFuture<Void> fut = new CompletableFuture<>();
-    server.listen(ar -> {
+    server.listen().onComplete(ar -> {
       if (ar.succeeded()) {
         fut.complete(null);
       } else {

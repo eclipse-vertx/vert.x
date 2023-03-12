@@ -25,7 +25,7 @@ public class SimpleServer extends AbstractVerticle {
   public void start(Promise<Void> startPromise) throws Exception {
     HttpServer server = vertx.createHttpServer(new HttpServerOptions().setPort(8080));
     server.requestHandler(req -> req.response().end());
-    server.listen(res -> {
+    server.listen().onComplete(res -> {
       if (res.succeeded()) {
         startPromise.complete();
       } else {

@@ -78,7 +78,7 @@ public class PipeImpl<T> implements Pipe<T> {
     }
     Handler<Void> drainHandler = v -> src.resume();
     src.handler(item -> {
-      ws.write(item, this::handleWriteResult);
+      ws.write(item).onComplete(this::handleWriteResult);
       if (ws.writeQueueFull()) {
         src.pause();
         ws.drainHandler(drainHandler);
@@ -113,7 +113,7 @@ public class PipeImpl<T> implements Pipe<T> {
 
   private void handleSuccess(Handler<AsyncResult<Void>> completionHandler) {
     if (endOnSuccess) {
-      dst.end(completionHandler);
+      dst.end().onComplete(completionHandler);
     } else {
       completionHandler.handle(Future.succeededFuture());
     }
@@ -122,7 +122,7 @@ public class PipeImpl<T> implements Pipe<T> {
   private void handleFailure(Throwable cause, Handler<AsyncResult<Void>> completionHandler) {
     Future<Void> res = Future.failedFuture(cause);
     if (endOnFailure){
-      dst.end(ignore -> {
+      dst.end().onComplete(ignore -> {
         completionHandler.handle(res);
       });
     } else {

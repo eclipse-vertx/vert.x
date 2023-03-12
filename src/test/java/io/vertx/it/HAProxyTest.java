@@ -13,6 +13,7 @@ package io.vertx.it;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.test.core.VertxTestBase;
@@ -33,16 +34,14 @@ public class HAProxyTest extends VertxTestBase {
         .requestHandler(req -> {
           req.response().end("hello");
         })
-        .listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(s -> {
+        .listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST).onComplete(onSuccess(s -> {
           HttpClient client = vertx.createHttpClient();
-          client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(req -> {
-            req.send(onSuccess(resp -> {
-              resp.body(onSuccess(body -> {
-                assertEquals("hello", body.toString());
-                testComplete();
-              }));
+          client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
+            .compose(req -> req.send().compose(HttpClientResponse::body))
+            .onComplete(onSuccess(body -> {
+              assertEquals("hello", body.toString());
+              testComplete();
             }));
-          }));
         }));
       await();
     } finally {

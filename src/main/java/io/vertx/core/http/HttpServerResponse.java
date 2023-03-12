@@ -472,7 +472,13 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    */
   @Fluent
   @Deprecated
-  HttpServerResponse sendFile(String filename, long offset, long length, Handler<AsyncResult<Void>> resultHandler);
+  default HttpServerResponse sendFile(String filename, long offset, long length, Handler<AsyncResult<Void>> resultHandler) {
+    Future<Void> fut = sendFile(filename, offset, length);
+    if (resultHandler != null) {
+      fut.onComplete(resultHandler);
+    }
+    return this;
+  }
 
   /**
    * Close the underlying TCP connection corresponding to the request.

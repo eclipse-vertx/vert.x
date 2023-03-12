@@ -36,7 +36,6 @@ import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.streams.impl.InboundBuffer;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.charset.Charset;
 import java.util.UUID;
@@ -256,46 +255,19 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
   @Override
   public Future<Void> sendFile(String filename, long offset, long length) {
-    Promise<Void> promise = context.promise();
-    sendFile(filename, offset, length, promise);
-    return promise.future();
-  }
-
-  @Override
-  public NetSocket sendFile(String filename, long offset, long length, final Handler<AsyncResult<Void>> resultHandler) {
-    File f = vertx.resolveFile(filename);
-    if (f.isDirectory()) {
-      throw new IllegalArgumentException("filename must point to a file and not to a directory");
-    }
-    RandomAccessFile raf = null;
+    PromiseInternal<Void> promise = context.promise();
+    File file = vertx.resolveFile(filename);
+    RandomAccessFile raf;
     try {
-      raf = new RandomAccessFile(f, "r");
-      ChannelFuture future = super.sendFile(raf, Math.min(offset, f.length()), Math.min(length, f.length() - offset));
-      if (resultHandler != null) {
-        future.addListener(fut -> {
-          final AsyncResult<Void> res;
-          if (future.isSuccess()) {
-            res = Future.succeededFuture();
-          } else {
-            res = Future.failedFuture(future.cause());
-          }
-          vertx.runOnContext(v -> resultHandler.handle(res));
-        });
-      }
-    } catch (IOException e) {
-      try {
-        if (raf != null) {
-          raf.close();
-        }
-      } catch (IOException ignore) {
-      }
-      if (resultHandler != null) {
-        vertx.runOnContext(v -> resultHandler.handle(Future.failedFuture(e)));
-      } else {
-        log.error("Failed to send file", e);
-      }
+      raf = new RandomAccessFile(file, "r");
+    } catch (Exception e) {
+      return context.failedFuture(e);
     }
-    return this;
+    long actualLength = Math.min(length, file.length() - offset);
+    long actualOffset = Math.min(offset, file.length());
+    ChannelFuture fut = sendFile(raf, actualOffset, actualLength);
+    fut.addListener(promise);
+    return promise.future();
   }
 
   public NetSocketImpl exceptionHandler(Handler<Throwable> handler) {

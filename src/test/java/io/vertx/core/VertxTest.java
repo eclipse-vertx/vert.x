@@ -67,11 +67,12 @@ public class VertxTest extends AsyncTestBase {
     vertx.addCloseHook(myCloseable1);
     vertx.addCloseHook(myCloseable2);
     // Now undeploy
-    vertx.close(ar -> {
-      assertTrue(ar.succeeded());
-      assertEquals(2, closedCount.get());
-      testComplete();
-    });
+    vertx
+      .close()
+      .onComplete(onSuccess(v -> {
+        assertEquals(2, closedCount.get());
+        testComplete();
+      }));
     await();
   }
 
@@ -82,7 +83,7 @@ public class VertxTest extends AsyncTestBase {
       @Override
       public void close(Promise<Void> completion) {
         if (closedCount.incrementAndGet() == 1) {
-          throw new RuntimeException();
+          throw new RuntimeException("Don't be afraid");
         } else {
           completion.handle(Future.succeededFuture());
         }
@@ -92,11 +93,12 @@ public class VertxTest extends AsyncTestBase {
     vertx.addCloseHook(new Hook());
     vertx.addCloseHook(new Hook());
     // Now undeploy
-    vertx.close(ar -> {
-      assertTrue(ar.succeeded());
-      assertEquals(2, closedCount.get());
-      testComplete();
-    });
+    vertx
+      .close()
+      .onComplete(onSuccess(v -> {
+        assertEquals(2, closedCount.get());
+        testComplete();
+      }));
     await();
   }
 
@@ -118,11 +120,12 @@ public class VertxTest extends AsyncTestBase {
     vertx.addCloseHook(new Hook());
     vertx.addCloseHook(new Hook());
     // Now undeploy
-    vertx.close(ar -> {
-      assertTrue(ar.succeeded());
-      assertEquals(2, closedCount.get());
-      testComplete();
-    });
+    vertx
+      .close()
+      .onComplete(onSuccess(v -> {
+        assertEquals(2, closedCount.get());
+        testComplete();
+      }));
     await();
   }
 
@@ -178,9 +181,9 @@ public class VertxTest extends AsyncTestBase {
         }
       }
     } finally {
-      vertx.close(ar -> {
-        testComplete();
-      });
+      vertx
+        .close()
+        .onComplete(onSuccess(v -> testComplete()));
     }
     await();
   }
@@ -202,7 +205,7 @@ public class VertxTest extends AsyncTestBase {
       vertx.addCloseHook(closeFuture);
       closeFuture.future().onComplete(ar -> closed.set(true));
       closeFuture = null;
-      client.connect(1234, "localhost", onSuccess(so -> {}));
+      client.connect(1234, "localhost");
       WeakReference<NetClient> ref = new WeakReference<>(client);
       client = null;
       assertWaitUntil(() -> socketRef.get() != null);
@@ -223,9 +226,9 @@ public class VertxTest extends AsyncTestBase {
         }
       }
     } finally {
-      vertx.close(ar -> {
-        testComplete();
-      });
+      vertx
+        .close()
+        .onComplete(onSuccess(v -> testComplete()));
     }
     await();
   }
@@ -247,9 +250,10 @@ public class VertxTest extends AsyncTestBase {
       assertFalse(threads[0].isAlive());
       assertFalse(threads[1].isAlive());
     } finally {
-      vertx.close(ar -> {
-        testComplete();
-      });
+      vertx
+        .close()
+        .toCompletionStage().toCompletableFuture()
+        .get(20, TimeUnit.SECONDS);
     }
   }
 
@@ -283,9 +287,9 @@ public class VertxTest extends AsyncTestBase {
         }
       }
     } finally {
-      vertx.close(ar -> {
-        testComplete();
-      });
+      vertx
+        .close()
+        .onComplete(onSuccess(v -> testComplete()));
     }
     await();
   }
@@ -300,9 +304,7 @@ public class VertxTest extends AsyncTestBase {
     Promise<Void> p = Promise.promise();
     fut.close(p);
     AtomicBoolean closed = new AtomicBoolean();
-    vertx.close(ar -> {
-      closed.set(true);
-    });
+    vertx.close().onComplete(ar -> closed.set(true));
     Thread.sleep(500);
     assertFalse(closed.get());
     ref.get().complete();
@@ -370,9 +372,9 @@ public class VertxTest extends AsyncTestBase {
         }
       }
     } finally {
-      vertx.close(ar -> {
-        testComplete();
-      });
+      vertx
+        .close()
+        .onComplete(onSuccess(v -> testComplete()));
     }
     await();
   }

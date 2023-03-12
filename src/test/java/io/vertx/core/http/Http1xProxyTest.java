@@ -202,13 +202,13 @@ public class Http1xProxyTest extends HttpTestBase {
       req.response().end();
     });
 
-    server.listen(onSuccess(s -> {
+    server.listen().onComplete(onSuccess(s -> {
       client.request(new RequestOptions()
         .setHost(DEFAULT_HTTP_HOST)
         .setPort(DEFAULT_HTTP_PORT)
         .setURI("/")
       ).onComplete(onSuccess(req -> {
-        req.send(onSuccess(resp -> {
+        req.send().onComplete(onSuccess(resp -> {
           assertEquals(200, resp.statusCode());
           assertNotNull("request did not go through proxy", proxy.getLastUri());
           assertEquals("Host header doesn't contain target host", "localhost:8080", proxy.getLastRequestHeaders().get("Host"));
@@ -231,10 +231,10 @@ public class Http1xProxyTest extends HttpTestBase {
       req.response().end();
     });
 
-    server.listen(onSuccess(s -> {
+    server.listen().onComplete(onSuccess(s -> {
       client.request(new RequestOptions().setURI(url))
         .onComplete(onSuccess(req -> {
-        req.send(onSuccess(resp -> {
+        req.send().onComplete(onSuccess(resp -> {
           assertEquals(200, resp.statusCode());
           assertEquals("request did sent the expected url", url, proxy.getLastUri());
           testComplete();
@@ -260,7 +260,7 @@ public class Http1xProxyTest extends HttpTestBase {
       .setHost(DEFAULT_HTTP_HOST)
       .setPort(DEFAULT_HTTP_PORT)
       .setURI("/")).onComplete(onSuccess(req -> {
-      req.send(onSuccess(resp -> {
+      req.send().onComplete(onSuccess(resp -> {
         assertEquals(200, resp.statusCode());
         assertNotNull("request did not go through proxy", proxy.getLastUri());
         testComplete();
@@ -288,7 +288,7 @@ public class Http1xProxyTest extends HttpTestBase {
       .setHost(DEFAULT_HTTP_HOST)
       .setPort(DEFAULT_HTTP_PORT)
       .setURI("/")).onComplete(onSuccess(req -> {
-      req.send(onSuccess(resp -> {
+      req.send().onComplete(onSuccess(resp -> {
         assertEquals(200, resp.statusCode());
         assertNotNull("request did not go through proxy", proxy.getLastUri());
         testComplete();
@@ -443,7 +443,7 @@ public class Http1xProxyTest extends HttpTestBase {
       server.requestHandler(req -> {
         SocketAddress addr = req.connection().remoteAddress();
         req.response().end("" + addr);
-      }).listen(onSuccess(s -> {
+      }).listen().onComplete(onSuccess(s -> {
         RequestOptions baseOptions = new RequestOptions()
           .setHost(DEFAULT_HTTP_HOST)
           .setPort(DEFAULT_HTTP_PORT)
@@ -540,7 +540,7 @@ public class Http1xProxyTest extends HttpTestBase {
     server.listen(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST).onSuccess(s -> {
       client.webSocket(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/").onSuccess(ws -> {
         ws.handler(buff -> {
-          ws.close(onSuccess(v -> {
+          ws.close().onComplete(onSuccess(v -> {
             if (proxied) {
               assertNotNull("request did not go through proxy", proxy.getLastUri());
               if (clientOptions.getProxyOptions().getType() == ProxyType.HTTP) {

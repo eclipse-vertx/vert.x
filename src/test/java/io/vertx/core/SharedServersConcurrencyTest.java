@@ -35,7 +35,7 @@ public class SharedServersConcurrencyTest extends VertxTestBase {
   private static class ApiVerticle extends AbstractVerticle {
     @Override
     public void start(Promise<Void> startPromise) {
-      vertx.deployVerticle(() -> new NetVerticle(), new DeploymentOptions().setInstances(32), ar -> {
+      vertx.deployVerticle(() -> new NetVerticle(), new DeploymentOptions().setInstances(32)).onComplete(ar -> {
         if (ar.succeeded()) {
           startPromise.complete();
         } else {
@@ -51,7 +51,7 @@ public class SharedServersConcurrencyTest extends VertxTestBase {
       vertx.createNetServer(new NetServerOptions().setPort(20152))
         .connectHandler(netSocket -> {
         })
-        .listen(ar -> {
+        .listen().onComplete(ar -> {
           if (ar.succeeded()) {
             startPromise.complete();
           } else {
@@ -67,7 +67,7 @@ public class SharedServersConcurrencyTest extends VertxTestBase {
       vertx.createHttpServer(new HttpServerOptions())
         .requestHandler(req -> {
         })
-        .listen(15152, ar -> {
+        .listen(15152).onComplete(ar -> {
           if (ar.succeeded()) {
             System.out.println("REST listening on port: " + ar.result().actualPort());
             startPromise.complete();
@@ -84,7 +84,7 @@ public class SharedServersConcurrencyTest extends VertxTestBase {
       vertx.createHttpServer(new HttpServerOptions())
         .requestHandler(req -> {
         })
-        .listen(16152, ar -> {
+        .listen(16152).onComplete(ar -> {
           if (ar.succeeded()) {
             System.out.println("Monitor listening on port: " + ar.result().actualPort());
             startPromise.complete();

@@ -76,7 +76,7 @@ class ConnectionHolder {
       if (metrics != null) {
         metrics.messageWritten(ctx.message.address(), data.length());
       }
-      socket.write(data, ctx);
+      socket.write(data).onComplete(ctx);
     } else {
       if (pending == null) {
         if (log.isDebugEnabled()) {
@@ -155,7 +155,7 @@ class ConnectionHolder {
         if (metrics != null) {
           metrics.messageWritten(ctx.message.address(), data.length());
         }
-        socket.write(data, ctx);
+        socket.write(data).onComplete(ctx);
       }
     }
     pending = null;

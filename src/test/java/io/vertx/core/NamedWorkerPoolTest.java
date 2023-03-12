@@ -48,16 +48,16 @@ public class NamedWorkerPoolTest extends VertxTestBase {
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
       public void start(Promise<Void> startPromise) throws Exception {
-        vertx.executeBlocking(fut -> {
+        vertx.<Void>executeBlocking(fut -> {
           try {
             SECONDS.sleep(5);
             fut.complete();
           } catch (InterruptedException e) {
             fut.fail(e);
           }
-        }, startPromise);
+        }).onComplete(startPromise);
       }
-    }, deploymentOptions, onSuccess(did -> {
+    }, deploymentOptions).onComplete(onSuccess(did -> {
       testComplete();
     }));
     await();
@@ -78,7 +78,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
       onEventLoopThread.set(Context.isOnEventLoopThread());
       threadName.set(Thread.currentThread().getName());
       fut.complete(null);
-    }, ar -> {
+    }).onComplete(ar -> {
       testComplete();
     });
     // Use regular assertions because the thread name does not start with "vert.x-"
@@ -117,7 +117,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
           }
           assertTrue(Thread.currentThread().getName().startsWith(poolName + "-"));
           fut.complete(null);
-        }, ar -> {
+        }).onComplete(ar -> {
           if (last) {
             testComplete();
           }
@@ -149,7 +149,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
           }
           assertTrue(Thread.currentThread().getName().startsWith(poolName + "-"));
           fut.complete(null);
-        }, false, ar -> {
+        }, false).onComplete(ar -> {
           complete();
         });
       }
@@ -180,10 +180,10 @@ public class NamedWorkerPoolTest extends VertxTestBase {
               assertSame(current, currentThread.get());
             }
             fut.complete();
-          }, true, onSuccess(v -> complete()));
+          }, true).onComplete(onSuccess(v -> complete()));
         }
       }
-    }, new DeploymentOptions().setWorker(true), onSuccess(id -> {}));
+    }, new DeploymentOptions().setWorker(true)).onComplete(onSuccess(v -> {}));
     await();
   }
 
@@ -199,8 +199,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
       worker.executeBlocking(fut -> {
         names.add(Thread.currentThread().getName());
         latch1.countDown();
-      }, false, ar -> {
-      });
+      }, false);
     }
     awaitLatch(latch1);
     assertEquals(5, names.size());
@@ -251,7 +250,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
       assertEquals(maxExecuteTime, thread.maxExecTime());
       assertEquals(maxExecuteTimeUnit, thread.maxExecTimeUnit());
       f.complete();
-    }, res -> {
+    }).onComplete(res -> {
       testComplete();
     });
     await();
@@ -265,7 +264,6 @@ public class NamedWorkerPoolTest extends VertxTestBase {
     WorkerExecutor worker2 = vertx.createSharedWorkerExecutor(poolName);
     worker1.executeBlocking(fut -> {
       thread.set(Thread.currentThread());
-    }, ar -> {
     });
     assertWaitUntil(() -> thread.get() != null);
     worker1.close();
@@ -284,11 +282,11 @@ public class NamedWorkerPoolTest extends VertxTestBase {
       public void start() throws Exception {
         pool.set(vertx.createSharedWorkerExecutor(poolName));
       }
-    }, onSuccess(deploymentIdRef::complete));
+    }).onComplete(onSuccess(deploymentIdRef::complete));
     String deploymentId = deploymentIdRef.get(20, SECONDS);
-    vertx.undeploy(deploymentId, onSuccess(v -> {
+    vertx.undeploy(deploymentId).onComplete(onSuccess(v -> {
       try {
-        pool.get().<String>executeBlocking(fut -> fail(), null);
+        pool.get().<String>executeBlocking(fut -> fail());
         fail();
       } catch (IllegalStateException ignore) {
         testComplete();
@@ -301,21 +299,24 @@ public class NamedWorkerPoolTest extends VertxTestBase {
   public void testDeployUsingNamedPool() throws Exception {
     AtomicReference<Thread> thread = new AtomicReference<>();
     String poolName = "vert.x-" + TestUtils.randomAlphaString(10);
+    Promise<Void> undeployed = Promise.promise();
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
-      public void start() throws Exception {
-        vertx.executeBlocking(fut -> {
-          thread.set(Thread.currentThread());
-          assertTrue(Context.isOnVertxThread());
-          assertTrue(Context.isOnWorkerThread());
-          assertFalse(Context.isOnEventLoopThread());
-          assertTrue(Thread.currentThread().getName().startsWith(poolName + "-"));
-          fut.complete();
-        }, onSuccess(v -> {
-          vertx.undeploy(context.deploymentID());
-        }));
+      public void start() {
+        vertx.runOnContext(v1 -> {
+          vertx.executeBlocking(fut -> {
+            thread.set(Thread.currentThread());
+            assertTrue(Context.isOnVertxThread());
+            assertTrue(Context.isOnWorkerThread());
+            assertFalse(Context.isOnEventLoopThread());
+            assertTrue(Thread.currentThread().getName().startsWith(poolName + "-"));
+            fut.complete();
+          }).onComplete(onSuccess(v2 -> {
+            vertx.undeploy(context.deploymentID()).onComplete(undeployed);
+          }));
+        });
       }
-    }, new DeploymentOptions().setWorkerPoolName(poolName), onSuccess(v -> {}));
+    }, new DeploymentOptions().setWorkerPoolName(poolName));
     assertWaitUntil(() -> thread.get() != null && thread.get().getState() == Thread.State.TERMINATED);
   }
 
@@ -328,8 +329,8 @@ public class NamedWorkerPoolTest extends VertxTestBase {
       public void start() {
         threads.add(Thread.currentThread());
       }
-    }, new DeploymentOptions().setInstances(instances).setWorkerPoolName("the-pool"), onSuccess(id -> {
-      vertx.undeploy(id, onSuccess(v -> {
+    }, new DeploymentOptions().setInstances(instances).setWorkerPoolName("the-pool")).onComplete(onSuccess(id -> {
+      vertx.undeploy(id).onComplete(onSuccess(v -> {
         assertEquals(instances, threads.size());
         testComplete();
       }));
@@ -354,7 +355,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
           vertx.undeploy(context.deploymentID());
         });
       }
-    }, new DeploymentOptions().setWorker(true).setWorkerPoolName(poolName), onSuccess(deployment::set));
+    }, new DeploymentOptions().setWorker(true).setWorkerPoolName(poolName)).onComplete(onSuccess(deployment::set));
     assertWaitUntil(() -> thread.get() != null && thread.get().getState() == Thread.State.TERMINATED);
   }
 
@@ -362,14 +363,14 @@ public class NamedWorkerPoolTest extends VertxTestBase {
   public void testCloseWorkerPoolsWhenVertxCloses() {
     Vertx vertx = Vertx.vertx();
     WorkerExecutor exec = vertx.createSharedWorkerExecutor("vert.x-123");
-    vertx.close(v -> {
+    vertx.close().onComplete(v -> {
       try {
-        vertx.executeBlocking(fut -> fail(), ar -> fail());
+        vertx.executeBlocking(fut -> fail()).onComplete(ar -> fail());
         fail();
       } catch (RejectedExecutionException ignore) {
       }
       try {
-        exec.executeBlocking(fut -> fail(), ar -> fail());
+        exec.executeBlocking(fut -> fail()).onComplete(ar -> fail());
         fail();
       } catch (IllegalStateException ignore) {
       }
@@ -387,25 +388,25 @@ public class NamedWorkerPoolTest extends VertxTestBase {
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
       public void start(Promise<Void> startPromise) {
-        vertx.executeBlocking(Promise::complete, startPromise);
+        vertx.<Void>executeBlocking(Promise::complete).onComplete(startPromise);
       }
-    }, new DeploymentOptions().setWorkerPoolName("foo"), onSuccess(id -> {
+    }, new DeploymentOptions().setWorkerPoolName("foo")).onComplete(onSuccess(id -> {
       ref.set(id);
       deployLatch1.countDown();
     }));
     awaitLatch(deployLatch1);
 
     CountDownLatch unDeployLatch = new CountDownLatch(1);
-    vertx.undeploy(ref.get(), onSuccess(v -> unDeployLatch.countDown()));
+    vertx.undeploy(ref.get()).onComplete(onSuccess(v -> unDeployLatch.countDown()));
     awaitLatch(unDeployLatch);
 
     CountDownLatch deployLatch2 = new CountDownLatch(1);
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
       public void start(Promise<Void> startPromise) {
-        vertx.executeBlocking(Promise::complete, startPromise);
+        vertx.<Void>executeBlocking(Promise::complete).onComplete(startPromise);
       }
-    }, new DeploymentOptions().setWorkerPoolName("foo"), onSuccess(id -> {
+    }, new DeploymentOptions().setWorkerPoolName("foo")).onComplete(onSuccess(id -> {
       deployLatch2.countDown();
     }));
     awaitLatch(deployLatch2);

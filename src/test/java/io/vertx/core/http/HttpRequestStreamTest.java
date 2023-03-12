@@ -46,10 +46,7 @@ public class HttpRequestStreamTest extends VertxTestBase {
     }
     if (server != null) {
       CountDownLatch latch = new CountDownLatch(1);
-      server.close((asyncResult) -> {
-        assertTrue(asyncResult.succeeded());
-        latch.countDown();
-      });
+      server.close().onComplete(onSuccess(v -> latch.countDown()));
       awaitLatch(latch);
     }
     super.tearDown();
@@ -67,15 +64,12 @@ public class HttpRequestStreamTest extends VertxTestBase {
       response.setStatusCode(200).end();
       response.close();
     });
-    server.listen(listenAR -> {
-      assertTrue(listenAR.succeeded());
+    server.listen().onComplete(onSuccess(ar -> {
       paused.set(true);
       httpStream.pause();
 
       netClient = vertx.createNetClient(new NetClientOptions().setConnectTimeout(1000));
-      netClient.connect(DEFAULT_HTTP_PORT, "localhost", socketAR -> {
-        assertTrue(socketAR.succeeded());
-        NetSocket socket = socketAR.result();
+      netClient.connect(DEFAULT_HTTP_PORT, "localhost").onComplete(onSuccess(socket -> {
         socket.write("GET / HTTP/1.1\r\n\r\n");
         Buffer buffer = Buffer.buffer();
         socket.handler(buffer::appendBuffer);
@@ -90,14 +84,14 @@ public class HttpRequestStreamTest extends VertxTestBase {
             .setURI(path)
           )
             .onComplete(onSuccess(req -> {
-              req.send(onSuccess(resp -> {
+              req.send().onComplete(onSuccess(resp -> {
                 assertEquals(200, resp.statusCode());
                 testComplete();
               }));
             }));
         });
-      });
-    });
+      }));
+    }));
     await();
   }
 
@@ -108,13 +102,11 @@ public class HttpRequestStreamTest extends VertxTestBase {
     ReadStream<HttpServerRequest> stream = server.requestStream();
     stream.endHandler(v -> complete());
     stream.handler(req -> {});
-    server.listen(ar -> {
-      assertTrue(ar.succeeded());
-      server.close(v -> {
-        assertTrue(ar.succeeded());
+    server.listen().onComplete(onSuccess(v1 -> {
+      server.close().onComplete(onSuccess(v2 -> {
         complete();
-      });
-    });
+      }));
+    }));
     await();
   }
 
@@ -133,10 +125,10 @@ public class HttpRequestStreamTest extends VertxTestBase {
         testComplete();
       }
     });
-    server.listen(ar -> {
+    server.listen().onComplete(ar -> {
       assertTrue(Vertx.currentContext().isEventLoopContext());
       assertNull(stack.get());
-      server.close(v -> {
+      server.close().onComplete(v -> {
         assertTrue(Vertx.currentContext().isEventLoopContext());
         if (done.incrementAndGet() == 2) {
           testComplete();

@@ -89,7 +89,20 @@ public interface MessageConsumer<T> extends ReadStream<Message<T>> {
    * @param completionHandler the completion handler
    */
   @Deprecated
-  void completionHandler(Handler<AsyncResult<Void>> completionHandler);
+  default void completionHandler(Handler<AsyncResult<Void>> completionHandler) {
+      completion(completionHandler);
+  }
+
+  @Deprecated
+  default MessageConsumer<T> completion(Handler<AsyncResult<Void>> completionHandler) {
+    Future<Void> completion = completion();
+    if (completionHandler != null) {
+      completion.onComplete(completionHandler);
+    }
+    return this;
+  }
+
+  Future<Void> completion();
 
   /**
    * Unregisters the handler which created this registration

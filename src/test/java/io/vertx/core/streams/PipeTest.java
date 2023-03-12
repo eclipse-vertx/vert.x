@@ -43,7 +43,7 @@ public class PipeTest extends AsyncTestBase {
   @Test
   public void testSimple() {
     FakeStream<Object> src = new FakeStream<>();
-    src.pipeTo(dst, onSuccess(v -> {
+    src.pipeTo(dst).onComplete(onSuccess(v -> {
       assertTrue(dst.isEnded());
       assertNull(src.handler());
       assertNull(src.exceptionHandler());
@@ -64,7 +64,7 @@ public class PipeTest extends AsyncTestBase {
     Pipe<Object> pipe = src.pipe();
     src.write(o1);
     src.end();
-    pipe.to(dst, onSuccess(v -> {
+    pipe.to(dst).onComplete(onSuccess(v -> {
       assertTrue(dst.isEnded());
       assertEquals(Collections.singletonList(o1), emitted);
       testComplete();
@@ -79,7 +79,7 @@ public class PipeTest extends AsyncTestBase {
     src.write(o1);
     Throwable failure = new Throwable();
     src.fail(failure);
-    pipe.to(dst, onFailure(err -> {
+    pipe.to(dst).onComplete(onFailure(err -> {
       assertSame(failure, err);
       assertTrue(dst.isEnded());
       assertEquals(Collections.singletonList(o1), emitted);
@@ -95,7 +95,7 @@ public class PipeTest extends AsyncTestBase {
     Pipe<Object> pipe = src.pipe();
     Promise<Void> end = Promise.promise();
     dst.setEnd(end.future());
-    pipe.to(dst, onFailure(err -> {
+    pipe.to(dst).onComplete(onFailure(err -> {
       assertSame(expected, err);
       assertTrue(dst.isEnded());
       assertTrue(end.future().isComplete());
@@ -112,7 +112,7 @@ public class PipeTest extends AsyncTestBase {
     FakeStream<Object> src = new FakeStream<>();
     Pipe<Object> pipe = src.pipe();
     pipe.endOnFailure(false);
-    pipe.to(dst, onFailure(err -> {
+    pipe.to(dst).onComplete(onFailure(err -> {
       assertSame(expected, err);
       assertFalse(dst.isEnded());
       testComplete();
@@ -128,7 +128,7 @@ public class PipeTest extends AsyncTestBase {
     Pipe<Object> pipe = src.pipe();
     dst.pause();
     Promise<Void> end = Promise.promise();
-    pipe.to(dst, onFailure(err -> {
+    pipe.to(dst).onComplete(onFailure(err -> {
       assertFalse(src.isPaused());
       assertSame(expected, err);
       assertTrue(dst.isEnded());
@@ -153,7 +153,7 @@ public class PipeTest extends AsyncTestBase {
     FakeStream<Object> src = new FakeStream<>();
     Pipe<Object> pipe = src.pipe();
     pipe.endOnSuccess(false);
-    pipe.to(dst, onSuccess(v -> {
+    pipe.to(dst).onComplete(onSuccess(v -> {
       assertEquals(Arrays.asList(o1, o2, o3), emitted);
       assertFalse(dst.isEnded());
       testComplete();
@@ -245,7 +245,7 @@ public class PipeTest extends AsyncTestBase {
     FakeStream<Object> src = new FakeStream<>();
     Pipe<Object> pipe = src.pipe();
     AtomicReference<AsyncResult<Void>> ended = new AtomicReference<>();
-    pipe.to(dst, ended::set);
+    pipe.to(dst).onComplete(ended::set);
     src.end();
     assertNull(ended.get());
     completion.complete();
@@ -259,7 +259,7 @@ public class PipeTest extends AsyncTestBase {
     FakeStream<Object> src = new FakeStream<>();
     Pipe<Object> pipe = src.pipe();
     AtomicReference<AsyncResult<Void>> ended = new AtomicReference<>();
-    pipe.to(dst, ended::set);
+    pipe.to(dst).onComplete(ended::set);
     src.end();
     assertNull(ended.get());
     Exception failure = new Exception();
@@ -273,7 +273,7 @@ public class PipeTest extends AsyncTestBase {
     FakeStream<Object> src = new FakeStream<>();
     Pipe<Object> pipe = src.pipe();
     List<AsyncResult<Void>> res = new ArrayList<>();
-    pipe.to(dst, res::add);
+    pipe.to(dst).onComplete(res::add);
     assertEquals(Collections.emptyList(), res);
     pipe.close();
     assertEquals(1, res.size());

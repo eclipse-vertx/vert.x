@@ -41,13 +41,13 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
   private final String address;
   private final boolean localOnly;
   private Handler<Message<T>> handler;
-  private Handler<AsyncResult<Void>> completionHandler;
   private Handler<Void> endHandler;
   private Handler<Message<T>> discardHandler;
   private int maxBufferedMessages = DEFAULT_MAX_BUFFERED_MESSAGES;
   private Queue<Message<T>> pending = new ArrayDeque<>(8);
   private long demand = Long.MAX_VALUE;
   private Promise<Void> result;
+  private boolean registered;
 
   MessageConsumerImpl(Vertx vertx, ContextInternal context, EventBusImpl eventBus, String address, boolean localOnly) {
     super(context, eventBus, address, false);
@@ -56,6 +56,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
     this.eventBus = eventBus;
     this.address = address;
     this.localOnly = localOnly;
+    this.result = context.promise();
   }
 
   @Override
@@ -98,13 +99,8 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
   }
 
   @Override
-  public synchronized void completionHandler(Handler<AsyncResult<Void>> handler) {
-    Objects.requireNonNull(handler);
-    if (result != null) {
-      result.future().onComplete(handler);
-    } else {
-      completionHandler = handler;
-    }
+  public synchronized Future<Void> completion() {
+    return result.future();
   }
 
   @Override
@@ -126,11 +122,10 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
     }
     discardHandler = null;
     Future<Void> fut = super.unregister();
-
-    Promise<Void> res = result; // Alias reference because result can become null when the onComplete callback executes
-    if (res != null) {
+    if (registered) {
+      Promise<Void> res = result; // Alias reference because result can become null when the onComplete callback executes
       fut.onComplete(ar -> res.tryFail("Consumer unregistered before registration completed"));
-      result = null;
+      result = context.promise();
     }
     return fut;
   }
@@ -216,15 +211,12 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
     if (h != null) {
       synchronized (this) {
         handler = h;
-        if (result == null) {
-          Promise<Void> p = context.promise();
-          if (completionHandler != null) {
-            p.future().onComplete(completionHandler);
-          }
-          result = p;
-          Promise<Void> reg = context.promise();
-          register(null, localOnly, reg);
-          reg.future().onComplete(ar -> {
+        if (!registered) {
+          registered = true;
+          Promise<Void> p = result;
+          Promise<Void> registration = context.promise();
+          register(null, localOnly, registration);
+          registration.future().onComplete(ar -> {
             if (ar.succeeded()) {
               p.tryComplete();
             } else {

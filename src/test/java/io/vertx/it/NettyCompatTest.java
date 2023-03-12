@@ -11,10 +11,7 @@
 
 package io.vertx.it;
 
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.*;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.test.core.VertxTestBase;
@@ -43,19 +40,18 @@ public class NettyCompatTest extends VertxTestBase {
         .setKeyCertOptions(Cert.SERVER_JKS.get())
     )
         .requestHandler(req -> req.response().end("OK"))
-        .listen(8443, "localhost", onSuccess(s -> {
+        .listen(8443, "localhost").onComplete(onSuccess(s -> {
           HttpClient client = vertx.createHttpClient(new HttpClientOptions()
               .setSsl(true)
               .setSslEngineOptions(new OpenSSLEngineOptions())
               .setTrustStoreOptions(Trust.SERVER_JKS.get()));
-          client.request(HttpMethod.GET, 8443, "localhost", "/somepath", onSuccess(req -> {
-            req.send(onSuccess(resp -> {
-              resp.bodyHandler(buff -> {
-                assertEquals("OK", buff.toString());
-                testComplete();
-              });
-            }));
-          }));
+          client
+            .request(HttpMethod.GET, 8443, "localhost", "/somepath")
+            .compose(req -> req.send().compose(HttpClientResponse::body))
+            .onComplete(buff -> {
+              assertEquals("OK", buff.toString());
+              testComplete();
+            });
         }));
     await();
   }

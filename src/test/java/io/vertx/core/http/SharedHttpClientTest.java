@@ -41,7 +41,7 @@ public class SharedHttpClientTest extends VertxTestBase {
     CountDownLatch receivedLatch = new CountDownLatch(TOTAL_REQUESTS);
     ServerVerticle serverVerticle = new ServerVerticle();
 
-    vertx.deployVerticle(serverVerticle, onSuccess(serverId -> {
+    vertx.deployVerticle(serverVerticle).onComplete(onSuccess(serverId -> {
 
       HttpClientOptions clientOptions = httpClientOptions(serverVerticle, SHARED_POOL_SIZE);
       DeploymentOptions deploymentOptions = deploymentOptions(CLIENT_VERTICLE_INSTANCES, clientOptions);
@@ -53,7 +53,7 @@ public class SharedHttpClientTest extends VertxTestBase {
         receivedLatch.countDown();
       });
 
-      vertx.deployVerticle(verticleSupplier, deploymentOptions, onSuccess(clientId -> {
+      vertx.deployVerticle(verticleSupplier, deploymentOptions).onComplete(onSuccess(clientId -> {
         vertx.eventBus().publish(ClientVerticle.TRIGGER_ADDRESS, NUM_REQUESTS_PER_VERTICLE);
       }));
     }));
@@ -70,7 +70,7 @@ public class SharedHttpClientTest extends VertxTestBase {
     ServerVerticle serverVerticle = new ServerVerticle();
     AtomicReference<String> clientDeploymentId = new AtomicReference<>();
 
-    vertx.deployVerticle(serverVerticle, onSuccess(serverId -> {
+    vertx.deployVerticle(serverVerticle).onComplete(onSuccess(serverId -> {
 
       HttpClientOptions clientOptions = httpClientOptions(serverVerticle, SHARED_POOL_SIZE)
         // Make sure connections stay alive for the duration of the test if the server is not closed
@@ -79,7 +79,7 @@ public class SharedHttpClientTest extends VertxTestBase {
 
       Supplier<Verticle> verticleSupplier = () -> new ClientVerticle(clientVerticle -> receivedLatch.countDown());
 
-      vertx.deployVerticle(verticleSupplier, deploymentOptions, onSuccess(clientId -> {
+      vertx.deployVerticle(verticleSupplier, deploymentOptions).onComplete(onSuccess(clientId -> {
         clientDeploymentId.set(clientId);
         vertx.eventBus().publish(ClientVerticle.TRIGGER_ADDRESS, NUM_REQUESTS_PER_VERTICLE);
       }));
@@ -90,7 +90,7 @@ public class SharedHttpClientTest extends VertxTestBase {
     awaitLatch(receivedLatch);
 
     CountDownLatch undeployLatch = new CountDownLatch(1);
-    vertx.undeploy(clientDeploymentId.get(), onSuccess(v -> {
+    vertx.undeploy(clientDeploymentId.get()).onComplete(onSuccess(v -> {
       undeployLatch.countDown();
     }));
 
@@ -106,7 +106,7 @@ public class SharedHttpClientTest extends VertxTestBase {
     ServerVerticle serverVerticle = new ServerVerticle();
     AtomicReference<String> clientDeploymentId = new AtomicReference<>();
 
-    vertx.deployVerticle(serverVerticle, onSuccess(serverId -> {
+    vertx.deployVerticle(serverVerticle).onComplete(onSuccess(serverId -> {
 
       HttpClientOptions clientOptions = httpClientOptions(serverVerticle, SHARED_POOL_SIZE)
         .setKeepAliveTimeout(keepAliveTimeoutSeconds);
@@ -114,7 +114,7 @@ public class SharedHttpClientTest extends VertxTestBase {
 
       Supplier<Verticle> verticleSupplier = () -> new ClientVerticle(clientVerticle -> receivedLatch.countDown());
 
-      vertx.deployVerticle(verticleSupplier, deploymentOptions, onSuccess(clientId -> {
+      vertx.deployVerticle(verticleSupplier, deploymentOptions).onComplete(onSuccess(clientId -> {
         clientDeploymentId.set(clientId);
         vertx.eventBus().publish(ClientVerticle.TRIGGER_ADDRESS, NUM_REQUESTS_PER_VERTICLE);
       }));
@@ -132,7 +132,7 @@ public class SharedHttpClientTest extends VertxTestBase {
       public void start() {
         client = vertx.createHttpClient(new HttpClientOptions().setShared(true).setName(ClientVerticle.SHARED_CLIENT_NAME));
       }
-    }, onSuccess(v -> {
+    }).onComplete(onSuccess(v -> {
       deployLatch.countDown();
     }));
     awaitLatch(deployLatch);
@@ -141,7 +141,7 @@ public class SharedHttpClientTest extends VertxTestBase {
     awaitLatch(receivedLatch);
 
     CountDownLatch undeployLatch = new CountDownLatch(1);
-    vertx.undeploy(clientDeploymentId.get(), onSuccess(v -> {
+    vertx.undeploy(clientDeploymentId.get()).onComplete(onSuccess(v -> {
       undeployLatch.countDown();
     }));
 
@@ -177,7 +177,7 @@ public class SharedHttpClientTest extends VertxTestBase {
     public void start(Promise<Void> startPromise) throws Exception {
       context = super.context;
       client = vertx.createHttpClient(new HttpClientOptions(config().getJsonObject("httpClientOptions")).setShared(true).setName(SHARED_CLIENT_NAME));
-      vertx.eventBus().consumer(TRIGGER_ADDRESS, this).completionHandler(startPromise);
+      vertx.eventBus().consumer(TRIGGER_ADDRESS, this).completion().onComplete(startPromise);
     }
 
     @Override

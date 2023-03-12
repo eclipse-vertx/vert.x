@@ -32,10 +32,8 @@ public class TracerTest extends VertxTestBase {
 
   @Test
   public void testClose() throws Exception {
-    CountDownLatch latch = new CountDownLatch(1);
     assertEquals(0, tracer.closeCount());
-    vertx.close(ar -> latch.countDown());
-    awaitLatch(latch);
+    awaitFuture(vertx.close());
     assertEquals(1, tracer.closeCount());
   }
 
@@ -45,7 +43,7 @@ public class TracerTest extends VertxTestBase {
     ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
     ContextInternal duplicate = ctx.duplicate();
     duplicate.runOnContext(v -> {
-      exec.executeBlocking(Promise::complete, onSuccess(res -> {
+      exec.executeBlocking(Promise::complete).onComplete(onSuccess(res -> {
         testComplete();
       }));
     });

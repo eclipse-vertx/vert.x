@@ -11,10 +11,7 @@
 
 package io.vertx.core.eventbus;
 
-import io.vertx.core.CompositeFuture;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
+import io.vertx.core.*;
 import io.vertx.core.impl.VertxBuilder;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.cluster.ClusterManager;
@@ -66,10 +63,8 @@ public class CustomNodeSelectorTest extends VertxTestBase {
         received.merge(i, Collections.singleton(msg.body()), (s1, s2) -> Stream.concat(s1.stream(), s2.stream()).collect(toSet()));
         latch.countDown();
       }))
-      .map(consumer -> {
-        Promise promise = Promise.promise();
-        consumer.completionHandler(promise);
-        return promise.future();
+      .<Future>map(consumer -> {
+        return consumer.completion();
       })
       .collect(collectingAndThen(toList(), CompositeFuture::all));
 

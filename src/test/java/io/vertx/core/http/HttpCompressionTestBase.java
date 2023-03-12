@@ -93,13 +93,13 @@ public abstract class HttpCompressionTestBase extends HttpTestBase {
     client.request(new RequestOptions())
       .onComplete(onSuccess(req -> {
         req.putHeader(HttpHeaders.ACCEPT_ENCODING, encoding());
-        req.send(onSuccess(resp -> {
+        req.send().onComplete(onSuccess(resp -> {
           if (req.version() != HttpVersion.HTTP_2) {
             assertNull(resp.getHeader(HttpHeaders.CONTENT_ENCODING));
           } else {
             assertEquals(HttpHeaders.IDENTITY.toString(), resp.getHeader(HttpHeaders.CONTENT_ENCODING));
           }
-          resp.body(onSuccess(responseBuffer -> {
+          resp.body().onComplete(onSuccess(responseBuffer -> {
             String responseBody = responseBuffer.toString(CharsetUtil.UTF_8);
             assertEquals(COMPRESS_TEST_STRING, responseBody);
             testComplete();
@@ -194,8 +194,8 @@ public abstract class HttpCompressionTestBase extends HttpTestBase {
     client = vertx.createHttpClient(createBaseClientOptions().setTryUseCompression(true));
     client.request(new RequestOptions())
       .onComplete(onSuccess(req -> {
-        req.send(onSuccess(resp -> {
-          resp.end(onSuccess(v -> {
+        req.send().onComplete(onSuccess(resp -> {
+          resp.end().onComplete(onSuccess(v -> {
             testComplete();
           }));
         }));

@@ -71,12 +71,12 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
         assertEquals(2, seq.get());
       });
       req.response().end();
-    }).listen(8080, "localhost", onSuccess(v -> {
+    }).listen(8080, "localhost").onComplete(onSuccess(v -> {
       latch.countDown();
     }));
     awaitLatch(latch);
-    client.request(HttpMethod.GET, 8080, "localhost", "/", onSuccess(req -> {
-      req.send(onSuccess(resp -> {
+    client.request(HttpMethod.GET, 8080, "localhost", "/").onComplete(onSuccess(req -> {
+      req.send().onComplete(onSuccess(resp -> {
         testComplete();
       }));
     }));
@@ -115,7 +115,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
         assertEquals(2, seq.get());
         complete();
       });
-    }).listen(8080, "localhost", onSuccess(v -> {
+    }).listen(8080, "localhost").onComplete(onSuccess(v -> {
       latch.countDown();
     }));
     awaitLatch(latch);
@@ -124,11 +124,11 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
       .setHost("localhost")
       .setURI("/")).onComplete(onSuccess(req -> {
       req
-        .response(onFailure(err -> {
+        .response().onComplete(onFailure(err -> {
           complete();
-        }))
-        .setChunked(true)
-        .sendHead(v -> {
+        }));
+      req.setChunked(true)
+        .sendHead().onComplete(v -> {
           req.connection().close();
         });
     }));
@@ -175,7 +175,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     server.requestHandler(req -> {
       assertEquals(traceId, req.getHeader("X-B3-TraceId"));
       req.response().end();
-    }).listen(8080, "localhost", onSuccess(v -> {
+    }).listen(8080, "localhost").onComplete(onSuccess(v -> {
       latch.countDown();
     }));
     awaitLatch(latch);
@@ -183,8 +183,8 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     ctx.runOnContext(v1 -> {
       ConcurrentMap<Object, Object> tracerMap = ((ContextInternal) ctx).localContextData();
       tracerMap.put(key, val);
-      client.request(request, onSuccess(req -> {
-        req.send(onSuccess(resp -> {
+      client.request(request).onComplete(onSuccess(req -> {
+        req.send().onComplete(onSuccess(resp -> {
           resp.endHandler(v2 -> {
             // Updates are done on the HTTP client context, so we need to run task on this context
             // to avoid data race
@@ -226,7 +226,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     server.requestHandler(req -> {
       assertEquals(traceId, req.getHeader("X-B3-TraceId"));
       req.connection().close();
-    }).listen(8080, "localhost", onSuccess(v -> {
+    }).listen(8080, "localhost").onComplete(onSuccess(v -> {
       latch.countDown();
     }));
     awaitLatch(latch);
@@ -234,8 +234,8 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     ctx.runOnContext(v1 -> {
       ConcurrentMap<Object, Object> tracerMap = ((ContextInternal) ctx).localContextData();
       tracerMap.put(key, val);
-      client.request(HttpMethod.GET, 8080, "localhost", "/", onSuccess(req -> {
-        req.send(onFailure(err -> {
+      client.request(HttpMethod.GET, 8080, "localhost", "/").onComplete(onSuccess(req -> {
+        req.send().onComplete(onFailure(err -> {
           assertEquals(2, seq.get());
           assertEquals(2, seq.get());
           assertNull(tracerMap.get(key));

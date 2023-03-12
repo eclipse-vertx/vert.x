@@ -121,28 +121,25 @@ public class VerticleFactoryTest extends VertxTestBase {
     String name1 = "aa:myverticle1";
     String name2 = "bb:myverticle2";
     String name3 = "cc:myverticle3";
-    vertx.deployVerticle(name1, new DeploymentOptions(), ar -> {
-      assertTrue(ar.succeeded());
+    vertx.deployVerticle(name1, new DeploymentOptions()).onComplete(onSuccess(ar -> {
       assertEquals(name1, fact1.identifier);
       assertTrue(verticle1.startCalled);
       assertFalse(verticle2.startCalled);
       assertFalse(verticle3.startCalled);
       assertNull(fact2.identifier);
       assertNull(fact3.identifier);
-      vertx.deployVerticle(name2, new DeploymentOptions(), ar2 -> {
-        assertTrue(ar2.succeeded());
+      vertx.deployVerticle(name2, new DeploymentOptions()).onComplete(onSuccess(ar2 -> {
         assertEquals(name2, fact2.identifier);
         assertTrue(verticle2.startCalled);
         assertFalse(verticle3.startCalled);
         assertNull(fact3.identifier);
-        vertx.deployVerticle(name3, new DeploymentOptions(), ar3 -> {
-          assertTrue(ar3.succeeded());
+        vertx.deployVerticle(name3, new DeploymentOptions()).onComplete(onSuccess(ar3 -> {
           assertEquals(name3, fact3.identifier);
           assertTrue(verticle3.startCalled);
           testComplete();
-        });
-      });
-    });
+        }));
+      }));
+    }));
     await();
   }
 
@@ -160,28 +157,25 @@ public class VerticleFactoryTest extends VertxTestBase {
     String name1 = "myverticle1.aa";
     String name2 = "myverticle2.bb";
     String name3 = "myverticle3.cc";
-    vertx.deployVerticle(name1, new DeploymentOptions(), ar -> {
-      assertTrue(ar.succeeded());
+    vertx.deployVerticle(name1, new DeploymentOptions()).onComplete(onSuccess(ar -> {
       assertEquals(name1, fact1.identifier);
       assertTrue(verticle1.startCalled);
       assertFalse(verticle2.startCalled);
       assertFalse(verticle3.startCalled);
       assertNull(fact2.identifier);
       assertNull(fact3.identifier);
-      vertx.deployVerticle(name2, new DeploymentOptions(), ar2 -> {
-        assertTrue(ar2.succeeded());
+      vertx.deployVerticle(name2, new DeploymentOptions()).onComplete(onSuccess(ar2 -> {
         assertEquals(name2, fact2.identifier);
         assertTrue(verticle2.startCalled);
         assertFalse(verticle3.startCalled);
         assertNull(fact3.identifier);
-        vertx.deployVerticle(name3, new DeploymentOptions(), ar3 -> {
-          assertTrue(ar3.succeeded());
+        vertx.deployVerticle(name3, new DeploymentOptions()).onComplete(onSuccess(ar3 -> {
           assertEquals(name3, fact3.identifier);
           assertTrue(verticle3.startCalled);
           testComplete();
-        });
-      });
-    });
+        }));
+      }));
+    }));
     await();
   }
 
@@ -195,13 +189,12 @@ public class VerticleFactoryTest extends VertxTestBase {
     vertx.registerVerticleFactory(fact2);
     String name1 = "cc:myverticle1";
     // If no match it will default to the simple Java verticle factory and then fail with ClassNotFoundException
-    vertx.deployVerticle(name1, new DeploymentOptions(), ar -> {
-      assertFalse(ar.succeeded());
+    vertx.deployVerticle(name1, new DeploymentOptions()).onComplete(onFailure(err -> {
       assertFalse(verticle1.startCalled);
       assertFalse(verticle2.startCalled);
-      assertTrue(ar.cause() instanceof ClassNotFoundException);
+      assertTrue(err instanceof ClassNotFoundException);
       testComplete();
-    });
+    }));
     await();
   }
 
@@ -214,13 +207,12 @@ public class VerticleFactoryTest extends VertxTestBase {
     vertx.registerVerticleFactory(fact1);
     TestVerticleFactory fact3 = new TestVerticleFactory("aa", verticle, 3);
     vertx.registerVerticleFactory(fact3);
-    vertx.deployVerticle("aa:someverticle", res -> {
-      assertTrue(res.succeeded());
+    vertx.deployVerticle("aa:someverticle").onComplete(onSuccess(res -> {
       assertEquals("aa:someverticle", fact1.identifier);
       assertNull(fact2.identifier);
       assertNull(fact3.identifier);
       testComplete();
-    });
+    }));
     await();
   }
 
@@ -233,13 +225,12 @@ public class VerticleFactoryTest extends VertxTestBase {
     vertx.registerVerticleFactory(fact1);
     TestVerticleFactory fact3 = new TestVerticleFactory("aa", verticle, 3);
     vertx.registerVerticleFactory(fact3);
-    vertx.deployVerticle("aa:someverticle", res -> {
-      assertTrue(res.succeeded());
+    vertx.deployVerticle("aa:someverticle").onComplete(onSuccess(res -> {
       assertEquals("aa:someverticle", fact2.identifier);
       assertNull(fact1.identifier);
       assertNull(fact3.identifier);
       testComplete();
-    });
+    }));
     await();
   }
 
@@ -252,13 +243,12 @@ public class VerticleFactoryTest extends VertxTestBase {
     vertx.registerVerticleFactory(fact1);
     TestVerticleFactory fact3 = new TestVerticleFactory("aa", verticle, 3);
     vertx.registerVerticleFactory(fact3);
-    vertx.deployVerticle("aa:someverticle", res -> {
-      assertTrue(res.succeeded());
+    vertx.deployVerticle("aa:someverticle").onComplete(onSuccess(res -> {
       assertEquals("aa:someverticle", fact3.identifier);
       assertNull(fact1.identifier);
       assertNull(fact2.identifier);
       testComplete();
-    });
+    }));
     await();
   }
 
@@ -271,25 +261,23 @@ public class VerticleFactoryTest extends VertxTestBase {
     vertx.registerVerticleFactory(fact1);
     TestVerticleFactory fact3 = new TestVerticleFactory("aa", verticle, 3, true);
     vertx.registerVerticleFactory(fact3);
-    vertx.deployVerticle("aa:someverticle", res -> {
-      assertFalse(res.succeeded());
-      assertTrue(res.cause() instanceof ClassNotFoundException);
+    vertx.deployVerticle("aa:someverticle").onComplete(onFailure(err -> {
+      assertTrue(err instanceof ClassNotFoundException);
       assertNull(fact1.identifier);
       assertNull(fact2.identifier);
       assertNull(fact3.identifier);
       testComplete();
-    });
+    }));
     await();
   }
 
   @Test
   public void testDeploymentOnClosedVertxWithCompletionHandler() {
     TestVerticle verticle = new TestVerticle();
-    vertx.close(done -> {
-      vertx.deployVerticle(verticle, ar -> {
-        assertFalse(ar.succeeded());
+    vertx.close().onComplete(done -> {
+      vertx.deployVerticle(verticle).onComplete(onFailure(err -> {
         testComplete();
-      });
+      }));
     });
     await();
   }
@@ -297,7 +285,7 @@ public class VerticleFactoryTest extends VertxTestBase {
   @Test
   public void testDeploymentOnClosedVertxWithoutCompletionHandler() {
     TestVerticle verticle = new TestVerticle();
-    vertx.close(done -> {
+    vertx.close().onComplete(done -> {
       vertx.deployVerticle(verticle);
       testComplete();
     });
@@ -405,7 +393,7 @@ public class VerticleFactoryTest extends VertxTestBase {
       }
     };
     vertx.registerVerticleFactory(factory);
-    vertx.deployVerticle("test:foo", new DeploymentOptions().setClassLoader(loader), onSuccess(id -> {
+    vertx.deployVerticle("test:foo", new DeploymentOptions().setClassLoader(loader)).onComplete(onSuccess(id -> {
       assertSame(loader, createClassLoader.get());
       testComplete();
     }));

@@ -100,7 +100,7 @@ public class Socks4Proxy extends TestProxyBase<Socks4Proxy> {
           }
           log.debug("connecting to " + host + ":" + port);
           NetClient netClient = vertx.createNetClient(new NetClientOptions());
-          netClient.connect(port, host, result -> {
+          netClient.connect(port, host).onComplete(result -> {
             if (result.succeeded()) {
               localAddresses.add(result.result().localAddress().toString());
               log.debug("writing: " + toHex(connectResponse));
@@ -123,7 +123,7 @@ public class Socks4Proxy extends TestProxyBase<Socks4Proxy> {
       });
     });
     CompletableFuture<Void> fut = new CompletableFuture<>();
-    server.listen(ar -> {
+    server.listen().onComplete(ar -> {
       if (ar.succeeded()) {
         fut.complete(null);
       } else {

@@ -11,6 +11,7 @@
 
 package io.vertx.core.http.impl;
 
+import io.vertx.core.MultiMap;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
@@ -33,12 +34,13 @@ public class WebSocketImpl extends WebSocketImplBase<WebSocketImpl> implements W
 
   public WebSocketImpl(ContextInternal context,
                        Http1xClientConnection conn,
+                       MultiMap headers,
                        boolean supportsContinuation,
                        long closingTimeout,
                        int maxWebSocketFrameSize,
                        int maxWebSocketMessageSize,
                        boolean registerWebSocketWriteHandlers) {
-    super(context, conn, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize, registerWebSocketWriteHandlers);
+    super(context, conn, headers, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize, registerWebSocketWriteHandlers);
     this.conn = conn;
     this.closingTimeoutMS = closingTimeout >= 0 ? closingTimeout * 1000L : -1L;
   }

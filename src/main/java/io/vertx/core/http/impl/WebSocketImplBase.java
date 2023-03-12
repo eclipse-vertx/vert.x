@@ -88,8 +88,13 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   private long closeTimeoutID = -1L;
   private MultiMap headers;
 
-  WebSocketImplBase(ContextInternal context, Http1xConnectionBase conn, boolean supportsContinuation,
-                    int maxWebSocketFrameSize, int maxWebSocketMessageSize, boolean registerWebSocketWriteHandlers) {
+  WebSocketImplBase(ContextInternal context,
+                    Http1xConnectionBase conn,
+                    MultiMap headers,
+                    boolean supportsContinuation,
+                    int maxWebSocketFrameSize,
+                    int maxWebSocketMessageSize,
+                    boolean registerWebSocketWriteHandlers) {
     this.supportsContinuation = supportsContinuation;
     if (registerWebSocketWriteHandlers) {
       textHandlerID = "__vertx.ws." + UUID.randomUUID();
@@ -104,6 +109,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     this.pending = new InboundBuffer<>(context);
     this.writable = !conn.isNotWritable();
     this.chctx = conn.channelHandlerContext();
+    this.headers = headers;
 
     pending.handler(this::receiveFrame);
     pending.drainHandler(v -> conn.doResume());
@@ -283,12 +289,6 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   public MultiMap headers() {
     synchronized(conn) {
       return headers;
-    }
-  }
-
-  void headers(MultiMap responseHeaders) {
-    synchronized(conn) {
-      this.headers = responseHeaders;
     }
   }
 

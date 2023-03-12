@@ -64,8 +64,8 @@ public class ConnectionBaseTest extends VertxTestBase {
           conn.writeMessage("msg2");
         });
       });
-      server.listen(1234, "localhost", onSuccess(s -> {
-        client.connect(1234, "localhost", onSuccess(so -> {
+      server.listen(1234, "localhost").onComplete(onSuccess(s -> {
+        client.connect(1234, "localhost").onComplete(onSuccess(so -> {
         }));
       }));
       await();
@@ -120,8 +120,8 @@ public class ConnectionBaseTest extends VertxTestBase {
           conn.writeToChannel("msg2");
         });
       });
-      server.listen(1234, "localhost", onSuccess(s -> {
-        client.connect(1234, "localhost", onSuccess(so -> {
+      server.listen(1234, "localhost").onComplete(onSuccess(s -> {
+        client.connect(1234, "localhost").onComplete(onSuccess(so -> {
         }));
       }));
       await();

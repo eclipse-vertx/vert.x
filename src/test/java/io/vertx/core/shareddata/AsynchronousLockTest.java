@@ -36,29 +36,27 @@ public class AsynchronousLockTest extends VertxTestBase {
 
   @Test
   public void testIllegalArguments() throws Exception {
-    assertNullPointerException(() -> getVertx().sharedData().getLock(null, ar -> {}));
-    assertNullPointerException(() -> getVertx().sharedData().getLock("foo", null));
-    assertNullPointerException(() -> getVertx().sharedData().getLockWithTimeout(null, 1, ar -> {}));
-    assertNullPointerException(() -> getVertx().sharedData().getLockWithTimeout("foo", 1, null));
-    assertIllegalArgumentException(() -> getVertx().sharedData().getLockWithTimeout("foo", -1, ar -> {}));
+    assertNullPointerException(() -> getVertx().sharedData().getLock(null));
+    assertNullPointerException(() -> getVertx().sharedData().getLockWithTimeout(null, 1));
+    assertIllegalArgumentException(() -> getVertx().sharedData().getLockWithTimeout("foo", -1));
   }
 
   @Test
   public void testAcquire() {
-    getVertx().sharedData().getLock("foo", ar -> {
-      assertTrue(ar.succeeded());
+    SharedData sharedData = getVertx().sharedData();
+    sharedData.getLock("foo").onComplete(onSuccess(lock -> {
       long start = System.currentTimeMillis();
-      Lock lock = ar.result();
       vertx.setTimer(1000, tid -> {
         lock.release();
       });
-      getVertx().sharedData().getLock("foo", ar2 -> {
-        assertTrue(ar2.succeeded());
-        // Should be delayed
-        assertTrue(System.currentTimeMillis() - start >= 1000);
-        testComplete();
-      });
-    });
+      sharedData
+        .getLock("foo")
+        .onComplete(onSuccess(v -> {
+          // Should be delayed
+          assertTrue(System.currentTimeMillis() - start >= 1000);
+          testComplete();
+        }));
+    }));
     await();
   }
 
@@ -69,22 +67,21 @@ public class AsynchronousLockTest extends VertxTestBase {
     SharedData sharedData = vertx.sharedData();
     AtomicReference<Long> start = new AtomicReference<>();
     context.runOnContext(v -> {
-      sharedData.getLock("foo", ar -> {
-        assertTrue(ar.succeeded());
+      sharedData.getLock("foo").onComplete(onSuccess(lock -> {
         start.set(System.currentTimeMillis());
-        Lock lock = ar.result();
         vertx.setTimer(1000, tid -> {
           lock.release();
         });
         context.runOnContext(v2 -> {
-          sharedData.getLock("foo", ar2 -> {
-            assertTrue(ar2.succeeded());
-            // Should be delayed
-            assertTrue(System.currentTimeMillis() - start.get() >= 1000);
-            testComplete();
-          });
+          sharedData
+            .getLock("foo")
+            .onComplete(onSuccess(ar2 -> {
+              // Should be delayed
+              assertTrue(System.currentTimeMillis() - start.get() >= 1000);
+              testComplete();
+            }));
         });
-      });
+      }));
     });
     await();
   }
@@ -96,21 +93,27 @@ public class AsynchronousLockTest extends VertxTestBase {
     SharedData sharedData = vertx.sharedData();
     AtomicInteger stage = new AtomicInteger();
     context.runOnContext(v -> {
-      sharedData.getLock("foo", onSuccess(foo -> {
-        assertTrue(stage.compareAndSet(0, 1));
-        // Create another lock request
-        sharedData.getLock("foo", onSuccess(foo1 -> {
-          assertEquals(2, stage.get());
-          foo1.release();
-          testComplete();
+      sharedData
+        .getLock("foo")
+        .onComplete(onSuccess(foo -> {
+          assertTrue(stage.compareAndSet(0, 1));
+          // Create another lock request
+          sharedData
+            .getLock("foo")
+            .onComplete(onSuccess(foo1 -> {
+              assertEquals(2, stage.get());
+              foo1.release();
+              testComplete();
+            }));
+          // Should not be blocked by second request for lock "foo"
+          sharedData
+            .getLock("bar")
+            .onComplete(onSuccess(bar -> {
+              assertTrue(stage.compareAndSet(1, 2));
+              foo.release();
+              bar.release();
+            }));
         }));
-        // Should not be blocked by second request for lock "foo"
-        sharedData.getLock("bar", onSuccess(bar -> {
-          assertTrue(stage.compareAndSet(1, 2));
-          foo.release();
-          bar.release();
-        }));
-      }));
     });
     await();
   }
@@ -120,13 +123,16 @@ public class AsynchronousLockTest extends VertxTestBase {
     Vertx vertx = getVertx();
     SharedData sharedData = vertx.sharedData();
     AtomicReference<Long> start = new AtomicReference<>();
+
     vertx.<Lock>executeBlocking(future -> {
       CountDownLatch acquireLatch = new CountDownLatch(1);
       AtomicReference<AsyncResult<Lock>> lockReference = new AtomicReference<>();
-      sharedData.getLock("foo", ar -> {
-        lockReference.set(ar);
-        acquireLatch.countDown();
-      });
+      sharedData
+        .getLock("foo")
+        .onComplete(ar -> {
+          lockReference.set(ar);
+          acquireLatch.countDown();
+        });
       try {
         awaitLatch(acquireLatch);
         AsyncResult<Lock> ar = lockReference.get();
@@ -138,73 +144,72 @@ public class AsynchronousLockTest extends VertxTestBase {
       } catch (InterruptedException e) {
         future.fail(e);
       }
-    }, ar -> {
-      if (ar.succeeded()) {
-        start.set(System.currentTimeMillis());
-        vertx.setTimer(1000, tid -> {
-          ar.result().release();
-        });
-        vertx.executeBlocking(future -> {
-          CountDownLatch acquireLatch = new CountDownLatch(1);
-          AtomicReference<AsyncResult<Lock>> lockReference = new AtomicReference<>();
-          sharedData.getLock("foo", ar2 -> {
+    }).compose(lock -> {
+      start.set(System.currentTimeMillis());
+      vertx.setTimer(1000, tid -> {
+        lock.release();
+      });
+      return vertx.executeBlocking(future -> {
+        CountDownLatch acquireLatch = new CountDownLatch(1);
+        AtomicReference<AsyncResult<Lock>> lockReference = new AtomicReference<>();
+        sharedData
+          .getLock("foo")
+          .onComplete(ar2 -> {
             lockReference.set(ar2);
             acquireLatch.countDown();
           });
-          try {
-            awaitLatch(acquireLatch);
-            AsyncResult<Lock> ar3 = lockReference.get();
-            if (ar3.succeeded()) {
-              future.complete(ar3.result());
-            } else {
-              future.fail(ar3.cause());
-            }
-          } catch (InterruptedException e) {
-            future.fail(e);
-          }
-        }, ar4 -> {
-          if (ar4.succeeded()) {
-            // Should be delayed
-            assertTrue(System.currentTimeMillis() - start.get() >= 1000);
-            testComplete();
+        try {
+          awaitLatch(acquireLatch);
+          AsyncResult<Lock> ar3 = lockReference.get();
+          if (ar3.succeeded()) {
+            future.complete(ar3.result());
           } else {
-            fail(ar4.cause());
+            future.fail(ar3.cause());
           }
-        });
-      } else {
-        fail(ar.cause());
-      }
-    });
+        } catch (InterruptedException e) {
+          future.fail(e);
+        }
+      });
+    }).onComplete(onSuccess(v -> {
+      // Should be delayed
+      assertTrue(System.currentTimeMillis() - start.get() >= 1000);
+      testComplete();
+    }));
     await();
   }
 
   @Test
   public void testAcquireDifferentLocks() {
-    getVertx().sharedData().getLock("foo", ar -> {
-      assertTrue(ar.succeeded());
-      long start = System.currentTimeMillis();
-      Lock lock = ar.result();
-      getVertx().sharedData().getLock("bar", ar2 -> {
-        assertTrue(ar2.succeeded());
-        assertTrue(System.currentTimeMillis() - start < 2000);
-        testComplete();
-      });
-    });
+    SharedData sharedData = getVertx().sharedData();
+    sharedData
+      .getLock("foo")
+      .onComplete(onSuccess(lock1 -> {
+        long start = System.currentTimeMillis();
+        sharedData
+          .getLock("bar")
+          .onComplete(onSuccess(lock2 -> {
+            assertTrue(System.currentTimeMillis() - start < 2000);
+            testComplete();
+          }));
+      }));
     await();
   }
 
   @Test
   public void testAcquireTimeout() {
-    getVertx().sharedData().getLock("foo", ar -> {
-      assertTrue(ar.succeeded());
-      long start = System.currentTimeMillis();
-      getVertx().sharedData().getLockWithTimeout("foo", 1000, ar2 -> {
-        assertFalse(ar2.succeeded());
-        // Should be delayed
-        assertTrue(System.currentTimeMillis() - start >= 1000);
-        testComplete();
-      });
-    });
+    SharedData sharedData = getVertx().sharedData();
+    sharedData
+      .getLock("foo")
+      .onComplete(onSuccess(ar -> {
+        long start = System.currentTimeMillis();
+        sharedData
+          .getLockWithTimeout("foo", 1000)
+          .onComplete(onFailure(ar2 -> {
+            // Should be delayed
+            assertTrue(System.currentTimeMillis() - start >= 1000);
+            testComplete();
+          }));
+      }));
     await();
   }
 
@@ -212,19 +217,25 @@ public class AsynchronousLockTest extends VertxTestBase {
   public void testReleaseTwice() throws Exception {
     CountDownLatch latch = new CountDownLatch(2);
     AtomicInteger count = new AtomicInteger(); // success lock count
-    getVertx().sharedData().getLock("foo", onSuccess(lock1 -> {
-      count.incrementAndGet();
-      for (int i = 0; i < 2; i++) {
-        getVertx().sharedData().getLockWithTimeout("foo", 10, ar -> {
-          if (ar.succeeded()) {
-            count.incrementAndGet();
-          }
-          latch.countDown();
-        });
-      }
-      lock1.release();
-      lock1.release();
-    }));
+    getVertx()
+      .sharedData()
+      .getLock("foo")
+      .onComplete(onSuccess(lock1 -> {
+        count.incrementAndGet();
+        for (int i = 0; i < 2; i++) {
+          getVertx()
+            .sharedData()
+            .getLockWithTimeout("foo", 10)
+            .onComplete(ar -> {
+              if (ar.succeeded()) {
+                count.incrementAndGet();
+              }
+              latch.countDown();
+            });
+        }
+        lock1.release();
+        lock1.release();
+      }));
     awaitLatch(latch);
     assertEquals(2, count.get());
   }
@@ -235,12 +246,14 @@ public class AsynchronousLockTest extends VertxTestBase {
     getVertx().deployVerticle(() -> new AbstractVerticle() {
       @Override
       public void start() throws Exception {
-        vertx.sharedData().getLock("foo", onSuccess(lock -> {
-          vertx.setTimer(10, l -> {
-            lock.release();
-            complete();
-          });
-        }));
+        vertx.sharedData()
+          .getLock("foo")
+          .onComplete(onSuccess(lock -> {
+            vertx.setTimer(10, l -> {
+              lock.release();
+              complete();
+            });
+          }));
       }
     }, new DeploymentOptions().setInstances(5).setWorkerPoolName("bar").setWorkerPoolSize(1));
     await();
@@ -250,19 +263,21 @@ public class AsynchronousLockTest extends VertxTestBase {
   public void evictTimedOutWaiters() {
     int numWaiters = 10;
     SharedData sharedData = vertx.sharedData();
-    sharedData.getLocalLock("foo", onSuccess(lock -> {
-      List<Future> locks = new ArrayList<>();
-      for (int i = 0;i < numWaiters;i++) {
-        locks.add(sharedData.getLocalLockWithTimeout("foo", 200));
-      }
-      LockInternal lockInternal = (LockInternal) lock;
-      assertEquals(numWaiters, lockInternal.waiters());
-      CompositeFuture.join(locks).onComplete(cf -> {
-        assertEquals(0, lockInternal.waiters());
-        lock.release();
-        testComplete();
-      });
-    }));
+    sharedData
+      .getLocalLock("foo")
+      .onComplete(onSuccess(lock -> {
+        List<Future> locks = new ArrayList<>();
+        for (int i = 0; i < numWaiters; i++) {
+          locks.add(sharedData.getLocalLockWithTimeout("foo", 200));
+        }
+        LockInternal lockInternal = (LockInternal) lock;
+        assertEquals(numWaiters, lockInternal.waiters());
+        CompositeFuture.join(locks).onComplete(cf -> {
+          assertEquals(0, lockInternal.waiters());
+          lock.release();
+          testComplete();
+        });
+      }));
     await();
   }
 }

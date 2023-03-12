@@ -62,7 +62,7 @@ public class JsonTest extends VertxTestBase {
     try {
       vertx.createHttpServer().requestHandler(req -> {
         req.response().end("hello");
-      }).listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(s -> {
+      }).listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST).onComplete(onSuccess(s -> {
         HttpClient client = vertx.createHttpClient();
         client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
           .compose(req -> req
@@ -88,7 +88,7 @@ public class JsonTest extends VertxTestBase {
         assertEquals("ping", msg.body());
         msg.reply("pong");
       });
-      eb.request("the-address", "ping", onSuccess(resp -> {
+      eb.request("the-address", "ping").onComplete(onSuccess(resp -> {
         assertEquals("pong", resp.body());
         testComplete();
       }));

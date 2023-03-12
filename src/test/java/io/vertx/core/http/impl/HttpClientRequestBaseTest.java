@@ -23,8 +23,8 @@ public class HttpClientRequestBaseTest extends HttpTestBase {
   @Test
   public void testPathCacheAndQueryCache() {
     server.requestHandler(req -> {});
-    server.listen(testAddress, onSuccess(server -> {
-      client.request(new RequestOptions(requestOptions).setURI("/?"), onSuccess(req -> {
+    server.listen(testAddress).onComplete(onSuccess(server -> {
+      client.request(new RequestOptions(requestOptions).setURI("/?")).onComplete(onSuccess(req -> {
         assertThat(req.getURI(), is("/?"));
         assertThat(req.path(), is("/"));
         assertThat(req.query(), is(""));

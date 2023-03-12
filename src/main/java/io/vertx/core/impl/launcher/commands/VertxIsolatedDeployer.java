@@ -39,7 +39,7 @@ public class VertxIsolatedDeployer {
                      Handler<AsyncResult<String>> completionHandler) {
     this.vertx = vertx;
     String message = (options.isWorker()) ? "deploying worker verticle" : "deploying verticle";
-    vertx.deployVerticle(verticle, options, createHandler(message, completionHandler));
+    vertx.deployVerticle(verticle, options).onComplete(createHandler(message, completionHandler));
   }
 
   /**
@@ -48,7 +48,7 @@ public class VertxIsolatedDeployer {
    * @param completionHandler the completion handler
    */
   public void undeploy(Handler<AsyncResult<Void>> completionHandler) {
-    vertx.undeploy(deploymentId, res -> {
+    vertx.undeploy(deploymentId).onComplete(res -> {
       if (res.failed()) {
         log.error("Failed in undeploying " + deploymentId, res.cause());
       } else {

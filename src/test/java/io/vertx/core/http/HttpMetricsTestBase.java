@@ -122,7 +122,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
         .setURI(TestUtils.randomAlphaString(16)))
         .onComplete(onSuccess(req -> {
           req
-            .response(onSuccess(resp -> {
+            .response().onComplete(onSuccess(resp -> {
               clientSocketMetric.set(metrics.firstMetric(SocketAddress.inetSocketAddress(8080, "localhost")));
               assertNotNull(clientSocketMetric.get());
               assertEquals(Collections.singleton("localhost:8080"), metrics.endpoints());
@@ -139,8 +139,8 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
                 assertEquals(contentLength, buff.length());
                 latch.countDown();
               });
-            }))
-            .exceptionHandler(this::fail)
+            }));
+          req.exceptionHandler(this::fail)
             .setChunked(true);
           assertNull(metrics.getMetric(req));
           for (int i = 0;i < numBuffers;i++) {
@@ -209,7 +209,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
       });
     });
     CountDownLatch listenLatch = new CountDownLatch(1);
-    server.listen(8080, "localhost", onSuccess(s -> { listenLatch.countDown(); }));
+    server.listen(8080, "localhost").onComplete(onSuccess(s -> { listenLatch.countDown(); }));
     awaitLatch(listenLatch);
     FakeHttpClientMetrics clientMetrics = FakeMetricsBase.getMetrics(client);
     CountDownLatch responseBeginLatch = new CountDownLatch(1);
@@ -220,13 +220,13 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
       .setHost("localhost")
       .setURI("/somepath")).onComplete(onSuccess(req -> {
       req
-        .response(onSuccess(resp -> {
+        .response().onComplete(onSuccess(resp -> {
           responseBeginLatch.countDown();
           resp.endHandler(v -> {
             responseEndLatch.countDown();
           });
-        }))
-        .setChunked(true);
+        }));
+      req.setChunked(true);
       req.sendHead();
     }));
     awaitLatch(requestBeginLatch);
@@ -261,7 +261,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
     client = vertx.createHttpClient(createBaseClientOptions().setIdleTimeout(2));
     FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
     client.request(requestOptions).onComplete(onSuccess(req -> {
-      req.send(onSuccess(resp -> {
+      req.send().onComplete(onSuccess(resp -> {
         HttpClientMetric metric = metrics.getMetric(resp.request());
         assertNotNull(metric);
         assertFalse(metric.failed.get());
@@ -333,8 +333,8 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
   public void testResetImmediately() {
     FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
     server.requestHandler(req -> {
-    }).listen(testAddress, onSuccess(v -> {
-      client.request(HttpMethod.GET, 8080, "localhost", "/somepath", onSuccess(request -> {
+    }).listen(testAddress).onComplete(onSuccess(v -> {
+      client.request(HttpMethod.GET, 8080, "localhost", "/somepath").onComplete(onSuccess(request -> {
         assertNull(metrics.getMetric(request));
         request.reset(0);
         vertx.setTimer(10, id -> {

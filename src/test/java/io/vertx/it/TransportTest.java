@@ -36,7 +36,7 @@ public class TransportTest extends AsyncTestBase {
   }
 
   @Test
-  public void testNoNative() {
+  public void testNoNative() throws Exception {
     ClassLoader classLoader = Vertx.class.getClassLoader();
     try {
       Class<?> clazz = classLoader.loadClass("io.netty.channel.epoll.Epoll");
@@ -55,12 +55,12 @@ public class TransportTest extends AsyncTestBase {
   }
 
   @Test
-  public void testFallbackOnJDK() {
+  public void testFallbackOnJDK() throws Exception {
     testNetServer(new VertxOptions().setPreferNativeTransport(true));
     assertFalse(vertx.isNativeTransportEnabled());
   }
 
-  private void testNetServer(VertxOptions options) {
+  private void testNetServer(VertxOptions options) throws InterruptedException {
     vertx = Vertx.vertx(options);
     NetServer server = vertx.createNetServer();
     server.connectHandler(so -> {
@@ -72,15 +72,14 @@ public class TransportTest extends AsyncTestBase {
         testComplete();
       });
     });
-    server.listen(1234, onSuccess(v -> {
-      NetClient client = vertx.createNetClient();
-      client.connect(1234, "localhost", onSuccess(so -> {
-        so.write("ping");
-        so.handler(buff -> {
-          assertEquals("pong", buff.toString());
-          so.close();
-        });
-      }));
+    awaitFuture(server.listen(1234));
+    NetClient client = vertx.createNetClient();
+    client.connect(1234, "localhost").onComplete(onSuccess(so -> {
+      so.write("ping");
+      so.handler(buff -> {
+        assertEquals("pong", buff.toString());
+        so.close();
+      });
     }));
     await();
   }
@@ -91,10 +90,12 @@ public class TransportTest extends AsyncTestBase {
     vertx = Vertx.vertx();
     NetServer server = vertx.createNetServer();
     server.connectHandler(so -> {});
-    server.listen(SocketAddress.domainSocketAddress(sock.getAbsolutePath()), onFailure(err -> {
-      assertEquals(err.getClass(), IllegalArgumentException.class);
-      testComplete();
-    }));
+    server
+      .listen(SocketAddress.domainSocketAddress(sock.getAbsolutePath()))
+      .onComplete(onFailure(err -> {
+        assertEquals(err.getClass(), IllegalArgumentException.class);
+        testComplete();
+      }));
     await();
   }
 
@@ -103,10 +104,11 @@ public class TransportTest extends AsyncTestBase {
     File sock = TestUtils.tmpFile(".sock");
     vertx = Vertx.vertx();
     NetClient client = vertx.createNetClient();
-    client.connect(SocketAddress.domainSocketAddress(sock.getAbsolutePath()), onFailure(err -> {
-      assertEquals(err.getClass(), IllegalArgumentException.class);
-      testComplete();
-    }));
+    client.connect(SocketAddress.domainSocketAddress(sock.getAbsolutePath()))
+      .onComplete(onFailure(err -> {
+        assertEquals(err.getClass(), IllegalArgumentException.class);
+        testComplete();
+      }));
     await();
   }
 }

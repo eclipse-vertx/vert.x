@@ -488,18 +488,17 @@ public abstract class EventBusTestBase extends VertxTestBase {
       public void start() throws Exception {
         vertices[1].eventBus().<String>consumer(ADDRESS1, msg -> {
           msg.reply(expectedBody);
-        }).completionHandler(ar -> {
+        }).completion().onComplete(ar -> {
           assertTrue(ar.succeeded());
           latch.countDown();
         });
       }
     }, new DeploymentOptions().setWorker(true));
     awaitLatch(latch);
-    vertices[0].eventBus().request(ADDRESS1, "whatever", reply -> {
-      assertTrue(reply.succeeded());
-      assertEquals(expectedBody, reply.result().body());
+    vertices[0].eventBus().request(ADDRESS1, "whatever").onComplete(onSuccess(reply -> {
+      assertEquals(expectedBody, reply.body());
       testComplete();
-    });
+    }));
     await();
   }
 
@@ -511,7 +510,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
     vertices[1].eventBus().<String>consumer(ADDRESS1, msg -> {
       assertEquals(expectedBody, msg.body());
       receivedLatch.countDown();
-    }).completionHandler(ar -> {
+    }).completion().onComplete(ar -> {
       assertTrue(ar.succeeded());
       vertices[0].executeBlocking(fut -> {
         vertices[0].eventBus().send(ADDRESS1, expectedBody);
@@ -522,13 +521,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
           fut.fail(e);
         }
         fut.complete();
-      }, ar2 -> {
-        if (ar2.succeeded()) {
-          testComplete();
-        } else {
-          fail(ar2.cause());
-        }
-      });
+      }).onComplete(onSuccess(ar2 -> testComplete()));
     });
     await();
   }
@@ -539,32 +532,30 @@ public abstract class EventBusTestBase extends VertxTestBase {
     waitFor(4);
 
     // On an "external" thread
-    vertices[0].eventBus().request("blah", "blah", ar -> {
-      assertTrue(ar.failed());
-      if (ar.cause() instanceof ReplyException) {
-        ReplyException cause = (ReplyException) ar.cause();
+    vertices[0].eventBus().request("blah", "blah").onComplete(onFailure(err -> {
+      if (err instanceof ReplyException) {
+        ReplyException cause = (ReplyException) err;
         assertSame(ReplyFailure.NO_HANDLERS, cause.failureType());
       } else {
-        fail(ar.cause());
+        fail(err);
       }
       assertTrue("Not an EL thread", Context.isOnEventLoopThread());
       complete();
-    });
+    }));
 
     // On a EL context
     vertices[0].runOnContext(v -> {
       Context ctx = vertices[0].getOrCreateContext();
-      vertices[0].eventBus().request("blah", "blah", ar -> {
-        assertTrue(ar.failed());
-        if (ar.cause() instanceof ReplyException) {
-          ReplyException cause = (ReplyException) ar.cause();
+      vertices[0].eventBus().request("blah", "blah").onComplete(onFailure(err -> {
+        if (err instanceof ReplyException) {
+          ReplyException cause = (ReplyException) err;
           assertSame(ReplyFailure.NO_HANDLERS, cause.failureType());
         } else {
-          fail(ar.cause());
+          fail(err);
         }
         assertSame(ctx, vertices[0].getOrCreateContext());
         complete();
-      });
+      }));
     });
 
     // On a Worker context
@@ -572,35 +563,33 @@ public abstract class EventBusTestBase extends VertxTestBase {
       @Override
       public void start() throws Exception {
         Context ctx = getVertx().getOrCreateContext();
-        vertices[0].eventBus().request("blah", "blah", ar -> {
-          assertTrue(ar.failed());
-          if (ar.cause() instanceof ReplyException) {
-            ReplyException cause = (ReplyException) ar.cause();
+        vertices[0].eventBus().request("blah", "blah").onComplete(onFailure(err -> {
+          if (err instanceof ReplyException) {
+            ReplyException cause = (ReplyException) err;
             assertSame(ReplyFailure.NO_HANDLERS, cause.failureType());
           } else {
-            fail(ar.cause());
+            fail(err);
           }
           assertSame(ctx, getVertx().getOrCreateContext());
           complete();
-        });
+        }));
       }
     }, new DeploymentOptions().setWorker(true));
 
     // Inside executeBlocking
     vertices[0].executeBlocking(fut -> {
-      vertices[0].eventBus().request("blah", "blah", ar -> {
-        assertTrue(ar.failed());
-        if (ar.cause() instanceof ReplyException) {
-          ReplyException cause = (ReplyException) ar.cause();
+      vertices[0].eventBus().request("blah", "blah").onComplete(onFailure(err -> {
+        if (err instanceof ReplyException) {
+          ReplyException cause = (ReplyException) err;
           assertSame(ReplyFailure.NO_HANDLERS, cause.failureType());
         } else {
-          fail(ar.cause());
+          fail(err);
         }
         assertTrue("Not an EL thread", Context.isOnEventLoopThread());
         complete();
-      });
+      }));
       fut.complete();
-    }, false, null);
+    }, false);
 
     await();
   }

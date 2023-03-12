@@ -14,6 +14,7 @@ package io.vertx.test.core;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.Handler;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.logging.Logger;
@@ -28,9 +29,7 @@ import org.junit.rules.TestName;
 
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -594,6 +593,29 @@ public class AsyncTestBase {
     };
   }
 
+  protected <T> T awaitFuture(Future<T> latch) throws InterruptedException {
+    return awaitFuture(latch, 10, TimeUnit.SECONDS);
+  }
+
+  protected <T> T awaitFuture(Future<T> fut, long timeout, TimeUnit unit) throws InterruptedException {
+    return awaitFuture(fut.toCompletionStage(), timeout, unit);
+  }
+
+  protected <T> T awaitFuture(CompletionStage<T> cs) throws InterruptedException {
+    return awaitFuture(cs, 10, TimeUnit.SECONDS);
+  }
+
+  protected <T> T awaitFuture(CompletionStage<T> cs, long timeout, TimeUnit unit) throws InterruptedException {
+    assertFalse(Context.isOnVertxThread());
+    try {
+      return cs.toCompletableFuture().get(timeout, unit);
+    } catch (ExecutionException e) {
+      throw new RuntimeException(e);
+    } catch (TimeoutException e) {
+      throw new AssertionError(e);
+    }
+  }
+
   protected void awaitLatch(CountDownLatch latch) throws InterruptedException {
     awaitLatch(latch, 10, TimeUnit.SECONDS);
   }
@@ -656,7 +678,7 @@ public class AsyncTestBase {
 
   protected void close(Vertx vertx) throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
-    vertx.close(ar -> {
+    vertx.close().onComplete(ar -> {
       latch.countDown();
     });
     awaitLatch(latch);

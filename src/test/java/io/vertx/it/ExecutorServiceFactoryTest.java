@@ -35,7 +35,7 @@ public class ExecutorServiceFactoryTest extends VertxTestBase {
         vertx.executeBlocking(p -> {
           assertTrue(CustomExecutorService.executing.get());
           p.complete();
-        }, onSuccess(v -> {
+        }).onComplete(onSuccess(v -> {
           latch.countDown();
         }));
       }

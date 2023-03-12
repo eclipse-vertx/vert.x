@@ -51,14 +51,14 @@ public class HttpConnectionEarlyResetTest extends VertxTestBase {
         resetLatch.countDown();
       });
     ctx.runOnContext(v -> {
-      httpServer.listen(8080, onSuccess(server -> listenLatch.countDown()));
+      httpServer.listen(8080).onComplete(onSuccess(server -> listenLatch.countDown()));
     });
     awaitLatch(listenLatch);
   }
 
   @Test
   public void testExceptionCaught() throws Exception {
-    vertx.createNetClient(new NetClientOptions().setSoLinger(0)).connect(8080, "localhost", onSuccess(socket -> {
+    vertx.createNetClient(new NetClientOptions().setSoLinger(0)).connect(8080, "localhost").onComplete(onSuccess(socket -> {
       vertx.setTimer(2000, id -> {
         socket.close();
       });
@@ -71,7 +71,7 @@ public class HttpConnectionEarlyResetTest extends VertxTestBase {
   public void tearDown() throws Exception {
     if (httpServer != null) {
       CountDownLatch closeLatch = new CountDownLatch(1);
-      httpServer.close(event -> closeLatch.countDown());
+      httpServer.close().onComplete(event -> closeLatch.countDown());
       awaitLatch(closeLatch);
     }
     super.tearDown();

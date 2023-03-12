@@ -117,9 +117,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   String closeReason();
 
   /**
-   *  Returns the HTTP headers when the WebSocket is first obtained in the handler.
-   *  <p/>
-   *  The headers will be {@code null} on subsequent interactions.
+   *  Returns the HTTP headers.
    *
    * @return the headers
    */
