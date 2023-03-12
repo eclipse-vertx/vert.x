@@ -2158,9 +2158,10 @@ public abstract class HttpTest extends HttpTestBase {
     });
     startServer(testAddress);
     client.request(requestOptions)
-      .compose(HttpClientRequest::send)
-      .andThen(onSuccess(resp -> assertEquals(String.valueOf(10), resp.headers().get("Content-Length"))))
-      .compose(HttpClientResponse::body)
+      .compose(req -> req
+        .send()
+        .andThen(onSuccess(resp -> assertEquals(String.valueOf(10), resp.headers().get("Content-Length"))))
+        .compose(HttpClientResponse::body))
       .onComplete(onSuccess(body -> {
         assertEquals("server.net", body.toString());
         assertEquals(10, body.toString().length());
@@ -2737,9 +2738,8 @@ public abstract class HttpTest extends HttpTestBase {
 
     startServer(testAddress);
     client.request(new RequestOptions(requestOptions).setURI("/foo/bar"))
-      .compose(HttpClientRequest::send)
-      .compose(HttpClientResponse::body)
-      .onComplete(onSuccess(req -> {
+      .compose(req -> req.send().compose(HttpClientResponse::end))
+      .onComplete(onSuccess(v -> {
         testComplete();
       }));
 

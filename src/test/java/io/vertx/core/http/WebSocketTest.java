@@ -2563,16 +2563,18 @@ public class WebSocketTest extends VertxTestBase {
     });
     awaitFuture(server.listen());
     client = vertx.createHttpClient();
-    client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
-      List<Buffer> pongs = new ArrayList<>();
-      ws.pongHandler(pong -> {
-        pongs.add(pong);
-        if (pongs.size() == 2) {
-          assertEquals(pongs, Arrays.asList(ping1, ping2));
-          testComplete();
-        }
-      });
-    }));
+    vertx.runOnContext(v -> {
+      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
+        List<Buffer> pongs = new ArrayList<>();
+        ws.pongHandler(pong -> {
+          pongs.add(pong);
+          if (pongs.size() == 2) {
+            assertEquals(pongs, Arrays.asList(ping1, ping2));
+            testComplete();
+          }
+        });
+      }));
+    });
     await();
   }
 

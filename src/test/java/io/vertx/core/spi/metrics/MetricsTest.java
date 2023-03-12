@@ -609,16 +609,18 @@ public class MetricsTest extends VertxTestBase {
     });
     awaitFuture(server.listen(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST));
     client = vertx.createHttpClient();
-    client.webSocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
-      FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
-      WebSocketMetric metric = metrics.getMetric(ws);
-      assertNotNull(metric);
-      ws.closeHandler(closed -> {
-        assertNull(metrics.getMetric(ws));
-        testComplete();
-      });
-      ws.handler(ws::write);
-    }));
+    vertx.runOnContext(v -> {
+      client.webSocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
+        FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
+        WebSocketMetric metric = metrics.getMetric(ws);
+        assertNotNull(metric);
+        ws.closeHandler(closed -> {
+          assertNull(metrics.getMetric(ws));
+          testComplete();
+        });
+        ws.handler(ws::write);
+      }));
+    });
     await();
   }
 

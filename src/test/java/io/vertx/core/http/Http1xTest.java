@@ -1533,11 +1533,15 @@ public class Http1xTest extends HttpTest {
     for (int i = 0; i < numGets; i++) {
       int theCount = i;
       client.request(new RequestOptions(requestOptions).setURI(path))
-        .compose(req -> req.putHeader("count", String.valueOf(theCount)).send())
+        .compose(req -> req.putHeader("count", String.valueOf(theCount))
+          .send()
+          .andThen(onSuccess(resp -> {
+            resp.exceptionHandler(this::fail);
+            assertEquals(200, resp.statusCode());
+            assertEquals(theCount, Integer.parseInt(resp.headers().get("count")));
+          }))
+          .compose(HttpClientResponse::end))
         .onComplete(onSuccess(resp -> {
-          resp.exceptionHandler(this::fail);
-          assertEquals(200, resp.statusCode());
-          assertEquals(theCount, Integer.parseInt(resp.headers().get("count")));
           if (cnt.incrementAndGet() == numGets) {
             testComplete();
           }
@@ -2526,19 +2530,18 @@ public class Http1xTest extends HttpTest {
     startServer(testAddress);
     vertx.createHttpClient()
       .request(new RequestOptions(requestOptions).setURI("/?t=" + longParam))
-      .compose(HttpClientRequest::send)
-      .onComplete(
-        onSuccess(resp -> {
-          if (maxInitialLength > HttpServerOptions.DEFAULT_MAX_INITIAL_LINE_LENGTH) {
-            assertEquals(200, resp.statusCode());
-            testComplete();
-          } else {
-            assertEquals(414, resp.statusCode());
-            resp.request().connection().closeHandler(v -> {
-              testComplete();
-            });
-          }
-        }));
+      .compose(req -> req.send().compose(resp -> {
+        if (maxInitialLength > HttpServerOptions.DEFAULT_MAX_INITIAL_LINE_LENGTH) {
+          assertEquals(200, resp.statusCode());
+          return resp.end();
+        } else {
+          assertEquals(414, resp.statusCode());
+          return Future.future(p -> {
+            resp.request().connection().closeHandler(v -> p.complete());
+          });
+        }
+      }))
+      .onComplete(onSuccess(v -> testComplete()));
     await();
   }
 
