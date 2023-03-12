@@ -272,7 +272,7 @@ public class HAManager {
         } else {
           fut.fail(ar1.cause());
         }
-      }, false, ar2 -> {
+      }, false).onComplete(ar2 -> {
         if (doneHandler != null) {
           doneHandler.handle(ar2);
         } else if (ar2.failed()) {
