@@ -511,7 +511,7 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider, Clos
 
   @Override
   public void close(Handler<AsyncResult<Void>> handler) {
-    netClient.close(handler);
+    netClient.close().onComplete(handler);
   }
 
   @Override
