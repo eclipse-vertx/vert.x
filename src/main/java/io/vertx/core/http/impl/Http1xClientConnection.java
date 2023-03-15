@@ -1282,11 +1282,6 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   }
 
   @Override
-  public void shutdown(long timeout, Handler<AsyncResult<Void>> handler) {
-    shutdown(timeout, vertx.promise(handler));
-  }
-
-  @Override
   public Future<Void> shutdown(long timeoutMs) {
     PromiseInternal<Void> promise = vertx.promise();
     shutdown(timeoutMs, promise);

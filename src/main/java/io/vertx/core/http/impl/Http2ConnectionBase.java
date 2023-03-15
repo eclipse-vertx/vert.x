@@ -361,11 +361,6 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public void shutdown(long timeout, Handler<AsyncResult<Void>> handler) {
-    shutdown(timeout, vertx.promise(handler));
-  }
-
-  @Override
   public Future<Void> shutdown(long timeoutMs) {
     PromiseInternal<Void> promise = vertx.promise();
     shutdown(timeoutMs, promise);
@@ -421,12 +416,6 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     return promise.future();
   }
 
-  @Override
-  public HttpConnection updateSettings(io.vertx.core.http.Http2Settings settings, @Nullable Handler<AsyncResult<Void>> completionHandler) {
-    updateSettings(settings).onComplete(completionHandler);
-    return this;
-  }
-
   protected void updateSettings(Http2Settings settingsUpdate, Handler<AsyncResult<Void>> completionHandler) {
     Http2Settings current = handler.decoder().localSettings();
     for (Map.Entry<Character, Long> entry : current.entrySet()) {
@@ -472,15 +461,6 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
       }
     });
     return promise.future();
-  }
-
-  @Override
-  public HttpConnection ping(Buffer data, Handler<AsyncResult<Buffer>> pongHandler) {
-    Future<Buffer> fut = ping(data);
-    if (pongHandler != null) {
-      fut.onComplete(pongHandler);
-    }
-    return this;
   }
 
   @Override

@@ -129,28 +129,14 @@ public interface HttpConnection {
    *   <li>HTTP/1.x server connections do not support this feature</li>
    * </ul>
    *
-   * @param handler the handler called when shutdown has completed
-   */
-  @Deprecated
-  default void shutdown(Handler<AsyncResult<Void>> handler) {
-    shutdown(30000, handler);
-  }
-
-  /**
-   * Like {@link #shutdown(Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future completed when shutdown has completed
    */
   default Future<Void> shutdown() {
     return shutdown(30000L);
   }
 
   /**
-   * Like {@link #shutdown(Handler)} but with a specific {@code timeout} in milliseconds.
-   */
-  @Deprecated
-  void shutdown(long timeout, Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #shutdown(long, Handler)} but returns a {@code Future} of the asynchronous result
+   * Like {@link #shutdown()} but with a specific {@code timeout} in milliseconds.
    */
   Future<Void> shutdown(long timeoutMs);
 
@@ -164,36 +150,18 @@ public interface HttpConnection {
   HttpConnection closeHandler(Handler<Void> handler);
 
   /**
-   * Like {@link #close(Handler)} but returns a {@code Future} of the asynchronous result
-   */
-  Future<Void> close();
-
-  /**
    * Close the connection and all the currently active streams.
    * <p/>
    * An HTTP/2 connection will send a {@literal GOAWAY} frame before.
    *
-   * @param handler the handler to be completed when the connection is closed
+   * @return a future completed when the connection is closed
    */
-  @Deprecated
-  default void close(Handler<AsyncResult<Void>> handler) {
-    close().onComplete(handler);
-  }
+  Future<Void> close();
 
   /**
    * @return the latest server settings acknowledged by the remote endpoint - this is not implemented for HTTP/1.x
    */
   Http2Settings settings();
-
-  /**
-   * Send to the remote endpoint an update of the server settings.
-   * <p/>
-   * This is not implemented for HTTP/1.x.
-   *
-   * @param settings the new settings
-   * @return a future completed with the result
-   */
-  Future<Void> updateSettings(Http2Settings settings);
 
   /**
    * Send to the remote endpoint an update of this endpoint settings
@@ -203,12 +171,9 @@ public interface HttpConnection {
    * This is not implemented for HTTP/1.x.
    *
    * @param settings the new settings
-   * @param completionHandler the handler notified when the settings have been acknowledged by the remote endpoint
-   * @return a reference to this, so the API can be used fluently
+   * @return a future completed when the settings have been acknowledged by the remote endpoint
    */
-  @Fluent
-  @Deprecated
-  HttpConnection updateSettings(Http2Settings settings, Handler<AsyncResult<Void>> completionHandler);
+  Future<Void> updateSettings(Http2Settings settings);
 
   /**
    * @return the current remote endpoint settings for this connection - this is not implemented for HTTP/1.x
@@ -232,15 +197,7 @@ public interface HttpConnection {
    * This is not implemented for HTTP/1.x.
    *
    * @param data the 8 bytes data of the frame
-   * @param pongHandler an async result handler notified with pong reply or the failure
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  HttpConnection ping(Buffer data, Handler<AsyncResult<Buffer>> pongHandler);
-
-  /**
-   * Same as {@link #ping(Buffer, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified with the pong reply or the failure
    */
   Future<Buffer> ping(Buffer data);
 

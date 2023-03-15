@@ -876,11 +876,6 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
   }
 
   @Override
-  public void shutdown(long timeout, Handler<AsyncResult<Void>> handler) {
-    current.shutdown(timeout, handler);
-  }
-
-  @Override
   public Future<Void> shutdown(long timeoutMs) {
     return current.shutdown(timeoutMs);
   }
@@ -891,11 +886,6 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
   }
 
   @Override
-  public HttpConnection updateSettings(Http2Settings settings, Handler<AsyncResult<Void>> completionHandler) {
-    return current.updateSettings(settings, completionHandler);
-  }
-
-  @Override
   public Http2Settings settings() {
     return current.settings();
   }
@@ -903,11 +893,6 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
   @Override
   public Http2Settings remoteSettings() {
     return current.remoteSettings();
-  }
-
-  @Override
-  public HttpConnection ping(Buffer data, Handler<AsyncResult<Buffer>> pongHandler) {
-    return current.ping(data, pongHandler);
   }
 
   @Override
