@@ -12,9 +12,7 @@
 package io.vertx.core.shareddata;
 
 import io.vertx.codegen.annotations.VertxGen;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 
 /**
  * Shared data allows you to share data safely between different parts of your application in a safe way.
@@ -43,14 +41,8 @@ public interface SharedData {
    * put into the map from any node is visible to to any other node.
    *
    * @param name  the name of the map
-   * @param resultHandler  the map will be returned asynchronously in this handler
+   * @return a future notified with the map
    * @throws IllegalStateException if the parent {@link io.vertx.core.Vertx} instance is not clustered
-   */
-  @Deprecated
-  <K, V> void getClusterWideMap(String name, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler);
-
-  /**
-   * Same as {@link #getClusterWideMap(String, Handler)} but returns a {@code Future} of the asynchronous result
    */
   <K, V> Future<AsyncMap<K, V>> getClusterWideMap(String name);
 
@@ -63,13 +55,7 @@ public interface SharedData {
    * </p>
    *
    * @param name the name of the map
-   * @param resultHandler the map will be returned asynchronously in this handler
-   */
-  @Deprecated
-  <K, V> void getAsyncMap(String name, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler);
-
-  /**
-   * Same as {@link #getAsyncMap(String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified with the map
    */
   <K, V> Future<AsyncMap<K, V>> getAsyncMap(String name);
 
@@ -80,13 +66,7 @@ public interface SharedData {
    * Only the instance which created the map can put and retrieve data from this map.
    *
    * @param name the name of the map
-   * @param resultHandler the map will be returned asynchronously in this handler
-   */
-  @Deprecated
-  <K, V> void getLocalAsyncMap(String name, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler);
-
-  /**
-   * Same as {@link #getLocalAsyncMap(String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified with the map
    */
   <K, V> Future<AsyncMap<K, V>> getLocalAsyncMap(String name);
 
@@ -98,18 +78,12 @@ public interface SharedData {
    * </p>
    *
    * @param name  the name of the lock
-   * @param resultHandler  the handler
-   */
-  @Deprecated
-  void getLock(String name, Handler<AsyncResult<Lock>> resultHandler);
-
-  /**
-   * Same as {@link #getLock(String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified with the lock
    */
   Future<Lock> getLock(String name);
 
   /**
-   * Like {@link #getLock(String, Handler)} but specifying a timeout. If the lock is not obtained within the timeout
+   * Like {@link #getLock(String)} but specifying a timeout. If the lock is not obtained within the timeout
    * a failure will be sent to the handler.
    * <p>
    *   In general lock acquision is unordered, so that sequential attempts to acquire a lock,
@@ -118,13 +92,7 @@ public interface SharedData {
    *
    * @param name  the name of the lock
    * @param timeout  the timeout in ms
-   * @param resultHandler  the handler
-   */
-  @Deprecated
-  void getLockWithTimeout(String name, long timeout, Handler<AsyncResult<Lock>> resultHandler);
-
-  /**
-   * Same as {@link #getLockWithTimeout(String, long, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified with the lock
    */
   Future<Lock> getLockWithTimeout(String name, long timeout);
 
@@ -136,18 +104,12 @@ public interface SharedData {
    * </p>
    *
    * @param name  the name of the lock
-   * @param resultHandler  the handler
-   */
-  @Deprecated
-  void getLocalLock(String name, Handler<AsyncResult<Lock>> resultHandler);
-
-  /**
-   * Same as {@link #getLocalLock(String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified with the lock
    */
   Future<Lock> getLocalLock(String name);
 
   /**
-   * Like {@link #getLocalLock(String, Handler)} but specifying a timeout. If the lock is not obtained within the timeout
+   * Like {@link #getLocalLock(String)} but specifying a timeout. If the lock is not obtained within the timeout
    * a failure will be sent to the handler.
    * <p>
    *   In general lock acquision is unordered, so that sequential attempts to acquire a lock,
@@ -156,13 +118,7 @@ public interface SharedData {
    *
    * @param name  the name of the lock
    * @param timeout  the timeout in ms
-   * @param resultHandler  the handler
-   */
-  @Deprecated
-  void getLocalLockWithTimeout(String name, long timeout, Handler<AsyncResult<Lock>> resultHandler);
-
-  /**
-   * Same as {@link #getLocalLockWithTimeout(String, long, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified with the lock
    */
   Future<Lock> getLocalLockWithTimeout(String name, long timeout);
 
@@ -170,13 +126,7 @@ public interface SharedData {
    * Get an asynchronous counter. The counter will be passed to the handler.
    *
    * @param name  the name of the counter.
-   * @param resultHandler  the handler
-   */
-  @Deprecated
-  void getCounter(String name, Handler<AsyncResult<Counter>> resultHandler);
-
-  /**
-   * Same as {@link #getCounter(String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified with the counter
    */
   Future<Counter> getCounter(String name);
 
@@ -184,13 +134,7 @@ public interface SharedData {
    * Get an asynchronous local counter. The counter will be passed to the handler.
    *
    * @param name  the name of the counter.
-   * @param resultHandler  the handler
-   */
-  @Deprecated
-  void getLocalCounter(String name, Handler<AsyncResult<Counter>> resultHandler);
-
-  /**
-   * Same as {@link #getLocalCounter(String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified with the counter
    */
   Future<Counter> getLocalCounter(String name);
 

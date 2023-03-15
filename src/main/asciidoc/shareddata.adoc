@@ -112,8 +112,8 @@ This is useful when you want to do something or access a resource on only one no
 
 Asynchronous locks have an asynchronous API unlike most lock APIs which block the calling thread until the lock is obtained.
 
-To obtain a lock use {@link io.vertx.core.shareddata.SharedData#getLock(java.lang.String,io.vertx.core.Handler)}.
-This won't block, but when the lock is available, the handler will be called with an instance of {@link io.vertx.core.shareddata.Lock}, signalling that you now own the lock.
+To obtain a lock use {@link io.vertx.core.shareddata.SharedData#getLock(java.lang.String)}.
+This won't block, but when the lock is available, the returned future is completed with an instance of {@link io.vertx.core.shareddata.Lock}, signalling that you now own the lock.
 
 While you own the lock, no other caller, locally or on the cluster, will be able to obtain the lock.
 
@@ -149,7 +149,7 @@ It's often useful to maintain an atomic counter locally or across the different 
 
 You can do this with {@link io.vertx.core.shareddata.Counter}.
 
-You obtain an instance with {@link io.vertx.core.shareddata.SharedData#getCounter(java.lang.String,io.vertx.core.Handler)}:
+You obtain an instance with {@link io.vertx.core.shareddata.SharedData#getCounter(java.lang.String)}:
 
 [source,$lang]
 ----

@@ -50,12 +50,6 @@ public class SharedDataImpl implements SharedData {
   }
 
   @Override
-  public <K, V> void getClusterWideMap(String name, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler) {
-    Objects.requireNonNull(resultHandler, "resultHandler");
-    this.<K, V>getClusterWideMap(name).onComplete(resultHandler);
-  }
-
-  @Override
   public <K, V> Future<AsyncMap<K, V>> getClusterWideMap(String name) {
     Objects.requireNonNull(name, "name");
     if (clusterManager == null) {
@@ -64,12 +58,6 @@ public class SharedDataImpl implements SharedData {
     Promise<AsyncMap<K, V>> promise = vertx.promise();
     clusterManager.getAsyncMap(name, promise);
     return promise.future().map(WrappedAsyncMap::new);
-  }
-
-  @Override
-  public <K, V> void getAsyncMap(String name, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler) {
-    Objects.requireNonNull(resultHandler, "resultHandler");
-    this.<K, V>getAsyncMap(name).onComplete(resultHandler);
   }
 
   @Override
@@ -85,19 +73,8 @@ public class SharedDataImpl implements SharedData {
   }
 
   @Override
-  public void getLock(String name, Handler<AsyncResult<Lock>> resultHandler) {
-    getLockWithTimeout(name, DEFAULT_LOCK_TIMEOUT, resultHandler);
-  }
-
-  @Override
   public Future<Lock> getLock(String name) {
     return getLockWithTimeout(name, DEFAULT_LOCK_TIMEOUT);
-  }
-
-  @Override
-  public void getLockWithTimeout(String name, long timeout, Handler<AsyncResult<Lock>> resultHandler) {
-    Objects.requireNonNull(resultHandler, "resultHandler");
-    getLockWithTimeout(name, timeout).onComplete(resultHandler);
   }
 
   @Override
@@ -114,19 +91,8 @@ public class SharedDataImpl implements SharedData {
   }
 
   @Override
-  public void getLocalLock(String name, Handler<AsyncResult<Lock>> resultHandler) {
-    getLocalLockWithTimeout(name, DEFAULT_LOCK_TIMEOUT, resultHandler);
-  }
-
-  @Override
   public Future<Lock> getLocalLock(String name) {
     return getLocalLockWithTimeout(name, DEFAULT_LOCK_TIMEOUT);
-  }
-
-  @Override
-  public void getLocalLockWithTimeout(String name, long timeout, Handler<AsyncResult<Lock>> resultHandler) {
-    Objects.requireNonNull(resultHandler, "resultHandler");
-    getLocalLockWithTimeout(name, timeout).onComplete(resultHandler);
   }
 
   @Override
@@ -148,12 +114,6 @@ public class SharedDataImpl implements SharedData {
     }
   }
 
-  @Override
-  public void getCounter(String name, Handler<AsyncResult<Counter>> resultHandler) {
-    Objects.requireNonNull(resultHandler, "resultHandler");
-    getCounter(name).onComplete(resultHandler);
-  }
-
   /**
    * Return a {@code Map} with the specific {@code name}. All invocations of this method with the same value of {@code name}
    * are guaranteed to return the same {@code Map} instance. <p>
@@ -164,24 +124,12 @@ public class SharedDataImpl implements SharedData {
     return (LocalMap<K, V>) localMaps.computeIfAbsent(name, n -> new LocalMapImpl<>(n, localMaps));
   }
 
-  @Override
-  public <K, V> void getLocalAsyncMap(String name, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler) {
-    Objects.requireNonNull(resultHandler, "resultHandler");
-    this.<K, V>getLocalAsyncMap(name).onComplete(resultHandler);
-  }
-
   @SuppressWarnings("unchecked")
   @Override
   public <K, V> Future<AsyncMap<K, V>> getLocalAsyncMap(String name) {
     LocalAsyncMapImpl<K, V> asyncMap = (LocalAsyncMapImpl<K, V>) localAsyncMaps.computeIfAbsent(name, n -> new LocalAsyncMapImpl<>(vertx));
     ContextInternal context = vertx.getOrCreateContext();
     return context.succeededFuture(new WrappedAsyncMap<>(asyncMap));
-  }
-
-  @Override
-  public void getLocalCounter(String name, Handler<AsyncResult<Counter>> resultHandler) {
-    Objects.requireNonNull(resultHandler, "resultHandler");
-    getLocalCounter(name).onComplete(resultHandler);
   }
 
   @Override
