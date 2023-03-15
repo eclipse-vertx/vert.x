@@ -71,11 +71,6 @@ public interface HttpClientStream extends WriteStream<Buffer> {
   }
 
   @Override
-  default void write(Buffer data, Handler<AsyncResult<Void>> handler) {
-    writeBuffer(data.getByteBuf(), false, handler);
-  }
-
-  @Override
   default Future<Void> end(Buffer data) {
     PromiseInternal<Void> promise = getContext().promise();
     writeBuffer(data.getByteBuf(), true, promise);
@@ -83,20 +78,10 @@ public interface HttpClientStream extends WriteStream<Buffer> {
   }
 
   @Override
-  default void end(Buffer data, Handler<AsyncResult<Void>> handler) {
-    writeBuffer(data.getByteBuf(), true, handler);
-  }
-
-  @Override
   default Future<Void> end() {
     PromiseInternal<Void> promise = getContext().promise();
     writeBuffer(Unpooled.EMPTY_BUFFER, true, promise);
     return promise.future();
-  }
-
-  @Override
-  default void end(Handler<AsyncResult<Void>> handler) {
-    writeBuffer(Unpooled.EMPTY_BUFFER, true, handler);
   }
 
   void headHandler(Handler<HttpResponseHead> handler);

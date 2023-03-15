@@ -59,17 +59,6 @@ public interface WriteStream<T> extends StreamBase {
   Future<Void> write(T data);
 
   /**
-   * Same as {@link #write(T)} but with an {@code handler} called when the operation completes
-   */
-  @Deprecated
-  default void write(T data, Handler<AsyncResult<Void>> handler) {
-    Future<Void> fut = write(data);
-    if (handler != null) {
-      fut.onComplete(handler);
-    }
-  }
-
-  /**
    * Ends the stream.
    * <p>
    * Once the stream has ended, it cannot be used any more.
@@ -77,17 +66,6 @@ public interface WriteStream<T> extends StreamBase {
    * @return a future completed with the result
    */
   Future<Void> end();
-
-  /**
-   * Same as {@link #end()} but with an {@code handler} called when the operation completes
-   */
-  @Deprecated
-  default void end(Handler<AsyncResult<Void>> handler) {
-    Future<Void> fut = end();
-    if (handler != null) {
-      fut.onComplete(handler);
-    }
-  }
 
   /**
    * Same as {@link #end()} but writes some data to the stream before ending.
@@ -99,17 +77,6 @@ public interface WriteStream<T> extends StreamBase {
    */
   default Future<Void> end(T data) {
     return write(data).compose(v -> end());
-  }
-
-  /**
-   * Same as {@link #end(T)} but with an {@code handler} called when the operation completes
-   */
-  @Deprecated
-  default void end(T data, Handler<AsyncResult<Void>> handler) {
-    Future<Void> fut = end(data);
-    if (handler != null) {
-      fut.onComplete(handler);
-    }
   }
 
   /**

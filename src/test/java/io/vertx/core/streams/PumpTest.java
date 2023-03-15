@@ -201,11 +201,6 @@ public class PumpTest {
       return fut;
     }
 
-    @Override
-    public void write(T data, Handler<AsyncResult<Void>> handler) {
-      throw new UnsupportedOperationException();
-    }
-
     public FakeWriteStream exceptionHandler(Handler<Throwable> handler) {
       return this;
     }
@@ -215,10 +210,6 @@ public class PumpTest {
       throw new UnsupportedOperationException();
     }
 
-    @Override
-    public void end(Handler<AsyncResult<Void>> handler) {
-      throw new UnsupportedOperationException();
-    }
   }
 
   static class MyClass {
