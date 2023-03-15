@@ -13,7 +13,6 @@ package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.Fluent;
@@ -62,22 +61,6 @@ public interface NetServer extends Measured {
   Future<NetServer> listen();
 
   /**
-   * Like {@link #listen} but providing a handler that will be notified when the server is listening, or fails.
-   *
-   * @param listenHandler  handler that will be notified when listening or failed
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  default NetServer listen(Handler<AsyncResult<NetServer>> listenHandler) {
-    Future<NetServer> fut = listen();
-    if (listenHandler != null) {
-      fut.onComplete(listenHandler);
-    }
-    return this;
-  }
-
-  /**
    * Start listening on the specified port and host, ignoring port and host configured in the {@link io.vertx.core.net.NetServerOptions} used when
    * creating the server.
    * <p>
@@ -90,26 +73,7 @@ public interface NetServer extends Measured {
    * @return a future completed with the listen operation result
    */
   default Future<NetServer> listen(int port, String host) {
-
     return listen(new SocketAddressImpl(port, host));
-  }
-
-  /**
-   * Like {@link #listen(int, String)} but providing a handler that will be notified when the server is listening, or fails.
-   *
-   * @param port  the port to listen on
-   * @param host  the host to listen on
-   * @param listenHandler handler that will be notified when listening or failed
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  default NetServer listen(int port, String host, Handler<AsyncResult<NetServer>> listenHandler) {
-    Future<NetServer> fut = listen(port, host);
-    if (listenHandler != null) {
-      fut.onComplete(listenHandler);
-    }
-    return this;
   }
 
   /**
@@ -127,19 +91,6 @@ public interface NetServer extends Measured {
   }
 
   /**
-   * Like {@link #listen(int)} but providing a handler that will be notified when the server is listening, or fails.
-   *
-   * @param port  the port to listen on
-   * @param listenHandler handler that will be notified when listening or failed
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  default NetServer listen(int port, Handler<AsyncResult<NetServer>> listenHandler) {
-    return listen(port, "0.0.0.0", listenHandler);
-  }
-
-  /**
    * Start listening on the specified local address, ignoring port and host configured in the {@link io.vertx.core.net.NetServerOptions} used when
    * creating the server.
    * <p>
@@ -149,23 +100,6 @@ public interface NetServer extends Measured {
    * @return a future completed with the listen operation result
    */
   Future<NetServer> listen(SocketAddress localAddress);
-
-  /**
-   * Like {@link #listen(SocketAddress)} but providing a handler that will be notified when the server is listening, or fails.
-   *
-   * @param localAddress the local address to listen on
-   * @param listenHandler handler that will be notified when listening or failed
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  default NetServer listen(SocketAddress localAddress, Handler<AsyncResult<NetServer>> listenHandler) {
-    Future<NetServer> fut = listen(localAddress);
-    if (listenHandler != null) {
-      fut.onComplete(listenHandler);
-    }
-    return this;
-  }
 
   /**
    * Set an exception handler called for socket errors happening before the connection
@@ -187,14 +121,6 @@ public interface NetServer extends Measured {
   Future<Void> close();
 
   /**
-   * Like {@link #close} but supplying a handler that will be notified when close is complete.
-   *
-   * @param completionHandler  the handler
-   */
-  @Deprecated
-  void close(Handler<AsyncResult<Void>> completionHandler);
-
-  /**
    * The actual port the server is listening on. This is useful if you bound the server specifying 0 as port number
    * signifying an ephemeral port
    *
@@ -212,17 +138,4 @@ public interface NetServer extends Measured {
    */
   Future<Void> updateSSLOptions(SSLOptions options);
 
-  /**
-   * Like {@link #updateSSLOptions(SSLOptions)}  but supplying a handler that will be called when the update
-   * happened (or has failed).
-   *
-   * @param options the new SSL options
-   * @param handler the update handler
-   */
-  @Deprecated
-  default void updateSSLOptions(SSLOptions options, Handler<AsyncResult<Void>> handler) {
-    Future<Void> fut = updateSSLOptions(options);
-    if (handler != null) {
-      fut.onComplete(handler);
-    }
-  }}
+}
