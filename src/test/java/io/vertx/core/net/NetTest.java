@@ -3399,7 +3399,7 @@ public class NetTest extends VertxTestBase {
             HttpResponseStatus.OK,
             Unpooled.copiedBuffer("Hello World", StandardCharsets.UTF_8));
           response.headers().set(HttpHeaderNames.CONTENT_LENGTH, "11");
-          internal.writeMessage(response, onSuccess(v -> complete()));
+          internal.writeMessage(response).onComplete(onSuccess(v -> complete()));
         }
       });
     });
@@ -3522,7 +3522,7 @@ public class NetTest extends VertxTestBase {
             fail();
         }
       });
-      soInt.writeMessage(new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/somepath"), onSuccess(v -> complete()));
+      soInt.writeMessage(new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/somepath")).onComplete(onSuccess(v -> complete()));
     }));
     await();
   }

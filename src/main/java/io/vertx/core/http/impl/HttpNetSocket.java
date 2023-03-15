@@ -182,18 +182,8 @@ class HttpNetSocket implements NetSocket {
   }
 
   @Override
-  public void write(String str, String enc, Handler<AsyncResult<Void>> handler) {
-    writeStream.write(Buffer.buffer(str, enc)).onComplete(handler);
-  }
-
-  @Override
   public Future<Void> write(String str) {
     return writeStream.write(Buffer.buffer(str));
-  }
-
-  @Override
-  public void write(String str, Handler<AsyncResult<Void>> handler) {
-    writeStream.write(Buffer.buffer(str)).onComplete(handler);
   }
 
   @Override
@@ -243,14 +233,6 @@ class HttpNetSocket implements NetSocket {
   }
 
   @Override
-  public void close(Handler<AsyncResult<Void>> handler) {
-    Future<Void> fut = writeStream.end();
-    if (handler != null) {
-      fut.onComplete(handler);
-    }
-  }
-
-  @Override
   public NetSocket closeHandler(@Nullable Handler<Void> handler) {
     synchronized (conn) {
       closeHandler = handler;
@@ -262,18 +244,6 @@ class HttpNetSocket implements NetSocket {
     synchronized (conn) {
       return closeHandler;
     }
-  }
-
-  @Override
-  public NetSocket upgradeToSsl(Handler<AsyncResult<Void>> handler) {
-    handler.handle(upgradeToSsl());
-    return this;
-  }
-
-  @Override
-  public NetSocket upgradeToSsl(String serverName, Handler<AsyncResult<Void>> handler) {
-    handler.handle(upgradeToSsl(serverName));
-    return this;
   }
 
   @Override
