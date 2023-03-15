@@ -79,9 +79,9 @@ If your application doesn't need data to be shared with every other node, you ca
 
 ==== Putting data in a map
 
-You put data in a map with {@link io.vertx.core.shareddata.AsyncMap#put(java.lang.Object,java.lang.Object,io.vertx.core.Handler)}.
+You put data in a map with {@link io.vertx.core.shareddata.AsyncMap#put(java.lang.Object,java.lang.Object)}.
 
-The actual put is asynchronous and the handler is notified once it is complete:
+The actual put is asynchronous and the returned future is notified once it is complete:
 
 [source,$lang]
 ----
@@ -90,9 +90,9 @@ The actual put is asynchronous and the handler is notified once it is complete:
 
 ==== Getting data from a map
 
-You get data from a map with {@link io.vertx.core.shareddata.AsyncMap#get(java.lang.Object,io.vertx.core.Handler)}.
+You get data from a map with {@link io.vertx.core.shareddata.AsyncMap#get(java.lang.Object)}.
 
-The actual get is asynchronous and the handler is notified with the result some time later:
+The actual get is asynchronous and the returned future is notified with the result some time later:
 
 [source,$lang]
 ----
