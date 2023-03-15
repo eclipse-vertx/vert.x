@@ -129,22 +129,10 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   @Override
-  public void close(Handler<AsyncResult<Void>> handler) {
-    closeInternal(handler);
-  }
-
-  @Override
   public Future<Void> end() {
     Promise<Void> promise = context.promise();
-    close(promise);
+    closeInternal(promise);
     return promise.future();
-  }
-
-  @Override
-  public synchronized AsyncFile read(Buffer buffer, int offset, long position, int length, Handler<AsyncResult<Buffer>> handler) {
-    Objects.requireNonNull(handler, "handler");
-    read(buffer, offset, position, length).onComplete(handler);
-    return this;
   }
 
   @Override
@@ -167,15 +155,9 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   @Override
-  public void write(Buffer buffer, long position, Handler<AsyncResult<Void>> handler) {
-    Objects.requireNonNull(handler, "handler");
-    doWrite(buffer, position, handler);
-  }
-
-  @Override
   public Future<Void> write(Buffer buffer, long position) {
     Promise<Void> promise = context.promise();
-    write(buffer, position, promise);
+    doWrite(buffer, position, promise);
     return promise.future();
   }
 
@@ -318,12 +300,6 @@ public class AsyncFileImpl implements AsyncFile {
     Promise<Void> promise = context.promise();
     doFlush(promise);
     return promise.future();
-  }
-
-  @Override
-  public AsyncFile flush(Handler<AsyncResult<Void>> handler) {
-    doFlush(handler);
-    return this;
   }
 
   @Override
@@ -608,14 +584,6 @@ public class AsyncFileImpl implements AsyncFile {
     return lock(0, Long.MAX_VALUE, false);
   }
 
-  @Override
-  public void lock(Handler<AsyncResult<AsyncFileLock>> handler) {
-    Future<AsyncFileLock> future = lock();
-    if (handler != null) {
-      future.onComplete(handler);
-    }
-  }
-
   private static CompletionHandler<FileLock, PromiseInternal<AsyncFileLock>> LOCK_COMPLETION = new CompletionHandler<FileLock, PromiseInternal<AsyncFileLock>>() {
     @Override
     public void completed(FileLock result, PromiseInternal<AsyncFileLock> p) {
@@ -640,13 +608,5 @@ public class AsyncFileImpl implements AsyncFile {
       }
     });
     return promise.future();
-  }
-
-  @Override
-  public void lock(long position, long size, boolean shared, Handler<AsyncResult<AsyncFileLock>> handler) {
-    Future<AsyncFileLock> future = lock(position, size, shared);
-    if (handler != null) {
-      future.onComplete(handler);
-    }
   }
 }
