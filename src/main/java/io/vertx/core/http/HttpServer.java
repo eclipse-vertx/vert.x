@@ -13,7 +13,6 @@ package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.GenIgnore;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.Fluent;
@@ -131,21 +130,6 @@ public interface HttpServer extends Measured {
   Future<Void> updateSSLOptions(SSLOptions options);
 
   /**
-   * Like {@link #updateSSLOptions(SSLOptions)}  but supplying a handler that will be called when the update
-   * happened (or has failed).
-   *
-   * @param options the new SSL options
-   * @param handler the update handler
-   */
-  @Deprecated
-  default void updateSSLOptions(SSLOptions options, Handler<AsyncResult<Void>> handler) {
-    Future<Void> fut = updateSSLOptions(options);
-    if (handler != null) {
-      fut.onComplete(handler);
-    }
-  }
-
-  /**
    * Tell the server to start listening. The server will listen on the port and host specified in the
    * {@link io.vertx.core.http.HttpServerOptions} that was used when creating the server.
    * <p>
@@ -171,43 +155,12 @@ public interface HttpServer extends Measured {
   }
 
   /**
-   * Like {@link #listen(int, String)} but supplying a handler that will be called when the server is actually
-   * listening (or has failed).
-   *
-   * @param port  the port to listen on
-   * @param host  the host to listen on
-   * @param listenHandler  the listen handler
-   */
-  @Fluent
-  @Deprecated
-  default HttpServer listen(int port, String host, Handler<AsyncResult<HttpServer>> listenHandler) {
-    Future<HttpServer> fut = listen(port, host);
-    if (listenHandler != null) {
-      fut.onComplete(listenHandler);
-    }
-    return this;
-  }
-
-  /**
    * Tell the server to start listening on the given address supplying
    * a handler that will be called when the server is actually
    * listening (or has failed).
    *
    * @param address the address to listen on
-   * @param listenHandler  the listen handler
-   */
-  @Fluent
-  @Deprecated
-  default HttpServer listen(SocketAddress address, Handler<AsyncResult<HttpServer>> listenHandler) {
-    Future<HttpServer> fut = listen(address);
-    if (listenHandler != null) {
-      fut.onComplete(listenHandler);
-    }
-    return this;
-  }
-
-  /**
-   * Like {@link #listen(SocketAddress, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future completed with the listen operation result
    */
   Future<HttpServer> listen(SocketAddress address);
 
@@ -224,37 +177,6 @@ public interface HttpServer extends Measured {
   }
 
   /**
-   * Like {@link #listen(int)} but supplying a handler that will be called when the server is actually listening (or has failed).
-   *
-   * @param port  the port to listen on
-   * @param listenHandler  the listen handler
-   */
-  @Fluent
-  @Deprecated
-  default HttpServer listen(int port, Handler<AsyncResult<HttpServer>> listenHandler) {
-    Future<HttpServer> fut = listen(port);
-    if (listenHandler != null) {
-      fut.onComplete(listenHandler);
-    }
-    return this;
-  }
-
-  /**
-   * Like {@link #listen} but supplying a handler that will be called when the server is actually listening (or has failed).
-   *
-   * @param listenHandler  the listen handler
-   */
-  @Fluent
-  @Deprecated
-  default HttpServer listen(Handler<AsyncResult<HttpServer>> listenHandler) {
-    Future<HttpServer> fut = listen();
-    if (listenHandler != null) {
-      fut.onComplete(listenHandler);
-    }
-    return this;
-  }
-
-  /**
    * Close the server. Any open HTTP connections will be closed.
    * <p>
    * The close happens asynchronously and the server may not be closed until some time after the call has returned.
@@ -262,14 +184,6 @@ public interface HttpServer extends Measured {
    * @return a future completed with the result
    */
   Future<Void> close();
-
-  /**
-   * Like {@link #close} but supplying a handler that will be called when the server is actually closed (or has failed).
-   *
-   * @param completionHandler  the handler
-   */
-  @Deprecated
-  void close(Handler<AsyncResult<Void>> completionHandler);
 
   /**
    * The actual port the server is listening on. This is useful if you bound the server specifying 0 as port number
