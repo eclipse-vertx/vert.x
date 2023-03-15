@@ -2553,13 +2553,14 @@ public class Http1xTest extends HttpTest {
     startServer(testAddress);
     vertx.createHttpClient()
       .request(new RequestOptions(requestOptions).setURI("/?ab c=1"))
-      .compose(HttpClientRequest::send)
-      .onComplete(onSuccess(resp -> {
-        assertEquals(400, resp.statusCode());
-        resp.request().connection().closeHandler(v -> {
-          testComplete();
-        });
-      }));
+      .onComplete(onSuccess(req -> req
+        .send()
+        .onComplete(onSuccess(resp -> {
+          assertEquals(400, resp.statusCode());
+          resp.request().connection().closeHandler(v -> {
+            testComplete();
+          });
+        }))));
     await();
   }
 
