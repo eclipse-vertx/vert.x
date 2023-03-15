@@ -590,14 +590,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return clusterManager;
   }
 
-  @Override
-  public Future<Void> close() {
-    // Create this promise purposely without a context because the close operation will close thread pools
-    Promise<Void> promise = Promise.promise();
-    close(promise);
-    return promise.future();
-  }
-
   private void closeClusterManager(Handler<AsyncResult<Void>> completionHandler) {
     Promise<Void> leavePromise = getOrCreateContext().promise();
     if (clusterManager != null) {
@@ -616,7 +608,14 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public synchronized void close(Handler<AsyncResult<Void>> completionHandler) {
+  public Future<Void> close() {
+    // Create this promise purposely without a context because the close operation will close thread pools
+    Promise<Void> promise = Promise.promise();
+    close(promise);
+    return promise.future();
+  }
+
+  private synchronized void close(Handler<AsyncResult<Void>> completionHandler) {
     if (closed || eventBus == null) {
       // Just call the handler directly since pools shutdown
       if (completionHandler != null) {

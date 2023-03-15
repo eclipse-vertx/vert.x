@@ -58,7 +58,7 @@ import java.util.function.Supplier;
  * Most functionality in Vert.x core is fairly low level.
  * <p>
  * To create an instance of this class you can use the static factory methods: {@link #vertx},
- * {@link #vertx(io.vertx.core.VertxOptions)} and {@link #clusteredVertx(io.vertx.core.VertxOptions, Handler)}.
+ * {@link #vertx(io.vertx.core.VertxOptions)} and {@link #clusteredVertx(io.vertx.core.VertxOptions)}.
  * <p>
  * Please see the user manual for more detailed usage information.
  *
@@ -90,22 +90,14 @@ public interface Vertx extends Measured {
   /**
    * Creates a clustered instance using the specified options.
    * <p>
-   * The instance is created asynchronously and the resultHandler is called with the result when it is ready.
+   * The instance is created asynchronously and the returned future is completed with the result when it is ready.
    *
    * @param options  the options to use
-   * @param resultHandler  the result handler that will receive the result
-   */
-  @Deprecated
-  static void clusteredVertx(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
-    new VertxBuilder(options).init().clusteredVertx(resultHandler);
-  }
-
-  /**
-   * Same as {@link #clusteredVertx(VertxOptions, Handler)} but with an {@code handler} called when the operation completes
+   * @return a future completed with the clustered vertx
    */
   static Future<Vertx> clusteredVertx(VertxOptions options) {
     Promise<Vertx> promise = Promise.promise();
-    clusteredVertx(options, promise);
+    new VertxBuilder(options).init().clusteredVertx(promise);
     return promise.future();
   }
 
@@ -350,14 +342,6 @@ public interface Vertx extends Measured {
    * @return a future completed with the result
    */
   Future<Void> close();
-
-  /**
-   * Like {@link #close} but the completionHandler will be called when the close is complete
-   *
-   * @param completionHandler  The handler will be notified when the close is complete.
-   */
-  @Deprecated
-  void close(Handler<AsyncResult<Void>> completionHandler);
 
   /**
    * Deploy a verticle instance that you have created yourself.

@@ -205,11 +205,6 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public void close(Handler<AsyncResult<Void>> completionHandler) {
-    delegate.close(completionHandler);
-  }
-
-  @Override
   public Future<String> deployVerticle(Verticle verticle) {
     return delegate.deployVerticle(verticle);
   }
