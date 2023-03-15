@@ -93,20 +93,8 @@ public final class DnsClientImpl implements DnsClient {
   }
 
   @Override
-  public DnsClient lookup4(String name, Handler<AsyncResult<String>> handler) {
-    lookup4(name).onComplete(handler);
-    return this;
-  }
-
-  @Override
   public Future<@Nullable String> lookup4(String name) {
     return lookupSingle(name, DnsRecordType.A);
-  }
-
-  @Override
-  public DnsClient lookup6(String name, Handler<AsyncResult<String>> handler) {
-    lookup6(name).onComplete(handler);
-    return this;
   }
 
   @Override
@@ -115,20 +103,8 @@ public final class DnsClientImpl implements DnsClient {
   }
 
   @Override
-  public DnsClient lookup(String name, Handler<AsyncResult<String>> handler) {
-    lookup(name).onComplete(handler);
-    return this;
-  }
-
-  @Override
   public Future<@Nullable String> lookup(String name) {
     return lookupSingle(name, DnsRecordType.A, DnsRecordType.AAAA);
-  }
-
-  @Override
-  public DnsClient resolveA(String name, Handler<AsyncResult<List<String>>> handler) {
-    resolveA(name).onComplete(handler);
-    return this;
   }
 
   @Override
@@ -137,20 +113,8 @@ public final class DnsClientImpl implements DnsClient {
   }
 
   @Override
-  public DnsClient resolveCNAME(String name, Handler<AsyncResult<List<String> >> handler) {
-    resolveCNAME(name).onComplete(handler);
-    return this;
-  }
-
-  @Override
   public Future<List<String>> resolveCNAME(String name) {
     return lookupList(name, DnsRecordType.CNAME);
-  }
-
-  @Override
-  public DnsClient resolveMX(String name, Handler<AsyncResult<List<MxRecord>>> handler) {
-    resolveMX(name).onComplete(handler);
-    return this;
   }
 
   @Override
@@ -170,26 +134,8 @@ public final class DnsClientImpl implements DnsClient {
   }
 
   @Override
-  public DnsClient resolveTXT(String name, Handler<AsyncResult<List<String>>> handler) {
-    resolveTXT(name).onComplete(handler);
-    return this;
-  }
-
-  @Override
   public Future<@Nullable String> resolvePTR(String name) {
     return lookupSingle(name, DnsRecordType.PTR);
-  }
-
-  @Override
-  public DnsClient resolvePTR(String name, Handler<AsyncResult<String>> handler) {
-    resolvePTR(name).onComplete(handler);
-    return this;
-  }
-
-  @Override
-  public DnsClient resolveAAAA(String name, Handler<AsyncResult<List<String>>> handler) {
-    resolveAAAA(name).onComplete(handler);
-    return this;
   }
 
   @Override
@@ -203,20 +149,8 @@ public final class DnsClientImpl implements DnsClient {
   }
 
   @Override
-  public DnsClient resolveNS(String name, Handler<AsyncResult<List<String>>> handler) {
-    resolveNS(name).onComplete(handler);
-    return this;
-  }
-
-  @Override
   public Future<List<SrvRecord>> resolveSRV(String name) {
     return lookupList(name, DnsRecordType.SRV);
-  }
-
-  @Override
-  public DnsClient resolveSRV(String name, Handler<AsyncResult<List<SrvRecord>>> handler) {
-    resolveSRV(name).onComplete(handler);
-    return this;
   }
 
   @Override
@@ -251,12 +185,6 @@ public final class DnsClientImpl implements DnsClient {
       // anyway just in case notify the handler
       return Future.failedFuture(e);
     }
-  }
-
-  @Override
-  public DnsClient reverseLookup(String address, Handler<AsyncResult<String>> handler) {
-    reverseLookup(address).onComplete(handler);
-    return this;
   }
 
   private <T> Future<T> lookupSingle(String name, DnsRecordType... types) {
