@@ -315,15 +315,6 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   Future<Void> end();
 
   /**
-   * {@inheritDoc}
-   *
-   * Calls {@link #close(Handler)}
-   */
-  @Override
-  @Deprecated
-  void end(Handler<AsyncResult<Void>> handler);
-
-  /**
    * Close the WebSocket sending the default close frame.
    * <p/>
    * No more messages can be sent.

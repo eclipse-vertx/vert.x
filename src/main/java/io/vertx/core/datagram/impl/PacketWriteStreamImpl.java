@@ -52,18 +52,11 @@ class PacketWriteStreamImpl implements WriteStream<Buffer>, Handler<AsyncResult<
   @Override
   public Future<Void> write(Buffer data) {
     Promise<Void> promise = Promise.promise();
-    write(data, promise);
-    return promise.future();
-  }
-
-  @Override
-  public void write(Buffer data, Handler<AsyncResult<Void>> handler) {
     datagramSocket.send(data, port, host, ar -> {
       PacketWriteStreamImpl.this.handle(ar);
-      if (handler != null) {
-        handler.handle(ar.mapEmpty());
-      }
+      promise.handle(ar.mapEmpty());
     });
+    return promise.future();
   }
 
   @Override
@@ -83,13 +76,8 @@ class PacketWriteStreamImpl implements WriteStream<Buffer>, Handler<AsyncResult<
 
   @Override
   public Future<Void> end() {
-    Promise<Void> promide = Promise.promise();
-    end(promide);
-    return promide.future();
-  }
-
-  @Override
-  public void end(Handler<AsyncResult<Void>> handler) {
-    datagramSocket.close(handler);
+    Promise<Void> promise = Promise.promise();
+    datagramSocket.close(promise);
+    return promise.future();
   }
 }

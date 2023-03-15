@@ -115,13 +115,7 @@ public class FakeStream<T> implements ReadStream<T>, WriteStream<T> {
   }
 
   public Future<Void> end() {
-    Promise<Void> promise = Promise.promise();
-    end(promise);
-    return promise.future();
-  }
-
-  @Override
-  public void end(Handler<AsyncResult<Void>> h) {
+    Promise<Void> p = Promise.promise();
     synchronized(this) {
       if (ended) {
         throw new IllegalStateException();
@@ -129,9 +123,7 @@ public class FakeStream<T> implements ReadStream<T>, WriteStream<T> {
       ended = true;
       Promise<Void> promise = Promise.promise();
       promise.future().onComplete(ar -> {
-        if (h != null) {
-          h.handle(ar);
-        }
+        p.handle(ar);
         Handler<Void> handler = endHandler();
         if (handler != null) {
           handler.handle(null);
@@ -140,6 +132,7 @@ public class FakeStream<T> implements ReadStream<T>, WriteStream<T> {
       pending.add(new Op<>((T)END_SENTINEL, promise));
     }
     checkPending();
+    return p.future();
   }
 
   public synchronized void fail(Throwable err) {
@@ -235,15 +228,6 @@ public class FakeStream<T> implements ReadStream<T>, WriteStream<T> {
     Promise<Void> ack = Promise.promise();
     doEmit(new Op<>(data, ack));
     return ack.future();
-  }
-
-  @Override
-  public void write(T data, Handler<AsyncResult<Void>> handler) {
-    Promise<Void> ack = Promise.promise();
-    if (handler != null) {
-      ack.future().onComplete(handler);
-    }
-    doEmit(new Op<>(data, ack));
   }
 
   @Override

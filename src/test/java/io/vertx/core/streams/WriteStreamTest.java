@@ -28,7 +28,7 @@ public class WriteStreamTest extends AsyncTestBase {
     @Override public StreamBase<T> setWriteQueueMaxSize(int maxSize) { throw new UnsupportedOperationException(); }
     @Override public boolean writeQueueFull() { throw new UnsupportedOperationException(); }
     @Override public StreamBase<T> drainHandler(@Nullable Handler<Void> handler) { throw new UnsupportedOperationException(); }
-    @Override public final Future<Void> end() { throw new UnsupportedOperationException(); }
+    @Override public Future<Void> end() { throw new UnsupportedOperationException(); }
   }
 
   static class EndWithItemStreamAsync extends StreamBase<Object> {
@@ -37,14 +37,14 @@ public class WriteStreamTest extends AsyncTestBase {
     AtomicInteger endCount = new AtomicInteger();
     Promise<Void> endFut = Promise.promise();
     @Override
-    public void write(Object data, Handler<AsyncResult<Void>> handler) {
+    public Future<Void> write(Object data) {
       writeCount.incrementAndGet();
-      writeFut.future().onComplete(handler);
+      return writeFut.future();
     }
     @Override
-    public void end(Handler<AsyncResult<Void>> handler) {
+    public Future<Void> end() {
       endCount.incrementAndGet();
-      endFut.future().onComplete(handler);
+      return endFut.future();
     }
   }
 

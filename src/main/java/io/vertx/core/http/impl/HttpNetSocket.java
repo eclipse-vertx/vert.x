@@ -177,18 +177,13 @@ class HttpNetSocket implements NetSocket {
   }
 
   @Override
-  public void write(Buffer data, Handler<AsyncResult<Void>> handler) {
-    writeStream.write(data, handler);
-  }
-
-  @Override
   public Future<Void> write(String str, String enc) {
     return write(Buffer.buffer(str, enc));
   }
 
   @Override
   public void write(String str, String enc, Handler<AsyncResult<Void>> handler) {
-    writeStream.write(Buffer.buffer(str, enc), handler);
+    writeStream.write(Buffer.buffer(str, enc)).onComplete(handler);
   }
 
   @Override
@@ -198,7 +193,7 @@ class HttpNetSocket implements NetSocket {
 
   @Override
   public void write(String str, Handler<AsyncResult<Void>> handler) {
-    writeStream.write(Buffer.buffer(str), handler);
+    writeStream.write(Buffer.buffer(str)).onComplete(handler);
   }
 
   @Override
@@ -207,18 +202,8 @@ class HttpNetSocket implements NetSocket {
   }
 
   @Override
-  public void end(Buffer buffer, Handler<AsyncResult<Void>> handler) {
-    writeStream.end(buffer, handler);
-  }
-
-  @Override
   public Future<Void> end() {
     return writeStream.end();
-  }
-
-  @Override
-  public void end(Handler<AsyncResult<Void>> handler) {
-    writeStream.end(handler);
   }
 
   @Override
@@ -259,7 +244,10 @@ class HttpNetSocket implements NetSocket {
 
   @Override
   public void close(Handler<AsyncResult<Void>> handler) {
-    end(handler);
+    Future<Void> fut = writeStream.end();
+    if (handler != null) {
+      fut.onComplete(handler);
+    }
   }
 
   @Override
