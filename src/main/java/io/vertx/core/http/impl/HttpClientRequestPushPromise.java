@@ -140,6 +140,11 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
+  public void write(Buffer data, Handler<AsyncResult<Void>> handler) {
+    throw new IllegalStateException();
+  }
+
+  @Override
   public void write(String chunk, Handler<AsyncResult<Void>> handler) {
     throw new IllegalStateException();
   }
@@ -205,7 +210,17 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
+  public void end(Buffer chunk, Handler<AsyncResult<Void>> handler) {
+    throw new IllegalStateException();
+  }
+
+  @Override
   public Future<Void> end() {
+    throw new IllegalStateException();
+  }
+
+  @Override
+  public void end(Handler<AsyncResult<Void>> handler) {
     throw new IllegalStateException();
   }
 

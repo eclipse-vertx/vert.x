@@ -326,6 +326,11 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
+  public void write(Buffer chunk, Handler<AsyncResult<Void>> handler) {
+    write(chunk.getByteBuf(), handler == null ? null : context.promise(handler));
+  }
+
+  @Override
   public Future<Void> write(String chunk, String enc) {
     PromiseInternal<Void> promise = context.promise();
     write(Buffer.buffer(chunk, enc).getByteBuf(), promise);
@@ -384,7 +389,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public void end(String chunk, Handler<AsyncResult<Void>> handler) {
-    end(Buffer.buffer(chunk), handler == null ? null : context.promise(handler));
+    end(Buffer.buffer(chunk), handler);
   }
 
   @Override
@@ -394,7 +399,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public void end(String chunk, String enc, Handler<AsyncResult<Void>> handler) {
-    end(Buffer.buffer(chunk, enc), handler == null ? null : context.promise(handler));
+    end(Buffer.buffer(chunk, enc), handler);
   }
 
   @Override
@@ -402,6 +407,11 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
     PromiseInternal<Void> promise = context.promise();
     end(chunk, promise);
     return promise.future();
+  }
+
+  @Override
+  public void end(Buffer chunk, Handler<AsyncResult<Void>> handler) {
+    end(chunk, handler == null ? null : context.promise(handler));
   }
 
   private void end(Buffer chunk, PromiseInternal<Void> listener) {
@@ -465,6 +475,11 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   @Override
   public Future<Void> end() {
     return end(EMPTY_BUFFER);
+  }
+
+  @Override
+  public void end(Handler<AsyncResult<Void>> handler) {
+    end(EMPTY_BUFFER, handler);
   }
 
   @Override

@@ -354,6 +354,12 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
+  public void write(Buffer chunk, Handler<AsyncResult<Void>> handler) {
+    ByteBuf buf = chunk.getByteBuf();
+    write(buf, false, handler);
+  }
+
+  @Override
   public Future<Void> write(String chunk, String enc) {
     Promise<Void> promise = stream.context.promise();
     write(Buffer.buffer(chunk, enc).getByteBuf(), false, promise);
@@ -389,7 +395,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public void end(String chunk, Handler<AsyncResult<Void>> handler) {
-    end(Buffer.buffer(chunk).getByteBuf(), handler);
+    end(Buffer.buffer(chunk), handler);
   }
 
   @Override
@@ -410,10 +416,20 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
+  public void end(Buffer chunk, Handler<AsyncResult<Void>> handler) {
+    end(chunk.getByteBuf(), handler);
+  }
+
+  @Override
   public Future<Void> end() {
     Promise<Void> promise = stream.context.promise();
     write(null, true, promise);
     return promise.future();
+  }
+
+  @Override
+  public void end(Handler<AsyncResult<Void>> handler) {
+    end((ByteBuf) null, handler);
   }
 
   Future<NetSocket> netSocket() {

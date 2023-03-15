@@ -37,14 +37,14 @@ public class WriteStreamTest extends AsyncTestBase {
     AtomicInteger endCount = new AtomicInteger();
     Promise<Void> endFut = Promise.promise();
     @Override
-    public Future<Void> write(Object data) {
+    public void write(Object data, Handler<AsyncResult<Void>> handler) {
       writeCount.incrementAndGet();
-      return writeFut.future();
+      writeFut.future().onComplete(handler);
     }
     @Override
-    public Future<Void> end(Object data) {
+    public void end(Handler<AsyncResult<Void>> handler) {
       endCount.incrementAndGet();
-      return endFut.future();
+      endFut.future().onComplete(handler);
     }
   }
 

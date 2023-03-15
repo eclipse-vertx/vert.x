@@ -326,6 +326,14 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   @Override
+  public final void write(Buffer data, Handler<AsyncResult<Void>> handler) {
+    Future<Void> fut = write(data);
+    if (handler != null) {
+      fut.onComplete(handler);
+    }
+  }
+
+  @Override
   public Future<Void> writePing(Buffer data) {
     if (data.length() > maxWebSocketFrameSize || data.length() > 125) {
       return context.failedFuture("Ping cannot exceed maxWebSocketFrameSize or 125 bytes");
@@ -833,4 +841,8 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     return close();
   }
 
+  @Override
+  public void end(Handler<AsyncResult<Void>> handler) {
+    close(handler);
+  }
 }

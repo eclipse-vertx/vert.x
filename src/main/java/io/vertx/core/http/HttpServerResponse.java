@@ -299,6 +299,13 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   Future<Void> end(Buffer chunk);
 
   /**
+   * Same as {@link #end(Buffer)} but with an {@code handler} called when the operation completes
+   */
+  @Override
+  @Deprecated
+  void end(Buffer chunk, Handler<AsyncResult<Void>> handler);
+
+  /**
    * Ends the response. If no data has been written to the response body,
    * the actual response won't get written until this method gets called.
    * <p>
@@ -316,10 +323,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    */
   @Deprecated
   default void send(Handler<AsyncResult<Void>> handler) {
-    Future<Void> fut = end();
-    if (handler != null) {
-      fut.onComplete(handler);
-    }
+    end(handler);
   }
 
   /**
@@ -353,10 +357,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    */
   @Deprecated
   default void send(Buffer body, Handler<AsyncResult<Void>> handler) {
-    Future<Void> fut = send(body);
-    if (handler != null) {
-      fut.onComplete(handler);
-    }
+    end(body, handler);
   }
 
   /**

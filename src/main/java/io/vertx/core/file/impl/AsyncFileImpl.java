@@ -141,6 +141,11 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   @Override
+  public void end(Handler<AsyncResult<Void>> handler) {
+    close(handler);
+  }
+
+  @Override
   public synchronized AsyncFile read(Buffer buffer, int offset, long position, int length, Handler<AsyncResult<Buffer>> handler) {
     Objects.requireNonNull(handler, "handler");
     read(buffer, offset, position, length).onComplete(handler);
@@ -231,12 +236,17 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   @Override
-  public synchronized Future<Void> write(Buffer buffer) {
+  public Future<Void> write(Buffer buffer) {
     Promise<Void> promise = context.promise();
-    int length = buffer.length();
-    doWrite(buffer, writePos, promise);
-    writePos += length;
+    write(buffer, promise);
     return promise.future();
+  }
+
+  @Override
+  public synchronized void write(Buffer buffer, Handler<AsyncResult<Void>> handler) {
+    int length = buffer.length();
+    doWrite(buffer, writePos, handler);
+    writePos += length;
   }
 
   @Override
