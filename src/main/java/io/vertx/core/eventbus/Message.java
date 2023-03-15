@@ -98,35 +98,19 @@ public interface Message<T> {
    * this method does nothing.
    *
    * @param message  the message to reply with.
-   * @param replyHandler  the reply handler for the reply.
-   */
-  @Deprecated
-  default <R> void replyAndRequest(@Nullable Object message, Handler<AsyncResult<Message<R>>> replyHandler) {
-    replyAndRequest(message, new DeliveryOptions(), replyHandler);
-  }
-
-  /**
-   * Like {@link #replyAndRequest(Object, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified when any reply from the recipient is received
    */
   default <R> Future<Message<R>> replyAndRequest(@Nullable Object message) {
     return replyAndRequest(message, new DeliveryOptions());
   }
 
   /**
-   * Like {@link #replyAndRequest(Object, Handler)} but specifying {@code options} that can be used
+   * Like {@link #replyAndRequest(Object)} but specifying {@code options} that can be used
    * to configure the delivery.
    *
    * @param message  the message body, may be {@code null}
    * @param options  delivery options
-   * @param replyHandler  reply handler will be called when any reply from the recipient is received
-   */
-  @Deprecated
-  default <R> void replyAndRequest(@Nullable Object message, DeliveryOptions options, Handler<AsyncResult<Message<R>>> replyHandler) {
-    this.<R>replyAndRequest(message, options).onComplete(replyHandler);
-  }
-
-  /**
-   * Like {@link #replyAndRequest(Object, DeliveryOptions, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified when any reply from the recipient is received
    */
   <R> Future<Message<R>> replyAndRequest(@Nullable Object message, DeliveryOptions options);
 
