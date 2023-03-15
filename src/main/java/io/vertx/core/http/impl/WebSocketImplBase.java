@@ -155,32 +155,8 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   @Override
-  public void close(Handler<AsyncResult<Void>> handler) {
-    Future<Void> future = close();
-    if (handler != null) {
-      future.onComplete(handler);
-    }
-  }
-
-  @Override
   public Future<Void> close(short statusCode) {
     return close(statusCode, (String) null);
-  }
-
-  @Override
-  public void close(short statusCode, Handler<AsyncResult<Void>> handler) {
-    Future<Void> future = close(statusCode, (String) null);
-    if (handler != null) {
-      future.onComplete(handler);
-    }
-  }
-
-  @Override
-  public void close(short statusCode, @Nullable String reason, Handler<AsyncResult<Void>> handler) {
-    Future<Void> fut = close(statusCode, reason);
-    if (handler != null) {
-      fut.onComplete(handler);
-    }
   }
 
   @Override
@@ -236,26 +212,12 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   @Override
   public Future<Void> writeFinalTextFrame(String text) {
-    Promise<Void> promise = context.promise();
-    writeFinalTextFrame(text, promise);
-    return promise.future();
-  }
-
-  @Override
-  public S writeFinalTextFrame(String text, Handler<AsyncResult<Void>> handler) {
-    return writeFrame(WebSocketFrame.textFrame(text, true), handler);
+    return writeFrame(WebSocketFrame.textFrame(text, true));
   }
 
   @Override
   public Future<Void> writeFinalBinaryFrame(Buffer data) {
-    Promise<Void> promise = context.promise();
-    writeFinalBinaryFrame(data, promise);
-    return promise.future();
-  }
-
-  @Override
-  public S writeFinalBinaryFrame(Buffer data, Handler<AsyncResult<Void>> handler) {
-    return writeFrame(WebSocketFrame.binaryFrame(data, true), handler);
+    return writeFrame(WebSocketFrame.binaryFrame(data, true));
   }
 
   @Override
@@ -298,26 +260,8 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   @Override
-  public final S writeBinaryMessage(Buffer data, Handler<AsyncResult<Void>> handler) {
-    Future<Void> fut = writeBinaryMessage(data);
-    if (handler != null) {
-      fut.onComplete(handler);
-    }
-    return (S) this;
-  }
-
-  @Override
   public Future<Void> writeTextMessage(String text) {
     return writePartialMessage(WebSocketFrameType.TEXT, Buffer.buffer(text), 0);
-  }
-
-  @Override
-  public final S writeTextMessage(String text, Handler<AsyncResult<Void>> handler) {
-    Future<Void> fut = writeTextMessage(text);
-    if (handler != null) {
-      fut.onComplete(handler);
-    }
-    return (S) this;
   }
 
   @Override
@@ -334,29 +278,11 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   @Override
-  public final WebSocketBase writePing(Buffer data, Handler<AsyncResult<Void>> handler) {
-    Future<Void> fut = writePing(data);
-    if (handler != null) {
-      fut.onComplete(handler);
-    }
-    return (S) this;
-  }
-
-  @Override
   public Future<Void> writePong(Buffer data) {
     if (data.length() > maxWebSocketFrameSize || data.length() > 125) {
       return context.failedFuture("Pong cannot exceed maxWebSocketFrameSize or 125 bytes");
     }
     return writeFrame(WebSocketFrame.pongFrame(data));
-  }
-
-  @Override
-  public final WebSocketBase writePong(Buffer data, Handler<AsyncResult<Void>> handler) {
-    Future<Void> fut = writePong(data);
-    if (handler != null) {
-      fut.onComplete(handler);
-    }
-    return (S) this;
   }
 
   /**
@@ -398,14 +324,6 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
       conn.writeToChannel(encodeFrame((WebSocketFrameImpl) frame), promise);
       return promise.future();
     }
-  }
-
-  public final S writeFrame(WebSocketFrame frame, Handler<AsyncResult<Void>> handler) {
-    Future<Void> fut = writeFrame(frame);
-    if (handler != null) {
-      fut.onComplete(handler);
-    }
-    return (S) this;
   }
 
   private void writeBinaryFrameInternal(Buffer data) {

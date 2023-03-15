@@ -14,15 +14,12 @@ package io.vertx.core.http;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 
-import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
-import javax.security.cert.X509Certificate;
 
 /**
  * Represents a server side WebSocket.
@@ -58,26 +55,6 @@ public interface ServerWebSocket extends WebSocketBase {
 
   @Override
   ServerWebSocket drainHandler(Handler<Void> handler);
-
-  @Override
-  @Deprecated
-  ServerWebSocket writeFrame(WebSocketFrame frame, Handler<AsyncResult<Void>> handler);
-
-  @Override
-  @Deprecated
-  ServerWebSocket writeFinalTextFrame(String text, Handler<AsyncResult<Void>> handler);
-
-  @Override
-  @Deprecated
-  ServerWebSocket writeFinalBinaryFrame(Buffer data, Handler<AsyncResult<Void>> handler);
-
-  @Override
-  @Deprecated
-  ServerWebSocket writeBinaryMessage(Buffer data, Handler<AsyncResult<Void>> handler);
-
-  @Override
-  @Deprecated
-  ServerWebSocket writeTextMessage(String text, Handler<AsyncResult<Void>> handler);
 
   @Override
   ServerWebSocket closeHandler(Handler<Void> handler);
@@ -160,14 +137,8 @@ public interface ServerWebSocket extends WebSocketBase {
    * Calling this method will override the {@code future} completion handler.
    *
    * @param future the future to complete with
-   * @param handler the completion handler
+   * @return a future notified when the handshake has completed
    * @throws IllegalStateException when the WebSocket has already an asynchronous result
-   */
-  @Deprecated
-  void setHandshake(Future<Integer> future, Handler<AsyncResult<Integer>> handler);
-
-  /**
-   * Like {@link #setHandshake(Future, Handler)} but returns a {@code Future} of the asynchronous result
    */
   Future<Integer> setHandshake(Future<Integer> future);
 
