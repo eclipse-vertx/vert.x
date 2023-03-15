@@ -42,30 +42,16 @@ public interface WorkerExecutor extends Measured {
    * scheduled in the {@code blockingCodeHandler} will be executed on the this context and not on the worker thread.
    *
    * @param blockingCodeHandler  handler representing the blocking code to run
-   * @param resultHandler  handler that will be called when the blocking code is complete
    * @param ordered  if true then if executeBlocking is called several times on the same context, the executions
    *                 for that context will be executed serially, not in parallel. if false then they will be no ordering
    *                 guarantees
    * @param <T> the type of the result
-   */
-  @Deprecated
-  <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<@Nullable T>> resultHandler);
-
-  /**
-   * Like {@link #executeBlocking(Handler, boolean, Handler)} called with ordered = true.
-   */
-  @Deprecated
-  default <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<@Nullable T>> resultHandler) {
-    executeBlocking(blockingCodeHandler, true, resultHandler);
-  }
-
-  /**
-   * Same as {@link #executeBlocking(Handler, boolean, Handler)} but with an {@code handler} called when the operation completes
+   * @return a future notified with the result
    */
   <T> Future<@Nullable T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered);
 
   /**
-   * Like {@link #executeBlocking(Handler, boolean, Handler)} called with ordered = true.
+   * Like {@link #executeBlocking(Handler, boolean)} called with ordered = true.
    */
   default <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler) {
     return executeBlocking(blockingCodeHandler, true);
@@ -73,14 +59,6 @@ public interface WorkerExecutor extends Measured {
 
   /**
    * Close the executor.
-   *
-   * @param handler the completion handler
-   */
-  @Deprecated
-  void close(Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #close(Handler)} but returns a {@code Future} of the asynchronous result
    */
   Future<Void> close();
 
