@@ -12,7 +12,6 @@
 package io.vertx.core.eventbus;
 
 import io.vertx.codegen.annotations.VertxGen;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.streams.ReadStream;
@@ -84,37 +83,15 @@ public interface MessageConsumer<T> extends ReadStream<Message<T>> {
   int getMaxBufferedMessages();
 
   /**
-   * Optional method which can be called to indicate when the registration has been propagated across the cluster.
-   *
-   * @param completionHandler the completion handler
+   * @return a future notified when the message consumer is registered
    */
-  @Deprecated
-  default void completionHandler(Handler<AsyncResult<Void>> completionHandler) {
-      completion(completionHandler);
-  }
-
-  @Deprecated
-  default MessageConsumer<T> completion(Handler<AsyncResult<Void>> completionHandler) {
-    Future<Void> completion = completion();
-    if (completionHandler != null) {
-      completion.onComplete(completionHandler);
-    }
-    return this;
-  }
-
   Future<Void> completion();
 
   /**
    * Unregisters the handler which created this registration
+   *
+   * @return a future notified when the unregistation is done
    */
   Future<Void> unregister();
 
-  /**
-   * Unregisters the handler which created this registration
-   *
-   * @param completionHandler the handler called when the unregister is done. For example in a cluster when all nodes of the
-   * event bus have been unregistered.
-   */
-  @Deprecated
-  void unregister(Handler<AsyncResult<Void>> completionHandler);
 }
