@@ -31,64 +31,28 @@ public interface Counter {
   /**
    * Get the current value of the counter
    *
-   * @param resultHandler handler which will be passed the value
-   */
-  @Deprecated
-  default void get(Handler<AsyncResult<Long>> resultHandler) {
-    Objects.requireNonNull(resultHandler, "resultHandler");
-    get().onComplete(resultHandler);
-  }
-
-  /**
-   * Same as {@link #get(Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified with the value
    */
   Future<Long> get();
 
   /**
    * Increment the counter atomically and return the new count
    *
-   * @param resultHandler handler which will be passed the value
-   */
-  @Deprecated
-  default void incrementAndGet(Handler<AsyncResult<Long>> resultHandler) {
-    Objects.requireNonNull(resultHandler, "resultHandler");
-    incrementAndGet().onComplete(resultHandler);
-  }
-
-  /**
-   * Same as {@link #incrementAndGet(Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified with the value
    */
   Future<Long> incrementAndGet();
 
   /**
    * Increment the counter atomically and return the value before the increment.
    *
-   * @param resultHandler handler which will be passed the value
-   */
-  @Deprecated
-  default void getAndIncrement(Handler<AsyncResult<Long>> resultHandler) {
-    Objects.requireNonNull(resultHandler, "resultHandler");
-    getAndIncrement().onComplete(resultHandler);
-  }
-
-  /**
-   * Same as {@link #getAndIncrement(Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified with the value
    */
   Future<Long> getAndIncrement();
 
   /**
    * Decrement the counter atomically and return the new count
    *
-   * @param resultHandler handler which will be passed the value
-   */
-  @Deprecated
-  default void decrementAndGet(Handler<AsyncResult<Long>> resultHandler) {
-    Objects.requireNonNull(resultHandler, "resultHandler");
-    decrementAndGet().onComplete(resultHandler);
-  }
-
-  /**
-   * Same as {@link #decrementAndGet(Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified with the value
    */
   Future<Long> decrementAndGet();
 
@@ -96,16 +60,7 @@ public interface Counter {
    * Add the value to the counter atomically and return the new count
    *
    * @param value  the value to add
-   * @param resultHandler handler which will be passed the value
-   */
-  @Deprecated
-  default void addAndGet(long value, Handler<AsyncResult<Long>> resultHandler) {
-    Objects.requireNonNull(resultHandler, "resultHandler");
-    addAndGet(value).onComplete(resultHandler);
-  }
-
-  /**
-   * Same as {@link #addAndGet(long, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified with the value
    */
   Future<Long> addAndGet(long value);
 
@@ -113,16 +68,7 @@ public interface Counter {
    * Add the value to the counter atomically and return the value before the add
    *
    * @param value  the value to add
-   * @param resultHandler handler which will be passed the value
-   */
-  @Deprecated
-  default void getAndAdd(long value, Handler<AsyncResult<Long>> resultHandler) {
-    Objects.requireNonNull(resultHandler, "resultHandler");
-    getAndAdd(value).onComplete(resultHandler);
-  }
-
-  /**
-   * Same as {@link #getAndAdd(long, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified with the value
    */
   Future<Long> getAndAdd(long value);
 
@@ -132,16 +78,7 @@ public interface Counter {
    *
    * @param expected  the expected value
    * @param value  the new value
-   * @param resultHandler  the handler will be passed true on success
-   */
-  @Deprecated
-  default void compareAndSet(long expected, long value, Handler<AsyncResult<Boolean>> resultHandler) {
-    Objects.requireNonNull(resultHandler, "resultHandler");
-    compareAndSet(expected, value).onComplete(resultHandler);
-  }
-
-  /**
-   * Same as {@link #compareAndSet(long, long, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified with {@code true} on success
    */
   Future<Boolean> compareAndSet(long expected, long value);
 }
