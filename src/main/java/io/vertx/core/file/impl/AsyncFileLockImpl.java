@@ -65,14 +65,6 @@ public class AsyncFileLockImpl implements AsyncFileLock {
   }
 
   @Override
-  public void isValid(Handler<AsyncResult<Boolean>> handler) {
-    Future<Boolean> future = isValid();
-    if (handler != null) {
-      future.onComplete(handler);
-    }
-  }
-
-  @Override
   public void releaseBlocking() {
     try {
       fileLock.release();
@@ -91,13 +83,5 @@ public class AsyncFileLockImpl implements AsyncFileLock {
         prom.fail(new FileSystemException(e));
       }
     });
-  }
-
-  @Override
-  public void release(Handler<AsyncResult<Void>> handler) {
-    Future<Void> future = release();
-    if (handler != null) {
-      future.onComplete(handler);
-    }
   }
 }

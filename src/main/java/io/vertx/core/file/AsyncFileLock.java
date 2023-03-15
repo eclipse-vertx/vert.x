@@ -12,9 +12,7 @@
 package io.vertx.core.file;
 
 import io.vertx.codegen.annotations.VertxGen;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 
 /**
  * A lock on a region of an {@link AsyncFile}.
@@ -55,12 +53,6 @@ public interface AsyncFileLock {
   Future<Boolean> isValid();
 
   /**
-   * Like {@link #isValid()} but the {@code handler} will be called when the operation completes or if an error occurs.
-   */
-  @Deprecated
-  void isValid(Handler<AsyncResult<Boolean>> handler);
-
-  /**
    * Like {@link #release()} but blocking.
    *
    * @throws FileSystemException if an error occurs
@@ -72,9 +64,4 @@ public interface AsyncFileLock {
    */
   Future<Void> release();
 
-  /**
-   * Like {@link #release()} but the {@code handler} will be called when the operation completes or if an error occurs.
-   */
-  @Deprecated
-  void release(Handler<AsyncResult<Void>> handler);
 }
