@@ -665,22 +665,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public void deployVerticle(String name, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
-    Future<String> fut = deployVerticle(name, options);
-    if (completionHandler != null) {
-      fut.onComplete(completionHandler);
-    }
-  }
-
-  @Override
-  public void deployVerticle(Verticle verticle, Handler<AsyncResult<String>> completionHandler) {
-    Future<String> fut = deployVerticle(verticle);
-    if (completionHandler != null) {
-      fut.onComplete(completionHandler);
-    }
-  }
-
-  @Override
   public Future<String> deployVerticle(Verticle verticle, DeploymentOptions options) {
     if (options.getInstances() != 1) {
       throw new IllegalArgumentException("Can't specify > 1 instances for already created verticle");
@@ -689,37 +673,13 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public void deployVerticle(Verticle verticle, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
-    Future<String> fut = deployVerticle(verticle, options);
-    if (completionHandler != null) {
-      fut.onComplete(completionHandler);
-    }
-  }
-
-  @Override
   public Future<String> deployVerticle(Class<? extends Verticle> verticleClass, DeploymentOptions options) {
     return deployVerticle((Callable<Verticle>) verticleClass::newInstance, options);
   }
 
   @Override
-  public void deployVerticle(Class<? extends Verticle> verticleClass, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
-    Future<String> fut = deployVerticle(verticleClass, options);
-    if (completionHandler != null) {
-      fut.onComplete(completionHandler);
-    }
-  }
-
-  @Override
   public Future<String> deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options) {
     return deployVerticle((Callable<Verticle>) verticleSupplier::get, options);
-  }
-
-  @Override
-  public void deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
-    Future<String> fut = deployVerticle(verticleSupplier, options);
-    if (completionHandler != null) {
-      fut.onComplete(completionHandler);
-    }
   }
 
   private Future<String> deployVerticle(Callable<Verticle> verticleSupplier, DeploymentOptions options) {
@@ -748,14 +708,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       future = getOrCreateContext().succeededFuture();
     }
     return future.compose(v -> deploymentManager.undeployVerticle(deploymentID));
-  }
-
-  @Override
-  public void undeploy(String deploymentID, Handler<AsyncResult<Void>> completionHandler) {
-    Future<Void> fut = undeploy(deploymentID);
-    if (completionHandler != null) {
-      fut.onComplete(completionHandler);
-    }
   }
 
   @Override

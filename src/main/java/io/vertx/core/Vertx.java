@@ -365,6 +365,11 @@ public interface Vertx extends Measured {
    * Vert.x will assign the verticle a context and start the verticle.
    * <p>
    * The actual deploy happens asynchronously and may not complete until after the call has returned.
+   * <p>
+   * If the deployment is successful the result will contain a string representing the unique deployment ID of the
+   * deployment.
+   * <p>
+   * This deployment ID can subsequently be used to undeploy the verticle.
    *
    * @param verticle  the verticle instance to deploy.
    * @return a future completed with the result
@@ -373,21 +378,6 @@ public interface Vertx extends Measured {
   default Future<String> deployVerticle(Verticle verticle) {
     return deployVerticle(verticle, new DeploymentOptions());
   }
-
-  /**
-   * Like {@link #deployVerticle(Verticle)} but the completionHandler will be notified when the deployment is complete.
-   * <p>
-   * If the deployment is successful the result will contain a string representing the unique deployment ID of the
-   * deployment.
-   * <p>
-   * This deployment ID can subsequently be used to undeploy the verticle.
-   *
-   * @param verticle  the verticle instance to deploy
-   * @param completionHandler  a handler which will be notified when the deployment is complete
-   */
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  @Deprecated
-  void deployVerticle(Verticle verticle, Handler<AsyncResult<String>> completionHandler);
 
   /**
    * Like {@link #deployVerticle(Verticle)} but {@link io.vertx.core.DeploymentOptions} are provided to configure the
@@ -423,43 +413,16 @@ public interface Vertx extends Measured {
   Future<String> deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options);
 
   /**
-   * Like {@link #deployVerticle(Verticle, Handler)} but {@link io.vertx.core.DeploymentOptions} are provided to configure the
-   * deployment.
-   *
-   * @param verticle  the verticle instance to deploy
-   * @param options  the deployment options.
-   * @param completionHandler  a handler which will be notified when the deployment is complete
-   */
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  @Deprecated
-  void deployVerticle(Verticle verticle, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler);
-
-  /**
-   * Like {@link #deployVerticle(Verticle, DeploymentOptions, Handler)} but {@link Verticle} instance is created by
-   * invoking the default constructor of {@code verticleClass}.
-   */
-  @GenIgnore
-  void deployVerticle(Class<? extends Verticle> verticleClass, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler);
-
-  /**
-   * Like {@link #deployVerticle(Verticle, DeploymentOptions, Handler)} but {@link Verticle} instance is created by
-   * invoking the {@code verticleSupplier}.
-   * <p>
-   * The supplier will be invoked as many times as {@link DeploymentOptions#getInstances()}.
-   * It must not return the same instance twice.
-   * <p>
-   * Note that the supplier will be invoked on the caller thread.
-   */
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  @Deprecated
-  void deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler);
-
-  /**
    * Deploy a verticle instance given a name.
    * <p>
    * Given the name, Vert.x selects a {@link VerticleFactory} instance to use to instantiate the verticle.
    * <p>
    * For the rules on how factories are selected please consult the user manual.
+   * <p>
+   * If the deployment is successful the result will contain a String representing the unique deployment ID of the
+   * deployment.
+   * <p>
+   * This deployment ID can subsequently be used to undeploy the verticle.
    *
    * @param name  the name.
    * @return a future completed with the result
@@ -467,23 +430,6 @@ public interface Vertx extends Measured {
   default Future<String> deployVerticle(String name) {
     return deployVerticle(name, new DeploymentOptions());
   }
-
-  /**
-   * Like {@link #deployVerticle(String)} but the completionHandler will be notified when the deployment is complete.
-   * <p>
-   * If the deployment is successful the result will contain a String representing the unique deployment ID of the
-   * deployment.
-   * <p>
-   * This deployment ID can subsequently be used to undeploy the verticle.
-   *
-   * @param name  The identifier
-   * @param completionHandler  a handler which will be notified when the deployment is complete
-   */
-  @Deprecated
-  default void deployVerticle(String name, Handler<AsyncResult<String>> completionHandler) {
-    deployVerticle(name, new DeploymentOptions(), completionHandler);
-  }
-
 
   /**
    * Like {@link #deployVerticle(Verticle)} but {@link io.vertx.core.DeploymentOptions} are provided to configure the
@@ -496,17 +442,6 @@ public interface Vertx extends Measured {
   Future<String> deployVerticle(String name, DeploymentOptions options);
 
   /**
-   * Like {@link #deployVerticle(String, Handler)} but {@link io.vertx.core.DeploymentOptions} are provided to configure the
-   * deployment.
-   *
-   * @param name  the name
-   * @param options  the deployment options.
-   * @param completionHandler  a handler which will be notified when the deployment is complete
-   */
-  @Deprecated
-  void deployVerticle(String name, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler);
-
-  /**
    * Undeploy a verticle deployment.
    * <p>
    * The actual undeployment happens asynchronously and may not complete until after the method has returned.
@@ -515,15 +450,6 @@ public interface Vertx extends Measured {
    * @return a future completed with the result
    */
   Future<Void> undeploy(String deploymentID);
-
-  /**
-   * Like {@link #undeploy(String) } but the completionHandler will be notified when the undeployment is complete.
-   *
-   * @param deploymentID  the deployment ID
-   * @param completionHandler  a handler which will be notified when the undeployment is complete
-   */
-  @Deprecated
-  void undeploy(String deploymentID, Handler<AsyncResult<Void>> completionHandler);
 
   /**
    * Return a Set of deployment IDs for the currently deployed deploymentIDs.

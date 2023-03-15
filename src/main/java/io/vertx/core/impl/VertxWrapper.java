@@ -215,11 +215,6 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public void deployVerticle(Verticle verticle, Handler<AsyncResult<String>> completionHandler) {
-    delegate.deployVerticle(verticle, completionHandler);
-  }
-
-  @Override
   public Future<String> deployVerticle(Verticle verticle, DeploymentOptions options) {
     return delegate.deployVerticle(verticle, options);
   }
@@ -235,28 +230,8 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public void deployVerticle(Verticle verticle, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
-    delegate.deployVerticle(verticle, options, completionHandler);
-  }
-
-  @Override
-  public void deployVerticle(Class<? extends Verticle> verticleClass, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
-    delegate.deployVerticle(verticleClass, options, completionHandler);
-  }
-
-  @Override
-  public void deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
-    delegate.deployVerticle(verticleSupplier, options, completionHandler);
-  }
-
-  @Override
   public Future<String> deployVerticle(String name) {
     return delegate.deployVerticle(name);
-  }
-
-  @Override
-  public void deployVerticle(String name, Handler<AsyncResult<String>> completionHandler) {
-    delegate.deployVerticle(name, completionHandler);
   }
 
   @Override
@@ -265,18 +240,8 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public void deployVerticle(String name, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
-    delegate.deployVerticle(name, options, completionHandler);
-  }
-
-  @Override
   public Future<Void> undeploy(String deploymentID) {
     return delegate.undeploy(deploymentID);
-  }
-
-  @Override
-  public void undeploy(String deploymentID, Handler<AsyncResult<Void>> completionHandler) {
-    delegate.undeploy(deploymentID, completionHandler);
   }
 
   @Override
