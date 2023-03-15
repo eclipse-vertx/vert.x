@@ -62,7 +62,8 @@ public class PipeImpl<T> implements Pipe<T> {
   }
 
   @Override
-  public void to(WriteStream<T> ws, Handler<AsyncResult<Void>> completionHandler) {
+  public Future<Void> to(WriteStream<T> ws) {
+    Promise<Void> promise = Promise.promise();
     if (ws == null) {
       throw new NullPointerException();
     }
@@ -99,16 +100,17 @@ public class PipeImpl<T> implements Pipe<T> {
       } catch (Exception ignore) {
       }
       if (ar.succeeded()) {
-        handleSuccess(completionHandler);
+        handleSuccess(promise);
       } else {
         Throwable err = ar.cause();
         if (err instanceof WriteException) {
           src.resume();
           err = err.getCause();
         }
-        handleFailure(err, completionHandler);
+        handleFailure(err, promise);
       }
     });
+    return promise.future();
   }
 
   private void handleSuccess(Handler<AsyncResult<Void>> completionHandler) {
