@@ -1150,7 +1150,7 @@ either aggregate it yourself:
 {@link examples.HTTPExamples#example48}
 ----
 
-Or you can use the convenience {@link io.vertx.core.http.HttpClientResponse#body(io.vertx.core.Handler)} which
+Or you can use the convenience {@link io.vertx.core.http.HttpClientResponse#body()} which
 is called with the entire body when the response has been fully read:
 
 [source,$lang]
