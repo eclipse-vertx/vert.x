@@ -172,11 +172,6 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
     write(Unpooled.copiedBuffer(str, cs), handler);
   }
 
-  @Override
-  public void write(Buffer message, Handler<AsyncResult<Void>> handler) {
-    write(message.getByteBuf(), handler);
-  }
-
   private void write(ByteBuf buff, Handler<AsyncResult<Void>> handler) {
     reportBytesWritten(buff.readableBytes());
     writeMessage(buff, handler);
@@ -327,11 +322,6 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   @Override
   protected void handleInterestedOpsChanged() {
     context.emit(null, v -> callDrainHandler());
-  }
-
-  @Override
-  public void end(Handler<AsyncResult<Void>> handler) {
-    close(handler);
   }
 
   @Override

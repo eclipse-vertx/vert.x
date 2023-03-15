@@ -464,13 +464,6 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
   Future<Void> end(Buffer chunk);
 
   /**
-   * Same as {@link #end(String)} but with an {@code handler} called when the operation completes
-   */
-  @Override
-  @Deprecated
-  void end(Buffer chunk, Handler<AsyncResult<Void>> handler);
-
-  /**
    * Ends the request. If no data has been written to the request body, and {@link #sendHead()} has not been called then
    * the actual request won't get written until this method gets called.
    * <p>
@@ -481,13 +474,6 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    */
   @Override
   Future<Void> end();
-
-  /**
-   * Same as {@link #end()} but with an {@code handler} called when the operation completes
-   */
-  @Override
-  @Deprecated
-  void end(Handler<AsyncResult<Void>> handler);
 
   /**
    * Set's the amount of time after which if the request does not return any data within the timeout period an
