@@ -112,26 +112,16 @@ public interface ReadStream<T> extends StreamBase {
   }
 
   /**
-   * Same as {@link #pipeTo(WriteStream, Handler)} but returns a {@code Future} of the asynchronous result
+   * Pipe this {@code ReadStream} to the {@code WriteStream}.
+   * <p>
+   * Elements emitted by this stream will be written to the write stream until this stream ends or fails.
+   *
+   * @param dst the destination write stream
+   * @return a future notified when the write stream will be ended with the outcome
    */
   default Future<Void> pipeTo(WriteStream<T> dst) {
     Promise<Void> promise = Promise.promise();
     new PipeImpl<>(this).to(dst, promise);
     return promise.future();
-  }
-
-  /**
-   * Pipe this {@code ReadStream} to the {@code WriteStream}.
-   * <p>
-   * Elements emitted by this stream will be written to the write stream until this stream ends or fails.
-   * <p>
-   * Once this stream has ended or failed, the write stream will be ended and the {@code handler} will be
-   * called with the result.
-   *
-   * @param dst the destination write stream
-   */
-  @Deprecated
-  default void pipeTo(WriteStream<T> dst, Handler<AsyncResult<Void>> handler) {
-    new PipeImpl<>(this).to(dst, handler);
   }
 }

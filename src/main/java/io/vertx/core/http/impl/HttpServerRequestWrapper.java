@@ -10,7 +10,6 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
-import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpConnection;
@@ -384,8 +383,4 @@ public class HttpServerRequestWrapper extends HttpServerRequestInternal {
     return delegate.pipeTo(dst);
   }
 
-  @Override
-  public void pipeTo(WriteStream<Buffer> dst, Handler<AsyncResult<Void>> handler) {
-    delegate.pipeTo(dst, handler);
-  }
 }

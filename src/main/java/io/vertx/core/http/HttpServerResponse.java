@@ -376,11 +376,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    */
   @Deprecated
   default void send(ReadStream<Buffer> body, Handler<AsyncResult<Void>> handler) {
-    MultiMap headers = headers();
-    if (headers == null || !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
-      setChunked(true);
-    }
-    body.pipeTo(this, handler);
+    send(body).onComplete(handler);
   }
 
   /**
