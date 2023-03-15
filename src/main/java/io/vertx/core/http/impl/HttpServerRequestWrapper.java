@@ -228,18 +228,8 @@ public class HttpServerRequestWrapper extends HttpServerRequestInternal {
   }
 
   @Override
-  public void end(Handler<AsyncResult<Void>> handler) {
-    delegate.end(handler);
-  }
-
-  @Override
   public Future<Void> end() {
     return delegate.end();
-  }
-
-  @Override
-  public void toNetSocket(Handler<AsyncResult<NetSocket>> handler) {
-    delegate.toNetSocket(handler);
   }
 
   @Override
@@ -280,11 +270,6 @@ public class HttpServerRequestWrapper extends HttpServerRequestInternal {
   @CacheReturn
   public int streamId() {
     return delegate.streamId();
-  }
-
-  @Override
-  public void toWebSocket(Handler<AsyncResult<ServerWebSocket>> handler) {
-    delegate.toWebSocket(handler);
   }
 
   @Override
