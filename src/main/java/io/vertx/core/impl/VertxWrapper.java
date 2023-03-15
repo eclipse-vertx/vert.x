@@ -305,16 +305,6 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> asyncResultHandler) {
-    delegate.executeBlocking(blockingCodeHandler, ordered, asyncResultHandler);
-  }
-
-  @Override
-  public <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<T>> asyncResultHandler) {
-    delegate.executeBlocking(blockingCodeHandler, asyncResultHandler);
-  }
-
-  @Override
   public <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered) {
     return delegate.executeBlocking(blockingCodeHandler, ordered);
   }
@@ -510,13 +500,13 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public <T> void executeBlockingInternal(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<T>> asyncResultHandler) {
-    delegate.executeBlockingInternal(blockingCodeHandler, asyncResultHandler);
+  public <T> Future<T> executeBlockingInternal(Handler<Promise<T>> blockingCodeHandler) {
+    return delegate.executeBlockingInternal(blockingCodeHandler);
   }
 
   @Override
-  public <T> void executeBlockingInternal(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> asyncResultHandler) {
-    delegate.executeBlockingInternal(blockingCodeHandler, ordered, asyncResultHandler);
+  public <T> Future<T> executeBlockingInternal(Handler<Promise<T>> blockingCodeHandler, boolean ordered) {
+    return delegate.executeBlockingInternal(blockingCodeHandler, ordered);
   }
 
   @Override

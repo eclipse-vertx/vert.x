@@ -245,7 +245,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       this.<HAManager>executeBlocking(fut -> {
         haManager = new HAManager(this, deploymentManager, verticleManager, clusterManager, clusterManager.getSyncMap(CLUSTER_MAP_NAME), options.getQuorumSize(), options.getHAGroup());
         fut.complete(haManager);
-      }, false, ar -> {
+      }, false).onComplete(ar -> {
         if (ar.succeeded()) {
           startEventBus(true, initPromise);
         } else {
@@ -274,13 +274,13 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   private void initializeHaManager(Promise<Void> initPromise) {
-    this.executeBlocking(fut -> {
+    this.<Void>executeBlocking(fut -> {
       // Init the manager (i.e register listener and check the quorum)
       // after the event bus has been fully started and updated its state
       // it will have also set the clustered changed view handler on the ha manager
       haManager.init();
       fut.complete();
-    }, false, initPromise);
+    }, false).onComplete(initPromise);
   }
 
   /**
@@ -630,10 +630,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         HAManager haManager = haManager();
         Promise<Void> haPromise = Promise.promise();
         if (haManager != null) {
-          this.executeBlocking(fut -> {
+          this.<Void>executeBlocking(fut -> {
             haManager.stop();
             fut.complete();
-          }, false, haPromise);
+          }, false).onComplete(haPromise);
         } else {
           haPromise.complete();
         }
@@ -863,7 +863,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       } catch (IOException e) {
         fut.tryFail(e);
       }
-    }, ar -> {
+    }).onComplete(ar -> {
 
       workerPool.close();
       internalWorkerPool.close();

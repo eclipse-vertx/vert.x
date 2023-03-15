@@ -441,7 +441,7 @@ public class AsyncFileImpl implements AsyncFile {
       } catch (IOException e) {
         throw new FileSystemException(e);
       }
-    }, handler);
+    }).onComplete(handler);
   }
 
   private void doWrite(ByteBuffer buff, long position, long toWrite, Handler<AsyncResult<Void>> handler) {
@@ -547,14 +547,14 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   private void doClose(Handler<AsyncResult<Void>> handler) {
-    context.executeBlockingInternal(res -> {
+    context.<Void>executeBlockingInternal(res -> {
       try {
         ch.close();
         res.complete(null);
       } catch (IOException e) {
         res.fail(e);
       }
-    }, handler);
+    }).onComplete(handler);
   }
 
   private synchronized void closeInternal(Handler<AsyncResult<Void>> handler) {
@@ -633,7 +633,7 @@ public class AsyncFileImpl implements AsyncFile {
     PromiseInternal<AsyncFileLock> promise = vertx.promise();
     vertx.executeBlockingInternal(prom -> {
       ch.lock(position, size, shared, promise, LOCK_COMPLETION);
-    }, ar -> {
+    }).onComplete(ar -> {
       if (ar.failed()) {
         // Happens only if ch.lock throws a RuntimeException
         promise.fail(new FileSystemException(ar.cause()));

@@ -122,33 +122,19 @@ public interface Context {
    * verticles using the event-bus or {@link Context#runOnContext(Handler)}
    *
    * @param blockingCodeHandler  handler representing the blocking code to run
-   * @param resultHandler  handler that will be called when the blocking code is complete
    * @param ordered  if true then if executeBlocking is called several times on the same context, the executions
    *                 for that context will be executed serially, not in parallel. if false then they will be no ordering
    *                 guarantees
    * @param <T> the type of the result
-   */
-  @Deprecated
-  <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<@Nullable T>> resultHandler);
-
-  /**
-   * Invoke {@link #executeBlocking(Handler, boolean, Handler)} with order = true.
-   * @param blockingCodeHandler  handler representing the blocking code to run
-   * @param resultHandler  handler that will be called when the blocking code is complete
-   * @param <T> the type of the result
-   */
-  @Deprecated
-  default <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<@Nullable T>> resultHandler) {
-    executeBlocking(blockingCodeHandler, true, resultHandler);
-  }
-
-  /**
-   * Same as {@link #executeBlocking(Handler, boolean, Handler)} but with an {@code handler} called when the operation completes
+   * @return a future completed when the blocking code is complete
    */
   <T> Future<@Nullable T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered);
 
   /**
-   * Same as {@link #executeBlocking(Handler, Handler)} but with an {@code handler} called when the operation completes
+   * Invoke {@link #executeBlocking(Handler, boolean)} with order = true.
+   * @param blockingCodeHandler  handler representing the blocking code to run
+   * @param <T> the type of the result
+   * @return a future completed when the blocking code is complete
    */
   default <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler) {
     return executeBlocking(blockingCodeHandler, true);

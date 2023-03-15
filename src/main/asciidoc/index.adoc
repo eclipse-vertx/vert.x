@@ -621,7 +621,7 @@ which can interact with verticles using the event-bus or {@link io.vertx.core.Co
 By default, if executeBlocking is called several times from the same context (e.g. the same verticle instance) then
 the different executeBlocking are executed _serially_ (i.e. one after another).
 
-If you don't care about ordering you can call {@link io.vertx.core.Vertx#executeBlocking(io.vertx.core.Handler,boolean,io.vertx.core.Handler)}
+If you don't care about ordering you can call {@link io.vertx.core.Vertx#executeBlocking(io.vertx.core.Handler,boolean)}
 specifying `false` as the argument to `ordered`. In this case any executeBlocking may be executed in parallel
 on the worker pool.
 
