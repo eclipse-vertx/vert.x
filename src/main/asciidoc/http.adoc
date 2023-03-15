@@ -580,7 +580,7 @@ Here's a very simple web server that serves files from the file system using sen
 ----
 
 Sending a file is asynchronous and may not complete until some time after the call has returned. If you want to
-be notified when the file has been written you can use {@link io.vertx.core.http.HttpServerResponse#sendFile(String,io.vertx.core.Handler)}
+be notified when the file has been written you can use {@link io.vertx.core.http.HttpServerResponse#sendFile(String)}
 
 Please see the chapter about <<classpath, serving files from the classpath>> for restrictions about the classpath resolution or disabling it.
 

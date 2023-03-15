@@ -333,20 +333,10 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public void write(String chunk, String enc, Handler<AsyncResult<Void>> handler) {
-    write(Buffer.buffer(chunk, enc).getByteBuf(), handler == null ? null : context.promise(handler));
-  }
-
-  @Override
   public Future<Void> write(String chunk) {
     PromiseInternal<Void> promise = context.promise();
     write(Buffer.buffer(chunk).getByteBuf(), promise);
     return promise.future();
-  }
-
-  @Override
-  public void write(String chunk, Handler<AsyncResult<Void>> handler) {
-    write(Buffer.buffer(chunk).getByteBuf(), handler == null ? null : context.promise(handler));
   }
 
   @Override
@@ -358,12 +348,6 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   @Override
   public Future<Void> writeEarlyHints(MultiMap headers) {
     PromiseInternal<Void> promise = context.promise();
-    writeEarlyHints(headers, promise);
-    return promise.future();
-  }
-
-  @Override
-  public void writeEarlyHints(MultiMap headers, Handler<AsyncResult<Void>> handler) {
     HeadersMultiMap headersMultiMap;
     if (headers instanceof HeadersMultiMap) {
       headersMultiMap = (HeadersMultiMap) headers;
@@ -374,7 +358,8 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
     synchronized (conn) {
       checkHeadWritten();
     }
-    conn.write103EarlyHints(headersMultiMap, context.promise(handler));
+    conn.write103EarlyHints(headersMultiMap, context.promise(promise));
+    return promise.future();
   }
 
   @Override
@@ -383,18 +368,8 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public void end(String chunk, Handler<AsyncResult<Void>> handler) {
-    end(Buffer.buffer(chunk), handler == null ? null : context.promise(handler));
-  }
-
-  @Override
   public Future<Void> end(String chunk, String enc) {
     return end(Buffer.buffer(chunk, enc));
-  }
-
-  @Override
-  public void end(String chunk, String enc, Handler<AsyncResult<Void>> handler) {
-    end(Buffer.buffer(chunk, enc), handler == null ? null : context.promise(handler));
   }
 
   @Override
