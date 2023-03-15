@@ -123,6 +123,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
     discardHandler = null;
     Future<Void> fut = super.unregister();
     if (registered) {
+      registered = false;
       Promise<Void> res = result; // Alias reference because result can become null when the onComplete callback executes
       fut.onComplete(ar -> res.tryFail("Consumer unregistered before registration completed"));
       result = context.promise();
