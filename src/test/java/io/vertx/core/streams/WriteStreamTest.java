@@ -25,14 +25,10 @@ public class WriteStreamTest extends AsyncTestBase {
   static class StreamBase<T> implements WriteStream<T> {
     @Override public StreamBase<T> exceptionHandler(Handler<Throwable> handler) { throw new UnsupportedOperationException(); }
     @Override public Future<Void> write(T data) { throw new UnsupportedOperationException(); }
-    @Override public void write(T data, Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
-    @Override public void end(Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
     @Override public StreamBase<T> setWriteQueueMaxSize(int maxSize) { throw new UnsupportedOperationException(); }
     @Override public boolean writeQueueFull() { throw new UnsupportedOperationException(); }
     @Override public StreamBase<T> drainHandler(@Nullable Handler<Void> handler) { throw new UnsupportedOperationException(); }
-    @Override public final Future<Void> end() { return WriteStream.super.end(); }
-    @Override public final Future<Void> end(T t) { return WriteStream.super.end(t); }
-    @Override public final void end(T t, Handler<AsyncResult<Void>> handler) { WriteStream.super.end(t, handler); }
+    @Override public final Future<Void> end() { throw new UnsupportedOperationException(); }
   }
 
   static class EndWithItemStreamAsync extends StreamBase<Object> {
