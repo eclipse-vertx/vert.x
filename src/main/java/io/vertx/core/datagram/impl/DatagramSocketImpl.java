@@ -22,7 +22,6 @@ import io.netty.channel.socket.InternetProtocolFamily;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -94,15 +93,6 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
     channel.pipeline().addLast("handler", VertxHandler.create(this::createConnection));
   }
 
-  @Override
-  public DatagramSocket listenMulticastGroup(String multicastAddress, Handler<AsyncResult<Void>> handler) {
-    Future<Void> fut = listenMulticastGroup(multicastAddress);
-    if (handler != null) {
-      fut.onComplete(handler);
-    }
-    return this;
-  }
-
   private NetworkInterface determineMulticastNetworkIface() throws Exception {
     NetworkInterface iface = null;
     InetSocketAddress localAddr = channel.localAddress();
@@ -138,15 +128,6 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
   }
 
   @Override
-  public DatagramSocket listenMulticastGroup(String multicastAddress, String networkInterface, String source, Handler<AsyncResult<Void>> handler) {
-    Future<Void> fut = listenMulticastGroup(multicastAddress, networkInterface, source);
-    if (handler != null) {
-      fut.onComplete(handler);
-    }
-    return this;
-  }
-
-  @Override
   public Future<Void> listenMulticastGroup(String multicastAddress, String networkInterface, @Nullable String source) {
     ChannelFuture fut;
     try {
@@ -163,15 +144,6 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
     PromiseInternal<Void> promise = context.promise();
     fut.addListener(promise);
     return promise.future();
-  }
-
-  @Override
-  public DatagramSocket unlistenMulticastGroup(String multicastAddress, Handler<AsyncResult<Void>> handler) {
-    Future<Void> fut = unlistenMulticastGroup(multicastAddress);
-    if (handler != null) {
-      fut.onComplete(handler);
-    }
-    return this;
   }
 
   @Override
@@ -197,15 +169,6 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
   }
 
   @Override
-  public DatagramSocket unlistenMulticastGroup(String multicastAddress, String networkInterface, String source, Handler<AsyncResult<Void>> handler) {
-    Future<Void> fut = unlistenMulticastGroup(multicastAddress, networkInterface, source);
-    if (handler != null) {
-      fut.onComplete(handler);
-    }
-    return this;
-  }
-
-  @Override
   public Future<Void> unlistenMulticastGroup(String multicastAddress, String networkInterface, @Nullable String source) {
     ChannelFuture fut;
     try {
@@ -222,15 +185,6 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
     PromiseInternal<Void> promise = context.promise();
     fut.addListener(promise);
     return promise.future();
-  }
-
-  @Override
-  public DatagramSocket blockMulticastGroup(String multicastAddress, String networkInterface, String sourceToBlock, Handler<AsyncResult<Void>> handler) {
-    Future<Void> fut = blockMulticastGroup(multicastAddress, networkInterface, sourceToBlock);
-    if (handler != null) {
-      fut.onComplete(handler);
-    }
-    return  this;
   }
 
   @Override
@@ -253,15 +207,6 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
   }
 
   @Override
-  public DatagramSocket blockMulticastGroup(String multicastAddress, String sourceToBlock, Handler<AsyncResult<Void>> handler) {
-    Future<Void> fut = blockMulticastGroup(multicastAddress, sourceToBlock);
-    if (handler != null) {
-      fut.onComplete(handler);
-    }
-    return this;
-  }
-
-  @Override
   public Future<Void> blockMulticastGroup(String multicastAddress, String sourceToBlock) {
     ChannelFuture fut;
     try {
@@ -272,13 +217,6 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
     PromiseInternal<Void> promise = context.promise();
     fut.addListener(promise);
     return promise.future();
-  }
-
-  @Override
-  public DatagramSocket listen(int port, String address, Handler<AsyncResult<DatagramSocket>> handler) {
-    Objects.requireNonNull(handler, "no null handler accepted");
-    listen(SocketAddress.inetSocketAddress(port, address)).onComplete(handler);
-    return this;
   }
 
   @Override
@@ -360,15 +298,6 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
   }
 
   @Override
-  public DatagramSocket send(Buffer packet, int port, String host, Handler<AsyncResult<Void>> handler) {
-    Future<Void> fut = send(packet, port, host);
-    if (handler != null) {
-      fut.onComplete(handler);
-    }
-    return this;
-  }
-
-  @Override
   public Future<Void> send(Buffer packet, int port, String host) {
     Objects.requireNonNull(packet, "no null packet accepted");
     Objects.requireNonNull(host, "no null host accepted");
@@ -404,18 +333,8 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
   }
 
   @Override
-  public DatagramSocket send(String str, int port, String host, Handler<AsyncResult<Void>> handler) {
-    return send(Buffer.buffer(str), port, host, handler);
-  }
-
-  @Override
   public Future<Void> send(String str, int port, String host) {
     return send(Buffer.buffer(str), port, host);
-  }
-
-  @Override
-  public DatagramSocket send(String str, String enc, int port, String host, Handler<AsyncResult<Void>> handler) {
-    return send(Buffer.buffer(str, enc), port, host, handler);
   }
 
   @Override
@@ -426,12 +345,6 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
   @Override
   public SocketAddress localAddress() {
     return context.owner().transport().convert(channel.localAddress());
-  }
-
-  @Override
-  public void close(Handler<AsyncResult<Void>> handler) {
-    ContextInternal closingCtx = context.owner().getOrCreateContext();
-    closeFuture.close(handler != null ? closingCtx.promise(handler) : null);
   }
 
   @Override
