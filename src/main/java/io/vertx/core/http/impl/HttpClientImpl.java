@@ -17,6 +17,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
+import io.vertx.core.VertxException;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
@@ -25,6 +26,7 @@ import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.LoadBalancePolicy;
 import io.vertx.core.http.RequestOptions;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebSocketConnectOptions;
@@ -54,13 +56,16 @@ import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 
 import java.lang.ref.WeakReference;
+import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -150,6 +155,7 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider, Clos
   private volatile Handler<HttpConnection> connectionHandler;
   private volatile Function<HttpClientResponse, Future<RequestOptions>> redirectHandler = DEFAULT_HANDLER;
   private final Function<ContextInternal, EventLoopContext> contextProvider;
+  private final Random random = new Random();
 
   public HttpClientImpl(VertxInternal vertx, HttpClientOptions options, CloseFuture closeFuture) {
     this.vertx = vertx;
@@ -622,6 +628,15 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider, Clos
       key = new EndpointKey(useSSL, proxyOptions, server, peerAddress);
       proxyOptions = null;
     } else {
+      if (options.getLoadBalancePolicy() == LoadBalancePolicy.RANDOM) {
+        try {
+          InetAddress[] addresses = InetAddress.getAllByName(host);
+          int idx = random.nextInt(addresses.length);
+          server = SocketAddress.inetSocketAddress(port, addresses[idx].getHostAddress());
+        } catch (UnknownHostException e) {
+          throw new VertxException(e);
+        }
+      }
       key = new EndpointKey(useSSL, proxyOptions, server, peerAddress);
     }
     doRequest(method, peerAddress, server, host, port, useSSL, requestURI, headers, request.getTraceOperation(), timeout, followRedirects, proxyOptions, key, promise);

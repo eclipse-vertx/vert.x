@@ -221,6 +221,11 @@ public class HttpClientOptions extends ClientOptionsBase {
   public static final TracingPolicy DEFAULT_TRACING_POLICY = TracingPolicy.PROPAGATE;
 
   /**
+   * Default tracing control = {@link LoadBalancePolicy#NONE}
+   */
+  public static final LoadBalancePolicy DEFAULT_LOAD_BALANCE_POLICY = LoadBalancePolicy.NONE;
+
+  /**
    * Default shared client = {@code false}
    */
   public static final boolean DEFAULT_SHARED = false;
@@ -271,6 +276,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private int webSocketClosingTimeout;
 
   private TracingPolicy tracingPolicy;
+  private LoadBalancePolicy loadBalancePolicy;
 
   private boolean shared;
   private String name;
@@ -328,6 +334,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.webSocketRequestServerNoContext = other.webSocketRequestServerNoContext;
     this.webSocketClosingTimeout = other.webSocketClosingTimeout;
     this.tracingPolicy = other.tracingPolicy;
+    this.loadBalancePolicy = other.loadBalancePolicy;
     this.shared = other.shared;
     this.name = other.name;
   }
@@ -393,6 +400,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     poolCleanerPeriod = DEFAULT_POOL_CLEANER_PERIOD;
     poolEventLoopSize = DEFAULT_POOL_EVENT_LOOP_SIZE;
     tracingPolicy = DEFAULT_TRACING_POLICY;
+    loadBalancePolicy = DEFAULT_LOAD_BALANCE_POLICY;
     shared = DEFAULT_SHARED;
     name = DEFAULT_NAME;
   }
@@ -1438,6 +1446,24 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public HttpClientOptions setTracingPolicy(TracingPolicy tracingPolicy) {
     this.tracingPolicy = tracingPolicy;
+    return this;
+  }
+
+  /**
+   * @return the load-balance policy
+   */
+  public LoadBalancePolicy getLoadBalancePolicy() {
+    return loadBalancePolicy;
+  }
+
+  /**
+   * Set the load balance policy for the HTTP client
+   *
+   * @param loadBalancePolicy the load balance policy
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setLoadBalancePolicy(LoadBalancePolicy loadBalancePolicy) {
+    this.loadBalancePolicy = loadBalancePolicy;
     return this;
   }
 
