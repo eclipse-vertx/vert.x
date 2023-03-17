@@ -450,7 +450,11 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider, Clos
   public Future<HttpClientRequest> request(RequestOptions options) {
     ContextInternal ctx = vertx.getOrCreateContext();
     PromiseInternal<HttpClientRequest> promise = ctx.promise();
-    doRequest(options, promise);
+    try {
+      doRequest(options, promise);
+    } catch (Exception e) {
+      return ctx.failedFuture(e);
+    }
     return promise.future();
   }
 
