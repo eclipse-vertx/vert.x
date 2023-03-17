@@ -16,7 +16,6 @@ import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -132,13 +131,6 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   Future<Void> writeFrame(WebSocketFrame frame);
 
   /**
-   * Same as {@link #writeFrame(WebSocketFrame)} but with an {@code handler} called when the operation completes
-   */
-  @Fluent
-  @Deprecated
-  WebSocketBase writeFrame(WebSocketFrame frame, Handler<AsyncResult<Void>> handler);
-
-  /**
    * Write a final WebSocket text frame to the connection
    *
    * @param text  The text to write
@@ -147,26 +139,12 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   Future<Void> writeFinalTextFrame(String text);
 
   /**
-   * Same as {@link #writeFinalTextFrame(String, Handler)} but with an {@code handler} called when the operation completes
-   */
-  @Fluent
-  @Deprecated
-  WebSocketBase writeFinalTextFrame(String text, Handler<AsyncResult<Void>> handler);
-
-  /**
    * Write a final WebSocket binary frame to the connection
    *
    * @param data  The data to write
    * @return a future completed with the result
    */
   Future<Void> writeFinalBinaryFrame(Buffer data);
-
-  /**
-   * Same as {@link #writeFinalBinaryFrame(Buffer, Handler)} but with an {@code handler} called when the operation completes
-   */
-  @Fluent
-  @Deprecated
-  WebSocketBase writeFinalBinaryFrame(Buffer data, Handler<AsyncResult<Void>> handler);
 
   /**
    * Writes a (potentially large) piece of binary data to the connection. This data might be written as multiple frames
@@ -178,13 +156,6 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   Future<Void> writeBinaryMessage(Buffer data);
 
   /**
-   * Same as {@link #writeBinaryMessage(Buffer)} but with an {@code handler} called when the operation completes
-   */
-  @Fluent
-  @Deprecated
-  WebSocketBase writeBinaryMessage(Buffer data, Handler<AsyncResult<Void>> handler);
-
-  /**
    * Writes a (potentially large) piece of text data to the connection. This data might be written as multiple frames
    * if it exceeds the maximum WebSocket frame size.
    *
@@ -192,13 +163,6 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @return a future completed with the result
    */
   Future<Void> writeTextMessage(String text);
-
-  /**
-   * Same as {@link #writeTextMessage(String)} but with an {@code handler} called when the operation completes
-   */
-  @Fluent
-  @Deprecated
-  WebSocketBase writeTextMessage(String text, Handler<AsyncResult<Void>> handler);
 
   /**
    * Writes a ping frame to the connection. This will be written in a single frame. Ping frames may be at most 125 bytes (octets).
@@ -210,16 +174,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * states that the only response to a ping frame is a pong frame with identical contents.
    *
    * @param data the data to write, may be at most 125 bytes
-   * @param handler called when the ping frame has been successfully written
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Deprecated
-  @Fluent
-  WebSocketBase writePing(Buffer data, Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #writePing(Buffer, Handler)} but with an {@code handler} called when the message has been written
-   * or failed to be written.
+   * @return a future notified when the ping frame has been successfully written
    */
   Future<Void> writePing(Buffer data);
 
@@ -234,16 +189,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * to implement a one way heartbeat.
    *
    * @param data the data to write, may be at most 125 bytes
-   * @param handler called when the pong frame has been successfully written
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  WebSocketBase writePong(Buffer data, Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #writePong(Buffer, Handler)} but with an {@code handler} called when the message has been written
-   * or failed to be written.
+   * @return a future notified when the pong frame has been successfully written
    */
   Future<Void> writePong(Buffer data);
 
@@ -324,12 +270,6 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   Future<Void> close();
 
   /**
-   * Same as {@link #close()} but with an {@code handler} called when the operation completes
-   */
-  @Deprecated
-  void close(Handler<AsyncResult<Void>> handler);
-
-  /**
    * Close the WebSocket sending a close frame with specified status code. You can give a look at various close payloads
    * here: RFC6455 <a href="https://tools.ietf.org/html/rfc6455#section-7.4.1">section 7.4.1</a>
    * <p/>
@@ -339,12 +279,6 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @return a future completed with the result
    */
   Future<Void> close(short statusCode);
-
-  /**
-   * Same as {@link #close(short)} but with an {@code handler} called when the operation completes
-   */
-  @Deprecated
-  void close(short statusCode, Handler<AsyncResult<Void>> handler);
 
   /**
    * Close sending a close frame with specified status code and reason. You can give a look at various close payloads
@@ -357,12 +291,6 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @return a future completed with the result
    */
   Future<Void> close(short statusCode, @Nullable String reason);
-
-  /**
-   * Same as {@link #close(short, String)} but with an {@code handler} called when the operation completes
-   */
-  @Deprecated
-  void close(short statusCode, @Nullable String reason, Handler<AsyncResult<Void>> handler);
 
   /**
    * @return the remote address for this connection, possibly {@code null} (e.g a server bound on a domain socket).

@@ -305,14 +305,6 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   Future<Buffer> body();
 
   /**
-   * Same as {@link #end()} but with an {@code handler} called when the operation completes
-   */
-  @Deprecated
-  default void end(Handler<AsyncResult<Void>> handler) {
-    end().onComplete(handler);
-  }
-
-  /**
    * Returns a future signaling when the request has been fully received successfully or failed.
    *
    * @return a future completed with the body result
@@ -341,18 +333,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * });
    * </pre>
    *
-   * @param handler the completion handler
-   */
-  @Deprecated
-  default void toNetSocket(Handler<AsyncResult<NetSocket>> handler) {
-    Future<NetSocket> fut = toNetSocket();
-    if (handler != null) {
-      fut.onComplete(handler);
-    }
-  }
-
-  /**
-   * Like {@link #toNetSocket(Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified with the upgraded socket
    */
   Future<NetSocket> toNetSocket();
 
@@ -424,18 +405,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * you need to {@link #pause()} the request in order to not lose HTTP events necessary to upgrade the
    * request.
    *
-   * @param handler the completion handler
-   */
-  @Deprecated
-  default void toWebSocket(Handler<AsyncResult<ServerWebSocket>> handler) {
-    Future<ServerWebSocket> fut = toWebSocket();
-    if (handler != null) {
-      fut.onComplete(handler);
-    }
-  }
-
-  /**
-   * Like {@link #toWebSocket(Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified with the upgraded WebSocket
    */
   Future<ServerWebSocket> toWebSocket();
 

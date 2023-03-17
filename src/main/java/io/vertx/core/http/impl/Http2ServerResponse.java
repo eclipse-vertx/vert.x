@@ -328,12 +328,6 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   @Override
   public Future<Void> writeEarlyHints(MultiMap headers) {
     PromiseInternal<Void> promise = stream.context.promise();
-    writeEarlyHints(headers, promise);
-    return promise.future();
-  }
-
-  @Override
-  public void writeEarlyHints(MultiMap headers, Handler<AsyncResult<Void>> handler) {
     DefaultHttp2Headers http2Headers = new DefaultHttp2Headers();
     for (Entry<String, String> header : headers) {
       http2Headers.add(header.getKey(), header.getValue());
@@ -342,7 +336,8 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     synchronized (conn) {
       checkHeadWritten();
     }
-    stream.writeHeaders(http2Headers, false, handler);
+    stream.writeHeaders(http2Headers, false, promise);
+    return promise.future();
   }
 
   @Override
@@ -361,20 +356,10 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public void write(String chunk, String enc, Handler<AsyncResult<Void>> handler) {
-    write(Buffer.buffer(chunk, enc).getByteBuf(), false, handler);
-  }
-
-  @Override
   public Future<Void> write(String chunk) {
     Promise<Void> promise = stream.context.promise();
     write(Buffer.buffer(chunk).getByteBuf(), false, promise);
     return promise.future();
-  }
-
-  @Override
-  public void write(String chunk, Handler<AsyncResult<Void>> handler) {
-    write(Buffer.buffer(chunk).getByteBuf(), false, handler);
   }
 
   private Http2ServerResponse write(ByteBuf chunk) {
@@ -388,18 +373,8 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public void end(String chunk, Handler<AsyncResult<Void>> handler) {
-    end(Buffer.buffer(chunk).getByteBuf(), handler);
-  }
-
-  @Override
   public Future<Void> end(String chunk, String enc) {
     return end(Buffer.buffer(chunk, enc));
-  }
-
-  @Override
-  public void end(String chunk, String enc, Handler<AsyncResult<Void>> handler) {
-    end(Buffer.buffer(chunk, enc));
   }
 
   @Override

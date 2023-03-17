@@ -130,15 +130,9 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
   @Override
   public synchronized Future<Void> writeMessage(Object message) {
-    Promise<Void> promise = context.promise();
-    writeMessage(message, promise);
+    PromiseInternal<Void> promise = context.promise();
+    writeToChannel(message, promise);
     return promise.future();
-  }
-
-  @Override
-  public NetSocketInternal writeMessage(Object message, Handler<AsyncResult<Void>> handler) {
-    writeToChannel(message, handler == null ? null : context.promise(handler));
-    return this;
   }
 
   @Override
@@ -152,11 +146,6 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   }
 
   @Override
-  public void write(String str, Handler<AsyncResult<Void>> handler) {
-    write(Unpooled.copiedBuffer(str, CharsetUtil.UTF_8), handler);
-  }
-
-  @Override
   public Future<Void> write(String str) {
     return writeMessage(Unpooled.copiedBuffer(str, CharsetUtil.UTF_8));
   }
@@ -164,17 +153,6 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   @Override
   public Future<Void> write(String str, String enc) {
     return writeMessage(Unpooled.copiedBuffer(str, Charset.forName(enc)));
-  }
-
-  @Override
-  public void write(String str, String enc, Handler<AsyncResult<Void>> handler) {
-    Charset cs = enc != null ? Charset.forName(enc) : CharsetUtil.UTF_8;
-    write(Unpooled.copiedBuffer(str, cs), handler);
-  }
-
-  private void write(ByteBuf buff, Handler<AsyncResult<Void>> handler) {
-    reportBytesWritten(buff.readableBytes());
-    writeMessage(buff, handler);
   }
 
   private synchronized Handler<Buffer> handler() {
@@ -303,20 +281,6 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
       });
     }
     return promise.future();
-  }
-
-  @Override
-  public NetSocket upgradeToSsl(Handler<AsyncResult<Void>> handler) {
-    return upgradeToSsl(null, handler);
-  }
-
-  @Override
-  public NetSocket upgradeToSsl(String serverName, Handler<AsyncResult<Void>> handler) {
-    Future<Void> fut = upgradeToSsl(serverName);
-    if (handler != null) {
-      fut.onComplete(handler);
-    }
-    return this;
   }
 
   @Override

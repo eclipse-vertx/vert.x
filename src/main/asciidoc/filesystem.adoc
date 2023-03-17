@@ -54,14 +54,13 @@ They also allow you to read and write directly to them.
 ==== Random access writes
 
 To use an `AsyncFile` for random access writing you use the
-{@link io.vertx.core.file.AsyncFile#write(io.vertx.core.buffer.Buffer,long,io.vertx.core.Handler) write} method.
+{@link io.vertx.core.file.AsyncFile#write(io.vertx.core.buffer.Buffer,long) write} method.
 
 The parameters to the method are:
 
 * `buffer`: the buffer to write.
 * `position`: an integer position in the file where to write the buffer. If the position is greater or equal to the size
  of the file, the file will be enlarged to accommodate the offset.
-* `handler`: the result handler
 
 Here is an example of random access writes:
 
@@ -73,7 +72,7 @@ Here is an example of random access writes:
 ==== Random access reads
 
 To use an `AsyncFile` for random access reads you use the
-{@link io.vertx.core.file.AsyncFile#read(io.vertx.core.buffer.Buffer,int,long,int,io.vertx.core.Handler) read}
+{@link io.vertx.core.file.AsyncFile#read(io.vertx.core.buffer.Buffer,int,long,int) read}
 method.
 
 The parameters to the method are:

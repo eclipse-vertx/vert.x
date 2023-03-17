@@ -333,7 +333,7 @@ public class ContextTest extends VertxTestBase {
     for (int i = 0;i < 2;i++) {
       TaskQueue queue = new TaskQueue();
       lst.add(task -> {
-        context.executeBlocking(task, queue, ar -> {});
+        context.executeBlocking(task, queue);
       });
     }
     testInternalExecuteBlockingWithQueue(lst);

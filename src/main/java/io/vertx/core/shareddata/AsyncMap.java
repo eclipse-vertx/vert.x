@@ -14,9 +14,7 @@ package io.vertx.core.shareddata;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 
 import java.util.List;
 import java.util.Map;
@@ -40,15 +38,7 @@ public interface AsyncMap<K, V> {
    * Get a value from the map, asynchronously.
    *
    * @param k  the key
-   * @param resultHandler - this will be called some time later with the async result.
-   */
-  @Deprecated
-  default void get(K k, Handler<AsyncResult<@Nullable V>> resultHandler) {
-    get(k).onComplete(resultHandler);
-  }
-
-  /**
-   * Same as {@link #get(K, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified some time later with the async result.
    */
   Future<@Nullable V> get(K k);
 
@@ -57,15 +47,7 @@ public interface AsyncMap<K, V> {
    *
    * @param k  the key
    * @param v  the value
-   * @param completionHandler - this will be called some time later to signify the value has been put
-   */
-  @Deprecated
-  default void put(K k, V v, Handler<AsyncResult<Void>> completionHandler) {
-    put(k, v).onComplete(completionHandler);
-  }
-
-  /**
-   * Same as {@link #put(K, V, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified some time later with the async result.
    */
   Future<Void> put(K k, V v);
 
@@ -76,15 +58,7 @@ public interface AsyncMap<K, V> {
    * @param k  the key
    * @param v  the value
    * @param ttl  The time to live (in ms) for the entry
-   * @param completionHandler  the handler
-   */
-  @Deprecated
-  default void put(K k, V v, long ttl, Handler<AsyncResult<Void>> completionHandler) {
-    put(k, v, ttl).onComplete(completionHandler);
-  }
-
-  /**
-   * Same as {@link #put(K, V, long, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified some time later with the async result.
    */
   Future<Void> put(K k, V v, long ttl);
 
@@ -94,15 +68,7 @@ public interface AsyncMap<K, V> {
    *
    * @param k  the key
    * @param v  the value
-   * @param completionHandler  the handler
-   */
-  @Deprecated
-  default void putIfAbsent(K k, V v, Handler<AsyncResult<@Nullable V>> completionHandler) {
-    putIfAbsent(k, v).onComplete(completionHandler);
-  }
-
-  /**
-   * Same as {@link #putIfAbsent(K, V, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified some time later with the async result.
    */
   Future<@Nullable V> putIfAbsent(K k, V v);
 
@@ -113,15 +79,7 @@ public interface AsyncMap<K, V> {
    * @param k  the key
    * @param v  the value
    * @param ttl  The time to live (in ms) for the entry
-   * @param completionHandler  the handler
-   */
-  @Deprecated
-  default void putIfAbsent(K k, V v, long ttl, Handler<AsyncResult<@Nullable V>> completionHandler) {
-    putIfAbsent(k, v, ttl).onComplete(completionHandler);
-  }
-
-  /**
-   * Same as {@link #putIfAbsent(K, V, long, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified some time later with the async result.
    */
   Future<@Nullable V> putIfAbsent(K k, V v, long ttl);
 
@@ -129,15 +87,7 @@ public interface AsyncMap<K, V> {
    * Remove a value from the map, asynchronously.
    *
    * @param k  the key
-   * @param resultHandler - this will be called some time later to signify the value has been removed
-   */
-  @Deprecated
-  default void remove(K k, Handler<AsyncResult<@Nullable V>> resultHandler) {
-    remove(k).onComplete(resultHandler);
-  }
-
-  /**
-   * Same as {@link #remove(K, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified some time later with the async result.
    */
   Future<@Nullable V> remove(K k);
 
@@ -146,15 +96,7 @@ public interface AsyncMap<K, V> {
    *
    * @param k  the key
    * @param v  the value
-   * @param resultHandler - this will be called some time later to signify the value has been removed
-   */
-  @Deprecated
-  default void removeIfPresent(K k, V v, Handler<AsyncResult<Boolean>> resultHandler) {
-    removeIfPresent(k, v).onComplete(resultHandler);
-  }
-
-  /**
-   * Same as {@link #removeIfPresent(K, V, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified some time later with the async result.
    */
   Future<Boolean> removeIfPresent(K k, V v);
 
@@ -163,15 +105,7 @@ public interface AsyncMap<K, V> {
    *
    * @param k  the key
    * @param v  the new value
-   * @param resultHandler  the result handler will be passed the previous value
-   */
-  @Deprecated
-  default void replace(K k, V v, Handler<AsyncResult<@Nullable V>> resultHandler) {
-    replace(k, v).onComplete(resultHandler);
-  }
-
-  /**
-   * Same as {@link #replace(K, V, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified some time later with the async result.
    */
   Future<@Nullable V> replace(K k, V v);
 
@@ -181,17 +115,7 @@ public interface AsyncMap<K, V> {
    * @param k  the key
    * @param v  the new value
    * @param ttl  The time to live (in ms) for the entry
-   * @param resultHandler  the result handler will be passed the previous value
-   */
-  @Deprecated
-  default void replace(K k, V v, long ttl, Handler<AsyncResult<@Nullable V>> resultHandler) {
-    replace(k, v, ttl).onComplete(resultHandler);
-  }
-
-  /**
-   * Same as {@link #replace(K, V, long, Handler)} but returns a {@code Future} of the asynchronous result
-   *
-   * returns UnsupportedOperationException if the implementation does not support it
+   * @return a future notified some time later with the previous value
    */
   default Future<@Nullable V> replace(K k, V v, long ttl) {
     return Future.failedFuture(new UnsupportedOperationException());
@@ -203,15 +127,7 @@ public interface AsyncMap<K, V> {
    * @param k  the key
    * @param oldValue  the existing value
    * @param newValue  the new value
-   * @param resultHandler the result handler
-   */
-  @Deprecated
-  default void replaceIfPresent(K k, V oldValue, V newValue, Handler<AsyncResult<Boolean>> resultHandler) {
-    replaceIfPresent(k, oldValue, newValue).onComplete(resultHandler);
-  }
-
-  /**
-   * Same as {@link #replaceIfPresent(K, V, V, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified some time later with the async result.
    */
   Future<Boolean> replaceIfPresent(K k, V oldValue, V newValue);
 
@@ -222,17 +138,7 @@ public interface AsyncMap<K, V> {
    * @param oldValue  the existing value
    * @param newValue  the new value
    * @param ttl  The time to live (in ms) for the entry
-   * @param resultHandler the result handler
-   */
-  @Deprecated
-  default void replaceIfPresent(K k, V oldValue, V newValue, long ttl, Handler<AsyncResult<Boolean>> resultHandler) {
-    replaceIfPresent(k, oldValue, newValue, ttl).onComplete(resultHandler);
-  }
-
-  /**
-   * Same as {@link #replaceIfPresent(K, V, V, long, Handler)} but returns a {@code Future} of the asynchronous result
-   *
-   * returns UnsupportedOperationException if the implementation does not support it
+   * @return a future notified some time later with the async result.
    */
   default Future<Boolean> replaceIfPresent(K k, V oldValue, V newValue, long ttl) {
     return Future.failedFuture(new UnsupportedOperationException());
@@ -241,30 +147,14 @@ public interface AsyncMap<K, V> {
   /**
    * Clear all entries in the map
    *
-   * @param resultHandler  called on completion
-   */
-  @Deprecated
-  default void clear(Handler<AsyncResult<Void>> resultHandler) {
-    clear().onComplete(resultHandler);
-  }
-
-  /**
-   * Same as {@link #clear(Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified some time later with the async result.
    */
   Future<Void> clear();
 
   /**
    * Provide the number of entries in the map
    *
-   * @param resultHandler  handler which will receive the number of entries
-   */
-  @Deprecated
-  default void size(Handler<AsyncResult<Integer>> resultHandler) {
-    size().onComplete(resultHandler);
-  }
-
-  /**
-   * Same as {@link #size(Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified some time later with the async result.
    */
   Future<Integer> size();
 
@@ -275,16 +165,7 @@ public interface AsyncMap<K, V> {
    * which may not fit entirely in memory of a single node.
    * In this case, the invocation will result in an {@link OutOfMemoryError}.
    *
-   * @param resultHandler invoked when the operation completes
-   */
-  @GenIgnore(PERMITTED_TYPE)
-  @Deprecated
-  default void keys(Handler<AsyncResult<Set<K>>> resultHandler) {
-    keys().onComplete(resultHandler);
-  }
-
-  /**
-   * Same as {@link #keys(Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified some time later with the async result.
    */
   @GenIgnore(PERMITTED_TYPE)
   Future<Set<K>> keys();
@@ -296,16 +177,7 @@ public interface AsyncMap<K, V> {
    * which may not fit entirely in memory of a single node.
    * In this case, the invocation will result in an {@link OutOfMemoryError}.
    *
-   * @param resultHandler invoked when the operation completes
-   */
-  @GenIgnore(PERMITTED_TYPE)
-  @Deprecated
-  default void values(Handler<AsyncResult<List<V>>> resultHandler) {
-    values().onComplete(resultHandler);
-  }
-
-  /**
-   * Same as {@link #values(Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified some time later with the async result.
    */
   @GenIgnore(PERMITTED_TYPE)
   Future<List<V>> values();
@@ -317,15 +189,7 @@ public interface AsyncMap<K, V> {
    * which may not fit entirely in memory of a single node.
    * In this case, the invocation will result in an {@link OutOfMemoryError}.
    *
-   * @param resultHandler invoked when the operation completes
-   */
-  @GenIgnore
-  default void entries(Handler<AsyncResult<Map<K, V>>> resultHandler) {
-    entries().onComplete(resultHandler);
-  }
-
-  /**
-   * Same as {@link #entries(Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified some time later with the async result.
    */
   @GenIgnore
   Future<Map<K, V>> entries();

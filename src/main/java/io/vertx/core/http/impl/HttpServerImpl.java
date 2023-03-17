@@ -186,16 +186,6 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
     return promise.future();
   }
 
-  @Override
-  public void close(Handler<AsyncResult<Void>> done) {
-    ContextInternal context = vertx.getOrCreateContext();
-    PromiseInternal<Void> promise = context.promise();
-    close(promise);
-    if (done != null) {
-      promise.future().onComplete(done);
-    }
-  }
-
   public synchronized void close(Promise<Void> completion) {
     if (wsStream.endHandler() != null || requestStream.endHandler() != null) {
       Handler<Void> wsEndHandler = wsStream.endHandler();

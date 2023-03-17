@@ -130,21 +130,6 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
     return promise.future();
   }
 
-  public NetClient connect(int port, String host, Handler<AsyncResult<NetSocket>> connectHandler) {
-    return connect(port, host, null, connectHandler);
-  }
-
-  @Override
-  public NetClient connect(int port, String host, String serverName, Handler<AsyncResult<NetSocket>> connectHandler) {
-    return connect(SocketAddress.inetSocketAddress(port, host), serverName, connectHandler);
-  }
-
-  @Override
-  public void close(Handler<AsyncResult<Void>> handler) {
-    ContextInternal closingCtx = vertx.getOrCreateContext();
-    closeFuture.close(handler != null ? closingCtx.promise(handler) : null);
-  }
-
   @Override
   public Future<Void> close() {
     ContextInternal closingCtx = vertx.getOrCreateContext();
@@ -183,21 +168,6 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
     Future<SslChannelProvider> fut = sslHelper.buildChannelProvider(new SSLOptions(options), vertx.getOrCreateContext());
     fut.onSuccess(v -> sslChannelProvider.set(fut));
     return fut.mapEmpty();
-  }
-
-  @Override
-  public NetClient connect(SocketAddress remoteAddress, String serverName, Handler<AsyncResult<NetSocket>> connectHandler) {
-    Objects.requireNonNull(connectHandler, "No null connectHandler accepted");
-    ContextInternal ctx = vertx.getOrCreateContext();
-    Promise<NetSocket> promise = ctx.promise();
-    promise.future().onComplete(connectHandler);
-    connect(remoteAddress, serverName, promise, ctx);
-    return this;
-  }
-
-  @Override
-  public NetClient connect(SocketAddress remoteAddress, Handler<AsyncResult<NetSocket>> connectHandler) {
-    return connect(remoteAddress, null, connectHandler);
   }
 
   private void connect(SocketAddress remoteAddress, String serverName, Promise<NetSocket> connectHandler, ContextInternal ctx) {

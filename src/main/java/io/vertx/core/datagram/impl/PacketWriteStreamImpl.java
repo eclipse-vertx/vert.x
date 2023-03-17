@@ -51,12 +51,9 @@ class PacketWriteStreamImpl implements WriteStream<Buffer>, Handler<AsyncResult<
 
   @Override
   public Future<Void> write(Buffer data) {
-    Promise<Void> promise = Promise.promise();
-    datagramSocket.send(data, port, host, ar -> {
-      PacketWriteStreamImpl.this.handle(ar);
-      promise.handle(ar.mapEmpty());
-    });
-    return promise.future();
+    Future<Void> fut = datagramSocket.send(data, port, host);
+    fut.onComplete(PacketWriteStreamImpl.this);
+    return fut;
   }
 
   @Override

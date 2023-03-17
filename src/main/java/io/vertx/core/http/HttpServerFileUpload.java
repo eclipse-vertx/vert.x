@@ -49,14 +49,6 @@ public interface HttpServerFileUpload extends ReadStream<Buffer> {
   /**
    * Stream the content of this upload to the given file on storage.
    *
-   * @param filename  the name of the file
-   */
-  @Deprecated
-  void streamToFileSystem(String filename, Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Stream the content of this upload to the given file on storage.
-   *
    * <p> If the stream has a failure or is cancelled the created file will be deleted.
    *
    * @param filename  the name of the file

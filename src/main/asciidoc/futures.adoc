@@ -12,10 +12,6 @@ You cannot interact directly with the result of a future, instead you need to se
 {@link examples.CoreExamples#exampleFuture1}
 ----
 
-NOTE: Vert.x 3 provides a callback-only model.
-To allow an easy migration to Vert.x 4 we decided that each asynchronous method has also a callback version.
-The `props` method above has also a version {@link io.vertx.core.file.FileSystem#props(java.lang.String, io.vertx.core.Handler)} with a callback as method argument.
-
 [CAUTION]
 ====
 Do not confuse _futures_ with _promises_.

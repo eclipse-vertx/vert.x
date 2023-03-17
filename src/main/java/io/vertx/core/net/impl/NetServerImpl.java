@@ -151,14 +151,6 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
   }
 
   @Override
-  public void close(Handler<AsyncResult<Void>> completionHandler) {
-    ContextInternal context = vertx.getOrCreateContext();
-    Promise<Void> promise = context.promise();
-    close(promise);
-    promise.future().onComplete(completionHandler);
-  }
-
-  @Override
   public synchronized void close(Promise<Void> completion) {
     super.close(completion);
     Handler<Void> handler = endHandler;

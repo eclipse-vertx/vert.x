@@ -11,7 +11,6 @@
 
 package io.vertx.core.http.impl;
 
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -40,12 +39,6 @@ public class SharedHttpClient implements HttpClientInternal {
   }
 
   @Override
-  public void close(Handler<AsyncResult<Void>> handler) {
-    ContextInternal closingCtx = vertx.getOrCreateContext();
-    closeFuture.close(handler != null ? closingCtx.promise(handler) : null);
-  }
-
-  @Override
   public Future<Void> close() {
     ContextInternal closingCtx = vertx.getOrCreateContext();
     PromiseInternal<Void> promise = closingCtx.promise();
@@ -54,18 +47,8 @@ public class SharedHttpClient implements HttpClientInternal {
   }
 
   @Override
-  public void request(RequestOptions options, Handler<AsyncResult<HttpClientRequest>> handler) {
-    delegate.request(options, handler);
-  }
-
-  @Override
   public Future<HttpClientRequest> request(RequestOptions options) {
     return delegate.request(options);
-  }
-
-  @Override
-  public void request(HttpMethod method, int port, String host, String requestURI, Handler<AsyncResult<HttpClientRequest>> handler) {
-    delegate.request(method, port, host, requestURI, handler);
   }
 
   @Override
@@ -74,18 +57,8 @@ public class SharedHttpClient implements HttpClientInternal {
   }
 
   @Override
-  public void request(HttpMethod method, String host, String requestURI, Handler<AsyncResult<HttpClientRequest>> handler) {
-    delegate.request(method, host, requestURI, handler);
-  }
-
-  @Override
   public Future<HttpClientRequest> request(HttpMethod method, String host, String requestURI) {
     return delegate.request(method, host, requestURI);
-  }
-
-  @Override
-  public void request(HttpMethod method, String requestURI, Handler<AsyncResult<HttpClientRequest>> handler) {
-    delegate.request(method, requestURI, handler);
   }
 
   @Override
@@ -94,18 +67,8 @@ public class SharedHttpClient implements HttpClientInternal {
   }
 
   @Override
-  public void webSocket(int port, String host, String requestURI, Handler<AsyncResult<WebSocket>> handler) {
-    delegate.webSocket(port, host, requestURI, handler);
-  }
-
-  @Override
   public Future<WebSocket> webSocket(int port, String host, String requestURI) {
     return delegate.webSocket(port, host, requestURI);
-  }
-
-  @Override
-  public void webSocket(String host, String requestURI, Handler<AsyncResult<WebSocket>> handler) {
-    delegate.webSocket(host, requestURI, handler);
   }
 
   @Override
@@ -114,28 +77,13 @@ public class SharedHttpClient implements HttpClientInternal {
   }
 
   @Override
-  public void webSocket(String requestURI, Handler<AsyncResult<WebSocket>> handler) {
-    delegate.webSocket(requestURI, handler);
-  }
-
-  @Override
   public Future<WebSocket> webSocket(String requestURI) {
     return delegate.webSocket(requestURI);
   }
 
   @Override
-  public void webSocket(WebSocketConnectOptions options, Handler<AsyncResult<WebSocket>> handler) {
-    delegate.webSocket(options, handler);
-  }
-
-  @Override
   public Future<WebSocket> webSocket(WebSocketConnectOptions options) {
     return delegate.webSocket(options);
-  }
-
-  @Override
-  public void webSocketAbs(String url, MultiMap headers, WebsocketVersion version, List<String> subProtocols, Handler<AsyncResult<WebSocket>> handler) {
-    delegate.webSocketAbs(url, headers, version, subProtocols, handler);
   }
 
   @Override

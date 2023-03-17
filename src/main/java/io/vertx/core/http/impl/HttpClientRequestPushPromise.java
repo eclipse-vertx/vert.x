@@ -140,16 +140,6 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  public void write(String chunk, Handler<AsyncResult<Void>> handler) {
-    throw new IllegalStateException();
-  }
-
-  @Override
-  public void write(String chunk, String enc, Handler<AsyncResult<Void>> handler) {
-    throw new IllegalStateException();
-  }
-
-  @Override
   public HttpClientRequest continueHandler(@Nullable Handler<Void> handler) {
     throw new IllegalStateException();
   }
@@ -165,17 +155,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  public HttpClientRequest sendHead(Handler<AsyncResult<Void>> completionHandler) {
-    throw new IllegalStateException();
-  }
-
-  @Override
   public Future<HttpClientResponse> connect() {
-    throw new IllegalStateException();
-  }
-
-  @Override
-  public void connect(Handler<AsyncResult<HttpClientResponse>> handler) {
     throw new IllegalStateException();
   }
 
@@ -185,17 +165,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  public void end(String chunk, Handler<AsyncResult<Void>> handler) {
-    throw new IllegalStateException();
-  }
-
-  @Override
   public Future<Void> end(String chunk, String enc) {
-    throw new IllegalStateException();
-  }
-
-  @Override
-  public void end(String chunk, String enc, Handler<AsyncResult<Void>> handler) {
     throw new IllegalStateException();
   }
 

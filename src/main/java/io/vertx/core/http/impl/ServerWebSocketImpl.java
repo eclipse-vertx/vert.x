@@ -203,12 +203,6 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
   }
 
   @Override
-  public void setHandshake(Future<Integer> future, Handler<AsyncResult<Integer>> handler) {
-    Future<Integer> fut = setHandshake(future);
-    fut.onComplete(handler);
-  }
-
-  @Override
   public Future<Integer> setHandshake(Future<Integer> future) {
     if (future == null) {
       throw new NullPointerException();

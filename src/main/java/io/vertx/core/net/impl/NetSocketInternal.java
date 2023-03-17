@@ -13,7 +13,6 @@ package io.vertx.core.net.impl;
 
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.net.NetSocket;
@@ -58,12 +57,6 @@ public interface NetSocketInternal extends NetSocket {
    * @return a future completed with the result
    */
   Future<Void> writeMessage(Object message);
-
-  /**
-   * Like {@link #writeMessage(Object)} but with an {@code handler} called when the message has been written
-   * or failed to be written.
-   */
-  NetSocketInternal writeMessage(Object message, Handler<AsyncResult<Void>> handler);
 
   /**
    * Set a {@code handler} on this socket to process the messages produced by this socket. The message can be

@@ -64,13 +64,7 @@ public interface HttpClient extends Measured {
    * is called when the request is ready to be sent.
    *
    * @param options    the request options
-   * @param handler    the handler called when the request is ready to be sent
-   */
-  @Deprecated
-  void request(RequestOptions options, Handler<AsyncResult<HttpClientRequest>> handler);
-
-  /**
-   * Like {@link #request(RequestOptions, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified when the request is ready to be sent
    */
   Future<HttpClientRequest> request(RequestOptions options);
 
@@ -82,13 +76,7 @@ public interface HttpClient extends Measured {
    * @param port       the port
    * @param host       the host
    * @param requestURI the relative URI
-   * @param handler    the handler called when the request is ready to be sent
-   */
-  @Deprecated
-  void request(HttpMethod method, int port, String host, String requestURI, Handler<AsyncResult<HttpClientRequest>> handler);
-
-  /**
-   * Like {@link #request(HttpMethod, int, String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified when the request is ready to be sent
    */
   Future<HttpClientRequest> request(HttpMethod method, int port, String host, String requestURI);
 
@@ -99,13 +87,7 @@ public interface HttpClient extends Measured {
    * @param method     the HTTP method
    * @param host       the host
    * @param requestURI the relative URI
-   * @param handler    the handler called when the request is ready to be sent
-   */
-  @Deprecated
-  void request(HttpMethod method, String host, String requestURI, Handler<AsyncResult<HttpClientRequest>> handler);
-
-  /**
-   * Like {@link #request(HttpMethod, String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified when the request is ready to be sent
    */
   Future<HttpClientRequest> request(HttpMethod method, String host, String requestURI);
 
@@ -115,13 +97,7 @@ public interface HttpClient extends Measured {
    *
    * @param method     the HTTP method
    * @param requestURI the relative URI
-   * @param handler    the handler called when the request is ready to be sent
-   */
-  @Deprecated
-  void request(HttpMethod method, String requestURI, Handler<AsyncResult<HttpClientRequest>> handler);
-
-  /**
-   * Like {@link #request(HttpMethod, String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified when the request is ready to be sent
    */
   Future<HttpClientRequest> request(HttpMethod method, String requestURI);
 
@@ -130,13 +106,7 @@ public interface HttpClient extends Measured {
    * @param port  the port
    * @param host  the host
    * @param requestURI  the relative URI
-   * @param handler  handler that will be called with the WebSocket when connected
-   */
-  @Deprecated
-  void webSocket(int port, String host, String requestURI, Handler<AsyncResult<WebSocket>> handler);
-
-  /**
-   * Like {@link #webSocket(int, String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified when the WebSocket when connected
    */
   Future<WebSocket> webSocket(int port, String host, String requestURI);
 
@@ -144,26 +114,14 @@ public interface HttpClient extends Measured {
    * Connect a WebSocket to the host and relative request URI and default port
    * @param host  the host
    * @param requestURI  the relative URI
-   * @param handler  handler that will be called with the WebSocket when connected
-   */
-  @Deprecated
-  void webSocket(String host, String requestURI, Handler<AsyncResult<WebSocket>> handler);
-
-  /**
-   * Like {@link #webSocket(String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified when the WebSocket when connected
    */
   Future<WebSocket> webSocket(String host, String requestURI);
 
   /**
    * Connect a WebSocket at the relative request URI using the default host and port
    * @param requestURI  the relative URI
-   * @param handler  handler that will be called with the WebSocket when connected
-   */
-  @Deprecated
-  void webSocket(String requestURI, Handler<AsyncResult<WebSocket>> handler);
-
-  /**
-   * Like {@link #webSocket(String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified when the WebSocket when connected
    */
   Future<WebSocket> webSocket(String requestURI);
 
@@ -171,12 +129,7 @@ public interface HttpClient extends Measured {
    * Connect a WebSocket with the specified options.
    *
    * @param options  the request options
-   */
-  @Deprecated
-  void webSocket(WebSocketConnectOptions options, Handler<AsyncResult<WebSocket>> handler);
-
-  /**
-   * Like {@link #webSocket(WebSocketConnectOptions, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified when the WebSocket when connected
    */
   Future<WebSocket> webSocket(WebSocketConnectOptions options);
 
@@ -188,13 +141,7 @@ public interface HttpClient extends Measured {
    * @param headers        the headers
    * @param version        the WebSocket version
    * @param subProtocols   the subprotocols to use
-   * @param handler handler that will be called if WebSocket connection fails
-   */
-  @Deprecated
-  void webSocketAbs(String url, MultiMap headers, WebsocketVersion version, List<String> subProtocols, Handler<AsyncResult<WebSocket>> handler);
-
-  /**
-   * Like {@link #webSocketAbs(String, MultiMap, WebsocketVersion, List, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified when the WebSocket when connected
    */
   Future<WebSocket> webSocketAbs(String url, MultiMap headers, WebsocketVersion version, List<String> subProtocols);
 
@@ -207,21 +154,6 @@ public interface HttpClient extends Measured {
    * @return a future signaling the update success
    */
   Future<Void> updateSSLOptions(SSLOptions options);
-
-  /**
-   * Like {@link #updateSSLOptions(SSLOptions)}  but supplying a handler that will be called when the update
-   * happened (or has failed).
-   *
-   * @param options the new SSL options
-   * @param handler the update handler
-   */
-  @Deprecated
-  default void updateSSLOptions(SSLOptions options, Handler<AsyncResult<Void>> handler) {
-    Future<Void> fut = updateSSLOptions(options);
-    if (handler != null) {
-      fut.onComplete(handler);
-    }
-  }
 
   /**
    * Set a connection handler for the client. This handler is called when a new connection is established.
@@ -262,12 +194,7 @@ public interface HttpClient extends Measured {
   /**
    * Close the client. Closing will close down any pooled connections.
    * Clients should always be closed after use.
-   */
-  @Deprecated
-  void close(Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #close(Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified when the client is closed
    */
   Future<Void> close();
 

@@ -12,7 +12,6 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.VertxGen;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 
@@ -47,26 +46,6 @@ public interface WebSocket extends WebSocketBase {
 
   @Override
   WebSocket drainHandler(Handler<Void> handler);
-
-  @Override
-  @Deprecated
-  WebSocket writeFrame(WebSocketFrame frame, Handler<AsyncResult<Void>> handler);
-
-  @Override
-  @Deprecated
-  WebSocket writeFinalTextFrame(String text, Handler<AsyncResult<Void>> handler);
-
-  @Override
-  @Deprecated
-  WebSocket writeFinalBinaryFrame(Buffer data, Handler<AsyncResult<Void>> handler);
-
-  @Override
-  @Deprecated
-  WebSocket writeBinaryMessage(Buffer data, Handler<AsyncResult<Void>> handler);
-
-  @Override
-  @Deprecated
-  WebSocket writeTextMessage(String text, Handler<AsyncResult<Void>> handler);
 
   @Override
   WebSocket closeHandler(Handler<Void> handler);

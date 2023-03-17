@@ -67,25 +67,12 @@ class WorkerExecutorImpl implements MetricsProvider, WorkerExecutorInternal {
     return ContextBase.executeBlocking(context, blockingCodeHandler, pool, ordered ? impl.orderedTasks : null);
   }
 
-  public <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> asyncResultHandler) {
-    Future<T> fut = executeBlocking(blockingCodeHandler, ordered);
-    if (asyncResultHandler != null) {
-      fut.onComplete(asyncResultHandler);
-    }
-  }
-
   @Override
   public Future<Void> close() {
     ContextInternal closingCtx = vertx.getOrCreateContext();
     PromiseInternal<Void> promise = closingCtx.promise();
     closeFuture.close(promise);
     return promise.future();
-  }
-
-  @Override
-  public void close(Handler<AsyncResult<Void>> handler) {
-    ContextInternal closingCtx = vertx.getOrCreateContext();
-    closeFuture.close(handler != null ? closingCtx.promise(handler) : null);
   }
 
   @Override

@@ -77,41 +77,19 @@ public interface EventBus extends Measured {
    *
    * @param address  the address to send it to
    * @param message  the message body, may be {@code null}
-   * @param replyHandler  reply handler will be called when any reply from the recipient is received
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  default <T> EventBus request(String address, @Nullable Object message, Handler<AsyncResult<Message<T>>> replyHandler) {
-    return request(address, message, new DeliveryOptions(), replyHandler);
-  }
-
-  /**
-   * Like {@link #request(String, Object, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified when any reply from the recipient is received
    */
   default <T> Future<Message<T>> request(String address, @Nullable Object message) {
     return request(address, message, new DeliveryOptions());
   }
 
   /**
-   * Like {@link #request(String, Object, Handler)} but specifying {@code options} that can be used to configure the delivery.
+   * Like {@link #request(String, Object)} but specifying {@code options} that can be used to configure the delivery.
    *
    * @param address  the address to send it to
    * @param message  the message body, may be {@code null}
    * @param options  delivery options
-   * @param replyHandler  reply handler will be called when any reply from the recipient is received
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  default <T> EventBus request(String address, @Nullable Object message, DeliveryOptions options, Handler<AsyncResult<Message<T>>> replyHandler) {
-    Future<Message<T>> reply = request(address, message, options);
-    reply.onComplete(replyHandler);
-    return this;
-  }
-
-  /**
-   * Like {@link #request(String, Object, DeliveryOptions, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified when any reply from the recipient is received
    */
   <T> Future<Message<T>> request(String address, @Nullable Object message, DeliveryOptions options);
 

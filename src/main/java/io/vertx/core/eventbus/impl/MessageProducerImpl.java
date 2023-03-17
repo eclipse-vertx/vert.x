@@ -11,9 +11,7 @@
 
 package io.vertx.core.eventbus.impl;
 
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.*;
@@ -52,15 +50,6 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
     return promise.future();
   }
 
-  @Override
-  public void write(T body, Handler<AsyncResult<Void>> handler) {
-    Promise<Void> promise = null;
-    if (handler != null) {
-      promise = ((VertxInternal)vertx).getOrCreateContext().promise(handler);
-    }
-    write(body, promise);
-  }
-
   private void write(T data, Promise<Void> handler) {
     MessageImpl msg = bus.createMessage(send, address, options.getHeaders(), data, options.getCodecName());
     bus.sendOrPubInternal(msg, options, null, handler);
@@ -76,11 +65,4 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
     return ((ContextInternal)vertx.getOrCreateContext()).succeededFuture();
   }
 
-  @Override
-  public void close(Handler<AsyncResult<Void>> handler) {
-    Future<Void> fut = close();
-    if (handler != null) {
-      fut.onComplete(handler);
-    }
-  }
 }

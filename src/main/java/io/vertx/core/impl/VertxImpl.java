@@ -245,7 +245,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       this.<HAManager>executeBlocking(fut -> {
         haManager = new HAManager(this, deploymentManager, verticleManager, clusterManager, clusterManager.getSyncMap(CLUSTER_MAP_NAME), options.getQuorumSize(), options.getHAGroup());
         fut.complete(haManager);
-      }, false, ar -> {
+      }, false).onComplete(ar -> {
         if (ar.succeeded()) {
           startEventBus(true, initPromise);
         } else {
@@ -274,13 +274,13 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   private void initializeHaManager(Promise<Void> initPromise) {
-    this.executeBlocking(fut -> {
+    this.<Void>executeBlocking(fut -> {
       // Init the manager (i.e register listener and check the quorum)
       // after the event bus has been fully started and updated its state
       // it will have also set the clustered changed view handler on the ha manager
       haManager.init();
       fut.complete();
-    }, false, initPromise);
+    }, false).onComplete(initPromise);
   }
 
   /**
@@ -590,14 +590,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return clusterManager;
   }
 
-  @Override
-  public Future<Void> close() {
-    // Create this promise purposely without a context because the close operation will close thread pools
-    Promise<Void> promise = Promise.promise();
-    close(promise);
-    return promise.future();
-  }
-
   private void closeClusterManager(Handler<AsyncResult<Void>> completionHandler) {
     Promise<Void> leavePromise = getOrCreateContext().promise();
     if (clusterManager != null) {
@@ -616,7 +608,14 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public synchronized void close(Handler<AsyncResult<Void>> completionHandler) {
+  public Future<Void> close() {
+    // Create this promise purposely without a context because the close operation will close thread pools
+    Promise<Void> promise = Promise.promise();
+    close(promise);
+    return promise.future();
+  }
+
+  private synchronized void close(Handler<AsyncResult<Void>> completionHandler) {
     if (closed || eventBus == null) {
       // Just call the handler directly since pools shutdown
       if (completionHandler != null) {
@@ -630,10 +629,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         HAManager haManager = haManager();
         Promise<Void> haPromise = Promise.promise();
         if (haManager != null) {
-          this.executeBlocking(fut -> {
+          this.<Void>executeBlocking(fut -> {
             haManager.stop();
             fut.complete();
-          }, false, haPromise);
+          }, false).onComplete(haPromise);
         } else {
           haPromise.complete();
         }
@@ -665,22 +664,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public void deployVerticle(String name, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
-    Future<String> fut = deployVerticle(name, options);
-    if (completionHandler != null) {
-      fut.onComplete(completionHandler);
-    }
-  }
-
-  @Override
-  public void deployVerticle(Verticle verticle, Handler<AsyncResult<String>> completionHandler) {
-    Future<String> fut = deployVerticle(verticle);
-    if (completionHandler != null) {
-      fut.onComplete(completionHandler);
-    }
-  }
-
-  @Override
   public Future<String> deployVerticle(Verticle verticle, DeploymentOptions options) {
     if (options.getInstances() != 1) {
       throw new IllegalArgumentException("Can't specify > 1 instances for already created verticle");
@@ -689,37 +672,13 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public void deployVerticle(Verticle verticle, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
-    Future<String> fut = deployVerticle(verticle, options);
-    if (completionHandler != null) {
-      fut.onComplete(completionHandler);
-    }
-  }
-
-  @Override
   public Future<String> deployVerticle(Class<? extends Verticle> verticleClass, DeploymentOptions options) {
     return deployVerticle((Callable<Verticle>) verticleClass::newInstance, options);
   }
 
   @Override
-  public void deployVerticle(Class<? extends Verticle> verticleClass, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
-    Future<String> fut = deployVerticle(verticleClass, options);
-    if (completionHandler != null) {
-      fut.onComplete(completionHandler);
-    }
-  }
-
-  @Override
   public Future<String> deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options) {
     return deployVerticle((Callable<Verticle>) verticleSupplier::get, options);
-  }
-
-  @Override
-  public void deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
-    Future<String> fut = deployVerticle(verticleSupplier, options);
-    if (completionHandler != null) {
-      fut.onComplete(completionHandler);
-    }
   }
 
   private Future<String> deployVerticle(Callable<Verticle> verticleSupplier, DeploymentOptions options) {
@@ -748,14 +707,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       future = getOrCreateContext().succeededFuture();
     }
     return future.compose(v -> deploymentManager.undeployVerticle(deploymentID));
-  }
-
-  @Override
-  public void undeploy(String deploymentID, Handler<AsyncResult<Void>> completionHandler) {
-    Future<Void> fut = undeploy(deploymentID);
-    if (completionHandler != null) {
-      fut.onComplete(completionHandler);
-    }
   }
 
   @Override
@@ -863,7 +814,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       } catch (IOException e) {
         fut.tryFail(e);
       }
-    }, ar -> {
+    }).onComplete(ar -> {
 
       workerPool.close();
       internalWorkerPool.close();

@@ -48,15 +48,7 @@ public interface FileSystem {
    *
    * @param from  the path to copy from
    * @param to  the path to copy to
-   * @param handler  the handler that will be called on completion
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  FileSystem copy(String from, String to, Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #copy(String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified on completion
    */
   Future<Void> copy(String from, String to);
 
@@ -66,20 +58,12 @@ public interface FileSystem {
    * @param from    the path to copy from
    * @param to      the path to copy to
    * @param options options describing how the file should be copied
-   * @param handler the handler that will be called on completion
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  FileSystem copy(String from, String to, CopyOptions options, Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #copy(String, String, CopyOptions, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified on completion
    */
   Future<Void> copy(String from, String to, CopyOptions options);
 
   /**
-   * Blocking version of {@link #copy(String, String, Handler)}
+   * Blocking version of {@link #copy(String, String)}
    */
   @Fluent
   FileSystem copyBlocking(String from, String to) ;
@@ -95,20 +79,12 @@ public interface FileSystem {
    * @param from  the path to copy from
    * @param to  the path to copy to
    * @param recursive
-   * @param handler  the handler that will be called on completion
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  FileSystem copyRecursive(String from, String to, boolean recursive, Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #copyRecursive(String, String, boolean, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified on completion
    */
   Future<Void> copyRecursive(String from, String to, boolean recursive);
 
   /**
-   * Blocking version of {@link #copyRecursive(String, String, boolean, Handler)}
+   * Blocking version of {@link #copyRecursive(String, String, boolean)}
    */
   @Fluent
   FileSystem copyRecursiveBlocking(String from, String to, boolean recursive) ;
@@ -120,15 +96,7 @@ public interface FileSystem {
    *
    * @param from  the path to copy from
    * @param to  the path to copy to
-   * @param handler  the handler that will be called on completion
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  FileSystem move(String from, String to, Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #move(String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified on completion
    */
   Future<Void> move(String from, String to);
 
@@ -138,20 +106,12 @@ public interface FileSystem {
    * @param from    the path to copy from
    * @param to      the path to copy to
    * @param options options describing how the file should be copied
-   * @param handler the handler that will be called on completion
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  FileSystem move(String from, String to, CopyOptions options, Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #move(String, String, CopyOptions, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified on completion
    */
   Future<Void> move(String from, String to, CopyOptions options);
 
   /**
-   * Blocking version of {@link #move(String, String, Handler)}
+   * Blocking version of {@link #move(String, String)}
    */
   @Fluent
   FileSystem moveBlocking(String from, String to) ;
@@ -163,20 +123,12 @@ public interface FileSystem {
    *
    * @param path  the path to the file
    * @param len  the length to truncate it to
-   * @param handler  the handler that will be called on completion
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  FileSystem truncate(String path, long len, Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #truncate(String, long, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified on completion
    */
   Future<Void> truncate(String path, long len);
 
   /**
-   * Blocking version of {@link #truncate(String, long, Handler)}
+   * Blocking version of {@link #truncate(String, long)}
    */
   @Fluent
   FileSystem truncateBlocking(String path, long len) ;
@@ -189,20 +141,12 @@ public interface FileSystem {
    *
    * @param path  the path to the file
    * @param perms  the permissions string
-   * @param handler  the handler that will be called on completion
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  FileSystem chmod(String path, String perms, Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #chmod(String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified on completion
    */
   Future<Void> chmod(String path, String perms);
 
   /**
-   * Blocking version of {@link #chmod(String, String, Handler) }
+   * Blocking version of {@link #chmod(String, String) }
    */
   @Fluent
   FileSystem chmodBlocking(String path, String perms) ;
@@ -218,20 +162,12 @@ public interface FileSystem {
    * @param path  the path to the file
    * @param perms  the permissions string
    * @param dirPerms  the directory permissions
-   * @param handler  the handler that will be called on completion
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  FileSystem chmodRecursive(String path, String perms, String dirPerms, Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #chmodRecursive(String, String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified on completion
    */
   Future<Void> chmodRecursive(String path, String perms, String dirPerms);
 
   /**
-   * Blocking version of {@link #chmodRecursive(String, String, String, Handler)}
+   * Blocking version of {@link #chmodRecursive(String, String, String)}
    */
   @Fluent
   FileSystem chmodRecursiveBlocking(String path, String perms, String dirPerms) ;
@@ -243,20 +179,12 @@ public interface FileSystem {
    * @param path  the path to the file
    * @param user  the user name, {@code null} will not change the user name
    * @param group  the user group, {@code null} will not change the user group name
-   * @param handler  the handler that will be called on completion
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  FileSystem chown(String path, @Nullable String user, @Nullable String group, Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #chown(String, String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified on completion
    */
   Future<Void> chown(String path, @Nullable String user, @Nullable String group);
 
   /**
-   * Blocking version of {@link #chown(String, String, String, Handler)}
+   * Blocking version of {@link #chown(String, String, String)}
    *
    */
   @Fluent
@@ -268,20 +196,12 @@ public interface FileSystem {
    * If the file is a link, the link will be followed.
    *
    * @param path  the path to the file
-   * @param handler  the handler that will be called on completion
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  FileSystem props(String path, Handler<AsyncResult<FileProps>> handler);
-
-  /**
-   * Like {@link #props(String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified on completion
    */
   Future<FileProps> props(String path);
 
   /**
-   * Blocking version of {@link #props(String, Handler)}
+   * Blocking version of {@link #props(String)}
    */
   FileProps propsBlocking(String path) ;
 
@@ -291,20 +211,12 @@ public interface FileSystem {
    * The link will not be followed.
    *
    * @param path  the path to the file
-   * @param handler  the handler that will be called on completion
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  FileSystem lprops(String path, Handler<AsyncResult<FileProps>> handler);
-
-  /**
-   * Like {@link #lprops(String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified on completion
    */
   Future<FileProps> lprops(String path);
 
   /**
-   * Blocking version of {@link #lprops(String, Handler)}
+   * Blocking version of {@link #lprops(String)}
    */
   FileProps lpropsBlocking(String path) ;
 
@@ -313,20 +225,12 @@ public interface FileSystem {
    *
    * @param link  the link
    * @param existing  the link destination
-   * @param handler  the handler that will be called on completion
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  FileSystem link(String link, String existing, Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #link(String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified on completion
    */
   Future<Void> link(String link, String existing);
 
   /**
-   * Blocking version of {@link #link(String, String, Handler)}
+   * Blocking version of {@link #link(String, String)}
    */
   @Fluent
   FileSystem linkBlocking(String link, String existing) ;
@@ -336,20 +240,12 @@ public interface FileSystem {
    *
    * @param link  the link
    * @param existing  the link destination
-   * @param handler  the handler that will be called on completion
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  FileSystem symlink(String link, String existing, Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #symlink(String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified on completion
    */
   Future<Void> symlink(String link, String existing);
 
   /**
-   * Blocking version of {@link #link(String, String, Handler)}
+   * Blocking version of {@link #link(String, String)}
    */
   @Fluent
   FileSystem symlinkBlocking(String link, String existing) ;
@@ -358,20 +254,12 @@ public interface FileSystem {
    * Unlinks the link on the file system represented by the path {@code link}, asynchronously.
    *
    * @param link  the link
-   * @param handler  the handler that will be called on completion
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  FileSystem unlink(String link, Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #unlink(String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified on completion
    */
   Future<Void> unlink(String link);
 
   /**
-   * Blocking version of {@link #unlink(String, Handler)}
+   * Blocking version of {@link #unlink(String)}
    */
   @Fluent
   FileSystem unlinkBlocking(String link) ;
@@ -380,20 +268,12 @@ public interface FileSystem {
    * Returns the path representing the file that the symbolic link specified by {@code link} points to, asynchronously.
    *
    * @param link  the link
-   * @param handler  the handler that will be called on completion
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  FileSystem readSymlink(String link, Handler<AsyncResult<String>> handler);
-
-  /**
-   * Like {@link #readSymlink(String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified on completion
    */
   Future<String> readSymlink(String link);
 
   /**
-   * Blocking version of {@link #readSymlink(String, Handler)}
+   * Blocking version of {@link #readSymlink(String)}
    */
   String readSymlinkBlocking(String link) ;
 
@@ -401,20 +281,12 @@ public interface FileSystem {
    * Deletes the file represented by the specified {@code path}, asynchronously.
    *
    * @param path  path to the file
-   * @param handler  the handler that will be called on completion
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  FileSystem delete(String path, Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #delete(String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified on completion
    */
   Future<Void> delete(String path);
 
   /**
-   * Blocking version of {@link #delete(String, Handler)}
+   * Blocking version of {@link #delete(String)}
    */
   @Fluent
   FileSystem deleteBlocking(String path) ;
@@ -427,20 +299,12 @@ public interface FileSystem {
    *
    * @param path  path to the file
    * @param recursive  delete recursively?
-   * @param handler  the handler that will be called on completion
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  FileSystem deleteRecursive(String path, boolean recursive, Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #deleteRecursive(String, boolean, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified on completion
    */
   Future<Void> deleteRecursive(String path, boolean recursive);
 
   /**
-   * Blocking version of {@link #deleteRecursive(String, boolean, Handler)}
+   * Blocking version of {@link #deleteRecursive(String, boolean)}
    */
   @Fluent
   FileSystem deleteRecursiveBlocking(String path, boolean recursive) ;
@@ -451,20 +315,12 @@ public interface FileSystem {
    * The operation will fail if the directory already exists.
    *
    * @param path  path to the file
-   * @param handler  the handler that will be called on completion
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  FileSystem mkdir(String path, Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #mkdir(String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified on completion
    */
   Future<Void> mkdir(String path);
 
   /**
-   * Blocking version of {@link #mkdir(String, Handler)}
+   * Blocking version of {@link #mkdir(String)}
    */
   @Fluent
   FileSystem mkdirBlocking(String path) ;
@@ -481,20 +337,12 @@ public interface FileSystem {
    *
    * @param path  path to the file
    * @param perms  the permissions string
-   * @param handler  the handler that will be called on completion
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  FileSystem mkdir(String path, String perms, Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #mkdir(String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified on completion
    */
   Future<Void> mkdir(String path, String perms);
 
   /**
-   * Blocking version of {@link #mkdir(String, String, Handler)}
+   * Blocking version of {@link #mkdir(String, String)}
    */
   @Fluent
   FileSystem mkdirBlocking(String path, String perms) ;
@@ -505,20 +353,12 @@ public interface FileSystem {
    * The operation will fail if the {@code path} already exists but is not a directory.
    *
    * @param path  path to the file
-   * @param handler  the handler that will be called on completion
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  FileSystem mkdirs(String path, Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #mkdirs(String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified on completion
    */
   Future<Void> mkdirs(String path);
 
   /**
-   * Blocking version of {@link #mkdirs(String, Handler)}
+   * Blocking version of {@link #mkdirs(String)}
    */
   @Fluent
   FileSystem mkdirsBlocking(String path) ;
@@ -535,20 +375,12 @@ public interface FileSystem {
    *
    * @param path  path to the file
    * @param perms  the permissions string
-   * @param handler  the handler that will be called on completion
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  FileSystem mkdirs(String path, String perms, Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #mkdirs(String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified on completion
    */
   Future<Void> mkdirs(String path, String perms);
 
   /**
-   * Blocking version of {@link #mkdirs(String, String, Handler)}
+   * Blocking version of {@link #mkdirs(String, String)}
    */
   @Fluent
   FileSystem mkdirsBlocking(String path, String perms) ;
@@ -559,20 +391,12 @@ public interface FileSystem {
    * The result is an array of String representing the paths of the files inside the directory.
    *
    * @param path  path to the file
-   * @param handler  the handler that will be called on completion
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  FileSystem readDir(String path, Handler<AsyncResult<List<String>>> handler);
-
-  /**
-   * Like {@link #readDir(String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified on completion
    */
   Future<List<String>> readDir(String path);
 
   /**
-   * Blocking version of {@link #readDir(String, Handler)}
+   * Blocking version of {@link #readDir(String)}
    */
   List<String> readDirBlocking(String path) ;
 
@@ -586,20 +410,12 @@ public interface FileSystem {
    *
    * @param path  path to the directory
    * @param filter  the filter expression
-   * @param handler  the handler that will be called on completion
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  FileSystem readDir(String path, String filter, Handler<AsyncResult<List<String>>> handler);
-
-  /**
-   * Like {@link #readDir(String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified on completion
    */
   Future<List<String>> readDir(String path, String filter);
 
   /**
-   * Blocking version of {@link #readDir(String, String, Handler)}
+   * Blocking version of {@link #readDir(String, String)}
    */
   List<String> readDirBlocking(String path, String filter) ;
 
@@ -609,20 +425,12 @@ public interface FileSystem {
    * Do not use this method to read very large files or you risk running out of available RAM.
    *
    * @param path  path to the file
-   * @param handler  the handler that will be called on completion
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  FileSystem readFile(String path, Handler<AsyncResult<Buffer>> handler);
-
-  /**
-   * Like {@link #readFile(String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified on completion
    */
   Future<Buffer> readFile(String path);
 
   /**
-   * Blocking version of {@link #readFile(String, Handler)}
+   * Blocking version of {@link #readFile(String)}
    */
   Buffer readFileBlocking(String path) ;
 
@@ -631,20 +439,12 @@ public interface FileSystem {
    * asynchronously.
    *
    * @param path  path to the file
-   * @param handler  the handler that will be called on completion
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  FileSystem writeFile(String path, Buffer data, Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #writeFile(String, Buffer, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified on completion
    */
   Future<Void> writeFile(String path, Buffer data);
 
   /**
-   * Blocking version of {@link #writeFile(String, Buffer, Handler)}
+   * Blocking version of {@link #writeFile(String, Buffer)}
    */
   @Fluent
   FileSystem writeFileBlocking(String path, Buffer data) ;
@@ -656,20 +456,12 @@ public interface FileSystem {
    *
    * @param path  path to the file
    * @param options options describing how the file should be opened
-   * @return a reference to this, so the API can be used fluently
-   *
-   */
-  @Fluent
-  @Deprecated
-  FileSystem open(String path, OpenOptions options, Handler<AsyncResult<AsyncFile>> handler);
-
-  /**
-   * Like {@link #open(String, OpenOptions, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified on completion
    */
   Future<AsyncFile> open(String path, OpenOptions options);
 
   /**
-   * Blocking version of {@link #open(String, io.vertx.core.file.OpenOptions, Handler)}
+   * Blocking version of {@link #open(String, io.vertx.core.file.OpenOptions)}
    */
   AsyncFile openBlocking(String path, OpenOptions options);
 
@@ -677,20 +469,12 @@ public interface FileSystem {
    * Creates an empty file with the specified {@code path}, asynchronously.
    *
    * @param path  path to the file
-   * @param handler  the handler that will be called on completion
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  FileSystem createFile(String path, Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #createFile(String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified on completion
    */
   Future<Void> createFile(String path);
 
   /**
-   * Blocking version of {@link #createFile(String, Handler)}
+   * Blocking version of {@link #createFile(String)}
    */
   @Fluent
   FileSystem createFileBlocking(String path) ;
@@ -700,20 +484,12 @@ public interface FileSystem {
    *
    * @param path  path to the file
    * @param perms  the permissions string
-   * @param handler  the handler that will be called on completion
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  FileSystem createFile(String path, String perms, Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #createFile(String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified on completion
    */
   Future<Void> createFile(String path, String perms);
 
   /**
-   * Blocking version of {@link #createFile(String, String, Handler)}
+   * Blocking version of {@link #createFile(String, String)}
    */
   @Fluent
   FileSystem createFileBlocking(String path, String perms) ;
@@ -722,20 +498,12 @@ public interface FileSystem {
    * Determines whether the file as specified by the path {@code path} exists, asynchronously.
    *
    * @param path  path to the file
-   * @param handler  the handler that will be called on completion
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  FileSystem exists(String path, Handler<AsyncResult<Boolean>> handler);
-
-  /**
-   * Like {@link #exists(String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified on completion
    */
   Future<Boolean> exists(String path);
 
   /**
-   * Blocking version of {@link #exists(String, Handler)}
+   * Blocking version of {@link #exists(String)}
    */
   boolean existsBlocking(String path) ;
 
@@ -743,20 +511,12 @@ public interface FileSystem {
    * Returns properties of the file-system being used by the specified {@code path}, asynchronously.
    *
    * @param path  path to anywhere on the filesystem
-   * @param handler  the handler that will be called on completion
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  FileSystem fsProps(String path, Handler<AsyncResult<FileSystemProps>> handler);
-
-  /**
-   * Like {@link #fsProps(String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified on completion
    */
   Future<FileSystemProps> fsProps(String path);
 
   /**
-   * Blocking version of {@link #fsProps(String, Handler)}
+   * Blocking version of {@link #fsProps(String)}
    */
   FileSystemProps fsPropsBlocking(String path) ;
 
@@ -772,20 +532,12 @@ public interface FileSystem {
    *
    * @param prefix  the prefix string to be used in generating the directory's name;
    *                may be {@code null}
-   * @param handler the handler that will be called on completion
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  FileSystem createTempDirectory(String prefix, Handler<AsyncResult<String>> handler);
-
-  /**
-   * Like {@link #createTempDirectory(String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified on completion
    */
   Future<String> createTempDirectory(String prefix);
 
   /**
-   * Blocking version of {@link #createTempDirectory(String, Handler)}
+   * Blocking version of {@link #createTempDirectory(String)}
    */
   String createTempDirectoryBlocking(String prefix);
 
@@ -807,20 +559,12 @@ public interface FileSystem {
    * @param prefix  the prefix string to be used in generating the directory's name;
    *                may be {@code null}
    * @param perms   the permissions string
-   * @param handler the handler that will be called on completion
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  FileSystem createTempDirectory(String prefix, String perms, Handler<AsyncResult<String>> handler);
-
-  /**
-   * Like {@link #createTempDirectory(String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified on completion
    */
   Future<String> createTempDirectory(String prefix, String perms);
 
   /**
-   * Blocking version of {@link #createTempDirectory(String, String, Handler)}
+   * Blocking version of {@link #createTempDirectory(String, String)}
    */
   String createTempDirectoryBlocking(String prefix, String perms);
 
@@ -843,20 +587,12 @@ public interface FileSystem {
    * @param prefix  the prefix string to be used in generating the directory's name;
    *                may be {@code null}
    * @param perms   the permissions string
-   * @param handler the handler that will be called on completion
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  FileSystem createTempDirectory(String dir, String prefix, String perms, Handler<AsyncResult<String>> handler);
-
-  /**
-   * Like {@link #createTempDirectory(String, String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified on completion
    */
   Future<String> createTempDirectory(String dir, String prefix, String perms);
 
   /**
-   * Blocking version of {@link #createTempDirectory(String, String, String, Handler)}
+   * Blocking version of {@link #createTempDirectory(String, String, String)}
    */
   String createTempDirectoryBlocking(String dir, String prefix, String perms);
 
@@ -875,20 +611,12 @@ public interface FileSystem {
    *                may be {@code null}
    * @param suffix  the suffix string to be used in generating the file's name;
    *                may be {@code null}, in which case "{@code .tmp}" is used
-   * @param handler the handler that will be called on completion
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  FileSystem createTempFile(String prefix, String suffix, Handler<AsyncResult<String>> handler);
-
-  /**
-   * Like {@link #createTempFile(String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified on completion
    */
   Future<String> createTempFile(String prefix, String suffix);
 
   /**
-   * Blocking version of {@link #createTempFile(String, String, Handler)}
+   * Blocking version of {@link #createTempFile(String, String)}
    */
   String createTempFileBlocking(String prefix, String suffix);
 
@@ -906,20 +634,12 @@ public interface FileSystem {
    *                may be {@code null}
    * @param suffix  the suffix string to be used in generating the file's name;
    *                may be {@code null}, in which case "{@code .tmp}" is used
-   * @param handler the handler that will be called on completion
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  FileSystem createTempFile(String prefix, String suffix, String perms, Handler<AsyncResult<String>> handler);
-
-  /**
-   * Like {@link #createTempFile(String, String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified on completion
    */
   Future<String> createTempFile(String prefix, String suffix, String perms);
 
   /**
-   * Blocking version of {@link #createTempFile(String, String, String, Handler)}
+   * Blocking version of {@link #createTempFile(String, String, String)}
    */
   String createTempFileBlocking(String prefix, String suffix, String perms);
 
@@ -944,20 +664,12 @@ public interface FileSystem {
    * @param suffix  the suffix string to be used in generating the file's name;
    *                may be {@code null}, in which case "{@code .tmp}" is used
    * @param perms   the permissions string
-   * @param handler the handler that will be called on completion
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  FileSystem createTempFile(String dir, String prefix, String suffix, String perms, Handler<AsyncResult<String>> handler);
-
-  /**
-   * Like {@link #createTempFile(String, String, String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified on completion
    */
   Future<String> createTempFile(String dir, String prefix, String suffix, String perms);
 
   /**
-   * Blocking version of {@link #createTempFile(String, String, String, String, Handler)}
+   * Blocking version of {@link #createTempFile(String, String, String, String)}
    */
   String createTempFileBlocking(String dir, String prefix, String suffix, String perms);
 

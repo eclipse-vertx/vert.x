@@ -74,19 +74,9 @@ public class FileSystemImpl implements FileSystem {
     this.vertx = vertx;
   }
 
-  public FileSystem copy(String from, String to, Handler<AsyncResult<Void>> handler) {
-    return copy(from, to, DEFAULT_OPTIONS, handler);
-  }
-
   @Override
   public Future<Void> copy(String from, String to) {
     return copy(from, to, DEFAULT_OPTIONS);
-  }
-
-  @Override
-  public FileSystem copy(String from, String to, CopyOptions options, Handler<AsyncResult<Void>> handler) {
-    copy(from, to, options).onComplete(handler);
-    return this;
   }
 
   @Override
@@ -96,11 +86,6 @@ public class FileSystemImpl implements FileSystem {
 
   public FileSystem copyBlocking(String from, String to) {
     copyInternal(from, to, DEFAULT_OPTIONS).perform();
-    return this;
-  }
-
-  public FileSystem copyRecursive(String from, String to, boolean recursive, Handler<AsyncResult<Void>> handler) {
-    copyRecursive(from, to, recursive).onComplete(handler);
     return this;
   }
 
@@ -114,19 +99,9 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public FileSystem move(String from, String to, Handler<AsyncResult<Void>> handler) {
-    return move(from, to, DEFAULT_OPTIONS, handler);
-  }
-
   @Override
   public Future<Void> move(String from, String to) {
     return move(from, to, DEFAULT_OPTIONS);
-  }
-
-  @Override
-  public FileSystem move(String from, String to, CopyOptions options, Handler<AsyncResult<Void>> handler) {
-    move(from, to, options).onComplete(handler);
-    return this;
   }
 
   @Override
@@ -136,11 +111,6 @@ public class FileSystemImpl implements FileSystem {
 
   public FileSystem moveBlocking(String from, String to) {
     moveInternal(from, to, DEFAULT_OPTIONS).perform();
-    return this;
-  }
-
-  public FileSystem truncate(String path, long len, Handler<AsyncResult<Void>> handler) {
-    truncate(path, len).onComplete(handler);
     return this;
   }
 
@@ -154,11 +124,6 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public FileSystem chmod(String path, String perms, Handler<AsyncResult<Void>> handler) {
-    chmod(path, perms).onComplete(handler);
-    return this;
-  }
-
   @Override
   public Future<Void> chmod(String path, String perms) {
     return chmodInternal(path, perms).run();
@@ -166,11 +131,6 @@ public class FileSystemImpl implements FileSystem {
 
   public FileSystem chmodBlocking(String path, String perms) {
     chmodInternal(path, perms).perform();
-    return this;
-  }
-
-  public FileSystem chmodRecursive(String path, String perms, String dirPerms, Handler<AsyncResult<Void>> handler) {
-    chmodRecursive(path, perms, dirPerms).onComplete(handler);
     return this;
   }
 
@@ -184,11 +144,6 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public FileSystem chown(String path, String user, String group, Handler<AsyncResult<Void>> handler) {
-    chown(path, user, group).onComplete(handler);
-    return this;
-  }
-
   @Override
   public Future<Void> chown(String path, @Nullable String user, @Nullable String group) {
     return chownInternal(path, user, group).run();
@@ -196,11 +151,6 @@ public class FileSystemImpl implements FileSystem {
 
   public FileSystem chownBlocking(String path, String user, String group) {
     chownInternal(path, user, group).perform();
-    return this;
-  }
-
-  public FileSystem props(String path, Handler<AsyncResult<FileProps>> handler) {
-    props(path).onComplete(handler);
     return this;
   }
 
@@ -213,11 +163,6 @@ public class FileSystemImpl implements FileSystem {
     return propsInternal(path).perform();
   }
 
-  public FileSystem lprops(String path, Handler<AsyncResult<FileProps>> handler) {
-    lprops(path).onComplete(handler);
-    return this;
-  }
-
   @Override
   public Future<FileProps> lprops(String path) {
     return lpropsInternal(path).run();
@@ -227,11 +172,6 @@ public class FileSystemImpl implements FileSystem {
     return lpropsInternal(path).perform();
   }
 
-  public FileSystem link(String link, String existing, Handler<AsyncResult<Void>> handler) {
-    link(link, existing).onComplete(handler);
-    return this;
-  }
-
   @Override
   public Future<Void> link(String link, String existing) {
     return linkInternal(link, existing).run();
@@ -239,11 +179,6 @@ public class FileSystemImpl implements FileSystem {
 
   public FileSystem linkBlocking(String link, String existing) {
     linkInternal(link, existing).perform();
-    return this;
-  }
-
-  public FileSystem symlink(String link, String existing, Handler<AsyncResult<Void>> handler) {
-    symlink(link, existing).onComplete(handler);
     return this;
   }
 
@@ -257,11 +192,6 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public FileSystem unlink(String link, Handler<AsyncResult<Void>> handler) {
-    unlink(link).onComplete(handler);
-    return this;
-  }
-
   @Override
   public Future<Void> unlink(String link) {
     return unlinkInternal(link).run();
@@ -269,11 +199,6 @@ public class FileSystemImpl implements FileSystem {
 
   public FileSystem unlinkBlocking(String link) {
     unlinkInternal(link).perform();
-    return this;
-  }
-
-  public FileSystem readSymlink(String link, Handler<AsyncResult<String>> handler) {
-    readSymlink(link).onComplete(handler);
     return this;
   }
 
@@ -286,11 +211,6 @@ public class FileSystemImpl implements FileSystem {
     return readSymlinkInternal(link).perform();
   }
 
-  public FileSystem delete(String path, Handler<AsyncResult<Void>> handler) {
-    delete(path).onComplete(handler);
-    return this;
-  }
-
   @Override
   public Future<Void> delete(String path) {
     return deleteInternal(path).run();
@@ -298,11 +218,6 @@ public class FileSystemImpl implements FileSystem {
 
   public FileSystem deleteBlocking(String path) {
     deleteInternal(path).perform();
-    return this;
-  }
-
-  public FileSystem deleteRecursive(String path, boolean recursive, Handler<AsyncResult<Void>> handler) {
-    deleteRecursive(path, recursive).onComplete(handler);
     return this;
   }
 
@@ -316,11 +231,6 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public FileSystem mkdir(String path, Handler<AsyncResult<Void>> handler) {
-    mkdir(path).onComplete(handler);
-    return this;
-  }
-
   @Override
   public Future<Void> mkdir(String path) {
     return mkdirInternal(path).run();
@@ -328,11 +238,6 @@ public class FileSystemImpl implements FileSystem {
 
   public FileSystem mkdirBlocking(String path) {
     mkdirInternal(path).perform();
-    return this;
-  }
-
-  public FileSystem mkdirs(String path, Handler<AsyncResult<Void>> handler) {
-    mkdirs(path).onComplete(handler);
     return this;
   }
 
@@ -346,11 +251,6 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public FileSystem mkdir(String path, String perms, Handler<AsyncResult<Void>> handler) {
-    mkdir(path, perms).onComplete(handler);
-    return this;
-  }
-
   @Override
   public Future<Void> mkdir(String path, String perms) {
     return mkdirInternal(path, perms).run();
@@ -358,11 +258,6 @@ public class FileSystemImpl implements FileSystem {
 
   public FileSystem mkdirBlocking(String path, String perms) {
     mkdirInternal(path, perms).perform();
-    return this;
-  }
-
-  public FileSystem mkdirs(String path, String perms, Handler<AsyncResult<Void>> handler) {
-    mkdirs(path, perms).onComplete(handler);
     return this;
   }
 
@@ -376,11 +271,6 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public FileSystem readDir(String path, Handler<AsyncResult<List<String>>> handler) {
-    readDir(path).onComplete(handler);
-    return this;
-  }
-
   @Override
   public Future<List<String>> readDir(String path) {
     return readDirInternal(path).run();
@@ -388,11 +278,6 @@ public class FileSystemImpl implements FileSystem {
 
   public List<String> readDirBlocking(String path) {
     return readDirInternal(path).perform();
-  }
-
-  public FileSystem readDir(String path, String filter, Handler<AsyncResult<List<String>>> handler) {
-    readDir(path, filter).onComplete(handler);
-    return this;
   }
 
   @Override
@@ -404,11 +289,6 @@ public class FileSystemImpl implements FileSystem {
     return readDirInternal(path, filter).perform();
   }
 
-  public FileSystem readFile(String path, Handler<AsyncResult<Buffer>> handler) {
-    readFile(path).onComplete(handler);
-    return this;
-  }
-
   @Override
   public Future<Buffer> readFile(String path) {
     return readFileInternal(path).run();
@@ -416,11 +296,6 @@ public class FileSystemImpl implements FileSystem {
 
   public Buffer readFileBlocking(String path) {
     return readFileInternal(path).perform();
-  }
-
-  public FileSystem writeFile(String path, Buffer data, Handler<AsyncResult<Void>> handler) {
-    writeFile(path, data).onComplete(handler);
-    return this;
   }
 
   @Override
@@ -433,11 +308,6 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public FileSystem open(String path, OpenOptions options, Handler<AsyncResult<AsyncFile>> handler) {
-    open(path, options).onComplete(handler);
-    return this;
-  }
-
   @Override
   public Future<AsyncFile> open(String path, OpenOptions options) {
     return openInternal(path, options).run();
@@ -447,11 +317,6 @@ public class FileSystemImpl implements FileSystem {
     return openInternal(path, options).perform();
   }
 
-  public FileSystem createFile(String path, Handler<AsyncResult<Void>> handler) {
-    createFile(path).onComplete(handler);
-    return this;
-  }
-
   @Override
   public Future<Void> createFile(String path) {
     return createFileInternal(path).run();
@@ -459,11 +324,6 @@ public class FileSystemImpl implements FileSystem {
 
   public FileSystem createFileBlocking(String path) {
     createFileInternal(path).perform();
-    return this;
-  }
-
-  public FileSystem createFile(String path, String perms, Handler<AsyncResult<Void>> handler) {
-    createFile(path, perms).onComplete(handler);
     return this;
   }
 
@@ -477,11 +337,6 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
-  public FileSystem exists(String path, Handler<AsyncResult<Boolean>> handler) {
-    exists(path).onComplete(handler);
-    return this;
-  }
-
   @Override
   public Future<Boolean> exists(String path) {
     return existsInternal(path).run();
@@ -491,11 +346,6 @@ public class FileSystemImpl implements FileSystem {
     return existsInternal(path).perform();
   }
 
-  public FileSystem fsProps(String path, Handler<AsyncResult<FileSystemProps>> handler) {
-    fsProps(path).onComplete(handler);
-    return this;
-  }
-
   @Override
   public Future<FileSystemProps> fsProps(String path) {
     return fsPropsInternal(path).run();
@@ -503,12 +353,6 @@ public class FileSystemImpl implements FileSystem {
 
   public FileSystemProps fsPropsBlocking(String path) {
     return fsPropsInternal(path).perform();
-  }
-
-  @Override
-  public FileSystem createTempDirectory(String prefix, Handler<AsyncResult<String>> handler) {
-    createTempDirectory(prefix).onComplete(handler);
-    return this;
   }
 
   @Override
@@ -522,12 +366,6 @@ public class FileSystemImpl implements FileSystem {
   }
 
   @Override
-  public FileSystem createTempDirectory(String prefix, String perms, Handler<AsyncResult<String>> handler) {
-    createTempDirectory(prefix, perms).onComplete(handler);
-    return this;
-  }
-
-  @Override
   public Future<String> createTempDirectory(String prefix, String perms) {
     return createTempDirectoryInternal(null, prefix, perms).run();
   }
@@ -535,12 +373,6 @@ public class FileSystemImpl implements FileSystem {
   @Override
   public String createTempDirectoryBlocking(String prefix, String perms) {
     return createTempDirectoryInternal(null, prefix, perms).perform();
-  }
-
-  @Override
-  public FileSystem createTempDirectory(String dir, String prefix, String perms, Handler<AsyncResult<String>> handler) {
-    createTempDirectory(dir, prefix, perms).onComplete(handler);
-    return this;
   }
 
   @Override
@@ -554,12 +386,6 @@ public class FileSystemImpl implements FileSystem {
   }
 
   @Override
-  public FileSystem createTempFile(String prefix, String suffix, Handler<AsyncResult<String>> handler) {
-    createTempFile(prefix, suffix).onComplete(handler);
-    return this;
-  }
-
-  @Override
   public Future<String> createTempFile(String prefix, String suffix) {
     return createTempFileInternal(null, prefix, suffix, null).run();
   }
@@ -570,12 +396,6 @@ public class FileSystemImpl implements FileSystem {
   }
 
   @Override
-  public FileSystem createTempFile(String prefix, String suffix, String perms, Handler<AsyncResult<String>> handler) {
-    createTempFile(prefix, suffix, perms).onComplete(handler);
-    return this;
-  }
-
-  @Override
   public Future<String> createTempFile(String prefix, String suffix, String perms) {
     return createTempFileInternal(null, prefix, suffix, perms).run();
   }
@@ -583,13 +403,6 @@ public class FileSystemImpl implements FileSystem {
   @Override
   public String createTempFileBlocking(String prefix, String suffix, String perms) {
     return createTempFileInternal(null, prefix, suffix, perms).perform();
-  }
-
-
-  @Override
-  public FileSystem createTempFile(String dir, String prefix, String suffix, String perms, Handler<AsyncResult<String>> handler) {
-    createTempFile(dir, prefix, suffix, perms).onComplete(handler);
-    return this;
   }
 
   @Override

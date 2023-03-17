@@ -240,12 +240,6 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   abstract boolean reset(Throwable cause);
 
   @Override
-  public HttpClientRequest response(Handler<AsyncResult<HttpClientResponse>> handler) {
-    responsePromise.future().onComplete(handler);
-    return this;
-  }
-
-  @Override
   public Future<HttpClientResponse> response() {
     return responsePromise.future();
   }

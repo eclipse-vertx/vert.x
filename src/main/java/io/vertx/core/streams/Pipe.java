@@ -71,24 +71,14 @@ public interface Pipe<T> {
   Pipe<T> endOnComplete(boolean end);
 
   /**
-   * Same as {@link #to(WriteStream, Handler)} but returns a {@code Future} of the asynchronous result
-   */
-  default Future<Void> to(WriteStream<T> dst) {
-    Promise<Void> promise = Promise.promise();
-    to(dst, promise);
-    return promise.future();
-  }
-
-  /**
    * Start to pipe the elements to the destination {@code WriteStream}.
    * <p>
    * When the operation fails with a write error, the source stream is resumed.
    *
    * @param dst the destination write stream
-   * @param completionHandler the handler called when the pipe operation completes
+   * @return a future notified when the pipe operation completes
    */
-  @Deprecated
-  void to(WriteStream<T> dst, Handler<AsyncResult<Void>> completionHandler);
+  Future<Void> to(WriteStream<T> dst);
 
   /**
    * Close the pipe.

@@ -79,9 +79,9 @@ If your application doesn't need data to be shared with every other node, you ca
 
 ==== Putting data in a map
 
-You put data in a map with {@link io.vertx.core.shareddata.AsyncMap#put(java.lang.Object,java.lang.Object,io.vertx.core.Handler)}.
+You put data in a map with {@link io.vertx.core.shareddata.AsyncMap#put(java.lang.Object,java.lang.Object)}.
 
-The actual put is asynchronous and the handler is notified once it is complete:
+The actual put is asynchronous and the returned future is notified once it is complete:
 
 [source,$lang]
 ----
@@ -90,9 +90,9 @@ The actual put is asynchronous and the handler is notified once it is complete:
 
 ==== Getting data from a map
 
-You get data from a map with {@link io.vertx.core.shareddata.AsyncMap#get(java.lang.Object,io.vertx.core.Handler)}.
+You get data from a map with {@link io.vertx.core.shareddata.AsyncMap#get(java.lang.Object)}.
 
-The actual get is asynchronous and the handler is notified with the result some time later:
+The actual get is asynchronous and the returned future is notified with the result some time later:
 
 [source,$lang]
 ----
@@ -112,8 +112,8 @@ This is useful when you want to do something or access a resource on only one no
 
 Asynchronous locks have an asynchronous API unlike most lock APIs which block the calling thread until the lock is obtained.
 
-To obtain a lock use {@link io.vertx.core.shareddata.SharedData#getLock(java.lang.String,io.vertx.core.Handler)}.
-This won't block, but when the lock is available, the handler will be called with an instance of {@link io.vertx.core.shareddata.Lock}, signalling that you now own the lock.
+To obtain a lock use {@link io.vertx.core.shareddata.SharedData#getLock(java.lang.String)}.
+This won't block, but when the lock is available, the returned future is completed with an instance of {@link io.vertx.core.shareddata.Lock}, signalling that you now own the lock.
 
 While you own the lock, no other caller, locally or on the cluster, will be able to obtain the lock.
 
@@ -149,7 +149,7 @@ It's often useful to maintain an atomic counter locally or across the different 
 
 You can do this with {@link io.vertx.core.shareddata.Counter}.
 
-You obtain an instance with {@link io.vertx.core.shareddata.SharedData#getCounter(java.lang.String,io.vertx.core.Handler)}:
+You obtain an instance with {@link io.vertx.core.shareddata.SharedData#getCounter(java.lang.String)}:
 
 [source,$lang]
 ----

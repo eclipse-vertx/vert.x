@@ -39,14 +39,7 @@ public interface NetClient extends Measured {
    *
    * @param port  the port
    * @param host  the host
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  NetClient connect(int port, String host, Handler<AsyncResult<NetSocket>> connectHandler);
-
-  /**
-   * Like {@link #connect(int, String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified when the socket is connected
    */
   Future<NetSocket> connect(int port, String host);
 
@@ -59,14 +52,7 @@ public interface NetClient extends Measured {
    * @param port the port
    * @param host the host
    * @param serverName the SNI server name
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  NetClient connect(int port, String host, String serverName, Handler<AsyncResult<NetSocket>> connectHandler);
-
-  /**
-   * Like {@link #connect(int, String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified when the socket is connected
    */
   Future<NetSocket> connect(int port, String host, String serverName);
 
@@ -76,14 +62,7 @@ public interface NetClient extends Measured {
    * The connect is done asynchronously and on success, a {@link NetSocket} instance is supplied via the {@code connectHandler} instance
    *
    * @param remoteAddress the remote address
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  NetClient connect(SocketAddress remoteAddress, Handler<AsyncResult<NetSocket>> connectHandler);
-
-  /**
-   * Like {@link #connect(SocketAddress, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified when the socket is connected
    */
   Future<NetSocket> connect(SocketAddress remoteAddress);
 
@@ -94,14 +73,7 @@ public interface NetClient extends Measured {
    *
    * @param remoteAddress the remote address
    * @param serverName the SNI server name
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  NetClient connect(SocketAddress remoteAddress, String serverName, Handler<AsyncResult<NetSocket>> connectHandler);
-
-  /**
-   * Like {@link #connect(SocketAddress, String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified when the socket is connected
    */
   Future<NetSocket> connect(SocketAddress remoteAddress, String serverName);
 
@@ -110,12 +82,7 @@ public interface NetClient extends Measured {
    * <p>
    * Any sockets which have not been closed manually will be closed here. The close is asynchronous and may not
    * complete until some time after the method has returned.
-   */
-  @Deprecated
-  void close(Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #close(Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified when the client is closed
    */
   Future<Void> close();
 
@@ -129,18 +96,4 @@ public interface NetClient extends Measured {
    */
   Future<Void> updateSSLOptions(SSLOptions options);
 
-  /**
-   * Like {@link #updateSSLOptions(SSLOptions)}  but supplying a handler that will be called when the update
-   * happened (or has failed).
-   *
-   * @param options the new SSL options
-   * @param handler the update handler
-   */
-  @Deprecated
-  default void updateSSLOptions(SSLOptions options, Handler<AsyncResult<Void>> handler) {
-    Future<Void> fut = updateSSLOptions(options);
-    if (handler != null) {
-      fut.onComplete(handler);
-    }
-  }
 }

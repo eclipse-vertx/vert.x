@@ -316,7 +316,6 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider, Clos
     return promise.future();
   }
 
-  @Override
   public void webSocket(WebSocketConnectOptions connectOptions, Handler<AsyncResult<WebSocket>> handler) {
     webSocket(connectOptions, vertx.promise(handler));
   }
@@ -401,22 +400,18 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider, Clos
     return promise.future();
   }
 
-  @Override
   public void webSocket(int port, String host, String requestURI, Handler<AsyncResult<WebSocket>> handler) {
     webSocket(new WebSocketConnectOptions().setURI(requestURI).setHost(host).setPort(port), handler);
   }
 
-  @Override
   public void webSocket(String host, String requestURI, Handler<AsyncResult<WebSocket>> handler) {
     webSocket(options.getDefaultPort(), host, requestURI, handler);
   }
 
-  @Override
   public void webSocket(String requestURI, Handler<AsyncResult<WebSocket>> handler) {
     webSocket(options.getDefaultPort(), options.getDefaultHost(), requestURI, handler);
   }
 
-  @Override
   public void webSocketAbs(String url, MultiMap headers, WebsocketVersion version, List<String> subProtocols, Handler<AsyncResult<WebSocket>> handler) {
     URI uri;
     try {
@@ -452,23 +447,15 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider, Clos
   }
 
   @Override
-  public void request(RequestOptions options, Handler<AsyncResult<HttpClientRequest>> handler) {
-    ContextInternal ctx = vertx.getOrCreateContext();
-    PromiseInternal<HttpClientRequest> promise = ctx.promise(handler);
-    doRequest(options, promise);
-  }
-
-  @Override
   public Future<HttpClientRequest> request(RequestOptions options) {
     ContextInternal ctx = vertx.getOrCreateContext();
     PromiseInternal<HttpClientRequest> promise = ctx.promise();
-    doRequest(options, promise);
+    try {
+      doRequest(options, promise);
+    } catch (Exception e) {
+      return ctx.failedFuture(e);
+    }
     return promise.future();
-  }
-
-  @Override
-  public void request(HttpMethod method, int port, String host, String requestURI, Handler<AsyncResult<HttpClientRequest>> handler) {
-    request(new RequestOptions().setMethod(method).setPort(port).setHost(host).setURI(requestURI), handler);
   }
 
   @Override
@@ -477,18 +464,8 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider, Clos
   }
 
   @Override
-  public void request(HttpMethod method, String host, String requestURI, Handler<AsyncResult<HttpClientRequest>> handler) {
-    request(method, options.getDefaultPort(), host, requestURI, handler);
-  }
-
-  @Override
   public Future<HttpClientRequest> request(HttpMethod method, String host, String requestURI) {
     return request(method, options.getDefaultPort(), host, requestURI);
-  }
-
-  @Override
-  public void request(HttpMethod method, String requestURI, Handler<AsyncResult<HttpClientRequest>> handler) {
-    request(method, options.getDefaultPort(), options.getDefaultHost(), requestURI, handler);
   }
 
   @Override
@@ -507,11 +484,6 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider, Clos
     webSocketCM.close();
     httpCM.close();
     completion.complete();
-  }
-
-  @Override
-  public void close(Handler<AsyncResult<Void>> handler) {
-    netClient.close(handler);
   }
 
   @Override

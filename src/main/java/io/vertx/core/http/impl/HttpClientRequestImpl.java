@@ -214,16 +214,8 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   @Override
   public Future<Void> sendHead() {
-    Promise<Void> promise = context.promise();
-    sendHead(promise);
-    return promise.future();
-  }
-
-  @Override
-  public HttpClientRequest sendHead(Handler<AsyncResult<Void>> headersHandler) {
     checkEnded();
-    doWrite(null, false, false, headersHandler);
-    return this;
+    return doWrite(null, false, false);
   }
 
   @Override
@@ -231,16 +223,8 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     if (client.options().isPipelining()) {
       return context.failedFuture("Cannot upgrade a pipe-lined request");
     }
-    doWrite(null, false, true, ar -> {});
+    doWrite(null, false, true);
     return response();
-  }
-
-  @Override
-  public void connect(Handler<AsyncResult<HttpClientResponse>> handler) {
-    Future<HttpClientResponse> fut = connect();
-    if (handler != null) {
-      fut.onComplete(handler);
-    }
   }
 
   @Override
@@ -299,7 +283,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   private void handleNextRequest(HttpClientRequest next, Handler<AsyncResult<HttpClientResponse>> handler, long timeoutMs) {
-    next.response(handler);
+    next.response().onComplete(handler);
     next.exceptionHandler(exceptionHandler());
     exceptionHandler(null);
     next.pushHandler(pushHandler());
@@ -370,81 +354,47 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   @Override
   public Future<Void> end(String chunk) {
-    Promise<Void> promise = context.promise();
-    end(chunk, promise);
-    return promise.future();
-  }
-
-  @Override
-  public void end(String chunk, Handler<AsyncResult<Void>> handler) {
-    write(Buffer.buffer(chunk).getByteBuf(), true, handler);
+    return write(Buffer.buffer(chunk).getByteBuf(), true);
   }
 
   @Override
   public Future<Void> end(String chunk, String enc) {
-    Promise<Void> promise = context.promise();
-    end(chunk, enc, promise);
-    return promise.future();
-  }
-
-  @Override
-  public void end(String chunk, String enc, Handler<AsyncResult<Void>> handler) {
     Objects.requireNonNull(enc, "no null encoding accepted");
-    write(Buffer.buffer(chunk, enc).getByteBuf(), true, handler);
+    return write(Buffer.buffer(chunk, enc).getByteBuf(), true);
   }
 
   @Override
   public Future<Void> end(Buffer chunk) {
-    Promise<Void> promise = context.promise();
-    write(chunk.getByteBuf(), true, promise);
-    return promise.future();
+    return write(chunk.getByteBuf(), true);
   }
 
   @Override
   public Future<Void> end() {
-    Promise<Void> promise = context.promise();
-    write(null, true, promise);
-    return promise.future();
+    return write(null, true);
   }
 
   @Override
   public Future<Void> write(Buffer chunk) {
-    Promise<Void> promise = context.promise();
     ByteBuf buf = chunk.getByteBuf();
-    write(buf, false, promise);
-    return promise.future();
+    return write(buf, false);
   }
 
   @Override
   public Future<Void> write(String chunk) {
-    Promise<Void> promise = context.promise();
-    write(chunk, promise);
-    return promise.future();
-  }
-
-  @Override
-  public void write(String chunk, Handler<AsyncResult<Void>> handler) {
-    write(Buffer.buffer(chunk).getByteBuf(), false, handler);
+    return write(Buffer.buffer(chunk).getByteBuf(), false);
   }
 
   @Override
   public Future<Void> write(String chunk, String enc) {
-    Promise<Void> promise = context.promise();
-    write(chunk, enc, promise);
-    return promise.future();
-  }
-
-  @Override
-  public void write(String chunk, String enc, Handler<AsyncResult<Void>> handler) {
     Objects.requireNonNull(enc, "no null encoding accepted");
-    write(Buffer.buffer(chunk, enc).getByteBuf(), false, handler);
+    return write(Buffer.buffer(chunk, enc).getByteBuf(), false);
   }
 
   private boolean requiresContentLength() {
     return !chunked && (headers == null || !headers.contains(CONTENT_LENGTH)) && !isConnect;
   }
 
-  private void write(ByteBuf buff, boolean end, Handler<AsyncResult<Void>> completionHandler) {
+  private Future<Void> write(ByteBuf buff, boolean end) {
     if (end) {
       if (buff != null && requiresContentLength()) {
         headers().set(CONTENT_LENGTH, String.valueOf(buff.readableBytes()));
@@ -453,16 +403,15 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
         + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
     }
-    doWrite(buff, end, false, completionHandler);
+    return doWrite(buff, end, false);
   }
 
-  private void doWrite(ByteBuf buff, boolean end, boolean connect, Handler<AsyncResult<Void>> completionHandler) {
+  private Future<Void> doWrite(ByteBuf buff, boolean end, boolean connect) {
     boolean writeHead;
     boolean writeEnd;
     synchronized (this) {
       if (ended) {
-        completionHandler.handle(Future.failedFuture(new IllegalStateException("Request already complete")));
-        return;
+        return context.failedFuture(new IllegalStateException("Request already complete"));
       }
       checkResponseHandler();
       if (!headWritten) {
@@ -476,6 +425,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       ended = end;
     }
 
+    PromiseInternal<Void> promise = context.promise();
     if (writeHead) {
       HttpMethod method = getMethod();
       String uri = getURI();
@@ -483,16 +433,17 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         uri = "/";
       }
       HttpRequestHead head = new HttpRequestHead(method, uri, headers, authority(), absoluteURI(), traceOperation);
-      stream.writeHead(head, chunked, buff, writeEnd, priority, connect, completionHandler);
+      stream.writeHead(head, chunked, buff, writeEnd, priority, connect, promise);
     } else {
       if (buff == null && !end) {
         throw new IllegalArgumentException();
       }
-      stream.writeBuffer(buff, writeEnd, completionHandler);
+      stream.writeBuffer(buff, writeEnd, promise);
     }
     if (end) {
       tryComplete();
     }
+    return promise.future();
   }
 
   private void checkEnded() {

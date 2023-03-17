@@ -15,7 +15,6 @@ import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.Unstable;
 import io.vertx.codegen.annotations.VertxGen;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
@@ -67,15 +66,6 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
   Future<Void> close();
 
   /**
-   * Close the file. The actual close happens asynchronously.
-   * The handler will be called when the close is complete, or an error occurs.
-   *
-   * @param handler  the handler
-   */
-  @Deprecated
-  void close(Handler<AsyncResult<Void>> handler);
-
-  /**
    * Write a {@link io.vertx.core.buffer.Buffer} to the file at position {@code position} in the file, asynchronously.
    * <p>
    * If {@code position} lies outside of the current size
@@ -83,18 +73,10 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
    * <p>
    * When multiple writes are invoked on the same file
    * there are no guarantees as to order in which those writes actually occur
-   * <p>
-   * The handler will be called when the write is complete, or if an error occurs.
    *
    * @param buffer  the buffer to write
    * @param position  the position in the file to write it at
-   * @param handler  the handler to call when the write is complete
-   */
-  @Deprecated
-  void write(Buffer buffer, long position, Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #write(Buffer, long, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified when the write is complete
    */
   Future<Void> write(Buffer buffer, long position);
 
@@ -105,22 +87,12 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
    * <p>
    * If data is read past the end of the file then zero bytes will be read.<p>
    * When multiple reads are invoked on the same file there are no guarantees as to order in which those reads actually occur.
-   * <p>
-   * The handler will be called when the close is complete, or if an error occurs.
    *
    * @param buffer  the buffer to read into
    * @param offset  the offset into the buffer where the data will be read
    * @param position  the position in the file where to start reading
    * @param length  the number of bytes to read
-   * @param handler  the handler to call when the write is complete
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  AsyncFile read(Buffer buffer, int offset, long position, int length, Handler<AsyncResult<Buffer>> handler);
-
-  /**
-   * Like {@link #read(Buffer, int, long, int, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified when the write is complete
    */
   Future<Buffer> read(Buffer buffer, int offset, long position, int length);
 
@@ -134,13 +106,6 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @return a future completed with the result
    */
   Future<Void> flush();
-
-  /**
-   * Same as {@link #flush} but the handler will be called when the flush is complete or if an error occurs
-   */
-  @Fluent
-  @Deprecated
-  AsyncFile flush(Handler<AsyncResult<Void>> handler);
 
   /**
    * Sets the position from which data will be read from when using the file as a {@link io.vertx.core.streams.ReadStream}.
@@ -196,17 +161,6 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
   long sizeBlocking();
 
   /**
-   * Like {@link #size()} but the {@code handler} will be called when the operation is complete or if an error occurs.
-   */
-  @Deprecated
-  default void size(Handler<AsyncResult<Long>> handler) {
-    Future<Long> future = size();
-    if (handler != null) {
-      future.onComplete(handler);
-    }
-  }
-
-  /**
    * @return the size of the file
    */
   Future<Long> size();
@@ -239,13 +193,6 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
   Future<AsyncFileLock> lock();
 
   /**
-   * Like {@link #lock()} but the {@code handler} will be called when the operation is complete or if an error occurs.
-   */
-  @Unstable
-  @Deprecated
-  void lock(Handler<AsyncResult<AsyncFileLock>> handler);
-
-  /**
    * Acquire a lock on a portion of this file.
    *
    * @param position where the region starts
@@ -255,12 +202,5 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
    */
   @Unstable
   Future<AsyncFileLock> lock(long position, long size, boolean shared);
-
-  /**
-   * Like {@link #lock(long, long, boolean)} but the {@code handler} will be called when the operation is complete or if an error occurs.
-   */
-  @Unstable
-  @Deprecated
-  void lock(long position, long size, boolean shared, Handler<AsyncResult<AsyncFileLock>> handler);
 
 }

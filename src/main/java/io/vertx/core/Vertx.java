@@ -58,7 +58,7 @@ import java.util.function.Supplier;
  * Most functionality in Vert.x core is fairly low level.
  * <p>
  * To create an instance of this class you can use the static factory methods: {@link #vertx},
- * {@link #vertx(io.vertx.core.VertxOptions)} and {@link #clusteredVertx(io.vertx.core.VertxOptions, Handler)}.
+ * {@link #vertx(io.vertx.core.VertxOptions)} and {@link #clusteredVertx(io.vertx.core.VertxOptions)}.
  * <p>
  * Please see the user manual for more detailed usage information.
  *
@@ -90,22 +90,14 @@ public interface Vertx extends Measured {
   /**
    * Creates a clustered instance using the specified options.
    * <p>
-   * The instance is created asynchronously and the resultHandler is called with the result when it is ready.
+   * The instance is created asynchronously and the returned future is completed with the result when it is ready.
    *
    * @param options  the options to use
-   * @param resultHandler  the result handler that will receive the result
-   */
-  @Deprecated
-  static void clusteredVertx(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
-    new VertxBuilder(options).init().clusteredVertx(resultHandler);
-  }
-
-  /**
-   * Same as {@link #clusteredVertx(VertxOptions, Handler)} but with an {@code handler} called when the operation completes
+   * @return a future completed with the clustered vertx
    */
   static Future<Vertx> clusteredVertx(VertxOptions options) {
     Promise<Vertx> promise = Promise.promise();
-    clusteredVertx(options, promise);
+    new VertxBuilder(options).init().clusteredVertx(promise);
     return promise.future();
   }
 
@@ -352,19 +344,16 @@ public interface Vertx extends Measured {
   Future<Void> close();
 
   /**
-   * Like {@link #close} but the completionHandler will be called when the close is complete
-   *
-   * @param completionHandler  The handler will be notified when the close is complete.
-   */
-  @Deprecated
-  void close(Handler<AsyncResult<Void>> completionHandler);
-
-  /**
    * Deploy a verticle instance that you have created yourself.
    * <p>
    * Vert.x will assign the verticle a context and start the verticle.
    * <p>
    * The actual deploy happens asynchronously and may not complete until after the call has returned.
+   * <p>
+   * If the deployment is successful the result will contain a string representing the unique deployment ID of the
+   * deployment.
+   * <p>
+   * This deployment ID can subsequently be used to undeploy the verticle.
    *
    * @param verticle  the verticle instance to deploy.
    * @return a future completed with the result
@@ -373,21 +362,6 @@ public interface Vertx extends Measured {
   default Future<String> deployVerticle(Verticle verticle) {
     return deployVerticle(verticle, new DeploymentOptions());
   }
-
-  /**
-   * Like {@link #deployVerticle(Verticle)} but the completionHandler will be notified when the deployment is complete.
-   * <p>
-   * If the deployment is successful the result will contain a string representing the unique deployment ID of the
-   * deployment.
-   * <p>
-   * This deployment ID can subsequently be used to undeploy the verticle.
-   *
-   * @param verticle  the verticle instance to deploy
-   * @param completionHandler  a handler which will be notified when the deployment is complete
-   */
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  @Deprecated
-  void deployVerticle(Verticle verticle, Handler<AsyncResult<String>> completionHandler);
 
   /**
    * Like {@link #deployVerticle(Verticle)} but {@link io.vertx.core.DeploymentOptions} are provided to configure the
@@ -423,43 +397,16 @@ public interface Vertx extends Measured {
   Future<String> deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options);
 
   /**
-   * Like {@link #deployVerticle(Verticle, Handler)} but {@link io.vertx.core.DeploymentOptions} are provided to configure the
-   * deployment.
-   *
-   * @param verticle  the verticle instance to deploy
-   * @param options  the deployment options.
-   * @param completionHandler  a handler which will be notified when the deployment is complete
-   */
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  @Deprecated
-  void deployVerticle(Verticle verticle, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler);
-
-  /**
-   * Like {@link #deployVerticle(Verticle, DeploymentOptions, Handler)} but {@link Verticle} instance is created by
-   * invoking the default constructor of {@code verticleClass}.
-   */
-  @GenIgnore
-  void deployVerticle(Class<? extends Verticle> verticleClass, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler);
-
-  /**
-   * Like {@link #deployVerticle(Verticle, DeploymentOptions, Handler)} but {@link Verticle} instance is created by
-   * invoking the {@code verticleSupplier}.
-   * <p>
-   * The supplier will be invoked as many times as {@link DeploymentOptions#getInstances()}.
-   * It must not return the same instance twice.
-   * <p>
-   * Note that the supplier will be invoked on the caller thread.
-   */
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  @Deprecated
-  void deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler);
-
-  /**
    * Deploy a verticle instance given a name.
    * <p>
    * Given the name, Vert.x selects a {@link VerticleFactory} instance to use to instantiate the verticle.
    * <p>
    * For the rules on how factories are selected please consult the user manual.
+   * <p>
+   * If the deployment is successful the result will contain a String representing the unique deployment ID of the
+   * deployment.
+   * <p>
+   * This deployment ID can subsequently be used to undeploy the verticle.
    *
    * @param name  the name.
    * @return a future completed with the result
@@ -467,23 +414,6 @@ public interface Vertx extends Measured {
   default Future<String> deployVerticle(String name) {
     return deployVerticle(name, new DeploymentOptions());
   }
-
-  /**
-   * Like {@link #deployVerticle(String)} but the completionHandler will be notified when the deployment is complete.
-   * <p>
-   * If the deployment is successful the result will contain a String representing the unique deployment ID of the
-   * deployment.
-   * <p>
-   * This deployment ID can subsequently be used to undeploy the verticle.
-   *
-   * @param name  The identifier
-   * @param completionHandler  a handler which will be notified when the deployment is complete
-   */
-  @Deprecated
-  default void deployVerticle(String name, Handler<AsyncResult<String>> completionHandler) {
-    deployVerticle(name, new DeploymentOptions(), completionHandler);
-  }
-
 
   /**
    * Like {@link #deployVerticle(Verticle)} but {@link io.vertx.core.DeploymentOptions} are provided to configure the
@@ -496,17 +426,6 @@ public interface Vertx extends Measured {
   Future<String> deployVerticle(String name, DeploymentOptions options);
 
   /**
-   * Like {@link #deployVerticle(String, Handler)} but {@link io.vertx.core.DeploymentOptions} are provided to configure the
-   * deployment.
-   *
-   * @param name  the name
-   * @param options  the deployment options.
-   * @param completionHandler  a handler which will be notified when the deployment is complete
-   */
-  @Deprecated
-  void deployVerticle(String name, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler);
-
-  /**
    * Undeploy a verticle deployment.
    * <p>
    * The actual undeployment happens asynchronously and may not complete until after the method has returned.
@@ -515,15 +434,6 @@ public interface Vertx extends Measured {
    * @return a future completed with the result
    */
   Future<Void> undeploy(String deploymentID);
-
-  /**
-   * Like {@link #undeploy(String) } but the completionHandler will be notified when the undeployment is complete.
-   *
-   * @param deploymentID  the deployment ID
-   * @param completionHandler  a handler which will be notified when the undeployment is complete
-   */
-  @Deprecated
-  void undeploy(String deploymentID, Handler<AsyncResult<Void>> completionHandler);
 
   /**
    * Return a Set of deployment IDs for the currently deployed deploymentIDs.
@@ -588,28 +498,11 @@ public interface Vertx extends Measured {
    * verticles using the event-bus or {@link Context#runOnContext(Handler)}
    *
    * @param blockingCodeHandler  handler representing the blocking code to run
-   * @param resultHandler  handler that will be called when the blocking code is complete
    * @param ordered  if true then if executeBlocking is called several times on the same context, the executions
    *                 for that context will be executed serially, not in parallel. if false then they will be no ordering
    *                 guarantees
    * @param <T> the type of the result
-   */
-  @Deprecated
-  default <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<@Nullable T>> resultHandler) {
-    Context context = getOrCreateContext();
-    context.executeBlocking(blockingCodeHandler, ordered, resultHandler);
-  }
-
-  /**
-   * Like {@link #executeBlocking(Handler, boolean, Handler)} called with ordered = true.
-   */
-  @Deprecated
-  default <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<@Nullable T>> resultHandler) {
-    executeBlocking(blockingCodeHandler, true, resultHandler);
-  }
-
-  /**
-   * Same as {@link #executeBlocking(Handler, boolean, Handler)} but with an {@code handler} called when the operation completes
+   * @return a future completed when the blocking code is complete
    */
   default <T> Future<@Nullable T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered) {
     Context context = getOrCreateContext();
@@ -617,7 +510,7 @@ public interface Vertx extends Measured {
   }
 
   /**
-   * Same as {@link #executeBlocking(Handler, Handler)} but with an {@code handler} called when the operation completes
+   * Like {@link #executeBlocking(Handler, boolean)} called with ordered = true.
    */
   default <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler) {
     return executeBlocking(blockingCodeHandler, true);

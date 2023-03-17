@@ -173,14 +173,6 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
   }
 
   @Override
-  public void streamToFileSystem(String filename, Handler<AsyncResult<Void>> handler) {
-    Future<Void> fut = streamToFileSystem(filename);
-    if (handler != null) {
-      fut.onComplete(handler);
-    }
-  }
-
-  @Override
   public Future<Void> streamToFileSystem(String filename) {
     synchronized (this) {
       if (pipe != null) {

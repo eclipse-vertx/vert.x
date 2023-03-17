@@ -131,7 +131,7 @@ return a +MessageConsumer+ with no handler set, and then set the handler on that
 When registering a handler on a clustered event bus, it can take some time for the registration to reach all
 nodes of the cluster.
 
-If you want to be notified when this has completed, you can register a {@link io.vertx.core.eventbus.MessageConsumer#completionHandler completion handler}
+If you want to be notified when this has completed, you can use the {@link io.vertx.core.eventbus.MessageConsumer#completion() completion future}
 on the +MessageConsumer+ object.
 
 [source,$lang]
@@ -143,8 +143,8 @@ on the +MessageConsumer+ object.
 
 To unregister a handler, call {@link io.vertx.core.eventbus.MessageConsumer#unregister}.
 
-If you are on a clustered event bus, un-registering can take some time to propagate across the nodes.  If you want to
-be notified when this is complete, use {@link io.vertx.core.eventbus.MessageConsumer#unregister(io.vertx.core.Handler)}.
+If you are on a clustered event bus, un-registering can take some time to propagate across the nodes. If you want to
+be notified when this is complete, use the future returned by {@link io.vertx.core.eventbus.MessageConsumer#unregister()}.
 
 [source,$lang]
 ----

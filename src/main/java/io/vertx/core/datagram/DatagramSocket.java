@@ -43,20 +43,11 @@ public interface DatagramSocket extends ReadStream<DatagramPacket>, Measured {
 
   /**
    * Write the given {@link io.vertx.core.buffer.Buffer} to the {@link io.vertx.core.net.SocketAddress}.
-   * The {@link io.vertx.core.Handler} will be notified once the write completes.
    *
    * @param packet  the {@link io.vertx.core.buffer.Buffer} to write
    * @param port  the host port of the remote peer
    * @param host  the host address of the remote peer
-   * @param handler  the {@link io.vertx.core.Handler} to notify once the write completes.
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  DatagramSocket send(Buffer packet, int port, String host, Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #send(Buffer, int, String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified once the write completes.
    */
   Future<Void> send(Buffer packet, int port, String host);
 
@@ -72,40 +63,22 @@ public interface DatagramSocket extends ReadStream<DatagramPacket>, Measured {
 
   /**
    * Write the given {@link String} to the {@link io.vertx.core.net.SocketAddress} using UTF8 encoding.
-   * The {@link Handler} will be notified once the write completes.
    *
    * @param str   the {@link String} to write
    * @param port  the host port of the remote peer
    * @param host  the host address of the remote peer
-   * @param handler  the {@link io.vertx.core.Handler} to notify once the write completes.
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  DatagramSocket send(String str, int port, String host, Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #send(String, int, String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified once the write completes.
    */
   Future<Void> send(String str, int port, String host);
 
   /**
    * Write the given {@link String} to the {@link io.vertx.core.net.SocketAddress} using the given encoding.
-   * The {@link Handler} will be notified once the write completes.
    *
    * @param str  the {@link String} to write
    * @param enc  the charset used for encoding
    * @param port  the host port of the remote peer
    * @param host  the host address of the remote peer
-   * @param handler  the {@link io.vertx.core.Handler} to notify once the write completes.
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  DatagramSocket send(String str, String enc, int port, String host, Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #send(String, String, int, String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified once the write completes.
    */
   Future<Void> send(String str, String enc, int port, String host);
 
@@ -113,13 +86,7 @@ public interface DatagramSocket extends ReadStream<DatagramPacket>, Measured {
    * Closes the {@link io.vertx.core.datagram.DatagramSocket} implementation asynchronous
    * and notifies the handler once done.
    *
-   * @param handler  the handler to notify once complete
-   */
-  @Deprecated
-  void close(Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Closes the {@link io.vertx.core.datagram.DatagramSocket}. The close itself is asynchronous.
+   * @return a future notified once the socket is closed
    */
   Future<Void> close();
 
@@ -134,75 +101,37 @@ public interface DatagramSocket extends ReadStream<DatagramPacket>, Measured {
 
   /**
    * Joins a multicast group and listens for packets send to it.
-   * The {@link Handler} is notified once the operation completes.
    *
    * @param multicastAddress  the address of the multicast group to join
-   * @param  handler  then handler to notify once the operation completes
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  DatagramSocket listenMulticastGroup(String multicastAddress, Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #listenMulticastGroup(String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified once the operation completes
    */
   Future<Void> listenMulticastGroup(String multicastAddress);
 
   /**
    * Joins a multicast group and listens for packets send to it on the given network interface.
-   * The {@link Handler} is notified once the operation completes.
    *
    * @param  multicastAddress  the address of the multicast group to join
    * @param  networkInterface  the network interface on which to listen for packets.
    * @param  source  the address of the source for which we will listen for multicast packets
-   * @param  handler  then handler to notify once the operation completes
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  DatagramSocket listenMulticastGroup(String multicastAddress, String networkInterface, @Nullable String source,
-                                      Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #listenMulticastGroup(String, String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified once the operation completes
    */
   Future<Void> listenMulticastGroup(String multicastAddress, String networkInterface, @Nullable String source);
 
   /**
    * Leaves a multicast group and stops listening for packets send to it.
-   * The {@link Handler} is notified once the operation completes.
    *
    * @param multicastAddress  the address of the multicast group to leave
-   * @param handler  then handler to notify once the operation completes
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  DatagramSocket unlistenMulticastGroup(String multicastAddress, Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #unlistenMulticastGroup(String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified once the operation completes
    */
   Future<Void> unlistenMulticastGroup(String multicastAddress);
 
   /**
    * Leaves a multicast group and stops listening for packets send to it on the given network interface.
-   * The {@link Handler} is notified once the operation completes.
    *
    * @param  multicastAddress  the address of the multicast group to join
    * @param  networkInterface  the network interface on which to listen for packets.
    * @param  source  the address of the source for which we will listen for multicast packets
-   * @param  handler the handler to notify once the operation completes
-   * @return  a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  DatagramSocket unlistenMulticastGroup(String multicastAddress, String networkInterface, @Nullable String source,
-                                        Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #unlistenMulticastGroup(String, String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified once the operation completes
    */
   Future<Void> unlistenMulticastGroup(String multicastAddress, String networkInterface, @Nullable String source);
 
@@ -213,16 +142,7 @@ public interface DatagramSocket extends ReadStream<DatagramPacket>, Measured {
    * @param multicastAddress  the address for which you want to block the source address
    * @param sourceToBlock  the source address which should be blocked. You will not receive an multicast packets
    *                       for it anymore.
-   * @param handler  the handler to notify once the operation completes
-   * @return  a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  DatagramSocket blockMulticastGroup(String multicastAddress, String sourceToBlock,
-                                     Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #blockMulticastGroup(String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified once the operation completes
    */
   Future<Void> blockMulticastGroup(String multicastAddress, String sourceToBlock);
 
@@ -234,16 +154,7 @@ public interface DatagramSocket extends ReadStream<DatagramPacket>, Measured {
    * @param  networkInterface  the network interface on which the blocking should occur.
    * @param  sourceToBlock  the source address which should be blocked. You will not receive an multicast packets
    *                        for it anymore.
-   * @param  handler  the handler to notify once the operation completes
-   * @return  a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  DatagramSocket blockMulticastGroup(String multicastAddress, String networkInterface, String sourceToBlock,
-                                     Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #blockMulticastGroup(String, String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified once the operation completes
    */
   Future<Void> blockMulticastGroup(String multicastAddress, String networkInterface, String sourceToBlock);
 
@@ -252,15 +163,7 @@ public interface DatagramSocket extends ReadStream<DatagramPacket>, Measured {
    *
    * @param port  the port to listen on
    * @param host  the host to listen on
-   * @param handler  the handler will be called when listening
-   * @return  a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  @Deprecated
-  DatagramSocket listen(int port, String host, Handler<AsyncResult<DatagramSocket>> handler);
-
-  /**
-   * Like {@link #listen(int, String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @return a future notified once the operation completes
    */
   Future<DatagramSocket> listen(int port, String host);
 

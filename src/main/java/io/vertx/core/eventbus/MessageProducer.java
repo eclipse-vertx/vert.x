@@ -46,14 +46,8 @@ public interface MessageProducer<T> {
    * Write a message to the event-bus, either sending or publishing.
    *
    * @param body the message body
-   * @param handler the handler called when the message has been successfully or failed to be written, this is not a delivery
+   * @return a future called when the message has been successfully or failed to be written, this is not a delivery
    *                guarantee
-   */
-  @Deprecated
-  void write(T body, Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #write(Object, Handler)} but returns a {@code Future} of the asynchronous result
    */
   Future<Void> write(T body);
 
@@ -64,9 +58,4 @@ public interface MessageProducer<T> {
    */
   Future<Void> close();
 
-  /**
-   * Same as {@link #close()} but with an {@code handler} called when the operation completes
-   */
-  @Deprecated
-  void close(Handler<AsyncResult<Void>> handler);
 }

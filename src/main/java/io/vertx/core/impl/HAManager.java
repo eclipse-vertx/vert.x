@@ -349,7 +349,7 @@ public class HAManager {
                 });
               }
               fut.complete();
-            }, null);
+            });
           }
         });
       }

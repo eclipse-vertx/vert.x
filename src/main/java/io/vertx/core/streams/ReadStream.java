@@ -120,8 +120,6 @@ public interface ReadStream<T> extends StreamBase {
    * @return a future notified when the write stream will be ended with the outcome
    */
   default Future<Void> pipeTo(WriteStream<T> dst) {
-    Promise<Void> promise = Promise.promise();
-    new PipeImpl<>(this).to(dst, promise);
-    return promise.future();
+    return new PipeImpl<>(this).to(dst);
   }
 }

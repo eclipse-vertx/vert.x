@@ -1342,7 +1342,8 @@ public class DeploymentTest extends VertxTestBase {
   @Test
   public void testDeployClass() {
     JsonObject config = generateJSONObject();
-    vertx.deployVerticle(ReferenceSavingMyVerticle.class, new DeploymentOptions().setInstances(4).setConfig(config), onSuccess(deploymentId -> {
+    vertx.deployVerticle(ReferenceSavingMyVerticle.class, new DeploymentOptions().setInstances(4).setConfig(config))
+      .onComplete(onSuccess(deploymentId -> {
       ReferenceSavingMyVerticle.myVerticles.forEach(myVerticle -> {
         assertEquals(deploymentId, myVerticle.deploymentID);
         assertEquals(config, myVerticle.config);
@@ -1357,7 +1358,7 @@ public class DeploymentTest extends VertxTestBase {
   public void testDeployClassNoDefaultPublicConstructor() throws Exception {
     class NoDefaultPublicConstructorVerticle extends AbstractVerticle {
     }
-    vertx.deployVerticle(NoDefaultPublicConstructorVerticle.class, new DeploymentOptions(), onFailure(t -> {
+    vertx.deployVerticle(NoDefaultPublicConstructorVerticle.class, new DeploymentOptions()).onComplete(onFailure(t -> {
       testComplete();
     }));
     await();

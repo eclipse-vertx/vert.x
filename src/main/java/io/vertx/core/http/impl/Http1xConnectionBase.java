@@ -127,11 +127,6 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
   }
 
   @Override
-  public void shutdown(long timeout, Handler<AsyncResult<Void>> handler) {
-    throw new UnsupportedOperationException("HTTP/1.x connections cannot be shutdown");
-  }
-
-  @Override
   public Future<Void> shutdown(long timeoutMs) {
     throw new UnsupportedOperationException("HTTP/1.x connections cannot be shutdown");
   }
@@ -147,11 +142,6 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
   }
 
   @Override
-  public HttpConnection updateSettings(Http2Settings settings, Handler<AsyncResult<Void>> completionHandler) {
-    throw new UnsupportedOperationException("HTTP/1.x connections don't support SETTINGS");
-  }
-
-  @Override
   public Http2Settings remoteSettings() {
     throw new UnsupportedOperationException("HTTP/1.x connections don't support SETTINGS");
   }
@@ -159,11 +149,6 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
   @Override
   public HttpConnection remoteSettingsHandler(Handler<Http2Settings> handler) {
     throw new UnsupportedOperationException("HTTP/1.x connections don't support SETTINGS");
-  }
-
-  @Override
-  public HttpConnection ping(Buffer data, Handler<AsyncResult<Buffer>> pongHandler) {
-    throw new UnsupportedOperationException("HTTP/1.x connections don't support PING");
   }
 
   @Override

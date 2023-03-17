@@ -163,7 +163,7 @@ See the chapter on <<streams, streams >> for more information.
 
 === Upgrading connections to SSL/TLS
 
-A non SSL/TLS connection can be upgraded to SSL/TLS using {@link io.vertx.core.net.NetSocket#upgradeToSsl(io.vertx.core.Handler)}.
+A non SSL/TLS connection can be upgraded to SSL/TLS using {@link io.vertx.core.net.NetSocket#upgradeToSsl()}.
 
 The server or client must be configured for SSL/TLS for this to work correctly. Please see the <<ssl, chapter on SSL/TLS>>
 for more information.
@@ -249,7 +249,7 @@ instance when creating it:
 
 === Making connections
 
-To make a connection to a server you use {@link io.vertx.core.net.NetClient#connect(int,java.lang.String,io.vertx.core.Handler)},
+To make a connection to a server you use {@link io.vertx.core.net.NetClient#connect(int,java.lang.String)},
 specifying the port and host of the server and a handler that will be called with a result containing the
 {@link io.vertx.core.net.NetSocket} when connection is successful or with a failure if connection failed.
 
