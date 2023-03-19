@@ -420,12 +420,8 @@ public class Http2Test extends HttpTest {
   public void testClientMakeRequestHttp2WithSSLWithoutAlpn() throws Exception {
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions().setUseAlpn(false));
-    try {
-      client.request(requestOptions);
-      fail();
-    } catch (IllegalArgumentException ignore) {
-      // Expected
-    }
+    client.request(requestOptions).onComplete(onFailure(err -> testComplete()));
+    await();
   }
 
   @Test
