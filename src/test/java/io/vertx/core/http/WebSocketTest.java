@@ -500,12 +500,14 @@ public class WebSocketTest extends VertxTestBase {
     });
     awaitFuture(server.listen());
     client = vertx.createHttpClient();
-    client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path).onComplete(onSuccess(ws -> {
-      ws.handler(buff -> {
-        assertEquals(message, buff.toString("UTF-8"));
-        testComplete();
-      });
-    }));
+    vertx.runOnContext(v -> {
+      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path).onComplete(onSuccess(ws -> {
+        ws.handler(buff -> {
+          assertEquals(message, buff.toString("UTF-8"));
+          testComplete();
+        });
+      }));
+    });
     await();
   }
 
