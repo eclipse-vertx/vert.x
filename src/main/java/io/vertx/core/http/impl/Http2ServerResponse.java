@@ -21,15 +21,12 @@ import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.file.AsyncFile;
 import io.vertx.core.http.Cookie;
-import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerResponse;
@@ -97,6 +94,9 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   void handleException(Throwable cause) {
     Handler<Throwable> handler;
     synchronized (conn) {
+      if (ended) {
+        return;
+      }
       handler = exceptionHandler;
     }
     if (handler != null) {
@@ -104,19 +104,15 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     }
   }
 
-  void handleClose(HttpClosedException ex) {
+  void handleClose() {
     Handler<Throwable> exceptionHandler;
     Handler<Void> endHandler;
     Handler<Void> closeHandler;
     synchronized (conn) {
       closed = true;
       boolean failed = !ended;
-      exceptionHandler = failed ? this.exceptionHandler : null;
       endHandler = failed ? this.endHandler : null;
       closeHandler = this.closeHandler;
-    }
-    if (exceptionHandler != null) {
-      stream.context.emit(ex, exceptionHandler);
     }
     if (endHandler != null) {
       stream.context.emit(null, endHandler);

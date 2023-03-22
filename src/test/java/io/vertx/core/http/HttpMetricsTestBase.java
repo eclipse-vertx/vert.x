@@ -265,10 +265,12 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
         HttpClientMetric metric = metrics.getMetric(resp.request());
         assertNotNull(metric);
         assertFalse(metric.failed.get());
-        resp.exceptionHandler(err -> {
-          assertNull(metrics.getMetric(resp.request()));
-          assertTrue(metric.failed.get());
-          testComplete();
+        req.connection().closeHandler(v1 -> {
+          vertx.runOnContext(v2 -> {
+            assertNull(metrics.getMetric(resp.request()));
+            assertTrue(metric.failed.get());
+            testComplete();
+          });
         });
       }));
     }));

@@ -17,15 +17,18 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.observability.HttpRequest;
+import io.vertx.core.spi.tracing.SpanKind;
+import io.vertx.core.spi.tracing.VertxTracer;
+import io.vertx.core.tracing.TracingPolicy;
 
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
@@ -35,7 +38,10 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
   protected final HttpMethod method;
   protected final String uri;
   protected final String host;
+  private final TracingPolicy tracingPolicy;
   private Object metric;
+  private Object trace;
+  private boolean halfClosedRemote;
   private boolean requestEnded;
   private boolean responseEnded;
   Http2ServerStreamHandler request;
@@ -43,16 +49,20 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
   Http2ServerStream(Http2ServerConnection conn,
                     ContextInternal context,
                     HttpMethod method,
-                    String uri) {
+                    String uri,
+                    TracingPolicy tracingPolicy,
+                    boolean halfClosedRemote) {
     super(conn, context);
 
     this.headers = null;
     this.method = method;
     this.uri = uri;
     this.host = null;
+    this.tracingPolicy = tracingPolicy;
+    this.halfClosedRemote = halfClosedRemote;
   }
 
-  Http2ServerStream(Http2ServerConnection conn, ContextInternal context, Http2Headers headers, String serverOrigin) {
+  Http2ServerStream(Http2ServerConnection conn, ContextInternal context, Http2Headers headers, String serverOrigin, TracingPolicy tracingPolicy, boolean halfClosedRemote) {
     super(conn, context);
 
     String host = headers.get(":authority") != null ? headers.get(":authority").toString() : null;
@@ -65,6 +75,8 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
     this.host = host;
     this.uri = headers.get(":path") != null ? headers.get(":path").toString() : null;
     this.method = headers.get(":method") != null ? HttpMethod.valueOf(headers.get(":method").toString()) : null;
+    this.tracingPolicy = tracingPolicy;
+    this.halfClosedRemote = halfClosedRemote;
   }
 
   void registerMetrics() {
@@ -91,6 +103,10 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
       ((value != null && HttpHeaderValues.CONTINUE.equals(value)) ||
         headers.contains(HttpHeaderNames.EXPECT, HttpHeaderValues.CONTINUE))) {
       request.response().writeContinue();
+    }
+    VertxTracer tracer = context.tracer();
+    if (tracer != null) {
+      trace = tracer.receiveRequest(context, SpanKind.RPC, tracingPolicy, request, method().name(), new Http2HeadersAdaptor(headers), HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
     }
     request.dispatch(conn.requestHandler);
   }
@@ -146,16 +162,9 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
   }
 
   @Override
-  void handleClose(HttpClosedException ex) {
-    super.handleClose(ex);
-    if (METRICS_ENABLED) {
-      HttpServerMetrics metrics = conn.metrics();
-      // Null in case of push response : handle this case
-      if (metrics != null && (!requestEnded || !responseEnded)) {
-        metrics.requestReset(metric);
-      }
-    }
-    request.handleClose(ex);
+  void handleClose() {
+    super.handleClose();
+    request.handleClose();
   }
 
   @Override
@@ -185,13 +194,34 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
 
   @Override
   void handleEnd(MultiMap trailers) {
+    halfClosedRemote = true;
     request.handleEnd(trailers);
   }
 
   @Override
-  void onClose(HttpClosedException ex) {
-    request.onClose(ex);
-    super.onClose(ex);
+  void onClose() {
+    if (METRICS_ENABLED) {
+      HttpServerMetrics metrics = conn.metrics();
+      // Null in case of push response : handle this case
+      if (metrics != null && (!requestEnded || !responseEnded)) {
+        metrics.requestReset(metric);
+      }
+    }
+    request.onClose();
+    VertxTracer tracer = context.tracer();
+    Object trace = this.trace;
+    if (tracer != null && trace != null) {
+      Throwable failure;
+      synchronized (conn) {
+        if (!halfClosedRemote && (!requestEnded || !responseEnded)) {
+          failure = HttpUtils.STREAM_CLOSED_EXCEPTION;
+        } else {
+          failure = null;
+        }
+      }
+      tracer.sendResponse(context, failure == null ? request.response() : null, trace, failure, HttpUtils.SERVER_RESPONSE_TAG_EXTRACTOR);
+    }
+    super.onClose();
   }
 
   public Object metric() {

@@ -127,7 +127,7 @@ public class FakeTracer implements VertxTracer<Span, Span> {
   public <R> void sendResponse(Context context, R response, Span span, Throwable failure, TagExtractor<R> tagExtractor) {
     if (span != null) {
       addTags(span, response, tagExtractor);
-      span.finish();
+      span.finish(failure);
     }
   }
 
@@ -154,7 +154,7 @@ public class FakeTracer implements VertxTracer<Span, Span> {
   public <R> void receiveResponse(Context context, R response, Span span, Throwable failure, TagExtractor<R> tagExtractor) {
     if (span != null) {
       addTags(span, response, tagExtractor);
-      span.finish();
+      span.finish(failure);
     }
   }
 

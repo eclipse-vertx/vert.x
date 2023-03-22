@@ -17,11 +17,14 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author Pavol Loffay
  */
 public class Span {
+
+  private static final Throwable FINISHED_SENTINEL = new Throwable();
 
   public final SpanKind kind;
   public final int traceId;
@@ -29,7 +32,7 @@ public class Span {
   public final int id;
   public final String operation;
   final FakeTracer tracer;
-  private AtomicBoolean finished = new AtomicBoolean();
+  private AtomicReference<Throwable> finished = new AtomicReference<>();
   private final Map<String, String> tags = new ConcurrentHashMap<>();
 
   Span(FakeTracer tracer, SpanKind kind, int traceId, int parentId, int id, String operation) {
@@ -55,8 +58,14 @@ public class Span {
     }
   }
 
-  public void finish() {
-    if (finished.getAndSet(true)) {
+  public Throwable failure() {
+    Throwable failure = finished.get();
+    return failure == FINISHED_SENTINEL ? null : failure;
+  }
+
+  public void finish(Throwable failure) {
+    Throwable t = failure == null ? FINISHED_SENTINEL : failure;
+    if (!finished.compareAndSet(null, t)) {
       throw new IllegalStateException("Finishing already finished span!");
     }
     tracer.finishedSpans.add(this);

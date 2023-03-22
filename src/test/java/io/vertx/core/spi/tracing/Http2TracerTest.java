@@ -10,10 +10,7 @@
  */
 package io.vertx.core.spi.tracing;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
-import org.junit.Ignore;
+import org.junit.Assert;
 import org.junit.Test;
 
 import io.vertx.core.http.Http2TestBase;
@@ -55,23 +52,30 @@ public class Http2TracerTest extends HttpTracerTestBase {
       req.response().end("Ok");
     });
     startServer(testAddress);
-    CountDownLatch finished = new CountDownLatch(1);
-    waitFor(1);
+    waitFor(2);
+    // request <1>
     client.request(requestOptions).onSuccess(request -> {
-      request.connection().closeHandler((v) -> {
-        finished.countDown();
-      });
       request.send().onSuccess(response -> {
         complete();
       });
     });
-    await();
-    finished.await(5, TimeUnit.SECONDS);
-    // There should be 2 spans: 1 of kind server and 1 of kind client.
-    assertEquals(2, fakeTracer.getFinishedSpans().size());
-    assertTrue("Span with kind server was not found!",
+    // request <2>
+    client.request(requestOptions).onSuccess(request -> {
+      request.send().onSuccess(response -> {
+        complete();
+      });
+    });
+    // There should be 4 spans: 2 of kind server and 2 of kind client.
+    // This test is failing because the first request <1> is missing one span that is produced only when the connection is closed.
+    // The next request <2> is working correctly: the two spans are properly generated.
+    waitUntil(() -> fakeTracer.getFinishedSpans().size() == 4);
+    Assert.assertTrue("Span with kind server was not found!",
       fakeTracer.getFinishedSpans().stream().anyMatch(s -> SPAN_KIND_SERVER.equals(s.getTags().get(SPAN_KIND_KEY))));
-    assertTrue("Span with kind client was not found!",
+    Assert.assertTrue("Span with kind client was not found!",
       fakeTracer.getFinishedSpans().stream().anyMatch(s -> SPAN_KIND_CLIENT.equals(s.getTags().get(SPAN_KIND_KEY))));
+    fakeTracer.getFinishedSpans().forEach(s -> {
+      Assert.assertNull(s.failure());
+    });
+    await();
   }
 }
