@@ -27,7 +27,7 @@ public class NettyCompatTest extends VertxTestBase {
   @Test
   public void testAddressResolver() {
     VertxInternal vertx = (VertxInternal) super.vertx;
-    vertx.resolveAddress("localhost", onSuccess(v -> testComplete()));
+    vertx.resolveAddress("localhost").onComplete(onSuccess(v -> testComplete()));
     await();
   }
 

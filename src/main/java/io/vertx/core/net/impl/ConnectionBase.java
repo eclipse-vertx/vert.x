@@ -286,13 +286,6 @@ public abstract class ConnectionBase {
     return promise.future();
   }
 
-  /**
-   * Close the connection and notifies the {@code handler}
-   */
-  public final void close(Handler<AsyncResult<Void>> handler) {
-    close().onComplete(handler);
-  }
-
   public synchronized ConnectionBase closeHandler(Handler<Void> handler) {
     closeHandler = handler;
     return this;

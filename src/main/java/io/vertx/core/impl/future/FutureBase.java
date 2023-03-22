@@ -24,14 +24,14 @@ import java.util.function.Function;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class FutureBase<T> implements FutureInternal<T> {
+public abstract class FutureBase<T> implements FutureInternal<T> {
 
   protected final ContextInternal context;
 
   /**
    * Create a future that hasn't completed yet
    */
-  FutureBase() {
+  protected FutureBase() {
     this(null);
   }
 

@@ -12,6 +12,7 @@
 package io.vertx.core.spi.resolver;
 
 import io.netty.resolver.AddressResolverGroup;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
@@ -50,6 +51,6 @@ public interface ResolverProvider {
 
   AddressResolverGroup<InetSocketAddress> resolver(AddressResolverOptions options);
 
-  void close(Handler<Void> doneHandler);
+  Future<Void> close();
 
 }

@@ -932,7 +932,7 @@ public class ConnectionPoolTest extends VertxTestBase {
       int count = 0;
       int reentrancy = 0;
       @Override
-      public void connect(EventLoopContext context, Listener listener, Handler<AsyncResult<ConnectResult<Connection>>> handler) {
+      public Future<ConnectResult<Connection>> connect(EventLoopContext context, Listener listener) {
         assertEquals(0, reentrancy++);
         try {
           int val = count++;
@@ -946,7 +946,7 @@ public class ConnectionPoolTest extends VertxTestBase {
               }));
             }
           }
-          handler.handle(Future.failedFuture("failure"));
+          return Future.failedFuture("failure");
         } finally {
           reentrancy--;
         }
@@ -1011,8 +1011,10 @@ public class ConnectionPoolTest extends VertxTestBase {
     private final Queue<ConnectionRequest> requests = new ArrayBlockingQueue<>(100);
 
     @Override
-    public void connect(EventLoopContext context, Listener listener, Handler<AsyncResult<ConnectResult<Connection>>> handler) {
-      requests.add(new ConnectionRequest(context, listener, handler));
+    public Future<ConnectResult<Connection>> connect(EventLoopContext context, Listener listener) {
+      Promise<ConnectResult<Connection>> promise = Promise.promise();
+      requests.add(new ConnectionRequest(context, listener, promise));
+      return promise.future();
     }
 
     @Override

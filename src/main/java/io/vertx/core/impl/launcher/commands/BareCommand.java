@@ -261,7 +261,7 @@ public class BareCommand extends ClasspathHandler {
 
       CountDownLatch latch = new CountDownLatch(1);
       AtomicReference<AsyncResult<Vertx>> result = new AtomicReference<>();
-      create(builder, ar -> {
+      createClustered(builder).onComplete(ar -> {
         result.set(ar);
         latch.countDown();
       });

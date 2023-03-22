@@ -16,7 +16,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.TooLongHttpHeaderException;
 import io.netty.handler.codec.http.TooLongHttpLineException;
 import io.vertx.codegen.annotations.*;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -283,14 +282,6 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   @Fluent
   default HttpServerRequest bodyHandler(@Nullable Handler<Buffer> bodyHandler) {
     body().onSuccess(bodyHandler);
-    return this;
-  }
-
-  /**
-   * Same as {@link #body()} but with an {@code handler} called when the operation completes
-   */
-  default HttpServerRequest body(Handler<AsyncResult<Buffer>> handler) {
-    body().onComplete(handler);
     return this;
   }
 

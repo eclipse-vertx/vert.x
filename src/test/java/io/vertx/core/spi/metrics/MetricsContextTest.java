@@ -468,7 +468,6 @@ public class MetricsContextTest extends VertxTestBase {
     testHttpClientWebSocket(eventLoopContextFactory);
   }
 
-  // FIXME!! This test intermittently fails
   @Test
   public void testHttpClientWebSocketWorker() throws Exception {
     testHttpClientWebSocket(workerContextFactory);

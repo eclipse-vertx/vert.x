@@ -32,7 +32,9 @@ public class Http1xClientConnectionTest extends HttpClientConnectionTest {
       conn.evictionHandler(v -> {
         evictions.incrementAndGet();
       });
-      conn.createStream((ContextInternal) vertx.getOrCreateContext(), onSuccess(stream -> {
+      conn
+        .createStream((ContextInternal) vertx.getOrCreateContext())
+        .onComplete(onSuccess(stream -> {
         Exception cause = new Exception();
         stream.closeHandler(v -> {
           assertEquals(0, evictions.get());
@@ -57,7 +59,9 @@ public class Http1xClientConnectionTest extends HttpClientConnectionTest {
       conn.evictionHandler(v -> {
         evictions.incrementAndGet();
       });
-      conn.createStream((ContextInternal) vertx.getOrCreateContext(), onSuccess(stream -> {
+      conn
+        .createStream((ContextInternal) vertx.getOrCreateContext())
+        .onComplete(onSuccess(stream -> {
         Exception cause = new Exception();
         stream.closeHandler(v -> {
           assertEquals(1, evictions.get());
@@ -69,7 +73,7 @@ public class Http1xClientConnectionTest extends HttpClientConnectionTest {
             stream.reset(cause);
           });
         stream.writeHead(new HttpRequestHead(
-          HttpMethod.GET, "/", MultiMap.caseInsensitiveMultiMap(), "localhost:8080", "", null), false, Unpooled.EMPTY_BUFFER, false, new StreamPriority(), false, null);
+          HttpMethod.GET, "/", MultiMap.caseInsensitiveMultiMap(), "localhost:8080", "", null), false, Unpooled.EMPTY_BUFFER, false, new StreamPriority(), false);
       }));
     }));
     await();
@@ -87,13 +91,13 @@ public class Http1xClientConnectionTest extends HttpClientConnectionTest {
       conn.evictionHandler(v -> {
         assertEquals(1, evictions.incrementAndGet());
       });
-      conn.createStream((ContextInternal) vertx.getOrCreateContext(), onSuccess(stream -> {
+      conn.createStream((ContextInternal) vertx.getOrCreateContext()).onComplete(onSuccess(stream -> {
         stream.closeHandler(v -> {
           assertEquals(1, evictions.get());
           complete();
         });
         stream.writeHead(new HttpRequestHead(
-          HttpMethod.GET, "/", MultiMap.caseInsensitiveMultiMap(), "localhost:8080", "", null), false, Unpooled.EMPTY_BUFFER, true, new StreamPriority(), false, null);
+          HttpMethod.GET, "/", MultiMap.caseInsensitiveMultiMap(), "localhost:8080", "", null), false, Unpooled.EMPTY_BUFFER, true, new StreamPriority(), false);
       }));
     }));
     await();

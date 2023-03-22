@@ -358,7 +358,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
     synchronized (conn) {
       checkHeadWritten();
     }
-    conn.write103EarlyHints(headersMultiMap, context.promise(promise));
+    conn.write103EarlyHints(headersMultiMap, promise);
     return promise.future();
   }
 

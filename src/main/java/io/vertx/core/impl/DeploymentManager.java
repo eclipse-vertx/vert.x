@@ -122,7 +122,7 @@ public class DeploymentManager {
     }
   }
 
-  private <T> void reportFailure(Throwable t, Context context, Handler<AsyncResult<T>> completionHandler) {
+  private <T> void reportFailure(Throwable t, ContextInternal context, Promise<T> completionHandler) {
     if (completionHandler != null) {
       reportResult(context, completionHandler, Future.failedFuture(t));
     } else {
@@ -130,7 +130,7 @@ public class DeploymentManager {
     }
   }
 
-  private <T> void reportResult(Context context, Handler<AsyncResult<T>> completionHandler, AsyncResult<T> result) {
+  private <T> void reportResult(Context context, Promise<T> completionHandler, AsyncResult<T> result) {
     context.runOnContext(v -> {
       try {
         completionHandler.handle(result);
@@ -237,12 +237,11 @@ public class DeploymentManager {
       this.closeFuture = closeFuture;
     }
 
-    void close(Handler<AsyncResult<Void>> completionHandler) {
-      closeFuture.close().onComplete(ar -> {
+    Future<Void> close() {
+      return closeFuture.close().andThen(ar -> {
         if (workerPool != null) {
           workerPool.close();
         }
-        completionHandler.handle(ar);
       });
     }
   }
@@ -274,7 +273,7 @@ public class DeploymentManager {
       verticles.add(holder);
     }
 
-    private synchronized void rollback(ContextInternal callingContext, Handler<AsyncResult<Deployment>> completionHandler, ContextBase context, VerticleHolder closeFuture, Throwable cause) {
+    private synchronized void rollback(ContextInternal callingContext, Promise<Deployment> completionPromise, ContextBase context, VerticleHolder closeFuture, Throwable cause) {
       if (status == ST_DEPLOYED) {
         status = ST_UNDEPLOYING;
         doUndeployChildren(callingContext).onComplete(childrenResult -> {
@@ -292,9 +291,9 @@ public class DeploymentManager {
             }
           }
           if (childrenResult.failed()) {
-            reportFailure(cause, callingContext, completionHandler);
+            completionPromise.fail(cause);
           } else {
-            closeFuture.close(closeHookAsyncResult -> reportFailure(cause, callingContext, completionHandler));
+            closeFuture.close().transform(ar -> Future.<Deployment>failedFuture(cause)).onComplete(completionPromise);
           }
         });
       }
@@ -332,25 +331,18 @@ public class DeploymentManager {
         }
         for (VerticleHolder verticleHolder: verticles) {
           ContextBase context = verticleHolder.context;
-          Promise p = Promise.promise();
+          Promise<Void> p = Promise.promise();
           undeployFutures.add(p.future());
           context.runOnContext(v -> {
             Promise<Void> stopPromise = undeployingContext.promise();
             Future<Void> stopFuture = stopPromise.future();
-            stopFuture.onComplete(ar -> {
-              deployments.remove(deploymentID);
-              verticleHolder.close(ar2 -> {
-                if (ar2.failed()) {
-                  // Log error but we report success anyway
-                  log.error("Failed to run close hook", ar2.cause());
-                }
-                if (ar.succeeded()) {
-                  p.complete();
-                } else if (ar.failed()) {
-                  p.fail(ar.cause());
-                }
-              });
-            });
+            stopFuture
+              .eventually(v2 -> {
+                deployments.remove(deploymentID);
+                return verticleHolder
+                  .close()
+                  .onFailure(err -> log.error("Failed to run close hook", err));
+              }).onComplete(p);
             try {
               verticleHolder.verticle.stop(stopPromise);
             } catch (Throwable t) {
@@ -366,13 +358,7 @@ public class DeploymentManager {
         Handler<Void> handler = undeployHandler;
         if (handler != null) {
           undeployHandler = null;
-          return fut.compose(v -> {
-            handler.handle(null);
-            return Future.succeededFuture();
-          }, v -> {
-            handler.handle(null);
-            return Future.succeededFuture();
-          });
+          return fut.andThen(ar -> handler.handle(null));
         }
         return fut;
       }

@@ -10,9 +10,7 @@
  */
 package io.vertx.core.http.impl;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
+import io.vertx.core.*;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.metrics.ClientMetrics;
@@ -27,6 +25,17 @@ import java.util.Deque;
  */
 class WebSocketEndpoint extends ClientHttpEndpointBase<HttpClientConnection> {
 
+  private static class Waiter {
+
+    final Promise<HttpClientConnection> promise;
+    final ContextInternal context;
+
+    Waiter(ContextInternal context) {
+      this.promise = context.promise();
+      this.context = context;
+    }
+  }
+
   private final int maxPoolSize;
   private final HttpChannelConnector connector;
   private final Deque<Waiter> waiters;
@@ -39,74 +48,52 @@ class WebSocketEndpoint extends ClientHttpEndpointBase<HttpClientConnection> {
     this.waiters = new ArrayDeque<>();
   }
 
-  private static class Waiter {
-    final Handler<AsyncResult<HttpClientConnection>> handler;
-    final ContextInternal context;
-    Waiter(Handler<AsyncResult<HttpClientConnection>> handler, ContextInternal context) {
-      this.handler = handler;
-      this.context = context;
+  private void onEvict() {
+    decRefCount();
+    Waiter h;
+    synchronized (WebSocketEndpoint.this) {
+      if (--inflightConnections > maxPoolSize || waiters.isEmpty()) {
+        return;
+      }
+      h = waiters.poll();
     }
+    tryConnect(h.context).onComplete(h.promise);
   }
 
-  private void tryConnect(ContextInternal ctx, Handler<AsyncResult<HttpClientConnection>> handler) {
-
-    class Listener implements Handler<AsyncResult<HttpClientConnection>> {
-
-      private void onEvict() {
-        decRefCount();
-        Waiter h;
-        synchronized (WebSocketEndpoint.this) {
-          if (--inflightConnections > maxPoolSize || waiters.isEmpty()) {
-            return;
-          }
-          h = waiters.poll();
-        }
-        tryConnect(h.context, h.handler);
-      }
-
-      @Override
-      public void handle(AsyncResult<HttpClientConnection> ar) {
-        if (ar.succeeded()) {
-          HttpClientConnection c = ar.result();
-          if (incRefCount()) {
-            c.evictionHandler(v -> onEvict());
-            handler.handle(Future.succeededFuture(c));
-          } else {
-            c.close();
-            handler.handle(Future.failedFuture("Connection closed"));
-          }
-        } else {
-          handler.handle(Future.failedFuture(ar.cause()));
-        }
-      }
-    }
-
+  private Future<HttpClientConnection> tryConnect(ContextInternal ctx) {
     EventLoopContext eventLoopContext;
     if (ctx instanceof EventLoopContext) {
       eventLoopContext = (EventLoopContext) ctx;
     } else {
       eventLoopContext = ctx.owner().createEventLoopContext(ctx.nettyEventLoop(), ctx.workerPool(), ctx.classLoader());
     }
-
-    connector
-      .httpConnect(eventLoopContext, new Listener());
+    Future<HttpClientConnection> fut = connector.httpConnect(eventLoopContext);
+    return fut.map(c -> {
+      if (incRefCount()) {
+        c.evictionHandler(v -> onEvict());
+        return c;
+      } else {
+        c.close();
+        throw new VertxException("Connection closed", true);
+      }
+    });
   }
 
   @Override
-  public void requestConnection2(ContextInternal ctx, long timeout, Handler<AsyncResult<HttpClientConnection>> handler) {
+  protected Future<HttpClientConnection> requestConnection2(ContextInternal ctx, long timeout) {
     synchronized (this) {
       if (inflightConnections >= maxPoolSize) {
-        waiters.add(new Waiter(handler, ctx));
-        return;
+        Waiter waiter = new Waiter(ctx);
+        waiters.add(waiter);
+        return waiter.promise.future();
       }
       inflightConnections++;
     }
-    tryConnect(ctx, handler);
+    return tryConnect(ctx);
   }
 
   @Override
   void checkExpired() {
-
   }
 
   @Override
@@ -115,7 +102,7 @@ class WebSocketEndpoint extends ClientHttpEndpointBase<HttpClientConnection> {
     synchronized (this) {
       waiters.forEach(waiter -> {
         waiter.context.runOnContext(v -> {
-          waiter.handler.handle(Future.failedFuture("Closed"));
+          waiter.promise.fail("Closed");
         });
       });
       waiters.clear();

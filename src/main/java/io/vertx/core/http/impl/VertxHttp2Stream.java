@@ -18,9 +18,8 @@ import io.netty.handler.codec.http2.EmptyHttp2Headers;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.util.concurrent.FutureListener;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.StreamPriority;
@@ -177,18 +176,17 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     conn.handler.writeFrame(stream, (byte) type, (short) flags, payload);
   }
 
-  final void writeHeaders(Http2Headers headers, boolean end, Handler<AsyncResult<Void>> handler) {
+  final void writeHeaders(Http2Headers headers, boolean end, Promise<Void> promise) {
     EventLoop eventLoop = conn.getContext().nettyEventLoop();
     if (eventLoop.inEventLoop()) {
-      doWriteHeaders(headers, end, handler);
+      doWriteHeaders(headers, end, promise);
     } else {
-      eventLoop.execute(() -> doWriteHeaders(headers, end, handler));
+      eventLoop.execute(() -> doWriteHeaders(headers, end, promise));
     }
   }
 
-  void doWriteHeaders(Http2Headers headers, boolean end, Handler<AsyncResult<Void>> handler) {
-    FutureListener<Void> promise = handler == null ? null : context.promise(handler);
-    conn.handler.writeHeaders(stream, headers, end, priority.getDependency(), priority.getWeight(), priority.isExclusive(), promise);
+  void doWriteHeaders(Http2Headers headers, boolean end, Promise<Void> promise) {
+    conn.handler.writeHeaders(stream, headers, end, priority.getDependency(), priority.getWeight(), priority.isExclusive(), (FutureListener<Void>) promise);
     if (end) {
       endWritten();
     }
@@ -201,17 +199,17 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     conn.handler.writePriority(stream, priority.getDependency(), priority.getWeight(), priority.isExclusive());
   }
 
-  final void writeData(ByteBuf chunk, boolean end, Handler<AsyncResult<Void>> handler) {
+  final void writeData(ByteBuf chunk, boolean end, Promise<Void> promise) {
     ContextInternal ctx = conn.getContext();
     EventLoop eventLoop = ctx.nettyEventLoop();
     if (eventLoop.inEventLoop()) {
-      doWriteData(chunk, end, handler);
+      doWriteData(chunk, end, promise);
     } else {
-      eventLoop.execute(() -> doWriteData(chunk, end, handler));
+      eventLoop.execute(() -> doWriteData(chunk, end, promise));
     }
   }
 
-  void doWriteData(ByteBuf buf, boolean end, Handler<AsyncResult<Void>> handler) {
+  void doWriteData(ByteBuf buf, boolean end, Promise<Void> promise) {
     ByteBuf chunk;
     if (buf == null && end) {
       chunk = Unpooled.EMPTY_BUFFER;
@@ -221,8 +219,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     int numOfBytes = chunk.readableBytes();
     bytesWritten += numOfBytes;
     conn.reportBytesWritten(numOfBytes);
-    FutureListener<Void> promise = handler == null ? null : context.promise(handler);
-    conn.handler.writeData(stream, chunk, end, promise);
+    conn.handler.writeData(stream, chunk, end, (FutureListener<Void>) promise);
     if (end) {
       endWritten();
     }

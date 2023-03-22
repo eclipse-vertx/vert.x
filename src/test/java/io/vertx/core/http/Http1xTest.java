@@ -1579,7 +1579,8 @@ public class Http1xTest extends HttpTest {
     startServer(testAddress);
 
     client.request(new RequestOptions(requestOptions).setURI("/1")).onComplete(onSuccess(req -> {
-      client.request(new RequestOptions(requestOptions).setURI("/1")).onComplete(onFailure(err -> {
+      Future<HttpClientRequest> request = client.request(new RequestOptions(requestOptions).setURI("/1"));
+      request.onComplete(onFailure(err -> {
         req.end();
         complete();
       }));
@@ -5270,7 +5271,7 @@ public class Http1xTest extends HttpTest {
 
   private void testNetSocketUpgradeSuccess(Buffer payload) {
     server.requestHandler(req -> {
-      req.body(onSuccess(body -> {
+      req.body().onComplete(onSuccess(body -> {
         if (payload != null) {
           assertEquals(payload, body);
         }

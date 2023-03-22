@@ -11,7 +11,9 @@
 package io.vertx.core.http.impl;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.impl.pool.Endpoint;
 import io.vertx.core.spi.metrics.ClientMetrics;
@@ -30,7 +32,8 @@ abstract class ClientHttpEndpointBase<C> extends Endpoint<C> {
   }
 
   @Override
-  public final void requestConnection(ContextInternal ctx, long timeout, Handler<AsyncResult<C>> handler) {
+  public Future<C> requestConnection(ContextInternal ctx, long timeout) {
+    Future<C> fut = requestConnection2(ctx, timeout);
     if (metrics != null) {
       Object metric;
       if (metrics != null) {
@@ -38,18 +41,14 @@ abstract class ClientHttpEndpointBase<C> extends Endpoint<C> {
       } else {
         metric = null;
       }
-      Handler<AsyncResult<C>> next = handler;
-      handler = ar -> {
-        if (metrics != null) {
-          metrics.dequeueRequest(metric);
-        }
-        next.handle(ar);
-      };
+      fut = fut.andThen(ar -> {
+        metrics.dequeueRequest(metric);
+      });
     }
-    requestConnection2(ctx, timeout, handler);
+    return fut;
   }
 
-  protected abstract void requestConnection2(ContextInternal ctx, long timeout, Handler<AsyncResult<C>> handler);
+  protected abstract Future<C> requestConnection2(ContextInternal ctx, long timeout);
 
   abstract void checkExpired();
 

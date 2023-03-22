@@ -47,7 +47,7 @@ public final class WriteHandlerLookupFailureTest extends VertxTestBase {
         promise.fail("Not implemented");
       }
     };
-    new VertxBuilder(options).init().clusterNodeSelector(nodeSelector).clusteredVertx(onSuccess(node -> {
+    new VertxBuilder(options).init().clusterNodeSelector(nodeSelector).clusteredVertx().onComplete(onSuccess(node -> {
       vertx = node;
       MessageProducer<String> sender = vertx.eventBus().sender("foo");
       sender.write("the_string").onComplete(onFailure(err -> {

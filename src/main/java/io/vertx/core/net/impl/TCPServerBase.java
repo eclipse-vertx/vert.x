@@ -24,6 +24,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
+import io.vertx.core.impl.AddressResolver;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -35,6 +36,7 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TCPMetrics;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.HashSet;
 import java.util.Map;
@@ -184,7 +186,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
             applyConnectionOptions(localAddress.isDomainSocket(), bootstrap);
 
             // Actual bind
-            io.netty.util.concurrent.Future<Channel> bindFuture = AsyncResolveConnectHelper.doBind(vertx, bindAddress, bootstrap);
+            io.netty.util.concurrent.Future<Channel> bindFuture = resolveAndBind(context, bindAddress, bootstrap);
             bindFuture.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) res -> {
               if (res.isSuccess()) {
                 Channel ch = res.getNow();
@@ -305,4 +307,55 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
 
   public abstract Future<Void> close();
 
+  public static io.netty.util.concurrent.Future<Channel> resolveAndBind(ContextInternal context,
+                                                                        SocketAddress socketAddress,
+                                                                        ServerBootstrap bootstrap) {
+    VertxInternal vertx = context.owner();
+    io.netty.util.concurrent.Promise<Channel> promise = vertx.getAcceptorEventLoopGroup().next().newPromise();
+    try {
+      bootstrap.channelFactory(vertx.transport().serverChannelFactory(socketAddress.isDomainSocket()));
+    } catch (Exception e) {
+      promise.setFailure(e);
+      return promise;
+    }
+    if (socketAddress.isDomainSocket()) {
+      java.net.SocketAddress converted = vertx.transport().convert(socketAddress);
+      ChannelFuture future = bootstrap.bind(converted);
+      future.addListener(f -> {
+        if (f.isSuccess()) {
+          promise.setSuccess(future.channel());
+        } else {
+          promise.setFailure(f.cause());
+        }
+      });
+    } else {
+      SocketAddressImpl impl = (SocketAddressImpl) socketAddress;
+      if (impl.ipAddress() != null) {
+        bind(bootstrap, impl.ipAddress(), socketAddress.port(), promise);
+      } else {
+        AddressResolver resolver = vertx.addressResolver();
+        io.netty.util.concurrent.Future<InetSocketAddress> fut = resolver.resolveHostname(context.nettyEventLoop(), socketAddress.host());
+        fut.addListener((GenericFutureListener<io.netty.util.concurrent.Future<InetSocketAddress>>) future -> {
+          if (future.isSuccess()) {
+            bind(bootstrap, future.getNow().getAddress(), socketAddress.port(), promise);
+          } else {
+            promise.setFailure(future.cause());
+          }
+        });
+      }
+    }
+    return promise;
+  }
+
+  private static void bind(ServerBootstrap bootstrap, InetAddress address, int port, io.netty.util.concurrent.Promise<Channel> promise) {
+    InetSocketAddress t = new InetSocketAddress(address, port);
+    ChannelFuture future = bootstrap.bind(t);
+    future.addListener(f -> {
+      if (f.isSuccess()) {
+        promise.setSuccess(future.channel());
+      } else {
+        promise.setFailure(f.cause());
+      }
+    });
+  }
 }

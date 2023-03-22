@@ -44,17 +44,16 @@ public class StressTest extends VertxTestBase {
     }
 
     @Override
-    public void connect(EventLoopContext context, Listener listener, Handler<AsyncResult<ConnectResult<FakeConnection>>> handler) {
+    public Future<ConnectResult<FakeConnection>> connect(EventLoopContext context, Listener listener) {
       int i = ThreadLocalRandom.current().nextInt(100);
-      Promise<ConnectResult<FakeConnection>> promise = Promise.promise();
-      Future<ConnectResult<FakeConnection>> future = promise.future();
-      future.onComplete(handler);
+      Promise<ConnectResult<FakeConnection>> promise = context.promise();
       FakeConnection conn = new FakeConnection(context, listener, promise);
       if (i < 10) {
         conn.fail(new Exception("Could not connect"));
       } else {
         conn.connect();
       }
+      return promise.future();
     }
 
     @Override

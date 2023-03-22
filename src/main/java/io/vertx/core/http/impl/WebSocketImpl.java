@@ -34,13 +34,12 @@ public class WebSocketImpl extends WebSocketImplBase<WebSocketImpl> implements W
 
   public WebSocketImpl(ContextInternal context,
                        Http1xClientConnection conn,
-                       MultiMap headers,
                        boolean supportsContinuation,
                        long closingTimeout,
                        int maxWebSocketFrameSize,
                        int maxWebSocketMessageSize,
                        boolean registerWebSocketWriteHandlers) {
-    super(context, conn, headers, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize, registerWebSocketWriteHandlers);
+    super(context, conn, null, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize, registerWebSocketWriteHandlers);
     this.conn = conn;
     this.closingTimeoutMS = closingTimeout >= 0 ? closingTimeout * 1000L : -1L;
   }

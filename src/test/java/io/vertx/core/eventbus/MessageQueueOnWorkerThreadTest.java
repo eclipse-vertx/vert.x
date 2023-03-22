@@ -11,10 +11,7 @@
 
 package io.vertx.core.eventbus;
 
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
+import io.vertx.core.*;
 import io.vertx.core.eventbus.impl.clustered.Serializer;
 import io.vertx.core.impl.VertxBuilder;
 import io.vertx.core.spi.cluster.ClusterManager;
@@ -42,9 +39,8 @@ public class MessageQueueOnWorkerThreadTest extends VertxTestBase {
     super.setUp();
     CustomNodeSelector selector = new CustomNodeSelector();
     VertxBuilder factory = new VertxBuilder().init().clusterNodeSelector(selector);
-    Promise<Vertx> promise = Promise.promise();
-    factory.clusteredVertx(promise);
-    vertx = promise.future().toCompletionStage().toCompletableFuture().get();
+    Future<Vertx> fut = factory.clusteredVertx();
+    vertx = fut.toCompletionStage().toCompletableFuture().get();
   }
 
   @Test

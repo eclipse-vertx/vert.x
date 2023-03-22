@@ -13,7 +13,6 @@ package io.vertx.core.impl;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.resolver.AddressResolverGroup;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Closeable;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
@@ -300,11 +299,6 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public <T> PromiseInternal<T> promise(Handler<AsyncResult<T>> handler) {
-    return delegate.promise(handler);
-  }
-
-  @Override
   public long maxEventLoopExecTime() {
     return delegate.maxEventLoopExecTime();
   }
@@ -480,8 +474,8 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public void resolveAddress(String hostname, Handler<AsyncResult<InetAddress>> resultHandler) {
-    delegate.resolveAddress(hostname, resultHandler);
+  public Future<InetAddress> resolveAddress(String hostname) {
+    return delegate.resolveAddress(hostname);
   }
 
   @Override

@@ -13,9 +13,8 @@ package io.vertx.core.http.impl;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http2.Http2Headers;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpMethod;
@@ -124,14 +123,14 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
   }
 
   @Override
-  void doWriteHeaders(Http2Headers headers, boolean end, Handler<AsyncResult<Void>> handler) {
+  void doWriteHeaders(Http2Headers headers, boolean end, Promise<Void> promise) {
     if (Metrics.METRICS_ENABLED && !end) {
       HttpServerMetrics metrics = conn.metrics();
       if (metrics != null) {
         metrics.responseBegin(metric, request.response());
       }
     }
-    super.doWriteHeaders(headers, end, handler);
+    super.doWriteHeaders(headers, end, promise);
   }
 
   @Override

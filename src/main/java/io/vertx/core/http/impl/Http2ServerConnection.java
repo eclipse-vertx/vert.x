@@ -23,7 +23,6 @@ import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.FutureListener;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
@@ -223,9 +222,9 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     });
   }
 
-  protected void updateSettings(Http2Settings settingsUpdate, Handler<AsyncResult<Void>> completionHandler) {
+  protected io.vertx.core.Future<Void> updateSettings(Http2Settings settingsUpdate) {
     settingsUpdate.remove(Http2CodecUtil.SETTINGS_ENABLE_PUSH);
-    super.updateSettings(settingsUpdate, completionHandler);
+    return super.updateSettings(settingsUpdate);
   }
 
   private class Push implements Http2ServerStreamHandler {
