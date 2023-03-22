@@ -425,7 +425,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       ended = end;
     }
 
-    PromiseInternal<Void> promise = context.promise();
+    Future<Void> future;
     if (writeHead) {
       HttpMethod method = getMethod();
       String uri = getURI();
@@ -433,17 +433,17 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         uri = "/";
       }
       HttpRequestHead head = new HttpRequestHead(method, uri, headers, authority(), absoluteURI(), traceOperation);
-      stream.writeHead(head, chunked, buff, writeEnd, priority, connect, promise);
+      future = stream.writeHead(head, chunked, buff, writeEnd, priority, connect);
     } else {
       if (buff == null && !end) {
         throw new IllegalArgumentException();
       }
-      stream.writeBuffer(buff, writeEnd, promise);
+      future = stream.writeBuffer(buff, writeEnd);
     }
     if (end) {
       tryComplete();
     }
-    return promise.future();
+    return future;
   }
 
   private void checkEnded() {

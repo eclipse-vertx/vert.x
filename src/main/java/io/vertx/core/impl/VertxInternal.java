@@ -56,7 +56,7 @@ public interface VertxInternal extends Vertx {
    * @return a promise associated with the context returned by {@link #getOrCreateContext()} or the {@code handler}
    *         if that handler is already an instance of {@code PromiseInternal}
    */
-  <T> PromiseInternal<T> promise(Handler<AsyncResult<T>> handler);
+  <T> PromiseInternal<T> promise(Promise<T> promise);
 
   long maxEventLoopExecTime();
 
@@ -162,9 +162,9 @@ public interface VertxInternal extends Vertx {
    * Resolve an address (e.g. {@code vertx.io} into the first found A (IPv4) or AAAA (IPv6) record.
    *
    * @param hostname the hostname to resolve
-   * @param resultHandler the result handler
+   * @return a future notified with the result
    */
-  void resolveAddress(String hostname, Handler<AsyncResult<InetAddress>> resultHandler);
+  Future<InetAddress> resolveAddress(String hostname);
 
   /**
    * @return the address resolver

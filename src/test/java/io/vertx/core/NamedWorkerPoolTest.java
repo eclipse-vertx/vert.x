@@ -361,6 +361,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
 
   @Test
   public void testCloseWorkerPoolsWhenVertxCloses() {
+    disableThreadChecks();
     Vertx vertx = Vertx.vertx();
     WorkerExecutor exec = vertx.createSharedWorkerExecutor("vert.x-123");
     vertx.close().onComplete(v -> {

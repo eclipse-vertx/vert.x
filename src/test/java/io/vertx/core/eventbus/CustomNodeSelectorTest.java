@@ -45,9 +45,7 @@ public class CustomNodeSelectorTest extends VertxTestBase {
       })
       .map(options -> {
         VertxBuilder factory = new VertxBuilder(options).init().clusterNodeSelector(new CustomNodeSelector());
-        Promise promise = Promise.promise();
-        factory.clusteredVertx(promise);
-        return promise.future();
+        return (Future)factory.clusteredVertx();
       })
       .collect(collectingAndThen(toList(), CompositeFuture::all));
 

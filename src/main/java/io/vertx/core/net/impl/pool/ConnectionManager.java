@@ -12,6 +12,7 @@
 package io.vertx.core.net.impl.pool;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextInternal;
 
@@ -33,23 +34,22 @@ public class ConnectionManager<K, C> {
     endpointMap.values().forEach(consumer);
   }
 
-  public void getConnection(ContextInternal ctx,
+  public Future<C> getConnection(ContextInternal ctx,
                             K key,
-                            EndpointProvider<C> provider,
-                            Handler<AsyncResult<C>> handler) {
-    getConnection(ctx, key, provider, 0, handler);
+                            EndpointProvider<C> provider) {
+    return getConnection(ctx, key, provider, 0);
   }
 
-  public void getConnection(ContextInternal ctx,
-                            K key,
-                            EndpointProvider<C> provider,
-                            long timeout,
-                            Handler<AsyncResult<C>> handler) {
+  public Future<C> getConnection(ContextInternal ctx,
+                                 K key,
+                                 EndpointProvider<C> provider,
+                                 long timeout) {
     Runnable dispose = () -> endpointMap.remove(key);
     while (true) {
       Endpoint<C> endpoint = endpointMap.computeIfAbsent(key, k -> provider.create(ctx, dispose));
-      if (endpoint.getConnection(ctx, timeout, handler)) {
-        break;
+      Future<C> fut = endpoint.getConnection(ctx, timeout);
+      if (fut != null) {
+        return fut;
       }
     }
   }

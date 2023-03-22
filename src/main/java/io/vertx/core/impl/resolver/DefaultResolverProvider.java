@@ -13,6 +13,7 @@ package io.vertx.core.impl.resolver;
 
 import io.netty.resolver.AddressResolverGroup;
 import io.netty.resolver.DefaultAddressResolverGroup;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.spi.resolver.ResolverProvider;
@@ -30,7 +31,7 @@ public class DefaultResolverProvider implements ResolverProvider {
   }
 
   @Override
-  public void close(Handler<Void> doneHandler) {
-    doneHandler.handle(null);
+  public Future<Void> close() {
+    return Future.succeededFuture();
   }
 }

@@ -5,7 +5,6 @@ import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -215,11 +214,6 @@ public class HttpServerRequestWrapper extends HttpServerRequestInternal {
   @Fluent
   public HttpServerRequest bodyHandler(@Nullable Handler<Buffer> bodyHandler) {
     return delegate.bodyHandler(bodyHandler);
-  }
-
-  @Override
-  public HttpServerRequest body(Handler<AsyncResult<Buffer>> handler) {
-    return delegate.body(handler);
   }
 
   @Override

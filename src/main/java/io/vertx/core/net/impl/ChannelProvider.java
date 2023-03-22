@@ -187,7 +187,7 @@ public final class ChannelProvider {
     final String proxyPassword = proxyOptions.getPassword();
     final ProxyType proxyType = proxyOptions.getType();
 
-    vertx.resolveAddress(proxyHost, dnsRes -> {
+    vertx.resolveAddress(proxyHost).onComplete(dnsRes -> {
       if (dnsRes.succeeded()) {
         InetAddress address = dnsRes.result();
         InetSocketAddress proxyAddr = new InetSocketAddress(address, proxyPort);

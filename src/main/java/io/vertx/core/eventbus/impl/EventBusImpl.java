@@ -329,14 +329,6 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
     sendLocally(sendContext);
   }
 
-  protected void callCompletionHandlerAsync(Handler<AsyncResult<Void>> completionHandler) {
-    if (completionHandler != null) {
-      vertx.runOnContext(v -> {
-        completionHandler.handle(Future.succeededFuture());
-      });
-    }
-  }
-
   private <T> void sendLocally(OutboundDeliveryContext<T> sendContext) {
     ReplyException failure = deliverMessageLocally(sendContext.message);
     if (failure != null) {

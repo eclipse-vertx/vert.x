@@ -5614,7 +5614,7 @@ public abstract class HttpTest extends HttpTestBase {
   public void testServerRequestBodyFuture() throws Exception {
     Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(1024));
     server.requestHandler(req -> {
-      req.body(onSuccess(body -> {
+      req.body().onComplete(onSuccess(body -> {
         assertEquals(expected, body);
         req.response().end();
       }));
@@ -5635,7 +5635,7 @@ public abstract class HttpTest extends HttpTestBase {
     Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(1024));
     CompletableFuture<Void> latch = new CompletableFuture<>();
     server.requestHandler(req -> {
-      req.body(onFailure(err -> {
+      req.body().onComplete(onFailure(err -> {
         testComplete();
       }));
       latch.complete(null);

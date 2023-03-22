@@ -49,10 +49,11 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
     });
     startServer(testAddress);
     client.connect(testAddress, peerAddress).onComplete(onSuccess(conn -> {
-      conn.createStream((ContextInternal) vertx.getOrCreateContext(), onSuccess(stream -> {
+      conn
+        .createStream((ContextInternal) vertx.getOrCreateContext())
+        .onComplete(onSuccess(stream -> {
         stream.writeHead(new HttpRequestHead(
-          HttpMethod.GET, "/", MultiMap.caseInsensitiveMultiMap(), "localhost:8080", "", null), false, Unpooled.EMPTY_BUFFER, true, new StreamPriority(), false, onSuccess(v -> {
-        }));
+          HttpMethod.GET, "/", MultiMap.caseInsensitiveMultiMap(), "localhost:8080", "", null), false, Unpooled.EMPTY_BUFFER, true, new StreamPriority(), false);
         stream.headHandler(resp -> {
           assertEquals(200, resp.statusCode);
           complete();
@@ -82,10 +83,9 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
         assertEquals(1, evictions.incrementAndGet());
         complete();
       });
-      conn.createStream((ContextInternal) vertx.getOrCreateContext(), onSuccess(stream -> {
+      conn.createStream((ContextInternal) vertx.getOrCreateContext()).onComplete(onSuccess(stream -> {
         stream.writeHead(new HttpRequestHead(
-          HttpMethod.GET, "/", MultiMap.caseInsensitiveMultiMap(), "localhost:8080", "", null), false, Unpooled.EMPTY_BUFFER, true, new StreamPriority(), false, onSuccess(v -> {
-        }));
+          HttpMethod.GET, "/", MultiMap.caseInsensitiveMultiMap(), "localhost:8080", "", null), false, Unpooled.EMPTY_BUFFER, true, new StreamPriority(), false);
         stream.headHandler(resp -> {
           fail();
         });

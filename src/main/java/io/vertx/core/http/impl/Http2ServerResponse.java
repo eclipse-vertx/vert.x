@@ -20,7 +20,6 @@ import io.netty.handler.codec.http.HttpStatusClass;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -339,28 +338,17 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   @Override
   public Future<Void> write(Buffer chunk) {
     ByteBuf buf = chunk.getByteBuf();
-    Promise<Void> promise = stream.context.promise();
-    write(buf, false, promise);
-    return promise.future();
+    return write(buf, false);
   }
 
   @Override
   public Future<Void> write(String chunk, String enc) {
-    Promise<Void> promise = stream.context.promise();
-    write(Buffer.buffer(chunk, enc).getByteBuf(), false, promise);
-    return promise.future();
+    return write(Buffer.buffer(chunk, enc).getByteBuf(), false);
   }
 
   @Override
   public Future<Void> write(String chunk) {
-    Promise<Void> promise = stream.context.promise();
-    write(Buffer.buffer(chunk).getByteBuf(), false, promise);
-    return promise.future();
-  }
-
-  private Http2ServerResponse write(ByteBuf chunk) {
-    write(chunk, false, null);
-    return this;
+    return write(Buffer.buffer(chunk).getByteBuf(), false);
   }
 
   @Override
@@ -375,16 +363,12 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public Future<Void> end(Buffer chunk) {
-    Promise<Void> promise = stream.context.promise();
-    write(chunk.getByteBuf(), true, promise);
-    return promise.future();
+    return write(chunk.getByteBuf(), true);
   }
 
   @Override
   public Future<Void> end() {
-    Promise<Void> promise = stream.context.promise();
-    write(null, true, promise);
-    return promise.future();
+    return write(null, true);
   }
 
   Future<NetSocket> netSocket() {
@@ -403,14 +387,10 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     return netSocket;
   }
 
-  private void end(ByteBuf chunk, Handler<AsyncResult<Void>> handler) {
-    write(chunk, true, handler);
-  }
-
-  void write(ByteBuf chunk, boolean end, Handler<AsyncResult<Void>> handler) {
+  Future<Void> write(ByteBuf chunk, boolean end) {
+    Future<Void> fut;
     Handler<Void> bodyEndHandler;
     Handler<Void> endHandler;
-    boolean invokeHandler = false;
     synchronized (conn) {
       if (ended) {
         throw new IllegalStateException("Response has already been written");
@@ -427,9 +407,11 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       }
       boolean sent = checkSendHeaders(end && !hasBody && trailers == null);
       if (hasBody || (!sent && end)) {
-        stream.writeData(chunk, end && trailers == null, handler);
+        Promise<Void> p = stream.context.promise();
+        fut = p.future();
+        stream.writeData(chunk, end && trailers == null, p);
       } else {
-        invokeHandler = true;
+        fut = stream.context.succeededFuture();
       }
       if (end && trailers != null) {
         stream.writeHeaders(trailers, true, null);
@@ -444,10 +426,8 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       if (endHandler != null) {
         endHandler.handle(null);
       }
-      if (invokeHandler && handler != null) {
-        handler.handle(Future.succeededFuture());
-      }
     }
+    return fut;
   }
 
   private boolean needsContentLengthHeader() {

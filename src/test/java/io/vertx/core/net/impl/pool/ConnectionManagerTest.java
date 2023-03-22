@@ -10,9 +10,7 @@
  */
 package io.vertx.core.net.impl.pool;
 
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.test.core.VertxTestBase;
@@ -49,19 +47,19 @@ public class ConnectionManagerTest extends VertxTestBase {
       public Endpoint<Connection> create(ContextInternal ctx, Runnable dispose) {
         return new Endpoint<Connection>(dispose) {
           @Override
-          public void requestConnection(ContextInternal ctx, long timeout, Handler<AsyncResult<Connection>> handler) {
+          public Future<Connection> requestConnection(ContextInternal ctx, long timeout) {
             incRefCount();
             if (success) {
-              handler.handle(Future.succeededFuture(result));
+              return ctx.succeededFuture(result);
             } else {
-              handler.handle(Future.failedFuture(failure));
+              return ctx.failedFuture(failure);
             }
           }
         };
       }
     };
     ConnectionManager<Object, Connection> mgr = new ConnectionManager<>();
-    mgr.getConnection(ctx, TEST_KEY, provider, ar -> {
+    mgr.getConnection(ctx, TEST_KEY, provider).onComplete(ar -> {
       if (ar.succeeded()) {
         assertTrue(success);
         assertSame(result, ar.result());
@@ -87,24 +85,29 @@ public class ConnectionManagerTest extends VertxTestBase {
   private void testDispose(boolean closeConnectionAfterCallback) {
     EventLoopContext ctx = (EventLoopContext) vertx.getOrCreateContext();
     Connection expected = new Connection();
+    AtomicReference<Runnable> postCheck = new AtomicReference<>();
     boolean[] disposed = new boolean[1];
     EndpointProvider<Connection> provider = new EndpointProvider<Connection>() {
       @Override
       public Endpoint<Connection> create(ContextInternal ctx, Runnable dispose) {
         return new Endpoint<Connection>(dispose) {
           @Override
-          public void requestConnection(ContextInternal ctx, long timeout, Handler<AsyncResult<Connection>> handler) {
+          public Future<Connection> requestConnection(ContextInternal ctx, long timeout) {
             incRefCount();
             if (closeConnectionAfterCallback) {
-              handler.handle(Future.succeededFuture(expected));
-              assertFalse(disposed[0]);
-              decRefCount();
-              assertTrue(disposed[0]);
+              postCheck.set(() -> {
+                assertFalse(disposed[0]);
+                decRefCount();
+                assertTrue(disposed[0]);
+              });
+              return ctx.succeededFuture(expected);
             } else {
               decRefCount();
               assertFalse(disposed[0]);
-              handler.handle(Future.succeededFuture(expected));
-              assertTrue(disposed[0]);
+              postCheck.set(() -> {
+                assertTrue(disposed[0]);
+              });
+              return ctx.succeededFuture(expected);
             }
           }
 
@@ -116,8 +119,9 @@ public class ConnectionManagerTest extends VertxTestBase {
       }
     };
     ConnectionManager<Object, Connection> mgr = new ConnectionManager<>();
-    mgr.getConnection(ctx, TEST_KEY, provider, onSuccess(conn -> {
+    mgr.getConnection(ctx, TEST_KEY, provider).onComplete(onSuccess(conn -> {
       assertEquals(expected, conn);
+      postCheck.get().run();
     }));
     waitUntil(() -> disposed[0]);
   }
@@ -132,9 +136,9 @@ public class ConnectionManagerTest extends VertxTestBase {
       public Endpoint<Connection> create(ContextInternal ctx, Runnable dispose) {
         return new Endpoint<Connection>(dispose) {
           @Override
-          public void requestConnection(ContextInternal ctx, long timeout, Handler<AsyncResult<Connection>> handler) {
+          public Future<Connection> requestConnection(ContextInternal ctx, long timeout) {
             incRefCount();
-            handler.handle(Future.succeededFuture(expected));
+            return ctx.succeededFuture(expected);
           }
 
           @Override
@@ -152,7 +156,7 @@ public class ConnectionManagerTest extends VertxTestBase {
     };
     ConnectionManager<Object, Connection> mgr = new ConnectionManager<>();
     CountDownLatch latch = new CountDownLatch(1);
-    mgr.getConnection(ctx, TEST_KEY, provider, onSuccess(conn -> {
+    mgr.getConnection(ctx, TEST_KEY, provider).onComplete(onSuccess(conn -> {
       assertEquals(expected, conn);
       latch.countDown();
     }));
@@ -173,16 +177,17 @@ public class ConnectionManagerTest extends VertxTestBase {
       public Endpoint<Connection> create(ContextInternal ctx, Runnable dispose) {
         return new Endpoint<Connection>(dispose) {
           @Override
-          public void requestConnection(ContextInternal ctx, long timeout, Handler<AsyncResult<Connection>> handler) {
+          public Future<Connection> requestConnection(ContextInternal ctx, long timeout) {
             adder.set(() -> {
               incRefCount();
             });
+            return ctx.promise();
           }
         };
       }
     };
     ConnectionManager<Object, Connection> mgr = new ConnectionManager<>();
-    mgr.getConnection(ctx, TEST_KEY, provider, onSuccess(conn -> {
+    mgr.getConnection(ctx, TEST_KEY, provider).onComplete(onSuccess(conn -> {
     }));
     waitUntil(() -> adder.get() != null);
     mgr.close();
@@ -200,15 +205,16 @@ public class ConnectionManagerTest extends VertxTestBase {
         disposals.add(disposed);
         return new Endpoint<Connection>(dispose) {
           @Override
-          public void requestConnection(ContextInternal ctx, long timeout, Handler<AsyncResult<Connection>> handler) {
+          public Future<Connection> requestConnection(ContextInternal ctx, long timeout) {
             if (disposed.get()) {
               // Check we don't have reentrant demands once disposed
               fail();
+              return ctx.promise();
             } else {
               Connection conn = new Connection();
               incRefCount();
-              handler.handle(Future.succeededFuture(conn));
               decRefCount();
+              return ctx.succeededFuture(conn);
             }
           }
 
@@ -228,7 +234,7 @@ public class ConnectionManagerTest extends VertxTestBase {
       latches[i] = cc;
       new Thread(() -> {
         for (int j = 0;j < num;j++) {
-          mgr.getConnection(ctx, TEST_KEY, provider, onSuccess(conn -> {
+          mgr.getConnection(ctx, TEST_KEY, provider).onComplete(onSuccess(conn -> {
             cc.countDown();
           }));
         }

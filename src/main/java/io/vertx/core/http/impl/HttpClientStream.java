@@ -13,7 +13,6 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -22,7 +21,6 @@ import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.streams.WriteStream;
 
 /**
@@ -48,14 +46,8 @@ public interface HttpClientStream extends WriteStream<Buffer> {
   HttpClientConnection connection();
   ContextInternal getContext();
 
-  void writeHead(HttpRequestHead request,
-                 boolean chunked,
-                 ByteBuf buf,
-                 boolean end,
-                 StreamPriority priority,
-                 boolean connect,
-                 Handler<AsyncResult<Void>> handler);
-  void writeBuffer(ByteBuf buf, boolean end, Handler<AsyncResult<Void>> listener);
+  Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect);
+  Future<Void> writeBuffer(ByteBuf buf, boolean end);
   void writeFrame(int type, int flags, ByteBuf payload);
 
   void continueHandler(Handler<Void> handler);
@@ -65,23 +57,17 @@ public interface HttpClientStream extends WriteStream<Buffer> {
 
   @Override
   default Future<Void> write(Buffer data) {
-    PromiseInternal<Void> promise = getContext().promise();
-    writeBuffer(data.getByteBuf(), false, promise);
-    return promise.future();
+    return writeBuffer(data.getByteBuf(), false);
   }
 
   @Override
   default Future<Void> end(Buffer data) {
-    PromiseInternal<Void> promise = getContext().promise();
-    writeBuffer(data.getByteBuf(), true, promise);
-    return promise.future();
+    return writeBuffer(data.getByteBuf(), true);
   }
 
   @Override
   default Future<Void> end() {
-    PromiseInternal<Void> promise = getContext().promise();
-    writeBuffer(Unpooled.EMPTY_BUFFER, true, promise);
-    return promise.future();
+    return writeBuffer(Unpooled.EMPTY_BUFFER, true);
   }
 
   void headHandler(Handler<HttpResponseHead> handler);

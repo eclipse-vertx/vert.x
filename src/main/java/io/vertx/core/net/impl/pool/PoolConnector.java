@@ -11,6 +11,7 @@
 package io.vertx.core.net.impl.pool;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.EventLoopContext;
 
@@ -26,9 +27,9 @@ public interface PoolConnector<C> {
    *
    * @param context the context to use for IO
    * @param listener the listener
-   * @param handler the callback handler with the result
+   * @return a future notified with the result
    */
-  void connect(EventLoopContext context, Listener listener, Handler<AsyncResult<ConnectResult<C>>> handler);
+  Future<ConnectResult<C>> connect(EventLoopContext context, Listener listener);
 
   /**
    * Checks whether the connection is still valid.

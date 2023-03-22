@@ -11,11 +11,7 @@
 
 package io.vertx.core.impl.launcher.commands;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
+import io.vertx.core.*;
 import io.vertx.core.cli.annotations.Description;
 import io.vertx.core.cli.annotations.Option;
 import io.vertx.core.impl.VertxBuilder;
@@ -124,15 +120,16 @@ public abstract class ClasspathHandler extends DefaultCommand {
    * Creates a new clustered vert.x instance.
    *
    * @param builder       the builder
-   * @param resultHandler the result handler
+   * @return a future notified with the result
    */
-  protected synchronized void create(VertxBuilder builder, Handler<AsyncResult<Vertx>> resultHandler) {
+  protected synchronized Future<Vertx> createClustered(VertxBuilder builder) {
     final ClassLoader originalClassLoader = Thread.currentThread().getContextClassLoader();
     try {
       Thread.currentThread().setContextClassLoader(classloader != null ? classloader : getClass().getClassLoader());
-      builder.clusteredVertx(resultHandler);
+      return builder.clusteredVertx();
     } catch (Exception e) {
       log.error("Failed to create the vert.x instance", e);
+      return Future.failedFuture(e);
     } finally {
       Thread.currentThread().setContextClassLoader(originalClassLoader);
     }

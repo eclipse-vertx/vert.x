@@ -24,7 +24,6 @@ import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.handler.timeout.IdleStateEvent;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -411,13 +410,10 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   public Future<Void> updateSettings(io.vertx.core.http.Http2Settings settings) {
-    Promise<Void> promise = context.promise();
-    Http2Settings settingsUpdate = HttpUtils.fromVertxSettings(settings);
-    updateSettings(settingsUpdate, promise);
-    return promise.future();
+    return updateSettings(HttpUtils.fromVertxSettings(settings));
   }
 
-  protected void updateSettings(Http2Settings settingsUpdate, Handler<AsyncResult<Void>> completionHandler) {
+  protected Future<Void> updateSettings(Http2Settings settingsUpdate) {
     Http2Settings current = handler.decoder().localSettings();
     for (Map.Entry<Character, Long> entry : current.entrySet()) {
       Character key = entry.getKey();
@@ -425,13 +421,12 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
         settingsUpdate.remove(key);
       }
     }
+    Promise<Void> promise = context.promise();
     Handler<Void> pending = v -> {
       synchronized (Http2ConnectionBase.this) {
         localSettings.putAll(settingsUpdate);
       }
-      if (completionHandler != null) {
-        completionHandler.handle(Future.succeededFuture());
-      }
+      promise.complete();
     };
     updateSettingsHandlers.add(pending);
     handler.writeSettings(settingsUpdate).addListener(fut -> {
@@ -439,11 +434,10 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
         synchronized (Http2ConnectionBase.this) {
           updateSettingsHandlers.remove(pending);
         }
-        if (completionHandler != null) {
-          completionHandler.handle(Future.failedFuture(fut.cause()));
-        }
+        promise.fail(fut.cause());
       }
     });
+    return promise.future();
   }
 
   @Override

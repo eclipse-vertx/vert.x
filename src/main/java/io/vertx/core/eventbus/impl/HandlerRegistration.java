@@ -86,13 +86,6 @@ public abstract class HandlerRegistration<T> implements Closeable {
     return promise.future();
   }
 
-  public void unregister(Handler<AsyncResult<Void>> completionHandler) {
-    Future<Void> fut = unregister();
-    if (completionHandler != null) {
-      fut.onComplete(completionHandler);
-    }
-  }
-
   void dispatch(Handler<Message<T>> theHandler, Message<T> message, ContextInternal context) {
     InboundDeliveryContext deliveryCtx = new InboundDeliveryContext((MessageImpl<?, T>) message, theHandler, context);
     deliveryCtx.dispatch();
@@ -151,6 +144,6 @@ public abstract class HandlerRegistration<T> implements Closeable {
 
   @Override
   public void close(Promise<Void> completion) {
-    unregister(completion);
+    unregister().onComplete(completion);
   }
 }

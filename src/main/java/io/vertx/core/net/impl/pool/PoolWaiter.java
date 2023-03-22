@@ -13,6 +13,7 @@ package io.vertx.core.net.impl.pool;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
 
@@ -49,13 +50,13 @@ public class PoolWaiter<C> {
   final PoolWaiter.Listener<C> listener;
   final ContextInternal context;
   final int capacity;
-  final Handler<AsyncResult<Lease<C>>> handler;
+  final Promise<Lease<C>> handler;
   PoolWaiter<C> prev;
   PoolWaiter<C> next;
   boolean disposed;
   boolean queued;
 
-  PoolWaiter(PoolWaiter.Listener<C> listener, ContextInternal context, final int capacity, Handler<AsyncResult<Lease<C>>> handler) {
+  PoolWaiter(PoolWaiter.Listener<C> listener, ContextInternal context, final int capacity, Promise<Lease<C>> handler) {
     this.listener = listener;
     this.context = context;
     this.capacity = capacity;

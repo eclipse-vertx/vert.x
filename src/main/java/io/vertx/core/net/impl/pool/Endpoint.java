@@ -10,8 +10,8 @@
  */
 package io.vertx.core.net.impl.pool;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.impl.ContextInternal;
 
 /**
@@ -31,14 +31,14 @@ public abstract class Endpoint<C> {
     this.dispose = dispose;
   }
 
-  public boolean getConnection(ContextInternal ctx, long timeout, Handler<AsyncResult<C>> handler) {
+  public Future<C> getConnection(ContextInternal ctx, long timeout) {
     synchronized (this) {
       if (disposed) {
-        return false;
+        return null;
       }
       pendingRequestCount++;
     }
-    requestConnection(ctx, timeout, ar -> {
+    return requestConnection(ctx, timeout).andThen(ar -> {
       boolean dispose;
       synchronized (Endpoint.this) {
         pendingRequestCount--;
@@ -49,12 +49,10 @@ public abstract class Endpoint<C> {
       if (dispose) {
         disposeInternal();
       }
-      handler.handle(ar);
     });
-    return true;
   }
 
-  public abstract void requestConnection(ContextInternal ctx, long timeout, Handler<AsyncResult<C>> handler);
+  public abstract Future<C> requestConnection(ContextInternal ctx, long timeout);
 
   protected boolean incRefCount() {
     synchronized (this) {

@@ -13,10 +13,12 @@ package io.vertx.core.http.impl;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.impl.pool.ConnectResult;
 import io.vertx.core.net.impl.pool.ConnectionPool;
 import io.vertx.core.net.impl.pool.PoolConnection;
@@ -78,11 +80,11 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
   }
 
   @Override
-  public void connect(EventLoopContext context, Listener listener, Handler<AsyncResult<ConnectResult<HttpClientConnection>>> handler) {
-    connector.httpConnect(context, ar -> {
-      if (ar.succeeded()) {
+  public Future<ConnectResult<HttpClientConnection>> connect(EventLoopContext context, Listener listener) {
+    return connector
+      .httpConnect(context)
+      .map(connection -> {
         incRefCount();
-        HttpClientConnection connection = ar.result();
         connection.evictionHandler(v -> {
           decRefCount();
           listener.onRemove();
@@ -99,10 +101,7 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
         } else {
           idx = 1;
         }
-        handler.handle(Future.succeededFuture(new ConnectResult<>(connection, capacity, idx)));
-      } else {
-        handler.handle(Future.failedFuture(ar.cause()));
-      }
+        return new ConnectResult<>(connection, capacity, idx);
     });
   }
 
@@ -125,14 +124,14 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
     private final ContextInternal context;
     private final HttpVersion protocol;
     private final long timeout;
-    private final Handler<AsyncResult<Lease<HttpClientConnection>>> handler;
+    private final Promise<Lease<HttpClientConnection>> promise;
     private long timerID;
 
-    Request(ContextInternal context, HttpVersion protocol, long timeout, Handler<AsyncResult<Lease<HttpClientConnection>>> handler) {
+    Request(ContextInternal context, HttpVersion protocol, long timeout, Promise<Lease<HttpClientConnection>> promise) {
       this.context = context;
       this.protocol = protocol;
       this.timeout = timeout;
-      this.handler = handler;
+      this.promise = promise;
       this.timerID = -1L;
     }
 
@@ -147,7 +146,7 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
         timerID = context.setTimer(timeout, id -> {
           pool.cancel(waiter, ar -> {
             if (ar.succeeded() && ar.result()) {
-              handler.handle(Future.failedFuture(new NoStackTraceTimeoutException("The timeout of " + timeout + " ms has been exceeded when getting a connection to " + connector.server())));
+              promise.fail(new NoStackTraceTimeoutException("The timeout of " + timeout + " ms has been exceeded when getting a connection to " + connector.server()));
             }
           });
         });
@@ -159,7 +158,7 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
       if (timerID >= 0) {
         context.owner().cancelTimer(timerID);
       }
-      handler.handle(ar);
+      promise.handle(ar);
     }
 
     void acquire() {
@@ -168,8 +167,10 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
   }
 
   @Override
-  public void requestConnection2(ContextInternal ctx, long timeout, Handler<AsyncResult<Lease<HttpClientConnection>>> handler) {
-    Request request = new Request(ctx, client.options().getProtocolVersion(), timeout, handler);
+  protected Future<Lease<HttpClientConnection>> requestConnection2(ContextInternal ctx, long timeout) {
+    PromiseInternal<Lease<HttpClientConnection>> promise = ctx.promise();
+    Request request = new Request(ctx, client.options().getProtocolVersion(), timeout, promise);
     request.acquire();
+    return promise.future();
   }
 }

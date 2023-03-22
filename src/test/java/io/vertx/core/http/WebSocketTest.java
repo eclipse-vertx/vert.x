@@ -2220,7 +2220,8 @@ public class WebSocketTest extends VertxTestBase {
         @Override
         public void start() {
           client = vertx.createHttpClient();
-          client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
+          Future<WebSocket> fut = client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/");
+          fut.onComplete(onSuccess(ws -> {
             assertTrue(Context.isOnWorkerThread());
             ws.write(Buffer.buffer("ping"));
             ws.handler(buf -> {

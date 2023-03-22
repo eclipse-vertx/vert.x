@@ -27,6 +27,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.SocketAddress;
@@ -143,13 +144,13 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public void writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect, Handler<AsyncResult<Void>> handler) {
-      delegate.writeHead(request, chunked, buf, end, priority, connect, handler);
+    public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect) {
+      return delegate.writeHead(request, chunked, buf, end, priority, connect);
     }
 
     @Override
-    public void writeBuffer(ByteBuf buf, boolean end, Handler<AsyncResult<Void>> listener) {
-      delegate.writeBuffer(buf, end, listener);
+    public Future<Void> writeBuffer(ByteBuf buf, boolean end) {
+      return delegate.writeBuffer(buf, end);
     }
 
     @Override
@@ -298,13 +299,12 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
      * HTTP/2 clear text upgrade here.
      */
     @Override
-    public void writeHead(HttpRequestHead request,
+    public Future<Void> writeHead(HttpRequestHead request,
                           boolean chunked,
                           ByteBuf buf,
                           boolean end,
                           StreamPriority priority,
-                          boolean connect,
-                          Handler<AsyncResult<Void>> handler) {
+                          boolean connect) {
       ChannelPipeline pipeline = upgradingConnection.channel().pipeline();
       HttpClientCodec httpCodec = pipeline.get(HttpClientCodec.class);
 
@@ -357,69 +357,70 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
               return;
             }
             Http2ClientConnection conn = (Http2ClientConnection) future.getNow();
-            conn.upgradeStream(upgradingStream.metric(), upgradingStream.trace(), upgradingStream.getContext(), ar -> {
-              upgradingConnection.closeHandler(null);
-              upgradingConnection.exceptionHandler(null);
-              upgradingConnection.evictionHandler(null);
-              upgradingConnection.concurrencyChangeHandler(null);
-              if (ar.succeeded()) {
-                upgradedStream = ar.result();
-                upgradedStream.headHandler(headHandler);
-                upgradedStream.chunkHandler(chunkHandler);
-                upgradedStream.endHandler(endHandler);
-                upgradedStream.priorityHandler(priorityHandler);
-                upgradedStream.exceptionHandler(exceptionHandler);
-                upgradedStream.drainHandler(drainHandler);
-                upgradedStream.continueHandler(continueHandler);
-                upgradedStream.earlyHintsHandler(earlyHintsHandler);
-                upgradedStream.pushHandler(pushHandler);
-                upgradedStream.unknownFrameHandler(unknownFrameHandler);
-                upgradedStream.closeHandler(closeHandler);
-                upgradingStream.headHandler(null);
-                upgradingStream.chunkHandler(null);
-                upgradingStream.endHandler(null);
-                upgradingStream.priorityHandler(null);
-                upgradingStream.exceptionHandler(null);
-                upgradingStream.drainHandler(null);
-                upgradingStream.continueHandler(null);
-                upgradingStream.earlyHintsHandler(null);
-                upgradingStream.pushHandler(null);
-                upgradingStream.unknownFrameHandler(null);
-                upgradingStream.closeHandler(null);
-                headHandler = null;
-                chunkHandler = null;
-                endHandler = null;
-                priorityHandler = null;
-                exceptionHandler = null;
-                drainHandler = null;
-                continueHandler = null;
-                earlyHintsHandler = null;
-                pushHandler = null;
-                closeHandler = null;
-                upgradedConnection.current = conn;
-                conn.closeHandler(upgradedConnection.closeHandler);
-                conn.exceptionHandler(upgradedConnection.exceptionHandler);
-                conn.pingHandler(upgradedConnection.pingHandler);
-                conn.goAwayHandler(upgradedConnection.goAwayHandler);
-                conn.shutdownHandler(upgradedConnection.shutdownHandler);
-                conn.remoteSettingsHandler(upgradedConnection.remoteSettingsHandler);
-                conn.evictionHandler(upgradedConnection.evictionHandler);
-                conn.concurrencyChangeHandler(upgradedConnection.concurrencyChangeHandler);
-                Handler<Long> concurrencyChangeHandler = upgradedConnection.concurrencyChangeHandler;
-                upgradedConnection.closeHandler = null;
-                upgradedConnection.exceptionHandler = null;
-                upgradedConnection.pingHandler = null;
-                upgradedConnection.goAwayHandler = null;
-                upgradedConnection.shutdownHandler = null;
-                upgradedConnection.remoteSettingsHandler = null;
-                upgradedConnection.evictionHandler = null;
-                upgradedConnection.concurrencyChangeHandler = null;
-                concurrencyChangeHandler.handle(conn.concurrency());
-              } else {
-                // Handle me
-                log.error(ar.cause().getMessage(), ar.cause());
+            try {
+              try {
+                upgradedStream = conn.upgradeStream(upgradingStream.metric(), upgradingStream.trace(), upgradingStream.getContext());
+              } finally {
+                upgradingConnection.closeHandler(null);
+                upgradingConnection.exceptionHandler(null);
+                upgradingConnection.evictionHandler(null);
+                upgradingConnection.concurrencyChangeHandler(null);
               }
-            });
+              upgradedStream.headHandler(headHandler);
+              upgradedStream.chunkHandler(chunkHandler);
+              upgradedStream.endHandler(endHandler);
+              upgradedStream.priorityHandler(priorityHandler);
+              upgradedStream.exceptionHandler(exceptionHandler);
+              upgradedStream.drainHandler(drainHandler);
+              upgradedStream.continueHandler(continueHandler);
+              upgradedStream.earlyHintsHandler(earlyHintsHandler);
+              upgradedStream.pushHandler(pushHandler);
+              upgradedStream.unknownFrameHandler(unknownFrameHandler);
+              upgradedStream.closeHandler(closeHandler);
+              upgradingStream.headHandler(null);
+              upgradingStream.chunkHandler(null);
+              upgradingStream.endHandler(null);
+              upgradingStream.priorityHandler(null);
+              upgradingStream.exceptionHandler(null);
+              upgradingStream.drainHandler(null);
+              upgradingStream.continueHandler(null);
+              upgradingStream.earlyHintsHandler(null);
+              upgradingStream.pushHandler(null);
+              upgradingStream.unknownFrameHandler(null);
+              upgradingStream.closeHandler(null);
+              headHandler = null;
+              chunkHandler = null;
+              endHandler = null;
+              priorityHandler = null;
+              exceptionHandler = null;
+              drainHandler = null;
+              continueHandler = null;
+              earlyHintsHandler = null;
+              pushHandler = null;
+              closeHandler = null;
+              upgradedConnection.current = conn;
+              conn.closeHandler(upgradedConnection.closeHandler);
+              conn.exceptionHandler(upgradedConnection.exceptionHandler);
+              conn.pingHandler(upgradedConnection.pingHandler);
+              conn.goAwayHandler(upgradedConnection.goAwayHandler);
+              conn.shutdownHandler(upgradedConnection.shutdownHandler);
+              conn.remoteSettingsHandler(upgradedConnection.remoteSettingsHandler);
+              conn.evictionHandler(upgradedConnection.evictionHandler);
+              conn.concurrencyChangeHandler(upgradedConnection.concurrencyChangeHandler);
+              Handler<Long> concurrencyChangeHandler = upgradedConnection.concurrencyChangeHandler;
+              upgradedConnection.closeHandler = null;
+              upgradedConnection.exceptionHandler = null;
+              upgradedConnection.pingHandler = null;
+              upgradedConnection.goAwayHandler = null;
+              upgradedConnection.shutdownHandler = null;
+              upgradedConnection.remoteSettingsHandler = null;
+              upgradedConnection.evictionHandler = null;
+              upgradedConnection.concurrencyChangeHandler = null;
+              concurrencyChangeHandler.handle(conn.concurrency());
+            } catch (Exception e) {
+              // Handle me
+              log.error(e.getMessage(), e);
+            }
           });
           handler.clientUpgrade(ctx);
         }
@@ -497,7 +498,9 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
       };
       pipeline.addAfter("codec", null, new UpgradeRequestHandler());
       pipeline.addAfter("codec", null, upgradeHandler);
-      doWriteHead(request, chunked, buf, end, priority, connect, handler);
+      PromiseInternal<Void> promise = upgradingStream.getContext().promise();
+      doWriteHead(request, chunked, buf, end, priority, connect, promise);
+      return promise.future();
     }
 
     private void doWriteHead(HttpRequestHead head,
@@ -509,7 +512,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
                              Handler<AsyncResult<Void>> handler) {
       EventExecutor exec = upgradingConnection.channelHandlerContext().executor();
       if (exec.inEventLoop()) {
-        upgradingStream.writeHead(head, chunked, buf, end, priority, connect, handler);
+        upgradingStream.writeHead(head, chunked, buf, end, priority, connect);
         if (end) {
           ChannelPipeline pipeline = upgradingConnection.channelHandlerContext().pipeline();
           pipeline.fireUserEventTriggered(SEND_BUFFERED_MESSAGES);
@@ -680,17 +683,19 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public void writeBuffer(ByteBuf buf, boolean end, Handler<AsyncResult<Void>> handler) {
+    public Future<Void> writeBuffer(ByteBuf buf, boolean end) {
+      Promise<Void> promise = upgradingStream.getContext().promise();
       EventExecutor exec = upgradingConnection.channelHandlerContext().executor();
       if (exec.inEventLoop()) {
-        upgradingStream.writeBuffer(buf, end, handler);
+        upgradingStream.writeBuffer(buf, end);
         if (end) {
           ChannelPipeline pipeline = upgradingConnection.channelHandlerContext().pipeline();
           pipeline.fireUserEventTriggered(SEND_BUFFERED_MESSAGES);
         }
       } else {
-        exec.execute(() -> writeBuffer(buf, end, handler));
+        exec.execute(() -> writeBuffer(buf, end));
       }
+      return promise.future();
     }
 
     @Override
@@ -767,25 +772,15 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
   }
 
   @Override
-  public void createStream(ContextInternal context, Handler<AsyncResult<HttpClientStream>> handler) {
+  public Future<HttpClientStream> createStream(ContextInternal context) {
     if (current instanceof Http1xClientConnection && !upgradeProcessed) {
-      current.createStream(context, ar -> {
-        if (ar.succeeded()) {
-          HttpClientStream stream = ar.result();
-          UpgradingStream upgradingStream = new UpgradingStream(stream, this, (Http1xClientConnection) current);
-          handler.handle(Future.succeededFuture(upgradingStream));
-        } else {
-          handler.handle(ar);
-        }
-      });
+      return current
+        .createStream(context)
+        .map(stream -> new UpgradingStream(stream, this, (Http1xClientConnection) current));
     } else {
-      current.createStream(context, ar -> {
-        if (ar.succeeded()) {
-          handler.handle(Future.succeededFuture(new DelegatingStream(this, ar.result())));
-        } else {
-          handler.handle(ar);
-        }
-      });
+      return current
+        .createStream(context)
+        .map(stream -> new DelegatingStream(this, stream));
     }
   }
 

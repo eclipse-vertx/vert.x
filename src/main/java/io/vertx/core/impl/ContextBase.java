@@ -32,14 +32,6 @@ import java.util.concurrent.RejectedExecutionException;
  */
 public abstract class ContextBase implements ContextInternal {
 
-  static <T> void setResultHandler(ContextInternal ctx, Future<T> fut, Handler<AsyncResult<T>> resultHandler) {
-    if (resultHandler != null) {
-      fut.onComplete(resultHandler);
-    } else {
-      fut.onFailure(ctx::reportException);
-    }
-  }
-
   private static final Logger log = LoggerFactory.getLogger(ContextBase.class);
 
   private static final String DISABLE_TIMINGS_PROP_NAME = "vertx.disableContextTimings";

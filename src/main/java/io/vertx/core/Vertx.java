@@ -96,9 +96,7 @@ public interface Vertx extends Measured {
    * @return a future completed with the clustered vertx
    */
   static Future<Vertx> clusteredVertx(VertxOptions options) {
-    Promise<Vertx> promise = Promise.promise();
-    new VertxBuilder(options).init().clusteredVertx(promise);
-    return promise.future();
+    return new VertxBuilder(options).init().clusteredVertx();
   }
 
   /**

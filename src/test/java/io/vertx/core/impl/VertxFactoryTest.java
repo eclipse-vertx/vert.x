@@ -61,7 +61,7 @@ public class VertxFactoryTest {
     VertxBuilder factory = new VertxBuilder().init();
     CompletableFuture<Vertx> fut = new CompletableFuture<>();
     factory.init();
-    factory.clusteredVertx(ar -> {
+    factory.clusteredVertx().onComplete(ar -> {
       if (ar.succeeded()) {
         fut.complete(ar.result());
       } else {
@@ -136,7 +136,7 @@ public class VertxFactoryTest {
       VertxBuilder factory = new VertxBuilder(new VertxOptions());
       factory.clusterManager(clusterManager);
       factory.init();
-      factory.clusteredVertx(ar -> {
+      factory.clusteredVertx().onComplete(ar -> {
         if (ar.succeeded()) {
           res.complete(ar.result());
         } else {

@@ -112,7 +112,7 @@ public class VertxStartFailureTest extends AsyncTestBase {
       }
     };
     AtomicReference<AsyncResult<Vertx>> resultRef = new AtomicReference<>();
-    new VertxBuilder(options).init().findTransport(transport).clusteredVertx(ar -> {
+    new VertxBuilder(options).init().findTransport(transport).clusteredVertx().onComplete(ar -> {
       resultRef.set(ar);
       latch.countDown();
     });

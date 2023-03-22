@@ -13,10 +13,7 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.EventLoop;
+import io.netty.channel.*;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.compression.Brotli;
 import io.netty.handler.codec.compression.ZlibCodecFactory;
@@ -56,7 +53,7 @@ import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageD
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.FutureListener;
-import io.vertx.core.AsyncResult;
+import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -143,6 +140,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   private long readWindow;
   private long writeWindow;
   private boolean writeOverflow;
+  private Deque<WebSocketFrame> pendingFrames;
 
   private long lastResponseReceivedTimestamp;
 
@@ -255,7 +253,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     return Brotli.isAvailable();
   }
 
-  private void beginRequest(Stream stream, HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, Handler<AsyncResult<Void>> handler) {
+  private void beginRequest(Stream stream, HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, PromiseInternal<Void> promise) {
     request.id = stream.id;
     request.remoteAddress = remoteAddress();
     stream.bytesWritten += buf != null ? buf.readableBytes() : 0L;
@@ -276,7 +274,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
         stream.trace = tracer.sendRequest(stream.context, SpanKind.RPC, options.getTracingPolicy(), request, operation, headers, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
       }
     }
-    writeToChannel(nettyRequest, handler == null ? null : context.promise(handler));
+    writeToChannel(nettyRequest, promise);
     if (end) {
       endRequest(stream);
     }
@@ -387,10 +385,10 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     private long bytesRead;
     private long bytesWritten;
 
-    Stream(ContextInternal context, int id) {
+    Stream(ContextInternal context, Promise<HttpClientStream> promise, int id) {
       this.context = context;
       this.id = id;
-      this.promise = context.promise();
+      this.promise = promise;
     }
 
     // Not really elegant... but well
@@ -434,8 +432,8 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     private Handler<Throwable> exceptionHandler;
     private Handler<Void> closeHandler;
 
-    StreamImpl(ContextInternal context, Http1xClientConnection conn, int id) {
-      super(context, id);
+    StreamImpl(ContextInternal context, Http1xClientConnection conn, Promise<HttpClientStream> promise, int id) {
+      super(context, promise, id);
 
       this.conn = conn;
       this.queue = new InboundBuffer<>(context, 5)
@@ -548,11 +546,13 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     }
 
     @Override
-    public void writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect, Handler<AsyncResult<Void>> handler) {
-      writeHead(request, chunked, buf, end, connect, handler == null ? null : context.promise(handler));
+    public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect) {
+      PromiseInternal<Void> promise = context.promise();
+      writeHead(request, chunked, buf, end, connect, promise);
+      return promise.future();
     }
 
-    private void writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, Handler<AsyncResult<Void>> handler) {
+    private void writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, PromiseInternal<Void> handler) {
       EventLoop eventLoop = conn.context.nettyEventLoop();
       if (eventLoop.inEventLoop()) {
         this.request = request;
@@ -563,10 +563,13 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     }
 
     @Override
-    public void writeBuffer(ByteBuf buff, boolean end, Handler<AsyncResult<Void>> handler) {
+    public Future<Void> writeBuffer(ByteBuf buff, boolean end) {
       if (buff != null || end) {
-        FutureListener<Void> listener = handler == null ? null : context.promise(handler);
+        PromiseInternal<Void> listener = context.promise();
         writeBuffer(buff, end, listener);
+        return listener.future();
+      } else {
+        throw new IllegalStateException("???");
       }
     }
 
@@ -782,7 +785,15 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     } else if (msg instanceof ByteBuf && isConnect) {
       handleChunk((ByteBuf) msg);
     } else if (msg instanceof WebSocketFrame) {
-      handleWsFrame((WebSocketFrame) msg);
+      WebSocketFrame frame = (WebSocketFrame) msg;
+      if (webSocket == null) {
+        if (pendingFrames == null) {
+          pendingFrames = new ArrayDeque<>();
+        }
+        pendingFrames.add(frame);
+      } else {
+        handleWsFrame(frame);
+      }
     } else {
       invalidMessageHandler.handle(msg);
     }
@@ -952,7 +963,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     return client.metrics();
   }
 
-  synchronized void toWebSocket(
+  synchronized Future<WebSocket> toWebSocket(
     ContextInternal context,
     String requestURI,
     MultiMap headers,
@@ -961,8 +972,8 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     List<String> subProtocols,
     long handshakeTimeout,
     boolean registerWriteHandlers,
-    int maxWebSocketFrameSize,
-    Promise<WebSocket> promise) {
+    int maxWebSocketFrameSize) {
+    Promise<WebSocket> promise = context.promise();
     try {
       URI wsuri = new URI(requestURI);
       if (!wsuri.isAbsolute()) {
@@ -984,9 +995,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
 
       long timer;
       if (handshakeTimeout > 0L) {
-        timer = vertx.setTimer(handshakeTimeout, id -> {
-          close();
-        });
+        timer = vertx.setTimer(handshakeTimeout, id -> close());
       } else {
         timer = -1;
       }
@@ -1012,41 +1021,48 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
         maxWebSocketFrameSize,
         !options.isSendUnmaskedFrames());
 
-      WebSocketHandshakeInboundHandler handshakeInboundHandler = new WebSocketHandshakeInboundHandler(handshaker, ar -> {
+      io.netty.util.concurrent.Promise<HttpHeaders> upgrade = chctx.executor().newPromise();
+      WebSocketHandshakeInboundHandler handshakeInboundHandler = new WebSocketHandshakeInboundHandler(handshaker, upgrade);
+      p.addBefore("handler", "handshakeCompleter", handshakeInboundHandler);
+      upgrade.addListener((GenericFutureListener<io.netty.util.concurrent.Future<HttpHeaders>>) future -> {
         if (timer > 0L) {
           vertx.cancelTimer(timer);
         }
-        AsyncResult<WebSocket> wsRes = ar.map(v -> {
-          WebSocketImpl w = new WebSocketImpl(
+        if (future.isSuccess()) {
+          WebSocketImpl ws = new WebSocketImpl(
             context,
             Http1xClientConnection.this,
-            ar.result(),
-            version != WebSocketVersion.V00,
+            version != V00,
             options.getWebSocketClosingTimeout(),
             options.getMaxWebSocketFrameSize(),
             options.getMaxWebSocketMessageSize(),
             registerWriteHandlers);
-          w.subProtocol(handshaker.actualSubprotocol());
-          return w;
-        });
-        if (ar.failed()) {
-          close();
-        } else {
-          webSocket = (WebSocketImpl) wsRes.result();
-          webSocket.registerHandler(vertx.eventBus());
-          log.debug("WebSocket handshake complete");
+          ws.headers(new HeadersAdaptor(future.getNow()));
+          ws.subProtocol(handshaker.actualSubprotocol());
+          ws.registerHandler(vertx.eventBus());
+          webSocket = ws;
           HttpClientMetrics metrics = client.metrics();
           if (metrics != null) {
-            webSocket.setMetric(metrics.connected(webSocket));
+            ws.setMetric(metrics.connected(ws));
           }
+          promise.complete(ws);
+          Deque<WebSocketFrame> toResubmit = pendingFrames;
+          if (toResubmit != null) {
+            pendingFrames = null;
+            WebSocketFrame frame;
+            while ((frame = toResubmit.poll()) != null) {
+              handleWsFrame(frame);
+            }
+          }
+        } else {
+          close();
+          promise.fail(future.cause());
         }
-        getContext().emit(wsRes, promise);
       });
-      p.addBefore("handler", "handshakeCompleter", handshakeInboundHandler);
-      handshaker.handshake(chctx.channel());
     } catch (Exception e) {
       handleException(e);
     }
+    return promise.future();
   }
 
   static WebSocketClientHandshaker newHandshaker(
@@ -1244,29 +1260,29 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   }
 
   @Override
-  public void createStream(ContextInternal context, Handler<AsyncResult<HttpClientStream>> handler) {
+  public Future<HttpClientStream> createStream(ContextInternal context) {
+    PromiseInternal<HttpClientStream> promise = context.promise();
+    createStream(context, promise);
+    return promise.future();
+  }
+
+  private void createStream(ContextInternal context, Promise<HttpClientStream> promise) {
     EventLoop eventLoop = context.nettyEventLoop();
     if (eventLoop.inEventLoop()) {
-      StreamImpl stream;
       synchronized (this) {
-        if (closed) {
-          stream = null;
-        } else {
-          stream = new StreamImpl(context, this, seq++);
+        if (!closed) {
+          StreamImpl stream = new StreamImpl(context, this, promise, seq++);
           requests.add(stream);
           if (requests.size() == 1) {
             stream.promise.complete(stream);
           }
+          return;
         }
       }
-      if (stream != null) {
-        stream.promise.future().onComplete(handler);
-      } else {
-        handler.handle(Future.failedFuture(HttpUtils.CONNECTION_CLOSED_EXCEPTION));
-      }
+      promise.fail(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
     } else {
       eventLoop.execute(() -> {
-        createStream(context, handler);
+        createStream(context, promise);
       });
     }
   }

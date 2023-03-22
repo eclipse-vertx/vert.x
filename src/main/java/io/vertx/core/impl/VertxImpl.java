@@ -16,6 +16,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.resolver.AddressResolverGroup;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.GenericFutureListener;
+import io.netty.util.concurrent.GlobalEventExecutor;
 import io.vertx.core.Future;
 import io.vertx.core.*;
 import io.vertx.core.datagram.DatagramSocket;
@@ -214,21 +215,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
   }
 
-  void initClustered(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
+  Future<Vertx> initClustered(VertxOptions options) {
     nodeSelector.init(this, clusterManager);
     clusterManager.init(this, nodeSelector);
-    Promise<Void> initPromise = getOrCreateContext().promise();
-    initPromise.future().onComplete(ar -> {
-      if (ar.succeeded()) {
-        if (metrics != null) {
-          metrics.vertxCreated(this);
-        }
-        resultHandler.handle(Future.succeededFuture(this));
-      } else {
-        log.error("Failed to initialize clustered Vert.x", ar.cause());
-        close().onComplete(ignore -> resultHandler.handle(Future.failedFuture(ar.cause())));
-      }
-    });
+    Promise<Void> initPromise = Promise.promise();
     Promise<Void> joinPromise = Promise.promise();
     joinPromise.future().onComplete(ar -> {
       if (ar.succeeded()) {
@@ -238,6 +228,19 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       }
     });
     clusterManager.join(joinPromise);
+    return initPromise
+      .future()
+      .transform(ar -> {
+        if (ar.succeeded()) {
+          if (metrics != null) {
+            metrics.vertxCreated(this);
+          }
+          return Future.succeededFuture(this);
+        } else {
+          log.error("Failed to initialize clustered Vert.x", ar.cause());
+          return close().transform(v -> Future.failedFuture(ar.cause()));
+        }
+      });
   }
 
   private void createHaManager(VertxOptions options, Promise<Void> initPromise) {
@@ -405,16 +408,15 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return context.promise();
   }
 
-  @Override
-  public <T> PromiseInternal<T> promise(Handler<AsyncResult<T>> handler) {
-    if (handler instanceof PromiseInternal) {
-      PromiseInternal<T> promise = (PromiseInternal<T>) handler;
+  public <T> PromiseInternal<T> promise(Promise<T> p) {
+    if (p instanceof PromiseInternal) {
+      PromiseInternal<T> promise = (PromiseInternal<T>) p;
       if (promise.context() != null) {
         return promise;
       }
     }
     PromiseInternal<T> promise = promise();
-    promise.future().onComplete(handler);
+    promise.future().onComplete(p);
     return promise;
   }
 
@@ -590,66 +592,61 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return clusterManager;
   }
 
-  private void closeClusterManager(Handler<AsyncResult<Void>> completionHandler) {
-    Promise<Void> leavePromise = getOrCreateContext().promise();
+  private Future<Void> closeClusterManager() {
+    Future<Void> fut;
     if (clusterManager != null) {
+      Promise<Void> leavePromise = getOrCreateContext().promise();
       clusterManager.leave(leavePromise);
+      fut = leavePromise.future();
     } else {
-      leavePromise.complete();
+      fut = getOrCreateContext().succeededFuture();
     }
-    leavePromise.future().onComplete(ar -> {
+    return fut.transform(ar -> {
       if (ar.failed()) {
         log.error("Failed to leave cluster", ar.cause());
       }
-      if (completionHandler != null) {
-        completionHandler.handle(Future.succeededFuture());
-      }
+      return Future.succeededFuture();
     });
   }
 
   @Override
-  public Future<Void> close() {
+  public synchronized Future<Void> close() {
     // Create this promise purposely without a context because the close operation will close thread pools
-    Promise<Void> promise = Promise.promise();
-    close(promise);
-    return promise.future();
-  }
-
-  private synchronized void close(Handler<AsyncResult<Void>> completionHandler) {
     if (closed || eventBus == null) {
       // Just call the handler directly since pools shutdown
-      if (completionHandler != null) {
-        completionHandler.handle(Future.succeededFuture());
-      }
-      return;
+      return Future.succeededFuture();
     }
     closed = true;
-    closeFuture.close().onComplete(ar -> {
-      deploymentManager.undeployAll().onComplete(ar1 -> {
-        HAManager haManager = haManager();
-        Promise<Void> haPromise = Promise.promise();
-        if (haManager != null) {
-          this.<Void>executeBlocking(fut -> {
-            haManager.stop();
-            fut.complete();
-          }, false).onComplete(haPromise);
-        } else {
-          haPromise.complete();
-        }
-        haPromise.future().onComplete(ar2 -> {
-          addressResolver.close(ar3 -> {
-            Promise<Void> ebClose = getOrCreateContext().promise();
-            eventBus.close(ebClose);
-            ebClose.future().onComplete(ar4 -> {
-              closeClusterManager(ar5 -> {
-                // Copy set to prevent ConcurrentModificationException
-                deleteCacheDirAndShutdown(completionHandler);
-              });
-            });
-          });
-        });
+    Future<Void> fut = closeFuture
+      .close()
+      .transform(ar -> deploymentManager.undeployAll());
+    if (haManager != null) {
+      fut = fut.transform(ar -> executeBlocking(res -> {
+        haManager.stop();
+        res.complete();
+      }, false));
+    }
+    fut = fut
+      .transform(ar -> addressResolver.close())
+      .transform(ar -> Future.future(h -> eventBus.close((Promise) h)))
+      .transform(ar -> closeClusterManager())
+      .transform(ar -> {
+        Promise<Void> promise = Promise.promise();
+        deleteCacheDirAndShutdown(promise);
+        return promise.future();
       });
+    Future<Void> val = fut;
+    Promise<Void> p = Promise.promise();
+    val.onComplete(ar -> {
+      eventLoopThreadFactory.newThread(() -> {
+        if (ar.succeeded()) {
+          p.complete();
+        } else {
+          p.fail(ar.cause());
+        }
+      }).start();
     });
+    return p.future();
   }
 
   @Override
@@ -781,8 +778,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public void resolveAddress(String hostname, Handler<AsyncResult<InetAddress>> resultHandler) {
-    addressResolver.resolveHostname(hostname, resultHandler);
+  public Future<InetAddress> resolveAddress(String hostname) {
+    return addressResolver.resolveHostname(hostname);
   }
 
   @Override
@@ -806,7 +803,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @SuppressWarnings("unchecked")
-  private void deleteCacheDirAndShutdown(Handler<AsyncResult<Void>> completionHandler) {
+  private void deleteCacheDirAndShutdown(Promise<Void> promise) {
     executeBlockingInternal(fut -> {
       try {
         fileResolver.close();
@@ -838,14 +835,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
               if (tracer != null) {
                 tracer.close();
               }
-
               checker.close();
-
-              if (completionHandler != null) {
-                eventLoopThreadFactory.newThread(() -> {
-                  completionHandler.handle(Future.succeededFuture());
-                }).start();
-              }
+              eventLoopThreadFactory.newThread(promise::complete).start();
             }
           });
         }

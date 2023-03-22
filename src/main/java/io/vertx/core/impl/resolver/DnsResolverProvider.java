@@ -19,12 +19,10 @@ import io.netty.resolver.*;
 import io.netty.resolver.dns.*;
 import io.netty.util.NetUtil;
 import io.netty.util.concurrent.EventExecutor;
-import io.vertx.core.Context;
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxException;
+import io.vertx.core.*;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.impl.AddressResolver;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.spi.resolver.ResolverProvider;
 
@@ -199,19 +197,19 @@ public class DnsResolverProvider implements ResolverProvider {
   }
 
   @Override
-  public void close(Handler<Void> doneHandler) {
-    Context context = vertx.getOrCreateContext();
+  public Future<Void> close() {
+    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
     ResolverRegistration[] registrations = this.resolvers.toArray(new ResolverRegistration[0]);
     if (registrations.length == 0) {
-      context.runOnContext(doneHandler);
-      return;
+      return context.succeededFuture();
     }
+    Promise<Void> promise = context.promise();
     AtomicInteger count = new AtomicInteger(registrations.length);
     for (ResolverRegistration registration : registrations) {
       Runnable task = () -> {
         registration.resolver.close();
         if (count.decrementAndGet() == 0) {
-          context.runOnContext(doneHandler);
+          promise.complete();
         }
       };
       if (registration.executor.inEventLoop()) {
@@ -220,5 +218,6 @@ public class DnsResolverProvider implements ResolverProvider {
         registration.executor.execute(task);
       }
     }
+    return promise.future();
   }
 }

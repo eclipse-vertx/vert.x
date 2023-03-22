@@ -18,9 +18,7 @@ import io.netty.handler.codec.http.*;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpHeaders;
@@ -141,11 +139,10 @@ public class HttpChannelConnector {
     return promise.future();
   }
 
-  public void httpConnect(EventLoopContext context, Handler<AsyncResult<HttpClientConnection>> handler) {
+  public Future<HttpClientConnection> httpConnect(EventLoopContext context) {
     Promise<NetSocket> promise = context.promise();
-    Future<HttpClientConnection> fut = promise.future().flatMap(so -> wrap(context, so));
-    fut.onComplete(handler);
     connect(context, promise);
+    return promise.future().flatMap(so -> wrap(context, so));
   }
 
   private void applyHttp2ConnectionOptions(ChannelPipeline pipeline) {
@@ -204,7 +201,7 @@ public class HttpChannelConnector {
           conn2.concurrencyChangeHandler(concurrency -> {
             // Ignore
           });
-          conn2.createStream(conn.getContext(), ar -> {
+          conn2.createStream(conn.getContext()).onComplete(ar -> {
             if (ar.succeeded()) {
               HttpClientStream stream = ar.result();
               stream.headHandler(resp -> {
@@ -215,7 +212,7 @@ public class HttpChannelConnector {
               stream.exceptionHandler(future::tryFail);
               HttpRequestHead request = new HttpRequestHead(OPTIONS, "/", HttpHeaders.headers(), server.toString(),
                 "http://" + server + "/", null);
-              stream.writeHead(request, false, null, true, null, false, null);
+              stream.writeHead(request, false, null, true, null, false);
             } else {
               future.fail(ar.cause());
             }

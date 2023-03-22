@@ -254,6 +254,12 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     }
   }
 
+  void headers(MultiMap headers) {
+    synchronized (conn) {
+      this.headers = headers;
+    }
+  }
+
   @Override
   public Future<Void> writeBinaryMessage(Buffer data) {
     return writePartialMessage(WebSocketFrameType.BINARY, data, 0);
