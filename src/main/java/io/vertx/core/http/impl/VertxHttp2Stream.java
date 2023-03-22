@@ -22,7 +22,6 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
@@ -64,7 +63,13 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
       } else {
         Buffer data = (Buffer) item;
         int len = data.length();
-        conn.getContext().emit(null, v -> conn.consumeCredits(this.stream, len));
+        conn.getContext().emit(null, v -> {
+          if (stream.state().remoteSideOpen()) {
+            // Handle the HTTP upgrade case
+            // buffers are received by HTTP/1 and not accounted by HTTP/2
+            conn.consumeCredits(this.stream, len);
+          }
+        });
         bytesRead += data.length();
         handleData(data);
       }
@@ -81,12 +86,12 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     stream.setProperty(conn.streamKey, this);
   }
 
-  void onClose(HttpClosedException ex) {
+  void onClose() {
     conn.flushBytesWritten();
-    context.execute(ex, this::handleClose);
+    context.execute(ex -> handleClose());
   }
 
-  void onError(Throwable cause) {
+  void onException(Throwable cause) {
     context.emit(cause, this::handleException);
   }
 
@@ -263,7 +268,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   void handleException(Throwable cause) {
   }
 
-  void handleClose(HttpClosedException ex) {
+  void handleClose() {
   }
 
   synchronized void priority(StreamPriority streamPriority) {

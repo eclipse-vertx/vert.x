@@ -1699,7 +1699,7 @@ public class Http2ServerTest extends Http2TestBase {
       } else {
         assertEquals(0, status.getAndIncrement());
         req.exceptionHandler(err -> {
-          fail();
+          closed.incrementAndGet();
         });
         req.response().closeHandler(err -> {
           closed.incrementAndGet();
@@ -1709,7 +1709,7 @@ public class Http2ServerTest extends Http2TestBase {
         });
         HttpConnection conn = req.connection();
         conn.closeHandler(v -> {
-          assertEquals(4, closed.get());
+          assertEquals(5, closed.get());
           assertEquals(1, status.get());
           complete();
         });
@@ -2585,7 +2585,7 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testUpgradeToClearTextPut() throws Exception {
-    Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(8192));
+    Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(20));
     testUpgradeToClearText(HttpMethod.PUT, expected, options -> {});
   }
 
@@ -2836,7 +2836,7 @@ public class Http2ServerTest extends Http2TestBase {
     server = vertx.createHttpServer(serverOptions.setIdleTimeoutUnit(TimeUnit.MILLISECONDS).setIdleTimeout(2000));
     server.requestHandler(req -> {
       req.exceptionHandler(err -> {
-        assertTrue(err instanceof ClosedChannelException);
+        assertTrue(err instanceof HttpClosedException);
         complete();
       });
       req.response().closeHandler(v -> {

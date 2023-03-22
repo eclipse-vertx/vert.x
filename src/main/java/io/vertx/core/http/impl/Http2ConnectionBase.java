@@ -24,7 +24,6 @@ import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.handler.timeout.IdleStateEvent;
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -133,7 +132,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   void onStreamError(int streamId, Throwable cause) {
     VertxHttp2Stream stream = stream(streamId);
     if (stream != null) {
-      stream.onError(cause);
+      stream.onException(cause);
     }
   }
 
@@ -147,11 +146,13 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   void onStreamClosed(Http2Stream s) {
     VertxHttp2Stream stream = s.getProperty(streamKey);
     if (stream != null) {
+      boolean active = chctx.channel().isActive();
       if (goAwayStatus != null) {
-        stream.onClose(new HttpClosedException(goAwayStatus));
-      } else {
-        stream.onClose(HttpUtils.STREAM_CLOSED_EXCEPTION);
+        stream.onException(new HttpClosedException(goAwayStatus));
+      } else if (!active) {
+        stream.onException(HttpUtils.STREAM_CLOSED_EXCEPTION);
       }
+      stream.onClose();
     }
     checkShutdown();
   }
