@@ -27,14 +27,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.GoAway;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpClosedException;
-import io.vertx.core.http.HttpFrame;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.StreamPriority;
-import io.vertx.core.http.StreamResetException;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.impl.ContextInternal;
@@ -140,11 +133,12 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     Future<HttpClientStream> fut;
     synchronized (this) {
       try {
-        StreamImpl stream = createStream(context);
+        Stream stream = createStream(context);
         stream.init(handler.connection().stream(1));
         stream.metric = metric;
         stream.trace = trace;
-        fut = Future.succeededFuture(stream);
+        stream.requestEnded = true;
+        fut = Future.succeededFuture((HttpClientStream) stream);
       } catch (Exception e) {
         fut = Future.failedFuture(e);
       }
@@ -366,7 +360,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    void onClose(HttpClosedException ex) {
+    void onClose() {
       if (conn.metrics != null) {
         if (!requestEnded || !responseEnded) {
           conn.metrics.requestReset(metric);
@@ -378,14 +372,15 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         if (responseEnded && requestEnded) {
           err = null;
         } else {
-          err = ex;
+          err = HttpUtils.STREAM_CLOSED_EXCEPTION;
         }
         tracer.receiveResponse(context, response, trace, err, HttpUtils.CLIENT_RESPONSE_TAG_EXTRACTOR);
       }
       if (!responseEnded) {
-        onError(ex);
+        // NOT SURE OF THAT
+        onException(HttpUtils.STREAM_CLOSED_EXCEPTION);
       }
-      super.onClose(ex);
+      super.onClose();
       // commented to be used later when we properly define the HTTP/2 connection expiration from the pool
       // boolean disposable = conn.streams.isEmpty();
       if (!push) {

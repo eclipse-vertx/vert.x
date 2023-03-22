@@ -94,7 +94,7 @@ public class Http1xUpgradeToH2CHandler extends ChannelInboundHandlerAdapter {
                 }
                 handler = initializer.buildHttp2ConnectionHandler(initializer.context, initializer.connectionHandler);
                 pipeline.addLast("handler", handler);
-                handler.serverUpgrade(ctx, settings, request);
+                handler.serverUpgrade(ctx, settings);
                 DefaultHttp2Headers headers = new DefaultHttp2Headers();
                 headers.method(request.method().name());
                 headers.path(request.uri());

@@ -13,12 +13,9 @@ package io.vertx.core.http.impl;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.StreamPriority;
-import io.vertx.core.impl.ContextInternal;
 
 interface Http2ServerStreamHandler {
 
@@ -30,7 +27,7 @@ interface Http2ServerStreamHandler {
 
   void handleException(Throwable cause);
 
-  void handleClose(HttpClosedException ex);
+  void handleClose();
 
   default void handleData(Buffer data) {
   }
@@ -44,6 +41,9 @@ interface Http2ServerStreamHandler {
   default void handlePriorityChange(StreamPriority streamPriority) {
   }
 
-  default void onClose(HttpClosedException ex) {
+  default void onException(Throwable t) {
+  }
+
+  default void onClose() {
   }
 }

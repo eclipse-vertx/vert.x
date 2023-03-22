@@ -12,14 +12,11 @@
 package io.vertx.core.http.impl;
 
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.http.HttpClosedException;
+import io.vertx.core.http.StreamResetException;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.NetSocket;
@@ -84,19 +81,20 @@ class HttpNetSocket implements NetSocket {
   }
 
   private void handleException(Throwable cause) {
-    if (cause instanceof HttpClosedException || cause.getClass() == ClosedChannelException.class) {
+    Handler<Throwable> handler = exceptionHandler();
+    if (handler != null) {
+      handler.handle(cause);
+    }
+    if (cause instanceof HttpClosedException) {
       Handler<Void> endHandler = endHandler();
       if (endHandler != null) {
         endHandler.handle(null);
       }
+    }
+    if (cause instanceof StreamResetException || cause instanceof HttpClosedException) {
       Handler<Void> closeHandler = closeHandler();
       if (closeHandler != null) {
         closeHandler.handle(null);
-      }
-    } else {
-      Handler<Throwable> handler = exceptionHandler();
-      if (handler != null) {
-        handler.handle(cause);
       }
     }
   }

@@ -28,7 +28,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.Cookie;
-import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerFileUpload;
@@ -44,14 +43,11 @@ import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.spi.tracing.SpanKind;
-import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingPolicy;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
 import java.net.URISyntaxException;
-import java.nio.channels.ClosedChannelException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
@@ -70,10 +66,6 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   private final String serverOrigin;
   private final MultiMap headersMap;
   private final String scheme;
-  private final TracingPolicy tracingPolicy;
-
-  // Accessed on event loop
-  private Object trace;
 
   // Accessed on context thread
   private Charset paramsCharset = StandardCharsets.UTF_8;
@@ -81,7 +73,6 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   private String absoluteURI;
   private MultiMap attributes;
   private HttpEventHandler eventHandler;
-  private boolean streamEnded;
   private boolean ended;
   private Handler<HttpServerFileUpload> uploadHandler;
   private HttpPostRequestDecoder postRequestDecoder;
@@ -90,10 +81,8 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
 
   Http2ServerRequest(Http2ServerStream stream,
                      String serverOrigin,
-                     TracingPolicy tracingPolicy,
                      Http2Headers headers,
-                     String contentEncoding,
-                     boolean streamEnded) {
+                     String contentEncoding) {
     String scheme = headers.get(":scheme") != null ? headers.get(":scheme").toString() : null;
     headers.remove(":method");
     headers.remove(":scheme");
@@ -104,10 +93,8 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
     this.stream = stream;
     this.response = new Http2ServerResponse(stream.conn, stream, false, contentEncoding);
     this.serverOrigin = serverOrigin;
-    this.streamEnded = streamEnded;
     this.scheme = scheme;
     this.headersMap = new Http2HeadersAdaptor(headers);
-    this.tracingPolicy = tracingPolicy;
   }
 
   private HttpEventHandler eventHandler(boolean create) {
@@ -118,10 +105,6 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   }
 
   public void dispatch(Handler<HttpServerRequest> handler) {
-    VertxTracer tracer = context.tracer();
-    if (tracer != null) {
-      trace = tracer.receiveRequest(context, SpanKind.RPC, tracingPolicy, this, method().name(), headers(), HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
-    }
     context.emit(this, handler);
   }
 
@@ -155,32 +138,8 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   }
 
   @Override
-  public void onClose(HttpClosedException ex) {
-    VertxTracer tracer = context.tracer();
-    Object trace = this.trace;
-    if (tracer != null && trace != null) {
-      Throwable failure;
-      synchronized (stream.conn) {
-        if (!streamEnded && (!ended || !response.ended())) {
-          failure = ex;
-        } else {
-          failure = null;
-        }
-      }
-      tracer.sendResponse(context, failure == null ? response : null, trace, failure, HttpUtils.SERVER_RESPONSE_TAG_EXTRACTOR);
-    }
-  }
-
-  @Override
-  public void handleClose(HttpClosedException ex) {
-    boolean notify;
-    synchronized (stream.conn) {
-      notify = !streamEnded;
-    }
-    if (notify) {
-      notifyException(new ClosedChannelException());
-    }
-    response.handleClose(ex);
+  public void handleClose() {
+    response.handleClose();
   }
 
   @Override
@@ -207,7 +166,6 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   public void handleEnd(MultiMap trailers) {
     HttpEventHandler handler;
     synchronized (stream.conn) {
-      streamEnded = true;
       ended = true;
       if (postRequestDecoder != null) {
         try {
