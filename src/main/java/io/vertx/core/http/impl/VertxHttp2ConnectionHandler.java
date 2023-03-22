@@ -15,7 +15,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
-import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http2.*;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.concurrent.DefaultPromise;
@@ -44,6 +43,7 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   private Handler<C> removeHandler;
   private final boolean useDecompressor;
   private final Http2Settings initialSettings;
+  public boolean upgraded;
 
   public VertxHttp2ConnectionHandler(
       Function<VertxHttp2ConnectionHandler<C>, C> connectionFactory,
@@ -121,15 +121,14 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
 
   public void serverUpgrade(
     ChannelHandlerContext ctx,
-    Http2Settings serverUpgradeSettings,
-    HttpRequest request) throws Exception {
+    Http2Settings serverUpgradeSettings) throws Exception {
+    upgraded = true;
     onHttpServerUpgrade(serverUpgradeSettings);
     onSettingsRead(ctx, serverUpgradeSettings);
-    // Http2ServerConnection c = (Http2ServerConnection) connection;
-    // return c.createUpgradeRequest(request);
   }
 
   public void clientUpgrade(ChannelHandlerContext ctx) throws Exception {
+    upgraded = true;
     onHttpClientUpgrade();
     // super call writes the connection preface
     // we need to flush to send it
