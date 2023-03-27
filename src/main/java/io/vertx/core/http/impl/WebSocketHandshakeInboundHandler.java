@@ -11,45 +11,22 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelPipeline;
+import io.netty.channel.*;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpContentDecompressor;
-import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.handler.codec.http.websocketx.WebSocket00FrameDecoder;
-import io.netty.handler.codec.http.websocketx.WebSocket07FrameDecoder;
-import io.netty.handler.codec.http.websocketx.WebSocket08FrameDecoder;
-import io.netty.handler.codec.http.websocketx.WebSocket13FrameDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocketClientHandshaker;
-import io.netty.handler.codec.http.websocketx.WebSocketClientHandshaker00;
-import io.netty.handler.codec.http.websocketx.WebSocketClientHandshaker07;
-import io.netty.handler.codec.http.websocketx.WebSocketClientHandshaker08;
-import io.netty.handler.codec.http.websocketx.WebSocketClientHandshaker13;
-import io.netty.handler.codec.http.websocketx.WebSocketClientHandshakerFactory;
-import io.netty.handler.codec.http.websocketx.WebSocketDecoderConfig;
-import io.netty.handler.codec.http.websocketx.WebSocketFrameDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
-import io.netty.handler.codec.http.websocketx.WebSocketVersion;
+import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.UpgradeRejectedException;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
-
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
-
-import static io.netty.handler.codec.http.websocketx.WebSocketVersion.V00;
-import static io.netty.handler.codec.http.websocketx.WebSocketVersion.V07;
-import static io.netty.handler.codec.http.websocketx.WebSocketVersion.V08;
-import static io.netty.handler.codec.http.websocketx.WebSocketVersion.V13;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -61,6 +38,7 @@ class WebSocketHandshakeInboundHandler extends ChannelInboundHandlerAdapter {
   private final WebSocketClientHandshaker handshaker;
   private ChannelHandlerContext chctx;
   private FullHttpResponse response;
+  private ChannelFuture fut;
 
   WebSocketHandshakeInboundHandler(WebSocketClientHandshaker handshaker, Handler<AsyncResult<HeadersAdaptor>> wsHandler) {
     this.handshaker = handshaker;
@@ -71,6 +49,7 @@ class WebSocketHandshakeInboundHandler extends ChannelInboundHandlerAdapter {
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
     super.handlerAdded(ctx);
     chctx = ctx;
+    fut = handshaker.handshake(ctx.channel());
   }
 
   @Override
@@ -102,8 +81,7 @@ class WebSocketHandshakeInboundHandler extends ChannelInboundHandlerAdapter {
               // remove decompressor as its not needed anymore once connection was upgraded to WebSocket
               ctx.pipeline().remove(handler);
             }
-            Future<HeadersAdaptor> fut = handshakeComplete(response);
-            wsHandler.handle(fut);
+            handshakeComplete(response);
           }
         }
       } finally {
@@ -112,7 +90,7 @@ class WebSocketHandshakeInboundHandler extends ChannelInboundHandlerAdapter {
     }
   }
 
-  private Future<HeadersAdaptor> handshakeComplete(FullHttpResponse response) {
+  private void handshakeComplete(FullHttpResponse response) {
     int sc = response.status().code();
     if (sc != 101) {
       String msg = "WebSocket upgrade failure: " + sc;
@@ -122,66 +100,22 @@ class WebSocketHandshakeInboundHandler extends ChannelInboundHandlerAdapter {
         sc,
         new HeadersAdaptor(response.headers()),
         content != null ? Buffer.buffer(content) : null);
-      return Future.failedFuture(failure);
+      wsHandler.handle(Future.failedFuture(failure));
     } else {
-      try {
-        handshaker.finishHandshake(chctx.channel(), response);
-        return Future.succeededFuture(new HeadersAdaptor(response.headers()));
-      } catch (WebSocketHandshakeException e) {
-        return Future.failedFuture(e);
-      }
+      fut.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Void>>) future -> {
+        Future<HeadersAdaptor> res;
+        if (future.isSuccess()) {
+          try {
+            handshaker.finishHandshake(chctx.channel(), response);
+            res = Future.succeededFuture(new HeadersAdaptor(response.headers()));
+          } catch (WebSocketHandshakeException e) {
+            res = Future.failedFuture(e);
+          }
+        } else {
+          res = Future.failedFuture(future.cause());
+        }
+        wsHandler.handle(res);
+      });
     }
   }
-
-  /**
-   * Copy of {@link WebSocketClientHandshakerFactory#newHandshaker} that will not send a WebSocket
-   * close frame on protocol violation.
-   */
-  static WebSocketClientHandshaker newHandshaker(
-    URI webSocketURL, WebSocketVersion version, String subprotocol,
-    boolean allowExtensions, HttpHeaders customHeaders, int maxFramePayloadLength,
-    boolean performMasking) {
-    WebSocketDecoderConfig config = WebSocketDecoderConfig.newBuilder()
-      .expectMaskedFrames(false)
-      .allowExtensions(allowExtensions)
-      .maxFramePayloadLength(maxFramePayloadLength)
-      .allowMaskMismatch(false)
-      .closeOnProtocolViolation(false)
-      .build();
-    if (version == V13) {
-      return new WebSocketClientHandshaker13(
-        webSocketURL, V13, subprotocol, allowExtensions, customHeaders,
-        maxFramePayloadLength, performMasking, false, -1) {
-        @Override
-        protected WebSocketFrameDecoder newWebsocketDecoder() {
-          return new WebSocket13FrameDecoder(config);
-        }
-      };
-    }
-    if (version == V08) {
-      return new WebSocketClientHandshaker08(
-        webSocketURL, V08, subprotocol, allowExtensions, customHeaders,
-        maxFramePayloadLength, performMasking, false, -1) {
-        @Override
-        protected WebSocketFrameDecoder newWebsocketDecoder() {
-          return new WebSocket08FrameDecoder(config);
-        }
-      };
-    }
-    if (version == V07) {
-      return new WebSocketClientHandshaker07(
-        webSocketURL, V07, subprotocol, allowExtensions, customHeaders,
-        maxFramePayloadLength, performMasking, false, -1) {
-        @Override
-        protected WebSocketFrameDecoder newWebsocketDecoder() {
-          return new WebSocket07FrameDecoder(config);
-        }
-      };
-    }
-    if (version == V00) {
-      return new WebSocketClientHandshaker00(
-        webSocketURL, V00, subprotocol, customHeaders, maxFramePayloadLength, -1);
-    }
-
-    throw new WebSocketHandshakeException("Protocol version " + version + " not supported.");
-  }}
+}

@@ -13,10 +13,7 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.EventLoop;
+import io.netty.channel.*;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.compression.Brotli;
 import io.netty.handler.codec.compression.ZlibCodecFactory;
@@ -1012,48 +1009,51 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
         maxWebSocketFrameSize,
         !options.isSendUnmaskedFrames());
 
-      WebSocketHandshakeInboundHandler handshakeInboundHandler = new WebSocketHandshakeInboundHandler(handshaker, ar -> {
+      Handler<AsyncResult<HeadersAdaptor>> webSocketHandshakeComplete = ar -> {
         if (timer > 0L) {
           vertx.cancelTimer(timer);
         }
-        AsyncResult<WebSocket> wsRes = ar.map(v -> {
-          WebSocketImpl w = new WebSocketImpl(
-            context,
-            Http1xClientConnection.this,
-            version != WebSocketVersion.V00,
-            options.getWebSocketClosingTimeout(),
-            options.getMaxWebSocketFrameSize(),
-            options.getMaxWebSocketMessageSize(),
-            registerWriteHandlers);
-          w.subProtocol(handshaker.actualSubprotocol());
-          return w;
-        });
         if (ar.failed()) {
           close();
+          promise.fail(ar.cause());
         } else {
-          webSocket = (WebSocketImpl) wsRes.result();
-          webSocket.registerHandler(vertx.eventBus());
-          log.debug("WebSocket handshake complete");
-          HttpClientMetrics metrics = client.metrics();
-          if (metrics != null) {
-            webSocket.setMetric(metrics.connected(webSocket));
-          }
-        }
-        getContext().emit(wsRes, res -> {
-          if (res.succeeded()) {
-            webSocket.headers(ar.result());
-          }
-          promise.handle(res);
-          if (res.succeeded()) {
+          WebSocketImpl ws = finish(context, version, registerWriteHandlers, handshaker, ar.result());
+          webSocket = ws;
+          getContext().emit(ws, w -> {
+            promise.handle(Future.succeededFuture(w));
             webSocket.headers(null);
-          }
-        });
-      });
+          });
+        }
+      };
+      WebSocketHandshakeInboundHandler handshakeInboundHandler = new WebSocketHandshakeInboundHandler(handshaker, webSocketHandshakeComplete);
       p.addBefore("handler", "handshakeCompleter", handshakeInboundHandler);
-      handshaker.handshake(chctx.channel());
     } catch (Exception e) {
       handleException(e);
     }
+  }
+
+  private WebSocketImpl finish(ContextInternal context,
+                               WebSocketVersion version,
+                               boolean registerWriteHandlers,
+                               WebSocketClientHandshaker handshaker,
+                               MultiMap headers) {
+    WebSocketImpl ws = new WebSocketImpl(
+      context,
+      Http1xClientConnection.this,
+      version != V00,
+      options.getWebSocketClosingTimeout(),
+      options.getMaxWebSocketFrameSize(),
+      options.getMaxWebSocketMessageSize(),
+      registerWriteHandlers);
+    ws.subProtocol(handshaker.actualSubprotocol());
+    ws.registerHandler(vertx.eventBus());
+    log.debug("WebSocket handshake complete");
+    HttpClientMetrics metrics = client.metrics();
+    if (metrics != null) {
+      ws.setMetric(metrics.connected(ws));
+    }
+    ws.headers(headers);
+    return ws;
   }
 
   static WebSocketClientHandshaker newHandshaker(
