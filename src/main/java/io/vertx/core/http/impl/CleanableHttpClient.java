@@ -18,9 +18,11 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.net.Address;
 import io.vertx.core.net.SSLOptions;
 import io.vertx.core.net.impl.NetClientInternal;
 import io.vertx.core.spi.metrics.Metrics;
+import io.vertx.core.spi.resolver.AddressResolver;
 
 import java.lang.ref.Cleaner;
 import java.util.List;
@@ -170,6 +172,16 @@ public class CleanableHttpClient implements HttpClientInternal {
   @Override
   public Future<Void> closeFuture() {
     return delegate.closeFuture();
+  }
+
+  @Override
+  public void addressResolver(AddressResolver addressResolver) {
+    delegate.addressResolver(addressResolver);
+  }
+
+  @Override
+  public Future<HttpClientRequest> request(Address address, HttpMethod method, int port, String host, String requestURI) {
+    return delegate.request(address, method, port, host, requestURI);
   }
 
   @Override

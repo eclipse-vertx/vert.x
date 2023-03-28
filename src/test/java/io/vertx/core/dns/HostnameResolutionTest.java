@@ -805,7 +805,7 @@ public class HostnameResolutionTest extends VertxTestBase {
 
     List<String> expectedIPAddresses = Arrays.asList("127.0.0.2", "127.0.0.3");
 
-    addRecordsToStore(dnsServer, "fakeAddress.com", expectedIPAddresses.toArray(new String[0]));
+    dnsServer.addRecordsToStore( "fakeAddress.com", expectedIPAddresses.toArray(new String[0]));
 
     AddressResolver resolver = new AddressResolver(vertx, getAddressResolverOptions());
 
@@ -896,22 +896,9 @@ public class HostnameResolutionTest extends VertxTestBase {
     testAddressSelection(getAddressResolverOptions().setRoundRobinInetAddress(false), 1);
   }
 
-  private void addRecordsToStore(FakeDNSServer server,String domainName,String ...entries){
-
-    final Set<ResourceRecord> records = new LinkedHashSet<>();
-
-    Function<String, ResourceRecord> createRecord = ipAddress -> new FakeDNSServer.VertxResourceRecord(domainName, ipAddress);
-
-    for (String e : entries){
-      records.add(createRecord.apply(e));
-    }
-
-    server.store(x -> records);
-  }
-
   private void testAddressSelection(AddressResolverOptions options, int expected) throws Exception {
 
-    addRecordsToStore(dnsServer,"vertx.io","127.0.0.1","127.0.0.2");
+    dnsServer.addRecordsToStore("vertx.io", "127.0.0.1", "127.0.0.2");
 
     AddressResolver resolver = new AddressResolver(vertx, options);
     Set<String> resolved = Collections.synchronizedSet(new HashSet<>());

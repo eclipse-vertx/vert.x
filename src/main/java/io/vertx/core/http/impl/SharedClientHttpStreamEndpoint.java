@@ -110,7 +110,7 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
     return connection.isValid();
   }
 
-  void checkExpired() {
+  protected void checkExpired() {
     pool.evict(conn -> !conn.isValid(), ar -> {
       if (ar.succeeded()) {
         List<HttpClientConnection> lst = ar.result();

@@ -24,11 +24,7 @@ import io.vertx.test.proxy.TestProxyBase;
 import io.vertx.test.tls.Cert;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -322,7 +318,7 @@ public class Http1xProxyTest extends HttpTestBase {
       .setHost("localhost")
       .setPort(proxy.port());
     List<String> res = testPooling(req, req, proxy);
-    assertEquals(Arrays.asList(proxy.lastLocalAddress(), proxy.lastLocalAddress()), res);
+    assertEquals(proxy.localAddresses(), res);
   }
 
   @Test
@@ -360,8 +356,8 @@ public class Http1xProxyTest extends HttpTestBase {
       .setHost("localhost")
       .setPort(proxy.port());
     List<String> res = testPooling(req1, req2, proxy);
-    assertEquals(1, proxy.localAddresses().size());
-    assertEquals(Arrays.asList(proxy.localAddresses().get(0), proxy.localAddresses().get(0)), res);
+    assertEquals(2, proxy.localAddresses().size());
+    assertEquals(proxy.localAddresses(), res);
   }
 
   @Test
@@ -388,7 +384,7 @@ public class Http1xProxyTest extends HttpTestBase {
       .setHost("localhost")
       .setPort(proxy.port());
     List<String> res = testPooling(req, req, proxy);
-    assertEquals(Arrays.asList(proxy.lastLocalAddress(), proxy.lastLocalAddress()), res);
+    assertEquals(proxy.localAddresses(), res);
   }
 
   @Test
@@ -412,7 +408,7 @@ public class Http1xProxyTest extends HttpTestBase {
 
   @Test
   public void testSocksProxyAuthPooling2() throws Exception {
-    SocksProxy proxy = new SocksProxy().port(SocksProxy.DEFAULT_PORT).username(Arrays.asList("user1"));
+    SocksProxy proxy = new SocksProxy().port(SocksProxy.DEFAULT_PORT).username(Arrays.asList("user1", "user1"));
     ProxyOptions req1 = new ProxyOptions()
       .setUsername("user1")
       .setPassword("user1")
@@ -426,8 +422,8 @@ public class Http1xProxyTest extends HttpTestBase {
       .setHost("localhost")
       .setPort(proxy.port());
     List<String> res = testPooling(req1, req2, proxy);
-    assertEquals(1, proxy.localAddresses().size());
-    assertEquals(Arrays.asList(proxy.localAddresses().get(0), proxy.localAddresses().get(0)), res);
+    assertEquals(2, proxy.localAddresses().size());
+    assertEquals(proxy.localAddresses(), res);
   }
 
   public List<String> testPooling(ProxyOptions request1, ProxyOptions request2, TestProxyBase... proxies) throws Exception {
@@ -436,30 +432,37 @@ public class Http1xProxyTest extends HttpTestBase {
     }
 
     client.close();
-    client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(1).setKeepAlive(true));
+    client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(2).setKeepAlive(true));
 
     CompletableFuture<List<String>> ret = new CompletableFuture<>();
 
     try {
+      List<HttpServerRequest> requests = new ArrayList<>();
       server.requestHandler(req -> {
-        SocketAddress addr = req.connection().remoteAddress();
-        req.response().end("" + addr);
+        requests.add(req);
+        if (requests.size() == 2) {
+          requests.forEach(request -> {
+            SocketAddress addr = request.connection().remoteAddress();
+            request.response().end("" + addr);
+          });
+        }
       }).listen().onComplete(onSuccess(s -> {
         RequestOptions baseOptions = new RequestOptions()
           .setHost(DEFAULT_HTTP_HOST)
           .setPort(DEFAULT_HTTP_PORT)
           .setURI("/");
-        client.request(new RequestOptions(baseOptions).setProxyOptions(request1))
-          .compose(HttpClientRequest::send)
-          .compose(HttpClientResponse::body)
-          .onComplete(onSuccess(res1 -> {
-            client.request(new RequestOptions(baseOptions).setProxyOptions(request2))
-              .compose(HttpClientRequest::send)
-              .compose(HttpClientResponse::body)
-              .onComplete(onSuccess(res2 -> {
-                ret.complete(Arrays.asList(res1.toString(), res2.toString()));
-              }));
-          }));
+        List<String> responses = new ArrayList<>();
+        for (int i = 0;i < 2;i++) {
+          client.request(new RequestOptions(baseOptions).setProxyOptions(i == 0 ? request1 : request2))
+            .compose(HttpClientRequest::send)
+            .compose(HttpClientResponse::body)
+            .onComplete(onSuccess(res2 -> {
+              responses.add(res2.toString());
+              if (responses.size() == 2) {
+                ret.complete(responses);
+              }
+            }));
+        }
       }));
 
       return ret.get(40, TimeUnit.SECONDS);
