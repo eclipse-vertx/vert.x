@@ -54,6 +54,9 @@ public abstract class Endpoint<C> {
 
   public abstract Future<C> requestConnection(ContextInternal ctx, long timeout);
 
+  protected void checkExpired() {
+  }
+
   protected boolean incRefCount() {
     synchronized (this) {
       refCount++;

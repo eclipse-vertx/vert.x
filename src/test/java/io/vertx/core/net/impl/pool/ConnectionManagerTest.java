@@ -42,9 +42,9 @@ public class ConnectionManagerTest extends VertxTestBase {
     EventLoopContext ctx = (EventLoopContext) vertx.getOrCreateContext();
     Connection result = new Connection();
     Throwable failure = new Throwable();
-    EndpointProvider<Connection> provider = new EndpointProvider<Connection>() {
+    EndpointProvider<Object, Connection> provider = new EndpointProvider<Object, Connection>() {
       @Override
-      public Endpoint<Connection> create(ContextInternal ctx, Runnable dispose) {
+      public Endpoint<Connection> create(Object key, Runnable dispose) {
         return new Endpoint<Connection>(dispose) {
           @Override
           public Future<Connection> requestConnection(ContextInternal ctx, long timeout) {
@@ -58,8 +58,8 @@ public class ConnectionManagerTest extends VertxTestBase {
         };
       }
     };
-    ConnectionManager<Object, Connection> mgr = new ConnectionManager<>();
-    mgr.getConnection(ctx, TEST_KEY, provider).onComplete(ar -> {
+    ConnectionManager<Object, Connection> mgr = new ConnectionManager<>(provider);
+    mgr.getConnection(ctx, TEST_KEY).onComplete(ar -> {
       if (ar.succeeded()) {
         assertTrue(success);
         assertSame(result, ar.result());
@@ -87,9 +87,9 @@ public class ConnectionManagerTest extends VertxTestBase {
     Connection expected = new Connection();
     AtomicReference<Runnable> postCheck = new AtomicReference<>();
     boolean[] disposed = new boolean[1];
-    EndpointProvider<Connection> provider = new EndpointProvider<Connection>() {
+    EndpointProvider<Object, Connection> provider = new EndpointProvider<Object, Connection>() {
       @Override
-      public Endpoint<Connection> create(ContextInternal ctx, Runnable dispose) {
+      public Endpoint<Connection> create(Object key, Runnable dispose) {
         return new Endpoint<Connection>(dispose) {
           @Override
           public Future<Connection> requestConnection(ContextInternal ctx, long timeout) {
@@ -118,8 +118,8 @@ public class ConnectionManagerTest extends VertxTestBase {
         };
       }
     };
-    ConnectionManager<Object, Connection> mgr = new ConnectionManager<>();
-    mgr.getConnection(ctx, TEST_KEY, provider).onComplete(onSuccess(conn -> {
+    ConnectionManager<Object, Connection> mgr = new ConnectionManager<>(provider);
+    mgr.getConnection(ctx, TEST_KEY).onComplete(onSuccess(conn -> {
       assertEquals(expected, conn);
       postCheck.get().run();
     }));
@@ -131,9 +131,9 @@ public class ConnectionManagerTest extends VertxTestBase {
     EventLoopContext ctx = (EventLoopContext) vertx.getOrCreateContext();
     Connection expected = new Connection();
     boolean[] disposed = new boolean[1];
-    EndpointProvider<Connection> provider = new EndpointProvider<Connection>() {
+    EndpointProvider<Object, Connection> provider = new EndpointProvider<Object, Connection>() {
       @Override
-      public Endpoint<Connection> create(ContextInternal ctx, Runnable dispose) {
+      public Endpoint<Connection> create(Object key, Runnable dispose) {
         return new Endpoint<Connection>(dispose) {
           @Override
           public Future<Connection> requestConnection(ContextInternal ctx, long timeout) {
@@ -154,9 +154,9 @@ public class ConnectionManagerTest extends VertxTestBase {
         };
       }
     };
-    ConnectionManager<Object, Connection> mgr = new ConnectionManager<>();
+    ConnectionManager<Object, Connection> mgr = new ConnectionManager<>(provider);
     CountDownLatch latch = new CountDownLatch(1);
-    mgr.getConnection(ctx, TEST_KEY, provider).onComplete(onSuccess(conn -> {
+    mgr.getConnection(ctx, TEST_KEY).onComplete(onSuccess(conn -> {
       assertEquals(expected, conn);
       latch.countDown();
     }));
@@ -172,22 +172,17 @@ public class ConnectionManagerTest extends VertxTestBase {
     Connection expected = new Connection();
     boolean[] disposed = new boolean[1];
     AtomicReference<Runnable> adder = new AtomicReference<>();
-    EndpointProvider<Connection> provider = new EndpointProvider<Connection>() {
+    EndpointProvider<Object, Connection> provider = (key, dispose) -> new Endpoint<Connection>(dispose) {
       @Override
-      public Endpoint<Connection> create(ContextInternal ctx, Runnable dispose) {
-        return new Endpoint<Connection>(dispose) {
-          @Override
-          public Future<Connection> requestConnection(ContextInternal ctx, long timeout) {
-            adder.set(() -> {
-              incRefCount();
-            });
-            return ctx.promise();
-          }
-        };
+      public Future<Connection> requestConnection(ContextInternal ctx1, long timeout) {
+        adder.set(() -> {
+          incRefCount();
+        });
+        return ctx1.promise();
       }
     };
-    ConnectionManager<Object, Connection> mgr = new ConnectionManager<>();
-    mgr.getConnection(ctx, TEST_KEY, provider).onComplete(onSuccess(conn -> {
+    ConnectionManager<Object, Connection> mgr = new ConnectionManager<>(provider);
+    mgr.getConnection(ctx, TEST_KEY).onComplete(onSuccess(conn -> {
     }));
     waitUntil(() -> adder.get() != null);
     mgr.close();
@@ -198,9 +193,9 @@ public class ConnectionManagerTest extends VertxTestBase {
   public void testConcurrentDispose() throws Exception {
     EventLoopContext ctx = (EventLoopContext) vertx.getOrCreateContext();
     ConcurrentLinkedQueue<AtomicBoolean> disposals = new ConcurrentLinkedQueue<>();
-    EndpointProvider<Connection> provider = new EndpointProvider<Connection>() {
+    EndpointProvider<Object, Connection> provider = new EndpointProvider<Object, Connection>() {
       @Override
-      public Endpoint<Connection> create(ContextInternal ctx, Runnable dispose) {
+      public Endpoint<Connection> create(Object key, Runnable dispose) {
         AtomicBoolean disposed = new AtomicBoolean();
         disposals.add(disposed);
         return new Endpoint<Connection>(dispose) {
@@ -225,7 +220,7 @@ public class ConnectionManagerTest extends VertxTestBase {
         };
       }
     };
-    ConnectionManager<Object, Connection> mgr = new ConnectionManager<>();
+    ConnectionManager<Object, Connection> mgr = new ConnectionManager<>(provider);
     int num = 100000;
     int concurrency = 4;
     CountDownLatch[] latches = new CountDownLatch[concurrency];
@@ -234,7 +229,7 @@ public class ConnectionManagerTest extends VertxTestBase {
       latches[i] = cc;
       new Thread(() -> {
         for (int j = 0;j < num;j++) {
-          mgr.getConnection(ctx, TEST_KEY, provider).onComplete(onSuccess(conn -> {
+          mgr.getConnection(ctx, TEST_KEY).onComplete(onSuccess(conn -> {
             cc.countDown();
           }));
         }

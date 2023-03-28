@@ -10,10 +10,7 @@
  */
 package io.vertx.core.http.impl;
 
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.impl.pool.Endpoint;
 import io.vertx.core.spi.metrics.ClientMetrics;
@@ -49,8 +46,6 @@ abstract class ClientHttpEndpointBase<C> extends Endpoint<C> {
   }
 
   protected abstract Future<C> requestConnection2(ContextInternal ctx, long timeout);
-
-  abstract void checkExpired();
 
   @Override
   protected void dispose() {

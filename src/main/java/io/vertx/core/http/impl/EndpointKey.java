@@ -15,7 +15,7 @@ import io.vertx.core.net.SocketAddress;
 
 import java.util.Objects;
 
-final class EndpointKey {
+class EndpointKey {
 
   final boolean ssl;
   final SocketAddress serverAddr;
@@ -73,5 +73,10 @@ final class EndpointKey {
     } else {
       return Objects.hash(options.getHost(), options.getPort(), options.getType());
     }
+  }
+
+  @Override
+  public String toString() {
+    return serverAddr.toString();
   }
 }

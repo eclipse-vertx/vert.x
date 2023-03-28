@@ -10,22 +10,20 @@
  */
 package io.vertx.core.net.impl.pool;
 
-import io.vertx.core.impl.ContextInternal;
-
 /**
  * Provides endpoint to a {@link ConnectionManager}.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface EndpointProvider<C> {
+public interface EndpointProvider<K, C> {
 
   /**
    * Create an endpoint tracked by the {@link ConnectionManager}.
    *
-   * @param ctx     the creating context
+   * @param key     the endpoint key
    * @param dispose the callback to signal this endpoint should be destroyed
    * @return the created endpoint
    */
-  Endpoint<C> create(ContextInternal ctx, Runnable dispose);
+  Endpoint<C> create(K key, Runnable dispose);
 
 }
