@@ -11,9 +11,7 @@
 
 package io.vertx.core.net.impl.pool;
 
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextInternal;
 
 import java.util.*;
@@ -28,25 +26,25 @@ import java.util.function.Consumer;
  */
 public class ConnectionManager<K, C> {
 
+  private final EndpointProvider<K, C> provider;
   private final Map<K, Endpoint<C>> endpointMap = new ConcurrentHashMap<>();
+
+  public ConnectionManager(EndpointProvider<K, C> provider) {
+    this.provider = provider;
+  }
 
   public void forEach(Consumer<Endpoint<C>> consumer) {
     endpointMap.values().forEach(consumer);
   }
 
-  public Future<C> getConnection(ContextInternal ctx,
-                            K key,
-                            EndpointProvider<C> provider) {
-    return getConnection(ctx, key, provider, 0);
+  public Future<C> getConnection(ContextInternal ctx, K key) {
+    return getConnection(ctx, key, 0);
   }
 
-  public Future<C> getConnection(ContextInternal ctx,
-                                 K key,
-                                 EndpointProvider<C> provider,
-                                 long timeout) {
+  public Future<C> getConnection(ContextInternal ctx, K key, long timeout) {
     Runnable dispose = () -> endpointMap.remove(key);
     while (true) {
-      Endpoint<C> endpoint = endpointMap.computeIfAbsent(key, k -> provider.create(ctx, dispose));
+      Endpoint<C> endpoint = endpointMap.computeIfAbsent(key, k -> provider.create(ctx, key, dispose));
       Future<C> fut = endpoint.getConnection(ctx, timeout);
       if (fut != null) {
         return fut;

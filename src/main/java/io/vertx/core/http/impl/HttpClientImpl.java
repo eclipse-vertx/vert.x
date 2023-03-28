@@ -242,11 +242,35 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider {
   }
 
   private ConnectionManager<EndpointKey, Lease<HttpClientConnection>> httpConnectionManager() {
-    return new ConnectionManager<>();
+    EndpointProvider<EndpointKey, Lease<HttpClientConnection>> provider = (ctx, key, dispose) -> {
+      int maxPoolSize = Math.max(options.getMaxPoolSize(), options.getHttp2MaxPoolSize());
+      ClientMetrics metrics = HttpClientImpl.this.metrics != null ? HttpClientImpl.this.metrics.createEndpointMetrics(key.serverAddr, maxPoolSize) : null;
+      // Copy behavior from above - we should try to avoid this using some proper data instead of the key members
+      ProxyOptions proxyOptions = key.proxyOptions;
+      if (proxyOptions != null && !key.ssl && proxyOptions.getType() == ProxyType.HTTP) {
+        proxyOptions = null;
+      }
+      HttpChannelConnector connector = new HttpChannelConnector(HttpClientImpl.this, netClient, proxyOptions, metrics, options.getProtocolVersion(), key.ssl, options.isUseAlpn(), key.peerAddr, key.serverAddr);
+      return new SharedClientHttpStreamEndpoint(
+        HttpClientImpl.this,
+        metrics,
+        options.getMaxWaitQueueSize(),
+        options.getMaxPoolSize(),
+        options.getHttp2MaxPoolSize(),
+        connector,
+        dispose);
+    };
+    return new ConnectionManager<>(provider);
   }
 
   private ConnectionManager<EndpointKey, HttpClientConnection> webSocketConnectionManager() {
-    return new ConnectionManager<>();
+    EndpointProvider<EndpointKey, HttpClientConnection> provider = (ctx, key, dispose) -> {
+      int maxPoolSize = options.getMaxWebSockets();
+      ClientMetrics metrics = HttpClientImpl.this.metrics != null ? HttpClientImpl.this.metrics.createEndpointMetrics(key.serverAddr, maxPoolSize) : null;
+      HttpChannelConnector connector = new HttpChannelConnector(HttpClientImpl.this, netClient, key.proxyOptions, metrics, HttpVersion.HTTP_1_1, key.ssl, false, key.peerAddr, key.serverAddr);
+      return new WebSocketEndpoint(null, maxPoolSize, connector, dispose);
+    };
+    return new ConnectionManager<>(provider);
   }
 
   Function<ContextInternal, EventLoopContext> contextProvider() {
@@ -326,19 +350,10 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider {
     } else {
       eventLoopContext = vertx.createEventLoopContext(ctx.nettyEventLoop(), ctx.workerPool(), ctx.classLoader());
     }
-    EndpointProvider<HttpClientConnection> provider = new EndpointProvider<HttpClientConnection>() {
-      @Override
-      public Endpoint<HttpClientConnection> create(ContextInternal ctx, Runnable dispose) {
-        int maxPoolSize = options.getMaxWebSockets();
-        ClientMetrics metrics = HttpClientImpl.this.metrics != null ? HttpClientImpl.this.metrics.createEndpointMetrics(key.serverAddr, maxPoolSize) : null;
-        HttpChannelConnector connector = new HttpChannelConnector(HttpClientImpl.this, netClient, proxyOptions, metrics, HttpVersion.HTTP_1_1, key.ssl, false, key.peerAddr, key.serverAddr);
-        return new WebSocketEndpoint(null, maxPoolSize, connector, dispose);
-      }
-    };
     // Work around for workers
     return ctx
       .succeededFuture()
-      .compose(v -> webSocketCM.getConnection(eventLoopContext, key, provider))
+      .compose(v -> webSocketCM.getConnection(eventLoopContext, key))
       .compose(c -> {
         Http1xClientConnection conn = (Http1xClientConnection) c;
         return conn.toWebSocket(
@@ -577,24 +592,8 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider {
     ContextInternal ctx = vertx.getOrCreateContext();
     ContextInternal connCtx = ctx.isEventLoopContext() ? ctx : vertx.createEventLoopContext(ctx.nettyEventLoop(), ctx.workerPool(), ctx.classLoader());
     Promise<HttpClientRequest> promise = ctx.promise();
-    EndpointProvider<Lease<HttpClientConnection>> provider = new EndpointProvider<Lease<HttpClientConnection>>() {
-      @Override
-      public Endpoint<Lease<HttpClientConnection>> create(ContextInternal ctx, Runnable dispose) {
-        int maxPoolSize = Math.max(options.getMaxPoolSize(), options.getHttp2MaxPoolSize());
-        ClientMetrics metrics = HttpClientImpl.this.metrics != null ? HttpClientImpl.this.metrics.createEndpointMetrics(key.serverAddr, maxPoolSize) : null;
-        HttpChannelConnector connector = new HttpChannelConnector(HttpClientImpl.this, netClient, proxyOptions, metrics, options.getProtocolVersion(), key.ssl, options.isUseAlpn(), key.peerAddr, key.serverAddr);
-        return new SharedClientHttpStreamEndpoint(
-          HttpClientImpl.this,
-          metrics,
-          options.getMaxWaitQueueSize(),
-          options.getMaxPoolSize(),
-          options.getHttp2MaxPoolSize(),
-          connector,
-          dispose);
-      }
-    };
     httpCM
-      .getConnection(connCtx, key, provider, timeout)
+      .getConnection(connCtx, key, timeout)
       .compose(lease -> {
         HttpClientConnection conn = lease.get();
         return conn.createStream(ctx).<HttpClientRequest>map(stream -> {
