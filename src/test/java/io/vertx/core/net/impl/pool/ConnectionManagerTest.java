@@ -44,7 +44,7 @@ public class ConnectionManagerTest extends VertxTestBase {
     Throwable failure = new Throwable();
     EndpointProvider<Object, Connection> provider = new EndpointProvider<Object, Connection>() {
       @Override
-      public Endpoint<Connection> create(ContextInternal ctx, Object key, Runnable dispose) {
+      public Endpoint<Connection> create(Object key, Runnable dispose) {
         return new Endpoint<Connection>(dispose) {
           @Override
           public Future<Connection> requestConnection(ContextInternal ctx, long timeout) {
@@ -89,7 +89,7 @@ public class ConnectionManagerTest extends VertxTestBase {
     boolean[] disposed = new boolean[1];
     EndpointProvider<Object, Connection> provider = new EndpointProvider<Object, Connection>() {
       @Override
-      public Endpoint<Connection> create(ContextInternal ctx, Object key, Runnable dispose) {
+      public Endpoint<Connection> create(Object key, Runnable dispose) {
         return new Endpoint<Connection>(dispose) {
           @Override
           public Future<Connection> requestConnection(ContextInternal ctx, long timeout) {
@@ -133,7 +133,7 @@ public class ConnectionManagerTest extends VertxTestBase {
     boolean[] disposed = new boolean[1];
     EndpointProvider<Object, Connection> provider = new EndpointProvider<Object, Connection>() {
       @Override
-      public Endpoint<Connection> create(ContextInternal ctx, Object key, Runnable dispose) {
+      public Endpoint<Connection> create(Object key, Runnable dispose) {
         return new Endpoint<Connection>(dispose) {
           @Override
           public Future<Connection> requestConnection(ContextInternal ctx, long timeout) {
@@ -172,7 +172,7 @@ public class ConnectionManagerTest extends VertxTestBase {
     Connection expected = new Connection();
     boolean[] disposed = new boolean[1];
     AtomicReference<Runnable> adder = new AtomicReference<>();
-    EndpointProvider<Object, Connection> provider = (ctx1, key, dispose) -> new Endpoint<Connection>(dispose) {
+    EndpointProvider<Object, Connection> provider = (key, dispose) -> new Endpoint<Connection>(dispose) {
       @Override
       public Future<Connection> requestConnection(ContextInternal ctx1, long timeout) {
         adder.set(() -> {
@@ -195,7 +195,7 @@ public class ConnectionManagerTest extends VertxTestBase {
     ConcurrentLinkedQueue<AtomicBoolean> disposals = new ConcurrentLinkedQueue<>();
     EndpointProvider<Object, Connection> provider = new EndpointProvider<Object, Connection>() {
       @Override
-      public Endpoint<Connection> create(ContextInternal ctx, Object key, Runnable dispose) {
+      public Endpoint<Connection> create(Object key, Runnable dispose) {
         AtomicBoolean disposed = new AtomicBoolean();
         disposals.add(disposed);
         return new Endpoint<Connection>(dispose) {

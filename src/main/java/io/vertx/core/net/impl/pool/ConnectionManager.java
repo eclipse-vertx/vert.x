@@ -17,6 +17,7 @@ import io.vertx.core.impl.ContextInternal;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * The connection manager associates remote hosts with pools, it also tracks all connections so they can be closed
@@ -37,19 +38,26 @@ public class ConnectionManager<K, C> {
     endpointMap.values().forEach(consumer);
   }
 
+  public <T> T withEndpoint(K key, Function<Endpoint<C>, Optional<T>> f) {
+    Runnable dispose = () -> endpointMap.remove(key);
+    while (true) {
+      Endpoint<C> endpoint = endpointMap.computeIfAbsent(key, k -> provider.create(key, dispose));
+      Optional<T> opt = f.apply(endpoint);
+      if (opt.isPresent()) {
+        return opt.get();
+      }
+    }
+  }
+
   public Future<C> getConnection(ContextInternal ctx, K key) {
     return getConnection(ctx, key, 0);
   }
 
   public Future<C> getConnection(ContextInternal ctx, K key, long timeout) {
-    Runnable dispose = () -> endpointMap.remove(key);
-    while (true) {
-      Endpoint<C> endpoint = endpointMap.computeIfAbsent(key, k -> provider.create(ctx, key, dispose));
+    return withEndpoint(key, endpoint -> {
       Future<C> fut = endpoint.getConnection(ctx, timeout);
-      if (fut != null) {
-        return fut;
-      }
-    }
+      return Optional.ofNullable(fut);
+    });
   }
 
   public void close() {

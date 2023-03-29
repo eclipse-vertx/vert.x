@@ -243,7 +243,7 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider {
   }
 
   private ConnectionManager<EndpointKey, Lease<HttpClientConnection>> httpConnectionManager() {
-    EndpointProvider<EndpointKey, Lease<HttpClientConnection>> provider = (ctx, key, dispose) -> {
+    EndpointProvider<EndpointKey, Lease<HttpClientConnection>> provider = (key, dispose) -> {
       int maxPoolSize = Math.max(options.getMaxPoolSize(), options.getHttp2MaxPoolSize());
       ClientMetrics metrics = HttpClientImpl.this.metrics != null ? HttpClientImpl.this.metrics.createEndpointMetrics(key.serverAddr, maxPoolSize) : null;
       // Copy behavior from above - we should try to avoid this using some proper data instead of the key members
@@ -265,7 +265,7 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider {
   }
 
   private ConnectionManager<EndpointKey, HttpClientConnection> webSocketConnectionManager() {
-    EndpointProvider<EndpointKey, HttpClientConnection> provider = (ctx, key, dispose) -> {
+    EndpointProvider<EndpointKey, HttpClientConnection> provider = (key, dispose) -> {
       int maxPoolSize = options.getMaxWebSockets();
       ClientMetrics metrics = HttpClientImpl.this.metrics != null ? HttpClientImpl.this.metrics.createEndpointMetrics(key.serverAddr, maxPoolSize) : null;
       HttpChannelConnector connector = new HttpChannelConnector(HttpClientImpl.this, netClient, key.proxyOptions, metrics, HttpVersion.HTTP_1_1, key.ssl, false, key.peerAddr, key.serverAddr);
@@ -608,6 +608,7 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider {
     EndpointKey key) {
     ContextInternal ctx = vertx.getOrCreateContext();
     ContextInternal connCtx = ctx.isEventLoopContext() ? ctx : vertx.createEventLoopContext(ctx.nettyEventLoop(), ctx.workerPool(), ctx.classLoader());
+    Promise promise = ctx.promise();
     resolver
       .getConnection(connCtx, key, timeout)
       .compose(lease -> {
