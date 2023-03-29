@@ -130,7 +130,7 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider {
   private final VertxInternal vertx;
   private final HttpClientOptions options;
   private final ConnectionManager<EndpointKey, HttpClientConnection> webSocketCM;
-  private final ConnectionManager<EndpointKey, Lease<HttpClientConnection>> httpCM;
+  final ConnectionManager<EndpointKey, Lease<HttpClientConnection>> httpCM;
   private final NetClientInternal netClient;
   private final HttpClientMetrics metrics;
   private final boolean keepAlive;
@@ -575,6 +575,8 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider {
     return doRequest(method, peerAddress, server, host, port, useSSL, requestURI, headers, request.getTraceOperation(), timeout, followRedirects, proxyOptions, key);
   }
 
+  private final EndpointResolver resolver = new EndpointResolver(this);
+
   private Future<HttpClientRequest> doRequest(
     HttpMethod method,
     SocketAddress peerAddress,
@@ -591,8 +593,7 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider {
     EndpointKey key) {
     ContextInternal ctx = vertx.getOrCreateContext();
     ContextInternal connCtx = ctx.isEventLoopContext() ? ctx : vertx.createEventLoopContext(ctx.nettyEventLoop(), ctx.workerPool(), ctx.classLoader());
-    Promise<HttpClientRequest> promise = ctx.promise();
-    httpCM
+    resolver
       .getConnection(connCtx, key, timeout)
       .compose(lease -> {
         HttpClientConnection conn = lease.get();

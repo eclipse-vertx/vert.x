@@ -577,4 +577,13 @@ public final class FakeDNSServer extends DnsServer {
       return new DnsTcpDecoder();
     }
   }
+
+  public void addRecordsToStore(String domainName, String ...entries){
+    Set<ResourceRecord> records = new LinkedHashSet<>();
+    Function<String, ResourceRecord> createRecord = ipAddress -> new FakeDNSServer.VertxResourceRecord(domainName, ipAddress);
+    for (String e : entries){
+      records.add(createRecord.apply(e));
+    }
+    store(x -> records);
+  }
 }
