@@ -42,6 +42,7 @@ import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
+import io.vertx.core.spi.naming.NameResolver;
 
 import java.lang.ref.WeakReference;
 import java.net.URI;
@@ -575,7 +576,21 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider {
     return doRequest(method, peerAddress, server, host, port, useSSL, requestURI, headers, request.getTraceOperation(), timeout, followRedirects, proxyOptions, key);
   }
 
-  private final EndpointResolver resolver = new EndpointResolver(this);
+  private NameResolver nameResolver;
+  private EndpointResolver<?> resolver;
+
+  public void nameResolver(NameResolver nameResolver) {
+    this.nameResolver = nameResolver;
+    if (nameResolver != null) {
+      this.resolver = new EndpointResolver(this, nameResolver);
+    } else {
+      this.resolver = null;
+    }
+  }
+
+  public NameResolver nameResolver() {
+    return nameResolver;
+  }
 
   private Future<HttpClientRequest> doRequest(
     HttpMethod method,
