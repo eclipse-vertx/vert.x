@@ -25,7 +25,7 @@ public class JsonCodecTest extends VertxTestBase {
   public void testJsonObject() {
     JsonObject obj = new JsonObject("{\"foo\":\"bar\"}");
     assertEquals("bar", obj.getString("foo"));
-    assertEquals("{\"foo\":\"bar\"}", obj.toString());
+    assertEquals("{\"foo\":\"bar\"}", obj.encode());
     try {
       obj.mapTo(Object.class);
       fail();
