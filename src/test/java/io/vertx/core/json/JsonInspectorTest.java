@@ -281,4 +281,31 @@ public class JsonInspectorTest {
         + 10000,  // the inspection string length limit
       inspect(obj).length());
   }
+
+  @Test
+  public void testDeep() {
+    JsonObject obj = new JsonObject()
+      .put("0", new JsonObject()
+        .put("1", new JsonObject()
+          .put("2", new JsonObject()
+            .put("3", new JsonObject()))));
+
+    // only 3 levels are printed (3 is dotted)
+    assertEquals(
+      "{0: {1: {2: {...}}}}",
+      inspect(obj));
+  }
+
+  @Test
+  public void testDeepCircular() {
+    JsonObject obj = new JsonObject();
+    obj
+      .put("0", new JsonObject()
+        .put("1", obj));
+
+    // circular doesn't need to be directly nested
+    assertEquals(
+      String.format("{0: {1: {Circular *%d}}}", System.identityHashCode(obj.getMap())),
+      inspect(obj));
+  }
 }
