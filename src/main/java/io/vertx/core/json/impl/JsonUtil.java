@@ -128,4 +128,52 @@ public final class JsonUtil {
     Iterable<T> iterable = () -> sourceIterator;
     return StreamSupport.stream(iterable.spliterator(), false);
   }
+
+  /**
+   * Inspect a JsonObject. Inspect is a debug method that returns a string representation of the object. It will display
+   * a JSON-like representation of the object. Keys and values are not escaped. When the object contains circular
+   * references a warning is displayed {@code (Circular *int)} the integer value is the offending object hash code as
+   * computed by: {@link System#identityHashCode(Object)}.
+   *
+   * The inspector will enforce some limits to avoid stack overflow errors. The limits are:
+   *
+   * <ul>
+   *   <li>max nested level of objects and/or arrays: {@code 3} - The current object + 2 levels</li>
+   *   <li>max length of arrays or object properties: {@code 100} - Ellipsis will be printed after</li>
+   *   <li>max string length: {@code 10000} - Ellipsis will be printed after</li>
+   * </ul>
+   *
+   * @param obj the JsonObject to inspect
+   * @return String representation
+   */
+  public static String inspect(JsonObject obj) {
+    if (obj == null) {
+      return "null";
+    }
+    return Inspector.inspect(obj, null);
+  }
+
+  /**
+   * Inspect a JsonArray. Inspect is a debug method that returns a string representation of the object. It will display
+   * a JSON-like representation of the object. Keys and values are not escaped. When the object contains circular
+   * references a warning is displayed {@code (Circular *int)} the integer value is the offending object hash code as
+   * computed by: {@link System#identityHashCode(Object)}.
+   *
+   * The inspector will enforce some limits to avoid stack overflow errors. The limits are:
+   *
+   * <ul>
+   *   <li>max nested level of objects and/or arrays: {@code 3} - The current object + 2 levels</li>
+   *   <li>max length of arrays or object properties: {@code 100} - Ellipsis will be printed after</li>
+   *   <li>max string length: {@code 10000} - Ellipsis will be printed after</li>
+   * </ul>
+   *
+   * @param obj the JsonObject to inspect
+   * @return String representation
+   */
+  public static String inspect(JsonArray obj) {
+    if (obj == null) {
+      return "null";
+    }
+    return Inspector.inspect(obj, null);
+  }
 }
