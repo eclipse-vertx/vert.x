@@ -7,6 +7,7 @@ import java.util.List;
 
 import static io.vertx.core.json.impl.JsonUtil.inspect;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class JsonInspectorTest {
 
@@ -272,6 +273,8 @@ public class JsonInspectorTest {
     for (int i = 0; i < 10; i++) {
       loremIpsum += loremIpsum;
     }
+
+    assertTrue(loremIpsum.length() > 10000);
 
     JsonObject obj = new JsonObject().put("msg", loremIpsum);
 
