@@ -34,6 +34,8 @@ public final class JsonUtil {
   public static final Base64.Encoder BASE64_ENCODER;
   public static final Base64.Decoder BASE64_DECODER;
 
+  private static final boolean LEGACY_TO_STRING;
+
   static {
     /*
      * Vert.x 3.x Json supports RFC-7493, however the JSON encoder/decoder format was incorrect.
@@ -47,6 +49,16 @@ public final class JsonUtil {
       BASE64_ENCODER = Base64.getUrlEncoder().withoutPadding();
       BASE64_DECODER = Base64.getUrlDecoder();
     }
+
+    /*
+     * Vert.x 4.x Json toString() methods rely on the CODEC. This can be dangerous when circular references
+     * are present in the object graph, for this reason these methods will encode with a simpler inspector
+     * mode that hints about circular references and avoids encoding very large objects by truncating elements
+     * or deeply nested objects/arrays. Users who might need to interop with Vert.x 4.x applications and expect
+     * toString() to be an alias to `encode()` should set the system property {@code vertx.json.tostring} to
+     *  {@code legacy}.
+     */
+    LEGACY_TO_STRING = "legacy".equalsIgnoreCase(System.getProperty("vertx.json.tostring"));
   }
 
   /**
@@ -127,5 +139,65 @@ public final class JsonUtil {
   public static <T> Stream<T> asStream(Iterator<T> sourceIterator) {
     Iterable<T> iterable = () -> sourceIterator;
     return StreamSupport.stream(iterable.spliterator(), false);
+  }
+
+  /**
+   * Inspect a JsonObject. Inspect is a debug method that returns a string representation of the object. It will display
+   * a JSON-like representation of the object. Keys and values are not escaped. When the object contains circular
+   * references a warning is displayed {@code (Circular *int)} the integer value is the offending object hash code as
+   * computed by: {@link System#identityHashCode(Object)}.
+   *
+   * The inspector will enforce some limits to avoid stack overflow errors. The limits are:
+   *
+   * <ul>
+   *   <li>max nested level of objects and/or arrays: {@code 3} - The current object + 2 levels</li>
+   *   <li>max length of arrays or object properties: {@code 100} - Ellipsis will be printed after</li>
+   *   <li>max string length: {@code 10000} - Ellipsis will be printed after</li>
+   * </ul>
+   *
+   * Note: If the system property {@code vertx.json.tostring} is set to {@code legacy} the method will return JSON
+   * encoded string.
+   *
+   * @param obj the JsonObject to inspect
+   * @return String representation
+   */
+  public static String inspect(JsonObject obj) {
+    if (obj == null) {
+      return "null";
+    }
+    if (LEGACY_TO_STRING) {
+      return obj.encode();
+    }
+    return Inspector.inspect(obj, null);
+  }
+
+  /**
+   * Inspect a JsonArray. Inspect is a debug method that returns a string representation of the object. It will display
+   * a JSON-like representation of the object. Keys and values are not escaped. When the object contains circular
+   * references a warning is displayed {@code (Circular *int)} the integer value is the offending object hash code as
+   * computed by: {@link System#identityHashCode(Object)}.
+   *
+   * The inspector will enforce some limits to avoid stack overflow errors. The limits are:
+   *
+   * <ul>
+   *   <li>max nested level of objects and/or arrays: {@code 3} - The current object + 2 levels</li>
+   *   <li>max length of arrays or object properties: {@code 100} - Ellipsis will be printed after</li>
+   *   <li>max string length: {@code 10000} - Ellipsis will be printed after</li>
+   * </ul>
+   *
+   * Note: If the system property {@code vertx.json.tostring} is set to {@code legacy} the method will return JSON
+   * encoded string.
+   *
+   * @param obj the JsonObject to inspect
+   * @return String representation
+   */
+  public static String inspect(JsonArray obj) {
+    if (obj == null) {
+      return "null";
+    }
+    if (LEGACY_TO_STRING) {
+      return obj.encode();
+    }
+    return Inspector.inspect(obj, null);
   }
 }

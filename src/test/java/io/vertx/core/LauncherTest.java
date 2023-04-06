@@ -478,7 +478,7 @@ public class LauncherTest extends VertxTestBase {
       Files.write(file.toPath(), json.toBuffer().getBytes());
       optionsArg = file.getPath();
     } else {
-      optionsArg = json.toString();
+      optionsArg = json.encode();
     }
 
     MyLauncher launcher = new MyLauncher();
@@ -579,7 +579,7 @@ public class LauncherTest extends VertxTestBase {
       Files.write(file.toPath(), json.toBuffer().getBytes());
       optionsArg = file.getPath();
     } else {
-      optionsArg = json.toString();
+      optionsArg = json.encode();
     }
 
     MyLauncher launcher = new MyLauncher();
