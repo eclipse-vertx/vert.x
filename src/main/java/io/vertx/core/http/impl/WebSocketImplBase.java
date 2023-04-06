@@ -463,6 +463,10 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
           context.dispatch(frame.binaryData(), handler);
         }
         break;
+      case PING:
+      case PONG:
+        fetch(1);
+        break;
     }
   }
 
