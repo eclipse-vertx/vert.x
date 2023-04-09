@@ -853,7 +853,7 @@ public class JsonArrayTest {
   @Test
   public void testToString() {
     jsonArray.add("foo").add(123);
-    assertEquals("[\"foo\", 123]", jsonArray.toString());
+    assertEquals(jsonArray.encode(), jsonArray.toString());
   }
 
   @Test

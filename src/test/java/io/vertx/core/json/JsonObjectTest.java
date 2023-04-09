@@ -1263,7 +1263,7 @@ public class JsonObjectTest {
   @Test
   public void testToString() {
     jsonObject.put("foo", "bar");
-    assertEquals("{foo: \"bar\"}", jsonObject.toString());
+    assertEquals(jsonObject.encode(), jsonObject.toString());
   }
 
   @Test

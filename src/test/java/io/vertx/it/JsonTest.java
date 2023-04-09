@@ -35,7 +35,7 @@ public class JsonTest extends VertxTestBase {
     JsonObject obj = new JsonObject();
     obj.put("foo", "bar");
     try {
-      obj.encode();
+      obj.toString();
       fail();
     } catch (NoClassDefFoundError ignore) {
     }
@@ -48,7 +48,7 @@ public class JsonTest extends VertxTestBase {
     JsonArray array = new JsonArray();
     array.add("foo");
     try {
-      array.encode();
+      array.toString();
       fail();
     } catch (NoClassDefFoundError ignore) {
     }

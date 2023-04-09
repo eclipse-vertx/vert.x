@@ -25,13 +25,13 @@ public class CustomJsonCodecTest extends VertxTestBase {
   public void testJsonObject() {
     JsonObject obj = new JsonObject();
     obj.put("foo", "bar");
-    assertEquals("{\"foo\":\"bar\"}", obj.encode());
+    assertEquals("{\"foo\":\"bar\"}", obj.toString());
   }
 
   @Test
   public void testJsonArray() {
     JsonArray array = new JsonArray();
     array.add("foo");
-    assertEquals("[\"foo\"]", array.encode());
+    assertEquals("[\"foo\"]", array.toString());
   }
 }
