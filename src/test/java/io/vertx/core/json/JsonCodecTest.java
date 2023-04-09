@@ -491,10 +491,10 @@ public class JsonCodecTest {
     assertNull(asBuffer ? mapper.fromBuffer(Buffer.buffer(nullText)) : mapper.fromString(nullText));
 
     JsonObject obj = new JsonObject().put("foo", "bar");
-    assertEquals(obj, asBuffer ? mapper.fromBuffer(obj.toBuffer()) : mapper.fromString(obj.encode()));
+    assertEquals(obj, asBuffer ? mapper.fromBuffer(obj.toBuffer()) : mapper.fromString(obj.toString()));
 
     JsonArray arr = new JsonArray().add(1).add(false).add("whatever").add(obj);
-    assertEquals(arr, asBuffer ? mapper.fromBuffer(arr.toBuffer()) : mapper.fromString(arr.encode()));
+    assertEquals(arr, asBuffer ? mapper.fromBuffer(arr.toBuffer()) : mapper.fromString(arr.toString()));
 
     String invalidText = "\"invalid";
     try {

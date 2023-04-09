@@ -1155,7 +1155,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
 
   @Override
   public String toString() {
-    return inspect(this);
+    return encode();
   }
 
   @Override

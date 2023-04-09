@@ -621,7 +621,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
 
   @Override
   public String toString() {
-    return inspect(this);
+    return encode();
   }
 
   @Override
