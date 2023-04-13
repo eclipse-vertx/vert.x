@@ -200,7 +200,7 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
     if (headers != null && !headers.isEmpty()) {
       int headersLengthPos = buffer.length();
       buffer.appendInt(0);
-      buffer.appendInt(headers.size());
+      buffer.appendInt(headers.entries().size());
       List<Map.Entry<String, String>> entries = headers.entries();
       for (Map.Entry<String, String> entry: entries) {
         writeString(buffer, entry.getKey());
