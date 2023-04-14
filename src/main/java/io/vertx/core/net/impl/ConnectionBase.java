@@ -33,7 +33,6 @@ import io.vertx.core.spi.metrics.TCPMetrics;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
-import javax.security.cert.X509Certificate;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
@@ -563,15 +562,6 @@ public abstract class ConnectionBase {
     if (sslHandlerContext != null) {
       SslHandler sslHandler = (SslHandler) sslHandlerContext.handler();
       return sslHandler.engine().getSession();
-    } else {
-      return null;
-    }
-  }
-
-  public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
-    SSLSession session = sslSession();
-    if (session != null) {
-      return session.getPeerCertificateChain();
     } else {
       return null;
     }

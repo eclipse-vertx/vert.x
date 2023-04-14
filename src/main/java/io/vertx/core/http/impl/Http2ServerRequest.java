@@ -45,8 +45,6 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.tracing.TracingPolicy;
 
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.security.cert.X509Certificate;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -376,11 +374,6 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
       }
       return params;
     }
-  }
-
-  @Override
-  public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
-    return stream.conn.peerCertificateChain();
   }
 
   @Override
