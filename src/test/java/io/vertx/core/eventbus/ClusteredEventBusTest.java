@@ -688,7 +688,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
       assertEquals("entry 'd' should have 1 element", Collections.singletonList("4"), headers.getAll("d"));
       complete();
 
-    }).completionHandler(v1 -> {
+    }).completion().onComplete(v1 -> {
       vertices[0].eventBus().send(ADDRESS1, "foo", new DeliveryOptions().setHeaders(expectedHeaders));
     });
 
