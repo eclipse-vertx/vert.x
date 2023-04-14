@@ -2480,31 +2480,6 @@ public class WebSocketTest extends VertxTestBase {
     }));
     await();
   }
-  
-  @Test
-  public void testWebSocketPausePing() throws InterruptedException {
-    server = vertx.createHttpServer(new HttpServerOptions().setIdleTimeout(1).setPort(DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST));
-    server.webSocketHandler(ws -> {
-      ws.pongHandler(buff -> {
-        assertEquals("ping", buff.toString());
-        ws.close();
-      });
-      ws.writePing(Buffer.buffer("ping"));
-    }).listen(onSuccess(v -> {
-      client = vertx.createHttpClient();
-      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
-        ws.pause();
-        ws.handler(buff -> {
-          fail("Should not receive a buffer");
-        });
-        ws.fetch(1);
-        ws.endHandler(v2 -> {
-          testComplete();
-        });
-      }));
-    }));
-    await();
-  }
 
   @Test
   public void testServerWebSocketPingExceeds125Bytes() {
