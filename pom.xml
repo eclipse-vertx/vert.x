@@ -45,7 +45,7 @@
 
   <properties>
     <junit.version>4.13.1</junit.version>
-    <assertj.version>3.4.1</assertj.version>
+    <assertj.version>3.24.2</assertj.version>
     <apacheds-protocol-dns.version>1.5.7</apacheds-protocol-dns.version>
     <generated.dir>${project.basedir}/src/main/generated</generated.dir>
     <stack.version>5.0.0-SNAPSHOT</stack.version>
