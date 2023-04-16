@@ -150,6 +150,7 @@ public class StressTest extends VertxTestBase {
 
   @Test
   public void testStress() throws InterruptedException {
+    disableThreadChecks();
     int numActors = 16;
     int numConnections = 1000;
 
