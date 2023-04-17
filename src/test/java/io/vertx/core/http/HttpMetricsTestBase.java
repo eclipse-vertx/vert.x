@@ -16,6 +16,7 @@ import io.vertx.core.Future;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.HttpClientImpl;
+import io.vertx.core.http.impl.HttpClientInternal;
 import io.vertx.core.http.impl.HttpServerRequestInternal;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.net.NetClient;
@@ -110,7 +111,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
     AtomicReference<HttpClientMetric> clientMetric = new AtomicReference<>();
     AtomicReference<SocketMetric> clientSocketMetric = new AtomicReference<>();
     FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
-    NetClient netClient = ((HttpClientImpl) client).netClient();
+    NetClient netClient = ((HttpClientInternal) client).netClient();
     FakeTCPMetrics tcpMetrics = FakeMetricsBase.getMetrics(netClient);
     assertSame(metrics, tcpMetrics);
     Context ctx = vertx.getOrCreateContext();

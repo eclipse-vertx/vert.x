@@ -11,7 +11,6 @@
 
 package io.vertx.core.http.impl;
 
-import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -28,19 +27,11 @@ import io.vertx.core.http.RequestOptions;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebSocketConnectOptions;
 import io.vertx.core.http.WebsocketVersion;
-import io.vertx.core.impl.CloseFuture;
-import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.EventLoopContext;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.*;
 import io.vertx.core.impl.future.PromiseInternal;
-import io.vertx.core.net.NetClient;
-import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.ProxyOptions;
-import io.vertx.core.net.ProxyType;
-import io.vertx.core.net.SSLOptions;
-import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.*;
 import io.vertx.core.net.impl.NetClientBuilder;
-import io.vertx.core.net.impl.NetClientImpl;
+import io.vertx.core.net.impl.NetClientInternal;
 import io.vertx.core.net.impl.ProxyFilter;
 import io.vertx.core.net.impl.pool.ConnectionManager;
 import io.vertx.core.net.impl.pool.ConnectionPool;
@@ -60,6 +51,7 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -74,7 +66,7 @@ import static io.vertx.core.http.HttpHeaders.*;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class HttpClientImpl implements HttpClientInternal, MetricsProvider, Closeable {
+public class HttpClientImpl implements HttpClientInternal, MetricsProvider {
 
   // Pattern to check we are not dealing with an absoluate URI
   private static final Pattern ABS_URI_START_PATTERN = Pattern.compile("^\\p{Alpha}[\\p{Alpha}\\p{Digit}+.\\-]*:");
@@ -139,22 +131,24 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider, Clos
   private final HttpClientOptions options;
   private final ConnectionManager<EndpointKey, HttpClientConnection> webSocketCM;
   private final ConnectionManager<EndpointKey, Lease<HttpClientConnection>> httpCM;
-  private final NetClientImpl netClient;
+  private final NetClientInternal netClient;
   private final HttpClientMetrics metrics;
   private final boolean keepAlive;
   private final boolean pipelining;
-  private final CloseFuture closeFuture;
+  private final CloseSequence closeSequence;
+  private long closeTimeout = 0L;
+  private TimeUnit closeTimeoutUnit = TimeUnit.SECONDS;
   private long timerID;
   private Predicate<SocketAddress> proxyFilter;
   private volatile Handler<HttpConnection> connectionHandler;
   private volatile Function<HttpClientResponse, Future<RequestOptions>> redirectHandler = DEFAULT_HANDLER;
   private final Function<ContextInternal, EventLoopContext> contextProvider;
 
-  public HttpClientImpl(VertxInternal vertx, HttpClientOptions options, CloseFuture closeFuture) {
+  public HttpClientImpl(VertxInternal vertx, HttpClientOptions options) {
     this.vertx = vertx;
     this.metrics = vertx.metricsSPI() != null ? vertx.metricsSPI().createHttpClientMetrics(options) : null;
     this.options = new HttpClientOptions(options);
-    this.closeFuture = closeFuture;
+    this.closeSequence = new CloseSequence(this::doClose, this::doShutdown);
     List<HttpVersion> alpnVersions = options.getAlpnVersions();
     if (alpnVersions == null || alpnVersions.isEmpty()) {
       switch (options.getProtocolVersion()) {
@@ -172,7 +166,7 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider, Clos
       throw new IllegalStateException("Cannot have pipelining with no keep alive");
     }
     this.proxyFilter = options.getNonProxyHosts() != null ? ProxyFilter.nonProxyHosts(options.getNonProxyHosts()) : ProxyFilter.DEFAULT_PROXY_FILTER;
-    this.netClient = (NetClientImpl) new NetClientBuilder(vertx, new NetClientOptions(options)
+    this.netClient = new NetClientBuilder(vertx, new NetClientOptions(options)
       .setHostnameVerificationAlgorithm(options.isVerifyHost() ? "HTTPS": "")
       .setProxyOptions(null)
       .setApplicationLayerProtocols(alpnVersions
@@ -180,7 +174,6 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider, Clos
         .map(HttpVersion::alpnName)
         .collect(Collectors.toList())))
       .metrics(metrics)
-      .closeFuture(closeFuture)
       .build();
     webSocketCM = webSocketConnectionManager();
     httpCM = httpConnectionManager();
@@ -203,12 +196,20 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider, Clos
     } else {
       contextProvider = ConnectionPool.EVENT_LOOP_CONTEXT_PROVIDER;
     }
-
-    closeFuture.add(netClient);
   }
 
-  public NetClient netClient() {
+  public NetClientInternal netClient() {
     return netClient;
+  }
+
+  @Override
+  public Future<Void> closeFuture() {
+    return closeSequence.future();
+  }
+
+  @Override
+  public void close(Promise<Void> completion) {
+    closeSequence.close(completion);
   }
 
   /**
@@ -234,7 +235,7 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider, Clos
   private void checkExpired(Handler<Long> checker) {
     httpCM.forEach(EXPIRED_CHECKER);
     synchronized (this) {
-      if (!closeFuture.isClosed()) {
+      if (!closeSequence.started()) {
         timerID = vertx.setTimer(options.getPoolCleanerPeriod(), checker);
       }
     }
@@ -428,22 +429,27 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider, Clos
     return request(method, options.getDefaultPort(), options.getDefaultHost(), requestURI);
   }
 
-  @Override
-  public void close(Promise<Void> completion) {
+  private void doShutdown(Promise<Void> p) {
     synchronized (this) {
       if (timerID >= 0) {
         vertx.cancelTimer(timerID);
         timerID = -1;
       }
     }
-    webSocketCM.close();
     httpCM.close();
-    completion.complete();
+    webSocketCM.close();
+    netClient.shutdown(closeTimeout, closeTimeoutUnit).onComplete(p);
+  }
+
+  private void doClose(Promise<Void> p) {
+    netClient.close().onComplete(p);
   }
 
   @Override
-  public Future<Void> close() {
-    return netClient.close();
+  public Future<Void> close(long timeout, TimeUnit timeUnit) {
+    this.closeTimeout = timeout;
+    this.closeTimeoutUnit = timeUnit;
+    return closeSequence.close();
   }
 
   @Override
@@ -613,7 +619,7 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider, Clos
   }
 
   private void checkClosed() {
-    if (closeFuture.isClosed()) {
+    if (closeSequence.started()) {
       throw new IllegalStateException("Client is closed");
     }
   }

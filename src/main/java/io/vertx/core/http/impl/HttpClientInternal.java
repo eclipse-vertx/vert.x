@@ -11,11 +11,16 @@
 
 package io.vertx.core.http.impl;
 
+import io.vertx.core.Closeable;
+import io.vertx.core.Future;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.impl.CloseSequence;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.net.impl.NetClientInternal;
+import io.vertx.core.spi.metrics.MetricsProvider;
 
-public interface HttpClientInternal extends HttpClient {
+public interface HttpClientInternal extends HttpClient, MetricsProvider, Closeable {
 
   /**
    * @return the vertx, for use in package related classes only.
@@ -23,4 +28,9 @@ public interface HttpClientInternal extends HttpClient {
   VertxInternal vertx();
 
   HttpClientOptions options();
+
+  NetClientInternal netClient();
+
+  Future<Void> closeFuture();
+
 }

@@ -359,13 +359,8 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public HttpClient createHttpClient(HttpClientOptions options, CloseFuture closeFuture) {
-    return delegate.createHttpClient(options, closeFuture);
-  }
-
-  @Override
-  public <C> C createSharedClient(String clientKey, String clientName, CloseFuture closeFuture, Function<CloseFuture, C> supplier) {
-    return delegate.createSharedClient(clientKey, clientName, closeFuture, supplier);
+  public <C> C createSharedResource(String resourceKey, String resourceName, CloseFuture closeFuture, Function<CloseFuture, C> supplier) {
+    return delegate.createSharedResource(resourceKey, resourceName, closeFuture, supplier);
   }
 
   @Override

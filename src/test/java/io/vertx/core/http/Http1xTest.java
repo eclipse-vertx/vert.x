@@ -5353,4 +5353,73 @@ public class Http1xTest extends HttpTest {
   public void testServerResponseChunkedSend() throws Exception {
     testServerResponseSend(true);
   }
+
+  @Test
+  public void testClientCloseWaiters() throws Exception {
+    int num = 4;
+    waitFor(num);
+    CountDownLatch latch = new CountDownLatch(1);
+    server.requestHandler(req -> {
+      System.out.println("got req");
+      latch.countDown();
+    });
+    startServer(testAddress);
+    awaitFuture(client.close());
+    client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1));
+    for (int i = 0;i < num;i++) {
+      int val = i;
+      client.request(requestOptions).compose(request -> {
+        return request.send().onComplete(ar -> {
+
+        });
+      }).onComplete(onFailure(err -> {
+        if (val == 0) {
+          assertEquals("Connection was closed", err.getMessage());
+        } else {
+          assertEquals("Pool closed", err.getMessage());
+        }
+        complete();
+      }));
+      if (i == 0) {
+        awaitLatch(latch);
+      }
+    }
+    awaitFuture(client.close());
+    await();
+  }
+
+  @Test
+  public void testShutdown() throws Exception {
+    int num = 4;
+    AtomicReference<HttpServerRequest> ref = new AtomicReference<>();
+    server.requestHandler(req -> {
+      ref.compareAndSet(null, req);
+    });
+    startServer(testAddress);
+    awaitFuture(client.close());
+    client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1));
+    CountDownLatch latch2 = new CountDownLatch(num - 1);
+    for (int i = 0;i < num;i++) {
+      int val = i;
+      client.request(requestOptions)
+        .compose(request -> request.send()
+          .compose(HttpClientResponse::end))
+        .onComplete(ar -> {
+          if (val == 0) {
+            assertTrue(ar.succeeded());
+          } else {
+            assertTrue(ar.failed());
+            assertEquals("Pool closed", ar.cause().getMessage());
+            latch2.countDown();
+          }
+        });
+      if (i == 0) {
+        assertWaitUntil(() -> ref.get() != null);
+      }
+    }
+    Future<Void> shutdown = client.close(10, TimeUnit.SECONDS);
+    awaitLatch(latch2);
+    ref.get().response().end("hello");
+    awaitFuture(shutdown);
+  }
 }

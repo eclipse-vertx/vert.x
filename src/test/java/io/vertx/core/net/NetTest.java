@@ -50,14 +50,9 @@ import io.vertx.core.http.*;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
-import io.vertx.core.net.impl.NetServerImpl;
-import io.vertx.core.net.impl.NetSocketInternal;
-import io.vertx.core.net.impl.VertxHandler;
+import io.vertx.core.net.impl.*;
 import io.vertx.core.spi.tls.SslContextFactory;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.CheckingSender;
@@ -111,8 +106,6 @@ import static org.hamcrest.CoreMatchers.*;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class NetTest extends VertxTestBase {
-
-  private static final Logger log = LoggerFactory.getLogger(NetTest.class);
 
   private SocketAddress testAddress;
   private NetServer server;
@@ -4312,5 +4305,42 @@ public class NetTest extends VertxTestBase {
       fail();
     } catch (IllegalArgumentException ignore) {
     }
+  }
+
+  @Test
+  public void testClientShutdown() throws Exception {
+    waitFor(2);
+    server.connectHandler(so -> {
+
+    });
+    startServer();
+    NetClientInternal client = ((CleanableNetClient) vertx.createNetClient()).unwrap();
+    CountDownLatch latch = new CountDownLatch(1);
+    long now = System.currentTimeMillis();
+    client.connect(testAddress)
+      .onComplete(onSuccess(so -> {
+        AtomicInteger eventCount = new AtomicInteger();
+        ((NetSocketInternal)so).eventHandler(event -> {
+          if  (event instanceof ShutdownEvent) {
+            ShutdownEvent closeEvent = (ShutdownEvent) event;
+            assertEquals(2, closeEvent.timeout());
+            assertEquals(TimeUnit.SECONDS, closeEvent.timeUnit());
+            eventCount.incrementAndGet();
+          }
+        });
+        so.closeHandler(v -> {
+          assertEquals(1, eventCount.get());
+          assertTrue(System.currentTimeMillis() - now > 2);
+          complete();
+        });
+        latch.countDown();
+    }));
+    awaitLatch(latch);
+    Future<Void> fut = client.close(2, TimeUnit.SECONDS);
+    fut.onComplete(onSuccess(v -> {
+      assertTrue(System.currentTimeMillis() - now > 2);
+      complete();
+    }));
+    await();
   }
 }

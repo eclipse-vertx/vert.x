@@ -72,6 +72,7 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.net.impl.ShutdownEvent;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.NetSocketInternal;
@@ -170,6 +171,16 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   public HttpClientConnection evictionHandler(Handler<Void> handler) {
     evictionHandler = handler;
     return this;
+  }
+
+  @Override
+  protected void handleEvent(Object evt) {
+    if (evt instanceof ShutdownEvent) {
+      ShutdownEvent shutdown = (ShutdownEvent) evt;
+      shutdown(shutdown.timeUnit().toMillis(shutdown.timeout()));
+    } else {
+      super.handleEvent(evt);
+    }
   }
 
   @Override

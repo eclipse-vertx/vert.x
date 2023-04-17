@@ -80,7 +80,7 @@ public class BlockedThreadWarning implements TestRule {
     assertThat(logs, hasItem(allOf(
       containsString(" has been blocked for "),
       containsString(" time limit is " + maxExecuteTimeUnit.toMillis(maxExecuteTime) + " ms"),
-      containsString("Thread[" + poolName + "-"))
+      containsString("Thread " + poolName + "-"))
     ));
   }
 }

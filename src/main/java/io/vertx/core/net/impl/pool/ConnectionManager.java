@@ -55,8 +55,8 @@ public class ConnectionManager<K, C> {
   }
 
   public void close() {
-    for (Endpoint<C> conn : endpointMap.values()) {
-      conn.close();
+    for (Endpoint<C> endpoint : endpointMap.values()) {
+      endpoint.close();
     }
   }
 }

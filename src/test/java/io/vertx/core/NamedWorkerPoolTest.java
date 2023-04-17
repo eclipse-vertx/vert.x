@@ -39,7 +39,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
   public BlockedThreadWarning blockedThreadWarning = new BlockedThreadWarning();
 
   @Test
-  public void testMaxExecuteWorkerTime() throws Exception {
+  public void testMaxExecuteWorkerTime() {
     String poolName = TestUtils.randomAlphaString(10);
     long maxWorkerExecuteTime = NANOSECONDS.convert(3, SECONDS);
     DeploymentOptions deploymentOptions = new DeploymentOptions()
@@ -288,7 +288,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
       try {
         pool.get().<String>executeBlocking(fut -> fail());
         fail();
-      } catch (IllegalStateException ignore) {
+      } catch (RejectedExecutionException ignore) {
         testComplete();
       }
     }));
@@ -373,7 +373,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
       try {
         exec.executeBlocking(fut -> fail()).onComplete(ar -> fail());
         fail();
-      } catch (IllegalStateException ignore) {
+      } catch (RejectedExecutionException ignore) {
       }
       // Check we can still close
       exec.close();

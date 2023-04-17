@@ -895,21 +895,22 @@ public class WebSocketTest extends VertxTestBase {
       .setURI(path)
       .setVersion(version);
     client = vertx.createHttpClient();
-    client.webSocket(options).onComplete(onSuccess(ws -> {
-      AtomicBoolean receivedFirstFrame = new AtomicBoolean();
-      ws.frameHandler(received -> {
-        Buffer receivedBuffer = Buffer.buffer(received.textData());
-        if (!received.isFinal()) {
-          assertEquals(firstFrame, receivedBuffer.toString());
-          receivedFirstFrame.set(true);
-        } else if (receivedFirstFrame.get() && received.isFinal()) {
-          assertEquals(continuationFrame, receivedBuffer.toString());
-          ws.close();
-          testComplete();
-        }
-      });
-    }));
-
+    vertx.runOnContext(v -> {
+      client.webSocket(options).onComplete(onSuccess(ws -> {
+        AtomicBoolean receivedFirstFrame = new AtomicBoolean();
+        ws.frameHandler(received -> {
+          Buffer receivedBuffer = Buffer.buffer(received.textData());
+          if (!received.isFinal()) {
+            assertEquals(firstFrame, receivedBuffer.toString());
+            receivedFirstFrame.set(true);
+          } else if (receivedFirstFrame.get() && received.isFinal()) {
+            assertEquals(continuationFrame, receivedBuffer.toString());
+            ws.close();
+            testComplete();
+          }
+        });
+      }));
+    });
     await();
   }
 
@@ -930,17 +931,19 @@ public class WebSocketTest extends VertxTestBase {
       .setURI(path)
       .setVersion(version);
     client = vertx.createHttpClient();
-    client.webSocket(options).onComplete(onSuccess(ws -> {
-      Buffer received = Buffer.buffer();
-      ws.handler(data -> {
-        received.appendBuffer(data);
-        if (received.length() == buff.length()) {
-          assertEquals(buff, received);
-          ws.close();
-          testComplete();
-        }
-      });
-    }));
+    vertx.runOnContext(v -> {
+      client.webSocket(options).onComplete(onSuccess(ws -> {
+        Buffer received = Buffer.buffer();
+        ws.handler(data -> {
+          received.appendBuffer(data);
+          if (received.length() == buff.length()) {
+            assertEquals(buff, received);
+            ws.close();
+            testComplete();
+          }
+        });
+      }));
+    });
     await();
   }
 
@@ -963,17 +966,19 @@ public class WebSocketTest extends VertxTestBase {
     HttpClientOptions options = new HttpClientOptions();
     options.setTryUsePerFrameWebSocketCompression(true);
     client = vertx.createHttpClient(options);
-    client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, path).onComplete(onSuccess(ws -> {
-      final Buffer received = Buffer.buffer();
-      ws.handler(data -> {
-        received.appendBuffer(data);
-        if (received.length() == buff.length()) {
-          assertEquals(buff, received);
-          ws.close();
-          testComplete();
-        }
-      });
-    }));
+    vertx.runOnContext(v -> {
+      client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, path).onComplete(onSuccess(ws -> {
+        final Buffer received = Buffer.buffer();
+        ws.handler(data -> {
+          received.appendBuffer(data);
+          if (received.length() == buff.length()) {
+            assertEquals(buff, received);
+            ws.close();
+            testComplete();
+          }
+        });
+      }));
+    });
     await();
   }
 
@@ -995,17 +1000,19 @@ public class WebSocketTest extends VertxTestBase {
     HttpClientOptions options = new HttpClientOptions();
     options.setTryUsePerMessageWebSocketCompression(true);
     client = vertx.createHttpClient(options);
-    client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, path).onComplete(onSuccess(ws -> {
-      final Buffer received = Buffer.buffer();
-      ws.handler(data -> {
-        received.appendBuffer(data);
-        if (received.length() == buff.length()) {
-          assertEquals(buff, received);
-          ws.close();
-          testComplete();
-        }
-      });
-    }));
+    vertx.runOnContext(v -> {
+      client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, path).onComplete(onSuccess(ws -> {
+        final Buffer received = Buffer.buffer();
+        ws.handler(data -> {
+          received.appendBuffer(data);
+          if (received.length() == buff.length()) {
+            assertEquals(buff, received);
+            ws.close();
+            testComplete();
+          }
+        });
+      }));
+    });
     await();
   }
 
@@ -1058,17 +1065,19 @@ public class WebSocketTest extends VertxTestBase {
     awaitFuture(server.listen());
     HttpClientOptions options = new HttpClientOptions();
     client = vertx.createHttpClient(options);
-    client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, path).onComplete(onSuccess(ws -> {
-      final Buffer received = Buffer.buffer();
-      ws.handler(data -> {
-        received.appendBuffer(data);
-        if (received.length() == buff.length()) {
-          assertEquals(buff, received);
-          ws.close();
-          testComplete();
-        }
-      });
-    }));
+    vertx.runOnContext(v -> {
+      client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, path).onComplete(onSuccess(ws -> {
+        final Buffer received = Buffer.buffer();
+        ws.handler(data -> {
+          received.appendBuffer(data);
+          if (received.length() == buff.length()) {
+            assertEquals(buff, received);
+            ws.close();
+            testComplete();
+          }
+        });
+      }));
+    });
     await();
   }
 
@@ -1092,18 +1101,20 @@ public class WebSocketTest extends VertxTestBase {
       .setVersion(version)
       .setSubProtocols(clientSubProtocols);
     client = vertx.createHttpClient();
-    client.webSocket(options).onComplete(onSuccess(ws -> {
-      assertEquals("commonproto", ws.subProtocol());
-      final Buffer received = Buffer.buffer();
-      ws.handler(data -> {
-        received.appendBuffer(data);
-        if (received.length() == buff.length()) {
-          assertEquals(buff, received);
-          ws.close();
-          testComplete();
-        }
-      });
-    }));
+    vertx.runOnContext(v -> {
+      client.webSocket(options).onComplete(onSuccess(ws -> {
+        assertEquals("commonproto", ws.subProtocol());
+        final Buffer received = Buffer.buffer();
+        ws.handler(data -> {
+          received.appendBuffer(data);
+          if (received.length() == buff.length()) {
+            assertEquals(buff, received);
+            ws.close();
+            testComplete();
+          }
+        });
+      }));
+    });
     await();
   }
 
@@ -1376,11 +1387,13 @@ public class WebSocketTest extends VertxTestBase {
     });
     awaitFuture(server.listen());
     client = vertx.createHttpClient();
-    client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path").onComplete(onSuccess(ws -> {
-      ws.closeHandler(v -> {
-        testComplete();
-      });
-    }));
+    vertx.runOnContext(v1 -> {
+      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path").onComplete(onSuccess(ws -> {
+        ws.closeHandler(v2 -> {
+          testComplete();
+        });
+      }));
+    });
     await();
   }
 
@@ -1444,13 +1457,15 @@ public class WebSocketTest extends VertxTestBase {
       }
     });
     awaitFuture(server.listen());
-    client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path").onComplete(
-      onSuccess(ws -> {
-        test.accept(ws);
-        if (closeClient) {
-          ws.close();
-        }
-      }));
+    vertx.runOnContext(v -> {
+      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path").onComplete(
+        onSuccess(ws -> {
+          test.accept(ws);
+          if (closeClient) {
+            ws.close();
+          }
+        }));
+    });
     await();
   }
 
@@ -1551,14 +1566,16 @@ public class WebSocketTest extends VertxTestBase {
       .setPort(DEFAULT_HTTP_PORT)
       .setURI(path)
       .setVersion(version);
-    client.webSocket(options).onComplete(onSuccess(ws -> {
-      Buffer actual = Buffer.buffer();
-      ws.handler(actual::appendBuffer);
-      ws.closeHandler(v -> {
-        assertArrayEquals(expected, actual.getBytes(0, actual.length()));
-        complete();
-      });
-    }));
+    vertx.runOnContext(v1 -> {
+      client.webSocket(options).onComplete(onSuccess(ws -> {
+        Buffer actual = Buffer.buffer();
+        ws.handler(actual::appendBuffer);
+        ws.closeHandler(v2 -> {
+          assertArrayEquals(expected, actual.getBytes(0, actual.length()));
+          complete();
+        });
+      }));
+    });
     await();
   }
 
@@ -1663,11 +1680,13 @@ public class WebSocketTest extends VertxTestBase {
       .setURI(path)
       .setVersion(version);
     client = vertx.createHttpClient();
-    client.webSocket(options).onComplete(onSuccess(ws -> {
-      ws.textMessageHandler(receivedMessages::add);
-      ws.exceptionHandler(receivedExceptions::add);
-      ws.closeHandler(v -> testComplete());
-    }));
+    vertx.runOnContext(v1 -> {
+      client.webSocket(options).onComplete(onSuccess(ws -> {
+        ws.textMessageHandler(receivedMessages::add);
+        ws.exceptionHandler(receivedExceptions::add);
+        ws.closeHandler(v2 -> testComplete());
+      }));
+    });
     await();
     return new SocketMessages(receivedMessages, receivedExceptions);
   }
@@ -1844,19 +1863,21 @@ public class WebSocketTest extends VertxTestBase {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).webSocketHandler(WebSocketBase::close);
     awaitFuture(server.listen());
     client = vertx.createHttpClient();
-    client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path).onComplete(onSuccess(ws -> {
-      ws.endHandler(v2 -> {
-        try {
-          ws.endHandler(null);
-          ws.exceptionHandler(null);
-          ws.handler(null);
-        } catch (Exception e) {
-          fail("Was expecting to set to null the handlers when the socket is closed");
-          return;
-        }
-        testComplete();
-      });
-    }));
+    vertx.runOnContext(v -> {
+      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path).onComplete(onSuccess(ws -> {
+        ws.endHandler(v2 -> {
+          try {
+            ws.endHandler(null);
+            ws.exceptionHandler(null);
+            ws.handler(null);
+          } catch (Exception e) {
+            fail("Was expecting to set to null the handlers when the socket is closed");
+            return;
+          }
+          testComplete();
+        });
+      }));
+    });
     await();
   }
 
@@ -1866,13 +1887,15 @@ public class WebSocketTest extends VertxTestBase {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).webSocketHandler(WebSocketBase::close);
     awaitFuture(server.listen());
     client = vertx.createHttpClient();
-    client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path).onComplete(onSuccess(ws -> {
-      ws.endHandler(v2 -> {
-        ws.write(Buffer.buffer("test")).onComplete(onFailure(err -> {
-          testComplete();
-        }));
-      });
-    }));
+    vertx.runOnContext(v -> {
+      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path).onComplete(onSuccess(ws -> {
+        ws.endHandler(v2 -> {
+          ws.write(Buffer.buffer("test")).onComplete(onFailure(err -> {
+            testComplete();
+          }));
+        });
+      }));
+    });
     await();
   }
 
@@ -1947,16 +1970,18 @@ public class WebSocketTest extends VertxTestBase {
     });
     awaitFuture(server.listen());
     client = vertx.createHttpClient();
-    client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path).onComplete(onSuccess(ws -> {
-      Buffer buff = Buffer.buffer();
-      ws.handler(buff::appendBuffer);
-      ws.endHandler(v -> {
-        // Last two bytes are status code payload
-        assertEquals("helloworld", buff.toString("UTF-8"));
-        testComplete();
-      });
-      ws.write(Buffer.buffer("foo"));
-    }));
+    vertx.runOnContext(v1 -> {
+      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path).onComplete(onSuccess(ws -> {
+        Buffer buff = Buffer.buffer();
+        ws.handler(buff::appendBuffer);
+        ws.endHandler(v2 -> {
+          // Last two bytes are status code payload
+          assertEquals("helloworld", buff.toString("UTF-8"));
+          testComplete();
+        });
+        ws.write(Buffer.buffer("foo"));
+      }));
+    });
     await();
   }
 
@@ -2372,11 +2397,13 @@ public class WebSocketTest extends VertxTestBase {
     server = vertx.createHttpServer(serverOptions).webSocketHandler(WebSocketBase::close);
     awaitFuture(server.listen());
     WebSocketConnectOptions options = new WebSocketConnectOptions().setPort(DEFAULT_HTTPS_PORT).setSsl(true);
-    client.webSocket(options).onComplete(onSuccess(ws -> {
-      ws.closeHandler(v -> {
-        testComplete();
-      });
-    }));
+    vertx.runOnContext(v1 -> {
+      client.webSocket(options).onComplete(onSuccess(ws -> {
+        ws.closeHandler(v2 -> {
+          testComplete();
+        });
+      }));
+    });
     await();
   }
 
@@ -2468,11 +2495,13 @@ public class WebSocketTest extends VertxTestBase {
     });
     awaitFuture(server.listen());
     client = vertx.createHttpClient();
-    client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
-      ws.closeHandler(v2 -> {
-        testComplete();
-      });
-    }));
+    vertx.runOnContext(v -> {
+      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
+        ws.closeHandler(v2 -> {
+          testComplete();
+        });
+      }));
+    });
     await();
   }
 
@@ -2521,10 +2550,12 @@ public class WebSocketTest extends VertxTestBase {
     });
     awaitFuture(server.listen());
     client = vertx.createHttpClient();
-    client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
-      ws.pongHandler(buff -> fail());
-      vertx.setTimer(2000, id -> testComplete());
-    }));
+    vertx.runOnContext(v -> {
+      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
+        ws.pongHandler(buff -> fail());
+        vertx.setTimer(2000, id -> testComplete());
+      }));
+    });
     await();
   }
 
@@ -2623,22 +2654,24 @@ public class WebSocketTest extends VertxTestBase {
     });
     awaitFuture(server.listen());
     client = vertx.createHttpClient();
-    client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
-      List<Buffer> pongs = new ArrayList<>();
-      ws.pongHandler(pong -> {
-        pongs.add(pong);
-        if (pongs.size() == 2) {
-          assertEquals(pongs, Arrays.asList(ping1, ping2));
-          testComplete();
+    vertx.runOnContext(v -> {
+      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
+        List<Buffer> pongs = new ArrayList<>();
+        ws.pongHandler(pong -> {
+          pongs.add(pong);
+          if (pongs.size() == 2) {
+            assertEquals(pongs, Arrays.asList(ping1, ping2));
+            testComplete();
+          }
+        });
+        try {
+          ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PING, ping1.copy().getByteBuf(), false));
+          ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PING, ping2.copy().getByteBuf(), true));
+        } catch(Throwable t) {
+          fail(t);
         }
-      });
-      try {
-        ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PING, ping1.copy().getByteBuf(), false));
-        ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PING, ping2.copy().getByteBuf(), true));
-      } catch(Throwable t) {
-        fail(t);
-      }
-    }));
+      }));
+    });
     await();
   }
 
@@ -2655,22 +2688,24 @@ public class WebSocketTest extends VertxTestBase {
     });
     awaitFuture(server.listen());
     client = vertx.createHttpClient();
-    client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
-      List<Buffer> pongs = new ArrayList<>();
-      ws.pongHandler(pong -> {
-        pongs.add(pong);
-        if (pongs.size() == 2) {
-          assertEquals(pongs, Arrays.asList(ping1, ping2));
-          testComplete();
+    vertx.runOnContext(v -> {
+      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
+        List<Buffer> pongs = new ArrayList<>();
+        ws.pongHandler(pong -> {
+          pongs.add(pong);
+          if (pongs.size() == 2) {
+            assertEquals(pongs, Arrays.asList(ping1, ping2));
+            testComplete();
+          }
+        });
+        try {
+          ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PING, ping1.copy().getByteBuf(), false));
+          ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PING, ping2.copy().getByteBuf(), true));
+        } catch(Throwable t) {
+          fail(t);
         }
-      });
-      try {
-        ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PING, ping1.copy().getByteBuf(), false));
-        ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PING, ping2.copy().getByteBuf(), true));
-      } catch(Throwable t) {
-        fail(t);
-      }
-    }));
+      }));
+    });
     await();
   }
 
@@ -2741,18 +2776,20 @@ public class WebSocketTest extends VertxTestBase {
         vertx.setTimer(100, id -> closeOp.accept(socket));
       });
     awaitFuture(server.listen());
-    client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
-      ws.frameHandler(frame -> {
-        assertEquals(1000, frame.binaryData().getByteBuf().getShort(0));
-        assertEquals(1000, frame.closeStatusCode());
-        assertNull(frame.closeReason());
-        complete();
-      });
-      ws.closeHandler(sc -> {
-        assertEquals((Short)(short)1000, ws.closeStatusCode());
-        complete();
-      });
-    }));
+    vertx.runOnContext(v -> {
+      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
+        ws.frameHandler(frame -> {
+          assertEquals(1000, frame.binaryData().getByteBuf().getShort(0));
+          assertEquals(1000, frame.closeStatusCode());
+          assertNull(frame.closeReason());
+          complete();
+        });
+        ws.closeHandler(sc -> {
+          assertEquals((Short)(short)1000, ws.closeStatusCode());
+          complete();
+        });
+      }));
+    });
     await();
   }
 
@@ -2831,15 +2868,17 @@ public class WebSocketTest extends VertxTestBase {
         vertx.setTimer(100, (ar) -> closeOp.accept(socket));
       });
     awaitFuture(server.listen());
-    client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
-      ws.frameHandler(frame -> {
-        assertEquals(TEST_REASON, frame.binaryData().getByteBuf().readerIndex(2).toString(StandardCharsets.UTF_8));
-        assertEquals(TEST_STATUS_CODE, frame.binaryData().getByteBuf().getShort(0));
-        assertEquals(TEST_REASON, frame.closeReason());
-        assertEquals(TEST_STATUS_CODE, frame.closeStatusCode());
-        complete();
-      });
-    }));
+    vertx.runOnContext(v -> {
+      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
+        ws.frameHandler(frame -> {
+          assertEquals(TEST_REASON, frame.binaryData().getByteBuf().readerIndex(2).toString(StandardCharsets.UTF_8));
+          assertEquals(TEST_STATUS_CODE, frame.binaryData().getByteBuf().getShort(0));
+          assertEquals(TEST_REASON, frame.closeReason());
+          assertEquals(TEST_STATUS_CODE, frame.closeStatusCode());
+          complete();
+        });
+      }));
+    });
     await();
   }
 
@@ -3128,14 +3167,16 @@ public class WebSocketTest extends VertxTestBase {
       .setURI("/some/path")
       .setVersion(WebsocketVersion.V13);
     client = vertx.createHttpClient();
-    client.webSocket(options).onComplete(onSuccess(ws -> {
-      AtomicReference<Throwable> failure = new AtomicReference<>();
-      ws.closeHandler(v -> {
-        assertNotNull(failure.get());
-        testComplete();
-      });
-      ws.exceptionHandler(failure::set);
-    }));
+    vertx.runOnContext(v1 -> {
+      client.webSocket(options).onComplete(onSuccess(ws -> {
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+        ws.closeHandler(v2 -> {
+          assertNotNull(failure.get());
+          testComplete();
+        });
+        ws.exceptionHandler(failure::set);
+      }));
+    });
     await();
   }
 
@@ -3180,11 +3221,13 @@ public class WebSocketTest extends VertxTestBase {
     });
     awaitFuture(server.listen());
     client = vertx.createHttpClient();
-    client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/someuri").onComplete(onSuccess(ws -> {
-      vertx.setTimer(1000, id -> {
-        ws.close();
-      });
-    }));
+    vertx.runOnContext(v -> {
+      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/someuri").onComplete(onSuccess(ws -> {
+        vertx.setTimer(1000, id -> {
+          ws.close();
+        });
+      }));
+    });
     await();
   }
 

@@ -16,6 +16,7 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.test.core.VertxTestBase;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Collections;

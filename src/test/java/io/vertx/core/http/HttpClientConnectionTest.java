@@ -12,6 +12,7 @@ package io.vertx.core.http;
 
 import io.netty.buffer.Unpooled;
 import io.vertx.core.MultiMap;
+import io.vertx.core.http.impl.CleanableHttpClient;
 import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.http.impl.HttpRequestHead;
 import io.vertx.core.impl.ContextInternal;
@@ -38,7 +39,7 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
       testAddress = SocketAddress.domainSocketAddress(tmp.getAbsolutePath());
       requestOptions.setServer(testAddress);
     }
-    this.client = (HttpClientImpl) super.client;
+    this.client = (HttpClientImpl) ((CleanableHttpClient) super.client).delegate;
   }
 
   @Test

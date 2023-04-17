@@ -13,6 +13,7 @@ package io.vertx.core.http;
 import io.vertx.core.Future;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.impl.CleanableHttpClient;
 import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
@@ -95,7 +96,7 @@ public class Http1xProxyTest extends HttpTestBase {
     client = vertx.createHttpClient(new HttpClientOptions()
       .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.port())));
     Set<SocketAddress> filtered = Collections.synchronizedSet(new HashSet<>());
-    ((HttpClientImpl)client).proxyFilter(so -> {
+    ((HttpClientImpl)((CleanableHttpClient)client).delegate).proxyFilter(so -> {
       filtered.add(so);
       return accept;
     });

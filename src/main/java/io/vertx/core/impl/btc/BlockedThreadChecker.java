@@ -90,7 +90,7 @@ public class BlockedThreadChecker {
   }
 
   private static void defaultBlockedThreadHandler(BlockedThreadEvent bte) {
-    final String message = "Thread " + bte.thread() + " has been blocked for " + (bte.duration() / 1_000_000) + " ms, time limit is " + (bte.maxExecTime() / 1_000_000) + " ms";
+    final String message = "Thread " + bte.thread().getName() + " has been blocked for " + (bte.duration() / 1_000_000) + " ms, time limit is " + (bte.maxExecTime() / 1_000_000) + " ms";
     if (bte.duration() <= bte.warningExceptionTime()) {
       log.warn(message);
     } else {
