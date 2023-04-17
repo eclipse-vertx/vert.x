@@ -3092,10 +3092,10 @@ public abstract class HttpTest extends HttpTestBase {
     });
 
     startServer(testAddress);
-    client
-      .request(requestOptions)
-      .compose(HttpClientRequest::send)
-      .compose(HttpClientResponse::body)
+    client.request(requestOptions).compose(req -> req
+      .send()
+      .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+      .compose(HttpClientResponse::body))
       .onComplete(onSuccess(buff -> {
         assertEquals(bodyBuff, buff);
         testComplete();
