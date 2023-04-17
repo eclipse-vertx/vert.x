@@ -20,7 +20,6 @@ import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.WorkerContext;
 import io.vertx.test.core.VertxTestBase;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.*;
@@ -31,10 +30,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.IntConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 public class ConnectionPoolTest extends VertxTestBase {
 
@@ -957,10 +954,12 @@ public class ConnectionPoolTest extends VertxTestBase {
       }
     }, new int[]{1}, 1 + numAcquires);
     ref.set(pool);
-    int num = seq.getAndIncrement();
-    pool.acquire(ctx, 0, onFailure(err -> res.add(num)));
+    ctx.runOnContext(v -> {
+      int num = seq.getAndIncrement();
+      pool.acquire(ctx, 0, onFailure(err -> res.add(num)));
+    });
     awaitLatch(latch);
-    List<Integer> expected = IntStream.range(0, numAcquires + 1).boxed().collect(Collectors.toList());
+    List<Integer> expected = IntStream.concat(IntStream.range(1, numAcquires + 1), IntStream.of(0)).boxed().collect(Collectors.toList());
     assertEquals(expected, res);
   }
 
