@@ -13,14 +13,12 @@ package io.vertx.core.http;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPromise;
-import io.netty.channel.socket.DuplexChannel;
 import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.impl.Http2ServerConnection;
 import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.test.core.AsyncTestBase;
@@ -354,9 +352,7 @@ public class Http2Test extends HttpTest {
     AtomicInteger count = new AtomicInteger();
     server.requestHandler(req -> {
       if (count.getAndIncrement() == 0) {
-        Http2ServerConnection a = (Http2ServerConnection) req.connection();
-        DuplexChannel channel = (DuplexChannel) a.channel();
-        channel.shutdown();
+        req.connection().shutdown(0L);
       } else {
         req.response().end();
       }

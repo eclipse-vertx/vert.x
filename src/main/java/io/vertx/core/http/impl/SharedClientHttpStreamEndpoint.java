@@ -173,4 +173,10 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
     request.acquire();
     return promise.future();
   }
+
+  @Override
+  protected void close() {
+    super.close();
+    pool.close();
+  }
 }

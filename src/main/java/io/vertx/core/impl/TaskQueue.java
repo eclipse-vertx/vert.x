@@ -16,6 +16,7 @@ import io.vertx.core.impl.logging.LoggerFactory;
 
 import java.util.LinkedList;
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 
 /**
  * A task queue that always run all tasks in order. The executor to run the tasks is passed
@@ -90,7 +91,12 @@ public class TaskQueue {
       tasks.add(new Task(task, executor));
       if (current == null) {
         current = executor;
-        executor.execute(runner);
+        try {
+          executor.execute(runner);
+        } catch (RejectedExecutionException e) {
+          current = null;
+          throw e;
+        }
       }
     }
   }

@@ -25,6 +25,7 @@ import io.netty.util.concurrent.Promise;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.GoAway;
+import io.vertx.core.net.impl.ShutdownEvent;
 import io.vertx.core.net.impl.ConnectionBase;
 
 import java.util.function.Function;
@@ -177,6 +178,9 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
     } finally {
       if (evt instanceof IdleStateEvent) {
         connection.handleIdle((IdleStateEvent) evt);
+      } else if (evt instanceof ShutdownEvent) {
+        ShutdownEvent shutdownEvt = (ShutdownEvent) evt;
+        connection.shutdown(shutdownEvt.timeUnit().toMillis(shutdownEvt.timeout()));
       }
     }
   }

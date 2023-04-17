@@ -25,6 +25,7 @@ import io.vertx.core.net.*;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.observability.HttpRequest;
 import io.vertx.core.spi.observability.HttpResponse;
+import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
@@ -445,9 +446,10 @@ public class MetricsContextTest extends VertxTestBase {
       assertSame(expectedThread.get(), Thread.currentThread());
       client.request(HttpMethod.PUT, 8080, "localhost", "/the-uri")
         .compose(req -> req.send(Buffer.buffer("hello")).onComplete(onSuccess(resp -> {
-          executeInVanillaThread(() -> {
+          TestUtils.executeInVanillaVertxThread(() -> {
             client.close();
-            vertx.close().onComplete(v2 -> {
+            Future<Void> close = vertx.close();
+            close.onComplete(v2 -> {
               assertEquals("/the-uri", requestBeginCalled.get());
               assertTrue(responseEndCalled.get());
               assertTrue(socketConnectedCalled.get());
@@ -537,7 +539,7 @@ public class MetricsContextTest extends VertxTestBase {
       client.webSocket(8080, "localhost", "/").onComplete(onSuccess(ws -> {
         ws.handler(buf -> {
           ws.closeHandler(v2 -> {
-            executeInVanillaThread(() -> {
+            TestUtils.executeInVanillaVertxThread(() -> {
               client.close();
               vertx.close().onComplete(v3 -> {
                 assertTrue(webSocketConnected.get());
@@ -626,7 +628,7 @@ public class MetricsContextTest extends VertxTestBase {
     client.connect(1234, "localhost").onComplete(onSuccess(so -> {
       so.handler(buf -> {
         so.closeHandler(v -> {
-          executeInVanillaThread(() -> {
+          TestUtils.executeInVanillaVertxThread(() -> {
             vertx.close().onComplete(v4 -> {
               assertTrue(bytesReadCalled.get());
               assertTrue(bytesWrittenCalled.get());
@@ -709,7 +711,7 @@ public class MetricsContextTest extends VertxTestBase {
             assertTrue(bytesWrittenCalled.get());
             assertTrue(socketConnectedCalled.get());
             assertTrue(socketDisconnectedCalled.get());
-            executeInVanillaThread(() -> {
+            TestUtils.executeInVanillaVertxThread(() -> {
               client.close();
               vertx.close().onComplete(v4 -> {
                 assertTrue(closeCalled.get());
@@ -776,7 +778,7 @@ public class MetricsContextTest extends VertxTestBase {
           assertTrue(listening.get());
           assertTrue(bytesReadCalled.get());
           assertTrue(bytesWrittenCalled.get());
-          executeInVanillaThread(socket::close);
+          TestUtils.executeInVanillaVertxThread(socket::close);
         });
         socket.send(Buffer.buffer("msg"), 1234, "localhost");
       }));
@@ -800,7 +802,7 @@ public class MetricsContextTest extends VertxTestBase {
     };
     Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)));
     vertx.eventBus();
-    executeInVanillaThread(() -> {
+    TestUtils.executeInVanillaVertxThread(() -> {
       vertx.close().onComplete(onSuccess(v -> {
         assertTrue(closeCalled.get());
         testComplete();
@@ -858,7 +860,7 @@ public class MetricsContextTest extends VertxTestBase {
       MessageConsumer<Object> consumer = eb.consumer("the_address");
       consumer.handler(msg -> {
         Thread consumerThread = Thread.currentThread();
-        executeInVanillaThread(() -> {
+        TestUtils.executeInVanillaVertxThread(() -> {
           vertx.getOrCreateContext().runOnContext(v2 -> {
             consumer.unregister().onComplete(onSuccess(v3 -> {
               assertTrue(registeredCalled.get());
@@ -874,10 +876,6 @@ public class MetricsContextTest extends VertxTestBase {
       }));
     });
     await();
-  }
-
-  private void executeInVanillaThread(Runnable task) {
-    new Thread(task).start();
   }
 
   private Function<Vertx, Context> eventLoopContextFactory = Vertx::getOrCreateContext;

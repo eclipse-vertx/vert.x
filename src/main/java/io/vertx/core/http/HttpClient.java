@@ -14,19 +14,15 @@ package io.vertx.core.http;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.metrics.Measured;
 import io.vertx.core.net.SSLOptions;
-import io.vertx.core.net.SocketAddress;
-import io.vertx.core.streams.ReadStream;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 /**
  * An asynchronous HTTP client.
@@ -192,10 +188,28 @@ public interface HttpClient extends Measured {
   Function<HttpClientResponse, Future<RequestOptions>> redirectHandler();
 
   /**
-   * Close the client. Closing will close down any pooled connections.
-   * Clients should always be closed after use.
+   * Close the client immediately ({@code close(0, TimeUnit.SECONDS}).
+   *
    * @return a future notified when the client is closed
    */
-  Future<Void> close();
+  default Future<Void> close() {
+    return close(0, TimeUnit.SECONDS);
+  }
+
+  /**
+   * Initiate the client close sequence.
+   *
+   * <p> Connections are taken out of service and closed when all inflight requests are processed, client connection are
+   * immediately removed from the pool. When all connections are closed the client is closed. When the timeout
+   * expires, all unclosed connections are immediately closed.
+   *
+   * <ul>
+   *   <li>HTTP/2 connections will send a go away frame immediately to signal the other side the connection will close</li>
+   *   <li>HTTP/1.x client connection will be closed after the current response is received</li>
+   * </ul>
+   *
+   * @return a future notified when the client is closed
+   */
+  Future<Void> close(long timeout, TimeUnit timeUnit);
 
 }

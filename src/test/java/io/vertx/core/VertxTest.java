@@ -11,16 +11,16 @@
 
 package io.vertx.core;
 
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpMethod;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.datagram.DatagramSocket;
+import io.vertx.core.http.*;
+import io.vertx.core.http.impl.CleanableHttpClient;
 import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.NetClient;
-import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.NetSocket;
-import io.vertx.core.net.impl.NetClientBuilder;
+import io.vertx.core.net.*;
+import io.vertx.core.net.impl.CleanableNetClient;
+import io.vertx.core.net.impl.NetClientInternal;
+import io.vertx.core.net.impl.NetSocketInternal;
 import io.vertx.test.core.AsyncTestBase;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.RepeatRule;
@@ -144,31 +144,133 @@ public class VertxTest extends AsyncTestBase {
   public void testFinalizeHttpClient() throws Exception {
     VertxInternal vertx = (VertxInternal) Vertx.vertx();
     try {
+      AtomicBoolean closed1 = new AtomicBoolean();
+      AtomicBoolean closed2 = new AtomicBoolean();
       CountDownLatch latch = new CountDownLatch(1);
       AtomicReference<NetSocket> socketRef = new AtomicReference<>();
       vertx.createNetServer()
-        .connectHandler(socketRef::set)
+        .connectHandler(so -> {
+          socketRef.set(so);
+          so.closeHandler(v -> {
+            closed1.set(true);
+          });
+        })
         .listen(8080, "localhost")
         .onComplete(onSuccess(server -> latch.countDown()));
       awaitLatch(latch);
-      AtomicBoolean closed = new AtomicBoolean();
-      // No keep alive so the connection is not held in the pool ????
-      CloseFuture closeFuture = new CloseFuture();
-      closeFuture.future().onComplete(ar -> closed.set(true));
-      HttpClient client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(false), closeFuture);
-      vertx.addCloseHook(closeFuture);
-      client.request(HttpMethod.GET, 8080, "localhost", "/")
-        .compose(HttpClientRequest::send)
-        .onComplete(onFailure(err -> {}));
+      HttpClient client = vertx.createHttpClient();
+      // client.connect(1234, "localhost");
+      client.request(HttpMethod.GET, 8080, "localhost", "/").onSuccess(req -> {
+        req.send();
+      });
+      (((CleanableHttpClient)client).delegate).netClient().closeFuture().onComplete(ar -> {
+        closed2.set(true);
+      });
       WeakReference<HttpClient> ref = new WeakReference<>(client);
-      closeFuture = null;
-      client = null;
       assertWaitUntil(() -> socketRef.get() != null);
+      client = null;
       for (int i = 0;i < 10;i++) {
         Thread.sleep(10);
         runGC();
-        assertFalse(closed.get());
-        assertNotNull(ref.get());
+        assertFalse(closed1.get());
+        assertNull(ref.get());
+      }
+      socketRef.get().end(Buffer.buffer(
+        "HTTP/1.1 200 OK\r\n" +
+          "Content-Length\r\n" +
+          "\r\n"
+      ));
+      long now = System.currentTimeMillis();
+      while (true) {
+        assertTrue(System.currentTimeMillis() - now < 20_000);
+        runGC();
+        if (ref.get() == null) {
+          assertTrue(closed1.get());
+          break;
+        }
+      }
+      while (true) {
+        assertTrue(System.currentTimeMillis() - now < 20_000);
+        runGC();
+        if (ref.get() == null) {
+          assertTrue(closed2.get());
+          break;
+        }
+      }
+    } finally {
+      vertx
+        .close()
+        .onComplete(onSuccess(v -> testComplete()));
+    }
+    await();
+
+  }
+
+  @Test
+  public void testCascadeCloseHttpClient() throws Exception {
+    Vertx vertx1 = Vertx.vertx();
+    try {
+      HttpServer server = vertx1.createHttpServer();
+      AtomicBoolean connected = new AtomicBoolean();
+      awaitFuture(server.requestHandler(req -> {
+        connected.set(true);
+        req.connection().closeHandler(v -> {
+          connected.set(false);
+        });
+      }).listen(8080, "localhost"));
+      VertxInternal vertx2 = (VertxInternal) Vertx.vertx();
+      HttpClient client = vertx2.createHttpClient();
+      client.request(HttpMethod.GET, 8080, "localhost", "/").onComplete(onSuccess(req -> {
+        req.send();
+      }));
+      waitUntil(connected::get);
+      awaitFuture(vertx2.close());
+      waitUntil(() -> !connected.get());
+    } finally {
+      awaitFuture(vertx1.close());
+    }
+  }
+
+  @Test
+  public void testFinalizeNetClient() throws Exception {
+    VertxInternal vertx = (VertxInternal) Vertx.vertx();
+    try {
+      AtomicBoolean closed1 = new AtomicBoolean();
+      AtomicBoolean closed2 = new AtomicBoolean();
+      CountDownLatch latch = new CountDownLatch(1);
+      AtomicReference<NetSocket> socketRef = new AtomicReference<>();
+      vertx.createNetServer()
+        .connectHandler(so -> {
+          socketRef.set(so);
+          so.closeHandler(v -> {
+            closed1.set(true);
+          });
+        })
+        .listen(1234, "localhost")
+        .onComplete(onSuccess(server -> latch.countDown()));
+      awaitLatch(latch);
+      NetClient client = vertx.createNetClient();
+      CountDownLatch latch2 = new CountDownLatch(1);
+      AtomicInteger shutdownEventCount = new AtomicInteger();
+      client.connect(1234, "localhost").onComplete(ar -> {
+        if (ar.succeeded()) {
+          NetSocketInternal so = (NetSocketInternal) ar.result();
+          so.eventHandler(v -> shutdownEventCount.incrementAndGet());
+          latch2.countDown();
+        }
+      });
+      ((CleanableNetClient)client).unwrap().closeFuture().onComplete(ar -> {
+        closed2.set(true);
+      });
+      awaitLatch(latch2);
+      WeakReference<NetClient> ref = new WeakReference<>(client);
+      assertWaitUntil(() -> socketRef.get() != null);
+      client = null;
+      for (int i = 0;i < 10;i++) {
+        Thread.sleep(10);
+        runGC();
+        assertFalse(closed1.get());
+        assertNull(ref.get());
       }
       socketRef.get().close();
       long now = System.currentTimeMillis();
@@ -176,7 +278,16 @@ public class VertxTest extends AsyncTestBase {
         assertTrue(System.currentTimeMillis() - now < 20_000);
         runGC();
         if (ref.get() == null) {
-          assertTrue(closed.get());
+          assertTrue(closed1.get());
+          break;
+        }
+      }
+      assertEquals(1, shutdownEventCount.get());
+      while (true) {
+        assertTrue(System.currentTimeMillis() - now < 20_000);
+        runGC();
+        if (ref.get() == null) {
+          assertTrue(closed2.get());
           break;
         }
       }
@@ -189,42 +300,41 @@ public class VertxTest extends AsyncTestBase {
   }
 
   @Test
-  public void testFinalizeNetClient() throws Exception {
+  public void testCascadeCloseNetClient() throws Exception {
+    Vertx vertx1 = Vertx.vertx();
+    try {
+      NetServer server = vertx1.createNetServer();
+      AtomicBoolean connected = new AtomicBoolean();
+      awaitFuture(server.connectHandler(so -> {
+        connected.set(true);
+        so.closeHandler(v -> {
+          connected.set(false);
+        });
+      }).listen(1234, "localhost"));
+      VertxInternal vertx2 = (VertxInternal) Vertx.vertx();
+      NetClient client = vertx2.createNetClient();
+      client.connect(1234, "localhost").onComplete(onSuccess(so -> {
+      }));
+      waitUntil(connected::get);
+      awaitFuture(vertx2.close());
+      waitUntil(() -> !connected.get());
+    } finally {
+      awaitFuture(vertx1.close());
+    }
+  }
+
+  @Test
+  public void testCascadeCloseDatagramSocket() throws Exception {
     VertxInternal vertx = (VertxInternal) Vertx.vertx();
     try {
-      CountDownLatch latch = new CountDownLatch(1);
-      AtomicReference<NetSocket> socketRef = new AtomicReference<>();
-      vertx.createNetServer()
-        .connectHandler(socketRef::set)
-        .listen(1234, "localhost")
-        .onComplete(onSuccess(server -> latch.countDown()));
-      awaitLatch(latch);
+      DatagramSocket socket = vertx.createDatagramSocket();
       AtomicBoolean closed = new AtomicBoolean();
-      CloseFuture closeFuture = new CloseFuture();
-      NetClient client = new NetClientBuilder(vertx, new NetClientOptions()).closeFuture(closeFuture).build();
-      vertx.addCloseHook(closeFuture);
-      closeFuture.future().onComplete(ar -> closed.set(true));
-      closeFuture = null;
-      client.connect(1234, "localhost");
-      WeakReference<NetClient> ref = new WeakReference<>(client);
-      client = null;
-      assertWaitUntil(() -> socketRef.get() != null);
-      for (int i = 0;i < 10;i++) {
-        Thread.sleep(10);
-        runGC();
-        assertFalse(closed.get());
-        assertNotNull(ref.get());
-      }
-      socketRef.get().close();
-      long now = System.currentTimeMillis();
-      while (true) {
-        assertTrue(System.currentTimeMillis() - now < 20_000);
-        runGC();
-        if (ref.get() == null) {
-          assertTrue(closed.get());
-          break;
-        }
-      }
+      socket.endHandler(v -> {
+        closed.set(true);
+      });
+      awaitFuture(socket.listen(1234, "127.0.0.1"));
+      awaitFuture(vertx.close());
+      waitUntil(closed::get);
     } finally {
       vertx
         .close()

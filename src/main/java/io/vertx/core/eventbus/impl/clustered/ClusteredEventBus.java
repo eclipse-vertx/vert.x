@@ -70,7 +70,6 @@ public class ClusteredEventBus extends EventBusImpl {
   private final NetClient client;
 
   private final ConcurrentMap<String, ConnectionHolder> connections = new ConcurrentHashMap<>();
-  private final CloseFuture closeFuture;
   private final EventLoopContext ebContext;
 
   private NodeInfo nodeInfo;
@@ -79,21 +78,22 @@ public class ClusteredEventBus extends EventBusImpl {
 
   public ClusteredEventBus(VertxInternal vertx, VertxOptions options, ClusterManager clusterManager, NodeSelector nodeSelector) {
     super(vertx);
+
+    NetClient client = createNetClient(vertx, new NetClientOptions(options.getEventBusOptions().toJson()));
+
     this.options = options.getEventBusOptions();
     this.clusterManager = clusterManager;
     this.nodeSelector = nodeSelector;
-    closeFuture = new CloseFuture(log);
-    ebContext = vertx.createEventLoopContext(null, closeFuture, null, Thread.currentThread().getContextClassLoader());
-    this.client = createNetClient(vertx, new NetClientOptions(this.options.toJson()), closeFuture);
+    this.ebContext = vertx.createEventLoopContext(null, new CloseFuture(), null, Thread.currentThread().getContextClassLoader());
+    this.client = client;
   }
 
-  private NetClient createNetClient(VertxInternal vertx, NetClientOptions clientOptions, CloseFuture closeFuture) {
+  private NetClient createNetClient(VertxInternal vertx, NetClientOptions clientOptions) {
     NetClientBuilder builder = new NetClientBuilder(vertx, clientOptions);
     VertxMetrics metricsSPI = vertx.metricsSPI();
     if (metricsSPI != null) {
       builder.metrics(metricsSPI.createNetClientMetrics(clientOptions));
     }
-    builder.closeFuture(closeFuture);
     return builder.build();
   }
 
@@ -135,9 +135,10 @@ public class ClusteredEventBus extends EventBusImpl {
     Promise<Void> parentClose = Promise.promise();
     super.close(parentClose);
     parentClose.future()
-      .transform(ar -> closeFuture.close())
+      .transform(ar -> client.close())
       .andThen(ar -> {
         if (server != null) {
+          // TODO CLOSE SERVER TOO
           // Close all outbound connections explicitly - don't rely on context hooks
           for (ConnectionHolder holder : connections.values()) {
             holder.close();

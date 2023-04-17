@@ -13,10 +13,11 @@ package io.vertx.core.impl;
 
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
-import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.PoolMetrics;
+
+import java.lang.ref.Cleaner;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -24,14 +25,13 @@ import io.vertx.core.spi.metrics.PoolMetrics;
 class WorkerExecutorImpl implements MetricsProvider, WorkerExecutorInternal {
 
   private final VertxInternal vertx;
-  private final CloseFuture closeFuture;
-  private final VertxImpl.SharedWorkerPool pool;
-  private boolean closed;
+  private final WorkerPool pool;
+  private final Cleaner.Cleanable cleanable;
 
-  public WorkerExecutorImpl(VertxInternal vertx, CloseFuture closeFuture, VertxImpl.SharedWorkerPool pool) {
+  public WorkerExecutorImpl(VertxInternal vertx, Cleaner cleaner, WorkerPool pool) {
     this.vertx = vertx;
-    this.closeFuture = closeFuture;
     this.pool = pool;
+    this.cleanable = cleaner.register(this, pool::close);
   }
 
   @Override
@@ -57,30 +57,14 @@ class WorkerExecutorImpl implements MetricsProvider, WorkerExecutorInternal {
 
   @Override
   public <T> Future<@Nullable T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered) {
-    synchronized (this) {
-      if (closed) {
-        throw new IllegalStateException("Worker executor closed");
-      }
-    }
-    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+    ContextInternal context = vertx.getOrCreateContext();
     ContextBase impl = context instanceof DuplicatedContext ? ((DuplicatedContext)context).delegate : (ContextBase) context;
     return ContextBase.executeBlocking(context, blockingCodeHandler, pool, ordered ? impl.orderedTasks : null);
   }
 
   @Override
   public Future<Void> close() {
-    ContextInternal closingCtx = vertx.getOrCreateContext();
-    PromiseInternal<Void> promise = closingCtx.promise();
-    closeFuture.close(promise);
-    return promise.future();
-  }
-
-  @Override
-  public void close(Promise<Void> completion) {
-    synchronized (this) {
-      closed = true;
-    }
-    pool.close();
-    completion.complete();
+    cleanable.clean();
+    return vertx.getOrCreateContext().succeededFuture();
   }
 }

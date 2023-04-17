@@ -53,6 +53,7 @@
     <vertx.testNativeTransport>false</vertx.testNativeTransport>
     <vertx.testDomainSockets>false</vertx.testDomainSockets>
     <jar.manifest>${project.basedir}/src/main/resources/META-INF/MANIFEST.MF</jar.manifest>
+    <maven.compiler.release>11</maven.compiler.release>
   </properties>
 
   <dependencyManagement>

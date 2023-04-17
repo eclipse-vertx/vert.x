@@ -542,4 +542,11 @@ public class TestUtils {
     }
     return root;
   }
+
+  /**
+   * Execute the {@code task} in a vanilla Vert.x thread, named {@literal vert.x-vanilla-thread}.
+   */
+  public static void executeInVanillaVertxThread(Runnable task) {
+    new Thread(task, "vert.x-vanilla-thread").start();
+  }
 }

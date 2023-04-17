@@ -8,42 +8,56 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-
 package io.vertx.core.http.impl;
 
+import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.http.*;
-import io.vertx.core.impl.CloseFuture;
-import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.SSLOptions;
+import io.vertx.core.net.impl.NetClientInternal;
+import io.vertx.core.spi.metrics.Metrics;
 
+import java.lang.ref.Cleaner;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
-public class SharedHttpClient implements HttpClientInternal {
+/**
+ * A lightweight proxy of Vert.x {@link HttpClient} that can be collected by the garbage collector and release
+ * the resources when it happens with a {@code 30} seconds grace period.
+ *
+ * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ */
+public class CleanableHttpClient implements HttpClientInternal {
 
-  public static final String SHARED_MAP_NAME = "__vertx.shared.httpClients";
-
-  private final VertxInternal vertx;
-  private final CloseFuture closeFuture;
-  private final HttpClientInternal delegate;
-
-  public SharedHttpClient(VertxInternal vertx, CloseFuture closeFuture, HttpClient delegate) {
-    this.vertx = vertx;
-    this.closeFuture = closeFuture;
-    this.delegate = (HttpClientInternal) delegate;
+  static class Action implements Runnable {
+    private final BiFunction<Long, TimeUnit, Future<Void>> dispose;
+    private long timeout = 30L;
+    private TimeUnit timeUnit = TimeUnit.SECONDS;
+    private Future<Void> closeFuture;
+    private Action(BiFunction<Long, TimeUnit, Future<Void>> dispose) {
+      this.dispose = dispose;
+    }
+    @Override
+    public void run() {
+      closeFuture = dispose.apply(timeout, timeUnit);
+    }
   }
 
-  @Override
-  public Future<Void> close() {
-    ContextInternal closingCtx = vertx.getOrCreateContext();
-    PromiseInternal<Void> promise = closingCtx.promise();
-    closeFuture.close(promise);
-    return promise.future();
+  public final HttpClientInternal delegate;
+  private final Cleaner.Cleanable cleanable;
+  private final Action action;
+
+  public CleanableHttpClient(HttpClientInternal delegate, Cleaner cleaner, BiFunction<Long, TimeUnit, Future<Void>> dispose) {
+    this.action = new Action(dispose);
+    this.delegate = delegate;
+    this.cleanable = cleaner.register(this, action);
   }
 
   @Override
@@ -97,18 +111,35 @@ public class SharedHttpClient implements HttpClientInternal {
   }
 
   @Override
+  @Fluent
   public HttpClient connectionHandler(Handler<HttpConnection> handler) {
     return delegate.connectionHandler(handler);
   }
 
   @Override
+  @Fluent
   public HttpClient redirectHandler(Function<HttpClientResponse, Future<RequestOptions>> handler) {
     return delegate.redirectHandler(handler);
   }
 
   @Override
+  @GenIgnore
   public Function<HttpClientResponse, Future<RequestOptions>> redirectHandler() {
     return delegate.redirectHandler();
+  }
+
+  @Override
+  public Future<Void> close(long timeout, TimeUnit timeUnit) {
+    if (timeout < 0L) {
+      throw new IllegalArgumentException();
+    }
+    if (timeUnit == null) {
+      throw new IllegalArgumentException();
+    }
+    action.timeout = timeout;
+    action.timeUnit = timeUnit;
+    cleanable.clean();
+    return action.closeFuture;
   }
 
   @Override
@@ -119,5 +150,30 @@ public class SharedHttpClient implements HttpClientInternal {
   @Override
   public HttpClientOptions options() {
     return delegate.options();
+  }
+
+  @Override
+  public boolean isMetricsEnabled() {
+    return delegate.isMetricsEnabled();
+  }
+
+  @Override
+  public Metrics getMetrics() {
+    return delegate.getMetrics();
+  }
+
+  @Override
+  public NetClientInternal netClient() {
+    return delegate.netClient();
+  }
+
+  @Override
+  public Future<Void> closeFuture() {
+    return delegate.closeFuture();
+  }
+
+  @Override
+  public void close(Promise<Void> completion) {
+    delegate.close(completion);
   }
 }

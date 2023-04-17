@@ -16,7 +16,6 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.resolver.AddressResolverGroup;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.GenericFutureListener;
-import io.netty.util.concurrent.GlobalEventExecutor;
 import io.vertx.core.Future;
 import io.vertx.core.*;
 import io.vertx.core.datagram.DatagramSocket;
@@ -31,30 +30,22 @@ import io.vertx.core.eventbus.impl.EventBusImpl;
 import io.vertx.core.eventbus.impl.EventBusInternal;
 import io.vertx.core.eventbus.impl.clustered.ClusteredEventBus;
 import io.vertx.core.file.FileSystem;
+import io.vertx.core.http.*;
+import io.vertx.core.http.impl.CleanableHttpClient;
+import io.vertx.core.http.impl.HttpClientInternal;
 import io.vertx.core.impl.btc.BlockedThreadChecker;
-import io.vertx.core.net.impl.NetClientBuilder;
+import io.vertx.core.net.*;
+import io.vertx.core.net.impl.*;
 import io.vertx.core.impl.transports.JDKTransport;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.file.impl.FileSystemImpl;
 import io.vertx.core.file.impl.WindowsFileSystem;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.http.impl.HttpServerImpl;
-import io.vertx.core.http.impl.SharedHttpClient;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.impl.resolver.DnsResolverProvider;
-import io.vertx.core.net.NetClient;
-import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.NetServer;
-import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.net.impl.NetServerImpl;
-import io.vertx.core.net.impl.ServerID;
-import io.vertx.core.net.impl.TCPServerBase;
 import io.vertx.core.spi.transport.Transport;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.shareddata.impl.SharedDataImpl;
@@ -71,13 +62,11 @@ import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.ref.Cleaner;
 import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -88,6 +77,11 @@ import java.util.function.Supplier;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class VertxImpl implements VertxInternal, MetricsProvider {
+
+  /**
+   * Default shared cleaner for Vert.x
+   */
+  private static final Cleaner cleaner = Cleaner.create();
 
   /**
    * Context dispatch info for context running with non vertx threads (Loom).
@@ -137,7 +131,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private volatile HAManager haManager;
   private boolean closed;
   private volatile Handler<Throwable> exceptionHandler;
-  private final Map<String, SharedWorkerPool> namedWorkerPools;
   private final int defaultWorkerPoolSize;
   private final long maxWorkerExecTime;
   private final TimeUnit maxWorkerExecTimeUnit;
@@ -184,7 +177,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     // under a lot of load
     acceptorEventLoopGroup = transport.eventLoopGroup(Transport.ACCEPTOR_EVENT_LOOP_GROUP, 1, acceptorEventLoopThreadFactory, 100);
     internalWorkerPool = new WorkerPool(internalWorkerExec, internalBlockingPoolMetrics);
-    namedWorkerPools = new HashMap<>();
     workerPool = new WorkerPool(workerExec, workerPoolMetrics);
     defaultWorkerPoolSize = options.getWorkerPoolSize();
     maxWorkerExecTime = maxWorkerExecuteTime;
@@ -318,13 +310,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public NetClient createNetClient(NetClientOptions options) {
-    CloseFuture closeFuture = new CloseFuture(log);
     CloseFuture fut = resolveCloseFuture();
-    fut.add(closeFuture);
     NetClientBuilder builder = new NetClientBuilder(this, options);
     builder.metrics(metricsSPI() != null ? metricsSPI().createNetClientMetrics(options) : null);
-    builder.closeFuture(closeFuture);
-    return builder.build();
+    NetClientInternal netClient = builder.build();
+    fut.add(netClient);
+    return new CleanableNetClient(netClient, cleaner);
   }
 
   @Override
@@ -357,23 +348,25 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return new HttpServerImpl(this, serverOptions);
   }
 
-  @Override
-  public HttpClient createHttpClient(HttpClientOptions options, CloseFuture closeFuture) {
-    HttpClientImpl client = new HttpClientImpl(this, options, closeFuture);
-    closeFuture.add(client);
-    return client;
-  }
-
   public HttpClient createHttpClient(HttpClientOptions options) {
-    CloseFuture closeFuture = new CloseFuture();
+    CloseFuture cf = resolveCloseFuture();
     HttpClient client;
+    Closeable closeable;
     if (options.isShared()) {
-      client = createSharedClient(SharedHttpClient.SHARED_MAP_NAME, options.getName(), closeFuture, cf -> createHttpClient(options, cf));
-      client = new SharedHttpClient(this, closeFuture, client);
+      CloseFuture closeFuture = new CloseFuture();
+      client = createSharedResource("__vertx.shared.httpClients", options.getName(), closeFuture, cf_ -> {
+        HttpClientImpl impl = new HttpClientImpl(this, options);
+        cf_.add(completion -> impl.close().onComplete(completion));
+        return impl;
+      });
+      client = new CleanableHttpClient((HttpClientInternal) client, cleaner, (timeout, timeunit) -> closeFuture.close());
+      closeable = closeFuture;
     } else {
-      client = createHttpClient(options, closeFuture);
+      HttpClientImpl impl = new HttpClientImpl(this, options);
+      closeable = impl;
+      client = new CleanableHttpClient(impl, cleaner, impl::close);
     }
-    resolveCloseFuture().add(closeFuture);
+    cf.add(closeable);
     return client;
   }
 
@@ -812,11 +805,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         fut.tryFail(e);
       }
     }).onComplete(ar -> {
-
       workerPool.close();
       internalWorkerPool.close();
-      new ArrayList<>(namedWorkerPools.values()).forEach(WorkerPool::close);
-
+      List<WorkerPool> objects = SharedResourceHolder.clearSharedResource(this, "__vertx.shared.workerPools");
+      for (WorkerPool workerPool : objects) {
+        workerPool.close();
+      }
       acceptorEventLoopGroup.shutdownGracefully(0, 10, TimeUnit.SECONDS).addListener(new GenericFutureListener() {
         @Override
         public void operationComplete(io.netty.util.concurrent.Future future) throws Exception {
@@ -1022,28 +1016,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
   }
 
-  class SharedWorkerPool extends WorkerPool {
-
-    private final String name;
-    private int refCount = 1;
-
-    SharedWorkerPool(String name, ExecutorService workerExec, PoolMetrics workerMetrics) {
-      super(workerExec, workerMetrics);
-      this.name = name;
-    }
-
-    @Override
-    void close() {
-      synchronized (VertxImpl.this) {
-        if (--refCount > 0) {
-          return;
-        }
-        namedWorkerPools.remove(name);
-      }
-      super.close();
-    }
-  }
-
   @Override
   public WorkerExecutorImpl createSharedWorkerExecutor(String name) {
     return createSharedWorkerExecutor(name, defaultWorkerPoolSize);
@@ -1061,32 +1033,41 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public synchronized WorkerExecutorImpl createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime, TimeUnit maxExecuteTimeUnit) {
-    SharedWorkerPool sharedWorkerPool = createSharedWorkerPool(name, poolSize, maxExecuteTime, maxExecuteTimeUnit);
-    CloseFuture parentCf = resolveCloseFuture();
     CloseFuture execCf = new CloseFuture();
+    WorkerPool sharedWorkerPool = createSharedWorkerPool(execCf, name, poolSize, maxExecuteTime, maxExecuteTimeUnit);
+    CloseFuture parentCf = resolveCloseFuture();
     parentCf.add(execCf);
-    WorkerExecutorImpl namedExec = new WorkerExecutorImpl(this, execCf, sharedWorkerPool);
-    execCf.add(namedExec);
-    return namedExec;
+    return new WorkerExecutorImpl(this, cleaner, sharedWorkerPool);
   }
 
-  public synchronized SharedWorkerPool createSharedWorkerPool(String name, int poolSize, long maxExecuteTime, TimeUnit maxExecuteTimeUnit) {
+  public WorkerPool createSharedWorkerPool(String name, int poolSize, long maxExecuteTime, TimeUnit maxExecuteTimeUnit) {
+    return createSharedWorkerPool(new CloseFuture(), name, poolSize, maxExecuteTime, maxExecuteTimeUnit);
+  }
+
+  private synchronized WorkerPool createSharedWorkerPool(CloseFuture closeFuture, String name, int poolSize, long maxExecuteTime, TimeUnit maxExecuteTimeUnit) {
     if (poolSize < 1) {
       throw new IllegalArgumentException("poolSize must be > 0");
     }
     if (maxExecuteTime < 1) {
       throw new IllegalArgumentException("maxExecuteTime must be > 0");
     }
-    SharedWorkerPool sharedWorkerPool = namedWorkerPools.get(name);
-    if (sharedWorkerPool == null) {
+    WorkerPool shared = createSharedResource("__vertx.shared.workerPools", name, closeFuture, cf -> {
       ThreadFactory workerThreadFactory = createThreadFactory(threadFactory, checker, useDaemonThread, maxExecuteTime, maxExecuteTimeUnit, name + "-", true);
       ExecutorService workerExec = executorServiceFactory.createExecutor(workerThreadFactory, poolSize, poolSize);
       PoolMetrics workerMetrics = metrics != null ? metrics.createPoolMetrics("worker", name, poolSize) : null;
-      namedWorkerPools.put(name, sharedWorkerPool = new SharedWorkerPool(name, workerExec, workerMetrics));
-    } else {
-      sharedWorkerPool.refCount++;
-    }
-    return sharedWorkerPool;
+      WorkerPool pool = new WorkerPool(workerExec, workerMetrics);
+      cf.add(completion -> {
+        pool.close();
+        completion.complete();
+      });
+      return pool;
+    });
+    return new WorkerPool(shared.executor(), shared.metrics()) {
+      @Override
+      void close() {
+        closeFuture.close();
+      }
+    };
   }
 
   private static ThreadFactory createThreadFactory(VertxThreadFactory threadFactory, BlockedThreadChecker checker, Boolean useDaemonThread, long maxExecuteTime, TimeUnit maxExecuteTimeUnit, String prefix, boolean worker) {
