@@ -14,19 +14,19 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            jdk: 8
+            jdk: 11
             profile: ''
           - os: ubuntu-latest
-            jdk: 8
+            jdk: 11
             profile: '-PtestNativeTransport'
           - os: ubuntu-latest
-            jdk: 8
+            jdk: 11
             profile: '-PtestDomainSockets'
           - os: ubuntu-latest
             jdk: 17
             profile: ''
           - os: windows-latest
-            jdk: 8
+            jdk: 11
             profile: ''
     uses: ./.github/workflows/ci.yml
     with:
@@ -41,5 +41,5 @@ jobs:
     uses: ./.github/workflows/deploy.yml
     with:
       branch: ${{ github.event.pull_request.head.sha || github.ref_name }}
-      jdk: 8
+      jdk: 11
     secrets: inherit
