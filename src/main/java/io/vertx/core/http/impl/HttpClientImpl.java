@@ -410,14 +410,7 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider, Clos
 
   @Override
   public Future<HttpClientRequest> request(RequestOptions options) {
-    ContextInternal ctx = vertx.getOrCreateContext();
-    PromiseInternal<HttpClientRequest> promise = ctx.promise();
-    try {
-      doRequest(options, promise);
-    } catch (Exception e) {
-      return ctx.failedFuture(e);
-    }
-    return promise.future();
+    return doRequest(options);
   }
 
   @Override
@@ -507,7 +500,7 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider, Clos
     return vertx;
   }
 
-  private void doRequest(RequestOptions request, PromiseInternal<HttpClientRequest> promise) {
+  private Future<HttpClientRequest> doRequest(RequestOptions request) {
     String host = getHost(request);
     int port = getPort(request);
     SocketAddress server = request.getServer();
@@ -526,7 +519,7 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider, Clos
     boolean useAlpn = this.options.isUseAlpn();
     boolean useSSL = ssl != null ? ssl : this.options.isSsl();
     if (!useAlpn && useSSL && this.options.getProtocolVersion() == HttpVersion.HTTP_2) {
-      throw new IllegalArgumentException("Must enable ALPN when using H2");
+      return vertx.getOrCreateContext().failedFuture("Must enable ALPN when using H2");
     }
     checkClosed();
     ProxyOptions proxyOptions = resolveProxyOptions(request.getProxyOptions(), server);
@@ -558,10 +551,10 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider, Clos
     } else {
       key = new EndpointKey(useSSL, proxyOptions, server, peerAddress);
     }
-    doRequest(method, peerAddress, server, host, port, useSSL, requestURI, headers, request.getTraceOperation(), timeout, followRedirects, proxyOptions, key, promise);
+    return doRequest(method, peerAddress, server, host, port, useSSL, requestURI, headers, request.getTraceOperation(), timeout, followRedirects, proxyOptions, key);
   }
 
-  private void doRequest(
+  private Future<HttpClientRequest> doRequest(
     HttpMethod method,
     SocketAddress peerAddress,
     SocketAddress server,
@@ -574,9 +567,10 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider, Clos
     long timeout,
     Boolean followRedirects,
     ProxyOptions proxyOptions,
-    EndpointKey key,
-    PromiseInternal<HttpClientRequest> requestPromise) {
-    ContextInternal ctx = requestPromise.context();
+    EndpointKey key) {
+    ContextInternal ctx = vertx.getOrCreateContext();
+    ContextInternal connCtx = ctx.isEventLoopContext() ? ctx : vertx.createEventLoopContext(ctx.nettyEventLoop(), ctx.workerPool(), ctx.classLoader());
+    Promise<HttpClientRequest> promise = ctx.promise();
     EndpointProvider<Lease<HttpClientConnection>> provider = new EndpointProvider<Lease<HttpClientConnection>>() {
       @Override
       public Endpoint<Lease<HttpClientConnection>> create(ContextInternal ctx, Runnable dispose) {
@@ -594,7 +588,7 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider, Clos
       }
     };
     httpCM
-      .getConnection(ctx, key, provider, timeout)
+      .getConnection(connCtx, key, provider, timeout)
       .compose(lease -> {
         HttpClientConnection conn = lease.get();
         return conn.createStream(ctx).<HttpClientRequest>map(stream -> {
@@ -614,7 +608,8 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider, Clos
           }
           return req;
         });
-      }).onComplete(requestPromise);
+      }).onComplete(promise);
+    return promise.future();
   }
 
   private void checkClosed() {
