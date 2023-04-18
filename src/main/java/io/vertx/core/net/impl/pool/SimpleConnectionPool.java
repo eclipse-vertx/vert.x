@@ -18,11 +18,7 @@ import io.vertx.core.http.ConnectionPoolTooBusyException;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
 
-import java.util.AbstractList;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -901,6 +897,64 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
     @Override
     public int size() {
       return size;
+    }
+  }
+
+  @Override
+  public void suspend(Handler<AsyncResult<List<Future<C>>>> handler) {
+    execute(new Suspend<>(handler));
+  }
+
+  private static class Suspend<C> implements Executor.Action<SimpleConnectionPool<C>> {
+    private final Handler<AsyncResult<List<Future<C>>>> handler;
+
+    private Suspend(Handler<AsyncResult<List<Future<C>>>> handler) {
+      this.handler = handler;
+    }
+
+    @Override
+    public Task execute(SimpleConnectionPool<C> pool) {
+      if (pool.closed) {
+        return new Task() {
+          @Override
+          public void run() {
+            handler.handle(Future.succeededFuture(Collections.emptyList()));
+          }
+        };
+      }
+      List<Future<C>> list = new ArrayList<>();
+      for (int i = 0; i < pool.size;i++) {
+        Slot<C> slot = pool.slots[i];
+        pool.slots[i] = null;
+        PoolWaiter<C> waiter = slot.initiator;
+        if (waiter != null) {
+          pool.waiters.addFirst(slot.initiator);
+          slot.initiator = null;
+        }
+        list.add(slot.result.future());
+      }
+      pool.size = 0;
+      // prevent creating further connections
+      pool.capacity = pool.maxCapacity;
+      return new Task() {
+        @Override
+        public void run() {
+          handler.handle(Future.succeededFuture(list));
+        }
+      };
+    }
+  }
+
+  @Override
+  public void resume() {
+    execute(new Resume<>());
+  }
+
+  private static class Resume<C> implements Executor.Action<SimpleConnectionPool<C>> {
+    @Override
+    public Task execute(SimpleConnectionPool<C> pool) {
+      pool.capacity = 0;
+      return null;
     }
   }
 }
