@@ -924,7 +924,7 @@ public class ConnectionPoolTest extends VertxTestBase {
     EventLoopContext ctx = vertx.createEventLoopContext();
     List<Integer> res = Collections.synchronizedList(new LinkedList<>());
     AtomicInteger seq = new AtomicInteger();
-    CountDownLatch latch = new CountDownLatch(numAcquires);
+    CountDownLatch latch = new CountDownLatch(1 + numAcquires);
     ConnectionPool<Connection> pool = ConnectionPool.pool(new PoolConnector<Connection>() {
       int count = 0;
       int reentrancy = 0;
@@ -956,7 +956,10 @@ public class ConnectionPoolTest extends VertxTestBase {
     ref.set(pool);
     ctx.runOnContext(v -> {
       int num = seq.getAndIncrement();
-      pool.acquire(ctx, 0, onFailure(err -> res.add(num)));
+      pool.acquire(ctx, 0, onFailure(err -> {
+        res.add(num);
+        latch.countDown();
+      }));
     });
     awaitLatch(latch);
     List<Integer> expected = IntStream.concat(IntStream.range(1, numAcquires + 1), IntStream.of(0)).boxed().collect(Collectors.toList());
