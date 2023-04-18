@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -167,6 +168,10 @@ public class CloseFuture implements Closeable {
 
   @Override
   protected void finalize() {
-    close();
+    try {
+      close();
+    } catch (RejectedExecutionException ignore) {
+      // Vert.x is already shut down
+    }
   }
 }
