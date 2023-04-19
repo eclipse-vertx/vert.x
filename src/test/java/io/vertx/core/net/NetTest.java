@@ -3763,24 +3763,27 @@ public class NetTest extends VertxTestBase {
       });
     });
     startServer();
-    client.connect(testAddress, "localhost").onComplete(onSuccess(so -> {
-      so.pause();
-      AtomicBoolean closed = new AtomicBoolean();
-      AtomicBoolean ended = new AtomicBoolean();
-      Buffer received = Buffer.buffer();
-      so.handler(received::appendBuffer);
-      so.closeHandler(v -> {
-        assertFalse(ended.get());
-        assertEquals(Buffer.buffer(), received);
-        closed.set(true);
-        so.resume();
-      });
-      so.endHandler(v -> {
-        assertEquals(expected.toString(), received.toString());
-        ended.set(true);
-        testComplete();
-      });
-    }));
+    vertx.runOnContext(v1 -> {
+      client.connect(testAddress, "localhost").onComplete(onSuccess(so -> {
+        so.pause();
+        AtomicBoolean closed = new AtomicBoolean();
+        AtomicBoolean ended = new AtomicBoolean();
+        Buffer received = Buffer.buffer();
+        so.handler(received::appendBuffer);
+        so.closeHandler(v2 -> {
+          assertFalse(ended.get());
+          assertEquals(Buffer.buffer(), received);
+          closed.set(true);
+          so.resume();
+        });
+        so.endHandler(v -> {
+          assertEquals(expected.toString(), received.toString());
+          assertTrue(closed.get());
+          ended.set(true);
+          testComplete();
+        });
+      }));
+    });
     await();
   }
 
