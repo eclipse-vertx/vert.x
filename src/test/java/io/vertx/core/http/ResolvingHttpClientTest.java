@@ -1,12 +1,11 @@
 package io.vertx.core.http;
 
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.dns.DnsClient;
-import io.vertx.core.http.impl.HttpClientImpl;
+import io.vertx.core.http.impl.HttpClientInternal;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.naming.NameResolver;
 import io.vertx.test.core.VertxTestBase;
@@ -20,7 +19,6 @@ import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 public class ResolvingHttpClientTest extends VertxTestBase {
@@ -139,7 +137,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     requestHandler = (idx, req) -> req.response().end("server-" + idx);
     startServers(numServers);
     HttpClient client = vertx.createHttpClient();
-    ((HttpClientImpl)client).nameResolver(new SrvNameResolver(vertx));
+    ((HttpClientInternal)client).nameResolver(new SrvNameResolver(vertx));
     Set<String> responses = Collections.synchronizedSet(new HashSet<>());
     for (int i = 0;i < numServers * 2;i++) {
       client.request(HttpMethod.GET, 8080, "example.com", "/").compose(req -> req
@@ -161,7 +159,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     requestHandler = (idx, req) -> req.response().end("server-" + idx);
     startServers(numServers);
     HttpClient client = vertx.createHttpClient();
-    ((HttpClientImpl)client).nameResolver(new SrvNameResolver(vertx));
+    ((HttpClientInternal)client).nameResolver(new SrvNameResolver(vertx));
     CountDownLatch latch = new CountDownLatch(numServers);
     for (int i = 0;i < numServers;i++) {
       client.request(HttpMethod.GET, 8080, "example.com", "/").compose(req -> req

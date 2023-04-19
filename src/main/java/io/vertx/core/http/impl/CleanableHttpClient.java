@@ -21,6 +21,7 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.SSLOptions;
 import io.vertx.core.net.impl.NetClientInternal;
 import io.vertx.core.spi.metrics.Metrics;
+import io.vertx.core.spi.naming.NameResolver;
 
 import java.lang.ref.Cleaner;
 import java.util.List;
@@ -170,6 +171,11 @@ public class CleanableHttpClient implements HttpClientInternal {
   @Override
   public Future<Void> closeFuture() {
     return delegate.closeFuture();
+  }
+
+  @Override
+  public void nameResolver(NameResolver nameResolver) {
+    delegate.nameResolver(nameResolver);
   }
 
   @Override

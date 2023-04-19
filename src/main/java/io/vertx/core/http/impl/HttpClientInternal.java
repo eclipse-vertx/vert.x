@@ -19,6 +19,7 @@ import io.vertx.core.impl.CloseSequence;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.NetClientInternal;
 import io.vertx.core.spi.metrics.MetricsProvider;
+import io.vertx.core.spi.naming.NameResolver;
 
 public interface HttpClientInternal extends HttpClient, MetricsProvider, Closeable {
 
@@ -32,5 +33,7 @@ public interface HttpClientInternal extends HttpClient, MetricsProvider, Closeab
   NetClientInternal netClient();
 
   Future<Void> closeFuture();
+
+  void nameResolver(NameResolver nameResolver);
 
 }

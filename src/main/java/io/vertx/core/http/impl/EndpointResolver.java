@@ -27,15 +27,13 @@ class EndpointResolver<S> extends ConnectionManager<EndpointKey, Lease<HttpClien
           return resolved.compose(state -> {
             SocketAddress origin = resolver.pickName(state);
             EndpointKey key2 = new EndpointKey(key.ssl, key.proxyOptions, origin, origin);
-            Future<Lease<HttpClientConnection>> abc = httpClient.httpCM.getConnection(ctx, key2, timeout);
-            httpClient.httpCM.withEndpoint(key, endpoint -> {
+            return httpClient.httpCM.withEndpoint(key2, endpoint -> {
               Future<Lease<HttpClientConnection>> fut = endpoint.requestConnection(ctx, timeout);
               if (fut != null) {
                 return Optional.of(fut);
               }
               return Optional.empty();
             });
-            return abc;
           });
         }
       };
