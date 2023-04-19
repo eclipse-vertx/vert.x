@@ -95,6 +95,11 @@ public class HttpClientOptionsConverter {
             obj.setKeepAliveTimeout(((Number)member.getValue()).intValue());
           }
           break;
+        case "loadBalancePolicy":
+          if (member.getValue() instanceof String) {
+            obj.setLoadBalancePolicy(io.vertx.core.http.LoadBalancePolicy.valueOf((String)member.getValue()));
+          }
+          break;
         case "maxChunkSize":
           if (member.getValue() instanceof Number) {
             obj.setMaxChunkSize(((Number)member.getValue()).intValue());
@@ -258,6 +263,9 @@ public class HttpClientOptionsConverter {
     }
     json.put("keepAlive", obj.isKeepAlive());
     json.put("keepAliveTimeout", obj.getKeepAliveTimeout());
+    if (obj.getLoadBalancePolicy() != null) {
+      json.put("loadBalancePolicy", obj.getLoadBalancePolicy().name());
+    }
     json.put("maxChunkSize", obj.getMaxChunkSize());
     json.put("maxHeaderSize", obj.getMaxHeaderSize());
     json.put("maxInitialLineLength", obj.getMaxInitialLineLength());
