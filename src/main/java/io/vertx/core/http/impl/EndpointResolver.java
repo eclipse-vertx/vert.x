@@ -18,18 +18,12 @@ class EndpointResolver<S> extends ConnectionManager<EndpointKey, Lease<HttpClien
     super(new EndpointProvider<>() {
 
       private final EndpointProvider<EndpointKey, Lease<HttpClientConnection>> provider = httpClient.httpCM.provider;
-      private final ConnectionManager<MyEndpointKey, Lease<HttpClientConnection>> httpCM = new ConnectionManager<>(new EndpointProvider<MyEndpointKey, Lease<HttpClientConnection>>() {
-        @Override
-        public Endpoint<Lease<HttpClientConnection>> create(MyEndpointKey key, Runnable dispose) {
-          return provider.create(key, new Runnable() {
-            @Override
-            public void run() {
-              key.cleanup();
-              dispose.run();
-            }
-          });
-        }
-      });
+      private final ConnectionManager<MyEndpointKey, Lease<HttpClientConnection>> httpCM = new ConnectionManager<>((key, dispose) ->
+        provider.create(key, () -> {
+          key.cleanup();
+          dispose.run();
+        })
+      );
 
       abstract class MyEndpointKey extends EndpointKey {
         public MyEndpointKey(boolean ssl, ProxyOptions proxyOptions, SocketAddress serverAddr, SocketAddress peerAddr) {
@@ -55,6 +49,7 @@ class EndpointResolver<S> extends ConnectionManager<EndpointKey, Lease<HttpClien
                 void cleanup() {
                   if (resolver.removeAddress(state, origin)) {
                     resolver.dispose(state);
+                    dispose.run();
                   }
                 }
               };
