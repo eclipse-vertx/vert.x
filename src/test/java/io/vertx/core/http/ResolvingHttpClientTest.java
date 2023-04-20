@@ -124,13 +124,13 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     }
 
     @Override
-    public SocketAddress pickName(SrvState state) {
+    public SocketAddress pickAddress(SrvState state) {
       int idx = state.index++;
       return state.addresses.get(idx % state.addresses.size());
     }
 
     @Override
-    public boolean removeName(SrvState state, SocketAddress socketAddress) {
+    public boolean removeAddress(SrvState state, SocketAddress socketAddress) {
       state.addresses.remove(socketAddress);
       return state.addresses.isEmpty();
     }

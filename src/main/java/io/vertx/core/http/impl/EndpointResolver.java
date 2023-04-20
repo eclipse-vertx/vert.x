@@ -49,11 +49,11 @@ class EndpointResolver<S> extends ConnectionManager<EndpointKey, Lease<HttpClien
               resolved = resolver.resolve(key.serverAddr.hostName());
             }
             return resolved.compose(state -> {
-              SocketAddress origin = resolver.pickName(state);
+              SocketAddress origin = resolver.pickAddress(state);
               MyEndpointKey key2 = new MyEndpointKey(key.ssl, key.proxyOptions, origin, origin) {
                 @Override
                 void cleanup() {
-                  if (resolver.removeName(state, origin)) {
+                  if (resolver.removeAddress(state, origin)) {
                     resolver.dispose(state);
                   }
                 }

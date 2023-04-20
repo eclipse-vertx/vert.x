@@ -7,9 +7,9 @@ public interface NameResolver<S> {
 
   Future<S> resolve(String name);
 
-  SocketAddress pickName(S state);
+  SocketAddress pickAddress(S state);
 
-  boolean removeName(S state, SocketAddress socketAddress);
+  boolean removeAddress(S state, SocketAddress socketAddress);
 
   void dispose(S state);
 
