@@ -9,6 +9,8 @@ public interface NameResolver<S> {
 
   SocketAddress pickName(S state);
 
+  boolean removeName(S state, SocketAddress socketAddress);
+
   void dispose(S state);
 
 }

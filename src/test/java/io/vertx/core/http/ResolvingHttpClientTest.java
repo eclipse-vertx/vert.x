@@ -17,6 +17,8 @@ import org.junit.Test;
 
 import java.net.InetSocketAddress;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
@@ -91,9 +93,11 @@ public class ResolvingHttpClientTest extends VertxTestBase {
   }
 
   static class SrvState {
+    final String name;
     final List<SocketAddress> addresses;
     int index;
-    SrvState(List<SocketAddress> addresses) {
+    SrvState(String name, List<SocketAddress> addresses) {
+      this.name = name;
       this.addresses = addresses;
     }
   }
@@ -101,6 +105,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
   private static class SrvNameResolver implements NameResolver<SrvState> {
 
     private final DnsClient dnsClient;
+    private final ConcurrentMap<String, Future<SrvState>> cache = new ConcurrentHashMap<>();
 
     SrvNameResolver(Vertx vertx) {
       dnsClient = vertx.createDnsClient(53530, "127.0.0.1");
@@ -108,15 +113,14 @@ public class ResolvingHttpClientTest extends VertxTestBase {
 
     @Override
     public Future<SrvState> resolve(String name) {
-
-      return dnsClient.resolveSRV(name).map(list -> {
+      return cache.computeIfAbsent(name, name_ -> dnsClient.resolveSRV(name_).map(list -> {
         if (list.size() > 0) {
-          return new SrvState(list.stream()
+          return new SrvState(name, list.stream()
             .map(record -> SocketAddress.inetSocketAddress(record.port(), record.target()))
             .collect(Collectors.toList()));
         }
         throw new NoSuchElementException("No names");
-      });
+      }));
     }
 
     @Override
@@ -126,7 +130,14 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     }
 
     @Override
+    public boolean removeName(SrvState state, SocketAddress socketAddress) {
+      state.addresses.remove(socketAddress);
+      return state.addresses.isEmpty();
+    }
+
+    @Override
     public void dispose(SrvState state) {
+      cache.remove(state.name);
     }
   }
 
@@ -154,12 +165,13 @@ public class ResolvingHttpClientTest extends VertxTestBase {
   }
 
   @Test
-  public void testShutdownServer() throws Exception {
+  public void testShutdownServers() throws Exception {
     int numServers = 4;
     requestHandler = (idx, req) -> req.response().end("server-" + idx);
     startServers(numServers);
+    SrvNameResolver resolver = new SrvNameResolver(vertx);
     HttpClient client = vertx.createHttpClient();
-    ((HttpClientInternal)client).nameResolver(new SrvNameResolver(vertx));
+    ((HttpClientInternal)client).nameResolver(resolver);
     CountDownLatch latch = new CountDownLatch(numServers);
     for (int i = 0;i < numServers;i++) {
       client.request(HttpMethod.GET, 8080, "example.com", "/").compose(req -> req
@@ -171,7 +183,12 @@ public class ResolvingHttpClientTest extends VertxTestBase {
       }));
     }
     awaitLatch(latch);
-    awaitFuture(servers.get(2).close());
-    await();
+    SrvState state = resolver.cache.get("example.com").result();
+    for (int i = 0;i < servers.size();i++) {
+      int expected = state.addresses.size() - 1;
+      awaitFuture(servers.get(i).close());
+      assertWaitUntil(() -> state.addresses.size() == expected);
+    }
+    assertWaitUntil(() -> resolver.cache.get("example.com") == null);
   }
 }

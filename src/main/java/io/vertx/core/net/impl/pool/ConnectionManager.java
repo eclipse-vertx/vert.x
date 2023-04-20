@@ -27,7 +27,7 @@ import java.util.function.Function;
  */
 public class ConnectionManager<K, C> {
 
-  private final EndpointProvider<K, C> provider;
+  public final EndpointProvider<K, C> provider;
   private final Map<K, Endpoint<C>> endpointMap = new ConcurrentHashMap<>();
 
   public ConnectionManager(EndpointProvider<K, C> provider) {
