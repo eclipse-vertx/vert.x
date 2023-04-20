@@ -5,6 +5,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.dns.DnsClient;
+import io.vertx.core.dns.DnsException;
 import io.vertx.core.http.impl.HttpClientInternal;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.naming.NameResolver;
@@ -130,8 +131,8 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     }
 
     @Override
-    public boolean removeAddress(SrvState state, SocketAddress socketAddress) {
-      state.addresses.remove(socketAddress);
+    public boolean removeAddress(SrvState state, SocketAddress address) {
+      state.addresses.remove(address);
       return state.addresses.isEmpty();
     }
 
@@ -142,7 +143,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
   }
 
   @Test
-  public void testResolve() throws Exception {
+  public void testResolveServers() throws Exception {
     int numServers = 2;
     waitFor(numServers * 2);
     requestHandler = (idx, req) -> req.response().end("server-" + idx);
@@ -190,5 +191,20 @@ public class ResolvingHttpClientTest extends VertxTestBase {
       assertWaitUntil(() -> state.addresses.size() == expected);
     }
     assertWaitUntil(() -> resolver.cache.get("example.com") == null);
+  }
+
+  @Test
+  public void testResolveFailure() {
+    HttpClient client = vertx.createHttpClient();
+    ((HttpClientInternal)client).nameResolver(new SrvNameResolver(vertx));
+    client.request(HttpMethod.GET, 8080, "foo.com", "/").compose(req -> req
+      .send()
+      .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+      .compose(HttpClientResponse::body)
+    ).onComplete(onFailure(err -> {
+      assertEquals(DnsException.class, err.getClass());
+      testComplete();
+    }));
+    await();
   }
 }

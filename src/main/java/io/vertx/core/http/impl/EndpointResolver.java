@@ -11,6 +11,7 @@ import io.vertx.core.net.impl.pool.Lease;
 import io.vertx.core.spi.naming.NameResolver;
 
 import java.util.Optional;
+import java.util.function.Function;
 
 class EndpointResolver<S> extends ConnectionManager<EndpointKey, Lease<HttpClientConnection>> {
 
@@ -60,6 +61,12 @@ class EndpointResolver<S> extends ConnectionManager<EndpointKey, Lease<HttpClien
                 }
                 return Optional.empty();
               });
+            }, new Function<Throwable, Future<Lease<HttpClientConnection>>>() {
+              @Override
+              public Future<Lease<HttpClientConnection>> apply(Throwable throwable) {
+                dispose.run();
+                return Future.failedFuture(throwable);
+              }
             });
           }
         };
