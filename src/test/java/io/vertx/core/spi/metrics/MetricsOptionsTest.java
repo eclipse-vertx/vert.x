@@ -94,7 +94,7 @@ public class MetricsOptionsTest extends VertxTestBase {
     vertx.close();
     MetricsOptions metricsOptions = new MetricsOptions().setEnabled(true);
     VertxOptions options = new VertxOptions().setMetricsOptions(metricsOptions);
-    vertx = createVertxLoadingMetricsFromMetaInf(options, "io.vertx.test.fakemetrics.FakeMetricsFactory");
+    vertx = createVertxLoadingMetricsFromMetaInf(options, io.vertx.test.fakemetrics.FakeMetricsFactory.class);
     VertxMetrics metrics = ((VertxInternal) vertx).metricsSPI();
     assertNotNull(metrics);
     assertTrue(metrics instanceof FakeVertxMetrics);
@@ -106,19 +106,14 @@ public class MetricsOptionsTest extends VertxTestBase {
     DummyVertxMetrics metrics = DummyVertxMetrics.INSTANCE;
     vertx.close();
     VertxOptions options = new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(new SimpleVertxMetricsFactory<>(metrics)));
-    vertx = createVertxLoadingMetricsFromMetaInf(options, "io.vertx.test.fakemetrics.FakeMetricsFactory");
+    vertx = createVertxLoadingMetricsFromMetaInf(options, io.vertx.test.fakemetrics.FakeMetricsFactory.class);
     assertSame(metrics, ((VertxInternal) vertx).metricsSPI());
   }
 
-  static Vertx createVertxLoadingMetricsFromMetaInf(VertxOptions options, String factoryFqn) {
-    ClassLoader oldCL = Thread.currentThread().getContextClassLoader();
-    ClassLoader cl = createMetricsFromMetaInfLoader(factoryFqn);
-    Thread.currentThread().setContextClassLoader(cl);
-    try {
+  static Vertx createVertxLoadingMetricsFromMetaInf(VertxOptions options, Class<? extends VertxServiceProvider> factory) {
+    return TestUtils.runWithServiceLoader(VertxServiceProvider.class, factory, () -> {
       return Vertx.vertx(options);
-    } finally {
-      Thread.currentThread().setContextClassLoader(oldCL);
-    }
+    });
   }
 
   public static ClassLoader createMetricsFromMetaInfLoader(String factoryFqn) {

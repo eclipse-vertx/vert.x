@@ -405,8 +405,11 @@ public class VertxBuilder {
     if (preferNative) {
       Collection<Transport> transports = ServiceHelper.loadFactories(Transport.class);
       Iterator<Transport> it = transports.iterator();
-      if (it.hasNext()) {
-        return it.next();
+      while (it.hasNext()) {
+        Transport transport = it.next();
+        if (transport.isAvailable()) {
+          return transport;
+        }
       }
       Transport nativeTransport = nativeTransport();
       if (nativeTransport != null && nativeTransport.isAvailable()) {
