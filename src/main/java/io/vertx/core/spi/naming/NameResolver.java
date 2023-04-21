@@ -21,7 +21,7 @@ public interface NameResolver<S> {
    * @param state the state
    * @return the resolved socket address
    */
-  SocketAddress pickAddress(S state);
+  Future<SocketAddress> pickAddress(S state);
 
   /**
    * Remove a stale address from the state.

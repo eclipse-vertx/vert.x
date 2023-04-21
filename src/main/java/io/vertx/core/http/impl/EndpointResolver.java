@@ -43,8 +43,7 @@ class EndpointResolver<S> extends ConnectionManager<EndpointKey, Lease<HttpClien
             if (resolved == null) {
               resolved = resolver.resolve(key.serverAddr.hostName());
             }
-            return resolved.compose(state -> {
-              SocketAddress origin = resolver.pickAddress(state);
+            return resolved.compose(state -> resolver.pickAddress(state).compose(origin -> {
               MyEndpointKey key2 = new MyEndpointKey(key.ssl, key.proxyOptions, origin, origin) {
                 @Override
                 void cleanup() {
@@ -61,12 +60,9 @@ class EndpointResolver<S> extends ConnectionManager<EndpointKey, Lease<HttpClien
                 }
                 return Optional.empty();
               });
-            }, new Function<Throwable, Future<Lease<HttpClientConnection>>>() {
-              @Override
-              public Future<Lease<HttpClientConnection>> apply(Throwable throwable) {
-                dispose.run();
-                return Future.failedFuture(throwable);
-              }
+            }), failure -> {
+              dispose.run();
+              return Future.failedFuture(failure);
             });
           }
         };

@@ -125,9 +125,9 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     }
 
     @Override
-    public SocketAddress pickAddress(SrvState state) {
+    public Future<SocketAddress> pickAddress(SrvState state) {
       int idx = state.index++;
-      return state.addresses.get(idx % state.addresses.size());
+      return Future.succeededFuture(state.addresses.get(idx % state.addresses.size()));
     }
 
     @Override
