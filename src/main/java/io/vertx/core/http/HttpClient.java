@@ -56,8 +56,7 @@ import java.util.function.Function;
 public interface HttpClient extends Measured {
 
   /**
-   * Create an HTTP request to send to the server. The {@code handler}
-   * is called when the request is ready to be sent.
+   * Create an HTTP request to send to the server.
    *
    * @param options    the request options
    * @return a future notified when the request is ready to be sent
@@ -65,8 +64,7 @@ public interface HttpClient extends Measured {
   Future<HttpClientRequest> request(RequestOptions options);
 
   /**
-   * Create an HTTP request to send to the server at the {@code host} and {@code port}. The {@code handler}
-   * is called when the request is ready to be sent.
+   * Create an HTTP request to send to the server at the {@code host} and {@code port}.
    *
    * @param method     the HTTP method
    * @param port       the port
@@ -77,8 +75,7 @@ public interface HttpClient extends Measured {
   Future<HttpClientRequest> request(HttpMethod method, int port, String host, String requestURI);
 
   /**
-   * Create an HTTP request to send to the server at the {@code host} and default port. The {@code handler}
-   * is called when the request is ready to be sent.
+   * Create an HTTP request to send to the server at the {@code host} and default port.
    *
    * @param method     the HTTP method
    * @param host       the host
@@ -88,8 +85,7 @@ public interface HttpClient extends Measured {
   Future<HttpClientRequest> request(HttpMethod method, String host, String requestURI);
 
   /**
-   * Create an HTTP request to send to the server at the default host and port. The {@code handler}
-   * is called when the request is ready to be sent.
+   * Create an HTTP request to send to the server at the default host and port.
    *
    * @param method     the HTTP method
    * @param requestURI the relative URI
@@ -98,7 +94,8 @@ public interface HttpClient extends Measured {
   Future<HttpClientRequest> request(HttpMethod method, String requestURI);
 
   /**
-   * Connect a WebSocket to the specified port, host and relative request URI
+   * Connect a WebSocket to the specified port, host and relative request URI.
+   *
    * @param port  the port
    * @param host  the host
    * @param requestURI  the relative URI
@@ -107,7 +104,8 @@ public interface HttpClient extends Measured {
   Future<WebSocket> webSocket(int port, String host, String requestURI);
 
   /**
-   * Connect a WebSocket to the host and relative request URI and default port
+   * Connect a WebSocket to the host and relative request URI and default port.
+   *
    * @param host  the host
    * @param requestURI  the relative URI
    * @return a future notified when the WebSocket when connected
@@ -115,7 +113,8 @@ public interface HttpClient extends Measured {
   Future<WebSocket> webSocket(String host, String requestURI);
 
   /**
-   * Connect a WebSocket at the relative request URI using the default host and port
+   * Connect a WebSocket at the relative request URI using the default host and port.
+   *
    * @param requestURI  the relative URI
    * @return a future notified when the WebSocket when connected
    */
