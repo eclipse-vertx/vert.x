@@ -42,6 +42,7 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.test.core.AsyncTestBase;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.tls.Cert;
 import org.junit.Assert;
@@ -1909,6 +1910,7 @@ public class Http2ClientTest extends Http2TestBase {
     testMaxConcurrency(1, 5);
   }
 
+  @Repeat(times = 1000)
   @Test
   public void testMaxConcurrencyMultipleConnections() throws Exception {
     testMaxConcurrency(2, 1);
