@@ -141,8 +141,12 @@ public class HttpChannelConnector {
 
   public Future<HttpClientConnection> httpConnect(EventLoopContext context) {
     Promise<NetSocket> promise = context.promise();
+    Future<NetSocket> future = promise.future();
+    // We perform the compose operation before calling connect to be sure that the composition happens
+    // before the promise is completed by the connect operation
+    Future<HttpClientConnection> ret = future.compose(so -> wrap(context, so));
     connect(context, promise);
-    return promise.future().flatMap(so -> wrap(context, so));
+    return ret;
   }
 
   private void applyHttp2ConnectionOptions(ChannelPipeline pipeline) {
