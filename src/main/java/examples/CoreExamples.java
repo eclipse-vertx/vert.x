@@ -189,7 +189,7 @@ public class CoreExamples {
     });
   }
 
-  public void exampleFutureAll2(Future future1, Future future2, Future future3) {
+  public void exampleFutureAll2(Future<?> future1, Future<?> future2, Future<?> future3) {
     CompositeFuture.all(Arrays.asList(future1, future2, future3));
   }
 
@@ -203,11 +203,11 @@ public class CoreExamples {
     });
   }
 
-  public void exampleFutureAny2(Future f1, Future f2, Future f3) {
+  public void exampleFutureAny2(Future<?> f1, Future<?> f2, Future<?> f3) {
     CompositeFuture.any(Arrays.asList(f1, f2, f3));
   }
 
-  public void exampleFutureJoin1(Future future1, Future future2, Future future3) {
+  public void exampleFutureJoin1(Future<?> future1, Future<?> future2, Future<?> future3) {
     CompositeFuture.join(future1, future2, future3).onComplete(ar -> {
       if (ar.succeeded()) {
         // All succeeded
@@ -217,7 +217,7 @@ public class CoreExamples {
     });
   }
 
-  public void exampleFutureJoin2(Future future1, Future future2, Future future3) {
+  public void exampleFutureJoin2(Future<?> future1, Future<?> future2, Future<?> future3) {
     CompositeFuture.join(Arrays.asList(future1, future2, future3));
   }
 

@@ -45,7 +45,7 @@ public class CustomNodeSelectorTest extends VertxTestBase {
       })
       .map(options -> {
         VertxBuilder factory = new VertxBuilder(options).init().clusterNodeSelector(new CustomNodeSelector());
-        return (Future)factory.clusteredVertx();
+        return factory.clusteredVertx();
       })
       .collect(collectingAndThen(toList(), CompositeFuture::all));
 
@@ -61,9 +61,7 @@ public class CustomNodeSelectorTest extends VertxTestBase {
         received.merge(i, Collections.singleton(msg.body()), (s1, s2) -> Stream.concat(s1.stream(), s2.stream()).collect(toSet()));
         latch.countDown();
       }))
-      .<Future>map(consumer -> {
-        return consumer.completion();
-      })
+      .map(MessageConsumer::completion)
       .collect(collectingAndThen(toList(), CompositeFuture::all));
 
     Map<Integer, Set<String>> expected = new HashMap<>();
@@ -116,7 +114,7 @@ public class CustomNodeSelectorTest extends VertxTestBase {
       List<String> nodes = clusterManager.getNodes();
       CompositeFuture future = nodes.stream()
         .map(nodeId -> {
-          Promise nodeInfo = Promise.promise();
+          Promise<NodeInfo> nodeInfo = Promise.promise();
           clusterManager.getNodeInfo(nodeId, nodeInfo);
           return nodeInfo.future();
         })

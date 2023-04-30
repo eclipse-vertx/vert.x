@@ -266,7 +266,7 @@ public class AsynchronousLockTest extends VertxTestBase {
     sharedData
       .getLocalLock("foo")
       .onComplete(onSuccess(lock -> {
-        List<Future> locks = new ArrayList<>();
+        List<Future<?>> locks = new ArrayList<>();
         for (int i = 0; i < numWaiters; i++) {
           locks.add(sharedData.getLocalLockWithTimeout("foo", 200));
         }
