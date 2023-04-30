@@ -101,7 +101,7 @@ public class DeploymentManager {
         deploymentIDs.add(entry.getKey());
       }
     }
-    List<Future> completionList = new ArrayList<>();
+    List<Future<?>> completionList = new ArrayList<>();
     if (!deploymentIDs.isEmpty()) {
       for (String deploymentID : deploymentIDs) {
         Promise<Void> promise = Promise.promise();
@@ -301,7 +301,7 @@ public class DeploymentManager {
 
     private synchronized Future<Void> doUndeployChildren(ContextInternal undeployingContext) {
       if (!children.isEmpty()) {
-        List<Future> childFuts = new ArrayList<>();
+        List<Future<?>> childFuts = new ArrayList<>();
         for (Deployment childDeployment: new HashSet<>(children)) {
           Promise<Void> p = Promise.promise();
           childFuts.add(p.future());
@@ -325,7 +325,7 @@ public class DeploymentManager {
         return doUndeployChildren(undeployingContext).compose(v -> doUndeploy(undeployingContext));
       } else {
         status = ST_UNDEPLOYED;
-        List<Future> undeployFutures = new ArrayList<>();
+        List<Future<?>> undeployFutures = new ArrayList<>();
         if (parent != null) {
           parent.removeChild(this);
         }

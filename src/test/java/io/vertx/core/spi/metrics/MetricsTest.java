@@ -773,7 +773,7 @@ public class MetricsTest extends VertxTestBase {
       servers.add(server);
     }
     try {
-      List<Future> collect = servers.stream().map(server -> server.listen(8080)).collect(Collectors.toList());
+      List<Future<?>> collect = servers.stream().map(server -> server.listen(8080)).collect(Collectors.toList());
       CompositeFuture
         .all(collect)
         .onSuccess(v -> {

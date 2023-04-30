@@ -564,7 +564,7 @@ public class ContextTest extends VertxTestBase {
     int n = 2;
     List<ContextInternal> dup1 = Stream.generate(supplier).limit(n).collect(Collectors.toList());
     AtomicInteger cnt = new AtomicInteger();
-    List<Future> futures = dup1.stream().map(c -> c.<Void>executeBlocking(duplicate -> {
+    List<Future<?>> futures = dup1.stream().map(c -> c.<Void>executeBlocking(duplicate -> {
       assertTrue(Context.isOnWorkerThread());
       int val = cnt.incrementAndGet();
       if (ordered) {

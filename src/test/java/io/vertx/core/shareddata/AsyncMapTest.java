@@ -775,7 +775,7 @@ public abstract class AsyncMapTest extends VertxTestBase {
 
   protected void loadData(Map<JsonObject, Buffer> map, BiConsumer<Vertx, AsyncMap<JsonObject, Buffer>> test) {
     SharedData sharedData = getVertx().sharedData();
-    List<Future> futures = new ArrayList<>(map.size());
+    List<Future<?>> futures = new ArrayList<>(map.size());
     map.forEach((key, value) -> {
       futures.add(sharedData.getAsyncMap("foo").compose(asyncMap -> asyncMap.put(key, value)));
     });

@@ -5333,7 +5333,7 @@ public class Http1xTest extends HttpTest {
       .setPoolEventLoopSize(size));
     List<EventLoop> eventLoops = Collections.synchronizedList(new ArrayList<>());
     client.connectionHandler(conn -> eventLoops.add(((ContextInternal)Vertx.currentContext()).nettyEventLoop()));
-    List<Future> futures = new ArrayList<>();
+    List<Future<Buffer>> futures = new ArrayList<>();
     for (int i = 0;i < size * 2;i++) {
       futures.add(client
         .request(requestOptions)

@@ -40,7 +40,7 @@ public class FaultToleranceVerticle extends AbstractVerticle {
     JsonObject config = config();
     id = config.getInteger("id");
     numAddresses = config.getInteger("addressesCount");
-    List<Future> registrationFutures = new ArrayList<>(numAddresses);
+    List<Future<Void>> registrationFutures = new ArrayList<>(numAddresses);
     for (int i = 0; i < numAddresses; i++) {
       Promise<Void> registrationFuture = Promise.promise();
       registrationFutures.add(registrationFuture.future());

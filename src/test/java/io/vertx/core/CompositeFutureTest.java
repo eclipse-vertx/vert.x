@@ -123,12 +123,12 @@ public class CompositeFutureTest extends FutureTestBase {
     });
   }
 
-  private void testConcurrentCompletion(BiConsumer<Integer, Promise<String>> completer, Function<List<Future>, CompositeFuture> fact, Consumer<CompositeFuture> check) throws Exception {
+  private void testConcurrentCompletion(BiConsumer<Integer, Promise<String>> completer, Function<List<Future<?>>, CompositeFuture> fact, Consumer<CompositeFuture> check) throws Exception {
     disableThreadChecks();
     List<Promise<String>> promises = IntStream.range(0, NUM_THREADS)
       .mapToObj(i -> Promise.<String>promise())
       .collect(Collectors.toList());
-    List<Future> futures = promises.stream()
+    List<Future<?>> futures = promises.stream()
       .map(Promise::future)
       .collect(Collectors.toList());
     CompositeFuture compositeFuture = fact.apply(futures);
@@ -225,7 +225,7 @@ public class CompositeFutureTest extends FutureTestBase {
   }
 
   private void testAllLargeList(int size) {
-    List<Future> list = new ArrayList<>();
+    List<Future<?>> list = new ArrayList<>();
     for (int i = 0;i < size;i++) {
       list.add(Future.succeededFuture());
     }
@@ -339,7 +339,7 @@ public class CompositeFutureTest extends FutureTestBase {
   }
 
   private void testAnyLargeList(int size) {
-    List<Future> list = new ArrayList<>();
+    List<Future<?>> list = new ArrayList<>();
     for (int i = 0;i < size;i++) {
       list.add(Future.failedFuture(new Exception()));
     }

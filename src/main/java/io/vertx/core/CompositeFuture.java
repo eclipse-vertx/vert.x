@@ -35,35 +35,35 @@ public interface CompositeFuture extends Future<CompositeFuture> {
    * @param f2 future
    * @return the composite future
    */
-  static <T1, T2> CompositeFuture all(Future<T1> f1, Future<T2> f2) {
+  static CompositeFuture all(Future<?> f1, Future<?> f2) {
     return CompositeFutureImpl.all(f1, f2);
   }
 
   /**
    * Like {@link #all(Future, Future)} but with 3 futures.
    */
-  static <T1, T2, T3> CompositeFuture all(Future<T1> f1, Future<T2> f2, Future<T3> f3) {
+  static CompositeFuture all(Future<?> f1, Future<?> f2, Future<?> f3) {
     return CompositeFutureImpl.all(f1, f2, f3);
   }
 
   /**
    * Like {@link #all(Future, Future)} but with 4 futures.
    */
-  static <T1, T2, T3, T4> CompositeFuture all(Future<T1> f1, Future<T2> f2, Future<T3> f3, Future<T4> f4) {
+  static CompositeFuture all(Future<?> f1, Future<?> f2, Future<?> f3, Future<?> f4) {
     return CompositeFutureImpl.all(f1, f2, f3, f4);
   }
 
   /**
    * Like {@link #all(Future, Future)} but with 5 futures.
    */
-  static <T1, T2, T3, T4, T5> CompositeFuture all(Future<T1> f1, Future<T2> f2, Future<T3> f3, Future<T4> f4, Future<T5> f5) {
+  static CompositeFuture all(Future<?> f1, Future<?> f2, Future<?> f3, Future<?> f4, Future<?> f5) {
     return CompositeFutureImpl.all(f1, f2, f3, f4, f5);
   }
 
   /**
    * Like {@link #all(Future, Future)} but with 6 futures.
    */
-  static <T1, T2, T3, T4, T5, T6> CompositeFuture all(Future<T1> f1, Future<T2> f2, Future<T3> f3, Future<T4> f4, Future<T5> f5, Future<T6> f6) {
+  static CompositeFuture all(Future<?> f1, Future<?> f2, Future<?> f3, Future<?> f4, Future<?> f5, Future<?> f6) {
     return CompositeFutureImpl.all(f1, f2, f3, f4, f5, f6);
   }
 
@@ -72,7 +72,7 @@ public interface CompositeFuture extends Future<CompositeFuture> {
    *
    * When the list is empty, the returned future will be already completed.
    */
-  static CompositeFuture all(List<Future> futures) {
+  static <T> CompositeFuture all(List<? extends Future<?>> futures) {
     return CompositeFutureImpl.all(futures.toArray(new Future[0]));
   }
 
@@ -85,35 +85,35 @@ public interface CompositeFuture extends Future<CompositeFuture> {
    * @param f2 future
    * @return the composite future
    */
-  static <T1, T2> CompositeFuture any(Future<T1> f1, Future<T2> f2) {
+  static CompositeFuture any(Future<?> f1, Future<?> f2) {
     return CompositeFutureImpl.any(f1, f2);
   }
 
   /**
    * Like {@link #any(Future, Future)} but with 3 futures.
    */
-  static <T1, T2, T3> CompositeFuture any(Future<T1> f1, Future<T2> f2, Future<T3> f3) {
+  static CompositeFuture any(Future<?> f1, Future<?> f2, Future<?> f3) {
     return CompositeFutureImpl.any(f1, f2, f3);
   }
 
   /**
    * Like {@link #any(Future, Future)} but with 4 futures.
    */
-  static <T1, T2, T3, T4> CompositeFuture any(Future<T1> f1, Future<T2> f2, Future<T3> f3, Future<T4> f4) {
+  static CompositeFuture any(Future<?> f1, Future<?> f2, Future<?> f3, Future<?> f4) {
     return CompositeFutureImpl.any(f1, f2, f3, f4);
   }
 
   /**
    * Like {@link #any(Future, Future)} but with 5 futures.
    */
-  static <T1, T2, T3, T4, T5> CompositeFuture any(Future<T1> f1, Future<T2> f2, Future<T3> f3, Future<T4> f4, Future<T5> f5) {
+  static CompositeFuture any(Future<?> f1, Future<?> f2, Future<?> f3, Future<?> f4, Future<?> f5) {
     return CompositeFutureImpl.any(f1, f2, f3, f4, f5);
   }
 
   /**
    * Like {@link #any(Future, Future)} but with 6 futures.
    */
-  static <T1, T2, T3, T4, T5, T6> CompositeFuture any(Future<T1> f1, Future<T2> f2, Future<T3> f3, Future<T4> f4, Future<T5> f5, Future<T6> f6) {
+  static CompositeFuture any(Future<?> f1, Future<?> f2, Future<?> f3, Future<?> f4, Future<?> f5, Future<?> f6) {
     return CompositeFutureImpl.any(f1, f2, f3, f4, f5, f6);
   }
 
@@ -122,7 +122,7 @@ public interface CompositeFuture extends Future<CompositeFuture> {
    *
    * When the list is empty, the returned future will be already completed.
    */
-  static CompositeFuture any(List<Future> futures) {
+  static CompositeFuture any(List<? extends Future<?>> futures) {
     return CompositeFutureImpl.any(futures.toArray(new Future[0]));
   }
 
@@ -135,35 +135,35 @@ public interface CompositeFuture extends Future<CompositeFuture> {
    * @param f2 future
    * @return the composite future
    */
-  static <T1, T2> CompositeFuture join(Future<T1> f1, Future<T2> f2) {
+  static CompositeFuture join(Future<?> f1, Future<?> f2) {
     return CompositeFutureImpl.join(f1, f2);
   }
 
   /**
    * Like {@link #join(Future, Future)} but with 3 futures.
    */
-  static <T1, T2, T3> CompositeFuture join(Future<T1> f1, Future<T2> f2, Future<T3> f3) {
+  static CompositeFuture join(Future<?> f1, Future<?> f2, Future<?> f3) {
     return CompositeFutureImpl.join(f1, f2, f3);
   }
 
   /**
    * Like {@link #join(Future, Future)} but with 4 futures.
    */
-  static <T1, T2, T3, T4> CompositeFuture join(Future<T1> f1, Future<T2> f2, Future<T3> f3, Future<T4> f4) {
+  static CompositeFuture join(Future<?> f1, Future<?> f2, Future<?> f3, Future<?> f4) {
     return CompositeFutureImpl.join(f1, f2, f3, f4);
   }
 
   /**
    * Like {@link #join(Future, Future)} but with 5 futures.
    */
-  static <T1, T2, T3, T4, T5> CompositeFuture join(Future<T1> f1, Future<T2> f2, Future<T3> f3, Future<T4> f4, Future<T5> f5) {
+  static CompositeFuture join(Future<?> f1, Future<?> f2, Future<?> f3, Future<?> f4, Future<?> f5) {
     return CompositeFutureImpl.join(f1, f2, f3, f4, f5);
   }
 
   /**
    * Like {@link #join(Future, Future)} but with 6 futures.
    */
-  static <T1, T2, T3, T4, T5, T6> CompositeFuture join(Future<T1> f1, Future<T2> f2, Future<T3> f3, Future<T4> f4, Future<T5> f5, Future<T6> f6) {
+  static CompositeFuture join(Future<?> f1, Future<?> f2, Future<?> f3, Future<?> f4, Future<?> f5, Future<?> f6) {
     return CompositeFutureImpl.join(f1, f2, f3, f4, f5, f6);
   }
 
@@ -172,7 +172,7 @@ public interface CompositeFuture extends Future<CompositeFuture> {
    *
    * When the list is empty, the returned future will be already completed.
    */
-  static CompositeFuture join(List<Future> futures) {
+  static CompositeFuture join(List<? extends Future<?>> futures) {
     return CompositeFutureImpl.join(futures.toArray(new Future[0]));
   }
 

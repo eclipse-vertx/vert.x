@@ -422,7 +422,7 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
 
   private Future<Void> unregisterAll() {
     // Unregister all handlers explicitly - don't rely on context hooks
-    List<Future> futures = new ArrayList<>();
+    List<Future<?>> futures = new ArrayList<>();
     for (ConcurrentCyclicSequence<HandlerHolder> handlers : handlerMap.values()) {
       for (HandlerHolder holder : handlers) {
         futures.add(holder.getHandler().unregister());
