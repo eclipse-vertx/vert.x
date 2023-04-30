@@ -12,15 +12,11 @@
 package io.vertx.core;
 
 import io.vertx.core.impl.VertxThread;
-import io.vertx.test.core.BlockedThreadWarning;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
-import org.junit.Rule;
 import org.junit.Test;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.RejectedExecutionException;
@@ -34,35 +30,6 @@ import static java.util.concurrent.TimeUnit.*;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class NamedWorkerPoolTest extends VertxTestBase {
-
-  @Rule
-  public BlockedThreadWarning blockedThreadWarning = new BlockedThreadWarning();
-
-  @Test
-  public void testMaxExecuteWorkerTime() {
-    String poolName = TestUtils.randomAlphaString(10);
-    long maxWorkerExecuteTime = NANOSECONDS.convert(3, SECONDS);
-    DeploymentOptions deploymentOptions = new DeploymentOptions()
-      .setWorkerPoolName(poolName)
-      .setMaxWorkerExecuteTime(maxWorkerExecuteTime);
-    vertx.deployVerticle(new AbstractVerticle() {
-      @Override
-      public void start(Promise<Void> startPromise) throws Exception {
-        vertx.<Void>executeBlocking(fut -> {
-          try {
-            SECONDS.sleep(5);
-            fut.complete();
-          } catch (InterruptedException e) {
-            fut.fail(e);
-          }
-        }).onComplete(startPromise);
-      }
-    }, deploymentOptions).onComplete(onSuccess(did -> {
-      testComplete();
-    }));
-    await();
-    blockedThreadWarning.expectMessage(poolName, maxWorkerExecuteTime, NANOSECONDS);
-  }
 
   @Test
   public void testThread() {

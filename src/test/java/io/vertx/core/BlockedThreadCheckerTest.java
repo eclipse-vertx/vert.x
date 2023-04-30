@@ -11,13 +11,16 @@
 
 package io.vertx.core;
 
-import io.vertx.core.*;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.test.core.BlockedThreadWarning;
+import io.vertx.core.impl.btc.BlockedThreadEvent;
+import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
-import org.junit.Rule;
+import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.concurrent.TimeUnit.*;
@@ -27,8 +30,26 @@ import static java.util.concurrent.TimeUnit.*;
  */
 public class BlockedThreadCheckerTest extends VertxTestBase {
 
-  @Rule
-  public BlockedThreadWarning blockedThreadWarning = new BlockedThreadWarning();
+  private volatile List<BlockedThreadEvent> events;
+
+  public void expectMessage(String poolName, long maxExecuteTime, TimeUnit maxExecuteTimeUnit) {
+    boolean match = events
+      .stream()
+      .anyMatch(event ->
+        event.thread().getName().startsWith(poolName) &&
+        event.maxExecTime() == maxExecuteTimeUnit.toNanos(maxExecuteTime));
+    Assert.assertTrue("Invalid events " + events, match);
+  }
+
+  private void catchBlockedThreadEvents(Vertx vertx) {
+    ((VertxInternal)vertx).blockedThreadChecker().setThreadBlockedHandler(event -> events.add(event));
+  }
+
+  @Override
+  public void setUp() throws Exception {
+    super.setUp();
+    events = Collections.synchronizedList(new ArrayList<>());
+  }
 
   @Test
   public void testBlockCheckDefault() throws Exception {
@@ -39,9 +60,10 @@ public class BlockedThreadCheckerTest extends VertxTestBase {
         testComplete();
       }
     };
+    catchBlockedThreadEvents(vertx);
     vertx.deployVerticle(verticle);
     await();
-    blockedThreadWarning.expectMessage("vert.x-eventloop-thread", VertxOptions.DEFAULT_MAX_EVENT_LOOP_EXECUTE_TIME, VertxOptions.DEFAULT_MAX_EVENT_LOOP_EXECUTE_TIME_UNIT);
+    expectMessage("vert.x-eventloop-thread", VertxOptions.DEFAULT_MAX_EVENT_LOOP_EXECUTE_TIME, VertxOptions.DEFAULT_MAX_EVENT_LOOP_EXECUTE_TIME_UNIT);
   }
 
   @Test
@@ -62,9 +84,14 @@ public class BlockedThreadCheckerTest extends VertxTestBase {
     vertxOptions.setWarningExceptionTime(maxEventLoopExecuteTime);
     vertxOptions.setWarningExceptionTimeUnit(maxEventLoopExecuteTimeUnit);
     Vertx newVertx = vertx(vertxOptions);
-    newVertx.deployVerticle(verticle);
-    await();
-    blockedThreadWarning.expectMessage("vert.x-eventloop-thread", maxEventLoopExecuteTime, maxEventLoopExecuteTimeUnit);
+    catchBlockedThreadEvents(newVertx);
+    try {
+      newVertx.deployVerticle(verticle);
+      await();
+      expectMessage("vert.x-eventloop-thread", maxEventLoopExecuteTime, maxEventLoopExecuteTimeUnit);
+    } finally {
+      newVertx.close();
+    }
   }
 
   @Test
@@ -85,11 +112,16 @@ public class BlockedThreadCheckerTest extends VertxTestBase {
     vertxOptions.setWarningExceptionTime(maxWorkerExecuteTime);
     vertxOptions.setWarningExceptionTimeUnit(maxWorkerExecuteTimeUnit);
     Vertx newVertx = vertx(vertxOptions);
-    DeploymentOptions deploymentOptions = new DeploymentOptions();
-    deploymentOptions.setWorker(true);
-    newVertx.deployVerticle(verticle, deploymentOptions);
-    await();
-    blockedThreadWarning.expectMessage("vert.x-worker-thread", maxWorkerExecuteTime, maxWorkerExecuteTimeUnit);
+    try {
+      catchBlockedThreadEvents(newVertx);
+      DeploymentOptions deploymentOptions = new DeploymentOptions();
+      deploymentOptions.setWorker(true);
+      newVertx.deployVerticle(verticle, deploymentOptions);
+      await();
+      expectMessage("vert.x-worker-thread", maxWorkerExecuteTime, maxWorkerExecuteTimeUnit);
+    } finally {
+      newVertx.close();
+    }
   }
 
   @Test
@@ -116,9 +148,41 @@ public class BlockedThreadCheckerTest extends VertxTestBase {
     vertxOptions.setWarningExceptionTime(maxWorkerExecuteTime);
     vertxOptions.setWarningExceptionTimeUnit(maxWorkerExecuteTimeUnit);
     Vertx newVertx = vertx(vertxOptions);
-    newVertx.deployVerticle(verticle);
+    catchBlockedThreadEvents(newVertx);
+    try {
+      newVertx.deployVerticle(verticle);
+      await();
+      expectMessage("vert.x-worker-thread", maxWorkerExecuteTime, maxWorkerExecuteTimeUnit);
+    } finally {
+      newVertx.close();
+    }
+  }
+
+  @Test
+  public void testNamedWorkerPoolMaxExecuteWorkerTime() {
+    String poolName = TestUtils.randomAlphaString(10);
+    long maxWorkerExecuteTime = NANOSECONDS.convert(3, SECONDS);
+    DeploymentOptions deploymentOptions = new DeploymentOptions()
+      .setWorkerPoolName(poolName)
+      .setMaxWorkerExecuteTime(maxWorkerExecuteTime);
+    catchBlockedThreadEvents(vertx);
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start(Promise<Void> startPromise) throws Exception {
+        vertx.<Void>executeBlocking(fut -> {
+          try {
+            SECONDS.sleep(5);
+            fut.complete();
+          } catch (InterruptedException e) {
+            fut.fail(e);
+          }
+        }).onComplete(startPromise);
+      }
+    }, deploymentOptions).onComplete(onSuccess(did -> {
+      testComplete();
+    }));
     await();
-    blockedThreadWarning.expectMessage("vert.x-worker-thread", maxWorkerExecuteTime, maxWorkerExecuteTimeUnit);
+    expectMessage(poolName, maxWorkerExecuteTime, NANOSECONDS);
   }
 
   @Test

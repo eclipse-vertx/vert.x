@@ -53,4 +53,9 @@ public class BlockedThreadEvent {
   public long warningExceptionTime() {
     return warningExceptionTime;
   }
+
+  @Override
+  public String toString() {
+    return "BlockedThreadEvent(thread=" + thread.getName() + ",duration=" + duration + ",maxExecTime=" + maxExecTime + ")";
+  }
 }
