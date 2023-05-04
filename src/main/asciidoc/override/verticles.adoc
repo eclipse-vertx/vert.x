@@ -62,8 +62,8 @@ public class MyVerticle extends AbstractVerticle {
 
     // Now bind the server:
     server.listen(8080)
-    .<Void>mapEmpty()
-    .onComplete(startPromise);
+      .<Void>mapEmpty()
+      .onComplete(startPromise);
   }
 }
 ----
