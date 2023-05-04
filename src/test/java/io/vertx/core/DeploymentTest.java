@@ -11,13 +11,11 @@
 
 package io.vertx.core;
 
-import io.vertx.core.eventbus.Message;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.Deployment;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.verticle.CompilingClassLoader;
 import io.vertx.core.json.JsonObject;
-import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.verticles.*;
@@ -29,7 +27,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -59,20 +56,12 @@ public class DeploymentTest extends VertxTestBase {
     assertFalse(options.isWorker());
     assertEquals(options, options.setWorker(true));
     assertTrue(options.isWorker());
-    assertNull(options.getIsolationGroup());
     String rand = TestUtils.randomUnicodeString(1000);
-    assertEquals(options, options.setIsolationGroup(rand));
-    assertEquals(rand, options.getIsolationGroup());
     assertFalse(options.isHa());
     assertEquals(options, options.setHa(true));
     assertTrue(options.isHa());
-    assertNull(options.getExtraClasspath());
     List<String> cp = Arrays.asList("foo", "bar");
-    assertEquals(options, options.setExtraClasspath(cp));
-    assertNull(options.getIsolatedClasses());
     List<String> isol = Arrays.asList("com.foo.MyClass", "org.foo.*");
-    assertEquals(options, options.setIsolatedClasses(isol));
-    assertSame(isol, options.getIsolatedClasses());
     String workerPoolName = TestUtils.randomAlphaString(10);
     assertEquals(options, options.setWorkerPoolName(workerPoolName));
     assertEquals(workerPoolName, options.getWorkerPoolName());
@@ -102,24 +91,16 @@ public class DeploymentTest extends VertxTestBase {
     TimeUnit maxWorkerExecuteTimeUnit = TimeUnit.MILLISECONDS;
     options.setConfig(config);
     options.setWorker(worker);
-    options.setIsolationGroup(isolationGroup);
     options.setHa(ha);
-    options.setExtraClasspath(cp);
-    options.setIsolatedClasses(isol);
     options.setWorkerPoolName(poolName);
     options.setWorkerPoolSize(poolSize);
     options.setMaxWorkerExecuteTime(maxWorkerExecuteTime);
     options.setMaxWorkerExecuteTimeUnit(maxWorkerExecuteTimeUnit);
     DeploymentOptions copy = new DeploymentOptions(options);
     assertEquals(worker, copy.isWorker());
-    assertEquals(isolationGroup, copy.getIsolationGroup());
     assertNotSame(config, copy.getConfig());
     assertEquals("bar", copy.getConfig().getString("foo"));
     assertEquals(ha, copy.isHa());
-    assertEquals(cp, copy.getExtraClasspath());
-    assertNotSame(cp, copy.getExtraClasspath());
-    assertEquals(isol, copy.getIsolatedClasses());
-    assertNotSame(isol, copy.getIsolatedClasses());
     assertEquals(poolName, copy.getWorkerPoolName());
     assertEquals(poolSize, copy.getWorkerPoolSize());
     assertEquals(maxWorkerExecuteTime, copy.getMaxWorkerExecuteTime());
@@ -132,10 +113,7 @@ public class DeploymentTest extends VertxTestBase {
     DeploymentOptions json = new DeploymentOptions(new JsonObject());
     assertEquals(def.getConfig(), json.getConfig());
     assertEquals(def.isWorker(), json.isWorker());
-    assertEquals(def.getIsolationGroup(), json.getIsolationGroup());
     assertEquals(def.isHa(), json.isHa());
-    assertEquals(def.getExtraClasspath(), json.getExtraClasspath());
-    assertEquals(def.getIsolatedClasses(), json.getIsolatedClasses());
     assertEquals(def.getWorkerPoolName(), json.getWorkerPoolName());
     assertEquals(def.getWorkerPoolSize(), json.getWorkerPoolSize());
     assertEquals(def.getMaxWorkerExecuteTime(), json.getMaxWorkerExecuteTime());
@@ -979,52 +957,6 @@ public class DeploymentTest extends VertxTestBase {
     await();
   }
 
-  @Test
-  public void testIsolationGroup1() throws Exception {
-    boolean expectedSuccess = Thread.currentThread().getContextClassLoader() instanceof URLClassLoader;
-    List<String> isolatedClasses = Arrays.asList(TestVerticle.class.getCanonicalName());
-    try {
-      vertx.deployVerticle("java:" + TestVerticle.class.getCanonicalName(),
-          new DeploymentOptions().setIsolationGroup("somegroup").setIsolatedClasses(isolatedClasses))
-        .onComplete(onSuccess(id -> {
-          assertEquals(0, TestVerticle.instanceCount.get());
-          testComplete();
-        }));
-      assertTrue(expectedSuccess);
-      await();
-    } catch (IllegalStateException e) {
-      assertFalse(expectedSuccess);
-    }
-  }
-
-  @Test
-  public void testNullIsolationGroup() throws Exception {
-    vertx.deployVerticle("java:" + TestVerticle.class.getCanonicalName(), new DeploymentOptions().setIsolationGroup(null))
-      .onComplete(onSuccess(id -> {
-      assertEquals(1, TestVerticle.instanceCount.get());
-      testComplete();
-    }));
-    await();
-  }
-
-  @Test
-  public void testIsolationGroupSameGroup() throws Exception {
-    List<String> isolatedClasses = Arrays.asList(TestVerticle.class.getCanonicalName());
-    testIsolationGroup("somegroup", "somegroup", 1, 2, isolatedClasses, "java:" + TestVerticle.class.getCanonicalName());
-  }
-
-  @Test
-  public void testIsolationGroupSameGroupWildcard() throws Exception {
-    List<String> isolatedClasses = Arrays.asList("io.vertx.test.verticles.*");
-    testIsolationGroup("somegroup", "somegroup", 1, 2, isolatedClasses, "java:" + TestVerticle.class.getCanonicalName());
-  }
-
-  @Test
-  public void testIsolationGroupDifferentGroup() throws Exception {
-    List<String> isolatedClasses = Arrays.asList(TestVerticle.class.getCanonicalName());
-    testIsolationGroup("somegroup", "someothergroup", 1, 1, isolatedClasses, "java:" + TestVerticle.class.getCanonicalName());
-  }
-
   private String createClassOutsideClasspath(String className) throws Exception {
     File dir = Files.createTempDirectory("vertx").toFile();
     dir.deleteOnExit();
@@ -1043,88 +975,6 @@ public class DeploymentTest extends VertxTestBase {
     Files.write(classFile.toPath(), bytes);
 
     return dir.getAbsolutePath();
-  }
-
-  @Test
-  public void testExtraClasspathLoaderNotInParentLoader() throws Exception {
-    boolean expectedSuccess = Thread.currentThread().getContextClassLoader() instanceof URLClassLoader;
-    String dir = createClassOutsideClasspath("MyVerticle");
-    List<String> extraClasspath = Arrays.asList(dir);
-    try {
-      DeploymentOptions options = new DeploymentOptions().setIsolationGroup("somegroup").setExtraClasspath(extraClasspath);
-      vertx.deployVerticle("java:" + ExtraCPVerticleNotInParentLoader.class.getCanonicalName(), options)
-        .onComplete(onSuccess(id1 -> {
-          vertx.deployVerticle("java:" + ExtraCPVerticleNotInParentLoader.class.getCanonicalName(), options)
-            .onComplete(onSuccess(id2 -> {
-              vertx.undeploy(id1).onComplete(onSuccess(v1 -> {
-                assertFalse(ExtraCPVerticleNotInParentLoader.cl.isClosed());
-                vertx.undeploy(id2).onComplete(onSuccess(v2 -> {
-                  assertTrue(ExtraCPVerticleNotInParentLoader.cl.isClosed());
-                  testComplete();
-                }));
-              }));
-            }));
-        }));
-      assertTrue(expectedSuccess);
-      await();
-    } catch (IllegalStateException e) {
-      assertFalse(expectedSuccess);
-    } finally {
-      ExtraCPVerticleNotInParentLoader.cl = null;
-    }
-  }
-
-  @Test
-  public void testExtraClasspathLoaderAlreadyInParentLoader() throws Exception {
-    String dir = createClassOutsideClasspath("MyVerticle");
-    URLClassLoader loader = new URLClassLoader(new URL[]{new File(dir).toURI().toURL()}, Thread.currentThread().getContextClassLoader());
-    List<String> extraClasspath = Arrays.asList(dir);
-    ClassLoader currentCL = Thread.currentThread().getContextClassLoader();
-    Thread.currentThread().setContextClassLoader(loader);
-    try {
-      vertx.deployVerticle("java:" + ExtraCPVerticleAlreadyInParentLoader.class.getCanonicalName(), new DeploymentOptions().setIsolationGroup("somegroup").
-          setExtraClasspath(extraClasspath)).onComplete(onSuccess(id -> {
-        testComplete();
-      }));
-    } finally {
-      Thread.currentThread().setContextClassLoader(currentCL);
-    }
-    await();
-  }
-
-  @Test
-  public void testCloseIsolationGroup() throws Exception {
-    testCloseIsolationGroup(1);
-  }
-
-  @Test
-  public void testCloseIsolationGroupMultiInstances() throws Exception {
-    testCloseIsolationGroup(3);
-  }
-
-  private void testCloseIsolationGroup(int instances) throws Exception {
-    boolean expectedSuccess = Thread.currentThread().getContextClassLoader() instanceof URLClassLoader;
-    String dir = createClassOutsideClasspath("MyVerticle");
-    List<String> extraClasspath = Collections.singletonList(dir);
-    Vertx vertx = Vertx.vertx();
-    try {
-      DeploymentOptions options = new DeploymentOptions()
-        .setInstances(instances)
-        .setIsolationGroup("somegroup")
-        .setExtraClasspath(extraClasspath);
-      vertx.deployVerticle("java:" + ExtraCPVerticleNotInParentLoader.class.getCanonicalName(), options).onComplete(onSuccess(id -> {
-        vertx.close().onComplete(onSuccess(v -> {
-          assertTrue(ExtraCPVerticleNotInParentLoader.cl.isClosed());
-          testComplete();
-        }));
-      }));
-      assertTrue(expectedSuccess);
-      await();
-    } catch (IllegalStateException e) {
-      assertFalse(expectedSuccess);
-    } finally {
-      ExtraCPVerticleNotInParentLoader.cl = null;
-    }
   }
 
   public static class ParentVerticle extends AbstractVerticle {
@@ -1449,40 +1299,6 @@ public class DeploymentTest extends VertxTestBase {
     awaitLatch(deployLatch);
     vertx.undeploy(deploymentID.get());
     await();
-  }
-
-  private void testIsolationGroup(String group1, String group2, int count1, int count2, List<String> isolatedClasses,
-                                  String verticleID) throws Exception {
-    Map<String, Integer> countMap = new ConcurrentHashMap<>();
-    vertx.eventBus().<JsonObject>consumer("testcounts").handler((Message<JsonObject> msg) -> {
-      countMap.put(msg.body().getString("deploymentID"), msg.body().getInteger("count"));
-    });
-    CountDownLatch latch = new CountDownLatch(1);
-    AtomicReference<String> deploymentID1 = new AtomicReference<>();
-    AtomicReference<String> deploymentID2 = new AtomicReference<>();
-    boolean expectedSuccess = Thread.currentThread().getContextClassLoader() instanceof URLClassLoader;
-    try {
-      vertx.deployVerticle(verticleID, new DeploymentOptions().
-        setIsolationGroup(group1).setIsolatedClasses(isolatedClasses)).onComplete(onSuccess(id1 -> {
-        deploymentID1.set(id1);
-        assertEquals(0, TestVerticle.instanceCount.get());
-        vertx.deployVerticle(verticleID,
-            new DeploymentOptions().setIsolationGroup(group2).setIsolatedClasses(isolatedClasses))
-          .onComplete(onSuccess(id2 -> {
-            deploymentID2.set(id2);
-            assertEquals(0, TestVerticle.instanceCount.get());
-            latch.countDown();
-          }));
-      }));
-      awaitLatch(latch);
-      // Wait until two entries in the map
-      assertWaitUntil(() -> countMap.size() == 2);
-      assertEquals(count1, countMap.get(deploymentID1.get()).intValue());
-      assertEquals(count2, countMap.get(deploymentID2.get()).intValue());
-      assertTrue(expectedSuccess);
-    } catch (IllegalStateException e) {
-      assertFalse(expectedSuccess);
-    }
   }
 
   @Test

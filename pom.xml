@@ -308,19 +308,6 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <executions>
           <execution>
-            <id>jdk11</id>
-            <phase>compile</phase>
-            <goals>
-              <goal>compile</goal>
-            </goals>
-            <configuration>
-              <compileSourceRoots>
-                <compileSourceRoot>${project.basedir}/src/main/java11</compileSourceRoot>
-              </compileSourceRoots>
-              <outputDirectory>${project.build.outputDirectory}/META-INF/versions/11/</outputDirectory>
-            </configuration>
-          </execution>
-          <execution>
             <id>test-service-helper</id>
             <phase>test-compile</phase>
             <goals>
