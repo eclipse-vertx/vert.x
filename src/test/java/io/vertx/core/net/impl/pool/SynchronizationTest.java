@@ -10,7 +10,9 @@
  */
 package io.vertx.core.net.impl.pool;
 
+import io.vertx.core.impl.Utils;
 import io.vertx.test.core.AsyncTestBase;
+import org.junit.Assume;
 import org.junit.Test;
 
 import java.lang.management.ManagementFactory;
@@ -22,16 +24,24 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class SynchronizationTest extends AsyncTestBase {
 
-  static long iterationsForOneMilli;
+  private static Long iterationsForOneMilli;
+
+  private static long iterationsForOneMilli() {
+    Long val = iterationsForOneMilli;
+    if (val == null) {
+      val = Utils.calibrateBlackhole();
+      iterationsForOneMilli = val;
+    }
+    return val;
+  }
 
   static {
     iterationsForOneMilli = Utils.calibrateBlackhole();
-
   }
 
   private static void burnCPU(long cpu) {
     final long target_delay = Utils.ONE_MICRO_IN_NANO * cpu;
-    long num_iters = Math.round(target_delay * 1.0 * iterationsForOneMilli / Utils.ONE_MILLI_IN_NANO);
+    long num_iters = Math.round(target_delay * 1.0 * iterationsForOneMilli() / Utils.ONE_MILLI_IN_NANO);
     Utils.blackholeCpu(num_iters);
   }
 
@@ -68,8 +78,7 @@ public class SynchronizationTest extends AsyncTestBase {
 
   @Test
   public void testFoo() throws Exception {
-
-
+    Assume.assumeFalse(io.vertx.core.impl.Utils.isWindows());
     int numThreads = 8;
     int numIter = 1_000 * 100;
     Executor<Object> sync = new CombinerExecutor<>(new Object());
@@ -81,9 +90,6 @@ public class SynchronizationTest extends AsyncTestBase {
     for (int i = 0;i < numThreads;i++) {
       threads[i] = new Thread(() -> {
         for (int j = 0;j < numIter;j++) {
-          if (j % 1_000 == 0) {
-            System.out.println("Thread " + Thread.currentThread() + " " + j / 1_000);
-          }
           sync.submit(action);
         }
       });
@@ -95,11 +101,6 @@ public class SynchronizationTest extends AsyncTestBase {
       t.join();
     }
   }
-
-
-
-
-
 
   public static class Utils {
     public static long res = 0; // value sink
