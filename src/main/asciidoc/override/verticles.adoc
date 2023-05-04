@@ -77,8 +77,8 @@ public class MyVerticle extends AbstractVerticle {
   @Override
   public void stop(Promise<Void> stopPromise) {
     doSomethingThatTakesTime()
-    .<Void>mapEmpty()
-    .onComplete(stopPromise);
+      .<Void>mapEmpty()
+      .onComplete(stopPromise);
   }
 }
 ----
