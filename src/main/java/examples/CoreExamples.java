@@ -127,9 +127,7 @@ public class CoreExamples {
   }
 
   public void promiseAsHandler() {
-    Promise<String> promise = Promise.promise();
-    legacyGreetAsync(promise);
-    Future<String> greeting = promise.future();
+    Future<String> greeting = Future.future(promise -> legacyGreetAsync(promise));
   }
 
   public void promiseCallbackOrder(Future<Void> future) {
