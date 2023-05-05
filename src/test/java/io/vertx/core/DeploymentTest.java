@@ -1326,9 +1326,7 @@ public class DeploymentTest extends VertxTestBase {
         vertx.fileSystem().props("foo.txt").onComplete(onSuccess(props -> {
           assertEquals(5, props.size());
           assertTrue(used.get());
-          vertx.undeploy(context.deploymentID()).onComplete(onSuccess(v -> {
-              testComplete();
-          }));
+          testComplete();
         }));
       }
     }, new DeploymentOptions().setClassLoader(cl)).onComplete(onSuccess(id -> {
