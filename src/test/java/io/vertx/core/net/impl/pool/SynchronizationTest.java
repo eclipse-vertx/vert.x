@@ -35,10 +35,6 @@ public class SynchronizationTest extends AsyncTestBase {
     return val;
   }
 
-  static {
-    iterationsForOneMilli = Utils.calibrateBlackhole();
-  }
-
   private static void burnCPU(long cpu) {
     final long target_delay = Utils.ONE_MICRO_IN_NANO * cpu;
     long num_iters = Math.round(target_delay * 1.0 * iterationsForOneMilli() / Utils.ONE_MILLI_IN_NANO);
