@@ -12,16 +12,13 @@
 package io.vertx.core.datagram;
 
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.codegen.annotations.CacheReturn;
-import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.metrics.Measured;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
 /**
@@ -39,7 +36,7 @@ import io.vertx.core.streams.WriteStream;
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 @VertxGen
-public interface DatagramSocket extends ReadStream<DatagramPacket>, Measured {
+public interface DatagramSocket extends Measured {
 
   /**
    * Write the given {@link io.vertx.core.buffer.Buffer} to the {@link io.vertx.core.net.SocketAddress}.
@@ -167,22 +164,8 @@ public interface DatagramSocket extends ReadStream<DatagramPacket>, Measured {
    */
   Future<DatagramSocket> listen(int port, String host);
 
-  @Override
-  DatagramSocket pause();
-
-  @Override
-  DatagramSocket resume();
-
-  @Override
-  DatagramSocket fetch(long amount);
-
-  @Override
-  DatagramSocket endHandler(Handler<Void> endHandler);
-
-  @Override
   DatagramSocket handler(Handler<DatagramPacket> handler);
 
-  @Override
   DatagramSocket exceptionHandler(Handler<Throwable> handler);
 
 }

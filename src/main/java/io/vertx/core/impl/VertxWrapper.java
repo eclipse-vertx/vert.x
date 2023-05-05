@@ -18,7 +18,6 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
-import io.vertx.core.TimeoutStream;
 import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
 import io.vertx.core.datagram.DatagramSocket;
@@ -164,11 +163,6 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public TimeoutStream timerStream(long delay) {
-    return delegate.timerStream(delay);
-  }
-
-  @Override
   public long setPeriodic(long delay, Handler<Long> handler) {
     return delegate.setPeriodic(delay, handler);
   }
@@ -176,16 +170,6 @@ public abstract class VertxWrapper implements VertxInternal {
   @Override
   public long setPeriodic(long initialDelay, long delay, Handler<Long> handler) {
     return delegate.setPeriodic(initialDelay, delay, handler);
-  }
-
-  @Override
-  public TimeoutStream periodicStream(long delay) {
-    return delegate.periodicStream(delay);
-  }
-
-  @Override
-  public TimeoutStream periodicStream(long initialDelay, long delay) {
-    return delegate.periodicStream(initialDelay, delay);
   }
 
   @Override

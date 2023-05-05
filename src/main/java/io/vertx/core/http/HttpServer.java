@@ -11,7 +11,6 @@
 
 package io.vertx.core.http;
 
-import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -21,7 +20,6 @@ import io.vertx.core.metrics.Measured;
 import io.vertx.core.net.SSLOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.SocketAddressImpl;
-import io.vertx.core.streams.ReadStream;
 
 /**
  * An HTTP and WebSockets server.
@@ -36,15 +34,6 @@ import io.vertx.core.streams.ReadStream;
  */
 @VertxGen
 public interface HttpServer extends Measured {
-
-  /**
-   * Return the request stream for the server. As HTTP requests are received by the server,
-   * instances of {@link HttpServerRequest} will be created and passed to the stream {@link io.vertx.core.streams.ReadStream#handler(io.vertx.core.Handler)}.
-   *
-   * @return the request stream
-   */
-  @CacheReturn
-  ReadStream<HttpServerRequest> requestStream();
 
   /**
    * Set the request handler for the server to {@code requestHandler}. As HTTP requests are received by the server,
@@ -94,15 +83,6 @@ public interface HttpServer extends Measured {
    */
   @Fluent
   HttpServer exceptionHandler(Handler<Throwable> handler);
-
-  /**
-   * Return the WebSocket stream for the server. If a WebSocket connect handshake is successful a
-   * new {@link ServerWebSocket} instance will be created and passed to the stream {@link io.vertx.core.streams.ReadStream#handler(io.vertx.core.Handler)}.
-   *
-   * @return the WebSocket stream
-   */
-  @CacheReturn
-  ReadStream<ServerWebSocket> webSocketStream();
 
   /**
    * Set the WebSocket handler for the server to {@code wsHandler}. If a WebSocket connect handshake is successful a

@@ -19,15 +19,12 @@ import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.GenericFutureListener;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
@@ -47,9 +44,6 @@ import java.util.function.BiConsumer;
  */
 public class NetServerImpl extends TCPServerBase implements Closeable, MetricsProvider, NetServer {
 
-  private static final Logger log = LoggerFactory.getLogger(NetServerImpl.class);
-
-  private final NetSocketStream connectStream = new NetSocketStream();
   private long demand = Long.MAX_VALUE;
   private Handler<NetSocket> handler;
   private Handler<Void> endHandler;
@@ -143,11 +137,6 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
   @Override
   public Future<NetServer> listen() {
     return listen(options.getPort(), options.getHost());
-  }
-
-  @Override
-  public ReadStream<NetSocket> connectStream() {
-    return connectStream;
   }
 
   @Override

@@ -1736,39 +1736,6 @@ public class WebSocketTest extends VertxTestBase {
     }
   }
 
-  @Test
-  public void testWebSocketPauseAndResume() throws InterruptedException {
-    client = vertx.createHttpClient(new HttpClientOptions().setConnectTimeout(1000));
-    this.server = vertx.createHttpServer(new HttpServerOptions().setAcceptBacklog(1).setPort(DEFAULT_HTTP_PORT));
-    AtomicBoolean paused = new AtomicBoolean();
-    ReadStream<ServerWebSocket> stream = server.webSocketStream();
-    stream.handler(ws -> {
-      assertFalse(paused.get());
-      ws.writeBinaryMessage(Buffer.buffer("whatever"));
-      ws.close();
-    });
-    awaitFuture(server.listen());
-    stream.pause();
-    paused.set(true);
-    connectUntilWebSocketReject(client, 0, res -> {
-      if (!res.succeeded()) {
-        fail(new AssertionError("Was expecting error to be WebSocketHandshakeException", res.cause()));
-      }
-      assertTrue(paused.get());
-      paused.set(false);
-      stream.resume();
-      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path").onComplete(onSuccess(ws -> {
-        ws.handler(buffer -> {
-          assertEquals("whatever", buffer.toString("UTF-8"));
-          ws.closeHandler(v2 -> {
-            testComplete();
-          });
-        });
-      }));
-    });
-    await();
-  }
-
   private void connectUntilWebSocketReject(HttpClient client, int count, Handler<AsyncResult<Void>> doneHandler) {
     vertx.runOnContext(v -> {
       client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path").onComplete(ar -> {
@@ -1793,63 +1760,16 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   @Test
-  public void testClosingServerClosesWebSocketStreamEndHandler() throws InterruptedException {
-    waitFor(2);
-    this.server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
-    ReadStream<ServerWebSocket> stream = server.webSocketStream();
-    stream.endHandler(v -> complete());
-    stream.handler(ws -> {
-    });
-    awaitFuture(server.listen());
-    awaitFuture(server.close());
-  }
-
-  @Test
-  public void testWebSocketStreamCallbackAsynchronously() {
-    this.server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
-    AtomicInteger done = new AtomicInteger();
-    ReadStream<ServerWebSocket> stream = server.webSocketStream();
-    stream.handler(req -> { });
-    ThreadLocal<Object> stack = new ThreadLocal<>();
-    stack.set(true);
-    stream.endHandler(v -> {
-      assertTrue(Vertx.currentContext().isEventLoopContext());
-      assertNull(stack.get());
-      if (done.incrementAndGet() == 2) {
-        testComplete();
-      }
-    });
-    server.listen().onComplete(ar -> {
-      assertTrue(Vertx.currentContext().isEventLoopContext());
-      assertNull(stack.get());
-      server.close().onComplete(v -> {
-        assertTrue(Vertx.currentContext().isEventLoopContext());
-        if (done.incrementAndGet() == 2) {
-          testComplete();
-        }
-      });
-    });
-    await();
-  }
-
-  @Test
   public void testMultipleServerClose() {
     this.server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
-    AtomicInteger times = new AtomicInteger();
     // We assume the endHandler and the close completion handler are invoked in the same context task
     ThreadLocal stack = new ThreadLocal();
     stack.set(true);
-    server.webSocketStream().endHandler(v -> {
-      assertNull(stack.get());
-      assertTrue(Vertx.currentContext().isEventLoopContext());
-      times.incrementAndGet();
-    });
     server.close().onComplete(ar1 -> {
       assertNull(stack.get());
       assertTrue(Vertx.currentContext().isEventLoopContext());
       server.close().onComplete(ar2 -> {
         server.close().onComplete(ar3 -> {
-          assertEquals(1, times.get());
           testComplete();
         });
       });

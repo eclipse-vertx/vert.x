@@ -33,7 +33,6 @@ import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.spi.VerticleFactory;
-import io.vertx.core.streams.ReadStream;
 
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -262,15 +261,6 @@ public interface Vertx extends Measured {
   long setTimer(long delay, Handler<Long> handler);
 
   /**
-   * Returns a one-shot timer as a read stream. The timer will be fired after {@code delay} milliseconds after
-   * the {@link ReadStream#handler} has been called.
-   *
-   * @param delay  the delay in milliseconds, after which the timer will fire
-   * @return the timer stream
-   */
-  TimeoutStream timerStream(long delay);
-
-  /**
    * Set a periodic timer to fire every {@code delay} milliseconds, at which point {@code handler} will be called with
    * the id of the timer.
    *
@@ -292,27 +282,6 @@ public interface Vertx extends Measured {
    * @return the unique ID of the timer
    */
   long setPeriodic(long initialDelay, long delay, Handler<Long> handler);
-
-  /**
-   * Returns a periodic timer as a read stream. The timer will be fired every {@code delay} milliseconds after
-   * the {@link ReadStream#handler} has been called.
-   *
-   * @param delay  the delay in milliseconds, after which the timer will fire
-   * @return the periodic stream
-   */
-  default TimeoutStream periodicStream(long delay) {
-    return periodicStream(0, delay);
-  }
-
-  /**
-   * Returns a periodic timer as a read stream. The timer will be fired every {@code delay} milliseconds after
-   * the {@link ReadStream#handler} has been called.
-   *
-   * @param initialDelay the initial delay in milliseconds
-   * @param delay the delay in milliseconds, after which the timer will fire
-   * @return the periodic stream
-   */
-  TimeoutStream periodicStream(long initialDelay, long delay);
 
   /**
    * Cancels the timer with the specified {@code id}.

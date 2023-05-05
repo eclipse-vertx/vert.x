@@ -27,7 +27,6 @@ import io.vertx.core.streams.WriteStream;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.netty.TestLoggerFactory;
-import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
 
@@ -36,7 +35,6 @@ import java.net.NetworkInterface;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 
 import static io.vertx.test.core.TestUtils.*;
@@ -149,66 +147,7 @@ public class DatagramTest extends VertxTestBase {
     await();
   }
 
-  @Test
-  public void testEndHandler() {
-    ThreadLocal<Object> stack = new ThreadLocal<>();
-    stack.set(true);
-    peer2 = vertx.createDatagramSocket(new DatagramSocketOptions());
-    peer2
-      .listen(1234, "127.0.0.1")
-      .onComplete(onSuccess(v1 -> {
-        peer2.endHandler(v2 -> {
-          assertTrue(Vertx.currentContext().isEventLoopContext());
-          assertNull(stack.get());
-          testComplete();
-        });
-        peer2.close();
-      }));
-    await();
-  }
 
-  @Test
-  public void testPauseResume() {
-    peer1 = vertx.createDatagramSocket(new DatagramSocketOptions());
-    peer2 = vertx.createDatagramSocket(new DatagramSocketOptions());
-    peer2.exceptionHandler(t -> fail(t.getMessage()));
-    peer2
-      .listen(1234, "127.0.0.1")
-      .onComplete(onSuccess(v -> {
-      final AtomicBoolean suspendedReceive = new AtomicBoolean();
-      peer2.handler(packet -> suspendedReceive.set(true));
-      peer2.pause();
-      Buffer buffer = TestUtils.randomBuffer(128);
-      peer1.send(buffer, 1234, "127.0.0.1").onComplete(onSuccess(v2 -> {}));
-      final int MAX_FAILED_ATTEMPTS = 10;
-      vertx.setTimer(1000, ignore -> {
-        Assert.assertFalse(suspendedReceive.get());
-        AtomicBoolean resumedReceive = new AtomicBoolean();
-        peer2.handler(packet -> {
-          Assert.assertEquals(buffer, packet.data());
-          if (resumedReceive.compareAndSet(false, true)) {
-            testComplete();
-          }
-        });
-        peer2.resume();
-        peer1.send(buffer, 1234, "127.0.0.1").onComplete(onSuccess(v2 -> {}));
-        AtomicInteger failedAttempts = new AtomicInteger();
-        vertx.setPeriodic(1000, l -> {
-          if (resumedReceive.get()) {
-            vertx.cancelTimer(l.longValue());
-            return;
-          }
-          if (failedAttempts.incrementAndGet() == MAX_FAILED_ATTEMPTS) {
-            vertx.cancelTimer(l.longValue());
-            fail("failed to receive any packet while resumed: retried " + MAX_FAILED_ATTEMPTS + " times");
-            return;
-          }
-          peer1.send(buffer, 1234, "127.0.0.1").onComplete(onSuccess(v2 -> {}));
-        });
-      });
-    }));
-    await();
-  }
 
   @Test
   public void testSender() {
