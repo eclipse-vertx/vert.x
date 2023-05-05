@@ -380,19 +380,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return scheduleTimeout(ctx, true, initialDelay, delay, TimeUnit.MILLISECONDS, ctx.isDeployment(), handler);
   }
 
-  @Override
-  public TimeoutStream periodicStream(long initialDelay, long delay) {
-    return new TimeoutStreamImpl(initialDelay, delay, true);
-  }
-
   public long setTimer(long delay, Handler<Long> handler) {
     ContextInternal ctx = getOrCreateContext();
     return scheduleTimeout(ctx, false, delay, TimeUnit.MILLISECONDS, ctx.isDeployment(), handler);
-  }
-
-  @Override
-  public TimeoutStream timerStream(long delay) {
-    return new TimeoutStreamImpl(delay, false);
   }
 
   @Override
@@ -913,106 +903,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     public void close(Promise<Void> completion) {
       tryCancel();
       completion.complete();
-    }
-  }
-
-  /*
-   *
-   * This class is optimised for performance when used on the same event loop that is was passed to the handler with.
-   * However it can be used safely from other threads.
-   *
-   * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
-   * we benefit from biased locking which makes the overhead of synchronized near zero.
-   *
-   */
-  private class TimeoutStreamImpl implements TimeoutStream, Handler<Long> {
-
-    private final long initialDelay;
-    private final long delay;
-    private final boolean periodic;
-
-    private Long id;
-    private Handler<Long> handler;
-    private Handler<Void> endHandler;
-    private long demand;
-
-    public TimeoutStreamImpl(long delay, boolean periodic) {
-      this(delay, delay, periodic);
-    }
-
-    public TimeoutStreamImpl(long initialDelay, long delay, boolean periodic) {
-      this.initialDelay = initialDelay;
-      this.delay = delay;
-      this.periodic = periodic;
-      this.demand = Long.MAX_VALUE;
-    }
-
-    @Override
-    public synchronized void handle(Long event) {
-      try {
-        if (demand > 0) {
-          demand--;
-          handler.handle(event);
-        }
-      } finally {
-        if (!periodic && endHandler != null) {
-          endHandler.handle(null);
-        }
-      }
-    }
-
-    @Override
-    public synchronized TimeoutStream fetch(long amount) {
-      demand += amount;
-      if (demand < 0) {
-        demand = Long.MAX_VALUE;
-      }
-      return this;
-    }
-
-    @Override
-    public TimeoutStream exceptionHandler(Handler<Throwable> handler) {
-      return this;
-    }
-
-    @Override
-    public void cancel() {
-      if (id != null) {
-        VertxImpl.this.cancelTimer(id);
-      }
-    }
-
-    @Override
-    public synchronized TimeoutStream handler(Handler<Long> handler) {
-      if (handler != null) {
-        if (id != null) {
-          throw new IllegalStateException();
-        }
-        ContextInternal ctx = getOrCreateContext();
-        this.handler = handler;
-        this.id = scheduleTimeout(ctx, periodic, initialDelay, delay, TimeUnit.MILLISECONDS, ctx.isDeployment(), this);
-      } else {
-        cancel();
-      }
-      return this;
-    }
-
-    @Override
-    public synchronized TimeoutStream pause() {
-      demand = 0;
-      return this;
-    }
-
-    @Override
-    public synchronized TimeoutStream resume() {
-      demand = Long.MAX_VALUE;
-      return this;
-    }
-
-    @Override
-    public synchronized TimeoutStream endHandler(Handler<Void> endHandler) {
-      this.endHandler = endHandler;
-      return this;
     }
   }
 

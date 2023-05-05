@@ -13,7 +13,6 @@ package io.vertx.core.http.impl;
 
 import io.netty.channel.Channel;
 import io.vertx.core.*;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
@@ -26,7 +25,6 @@ import io.vertx.core.net.impl.*;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
-import io.vertx.core.streams.ReadStream;
 
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
@@ -52,8 +50,8 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
 
   final HttpServerOptions options;
   private final boolean disableH2c;
-  private final HttpStreamHandler<ServerWebSocket> wsStream = new HttpStreamHandler<>();
-  private final HttpStreamHandler<HttpServerRequest> requestStream = new HttpStreamHandler<>();
+  private Handler<HttpServerRequest> requestHandler;
+  private Handler<ServerWebSocket> wsHandler;
   private Handler<HttpServerRequest> invalidRequestHandler;
   private Handler<HttpConnection> connectionHandler;
 
@@ -77,28 +75,32 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
 
   @Override
   public synchronized HttpServer requestHandler(Handler<HttpServerRequest> handler) {
-    requestStream.handler(handler);
+    if (isListening()) {
+      throw new IllegalStateException("Please set handler before server is listening");
+    }
+    requestHandler = handler;
     return this;
   }
 
   @Override
-  public ReadStream<HttpServerRequest> requestStream() {
-    return requestStream;
-  }
-
-  @Override
-  public HttpServer webSocketHandler(Handler<ServerWebSocket> handler) {
-    webSocketStream().handler(handler);
+  public synchronized HttpServer webSocketHandler(Handler<ServerWebSocket> handler) {
+    if (isListening()) {
+      throw new IllegalStateException("Please set handler before server is listening");
+    }
+    wsHandler = handler;
     return this;
   }
 
   @Override
-  public Handler<HttpServerRequest> requestHandler() {
-    return requestStream.handler();
+  public synchronized Handler<HttpServerRequest> requestHandler() {
+    return requestHandler;
   }
 
   @Override
-  public HttpServer invalidRequestHandler(Handler<HttpServerRequest> handler) {
+  public synchronized HttpServer invalidRequestHandler(Handler<HttpServerRequest> handler) {
+    if (isListening()) {
+      throw new IllegalStateException("Please set handler before server is listening");
+    }
     invalidRequestHandler = handler;
     return this;
   }
@@ -122,13 +124,8 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
   }
 
   @Override
-  public Handler<ServerWebSocket> webSocketHandler() {
-    return wsStream.handler();
-  }
-
-  @Override
-  public ReadStream<ServerWebSocket> webSocketStream() {
-    return wsStream;
+  public synchronized Handler<ServerWebSocket> webSocketHandler() {
+    return wsHandler;
   }
 
   @Override
@@ -147,7 +144,7 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
     String host = address.isInetSocket() ? address.host() : "localhost";
     int port = address.port();
     String serverOrigin = (options.isSsl() ? "https" : "http") + "://" + host + ":" + port;
-    HttpServerConnectionHandler hello = new HttpServerConnectionHandler(this, requestStream.handler, invalidRequestHandler, wsStream.handler, connectionHandler, exceptionHandler == null ? DEFAULT_EXCEPTION_HANDLER : exceptionHandler);
+    HttpServerConnectionHandler hello = new HttpServerConnectionHandler(this, requestHandler, invalidRequestHandler, wsHandler, connectionHandler, exceptionHandler == null ? DEFAULT_EXCEPTION_HANDLER : exceptionHandler);
     Supplier<ContextInternal> streamContextSupplier = context::duplicate;
     return new HttpServerWorker(
       connContext,
@@ -172,7 +169,7 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
 
   @Override
   public synchronized Future<HttpServer> listen(SocketAddress address) {
-    if (requestStream.handler() == null && wsStream.handler() == null) {
+    if (requestHandler == null && wsHandler == null) {
       throw new IllegalStateException("Set request or WebSocket handler first");
     }
     return bind(address).map(this);
@@ -186,120 +183,17 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
     return promise.future();
   }
 
-  public synchronized void close(Promise<Void> completion) {
-    if (wsStream.endHandler() != null || requestStream.endHandler() != null) {
-      Handler<Void> wsEndHandler = wsStream.endHandler();
-      wsStream.endHandler(null);
-      Handler<Void> requestEndHandler = requestStream.endHandler();
-      requestStream.endHandler(null);
-      completion.future().onComplete(ar -> {
-        if (wsEndHandler != null) {
-          wsEndHandler.handle(null);
-        }
-        if (requestEndHandler != null) {
-          requestEndHandler.handle(null);
-        }
-      });
-    }
-    super.close(completion);
-  }
-
   public boolean isClosed() {
     return !isListening();
   }
 
   boolean requestAccept() {
-    return requestStream.accept();
+    // Might be useful later
+    return true;
   }
 
   boolean wsAccept() {
-    return wsStream.accept();
+    // Might be useful later
+    return true;
   }
-
-  /*
-    Needs to be protected using the HttpServerImpl monitor as that protects the listening variable
-    In practice synchronized overhead should be close to zero assuming most access is from the same thread due
-    to biased locks
-  */
-  class HttpStreamHandler<C extends ReadStream<Buffer>> implements ReadStream<C> {
-
-    private Handler<C> handler;
-    private long demand = Long.MAX_VALUE;
-    private Handler<Void> endHandler;
-
-    Handler<C> handler() {
-      synchronized (HttpServerImpl.this) {
-        return handler;
-      }
-    }
-
-    boolean accept() {
-      synchronized (HttpServerImpl.this) {
-        boolean accept = demand > 0L;
-        if (accept && demand != Long.MAX_VALUE) {
-          demand--;
-        }
-        return accept;
-      }
-    }
-
-    Handler<Void> endHandler() {
-      synchronized (HttpServerImpl.this) {
-        return endHandler;
-      }
-    }
-
-    @Override
-    public ReadStream handler(Handler<C> handler) {
-      synchronized (HttpServerImpl.this) {
-        if (isListening()) {
-          throw new IllegalStateException("Please set handler before server is listening");
-        }
-        this.handler = handler;
-        return this;
-      }
-    }
-
-    @Override
-    public ReadStream pause() {
-      synchronized (HttpServerImpl.this) {
-        demand = 0L;
-        return this;
-      }
-    }
-
-    @Override
-    public ReadStream fetch(long amount) {
-      if (amount > 0L) {
-        demand += amount;
-        if (demand < 0L) {
-          demand = Long.MAX_VALUE;
-        }
-      }
-      return this;
-    }
-
-    @Override
-    public ReadStream resume() {
-      synchronized (HttpServerImpl.this) {
-        demand = Long.MAX_VALUE;
-        return this;
-      }
-    }
-
-    @Override
-    public ReadStream endHandler(Handler<Void> endHandler) {
-      synchronized (HttpServerImpl.this) {
-        this.endHandler = endHandler;
-        return this;
-      }
-    }
-
-    @Override
-    public ReadStream exceptionHandler(Handler<Throwable> handler) {
-      // Should we use it in the server close exception handler ?
-      return this;
-    }
-  }
-
 }

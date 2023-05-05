@@ -64,9 +64,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
   private final DatagramSocketMetrics metrics;
   private DatagramChannel channel;
   private Handler<io.vertx.core.datagram.DatagramPacket> packetHandler;
-  private Handler<Void> endHandler;
   private Handler<Throwable> exceptionHandler;
-  private long demand;
   private final CloseFuture closeFuture;
 
   private DatagramSocketImpl(VertxInternal vertx, CloseFuture closeFuture, DatagramSocketOptions options) {
@@ -85,7 +83,6 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
     this.metrics = metrics != null ? metrics.createDatagramSocketMetrics(options) : null;
     this.channel = channel;
     this.context = context;
-    this.demand = Long.MAX_VALUE;
     this.closeFuture = closeFuture;
   }
 
@@ -229,13 +226,6 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
     this.packetHandler = handler;
     return this;
   }
-
-  @Override
-  public DatagramSocketImpl endHandler(Handler<Void> handler) {
-    endHandler = handler;
-    return this;
-  }
-
   @Override
   public DatagramSocketImpl exceptionHandler(Handler<Throwable> handler) {
     exceptionHandler = handler;
@@ -262,39 +252,6 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
       }
     });
     return promise.future().map(this);
-  }
-
-  public synchronized DatagramSocket pause() {
-    if (demand > 0L) {
-      demand = 0L;
-      channel.config().setAutoRead(false);
-    }
-    return this;
-  }
-
-  public synchronized DatagramSocket resume() {
-    if (demand == 0L) {
-      demand = Long.MAX_VALUE;
-      channel.config().setAutoRead(true);
-    }
-    return this;
-  }
-
-  @Override
-  public synchronized DatagramSocket fetch(long amount) {
-    if (amount < 0L) {
-      throw new IllegalArgumentException("Illegal fetch " + amount);
-    }
-    if (amount > 0L) {
-      if (demand == 0L) {
-        channel.config().setAutoRead(true);
-      }
-      demand += amount;
-      if (demand < 0L) {
-        demand = Long.MAX_VALUE;
-      }
-    }
-    return this;
   }
 
   @Override
@@ -411,17 +368,12 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
     @Override
     protected void handleClosed() {
       super.handleClosed();
-      Handler<Void> handler;
       DatagramSocketMetrics metrics;
       synchronized (DatagramSocketImpl.this) {
-        handler = endHandler;
         metrics = DatagramSocketImpl.this.metrics;
       }
       if (metrics != null) {
         metrics.close();
-      }
-      if (handler != null) {
-        context.emit(null, handler);
       }
     }
 
@@ -442,14 +394,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
         if (metrics != null) {
           metrics.bytesRead(null, packet.sender(), packet.data().length());
         }
-        if (demand > 0L) {
-          if (demand != Long.MAX_VALUE) {
-            demand--;
-          }
-          handler = packetHandler;
-        } else {
-          handler = null;
-        }
+        handler = packetHandler;
       }
       if (handler != null) {
         context.emit(packet, handler);

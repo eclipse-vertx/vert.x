@@ -54,7 +54,6 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.impl.*;
 import io.vertx.core.spi.tls.SslContextFactory;
-import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.CheckingSender;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
@@ -2589,58 +2588,16 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
-  public void testReadStreamPauseResume() {
-    server.close();
-    server = vertx.createNetServer(new NetServerOptions().setAcceptBacklog(1));
-    ReadStream<NetSocket> socketStream = server.connectStream();
-    AtomicBoolean paused = new AtomicBoolean();
-    socketStream.handler(so -> {
-      assertTrue(!paused.get());
-      so.write("hello");
-      so.close();
-    });
-    server.listen(testAddress).onComplete(onSuccess(v -> {
-      paused.set(true);
-      socketStream.pause();
-      client.connect(testAddress).onComplete(onSuccess(so2 -> {
-        so2.handler(buffer -> {
-          fail();
-        });
-        so2.closeHandler(v2 -> {
-          paused.set(false);
-          socketStream.resume();
-          client.connect(testAddress).onComplete(onSuccess(so3 -> {
-            Buffer buffer = Buffer.buffer();
-            so3.handler(buffer::appendBuffer);
-            so3.closeHandler(v3 -> {
-              assertEquals("hello", buffer.toString("utf-8"));
-              testComplete();
-            });
-          }));
-        });
-      }));
-    }));
-    await();
-  }
-
-  @Test
   public void testMultipleServerClose() {
     this.server = vertx.createNetServer();
-    AtomicInteger times = new AtomicInteger();
     // We assume the endHandler and the close completion handler are invoked in the same context task
     ThreadLocal stack = new ThreadLocal();
     stack.set(true);
-    server.connectStream().endHandler(v -> {
-      assertNull(stack.get());
-      assertTrue(Vertx.currentContext().isEventLoopContext());
-      times.incrementAndGet();
-    });
     server.close().onComplete(ar1 -> {
       assertNull(stack.get());
       assertTrue(Vertx.currentContext().isEventLoopContext());
       server.close().onComplete(ar2 -> {
         server.close().onComplete(ar3 -> {
-          assertEquals(1, times.get());
           testComplete();
         });
       });

@@ -19,7 +19,6 @@ import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.CleanableNetClient;
-import io.vertx.core.net.impl.NetClientInternal;
 import io.vertx.core.net.impl.NetSocketInternal;
 import io.vertx.test.core.AsyncTestBase;
 import io.vertx.test.core.Repeat;
@@ -328,13 +327,8 @@ public class VertxTest extends AsyncTestBase {
     VertxInternal vertx = (VertxInternal) Vertx.vertx();
     try {
       DatagramSocket socket = vertx.createDatagramSocket();
-      AtomicBoolean closed = new AtomicBoolean();
-      socket.endHandler(v -> {
-        closed.set(true);
-      });
       awaitFuture(socket.listen(1234, "127.0.0.1"));
       awaitFuture(vertx.close());
-      waitUntil(closed::get);
     } finally {
       vertx
         .close()

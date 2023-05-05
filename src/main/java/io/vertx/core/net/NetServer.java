@@ -19,7 +19,6 @@ import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.metrics.Measured;
 import io.vertx.core.net.impl.SocketAddressImpl;
-import io.vertx.core.streams.ReadStream;
 
 /**
  * Represents a TCP server
@@ -28,15 +27,6 @@ import io.vertx.core.streams.ReadStream;
  */
 @VertxGen
 public interface NetServer extends Measured {
-
-  /**
-   * Return the connect stream for this server. The server can only have at most one handler at any one time.
-   * As the server accepts TCP or SSL connections it creates an instance of {@link NetSocket} and passes it to the
-   * connect stream {@link ReadStream#handler(io.vertx.core.Handler)}.
-   *
-   * @return the connect stream
-   */
-  ReadStream<NetSocket> connectStream();
 
   /**
    * Supply a connect handler for this server. The server can only have at most one connect handler at any one time.
