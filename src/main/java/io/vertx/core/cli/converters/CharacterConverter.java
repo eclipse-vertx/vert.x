@@ -40,7 +40,7 @@ public final class CharacterConverter implements Converter<Character> {
           "character. The input's length must be 1");
     }
 
-    return input.toCharArray()[0];
+    return input.charAt(0);
 
   }
 }
