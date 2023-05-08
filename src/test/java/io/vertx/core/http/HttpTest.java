@@ -1439,7 +1439,9 @@ public abstract class HttpTest extends HttpTestBase {
     // Exception handler should be called for any requests in the pipeline if connection is closed
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req.send().onComplete(onSuccess(resp ->
-        resp.exceptionHandler(t -> testComplete()))
+        resp.exceptionHandler(atMostOnce(t -> {
+          testComplete();
+        })))
       );
     }));
     await();
@@ -1608,9 +1610,9 @@ public abstract class HttpTest extends HttpTestBase {
         resp.handler(buff -> {
           conn.get().close();
         });
-        resp.exceptionHandler(err -> {
+        resp.exceptionHandler(atMostOnce(err -> {
           testComplete();
-        });
+        }));
       }));
     }));
     await();
@@ -3309,7 +3311,8 @@ public abstract class HttpTest extends HttpTestBase {
         }).listen(testAddress).onComplete(onSuccess(s -> {
           assertTrue(Vertx.currentContext().isWorkerContext());
           assertTrue(Context.isOnWorkerThread());
-          HttpClient client = vertx.createHttpClient(createBaseClientOptions());
+          client.close();
+          client = vertx.createHttpClient(createBaseClientOptions());
           client.request(new RequestOptions(requestOptions).setMethod(PUT)).onComplete(onSuccess(req -> {
             req.send(Buffer.buffer("hello"))
               .onComplete(onSuccess(resp -> {
@@ -4540,15 +4543,15 @@ public abstract class HttpTest extends HttpTestBase {
     waitFor(7);
     server.requestHandler(req -> {
       HttpConnection conn = req.connection();
-      req.exceptionHandler(err -> {
+      req.exceptionHandler(atMostOnce(err -> {
         assertFalse(Thread.holdsLock(conn));
         complete();
-      });
+      }));
       HttpServerResponse resp = req.response();
-      resp.exceptionHandler(err -> {
+      resp.exceptionHandler(atMostOnce(err -> {
         assertFalse(Thread.holdsLock(conn));
         complete();
-      });
+      }));
       resp.closeHandler(v -> {
         assertFalse(Thread.holdsLock(conn));
         complete();
@@ -4565,20 +4568,20 @@ public abstract class HttpTest extends HttpTestBase {
         req.response().onComplete(onSuccess(resp -> {
           assertEquals(200, resp.statusCode());
           HttpConnection conn = resp.request().connection();
-          resp.exceptionHandler(err -> {
+          resp.exceptionHandler(atMostOnce(err -> {
             assertFalse(Thread.holdsLock(conn));
             complete();
-          });
+          }));
           conn.closeHandler(v -> {
             assertFalse(Thread.holdsLock(conn));
             complete();
           });
           conn.close();
         }));
-        req.exceptionHandler(err -> {
+        req.exceptionHandler(atMostOnce(err -> {
           assertFalse(Thread.holdsLock(req.connection()));
           complete();
-        });
+        }));
         req.setChunked(true).sendHead();
       }));
     await();
@@ -4856,7 +4859,8 @@ public abstract class HttpTest extends HttpTestBase {
     Vertx vertx = Vertx.vertx(new VertxOptions().setAddressResolverOptions(new AddressResolverOptions().setQueryTimeout(100)));
     try {
       int poolSize = 2;
-      HttpClient client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(poolSize));
+      client.close();
+      client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(poolSize));
       AtomicInteger failures = new AtomicInteger();
       vertx.runOnContext(v -> {
         for (int i = 0; i < (poolSize + 1); i++) {
@@ -6428,7 +6432,8 @@ public abstract class HttpTest extends HttpTestBase {
         startServer(SocketAddress.inetSocketAddress(DEFAULT_HTTP_PORT + i, DEFAULT_HTTP_HOST), server);
         servers.add(server);
       }
-      HttpClient client = vertx.createHttpClient(createBaseClientOptions());
+      client.close();
+      client = vertx.createHttpClient(createBaseClientOptions());
       client.connectionHandler(conn -> {
         inflight.incrementAndGet();
         conn.closeHandler(v -> {

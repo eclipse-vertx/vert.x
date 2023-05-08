@@ -30,6 +30,7 @@ import org.junit.rules.TestName;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -584,6 +585,15 @@ public class AsyncTestBase {
     } catch (AssertionError e) {
       handleThrowable(e);
     }
+  }
+
+  protected <T> Handler<T> atMostOnce(Consumer<T> consumer) {
+    AtomicBoolean called = new AtomicBoolean();
+    return result -> {
+      if (called.compareAndSet(false, true)) {
+        consumer.accept(result);
+      }
+    };
   }
 
   protected <T> Handler<AsyncResult<T>> onFailure(Consumer<Throwable> consumer) {

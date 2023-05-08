@@ -530,6 +530,7 @@ public class Http2Test extends HttpTest {
       complete();
     });
     startServer(testAddress);
+    client.close();
     client = vertx.createHttpClient(createBaseClientOptions());
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req
@@ -581,6 +582,7 @@ public class Http2Test extends HttpTest {
       complete();
     });
     startServer(testAddress);
+    client.close();
     client = vertx.createHttpClient(createBaseClientOptions());
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req
@@ -633,6 +635,7 @@ public class Http2Test extends HttpTest {
       });
     });
     startServer(testAddress);
+    client.close();
     client = vertx.createHttpClient(createBaseClientOptions());
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req
@@ -680,6 +683,7 @@ public class Http2Test extends HttpTest {
       });
     });
     startServer(testAddress);
+    client.close();
     client = vertx.createHttpClient(createBaseClientOptions());
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req
@@ -711,6 +715,7 @@ public class Http2Test extends HttpTest {
       complete();
     });
     startServer(testAddress);
+    client.close();
     client = vertx.createHttpClient(createBaseClientOptions());
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req
@@ -740,6 +745,7 @@ public class Http2Test extends HttpTest {
       complete();
     });
     startServer(testAddress);
+    client.close();
     client = vertx.createHttpClient(createBaseClientOptions());
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req.send().onComplete(onSuccess(resp -> {
@@ -768,6 +774,7 @@ public class Http2Test extends HttpTest {
       complete();
     });
     startServer(testAddress);
+    client.close();
     client = vertx.createHttpClient(createBaseClientOptions());
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req
@@ -797,6 +804,7 @@ public class Http2Test extends HttpTest {
       complete();
     });
     startServer(testAddress);
+    client.close();
     client = vertx.createHttpClient(createBaseClientOptions());
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req
