@@ -71,6 +71,8 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -108,7 +110,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final FileSystem fileSystem = getFileSystem();
   private final SharedData sharedData;
   private final VertxMetrics metrics;
-  private final ConcurrentMap<Long, InternalTimerHandler> timeouts = new ConcurrentHashMap<>();
+  private final ConcurrentMap<Long, Cancelable> timeouts = new ConcurrentHashMap<>();
   private final AtomicLong timeoutCounter = new AtomicLong(0);
   private final ClusterManager clusterManager;
   private final NodeSelector nodeSelector;
@@ -385,6 +387,15 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return new TimeoutStreamImpl(initialDelay, delay, true);
   }
 
+  @Override
+  public <T> long setInterval(long initialDelay, long delay, Function<Long, Future<T>> handler) {
+    ContextInternal ctx = getOrCreateContext();
+    long timerId = timeoutCounter.getAndIncrement();
+    IntervalTimerHandlerHolder<T> task = new IntervalTimerHandlerHolder<>(timerId, handler, initialDelay, delay, ctx);
+    timeouts.put(timerId, task);
+    return timerId;
+  }
+
   public long setTimer(long delay, Handler<Long> handler) {
     ContextInternal ctx = getOrCreateContext();
     return scheduleTimeout(ctx, false, delay, TimeUnit.MILLISECONDS, ctx.isDeployment(), handler);
@@ -476,7 +487,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public boolean cancelTimer(long id) {
-    InternalTimerHandler handler = timeouts.get(id);
+    Cancelable handler = timeouts.get(id);
     if (handler != null) {
       return handler.cancel();
     } else {
@@ -843,6 +854,53 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   /**
+   * Cancelable timeouts.
+   */
+  interface Cancelable {
+    boolean cancel();
+  }
+
+  class IntervalTimerHandlerHolder<T> implements Cancelable {
+    private final Function<Long, Future<T>> handler;
+    private final long id;
+    private final ContextInternal context;
+    private final AtomicBoolean disposed = new AtomicBoolean();
+
+    private final AtomicLong timerId = new AtomicLong();
+    private final long delay;
+
+    IntervalTimerHandlerHolder(long id, Function<Long, Future<T>> runnable, long initialDelay, long delay, ContextInternal context) {
+      this.context = context;
+      this.id = id;
+      this.handler = runnable;
+      this.delay = delay;
+      timerId.set(scheduleTimeout(context, false, initialDelay, delay, TimeUnit.MILLISECONDS, context.isDeployment(), wrapHandler()));
+    }
+
+    private Handler<Long> wrapHandler() {
+      return tid -> {
+        handler.apply(tid).onComplete(v->{
+            // TODO handle error
+            if(!disposed.get()) {
+              timerId.set(scheduleTimeout(context, false, delay, delay, TimeUnit.MILLISECONDS, context.isDeployment(), wrapHandler()));
+            }
+          });
+      };
+    }
+
+    @Override
+    public boolean cancel() {
+      if (disposed.compareAndSet(false, true)) {
+        timeouts.remove(id);
+        cancelTimer(timerId.get());
+        return true;
+      } else {
+        return false;
+      }
+    }
+  }
+
+  /**
    * Timers are stored in the {@link #timeouts} map at creation time.
    * <p/>
    * Timers are removed from the {@link #timeouts} map when they are cancelled or are fired. The thread
@@ -852,7 +910,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
    * This class does not rely on the internal {@link #future} for the termination to handle the worker case
    * since the actual timer {@link #handler} execution is scheduled when the {@link #future} executes.
    */
-  class InternalTimerHandler implements Handler<Void>, Closeable, Runnable {
+  class InternalTimerHandler implements Handler<Void>, Closeable, Runnable, Cancelable {
 
     private final Handler<Long> handler;
     private final boolean periodic;
@@ -873,6 +931,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       context.emit(this);
     }
 
+    @Override
     public void handle(Void v) {
       if (periodic) {
         if (!disposed.get()) {
@@ -889,7 +948,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       }
     }
 
-    private boolean cancel() {
+    @Override
+    public boolean cancel() {
       boolean cancelled = tryCancel();
       if (cancelled) {
         if (context.isDeployment()) {
@@ -910,6 +970,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
 
     // Called via Context close hook when Verticle is undeployed
+    @Override
     public void close(Promise<Void> completion) {
       tryCancel();
       completion.complete();

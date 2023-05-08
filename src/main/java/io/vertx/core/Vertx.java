@@ -37,6 +37,7 @@ import io.vertx.core.streams.ReadStream;
 
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -313,6 +314,33 @@ public interface Vertx extends Measured {
    * @return the periodic stream
    */
   TimeoutStream periodicStream(long initialDelay, long delay);
+
+  /**
+   * Set a interval timer to fire after {@code delay} milliseconds and after initial delay and after
+   * every of the previous handler finished, at which point {@code handler} will be called with
+   * the id of the timer.
+   *
+   * @param delay  the delay in milliseconds, after which the timer will fire
+   * @param handler  the handler that will be called with the timer ID when the timer fires
+   * @return the unique ID of the timer
+   */
+  default <T> long setInterval(long delay, Function<Long, Future<T>> handler) {
+    return setInterval(delay, delay, handler);
+  }
+
+  /**
+   * Set a interval timer to fire after {@code delay} milliseconds and after initial delay and after
+   * every of the previous handler finished, at which point {@code handler} will be called with
+   * the id of the timer.
+   *
+   * @param initialDelay the initial delay in milliseconds
+   * @param delay        the delay in milliseconds, after which the timer will
+   *                     fire
+   * @param handler      the handler that will be called with the timer ID when
+   *                     the timer fires
+   * @return the unique ID of the timer
+   */
+  <T> long setInterval(long initialDelay, long delay, Function<Long, Future<T>> handler);
 
   /**
    * Cancels the timer with the specified {@code id}.
