@@ -11,10 +11,10 @@
 package io.vertx.core.net.impl;
 
 import io.vertx.core.Future;
-import io.vertx.core.net.NetClient;
-import io.vertx.core.net.NetSocket;
-import io.vertx.core.net.SSLOptions;
-import io.vertx.core.net.SocketAddress;
+import io.vertx.core.Promise;
+import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.net.*;
+import io.vertx.core.spi.metrics.Metrics;
 
 import java.lang.ref.Cleaner;
 import java.util.concurrent.TimeUnit;
@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class CleanableNetClient implements NetClient {
+public class CleanableNetClient implements NetClientInternal {
 
   static class Action implements Runnable {
     private final NetClientInternal client;
@@ -85,5 +85,35 @@ public class CleanableNetClient implements NetClient {
   @Override
   public Future<Void> updateSSLOptions(SSLOptions options) {
     return client.updateSSLOptions(options);
+  }
+
+  @Override
+  public void close(Promise<Void> completion) {
+    client.close(completion);
+  }
+
+  @Override
+  public void connectInternal(ProxyOptions proxyOptions, SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, boolean useAlpn, boolean registerWriteHandlers, Promise<NetSocket> connectHandler, ContextInternal context, int remainingAttempts) {
+    client.connectInternal(proxyOptions, remoteAddress, peerAddress, serverName, ssl, useAlpn, registerWriteHandlers, connectHandler, context, remainingAttempts);
+  }
+
+  @Override
+  public Future<Void> closeFuture() {
+    return client.closeFuture();
+  }
+
+  @Override
+  public Future<Void> shutdown(long timeout, TimeUnit timeUnit) {
+    return client.shutdown(timeout, timeUnit);
+  }
+
+  @Override
+  public Future<Void> close(long timeout, TimeUnit timeUnit) {
+    return client.close(timeout, timeUnit);
+  }
+
+  @Override
+  public Metrics getMetrics() {
+    return client.getMetrics();
   }
 }

@@ -176,4 +176,6 @@ public class CleanableHttpClient implements HttpClientInternal {
   public void close(Promise<Void> completion) {
     delegate.close(completion);
   }
+
+
 }
