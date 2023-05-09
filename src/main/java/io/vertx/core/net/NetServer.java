@@ -36,7 +36,9 @@ public interface NetServer extends Measured {
    * connect stream {@link ReadStream#handler(io.vertx.core.Handler)}.
    *
    * @return the connect stream
+   * @deprecated instead use {@link #connectHandler(Handler)}
    */
+  @Deprecated
   ReadStream<NetSocket> connectStream();
 
   /**

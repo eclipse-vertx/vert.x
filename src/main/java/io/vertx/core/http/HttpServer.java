@@ -43,7 +43,9 @@ public interface HttpServer extends Measured {
    * instances of {@link HttpServerRequest} will be created and passed to the stream {@link io.vertx.core.streams.ReadStream#handler(io.vertx.core.Handler)}.
    *
    * @return the request stream
+   * @deprecated instead use {@link #requestHandler(Handler)}
    */
+  @Deprecated
   @CacheReturn
   ReadStream<HttpServerRequest> requestStream();
 
@@ -101,7 +103,9 @@ public interface HttpServer extends Measured {
    * new {@link ServerWebSocket} instance will be created and passed to the stream {@link io.vertx.core.streams.ReadStream#handler(io.vertx.core.Handler)}.
    *
    * @return the WebSocket stream
+   * @deprecated instead use {@link #webSocketHandler(Handler)}
    */
+  @Deprecated
   @CacheReturn
   ReadStream<ServerWebSocket> webSocketStream();
 

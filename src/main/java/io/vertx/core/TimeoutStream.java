@@ -23,7 +23,10 @@ import io.vertx.core.streams.ReadStream;
  * the timer.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ * @deprecated instead using {@link Vertx#setTimer}/{@link Vertx#setPeriodic}, Rx java like integrations should use
+ *             the Vert.s scheduler integration
  */
+@Deprecated()
 @VertxGen
 public interface TimeoutStream extends ReadStream<Long> {
 
