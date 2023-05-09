@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2023 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -196,10 +196,11 @@ public class DeploymentOptions {
 
   /**
    * Get the maximum number of worker threads to be used by the worker pool when the verticle is deployed
-   * with a {@link #setWorkerPoolName}. When the verticle does not use a named worker pool, this option
-   * has no effect.
+   * with a {@link #setWorkerPoolName}.
    * <p>
    * Worker threads are used for running blocking code and worker verticles.
+   * <p>
+   * When the verticle does not use a {@link #getWorkerPoolName() named worker pool}, this option has no effect.
    *
    * @return the maximum number of worker threads
    */
@@ -209,6 +210,8 @@ public class DeploymentOptions {
 
   /**
    * Set the maximum number of worker threads to be used by the Vert.x instance.
+   * <p>
+   * When the verticle does not use a {@link #getWorkerPoolName() named worker pool}, this option has no effect.
    *
    * @param workerPoolSize the number of threads
    * @return a reference to this, so the API can be used fluently
@@ -228,6 +231,8 @@ public class DeploymentOptions {
    * <p>
    * This can be used to detect where the user is blocking a worker thread for too long. Although worker threads
    * can be blocked longer than event loop threads, they shouldn't be blocked for long periods of time.
+   * <p>
+   * When the verticle does not use a {@link #getWorkerPoolName() named worker pool}, this option has no effect.
    *
    * @return The value of max worker execute time, the default value of {@link DeploymentOptions#setMaxWorkerExecuteTimeUnit} {@code maxWorkerExecuteTimeUnit} is {@link TimeUnit#NANOSECONDS}
    */
@@ -239,6 +244,8 @@ public class DeploymentOptions {
    * Sets the value of max worker execute time, in {@link DeploymentOptions#setMaxWorkerExecuteTimeUnit maxWorkerExecuteTimeUnit}.
    * <p>
    * The default value of {@link DeploymentOptions#setMaxWorkerExecuteTimeUnit maxWorkerExecuteTimeUnit} is {@link TimeUnit#NANOSECONDS}
+   * <p>
+   * When the verticle does not use a {@link #getWorkerPoolName() named worker pool}, this option has no effect.
    *
    * @param maxWorkerExecuteTime the value of max worker execute time, in in {@link DeploymentOptions#setMaxWorkerExecuteTimeUnit maxWorkerExecuteTimeUnit}.
    * @return a reference to this, so the API can be used fluently
@@ -252,6 +259,8 @@ public class DeploymentOptions {
   }
 
   /**
+   * When the verticle does not use a {@link #getWorkerPoolName() named worker pool}, this option has no effect.
+   *
    * @return the time unit of {@code maxWorkerExecuteTime}
    */
   public TimeUnit getMaxWorkerExecuteTimeUnit() {
@@ -260,6 +269,9 @@ public class DeploymentOptions {
 
   /**
    * Set the time unit of {@code maxWorkerExecuteTime}
+   * <p>
+   * When the verticle does not use a {@link #getWorkerPoolName() named worker pool}, this option has no effect.
+   *
    * @param maxWorkerExecuteTimeUnit the time unit of {@code maxWorkerExecuteTime}
    * @return a reference to this, so the API can be used fluently
    */
