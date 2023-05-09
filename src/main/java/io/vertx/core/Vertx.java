@@ -276,7 +276,10 @@ public interface Vertx extends Measured {
    *
    * @param delay  the delay in milliseconds, after which the timer will fire
    * @return the timer stream
+   * @deprecated instead using {@link Vertx#setTimer}, Rx java like integrations should use
+   *             the Vert.s scheduler integration
    */
+  @Deprecated
   TimeoutStream timerStream(long delay);
 
   /**
@@ -308,7 +311,10 @@ public interface Vertx extends Measured {
    *
    * @param delay  the delay in milliseconds, after which the timer will fire
    * @return the periodic stream
+   * @deprecated instead using {@link Vertx#setPeriodic}, Rx java like integrations should use
+   *             the Vert.s scheduler integration
    */
+  @Deprecated
   default TimeoutStream periodicStream(long delay) {
     return periodicStream(0, delay);
   }
@@ -320,7 +326,10 @@ public interface Vertx extends Measured {
    * @param initialDelay the initial delay in milliseconds
    * @param delay the delay in milliseconds, after which the timer will fire
    * @return the periodic stream
+   * @deprecated instead using {@link Vertx#setPeriodic}, Rx java like integrations should use
+   *             the Vert.s scheduler integration
    */
+  @Deprecated
   TimeoutStream periodicStream(long initialDelay, long delay);
 
   /**

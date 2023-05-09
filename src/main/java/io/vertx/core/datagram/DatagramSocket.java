@@ -253,15 +253,31 @@ public interface DatagramSocket extends ReadStream<DatagramPacket>, Measured {
    */
   Future<DatagramSocket> listen(int port, String host);
 
+  /**
+   * @deprecated no replacement for back-pressure, instead ignore the packet or buffer it somewhere
+   */
+  @Deprecated
   @Override
   DatagramSocket pause();
 
+  /**
+   * @deprecated no replacement for back-pressure, instead ignore the packet or buffer it somewhere
+   */
+  @Deprecated
   @Override
   DatagramSocket resume();
 
+  /**
+   * @deprecated no replacement for back-pressure, instead ignore the packet or buffer it somewhere
+   */
+  @Deprecated
   @Override
   DatagramSocket fetch(long amount);
 
+  /**
+   * @deprecated removed in Vert.x 5
+   */
+  @Deprecated
   @Override
   DatagramSocket endHandler(Handler<Void> endHandler);
 
