@@ -6260,7 +6260,7 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testHAProxyProtocolVersion1Unknown() throws Exception {
     Buffer header = HAProxy.createVersion1UnknownProtocolHeader();
-    testHAProxyProtocolAccepted(header, null, testAddress);
+    testHAProxyProtocolAccepted(header, null, null);
   }
 
   @Test
@@ -6290,7 +6290,7 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testHAProxyProtocolVersion2Unknown() throws Exception {
     Buffer header = HAProxy.createVersion2UnknownProtocolHeader();
-    testHAProxyProtocolAccepted(header, null, testAddress);
+    testHAProxyProtocolAccepted(header, null, null);
   }
 
 
