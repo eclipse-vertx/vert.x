@@ -4225,7 +4225,7 @@ public class NetTest extends VertxTestBase {
         assertAddresses(proxy.getConnectionLocalAddress(), event.remoteAddress(true));
         assertAddresses(local, event.localAddress());
         assertAddresses(local, event.localAddress(false));
-        assertAddresses(USE_DOMAIN_SOCKETS ? null : SocketAddress.inetSocketAddress(server.actualPort(), "127.0.0.1"), event.localAddress(true));
+        assertAddresses(USE_DOMAIN_SOCKETS ? testAddress : SocketAddress.inetSocketAddress(server.actualPort(), "127.0.0.1"), event.localAddress(true));
         complete();
       });
 
@@ -4268,7 +4268,7 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testHAProxyProtocolVersion1Unknown() throws Exception {
     Buffer header = HAProxy.createVersion1UnknownProtocolHeader();
-    testHAProxyProtocolAccepted(header, null, null);
+    testHAProxyProtocolAccepted(header, null, testAddress);
   }
 
   @Test
@@ -4298,7 +4298,7 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testHAProxyProtocolVersion2Unknown() throws Exception {
     Buffer header = HAProxy.createVersion2UnknownProtocolHeader();
-    testHAProxyProtocolAccepted(header, null, null);
+    testHAProxyProtocolAccepted(header, null, testAddress);
   }
 
 
@@ -4320,14 +4320,10 @@ public class NetTest extends VertxTestBase {
     server = vertx.createNetServer(new NetServerOptions()
       .setUseProxyProtocol(true))
       .connectHandler(so -> {
-        assertAddresses(remote == null && testAddress.isInetSocket() ?
-            proxy.getConnectionLocalAddress() :
-            remote,
-          so.remoteAddress());
-        assertAddresses(local == null && testAddress.isInetSocket() ?
-            proxy.getConnectionRemoteAddress() :
-            local,
-          so.localAddress());
+        SocketAddress ra = so.remoteAddress();
+        SocketAddress la = so.localAddress();
+        assertAddresses(remote == null && testAddress.isInetSocket() ? proxy.getConnectionLocalAddress() : remote, ra);
+        assertAddresses(local == null && testAddress.isInetSocket() ? proxy.getConnectionRemoteAddress() : local, la);
         complete();
       });
     startServer();
