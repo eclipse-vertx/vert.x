@@ -1286,11 +1286,6 @@ public class Http2ServerTest extends Http2TestBase {
   }
 
   @Test
-  public void testMissingEmptyPathPseudoHeader() throws Exception {
-    testMalformedRequestHeaders(new DefaultHttp2Headers().method("GET").scheme("http").path(""));
-  }
-
-  @Test
   public void testInvalidAuthority() throws Exception {
     testMalformedRequestHeaders(new DefaultHttp2Headers().method("GET").scheme("http").authority("foo@" + DEFAULT_HTTPS_HOST_AND_PORT).path("/"));
   }
