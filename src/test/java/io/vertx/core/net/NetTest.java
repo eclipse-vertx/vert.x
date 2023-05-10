@@ -4206,6 +4206,7 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testHAProxyProtocolConnectSSL() throws Exception {
+    Assume.assumeTrue(testAddress.isInetSocket());
     waitFor(2);
     SocketAddress remote = SocketAddress.inetSocketAddress(56324, "192.168.0.1");
     SocketAddress local = SocketAddress.inetSocketAddress(443, "192.168.0.11");
@@ -4267,6 +4268,7 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testHAProxyProtocolVersion1Unknown() throws Exception {
+    Assume.assumeTrue(testAddress.isInetSocket());
     Buffer header = HAProxy.createVersion1UnknownProtocolHeader();
     testHAProxyProtocolAccepted(header, null, testAddress);
   }
@@ -4297,6 +4299,7 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testHAProxyProtocolVersion2Unknown() throws Exception {
+    Assume.assumeTrue(testAddress.isInetSocket());
     Buffer header = HAProxy.createVersion2UnknownProtocolHeader();
     testHAProxyProtocolAccepted(header, null, testAddress);
   }
