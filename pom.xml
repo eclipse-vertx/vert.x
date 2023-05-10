@@ -121,6 +121,7 @@
       <groupId>io.netty</groupId>
       <artifactId>netty-transport-native-kqueue</artifactId>
       <optional>true</optional>
+      <classifier>osx-aarch_64</classifier>
     </dependency>
 
     <!-- Jackson -->
