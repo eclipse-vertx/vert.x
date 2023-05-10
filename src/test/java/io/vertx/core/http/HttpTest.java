@@ -6380,7 +6380,7 @@ public abstract class HttpTest extends HttpTestBase {
   public void testHAProxyProtocolVersion1Unknown() throws Exception {
     Assume.assumeTrue(testAddress.isInetSocket());
     Buffer header = HAProxy.createVersion1UnknownProtocolHeader();
-    testHAProxyProtocolAccepted(header, null, testAddress);
+    testHAProxyProtocolAccepted(header, null, null);
   }
 
   @Test
@@ -6411,7 +6411,7 @@ public abstract class HttpTest extends HttpTestBase {
   public void testHAProxyProtocolVersion2Unknown() throws Exception {
     Assume.assumeTrue(testAddress.isInetSocket());
     Buffer header = HAProxy.createVersion2UnknownProtocolHeader();
-    testHAProxyProtocolAccepted(header, null, testAddress);
+    testHAProxyProtocolAccepted(header, null, null);
   }
 
 
