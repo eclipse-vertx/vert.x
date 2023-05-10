@@ -12,6 +12,7 @@
 package io.vertx.core.eventbus;
 
 import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
@@ -29,6 +30,8 @@ import org.junit.Test;
 
 import java.io.InvalidClassException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CountDownLatch;
@@ -654,5 +657,42 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
       vertices[0].eventBus().send("foo", message);
     }));
     await();
+  }
+
+  @Test
+  public void testMultiHeaders() {
+
+    startNodes(2);
+    waitFor(1);
+
+    MultiMap expectedHeaders = MultiMap.caseInsensitiveMultiMap()
+      .add("a", "1")
+      .add("c", "2")
+      .add("b", "3")
+      .add("d", "4")
+      .add("a", "5")
+      .add("a", "6")
+      .add("a", "7")
+      .add("b", "8")
+      .add("b", "9")
+      .add("c", "10");
+
+    vertices[1].eventBus().consumer(ADDRESS1, msg -> {
+
+      MultiMap headers = msg.headers();
+      assertEquals("headers should have expected size", 4, headers.size());
+      assertEquals("headers should have expected number of entries", 10, headers.entries().size());
+      assertEquals("entry 'a' should have 4 elements", Arrays.asList("1", "5", "6", "7"), headers.getAll("a"));
+      assertEquals("entry 'b' should have 3 elements", Arrays.asList("3", "8", "9"), headers.getAll("b"));
+      assertEquals("entry 'c' should have 2 elements", Arrays.asList("2", "10"), headers.getAll("c"));
+      assertEquals("entry 'd' should have 1 element", Collections.singletonList("4"), headers.getAll("d"));
+      complete();
+
+    }).completion().onComplete(v1 -> {
+      vertices[0].eventBus().send(ADDRESS1, "foo", new DeliveryOptions().setHeaders(expectedHeaders));
+    });
+
+    await();
+
   }
 }
