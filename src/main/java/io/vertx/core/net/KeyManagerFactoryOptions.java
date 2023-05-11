@@ -13,6 +13,7 @@ package io.vertx.core.net;
 
 import io.vertx.core.Vertx;
 
+import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.X509KeyManager;
 import java.util.function.Function;
@@ -80,8 +81,7 @@ class KeyManagerFactoryOptions implements KeyCertOptions {
   }
 
   @Override
-  public Function<String, X509KeyManager> keyManagerMapper(Vertx vertx) {
-    return keyManagerFactory.getKeyManagers()[0] instanceof X509KeyManager ? serverName -> (X509KeyManager) keyManagerFactory.getKeyManagers()[0] : null;
+  public Function<String, KeyManagerFactory> keyManagerFactoryMapper(Vertx vertx) throws Exception {
+    return name -> null;
   }
-
 }

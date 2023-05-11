@@ -74,8 +74,8 @@ public class KeyStoreHelper {
   private final String password;
   private final KeyStore store;
   private final String aliasPassword;
-  private final Map<String, X509KeyManager> wildcardMgrMap = new HashMap<>();
-  private final Map<String, X509KeyManager> mgrMap = new HashMap<>();
+  private final Map<String, KeyManagerFactory> wildcardMgrFactoryMap = new HashMap<>();
+  private final Map<String, KeyManagerFactory> mgrFactoryMap = new HashMap<>();
   private final Map<String, TrustManagerFactory> trustMgrMap = new HashMap<>();
 
   public KeyStoreHelper(KeyStore ks, String password, String aliasPassword) throws Exception {
@@ -138,11 +138,13 @@ public class KeyStoreHelper {
               return key;
             }
           };
+
+          KeyManagerFactory kmf = toKeyManagerFactory(mgr);
           for (String domain : domains) {
             if (domain.startsWith("*.")) {
-              wildcardMgrMap.put(domain.substring(2), mgr);
+              wildcardMgrFactoryMap.put(domain.substring(2), kmf);
             } else {
-              mgrMap.put(domain, mgr);
+              mgrFactoryMap.put(domain, kmf);
             }
           }
         }
@@ -151,6 +153,17 @@ public class KeyStoreHelper {
     this.store = ks;
     this.password = password;
     this.aliasPassword = aliasPassword;
+  }
+
+  public static KeyManagerFactory toKeyManagerFactory(X509KeyManager mgr) throws Exception {
+    String keyStoreType = KeyStore.getDefaultType();
+    KeyStore ks = KeyStore.getInstance(keyStoreType);
+    ks.load(null, null);
+    ks.setKeyEntry("key", mgr.getPrivateKey(null), new char[0], mgr.getCertificateChain(null));
+    String keyAlgorithm = KeyManagerFactory.getDefaultAlgorithm();
+    KeyManagerFactory kmf = KeyManagerFactory.getInstance(keyAlgorithm);
+    kmf.init(ks, new char[0]);
+    return kmf;
   }
 
   public KeyManagerFactory getKeyMgrFactory() throws Exception {
@@ -165,13 +178,13 @@ public class KeyStoreHelper {
     return (password != null) ? password.toCharArray() : null;
   }
 
-  public X509KeyManager getKeyMgr(String serverName) {
-    X509KeyManager mgr = mgrMap.get(serverName);
-    if (mgr == null && !wildcardMgrMap.isEmpty()) {
+  public KeyManagerFactory getKeyMgrFactory(String serverName) {
+    KeyManagerFactory mgr = mgrFactoryMap.get(serverName);
+    if (mgr == null && !wildcardMgrFactoryMap.isEmpty()) {
       int index = serverName.indexOf('.') + 1;
       if (index > 0) {
         String s = serverName.substring(index);
-        mgr = wildcardMgrMap.get(s);
+        mgr = wildcardMgrFactoryMap.get(s);
       }
     }
     return mgr;

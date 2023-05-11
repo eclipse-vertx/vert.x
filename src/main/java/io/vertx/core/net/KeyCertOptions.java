@@ -12,6 +12,7 @@
 package io.vertx.core.net;
 
 import io.vertx.core.Vertx;
+import io.vertx.core.net.impl.KeyStoreHelper;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.X509KeyManager;
@@ -40,24 +41,21 @@ public interface KeyCertOptions {
   KeyManagerFactory getKeyManagerFactory(Vertx vertx) throws Exception;
 
   /**
-   * Returns a function that maps SNI server names to {@link X509KeyManager} instance.
+   * Returns a function that maps SNI server names to {@link KeyManagerFactory} instance.
    *
-   * The returned {@code X509KeyManager} must satisfies these rules:
+   * The returned {@code KeyManagerFactory} must satisfies these rules:
    *
    * <ul>
-   *   <li>{@link X509KeyManager#getPrivateKey(String)} returns the private key for the indicated server name,
-   *   the {@code alias} parameter will be {@code null}.</li>
-   *   <li>{@link X509KeyManager#getCertificateChain(String)} returns the certificate chain for the indicated server name,
-   *   the {@code alias} parameter will be {@code null}.</li>
+   *   <li>The store private key must match the indicated server name for a null alias.</li>
+   *   <li>The store certificate chain must match the indicated server name for a null alias.</li>
    * </ul>
    *
    * The mapper is only used when the server has SNI enabled and the client indicated a server name.
    * <p>
-   * The returned function may return null in which case the default key manager provided by {@link #getKeyManagerFactory(Vertx)}
+   * The returned function may return {@code null} in which case the default key manager provided by {@link #getKeyManagerFactory(Vertx)}
    * will be used.
-   *
    */
-  Function<String, X509KeyManager> keyManagerMapper(Vertx vertx) throws Exception;
+  Function<String, KeyManagerFactory> keyManagerFactoryMapper(Vertx vertx) throws Exception;
 
   /**
    * Returns a {@link KeyCertOptions} from the provided {@link X509KeyManager}

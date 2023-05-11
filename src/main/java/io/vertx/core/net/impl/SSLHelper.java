@@ -107,7 +107,7 @@ public class SSLHelper {
   private final List<String> applicationProtocols;
   private KeyManagerFactory keyManagerFactory;
   private TrustManagerFactory trustManagerFactory;
-  private Function<String, X509KeyManager> keyManagerMapper;
+  private Function<String, KeyManagerFactory> keyManagerFactoryMapper;
   private Function<String, TrustManager[]> trustManagerMapper;
   private List<CRL> crls;
 
@@ -143,7 +143,7 @@ public class SSLHelper {
         sslOptions.getEnabledCipherSuites(),
         sslOptions.getEnabledSecureTransportProtocols(),
         keyManagerFactory,
-        keyManagerMapper,
+        keyManagerFactoryMapper,
         trustManagerFactory,
         trustManagerMapper,
         crls,
@@ -194,7 +194,7 @@ public class SSLHelper {
         try {
           if (sslOptions.getKeyCertOptions() != null) {
             keyManagerFactory = sslOptions.getKeyCertOptions().getKeyManagerFactory(ctx.owner());
-            keyManagerMapper = sslOptions.getKeyCertOptions().keyManagerMapper(ctx.owner());
+            keyManagerFactoryMapper = sslOptions.getKeyCertOptions().keyManagerFactoryMapper(ctx.owner());
           }
           if (sslOptions.getTrustOptions() != null) {
             trustManagerFactory = sslOptions.getTrustOptions().getTrustManagerFactory(ctx.owner());
