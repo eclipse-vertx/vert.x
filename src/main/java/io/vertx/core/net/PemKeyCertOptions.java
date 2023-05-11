@@ -429,4 +429,10 @@ public class PemKeyCertOptions implements KeyCertOptions {
     KeyStoreHelper helper = getHelper(vertx);
     return helper != null ? helper::getKeyMgr : null;
   }
+
+  @Override
+  public Function<String, KeyManagerFactory> keyManagerFactoryMapper(Vertx vertx) throws Exception {
+    KeyStoreHelper helper = getHelper(vertx);
+    return helper != null ? helper::getKeyMgrFactory : null;
+  }
 }
