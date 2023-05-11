@@ -16,7 +16,6 @@ import io.vertx.core.http.ClientAuth;
 import io.vertx.core.spi.tls.SslContextFactory;
 
 import javax.net.ssl.*;
-import java.security.KeyStore;
 import java.security.cert.CRL;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -40,7 +39,7 @@ public class SslContextProvider {
   private final String endpointIdentificationAlgorithm;
   private final KeyManagerFactory keyManagerFactory;
   private final TrustManagerFactory trustManagerFactory;
-  private final Function<String, X509KeyManager> keyManagerMapper;
+  private final Function<String, KeyManagerFactory> keyManagerFactoryMapper;
   private final Function<String, TrustManager[]> trustManagerMapper;
 
   public SslContextProvider(ClientAuth clientAuth,
@@ -49,7 +48,7 @@ public class SslContextProvider {
                             Set<String> enabledCipherSuites,
                             Set<String> enabledProtocols,
                             KeyManagerFactory keyManagerFactory,
-                            Function<String, X509KeyManager> keyManagerMapper,
+                            Function<String, KeyManagerFactory> keyManagerFactoryMapper,
                             TrustManagerFactory trustManagerFactory,
                             Function<String, TrustManager[]> trustManagerMapper,
                             List<CRL> crls,
@@ -62,7 +61,7 @@ public class SslContextProvider {
     this.enabledProtocols = enabledProtocols;
     this.keyManagerFactory = keyManagerFactory;
     this.trustManagerFactory = trustManagerFactory;
-    this.keyManagerMapper = keyManagerMapper;
+    this.keyManagerFactoryMapper = keyManagerFactoryMapper;
     this.trustManagerMapper = trustManagerMapper;
     this.crls = crls;
   }
@@ -137,18 +136,8 @@ public class SslContextProvider {
   }
 
   public KeyManagerFactory loadKeyManagerFactory(String serverName) throws Exception {
-    if (keyManagerMapper != null) {
-      X509KeyManager mgr = keyManagerMapper.apply(serverName);
-      if (mgr != null) {
-        String keyStoreType = KeyStore.getDefaultType();
-        KeyStore ks = KeyStore.getInstance(keyStoreType);
-        ks.load(null, null);
-        ks.setKeyEntry("key", mgr.getPrivateKey(null), new char[0], mgr.getCertificateChain(null));
-        String keyAlgorithm = KeyManagerFactory.getDefaultAlgorithm();
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance(keyAlgorithm);
-        kmf.init(ks, new char[0]);
-        return kmf;
-      }
+    if (keyManagerFactoryMapper != null) {
+      return keyManagerFactoryMapper.apply(serverName);
     }
     return null;
   }

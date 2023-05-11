@@ -1835,35 +1835,41 @@ public abstract class HttpTLSTest extends HttpTestBase {
         return new KeyStoreHelper(testKs, jksOptions.getPassword(), null).getKeyMgrFactory();
       }
       @Override
-      public Function<String, X509KeyManager> keyManagerMapper(Vertx vertx) throws Exception {
+      public Function<String, KeyManagerFactory> keyManagerFactoryMapper(Vertx vertx) throws Exception {
         X509KeyManager keyManager = (X509KeyManager) getKeyManagerFactory(vertx).getKeyManagers()[0];
+        KeyManagerFactory kmf = KeyStoreHelper.toKeyManagerFactory(new X509KeyManager() {
+          @Override
+          public String[] getClientAliases(String keyType, Principal[] issuers) {
+            throw new UnsupportedOperationException();
+          }
+
+          @Override
+          public String chooseClientAlias(String[] keyType, Principal[] issuers, Socket socket) {
+            throw new UnsupportedOperationException();
+          }
+
+          @Override
+          public String[] getServerAliases(String keyType, Principal[] issuers) {
+            throw new UnsupportedOperationException();
+          }
+
+          @Override
+          public String chooseServerAlias(String keyType, Principal[] issuers, Socket socket) {
+            throw new UnsupportedOperationException();
+          }
+
+          @Override
+          public X509Certificate[] getCertificateChain(String alias) {
+            return keyManager.getCertificateChain("test-host2");
+          }
+
+          @Override
+          public PrivateKey getPrivateKey(String alias) {
+            return keyManager.getPrivateKey("test-host2");
+          }
+        });
         return serverName -> {
-          return new X509KeyManager() {
-            @Override
-            public String[] getClientAliases(String keyType, Principal[] issuers) {
-              throw new UnsupportedOperationException();
-            }
-            @Override
-            public String chooseClientAlias(String[] keyType, Principal[] issuers, Socket socket) {
-              throw new UnsupportedOperationException();
-            }
-            @Override
-            public String[] getServerAliases(String keyType, Principal[] issuers) {
-              throw new UnsupportedOperationException();
-            }
-            @Override
-            public String chooseServerAlias(String keyType, Principal[] issuers, Socket socket) {
-              throw new UnsupportedOperationException();
-            }
-            @Override
-            public X509Certificate[] getCertificateChain(String alias) {
-              return keyManager.getCertificateChain("test-host2");
-            }
-            @Override
-            public PrivateKey getPrivateKey(String alias) {
-              return keyManager.getPrivateKey("test-host2");
-            }
-          };
+          return kmf;
         };
       }
     };

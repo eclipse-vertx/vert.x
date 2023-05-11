@@ -207,9 +207,9 @@ public abstract class KeyStoreOptionsBase implements KeyCertOptions, TrustOption
   }
 
   @Override
-  public Function<String, X509KeyManager> keyManagerMapper(Vertx vertx) throws Exception {
+  public Function<String, KeyManagerFactory> keyManagerFactoryMapper(Vertx vertx) throws Exception {
     KeyStoreHelper helper = getHelper(vertx);
-    return helper != null ? helper::getKeyMgr : null;
+    return helper != null ? helper::getKeyMgrFactory : null;
   }
 
   @Override
