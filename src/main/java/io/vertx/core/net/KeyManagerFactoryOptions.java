@@ -83,5 +83,4 @@ class KeyManagerFactoryOptions implements KeyCertOptions {
   public Function<String, X509KeyManager> keyManagerMapper(Vertx vertx) {
     return keyManagerFactory.getKeyManagers()[0] instanceof X509KeyManager ? serverName -> (X509KeyManager) keyManagerFactory.getKeyManagers()[0] : null;
   }
-
 }
