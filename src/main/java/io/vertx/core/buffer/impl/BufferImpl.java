@@ -16,13 +16,13 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.ByteBufUtils;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 /**
@@ -45,23 +45,23 @@ public class BufferImpl implements Buffer {
   }
 
   BufferImpl(int initialSizeHint) {
-    buffer = Unpooled.unreleasableBuffer(Unpooled.buffer(initialSizeHint, Integer.MAX_VALUE));
+    buffer = ByteBufUtils.unpooledNotInstrumentedHeapByteBuf(initialSizeHint, Integer.MAX_VALUE);
   }
 
   BufferImpl(byte[] bytes) {
-    buffer = Unpooled.unreleasableBuffer(Unpooled.buffer(bytes.length, Integer.MAX_VALUE)).writeBytes(bytes);
+    buffer = ByteBufUtils.unpooledNotInstrumentedHeapByteBuf(bytes.length, Integer.MAX_VALUE).writeBytes(bytes);
   }
 
   BufferImpl(String str, String enc) {
-    this(str.getBytes(Charset.forName(Objects.requireNonNull(enc))));
+    buffer = ByteBufUtils.unpooledBufferOf(str, enc);
   }
 
   BufferImpl(String str, Charset cs) {
-    this(str.getBytes(cs));
+    buffer = ByteBufUtils.unpooledBufferOf(str, cs);
   }
 
   BufferImpl(String str) {
-    this(str, StandardCharsets.UTF_8);
+    this.buffer = ByteBufUtils.utf8UnpooledBufferOf(str);
   }
 
   BufferImpl(ByteBuf buffer) {
@@ -69,7 +69,7 @@ public class BufferImpl implements Buffer {
   }
 
   public String toString() {
-    return buffer.toString(StandardCharsets.UTF_8);
+    return buffer.toString(CharsetUtil.UTF_8);
   }
 
   public String toString(String enc) {
@@ -234,8 +234,8 @@ public class BufferImpl implements Buffer {
   }
 
   public String getString(int start, int end) {
-    byte[] bytes = getBytes(start, end);
-    return new String(bytes, StandardCharsets.UTF_8);
+    Arguments.require(end >= start, "end must be greater or equal than start");
+    return buffer.toString(start, end - start, CharsetUtil.UTF_8);
   }
 
   public Buffer appendBuffer(Buffer buff) {
@@ -502,7 +502,7 @@ public class BufferImpl implements Buffer {
   public ByteBuf getByteBuf() {
     // Return a duplicate so the Buffer can be written multiple times.
     // See #648
-    return buffer.duplicate();
+    return Unpooled.unreleasableBuffer(buffer.duplicate());
   }
 
   private Buffer append(String str, Charset charset) {

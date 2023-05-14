@@ -28,6 +28,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.ByteBufUtils;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
@@ -316,22 +317,22 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public HttpServerResponseImpl write(String chunk, String enc) {
-    return write(Buffer.buffer(chunk, enc).getByteBuf(), conn.voidPromise);
+    return write(Unpooled.unreleasableBuffer(ByteBufUtils.unpooledBufferOf(chunk, enc)), conn.voidPromise);
   }
 
   @Override
   public HttpServerResponse write(String chunk, String enc, Handler<AsyncResult<Void>> handler) {
-    return write(Buffer.buffer(chunk, enc).getByteBuf(), conn.toPromise(handler));
+    return write(Unpooled.unreleasableBuffer(ByteBufUtils.unpooledBufferOf(chunk, enc)), conn.toPromise(handler));
   }
 
   @Override
   public HttpServerResponseImpl write(String chunk) {
-    return write(Buffer.buffer(chunk).getByteBuf(), conn.voidPromise);
+    return write(Unpooled.unreleasableBuffer(ByteBufUtils.utf8UnpooledBufferOf(chunk)), conn.voidPromise);
   }
 
   @Override
   public HttpServerResponse write(String chunk, Handler<AsyncResult<Void>> handler) {
-    return write(Buffer.buffer(chunk).getByteBuf(), conn.toPromise(handler));
+    return write(Unpooled.unreleasableBuffer(ByteBufUtils.utf8UnpooledBufferOf(chunk)), conn.toPromise(handler));
   }
 
   @Override
@@ -342,22 +343,22 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public void end(String chunk) {
-    end(Buffer.buffer(chunk));
+    end(Unpooled.unreleasableBuffer(ByteBufUtils.utf8UnpooledBufferOf(chunk)), conn.voidPromise);
   }
 
   @Override
   public void end(String chunk, Handler<AsyncResult<Void>> handler) {
-    end(Buffer.buffer(chunk), handler);
+    end(Unpooled.unreleasableBuffer(ByteBufUtils.utf8UnpooledBufferOf(chunk)), conn.toPromise(handler));
   }
 
   @Override
   public void end(String chunk, String enc) {
-    end(Buffer.buffer(chunk, enc));
+    end(Unpooled.unreleasableBuffer(ByteBufUtils.unpooledBufferOf(chunk, enc)), conn.voidPromise);
   }
 
   @Override
   public void end(String chunk, String enc, Handler<AsyncResult<Void>> handler) {
-    end(Buffer.buffer(chunk, enc), handler);
+    end(Unpooled.unreleasableBuffer(ByteBufUtils.unpooledBufferOf(chunk, enc)), conn.toPromise(handler));
   }
 
   @Override
@@ -371,20 +372,23 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   private void end(Buffer chunk, ChannelPromise promise) {
+    end(chunk.getByteBuf(), promise);
+  }
+
+  private void end(ByteBuf chunk, ChannelPromise promise) {
     synchronized (conn) {
       if (written) {
         throw new IllegalStateException(RESPONSE_WRITTEN);
       }
-      ByteBuf data = chunk.getByteBuf();
-      bytesWritten += data.readableBytes();
+      bytesWritten += chunk.readableBytes();
       HttpObject msg;
       if (!headWritten) {
         // if the head was not written yet we can write out everything in one go
         // which is cheaper.
         prepareHeaders(bytesWritten);
-        msg = new AssembledFullHttpResponse(head, version, status, headers, data, trailingHeaders);
+        msg = new AssembledFullHttpResponse(head, version, status, headers, chunk, trailingHeaders);
       } else {
-        msg = new AssembledLastHttpContent(data, trailingHeaders);
+        msg = new AssembledLastHttpContent(chunk, trailingHeaders);
       }
       conn.writeToChannel(msg, promise);
       written = true;
