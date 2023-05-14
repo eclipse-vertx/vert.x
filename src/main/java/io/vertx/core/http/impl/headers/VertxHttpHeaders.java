@@ -21,6 +21,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.http.impl.HttpUtils;
 
 import java.util.AbstractMap;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -237,7 +238,7 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
   public List<String> getAll(CharSequence name) {
     Objects.requireNonNull(name, "name");
 
-    LinkedList<String> values = new LinkedList<>();
+    LinkedList<String> values = null;
 
     int h = AsciiString.hashCode(name);
     int i = h & 0x0000000F;
@@ -245,11 +246,14 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
     while (e != null) {
       CharSequence key = e.key;
       if (e.hash == h && (name == key || AsciiString.contentEqualsIgnoreCase(name, key))) {
+        if (values == null) {
+          values = new LinkedList<>();
+        }
         values.addFirst(e.getValue().toString());
       }
       e = e.next;
     }
-    return values;
+    return values == null ? Collections.emptyList() : values;
   }
 
   @Override

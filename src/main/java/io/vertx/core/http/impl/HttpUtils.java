@@ -126,6 +126,22 @@ public final class HttpUtils {
       return "/";
     }
 
+    boolean needsChange = false;
+    if (pathname.charAt(0) != '/') {
+      needsChange = true;
+    } else {
+      for (int i = 0; i < pathname.length(); ++i) {
+        char c = pathname.charAt(i);
+        if (c == '.' || c == '%') {
+          needsChange = true;
+          break;
+        }
+      }
+    }
+    if (!needsChange) {
+      return removeDots(pathname);
+    }
+
     StringBuilder ibuf = new StringBuilder(pathname.length() + 1);
 
     // Not standard!!!
@@ -203,6 +219,29 @@ public final class HttpUtils {
 
     if (path == null) {
       return null;
+    }
+    //fast path, most paths don't contain dots so save the allocations
+    boolean needsChange = false;
+    boolean lastSlash = false;
+    for (int i =0; i < path.length(); ++i) {
+      char c = path.charAt(i);
+      if (c == '.') {
+        needsChange = true;
+        break;
+      } else if (c == '/') {
+        //check for double slash
+        if (lastSlash) {
+          needsChange = true;
+          break;
+        } else {
+          lastSlash = true;
+        }
+      } else {
+        lastSlash = false;
+      }
+    }
+    if (!needsChange) {
+      return path.toString();
     }
 
     final StringBuilder obuf = new StringBuilder(path.length());
