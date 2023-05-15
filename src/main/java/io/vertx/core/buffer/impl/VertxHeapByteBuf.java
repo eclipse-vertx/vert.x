@@ -10,10 +10,7 @@
  */
 package io.vertx.core.buffer.impl;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.UnpooledHeapByteBuf;
-import io.netty.buffer.UnpooledUnsafeHeapByteBuf;
+import io.netty.buffer.*;
 
 /**
  * An un-releasable, un-pooled, un-instrumented heap {@code ByteBuf}.
@@ -52,5 +49,18 @@ final class VertxHeapByteBuf extends UnpooledHeapByteBuf {
   @Override
   public boolean release(int decrement) {
     return false;
+  }
+
+  @Override
+  protected byte[] allocateArray(int initialCapacity) {
+    byte[] bytes = super.allocateArray(initialCapacity);
+    ((VertxByteBufAllocator) alloc()).heapCounter.add(bytes.length);
+    return bytes;
+  }
+
+  @Override
+  protected void freeArray(byte[] array) {
+    ((VertxByteBufAllocator) alloc()).heapCounter.add(-array.length);
+    super.freeArray(array);
   }
 }

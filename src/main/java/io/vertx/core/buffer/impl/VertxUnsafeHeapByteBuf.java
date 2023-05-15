@@ -52,4 +52,17 @@ final class VertxUnsafeHeapByteBuf extends UnpooledUnsafeHeapByteBuf {
   public boolean release(int decrement) {
     return false;
   }
+
+  @Override
+  protected byte[] allocateArray(int initialCapacity) {
+    byte[] bytes = super.allocateArray(initialCapacity);
+    ((VertxByteBufAllocator) alloc()).heapCounter.add(bytes.length);
+    return bytes;
+  }
+
+  @Override
+  protected void freeArray(byte[] array) {
+    ((VertxByteBufAllocator) alloc()).heapCounter.add(-array.length);
+    super.freeArray(array);
+  }
 }
