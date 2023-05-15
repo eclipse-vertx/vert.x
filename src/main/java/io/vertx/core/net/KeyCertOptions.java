@@ -60,7 +60,9 @@ public interface KeyCertOptions {
    * @deprecated instead use {@link #keyManagerFactoryMapper(Vertx)}
    */
   @Deprecated
-  Function<String, X509KeyManager> keyManagerMapper(Vertx vertx) throws Exception;
+  default Function<String, X509KeyManager> keyManagerMapper(Vertx vertx) throws Exception {
+    return name -> null;
+  }
 
   /**
    * Returns a function that maps SNI server names to {@link KeyManagerFactory} instance.
