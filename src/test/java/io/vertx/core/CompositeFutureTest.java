@@ -54,7 +54,7 @@ public class CompositeFutureTest extends FutureTestBase {
   @Repeat(times = 100)
   @Test
   public void testConcurrentAllSuccess() throws Exception {
-    testConcurrentCompletion(SUCCESS, CompositeFuture::all, cf -> {
+    testConcurrentCompletion(SUCCESS, Future::all, cf -> {
       assertTrue(cf.succeeded());
     });
   }
@@ -62,7 +62,7 @@ public class CompositeFutureTest extends FutureTestBase {
   @Repeat(times = 100)
   @Test
   public void testConcurrentAllFailure() throws Exception {
-    testConcurrentCompletion((x, p) -> p.fail("failure-" + x), CompositeFuture::all, cf -> {
+    testConcurrentCompletion((x, p) -> p.fail("failure-" + x), Future::all, cf -> {
       assertTrue(cf.failed());
     });
   }
@@ -70,7 +70,7 @@ public class CompositeFutureTest extends FutureTestBase {
   @Repeat(times = 100)
   @Test
   public void testConcurrentAllMixed() throws Exception {
-    testConcurrentCompletion(MIXED, CompositeFuture::all, cf -> {
+    testConcurrentCompletion(MIXED, Future::all, cf -> {
       assertTrue(cf.isComplete());
     });
   }
@@ -78,7 +78,7 @@ public class CompositeFutureTest extends FutureTestBase {
   @Repeat(times = 100)
   @Test
   public void testConcurrentAnySuccess() throws Exception {
-    testConcurrentCompletion(SUCCESS, CompositeFuture::any, cf -> {
+    testConcurrentCompletion(SUCCESS, Future::any, cf -> {
       assertTrue(cf.succeeded());
     });
   }
@@ -86,7 +86,7 @@ public class CompositeFutureTest extends FutureTestBase {
   @Repeat(times = 100)
   @Test
   public void testConcurrentAnyFailure() throws Exception {
-    testConcurrentCompletion(FAILURE, CompositeFuture::any, cf -> {
+    testConcurrentCompletion(FAILURE, Future::any, cf -> {
       assertTrue(cf.failed());
     });
   }
@@ -94,7 +94,7 @@ public class CompositeFutureTest extends FutureTestBase {
   @Repeat(times = 100)
   @Test
   public void testConcurrentAnyMixed() throws Exception {
-    testConcurrentCompletion(MIXED, CompositeFuture::any, cf -> {
+    testConcurrentCompletion(MIXED, Future::any, cf -> {
       assertTrue(cf.isComplete());
     });
   }
@@ -102,7 +102,7 @@ public class CompositeFutureTest extends FutureTestBase {
   @Repeat(times = 100)
   @Test
   public void tesConcurrenttJoinSuccess() throws Exception {
-    testConcurrentCompletion(SUCCESS, CompositeFuture::join, cf -> {
+    testConcurrentCompletion(SUCCESS, Future::join, cf -> {
       assertTrue(cf.succeeded());
     });
   }
@@ -110,7 +110,7 @@ public class CompositeFutureTest extends FutureTestBase {
   @Repeat(times = 100)
   @Test
   public void testConcurrentJoinFailure() throws Exception {
-    testConcurrentCompletion((x, p) -> p.fail("failure-" + x), CompositeFuture::join, cf -> {
+    testConcurrentCompletion((x, p) -> p.fail("failure-" + x), Future::join, cf -> {
       assertTrue(cf.failed());
     });
   }
@@ -118,7 +118,7 @@ public class CompositeFutureTest extends FutureTestBase {
   @Repeat(times = 100)
   @Test
   public void testConcurrentJoinMixed() throws Exception {
-    testConcurrentCompletion(MIXED, CompositeFuture::join, cf -> {
+    testConcurrentCompletion(MIXED, Future::join, cf -> {
       assertTrue(cf.isComplete());
     });
   }
@@ -157,12 +157,12 @@ public class CompositeFutureTest extends FutureTestBase {
 
   @Test
   public void testAllSucceeded() {
-    testAllSucceeded(CompositeFuture::all);
+    testAllSucceeded(Future::all);
   }
 
   @Test
   public void testAllSucceededWithList() {
-    testAllSucceeded((f1, f2) -> CompositeFuture.all(Arrays.asList(f1, f2)));
+    testAllSucceeded((f1, f2) -> Future.all(Arrays.asList(f1, f2)));
   }
 
   private void testAllSucceeded(BiFunction<Future<String>, Future<Integer>, CompositeFuture> all) {
@@ -187,18 +187,18 @@ public class CompositeFutureTest extends FutureTestBase {
 
   @Test
   public void testAllWithEmptyList() {
-    CompositeFuture composite = CompositeFuture.all(Collections.emptyList());
+    Future composite = Future.all(Collections.emptyList());
     assertTrue(composite.isComplete());
   }
 
   @Test
   public void testAllFailed() {
-    testAllFailed(CompositeFuture::all);
+    testAllFailed(Future::all);
   }
 
   @Test
   public void testAllFailedWithList() {
-    testAllFailed((f1, f2) -> CompositeFuture.all(Arrays.asList(f1, f2)));
+    testAllFailed((f1, f2) -> Future.all(Arrays.asList(f1, f2)));
   }
 
   private void testAllFailed(BiFunction<Future<String>, Future<Integer>, CompositeFuture> all) {
@@ -229,7 +229,7 @@ public class CompositeFutureTest extends FutureTestBase {
     for (int i = 0;i < size;i++) {
       list.add(Future.succeededFuture());
     }
-    CompositeFuture composite = CompositeFuture.all(list);
+    CompositeFuture composite = Future.all(list);
     Checker<CompositeFuture> checker = new Checker<>(composite);
     checker.assertSucceeded(composite);
     for (int i = 0;i < size;i++) {
@@ -238,7 +238,7 @@ public class CompositeFutureTest extends FutureTestBase {
       for (int j = 0;j < size;j++) {
         list.add(i == j ? Future.failedFuture(cause) : Future.succeededFuture());
       }
-      composite = CompositeFuture.all(list);
+      composite = Future.all(list);
       checker = new Checker<>(composite);
       checker.assertFailed(cause);
       for (int j = 0;j < size;j++) {
@@ -253,12 +253,12 @@ public class CompositeFutureTest extends FutureTestBase {
 
   @Test
   public void testAnySucceeded1() {
-    testAnySucceeded1(CompositeFuture::any);
+    testAnySucceeded1(Future::any);
   }
 
   @Test
   public void testAnySucceeded1WithList() {
-    testAnySucceeded1((f1, f2) -> CompositeFuture.any(Arrays.asList(f1, f2)));
+    testAnySucceeded1((f1, f2) -> Future.any(Arrays.asList(f1, f2)));
   }
 
   private void testAnySucceeded1(BiFunction<Future<String>, Future<Integer>, CompositeFuture> any) {
@@ -279,18 +279,18 @@ public class CompositeFutureTest extends FutureTestBase {
 
   @Test
   public void testAnyWithEmptyList() {
-    CompositeFuture composite = CompositeFuture.any(Collections.emptyList());
+    CompositeFuture composite = Future.any(Collections.emptyList());
     assertTrue(composite.isComplete());
   }
 
   @Test
   public void testAnySucceeded2() {
-    testAnySucceeded2(CompositeFuture::any);
+    testAnySucceeded2(Future::any);
   }
 
   @Test
   public void testAnySucceeded2WithList() {
-    testAnySucceeded2(CompositeFuture::any);
+    testAnySucceeded2(Future::any);
   }
 
   private void testAnySucceeded2(BiFunction<Future<String>, Future<Integer>, CompositeFuture> any) {
@@ -308,12 +308,12 @@ public class CompositeFutureTest extends FutureTestBase {
 
   @Test
   public void testAnyFailed() {
-    testAnyFailed(CompositeFuture::any);
+    testAnyFailed(Future::any);
   }
 
   @Test
   public void testAnyFailedWithList() {
-    testAnyFailed((f1, f2) -> CompositeFuture.any(Arrays.asList(f1, f2)));
+    testAnyFailed((f1, f2) -> Future.any(Arrays.asList(f1, f2)));
   }
 
   private void testAnyFailed(BiFunction<Future<String>, Future<Integer>, CompositeFuture> any) {
@@ -343,7 +343,7 @@ public class CompositeFutureTest extends FutureTestBase {
     for (int i = 0;i < size;i++) {
       list.add(Future.failedFuture(new Exception()));
     }
-    CompositeFuture composite = CompositeFuture.any(list);
+    CompositeFuture composite = Future.any(list);
     Checker<CompositeFuture> checker = new Checker<>(composite);
     assertNotNull(checker.assertFailed());
     for (int i = 0;i < size;i++) {
@@ -351,7 +351,7 @@ public class CompositeFutureTest extends FutureTestBase {
       for (int j = 0;j < size;j++) {
         list.add(i == j ? Future.succeededFuture() : Future.failedFuture(new RuntimeException()));
       }
-      composite = CompositeFuture.any(list);
+      composite = Future.any(list);
       checker = new Checker<>(composite);
       checker.assertSucceeded(composite);
       for (int j = 0;j < size;j++) {
@@ -366,12 +366,12 @@ public class CompositeFutureTest extends FutureTestBase {
 
   @Test
   public void testJoinSucceeded() {
-    testJoinSucceeded(CompositeFuture::join);
+    testJoinSucceeded(Future::join);
   }
 
   @Test
   public void testJoinSucceededWithList() {
-    testJoinSucceeded((f1, f2) -> CompositeFuture.join(Arrays.asList(f1, f2)));
+    testJoinSucceeded((f1, f2) -> Future.join(Arrays.asList(f1, f2)));
   }
 
   private void testJoinSucceeded(BiFunction<Future<String>, Future<Integer>, CompositeFuture> join) {
@@ -390,12 +390,12 @@ public class CompositeFutureTest extends FutureTestBase {
 
   @Test
   public void testJoinFailed1() {
-    testJoinFailed1(CompositeFuture::join);
+    testJoinFailed1(Future::join);
   }
 
   @Test
   public void testJoinFailed1WithList() {
-    testJoinFailed1((f1, f2) -> CompositeFuture.join(Arrays.asList(f1, f2)));
+    testJoinFailed1((f1, f2) -> Future.join(Arrays.asList(f1, f2)));
   }
 
   private void testJoinFailed1(BiFunction<Future<String>, Future<Integer>, CompositeFuture> join) {
@@ -415,12 +415,12 @@ public class CompositeFutureTest extends FutureTestBase {
 
   @Test
   public void testJoinFailed2() {
-    testJoinFailed2(CompositeFuture::join);
+    testJoinFailed2(Future::join);
   }
 
   @Test
   public void testJoinFailed2WithList() {
-    testJoinFailed2((f1, f2) -> CompositeFuture.join(Arrays.asList(f1, f2)));
+    testJoinFailed2((f1, f2) -> Future.join(Arrays.asList(f1, f2)));
   }
 
   private void testJoinFailed2(BiFunction<Future<String>, Future<Integer>, CompositeFuture> join) {
@@ -440,12 +440,12 @@ public class CompositeFutureTest extends FutureTestBase {
 
   @Test
   public void testJoinFailed3() {
-    testJoinFailed3(CompositeFuture::join);
+    testJoinFailed3(Future::join);
   }
 
   @Test
   public void testJoinFailed3WithList() {
-    testJoinFailed3((f1, f2) -> CompositeFuture.join(Arrays.asList(f1, f2)));
+    testJoinFailed3((f1, f2) -> Future.join(Arrays.asList(f1, f2)));
   }
 
   private void testJoinFailed3(BiFunction<Future<String>, Future<Integer>, CompositeFuture> join) {
@@ -466,7 +466,7 @@ public class CompositeFutureTest extends FutureTestBase {
 
   @Test
   public void testJoinWithEmptyList() {
-    CompositeFuture composite = CompositeFuture.join(Collections.emptyList());
+    CompositeFuture composite = Future.join(Collections.emptyList());
     assertTrue(composite.isComplete());
   }
 
@@ -476,7 +476,7 @@ public class CompositeFutureTest extends FutureTestBase {
     Future<String> f1 = p1.future();
     Promise<Integer> p2 = Promise.promise();
     Future<Integer> f2 = p2.future();
-    CompositeFuture composite = CompositeFuture.all(f1, f2);
+    CompositeFuture composite = Future.all(f1, f2);
     assertEquals(Arrays.asList(null, null), composite.list());
     p1.complete("foo");
     assertEquals(Arrays.asList("foo", null), composite.list());
@@ -486,7 +486,7 @@ public class CompositeFutureTest extends FutureTestBase {
 
   @Test
   public void testCompositeFutureCauses() {
-    CompositeFuture composite = CompositeFuture.all(Future.failedFuture("blabla"), Future.succeededFuture());
+    CompositeFuture composite = Future.all(Future.failedFuture("blabla"), Future.succeededFuture());
 
     assertEquals(2, composite.causes().size());
     assertNotNull(composite.causes().get(0));
@@ -501,7 +501,7 @@ public class CompositeFutureTest extends FutureTestBase {
     Future<String> f1 = p1.future();
     Promise<Integer> p2 = Promise.promise();
     Future<Integer> f2 = p2.future();
-    CompositeFuture composite = CompositeFuture.all(f1, f2);
+    CompositeFuture composite = Future.all(f1, f2);
     AtomicInteger count = new AtomicInteger();
     composite.onComplete(ar -> {
       count.compareAndSet(0, 1);
@@ -521,7 +521,7 @@ public class CompositeFutureTest extends FutureTestBase {
 
   @Test
   public void testIndexOutOfBounds() {
-    CompositeFuture composite = CompositeFuture.all(Future.succeededFuture(), Future.succeededFuture());
+    CompositeFuture composite = Future.all(Future.succeededFuture(), Future.succeededFuture());
     testIndexOutOfBounds(() -> composite.resultAt(-2));
     testIndexOutOfBounds(() -> composite.resultAt(-1));
     testIndexOutOfBounds(() -> composite.resultAt(2));
@@ -530,7 +530,7 @@ public class CompositeFutureTest extends FutureTestBase {
 
   @Test
   public void testToString() {
-    assertEquals("Future{result=(Future{result=null},Future{result=null})}", CompositeFuture.all(Future.succeededFuture(), Future.succeededFuture()).toString());
-    assertEquals("Future{result=(Future{result=true},Future{result=false})}", CompositeFuture.all(Future.succeededFuture(true), Future.succeededFuture(false)).toString());
+    assertEquals("Future{result=(Future{result=null},Future{result=null})}", Future.all(Future.succeededFuture(), Future.succeededFuture()).toString());
+    assertEquals("Future{result=(Future{result=true},Future{result=false})}", Future.all(Future.succeededFuture(true), Future.succeededFuture(false)).toString());
   }
 }

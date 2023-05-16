@@ -42,11 +42,11 @@ public class ClusteredSharedCounterTest extends SharedCounterTest {
     final Vertx node2 = getVertx();
     assertNotSame(node1, node2);
 
-    CompositeFuture.all(node1.sharedData().getLocalCounter("counter"), node2.sharedData().getLocalCounter("counter"))
+    Future.all(node1.sharedData().getLocalCounter("counter"), node2.sharedData().getLocalCounter("counter"))
       .compose(compFuture -> {
         Counter counterNode1 = compFuture.result().resultAt(0);
         Counter counterNode2 = compFuture.result().resultAt(1);
-        return CompositeFuture.all(counterNode1.addAndGet(1), counterNode2.addAndGet(2));
+        return Future.all(counterNode1.addAndGet(1), counterNode2.addAndGet(2));
       }).onComplete(onSuccess(asyncCompFuture -> {
       long valueCounterNode1 = asyncCompFuture.result().resultAt(0);
       long valueCounterNode2 = asyncCompFuture.result().resultAt(1);

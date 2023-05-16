@@ -47,7 +47,7 @@ public class CustomNodeSelectorTest extends VertxTestBase {
         VertxBuilder factory = new VertxBuilder(options).init().clusterNodeSelector(new CustomNodeSelector());
         return factory.clusteredVertx();
       })
-      .collect(collectingAndThen(toList(), CompositeFuture::all));
+      .collect(collectingAndThen(toList(), Future::all));
 
     CountDownLatch startLatch = new CountDownLatch(1);
     startFuture.onComplete(onSuccess(cf -> startLatch.countDown()));
@@ -62,7 +62,7 @@ public class CustomNodeSelectorTest extends VertxTestBase {
         latch.countDown();
       }))
       .map(MessageConsumer::completion)
-      .collect(collectingAndThen(toList(), CompositeFuture::all));
+      .collect(collectingAndThen(toList(), Future::all));
 
     Map<Integer, Set<String>> expected = new HashMap<>();
     cf.onComplete(onSuccess(v -> {
@@ -118,7 +118,7 @@ public class CustomNodeSelectorTest extends VertxTestBase {
           clusterManager.getNodeInfo(nodeId, nodeInfo);
           return nodeInfo.future();
         })
-        .collect(collectingAndThen(toList(), CompositeFuture::all));
+        .collect(collectingAndThen(toList(), Future::all));
       future.<Iterable<String>>map(cf -> {
         List<String> res = new ArrayList<>();
         for (int i = 0; i < nodes.size(); i++) {

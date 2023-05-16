@@ -11,6 +11,7 @@
 
 package io.vertx.core.shareddata;
 
+import io.vertx.core.Future;
 import org.junit.Test;
 
 import io.vertx.core.CompositeFuture;
@@ -40,14 +41,14 @@ public class ClusteredAsyncMapTest extends AsyncMapTest {
     final Vertx node2 = getVertx();
     assertNotSame(node1, node2);
 
-    CompositeFuture
+    Future
       .all(node1.sharedData().getLocalAsyncMap("map"), node2.sharedData().getLocalAsyncMap("map"))
       .compose(compFutureMaps -> {
       AsyncMap<String, String> mapNode1 = compFutureMaps.result().resultAt(0);
       AsyncMap<String, String> mapNode2 = compFutureMaps.result().resultAt(1);
-      return CompositeFuture
+      return Future
         .all(mapNode1.put("Hodor", "Hodor"), mapNode2.put("Hodor", "Hodor Hodor"))
-        .compose(compFuturePutted -> CompositeFuture.all(mapNode1.get("Hodor"), mapNode2.get("Hodor")));
+        .compose(compFuturePutted -> Future.all(mapNode1.get("Hodor"), mapNode2.get("Hodor")));
     }).onComplete(onSuccess(asyncCompFuture -> {
       String valueMapNode1 = asyncCompFuture.result().resultAt(0);
       String valueMapNode2 = asyncCompFuture.result().resultAt(1);

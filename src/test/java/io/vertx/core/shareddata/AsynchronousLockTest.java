@@ -272,7 +272,7 @@ public class AsynchronousLockTest extends VertxTestBase {
         }
         LockInternal lockInternal = (LockInternal) lock;
         assertEquals(numWaiters, lockInternal.waiters());
-        CompositeFuture.join(locks).onComplete(cf -> {
+        Future.join(locks).onComplete(cf -> {
           assertEquals(0, lockInternal.waiters());
           lock.release();
           testComplete();

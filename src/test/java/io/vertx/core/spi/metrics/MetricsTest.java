@@ -774,7 +774,7 @@ public class MetricsTest extends VertxTestBase {
     }
     try {
       List<Future<?>> collect = servers.stream().map(server -> server.listen(8080)).collect(Collectors.toList());
-      CompositeFuture
+      Future
         .all(collect)
         .onSuccess(v -> {
           assertEquals("Was expecting a single metric", 1, servers.stream().map(FakeMetricsBase::getMetrics).distinct().count());

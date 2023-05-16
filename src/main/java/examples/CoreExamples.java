@@ -178,7 +178,7 @@ public class CoreExamples {
 
     Future<NetServer> netServerFuture = netServer.listen();
 
-    CompositeFuture.all(httpServerFuture, netServerFuture).onComplete(ar -> {
+    Future.all(httpServerFuture, netServerFuture).onComplete(ar -> {
       if (ar.succeeded()) {
         // All servers started
       } else {
@@ -188,11 +188,11 @@ public class CoreExamples {
   }
 
   public void exampleFutureAll2(Future<?> future1, Future<?> future2, Future<?> future3) {
-    CompositeFuture.all(Arrays.asList(future1, future2, future3));
+    Future.all(Arrays.asList(future1, future2, future3));
   }
 
   public void exampleFutureAny1(Future<String> future1, Future<String> future2) {
-    CompositeFuture.any(future1, future2).onComplete(ar -> {
+    Future.any(future1, future2).onComplete(ar -> {
       if (ar.succeeded()) {
         // At least one is succeeded
       } else {
@@ -202,11 +202,11 @@ public class CoreExamples {
   }
 
   public void exampleFutureAny2(Future<?> f1, Future<?> f2, Future<?> f3) {
-    CompositeFuture.any(Arrays.asList(f1, f2, f3));
+    Future.any(Arrays.asList(f1, f2, f3));
   }
 
   public void exampleFutureJoin1(Future<?> future1, Future<?> future2, Future<?> future3) {
-    CompositeFuture.join(future1, future2, future3).onComplete(ar -> {
+    Future.join(future1, future2, future3).onComplete(ar -> {
       if (ar.succeeded()) {
         // All succeeded
       } else {
@@ -216,7 +216,7 @@ public class CoreExamples {
   }
 
   public void exampleFutureJoin2(Future<?> future1, Future<?> future2, Future<?> future3) {
-    CompositeFuture.join(Arrays.asList(future1, future2, future3));
+    Future.join(Arrays.asList(future1, future2, future3));
   }
 
   public void example7_1(Vertx vertx) {

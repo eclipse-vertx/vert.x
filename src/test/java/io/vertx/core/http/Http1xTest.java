@@ -4947,7 +4947,7 @@ public class Http1xTest extends HttpTest {
             req.response().end();
           }).listen(bindPort, DEFAULT_HTTP_HOST));
         }
-        CompositeFuture.all((List)futures).onComplete(onSuccess(cf -> {
+        Future.all(futures).onComplete(onSuccess(cf -> {
           futures.stream()
             .map(Future::result)
             .map(HttpServer::actualPort)
@@ -5355,7 +5355,7 @@ public class Http1xTest extends HttpTest {
           .send()
           .compose(HttpClientResponse::body)));
     }
-    CompositeFuture.all(futures).onComplete(onSuccess(v -> {
+    Future.all(futures).onComplete(onSuccess(v -> {
       assertEquals(maxPoolSize, eventLoops.size());
       assertEquals(size, new HashSet<>(eventLoops).size());
       testComplete();

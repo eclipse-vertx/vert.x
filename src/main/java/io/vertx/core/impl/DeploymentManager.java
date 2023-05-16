@@ -115,7 +115,7 @@ public class DeploymentManager {
         });
       }
       Promise<Void> promise = vertx.getOrCreateContext().promise();
-      CompositeFuture.join(completionList).<Void>mapEmpty().onComplete(promise);
+      Future.join(completionList).<Void>mapEmpty().onComplete(promise);
       return promise.future();
     } else {
       return vertx.getOrCreateContext().succeededFuture();
@@ -310,7 +310,7 @@ public class DeploymentManager {
             p.handle(ar);
           });
         }
-        return CompositeFuture.all(childFuts).mapEmpty();
+        return Future.all(childFuts).mapEmpty();
       } else {
         return Future.succeededFuture();
       }
@@ -353,7 +353,7 @@ public class DeploymentManager {
           });
         }
         Promise<Void> resolvingPromise = undeployingContext.promise();
-        CompositeFuture.all(undeployFutures).<Void>mapEmpty().onComplete(resolvingPromise);
+        Future.all(undeployFutures).<Void>mapEmpty().onComplete(resolvingPromise);
         Future<Void> fut = resolvingPromise.future();
         Handler<Void> handler = undeployHandler;
         if (handler != null) {
