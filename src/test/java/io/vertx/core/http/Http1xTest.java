@@ -1664,36 +1664,38 @@ public class Http1xTest extends HttpTest {
     Set<HttpServer> connectedServers = Collections.newSetFromMap(new ConcurrentHashMap<>());
     Map<HttpServer, Integer> requestCount = new ConcurrentHashMap<>();
 
-    CountDownLatch latchListen = new CountDownLatch(numServers);
     CountDownLatch latchConns = new CountDownLatch(numRequests);
-    Set<Context> contexts = new ConcurrentHashSet<>();
-    for (int i = 0; i < numServers; i++) {
-      HttpServer theServer = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
-      servers.add(theServer);
-      final AtomicReference<Context> context = new AtomicReference<>();
-      theServer.requestHandler(req -> {
-        Context ctx = Vertx.currentContext();
-        if (context.get() != null) {
-          assertSameEventLoop(ctx, context.get());
-        } else {
-          context.set(ctx);
-          contexts.add(ctx);
-        }
-        connectedServers.add(theServer);
-        Integer cnt = requestCount.get(theServer);
-        int icnt = cnt == null ? 0 : cnt;
-        icnt++;
-        requestCount.put(theServer, icnt);
-        latchConns.countDown();
-        req.response().end();
-      }).listen(testAddress).onComplete(onSuccess(s -> {
-        if (s.actualPort() > 0) {
-          assertEquals(DEFAULT_HTTP_PORT, s.actualPort());
-        }
-        latchListen.countDown();
-      }));
-    }
-    awaitLatch(latchListen);
+    Set<Thread> threads = new ConcurrentHashSet<>();
+    Future<String> listenLatch = vertx.deployVerticle(() -> new AbstractVerticle() {
+      Thread thread;
+      @Override
+      public void start(Promise<Void> startPromise) {
+        HttpServer theServer = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
+        servers.add(theServer);
+        theServer.requestHandler(req -> {
+          Thread current = Thread.currentThread();
+          if (thread == null) {
+            thread = current;
+            threads.add(current);
+          } else {
+            assertSame(current, thread);
+          }
+          connectedServers.add(theServer);
+          Integer cnt = requestCount.get(theServer);
+          int icnt = cnt == null ? 0 : cnt;
+          icnt++;
+          requestCount.put(theServer, icnt);
+          latchConns.countDown();
+          req.response().end();
+        }).listen(testAddress).onComplete(onSuccess(s -> {
+          if (s.actualPort() > 0) {
+            assertEquals(DEFAULT_HTTP_PORT, s.actualPort());
+          }
+          startPromise.complete();
+        }));
+      }
+    }, new DeploymentOptions().setInstances(numServers));
+    awaitFuture(listenLatch);
 
 
     // Create a bunch of connections
@@ -1716,7 +1718,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(IntStream.range(0, requestCount.size())
       .mapToObj(i -> numRequests / numServers)
       .collect(Collectors.toList()), new ArrayList<>(requestCount.values()));
-    assertEquals(numServers, contexts.size());
+    assertEquals(numServers, threads.size());
 
     CountDownLatch closeLatch = new CountDownLatch(numServers);
 
@@ -1734,29 +1736,17 @@ public class Http1xTest extends HttpTest {
   @Test
   public void testSharedServersRoundRobinWithOtherServerRunningOnDifferentPort() throws Exception {
     // Have a server running on a different port to make sure it doesn't interact
-    CountDownLatch latch = new CountDownLatch(1);
     HttpServer theServer = vertx.createHttpServer(new HttpServerOptions().setPort(8081));
-    theServer.requestHandler(req -> {
-      fail("Should not process request");
-    }).listen().onComplete(onSuccess(s -> latch.countDown()));
-    awaitLatch(latch);
-
+    awaitFuture(theServer.requestHandler(req -> fail("Should not process request")).listen());
     testSharedServersRoundRobin();
   }
 
   @Test
   public void testSharedServersRoundRobinButFirstStartAndStopServer() throws Exception {
     // Start and stop a server on the same port/host before hand to make sure it doesn't interact
-    CountDownLatch latch = new CountDownLatch(1);
     HttpServer theServer = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
-    theServer.requestHandler(req -> {
-      fail("Should not process request");
-    }).listen().onComplete(onSuccess(s -> latch.countDown()));
-    awaitLatch(latch);
-
-    CountDownLatch closeLatch = new CountDownLatch(1);
-    theServer.close().onComplete(onSuccess(v -> closeLatch.countDown()));
-    assertTrue(closeLatch.await(10, TimeUnit.SECONDS));
+    awaitFuture(theServer.requestHandler(req -> fail("Should not process request")).listen());
+    awaitFuture(theServer.close());
 
     Thread.sleep(500); // Let some time
 
