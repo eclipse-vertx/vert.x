@@ -779,7 +779,7 @@ public abstract class AsyncMapTest extends VertxTestBase {
     map.forEach((key, value) -> {
       futures.add(sharedData.getAsyncMap("foo").compose(asyncMap -> asyncMap.put(key, value)));
     });
-    CompositeFuture.all(futures).compose(cf -> sharedData.<JsonObject, Buffer>getAsyncMap("foo"))
+    Future.all(futures).compose(cf -> sharedData.<JsonObject, Buffer>getAsyncMap("foo"))
       .onComplete(onSuccess(asyncMap -> test.accept(getVertx(), asyncMap)));
   }
 

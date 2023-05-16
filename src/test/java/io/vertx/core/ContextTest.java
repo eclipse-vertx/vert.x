@@ -581,7 +581,7 @@ public class ContextTest extends VertxTestBase {
       }
       duplicate.complete();
     }, ordered)).collect(Collectors.toList());
-    CompositeFuture.all(futures).onComplete(onSuccess(v -> {
+    Future.all(futures).onComplete(onSuccess(v -> {
       testComplete();
     }));
     await();

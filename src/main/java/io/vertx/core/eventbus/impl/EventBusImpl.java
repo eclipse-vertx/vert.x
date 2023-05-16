@@ -428,7 +428,7 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
         futures.add(holder.getHandler().unregister());
       }
     }
-    return CompositeFuture.join(futures).mapEmpty();
+    return Future.join(futures).mapEmpty();
   }
 
   private void addInterceptor(AtomicReferenceFieldUpdater<EventBusImpl, Handler[]> updater, Handler interceptor) {
