@@ -1069,7 +1069,9 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testReceiveMessageAfterExplicitClose() throws Exception {
     server.connectHandler(so -> {
-      so.write("Hello World");
+      so.handler(buff -> {
+        so.write(buff);
+      });
     });
     startServer();
     client.connect(testAddress).onComplete(onSuccess(so -> {
@@ -1085,6 +1087,7 @@ public class NetTest extends VertxTestBase {
         assertEquals("Hello World", buff.toString());
         testComplete();
       });
+      so.write("Hello World");
     }));
     await();
   }
@@ -1991,19 +1994,9 @@ public class NetTest extends VertxTestBase {
     // Create a bunch of connections
     client.close();
     client = vertx.createNetClient(new NetClientOptions());
-    CountDownLatch latchClient = new CountDownLatch(numConnections);
-    AtomicInteger connecting = new AtomicInteger(10);
     for (int i = 0; i < numConnections; i++) {
-      connecting.decrementAndGet();
-      client.connect(testAddress).onComplete(onSuccess(sock -> {
-        connecting.incrementAndGet();
-        sock.handler(buf -> {
-          latchClient.countDown();
-        });
-      }));
-      assertWaitUntil(() -> connecting.get() >= 0);
+      awaitFuture(client.connect(testAddress));
     }
-    awaitLatch(latchClient);
     assertWaitUntil(() -> numServers == connectedServers.size());
     assertEquals(numServers, threads.size());
     for (NetServer server : servers) {
