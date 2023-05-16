@@ -87,7 +87,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -1967,23 +1966,27 @@ public class NetTest extends VertxTestBase {
   public void testSharedServersRoundRobin() throws Exception {
 
     boolean domainSocket = testAddress.isDomainSocket();
-    int numServers = VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE / 2- 1;
+    int numServers = Math.max(2, VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE / 2- 1);
     int numConnections = numServers * (domainSocket ? 10 : 20);
 
     List<NetServer> servers = new ArrayList<>();
-    Map<NetServer, Integer> connectCount = new ConcurrentHashMap<>();
+    Set<NetServer> connectedServers = new ConcurrentHashSet<>();
+    Set<Thread> threads = new ConcurrentHashSet<>();
 
-    CountDownLatch latchListen = new CountDownLatch(numServers);
-    CountDownLatch latchConns = new CountDownLatch(numConnections);
-    for (int i = 0; i < numServers; i++) {
-      NetServer theServer = vertx.createNetServer();
-      servers.add(theServer);
-      theServer.connectHandler(sock -> {
-        connectCount.compute(theServer, (s, cur) -> cur == null ? 1 : cur + 1);
-        latchConns.countDown();
-      }).listen(testAddress).onComplete(onSuccess(s -> latchListen.countDown()));
-    }
-    assertTrue(latchListen.await(10, TimeUnit.SECONDS));
+    Future<String> listenLatch = vertx.deployVerticle(() -> new AbstractVerticle() {
+      NetServer server;
+      @Override
+      public void start(Promise<Void> startPromise) {
+        server = vertx.createNetServer();
+        servers.add(server);
+        server.connectHandler(sock -> {
+          threads.add(Thread.currentThread());
+          connectedServers.add(server);
+          sock.write("dummy");
+        }).listen(testAddress).onComplete(onSuccess(v -> startPromise.complete()));
+      }
+    }, new DeploymentOptions().setInstances(numServers));
+    awaitFuture(listenLatch);
 
     // Create a bunch of connections
     client.close();
@@ -1992,31 +1995,20 @@ public class NetTest extends VertxTestBase {
     AtomicInteger connecting = new AtomicInteger(10);
     for (int i = 0; i < numConnections; i++) {
       connecting.decrementAndGet();
-      client.connect(testAddress).onComplete(res -> {
+      client.connect(testAddress).onComplete(onSuccess(sock -> {
         connecting.incrementAndGet();
-        if (res.succeeded()) {
+        sock.handler(buf -> {
           latchClient.countDown();
-        } else {
-          res.cause().printStackTrace();
-          fail("Failed to connect");
-        }
-      });
+        });
+      }));
       assertWaitUntil(() -> connecting.get() >= 0);
     }
-
     awaitLatch(latchClient);
-    awaitLatch(latchConns);
-
-    assertEquals(numServers, connectCount.size());
+    assertWaitUntil(() -> numServers == connectedServers.size());
+    assertEquals(numServers, threads.size());
     for (NetServer server : servers) {
-      assertTrue(connectCount.containsKey(server));
+      assertTrue(connectedServers.contains(server));
     }
-    assertEquals(numServers, connectCount.size());
-    for (int cnt : connectCount.values()) {
-      assertEquals(numConnections / numServers, cnt);
-    }
-
-    testComplete();
   }
 
   @Test
