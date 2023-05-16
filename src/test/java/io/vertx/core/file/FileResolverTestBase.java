@@ -14,12 +14,9 @@ package io.vertx.core.file;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.*;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.file.impl.FileResolverImpl;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.test.core.VertxTestBase;
@@ -287,12 +284,13 @@ public abstract class FileResolverTestBase extends VertxTestBase {
     }).listen().onComplete(onSuccess(res -> {
       vertx.createHttpClient(new HttpClientOptions())
         .request(HttpMethod.GET, 8080, "localhost", "/")
-        .compose(HttpClientRequest::send)
-        .onComplete(onSuccess(resp -> {
-          resp.bodyHandler(buff -> {
-            assertTrue(buff.toString().startsWith("<html><body>blah</body></html>"));
-            complete();
-          });
+        .compose(req -> req
+          .send()
+          .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+          .compose(HttpClientResponse::body))
+        .onComplete(onSuccess(body -> {
+          assertTrue(body.toString().startsWith("<html><body>blah</body></html>"));
+          complete();
         }));
     }));
     await();
