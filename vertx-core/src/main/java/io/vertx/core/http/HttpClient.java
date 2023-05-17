@@ -15,6 +15,7 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 /**
  * The API to interacts with an HTTP server.
@@ -41,6 +42,10 @@ public interface HttpClient {
    */
   Future<HttpClientRequest> request(RequestOptions options);
 
+  default <T> Future<T> request(RequestOptions options, Function<HttpClientRequest, Future<T>> handler) {
+    return request(options).compose(handler);
+  }
+
   /**
    * Create an HTTP request to send to the server at the {@code host} and {@code port}.
    *
@@ -52,6 +57,10 @@ public interface HttpClient {
    */
   default Future<HttpClientRequest> request(HttpMethod method, int port, String host, String requestURI) {
     return request(new RequestOptions().setMethod(method).setPort(port).setHost(host).setURI(requestURI));
+  }
+
+  default <T> Future<T> request(HttpMethod method, int port, String host, String requestURI, Function<HttpClientRequest, Future<T>> handler) {
+    return request(method, port, host, requestURI).compose(handler);
   }
 
   /**
@@ -66,6 +75,10 @@ public interface HttpClient {
     return request(new RequestOptions().setMethod(method).setHost(host).setURI(requestURI));
   }
 
+  default <T> Future<T> request(HttpMethod method, String host, String requestURI , Function<HttpClientRequest, Future<T>> handler) {
+    return request(method, host, requestURI).compose(handler);
+  }
+
   /**
    * Create an HTTP request to send to the server at the default host and port.
    *
@@ -75,6 +88,10 @@ public interface HttpClient {
    */
   default Future<HttpClientRequest> request(HttpMethod method, String requestURI) {
     return request(new RequestOptions().setMethod(method).setURI(requestURI));
+  }
+
+  default <T> Future<T> request(HttpMethod method, String requestURI, Function<HttpClientRequest, Future<T>> handler) {
+    return request(method, requestURI).compose(handler);
   }
 
   /**
