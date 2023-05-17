@@ -30,7 +30,6 @@ import io.vertx.core.VertxException;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
-import io.vertx.core.http.Http2ServerTest.TestClient;
 import io.vertx.core.http.impl.HttpServerRequestInternal;
 import io.vertx.core.http.impl.ServerCookie;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
