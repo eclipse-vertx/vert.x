@@ -116,7 +116,7 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
   @Override
   public EventBus send(String address, Object message, DeliveryOptions options) {
     MessageImpl msg = createMessage(true, address, options.getHeaders(), message, options.getCodecName());
-    sendOrPubInternal(msg, options, null, null);
+    sendOrPubInternal(msg, options, null);
     return this;
   }
 
@@ -124,7 +124,7 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
   public <T> Future<Message<T>> request(String address, Object message, DeliveryOptions options) {
     MessageImpl msg = createMessage(true, address, options.getHeaders(), message, options.getCodecName());
     ReplyHandler<T> handler = createReplyHandler(msg, true, options);
-    sendOrPubInternal(msg, options, handler, null);
+    sendOrPubInternal(msg, options, handler);
     return handler.result();
   }
 
@@ -161,7 +161,7 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
 
   @Override
   public EventBus publish(String address, Object message, DeliveryOptions options) {
-    sendOrPubInternal(createMessage(false, address, options.getHeaders(), message, options.getCodecName()), options, null, null);
+    sendOrPubInternal(createMessage(false, address, options.getHeaders(), message, options.getCodecName()), options, null);
     return this;
   }
 
@@ -321,20 +321,24 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
     if (replyMessage.address() == null) {
       throw new IllegalStateException("address not specified");
     } else {
-      sendOrPubInternal(new OutboundDeliveryContext<>(vertx.getOrCreateContext(), replyMessage, options, replyHandler, null));
+      sendOrPubInternal(new OutboundDeliveryContext<>(vertx.getOrCreateContext(), replyMessage, options, replyHandler));
     }
   }
 
-  protected <T> void sendOrPub(OutboundDeliveryContext<T> sendContext) {
-    sendLocally(sendContext);
+  protected <T> void sendOrPub(ContextInternal ctx, MessageImpl<?, T> message, DeliveryOptions options, Promise<Void> writePromise) {
+    sendLocally(message, options, writePromise);
   }
 
-  private <T> void sendLocally(OutboundDeliveryContext<T> sendContext) {
-    ReplyException failure = deliverMessageLocally(sendContext.message);
+  protected <T> void sendOrPub(OutboundDeliveryContext<T> sendContext) {
+    sendOrPub(sendContext.ctx, sendContext.message, sendContext.options, sendContext);
+  }
+
+  protected <T> void sendLocally(MessageImpl<?, T> message, DeliveryOptions options, Promise<Void> writePromise) {
+    ReplyException failure = deliverMessageLocally(message);
     if (failure != null) {
-      sendContext.written(failure);
+      writePromise.tryFail(failure);
     } else {
-      sendContext.written(null);
+      writePromise.tryComplete();
     }
   }
 
@@ -403,8 +407,8 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
   }
 
   public <T> OutboundDeliveryContext<T> newSendContext(MessageImpl message, DeliveryOptions options,
-                                               ReplyHandler<T> handler, Promise<Void> writePromise) {
-    return new OutboundDeliveryContext<>(vertx.getOrCreateContext(), message, options, handler, writePromise);
+                                               ReplyHandler<T> handler) {
+    return new OutboundDeliveryContext<>(vertx.getOrCreateContext(), message, options, handler);
   }
 
   public <T> void sendOrPubInternal(OutboundDeliveryContext<T> senderCtx) {
@@ -414,10 +418,12 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
     senderCtx.next();
   }
 
-  public <T> void sendOrPubInternal(MessageImpl message, DeliveryOptions options,
-                                    ReplyHandler<T> handler, Promise<Void> writePromise) {
+  public <T> Future<Void> sendOrPubInternal(MessageImpl message, DeliveryOptions options,
+                                    ReplyHandler<T> handler) {
     checkStarted();
-    sendOrPubInternal(newSendContext(message, options, handler, writePromise));
+    OutboundDeliveryContext<T> ctx = newSendContext(message, options, handler);
+    sendOrPubInternal(ctx);
+    return ctx.writePromise.future();
   }
 
   private Future<Void> unregisterAll() {

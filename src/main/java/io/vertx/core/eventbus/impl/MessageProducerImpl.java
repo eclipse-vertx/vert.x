@@ -45,14 +45,8 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
 
   @Override
   public Future<Void> write(T body) {
-    Promise<Void> promise = ((VertxInternal)vertx).getOrCreateContext().promise();
-    write(body, promise);
-    return promise.future();
-  }
-
-  private void write(T data, Promise<Void> handler) {
-    MessageImpl msg = bus.createMessage(send, address, options.getHeaders(), data, options.getCodecName());
-    bus.sendOrPubInternal(msg, options, null, handler);
+    MessageImpl msg = bus.createMessage(send, address, options.getHeaders(), body, options.getCodecName());
+    return bus.sendOrPubInternal(msg, options, null);
   }
 
   @Override
