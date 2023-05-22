@@ -11,6 +11,7 @@
 package io.vertx.core.eventbus.impl;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.DeliveryOptions;
@@ -25,31 +26,43 @@ import io.vertx.core.tracing.TracingPolicy;
 
 import java.util.function.BiConsumer;
 
-public class OutboundDeliveryContext<T> extends DeliveryContextBase<T> implements Handler<AsyncResult<Void>> {
+public class OutboundDeliveryContext<T> extends DeliveryContextBase<T> implements Promise<Void> {
 
   public final ContextInternal ctx;
   public final DeliveryOptions options;
   public final ReplyHandler<T> replyHandler;
-  private final Promise<Void> writePromise;
+  public final Promise<Void> writePromise;
   private boolean src;
 
   EventBusImpl bus;
   EventBusMetrics metrics;
 
-  OutboundDeliveryContext(ContextInternal ctx, MessageImpl message, DeliveryOptions options, ReplyHandler<T> replyHandler, Promise<Void> writePromise) {
+  OutboundDeliveryContext(ContextInternal ctx, MessageImpl message, DeliveryOptions options, ReplyHandler<T> replyHandler) {
     super(message, message.bus.outboundInterceptors(), ctx);
     this.ctx = ctx;
     this.options = options;
     this.replyHandler = replyHandler;
-    this.writePromise = writePromise;
+    this.writePromise = ctx.promise();
   }
 
   @Override
-  public void handle(AsyncResult<Void> event) {
-    written(event.cause());
+  public boolean tryComplete(Void result) {
+    written(null);
+    return true;
   }
 
-  public void written(Throwable failure) {
+  @Override
+  public boolean tryFail(Throwable cause) {
+    written(cause);
+    return false;
+  }
+
+  @Override
+  public Future<Void> future() {
+    throw new UnsupportedOperationException();
+  }
+
+  private void written(Throwable failure) {
 
     // Metrics
     if (metrics != null) {
