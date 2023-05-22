@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -257,10 +258,12 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
     return msg;
   }
 
-  protected <T> HandlerHolder<T> addRegistration(String address, HandlerRegistration<T> registration, boolean replyHandler, boolean localOnly, Promise<Void> promise) {
+  protected <T> Consumer<Promise<Void>> addRegistration(String address, HandlerRegistration<T> registration, boolean replyHandler, boolean localOnly, Promise<Void> promise) {
     HandlerHolder<T> holder = addLocalRegistration(address, registration, replyHandler, localOnly);
     onLocalRegistration(holder, promise);
-    return holder;
+    return p -> {
+      removeRegistration(holder, p);
+    };
   }
 
   protected <T> void onLocalRegistration(HandlerHolder<T> handlerHolder, Promise<Void> promise) {
