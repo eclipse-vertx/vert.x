@@ -26,13 +26,13 @@ Runs the tests
 Vert.x supports native transport on BSD and Linux, to run the tests with native transport
 
 ```
-> mvn test -PtestNativeTransport
+> mvn test -DaddMacSupport -PtestNativeTransport
 ```
 
 Vert.x supports domain sockets on Linux exclusively, to run the tests with domain sockets
 
 ```
-> mvn test -PtestDomainSockets
+> mvn test -DaddMacSupport -PtestDomainSockets
 ```
 
 Vert.x has a few integrations tests that run a differently configured JVM (classpath, system properties, etc....)

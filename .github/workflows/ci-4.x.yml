@@ -12,10 +12,10 @@ jobs:
             profile: ''
           - os: ubuntu-latest
             jdk: 8
-            profile: '-PtestNativeTransport'
+            profile: '-DaddMacSupport -PtestNativeTransport'
           - os: ubuntu-latest
             jdk: 8
-            profile: '-PtestDomainSockets'
+            profile: '-DaddMacSupport -PtestDomainSockets'
           - os: ubuntu-latest
             jdk: 17
             profile: ''

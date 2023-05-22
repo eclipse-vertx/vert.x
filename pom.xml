@@ -754,12 +754,6 @@
           <optional>true</optional>
           <classifier>linux-x86_64</classifier>
         </dependency>
-        <dependency>
-          <groupId>io.netty</groupId>
-          <artifactId>netty-transport-native-kqueue</artifactId>
-          <optional>true</optional>
-          <classifier>osx-x86_64</classifier>
-        </dependency>
       </dependencies>
     </profile>
 
@@ -777,11 +771,49 @@
           <optional>true</optional>
           <classifier>linux-x86_64</classifier>
         </dependency>
+      </dependencies>
+    </profile>
+
+    <!-- Run tests with native transport on Mac -->
+    <profile>
+      <id>testNativeTransportOnMac</id>
+      <activation>
+        <property>
+          <name>addMacSupport</name>
+        </property>
+        <os>
+          <family>mac</family>
+          <arch>x86_64</arch>
+        </os>
+      </activation>
+      <dependencies>
         <dependency>
           <groupId>io.netty</groupId>
           <artifactId>netty-transport-native-kqueue</artifactId>
           <optional>true</optional>
           <classifier>osx-x86_64</classifier>
+        </dependency>
+      </dependencies>
+    </profile>
+
+    <!-- Run tests with native transport on Mac M1-->
+    <profile>
+      <id>testNativeTransportOnMacM1</id>
+      <activation>
+        <property>
+          <name>addMacSupport</name>
+        </property>
+        <os>
+          <family>mac</family>
+          <arch>aarch64</arch>
+        </os>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-transport-native-kqueue</artifactId>
+          <optional>true</optional>
+          <classifier>osx-aarch_64</classifier>
         </dependency>
       </dependencies>
     </profile>
@@ -865,6 +897,7 @@
       <activation>
         <os>
           <family>mac</family>
+          <arch>x86_64</arch>
         </os>
       </activation>
       <dependencies>
