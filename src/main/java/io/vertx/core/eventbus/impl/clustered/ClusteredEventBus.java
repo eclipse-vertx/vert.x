@@ -26,7 +26,6 @@ import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.impl.utils.ConcurrentCyclicSequence;
@@ -193,9 +192,9 @@ public class ClusteredEventBus extends EventBusImpl {
   @Override
   protected <T> void sendOrPub(ContextInternal ctx, MessageImpl<?, T> message, DeliveryOptions options, Promise<Void> writePromise) {
     if (((ClusteredMessage) message).getRepliedTo() != null) {
-      clusteredSendReply(message, options, writePromise, ((ClusteredMessage) message).getRepliedTo());
+      clusteredSendReply(message, writePromise, ((ClusteredMessage) message).getRepliedTo());
     } else if (options.isLocalOnly()) {
-      super.sendOrPub(ctx, message, options, writePromise);
+      sendLocally(message, writePromise);
     } else {
       Serializer serializer = Serializer.get(ctx);
       if (message.isSend()) {
@@ -203,7 +202,7 @@ public class ClusteredEventBus extends EventBusImpl {
         serializer.queue(message, nodeSelector::selectForSend, promise);
         promise.future().onComplete(ar -> {
           if (ar.succeeded()) {
-            sendToNode(ar.result(), message, options, writePromise);
+            sendToNode(ar.result(), message, writePromise);
           } else {
             sendOrPublishFailed(writePromise, ar.cause());
           }
@@ -213,7 +212,7 @@ public class ClusteredEventBus extends EventBusImpl {
         serializer.queue(message, nodeSelector::selectForPublish, promise);
         promise.future().onComplete(ar -> {
           if (ar.succeeded()) {
-            sendToNodes(ar.result(), message, options, writePromise);
+            sendToNodes(ar.result(), message, writePromise);
           } else {
             sendOrPublishFailed(writePromise, ar.cause());
           }
@@ -327,15 +326,15 @@ public class ClusteredEventBus extends EventBusImpl {
     };
   }
 
-  private <T> void sendToNode(String nodeId, MessageImpl<?, T> message, DeliveryOptions options, Promise<Void> writePromise) {
+  private <T> void sendToNode(String nodeId, MessageImpl<?, T> message, Promise<Void> writePromise) {
     if (nodeId != null && !nodeId.equals(this.nodeId)) {
-      sendRemote(nodeId, message, options, writePromise);
+      sendRemote(nodeId, message, writePromise);
     } else {
-      super.sendOrPub(ebContext, message, options, writePromise);
+      sendLocally(message, writePromise);
     }
   }
 
-  private <T> void sendToNodes(Iterable<String> nodeIds, MessageImpl<?, T> message, DeliveryOptions options, Promise<Void> writePromise) {
+  private <T> void sendToNodes(Iterable<String> nodeIds, MessageImpl<?, T> message, Promise<Void> writePromise) {
     boolean sentRemote = false;
     if (nodeIds != null) {
       for (String nid : nodeIds) {
@@ -343,23 +342,23 @@ public class ClusteredEventBus extends EventBusImpl {
           sentRemote = true;
         }
         // Write promise might be completed several times!!!!
-        sendToNode(nid, message, options, writePromise);
+        sendToNode(nid, message, writePromise);
       }
     }
     if (!sentRemote) {
-      super.sendOrPub(ebContext, message, options, writePromise);
+      sendLocally(message, writePromise);
     }
   }
 
-  private <T> void clusteredSendReply(MessageImpl<?, T> message, DeliveryOptions options, Promise<Void> writePromise, String replyDest) {
+  private <T> void clusteredSendReply(MessageImpl<?, T> message, Promise<Void> writePromise, String replyDest) {
     if (!replyDest.equals(nodeId)) {
-      sendRemote(replyDest, message, options, writePromise);
+      sendRemote(replyDest, message, writePromise);
     } else {
-      super.sendOrPub(ebContext, message, options, writePromise);
+      sendLocally(message, writePromise);
     }
   }
 
-  private void sendRemote(String remoteNodeId, MessageImpl<?, ?> message, DeliveryOptions options, Promise<Void> writePromise) {
+  private void sendRemote(String remoteNodeId, MessageImpl<?, ?> message, Promise<Void> writePromise) {
     // We need to deal with the fact that connecting can take some time and is async, and we cannot
     // block to wait for it. So we add any sends to a pending list if not connected yet.
     // Once we connect we send them.

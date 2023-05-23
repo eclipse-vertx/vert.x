@@ -329,14 +329,14 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
   }
 
   protected <T> void sendOrPub(ContextInternal ctx, MessageImpl<?, T> message, DeliveryOptions options, Promise<Void> writePromise) {
-    sendLocally(message, options, writePromise);
+    sendLocally(message, writePromise);
   }
 
   protected <T> void sendOrPub(OutboundDeliveryContext<T> sendContext) {
     sendOrPub(sendContext.ctx, sendContext.message, sendContext.options, sendContext);
   }
 
-  protected <T> void sendLocally(MessageImpl<?, T> message, DeliveryOptions options, Promise<Void> writePromise) {
+  protected <T> void sendLocally(MessageImpl<?, T> message, Promise<Void> writePromise) {
     ReplyException failure = deliverMessageLocally(message);
     if (failure != null) {
       writePromise.tryFail(failure);
