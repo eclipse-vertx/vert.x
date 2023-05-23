@@ -12,6 +12,7 @@
 package io.vertx.core.json;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.buffer.Buffer;
@@ -21,6 +22,7 @@ import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.*;
 
@@ -31,6 +33,7 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class JacksonDatabindTest extends VertxTestBase {
+
 
   @Test
   public void testGetMapper() {
@@ -52,19 +55,21 @@ public class JacksonDatabindTest extends VertxTestBase {
     String json = Json.encode(Collections.singletonList(original));
     List<Pojo> correct;
 
-    correct = JacksonCodec.decodeValue(json, new TypeReference<List<Pojo>>() {});
-    assertTrue(((List)correct).get(0) instanceof Pojo);
+    correct = JacksonCodec.decodeValue(json, new TypeReference<List<Pojo>>() {
+    });
+    assertTrue(((List) correct).get(0) instanceof Pojo);
     assertEquals(original.value, correct.get(0).value);
 
     // same must apply if instead of string we use a buffer
-    correct = JacksonCodec.decodeValue(Buffer.buffer(json, "UTF8"), new TypeReference<List<Pojo>>() {});
-    assertTrue(((List)correct).get(0) instanceof Pojo);
+    correct = JacksonCodec.decodeValue(Buffer.buffer(json, "UTF8"), new TypeReference<List<Pojo>>() {
+    });
+    assertTrue(((List) correct).get(0) instanceof Pojo);
     assertEquals(original.value, correct.get(0).value);
 
     List incorrect = Json.decodeValue(json, List.class);
     assertFalse(incorrect.get(0) instanceof Pojo);
     assertTrue(incorrect.get(0) instanceof Map);
-    assertEquals(original.value, ((Map)(incorrect.get(0))).get("value"));
+    assertEquals(original.value, ((Map) (incorrect.get(0))).get("value"));
   }
 
   @Test
@@ -95,6 +100,121 @@ public class JacksonDatabindTest extends VertxTestBase {
     Pojo original = new Pojo();
     Pojo decoded = Json.decodeValue("{\"bytes\":null}", Pojo.class);
     assertEquals(original.bytes, decoded.bytes);
+  }
+
+
+  @Test
+  public void testJsonArrayDeserializer() throws JsonProcessingException {
+
+    String jsonArrayString = "[1, 2, 3]";
+    JsonArray jsonArray = DatabindCodec.mapper().readValue(jsonArrayString, JsonArray.class);
+
+    assertEquals(3, jsonArray.size());
+    assertEquals(new JsonArray().add(1).add(2).add(3), jsonArray);
+
+  }
+
+
+  @Test
+  public void testJsonObjectDeserializer() throws JsonProcessingException {
+
+    String jsonObjectString = "{\"key1\": \"value1\", \"key2\": \"value2\", \"key3\": \"value3\"}";
+
+    JsonObject jsonObject = DatabindCodec.mapper().readValue(jsonObjectString, JsonObject.class);
+
+    assertEquals("value1", jsonObject.getString("key1"));
+    assertEquals("value2", jsonObject.getString("key2"));
+
+  }
+
+  @Test
+  public void testJsonObjectSerializer() throws JsonProcessingException {
+
+    ObjectMapper objectMapper = DatabindCodec.mapper();
+
+    JsonObject jsonObject = new JsonObject();
+    jsonObject.put("key1", "value1");
+    jsonObject.put("key2", "value2");
+    jsonObject.put("key3", "value3");
+
+    String jsonString = objectMapper.writeValueAsString(jsonObject);
+
+    assertEquals("{\"key1\":\"value1\",\"key2\":\"value2\",\"key3\":\"value3\"}", jsonString);
+  }
+
+  @Test
+  public void testJsonArraySerializer() throws JsonProcessingException {
+
+
+    JsonArray jsonArray = new JsonArray();
+    jsonArray.add("value1");
+    jsonArray.add("value2");
+    jsonArray.add("value3");
+
+    String jsonString = DatabindCodec.mapper().writeValueAsString(jsonArray);
+
+    assertEquals("[\"value1\",\"value2\",\"value3\"]", jsonString);
+  }
+
+  @Test
+  public void testInstantSerializer() throws IOException {
+
+    Instant instant = Instant.parse("2023-06-09T12:34:56.789Z");
+
+    String jsonString = DatabindCodec.mapper().writeValueAsString(instant);
+
+    assertEquals("\"2023-06-09T12:34:56.789Z\"", jsonString);
+  }
+
+  @Test
+  public void testInstantDeserializer() throws IOException {
+
+    String jsonString = "\"2023-06-09T12:34:56.789Z\"";
+
+    Instant instant = DatabindCodec.mapper().readValue(jsonString, Instant.class);
+
+    Instant expectedInstant = Instant.parse("2023-06-09T12:34:56.789Z");
+    assertEquals(expectedInstant, instant);
+  }
+
+  @Test
+  public void testByteArraySerializer() throws IOException {
+    byte[] byteArray = "Hello, World!".getBytes();
+
+    String jsonString = DatabindCodec.mapper().writeValueAsString(byteArray);
+
+    String expectedBase64String = Base64.getEncoder().withoutPadding().encodeToString(byteArray);
+    assertEquals("\"" + expectedBase64String + "\"", jsonString);
+  }
+
+  @Test
+  public void testByteArrayDeserializer() throws IOException {
+    String jsonString = "\"SGVsbG8sIFdvcmxkIQ\"";
+
+    byte[] byteArray = DatabindCodec.mapper().readValue(jsonString, byte[].class);
+
+    byte[] expectedByteArray = Base64.getDecoder().decode("SGVsbG8sIFdvcmxkIQ");
+    assertArrayEquals(expectedByteArray, byteArray);
+  }
+
+  @Test
+  public void testBufferSerializer() throws IOException {
+
+    Buffer buffer = Buffer.buffer("Hello, World!");
+
+    String jsonString = DatabindCodec.mapper().writeValueAsString(buffer);
+
+    assertEquals("\"SGVsbG8sIFdvcmxkIQ\"", jsonString);
+  }
+
+  @Test
+  public void testBufferDeserializer() throws IOException {
+    String jsonString = "\"SGVsbG8sIFdvcmxkIQ\"";
+
+    Buffer buffer = DatabindCodec.mapper().readValue(jsonString, Buffer.class);
+
+    Buffer expectedBuffer = Buffer.buffer("Hello, World!");
+    assertEquals(expectedBuffer, buffer);
   }
 
   private static class Pojo {

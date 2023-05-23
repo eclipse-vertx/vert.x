@@ -22,6 +22,8 @@ import java.time.Instant;
  * <ul>
  *   <li>{@code JsonObjectSerializer} of {@code JsonObject} </li>
  *   <li>{@code JsonArraySerializer} of {@code JsonArray}</li>
+ *   <li>{@code JsonArrayDeserializer} of {@code JsonArray} </li>
+ *   <li>{@code JsonObjectDeserializer} of {@code JsonObject}</li>
  *   <li>{@code InstantSerializer} and {@code InstantDeserializer} of {@code Instant}</li>
  *   <li>{@code ByteArraySerializer} and {@code ByteArraySerializer} of {@code byte[]}</li>
  *   <li>{@code BufferSerializer} and {@code BufferSerializer} of {@code Buffer}</li>
@@ -33,6 +35,8 @@ public class VertxModule extends SimpleModule {
     // custom types
     addSerializer(JsonObject.class, new JsonObjectSerializer());
     addSerializer(JsonArray.class, new JsonArraySerializer());
+    addDeserializer(JsonArray.class, new JsonArrayDeserializer());
+    addDeserializer(JsonObject.class, new JsonObjectDeserializer());
     // he have 2 extensions: RFC-7493
     addSerializer(Instant.class, new InstantSerializer());
     addDeserializer(Instant.class, new InstantDeserializer());
