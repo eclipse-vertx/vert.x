@@ -131,6 +131,15 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
     return fut;
   }
 
+  @Override
+  protected boolean doReceive(Frame msg) {
+    if (msg instanceof Message) {
+      return doReceive((Message<T>) msg);
+    } else {
+      return false;
+    }
+  }
+
   protected boolean doReceive(Message<T> message) {
     Handler<Message<T>> theHandler;
     synchronized (this) {

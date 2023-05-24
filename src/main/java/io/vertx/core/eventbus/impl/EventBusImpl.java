@@ -395,7 +395,13 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
         return new ReplyException(ReplyFailure.NO_HANDLERS, "No handlers for address " + msg.address);
       }
     } else {
-      return new ReplyException(ReplyFailure.NO_HANDLERS, "No handlers for address " + frame.address());
+      if (handlers != null) {
+        HandlerHolder holder = nextHandler(handlers, messageLocal);
+        holder.handler.receive(frame);
+        return null;
+      } else {
+        return new ReplyException(ReplyFailure.NO_HANDLERS, "No handlers for address " + frame.address());
+      }
     }
   }
 
