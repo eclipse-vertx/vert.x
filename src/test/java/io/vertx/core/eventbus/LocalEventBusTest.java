@@ -1531,5 +1531,34 @@ public class LocalEventBusTest extends EventBusTestBase {
     });
     await();
   }
+
+  @Test
+  public void testStream() throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    vertx.eventBus().bindStream(ADDRESS1, stream -> {
+      stream.handler(msg -> {
+        assertEquals("ping", msg.body());
+        stream.write(msg.body());
+      });
+      stream.endHandler(v -> {
+        stream.end();
+      });
+    }).onComplete(onSuccess(v -> {
+      latch.countDown();
+    }));
+    awaitLatch(latch);
+    vertx.eventBus().connectStream(ADDRESS1).onComplete(onSuccess(stream -> {
+      stream.write("ping");
+      stream.handler(msg -> {
+        assertEquals("ping", msg.body());
+        stream.end();
+      });
+      stream.endHandler(v -> {
+        testComplete();
+      });
+    }));
+    await();
+  }
+
 }
 
