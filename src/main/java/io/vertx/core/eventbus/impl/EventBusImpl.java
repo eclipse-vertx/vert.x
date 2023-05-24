@@ -258,9 +258,9 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
     return msg;
   }
 
-  protected <T> Consumer<Promise<Void>> addRegistration(String address, HandlerRegistration<T> registration, boolean replyHandler, boolean localOnly, Promise<Void> promise) {
+  protected <T> Consumer<Promise<Void>> addRegistration(String address, HandlerRegistration<T> registration, boolean broadcast, boolean localOnly, Promise<Void> promise) {
     HandlerHolder<T> holder = addLocalRegistration(address, registration, localOnly);
-    if (!replyHandler) {
+    if (broadcast) {
       onLocalRegistration(holder, promise);
     } else {
       if (promise != null) {
@@ -268,7 +268,7 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
       }
     }
     return p -> {
-      removeRegistration(holder, replyHandler, p);
+      removeRegistration(holder, broadcast, p);
     };
   }
 
@@ -303,9 +303,9 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
     return new HandlerHolder<>(registration, localOnly, context);
   }
 
-  protected <T> void removeRegistration(HandlerHolder<T> handlerHolder, boolean replyHandler, Promise<Void> promise) {
+  protected <T> void removeRegistration(HandlerHolder<T> handlerHolder, boolean broadcast, Promise<Void> promise) {
     removeLocalRegistration(handlerHolder);
-    if (!replyHandler) {
+    if (broadcast) {
       onLocalUnregistration(handlerHolder, promise);
     } else {
       promise.complete();

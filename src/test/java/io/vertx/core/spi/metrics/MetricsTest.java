@@ -438,7 +438,7 @@ public class MetricsTest extends VertxTestBase {
       assertEquals(ADDRESS1, metrics.getRegistrations().get(0).address);
       assertWaitUntil(() -> metrics.getRegistrations().size() == 2);
       HandlerMetric registration = metrics.getRegistrations().get(1);
-      assertEquals(ADDRESS1, registration.repliedAddress);
+      assertEquals(null, registration.repliedAddress); // new behavior
       assertEquals(0, registration.scheduleCount.get());
       assertEquals(0, registration.deliveredCount.get());
       assertEquals(0, registration.localDeliveredCount.get());
@@ -452,13 +452,13 @@ public class MetricsTest extends VertxTestBase {
     vertx.eventBus().request(ADDRESS1, "ping").onComplete(onSuccess(reply -> {
       assertEquals(ADDRESS1, metrics.getRegistrations().get(0).address);
       HandlerMetric registration = replyRegistration.get();
-      assertEquals(ADDRESS1, registration.repliedAddress);
+      assertEquals(null, registration.repliedAddress);
       assertEquals(1, registration.scheduleCount.get());
       assertEquals(1, registration.deliveredCount.get());
       assertEquals(1, registration.localDeliveredCount.get());
       vertx.runOnContext(v -> {
         assertEquals(ADDRESS1, metrics.getRegistrations().get(0).address);
-        assertEquals(ADDRESS1, registration.repliedAddress);
+        assertEquals(null, registration.repliedAddress);
         assertEquals(1, registration.scheduleCount.get());
         assertEquals(1, registration.deliveredCount.get());
         assertEquals(1, registration.localDeliveredCount.get());
