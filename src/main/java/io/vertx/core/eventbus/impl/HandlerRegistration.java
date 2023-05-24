@@ -58,13 +58,13 @@ public abstract class HandlerRegistration<T> implements Closeable {
 
   protected abstract void dispatch(Message<T> msg, ContextInternal context, Handler<Message<T>> handler);
 
-  synchronized void register(String repliedAddress, boolean localOnly, Promise<Void> promise) {
+  synchronized void register(boolean broadcast, boolean localOnly, Promise<Void> promise) {
     if (registered != null) {
       throw new IllegalStateException();
     }
-    registered = bus.addRegistration(address, this, repliedAddress != null, localOnly, promise);
+    registered = bus.addRegistration(address, this, broadcast, localOnly, promise);
     if (bus.metrics != null) {
-      metric = bus.metrics.handlerRegistered(address, repliedAddress);
+      metric = bus.metrics.handlerRegistered(address, null /* regression */);
     }
   }
 
