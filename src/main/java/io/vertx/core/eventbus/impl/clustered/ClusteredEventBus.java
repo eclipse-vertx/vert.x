@@ -156,37 +156,29 @@ public class ClusteredEventBus extends EventBusImpl {
 
   @Override
   protected <T> void onLocalRegistration(HandlerHolder<T> handlerHolder, Promise<Void> promise) {
-    if (!handlerHolder.isReplyHandler()) {
-      RegistrationInfo registrationInfo = new RegistrationInfo(
-        nodeId,
-        handlerHolder.getSeq(),
-        handlerHolder.isLocalOnly()
-      );
-      clusterManager.addRegistration(handlerHolder.getHandler().address, registrationInfo, Objects.requireNonNull(promise));
-    } else if (promise != null) {
-      promise.complete();
-    }
+    RegistrationInfo registrationInfo = new RegistrationInfo(
+      nodeId,
+      handlerHolder.getSeq(),
+      handlerHolder.isLocalOnly()
+    );
+    clusterManager.addRegistration(handlerHolder.getHandler().address, registrationInfo, Objects.requireNonNull(promise));
   }
 
   @Override
-  protected <T> HandlerHolder<T> createHandlerHolder(HandlerRegistration<T> registration, boolean replyHandler, boolean localOnly, ContextInternal context) {
-    return new ClusteredHandlerHolder<>(registration, replyHandler, localOnly, context, handlerSequence.getAndIncrement());
+  protected <T> HandlerHolder<T> createHandlerHolder(HandlerRegistration<T> registration, boolean localOnly, ContextInternal context) {
+    return new ClusteredHandlerHolder<>(registration, localOnly, context, handlerSequence.getAndIncrement());
   }
 
   @Override
   protected <T> void onLocalUnregistration(HandlerHolder<T> handlerHolder, Promise<Void> completionHandler) {
-    if (!handlerHolder.isReplyHandler()) {
-      RegistrationInfo registrationInfo = new RegistrationInfo(
-        nodeId,
-        handlerHolder.getSeq(),
-        handlerHolder.isLocalOnly()
-      );
-      Promise<Void> promise = Promise.promise();
-      clusterManager.removeRegistration(handlerHolder.getHandler().address, registrationInfo, promise);
-      promise.future().onComplete(completionHandler);
-    } else {
-      completionHandler.complete();
-    }
+    RegistrationInfo registrationInfo = new RegistrationInfo(
+      nodeId,
+      handlerHolder.getSeq(),
+      handlerHolder.isLocalOnly()
+    );
+    Promise<Void> promise = Promise.promise();
+    clusterManager.removeRegistration(handlerHolder.getHandler().address, registrationInfo, promise);
+    promise.future().onComplete(completionHandler);
   }
 
   @Override
@@ -249,7 +241,7 @@ public class ClusteredEventBus extends EventBusImpl {
       Iterator<HandlerHolder> iterator = handlers.iterator(false);
       while (iterator.hasNext()) {
         HandlerHolder next = iterator.next();
-        if (next.isReplyHandler() || !next.isLocalOnly()) {
+        if (!next.isLocalOnly()) {
           handlerHolder = next;
           break;
         }
