@@ -13,8 +13,6 @@ package io.vertx.core.spi.cluster.impl;
 
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import io.vertx.core.eventbus.Message;
-import io.vertx.core.impl.Arguments;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeSelector;
 import io.vertx.core.spi.cluster.RegistrationUpdateEvent;
@@ -37,17 +35,15 @@ public class DefaultNodeSelector implements NodeSelector {
   }
 
   @Override
-  public void selectForSend(Message<?> message, Promise<String> promise) {
-    Arguments.require(message.isSend(), "selectForSend used for publishing");
-    selectors.withSelector(message, promise, (prom, selector) -> {
+  public void selectForSend(String address, Promise<String> promise) {
+    selectors.withSelector(address, promise, (prom, selector) -> {
       prom.tryComplete(selector.selectForSend());
     });
   }
 
   @Override
-  public void selectForPublish(Message<?> message, Promise<Iterable<String>> promise) {
-    Arguments.require(!message.isSend(), "selectForPublish used for sending");
-    selectors.withSelector(message, promise, (prom, selector) -> {
+  public void selectForPublish(String address, Promise<Iterable<String>> promise) {
+    selectors.withSelector(address, promise, (prom, selector) -> {
       prom.tryComplete(selector.selectForPublish());
     });
   }

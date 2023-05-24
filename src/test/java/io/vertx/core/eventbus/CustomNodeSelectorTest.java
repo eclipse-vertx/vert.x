@@ -105,12 +105,12 @@ public class CustomNodeSelectorTest extends VertxTestBase {
     }
 
     @Override
-    public void selectForSend(Message<?> message, Promise<String> promise) {
+    public void selectForSend(String address, Promise<String> promise) {
       promise.fail("Not implemented");
     }
 
     @Override
-    public void selectForPublish(Message<?> message, Promise<Iterable<String>> promise) {
+    public void selectForPublish(String address, Promise<Iterable<String>> promise) {
       List<String> nodes = clusterManager.getNodes();
       CompositeFuture future = nodes.stream()
         .map(nodeId -> {

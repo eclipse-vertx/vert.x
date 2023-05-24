@@ -60,7 +60,7 @@ public class Serializer implements Closeable {
     return serializer;
   }
 
-  public <T> void queue(Message<?> message, BiConsumer<Message<?>, Promise<T>> selectHandler, Promise<T> promise) {
+  public <T> void queue(Message<?> message, BiConsumer<String, Promise<T>> selectHandler, Promise<T> promise) {
     ctx.emit(v -> {
       String address = message.address();
       SerializerQueue queue = queues.computeIfAbsent(address, SerializerQueue::new);
@@ -110,7 +110,7 @@ public class Serializer implements Closeable {
       }
     }
 
-    <U> void add(Message<?> msg, BiConsumer<Message<?>, Promise<U>> selectHandler, Promise<U> promise) {
+    <U> void add(Message<?> msg, BiConsumer<String, Promise<U>> selectHandler, Promise<U> promise) {
       SerializedTask<U> serializedTask = new SerializedTask<>(ctx, msg, selectHandler);
       Future<U> fut = serializedTask.internalPromise.future();
       fut.onComplete(promise);
@@ -136,20 +136,20 @@ public class Serializer implements Closeable {
     private class SerializedTask<U> implements Handler<AsyncResult<U>> {
 
       final Message<?> msg;
-      final BiConsumer<Message<?>, Promise<U>> selectHandler;
+      final BiConsumer<String, Promise<U>> selectHandler;
       final Promise<U> internalPromise;
 
       SerializedTask(
         ContextInternal context,
         Message<?> msg,
-        BiConsumer<Message<?>, Promise<U>> selectHandler) {
+        BiConsumer<String, Promise<U>> selectHandler) {
         this.msg = msg;
         this.selectHandler = selectHandler;
         this.internalPromise = context.promise();
       }
 
       void process() {
-        selectHandler.accept(msg, internalPromise);
+        selectHandler.accept(msg.address(), internalPromise);
       }
 
       @Override
