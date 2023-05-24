@@ -34,13 +34,13 @@ public class WrappedNodeSelector implements NodeSelector {
   }
 
   @Override
-  public void selectForSend(Message<?> message, Promise<String> promise) {
-    delegate.selectForSend(message, promise);
+  public void selectForSend(String address, Promise<String> promise) {
+    delegate.selectForSend(address, promise);
   }
 
   @Override
-  public void selectForPublish(Message<?> message, Promise<Iterable<String>> promise) {
-    delegate.selectForPublish(message, promise);
+  public void selectForPublish(String address, Promise<Iterable<String>> promise) {
+    delegate.selectForPublish(address, promise);
   }
 
   @Override

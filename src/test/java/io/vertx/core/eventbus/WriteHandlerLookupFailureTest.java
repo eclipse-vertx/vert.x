@@ -38,12 +38,12 @@ public final class WriteHandlerLookupFailureTest extends VertxTestBase {
       .setPort(0);
     NodeSelector nodeSelector = new DefaultNodeSelector() {
       @Override
-      public void selectForSend(Message<?> message, Promise<String> promise) {
+      public void selectForSend(String address, Promise<String> promise) {
         promise.fail(cause);
       }
 
       @Override
-      public void selectForPublish(Message<?> message, Promise<Iterable<String>> promise) {
+      public void selectForPublish(String address, Promise<Iterable<String>> promise) {
         promise.fail("Not implemented");
       }
     };
