@@ -13,6 +13,7 @@ package io.vertx.core.eventbus.impl;
 
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.*;
 
 import java.util.List;
@@ -21,7 +22,7 @@ import java.util.Map;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class MessageImpl<U, V> implements Message<V> {
+public class MessageImpl<U, V> implements Message<V>, Frame {
 
   protected MessageCodec<U, V> messageCodec;
   protected final EventBusImpl bus;
@@ -139,5 +140,15 @@ public class MessageImpl<U, V> implements Message<V> {
 
   protected boolean isLocal() {
     return true;
+  }
+
+  @Override
+  public Buffer encodeToWire() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public boolean isFromWire() {
+    throw new UnsupportedOperationException();
   }
 }

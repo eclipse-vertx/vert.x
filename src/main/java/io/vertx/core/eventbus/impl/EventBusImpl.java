@@ -346,7 +346,7 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
     sendOrPub(sendContext.ctx, sendContext.message, sendContext.options, sendContext);
   }
 
-  protected <T> void sendLocally(MessageImpl<?, T> message, Promise<Void> writePromise) {
+  protected <T> void sendLocally(Frame message, Promise<Void> writePromise) {
     ReplyException failure = deliverMessageLocally(message);
     if (failure != null) {
       writePromise.tryFail(failure);
@@ -355,42 +355,47 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
     }
   }
 
-  protected boolean isMessageLocal(MessageImpl msg) {
+  protected boolean isMessageLocal(Frame msg) {
     return true;
   }
 
-  protected ReplyException deliverMessageLocally(MessageImpl msg) {
-    ConcurrentCyclicSequence<HandlerHolder> handlers = handlerMap.get(msg.address());
-    boolean messageLocal = isMessageLocal(msg);
-    if (handlers != null) {
-      if (msg.isSend()) {
-        //Choose one
-        HandlerHolder holder = nextHandler(handlers, messageLocal);
-        if (metrics != null) {
-          metrics.messageReceived(msg.address(), !msg.isSend(), messageLocal, holder != null ? 1 : 0);
-        }
-        if (holder != null) {
-          holder.handler.receive(msg.copyBeforeReceive());
-        } else {
-          // RACY issue !!!!!
-        }
-      } else {
-        // Publish
-        if (metrics != null) {
-          metrics.messageReceived(msg.address(), !msg.isSend(), messageLocal, handlers.size());
-        }
-        for (HandlerHolder holder: handlers) {
-          if (messageLocal || !holder.isLocalOnly()) {
+  protected ReplyException deliverMessageLocally(Frame frame) {
+    ConcurrentCyclicSequence<HandlerHolder> handlers = handlerMap.get(frame.address());
+    boolean messageLocal = isMessageLocal(frame);
+    if (frame instanceof MessageImpl) {
+      MessageImpl msg = (MessageImpl) frame;
+      if (handlers != null) {
+        if (msg.isSend()) {
+          //Choose one
+          HandlerHolder holder = nextHandler(handlers, messageLocal);
+          if (metrics != null) {
+            metrics.messageReceived(msg.address(), !msg.isSend(), messageLocal, holder != null ? 1 : 0);
+          }
+          if (holder != null) {
             holder.handler.receive(msg.copyBeforeReceive());
+          } else {
+            // RACY issue !!!!!
+          }
+        } else {
+          // Publish
+          if (metrics != null) {
+            metrics.messageReceived(msg.address(), !msg.isSend(), messageLocal, handlers.size());
+          }
+          for (HandlerHolder holder: handlers) {
+            if (messageLocal || !holder.isLocalOnly()) {
+              holder.handler.receive(msg.copyBeforeReceive());
+            }
           }
         }
+        return null;
+      } else {
+        if (metrics != null) {
+          metrics.messageReceived(msg.address(), !msg.isSend(), messageLocal, 0);
+        }
+        return new ReplyException(ReplyFailure.NO_HANDLERS, "No handlers for address " + msg.address);
       }
-      return null;
     } else {
-      if (metrics != null) {
-        metrics.messageReceived(msg.address(), !msg.isSend(), messageLocal, 0);
-      }
-      return new ReplyException(ReplyFailure.NO_HANDLERS, "No handlers for address " + msg.address);
+      return new ReplyException(ReplyFailure.NO_HANDLERS, "No handlers for address " + frame.address());
     }
   }
 

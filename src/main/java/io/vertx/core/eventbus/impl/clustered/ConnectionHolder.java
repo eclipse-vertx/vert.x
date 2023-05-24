@@ -14,6 +14,7 @@ package io.vertx.core.eventbus.impl.clustered;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBusOptions;
+import io.vertx.core.eventbus.impl.Frame;
 import io.vertx.core.eventbus.impl.MessageImpl;
 import io.vertx.core.eventbus.impl.codecs.PingMessageCodec;
 import io.vertx.core.impl.VertxInternal;
@@ -48,9 +49,9 @@ class ConnectionHolder {
   private long pingTimeoutID = -1;
 
   private static class SomeTask {
-    final MessageImpl<?, ?> message;
+    final Frame message;
     final Promise<Void> writePromise;
-    SomeTask(MessageImpl<?, ?> message, Promise<Void> writePromise) {
+    SomeTask(Frame message, Promise<Void> writePromise) {
       this.message = message;
       this.writePromise = writePromise;
     }
@@ -79,9 +80,9 @@ class ConnectionHolder {
   }
 
   // TODO optimise this (contention on monitor)
-  synchronized void writeMessage(MessageImpl<?, ?> message, Promise<Void> writePromise) {
+  synchronized void writeMessage(Frame message, Promise<Void> writePromise) {
     if (connected) {
-      Buffer data = ((ClusteredMessage) message).encodeToWire();
+      Buffer data = message.encodeToWire();
       if (metrics != null) {
         metrics.messageWritten(message.address(), data.length());
       }

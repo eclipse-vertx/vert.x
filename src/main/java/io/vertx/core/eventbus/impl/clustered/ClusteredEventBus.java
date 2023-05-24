@@ -17,11 +17,7 @@ import io.vertx.core.eventbus.AddressHelper;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.EventBusOptions;
 import io.vertx.core.eventbus.MessageCodec;
-import io.vertx.core.eventbus.impl.CodecManager;
-import io.vertx.core.eventbus.impl.EventBusImpl;
-import io.vertx.core.eventbus.impl.HandlerHolder;
-import io.vertx.core.eventbus.impl.HandlerRegistration;
-import io.vertx.core.eventbus.impl.MessageImpl;
+import io.vertx.core.eventbus.impl.*;
 import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
@@ -227,7 +223,7 @@ public class ClusteredEventBus extends EventBusImpl {
   }
 
   @Override
-  protected boolean isMessageLocal(MessageImpl msg) {
+  protected boolean isMessageLocal(Frame msg) {
     ClusteredMessage clusteredMessage = (ClusteredMessage) msg;
     return !clusteredMessage.isFromWire();
   }
@@ -318,7 +314,7 @@ public class ClusteredEventBus extends EventBusImpl {
     };
   }
 
-  private <T> void sendToNode(String nodeId, MessageImpl<?, T> message, Promise<Void> writePromise) {
+  private <T> void sendToNode(String nodeId, Frame message, Promise<Void> writePromise) {
     if (nodeId != null && !nodeId.equals(this.nodeId)) {
       sendRemote(nodeId, message, writePromise);
     } else {
@@ -326,7 +322,7 @@ public class ClusteredEventBus extends EventBusImpl {
     }
   }
 
-  private <T> void sendToNodes(Iterable<String> nodeIds, MessageImpl<?, T> message, Promise<Void> writePromise) {
+  private <T> void sendToNodes(Iterable<String> nodeIds, Frame message, Promise<Void> writePromise) {
     boolean sentRemote = false;
     if (nodeIds != null) {
       for (String nid : nodeIds) {
@@ -350,7 +346,7 @@ public class ClusteredEventBus extends EventBusImpl {
     }
   }
 
-  private void sendRemote(String remoteNodeId, MessageImpl<?, ?> message, Promise<Void> writePromise) {
+  private void sendRemote(String remoteNodeId, Frame message, Promise<Void> writePromise) {
     // We need to deal with the fact that connecting can take some time and is async, and we cannot
     // block to wait for it. So we add any sends to a pending list if not connected yet.
     // Once we connect we send them.
