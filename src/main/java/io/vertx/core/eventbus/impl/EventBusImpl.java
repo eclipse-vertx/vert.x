@@ -259,10 +259,16 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
   }
 
   protected <T> Consumer<Promise<Void>> addRegistration(String address, HandlerRegistration<T> registration, boolean replyHandler, boolean localOnly, Promise<Void> promise) {
-    HandlerHolder<T> holder = addLocalRegistration(address, registration, replyHandler, localOnly);
-    onLocalRegistration(holder, promise);
+    HandlerHolder<T> holder = addLocalRegistration(address, registration, localOnly);
+    if (!replyHandler) {
+      onLocalRegistration(holder, promise);
+    } else {
+      if (promise != null) {
+        promise.complete();
+      }
+    }
     return p -> {
-      removeRegistration(holder, p);
+      removeRegistration(holder, replyHandler, p);
     };
   }
 
@@ -273,12 +279,12 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
   }
 
   private <T> HandlerHolder<T> addLocalRegistration(String address, HandlerRegistration<T> registration,
-                                                    boolean replyHandler, boolean localOnly) {
+                                                    boolean localOnly) {
     Objects.requireNonNull(address, "address");
 
     ContextInternal context = registration.context;
 
-    HandlerHolder<T> holder = createHandlerHolder(registration, replyHandler, localOnly, context);
+    HandlerHolder<T> holder = createHandlerHolder(registration, localOnly, context);
 
     ConcurrentCyclicSequence<HandlerHolder> handlers = new ConcurrentCyclicSequence<HandlerHolder>().add(holder);
     ConcurrentCyclicSequence<HandlerHolder> actualHandlers = handlerMap.merge(
@@ -293,13 +299,17 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
     return holder;
   }
 
-  protected <T> HandlerHolder<T> createHandlerHolder(HandlerRegistration<T> registration, boolean replyHandler, boolean localOnly, ContextInternal context) {
-    return new HandlerHolder<>(registration, replyHandler, localOnly, context);
+  protected <T> HandlerHolder<T> createHandlerHolder(HandlerRegistration<T> registration, boolean localOnly, ContextInternal context) {
+    return new HandlerHolder<>(registration, localOnly, context);
   }
 
-  protected <T> void removeRegistration(HandlerHolder<T> handlerHolder, Promise<Void> promise) {
+  protected <T> void removeRegistration(HandlerHolder<T> handlerHolder, boolean replyHandler, Promise<Void> promise) {
     removeLocalRegistration(handlerHolder);
-    onLocalUnregistration(handlerHolder, promise);
+    if (!replyHandler) {
+      onLocalUnregistration(handlerHolder, promise);
+    } else {
+      promise.complete();
+    }
   }
 
   protected <T> void onLocalUnregistration(HandlerHolder<T> handlerHolder, Promise<Void> promise) {

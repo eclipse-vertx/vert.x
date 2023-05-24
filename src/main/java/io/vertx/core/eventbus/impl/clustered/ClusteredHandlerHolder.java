@@ -19,8 +19,8 @@ public class ClusteredHandlerHolder<T> extends HandlerHolder<T> {
 
   private final long seq;
 
-  public ClusteredHandlerHolder(HandlerRegistration<T> handler, boolean replyHandler, boolean localOnly, ContextInternal context, long seq) {
-    super(handler, replyHandler, localOnly, context);
+  public ClusteredHandlerHolder(HandlerRegistration<T> handler, boolean localOnly, ContextInternal context, long seq) {
+    super(handler, localOnly, context);
     this.seq = seq;
   }
 

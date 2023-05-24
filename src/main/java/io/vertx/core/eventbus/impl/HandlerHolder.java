@@ -22,14 +22,12 @@ public class HandlerHolder<T> {
 
   public final ContextInternal context;
   public final HandlerRegistration<T> handler;
-  public final boolean replyHandler;
   public final boolean localOnly;
   private boolean removed;
 
-  public HandlerHolder(HandlerRegistration<T> handler, boolean replyHandler, boolean localOnly, ContextInternal context) {
+  public HandlerHolder(HandlerRegistration<T> handler, boolean localOnly, ContextInternal context) {
     this.context = context;
     this.handler = handler;
-    this.replyHandler = replyHandler;
     this.localOnly = localOnly;
   }
 
@@ -74,10 +72,6 @@ public class HandlerHolder<T> {
 
   public HandlerRegistration<T> getHandler() {
     return handler;
-  }
-
-  public boolean isReplyHandler() {
-    return replyHandler;
   }
 
   public boolean isLocalOnly() {

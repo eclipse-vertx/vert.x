@@ -83,7 +83,7 @@ class ReplyHandler<T> extends HandlerRegistration<T> implements Handler<Long> {
   }
 
   void register() {
-    register(repliedAddress, true, null);
+    register(repliedAddress, false, null);
   }
 
   @Override
