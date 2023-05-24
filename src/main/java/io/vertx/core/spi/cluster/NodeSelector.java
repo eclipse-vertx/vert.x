@@ -13,7 +13,6 @@ package io.vertx.core.spi.cluster;
 
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import io.vertx.core.eventbus.Message;
 import io.vertx.core.impl.VertxBuilder;
 import io.vertx.core.spi.VertxServiceProvider;
 
@@ -47,20 +46,16 @@ public interface NodeSelector extends VertxServiceProvider {
    *
    * <p> The provided {@code promise} needs to be completed with {@link Promise#tryComplete} and {@link Promise#tryFail}
    * as it might completed outside the selector.
-   *
-   * @throws IllegalArgumentException if {@link Message#isSend()} returns {@code false}
    */
-  void selectForSend(Message<?> message, Promise<String> promise);
+  void selectForSend(String address, Promise<String> promise);
 
   /**
    * Select a node for publishing the given {@code message}.
    *
    * <p> The provided {@code promise} needs to be completed with {@link Promise#tryComplete} and {@link Promise#tryFail}
    * as it might completed outside the selector.
-   *
-   * @throws IllegalArgumentException if {@link Message#isSend()} returns {@code true}
    */
-  void selectForPublish(Message<?> message, Promise<Iterable<String>> promise);
+  void selectForPublish(String address, Promise<Iterable<String>> promise);
 
   /**
    * Invoked by the {@link ClusterManager} when messaging handler registrations are added or removed.
