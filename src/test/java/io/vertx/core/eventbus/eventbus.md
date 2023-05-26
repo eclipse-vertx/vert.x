@@ -11,37 +11,44 @@ P -> C: MSG(request)
 title Request and response
 hide footbox
 participant Producer as P
-[-> P: send(request)
+[-> P: request(request_message)
 create Source as S
 P --> S: bind ephemeral address
 participant Consumer as C
-P -> C: SYN(Source)/MSG(request)
-S <- C: FIN/MSG(response)
+P -> C: SYN(Source)/MSG(request_message)
+S <- C: FIN/MSG(reply_message)
 Destroy S
-[<- S: reply(response)
+[<- S: response(reply_message)
 ```
 
 ```plantuml
 title General case
 hide footbox
 participant Producer as P
-[-> P: begin
+[-> P: stream = connect("consumer")
 create Source as S
 P --> S: src = bind ephemeral address
 participant Consumer as C
-P -> C: SYN(Source)
+P -> C: SYN(src)
 create Destination as D
-C --> D: bind ephemeral address
-S <- C: ACK(Destination)
-S -> D: MSG
-D -> S: MSG
-S -> D: MSG
+C --> D: dst = bind ephemeral address
+S <- C: ACK(dst)
+[-> S: stream.write(m1)
+S -> D: MSG(m1)
+D -> S: MSG(m2)
+[<- S: handler.handle(m2)
+[-> S: stream.write(m3)
+S -> D: MSG(m3)
+[-> S: stream.end()
 S -> D: FIN
 Destroy D
-D -> S: MSG
-D -> S: MSG
+[<- S: handler.handle(m4)
+D -> S: MSG(m4)
+[<- S: handler.handle(m5)
+D -> S: MSG(m5)
 D -> S: FIN
 Destroy S
+[<- S: endHandler.handle(null)
 ```
 
 ## Todo
