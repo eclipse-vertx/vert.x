@@ -12,9 +12,7 @@
 package io.vertx.core.eventbus;
 
 import io.netty.util.CharsetUtil;
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.Context;
-import io.vertx.core.DeploymentOptions;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -27,6 +25,7 @@ import org.junit.Test;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
@@ -41,71 +40,73 @@ public abstract class EventBusTestBase extends VertxTestBase {
   protected static final String ADDRESS1 = "some-address1";
   protected static final String ADDRESS2 = "some-address2";
 
+  protected abstract Vertx[] vertices(int num);
+
   @Test
-  public void testSendNull() {
+  public void testSendNull() throws Exception {
     testSend(null);
   }
 
   @Test
-  public void testReplyNull() {
+  public void testReplyNull() throws Exception {
     testReply(null);
   }
 
   @Test
-  public void testPublishNull() {
+  public void testPublishNull() throws Exception {
     testPublish(null);
   }
 
   @Test
-  public void testSendString() {
+  public void testSendString() throws Exception {
     String str = TestUtils.randomUnicodeString(100);
     testSend(str);
   }
 
   @Test
-  public void testReplyString() {
+  public void testReplyString() throws Exception {
     String str = TestUtils.randomUnicodeString(100);
     testReply(str);
   }
 
   @Test
-  public void testPublishString() {
+  public void testPublishString() throws Exception {
     String str = TestUtils.randomUnicodeString(100);
     testPublish(str);
   }
 
   @Test
-  public void testSendBooleanTrue() {
+  public void testSendBooleanTrue() throws Exception {
     testSend(true);
   }
 
   @Test
-  public void testSendBooleanFalse() {
+  public void testSendBooleanFalse() throws Exception {
     testSend(false);
   }
 
   @Test
-  public void testReplyBooleanTrue() {
+  public void testReplyBooleanTrue() throws Exception {
     testReply(true);
   }
 
   @Test
-  public void testReplyBooleanFalse() {
+  public void testReplyBooleanFalse() throws Exception {
     testReply(false);
   }
 
   @Test
-  public void testPublishBooleanTrue() {
+  public void testPublishBooleanTrue() throws Exception {
     testPublish(true);
   }
 
   @Test
-  public void testPublishBooleanFalse() {
+  public void testPublishBooleanFalse() throws Exception {
     testPublish(false);
   }
 
   @Test
-  public void testSendBuffer() {
+  public void testSendBuffer() throws Exception {
     Buffer sent = TestUtils.randomBuffer(100);
     testSend(sent, (buffer) -> {
       assertEquals(sent, buffer);
@@ -114,7 +115,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
   }
 
   @Test
-  public void testReplyBuffer() {
+  public void testReplyBuffer() throws Exception {
     Buffer sent = TestUtils.randomBuffer(100);
     testReply(sent, (bytes) -> {
       assertEquals(sent, bytes);
@@ -123,7 +124,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
   }
 
   @Test
-  public void testPublishBuffer() {
+  public void testPublishBuffer() throws Exception {
     Buffer sent = TestUtils.randomBuffer(100);
     testPublish(sent, (buffer) -> {
       assertEquals(sent, buffer);
@@ -132,22 +133,22 @@ public abstract class EventBusTestBase extends VertxTestBase {
   }
 
   @Test
-  public void testSendByte() {
+  public void testSendByte() throws Exception {
     testSend(TestUtils.randomByte());
   }
 
   @Test
-  public void testReplyByte() {
+  public void testReplyByte() throws Exception {
     testReply(TestUtils.randomByte());
   }
 
   @Test
-  public void testPublishByte() {
+  public void testPublishByte() throws Exception {
     testPublish(TestUtils.randomByte());
   }
 
   @Test
-  public void testSendByteArray() {
+  public void testSendByteArray() throws Exception {
     byte[] sent = TestUtils.randomByteArray(100);
     testSend(sent, (bytes) -> {
       TestUtils.byteArraysEqual(sent, bytes);
@@ -156,7 +157,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
   }
 
   @Test
-  public void testReplyByteArray() {
+  public void testReplyByteArray() throws Exception {
     byte[] sent = TestUtils.randomByteArray(100);
     testReply(sent, (bytes) -> {
       TestUtils.byteArraysEqual(sent, bytes);
@@ -165,7 +166,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
   }
 
   @Test
-  public void testPublishByteArray() {
+  public void testPublishByteArray() throws Exception {
     byte[] sent = TestUtils.randomByteArray(100);
     testPublish(sent, (bytes) -> {
       TestUtils.byteArraysEqual(sent, bytes);
@@ -174,127 +175,127 @@ public abstract class EventBusTestBase extends VertxTestBase {
   }
 
   @Test
-  public void testSendCharacter() {
+  public void testSendCharacter() throws Exception {
     testSend(TestUtils.randomChar());
   }
 
   @Test
-  public void testReplyCharacter() {
+  public void testReplyCharacter() throws Exception {
     testReply(TestUtils.randomChar());
   }
 
   @Test
-  public void testPublishCharacter() {
+  public void testPublishCharacter() throws Exception {
     testPublish(TestUtils.randomChar());
   }
 
   @Test
-  public void testSendDouble() {
+  public void testSendDouble() throws Exception {
     testSend(TestUtils.randomDouble());
   }
 
   @Test
-  public void testReplyDouble() {
+  public void testReplyDouble() throws Exception {
     testReply(TestUtils.randomDouble());
   }
 
   @Test
-  public void testPublishDouble() {
+  public void testPublishDouble() throws Exception {
     testPublish(TestUtils.randomDouble());
   }
 
   @Test
-  public void testSendFloat() {
+  public void testSendFloat() throws Exception {
     testSend(TestUtils.randomFloat());
   }
 
   @Test
-  public void testReplyFloat() {
+  public void testReplyFloat() throws Exception {
     testReply(TestUtils.randomFloat());
   }
 
   @Test
-  public void testPublishFloat() {
+  public void testPublishFloat() throws Exception {
     testPublish(TestUtils.randomFloat());
   }
 
   @Test
-  public void testSendInteger() {
+  public void testSendInteger() throws Exception {
     testSend(TestUtils.randomInt());
   }
 
   @Test
-  public void testReplyInteger() {
+  public void testReplyInteger() throws Exception {
     testReply(TestUtils.randomInt());
   }
 
   @Test
-  public void testPublishInteger() {
+  public void testPublishInteger() throws Exception {
     testPublish(TestUtils.randomInt());
   }
 
   @Test
-  public void testSendLong() {
+  public void testSendLong() throws Exception {
     testSend(TestUtils.randomLong());
   }
 
   @Test
-  public void testReplyLong() {
+  public void testReplyLong() throws Exception {
     testReply(TestUtils.randomLong());
   }
 
   @Test
-  public void testPublishLong() {
+  public void testPublishLong() throws Exception {
     testPublish(TestUtils.randomLong());
   }
 
   @Test
-  public void testSendShort() {
+  public void testSendShort() throws Exception {
     testSend(TestUtils.randomShort());
   }
 
   @Test
-  public void testReplyShort() {
+  public void testReplyShort() throws Exception {
     testReply(TestUtils.randomShort());
   }
 
   @Test
-  public void testPublishShort() {
+  public void testPublishShort() throws Exception {
     testPublish(TestUtils.randomShort());
   }
 
   @Test
-  public void testSendBigInteger() {
+  public void testSendBigInteger() throws Exception {
     testSend(BigInteger.valueOf(TestUtils.randomLong()));
   }
 
   @Test
-  public void testReplyBigInteger() {
+  public void testReplyBigInteger() throws Exception {
     testReply(BigInteger.valueOf(TestUtils.randomLong()));
   }
 
   @Test
-  public void testPublishBigInteger() {
+  public void testPublishBigInteger() throws Exception {
     testPublish(BigInteger.valueOf(TestUtils.randomLong()));
   }
 
   @Test
-  public void testSendBigDecimal() {
+  public void testSendBigDecimal() throws Exception {
     testSend(BigDecimal.valueOf(TestUtils.randomDouble()));
   }
 
   @Test
-  public void testReplyBigDecimal() {
+  public void testReplyBigDecimal() throws Exception {
     testReply(BigDecimal.valueOf(TestUtils.randomDouble()));
   }
 
   @Test
-  public void testPublishBigDecimal() {
+  public void testPublishBigDecimal() throws Exception {
     testPublish(BigDecimal.valueOf(TestUtils.randomDouble()));
   }
 
   @Test
-  public void testSendJsonArray() {
+  public void testSendJsonArray() throws Exception {
     JsonArray arr = new JsonArray();
     arr.add(TestUtils.randomUnicodeString(100)).add(TestUtils.randomInt()).add(TestUtils.randomBoolean());
     testSend(arr, (received) -> {
@@ -304,7 +305,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
   }
 
   @Test
-  public void testReplyJsonArray() {
+  public void testReplyJsonArray() throws Exception {
     JsonArray arr = new JsonArray();
     arr.add(TestUtils.randomUnicodeString(100)).add(TestUtils.randomInt()).add(TestUtils.randomBoolean());
     testReply(arr, (received) -> {
@@ -314,7 +315,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
   }
 
   @Test
-  public void testPublishJsonArray() {
+  public void testPublishJsonArray() throws Exception {
     JsonArray arr = new JsonArray();
     arr.add(TestUtils.randomUnicodeString(100)).add(TestUtils.randomInt()).add(TestUtils.randomBoolean());
     testPublish(arr, (received) -> {
@@ -324,7 +325,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
   }
 
   @Test
-  public void testSendJsonObject() {
+  public void testSendJsonObject() throws Exception {
     JsonObject obj = new JsonObject();
     obj.put(TestUtils.randomUnicodeString(100), TestUtils.randomUnicodeString(100)).put(TestUtils.randomUnicodeString(100), TestUtils.randomInt());
     testSend(obj, (received) -> {
@@ -334,7 +335,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
   }
 
   @Test
-  public void testReplyJsonObject() {
+  public void testReplyJsonObject() throws Exception {
     JsonObject obj = new JsonObject();
     obj.put(TestUtils.randomUnicodeString(100), TestUtils.randomUnicodeString(100)).put(TestUtils.randomUnicodeString(100), TestUtils.randomInt());
     testReply(obj, (received) -> {
@@ -344,7 +345,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
   }
 
   @Test
-  public void testPublishJsonObject() {
+  public void testPublishJsonObject() throws Exception {
     JsonObject obj = new JsonObject();
     obj.put(TestUtils.randomUnicodeString(100), TestUtils.randomUnicodeString(100)).put(TestUtils.randomUnicodeString(100), TestUtils.randomInt());
     testPublish(obj, (received) -> {
@@ -354,7 +355,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
   }
 
   @Test
-  public void testSendClusterSerializable() {
+  public void testSendClusterSerializable() throws Exception {
     SomeClusterSerializableObject obj = new SomeClusterSerializableObject(TestUtils.randomAlphaString(50));
     testSend(obj, (received) -> {
       assertEquals(obj, received);
@@ -363,7 +364,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
   }
 
   @Test
-  public void testReplyClusterSerializable() {
+  public void testReplyClusterSerializable() throws Exception {
     SomeClusterSerializableObject obj = new SomeClusterSerializableObject(TestUtils.randomAlphaString(50));
     testReply(obj, (received) -> {
       assertEquals(obj, received);
@@ -372,7 +373,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
   }
 
   @Test
-  public void testPublishClusterSerializable() {
+  public void testPublishClusterSerializable() throws Exception {
     SomeClusterSerializableObject obj = new SomeClusterSerializableObject(TestUtils.randomAlphaString(50));
     testPublish(obj, (received) -> {
       assertEquals(obj, received);
@@ -381,7 +382,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
   }
 
   @Test
-  public void testSendClusterSerializableImpl() {
+  public void testSendClusterSerializableImpl() throws Exception {
     SomeClusterSerializableImplObject obj = new SomeClusterSerializableImplObject(TestUtils.randomAlphaString(50));
     testSend(obj, (received) -> {
       assertEquals(obj, received);
@@ -390,7 +391,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
   }
 
   @Test
-  public void testReplyClusterSerializableImpl() {
+  public void testReplyClusterSerializableImpl() throws Exception {
     SomeClusterSerializableImplObject obj = new SomeClusterSerializableImplObject(TestUtils.randomAlphaString(50));
     testReply(obj, (received) -> {
       assertEquals(obj, received);
@@ -399,7 +400,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
   }
 
   @Test
-  public void testPublishClusterSerializableImpl() {
+  public void testPublishClusterSerializableImpl() throws Exception {
     SomeClusterSerializableImplObject obj = new SomeClusterSerializableImplObject(TestUtils.randomAlphaString(50));
     testPublish(obj, (received) -> {
       assertEquals(obj, received);
@@ -408,7 +409,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
   }
 
   @Test
-  public void testSendSerializable() {
+  public void testSendSerializable() throws Exception {
     SomeSerializableObject obj = new SomeSerializableObject(TestUtils.randomAlphaString(50));
     testSend(obj, (received) -> {
       assertEquals(obj, received);
@@ -417,7 +418,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
   }
 
   @Test
-  public void testReplySerializable() {
+  public void testReplySerializable() throws Exception {
     SomeSerializableObject obj = new SomeSerializableObject(TestUtils.randomAlphaString(50));
     testReply(obj, (received) -> {
       assertEquals(obj, received);
@@ -426,7 +427,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
   }
 
   @Test
-  public void testPublishSerializable() {
+  public void testPublishSerializable() throws Exception {
     SomeSerializableObject obj = new SomeSerializableObject(TestUtils.randomAlphaString(50));
     testPublish(obj, (received) -> {
       assertEquals(obj, received);
@@ -435,7 +436,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
   }
 
   @Test
-  public void testSendWithCodecFromSelector() {
+  public void testSendWithCodecFromSelector() throws Exception {
     ImmutableObject obj = new ImmutableObject(TestUtils.randomAlphaString(15));
     testSend(obj, (received) -> {
       assertEquals(obj, received);
@@ -444,7 +445,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
   }
 
   @Test
-  public void testReplyWithCodecFromSelector() {
+  public void testReplyWithCodecFromSelector() throws Exception {
     ImmutableObject obj = new ImmutableObject(TestUtils.randomAlphaString(15));
     testReply(obj, (received) -> {
       assertEquals(obj, received);
@@ -453,7 +454,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
   }
 
   @Test
-  public void testPublishWithCodecFromSelector() {
+  public void testPublishWithCodecFromSelector() throws Exception {
     ImmutableObject obj = new ImmutableObject(TestUtils.randomAlphaString(15));
     testPublish(obj, (received) -> {
       assertEquals(obj, received);
@@ -464,24 +465,24 @@ public abstract class EventBusTestBase extends VertxTestBase {
   protected abstract boolean shouldImmutableObjectBeCopied();
 
   @Test
-  public void testSendWithHeaders() {
+  public void testSendWithHeaders() throws Exception {
     testSend("foo", "foo", null, new DeliveryOptions().addHeader("uhqwduh", "qijwdqiuwd").addHeader("iojdijef", "iqjwddh"));
   }
 
   @Test
-  public void testSendWithDeliveryOptionsButNoHeaders() {
+  public void testSendWithDeliveryOptionsButNoHeaders() throws Exception {
     testSend("foo", "foo", null, new DeliveryOptions());
   }
 
   @Test
-  public void testReplyWithHeaders() {
+  public void testReplyWithHeaders() throws Exception {
     testReply("foo", "foo", null, new DeliveryOptions().addHeader("uhqwduh", "qijwdqiuwd").addHeader("iojdijef", "iqjwddh"));
   }
 
   @Test
   public void testReplyFromWorker() throws Exception {
     String expectedBody = TestUtils.randomAlphaString(20);
-    startNodes(2);
+    Vertx[] vertices = vertices(2);
     CountDownLatch latch = new CountDownLatch(1);
     vertices[0].deployVerticle(new AbstractVerticle() {
       @Override
@@ -506,7 +507,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
   public void testSendFromExecuteBlocking() throws Exception {
     String expectedBody = TestUtils.randomAlphaString(20);
     CountDownLatch receivedLatch = new CountDownLatch(1);
-    startNodes(2);
+    Vertx[] vertices = vertices(2);
     vertices[1].eventBus().<String>consumer(ADDRESS1, msg -> {
       assertEquals(expectedBody, msg.body());
       receivedLatch.countDown();
@@ -528,7 +529,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
 
   @Test
   public void testNoHandlersCallbackContext() {
-    startNodes(2);
+    Vertx[] vertices = vertices(2);
     waitFor(4);
 
     // On an "external" thread
@@ -594,27 +595,105 @@ public abstract class EventBusTestBase extends VertxTestBase {
     await();
   }
 
-  protected <T> void testSend(T val) {
+  protected <T> void testSend(T val) throws Exception {
     testSend(val, null);
   }
 
-  protected abstract <T, R> void testSend(T val, R received, Consumer<T> consumer, DeliveryOptions options);
+  protected <T, R> void testSend(T val, R received, Consumer<T> consumer, DeliveryOptions options) throws Exception {
+    Vertx[] vertices = vertices(2);
+    MessageConsumer<T> reg = vertices[1].eventBus().<T>consumer(ADDRESS1).handler((Message<T> msg) -> {
+      if (consumer == null) {
+        assertTrue(msg.isSend());
+        assertEquals(received, msg.body());
+        if (options != null) {
+          assertNotNull(msg.headers());
+          int numHeaders = options.getHeaders() != null ? options.getHeaders().size() : 0;
+          assertEquals(numHeaders, msg.headers().size());
+          if (numHeaders != 0) {
+            for (Map.Entry<String, String> entry : options.getHeaders().entries()) {
+              assertEquals(msg.headers().get(entry.getKey()), entry.getValue());
+            }
+          }
+        }
+      } else {
+        consumer.accept(msg.body());
+      }
+      testComplete();
+    });
+    awaitFuture(reg.completion());
+    if (options == null) {
+      vertices[0].eventBus().send(ADDRESS1, val);
+    } else {
+      vertices[0].eventBus().send(ADDRESS1, val, options);
+    }
+    await();
+  }
 
-  protected abstract <T> void testSend(T val, Consumer<T> consumer);
+  protected <T> void testSend(T val, Consumer<T> consumer) throws Exception {
+    testSend(val, val, consumer, null);
+  }
 
-  protected <T> void testReply(T val) {
+  protected <T> void testReply(T val) throws Exception {
     testReply(val, null);
   }
 
-  protected abstract <T> void testReply(T val, Consumer<T> consumer);
+  protected <T> void testReply(T val, Consumer<T> consumer) throws Exception {
+    testReply(val, val, consumer, null);
+  }
 
-  protected abstract <T, R> void testReply(T val, R received, Consumer<R> consumer, DeliveryOptions options);
+  protected <T, R> void testReply(T val, R received, Consumer<R> consumer, DeliveryOptions options) throws Exception {
+    Vertx[] vertices = vertices(2);
+    String str = TestUtils.randomUnicodeString(1000);
+    MessageConsumer<?> reg = vertices[1].eventBus().consumer(ADDRESS1, msg -> {
+      assertEquals(str, msg.body());
+      if (options == null) {
+        msg.reply(val);
+      } else {
+        msg.reply(val, options);
+      }
+    });
+    awaitFuture(reg.completion());
+    vertices[0].eventBus().<R>request(ADDRESS1, str).onComplete(onSuccess((Message<R> reply) -> {
+      if (consumer == null) {
+        assertTrue(reply.isSend());
+        assertEquals(received, reply.body());
+        if (options != null && options.getHeaders() != null) {
+          assertNotNull(reply.headers());
+          assertEquals(options.getHeaders().size(), reply.headers().size());
+          for (Map.Entry<String, String> entry: options.getHeaders().entries()) {
+            assertEquals(reply.headers().get(entry.getKey()), entry.getValue());
+          }
+        }
+      } else {
+        consumer.accept(reply.body());
+      }
+      testComplete();
+    }));
+    await();
+  }
 
-  protected <T> void testPublish(T val) {
+  protected <T> void testPublish(T val) throws Exception {
     testPublish(val, null);
   }
 
-  protected abstract <T> void testPublish(T val, Consumer<T> consumer);
+  protected <T> void testPublish(T val, Consumer<T> consumer) throws Exception {
+    Vertx[] vertices = vertices(3);
+    waitFor(vertices.length - 1);
+    for (int i = 1;i < vertices.length;i++) {
+      MessageConsumer<?> reg = vertices[i].eventBus().<T>consumer(ADDRESS1).handler(msg -> {
+        if (consumer == null) {
+          assertFalse(msg.isSend());
+          assertEquals(val, msg.body());
+        } else {
+          consumer.accept(msg.body());
+        }
+        complete();
+      });
+      awaitFuture(reg.completion());
+    }
+    vertices[0].eventBus().publish(ADDRESS1, val);
+    await();
+  }
 
   public static class MySystemDecoder implements MessageCodec<MyPOJO, String> {
 
