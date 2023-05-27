@@ -27,7 +27,6 @@ import io.vertx.test.core.TestUtils;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
 
-import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -68,86 +67,15 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
   }
 
   @Override
-  protected <T, R> void testSend(T val, R received, Consumer<T> consumer, DeliveryOptions options) {
+  protected Vertx[] vertices(int num) {
     if (vertices == null) {
-      startNodes(2);
+      startNodes(num);
     }
-
-    MessageConsumer<T> reg = vertices[1].eventBus().<T>consumer(ADDRESS1).handler((Message<T> msg) -> {
-      if (consumer == null) {
-        assertTrue(msg.isSend());
-        assertEquals(received, msg.body());
-        if (options != null) {
-          assertNotNull(msg.headers());
-          int numHeaders = options.getHeaders() != null ? options.getHeaders().size() : 0;
-          assertEquals(numHeaders, msg.headers().size());
-          if (numHeaders != 0) {
-            for (Map.Entry<String, String> entry : options.getHeaders().entries()) {
-              assertEquals(msg.headers().get(entry.getKey()), entry.getValue());
-            }
-          }
-        }
-      } else {
-        consumer.accept(msg.body());
-      }
-      testComplete();
-    });
-    reg.completion().onComplete(ar -> {
-      assertTrue(ar.succeeded());
-      if (options == null) {
-        vertices[0].eventBus().send(ADDRESS1, val);
-      } else {
-        vertices[0].eventBus().send(ADDRESS1, val, options);
-      }
-    });
-    await();
-  }
-
-  @Override
-  protected <T> void testSend(T val, Consumer <T> consumer) {
-    testSend(val, val, consumer, null);
-  }
-
-  @Override
-  protected <T> void testReply(T val, Consumer<T> consumer) {
-    testReply(val, val, consumer, null);
-  }
-
-  @Override
-  protected <T, R> void testReply(T val, R received, Consumer<R> consumer, DeliveryOptions options) {
-    if (vertices == null) {
-      startNodes(2);
+    Vertx[] instances = new Vertx[num];
+    for (int i = 0;i < num;i++) {
+      instances[i] = vertices[i];
     }
-    String str = TestUtils.randomUnicodeString(1000);
-    MessageConsumer<?> reg = vertices[1].eventBus().consumer(ADDRESS1).handler(msg -> {
-      assertEquals(str, msg.body());
-      if (options == null) {
-        msg.reply(val);
-      } else {
-        msg.reply(val, options);
-      }
-    });
-    reg.completion().onComplete(ar -> {
-      assertTrue(ar.succeeded());
-      vertices[0].eventBus().<R>request(ADDRESS1, str).onComplete(onSuccess((Message<R> reply) -> {
-        if (consumer == null) {
-          assertTrue(reply.isSend());
-          assertEquals(received, reply.body());
-          if (options != null && options.getHeaders() != null) {
-            assertNotNull(reply.headers());
-            assertEquals(options.getHeaders().size(), reply.headers().size());
-            for (Map.Entry<String, String> entry: options.getHeaders().entries()) {
-              assertEquals(reply.headers().get(entry.getKey()), entry.getValue());
-            }
-          }
-        } else {
-          consumer.accept(reply.body());
-        }
-        testComplete();
-      }));
-    });
-
-    await();
+    return instances;
   }
 
   @Test
@@ -175,42 +103,6 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
       assertTrue(ar.succeeded());
       vertices[1].eventBus().send(ADDRESS1, str);
     });
-    await();
-  }
-
-  @Override
-  protected <T> void testPublish(T val, Consumer<T> consumer) {
-    int numNodes = 3;
-    startNodes(numNodes);
-    AtomicInteger count = new AtomicInteger();
-    class MyHandler implements Handler<Message<T>> {
-      @Override
-      public void handle(Message<T> msg) {
-        if (consumer == null) {
-          assertFalse(msg.isSend());
-          assertEquals(val, msg.body());
-        } else {
-          consumer.accept(msg.body());
-        }
-        if (count.incrementAndGet() == numNodes - 1) {
-          testComplete();
-        }
-      }
-    }
-    AtomicInteger registerCount = new AtomicInteger(0);
-    class MyRegisterHandler implements Handler<AsyncResult<Void>> {
-      @Override
-      public void handle(AsyncResult<Void> ar) {
-        assertTrue(ar.succeeded());
-        if (registerCount.incrementAndGet() == 2) {
-          vertices[0].eventBus().publish(ADDRESS1, val);
-        }
-      }
-    }
-    MessageConsumer reg = vertices[2].eventBus().<T>consumer(ADDRESS1).handler(new MyHandler());
-    reg.completion().onComplete(new MyRegisterHandler());
-    reg = vertices[1].eventBus().<T>consumer(ADDRESS1).handler(new MyHandler());
-    reg.completion().onComplete(new MyRegisterHandler());
     await();
   }
 
