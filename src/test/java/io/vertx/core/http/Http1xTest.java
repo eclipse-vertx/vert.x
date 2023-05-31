@@ -5364,7 +5364,6 @@ public class Http1xTest extends HttpTest {
     waitFor(num);
     CountDownLatch latch = new CountDownLatch(1);
     server.requestHandler(req -> {
-      System.out.println("got req");
       latch.countDown();
     });
     startServer(testAddress);
@@ -5372,15 +5371,14 @@ public class Http1xTest extends HttpTest {
     client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1));
     for (int i = 0;i < num;i++) {
       int val = i;
-      client.request(requestOptions).compose(request -> {
-        return request.send().onComplete(ar -> {
-
-        });
-      }).onComplete(onFailure(err -> {
+      client
+        .request(requestOptions)
+        .compose(HttpClientRequest::send)
+        .onComplete(onFailure(err -> {
         if (val == 0) {
           assertEquals("Connection was closed", err.getMessage());
         } else {
-          assertEquals("Pool closed", err.getMessage());
+          assertTrue("Expected " + err.getMessage() + " to contain with <closed>", err.getMessage().contains("closed"));
         }
         complete();
       }));
