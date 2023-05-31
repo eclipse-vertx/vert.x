@@ -1985,7 +1985,7 @@ public class NetTest extends VertxTestBase {
     for (int i = 0;i < len;i++) {
       File sockFile = TestUtils.tmpFile(".sock");
       SocketAddress sockAddress = SocketAddress.domainSocketAddress(sockFile.getAbsolutePath());
-      NetServer server = vertx
+      NetServer server = vx
         .createNetServer()
         .connectHandler(so -> {
           so.end(Buffer.buffer(sockAddress.path()));
@@ -1993,6 +1993,7 @@ public class NetTest extends VertxTestBase {
       startServer(sockAddress, server);
       addresses.add(sockAddress);
     }
+    NetClient client = vx.createNetClient();
     for (int i = 0;i < len;i++) {
       for (int j = 0;j < len;j++) {
         SocketAddress sockAddress = addresses.get(i);
