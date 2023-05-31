@@ -49,7 +49,7 @@ public class AsyncTestBase {
   private volatile boolean awaitCalled;
   private boolean threadChecksEnabled = true;
   private volatile boolean tearingDown;
-  private volatile String mainThreadName;
+  private volatile Thread mainThread;
   private volatile boolean lateFailure;
   private Map<String, Exception> threadNames = new ConcurrentHashMap<>();
   @Rule
@@ -58,7 +58,7 @@ public class AsyncTestBase {
 
   protected void setUp() throws Exception {
     log.info("Starting test: " + this.getClass().getSimpleName() + "#" + name.getMethodName());
-    mainThreadName = Thread.currentThread().getName();
+    mainThread = Thread.currentThread();
     tearingDown = false;
     waitFor(1);
     throwable = null;
@@ -166,7 +166,7 @@ public class AsyncTestBase {
       throw new IllegalStateException("Test reported a failure after completion");
     }
     for (Map.Entry<String, Exception> entry: threadNames.entrySet()) {
-      if (!entry.getKey().equals(mainThreadName)) {
+      if (!entry.getKey().equals(mainThread.getName())) {
         if (threadChecksEnabled && !entry.getKey().startsWith("vert.x-")) {
           IllegalStateException is = new IllegalStateException("Non Vert.x thread! :" + entry.getKey());
           is.setStackTrace(entry.getValue().getStackTrace());
@@ -178,7 +178,7 @@ public class AsyncTestBase {
   }
 
   private void handleThrowable(Throwable t) {
-    if (testCompleteCalled) {
+    if (Thread.currentThread() != mainThread && testCompleteCalled) {
       lateFailure = true;
       throw new IllegalStateException("assert or failure occurred after test has completed", t);
     }

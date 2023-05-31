@@ -11,6 +11,7 @@
 
 package io.vertx.test.core;
 
+import org.junit.Assert;
 import org.junit.ComparisonFailure;
 import org.junit.Test;
 import org.junit.runner.JUnitCore;
@@ -289,7 +290,7 @@ public class AsyncTestBaseTest extends AsyncTestBase {
         } catch (Throwable ignore) {
         }
         latch.countDown();
-      }).run();
+      }).start();
     }
   }
 
@@ -303,5 +304,17 @@ public class AsyncTestBaseTest extends AsyncTestBase {
     }
     assertEquals(1, result.getFailureCount());
     assertEquals(IllegalStateException.class, result.getFailures().get(0).getException().getClass());
+  }
+
+  @Test
+  public void assertFailuresAfterCompleteFromMainThread() {
+    testComplete();
+    String msg = null;
+    try {
+      assertFalse("it failed", true);
+    } catch (AssertionError e) {
+      msg = e.getMessage();
+    }
+    Assert.assertEquals("it failed", msg);
   }
 }
