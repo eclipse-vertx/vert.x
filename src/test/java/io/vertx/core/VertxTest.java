@@ -31,6 +31,8 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import java.lang.ref.WeakReference;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -176,7 +178,7 @@ public class VertxTest extends AsyncTestBase {
       }
       socketRef.get().end(Buffer.buffer(
         "HTTP/1.1 200 OK\r\n" +
-          "Content-Length\r\n" +
+          "Content-Length: 0\r\n" +
           "\r\n"
       ));
       long now = System.currentTimeMillis();
@@ -202,6 +204,42 @@ public class VertxTest extends AsyncTestBase {
         .onComplete(onSuccess(v -> testComplete()));
     }
     await();
+  }
+
+  @Test
+  public void testFinalizeHttpClientWithRequestNotYetSent() throws Exception {
+    VertxInternal vertx = (VertxInternal) Vertx.vertx();
+    try {
+      CountDownLatch latch = new CountDownLatch(1);
+      vertx.createNetServer()
+        .connectHandler(so -> {
+          so.handler(buff -> {
+            so.write("HTTP/1.1 200 OK\r\n" +
+              "Content-Length: 0\r\n" +
+              "\r\n");
+          });
+        })
+        .listen(8080, "localhost")
+        .onComplete(onSuccess(server -> latch.countDown()));
+      awaitLatch(latch);
+      HttpClient client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(1));
+      Future<HttpClientRequest> fut = client.request(HttpMethod.GET, 8080, "localhost", "/");
+      assertWaitUntil(fut::succeeded);
+      WeakReference<HttpClient> ref = new WeakReference<>(client);
+      client = null;
+      runGC();
+      assertNull(ref.get());
+      fut.onComplete(onSuccess(req -> {
+        req.send().onComplete(onSuccess(resp -> {
+          testComplete();
+        }));
+      }));
+      await();
+    } finally {
+      vertx
+        .close()
+        .onComplete(onSuccess(v -> testComplete()));
+    }
 
   }
 

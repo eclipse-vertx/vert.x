@@ -5395,6 +5395,7 @@ public class Http1xTest extends HttpTest {
   @Test
   public void testShutdown() throws Exception {
     int num = 4;
+    waitFor(num);
     AtomicReference<HttpServerRequest> ref = new AtomicReference<>();
     server.requestHandler(req -> {
       ref.compareAndSet(null, req);
@@ -5402,7 +5403,6 @@ public class Http1xTest extends HttpTest {
     startServer(testAddress);
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1));
-    CountDownLatch latch2 = new CountDownLatch(num - 1);
     for (int i = 0;i < num;i++) {
       int val = i;
       client.request(requestOptions)
@@ -5413,17 +5413,17 @@ public class Http1xTest extends HttpTest {
             assertTrue(ar.succeeded());
           } else {
             assertTrue(ar.failed());
-            assertEquals("Pool closed", ar.cause().getMessage());
-            latch2.countDown();
+            assertEquals("Client is closed", ar.cause().getMessage());
           }
+          complete();
         });
       if (i == 0) {
         assertWaitUntil(() -> ref.get() != null);
       }
     }
     Future<Void> shutdown = client.close(10, TimeUnit.SECONDS);
-    awaitLatch(latch2);
     ref.get().response().end("hello");
     awaitFuture(shutdown);
+    await();
   }
 }
