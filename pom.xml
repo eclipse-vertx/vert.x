@@ -833,11 +833,10 @@
     </profile>
 
     <profile>
-      <id>linux-x86_64</id>
+      <id>linux</id>
       <activation>
         <os>
           <family>linux</family>
-          <arch>x86_64</arch>
         </os>
       </activation>
       <dependencies>
@@ -845,24 +844,6 @@
           <groupId>io.netty</groupId>
           <artifactId>netty-transport-native-epoll</artifactId>
           <classifier>linux-x86_64</classifier>
-          <scope>test</scope>
-        </dependency>
-      </dependencies>
-    </profile>
-
-    <profile>
-      <id>linux-aarch64</id>
-      <activation>
-        <os>
-          <family>linux</family>
-          <arch>aarch64</arch>
-        </os>
-      </activation>
-      <dependencies>
-        <dependency>
-          <groupId>io.netty</groupId>
-          <artifactId>netty-transport-native-epoll</artifactId>
-          <classifier>linux-aarch_64</classifier>
           <scope>test</scope>
         </dependency>
       </dependencies>
