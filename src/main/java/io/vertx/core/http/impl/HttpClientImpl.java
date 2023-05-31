@@ -436,12 +436,14 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider {
         timerID = -1;
       }
     }
-    httpCM.close();
-    webSocketCM.close();
+    httpCM.shutdown();
+    webSocketCM.shutdown();
     netClient.shutdown(closeTimeout, closeTimeoutUnit).onComplete(p);
   }
 
   private void doClose(Promise<Void> p) {
+    httpCM.close();
+    webSocketCM.close();
     netClient.close().onComplete(p);
   }
 

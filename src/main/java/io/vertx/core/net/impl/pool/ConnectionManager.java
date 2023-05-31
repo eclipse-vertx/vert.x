@@ -18,6 +18,7 @@ import io.vertx.core.impl.ContextInternal;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 /**
@@ -34,6 +35,8 @@ public class ConnectionManager<K, C> {
     endpointMap.values().forEach(consumer);
   }
 
+  private final AtomicInteger status = new AtomicInteger();
+
   public Future<C> getConnection(ContextInternal ctx,
                             K key,
                             EndpointProvider<C> provider) {
@@ -44,6 +47,12 @@ public class ConnectionManager<K, C> {
                                  K key,
                                  EndpointProvider<C> provider,
                                  long timeout) {
+    int st = status.get();
+    if (st == 1) {
+      return ctx.failedFuture("Pool shutdown");
+    } else if (st == 2) {
+      return ctx.failedFuture("Pool closed");
+    }
     Runnable dispose = () -> endpointMap.remove(key);
     while (true) {
       Endpoint<C> endpoint = endpointMap.computeIfAbsent(key, k -> provider.create(ctx, dispose));
@@ -54,9 +63,21 @@ public class ConnectionManager<K, C> {
     }
   }
 
+  public void shutdown() {
+    status.compareAndSet(0, 1);
+  }
+
   public void close() {
-    for (Endpoint<C> endpoint : endpointMap.values()) {
-      endpoint.close();
+    while (true) {
+      int val = status.get();
+      if (val > 1) {
+        break;
+      } else if (status.compareAndSet(val, 2)) {
+        for (Endpoint<C> endpoint : endpointMap.values()) {
+          endpoint.close();
+        }
+        break;
+      }
     }
   }
 }
