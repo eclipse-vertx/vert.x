@@ -19,6 +19,7 @@ import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingOptions;
 import io.vertx.test.fakecluster.FakeClusterManager;
+import junit.framework.AssertionFailedError;
 import org.junit.Assert;
 import org.junit.Rule;
 
@@ -64,7 +65,15 @@ public class VertxTestBase extends AsyncTestBase {
     VertxOptions options = getOptions();
     boolean nativeTransport = options.getPreferNativeTransport();
     vertx = vertx(options);
-    if (nativeTransport) {
+    if (nativeTransport && !vertx.isNativeTransportEnabled()) {
+      if (!vertx.isNativeTransportEnabled()) {
+        AssertionFailedError afe = new AssertionFailedError("Expected native transport");
+        Throwable cause = vertx.unavailableNativeTransportCause();
+        if (cause != null) {
+          afe.initCause(cause);
+        }
+        throw afe;
+      }
       assertTrue(vertx.isNativeTransportEnabled());
     }
   }
