@@ -178,12 +178,13 @@ public abstract class HttpTest extends HttpTestBase {
     for (int i = 0;i < len;i++) {
       File sockFile = TestUtils.tmpFile(".sock");
       SocketAddress sockAddress = SocketAddress.domainSocketAddress(sockFile.getAbsolutePath());
-      HttpServer server = vertx
+      HttpServer server = vx
         .createHttpServer(createBaseServerOptions())
         .requestHandler(req -> req.response().end(sockAddress.path()));
       startServer(sockAddress, server);
       addresses.add(sockAddress);
     }
+    HttpClient client = vx.createHttpClient(createBaseClientOptions());
     for (int i = 0;i < len;i++) {
       SocketAddress sockAddress = addresses.get(i);
       for (int j = 0;j < len;j++) {
