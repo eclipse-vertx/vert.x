@@ -16,6 +16,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.jackson.JacksonFactory;
 import io.vertx.core.spi.JsonFactory;
 import io.vertx.core.spi.json.JsonCodec;
+import org.intellij.lang.annotations.Language;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -79,7 +80,7 @@ public class Json {
    * @return an instance of T
    * @throws DecodeException when there is a parsing or invalid mapping.
    */
-  public static <T> T decodeValue(String str, Class<T> clazz) throws DecodeException {
+  public static <T> T decodeValue(@Language("json") String str, Class<T> clazz) throws DecodeException {
     return CODEC.fromString(str, clazz);
   }
 
@@ -91,7 +92,7 @@ public class Json {
    * @return a JSON element which can be a {@link JsonArray}, {@link JsonObject}, {@link String}, ...etc if the content is an array, object, string, ...etc
    * @throws DecodeException when there is a parsing or invalid mapping.
    */
-  public static Object decodeValue(String str) throws DecodeException {
+  public static Object decodeValue(@Language("json") String str) throws DecodeException {
     return decodeValue(str, Object.class);
   }
 

@@ -19,6 +19,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import org.intellij.lang.annotations.Language;
 
 import static io.vertx.core.json.impl.JsonUtil.*;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
@@ -48,7 +49,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    *
    * @param json the string of JSON
    */
-  public JsonArray(String json) {
+  public JsonArray(@Language("json") String json) {
     if (json == null) {
       throw new NullPointerException();
     }

@@ -18,6 +18,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import org.intellij.lang.annotations.Language;
 
 import static io.vertx.core.json.impl.JsonUtil.*;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
@@ -44,7 +45,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    *
    * @param json the string of JSON
    */
-  public JsonObject(String json) {
+  public JsonObject(@Language("json") String json) {
     if (json == null) {
       throw new NullPointerException();
     }

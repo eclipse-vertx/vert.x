@@ -50,6 +50,7 @@
     <generated.dir>${project.basedir}/src/main/generated</generated.dir>
     <stack.version>5.0.0-SNAPSHOT</stack.version>
     <jmh.version>1.36</jmh.version>
+    <org.jetbrains.annotations.version>24.0.1</org.jetbrains.annotations.version>
     <vertx.testNativeTransport>false</vertx.testNativeTransport>
     <vertx.testDomainSockets>false</vertx.testDomainSockets>
     <jar.manifest>${project.basedir}/src/main/resources/META-INF/MANIFEST.MF</jar.manifest>
@@ -155,6 +156,14 @@
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-docgen</artifactId>
+      <optional>true</optional>
+    </dependency>
+
+    <!-- Intelli Sense -->
+    <dependency>
+      <groupId>org.jetbrains</groupId>
+      <artifactId>annotations</artifactId>
+      <version>${org.jetbrains.annotations.version}</version>
       <optional>true</optional>
     </dependency>
 
