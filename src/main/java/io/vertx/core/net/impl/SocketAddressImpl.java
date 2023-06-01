@@ -82,7 +82,6 @@ public class SocketAddressImpl implements SocketAddress{
 
   public SocketAddressImpl(String path) {
     Objects.requireNonNull(path, "domain socket path must be non null");
-    Arguments.require(!path.isEmpty(), "domain socket must not be empty");
     this.port = -1;
     this.host = null;
     this.ipAddress = null;

@@ -125,7 +125,7 @@ public interface SocketAddress {
   int port();
 
   /**
-   * @return the domain socket path or {@code null} for a inet socket address.
+   * @return the domain socket path or {@code null} for inet socket address, empty path represents unnamed domain socket addresses.
    */
   @CacheReturn
   String path();
