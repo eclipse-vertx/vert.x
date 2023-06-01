@@ -2132,20 +2132,30 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
-  public void testRemoteAddress() {
+  public void  testSocketAddress() {
     server.connectHandler(socket -> {
-      SocketAddress addr = socket.remoteAddress();
-      assertEquals("127.0.0.1", addr.host());
-      assertEquals(null, addr.hostName());
-      assertEquals("127.0.0.1", addr.hostAddress());
-      socket.close();
-    }).listen(1234, "localhost").onComplete(onSuccess(v -> {
-      vertx.createNetClient(new NetClientOptions()).connect(1234, "localhost").onComplete(onSuccess(socket -> {
-        SocketAddress addr = socket.remoteAddress();
-        assertEquals("localhost", addr.host());
-        assertEquals("localhost", addr.hostName());
+      SocketAddress addr = socket.localAddress();
+      if (addr.isInetSocket()) {
+        assertEquals("127.0.0.1", addr.host());
+        assertEquals(null, addr.hostName());
         assertEquals("127.0.0.1", addr.hostAddress());
-        assertEquals(addr.port(), 1234);
+      } else {
+        assertEquals(testAddress.path(), addr.path());
+        assertEquals("", socket.remoteAddress().path());
+      }
+      socket.close();
+    }).listen(testAddress).onComplete(onSuccess(v -> {
+      vertx.createNetClient(new NetClientOptions()).connect(testAddress).onComplete(onSuccess(socket -> {
+        SocketAddress addr = socket.remoteAddress();
+        if (addr.isInetSocket()) {
+          assertEquals("localhost", addr.host());
+          assertEquals("localhost", addr.hostName());
+          assertEquals("127.0.0.1", addr.hostAddress());
+          assertEquals(addr.port(), 1234);
+        } else {
+          assertEquals(testAddress.path(), addr.path());
+          assertEquals("", socket.localAddress().path());
+        }
         socket.closeHandler(v2 -> testComplete());
       }));
     }));
@@ -4108,10 +4118,14 @@ public class NetTest extends VertxTestBase {
     server = vertx.createNetServer(new NetServerOptions()
       .setUseProxyProtocol(true))
       .connectHandler(so -> {
-        SocketAddress ra = so.remoteAddress();
-        SocketAddress la = so.localAddress();
-        assertAddresses(remote == null && testAddress.isInetSocket() ? proxy.getConnectionLocalAddress() : remote, ra);
-        assertAddresses(local == null && testAddress.isInetSocket() ? proxy.getConnectionRemoteAddress() : local, la);
+        assertAddresses(remote == null && testAddress.isInetSocket() ?
+            proxy.getConnectionLocalAddress() :
+            remote,
+          so.remoteAddress());
+        assertAddresses(local == null && testAddress.isInetSocket() ?
+            proxy.getConnectionRemoteAddress() :
+            local,
+          so.localAddress());
         complete();
       });
     startServer();
