@@ -53,11 +53,7 @@ public class KQueueTransport implements Transport {
   @Override
   public io.vertx.core.net.SocketAddress convert(SocketAddress address) {
     if (address instanceof DomainSocketAddress) {
-      String path = ((DomainSocketAddress) address).path();
-      if (path.isEmpty()) {
-        return null;
-      }
-      return new SocketAddressImpl(path);
+      return new SocketAddressImpl(((DomainSocketAddress) address).path());
     }
     return Transport.super.convert(address);
   }
