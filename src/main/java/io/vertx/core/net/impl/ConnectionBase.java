@@ -654,6 +654,10 @@ public abstract class ConnectionBase {
 
   private SocketAddress channelLocalAddress() {
     java.net.SocketAddress addr = chctx.channel().localAddress();
+    if (addr == null && channel().getClass().getSimpleName().endsWith("DomainSocketChannel")) {
+      // Workaround bug https://github.com/netty/netty/issues/13417
+      return SocketAddress.domainSocketAddress("");
+    }
     return addr != null ? vertx.transport().convert(addr) : null;
   }
 
