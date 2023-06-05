@@ -80,13 +80,15 @@ This extension is not required as its absence does not prevent Vert.x to execute
 
 You can use add it to your classpath to improve the integration and remove the warning.
 
+.Intel-based Mac
 [source,xml]
 ----
 <profile>
-  <id>mac</id>
+  <id>mac-intel</id>
   <activation>
     <os>
       <family>mac</family>
+      <arch>x86_64</arch>
     </os>
   </activation>
   <dependencies>
@@ -94,6 +96,28 @@ You can use add it to your classpath to improve the integration and remove the w
       <groupId>io.netty</groupId>
       <artifactId>netty-resolver-dns-native-macos</artifactId>
       <classifier>osx-x86_64</classifier>
+      <!--<version>Should align with netty version that Vert.x uses</version>-->
+    </dependency>
+  </dependencies>
+</profile>
+----
+
+.M1/M2 Mac
+[source,xml]
+----
+<profile>
+  <id>mac-silicon</id>
+  <activation>
+    <os>
+      <family>mac</family>
+      <arch>aarch64</arch>
+    </os>
+  </activation>
+  <dependencies>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-resolver-dns-native-macos</artifactId>
+      <classifier>osx-aarch_64</classifier>
       <!--<version>Should align with netty version that Vert.x uses</version>-->
     </dependency>
   </dependencies>

@@ -1285,6 +1285,7 @@ Native on Linux gives you extra networking options:
 
 You need to add the following dependency in your classpath:
 
+.Intel-based Mac
 [source,xml]
 ----
 <dependency>
@@ -1292,6 +1293,17 @@ You need to add the following dependency in your classpath:
   <artifactId>netty-transport-native-kqueue</artifactId>
   <classifier>osx-x86_64</classifier>
   <!--<version>Should align with netty version that Vert.x uses</version>-->
+</dependency>
+----
+
+.M1/M2 Mac
+[source,xml]
+----
+<dependency>
+<groupId>io.netty</groupId>
+<artifactId>netty-transport-native-kqueue</artifactId>
+<classifier>osx-aarch_64</classifier>
+<!--<version>Should align with netty version that Vert.x uses</version>-->
 </dependency>
 ----
 
