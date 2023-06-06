@@ -58,7 +58,7 @@ class NetClientImpl implements NetClientInternal {
   private final VertxInternal vertx;
   private final NetClientOptions options;
   private final SSLHelper sslHelper;
-  private final AtomicReference<Future<SslChannelProvider>> sslChannelProvider = new AtomicReference<>();
+  private Future<SslContextUpdate> sslChannelProvider;
   public final ChannelGroup channelGroup;
   private final TCPMetrics metrics;
   public ShutdownEvent closeEvent;
@@ -202,9 +202,21 @@ class NetClientImpl implements NetClientInternal {
 
   @Override
   public Future<Void> updateSSLOptions(SSLOptions options) {
-    Future<SslChannelProvider> fut = sslHelper.buildChannelProvider(new SSLOptions(options), vertx.getOrCreateContext());
-    fut.onSuccess(v -> sslChannelProvider.set(fut));
-    return fut.mapEmpty();
+    Future<SslContextUpdate> fut;
+    ContextInternal ctx = vertx.getOrCreateContext();
+    synchronized (this) {
+      fut = sslHelper.updateSslContext(new SSLOptions(options), ctx);
+      sslChannelProvider = fut;
+    }
+    return fut.transform(ar -> {
+      if (ar.failed()) {
+        return ctx.failedFuture(ar.cause());
+      } else if (ar.succeeded() && ar.result().error() != null) {
+        return ctx.failedFuture(ar.result().error());
+      } else {
+        return ctx.succeededFuture();
+      }
+    });
   }
 
   private void connect(SocketAddress remoteAddress, String serverName, Promise<NetSocket> connectHandler, ContextInternal ctx) {
@@ -252,21 +264,17 @@ class NetClientImpl implements NetClientInternal {
     if (closeSequence.started()) {
       connectHandler.fail(new IllegalStateException("Client is closed"));
     } else {
-      Future<SslChannelProvider> fut;
-      while (true) {
-        fut = sslChannelProvider.get();
+      Future<SslContextUpdate> fut;
+      synchronized (NetClientImpl.this) {
+        fut = sslChannelProvider;
         if (fut == null) {
-          fut = sslHelper.buildChannelProvider(options.getSslOptions(), context);
-          if (sslChannelProvider.compareAndSet(null, fut)) {
-            break;
-          }
-        } else {
-          break;
+          fut = sslHelper.updateSslContext(options.getSslOptions(), context);
+          sslChannelProvider = fut;
         }
       }
       fut.onComplete(ar -> {
         if (ar.succeeded()) {
-          connectInternal2(proxyOptions, remoteAddress, peerAddress, ar.result(), serverName, ssl, useAlpn, registerWriteHandlers, connectHandler, context, remainingAttempts);
+          connectInternal2(proxyOptions, remoteAddress, peerAddress, ar.result().sslChannelProvider(), serverName, ssl, useAlpn, registerWriteHandlers, connectHandler, context, remainingAttempts);
         } else {
           connectHandler.fail(ar.cause());
         }

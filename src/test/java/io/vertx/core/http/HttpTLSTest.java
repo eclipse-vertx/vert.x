@@ -1639,7 +1639,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
   }
 
   @Test
-  public void testReloadSSLOptions() throws Exception {
+  public void testUpdateSSLOptions() throws Exception {
     server = createHttpServer(createBaseServerOptions().setSsl(true).setKeyCertOptions(Cert.SERVER_JKS.get()))
       .requestHandler(req -> {
         req.response().end("Hello World");
@@ -1658,6 +1658,61 @@ public abstract class HttpTLSTest extends HttpTestBase {
             }));
           }));
         }));
+      }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testUpdateWithInvalidSSLOptions() throws Exception {
+    server = createHttpServer(createBaseServerOptions().setSsl(true).setKeyCertOptions(Cert.SERVER_JKS.get()))
+      .requestHandler(req -> {
+        req.response().end("Hello World");
+      });
+    startServer(testAddress);
+    client = createHttpClient(new HttpClientOptions().setKeepAlive(false).setSsl(true).setTrustOptions(Trust.SERVER_JKS.get()));
+    Future<Void> last = server.updateSSLOptions(new SSLOptions().setKeyCertOptions(new JksOptions().setValue(TestUtils.randomBuffer(20)).setPassword("invalid")));
+    last.onComplete(onFailure(err -> {
+      client
+        .request(requestOptions)
+        .compose(req -> req.send().compose(HttpClientResponse::body))
+        .onComplete(onSuccess(body -> {
+          assertEquals("Hello World", body.toString());
+          testComplete();
+        }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testConcurrentUpdateSSLOptions() throws Exception {
+    server = createHttpServer(createBaseServerOptions().setSsl(true).setKeyCertOptions(Cert.SERVER_JKS.get()))
+      .requestHandler(req -> {
+        req.response().end("Hello World");
+      });
+    startServer(testAddress);
+    client = createHttpClient(new HttpClientOptions().setKeepAlive(false).setSsl(true).setTrustOptions(Trust.SERVER_JKS_ROOT_CA.get()));
+    List<KeyCertOptions> list = Arrays.asList(
+      Cert.SERVER_PKCS12.get(),
+      Cert.SERVER_PEM.get(),
+      Cert.SERVER_PEM.get(),
+      Cert.SERVER_JKS_ROOT_CA.get());
+    AtomicInteger seq = new AtomicInteger();
+    Future<Void> last = null;
+    for (int i = 0;i < list.size();i++) {
+      int val = i;
+      last = server.updateSSLOptions(new SSLOptions().setKeyCertOptions(list.get(i)));
+      last.onComplete(onSuccess(v -> {
+        assertEquals(val, seq.getAndIncrement());
+      }));
+    }
+    last.onComplete(onSuccess(v -> {
+      client
+        .request(requestOptions)
+        .compose(req -> req.send().compose(HttpClientResponse::body))
+        .onComplete(onSuccess(body -> {
+        assertEquals("Hello World", body.toString());
+        testComplete();
       }));
     }));
     await();
