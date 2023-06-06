@@ -324,6 +324,25 @@ public class SSLOptions {
     return this;
   }
 
+  @Override
+  public boolean equals(Object obj) {
+    if (obj == this) {
+      return true;
+    }
+    if (obj instanceof SSLOptions) {
+      SSLOptions that = (SSLOptions) obj;
+      return sslHandshakeTimeoutUnit.toNanos(sslHandshakeTimeout) == that.sslHandshakeTimeoutUnit.toNanos(sslHandshakeTimeout) &&
+         Objects.equals(keyCertOptions, that.keyCertOptions) &&
+         Objects.equals(trustOptions, that.trustOptions) &&
+         Objects.equals(enabledCipherSuites, that.enabledCipherSuites) &&
+         Objects.equals(crlPaths, that.crlPaths) &&
+         Objects.equals(crlValues, that.crlValues) &&
+         useAlpn == that.useAlpn &&
+         Objects.equals(enabledSecureTransportProtocols, that.enabledSecureTransportProtocols);
+    }
+    return false;
+  }
+
   /**
    * Convert to JSON
    *

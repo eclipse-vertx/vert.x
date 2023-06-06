@@ -110,6 +110,7 @@ public class SSLHelper {
   private Function<String, KeyManagerFactory> keyManagerFactoryMapper;
   private Function<String, TrustManager[]> trustManagerMapper;
   private List<CRL> crls;
+  private Future<CachedProvider> cachedProvider;
 
   public SSLHelper(TCPSSLOptions options, List<String> applicationProtocols) {
     this.sslEngineOptions = options.getSslEngineOptions();
@@ -121,6 +122,17 @@ public class SSLHelper {
     this.endpointIdentificationAlgorithm = options instanceof NetClientOptions ? ((NetClientOptions)options).getHostnameVerificationAlgorithm() : "";
     this.sni = options instanceof NetServerOptions && ((NetServerOptions) options).isSni();
     this.applicationProtocols = applicationProtocols;
+  }
+
+  private static class CachedProvider {
+    final SSLOptions options;
+    final SslChannelProvider sslChannelProvider;
+    final Throwable failure;
+    CachedProvider(SSLOptions options, SslChannelProvider sslChannelProvider, Throwable failure) {
+      this.options = options;
+      this.sslChannelProvider = sslChannelProvider;
+      this.failure = failure;
+    }
   }
 
   private class EngineConfig {
@@ -148,6 +160,44 @@ public class SSLHelper {
         trustManagerMapper,
         crls,
         supplier);
+    }
+  }
+
+  /**
+   * Update cached options. This method ensures updates are serialized a nd performed when options is different
+   * (based on {@code equals}). Updates only happen when transforming {@code options} to a {@link SslChannelProvider}
+   * succeeds.
+   *
+   * @param options the options to use
+   * @param ctx the vertx context
+   * @return a future of the resolved channel provider
+   */
+  public Future<SslContextUpdate> updateSslContext(SSLOptions options, ContextInternal ctx) {
+    synchronized (this) {
+      if (cachedProvider == null) {
+        cachedProvider = this.buildChannelProvider(options, ctx).map(a -> new CachedProvider(options, a, null));
+      } else {
+        cachedProvider = cachedProvider.transform(prev -> {
+          if (prev.succeeded() && prev.result().options.equals(options)) {
+            return Future.succeededFuture(prev.result());
+          } else {
+            return this
+              .buildChannelProvider(options, ctx)
+              .transform(ar -> {
+                if (ar.succeeded()) {
+                  return ctx.succeededFuture(new CachedProvider(options, ar.result(), null));
+                } else {
+                  if (prev.succeeded()) {
+                    return ctx.succeededFuture(new CachedProvider(prev.result().options, prev.result().sslChannelProvider, ar.cause()));
+                  } else {
+                    return ctx.failedFuture(prev.cause());
+                  }
+                }
+              });
+          }
+        });
+      }
+      return cachedProvider.map(c -> new SslContextUpdate(c.sslChannelProvider, c.failure));
     }
   }
 

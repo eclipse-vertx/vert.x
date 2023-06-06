@@ -21,10 +21,10 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.impl.KeyStoreHelper;
 
 import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.X509KeyManager;
 import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -383,6 +383,21 @@ public class PemKeyCertOptions implements KeyCertOptions {
     Arguments.require(certValue != null, "Null certValue");
     certValues.add(certValue);
     return this;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj == this) {
+      return true;
+    }
+    if (obj != null && obj.getClass() == getClass()) {
+      PemKeyCertOptions that = (PemKeyCertOptions) obj;
+      return Objects.equals(keyPaths, that.keyPaths) &&
+        Objects.equals(keyValues, that.keyValues) &&
+        Objects.equals(certPaths, that.certPaths) &&
+        Objects.equals(certValues, that.certValues);
+    }
+    return false;
   }
 
   @Override

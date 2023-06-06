@@ -41,7 +41,6 @@ import java.net.InetSocketAddress;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
 /**
@@ -68,7 +67,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
 
   // Main
   private SSLHelper sslHelper;
-  private AtomicReference<SslChannelProvider> sslChannelProvider;
+  private volatile Future<SslContextUpdate> sslChannelProvider;
   private ServerChannelLoadBalancer channelBalancer;
   private Future<Channel> bindFuture;
   private Set<TCPServerBase> servers;
@@ -79,12 +78,15 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
     this.vertx = vertx;
     this.options = new NetServerOptions(options);
     this.creatingContext = vertx.getContext();
-    this.sslChannelProvider = new AtomicReference<>();
   }
 
   public SslContextProvider sslContextProvider() {
-    SslChannelProvider ref = sslChannelProvider.get();
-    return ref != null ? ref.sslContextProvider() : null;
+    SslContextUpdate update = sslChannelProvider.result();
+    if (update != null) {
+      return update.sslChannelProvider().sslContextProvider();
+    } else {
+      return null;
+    }
   }
 
   public int actualPort() {
@@ -99,11 +101,23 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
   }
 
   public Future<Void> updateSSLOptions(SSLOptions options) {
-    return sslHelper.buildChannelProvider(new SSLOptions(options), listenContext).andThen(ar -> {
-      if (ar.succeeded()) {
-        TCPServerBase.this.sslChannelProvider.set(ar.result());
-      }
-    }).<Void>mapEmpty();
+    TCPServerBase server = actualServer;
+    if (server != null && server != this) {
+      return server.updateSSLOptions(options);
+    } else {
+      ContextInternal ctx = vertx.getOrCreateContext();
+      Future<SslContextUpdate> update = sslHelper.updateSslContext(new SSLOptions(options), ctx);
+      sslChannelProvider = update;
+      return update.transform(ar -> {
+        if (ar.failed()) {
+          return ctx.failedFuture(ar.cause());
+        } else if (ar.succeeded() && ar.result().error() != null) {
+          return ctx.failedFuture(ar.result().error());
+        } else {
+          return ctx.succeededFuture();
+        }
+      });
+    }
   }
 
   public Future<TCPServerBase> bind(SocketAddress address) {
@@ -153,7 +167,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
         bindFuture = promise;
         sslHelper = createSSLHelper();
         childHandler =  childHandler(listenContext, localAddress);
-        worker = ch -> childHandler.accept(ch, sslChannelProvider.get());
+        worker = ch -> childHandler.accept(ch, sslChannelProvider.result().sslChannelProvider());
         servers = new HashSet<>();
         servers.add(this);
         channelBalancer = new ServerChannelLoadBalancer(vertx.getAcceptorEventLoopGroup().next());
@@ -166,11 +180,8 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
         listenContext.addCloseHook(this);
 
         // Initialize SSL before binding
-        sslHelper.buildChannelProvider(options.getSslOptions(), listenContext).onComplete(ar -> {
+        sslChannelProvider = sslHelper.updateSslContext(options.getSslOptions(), listenContext).onComplete(ar -> {
           if (ar.succeeded()) {
-
-            //
-            sslChannelProvider.set(ar.result());
 
             // Socket bind
             channelBalancer.addWorker(eventLoop, worker);
@@ -229,7 +240,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
         metrics = main.metrics;
         sslChannelProvider = main.sslChannelProvider;
         childHandler =  childHandler(listenContext, localAddress);
-        worker = ch -> childHandler.accept(ch, sslChannelProvider.get());
+        worker = ch -> childHandler.accept(ch, sslChannelProvider.result().sslChannelProvider());
         actualServer.servers.add(this);
         actualServer.channelBalancer.addWorker(eventLoop, worker);
         listenContext.addCloseHook(this);
