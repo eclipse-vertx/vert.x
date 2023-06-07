@@ -11,9 +11,7 @@
 
 package io.vertx.core.json;
 
-import io.vertx.core.ServiceHelper;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.json.jackson.JacksonFactory;
 import io.vertx.core.spi.JsonFactory;
 import io.vertx.core.spi.json.JsonCodec;
 

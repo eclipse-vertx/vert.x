@@ -553,7 +553,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return the string encoding
    */
   public String encode() {
-    return Json.CODEC.toString(this, false);
+    return Json.CODEC.toString(this.list, false);
   }
 
   /**
@@ -562,7 +562,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return the buffer encoding.
    */
   public Buffer toBuffer() {
-    return Json.CODEC.toBuffer(this, false);
+    return Json.CODEC.toBuffer(this.list, false);
   }
 
   /**
@@ -571,7 +571,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return the string encoding
    */
   public String encodePrettily() {
-    return Json.CODEC.toString(this, true);
+    return Json.CODEC.toString(this.list, true);
   }
 
   /**

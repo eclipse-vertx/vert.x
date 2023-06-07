@@ -33,7 +33,7 @@ public class VertxModule extends SimpleModule {
     // custom types
     addSerializer(JsonObject.class, new JsonObjectSerializer());
     addSerializer(JsonArray.class, new JsonArraySerializer());
-    // he have 2 extensions: RFC-7493
+    // we have 2 extensions: RFC-7493
     addSerializer(Instant.class, new InstantSerializer());
     addDeserializer(Instant.class, new InstantDeserializer());
     addSerializer(byte[].class, new ByteArraySerializer());
