@@ -12,7 +12,6 @@
 package io.vertx.core.impl;
 
 import io.vertx.core.AsyncResult;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
@@ -101,7 +100,7 @@ public class DeploymentManager {
         deploymentIDs.add(entry.getKey());
       }
     }
-    List<Future> completionList = new ArrayList<>();
+    List<Future<?>> completionList = new ArrayList<>();
     if (!deploymentIDs.isEmpty()) {
       for (String deploymentID : deploymentIDs) {
         Promise<Void> promise = Promise.promise();
@@ -115,7 +114,7 @@ public class DeploymentManager {
         });
       }
       Promise<Void> promise = vertx.getOrCreateContext().promise();
-      CompositeFuture.join(completionList).<Void>mapEmpty().onComplete(promise);
+      Future.join(completionList).<Void>mapEmpty().onComplete(promise);
       return promise.future();
     } else {
       return vertx.getOrCreateContext().succeededFuture();
@@ -302,16 +301,16 @@ public class DeploymentManager {
 
     private synchronized Future<Void> doUndeployChildren(ContextInternal undeployingContext) {
       if (!children.isEmpty()) {
-        List<Future> childFuts = new ArrayList<>();
+        List<Future<?>> undeployFutures = new ArrayList<>();
         for (Deployment childDeployment: new HashSet<>(children)) {
           Promise<Void> p = Promise.promise();
-          childFuts.add(p.future());
+          undeployFutures.add(p.future());
           childDeployment.doUndeploy(undeployingContext).onComplete(ar -> {
             children.remove(childDeployment);
             p.handle(ar);
           });
         }
-        return CompositeFuture.all(childFuts).mapEmpty();
+        return Future.all(undeployFutures).mapEmpty();
       } else {
         return Future.succeededFuture();
       }
@@ -326,13 +325,13 @@ public class DeploymentManager {
         return doUndeployChildren(undeployingContext).compose(v -> doUndeploy(undeployingContext));
       } else {
         status = ST_UNDEPLOYED;
-        List<Future> undeployFutures = new ArrayList<>();
+        final List<Future<?>> undeployFutures = new ArrayList<>();
         if (parent != null) {
           parent.removeChild(this);
         }
         for (VerticleHolder verticleHolder: verticles) {
           ContextBase context = verticleHolder.context;
-          Promise p = Promise.promise();
+          Promise<?> p = Promise.promise();
           undeployFutures.add(p.future());
           context.runOnContext(v -> {
             Promise<Void> stopPromise = undeployingContext.promise();
@@ -361,7 +360,7 @@ public class DeploymentManager {
           });
         }
         Promise<Void> resolvingPromise = undeployingContext.promise();
-        CompositeFuture.all(undeployFutures).<Void>mapEmpty().onComplete(resolvingPromise);
+        Future.all(undeployFutures).<Void>mapEmpty().onComplete(resolvingPromise);
         Future<Void> fut = resolvingPromise.future();
         Handler<Void> handler = undeployHandler;
         if (handler != null) {
