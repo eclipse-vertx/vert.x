@@ -274,10 +274,9 @@ public interface Vertx extends Measured {
    * Returns a one-shot timer as a read stream. The timer will be fired after {@code delay} milliseconds after
    * the {@link ReadStream#handler} has been called.
    *
-   * @param delay  the delay in milliseconds, after which the timer will fire
+   * @param delay the delay in milliseconds, after which the timer will fire
    * @return the timer stream
-   * @deprecated instead using {@link Vertx#setTimer}, Rx java like integrations should use
-   *             the Vert.s scheduler integration
+   * @deprecated use {@link Vertx#setTimer} instead. RxJava like integrations should use the Vert.x scheduler integration.
    */
   @Deprecated
   TimeoutStream timerStream(long delay);
@@ -311,8 +310,7 @@ public interface Vertx extends Measured {
    *
    * @param delay  the delay in milliseconds, after which the timer will fire
    * @return the periodic stream
-   * @deprecated instead using {@link Vertx#setPeriodic}, Rx java like integrations should use
-   *             the Vert.s scheduler integration
+   * @deprecated use {@link Vertx#setPeriodic} instead. RxJava like integrations should use the Vert.x scheduler integration.
    */
   @Deprecated
   default TimeoutStream periodicStream(long delay) {
@@ -326,8 +324,7 @@ public interface Vertx extends Measured {
    * @param initialDelay the initial delay in milliseconds
    * @param delay the delay in milliseconds, after which the timer will fire
    * @return the periodic stream
-   * @deprecated instead using {@link Vertx#setPeriodic}, Rx java like integrations should use
-   *             the Vert.s scheduler integration
+   * @deprecated use {@link Vertx#setPeriodic} instead. RxJava like integrations should use the Vert.x scheduler integration.
    */
   @Deprecated
   TimeoutStream periodicStream(long initialDelay, long delay);
