@@ -47,7 +47,7 @@ public class ClusterSerializableCodec implements MessageCodec<ClusterSerializabl
     ClusterSerializable clusterSerializable;
     try {
       Class<?> clazz = getClassLoader().loadClass(className);
-      clusterSerializable = (ClusterSerializable) clazz.newInstance();
+      clusterSerializable = (ClusterSerializable) clazz.getDeclaredConstructor().newInstance();
     } catch (Exception e) {
       throw new RuntimeException(e);
     }

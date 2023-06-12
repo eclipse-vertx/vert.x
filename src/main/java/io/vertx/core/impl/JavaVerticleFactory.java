@@ -44,7 +44,7 @@ public class JavaVerticleFactory implements VerticleFactory {
       promise.fail(e);
       return;
     }
-    promise.complete(clazz::newInstance);
+    promise.complete(() -> clazz.getDeclaredConstructor().newInstance());
   }
 
 }
