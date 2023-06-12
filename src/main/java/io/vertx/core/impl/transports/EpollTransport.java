@@ -141,7 +141,7 @@ public class EpollTransport implements Transport {
     if (!domainSocket) {
       bootstrap.option(EpollChannelOption.SO_REUSEPORT, options.isReusePort());
       if (options.isTcpFastOpen()) {
-        bootstrap.option(EpollChannelOption.TCP_FASTOPEN, options.isTcpFastOpen() ? pendingFastOpenRequestsThreshold : 0);
+        bootstrap.option(ChannelOption.TCP_FASTOPEN, options.isTcpFastOpen() ? pendingFastOpenRequestsThreshold : 0);
       }
       bootstrap.childOption(EpollChannelOption.TCP_QUICKACK, options.isTcpQuickAck());
       bootstrap.childOption(EpollChannelOption.TCP_CORK, options.isTcpCork());
@@ -153,7 +153,7 @@ public class EpollTransport implements Transport {
   public void configure(ClientOptionsBase options, boolean domainSocket, Bootstrap bootstrap) {
     if (!domainSocket) {
       if (options.isTcpFastOpen()) {
-        bootstrap.option(EpollChannelOption.TCP_FASTOPEN_CONNECT, options.isTcpFastOpen());
+        bootstrap.option(ChannelOption.TCP_FASTOPEN_CONNECT, options.isTcpFastOpen());
       }
       bootstrap.option(EpollChannelOption.TCP_USER_TIMEOUT, options.getTcpUserTimeout());
       bootstrap.option(EpollChannelOption.TCP_QUICKACK, options.isTcpQuickAck());
