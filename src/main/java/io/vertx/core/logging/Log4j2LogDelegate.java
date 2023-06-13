@@ -26,7 +26,7 @@ public class Log4j2LogDelegate implements LogDelegate {
 
   final ExtendedLogger logger;
 
-  final static String FQCN = Logger.class.getCanonicalName();
+  private static final String FQCN = LoggerAdapter.class.getCanonicalName();
 
   Log4j2LogDelegate(final String name) {
     logger = (ExtendedLogger) org.apache.logging.log4j.LogManager.getLogger(name);
