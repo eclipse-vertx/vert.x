@@ -18,14 +18,12 @@ import io.vertx.core.http.ConnectionPoolTooBusyException;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.future.Listener;
-import io.vertx.core.impl.future.PromiseInternal;
 
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -85,7 +83,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
   private static final Future POOL_CLOSED = Future.failedFuture("Pool closed");
 
   /**
-   * Select the first available available connection with the same event loop.
+   * Select the first available connection with the same event loop.
    */
   private static final BiFunction<PoolWaiter, List<PoolConnection>, PoolConnection> SAME_EVENT_LOOP_SELECTOR = (waiter, list) -> {
     int size = list.size();
@@ -127,6 +125,8 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
     private long concurrency; // The total number of times the connection can be acquired
     private int capacity;      // The connection capacity
 
+    private boolean inactive;  // Whether the slot can be returned as part of Acquire
+
     public Slot(SimpleConnectionPool<C> pool, EventLoopContext context, int index, int capacity) {
       this.pool = pool;
       this.context = context;
@@ -135,6 +135,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
       this.index = index;
       this.capacity = capacity;
       this.result = context.promise();
+      this.inactive = true;
     }
 
     @Override
@@ -283,6 +284,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
 
       int initialCapacity = slot.capacity;
       slot.connection = result.connection();
+      slot.inactive = false;
       slot.concurrency = result.concurrency();
       slot.capacity = capacity;
       slot.usage = 0;
@@ -411,7 +413,17 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
       removed.concurrency = 0;
       removed.connection = null;
       removed.capacity = 0;
+      removed.inactive = true;
       PoolWaiter<C> waiter = pool.waiters.poll();
+
+      // Remove can be invoked in the following cases:
+      // 1) Slot got evicted
+      // 2) Slot got released
+      // 3) Underlying connection got closed via onRemove
+      // 4) Connect Failure
+
+      // Refresh a removed connection with the removed slot's context if there is no waiter
+      // TODO What waiter do we pass if we just need to refresh the pool with a connection?
       if (waiter != null) {
         EventLoopContext connectionContext = pool.contextProvider.apply(waiter.context);
         Slot<C> slot = new Slot<>(pool, connectionContext, removed.index, waiter.capacity);
@@ -527,6 +539,8 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
         }
       }
       for (Slot<C> slot : removed) {
+        slot.inactive = true;
+        // TODO schedule a new connection for the slot
         pool.remove(slot);
       }
       return new Task() {
@@ -563,9 +577,9 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
         };
       }
 
-      // 1. Try reuse a existing connection with the same context
+      // 1. Try to reuse an existing connection with the same context
       Slot<C> slot1 = (Slot<C>) pool.selector.apply(this, pool.list);
-      if (slot1 != null) {
+      if (slot1 != null && ! slot1.inactive) {
         slot1.usage++;
         LeaseImpl<C> lease = new LeaseImpl<>(slot1, handler);
         return new Task() {
@@ -576,7 +590,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
         };
       }
 
-      // 2. Try create connection
+      // 2. Try to create connection
       if (pool.capacity < pool.maxCapacity) {
         pool.capacity += capacity;
         EventLoopContext connectionContext = pool.contextProvider.apply(context);
@@ -594,9 +608,9 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
         };
       }
 
-      // 3. Try use another context
+      // 3. Try to use another context
       Slot<C> slot3 = (Slot<C>) pool.fallbackSelector.apply(this, pool.list);
-      if (slot3 != null) {
+      if (slot3 != null && ! slot3.inactive) {
         slot3.usage++;
         LeaseImpl<C> lease = new LeaseImpl<>(slot3, handler);
         return new Task() {
@@ -714,6 +728,8 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
     public void recycle() {
       slot.pool.recycle(this);
     }
+    @Override
+    public void release(Handler<AsyncResult<C>> handler) { slot.pool.release(this, handler); }
 
     void emit() {
       Future<Lease<C>> fut = slot.context.succeededFuture(this);
@@ -755,6 +771,67 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
     }
     lease.recycled = true;
     execute(new Recycle<>(lease.slot));
+  }
+
+  private static class Release<C> implements Executor.Action<SimpleConnectionPool<C>> {
+    private final Slot<C> slot;
+    private final Promise<C> handler;
+
+    public Release(Slot<C> slot, Promise<C> handler) {
+      this.slot = slot;
+      this.handler = handler;
+    }
+
+    @Override
+    public Task execute(SimpleConnectionPool<C> pool) {
+      if (pool.closed) {
+        return new Task() {
+          @Override
+          public void run() {
+            handler.handle(POOL_CLOSED);
+          }
+        };
+      }
+
+      slot.inactive = true;
+      if (slot.connection == null) {
+        return new Task() {
+          @Override
+          public void run() {
+            handler.handle(Future.failedFuture("Slot has no connection for releasing"));
+          }
+        };
+      }
+
+      slot.usage--;
+      if (slot.usage == 0) {
+        // TODO schedule a new connection for the slot
+        pool.remove(slot);
+        return new Task() {
+          @Override
+          public void run() {
+            handler.handle(Future.succeededFuture(slot.connection));
+          }
+        };
+      } else {
+        return new Task() {
+          @Override
+          public void run() {
+            handler.handle(Future.failedFuture("Slot cannot be released due to existing leases"));
+          }
+        };
+      }
+    }
+  }
+
+  private void release(LeaseImpl<C> lease, Handler<AsyncResult<C>> handler) {
+    if (lease.recycled) {
+      throw new IllegalStateException("Attempt to release more than permitted");
+    }
+    lease.recycled = true;
+    Promise<C> promise = Promise.promise();
+    execute(new Release<>(lease.slot, promise));
+    promise.future().onComplete(handler);
   }
 
   public int waiters() {
