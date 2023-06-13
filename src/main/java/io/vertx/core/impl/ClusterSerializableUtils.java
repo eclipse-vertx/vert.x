@@ -12,7 +12,7 @@
 package io.vertx.core.impl;
 
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.shareddata.impl.ClusterSerializable;
+import io.vertx.core.shareddata.ClusterSerializable;
 
 import java.lang.reflect.InvocationTargetException;
 

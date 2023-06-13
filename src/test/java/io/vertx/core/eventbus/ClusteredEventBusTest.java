@@ -11,13 +11,8 @@
 
 package io.vertx.core.eventbus;
 
-import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
+import io.vertx.core.*;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.shareddata.AsyncMapTest.SomeClusterSerializableImplObject;
 import io.vertx.core.shareddata.AsyncMapTest.SomeClusterSerializableObject;
 import io.vertx.core.shareddata.AsyncMapTest.SomeSerializableObject;
 import io.vertx.core.spi.cluster.NodeSelector;
@@ -597,11 +592,6 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
   }
 
   @Test
-  public void testRejectedClusterSerializableImplNotSent() {
-    testRejectedNotSent(SomeClusterSerializableImplObject.class, new SomeClusterSerializableImplObject("bar"));
-  }
-
-  @Test
   public void testRejectedSerializableNotSent() {
     testRejectedNotSent(SomeSerializableObject.class, new SomeSerializableObject("bar"));
   }
@@ -626,11 +616,6 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
   @Test
   public void testRejectedClusterSerializableNotReceived() {
     testRejectedNotReceived(SomeClusterSerializableObject.class, new SomeClusterSerializableObject("bar"));
-  }
-
-  @Test
-  public void testRejectedClusterSerializableImplNotReceived() {
-    testRejectedNotReceived(SomeClusterSerializableImplObject.class, new SomeClusterSerializableImplObject("bar"));
   }
 
   @Test

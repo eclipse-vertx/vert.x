@@ -14,7 +14,6 @@ package io.vertx.core.shareddata;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.shareddata.AsyncMapTest.SomeClusterSerializableImplObject;
 import io.vertx.core.shareddata.AsyncMapTest.SomeClusterSerializableObject;
 import io.vertx.core.shareddata.AsyncMapTest.SomeSerializableObject;
 import io.vertx.test.core.TestUtils;
@@ -270,12 +269,6 @@ public class LocalSharedDataTest extends VertxTestBase {
     SomeClusterSerializableObject otherCso = (SomeClusterSerializableObject) map.get(key);
     assertEquals(cso, otherCso);
     assertNotSame(cso, otherCso);
-
-    SomeClusterSerializableImplObject csio = new SomeClusterSerializableImplObject(TestUtils.randomAlphaString(15));
-    map.put(key, csio);
-    SomeClusterSerializableImplObject otherCsio = (SomeClusterSerializableImplObject) map.get(key);
-    assertEquals(csio, otherCsio);
-    assertNotSame(csio, otherCsio);
   }
 
   @Test

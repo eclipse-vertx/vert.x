@@ -22,14 +22,13 @@ import io.vertx.core.buffer.Buffer;
  *
  * @implSpec Implementations must have a public no-argument constructor.
  */
-public interface ClusterSerializable extends io.vertx.core.shareddata.impl.ClusterSerializable {
+public interface ClusterSerializable {
 
   /**
    * Method invoked when serializing this instance.
    *
    * @param buffer the {@link Buffer} where the serialized bytes must be written to
    */
-  @Override
   void writeToBuffer(Buffer buffer);
 
   /**
@@ -39,6 +38,5 @@ public interface ClusterSerializable extends io.vertx.core.shareddata.impl.Clust
    * @param buffer the {@link Buffer} where the serialized bytes must be read from
    * @return the position after the last serialized byte
    */
-  @Override
   int readFromBuffer(int pos, Buffer buffer);
 }
