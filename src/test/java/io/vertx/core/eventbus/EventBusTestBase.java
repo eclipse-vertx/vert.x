@@ -12,11 +12,13 @@
 package io.vertx.core.eventbus;
 
 import io.netty.util.CharsetUtil;
-import io.vertx.core.*;
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Context;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.shareddata.AsyncMapTest.SomeClusterSerializableImplObject;
 import io.vertx.core.shareddata.AsyncMapTest.SomeClusterSerializableObject;
 import io.vertx.core.shareddata.AsyncMapTest.SomeSerializableObject;
 import io.vertx.test.core.TestUtils;
@@ -375,33 +377,6 @@ public abstract class EventBusTestBase extends VertxTestBase {
   @Test
   public void testPublishClusterSerializable() throws Exception {
     SomeClusterSerializableObject obj = new SomeClusterSerializableObject(TestUtils.randomAlphaString(50));
-    testPublish(obj, (received) -> {
-      assertEquals(obj, received);
-      assertFalse(obj == received); // Make sure it's copied
-    });
-  }
-
-  @Test
-  public void testSendClusterSerializableImpl() throws Exception {
-    SomeClusterSerializableImplObject obj = new SomeClusterSerializableImplObject(TestUtils.randomAlphaString(50));
-    testSend(obj, (received) -> {
-      assertEquals(obj, received);
-      assertFalse(obj == received); // Make sure it's copied
-    });
-  }
-
-  @Test
-  public void testReplyClusterSerializableImpl() throws Exception {
-    SomeClusterSerializableImplObject obj = new SomeClusterSerializableImplObject(TestUtils.randomAlphaString(50));
-    testReply(obj, (received) -> {
-      assertEquals(obj, received);
-      assertFalse(obj == received); // Make sure it's copied
-    });
-  }
-
-  @Test
-  public void testPublishClusterSerializableImpl() throws Exception {
-    SomeClusterSerializableImplObject obj = new SomeClusterSerializableImplObject(TestUtils.randomAlphaString(50));
     testPublish(obj, (received) -> {
       assertEquals(obj, received);
       assertFalse(obj == received); // Make sure it's copied

@@ -15,7 +15,7 @@ import io.netty.util.CharsetUtil;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.eventbus.impl.CodecManager;
-import io.vertx.core.shareddata.impl.ClusterSerializable;
+import io.vertx.core.shareddata.ClusterSerializable;
 
 import static io.vertx.core.impl.ClusterSerializableUtils.copy;
 

@@ -18,7 +18,7 @@ import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.impl.codecs.*;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.shareddata.impl.ClusterSerializable;
+import io.vertx.core.shareddata.ClusterSerializable;
 
 import java.io.Serializable;
 import java.util.Objects;

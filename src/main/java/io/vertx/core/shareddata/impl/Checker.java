@@ -15,6 +15,7 @@ import io.vertx.core.impl.ClusterSerializableUtils;
 import io.vertx.core.impl.SerializableUtils;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.shareddata.ClusterSerializable;
 import io.vertx.core.shareddata.Shareable;
 
 import java.io.ObjectInputStream;
