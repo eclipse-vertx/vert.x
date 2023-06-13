@@ -11,7 +11,6 @@
 package io.vertx.core.json.jackson;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import io.vertx.core.json.JsonArray;
@@ -20,12 +19,8 @@ import java.io.IOException;
 import java.util.List;
 
 class JsonArrayDeserializer extends JsonDeserializer<JsonArray> {
-
-  static final TypeReference<Object> OBJECT_TYPE_REFERENCE = new TypeReference<>() {
-  };
-
   @Override
   public JsonArray deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-    return new JsonArray(p.<List<Object>>readValueAs(OBJECT_TYPE_REFERENCE));
+    return new JsonArray(p.readValueAs(List.class));
   }
 }

@@ -11,6 +11,7 @@
 package io.vertx.core.json.jackson;
 
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import io.vertx.core.json.JsonObject;
@@ -18,11 +19,12 @@ import io.vertx.core.json.JsonObject;
 import java.io.IOException;
 import java.util.Map;
 
-import static io.vertx.core.json.jackson.JsonArrayDeserializer.OBJECT_TYPE_REFERENCE;
-
 class JsonObjectDeserializer extends JsonDeserializer<JsonObject> {
-  @Override
+
+  private static final TypeReference<Map<String, Object>> TYPE_REF = new TypeReference<>() {
+  };
+
   public JsonObject deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-    return new JsonObject(p.<Map<String, Object>>readValueAs(OBJECT_TYPE_REFERENCE));
+    return new JsonObject(p.<Map<String, Object>>readValueAs(TYPE_REF));
   }
 }
