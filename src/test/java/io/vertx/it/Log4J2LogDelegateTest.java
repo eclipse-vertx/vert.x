@@ -11,8 +11,9 @@
 
 package io.vertx.it;
 
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerAdapter;
+import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.spi.logging.LogDelegate;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -23,11 +24,10 @@ import java.io.IOException;
 import static org.junit.Assert.*;
 
 /**
- * Theses test checks the Log4J 2 log delegate.
+ * These test checks the Log4J 2 log delegate.
  *
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
-@SuppressWarnings("deprecation")
 public class Log4J2LogDelegateTest {
 
   private static StreamRecording recording;
@@ -45,7 +45,7 @@ public class Log4J2LogDelegateTest {
   @Test
   public void testDelegateUnwrap() {
     Logger logger = LoggerFactory.getLogger("my-log4j2-logger");
-    LogDelegate delegate = logger.getDelegate();
+    LogDelegate delegate = ((LoggerAdapter) logger).unwrap();
     assertNotNull("Delegate is null", delegate);
     try {
       org.apache.logging.log4j.Logger unwrapped = (org.apache.logging.log4j.Logger) delegate.unwrap();
@@ -67,39 +67,6 @@ public class Log4J2LogDelegateTest {
     });
     assertTrue(result.contains("exception"));
     assertTrue(result.contains("java.lang.NullPointerException"));
-
-    result = recording.execute(() -> {
-      logger.info("hello {} and {}", "Paulo", "Julien");
-    });
-    assertTrue(result.contains("hello Paulo and Julien"));
-
-    result = recording.execute(() -> {
-      logger.info("hello {}", "vert.x");
-    });
-    String expected = "hello vert.x";
-    assertTrue("Was expected <" + result + "> to contain <" + expected + ">" , result.contains(expected));
-
-    result = recording.execute(() -> {
-      logger.info("hello {} - {}", "vert.x");
-    });
-    assertTrue(result.contains("hello vert.x - {}"));
-
-    result = recording.execute(() -> {
-      logger.info("hello {} {}", "vert.x", "foo");
-    });
-    assertTrue(result.contains("hello vert.x foo"));
-
-    result = recording.execute(() -> {
-      logger.info("{}, an exception has been thrown", new IllegalStateException(), "Luke");
-    });
-    assertTrue(result.contains("Luke, an exception has been thrown"));
-    assertTrue(result.contains("java.lang.IllegalStateException"));
-
-    result = recording.execute(() -> {
-      logger.info("{}, an exception has been thrown", "Luke", new IllegalStateException());
-    });
-    assertTrue(result.contains("Luke, an exception has been thrown"));
-    assertTrue(result.contains("java.lang.IllegalStateException"));
   }
 
   @Test
@@ -114,39 +81,6 @@ public class Log4J2LogDelegateTest {
     });
     assertTrue(result.contains("exception"));
     assertTrue(result.contains("java.lang.NullPointerException"));
-
-    result = recording.execute(() -> {
-      logger.error("hello {} and {}", "Paulo", "Julien");
-    });
-    assertTrue(result.contains("hello Paulo and Julien"));
-
-    result = recording.execute(() -> {
-      logger.error("hello {}", "vert.x");
-    });
-    assertTrue(result.contains("hello vert.x"));
-
-    result = recording.execute(() -> {
-      logger.error("hello {} - {}", "vert.x");
-    });
-    assertTrue(result.contains("hello vert.x - {}"));
-
-    result = recording.execute(() -> {
-      logger.error("hello {} {}", "vert.x", "foo");
-    });
-    String expected = "hello vert.x foo";
-    assertTrue("Was expected <" + result + "> to contain <" + expected + ">" , result.contains(expected));
-
-    result = recording.execute(() -> {
-      logger.error("{}, an exception has been thrown", new IllegalStateException(), "Luke");
-    });
-    assertTrue(result.contains("Luke, an exception has been thrown"));
-    assertTrue(result.contains("java.lang.IllegalStateException"));
-
-    result = recording.execute(() -> {
-      logger.error("{}, an exception has been thrown", "Luke", new IllegalStateException());
-    });
-    assertTrue(result.contains("Luke, an exception has been thrown"));
-    assertTrue(result.contains("java.lang.IllegalStateException"));
   }
 
   @Test
@@ -161,39 +95,6 @@ public class Log4J2LogDelegateTest {
     });
     assertTrue(result.contains("exception"));
     assertTrue(result.contains("java.lang.NullPointerException"));
-
-    result = recording.execute(() -> {
-      logger.warn("hello {} and {}", "Paulo", "Julien");
-    });
-    assertTrue(result.contains("hello Paulo and Julien"));
-
-    result = recording.execute(() -> {
-      logger.warn("hello {}", "vert.x");
-    });
-    assertTrue(result.contains("hello vert.x"));
-
-    result = recording.execute(() -> {
-      logger.warn("hello {} - {}", "vert.x");
-    });
-    assertTrue(result.contains("hello vert.x - {}"));
-
-    result = recording.execute(() -> {
-      logger.warn("hello {} {}", "vert.x", "foo");
-    });
-    String expected = "hello vert.x foo";
-    assertTrue("Was expected <" + result + "> to contain <" + expected + ">" , result.contains(expected));
-
-    result = recording.execute(() -> {
-      logger.warn("{}, an exception has been thrown", new IllegalStateException(), "Luke");
-    });
-    assertTrue(result.contains("Luke, an exception has been thrown"));
-    assertTrue(result.contains("java.lang.IllegalStateException"));
-
-    result = recording.execute(() -> {
-      logger.warn("{}, an exception has been thrown", "Luke", new IllegalStateException());
-    });
-    assertTrue(result.contains("Luke, an exception has been thrown"));
-    assertTrue(result.contains("java.lang.IllegalStateException"));
   }
 
   // test that line numbers and method name are logged correctly

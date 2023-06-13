@@ -11,25 +11,77 @@
 
 package io.vertx.core.impl.logging;
 
+import io.vertx.core.logging.JULLogDelegateFactory;
+import io.vertx.core.spi.logging.LogDelegate;
+import io.vertx.core.spi.logging.LogDelegateFactory;
+
 /**
  * <strong>For internal logging purposes only</strong>.
  *
  * @author Thomas Segismont
  */
-@SuppressWarnings("deprecation")
 public class LoggerFactory {
+
+  public static final String LOGGER_DELEGATE_FACTORY_CLASS_NAME = "vertx.logger-delegate-factory-class-name";
+
+  private static volatile LogDelegateFactory delegateFactory;
+
+  static {
+    initialise();
+    // Do not log before being fully initialized (a logger extension may use Vert.x classes)
+    LogDelegate log = delegateFactory.createDelegate(LoggerFactory.class.getName());
+    log.debug("Using " + delegateFactory.getClass().getName());
+  }
+
+  private static synchronized void initialise() {
+    ClassLoader loader = Thread.currentThread().getContextClassLoader();
+    String className;
+    try {
+      className = System.getProperty(LOGGER_DELEGATE_FACTORY_CLASS_NAME);
+    } catch (Exception ignore) {
+      className = null;
+    }
+    if (className != null && configureWith(className, false, loader)) {
+      return;
+    }
+    if (loader.getResource("vertx-default-jul-logging.properties") == null) {
+      if (configureWith("SLF4J", true, loader)
+        || configureWith("Log4j2", true, loader)) {
+        return;
+      }
+    }
+    // Do not use dynamic classloading here to ensure the class is visible by AOT compilers
+    delegateFactory = new JULLogDelegateFactory();
+  }
+
+  private static boolean configureWith(String name, boolean shortName, ClassLoader loader) {
+    try {
+      Class<?> clazz = Class.forName(shortName ? "io.vertx.core.logging." + name + "LogDelegateFactory" : name, true, loader);
+      LogDelegateFactory factory = (LogDelegateFactory) clazz.getDeclaredConstructor().newInstance();
+      if (!factory.isAvailable()) {
+        return false;
+      }
+      delegateFactory = factory;
+      return true;
+    } catch (Throwable ignore) {
+      return false;
+    }
+  }
 
   /**
    * Like {@link #getLogger(String)}, using the provided {@code clazz} name.
    */
   public static Logger getLogger(Class<?> clazz) {
-    return new LoggerAdapter(io.vertx.core.logging.LoggerFactory.getLogger(clazz).getDelegate());
+    String name = clazz.isAnonymousClass() ?
+      clazz.getEnclosingClass().getCanonicalName() :
+      clazz.getCanonicalName();
+    return getLogger(name);
   }
 
   /**
    * Get the logger with the specified {@code name}.
    */
   public static Logger getLogger(String name) {
-    return new LoggerAdapter(io.vertx.core.logging.LoggerFactory.getLogger(name).getDelegate());
+    return new LoggerAdapter(delegateFactory.createDelegate(name));
   }
 }

@@ -11,8 +11,9 @@
 
 package io.vertx.it;
 
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerAdapter;
+import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.spi.logging.LogDelegate;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -27,7 +28,6 @@ import static org.junit.Assert.*;
  *
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
-@SuppressWarnings("deprecation")
 public class JULLogDelegateTest {
 
   private static Logger logger;
@@ -42,7 +42,7 @@ public class JULLogDelegateTest {
 
   @Test
   public void testDelegateUnwrap() {
-    LogDelegate delegate = logger.getDelegate();
+    LogDelegate delegate = ((LoggerAdapter) logger).unwrap();
     assertNotNull("Delegate is null", delegate);
     try {
       java.util.logging.Logger unwrapped = (java.util.logging.Logger) delegate.unwrap();
@@ -66,44 +66,6 @@ public class JULLogDelegateTest {
 
     assertTrue(result.contains("exception"));
     assertTrue(result.contains("java.lang.NullPointerException"));
-
-    result = recording.execute(() -> {
-      Logger logger = LoggerFactory.getLogger("my-jul-logger");
-      logger.info("hello {0} and {1}", "Paulo", "Julien");
-    });
-    assertTrue(result.contains("hello Paulo and Julien"));
-
-    result = recording.execute(() -> {
-      Logger logger = LoggerFactory.getLogger("my-jul-logger");
-      logger.info("hello {0}", "vert.x");
-    });
-    assertTrue(result.contains("hello vert.x"));
-
-    result = recording.execute(() -> {
-      Logger logger = LoggerFactory.getLogger("my-jul-logger");
-      logger.info("hello {0} - {1}", "vert.x");
-    });
-    assertTrue(result.contains("hello vert.x - {1}"));
-
-    result = recording.execute(() -> {
-      Logger logger = LoggerFactory.getLogger("my-jul-logger");
-      logger.info("hello {0}", "vert.x", "foo");
-    });
-    assertTrue(result.contains("hello vert.x"));
-
-    result = recording.execute(() -> {
-      Logger logger = LoggerFactory.getLogger("my-jul-logger");
-      logger.info("{0}, an exception has been thrown", new IllegalStateException(), "Luke");
-    });
-    assertTrue(result.contains("Luke, an exception has been thrown"));
-    assertTrue(result.contains("java.lang.IllegalStateException"));
-
-    result = recording.execute(() -> {
-      Logger logger = LoggerFactory.getLogger("my-jul-logger");
-      logger.info("{0}, an exception has been thrown", "Luke", new IllegalStateException());
-    });
-    assertTrue(result.contains("Luke, an exception has been thrown"));
-    assertTrue(result.contains("java.lang.IllegalStateException"));
   }
 
   @Test
@@ -119,44 +81,6 @@ public class JULLogDelegateTest {
     });
     assertTrue(result.contains("exception"));
     assertTrue(result.contains("java.lang.NullPointerException"));
-
-    result = recording.execute(() -> {
-      Logger logger = LoggerFactory.getLogger("my-jul-logger");
-      logger.error("hello {0} and {1}", "Paulo", "Julien");
-    });
-    assertTrue(result.contains("hello Paulo and Julien"));
-
-    result = recording.execute(() -> {
-      Logger logger = LoggerFactory.getLogger("my-jul-logger");
-      logger.error("hello {0}", "vert.x");
-    });
-    assertTrue(result.contains("hello vert.x"));
-
-    result = recording.execute(() -> {
-      Logger logger = LoggerFactory.getLogger("my-jul-logger");
-      logger.error("hello {0} - {1}", "vert.x");
-    });
-    assertTrue(result.contains("hello vert.x - {1}"));
-
-    result = recording.execute(() -> {
-      Logger logger = LoggerFactory.getLogger("my-jul-logger");
-      logger.error("hello {0}", "vert.x", "foo");
-    });
-    assertTrue(result.contains("hello vert.x"));
-
-    result = recording.execute(() -> {
-      Logger logger = LoggerFactory.getLogger("my-jul-logger");
-      logger.error("{0}, an exception has been thrown", new IllegalStateException(), "Luke");
-    });
-    assertTrue(result.contains("Luke, an exception has been thrown"));
-    assertTrue(result.contains("java.lang.IllegalStateException"));
-
-    result = recording.execute(() -> {
-      Logger logger = LoggerFactory.getLogger("my-jul-logger");
-      logger.error("{0}, an exception has been thrown", "Luke", new IllegalStateException());
-    });
-    assertTrue(result.contains("Luke, an exception has been thrown"));
-    assertTrue(result.contains("java.lang.IllegalStateException"));
   }
 
   @Test
@@ -172,43 +96,5 @@ public class JULLogDelegateTest {
     });
     assertTrue(result.contains("exception"));
     assertTrue(result.contains("java.lang.NullPointerException"));
-
-    result = recording.execute(() -> {
-      Logger logger = LoggerFactory.getLogger("my-jul-logger");
-      logger.warn("hello {0} and {1}", "Paulo", "Julien");
-    });
-    assertTrue(result.contains("hello Paulo and Julien"));
-
-    result = recording.execute(() -> {
-      Logger logger = LoggerFactory.getLogger("my-jul-logger");
-      logger.warn("hello {0}", "vert.x");
-    });
-    assertTrue(result.contains("hello vert.x"));
-
-    result = recording.execute(() -> {
-      Logger logger = LoggerFactory.getLogger("my-jul-logger");
-      logger.warn("hello {0} - {1}", "vert.x");
-    });
-    assertTrue(result.contains("hello vert.x - {1}"));
-
-    result = recording.execute(() -> {
-      Logger logger = LoggerFactory.getLogger("my-jul-logger");
-      logger.warn("hello {0}", "vert.x", "foo");
-    });
-    assertTrue(result.contains("hello vert.x"));
-
-    result = recording.execute(() -> {
-      Logger logger = LoggerFactory.getLogger("my-jul-logger");
-      logger.warn("{0}, an exception has been thrown", new IllegalStateException(), "Luke");
-    });
-    assertTrue(result.contains("Luke, an exception has been thrown"));
-    assertTrue(result.contains("java.lang.IllegalStateException"));
-
-    result = recording.execute(() -> {
-      Logger logger = LoggerFactory.getLogger("my-jul-logger");
-      logger.warn("{0}, an exception has been thrown", "Luke", new IllegalStateException());
-    });
-    assertTrue(result.contains("Luke, an exception has been thrown"));
-    assertTrue(result.contains("java.lang.IllegalStateException"));
   }
 }

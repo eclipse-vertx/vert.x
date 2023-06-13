@@ -20,7 +20,8 @@ public final class LoggerAdapter implements Logger {
 
   private final LogDelegate adapted;
 
-  LoggerAdapter(LogDelegate adapted) {
+  // Visible for testing
+  public LoggerAdapter(LogDelegate adapted) {
     this.adapted = adapted;
   }
 
@@ -92,5 +93,9 @@ public final class LoggerAdapter implements Logger {
   @Override
   public void error(Object message, Throwable t) {
     adapted.error(message, t);
+  }
+
+  public LogDelegate unwrap() {
+    return adapted;
   }
 }
