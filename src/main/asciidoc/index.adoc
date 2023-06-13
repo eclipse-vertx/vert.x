@@ -1025,7 +1025,6 @@ The logging backend is selected as follows:
 . JDK logging when a `vertx-default-jul-logging.properties` file is in the classpath or,
 . a backend present in the classpath, in the following order of preference:
 .. SLF4J
-.. Log4J
 .. Log4J2
 
 Otherwise Vert.x defaults to JDK logging.
