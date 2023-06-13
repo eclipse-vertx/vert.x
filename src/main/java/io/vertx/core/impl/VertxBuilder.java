@@ -313,7 +313,7 @@ public class VertxBuilder {
         // We allow specify a sys prop for the cluster manager factory which overrides ServiceLoader
         try {
           Class<?> clazz = Class.forName(clusterManagerClassName);
-          clusterManager = (ClusterManager) clazz.newInstance();
+          clusterManager = (ClusterManager) clazz.getDeclaredConstructor().newInstance();
         } catch (Exception e) {
           throw new IllegalStateException("Failed to instantiate " + clusterManagerClassName, e);
         }

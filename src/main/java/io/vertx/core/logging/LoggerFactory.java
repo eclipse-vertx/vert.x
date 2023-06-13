@@ -61,7 +61,7 @@ public class LoggerFactory {
   private static boolean configureWith(String name, boolean shortName, ClassLoader loader) {
     try {
       Class<?> clazz = Class.forName(shortName ? "io.vertx.core.logging." + name + "LogDelegateFactory" : name, true, loader);
-      LogDelegateFactory factory = (LogDelegateFactory) clazz.newInstance();
+      LogDelegateFactory factory = (LogDelegateFactory) clazz.getDeclaredConstructor().newInstance();
       if (!factory.isAvailable()) {
         return false;
       }
