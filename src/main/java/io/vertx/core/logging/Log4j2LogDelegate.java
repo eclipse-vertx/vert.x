@@ -11,10 +11,9 @@
 
 package io.vertx.core.logging;
 
-import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerAdapter;
 import io.vertx.core.spi.logging.LogDelegate;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.message.FormattedMessage;
 import org.apache.logging.log4j.message.Message;
 import org.apache.logging.log4j.spi.ExtendedLogger;
 
@@ -38,54 +37,67 @@ public class Log4j2LogDelegate implements LogDelegate {
     return logger.isWarnEnabled();
   }
 
+  @Override
   public boolean isInfoEnabled() {
     return logger.isInfoEnabled();
   }
 
+  @Override
   public boolean isDebugEnabled() {
     return logger.isDebugEnabled();
   }
 
+  @Override
   public boolean isTraceEnabled() {
     return logger.isTraceEnabled();
   }
 
+  @Override
   public void error(final Object message) {
     log(Level.ERROR, message);
   }
 
+  @Override
   public void error(final Object message, final Throwable t) {
     log(Level.ERROR, message, t);
   }
 
+  @Override
   public void warn(final Object message) {
     log(Level.WARN, message);
   }
 
+  @Override
   public void warn(final Object message, final Throwable t) {
     log(Level.WARN, message, t);
   }
 
+  @Override
   public void info(final Object message) {
     log(Level.INFO, message);
   }
 
+  @Override
   public void info(final Object message, final Throwable t) {
     log(Level.INFO, message, t);
   }
 
+  @Override
   public void debug(final Object message) {
     log(Level.DEBUG, message);
   }
 
+  @Override
   public void debug(final Object message, final Throwable t) {
     log(Level.DEBUG, message, t);
   }
 
+  @Override
   public void trace(final Object message) {
     log(Level.TRACE, message);
   }
 
+  @Override
   public void trace(final Object message, final Throwable t) {
     log(Level.TRACE, message.toString(), t);
   }
@@ -100,14 +112,6 @@ public class Log4j2LogDelegate implements LogDelegate {
     } else {
       logger.logIfEnabled(FQCN, level, null, message, t);
     }
-  }
-
-  private void log(Level level, String message, Object... params) {
-    logger.logIfEnabled(FQCN, level, null, message, params);
-  }
-
-  private void log(Level level, String message, Throwable t, Object... params) {
-    logger.logIfEnabled(FQCN, level, null, new FormattedMessage(message, params), t);
   }
 
   @Override

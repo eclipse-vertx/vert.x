@@ -47,6 +47,7 @@ public class JULLogDelegateFactory implements LogDelegateFactory {
     return true;
   }
 
+  @Override
   public LogDelegate createDelegate(final String name) {
     return new JULLogDelegate(name);
   }

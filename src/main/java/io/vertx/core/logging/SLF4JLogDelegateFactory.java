@@ -45,6 +45,7 @@ public class SLF4JLogDelegateFactory implements LogDelegateFactory {
     return !(fact instanceof NOPLoggerFactory);
   }
 
+  @Override
   public LogDelegate createDelegate(final String clazz) {
     return new SLF4JLogDelegate(clazz);
   }
