@@ -37,7 +37,7 @@ public class OpenSSLEngineOptions extends SSLEngineOptions {
    * @return when alpn support is available via OpenSSL engine
    */
   public static boolean isAlpnAvailable() {
-    return OpenSsl.isAlpnSupported();
+    return SslProvider.isAlpnSupported(SslProvider.OPENSSL);
   }
 
   /**
