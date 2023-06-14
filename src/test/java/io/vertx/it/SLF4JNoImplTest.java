@@ -11,28 +11,25 @@
 
 package io.vertx.it;
 
+import io.vertx.core.impl.logging.LoggerAdapter;
+import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.logging.JULLogDelegate;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.logging.SLF4JLogDelegateFactory;
 import io.vertx.core.spi.logging.LogDelegate;
 import org.junit.Test;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * Check the behavior when SLF4J is present on the classpath but without an implementation.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-@SuppressWarnings("deprecation")
 public class SLF4JNoImplTest {
 
-  private static Object getClass(String name) {
+  private static Object getMessageClass() {
     try {
-      return Thread.currentThread().getContextClassLoader().loadClass(name);
+      return Thread.currentThread().getContextClassLoader().loadClass("org.apache.logging.log4j.message.Message");
     } catch (Throwable e) {
       return null;
     }
@@ -41,9 +38,9 @@ public class SLF4JNoImplTest {
   @Test
   public void testImplementation() {
     assertNotNull(SLF4JLogDelegateFactory.class);
-    assertNull(getClass("org.apache.logging.log4j.message.Message"));
-    Logger logger = LoggerFactory.getLogger("my-slf4j-logger");
-    LogDelegate delegate = logger.getDelegate();
+    assertNull(getMessageClass());
+    LoggerAdapter loggerAdapter = (LoggerAdapter) LoggerFactory.getLogger("my-slf4j-logger");
+    LogDelegate delegate = loggerAdapter.unwrap();
     assertTrue(delegate instanceof JULLogDelegate);
   }
 }

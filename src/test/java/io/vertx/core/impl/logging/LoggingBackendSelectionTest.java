@@ -24,7 +24,7 @@ import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
 
-import static io.vertx.core.logging.LoggerFactory.LOGGER_DELEGATE_FACTORY_CLASS_NAME;
+import static io.vertx.core.impl.logging.LoggerFactory.LOGGER_DELEGATE_FACTORY_CLASS_NAME;
 import static org.junit.Assert.assertEquals;
 
 

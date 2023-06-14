@@ -15,21 +15,11 @@ package io.vertx.core.logging;
 import io.vertx.core.spi.logging.LogDelegate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.helpers.FormattingTuple;
-import org.slf4j.helpers.MessageFormatter;
-import org.slf4j.spi.LocationAwareLogger;
-
-import static org.slf4j.spi.LocationAwareLogger.*;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class SLF4JLogDelegate implements LogDelegate {
-
-  private static final Object[] EMPTY_PARAMETERS = {};
-
-  @SuppressWarnings("deprecation")
-  private static final String FQCN = io.vertx.core.logging.Logger.class.getCanonicalName();
 
   private final Logger logger;
 
@@ -37,6 +27,7 @@ public class SLF4JLogDelegate implements LogDelegate {
     logger = LoggerFactory.getLogger(name);
   }
 
+  // Visible for testing
   public SLF4JLogDelegate(Object logger) {
     this.logger = (Logger) logger;
   }
@@ -46,178 +37,73 @@ public class SLF4JLogDelegate implements LogDelegate {
     return logger.isWarnEnabled();
   }
 
+  @Override
   public boolean isInfoEnabled() {
     return logger.isInfoEnabled();
   }
 
+  @Override
   public boolean isDebugEnabled() {
     return logger.isDebugEnabled();
   }
 
+  @Override
   public boolean isTraceEnabled() {
     return logger.isTraceEnabled();
   }
 
-  public void fatal(final Object message) {
-    log(ERROR_INT, message);
-  }
-
-  public void fatal(final Object message, final Throwable t) {
-    log(ERROR_INT, message, t);
-  }
-
+  @Override
   public void error(final Object message) {
-    log(ERROR_INT, message);
+    logger.error(valueOf(message));
   }
 
   @Override
-  public void error(Object message, Object... params) {
-    log(ERROR_INT, message, null, params);
-  }
-
   public void error(final Object message, final Throwable t) {
-    log(ERROR_INT, message, t);
+    logger.error(valueOf(message), t);
   }
 
   @Override
-  public void error(Object message, Throwable t, Object... params) {
-    log(ERROR_INT, message, t, params);
-  }
-
   public void warn(final Object message) {
-    log(WARN_INT, message);
+    logger.warn(valueOf(message));
   }
 
   @Override
-  public void warn(Object message, Object... params) {
-    log(WARN_INT, message, null, params);
-  }
-
   public void warn(final Object message, final Throwable t) {
-    log(WARN_INT, message, t);
+    logger.warn(valueOf(message), t);
   }
 
   @Override
-  public void warn(Object message, Throwable t, Object... params) {
-    log(WARN_INT, message, t, params);
-  }
-
   public void info(final Object message) {
-    log(INFO_INT, message);
+    logger.info(valueOf(message));
   }
 
   @Override
-  public void info(Object message, Object... params) {
-    log(INFO_INT, message, null, params);
-  }
-
   public void info(final Object message, final Throwable t) {
-    log(INFO_INT, message, t);
+    logger.info(valueOf(message), t);
   }
 
   @Override
-  public void info(Object message, Throwable t, Object... params) {
-    log(INFO_INT, message, t, params);
-  }
-
   public void debug(final Object message) {
-    log(DEBUG_INT, message);
+    logger.debug(valueOf(message));
   }
 
-  public void debug(final Object message, final Object... params) {
-    log(DEBUG_INT, message, null, params);
-  }
-
+  @Override
   public void debug(final Object message, final Throwable t) {
-    log(DEBUG_INT, message, t);
+    logger.debug(valueOf(message), t);
   }
 
-  public void debug(final Object message, final Throwable t, final Object... params) {
-    log(DEBUG_INT, message, t, params);
-  }
-
+  @Override
   public void trace(final Object message) {
-    log(TRACE_INT, message);
+    logger.trace(valueOf(message));
   }
 
   @Override
-  public void trace(Object message, Object... params) {
-    log(TRACE_INT, message, null, params);
-  }
-
   public void trace(final Object message, final Throwable t) {
-    log(TRACE_INT, message, t);
+    logger.trace(valueOf(message), t);
   }
 
-  @Override
-  public void trace(Object message, Throwable t, Object... params) {
-    log(TRACE_INT, message, t, params);
-  }
-
-  private void log(int level, Object message) {
-    log(level, message, null);
-  }
-
-  private void log(int level, Object message, Throwable t) {
-    log(level, message, t, (Object[]) null);
-  }
-
-  private void log(int level, Object message, Throwable t, Object... params) {
-    String msg = (message == null) ? "NULL" : message.toString();
-
-    // We need to compute the right parameters.
-    // If we have both parameters and an error, we need to build a new array [params, t]
-    // If we don't have parameters, we need to build a new array [t]
-    // If we don't have error, it's just params.
-    Object[] parameters;
-    if (params == null) {
-      if (t == null) {
-        parameters = EMPTY_PARAMETERS;
-      } else {
-        parameters = new Object[]{t};
-      }
-    } else {
-      if (t == null) {
-        parameters = params;
-      } else {
-        parameters = new Object[params.length + 1];
-        System.arraycopy(params, 0, parameters, 0, params.length);
-        parameters[params.length] = t;
-      }
-    }
-
-    if (logger instanceof LocationAwareLogger) {
-      // make sure we don't format the objects if we don't log the line anyway
-      if (level == TRACE_INT && logger.isTraceEnabled() ||
-          level == DEBUG_INT && logger.isDebugEnabled() ||
-          level == INFO_INT && logger.isInfoEnabled() ||
-          level == WARN_INT && logger.isWarnEnabled() ||
-          level == ERROR_INT && logger.isErrorEnabled()) {
-        LocationAwareLogger l = (LocationAwareLogger) logger;
-        FormattingTuple ft = MessageFormatter.arrayFormat(msg, parameters);
-        l.log(null, FQCN, level, ft.getMessage(), null, ft.getThrowable());
-      }
-    } else {
-      switch (level) {
-        case TRACE_INT:
-          logger.trace(msg, parameters);
-          break;
-        case DEBUG_INT:
-          logger.debug(msg, parameters);
-          break;
-        case INFO_INT:
-          logger.info(msg, parameters);
-          break;
-        case WARN_INT:
-          logger.warn(msg, parameters);
-          break;
-        case ERROR_INT:
-          logger.error(msg, parameters);
-          break;
-        default:
-          throw new IllegalArgumentException("Unknown log level " + level);
-      }
-    }
+  private static String valueOf(Object message) {
+    return message == null ? "NULL" : message.toString();
   }
 
   @Override
