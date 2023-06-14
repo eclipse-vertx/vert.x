@@ -34,6 +34,7 @@ import java.util.function.Supplier;
 
 import javax.net.ssl.*;
 
+import io.vertx.core.*;
 import io.vertx.core.impl.VertxThread;
 import io.vertx.core.net.SSLOptions;
 import io.vertx.core.net.impl.KeyStoreHelper;
@@ -43,9 +44,6 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import io.netty.util.internal.PlatformDependent;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.JdkSSLEngineOptions;
 import io.vertx.core.net.JksOptions;
@@ -1641,11 +1639,38 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
   @Test
   public void testUpdateSSLOptions() throws Exception {
+    testUpdateSSLOptions(false);
+  }
+
+  @Test
+  public void testUpdateSSLOptionsWithScaledServer() throws Exception {
+    testUpdateSSLOptions(true);
+  }
+
+  private void testUpdateSSLOptions(boolean scaled) throws Exception {
     server = createHttpServer(createBaseServerOptions().setSsl(true).setKeyCertOptions(Cert.SERVER_JKS.get()))
       .requestHandler(req -> {
         req.response().end("Hello World");
-    });
+      });
     startServer(testAddress);
+    if (scaled) {
+      CountDownLatch latch = new CountDownLatch(1);
+      vertx.deployVerticle(new AbstractVerticle() {
+        private HttpServer server;
+        @Override
+        public void start(Promise<Void> startPromise) {
+          server = createHttpServer(createBaseServerOptions().setSsl(true).setKeyCertOptions(Cert.SERVER_JKS.get()))
+            .requestHandler(req -> {
+              req.response().end("Hello World");
+            });
+          server
+            .listen(testAddress)
+            .<Void>mapEmpty()
+            .onComplete(startPromise);
+        }
+      }).onComplete(onSuccess(v -> latch.countDown()));
+      awaitLatch(latch);
+    }
     Supplier<Future<Buffer>> request = () -> client.request(requestOptions).compose(req -> req.send().compose(HttpClientResponse::body));
     client = createHttpClient(new HttpClientOptions().setKeepAlive(false).setSsl(true).setTrustOptions(Trust.SERVER_JKS.get()));
     request.get().onComplete(onSuccess(body1 -> {
