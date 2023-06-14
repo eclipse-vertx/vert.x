@@ -268,9 +268,8 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
         // Server already exists with that host/port - we will use that
         actualServer = main;
         metrics = main.metrics;
-        sslChannelProvider = main.sslChannelProvider;
         childHandler =  childHandler(listenContext, localAddress, main.trafficShapingHandler);
-        worker = ch -> childHandler.accept(ch, sslChannelProvider.result().sslChannelProvider());
+        worker = ch -> childHandler.accept(ch, actualServer.sslChannelProvider.result().sslChannelProvider());
         actualServer.servers.add(this);
         actualServer.channelBalancer.addWorker(eventLoop, worker);
         listenContext.addCloseHook(this);
