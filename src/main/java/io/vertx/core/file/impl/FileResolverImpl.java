@@ -279,24 +279,30 @@ public class FileResolverImpl implements FileResolver {
     ZipFile zip = null;
     try {
       String path = url.getPath();
-      int idx1 = path.lastIndexOf(".jar!");
-      if (idx1 == -1) {
-        idx1 = path.lastIndexOf(".zip!");
+      int idx1 = -1, idx2 = -1;
+      for (int i = path.length() - 1; i > 4; ) {
+        if (path.charAt(i) == '!' && (path.startsWith(".jar", i - 4) || path.startsWith(".zip", i - 4) || path.startsWith(".war", i - 4))) {
+          if (idx1 == -1) {
+            idx1 = i;
+            i -= 4;
+            continue;
+          } else {
+            idx2 = i;
+            break;
+          }
+        }
+        i--;
       }
-      int idx2 = path.lastIndexOf(".jar!", idx1 - 1);
       if (idx2 == -1) {
-        idx2 = path.lastIndexOf(".zip!", idx1 - 1);
-      }
-      if (idx2 == -1) {
-        File file = new File(decodeURIComponent(path.substring(5, idx1 + 4), false));
+        File file = new File(decodeURIComponent(path.substring(5, idx1), false));
         zip = new ZipFile(file);
       } else {
-        String s = path.substring(idx2 + 6, idx1 + 4);
+        String s = path.substring(idx2 + 2, idx1);
         File file = resolveFile(s);
         zip = new ZipFile(file);
       }
 
-      String inJarPath = path.substring(idx1 + 6);
+      String inJarPath = path.substring(idx1 + 2);
       StringBuilder prefixBuilder = new StringBuilder();
       int first = 0;
       int second;
