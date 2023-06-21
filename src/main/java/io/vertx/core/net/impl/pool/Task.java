@@ -25,10 +25,9 @@ public abstract class Task {
     return next;
   }
 
-  protected final void runNextTasks(CombinerExecutor.InProgressHead head) {
+  protected final void runNextTasks() {
     Task task = this;
     while (task != null) {
-      head.head = task;
       task.run();
       final Task next = task.next;
       // help GC :P

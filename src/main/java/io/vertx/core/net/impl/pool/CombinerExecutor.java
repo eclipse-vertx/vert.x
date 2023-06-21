@@ -29,11 +29,11 @@ public class CombinerExecutor<S> implements Executor<S> {
   private final AtomicInteger s = new AtomicInteger();
   private final S state;
 
-  protected final class InProgressHead {
-    Task head;
+  protected final class InProgressTail {
+    Task task;
   }
 
-  private final FastThreadLocal<InProgressHead> current = new FastThreadLocal<>();
+  private final FastThreadLocal<InProgressTail> current = new FastThreadLocal<>();
 
   public CombinerExecutor(S state) {
     this.state = state;
@@ -68,25 +68,24 @@ public class CombinerExecutor<S> implements Executor<S> {
       }
     } while (!q.isEmpty() && s.compareAndSet(0, 1));
     if (head != null) {
-      InProgressHead inProgress = current.get();
+      InProgressTail inProgress = current.get();
       if (inProgress == null) {
-        inProgress = new InProgressHead();
+        inProgress = new InProgressTail();
         current.set(inProgress);
+        inProgress.task = tail;
         try {
-          // don't trust tail during this: linkTasksToHead can change it!
-          head.runNextTasks(inProgress);
+          // from now one cannot trust tail anymore
+          head.runNextTasks();
         } finally {
           current.remove();
         }
       } else {
-        assert inProgress.head != null;
-        linkTasksToHead(inProgress.head, head, tail);
+        assert inProgress.task != null;
+        Task oldNextTail = inProgress.task.replaceNext(head);
+        assert oldNextTail == null;
+        inProgress.task = tail;
+
       }
     }
-  }
-
-  private static void linkTasksToHead(Task head, Task nextHead, Task nextTail) {
-    Task oldNext = head.replaceNext(nextHead);
-    nextTail.next(oldNext);
   }
 }
