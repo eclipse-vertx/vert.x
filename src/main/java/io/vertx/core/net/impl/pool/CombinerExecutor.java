@@ -10,6 +10,7 @@
  */
 package io.vertx.core.net.impl.pool;
 
+import io.netty.util.concurrent.FastThreadLocal;
 import io.netty.util.internal.PlatformDependent;
 
 import java.util.Queue;
@@ -27,7 +28,12 @@ public class CombinerExecutor<S> implements Executor<S> {
   private final Queue<Action<S>> q = PlatformDependent.newMpscQueue();
   private final AtomicInteger s = new AtomicInteger();
   private final S state;
-  private final ThreadLocal<Task> current = new ThreadLocal<>();
+
+  protected final class InProgressHead {
+    Task head;
+  }
+
+  private final FastThreadLocal<InProgressHead> current = new FastThreadLocal<>();
 
   public CombinerExecutor(S state) {
     this.state = state;
@@ -40,50 +46,47 @@ public class CombinerExecutor<S> implements Executor<S> {
       return;
     }
     Task head = null;
+    Task tail = null;
     do {
       try {
-        head = pollAndExecute(head);
+        final Action<S> a = q.poll();
+        if (a == null) {
+          break;
+        }
+        Task task = a.execute(state);
+        if (task != null) {
+          if (head == null) {
+            assert tail == null;
+            tail = task;
+            head = task;
+          } else {
+            tail = tail.next(task);
+          }
+        }
       } finally {
         s.set(0);
       }
     } while (!q.isEmpty() && s.compareAndSet(0, 1));
     if (head != null) {
-      Task inProgress = current.get();
+      InProgressHead inProgress = current.get();
       if (inProgress == null) {
-        current.set(head);
+        inProgress = new InProgressHead();
+        current.set(inProgress);
         try {
-          while (head != null) {
-            head.run();
-            head = head.next;
-          }
+          // don't trust tail during this: linkTasksToHead can change it!
+          head.runNextTasks(inProgress);
         } finally {
           current.remove();
         }
       } else {
-        merge(inProgress, head);
+        assert inProgress.head != null;
+        linkTasksToHead(inProgress.head, head, tail);
       }
     }
   }
 
-  private Task pollAndExecute(Task head) {
-    Action<S> action;
-    while ((action = q.poll()) != null) {
-      Task task = action.execute(state);
-      if (task != null) {
-        if (head == null) {
-          head = task;
-        } else {
-          merge(head, task);
-        }
-      }
-    }
-    return head;
-  }
-
-  private static void merge(Task head, Task tail) {
-    Task tmp = tail.prev;
-    tail.prev = head.prev;
-    head.prev.next = tail;
-    head.prev = tmp;
+  private static void linkTasksToHead(Task head, Task nextHead, Task nextTail) {
+    Task oldNext = head.replaceNext(nextHead);
+    nextTail.next(oldNext);
   }
 }
