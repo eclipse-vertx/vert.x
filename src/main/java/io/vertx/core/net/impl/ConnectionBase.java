@@ -629,6 +629,9 @@ public abstract class ConnectionBase {
       address = socketAdressOverride(REMOTE_ADDRESS_OVERRIDE);
       if (address == null) {
         address = channelRemoteAddress();
+        if (address != null && address.isDomainSocket() && address.path().isEmpty()) {
+          address = channelLocalAddress();
+        }
       }
       if (address != null) {
         remoteAddress = address;
@@ -654,10 +657,6 @@ public abstract class ConnectionBase {
 
   private SocketAddress channelLocalAddress() {
     java.net.SocketAddress addr = chctx.channel().localAddress();
-    if (addr == null && channel().getClass().getSimpleName().endsWith("DomainSocketChannel")) {
-      // Workaround bug https://github.com/netty/netty/issues/13417
-      return SocketAddress.domainSocketAddress("");
-    }
     return addr != null ? vertx.transport().convert(addr) : null;
   }
 
@@ -667,6 +666,9 @@ public abstract class ConnectionBase {
       address = socketAdressOverride(LOCAL_ADDRESS_OVERRIDE);
       if (address == null) {
         address = channelLocalAddress();
+        if (address != null && address.isDomainSocket() && address.path().isEmpty()) {
+          address = channelRemoteAddress();
+        }
       }
       if (address != null) {
         localAddress = address;
