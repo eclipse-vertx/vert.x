@@ -2215,7 +2215,7 @@ public class NetTest extends VertxTestBase {
         assertEquals("127.0.0.1", addr.hostAddress());
       } else {
         assertEquals(testAddress.path(), addr.path());
-        assertEquals("", socket.remoteAddress().path());
+        assertEquals(testAddress.path(), socket.remoteAddress().path());
       }
       socket.close();
     }).listen(1234, "localhost").onComplete(onSuccess(v -> {
@@ -2228,7 +2228,7 @@ public class NetTest extends VertxTestBase {
           assertEquals(addr.port(), 1234);
         } else {
           assertEquals(testAddress.path(), addr.path());
-          assertEquals("", socket.localAddress().path());
+          assertEquals(testAddress.path(), socket.localAddress().path());
         }
         socket.closeHandler(v2 -> testComplete());
       }));
