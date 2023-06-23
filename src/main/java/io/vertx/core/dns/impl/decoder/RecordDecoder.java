@@ -45,7 +45,8 @@ public class RecordDecoder {
         ByteBuf packet = ((DnsRawRecord)record).content();
         int priority = packet.readShort();
         String name = RecordDecoder.readName(packet);
-        return new MxRecordImpl(priority, name);
+        long ttl = record.timeToLive();
+        return new MxRecordImpl(ttl, priority, name);
     };
 
     /**
@@ -83,12 +84,13 @@ public class RecordDecoder {
         int priority = packet.readShort();
         int weight = packet.readShort();
         int port = packet.readUnsignedShort();
+        long ttl = record.timeToLive();
         String target = RecordDecoder.readName(packet);
         String[] parts = record.name().split("\\.", 3);
         String service = parts[0];
         String protocol = parts[1];
         String name = parts[2];
-        return new SrvRecordImpl(priority, weight, port, name, protocol, service, target);
+        return new SrvRecordImpl(ttl, priority, weight, port, name, protocol, service, target);
     };
 
     /**
