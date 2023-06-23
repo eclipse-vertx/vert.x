@@ -22,6 +22,11 @@ import io.vertx.codegen.annotations.VertxGen;
 public interface MxRecord {
 
   /**
+   * The record time to live
+   */
+  long ttl();
+
+  /**
    * The priority of the MX record.
    */
   int priority();

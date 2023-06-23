@@ -186,6 +186,7 @@ public class DNSTest extends VertxTestBase {
         assertFalse(result.isEmpty());
         assertEquals(1, result.size());
         MxRecord record = result.get(0);
+        assertEquals(100, record.ttl());
         assertEquals(prio, record.priority());
         assertEquals(record.name(), mxRecord);
         testComplete();
@@ -278,6 +279,7 @@ public class DNSTest extends VertxTestBase {
 
         SrvRecord record = result.get(0);
 
+        assertEquals(100, record.ttl());
         assertEquals(priority, record.priority());
         assertEquals(weight, record.weight());
         assertEquals(port, record.port());

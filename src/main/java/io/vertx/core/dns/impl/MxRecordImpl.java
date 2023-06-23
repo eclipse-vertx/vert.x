@@ -18,12 +18,18 @@ import io.vertx.core.dns.MxRecord;
  */
 public final class MxRecordImpl implements MxRecord, Comparable<MxRecord> {
 
+  private final long ttl;
   private final int priority;
   private final String name;
 
-  public MxRecordImpl(int priority, String name) {
+  public MxRecordImpl(long ttl, int priority, String name) {
+    this.ttl = ttl;
     this.priority = priority;
     this.name = name;
+  }
+
+  public long ttl() {
+    return ttl;
   }
 
   @Override

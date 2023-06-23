@@ -28,6 +28,11 @@ public interface SrvRecord {
   int priority();
 
   /**
+   * Returns the record time to live
+   */
+  long ttl();
+
+  /**
    * Returns the weight of this service record.
    */
   int weight();
