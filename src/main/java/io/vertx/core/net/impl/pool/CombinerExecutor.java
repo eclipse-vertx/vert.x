@@ -29,7 +29,7 @@ public class CombinerExecutor<S> implements Executor<S> {
   private final AtomicInteger s = new AtomicInteger();
   private final S state;
 
-  protected final class InProgressTail {
+  protected static final class InProgressTail {
     Task task;
   }
 
@@ -49,18 +49,20 @@ public class CombinerExecutor<S> implements Executor<S> {
     Task tail = null;
     do {
       try {
-        final Action<S> a = q.poll();
-        if (a == null) {
-          break;
-        }
-        Task task = a.execute(state);
-        if (task != null) {
-          if (head == null) {
-            assert tail == null;
-            tail = task;
-            head = task;
-          } else {
-            tail = tail.next(task);
+        for (; ; ) {
+          final Action<S> a = q.poll();
+          if (a == null) {
+            break;
+          }
+          Task task = a.execute(state);
+          if (task != null) {
+            if (head == null) {
+              assert tail == null;
+              tail = task;
+              head = task;
+            } else {
+              tail = tail.next(task);
+            }
           }
         }
       } finally {
