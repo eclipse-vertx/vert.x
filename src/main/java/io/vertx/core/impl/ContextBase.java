@@ -23,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 /**
  * A base class for {@link Context} implementations.
@@ -36,6 +37,10 @@ public abstract class ContextBase implements ContextInternal {
 
   private static final String DISABLE_TIMINGS_PROP_NAME = "vertx.disableContextTimings";
   static final boolean DISABLE_TIMINGS = Boolean.getBoolean(DISABLE_TIMINGS_PROP_NAME);
+  private static final AtomicReferenceFieldUpdater<ContextBase, ConcurrentMap> DATA_UPDATER =
+    AtomicReferenceFieldUpdater.newUpdater(ContextBase.class, ConcurrentMap.class, "data");
+  private static final AtomicReferenceFieldUpdater<ContextBase, ConcurrentMap> LOCAL_DATA_UPDATER =
+    AtomicReferenceFieldUpdater.newUpdater(ContextBase.class, ConcurrentMap.class, "localData");
 
   private final VertxInternal owner;
   private final JsonObject config;
@@ -43,8 +48,8 @@ public abstract class ContextBase implements ContextInternal {
   private final CloseFuture closeFuture;
   private final ClassLoader tccl;
   private final EventLoop eventLoop;
-  private ConcurrentMap<Object, Object> data;
-  private ConcurrentMap<Object, Object> localData;
+  private volatile ConcurrentMap<Object, Object> data;
+  private volatile ConcurrentMap<Object, Object> localData;
   private volatile Handler<Throwable> exceptionHandler;
   final TaskQueue internalOrderedTasks;
   final WorkerPool internalWorkerPool;
@@ -167,19 +172,35 @@ public abstract class ContextBase implements ContextInternal {
   }
 
   @Override
-  public synchronized ConcurrentMap<Object, Object> contextData() {
-    if (data == null) {
-      data = new ConcurrentHashMap<>();
+  public ConcurrentMap<Object, Object> contextData() {
+    ConcurrentMap<Object, Object> data = this.data;
+    if (data != null) {
+      return data;
+    }
+    synchronized (this) {
+      data = this.data;
+      if (data == null) {
+        data = new ConcurrentHashMap<>();
+        DATA_UPDATER.lazySet(this, data);
+      }
     }
     return data;
   }
 
   @Override
-  public synchronized ConcurrentMap<Object, Object> localContextData() {
-    if (localData == null) {
-      localData = new ConcurrentHashMap<>();
+  public ConcurrentMap<Object, Object> localContextData() {
+    ConcurrentMap<Object, Object> data = this.localData;
+    if (data != null) {
+      return data;
     }
-    return localData;
+    synchronized (this) {
+      data = this.localData;
+      if (data == null) {
+        data = new ConcurrentHashMap<>();
+        LOCAL_DATA_UPDATER.lazySet(this, data);
+      }
+    }
+    return data;
   }
 
   public void reportException(Throwable t) {

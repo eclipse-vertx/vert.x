@@ -21,6 +21,7 @@ import io.vertx.core.spi.tracing.VertxTracer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 /**
  * A context that forwards most operations to a delegate. This context
@@ -34,6 +35,10 @@ import java.util.concurrent.Executor;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 class DuplicatedContext implements ContextInternal {
+
+  private static final AtomicReferenceFieldUpdater<DuplicatedContext, ConcurrentMap> LOCAL_DATA_UPDATER =
+    AtomicReferenceFieldUpdater.newUpdater(DuplicatedContext.class, ConcurrentMap.class, "localData");
+
 
   protected final ContextBase delegate;
   private ConcurrentMap<Object, Object> localData;
@@ -115,12 +120,18 @@ class DuplicatedContext implements ContextInternal {
 
   @Override
   public final ConcurrentMap<Object, Object> localContextData() {
-    synchronized (this) {
-      if (localData == null) {
-        localData = new ConcurrentHashMap<>();
-      }
-      return localData;
+    ConcurrentMap<Object, Object> data = this.localData;
+    if (data != null) {
+      return data;
     }
+    synchronized (this) {
+      data = this.localData;
+      if (data == null) {
+        data = new ConcurrentHashMap<>();
+        LOCAL_DATA_UPDATER.lazySet(this, data);
+      }
+    }
+    return data;
   }
 
   @Override
