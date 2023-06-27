@@ -12,6 +12,7 @@ package io.vertx.core.net.impl.pool;
 
 import io.vertx.core.Future;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.Address;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.resolver.AddressResolver;
@@ -75,7 +76,7 @@ public class EndpointResolver<S, K, C, A extends Address> extends ConnectionMana
   public static class ResolvedEndpoint<S, A extends Address, K, C> extends Endpoint<C> {
 
     private final AtomicReference<S> state;
-    private final Future<S> resolved;
+    private final AtomicReference<Future<S>> resolved;
     private final AddressResolver<S, A, ?> resolver;
     private final ConnectionManager<EndpointKey<K>, C> connectionManager;
     private final ResolvingKey<K, A> key;
@@ -93,7 +94,7 @@ public class EndpointResolver<S, K, C, A extends Address> extends ConnectionMana
           state.set(ar.result());
         }
       });
-      this.resolved = fut;
+      this.resolved = new AtomicReference<>(fut);
       this.state = state;
       this.resolver = resolver;
       this.connectionManager = connectionManager;
@@ -115,7 +116,29 @@ public class EndpointResolver<S, K, C, A extends Address> extends ConnectionMana
 
     @Override
     public Future<C> requestConnection(ContextInternal ctx, long timeout) {
-      return resolved.compose(state -> resolver
+      Future<S> fut = resolved.get();
+      return fut.transform(ar -> {
+        if (ar.succeeded()) {
+          S state = ar.result();
+          if (resolver.isValid(state)) {
+            return (Future<S>) ar;
+          } else {
+            PromiseInternal<S> promise = ctx.promise();
+            if (resolved.compareAndSet(fut, promise.future())) {
+              resolver.resolve(key.address).andThen(ar2 -> {
+                if (ar2.succeeded()) {
+                  ResolvedEndpoint.this.state.set(ar2.result());
+                }
+              }).onComplete(promise);
+              return promise.future();
+            } else {
+              return resolved.get();
+            }
+          }
+        } else {
+          return (Future<S>) ar;
+        }
+      }).compose(state -> resolver
         .pickAddress(state)
         .compose(origin -> {
           incRefCount();

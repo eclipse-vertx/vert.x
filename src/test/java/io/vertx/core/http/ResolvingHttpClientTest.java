@@ -46,13 +46,16 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     final List<SocketAddress> addresses;
     int index;
     final List<FakeMetric> metrics = Collections.synchronizedList(new ArrayList<>());
+    volatile boolean valid;
     FakeState(String name, List<SocketAddress> addresses) {
       this.name = name;
       this.addresses = addresses;
+      this.valid = true;
     }
     FakeState(String name, SocketAddress... addresses) {
       this.name = name;
       this.addresses = new ArrayList<>(Arrays.asList(addresses));
+      this.valid = true;
     }
   }
 
@@ -105,6 +108,11 @@ public class ResolvingHttpClientTest extends VertxTestBase {
   private static class FixedAddressResolver implements AddressResolver<FakeState, FakeAddress, FakeMetric> {
 
     private final ConcurrentMap<String, FakeState> map = new ConcurrentHashMap<>();
+
+    @Override
+    public boolean isValid(FakeState state) {
+      return state.valid;
+    }
 
     @Override
     public FakeMetric requestBegin(FakeState state, SocketAddress address) {
@@ -380,5 +388,32 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     assertTrue(metric.requestEnd - metric.requestBegin >= 0);
     assertTrue(metric.responseBegin - metric.requestEnd > 500);
     assertTrue(metric.responseEnd - metric.responseBegin >= 0);
+  }
+
+  @Test
+  public void testInvalidation() throws Exception {
+    startServers(2);
+    requestHandler = (idx, req) -> {
+      req.response().end("" + idx);
+    };
+    HttpClientInternal client = (HttpClientInternal) vertx.createHttpClient();
+    FixedAddressResolver resolver = new FixedAddressResolver();
+    SocketAddress addr1 = SocketAddress.inetSocketAddress(8080, "localhost");
+    SocketAddress addr2 = SocketAddress.inetSocketAddress(8081, "localhost");
+    resolver.map.put("example.com", new FakeState("example.com", addr1));
+    client.addressResolver(resolver);
+    String res = awaitFuture(client.request(new FakeAddress("example.com"), HttpMethod.GET, 8080, "example.com", "/").compose(req -> req
+      .send()
+      .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+      .compose(HttpClientResponse::body)
+    )).toString();
+    assertEquals("0", res);
+    resolver.map.put("example.com", new FakeState("example.com", addr2)).valid = false;
+    res = awaitFuture(client.request(new FakeAddress("example.com"), HttpMethod.GET, 8080, "example.com", "/").compose(req -> req
+      .send()
+      .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+      .compose(HttpClientResponse::body)
+    )).toString();
+    assertEquals("1", res);
   }
 }

@@ -45,6 +45,16 @@ public interface AddressResolver<S, A extends Address, M> {
   Future<S> resolve(A address);
 
   /**
+   * Check the state validity.
+   *
+   * @param state the state to check
+   * @return whether the state is valid
+   */
+  default boolean isValid(S state) {
+    return true;
+  }
+
+  /**
    * Pick a socket address for the state.
    *
    * @param state the state
