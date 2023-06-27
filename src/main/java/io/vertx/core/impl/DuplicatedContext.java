@@ -41,7 +41,7 @@ class DuplicatedContext implements ContextInternal {
 
 
   protected final ContextBase delegate;
-  private ConcurrentMap<Object, Object> localData;
+  private volatile ConcurrentMap<Object, Object> localData;
 
   DuplicatedContext(ContextBase delegate) {
     this.delegate = delegate;
