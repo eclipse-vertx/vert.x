@@ -17,12 +17,10 @@ import io.vertx.core.logging.SLF4JLogDelegate;
 import io.vertx.core.spi.logging.LogDelegate;
 import org.junit.Test;
 import org.slf4j.Marker;
-import org.slf4j.impl.SimpleLogger;
 import org.slf4j.spi.LocationAwareLogger;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.lang.reflect.Field;
 import java.util.concurrent.Callable;
 
 import static org.junit.Assert.*;
@@ -172,22 +170,23 @@ public class SLF4JLogDelegateTest {
     assertTrue(result.contains("java.lang.IllegalStateException"));
   }
 
-  private void setStream(PrintStream stream) {
+  private void withStream(PrintStream stream, Runnable runnable) {
+    PrintStream prev = System.out;
+    System.setOut(stream);
     try {
-      Field field = SimpleLogger.class.getDeclaredField("TARGET_STREAM");
-      field.setAccessible(true);
-      field.set(null, stream);
-    } catch (Exception e) {
-      throw new IllegalStateException(e);
+      runnable.run();
+    } finally {
+      System.setOut(prev);
     }
   }
 
   private String record(Runnable runnable) {
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     PrintStream written = new PrintStream(stream);
-    setStream(written);
-    runnable.run();
-    written.flush();
+    withStream(written, () -> {
+      runnable.run();
+      written.flush();
+    });
     String result = stream.toString();
     quiet(() -> {
       written.close();
