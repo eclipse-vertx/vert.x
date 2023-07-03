@@ -177,13 +177,12 @@ public abstract class ContextBase implements ContextInternal {
     if (data != null) {
       return data;
     }
-    synchronized (this) {
-      data = this.data;
-      if (data == null) {
-        data = new ConcurrentHashMap<>();
-        DATA_UPDATER.lazySet(this, data);
-      }
+    data = new ConcurrentHashMap<>();
+    if (DATA_UPDATER.compareAndSet(this, null, data)) {
+      return data;
     }
+    data = this.data;
+    assert data != null;
     return data;
   }
 
@@ -193,13 +192,12 @@ public abstract class ContextBase implements ContextInternal {
     if (data != null) {
       return data;
     }
-    synchronized (this) {
-      data = this.localData;
-      if (data == null) {
-        data = new ConcurrentHashMap<>();
-        LOCAL_DATA_UPDATER.lazySet(this, data);
-      }
+    data = new ConcurrentHashMap<>();
+    if (LOCAL_DATA_UPDATER.compareAndSet(this, null, data)) {
+      return data;
     }
+    data = this.localData;
+    assert data != null;
     return data;
   }
 

@@ -124,13 +124,12 @@ class DuplicatedContext implements ContextInternal {
     if (data != null) {
       return data;
     }
-    synchronized (this) {
-      data = this.localData;
-      if (data == null) {
-        data = new ConcurrentHashMap<>();
-        LOCAL_DATA_UPDATER.lazySet(this, data);
-      }
+    data = new ConcurrentHashMap<>();
+    if (LOCAL_DATA_UPDATER.compareAndSet(this, null, data)) {
+      return data;
     }
+    data = this.localData;
+    assert data != null;
     return data;
   }
 
