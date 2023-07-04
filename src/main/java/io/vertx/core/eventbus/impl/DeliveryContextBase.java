@@ -61,7 +61,15 @@ abstract class DeliveryContextBase<T> implements DeliveryContext<T> {
         Handler<DeliveryContext> interceptor = interceptors[interceptorIdx];
         invoking = true;
         interceptorIdx++;
-        context.emit(this, interceptor);
+        if (context.inThread()) {
+          context.dispatch(this, interceptor);
+        } else {
+          try {
+            interceptor.handle(this);
+          } catch (Throwable t) {
+            context.reportException(t);
+          }
+        }
         invoking = false;
         if (!invokeNext) {
           return;
