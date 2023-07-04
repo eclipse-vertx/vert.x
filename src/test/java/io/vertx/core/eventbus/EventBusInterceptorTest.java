@@ -355,6 +355,74 @@ public class EventBusInterceptorTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testOutboundInterceptorFromNonVertxThreadDispatch() {
+    AtomicReference<Thread> interceptorThread = new AtomicReference<>();
+    eb.addOutboundInterceptor(sc -> {
+      interceptorThread.set(Thread.currentThread());
+    });
+    eb.consumer("some-address", msg -> {
+    });
+    eb.send("some-address", "armadillo");
+    assertSame(Thread.currentThread(), interceptorThread.get());
+  }
+
+  @Test
+  public void testOutboundInterceptorFromNonVertxThreadFailure() {
+    RuntimeException expected = new RuntimeException();
+    eb.addOutboundInterceptor(sc -> {
+      throw expected;
+    });
+    eb.consumer("some-address", msg -> {
+    });
+    Context ctx = vertx.getOrCreateContext();
+    AtomicReference<Throwable> caught = new AtomicReference<>();
+    ctx.exceptionHandler(err -> caught.set(err));
+    eb.send("some-address", "armadillo");
+    assertSame(expected, caught.get());
+  }
+
+  @Test
+  public void testInboundInterceptorFromNonVertxThreadDispatch() {
+    AtomicReference<Thread> interceptorThread = new AtomicReference<>();
+    AtomicReference<Thread> th = new AtomicReference<>();
+    eb.addInboundInterceptor(sc -> {
+      new Thread(() -> {
+        th.set(Thread.currentThread());
+        sc.next();
+      }).start();
+    });
+    eb.addInboundInterceptor(sc -> {
+      interceptorThread.set(Thread.currentThread());
+    });
+    eb.consumer("some-address", msg -> {
+    });
+    eb.send("some-address", "armadillo");
+    waitUntil(() -> interceptorThread.get() != null);
+    assertSame(th.get(), interceptorThread.get());
+  }
+
+  @Test
+  public void testInboundInterceptorFromNonVertxThreadFailure() {
+    RuntimeException expected = new RuntimeException();
+    eb.addInboundInterceptor(sc -> {
+      new Thread(() -> {
+        sc.next();
+      }).start();
+    });
+    eb.addInboundInterceptor(sc -> {
+      throw expected;
+    });
+    eb.consumer("some-address", msg -> {
+    });
+    Context ctx = vertx.getOrCreateContext();
+    AtomicReference<Throwable> caught = new AtomicReference<>();
+    ctx.exceptionHandler(err -> caught.set(err));
+    eb.send("some-address", "armadillo");
+    waitUntil(() -> caught.get() != null);
+    assertSame(expected, caught.get());
+  }
+
   @Override
   public void setUp() throws Exception {
     super.setUp();
