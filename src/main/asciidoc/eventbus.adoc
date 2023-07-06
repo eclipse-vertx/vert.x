@@ -253,28 +253,17 @@ include::override/eventbus.adoc[]
 
 ==== Clustered Event Bus
 
-The event bus doesn't just exist in a single Vert.x instance. By clustering different Vert.x instances together on
-your network they can form a single, distributed event bus.
+The event bus doesn't just exist in a single Vert.x instance.
+By clustering different Vert.x instances together on your network they can form a single, distributed event bus.
 
-==== Clustering programmatically
-
-If you're creating your Vert.x instance programmatically you get a clustered event bus by configuring the Vert.x
-instance as clustered;
+If you're creating your Vert.x instance programmatically, you get a clustered event bus by configuring the Vert.x instance as clustered:
 
 [source,$lang]
 ----
 {@link examples.EventBusExamples#example12}
 ----
 
-You should also make sure you have a {@link io.vertx.core.spi.cluster.ClusterManager} implementation on your classpath, for example the Hazelcast cluster manager.
-
-==== Clustering on the command line
-
-You can run Vert.x clustered on the command line with
-
-----
-vertx run my-verticle.js -cluster
-----
+You should also make sure you have one of the link:/docs/#clustering[{@link io.vertx.core.spi.cluster.ClusterManager} implementations] on your classpath.
 
 === Automatic clean-up in verticles
 
