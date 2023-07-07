@@ -1,3 +1,0 @@
-Main-Class: io.vertx.core.Launcher
-Main-Verticle: java:io.vertx.test.verticles.TestVerticle
-Main-Command: hello

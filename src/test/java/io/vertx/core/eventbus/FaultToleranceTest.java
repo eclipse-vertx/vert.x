@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2023 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -11,7 +11,6 @@
 
 package io.vertx.core.eventbus;
 
-import io.vertx.core.Launcher;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -24,6 +23,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
@@ -117,11 +117,7 @@ public abstract class FaultToleranceTest extends VertxTestBase {
     command.add("-classpath");
     command.add(classpath);
     command.addAll(getExternalNodeSystemProperties());
-    command.add(Launcher.class.getName());
-    command.add("run");
     command.add(FaultToleranceVerticle.class.getName());
-    command.add("-cluster");
-    command.add("-conf");
     command.add(new JsonObject().put("id", id).put("addressesCount", ADDRESSES_COUNT).encode());
     return new ProcessBuilder(command).inheritIO().start();
   }
@@ -133,7 +129,7 @@ public abstract class FaultToleranceTest extends VertxTestBase {
   protected void assertEqualsEventually(String msg, Object expected, Supplier<Object> actual) {
     for (long start = System.currentTimeMillis(); System.currentTimeMillis() - start < timeoutMs; ) {
       Object act = actual.get();
-      if (expected == null ? act == null : expected.equals(act)) {
+      if (Objects.equals(expected, act)) {
         return;
       }
       try {
