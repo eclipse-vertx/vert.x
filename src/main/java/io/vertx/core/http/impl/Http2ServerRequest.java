@@ -41,9 +41,9 @@ import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.tracing.TracingPolicy;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
@@ -336,6 +336,11 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   @Override
   public String host() {
     return stream.host;
+  }
+
+  @Override
+  public @Nullable HostAndPort authority() {
+    return stream.authority;
   }
 
   @Override

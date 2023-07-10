@@ -32,6 +32,7 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.tracing.TagExtractor;
 
 import java.io.File;
@@ -508,9 +509,15 @@ public final class HttpUtils {
     if (scheme != null && (scheme.equals("http") || scheme.equals("https"))) {
       absoluteURI = uri.toString();
     } else {
-      String host = req.host();
-      if (host != null) {
-        absoluteURI = req.scheme() + "://" + host + uri;
+      boolean ssl = req.isSSL();
+      HostAndPort authority = req.authority();
+      if (authority != null) {
+        StringBuilder sb = new StringBuilder(req.scheme()).append("://").append(authority.host());
+        if ((ssl && authority.port() != 443) || (!ssl && authority.port() != 80)) {
+          sb.append(':').append(authority.port());
+        }
+        sb.append(uri);
+        absoluteURI = sb.toString();
       } else {
         // Fall back to the server origin
         absoluteURI = serverOrigin + uri;

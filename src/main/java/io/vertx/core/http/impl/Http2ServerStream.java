@@ -23,6 +23,8 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.net.HostAndPort;
+import io.vertx.core.net.impl.HostAndPortImpl;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.observability.HttpRequest;
@@ -37,7 +39,8 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
   protected final Http2Headers headers;
   protected final HttpMethod method;
   protected final String uri;
-  protected final String host;
+  protected final String host; // deprecated
+  protected final HostAndPort authority;
   private final TracingPolicy tracingPolicy;
   private Object metric;
   private Object trace;
@@ -58,6 +61,7 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
     this.method = method;
     this.uri = uri;
     this.host = null;
+    this.authority = null;
     this.tracingPolicy = tracingPolicy;
     this.halfClosedRemote = halfClosedRemote;
   }
@@ -72,7 +76,8 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
     }
 
     this.headers = headers;
-    this.host = host;
+    this.host =  host;
+    this.authority = HostAndPortImpl.parseHostAndPort(host, conn.isSsl() ? 443 : 80);
     this.uri = headers.get(":path") != null ? headers.get(":path").toString() : null;
     this.method = headers.get(":method") != null ? HttpMethod.valueOf(headers.get(":method").toString()) : null;
     this.tracingPolicy = tracingPolicy;
