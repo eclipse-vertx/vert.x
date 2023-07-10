@@ -12,7 +12,6 @@
 package io.vertx.core.http.impl;
 
 import io.netty.handler.codec.http2.Http2Error;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -22,6 +21,7 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
+import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
 
 import java.util.Objects;
@@ -123,20 +123,10 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   @Override
-  public synchronized HttpClientRequest setHost(String host) {
-    Objects.requireNonNull(uri);
-    this.host = host;
-    return this;
-  }
-
-  @Override
-  public int getPort() {
-    return port;
-  }
-
-  @Override
-  public synchronized HttpClientRequest setPort(int port) {
-    this.port = port;
+  public synchronized HttpClientRequest authority(HostAndPort authority) {
+    Objects.requireNonNull(authority);
+    this.host = authority.host();
+    this.port = authority.port();
     return this;
   }
 

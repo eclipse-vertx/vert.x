@@ -17,7 +17,6 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -32,6 +31,8 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.net.HostAndPort;
+import io.vertx.core.net.impl.HostAndPortImpl;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
@@ -71,6 +72,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   private HttpRequest request;
   private io.vertx.core.http.HttpVersion version;
   private io.vertx.core.http.HttpMethod method;
+  private HostAndPort authority;
   private String uri;
   private String path;
   private String query;
@@ -252,8 +254,12 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   }
 
   @Override
-  public @Nullable String host() {
-    return getHeader(HttpHeaderNames.HOST);
+  public synchronized HostAndPort authority() {
+    if (authority == null) {
+      String host = getHeader(HttpHeaderNames.HOST);
+      authority = HostAndPortImpl.parseHostAndPort(host, isSSL() ? 443 : 80);
+    }
+    return authority;
   }
 
   @Override

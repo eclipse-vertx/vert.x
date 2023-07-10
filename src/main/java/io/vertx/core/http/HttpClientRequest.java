@@ -17,6 +17,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
@@ -63,37 +64,14 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
   HttpClientRequest drainHandler(Handler<Void> handler);
 
   /**
-   * Set the host value of the HTTP/1.1 {@code host} header or HTTP/2 {@code authority} pseudo header
-   * <p>The initial value is the same than the server socket address host.
-   * <p>Keep in mind that changing this value won't change the actual server socket address for this request.
+   * Set the request authority, when using HTTP/1.x this overrides the request {@code host} header, when using
+   * HTTP/2 this sets the {@code authority} pseudo header.
    *
-   * @param host the host part of the HTTP/1.1 {@code host} header or HTTP/2 {@code authority} pseudo header
+   * @param authority the authority
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpClientRequest setHost(String host);
-
-  /**
-   * @return the host value of the HTTP/1.1 {@code host} header or HTTP/2 {@code authority} pseudo header
-   */
-  String getHost();
-
-  /**
-   * Set the port value of the HTTP/1.1 {@code host} header or HTTP/2 {@code authority} pseudo header
-   *
-   * <p> Keep in mind that this won't change the actual server socket address for this request.
-   * <p>The initial value is the same than the server socket address port.
-   *
-   * @param port the port part of the HTTP/1.1 {@code host} header or HTTP/2 {@code authority} pseudo header
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  HttpClientRequest setPort(int port);
-
-  /**
-   * @return the port value of the HTTP/1.1 {@code host} header or HTTP/2 {@code authority} pseudo header
-   */
-  int getPort();
+  HttpClientRequest authority(HostAndPort authority);
 
   /**
    * Set the request to follow HTTP redirects up to {@link HttpClientOptions#getMaxRedirects()}.
