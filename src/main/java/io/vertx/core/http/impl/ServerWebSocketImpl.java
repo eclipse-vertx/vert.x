@@ -16,10 +16,12 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
@@ -40,7 +42,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
   private final Http1xServerConnection conn;
   private final long closingTimeoutMS;
   private final String scheme;
-  private final String host;
+  private final HostAndPort authority;
   private final String uri;
   private final String path;
   private final String query;
@@ -62,7 +64,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
     this.conn = conn;
     this.closingTimeoutMS = closingTimeout >= 0 ? closingTimeout * 1000L : -1L;
     this.scheme = request.scheme();
-    this.host = request.host();
+    this.authority = request.authority();
     this.uri = request.uri();
     this.path = request.path();
     this.query = request.query();
@@ -76,8 +78,8 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
   }
 
   @Override
-  public String host() {
-    return host;
+  public HostAndPort authority() {
+    return authority;
   }
 
   @Override

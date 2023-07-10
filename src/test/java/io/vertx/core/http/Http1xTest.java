@@ -3824,7 +3824,7 @@ public class Http1xTest extends HttpTest {
       .setServer(SocketAddress.inetSocketAddress(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST))
       .setPort(8080)
       .setHost("host" + i)
-      .setURI("/somepath")), HttpServerRequest::host);
+      .setURI("/somepath")), req -> req.authority().toString());
   }
 
   @Test
@@ -3840,7 +3840,7 @@ public class Http1xTest extends HttpTest {
     testPerXXXPooling((i) -> client.request(new RequestOptions()
       .setPort(80)
       .setHost("host" + i)
-      .setURI("/somepath")), HttpServerRequest::host);
+      .setURI("/somepath")), req -> req.authority().toString());
   }
 
   private void testPerXXXPooling(Function<Integer, Future<HttpClientRequest>> requestProvider, Function<HttpServerRequest, String> keyExtractor) throws Exception {

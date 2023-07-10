@@ -429,7 +429,8 @@ public class Http2ServerTest extends Http2TestBase {
       });
       HttpServerResponse resp = req.response();
       assertEquals(HttpMethod.GET, req.method());
-      assertEquals(DEFAULT_HTTPS_HOST_AND_PORT, req.host());
+      assertEquals(DEFAULT_HTTPS_HOST, req.authority().host());
+      assertEquals(DEFAULT_HTTPS_PORT, req.authority().port());
       assertEquals("/", req.path());
       assertTrue(req.isSSL());
       assertEquals(expectedStreamId.get(), req.streamId());
@@ -519,7 +520,7 @@ public class Http2ServerTest extends Http2TestBase {
       assertEquals("foo=foo_value&bar=bar_value_1&bar=bar_value_2", req.query());
       assertEquals("/some/path?foo=foo_value&bar=bar_value_1&bar=bar_value_2", req.uri());
       assertEquals("http://whatever.com/some/path?foo=foo_value&bar=bar_value_1&bar=bar_value_2", req.absoluteURI());
-      assertEquals("whatever.com", req.host());
+      assertEquals("whatever.com", req.authority().host());
       MultiMap params = req.params();
       Set<String> names = params.names();
       assertEquals(2, names.size());
@@ -691,7 +692,7 @@ public class Http2ServerTest extends Http2TestBase {
   public void testConnect() throws Exception {
     server.requestHandler(req -> {
       assertEquals(HttpMethod.CONNECT, req.method());
-      assertEquals("whatever.com", req.host());
+      assertEquals("whatever.com", req.authority().host());
       assertNull(req.path());
       assertNull(req.query());
       assertNull(req.scheme());

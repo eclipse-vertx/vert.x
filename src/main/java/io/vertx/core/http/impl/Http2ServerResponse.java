@@ -33,7 +33,9 @@ import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.impl.future.PromiseInternal;
+import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.impl.HostAndPortImpl;
 import io.vertx.core.spi.observability.HttpResponse;
 import io.vertx.core.streams.ReadStream;
 
@@ -614,18 +616,38 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public Future<HttpServerResponse> push(HttpMethod method, String host, String path, MultiMap headers) {
+  public Future<HttpServerResponse> push(HttpMethod method, HostAndPort authority, String path, MultiMap headers) {
     if (push) {
       throw new IllegalStateException("A push response cannot promise another push");
     }
-    if (host == null) {
-      host = stream.host;
+    if (authority == null) {
+      authority = stream.authority;
     }
     synchronized (conn) {
       checkValid();
     }
     Promise<HttpServerResponse> promise = stream.context.promise();
-    conn.sendPush(stream.id(), host, method, headers, path, stream.priority(), promise);
+    conn.sendPush(stream.id(), authority, method, headers, path, stream.priority(), promise);
+    return promise.future();
+  }
+
+  @Override
+  public Future<HttpServerResponse> push(HttpMethod method, String authority, String path, MultiMap headers) {
+    if (push) {
+      throw new IllegalStateException("A push response cannot promise another push");
+    }
+    HostAndPort hostAndPort = null;
+    if (authority != null) {
+      hostAndPort = HostAndPortImpl.parseHostAndPort(authority, conn.isSsl() ? 443 : 80);
+    }
+    if (hostAndPort == null) {
+      hostAndPort = stream.authority;
+    }
+    synchronized (conn) {
+      checkValid();
+    }
+    Promise<HttpServerResponse> promise = stream.context.promise();
+    conn.sendPush(stream.id(), hostAndPort, method, headers, path, stream.priority(), promise);
     return promise.future();
   }
 

@@ -276,7 +276,8 @@ public class Http2ClientTest extends Http2TestBase {
       assertEquals("https", req.scheme());
       assertEquals(HttpMethod.GET, req.method());
       assertEquals("/somepath", req.path());
-      assertEquals(DEFAULT_HTTPS_HOST_AND_PORT, req.host());
+      assertEquals(DEFAULT_HTTPS_HOST, req.authority().host());
+      assertEquals(DEFAULT_HTTPS_PORT, req.authority().port());
       assertEquals("foo_request_value", req.getHeader("Foo_request"));
       assertEquals("bar_request_value", req.getHeader("bar_request"));
       assertEquals(2, req.headers().getAll("juu_request").size());
@@ -362,7 +363,8 @@ public class Http2ClientTest extends Http2TestBase {
   @Test
   public void testOverrideAuthority() throws Exception {
     server.requestHandler(req -> {
-      assertEquals("localhost:4444", req.host());
+      assertEquals("localhost", req.authority().host());
+      assertEquals(4444, req.authority().port());
       req.response().end();
     });
     startServer(testAddress);
@@ -1698,7 +1700,8 @@ public class Http2ClientTest extends Http2TestBase {
         } else {
           assertNull(upgrade);
         }
-        assertEquals(DEFAULT_HTTPS_HOST + ":" + DEFAULT_HTTPS_PORT, req.host());
+        assertEquals(DEFAULT_HTTPS_HOST, req.authority().host());
+        assertEquals(DEFAULT_HTTPS_PORT, req.authority().port());
         req.response().end("wibble");
         assertEquals(HttpVersion.HTTP_1_1, req.version());
       });

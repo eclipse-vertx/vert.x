@@ -20,6 +20,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.streams.ReadStream;
@@ -135,10 +136,10 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   String query();
 
   /**
-   * @return the request host. For HTTP2 it returns the {@literal :authority} pseudo header otherwise it returns the {@literal Host} header
+   * @return the request authority. For HTTP2 it returns the {@literal :authority} pseudo header otherwise it returns the {@literal Host} header
    */
   @Nullable
-  String host();
+  HostAndPort authority();
 
   /**
    * @return the total number of bytes read for the body of the request.

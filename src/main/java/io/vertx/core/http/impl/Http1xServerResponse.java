@@ -40,6 +40,7 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.observability.HttpResponse;
@@ -731,6 +732,11 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
     }
     close();
     return true;
+  }
+
+  @Override
+  public Future<HttpServerResponse> push(HttpMethod method, HostAndPort authority, String path, MultiMap headers) {
+    return context.failedFuture("HTTP/1 does not support response push");
   }
 
   @Override
