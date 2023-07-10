@@ -22,6 +22,7 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
+import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
 
 import java.util.Objects;
@@ -120,6 +121,14 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
 
   public String getHost() {
     return host;
+  }
+
+  @Override
+  public synchronized HttpClientRequest authority(HostAndPort authority) {
+    Objects.requireNonNull(authority);
+    this.host = authority.host();
+    this.port = authority.port();
+    return this;
   }
 
   @Override

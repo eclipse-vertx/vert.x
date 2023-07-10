@@ -19,6 +19,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.net.HostAndPort;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
@@ -88,9 +89,17 @@ public interface ServerWebSocket extends WebSocketBase {
 
   /**
    * @return the WebSocket handshake host
+   * @deprecated use {@link #authority()} instead
    */
   @Nullable
+  @Deprecated
   String host();
+
+  /**
+   * @return the WebSocket handshake authority
+   */
+  @Nullable
+  HostAndPort authority();
 
   /*
    * @return the WebSocket handshake URI. This is a relative URI.

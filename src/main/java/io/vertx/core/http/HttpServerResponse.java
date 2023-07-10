@@ -17,6 +17,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.net.HostAndPort;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
@@ -540,7 +541,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * Same as {@link #push(HttpMethod, String, MultiMap, Handler)} but with an {@code handler} called when the operation completes
    */
   default Future<HttpServerResponse> push(HttpMethod method, String path, MultiMap headers) {
-    return push(method, null, path, headers);
+    return push(method, (HostAndPort) null, path, headers);
   }
 
   /**
@@ -570,7 +571,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * Push can be sent only for peer initiated streams and if the response is not ended.
    *
    * @param method the method of the promised request
-   * @param host the host of the promised request
+   * @param authority the authority of the promised request
    * @param path the path of the promised request
    * @param headers the headers of the promised request
    * @param handler the handler notified when the response can be written
@@ -588,6 +589,27 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   /**
    * Same as {@link #push(HttpMethod, String, String, MultiMap, Handler)} but with an {@code handler} called when the operation completes
    */
+  Future<HttpServerResponse> push(HttpMethod method, HostAndPort authority, String path, MultiMap headers);
+
+  /**
+   * Push a response to the client.<p/>
+   *
+   * The {@code handler} will be notified with a <i>success</i> when the push can be sent and with
+   * a <i>failure</i> when the client has disabled push or reset the push before it has been sent.<p/>
+   *
+   * The {@code handler} may be queued if the client has reduced the maximum number of streams the server can push
+   * concurrently.<p/>
+   *
+   * Push can be sent only for peer initiated streams and if the response is not ended.
+   *
+   * @param method the method of the promised request
+   * @param host the host of the promised request
+   * @param path the path of the promised request
+   * @param headers the headers of the promised request
+   * @return a future notified when the response can be written
+   * @deprecated instead use {@link #push(HttpMethod, HostAndPort, String, MultiMap)}
+   */
+  @Deprecated
   Future<HttpServerResponse> push(HttpMethod method, String host, String path, MultiMap headers);
 
   /**

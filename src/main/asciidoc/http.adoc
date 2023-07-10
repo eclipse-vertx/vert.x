@@ -182,9 +182,9 @@ It also has case-insensitive keys, that means you can do the following:
 {@link examples.HTTPExamples#example8}
 ----
 
-==== Request host
+==== Request authority
 
-Use {@link io.vertx.core.http.HttpServerRequest#host} to return the host of the HTTP request.
+Use {@link io.vertx.core.http.HttpServerRequest#authority} to return the authority of the HTTP request.
 
 For HTTP/1.x requests the `host` header is returned, for HTTP/1 requests the `:authority` pseudo header is returned.
 

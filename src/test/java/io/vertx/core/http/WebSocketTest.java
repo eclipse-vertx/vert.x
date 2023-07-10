@@ -671,14 +671,14 @@ public class WebSocketTest extends VertxTestBase {
 
   private void testWSWriteStream(WebsocketVersion version) throws Exception {
 
-    String host = DEFAULT_HTTP_HOST + ":" + DEFAULT_HTTP_PORT;
     String scheme = "http";
     String path = "/some/path";
     String query = "handshake=bar&wibble=eek";
     String uri = path + "?" + query;
 
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).webSocketHandler(ws -> {
-      assertEquals(host, ws.host());
+      assertEquals(DEFAULT_HTTP_HOST, ws.authority().host());
+      assertEquals(DEFAULT_HTTP_PORT, ws.authority().port());
       assertEquals(scheme, ws.scheme());
       assertEquals(uri, ws.uri());
       assertEquals(path, ws.path());
@@ -721,7 +721,6 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   private void testWSFrames(boolean binary, WebsocketVersion version) throws Exception {
-    String host = DEFAULT_HTTP_HOST + ":" + DEFAULT_HTTP_PORT;
     String scheme = "http";
     String path = "/some/path";
     String query = "handshake=bar&wibble=eek";
@@ -731,7 +730,8 @@ public class WebSocketTest extends VertxTestBase {
     int frames = version == WebsocketVersion.V00 ? 1: 10;
 
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).webSocketHandler(ws -> {
-      assertEquals(host, ws.host());
+      assertEquals(DEFAULT_HTTP_HOST, ws.authority().host());
+      assertEquals(DEFAULT_HTTP_PORT, ws.authority().port());
       assertEquals(scheme, ws.scheme());
       assertEquals(uri, ws.uri());
       assertEquals(path, ws.path());

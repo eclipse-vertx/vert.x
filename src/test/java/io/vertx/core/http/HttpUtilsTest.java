@@ -229,5 +229,4 @@ public class HttpUtilsTest {
     URI uri = HttpUtils.resolveURIReference(base, ref);
     assertEquals(expected, uri.getPath());
   }
-
 }
