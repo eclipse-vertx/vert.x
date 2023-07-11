@@ -1,4 +1,4 @@
-[![Build Status](https://github.com/eclipse-vertx/vert.x/workflows/CI/badge.svg?branch=master)](https://github.com/eclipse-vertx/vert.x/actions?query=workflow%3ACI)
+[![Build Status (4.x)](https://github.com/eclipse-vertx/vert.x/actions/workflows/ci-4.x.yml/badge.svg)](https://github.com/eclipse-vertx/vert.x/actions/workflows/ci-4.x.yml)
 
 ## Vert.x Core
 
