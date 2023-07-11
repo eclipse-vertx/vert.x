@@ -1292,6 +1292,11 @@ public class Http2ServerTest extends Http2TestBase {
   }
 
   @Test
+  public void testInvalidHost() throws Exception {
+    testMalformedRequestHeaders(new DefaultHttp2Headers().method("GET").scheme("http").authority(DEFAULT_HTTPS_HOST_AND_PORT).path("/").set("host", "something-else"));
+  }
+
+  @Test
   public void testConnectInvalidPath() throws Exception {
     testMalformedRequestHeaders(new DefaultHttp2Headers().method("CONNECT").path("/").authority(DEFAULT_HTTPS_HOST_AND_PORT));
   }
