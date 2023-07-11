@@ -313,7 +313,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   public HttpServerResponse writeContinue() {
     synchronized (conn) {
       checkHeadWritten();
-      stream.writeHeaders(new DefaultHttp2Headers().status(HttpResponseStatus.CONTINUE.codeAsText()), false, null);
+      stream.writeHeaders(new DefaultHttp2Headers().status(HttpResponseStatus.CONTINUE.codeAsText()), false, true, null);
       return this;
     }
   }
@@ -335,7 +335,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     synchronized (conn) {
       checkHeadWritten();
     }
-    stream.writeHeaders(http2Headers, false, handler);
+    stream.writeHeaders(http2Headers, false, true, handler);
   }
 
   @Override
@@ -463,14 +463,14 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       if (end && !headWritten && needsContentLengthHeader()) {
         headers().set(HttpHeaderNames.CONTENT_LENGTH, String.valueOf(chunk.readableBytes()));
       }
-      boolean sent = checkSendHeaders(end && !hasBody && trailers == null);
+      boolean sent = checkSendHeaders(end && !hasBody && trailers == null, !hasBody);
       if (hasBody || (!sent && end)) {
         stream.writeData(chunk, end && trailers == null, handler);
       } else {
         invokeHandler = true;
       }
       if (end && trailers != null) {
-        stream.writeHeaders(trailers, true, null);
+        stream.writeHeaders(trailers, true, true, null);
       }
       bodyEndHandler = this.bodyEndHandler;
       endHandler = this.endHandler;
@@ -493,6 +493,10 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   private boolean checkSendHeaders(boolean end) {
+    return checkSendHeaders(end, true);
+  }
+
+  private boolean checkSendHeaders(boolean end, boolean checkFlush) {
     if (!headWritten) {
       if (headersEndHandler != null) {
         headersEndHandler.handle(null);
@@ -502,7 +506,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       }
       prepareHeaders();
       headWritten = true;
-      stream.writeHeaders(headers, end, null);
+      stream.writeHeaders(headers, end, checkFlush, null);
       if (end) {
         ctx.flush();
       }

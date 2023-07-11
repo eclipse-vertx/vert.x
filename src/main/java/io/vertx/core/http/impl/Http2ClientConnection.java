@@ -276,9 +276,9 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    void doWriteHeaders(Http2Headers headers, boolean end, Handler<AsyncResult<Void>> handler) {
+    void doWriteHeaders(Http2Headers headers, boolean end, boolean checkFlush, Handler<AsyncResult<Void>> handler) {
       isConnect = "CONNECT".contentEquals(headers.method());
-      super.doWriteHeaders(headers, end, handler);
+      super.doWriteHeaders(headers, end, checkFlush, handler);
     }
 
     @Override
@@ -588,10 +588,10 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         return;
       }
       if (buf != null) {
-        doWriteHeaders(headers, false, null);
+        doWriteHeaders(headers, false, false, null);
         doWriteData(buf, e, handler);
       } else {
-        doWriteHeaders(headers, e, handler);
+        doWriteHeaders(headers, e, true, handler);
       }
     }
 
