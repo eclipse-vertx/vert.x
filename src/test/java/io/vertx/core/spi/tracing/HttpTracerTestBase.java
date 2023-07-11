@@ -66,7 +66,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
       assertEquals(1, seq.get());
       ContextInternal ctx = (ContextInternal) Vertx.currentContext();
       assertSame(val, ctx.localContextData().get(key));
-      req.response().endHandler(v -> {
+      req.response().closeHandler(v -> {
         assertNull(ctx.localContextData().get(key));
         assertEquals(2, seq.get());
       });
