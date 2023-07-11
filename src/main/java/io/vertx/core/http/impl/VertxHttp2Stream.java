@@ -188,17 +188,17 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     conn.handler.writeFrame(stream, (byte) type, (short) flags, payload, (FutureListener<Void>) promise);
   }
 
-  final void writeHeaders(Http2Headers headers, boolean end, Promise<Void> promise) {
+  final void writeHeaders(Http2Headers headers, boolean end, boolean checkFlush, Promise<Void> promise) {
     EventLoop eventLoop = conn.getContext().nettyEventLoop();
     if (eventLoop.inEventLoop()) {
-      doWriteHeaders(headers, end, promise);
+      doWriteHeaders(headers, end, checkFlush, promise);
     } else {
-      eventLoop.execute(() -> doWriteHeaders(headers, end, promise));
+      eventLoop.execute(() -> doWriteHeaders(headers, end, checkFlush, promise));
     }
   }
 
-  void doWriteHeaders(Http2Headers headers, boolean end, Promise<Void> promise) {
-    conn.handler.writeHeaders(stream, headers, end, priority.getDependency(), priority.getWeight(), priority.isExclusive(), (FutureListener<Void>) promise);
+  void doWriteHeaders(Http2Headers headers, boolean end, boolean checkFlush, Promise<Void> promise) {
+    conn.handler.writeHeaders(stream, headers, end, priority.getDependency(), priority.getWeight(), priority.isExclusive(), checkFlush, (FutureListener<Void>) promise);
     if (end) {
       endWritten();
     }

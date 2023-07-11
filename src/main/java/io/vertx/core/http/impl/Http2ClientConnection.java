@@ -263,9 +263,9 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    void doWriteHeaders(Http2Headers headers, boolean end, Promise<Void> promise) {
+    void doWriteHeaders(Http2Headers headers, boolean end, boolean checkFlush, Promise<Void> promise) {
       isConnect = "CONNECT".contentEquals(headers.method());
-      super.doWriteHeaders(headers, end, promise);
+      super.doWriteHeaders(headers, end, checkFlush, promise);
     }
 
     @Override
@@ -575,10 +575,10 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         return;
       }
       if (buf != null) {
-        doWriteHeaders(headers, false, null);
+        doWriteHeaders(headers, false, false, null);
         doWriteData(buf, e, promise);
       } else {
-        doWriteHeaders(headers, e, promise);
+        doWriteHeaders(headers, e, true, promise);
       }
     }
 

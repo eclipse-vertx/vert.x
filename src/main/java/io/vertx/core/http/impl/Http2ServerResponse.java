@@ -318,7 +318,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     Promise<Void> promise = stream.context.promise();
     synchronized (conn) {
       checkHeadWritten();
-      stream.writeHeaders(new DefaultHttp2Headers().status(HttpResponseStatus.CONTINUE.codeAsText()), false, promise);
+      stream.writeHeaders(new DefaultHttp2Headers().status(HttpResponseStatus.CONTINUE.codeAsText()), false, true, promise);
     }
     return promise.future();
   }
@@ -334,7 +334,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     synchronized (conn) {
       checkHeadWritten();
     }
-    stream.writeHeaders(http2Headers, false, promise);
+;    stream.writeHeaders(http2Headers, false, true, promise);
     return promise.future();
   }
 
@@ -408,7 +408,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       if (end && !headWritten && needsContentLengthHeader()) {
         headers().set(HttpHeaderNames.CONTENT_LENGTH, String.valueOf(chunk.readableBytes()));
       }
-      boolean sent = checkSendHeaders(end && !hasBody && trailers == null);
+      boolean sent = checkSendHeaders(end && !hasBody && trailers == null, !hasBody);
       if (hasBody || (!sent && end)) {
         Promise<Void> p = stream.context.promise();
         fut = p.future();
@@ -417,7 +417,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
         fut = stream.context.succeededFuture();
       }
       if (end && trailers != null) {
-        stream.writeHeaders(trailers, true, null);
+        stream.writeHeaders(trailers, true, true, null);
       }
       bodyEndHandler = this.bodyEndHandler;
       endHandler = this.endHandler;
@@ -438,6 +438,10 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   private boolean checkSendHeaders(boolean end) {
+    return checkSendHeaders(end, true);
+  }
+
+  private boolean checkSendHeaders(boolean end, boolean checkFlush) {
     if (!headWritten) {
       if (headersEndHandler != null) {
         headersEndHandler.handle(null);
@@ -447,7 +451,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       }
       prepareHeaders();
       headWritten = true;
-      stream.writeHeaders(headers, end, null);
+      stream.writeHeaders(headers, end, checkFlush, null);
       if (end) {
         ctx.flush();
       }
