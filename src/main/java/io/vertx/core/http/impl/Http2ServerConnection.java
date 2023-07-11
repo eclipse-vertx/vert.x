@@ -111,6 +111,18 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
       if (uri.getRawUserInfo() != null) {
         return true;
       }
+      CharSequence host = headers.get(HttpHeaders.HOST);
+      if (host != null) {
+        URI hostURI;
+        try {
+          hostURI = new URI(null, host.toString(), null, null, null);
+        } catch (URISyntaxException e) {
+          return true;
+        }
+        if (uri.getRawUserInfo() != null || !uri.getAuthority().equals(hostURI.getAuthority())) {
+          return true;
+        }
+      }
     }
     return false;
   }
