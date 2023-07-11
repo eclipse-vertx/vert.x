@@ -432,7 +432,6 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
         if (!checkSendHeaders(false)) {
           netSocket = stream.context.failedFuture("Response for CONNECT already sent");
         } else {
-          ctx.flush();
           HttpNetSocket ns = HttpNetSocket.netSocket(conn, stream.context, (ReadStream<Buffer>) stream.request, this);
           netSocket = Future.succeededFuture(ns);
         }
@@ -507,9 +506,6 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       prepareHeaders();
       headWritten = true;
       stream.writeHeaders(headers, end, checkFlush, null);
-      if (end) {
-        ctx.flush();
-      }
       return true;
     } else {
       return false;
@@ -547,7 +543,6 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       checkValid();
       checkSendHeaders(false);
       stream.writeFrame(type, flags, payload.getByteBuf());
-      ctx.flush();
       return this;
     }
   }
