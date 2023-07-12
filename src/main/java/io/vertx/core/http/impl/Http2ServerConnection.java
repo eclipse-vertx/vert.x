@@ -206,7 +206,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     headers_.path(path);
     headers_.scheme(ssl ? "https" : "http");
     if (authority != null) {
-      String s = (ssl && authority.port() == 443) || (!ssl && authority.port() == 80) ? authority.host() : authority.host() + ':' + authority.port();
+      String s = (ssl && authority.port() == 443) || (!ssl && authority.port() == 80) || authority.port() <= 0 ? authority.host() : authority.host() + ':' + authority.port();
       headers_.authority(s);
     }
     if (headers != null) {

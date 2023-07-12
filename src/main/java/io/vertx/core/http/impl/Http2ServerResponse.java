@@ -722,7 +722,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     }
     HostAndPort hostAndPort = null;
     if (authority != null) {
-      hostAndPort = HostAndPortImpl.parseHostAndPort(authority, conn.isSsl() ? 443 : 80);
+      hostAndPort = HostAndPortImpl.parseHostAndPort(authority, -1);
     }
     if (hostAndPort == null) {
       hostAndPort = stream.authority;
