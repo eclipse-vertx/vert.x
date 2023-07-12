@@ -190,7 +190,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  public HttpClientRequest writeCustomFrame(int type, int flags, Buffer payload) {
+  public Future<Void> writeCustomFrame(int type, int flags, Buffer payload) {
     throw new UnsupportedOperationException("Cannot write frame with HTTP/1.x ");
   }
 }

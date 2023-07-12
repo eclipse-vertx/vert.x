@@ -4328,7 +4328,7 @@ public abstract class HttpTest extends HttpTestBase {
       public boolean reset(long code) { return false; }
       public boolean reset(long code, Throwable cause) { return false; }
       public HttpConnection connection() { throw new UnsupportedOperationException(); }
-      public HttpClientRequest writeCustomFrame(int type, int flags, Buffer payload) { throw new UnsupportedOperationException(); }
+      public Future<Void> writeCustomFrame(int type, int flags, Buffer payload) { throw new UnsupportedOperationException(); }
       public boolean writeQueueFull() { throw new UnsupportedOperationException(); }
       public StreamPriority getStreamPriority() { return null; }
       public HttpClientRequest onComplete(Handler<AsyncResult<HttpClientResponse>> handler) { throw new UnsupportedOperationException(); }

@@ -1597,7 +1597,9 @@ public class Http2ClientTest extends Http2TestBase {
         assertEquals(10, frame.type());
         assertEquals(253, frame.flags());
         assertEquals(expectedSend, frame.payload());
-        req.response().writeCustomFrame(12, 134, expectedRecv).end();
+        HttpServerResponse resp = req.response();
+        resp.writeCustomFrame(12, 134, expectedRecv);
+        resp.end();
       });
     });
     startServer(testAddress);

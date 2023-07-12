@@ -18,6 +18,7 @@ import io.netty.handler.codec.http2.EmptyHttp2Headers;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.util.concurrent.FutureListener;
+import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
@@ -163,17 +164,28 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     return !writable;
   }
 
-  public final void writeFrame(int type, int flags, ByteBuf payload) {
+  public final Future<Void> writeFrame(int type, int flags, ByteBuf payload) {
+    Promise<Void> promise = context.promise();
     EventLoop eventLoop = conn.getContext().nettyEventLoop();
     if (eventLoop.inEventLoop()) {
-      doWriteFrame(type, flags, payload);
+      doWriteFrame(type, flags, payload, promise);
     } else {
-      eventLoop.execute(() -> doWriteFrame(type, flags, payload));
+      eventLoop.execute(() -> doWriteFrame(type, flags, payload, promise));
+    }
+    return promise.future();
+  }
+
+  public final void writeFrame(int type, int flags, ByteBuf payload, Promise<Void> promise) {
+    EventLoop eventLoop = conn.getContext().nettyEventLoop();
+    if (eventLoop.inEventLoop()) {
+      doWriteFrame(type, flags, payload, promise);
+    } else {
+      eventLoop.execute(() -> doWriteFrame(type, flags, payload, promise));
     }
   }
 
-  private void doWriteFrame(int type, int flags, ByteBuf payload) {
-    conn.handler.writeFrame(stream, (byte) type, (short) flags, payload);
+  private void doWriteFrame(int type, int flags, ByteBuf payload, Promise<Void> promise) {
+    conn.handler.writeFrame(stream, (byte) type, (short) flags, payload, (FutureListener<Void>) promise);
   }
 
   final void writeHeaders(Http2Headers headers, boolean end, Promise<Void> promise) {

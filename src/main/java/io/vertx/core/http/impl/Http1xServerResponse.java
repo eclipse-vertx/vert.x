@@ -22,6 +22,7 @@ import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.util.concurrent.FutureListener;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -341,9 +342,10 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public HttpServerResponse writeContinue() {
-    conn.write100Continue();
-    return this;
+  public Future<Void> writeContinue() {
+    Promise<Void> promise = context.promise();
+    conn.write100Continue((FutureListener<Void>) promise);
+    return promise.future();
   }
 
   @Override
@@ -745,8 +747,8 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public HttpServerResponse writeCustomFrame(int type, int flags, Buffer payload) {
-    return this;
+  public Future<Void> writeCustomFrame(int type, int flags, Buffer payload) {
+    return context.failedFuture("HTTP/1 does not support custom frames");
   }
 
   CookieJar cookies() {

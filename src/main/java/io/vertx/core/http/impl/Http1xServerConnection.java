@@ -37,6 +37,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.handler.codec.http.websocketx.WebSocketVersion;
 import io.netty.util.ReferenceCountUtil;
+import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -455,8 +456,9 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     context.execute(writable, handler);
   }
 
-  void write100Continue() {
-    chctx.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
+  void write100Continue(FutureListener<Void> listener) {
+    ChannelPromise promise = listener == null ? chctx.voidPromise() : chctx.newPromise().addListener(listener);
+    chctx.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE), promise);
   }
 
   void write103EarlyHints(HttpHeaders headers, PromiseInternal<Void> promise) {

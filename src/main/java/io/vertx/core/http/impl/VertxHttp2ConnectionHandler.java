@@ -278,8 +278,9 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
     }
   }
 
-  void writeFrame(Http2Stream stream, byte type, short flags, ByteBuf payload) {
-    encoder().writeFrame(chctx, type, stream.id(), new Http2Flags(flags), payload, chctx.newPromise());
+  void writeFrame(Http2Stream stream, byte type, short flags, ByteBuf payload, FutureListener<Void> listener) {
+    ChannelPromise promise = listener == null ? chctx.voidPromise() : chctx.newPromise().addListener(listener);
+    encoder().writeFrame(chctx, type, stream.id(), new Http2Flags(flags), payload, promise);
     checkFlush();
   }
 

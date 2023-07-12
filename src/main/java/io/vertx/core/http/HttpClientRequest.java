@@ -463,8 +463,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    * @param payload the frame payload
    * @return a reference to this, so the API can be used fluently
    */
-  @Fluent
-  HttpClientRequest writeCustomFrame(int type, int flags, Buffer payload);
+  Future<Void> writeCustomFrame(int type, int flags, Buffer payload);
 
   /**
    * @return the id of the stream of this response, {@literal -1} when it is not yet determined, i.e
@@ -479,8 +478,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    *
    * @param frame the frame to write
    */
-  @Fluent
-  default HttpClientRequest writeCustomFrame(HttpFrame frame) {
+  default Future<Void> writeCustomFrame(HttpFrame frame) {
     return writeCustomFrame(frame.type(), frame.flags(), frame.payload());
   }
 
