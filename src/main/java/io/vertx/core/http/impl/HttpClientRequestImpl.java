@@ -263,12 +263,11 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   @Override
-  public HttpClientRequest writeCustomFrame(int type, int flags, Buffer payload) {
+  public Future<Void> writeCustomFrame(int type, int flags, Buffer payload) {
     synchronized (this) {
       checkEnded();
     }
-    stream.writeFrame(type, flags, payload.getByteBuf());
-    return this;
+    return stream.writeFrame(type, flags, payload.getByteBuf());
   }
 
   private void handleDrained(Void v) {

@@ -229,8 +229,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * Must only be used if the request contains an "Expect:100-Continue" header
    * @return a reference to this, so the API can be used fluently
    */
-  @Fluent
-  HttpServerResponse writeContinue();
+  Future<Void> writeContinue();
 
   /**
    * Used to write an interim 103 Early Hints response to return some HTTP headers before the final HTTP message.
@@ -504,16 +503,14 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * @param payload the frame payload
    * @return a reference to this, so the API can be used fluently
    */
-  @Fluent
-  HttpServerResponse writeCustomFrame(int type, int flags, Buffer payload);
+  Future<Void> writeCustomFrame(int type, int flags, Buffer payload);
 
   /**
    * Like {@link #writeCustomFrame(int, int, Buffer)} but with an {@link HttpFrame}.
    *
    * @param frame the frame to write
    */
-  @Fluent
-  default HttpServerResponse writeCustomFrame(HttpFrame frame) {
+  default Future<Void> writeCustomFrame(HttpFrame frame) {
     return writeCustomFrame(frame.type(), frame.flags(), frame.payload());
   }
 

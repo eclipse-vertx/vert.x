@@ -48,7 +48,7 @@ public interface HttpClientStream extends WriteStream<Buffer> {
 
   Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect);
   Future<Void> writeBuffer(ByteBuf buf, boolean end);
-  void writeFrame(int type, int flags, ByteBuf payload);
+  Future<Void> writeFrame(int type, int flags, ByteBuf payload);
 
   void continueHandler(Handler<Void> handler);
   void earlyHintsHandler(Handler<MultiMap> handler);

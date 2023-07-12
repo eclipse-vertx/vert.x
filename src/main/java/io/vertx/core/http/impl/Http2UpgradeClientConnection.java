@@ -154,8 +154,8 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public void writeFrame(int type, int flags, ByteBuf payload) {
-      delegate.writeFrame(type, flags, payload);
+    public Future<Void> writeFrame(int type, int flags, ByteBuf payload) {
+      return delegate.writeFrame(type, flags, payload);
     }
 
     @Override
@@ -699,11 +699,11 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public void writeFrame(int type, int flags, ByteBuf payload) {
+    public Future<Void> writeFrame(int type, int flags, ByteBuf payload) {
       if (upgradedStream != null) {
-        upgradedStream.writeFrame(type, flags, payload);
+        return upgradedStream.writeFrame(type, flags, payload);
       } else {
-        upgradingStream.writeFrame(type, flags, payload);
+        return upgradingStream.writeFrame(type, flags, payload);
       }
     }
 

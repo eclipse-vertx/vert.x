@@ -93,8 +93,8 @@ class StatisticsGatheringHttpClientStream<S, M> implements HttpClientStream {
   }
 
   @Override
-  public void writeFrame(int type, int flags, ByteBuf payload) {
-    delegate.writeFrame(type, flags, payload);
+  public Future<Void> writeFrame(int type, int flags, ByteBuf payload) {
+    return delegate.writeFrame(type, flags, payload);
   }
 
   @Override

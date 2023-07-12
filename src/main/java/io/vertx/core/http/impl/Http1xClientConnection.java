@@ -624,7 +624,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     }
 
     @Override
-    public void writeFrame(int type, int flags, ByteBuf payload) {
+    public Future<Void> writeFrame(int type, int flags, ByteBuf payload) {
       throw new IllegalStateException("Cannot write an HTTP/2 frame over an HTTP/1.x connection");
     }
 

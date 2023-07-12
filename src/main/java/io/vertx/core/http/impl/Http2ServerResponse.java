@@ -314,12 +314,13 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public HttpServerResponse writeContinue() {
+  public Future<Void> writeContinue() {
+    Promise<Void> promise = stream.context.promise();
     synchronized (conn) {
       checkHeadWritten();
-      stream.writeHeaders(new DefaultHttp2Headers().status(HttpResponseStatus.CONTINUE.codeAsText()), false, null);
-      return this;
+      stream.writeHeaders(new DefaultHttp2Headers().status(HttpResponseStatus.CONTINUE.codeAsText()), false, promise);
     }
+    return promise.future();
   }
 
   @Override
@@ -482,14 +483,15 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public HttpServerResponse writeCustomFrame(int type, int flags, Buffer payload) {
+  public Future<Void> writeCustomFrame(int type, int flags, Buffer payload) {
+    Promise<Void> promise = stream.context.promise();
     synchronized (conn) {
       checkValid();
       checkSendHeaders(false);
-      stream.writeFrame(type, flags, payload.getByteBuf());
+      stream.writeFrame(type, flags, payload.getByteBuf(), promise);
       ctx.flush();
-      return this;
     }
+    return promise.future();
   }
 
   private void checkValid() {
