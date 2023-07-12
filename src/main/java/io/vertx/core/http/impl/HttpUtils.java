@@ -512,7 +512,7 @@ public final class HttpUtils {
       HostAndPort authority = req.authority();
       if (authority != null) {
         StringBuilder sb = new StringBuilder(req.scheme()).append("://").append(authority.host());
-        if ((ssl && authority.port() != 443) || (!ssl && authority.port() != 80)) {
+        if (authority.port() > 0 && (ssl && authority.port() != 443) || (!ssl && authority.port() != 80)) {
           sb.append(':').append(authority.port());
         }
         sb.append(uri);
