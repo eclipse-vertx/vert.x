@@ -12,7 +12,6 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.*;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -64,10 +63,13 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
   HttpClientRequest drainHandler(Handler<Void> handler);
 
   /**
-   * Set the request authority, when using HTTP/1.x this overrides the request {@code host} header, when using
-   * HTTP/2 this sets the {@code authority} pseudo header.
+   * Override the request authority, when using HTTP/1.x this overrides the request {@code host} header, when using
+   * HTTP/2 this sets the {@code authority} pseudo header. When the port is a negative value, the default
+   * scheme port will be used.
    *
-   * @param authority the authority
+   * <p>The default request authority is the server host and port when connecting to the server.
+   *
+   * @param authority override the request authority
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent

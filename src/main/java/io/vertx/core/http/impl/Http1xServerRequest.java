@@ -257,7 +257,9 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   public synchronized HostAndPort authority() {
     if (authority == null) {
       String host = getHeader(HttpHeaderNames.HOST);
-      authority = HostAndPortImpl.parseHostAndPort(host, isSSL() ? 443 : 80);
+      if (host != null) {
+        authority = HostAndPortImpl.parseHostAndPort(host, -1);
+      }
     }
     return authority;
   }

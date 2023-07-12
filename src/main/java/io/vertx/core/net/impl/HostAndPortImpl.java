@@ -157,6 +157,10 @@ public class HostAndPortImpl implements HostAndPort {
 
   @Override
   public String toString() {
-    return host + ':' + port;
+    if (port >= 0) {
+      return host + ':' + port;
+    } else {
+      return host;
+    }
   }
 }
