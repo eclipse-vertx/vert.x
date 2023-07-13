@@ -488,15 +488,15 @@ public abstract class EventBusTestBase extends VertxTestBase {
       receivedLatch.countDown();
     }).completion().onComplete(ar -> {
       assertTrue(ar.succeeded());
-      vertices[0].executeBlocking(fut -> {
+      vertices[0].executeBlocking(() -> {
         vertices[0].eventBus().send(ADDRESS1, expectedBody);
         try {
           awaitLatch(receivedLatch); // Make sure message is sent even if we're busy
         } catch (InterruptedException e) {
           Thread.interrupted();
-          fut.fail(e);
+          throw e;
         }
-        fut.complete();
+        return null;
       }).onComplete(onSuccess(ar2 -> testComplete()));
     });
     await();
@@ -553,7 +553,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
     }, new DeploymentOptions().setWorker(true));
 
     // Inside executeBlocking
-    vertices[0].executeBlocking(fut -> {
+    vertices[0].executeBlocking(() -> {
       vertices[0].eventBus().request("blah", "blah").onComplete(onFailure(err -> {
         if (err instanceof ReplyException) {
           ReplyException cause = (ReplyException) err;
@@ -564,7 +564,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
         assertTrue("Not an EL thread", Context.isOnEventLoopThread());
         complete();
       }));
-      fut.complete();
+      return null;
     }, false);
 
     await();

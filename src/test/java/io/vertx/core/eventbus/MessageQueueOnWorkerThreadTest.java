@@ -112,7 +112,7 @@ public class MessageQueueOnWorkerThreadTest extends VertxTestBase {
     }
   }
 
-  private static class SenderVerticle extends AbstractVerticle {
+  private class SenderVerticle extends AbstractVerticle {
 
     final boolean worker;
     int count;
@@ -123,19 +123,25 @@ public class MessageQueueOnWorkerThreadTest extends VertxTestBase {
     }
 
     @Override
-    public void start() throws Exception {
+    public void start() {
       sendMessage();
     }
 
     void sendMessage() {
       if (worker) {
-        vertx.executeBlocking(prom -> {
+        vertx.<Boolean>executeBlocking(() -> {
           if (count > 0) {
             vertx.eventBus().send("foo", "bar");
             count--;
-            prom.complete();
+            return true;
+          } else {
+            return false;
           }
-        }).onComplete(ar -> vertx.runOnContext(v -> sendMessage()));
+        }).onComplete(onSuccess(cont -> {
+          if (cont) {
+            vertx.runOnContext(v -> sendMessage());
+          }
+        }));
       } else {
         if (count > 0) {
           vertx.eventBus().send("foo", "bar");

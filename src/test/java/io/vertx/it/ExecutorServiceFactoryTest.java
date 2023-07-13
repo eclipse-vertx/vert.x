@@ -32,9 +32,9 @@ public class ExecutorServiceFactoryTest extends VertxTestBase {
       int num = 10;
       CountDownLatch latch = new CountDownLatch(num);
       for (int i = 0;i < num;i++) {
-        vertx.executeBlocking(p -> {
+        vertx.executeBlocking(() -> {
           assertTrue(CustomExecutorService.executing.get());
-          p.complete();
+          return null;
         }).onComplete(onSuccess(v -> {
           latch.countDown();
         }));

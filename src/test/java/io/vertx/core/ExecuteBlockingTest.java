@@ -11,10 +11,12 @@
 
 package io.vertx.core;
 
+import io.vertx.core.impl.NoStackTraceException;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -25,12 +27,12 @@ public class ExecuteBlockingTest extends VertxTestBase {
   @Test
   public void testExecuteBlockingSuccess() {
 
-    vertx.executeBlocking(future -> {
+    vertx.executeBlocking(() -> {
       try {
         Thread.sleep(1000);
       } catch (Exception ignore) {
       }
-      future.complete("done!");
+      return "done!";
     }).onComplete(onSuccess(res -> {
       assertEquals("done!", res);
       testComplete();
@@ -41,12 +43,12 @@ public class ExecuteBlockingTest extends VertxTestBase {
   @Test
   public void testExecuteBlockingFailed() {
 
-    vertx.executeBlocking(future -> {
+    vertx.executeBlocking(() -> {
       try {
         Thread.sleep(1000);
       } catch (Exception ignore) {
       }
-      future.fail("failed!");
+      throw new NoStackTraceException("failed!");
     }).onComplete(onFailure(t -> {
       assertEquals("failed!", t.getMessage());
       testComplete();
@@ -57,7 +59,7 @@ public class ExecuteBlockingTest extends VertxTestBase {
   @Test
   public void testExecuteBlockingThrowsRTE() {
 
-    vertx.executeBlocking(future -> {
+    vertx.executeBlocking(() -> {
       throw new RuntimeException("rte");
     }).onComplete(onFailure(t -> {
       assertEquals("rte", t.getMessage());
@@ -72,7 +74,7 @@ public class ExecuteBlockingTest extends VertxTestBase {
     vertx.runOnContext(v -> {
       Context ctx = vertx.getOrCreateContext();
       assertTrue(ctx.isEventLoopContext());
-      vertx.executeBlocking(future -> {
+      vertx.executeBlocking(() -> {
         assertSame(ctx, vertx.getOrCreateContext());
         assertTrue(Thread.currentThread().getName().startsWith("vert.x-worker-thread"));
         assertTrue(Context.isOnWorkerThread());
@@ -81,13 +83,16 @@ public class ExecuteBlockingTest extends VertxTestBase {
           Thread.sleep(1000);
         } catch (Exception ignore) {
         }
+        CountDownLatch latch = new CountDownLatch(1);
         vertx.runOnContext(v2 -> {
           assertSame(ctx, vertx.getOrCreateContext());
           assertTrue(Thread.currentThread().getName().startsWith("vert.x-eventloop-thread"));
           assertFalse(Context.isOnWorkerThread());
           assertTrue(Context.isOnEventLoopThread());
-          future.complete("done!");
+          latch.countDown();
         });
+        assertTrue(latch.await(20, TimeUnit.SECONDS));
+        return "done!";
       }).onComplete(onSuccess(res -> {
         assertSame(ctx, vertx.getOrCreateContext());
         assertTrue(Thread.currentThread().getName().startsWith("vert.x-eventloop-thread"));
@@ -107,9 +112,9 @@ public class ExecuteBlockingTest extends VertxTestBase {
     assertNotNull(cl);
     CountDownLatch latch = new CountDownLatch(1);
     AtomicReference<ClassLoader> blockingTCCL = new AtomicReference<>();
-    vertx.<String>executeBlocking(future -> {
-      future.complete("whatever");
+    vertx.<String>executeBlocking(() -> {
       blockingTCCL.set(Thread.currentThread().getContextClassLoader());
+      return "whatever";
     }).onComplete(onSuccess(res -> {
       assertEquals("whatever", res);
       latch.countDown();
@@ -132,7 +137,7 @@ public class ExecuteBlockingTest extends VertxTestBase {
       assertTrue(ctx.isEventLoopContext());
 
       for (int i = 0; i < numExecBlocking; i++) {
-        vertx.executeBlocking(future -> {
+        vertx.executeBlocking(() -> {
           assertSame(ctx, vertx.getOrCreateContext());
           assertTrue(Thread.currentThread().getName().startsWith("vert.x-worker-thread"));
           assertTrue(Context.isOnWorkerThread());
@@ -141,7 +146,7 @@ public class ExecuteBlockingTest extends VertxTestBase {
             Thread.sleep(pause);
           } catch (Exception ignore) {
           }
-          future.complete("done!");
+          return "done!";
         }, false).onComplete(onSuccess(res -> {
           assertSame(ctx, vertx.getOrCreateContext());
           assertTrue(Thread.currentThread().getName().startsWith("vert.x-eventloop-thread"));

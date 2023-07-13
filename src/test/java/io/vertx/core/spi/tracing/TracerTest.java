@@ -43,7 +43,7 @@ public class TracerTest extends VertxTestBase {
     ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
     ContextInternal duplicate = ctx.duplicate();
     duplicate.runOnContext(v -> {
-      exec.executeBlocking(Promise::complete).onComplete(onSuccess(res -> {
+      exec.executeBlocking(() -> null).onComplete(onSuccess(res -> {
         testComplete();
       }));
     });

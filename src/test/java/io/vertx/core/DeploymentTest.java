@@ -1270,13 +1270,13 @@ public class DeploymentTest extends VertxTestBase {
 
     MyAsyncVerticle childVerticle = new MyAsyncVerticle(startPromise -> {
       deployLatch.countDown();
-      Vertx.currentContext().<Void>executeBlocking(prom -> {
+      Vertx.currentContext().<Void>executeBlocking(() -> {
         try {
           undeployLatch.await();
-          prom.complete();
+          return null;
         } catch (InterruptedException e) {
           Thread.currentThread().interrupt();
-          prom.fail(e.getMessage());
+          throw e;
         }
       }).onComplete(startPromise);
     }, Promise::complete);
