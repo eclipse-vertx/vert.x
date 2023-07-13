@@ -125,14 +125,14 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
   }
 
   @Override
-  void doWriteHeaders(Http2Headers headers, boolean end, Promise<Void> promise) {
+  void doWriteHeaders(Http2Headers headers, boolean end, boolean checkFlush, Promise<Void> promise) {
     if (Metrics.METRICS_ENABLED && !end) {
       HttpServerMetrics metrics = conn.metrics();
       if (metrics != null) {
         metrics.responseBegin(metric, request.response());
       }
     }
-    super.doWriteHeaders(headers, end, promise);
+    super.doWriteHeaders(headers, end, checkFlush, promise);
   }
 
   @Override
