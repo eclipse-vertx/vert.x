@@ -18,6 +18,8 @@ import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.PoolMetrics;
 
+import java.util.concurrent.Callable;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -63,6 +65,13 @@ class WorkerExecutorImpl implements MetricsProvider, WorkerExecutorInternal {
       }
     }
     ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+    ContextBase impl = context instanceof DuplicatedContext ? ((DuplicatedContext)context).delegate : (ContextBase) context;
+    return ContextBase.executeBlocking(context, blockingCodeHandler, pool, ordered ? impl.orderedTasks : null);
+  }
+
+  @Override
+  public <T> Future<@Nullable T> executeBlocking(Callable<T> blockingCodeHandler, boolean ordered) {
+    ContextInternal context = vertx.getOrCreateContext();
     ContextBase impl = context instanceof DuplicatedContext ? ((DuplicatedContext)context).delegate : (ContextBase) context;
     return ContextBase.executeBlocking(context, blockingCodeHandler, pool, ordered ? impl.orderedTasks : null);
   }

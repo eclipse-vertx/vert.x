@@ -55,6 +55,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -320,8 +321,18 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
+  public <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, boolean ordered) {
+    return delegate.executeBlockingInternal(blockingCodeHandler, ordered);
+  }
+
+  @Override
   public <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler) {
     return delegate.executeBlocking(blockingCodeHandler);
+  }
+
+  @Override
+  public <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler) {
+    return delegate.executeBlockingInternal(blockingCodeHandler);
   }
 
   @Override
@@ -515,8 +526,18 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
+  public <T> Future<T> executeBlockingInternal(Callable<T> blockingCodeHandler) {
+    return delegate.executeBlockingInternal(blockingCodeHandler);
+  }
+
+  @Override
   public <T> void executeBlockingInternal(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> asyncResultHandler) {
     delegate.executeBlockingInternal(blockingCodeHandler, ordered, asyncResultHandler);
+  }
+
+  @Override
+  public <T> Future<T> executeBlockingInternal(Callable<T> blockingCodeHandler, boolean ordered) {
+    return delegate.executeBlockingInternal(blockingCodeHandler, ordered);
   }
 
   @Override

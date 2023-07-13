@@ -20,6 +20,7 @@ import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.future.SucceededFuture;
 import io.vertx.core.spi.tracing.VertxTracer;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -135,6 +136,8 @@ public interface ContextInternal extends Context {
    */
   <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, TaskQueue queue);
 
+  <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, TaskQueue queue);
+
   /**
    * Execute an internal task on the internal blocking ordered executor.
    */
@@ -159,10 +162,14 @@ public interface ContextInternal extends Context {
    */
   <T> Future<T> executeBlockingInternal(Handler<Promise<T>> action);
 
+  <T> Future<T> executeBlockingInternal(Callable<T> action);
+
   /**
    * Like {@link #executeBlockingInternal(Handler, boolean, Handler)} but returns a {@code Future} of the asynchronous result
    */
   <T> Future<T> executeBlockingInternal(Handler<Promise<T>> action, boolean ordered);
+
+  <T> Future<T> executeBlockingInternal(Callable<T> action, boolean ordered);
 
   /**
    * @return the deployment associated with this context or {@code null}

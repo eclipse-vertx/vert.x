@@ -67,10 +67,9 @@ public class CoreExamples {
   }
 
   public void example7(Vertx vertx) {
-    vertx.executeBlocking(promise -> {
+    vertx.executeBlocking(() -> {
       // Call some blocking API that takes a significant amount of time to return
-      String result = someAPI.blockingMethod("hello");
-      promise.complete(result);
+      return someAPI.blockingMethod("hello");
     }).onComplete(res -> {
       System.out.println("The result is: " + res.result());
     });
@@ -78,10 +77,9 @@ public class CoreExamples {
 
   public void workerExecutor1(Vertx vertx) {
     WorkerExecutor executor = vertx.createSharedWorkerExecutor("my-worker-pool");
-    executor.executeBlocking(promise -> {
+    executor.executeBlocking(() -> {
       // Call some blocking API that takes a significant amount of time to return
-      String result = someAPI.blockingMethod("hello");
-      promise.complete(result);
+      return someAPI.blockingMethod("hello");
     }).onComplete(res -> {
       System.out.println("The result is: " + res.result());
     });
