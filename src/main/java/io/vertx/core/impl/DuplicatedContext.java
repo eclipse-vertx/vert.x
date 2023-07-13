@@ -18,6 +18,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.tracing.VertxTracer;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
@@ -129,7 +130,17 @@ class DuplicatedContext implements ContextInternal {
   }
 
   @Override
+  public <T> Future<T> executeBlockingInternal(Callable<T> action) {
+    return ContextBase.executeBlocking(this, action, delegate.internalWorkerPool, delegate.internalOrderedTasks);
+  }
+
+  @Override
   public final <T> Future<T> executeBlockingInternal(Handler<Promise<T>> action, boolean ordered) {
+    return ContextBase.executeBlocking(this, action, delegate.internalWorkerPool, ordered ? delegate.internalOrderedTasks : null);
+  }
+
+  @Override
+  public <T> Future<T> executeBlockingInternal(Callable<T> action, boolean ordered) {
     return ContextBase.executeBlocking(this, action, delegate.internalWorkerPool, ordered ? delegate.internalOrderedTasks : null);
   }
 
@@ -139,7 +150,17 @@ class DuplicatedContext implements ContextInternal {
   }
 
   @Override
+  public final <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, boolean ordered) {
+    return ContextBase.executeBlocking(this, blockingCodeHandler, delegate.workerPool, ordered ? delegate.orderedTasks : null);
+  }
+
+  @Override
   public final <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, TaskQueue queue) {
+    return ContextBase.executeBlocking(this, blockingCodeHandler, delegate.workerPool, queue);
+  }
+
+  @Override
+  public final <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, TaskQueue queue) {
     return ContextBase.executeBlocking(this, blockingCodeHandler, delegate.workerPool, queue);
   }
 

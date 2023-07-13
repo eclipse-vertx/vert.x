@@ -20,6 +20,7 @@ import io.vertx.core.impl.launcher.VertxCommandLauncher;
 import io.vertx.core.json.JsonObject;
 
 import java.util.List;
+import java.util.concurrent.Callable;
 
 /**
  * The execution context of a {@link io.vertx.core.Handler} execution.
@@ -105,8 +106,8 @@ public interface Context {
    * <p>
    * Executes the blocking code in the handler {@code blockingCodeHandler} using a thread from the worker pool.
    * <p>
-   * When the code is complete the handler {@code resultHandler} will be called with the result on the original context
-   * (e.g. on the original event loop of the caller).
+   * The returned future will be completed with the result on the original context (i.e. on the original event loop of the caller)
+   * or failed when the handler throws an exception.
    * <p>
    * A {@code Future} instance is passed into {@code blockingCodeHandler}. When the blocking code successfully completes,
    * the handler should call the {@link Promise#complete} or {@link Promise#complete(Object)} method, or the {@link Promise#fail}
@@ -131,12 +132,50 @@ public interface Context {
   <T> Future<@Nullable T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered);
 
   /**
+   * Safely execute some blocking code.
+   * <p>
+   * Executes the blocking code in the handler {@code blockingCodeHandler} using a thread from the worker pool.
+   * <p>
+   * The returned future will be completed with the result on the original context (i.e. on the original event loop of the caller)
+   * or failed when the handler throws an exception.
+   * <p>
+   * The blocking code should block for a reasonable amount of time (i.e no more than a few seconds). Long blocking operations
+   * or polling operations (i.e a thread that spin in a loop polling events in a blocking fashion) are precluded.
+   * <p>
+   * When the blocking operation lasts more than the 10 seconds, a message will be printed on the console by the
+   * blocked thread checker.
+   * <p>
+   * Long blocking operations should use a dedicated thread managed by the application, which can interact with
+   * verticles using the event-bus or {@link Context#runOnContext(Handler)}
+   *
+   * @param blockingCodeHandler  handler representing the blocking code to run
+   * @param ordered  if true then if executeBlocking is called several times on the same context, the executions
+   *                 for that context will be executed serially, not in parallel. if false then they will be no ordering
+   *                 guarantees
+   * @param <T> the type of the result
+   * @return a future completed when the blocking code is complete
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  <T> Future<@Nullable T> executeBlocking(Callable<T> blockingCodeHandler, boolean ordered);
+
+  /**
    * Invoke {@link #executeBlocking(Handler, boolean)} with order = true.
    * @param blockingCodeHandler  handler representing the blocking code to run
    * @param <T> the type of the result
    * @return a future completed when the blocking code is complete
    */
-  default <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler) {
+  default <T> Future<@Nullable T> executeBlocking(Handler<Promise<T>> blockingCodeHandler) {
+    return executeBlocking(blockingCodeHandler, true);
+  }
+
+  /**
+   * Invoke {@link #executeBlocking(Callable, boolean)} with order = true.
+   * @param blockingCodeHandler  handler representing the blocking code to run
+   * @param <T> the type of the result
+   * @return a future completed when the blocking code is complete
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  default <T> Future<@Nullable T> executeBlocking(Callable<T> blockingCodeHandler) {
     return executeBlocking(blockingCodeHandler, true);
   }
 
@@ -165,7 +204,7 @@ public interface Context {
   /**
    * Is the current context an event loop context?
    * <p>
-   * NOTE! when running blocking code using {@link io.vertx.core.Vertx#executeBlocking(Handler, Handler)} from a
+   * NOTE! when running blocking code using {@link io.vertx.core.Vertx#executeBlocking(Callable)} from a
    * standard (not worker) verticle, the context will still an event loop context and this {@link this#isEventLoopContext()}
    * will return true.
    *
@@ -176,7 +215,7 @@ public interface Context {
   /**
    * Is the current context a worker context?
    * <p>
-   * NOTE! when running blocking code using {@link io.vertx.core.Vertx#executeBlocking(Handler, Handler)} from a
+   * NOTE! when running blocking code using {@link io.vertx.core.Vertx#executeBlocking(Callable)} from a
    * standard (not worker) verticle, the context will still an event loop context and this {@link this#isWorkerContext()}
    * will return false.
    *

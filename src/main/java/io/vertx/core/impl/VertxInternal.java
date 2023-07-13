@@ -32,6 +32,7 @@ import java.io.File;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -138,7 +139,17 @@ public interface VertxInternal extends Vertx {
     return context.executeBlockingInternal(blockingCodeHandler);
   }
 
+  default <T> Future<T> executeBlockingInternal(Callable<T> blockingCodeHandler) {
+    ContextInternal context = getOrCreateContext();
+    return context.executeBlockingInternal(blockingCodeHandler);
+  }
+
   default <T> Future<T> executeBlockingInternal(Handler<Promise<T>> blockingCodeHandler, boolean ordered) {
+    ContextInternal context = getOrCreateContext();
+    return context.executeBlockingInternal(blockingCodeHandler, ordered);
+  }
+
+  default <T> Future<T> executeBlockingInternal(Callable<T> blockingCodeHandler, boolean ordered) {
     ContextInternal context = getOrCreateContext();
     return context.executeBlockingInternal(blockingCodeHandler, ordered);
   }

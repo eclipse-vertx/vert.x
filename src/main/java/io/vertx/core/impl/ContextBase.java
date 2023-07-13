@@ -12,17 +12,16 @@
 package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
+import io.vertx.core.Future;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.metrics.PoolMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.*;
 
 /**
  * A base class for {@link Context} implementations.
@@ -98,7 +97,17 @@ public abstract class ContextBase implements ContextInternal {
   }
 
   @Override
+  public <T> Future<T> executeBlockingInternal(Callable<T> action) {
+    return executeBlocking(this, action, internalWorkerPool, internalOrderedTasks);
+  }
+
+  @Override
   public <T> Future<T> executeBlockingInternal(Handler<Promise<T>> action, boolean ordered) {
+    return executeBlocking(this, action, internalWorkerPool, ordered ? internalOrderedTasks : null);
+  }
+
+  @Override
+  public <T> Future<T> executeBlockingInternal(Callable<T> action, boolean ordered) {
     return executeBlocking(this, action, internalWorkerPool, ordered ? internalOrderedTasks : null);
   }
 
@@ -108,11 +117,66 @@ public abstract class ContextBase implements ContextInternal {
   }
 
   @Override
+  public <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, boolean ordered) {
+    return executeBlocking(this, blockingCodeHandler, workerPool, ordered ? orderedTasks : null);
+  }
+
+  @Override
+  public boolean isEventLoopContext() {
+    return false;
+  }
+
+  @Override
+  public boolean isWorkerContext() {
+    return false;
+  }
+
+  @Override
+  public Executor executor() {
+    return null;
+  }
+
+  @Override
+  public boolean inThread() {
+    return false;
+  }
+
+  @Override
   public <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, TaskQueue queue) {
     return executeBlocking(this, blockingCodeHandler, workerPool, queue);
   }
 
+  @Override
+  public <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, TaskQueue queue) {
+    return executeBlocking(this, blockingCodeHandler, workerPool, queue);
+  }
+
+  static <T> Future<T> executeBlocking(ContextInternal context, Callable<T> blockingCodeHandler,
+                                       WorkerPool workerPool, TaskQueue queue) {
+    return internalExecuteBlocking(context, promise -> {
+      T result;
+      try {
+        result = blockingCodeHandler.call();
+      } catch (Throwable e) {
+        promise.fail(e);
+        return;
+      }
+      promise.complete(result);
+    }, workerPool, queue);
+  }
+
   static <T> Future<T> executeBlocking(ContextInternal context, Handler<Promise<T>> blockingCodeHandler,
+                                       WorkerPool workerPool, TaskQueue queue) {
+    return internalExecuteBlocking(context, promise -> {
+      try {
+        blockingCodeHandler.handle(promise);
+      } catch (Throwable e) {
+        promise.tryFail(e);
+      }
+    }, workerPool, queue);
+  }
+
+  private static <T> Future<T> internalExecuteBlocking(ContextInternal context, Handler<Promise<T>> blockingCodeHandler,
       WorkerPool workerPool, TaskQueue queue) {
     PoolMetrics metrics = workerPool.metrics();
     Object queueMetric = metrics != null ? metrics.submitted() : null;
@@ -124,13 +188,7 @@ public abstract class ContextBase implements ContextInternal {
         if (metrics != null) {
           execMetric = metrics.begin(queueMetric);
         }
-        context.dispatch(promise, f -> {
-          try {
-            blockingCodeHandler.handle(promise);
-          } catch (Throwable e) {
-            promise.tryFail(e);
-          }
-        });
+        context.dispatch(promise, blockingCodeHandler);
         if (metrics != null) {
           metrics.end(execMetric, fut.succeeded());
         }
