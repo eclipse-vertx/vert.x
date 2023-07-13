@@ -592,7 +592,9 @@ public interface Vertx extends Measured {
    *                 for that context will be executed serially, not in parallel. if false then they will be no ordering
    *                 guarantees
    * @param <T> the type of the result
+   * @deprecated use instead {@link #executeBlocking(Callable, boolean)}
    */
+  @Deprecated
   default <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<@Nullable T>> resultHandler) {
     Context context = getOrCreateContext();
     context.executeBlocking(blockingCodeHandler, ordered, resultHandler);
@@ -600,14 +602,20 @@ public interface Vertx extends Measured {
 
   /**
    * Like {@link #executeBlocking(Handler, boolean, Handler)} called with ordered = true.
+   *
+   * @deprecated instead use {@link #executeBlocking(Callable)}
    */
+  @Deprecated
   default <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<@Nullable T>> resultHandler) {
     executeBlocking(blockingCodeHandler, true, resultHandler);
   }
 
   /**
    * Same as {@link #executeBlocking(Handler, boolean, Handler)} but with an {@code handler} called when the operation completes
+   *
+   * @deprecated instead use {@link #executeBlocking(Callable, boolean)}
    */
+  @Deprecated
   default <T> Future<@Nullable T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered) {
     Context context = getOrCreateContext();
     return context.executeBlocking(blockingCodeHandler, ordered);
@@ -648,7 +656,10 @@ public interface Vertx extends Measured {
 
   /**
    * Same as {@link #executeBlocking(Handler, Handler)} but with an {@code handler} called when the operation completes
+   *
+   * @deprecated instead use {@link #executeBlocking(Callable)}
    */
+  @Deprecated
   default <T> Future<@Nullable T> executeBlocking(Handler<Promise<T>> blockingCodeHandler) {
     return executeBlocking(blockingCodeHandler, true);
   }

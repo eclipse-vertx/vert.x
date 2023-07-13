@@ -128,7 +128,9 @@ public interface Context {
    *                 for that context will be executed serially, not in parallel. if false then they will be no ordering
    *                 guarantees
    * @param <T> the type of the result
+   * @deprecated instead use {@link #executeBlocking(Callable, boolean)}
    */
+  @Deprecated
   <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<@Nullable T>> resultHandler);
 
   /**
@@ -163,19 +165,27 @@ public interface Context {
    * @param blockingCodeHandler  handler representing the blocking code to run
    * @param resultHandler  handler that will be called when the blocking code is complete
    * @param <T> the type of the result
+   * @deprecated instead use {@link #executeBlocking(Callable)}
    */
+  @Deprecated
   default <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<@Nullable T>> resultHandler) {
     executeBlocking(blockingCodeHandler, true, resultHandler);
   }
 
   /**
    * Same as {@link #executeBlocking(Handler, boolean, Handler)} but with an {@code handler} called when the operation completes
+   *
+   * @deprecated instead use {@link #executeBlocking(Callable, boolean)}
    */
+  @Deprecated
   <T> Future<@Nullable T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered);
 
   /**
    * Same as {@link #executeBlocking(Handler, Handler)} but with an {@code handler} called when the operation completes
+   *
+   * @deprecated instead use {@link #executeBlocking(Callable)}
    */
+  @Deprecated
   default <T> Future<@Nullable T> executeBlocking(Handler<Promise<T>> blockingCodeHandler) {
     return executeBlocking(blockingCodeHandler, true);
   }
