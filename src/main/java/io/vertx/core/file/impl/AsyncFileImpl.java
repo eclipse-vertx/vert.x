@@ -410,10 +410,10 @@ public class AsyncFileImpl implements AsyncFile {
 
   private synchronized void doFlush(Handler<AsyncResult<Void>> handler) {
     checkClosed();
-    context.executeBlockingInternal((Promise<Void> fut) -> {
+    context.<Void>executeBlockingInternal(() -> {
       try {
         ch.force(false);
-        fut.complete();
+        return null;
       } catch (IOException e) {
         throw new FileSystemException(e);
       }
@@ -523,13 +523,9 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   private void doClose(Handler<AsyncResult<Void>> handler) {
-    context.<Void>executeBlockingInternal(res -> {
-      try {
-        ch.close();
-        res.complete(null);
-      } catch (IOException e) {
-        res.fail(e);
-      }
+    context.<Void>executeBlockingInternal(() -> {
+      ch.close();
+      return null;
     }).onComplete(handler);
   }
 
@@ -556,9 +552,7 @@ public class AsyncFileImpl implements AsyncFile {
 
   @Override
   public Future<Long> size() {
-    return vertx.getOrCreateContext().executeBlockingInternal(prom -> {
-      prom.complete(sizeBlocking());
-    });
+    return vertx.getOrCreateContext().executeBlockingInternal(this::sizeBlocking);
   }
 
   @Override
@@ -599,8 +593,9 @@ public class AsyncFileImpl implements AsyncFile {
   @Override
   public Future<AsyncFileLock> lock(long position, long size, boolean shared) {
     PromiseInternal<AsyncFileLock> promise = vertx.promise();
-    vertx.executeBlockingInternal(prom -> {
+    vertx.executeBlockingInternal(() -> {
       ch.lock(position, size, shared, promise, LOCK_COMPLETION);
+      return null;
     }).onComplete(ar -> {
       if (ar.failed()) {
         // Happens only if ch.lock throws a RuntimeException

@@ -56,6 +56,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 
 /**
@@ -966,7 +967,7 @@ public class FileSystemImpl implements FileSystem {
     };
   }
 
-  protected abstract class BlockingAction<T> implements Handler<Promise<T>> {
+  protected abstract class BlockingAction<T> implements Callable<T> {
 
     protected final ContextInternal context;
 
@@ -982,13 +983,8 @@ public class FileSystemImpl implements FileSystem {
     }
 
     @Override
-    public void handle(Promise<T> fut) {
-      try {
-        T result = perform();
-        fut.complete(result);
-      } catch (Exception e) {
-        fut.fail(e);
-      }
+    public T call() throws Exception {
+      return perform();
     }
 
     public abstract T perform();

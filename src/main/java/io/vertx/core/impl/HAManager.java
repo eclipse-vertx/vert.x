@@ -11,6 +11,7 @@
 
 package io.vertx.core.impl;
 
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -263,16 +264,18 @@ public class HAManager {
   private void doDeployVerticle(final String verticleName, DeploymentOptions deploymentOptions,
                                 final Handler<AsyncResult<String>> doneHandler) {
     final Handler<AsyncResult<String>> wrappedHandler = ar1 -> {
-      vertx.<String>executeBlocking(fut -> {
-        if (ar1.succeeded()) {
+      Future<String> fut;
+      if (ar1.succeeded()) {
+        fut = vertx.executeBlocking(() -> {
           // Tell the other nodes of the cluster about the verticle for HA purposes
           String deploymentID = ar1.result();
           addToHA(deploymentID, verticleName, deploymentOptions);
-          fut.complete(deploymentID);
-        } else {
-          fut.fail(ar1.cause());
-        }
-      }, false).onComplete(ar2 -> {
+          return deploymentID;
+        }, false);
+      } else {
+        fut = (Future<String>) ar1;
+      }
+      fut.onComplete(ar2 -> {
         if (doneHandler != null) {
           doneHandler.handle(ar2);
         } else if (ar2.failed()) {
@@ -339,7 +342,7 @@ public class HAManager {
           checkQuorumTimerID = -1L;
           if (!stopped) {
             // This can block on a monitor so it needs to run as a worker
-            vertx.executeBlockingInternal(fut -> {
+            vertx.<Void>executeBlockingInternal(() -> {
               if (System.currentTimeMillis() - start > 10000) {
                 log.warn("Timed out waiting for group information to appear");
               } else {
@@ -348,7 +351,7 @@ public class HAManager {
                   checkQuorumWhenAdded(nodeID, start);
                 });
               }
-              fut.complete();
+              return null;
             });
           }
         });
