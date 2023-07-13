@@ -134,19 +134,9 @@ public interface VertxInternal extends Vertx {
 
   File resolveFile(String fileName);
 
-  default <T> Future<T> executeBlockingInternal(Handler<Promise<T>> blockingCodeHandler) {
-    ContextInternal context = getOrCreateContext();
-    return context.executeBlockingInternal(blockingCodeHandler);
-  }
-
   default <T> Future<T> executeBlockingInternal(Callable<T> blockingCodeHandler) {
     ContextInternal context = getOrCreateContext();
     return context.executeBlockingInternal(blockingCodeHandler);
-  }
-
-  default <T> Future<T> executeBlockingInternal(Handler<Promise<T>> blockingCodeHandler, boolean ordered) {
-    ContextInternal context = getOrCreateContext();
-    return context.executeBlockingInternal(blockingCodeHandler, ordered);
   }
 
   default <T> Future<T> executeBlockingInternal(Callable<T> blockingCodeHandler, boolean ordered) {

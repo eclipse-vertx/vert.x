@@ -92,28 +92,13 @@ public abstract class ContextBase implements ContextInternal {
   }
 
   @Override
-  public <T> Future<T> executeBlockingInternal(Handler<Promise<T>> action) {
-    return executeBlocking(this, action, internalWorkerPool, internalOrderedTasks);
-  }
-
-  @Override
   public <T> Future<T> executeBlockingInternal(Callable<T> action) {
     return executeBlocking(this, action, internalWorkerPool, internalOrderedTasks);
   }
 
   @Override
-  public <T> Future<T> executeBlockingInternal(Handler<Promise<T>> action, boolean ordered) {
-    return executeBlocking(this, action, internalWorkerPool, ordered ? internalOrderedTasks : null);
-  }
-
-  @Override
   public <T> Future<T> executeBlockingInternal(Callable<T> action, boolean ordered) {
     return executeBlocking(this, action, internalWorkerPool, ordered ? internalOrderedTasks : null);
-  }
-
-  @Override
-  public <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered) {
-    return executeBlocking(this, blockingCodeHandler, workerPool, ordered ? orderedTasks : null);
   }
 
   @Override
@@ -139,11 +124,6 @@ public abstract class ContextBase implements ContextInternal {
   @Override
   public boolean inThread() {
     return false;
-  }
-
-  @Override
-  public <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, TaskQueue queue) {
-    return executeBlocking(this, blockingCodeHandler, workerPool, queue);
   }
 
   @Override

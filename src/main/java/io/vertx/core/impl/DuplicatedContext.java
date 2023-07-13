@@ -125,18 +125,8 @@ class DuplicatedContext implements ContextInternal {
   }
 
   @Override
-  public final <T> Future<T> executeBlockingInternal(Handler<Promise<T>> action) {
-    return ContextBase.executeBlocking(this, action, delegate.internalWorkerPool, delegate.internalOrderedTasks);
-  }
-
-  @Override
   public <T> Future<T> executeBlockingInternal(Callable<T> action) {
     return ContextBase.executeBlocking(this, action, delegate.internalWorkerPool, delegate.internalOrderedTasks);
-  }
-
-  @Override
-  public final <T> Future<T> executeBlockingInternal(Handler<Promise<T>> action, boolean ordered) {
-    return ContextBase.executeBlocking(this, action, delegate.internalWorkerPool, ordered ? delegate.internalOrderedTasks : null);
   }
 
   @Override
@@ -145,18 +135,8 @@ class DuplicatedContext implements ContextInternal {
   }
 
   @Override
-  public final <T> Future<T> executeBlocking(Handler<Promise<T>> action, boolean ordered) {
-    return ContextBase.executeBlocking(this, action, delegate.workerPool, ordered ? delegate.orderedTasks : null);
-  }
-
-  @Override
   public final <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, boolean ordered) {
     return ContextBase.executeBlocking(this, blockingCodeHandler, delegate.workerPool, ordered ? delegate.orderedTasks : null);
-  }
-
-  @Override
-  public final <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, TaskQueue queue) {
-    return ContextBase.executeBlocking(this, blockingCodeHandler, delegate.workerPool, queue);
   }
 
   @Override

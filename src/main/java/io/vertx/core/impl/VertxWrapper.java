@@ -249,18 +249,8 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered) {
-    return delegate.executeBlocking(blockingCodeHandler, ordered);
-  }
-
-  @Override
   public <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, boolean ordered) {
     return delegate.executeBlockingInternal(blockingCodeHandler, ordered);
-  }
-
-  @Override
-  public <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler) {
-    return delegate.executeBlocking(blockingCodeHandler);
   }
 
   @Override
@@ -444,18 +434,8 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public <T> Future<T> executeBlockingInternal(Handler<Promise<T>> blockingCodeHandler) {
-    return delegate.executeBlockingInternal(blockingCodeHandler);
-  }
-
-  @Override
   public <T> Future<T> executeBlockingInternal(Callable<T> blockingCodeHandler) {
     return delegate.executeBlockingInternal(blockingCodeHandler);
-  }
-
-  @Override
-  public <T> Future<T> executeBlockingInternal(Handler<Promise<T>> blockingCodeHandler, boolean ordered) {
-    return delegate.executeBlockingInternal(blockingCodeHandler, ordered);
   }
 
   @Override
