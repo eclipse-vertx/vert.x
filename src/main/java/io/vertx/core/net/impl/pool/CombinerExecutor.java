@@ -54,11 +54,14 @@ public class CombinerExecutor<S> implements Executor<S> {
           if (a == null) {
             break;
           }
-          Task task = a.execute(state);
+          final Task task = a.execute(state);
           if (task != null) {
             if (head == null) {
               assert tail == null;
               tail = task;
+              for (Task next = tail.next();next != null;next = tail.next()) {
+                tail = tail.next();
+              }
               head = task;
             } else {
               tail = tail.next(task);

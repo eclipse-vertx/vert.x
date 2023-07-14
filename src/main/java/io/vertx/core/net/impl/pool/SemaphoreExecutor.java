@@ -30,8 +30,9 @@ public class SemaphoreExecutor<S> implements Executor<S> {
       post = action.execute(state);
     } finally {
       lock.unlock();
-      if (post != null) {
+      while (post != null) {
         post.run();
+        post = post.next();
       }
     }
   }
