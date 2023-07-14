@@ -20,6 +20,10 @@ public abstract class Task {
     return oldNext;
   }
 
+  public Task next() {
+    return next;
+  }
+
   public Task next(Task next) {
     this.next = next;
     return next;

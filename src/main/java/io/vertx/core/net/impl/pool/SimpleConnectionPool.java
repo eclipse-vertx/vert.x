@@ -368,10 +368,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
       } else {
         waiter.disposed = true;
       }
-      if (!pool.closed) {
-        pool.remove(removed);
-      }
-      return new Task() {
+      Task task = new Task() {
         @Override
         public void run() {
           if (waiter != null) {
@@ -386,6 +383,14 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
           removed.result.fail(cause);
         }
       };
+      if (!pool.closed) {
+        Task removeTask = new Remove<>(removed).execute(pool);
+        if (removeTask != null) {
+          removeTask.next(task);
+          task = removeTask;
+        }
+      }
+      return task;
     }
   }
 
@@ -522,15 +527,21 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
           res.add(slot.connection);
         }
       }
-      for (Slot<C> slot : removed) {
-        pool.remove(slot);
-      }
-      return new Task() {
+      Task head = new Task() {
         @Override
         public void run() {
           handler.handle(Future.succeededFuture(res));
         }
       };
+      Task tail = head;
+      for (Slot<C> slot : removed) {
+        Task next = new Remove<>(slot).execute(pool);
+        if (next != null) {
+          tail.next(next);
+          tail = next;
+        }
+      }
+      return head;
     }
   }
 
