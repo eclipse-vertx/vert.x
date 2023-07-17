@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -112,7 +113,7 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
     long startTime = System.nanoTime();
     HttpClient testClient = clientFactory.apply(vertx);
     AtomicLong receivedLength = new AtomicLong();
-    long expectedLength = Files.size(Path.of(sampleF.getAbsolutePath()));
+    long expectedLength = Files.size(Paths.get(sampleF.getAbsolutePath()));
     testClient.request(HttpMethod.GET, testServer.actualPort(), DEFAULT_HTTP_HOST,"/get-file")
               .compose(req -> req.send()
                                  .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
@@ -157,7 +158,7 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
     await();
     long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
 
-    Assert.assertTrue( elapsedMillis >  expectedTimeMillis(Files.size(Path.of(sampleF.getAbsolutePath())), INBOUND_LIMIT));
+    Assert.assertTrue( elapsedMillis >  expectedTimeMillis(Files.size(Paths.get(sampleF.getAbsolutePath())), INBOUND_LIMIT));
   }
 
   @Test
@@ -176,7 +177,7 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
     CountDownLatch waitForResponse = new CountDownLatch(2);
     AtomicLong startTime = new AtomicLong();
     AtomicLong totalReceivedLength = new AtomicLong();
-    long expectedLength = Files.size(Path.of(sampleF.getAbsolutePath()));
+    long expectedLength = Files.size(Paths.get(sampleF.getAbsolutePath()));
     listenLatch.onComplete(onSuccess(v -> {
       startTime.set(System.nanoTime());
       for (int i=0; i<2; i++) {
