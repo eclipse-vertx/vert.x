@@ -145,17 +145,6 @@ public abstract class ContextBase implements ContextInternal {
     }, workerPool, queue);
   }
 
-  static <T> Future<T> executeBlocking(ContextInternal context, Handler<Promise<T>> blockingCodeHandler,
-                                       WorkerPool workerPool, TaskQueue queue) {
-    return internalExecuteBlocking(context, promise -> {
-      try {
-        blockingCodeHandler.handle(promise);
-      } catch (Throwable e) {
-        promise.tryFail(e);
-      }
-    }, workerPool, queue);
-  }
-
   private static <T> Future<T> internalExecuteBlocking(ContextInternal context, Handler<Promise<T>> blockingCodeHandler,
       WorkerPool workerPool, TaskQueue queue) {
     PoolMetrics metrics = workerPool.metrics();
