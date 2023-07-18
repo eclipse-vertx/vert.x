@@ -36,6 +36,7 @@ import io.vertx.test.tls.Trust;
 import org.junit.Test;
 
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -912,14 +913,13 @@ public class MetricsTest extends VertxTestBase {
     assertThat(metrics.getPoolSize(), is(getOptions().getInternalBlockingPoolSize()));
     assertThat(metrics.numberOfIdleThreads(), is(getOptions().getWorkerPoolSize()));
 
-    Handler<Promise<Void>> job = getSomeDumbTask();
+    Callable<Void> job = getSomeDumbTask();
 
     AtomicBoolean hadWaitingQueue = new AtomicBoolean();
     AtomicBoolean hadIdle = new AtomicBoolean();
     AtomicBoolean hadRunning = new AtomicBoolean();
     for (int i = 0; i < 100; i++) {
-      vertx.executeBlocking(
-          job).onComplete(
+      vertx.executeBlocking(job).onComplete(
           ar -> {
             if (metrics.numberOfWaitingTasks() > 0) {
               hadWaitingQueue.set(true);
@@ -964,7 +964,7 @@ public class MetricsTest extends VertxTestBase {
     Map<Integer, CountDownLatch> latches = new HashMap<>();
     for (int i = 0; i < count; i++) {
       CountDownLatch latch = latches.computeIfAbsent(i / num, k -> new CountDownLatch(num));
-      v.executeBlockingInternal(fut -> {
+      v.executeBlockingInternal(() -> {
         latch.countDown();
         try {
           awaitLatch(latch);
@@ -978,7 +978,7 @@ public class MetricsTest extends VertxTestBase {
         if (metrics.numberOfWaitingTasks() > 0) {
           hadWaitingQueue.set(true);
         }
-        fut.complete();
+        return null;
       }, false).onComplete(ar -> {
         if (metrics.numberOfIdleThreads() > 0) {
           hadIdle.set(true);
@@ -1080,7 +1080,7 @@ public class MetricsTest extends VertxTestBase {
     assertThat(metrics.getPoolSize(), is(10));
     assertThat(metrics.numberOfIdleThreads(), is(10));
 
-    Handler<Promise<Void>> job = getSomeDumbTask();
+    Callable<Void> job = getSomeDumbTask();
 
     AtomicBoolean hadWaitingQueue = new AtomicBoolean();
     AtomicBoolean hadIdle = new AtomicBoolean();
@@ -1135,14 +1135,14 @@ public class MetricsTest extends VertxTestBase {
     assertTrue(metrics2.isClosed());
   }
 
-  private Handler<Promise<Void>> getSomeDumbTask() {
-    return (future) -> {
+  private Callable<Void> getSomeDumbTask() {
+    return () -> {
       try {
         Thread.sleep(50);
       } catch (InterruptedException e) {
         Thread.currentThread().isInterrupted();
       }
-      future.complete(null);
+      return null;
     };
   }
 

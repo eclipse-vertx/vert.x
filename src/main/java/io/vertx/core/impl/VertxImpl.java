@@ -237,9 +237,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   private void createHaManager(VertxOptions options, Promise<Void> initPromise) {
     if (options.isHAEnabled()) {
-      this.<HAManager>executeBlocking(fut -> {
+      this.executeBlocking(() -> {
         haManager = new HAManager(this, deploymentManager, verticleManager, clusterManager, clusterManager.getSyncMap(CLUSTER_MAP_NAME), options.getQuorumSize(), options.getHAGroup());
-        fut.complete(haManager);
+        return haManager;
       }, false).onComplete(ar -> {
         if (ar.succeeded()) {
           startEventBus(true, initPromise);
@@ -269,12 +269,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   private void initializeHaManager(Promise<Void> initPromise) {
-    this.<Void>executeBlocking(fut -> {
+    this.<Void>executeBlocking(() -> {
       // Init the manager (i.e register listener and check the quorum)
       // after the event bus has been fully started and updated its state
       // it will have also set the clustered changed view handler on the ha manager
       haManager.init();
-      fut.complete();
+      return null;
     }, false).onComplete(initPromise);
   }
 
@@ -604,9 +604,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       .close()
       .transform(ar -> deploymentManager.undeployAll());
     if (haManager != null) {
-      fut = fut.transform(ar -> executeBlocking(res -> {
+      fut = fut.transform(ar -> executeBlocking(() -> {
         haManager.stop();
-        res.complete();
+        return null;
       }, false));
     }
     fut = fut
@@ -679,9 +679,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     Future<Void> future;
     HAManager haManager = haManager();
     if (haManager != null) {
-      future = this.executeBlocking(fut -> {
+      future = this.executeBlocking(() -> {
         haManager.removeFromHA(deploymentID);
-        fut.complete();
+        return null;
       }, false);
     } else {
       future = getOrCreateContext().succeededFuture();
@@ -787,13 +787,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @SuppressWarnings("unchecked")
   private void deleteCacheDirAndShutdown(Promise<Void> promise) {
-    executeBlockingInternal(fut -> {
-      try {
-        fileResolver.close();
-        fut.complete();
-      } catch (IOException e) {
-        fut.tryFail(e);
-      }
+    executeBlockingInternal(() -> {
+      fileResolver.close();
+      return null;
     }).onComplete(ar -> {
       workerPool.close();
       internalWorkerPool.close();

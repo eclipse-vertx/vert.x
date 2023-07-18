@@ -1988,13 +1988,7 @@ public class FileSystemTest extends VertxTestBase {
           assertEquals(expected.creationTime(), actual.creationTime());
           assertEquals(expected.lastModifiedTime(), actual.lastModifiedTime());
         }))
-        .compose(v2 -> vertx.<Set<PosixFilePermission>>executeBlocking(fut -> {
-          try {
-            fut.complete(Files.getPosixFilePermissions(new File(testDir, target).toPath(), LinkOption.NOFOLLOW_LINKS));
-          } catch (IOException e) {
-            fut.fail(e);
-          }
-        })))).onComplete(onSuccess(perms -> {
+        .compose(v2 -> vertx.executeBlocking(() -> Files.getPosixFilePermissions(new File(testDir, target).toPath(), LinkOption.NOFOLLOW_LINKS))))).onComplete(onSuccess(perms -> {
       assertEquals(EnumSet.of(PosixFilePermission.OWNER_READ), perms);
       complete();
     }));

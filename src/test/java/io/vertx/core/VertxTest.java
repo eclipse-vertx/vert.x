@@ -380,13 +380,13 @@ public class VertxTest extends AsyncTestBase {
     VertxInternal vertx = (VertxInternal) Vertx.vertx();
     try {
       Thread[] threads = new Thread[2];
-      vertx.createSharedWorkerExecutor("LeakTest").executeBlocking(promise -> {
+      vertx.createSharedWorkerExecutor("LeakTest").executeBlocking(() -> {
         threads[0] = Thread.currentThread();
-        promise.complete();
+        return null;
       }).toCompletionStage().toCompletableFuture().get(20, TimeUnit.SECONDS);
-      vertx.createSharedWorkerExecutor("LeakTest").executeBlocking(promise -> {
+      vertx.createSharedWorkerExecutor("LeakTest").executeBlocking(() -> {
         threads[1] = Thread.currentThread();
-        promise.complete();
+        return null;
       }).toCompletionStage().toCompletableFuture().get(20, TimeUnit.SECONDS);
       runGC();
       assertFalse(threads[0].isAlive());
@@ -501,8 +501,8 @@ public class VertxTest extends AsyncTestBase {
     Vertx vertx = Vertx.vertx();
     try {
       WorkerExecutor exec = vertx.createSharedWorkerExecutor("pool");
-      WeakReference<Thread> ref = exec.<WeakReference<Thread>>executeBlocking(p -> {
-        p.complete(new WeakReference<>(Thread.currentThread()));
+      WeakReference<Thread> ref = exec.executeBlocking(() -> {
+        return new WeakReference<>(Thread.currentThread());
       }).toCompletionStage().toCompletableFuture().get();
       exec.close().toCompletionStage().toCompletableFuture().get();
       long now = System.currentTimeMillis();

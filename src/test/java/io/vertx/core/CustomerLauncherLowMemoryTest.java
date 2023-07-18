@@ -119,7 +119,7 @@ public class CustomerLauncherLowMemoryTest {
 
     @Override
     public void start() throws Exception {
-      vertx.<List<byte[]>>executeBlocking(prom -> {
+      vertx.<List<byte[]>>executeBlocking(() -> {
         List<byte[]> res = new ArrayList<>();
         long l;
         do {
@@ -129,10 +129,10 @@ public class CustomerLauncherLowMemoryTest {
         runtime.gc();
         try {
           Thread.sleep(100);
-          prom.complete(res);
+          return res;
         } catch (InterruptedException e) {
           Thread.currentThread().interrupt();
-          prom.fail(e);
+          throw e;
         }
       }).onComplete(ar1 -> {
         if (ar1.succeeded()) {

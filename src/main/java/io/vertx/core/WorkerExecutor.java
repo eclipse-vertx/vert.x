@@ -11,9 +11,12 @@
 
 package io.vertx.core;
 
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.metrics.Measured;
+
+import java.util.concurrent.Callable;
 
 /**
  * An executor for executing blocking code in Vert.x .<p>
@@ -31,15 +34,11 @@ public interface WorkerExecutor extends Measured {
    * <p>
    * Executes the blocking code in the handler {@code blockingCodeHandler} using a thread from the worker pool.
    * <p>
-   * When the code is complete the handler {@code resultHandler} will be called with the result on the original context
-   * (i.e. on the original event loop of the caller).
-   * <p>
-   * A {@code Future} instance is passed into {@code blockingCodeHandler}. When the blocking code successfully completes,
-   * the handler should call the {@link Promise#complete} or {@link Promise#complete(Object)} method, or the {@link Promise#fail}
-   * method if it failed.
+   * The returned future will be completed with the result on the original context (i.e. on the original event loop of the caller)
+   * or failed when the handler throws an exception.
    * <p>
    * In the {@code blockingCodeHandler} the current context remains the original context and therefore any task
-   * scheduled in the {@code blockingCodeHandler} will be executed on the this context and not on the worker thread.
+   * scheduled in the {@code blockingCodeHandler} will be executed on this context and not on the worker thread.
    *
    * @param blockingCodeHandler  handler representing the blocking code to run
    * @param ordered  if true then if executeBlocking is called several times on the same context, the executions
@@ -48,12 +47,14 @@ public interface WorkerExecutor extends Measured {
    * @param <T> the type of the result
    * @return a future notified with the result
    */
-  <T> Future<@Nullable T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered);
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  <T> Future<@Nullable T> executeBlocking(Callable<T> blockingCodeHandler, boolean ordered);
 
   /**
-   * Like {@link #executeBlocking(Handler, boolean)} called with ordered = true.
+   * Like {@link #executeBlocking(Callable, boolean)} called with ordered = true.
    */
-  default <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler) {
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  default <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler) {
     return executeBlocking(blockingCodeHandler, true);
   }
 

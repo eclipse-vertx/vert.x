@@ -603,8 +603,8 @@ blocking APIs safely within a Vert.x application.
 As discussed before, you can't call blocking operations directly from an event loop, as that would prevent it
 from doing any other useful work. So how can you do this?
 
-It's done by calling {@link io.vertx.core.Vertx#executeBlocking} specifying both the blocking code to execute and a
-result handler to be called back asynchronous when the blocking code has been executed.
+It's done by calling {@link io.vertx.core.Vertx#executeBlocking} with blocking code to execute, as return you get a
+future completed with the result of the blocking code execution.
 
 [source,$lang]
 ----
@@ -621,7 +621,7 @@ which can interact with verticles using the event-bus or {@link io.vertx.core.Co
 By default, if executeBlocking is called several times from the same context (e.g. the same verticle instance) then
 the different executeBlocking are executed _serially_ (i.e. one after another).
 
-If you don't care about ordering you can call {@link io.vertx.core.Vertx#executeBlocking(io.vertx.core.Handler,boolean)}
+If you don't care about ordering you can call {@link io.vertx.core.Vertx#executeBlocking(java.util.concurrent.Callable,boolean)}
 specifying `false` as the argument to `ordered`. In this case any executeBlocking may be executed in parallel
 on the worker pool.
 

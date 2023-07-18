@@ -12,6 +12,7 @@
 package io.vertx.core.shareddata;
 
 import io.vertx.core.*;
+import io.vertx.core.impl.NoStackTraceException;
 import io.vertx.core.shareddata.impl.LockInternal;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
@@ -124,7 +125,7 @@ public class AsynchronousLockTest extends VertxTestBase {
     SharedData sharedData = vertx.sharedData();
     AtomicReference<Long> start = new AtomicReference<>();
 
-    vertx.<Lock>executeBlocking(future -> {
+    vertx.executeBlocking(() -> {
       CountDownLatch acquireLatch = new CountDownLatch(1);
       AtomicReference<AsyncResult<Lock>> lockReference = new AtomicReference<>();
       sharedData
@@ -137,19 +138,19 @@ public class AsynchronousLockTest extends VertxTestBase {
         awaitLatch(acquireLatch);
         AsyncResult<Lock> ar = lockReference.get();
         if (ar.succeeded()) {
-          future.complete(ar.result());
+          return ar.result();
         } else {
-          future.fail(ar.cause());
+          throw new NoStackTraceException(ar.cause());
         }
       } catch (InterruptedException e) {
-        future.fail(e);
+        throw e;
       }
     }).compose(lock -> {
       start.set(System.currentTimeMillis());
       vertx.setTimer(1000, tid -> {
         lock.release();
       });
-      return vertx.executeBlocking(future -> {
+      return vertx.executeBlocking(() -> {
         CountDownLatch acquireLatch = new CountDownLatch(1);
         AtomicReference<AsyncResult<Lock>> lockReference = new AtomicReference<>();
         sharedData
@@ -162,12 +163,12 @@ public class AsynchronousLockTest extends VertxTestBase {
           awaitLatch(acquireLatch);
           AsyncResult<Lock> ar3 = lockReference.get();
           if (ar3.succeeded()) {
-            future.complete(ar3.result());
+            return ar3.result();
           } else {
-            future.fail(ar3.cause());
+            throw new NoStackTraceException(ar3.cause());
           }
         } catch (InterruptedException e) {
-          future.fail(e);
+          throw e;
         }
       });
     }).onComplete(onSuccess(v -> {

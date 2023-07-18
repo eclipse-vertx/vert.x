@@ -129,13 +129,14 @@ public class BlockedThreadCheckerTest extends VertxTestBase {
     Verticle verticle = new AbstractVerticle() {
       @Override
       public void start() throws InterruptedException {
-        vertx.executeBlocking(fut -> {
+        vertx.executeBlocking(() -> {
           try {
             Thread.sleep(3000);
           } catch (InterruptedException e) {
             fail();
           }
           testComplete();
+          return null;
         });
       }
     };
@@ -169,13 +170,9 @@ public class BlockedThreadCheckerTest extends VertxTestBase {
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
       public void start(Promise<Void> startPromise) throws Exception {
-        vertx.<Void>executeBlocking(fut -> {
-          try {
-            SECONDS.sleep(5);
-            fut.complete();
-          } catch (InterruptedException e) {
-            fut.fail(e);
-          }
+        vertx.<Void>executeBlocking(() -> {
+          SECONDS.sleep(5);
+          return null;
         }).onComplete(startPromise);
       }
     }, deploymentOptions).onComplete(onSuccess(did -> {

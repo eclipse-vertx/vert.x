@@ -19,6 +19,7 @@ import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.NoStackTraceException;
 import io.vertx.core.net.ClientOptionsBase;
 import io.vertx.core.net.JdkSSLEngineOptions;
 import io.vertx.core.net.KeyCertOptions;
@@ -240,7 +241,7 @@ public class SSLHelper {
     if (keyCertOptions != null || trustOptions != null || trustAll || ssl) {
       Promise<EngineConfig> promise = Promise.promise();
       sslContextFactorySupplier = promise.future();
-      ctx.<Void>executeBlockingInternal(p -> {
+      ctx.<Void>executeBlockingInternal(() -> {
         try {
           if (sslOptions.getKeyCertOptions() != null) {
             keyManagerFactory = sslOptions.getKeyCertOptions().getKeyManagerFactory(ctx.owner());
@@ -267,15 +268,14 @@ public class SSLHelper {
             crls.addAll(certificatefactory.generateCRLs(new ByteArrayInputStream(crlValue.getBytes())));
           }
         } catch (Exception e) {
-          p.fail(e);
-          return;
+          throw e;
         }
         if (client || sslOptions.getKeyCertOptions() != null) {
-          p.complete();
+          return null;
         } else {
-          p.fail("Key/certificate is mandatory for SSL");
+          throw new NoStackTraceException("Key/certificate is mandatory for SSL");
         }
-      }).compose(v2 -> ctx.<EngineConfig>executeBlockingInternal(p -> {
+      }).compose(v2 -> ctx.<EngineConfig>executeBlockingInternal(() -> {
         Supplier<SslContextFactory> supplier;
         boolean useWorkerPool;
         try {
@@ -283,10 +283,9 @@ public class SSLHelper {
           supplier = resolvedEngineOptions::sslContextFactory;
           useWorkerPool = resolvedEngineOptions.getUseWorkerThread();
         } catch (Exception e) {
-          p.fail(e);
-          return;
+          throw e;
         }
-        p.complete(new EngineConfig(sslOptions, supplier, useWorkerPool));
+        return new EngineConfig(sslOptions, supplier, useWorkerPool);
       })).onComplete(promise);
     } else {
       sslContextFactorySupplier = Future.succeededFuture(new EngineConfig(sslOptions, () -> new DefaultSslContextFactory(SslProvider.JDK, false), SSLEngineOptions.DEFAULT_USE_WORKER_POOL));

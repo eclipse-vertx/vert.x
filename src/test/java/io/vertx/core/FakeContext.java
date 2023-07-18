@@ -12,6 +12,7 @@ import io.vertx.core.impl.WorkerPool;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.tracing.VertxTracer;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 
@@ -43,7 +44,7 @@ class FakeContext implements ContextInternal {
   }
 
   @Override
-  public <T> Future<@Nullable T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered) {
+  public <T> Future<@Nullable T> executeBlocking(Callable<T> blockingCodeHandler, boolean ordered) {
     return null;
   }
 
@@ -88,17 +89,17 @@ class FakeContext implements ContextInternal {
   }
 
   @Override
-  public <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, TaskQueue queue) {
+  public <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, TaskQueue queue) {
     return null;
   }
 
   @Override
-  public <T> Future<T> executeBlockingInternal(Handler<Promise<T>> action) {
+  public <T> Future<T> executeBlockingInternal(Callable<T> action) {
     return null;
   }
 
   @Override
-  public <T> Future<T> executeBlockingInternal(Handler<Promise<T>> action, boolean ordered) {
+  public <T> Future<T> executeBlockingInternal(Callable<T> action, boolean ordered) {
     return null;
   }
 
