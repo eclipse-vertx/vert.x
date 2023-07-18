@@ -34,6 +34,7 @@ import java.io.File;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -147,14 +148,26 @@ public interface VertxInternal extends Vertx {
   /**
    * Like {@link #executeBlocking(Handler, Handler)} but using the internal worker thread pool.
    */
+  @Deprecated
   default <T> void executeBlockingInternal(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler) {
     ContextInternal context = getOrCreateContext();
     context.executeBlockingInternal(blockingCodeHandler, resultHandler);
   }
 
+  default <T> Future<T> executeBlockingInternal(Callable<T> blockingCodeHandler) {
+    ContextInternal context = getOrCreateContext();
+    return context.executeBlockingInternal(blockingCodeHandler);
+  }
+
+  @Deprecated
   default <T> void executeBlockingInternal(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> resultHandler) {
     ContextInternal context = getOrCreateContext();
     context.executeBlockingInternal(blockingCodeHandler, ordered, resultHandler);
+  }
+
+  default <T> Future<T> executeBlockingInternal(Callable<T> blockingCodeHandler, boolean ordered) {
+    ContextInternal context = getOrCreateContext();
+    return context.executeBlockingInternal(blockingCodeHandler, ordered);
   }
 
   ClusterManager getClusterManager();
