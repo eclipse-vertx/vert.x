@@ -60,6 +60,11 @@ public class NetServerOptionsConverter {
             obj.setSni((Boolean)member.getValue());
           }
           break;
+        case "trafficShapingOptions":
+          if (member.getValue() instanceof JsonObject) {
+            obj.setTrafficShapingOptions(new io.vertx.core.net.TrafficShapingOptions((io.vertx.core.json.JsonObject)member.getValue()));
+          }
+          break;
         case "useProxyProtocol":
           if (member.getValue() instanceof Boolean) {
             obj.setUseProxyProtocol((Boolean)member.getValue());
@@ -88,6 +93,9 @@ public class NetServerOptionsConverter {
     }
     json.put("registerWriteHandler", obj.isRegisterWriteHandler());
     json.put("sni", obj.isSni());
+    if (obj.getTrafficShapingOptions() != null) {
+      json.put("trafficShapingOptions", obj.getTrafficShapingOptions().toJson());
+    }
     json.put("useProxyProtocol", obj.isUseProxyProtocol());
   }
 }

@@ -20,6 +20,9 @@ import io.vertx.core.json.JsonObject;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static io.vertx.core.net.TrafficShapingOptions.DEFAULT_INBOUND_GLOBAL_BANDWIDTH_LIMIT;
+import static io.vertx.core.net.TrafficShapingOptions.DEFAULT_OUTBOUND_GLOBAL_BANDWIDTH_LIMIT;
+
 /**
  * Options for configuring a {@link io.vertx.core.net.NetServer}.
  *
@@ -84,6 +87,7 @@ public class NetServerOptions extends TCPSSLOptions {
   private long proxyProtocolTimeout;
   private TimeUnit proxyProtocolTimeoutUnit;
   private boolean registerWriteHandler;
+  private TrafficShapingOptions trafficShapingOptions;
 
   /**
    * Default constructor
@@ -111,6 +115,7 @@ public class NetServerOptions extends TCPSSLOptions {
       other.getProxyProtocolTimeoutUnit() :
       DEFAULT_PROXY_PROTOCOL_TIMEOUT_TIME_UNIT;
     this.registerWriteHandler = other.registerWriteHandler;
+    this.trafficShapingOptions = other.getTrafficShapingOptions();
   }
 
   /**
@@ -496,6 +501,24 @@ public class NetServerOptions extends TCPSSLOptions {
    */
   public TimeUnit getProxyProtocolTimeoutUnit() {
     return proxyProtocolTimeoutUnit;
+  }
+
+  /**
+   * @return traffic shaping options used by Net server.
+   */
+  public TrafficShapingOptions getTrafficShapingOptions() {
+    return this.trafficShapingOptions;
+  }
+
+  /**
+   * Set traffic shaping options. If not specified, traffic is unthrottled.
+   *
+   * @param trafficShapingOptions options used by traffic handler
+   * @return a reference to this, so the API can be used fluently
+   */
+  public NetServerOptions setTrafficShapingOptions(TrafficShapingOptions trafficShapingOptions) {
+    this.trafficShapingOptions = trafficShapingOptions;
+    return this;
   }
 
   private void init() {

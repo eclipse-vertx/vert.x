@@ -23,6 +23,7 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.handler.traffic.GlobalTrafficShapingHandler;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.Handler;
@@ -60,6 +61,7 @@ public class HttpServerWorker implements BiConsumer<Channel, SslChannelProvider>
   private final Handler<Throwable> exceptionHandler;
   private final CompressionOptions[] compressionOptions;
   private final Function<String, String> encodingDetector;
+  private final GlobalTrafficShapingHandler trafficShapingHandler;
 
   public HttpServerWorker(EventLoopContext context,
                           Supplier<ContextInternal> streamContextSupplier,
@@ -69,7 +71,8 @@ public class HttpServerWorker implements BiConsumer<Channel, SslChannelProvider>
                           String serverOrigin,
                           boolean disableH2C,
                           Handler<HttpServerConnection> connectionHandler,
-                          Handler<Throwable> exceptionHandler) {
+                          Handler<Throwable> exceptionHandler,
+                          GlobalTrafficShapingHandler trafficShapingHandler) {
 
     CompressionOptions[] compressionOptions = null;
     if (options.isCompressionSupported()) {
@@ -94,6 +97,7 @@ public class HttpServerWorker implements BiConsumer<Channel, SslChannelProvider>
     this.exceptionHandler = exceptionHandler;
     this.compressionOptions = compressionOptions;
     this.encodingDetector = compressionOptions != null ? new EncodingDetector(compressionOptions)::determineEncoding : null;
+    this.trafficShapingHandler = trafficShapingHandler;
   }
 
   @Override
@@ -192,6 +196,9 @@ public class HttpServerWorker implements BiConsumer<Channel, SslChannelProvider>
         });
       }
     }
+    if (trafficShapingHandler != null) {
+      pipeline.addFirst("globalTrafficShaping", trafficShapingHandler);
+    }
   }
 
   private void handleException(Throwable cause) {
@@ -270,7 +277,7 @@ public class HttpServerWorker implements BiConsumer<Channel, SslChannelProvider>
     if (options.isCompressionSupported()) {
       pipeline.addLast("deflater", new HttpChunkContentCompressor(compressionOptions));
     }
-    if (options.isSsl() || options.isCompressionSupported() || !vertx.transport().supportFileRegion()) {
+    if (options.isSsl() || options.isCompressionSupported() || !vertx.transport().supportFileRegion() || trafficShapingHandler != null) {
       // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
       pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
     }
