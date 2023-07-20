@@ -37,6 +37,7 @@ import io.vertx.core.tracing.TracingOptions;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.function.Consumer;
 
 /**
  * Vertx builder for creating vertx instances with SPI overrides.
@@ -55,6 +56,7 @@ public class VertxBuilder {
   private VertxTracer tracer;
   private VertxThreadFactory threadFactory;
   private ExecutorServiceFactory executorServiceFactory;
+  private Consumer<MetricsOptions> metricsOptionsProcessor;
   private VertxMetrics metrics;
   private FileResolver fileResolver;
 
@@ -150,6 +152,24 @@ public class VertxBuilder {
    */
   public VertxBuilder tracer(VertxTracer tracer) {
     this.tracer = tracer;
+    return this;
+  }
+
+  /**
+   * A {@link MetricsOptions} processor that can be used by {@link VertxMetricsFactory#init(VertxBuilder)} implementations.
+   * <p>
+   * May be {@code null}.
+   */
+  public Consumer<MetricsOptions> metricsOptionsProcessor() {
+    return metricsOptionsProcessor;
+  }
+
+
+  /**
+   * Set the {@link MetricsOptions} processor that can be used by {@link VertxMetricsFactory#init(VertxBuilder)} implementations.
+   */
+  public VertxBuilder metricsOptionsProcessor(Consumer<MetricsOptions> metricsOptionsProcessor) {
+    this.metricsOptionsProcessor = metricsOptionsProcessor;
     return this;
   }
 
