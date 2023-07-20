@@ -331,7 +331,7 @@ public class SSLOptions {
     }
     if (obj instanceof SSLOptions) {
       SSLOptions that = (SSLOptions) obj;
-      return sslHandshakeTimeoutUnit.toNanos(sslHandshakeTimeout) == that.sslHandshakeTimeoutUnit.toNanos(sslHandshakeTimeout) &&
+      return sslHandshakeTimeoutUnit.toNanos(sslHandshakeTimeout) == that.sslHandshakeTimeoutUnit.toNanos(that.sslHandshakeTimeout) &&
          Objects.equals(keyCertOptions, that.keyCertOptions) &&
          Objects.equals(trustOptions, that.trustOptions) &&
          Objects.equals(enabledCipherSuites, that.enabledCipherSuites) &&
