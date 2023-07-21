@@ -27,22 +27,10 @@ public interface VertxMetricsFactory extends VertxServiceProvider {
   @Override
   default void init(VertxBuilder builder) {
     if (builder.metrics() == null) {
-      JsonObject config = builder.config();
-      MetricsOptions metricsOptions;
-      VertxOptions options = builder.options();
-      if (config != null && config.containsKey("metricsOptions")) {
-        metricsOptions = newOptions(config.getJsonObject("metricsOptions"));
-      } else {
-        metricsOptions = options.getMetricsOptions();
-        if (metricsOptions == null) {
-          metricsOptions = newOptions();
-        } else {
-          metricsOptions = newOptions(metricsOptions);
-        }
-      }
-      builder.options().setMetricsOptions(metricsOptions);
-      if (options.getMetricsOptions().isEnabled()) {
-        builder.metrics(metrics(options));
+      VertxOptions vertxOptions = builder.options();
+      MetricsOptions metricsOptions = vertxOptions.getMetricsOptions();
+      if (metricsOptions != null && metricsOptions.isEnabled()) {
+        builder.metrics(metrics(vertxOptions));
       }
     }
   }

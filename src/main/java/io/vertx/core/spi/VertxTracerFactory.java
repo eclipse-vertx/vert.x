@@ -24,16 +24,18 @@ import io.vertx.core.tracing.TracingOptions;
 public interface VertxTracerFactory extends VertxServiceProvider {
 
   /**
-   * Noop tracer factory, it can be useful for disabling metrics, e.g
+   * Noop tracer factory, it can be useful for disabling metrics, e.g.
    * {@code new VertxOptions().setTracingOptions(new TracingOptions().setFactory(VertxTracerFactory.NOOP))}
    */
   VertxTracerFactory NOOP = options -> VertxTracer.NOOP;
 
   @Override
   default void init(VertxBuilder builder) {
-    TracingOptions options = builder.options().getTracingOptions();
-    if (options != null && builder.tracer() == null) {
-      builder.tracer(tracer(options));
+    if (builder.tracer() == null) {
+      TracingOptions tracingOptions = builder.options().getTracingOptions();
+      if (tracingOptions != null) {
+        builder.tracer(tracer(tracingOptions));
+      }
     }
   }
 
@@ -50,7 +52,6 @@ public interface VertxTracerFactory extends VertxServiceProvider {
   /**
    * Create an empty tracing options.
    * Providers can override this method to provide a custom tracing options subclass that exposes custom configuration.
-   * It is used by the {@link io.vertx.core.Launcher} class when creating new options when building a CLI Vert.x.
    *
    * @return new tracing options
    */
@@ -61,7 +62,6 @@ public interface VertxTracerFactory extends VertxServiceProvider {
   /**
    * Create tracing options from the provided {@code jsonObject}.
    * Providers can override this method to provide a custom tracing options subclass that exposes custom configuration.
-   * It is used by the {@link io.vertx.core.Launcher} class when creating new options when building a CLI Vert.x.
    *
    * @param jsonObject json provided by the user
    * @return new tracing options
