@@ -17,8 +17,6 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
-import java.util.function.Consumer;
-
 /**
  * A factory for the plugable metrics SPI.
  *
@@ -41,10 +39,6 @@ public interface VertxMetricsFactory extends VertxServiceProvider {
         } else {
           metricsOptions = newOptions(metricsOptions);
         }
-      }
-      Consumer<MetricsOptions> processor = builder.metricsOptionsProcessor();
-      if (processor != null) {
-        processor.accept(metricsOptions);
       }
       builder.options().setMetricsOptions(metricsOptions);
       if (options.getMetricsOptions().isEnabled()) {
