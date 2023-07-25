@@ -1745,6 +1745,34 @@ public abstract class HttpTLSTest extends HttpTestBase {
   }
 
   @Test
+  public void testServerSharing() throws Exception {
+    int numServers = 4;
+    HttpServer[] servers = new HttpServer[numServers];
+    for (int i = 0;i < numServers;i++) {
+      String msg = "Hello World " + i;
+      servers[i] = createHttpServer(createBaseServerOptions().setSsl(true).setKeyCertOptions(Cert.SERVER_JKS.get()))
+        .requestHandler(req -> {
+          req.response().end(msg);
+        });
+      servers[i].listen(testAddress).toCompletionStage().toCompletableFuture().get();
+    }
+    client = createHttpClient(new HttpClientOptions().setKeepAlive(false).setSsl(true).setTrustOptions(Trust.SERVER_JKS.get()));
+    for (int i = 0;i < numServers;i++) {
+      Buffer body = client.request(requestOptions).compose(req -> req.send().compose(HttpClientResponse::body)).toCompletionStage().toCompletableFuture().get();
+      assertEquals("Hello World " + i, body.toString());
+    }
+    client.close();
+    for (int i = 0;i < numServers;i++) {
+      servers[i].updateSSLOptions(new SSLOptions().setKeyCertOptions(Cert.SERVER_PKCS12.get())).toCompletionStage().toCompletableFuture().get();
+    }
+    client = createHttpClient(new HttpClientOptions().setKeepAlive(false).setSsl(true).setTrustOptions(Trust.SERVER_PKCS12.get()));
+    for (int i = 0;i < numServers;i++) {
+      Buffer body = client.request(requestOptions).compose(req -> req.send().compose(HttpClientResponse::body)).toCompletionStage().toCompletableFuture().get();
+      assertEquals("Hello World " + i, body.toString());
+    }
+  }
+
+  @Test
   public void testEngineUseEventLoopThread() throws Exception {
     testUseThreadPool(false, false);
   }
