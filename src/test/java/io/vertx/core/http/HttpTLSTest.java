@@ -1745,7 +1745,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
   }
 
   @Test
-  public void testServerSharing() throws Exception {
+  public void testServerSharingUpdateSSLOptions() throws Exception {
     int numServers = 4;
     HttpServer[] servers = new HttpServer[numServers];
     for (int i = 0;i < numServers;i++) {
