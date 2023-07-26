@@ -15,6 +15,7 @@ package io.vertx.core.impl;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.resolver.AddressResolverGroup;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.*;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;

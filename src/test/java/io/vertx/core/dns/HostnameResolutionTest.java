@@ -327,7 +327,7 @@ public class HostnameResolutionTest extends VertxTestBase {
       CountDownLatch connectLatch = new CountDownLatch(1);
       Bootstrap bootstrap = new Bootstrap();
       bootstrap.channelFactory(((VertxInternal)vertx).transport().channelFactory(false));
-      bootstrap.group(vertx.nettyEventLoopGroup());
+      bootstrap.group(((VertxInternal) vertx).getEventLoopGroup());
       bootstrap.resolver(((VertxInternal) vertx).nettyAddressResolverGroup());
       bootstrap.handler(new ChannelInitializer<Channel>() {
         @Override

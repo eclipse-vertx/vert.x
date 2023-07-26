@@ -676,8 +676,10 @@ public interface Vertx extends Measured {
    * Return the Netty EventLoopGroup used by Vert.x
    *
    * @return the EventLoopGroup
+   * @deprecated removed from public API in Vert.x 5
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @Deprecated
   EventLoopGroup nettyEventLoopGroup();
 
   /**

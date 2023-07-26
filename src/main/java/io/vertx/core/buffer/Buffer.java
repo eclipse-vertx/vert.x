@@ -110,7 +110,9 @@ public interface Buffer extends ClusterSerializable, Shareable {
    *
    * @param byteBuf the Netty ByteBuf
    * @return the buffer
+   * @deprecated removed from public API in Vert.x 5
    */
+  @Deprecated
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   static Buffer buffer(ByteBuf byteBuf) {
     Objects.requireNonNull(byteBuf);
@@ -705,7 +707,10 @@ public interface Buffer extends ClusterSerializable, Shareable {
    * Returns the Buffer as a Netty {@code ByteBuf}.
    *
    * <p> The returned buffer is a duplicate that maintain its own indices.
+   *
+   * @deprecated removed from public API in Vert.x 5
    */
+  @Deprecated
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   ByteBuf getByteBuf();
 
