@@ -10,6 +10,9 @@
  */
 package io.vertx.core.net.impl.pool;
 
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
+
 /**
  * A recyclable object.
  */
@@ -25,4 +28,7 @@ public interface Lease<T> {
    */
   void recycle();
 
+  default void release(Handler<AsyncResult<T>> handler) {
+    recycle();
+  }
 }
