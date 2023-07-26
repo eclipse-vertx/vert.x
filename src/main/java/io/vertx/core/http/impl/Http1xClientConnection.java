@@ -60,6 +60,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpMethod;
@@ -936,7 +937,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   }
 
   private void handleResponseChunk(Stream stream, ByteBuf chunk) {
-    Buffer buff = Buffer.buffer(VertxHandler.safeBuffer(chunk));
+    Buffer buff = BufferInternal.buffer(VertxHandler.safeBuffer(chunk));
     int len = buff.length();
     receiveBytes(len);
     stream.bytesRead += len;

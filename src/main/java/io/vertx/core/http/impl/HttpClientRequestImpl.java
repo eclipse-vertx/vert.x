@@ -15,6 +15,7 @@ import io.netty.buffer.ByteBuf;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.impl.Arguments;
@@ -267,7 +268,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     synchronized (this) {
       checkEnded();
     }
-    return stream.writeFrame(type, flags, payload.getByteBuf());
+    return stream.writeFrame(type, flags, ((BufferInternal)payload).getByteBuf());
   }
 
   private void handleDrained(Void v) {
@@ -353,18 +354,18 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   @Override
   public Future<Void> end(String chunk) {
-    return write(Buffer.buffer(chunk).getByteBuf(), true);
+    return write(BufferInternal.buffer(chunk).getByteBuf(), true);
   }
 
   @Override
   public Future<Void> end(String chunk, String enc) {
     Objects.requireNonNull(enc, "no null encoding accepted");
-    return write(Buffer.buffer(chunk, enc).getByteBuf(), true);
+    return write(BufferInternal.buffer(chunk, enc).getByteBuf(), true);
   }
 
   @Override
   public Future<Void> end(Buffer chunk) {
-    return write(chunk.getByteBuf(), true);
+    return write(((BufferInternal)chunk).getByteBuf(), true);
   }
 
   @Override
@@ -374,19 +375,19 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   @Override
   public Future<Void> write(Buffer chunk) {
-    ByteBuf buf = chunk.getByteBuf();
+    ByteBuf buf = ((BufferInternal)chunk).getByteBuf();
     return write(buf, false);
   }
 
   @Override
   public Future<Void> write(String chunk) {
-    return write(Buffer.buffer(chunk).getByteBuf(), false);
+    return write(BufferInternal.buffer(chunk).getByteBuf(), false);
   }
 
   @Override
   public Future<Void> write(String chunk, String enc) {
     Objects.requireNonNull(enc, "no null encoding accepted");
-    return write(Buffer.buffer(chunk, enc).getByteBuf(), false);
+    return write(BufferInternal.buffer(chunk, enc).getByteBuf(), false);
   }
 
   private boolean requiresContentLength() {

@@ -41,6 +41,7 @@ import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.KeyCertOptions;
@@ -450,10 +451,10 @@ public class TestUtils {
   }
 
   public static Buffer leftPad(int padding, Buffer buffer) {
-    return Buffer.buffer(Unpooled.buffer()
+    return BufferInternal.buffer(Unpooled.buffer()
       .writerIndex(padding)
       .readerIndex(padding)
-      .writeBytes(buffer.getByteBuf())
+      .writeBytes(((BufferInternal)buffer).getByteBuf())
     );
   }
 

@@ -30,6 +30,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.http.HttpHeaders;
@@ -67,7 +68,7 @@ import static io.vertx.core.http.HttpHeaders.*;
  */
 public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
 
-  private static final Buffer EMPTY_BUFFER = Buffer.buffer(Unpooled.EMPTY_BUFFER);
+  private static final Buffer EMPTY_BUFFER = BufferInternal.buffer(Unpooled.EMPTY_BUFFER);
   private static final Logger log = LoggerFactory.getLogger(Http1xServerResponse.class);
   private static final String RESPONSE_WRITTEN = "Response has already been written";
 
@@ -323,21 +324,21 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   @Override
   public Future<Void> write(Buffer chunk) {
     PromiseInternal<Void> promise = context.promise();
-    write(chunk.getByteBuf(), promise);
+    write(((BufferInternal)chunk).getByteBuf(), promise);
     return promise.future();
   }
 
   @Override
   public Future<Void> write(String chunk, String enc) {
     PromiseInternal<Void> promise = context.promise();
-    write(Buffer.buffer(chunk, enc).getByteBuf(), promise);
+    write(BufferInternal.buffer(chunk, enc).getByteBuf(), promise);
     return promise.future();
   }
 
   @Override
   public Future<Void> write(String chunk) {
     PromiseInternal<Void> promise = context.promise();
-    write(Buffer.buffer(chunk).getByteBuf(), promise);
+    write(BufferInternal.buffer(chunk).getByteBuf(), promise);
     return promise.future();
   }
 
@@ -388,7 +389,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
         throw new IllegalStateException(RESPONSE_WRITTEN);
       }
       written = true;
-      ByteBuf data = chunk.getByteBuf();
+      ByteBuf data = ((BufferInternal)chunk).getByteBuf();
       bytesWritten += data.readableBytes();
       HttpObject msg;
       if (!headWritten) {

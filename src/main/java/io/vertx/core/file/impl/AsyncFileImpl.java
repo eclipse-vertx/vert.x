@@ -17,6 +17,8 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.impl.BufferImpl;
+import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.AsyncFileLock;
 import io.vertx.core.file.FileSystemException;
@@ -203,7 +205,7 @@ public class AsyncFileImpl implements AsyncFile {
         }
       }
     };
-    ByteBuf buf = buffer.getByteBuf();
+    ByteBuf buf = ((BufferInternal)buffer).getByteBuf();
     if (buf.nioBufferCount() > 1) {
       doWrite(buf.nioBuffers(), position, wrapped);
     } else {

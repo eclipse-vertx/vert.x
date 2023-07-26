@@ -27,6 +27,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
@@ -307,7 +308,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     Buffer slice = data.slice(offset, end);
     WebSocketFrame frame;
     if (offset == 0 || !supportsContinuation) {
-      frame = new WebSocketFrameImpl(frameType, slice.getByteBuf(), isFinal);
+      frame = new WebSocketFrameImpl(frameType, ((BufferInternal)slice).getByteBuf(), isFinal);
     } else {
       frame = WebSocketFrame.continuationFrame(slice, isFinal);
     }
@@ -333,7 +334,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   private void writeBinaryFrameInternal(Buffer data) {
-    writeFrame(new WebSocketFrameImpl(WebSocketFrameType.BINARY, data.getByteBuf()));
+    writeFrame(new WebSocketFrameImpl(WebSocketFrameType.BINARY, ((BufferInternal)data).getByteBuf()));
   }
 
   private void writeTextFrameInternal(String str) {
@@ -525,7 +526,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     }
 
     private void handleTextFrame(WebSocketFrameInternal frame) {
-      Buffer frameBuffer = Buffer.buffer(frame.getBinaryData());
+      Buffer frameBuffer = BufferInternal.buffer(frame.getBinaryData());
       if (textMessageBuffer == null) {
         textMessageBuffer = frameBuffer;
       } else {
@@ -549,7 +550,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     }
 
     private void handleBinaryFrame(WebSocketFrameInternal frame) {
-      Buffer frameBuffer = Buffer.buffer(frame.getBinaryData());
+      Buffer frameBuffer = BufferInternal.buffer(frame.getBinaryData());
       if (binaryMessageBuffer == null) {
         binaryMessageBuffer = frameBuffer;
       } else {

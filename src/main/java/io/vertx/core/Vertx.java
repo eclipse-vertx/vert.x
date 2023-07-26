@@ -483,14 +483,6 @@ public interface Vertx extends Measured {
   }
 
   /**
-   * Return the Netty EventLoopGroup used by Vert.x
-   *
-   * @return the EventLoopGroup
-   */
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  EventLoopGroup nettyEventLoopGroup();
-
-  /**
    * Like {@link #createSharedWorkerExecutor(String, int)} but with the {@link VertxOptions#setWorkerPoolSize} {@code poolSize}.
    */
   WorkerExecutor createSharedWorkerExecutor(String name);

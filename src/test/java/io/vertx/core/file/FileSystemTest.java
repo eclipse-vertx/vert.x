@@ -15,6 +15,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.file.impl.AsyncFileImpl;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.json.JsonObject;
@@ -1228,7 +1229,7 @@ public class FileSystemTest extends VertxTestBase {
     byte[] content1 = TestUtils.randomByteArray(chunkSize * (chunks / 2));
     byte[] content2 = TestUtils.randomByteArray(chunkSize * (chunks / 2));
     ByteBuf byteBuf = Unpooled.wrappedBuffer(content1, content2);
-    Buffer buff = Buffer.buffer(byteBuf);
+    Buffer buff = BufferInternal.buffer(byteBuf);
     vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).onComplete(onSuccess(ws -> {
       ws.exceptionHandler(t -> fail(t.getMessage()));
       ws.write(buff);

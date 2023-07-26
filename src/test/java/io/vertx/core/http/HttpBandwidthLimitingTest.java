@@ -258,7 +258,7 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
     public Handler<HttpServerRequest> bufferWrite(Buffer expected) {
       return req -> {
         req.bodyHandler(buffer -> {
-          assertEquals(expected.getByteBuf(), buffer.getByteBuf());
+          assertEquals(expected, buffer);
           testComplete();
         });
       };

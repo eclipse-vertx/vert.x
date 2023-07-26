@@ -44,6 +44,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.*;
@@ -3478,7 +3479,7 @@ public class NetTest extends VertxTestBase {
     server.connectHandler(so -> {
       NetSocketInternal soi = (NetSocketInternal) so;
       soi.handler(msg -> {
-        ByteBuf byteBuf = msg.getByteBuf();
+        ByteBuf byteBuf = ((BufferInternal)msg).getByteBuf();
         assertFalse(byteBuf.isDirect());
         assertEquals(1, byteBuf.refCnt());
         assertFalse(byteBuf.release());
@@ -3491,7 +3492,7 @@ public class NetTest extends VertxTestBase {
       NetSocketInternal soi = (NetSocketInternal) so;
       soi.write(Buffer.buffer("Hello World"));
       soi.handler(msg -> {
-        ByteBuf byteBuf = msg.getByteBuf();
+        ByteBuf byteBuf = ((BufferInternal)msg).getByteBuf();
         assertFalse(byteBuf.isDirect());
         assertEquals(1, byteBuf.refCnt());
         assertFalse(byteBuf.release());

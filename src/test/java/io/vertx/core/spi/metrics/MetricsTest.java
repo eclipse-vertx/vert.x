@@ -1151,7 +1151,7 @@ public class MetricsTest extends VertxTestBase {
     assertSame(vertx, ((FakeVertxMetrics)FakeMetricsBase.getMetrics(vertx)).vertx());
     startNodes(1);
     assertSame(vertices[0], ((FakeVertxMetrics)FakeMetricsBase.getMetrics(vertices[0])).vertx());
-    EventLoopGroup group = vertx.nettyEventLoopGroup();
+    EventLoopGroup group = ((VertxInternal)vertx).nettyEventLoopGroup();
     Set<EventLoop> loops = new HashSet<>();
     int count = 0;
     while (true) {

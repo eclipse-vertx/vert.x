@@ -167,6 +167,13 @@ public interface VertxInternal extends Vertx {
   FileResolver fileResolver();
 
   /**
+   * Return the Netty EventLoopGroup used by Vert.x
+   *
+   * @return the EventLoopGroup
+   */
+  EventLoopGroup nettyEventLoopGroup();
+
+  /**
    * @return the Netty {@code AddressResolverGroup} to use in a Netty {@code Bootstrap}
    */
   AddressResolverGroup<InetSocketAddress> nettyAddressResolverGroup();
