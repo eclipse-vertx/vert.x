@@ -14,6 +14,7 @@ package io.vertx.core.shareddata;
 import io.vertx.core.*;
 import io.vertx.core.impl.NoStackTraceException;
 import io.vertx.core.shareddata.impl.LockInternal;
+import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
@@ -197,6 +198,56 @@ public class AsynchronousLockTest extends VertxTestBase {
   }
 
   @Test
+  public void testWithLock() {
+    waitFor(2);
+    String expected = TestUtils.randomAlphaString(10);
+    SharedData sharedData = getVertx().sharedData();
+    sharedData.withLock("foo", () -> {
+      long start = System.currentTimeMillis();
+      sharedData
+        .getLock("foo")
+        .onComplete(onSuccess(v2 -> {
+          // Should be delayed
+          assertTrue(System.currentTimeMillis() - start >= 1000);
+          complete();
+        }));
+      return Future.future(p -> {
+        vertx.setTimer(1000, tid -> p.complete(expected));
+      });
+    }).onComplete(onSuccess(s -> {
+      assertEquals(expected, s);
+      complete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testWithLockFailure() {
+    RuntimeException failure = new RuntimeException();
+    SharedData sharedData = getVertx().sharedData();
+    sharedData.withLock("foo", () -> {
+      throw failure;
+    }).onComplete(onFailure(err -> {
+      assertSame(failure, err.getCause());
+      complete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testWithDifferentLocks() {
+    SharedData sharedData = getVertx().sharedData();
+    sharedData.withLock("foo", () -> {
+      long start = System.currentTimeMillis();
+      return sharedData.withLock("bar", () -> Future.succeededFuture(System.currentTimeMillis() - start < 2000));
+    }).onComplete(onSuccess(res -> {
+      assertTrue(res);
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
   public void testAcquireTimeout() {
     SharedData sharedData = getVertx().sharedData();
     sharedData
@@ -210,6 +261,25 @@ public class AsynchronousLockTest extends VertxTestBase {
             assertTrue(System.currentTimeMillis() - start >= 1000);
             testComplete();
           }));
+      }));
+    await();
+  }
+
+  @Test
+  public void testWithLockTimeout() {
+    SharedData sharedData = getVertx().sharedData();
+    sharedData
+      .getLock("foo")
+      .onComplete(onSuccess(ar -> {
+        long start = System.currentTimeMillis();
+        sharedData.withLock("foo", 1000, () -> {
+          fail();
+          return Future.failedFuture("should-not-be-called");
+        }).onComplete(onFailure(ar2 -> {
+          // Should be delayed
+          assertTrue(System.currentTimeMillis() - start >= 1000);
+          testComplete();
+        }));
       }));
     await();
   }
