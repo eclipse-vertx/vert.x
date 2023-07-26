@@ -14,6 +14,7 @@ package io.vertx.core.parsetools.impl;
 import io.netty.buffer.Unpooled;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.streams.ReadStream;
@@ -27,7 +28,7 @@ import java.util.Objects;
 public class RecordParserImpl implements RecordParser {
 
   // Empty and unmodifiable
-  private static final Buffer EMPTY_BUFFER = Buffer.buffer(Unpooled.EMPTY_BUFFER);
+  private static final Buffer EMPTY_BUFFER = BufferInternal.buffer(Unpooled.EMPTY_BUFFER);
 
   private Buffer buff = EMPTY_BUFFER;
   private int pos;            // Current position in buffer

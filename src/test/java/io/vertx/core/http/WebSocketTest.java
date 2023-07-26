@@ -29,6 +29,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.http.impl.Http1xClientConnection;
 import io.vertx.core.http.impl.Http1xServerConnection;
 import io.vertx.core.http.impl.WebSocketInternal;
@@ -2519,8 +2520,8 @@ public class WebSocketTest extends VertxTestBase {
     client = vertx.createHttpClient();
     client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
       try {
-        ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PONG, ping1.copy().getByteBuf(), false));
-        ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PONG, ping2.copy().getByteBuf(), true));
+        ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PONG, ((BufferInternal)ping1.copy()).getByteBuf(), false));
+        ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PONG, ((BufferInternal)ping2.copy()).getByteBuf(), true));
       } catch(Throwable t) {
         fail(t);
       }
@@ -2538,8 +2539,8 @@ public class WebSocketTest extends VertxTestBase {
     server = vertx.createHttpServer(new HttpServerOptions().setIdleTimeout(1).setPort(DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST).setMaxWebSocketFrameSize(maxFrameSize));
     server.webSocketHandler(ws -> {
       try {
-        ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PONG, ping1.copy().getByteBuf(), false));
-        ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PONG, ping2.copy().getByteBuf(), true));
+        ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PONG, ((BufferInternal)ping1.copy()).getByteBuf(), false));
+        ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PONG, ((BufferInternal)ping2.copy()).getByteBuf(), true));
       } catch(Throwable t) {
         fail(t);
       }
@@ -2585,8 +2586,8 @@ public class WebSocketTest extends VertxTestBase {
           }
         });
         try {
-          ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PING, ping1.copy().getByteBuf(), false));
-          ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PING, ping2.copy().getByteBuf(), true));
+          ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PING, ((BufferInternal)ping1.copy()).getByteBuf(), false));
+          ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PING, ((BufferInternal)ping2.copy()).getByteBuf(), true));
         } catch(Throwable t) {
           fail(t);
         }
@@ -2619,8 +2620,8 @@ public class WebSocketTest extends VertxTestBase {
           }
         });
         try {
-          ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PING, ping1.copy().getByteBuf(), false));
-          ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PING, ping2.copy().getByteBuf(), true));
+          ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PING, ((BufferInternal)ping1.copy()).getByteBuf(), false));
+          ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PING, ((BufferInternal)ping2.copy()).getByteBuf(), true));
         } catch(Throwable t) {
           fail(t);
         }
@@ -2699,7 +2700,7 @@ public class WebSocketTest extends VertxTestBase {
     vertx.runOnContext(v -> {
       client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
         ws.frameHandler(frame -> {
-          assertEquals(1000, frame.binaryData().getByteBuf().getShort(0));
+          assertEquals(1000, ((BufferInternal)frame.binaryData()).getByteBuf().getShort(0));
           assertEquals(1000, frame.closeStatusCode());
           assertNull(frame.closeReason());
           complete();
@@ -2723,7 +2724,7 @@ public class WebSocketTest extends VertxTestBase {
           latch.countDown();
         });
         socket.frameHandler(frame -> {
-          assertEquals(1000, frame.binaryData().getByteBuf().getShort(0));
+          assertEquals(1000, ((BufferInternal)frame.binaryData()).getByteBuf().getShort(0));
           assertEquals(1000, frame.closeStatusCode());
           assertNull(frame.closeReason());
           latch.countDown();
@@ -2791,8 +2792,8 @@ public class WebSocketTest extends VertxTestBase {
     vertx.runOnContext(v -> {
       client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
         ws.frameHandler(frame -> {
-          assertEquals(TEST_REASON, frame.binaryData().getByteBuf().readerIndex(2).toString(StandardCharsets.UTF_8));
-          assertEquals(TEST_STATUS_CODE, frame.binaryData().getByteBuf().getShort(0));
+          assertEquals(TEST_REASON, ((BufferInternal)frame.binaryData()).getByteBuf().readerIndex(2).toString(StandardCharsets.UTF_8));
+          assertEquals(TEST_STATUS_CODE, ((BufferInternal)frame.binaryData()).getByteBuf().getShort(0));
           assertEquals(TEST_REASON, frame.closeReason());
           assertEquals(TEST_STATUS_CODE, frame.closeStatusCode());
           complete();
@@ -2822,8 +2823,8 @@ public class WebSocketTest extends VertxTestBase {
           complete();
         });
         socket.frameHandler(frame -> {
-          assertEquals(TEST_REASON, frame.binaryData().getByteBuf().readerIndex(2).toString(StandardCharsets.UTF_8));
-          assertEquals(TEST_STATUS_CODE, frame.binaryData().getByteBuf().getShort(0));
+          assertEquals(TEST_REASON, ((BufferInternal)frame.binaryData()).getByteBuf().readerIndex(2).toString(StandardCharsets.UTF_8));
+          assertEquals(TEST_STATUS_CODE, ((BufferInternal)frame.binaryData()).getByteBuf().getShort(0));
           assertEquals(TEST_REASON, frame.closeReason());
           assertEquals(TEST_STATUS_CODE, frame.closeStatusCode());
           complete();

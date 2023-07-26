@@ -20,6 +20,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetworkOptions;
@@ -103,7 +104,7 @@ public class DatagramTest extends VertxTestBase {
         assertSame(serverContext, Vertx.currentContext());
         assertFalse(Thread.holdsLock(peer2));
         Buffer data = packet.data();
-        ByteBuf buff = data.getByteBuf();
+        ByteBuf buff = ((BufferInternal)data).getByteBuf();
         while (buff != buff.unwrap() && buff.unwrap() != null) {
           buff = buff.unwrap();
         }

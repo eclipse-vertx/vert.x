@@ -22,6 +22,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.http.*;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpVersion;
@@ -447,7 +448,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
    * Handle the request when a WebSocket upgrade header is present.
    */
   private void webSocket(PromiseInternal<ServerWebSocket> promise) {
-    Buffer body = Buffer.buffer();
+    BufferInternal body = BufferInternal.buffer();
     boolean[] failed = new boolean[1];
     handler(buff -> {
       if (!failed[0]) {
@@ -548,7 +549,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
       bytesRead += data.length();
       if (decoder != null) {
         try {
-          decoder.offer(new DefaultHttpContent(data.getByteBuf()));
+          decoder.offer(new DefaultHttpContent(((BufferInternal)data).getByteBuf()));
         } catch (HttpPostRequestDecoder.ErrorDataDecoderException e) {
           handleException(e);
         }

@@ -36,31 +36,7 @@ import java.util.Objects;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class BufferImpl implements Buffer {
-
-  public static Buffer buffer(int initialSizeHint) {
-    return new BufferImpl(initialSizeHint);
-  }
-
-  public static Buffer buffer() {
-    return new BufferImpl();
-  }
-
-  public static Buffer buffer(String str) {
-    return new BufferImpl(str);
-  }
-
-  public static Buffer buffer(String str, String enc) {
-    return new BufferImpl(str, enc);
-  }
-
-  public static Buffer buffer(byte[] bytes) {
-    return new BufferImpl(bytes);
-  }
-
-  public static Buffer buffer(ByteBuf byteBuffer) {
-    return new BufferImpl(byteBuffer);
-  }
+public class BufferImpl implements BufferInternal {
 
   private ByteBuf buffer;
 
@@ -262,14 +238,14 @@ public class BufferImpl implements Buffer {
     return new String(bytes, StandardCharsets.UTF_8);
   }
 
-  public Buffer appendBuffer(Buffer buff) {
+  public BufferImpl appendBuffer(Buffer buff) {
     BufferImpl impl = (BufferImpl) buff;
     ByteBuf byteBuf = impl.buffer;
     buffer.writeBytes(impl.buffer, byteBuf.readerIndex(), impl.buffer.readableBytes());
     return this;
   }
 
-  public Buffer appendBuffer(Buffer buff, int offset, int len) {
+  public BufferImpl appendBuffer(Buffer buff, int offset, int len) {
     BufferImpl impl = (BufferImpl) buff;
     ByteBuf byteBuf = impl.buffer;
     int from = byteBuf.readerIndex() + offset;
@@ -277,201 +253,201 @@ public class BufferImpl implements Buffer {
     return this;
   }
 
-  public Buffer appendBytes(byte[] bytes) {
+  public BufferImpl appendBytes(byte[] bytes) {
     buffer.writeBytes(bytes);
     return this;
   }
 
-  public Buffer appendBytes(byte[] bytes, int offset, int len) {
+  public BufferImpl appendBytes(byte[] bytes, int offset, int len) {
     buffer.writeBytes(bytes, offset, len);
     return this;
   }
 
-  public Buffer appendByte(byte b) {
+  public BufferImpl appendByte(byte b) {
     buffer.writeByte(b);
     return this;
   }
 
-  public Buffer appendUnsignedByte(short b) {
+  public BufferImpl appendUnsignedByte(short b) {
     buffer.writeByte(b);
     return this;
   }
 
-  public Buffer appendInt(int i) {
+  public BufferImpl appendInt(int i) {
     buffer.writeInt(i);
     return this;
   }
 
-  public Buffer appendIntLE(int i) {
+  public BufferImpl appendIntLE(int i) {
     buffer.writeIntLE(i);
     return this;
   }
 
-  public Buffer appendUnsignedInt(long i) {
+  public BufferImpl appendUnsignedInt(long i) {
     buffer.writeInt((int) i);
     return this;
   }
 
-  public Buffer appendUnsignedIntLE(long i) {
+  public BufferImpl appendUnsignedIntLE(long i) {
     buffer.writeIntLE((int) i);
     return this;
   }
 
-  public Buffer appendMedium(int i) {
+  public BufferImpl appendMedium(int i) {
     buffer.writeMedium(i);
     return this;
   }
 
-  public Buffer appendMediumLE(int i) {
+  public BufferImpl appendMediumLE(int i) {
     buffer.writeMediumLE(i);
     return this;
   }
 
-  public Buffer appendLong(long l) {
+  public BufferImpl appendLong(long l) {
     buffer.writeLong(l);
     return this;
   }
 
-  public Buffer appendLongLE(long l) {
+  public BufferImpl appendLongLE(long l) {
     buffer.writeLongLE(l);
     return this;
   }
 
-  public Buffer appendShort(short s) {
+  public BufferImpl appendShort(short s) {
     buffer.writeShort(s);
     return this;
   }
 
-  public Buffer appendShortLE(short s) {
+  public BufferImpl appendShortLE(short s) {
     buffer.writeShortLE(s);
     return this;
   }
 
-  public Buffer appendUnsignedShort(int s) {
+  public BufferImpl appendUnsignedShort(int s) {
     buffer.writeShort(s);
     return this;
   }
 
-  public Buffer appendUnsignedShortLE(int s) {
+  public BufferImpl appendUnsignedShortLE(int s) {
     buffer.writeShortLE(s);
     return this;
   }
 
-  public Buffer appendFloat(float f) {
+  public BufferImpl appendFloat(float f) {
     buffer.writeFloat(f);
     return this;
   }
 
-  public Buffer appendDouble(double d) {
+  public BufferImpl appendDouble(double d) {
     buffer.writeDouble(d);
     return this;
   }
 
-  public Buffer appendString(String str, String enc) {
+  public BufferImpl appendString(String str, String enc) {
     return append(str, Charset.forName(Objects.requireNonNull(enc)));
   }
 
-  public Buffer appendString(String str) {
+  public BufferImpl appendString(String str) {
     return append(str, CharsetUtil.UTF_8);
   }
 
-  public Buffer setByte(int pos, byte b) {
+  public BufferImpl setByte(int pos, byte b) {
     ensureLength(pos + 1);
     buffer.setByte(pos, b);
     return this;
   }
 
-  public Buffer setUnsignedByte(int pos, short b) {
+  public BufferImpl setUnsignedByte(int pos, short b) {
     ensureLength(pos + 1);
     buffer.setByte(pos, b);
     return this;
   }
 
-  public Buffer setInt(int pos, int i) {
+  public BufferImpl setInt(int pos, int i) {
     ensureLength(pos + 4);
     buffer.setInt(pos, i);
     return this;
   }
 
-  public Buffer setIntLE(int pos, int i) {
+  public BufferImpl setIntLE(int pos, int i) {
     ensureLength(pos + 4);
     buffer.setIntLE(pos, i);
     return this;
   }
 
-  public Buffer setUnsignedInt(int pos, long i) {
+  public BufferImpl setUnsignedInt(int pos, long i) {
     ensureLength(pos + 4);
     buffer.setInt(pos, (int) i);
     return this;
   }
 
-  public Buffer setUnsignedIntLE(int pos, long i) {
+  public BufferImpl setUnsignedIntLE(int pos, long i) {
     ensureLength(pos + 4);
     buffer.setIntLE(pos, (int) i);
     return this;
   }
 
-  public Buffer setMedium(int pos, int i) {
+  public BufferImpl setMedium(int pos, int i) {
     ensureLength(pos + 3);
     buffer.setMedium(pos, i);
     return this;
   }
 
-  public Buffer setMediumLE(int pos, int i) {
+  public BufferImpl setMediumLE(int pos, int i) {
     ensureLength(pos + 3);
     buffer.setMediumLE(pos, i);
     return this;
   }
 
-  public Buffer setLong(int pos, long l) {
+  public BufferImpl setLong(int pos, long l) {
     ensureLength(pos + 8);
     buffer.setLong(pos, l);
     return this;
   }
 
-  public Buffer setLongLE(int pos, long l) {
+  public BufferImpl setLongLE(int pos, long l) {
     ensureLength(pos + 8);
     buffer.setLongLE(pos, l);
     return this;
   }
 
-  public Buffer setDouble(int pos, double d) {
+  public BufferImpl setDouble(int pos, double d) {
     ensureLength(pos + 8);
     buffer.setDouble(pos, d);
     return this;
   }
 
-  public Buffer setFloat(int pos, float f) {
+  public BufferImpl setFloat(int pos, float f) {
     ensureLength(pos + 4);
     buffer.setFloat(pos, f);
     return this;
   }
 
-  public Buffer setShort(int pos, short s) {
+  public BufferImpl setShort(int pos, short s) {
     ensureLength(pos + 2);
     buffer.setShort(pos, s);
     return this;
   }
 
-  public Buffer setShortLE(int pos, short s) {
+  public BufferImpl setShortLE(int pos, short s) {
     ensureLength(pos + 2);
     buffer.setShortLE(pos, s);
     return this;
   }
 
-  public Buffer setUnsignedShort(int pos, int s) {
+  public BufferImpl setUnsignedShort(int pos, int s) {
     ensureLength(pos + 2);
     buffer.setShort(pos, s);
     return this;
   }
 
-  public Buffer setUnsignedShortLE(int pos, int s) {
+  public BufferImpl setUnsignedShortLE(int pos, int s) {
     ensureLength(pos + 2);
     buffer.setShortLE(pos, s);
     return this;
   }
 
-  public Buffer setBuffer(int pos, Buffer buff) {
+  public BufferImpl setBuffer(int pos, Buffer buff) {
     ensureLength(pos + buff.length());
     BufferImpl impl = (BufferImpl) buff;
     ByteBuf byteBuf = impl.buffer;
@@ -479,7 +455,7 @@ public class BufferImpl implements Buffer {
     return this;
   }
 
-  public Buffer setBuffer(int pos, Buffer buffer, int offset, int len) {
+  public BufferImpl setBuffer(int pos, Buffer buffer, int offset, int len) {
     ensureLength(pos + len);
     BufferImpl impl = (BufferImpl) buffer;
     ByteBuf byteBuf = impl.buffer;
@@ -493,23 +469,23 @@ public class BufferImpl implements Buffer {
     return this;
   }
 
-  public Buffer setBytes(int pos, byte[] b) {
+  public BufferImpl setBytes(int pos, byte[] b) {
     ensureLength(pos + b.length);
     buffer.setBytes(pos, b);
     return this;
   }
 
-  public Buffer setBytes(int pos, byte[] b, int offset, int len) {
+  public BufferImpl setBytes(int pos, byte[] b, int offset, int len) {
     ensureLength(pos + len);
     buffer.setBytes(pos, b, offset, len);
     return this;
   }
 
-  public Buffer setString(int pos, String str) {
+  public BufferImpl setString(int pos, String str) {
     return setBytes(pos, str, CharsetUtil.UTF_8);
   }
 
-  public Buffer setString(int pos, String str, String enc) {
+  public BufferImpl setString(int pos, String str, String enc) {
     return setBytes(pos, str, Charset.forName(enc));
   }
 
@@ -517,15 +493,15 @@ public class BufferImpl implements Buffer {
     return buffer.writerIndex();
   }
 
-  public Buffer copy() {
+  public BufferImpl copy() {
     return buffer.isReadOnly() ? this : new BufferImpl(buffer.copy());
   }
 
-  public Buffer slice() {
+  public BufferImpl slice() {
     return new BufferImpl(buffer.slice());
   }
 
-  public Buffer slice(int start, int end) {
+  public BufferImpl slice(int start, int end) {
     return new BufferImpl(buffer.slice(start, end - start));
   }
 
@@ -544,14 +520,14 @@ public class BufferImpl implements Buffer {
     return duplicate;
   }
 
-  private Buffer append(String str, Charset charset) {
+  private BufferImpl append(String str, Charset charset) {
     byte[] bytes = str.getBytes(charset);
     ensureExpandableBy(bytes.length);
     buffer.writeBytes(bytes);
     return this;
   }
 
-  private Buffer setBytes(int pos, String str, Charset charset) {
+  private BufferImpl setBytes(int pos, String str, Charset charset) {
     byte[] bytes = str.getBytes(charset);
     ensureLength(pos + bytes.length);
     buffer.setBytes(pos, bytes);

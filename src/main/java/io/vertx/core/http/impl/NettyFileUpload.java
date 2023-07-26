@@ -17,6 +17,7 @@ import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.impl.InboundBuffer;
@@ -138,13 +139,13 @@ final class NettyFileUpload implements FileUpload, ReadStream<Buffer> {
   @Override
   public void setContent(ByteBuf channelBuffer) throws IOException {
     completed = true;
-    receiveData(Buffer.buffer(channelBuffer));
+    receiveData(BufferInternal.buffer(channelBuffer));
     end();
   }
 
   @Override
   public void addContent(ByteBuf channelBuffer, boolean last) throws IOException {
-    receiveData(Buffer.buffer(channelBuffer));
+    receiveData(BufferInternal.buffer(channelBuffer));
     if (last) {
       completed = true;
       end();

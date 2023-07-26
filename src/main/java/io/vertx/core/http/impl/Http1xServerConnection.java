@@ -44,6 +44,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
@@ -192,7 +193,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       handleError(content);
       return;
     }
-    Buffer buffer = Buffer.buffer(VertxHandler.safeBuffer(content.content()));
+    Buffer buffer = BufferInternal.buffer(VertxHandler.safeBuffer(content.content()));
     Http1xServerRequest request;
     synchronized (this) {
       request = requestInProgress;

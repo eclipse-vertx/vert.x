@@ -25,6 +25,7 @@ import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.http.UpgradeRejectedException;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
 
@@ -112,7 +113,7 @@ class WebSocketHandshakeInboundHandler extends ChannelInboundHandlerAdapter {
         msg,
         sc,
         new HeadersAdaptor(response.headers()),
-        content != null ? Buffer.buffer(content) : null);
+        content != null ? BufferInternal.buffer(content) : null);
     } else {
       handshaker.finishHandshake(chctx.channel(), response);
       return response.headers();

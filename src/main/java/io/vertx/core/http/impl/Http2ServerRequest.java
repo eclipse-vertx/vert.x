@@ -27,6 +27,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
@@ -152,7 +153,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   public void handleData(Buffer data) {
     if (postRequestDecoder != null) {
       try {
-        postRequestDecoder.offer(new DefaultHttpContent(data.getByteBuf()));
+        postRequestDecoder.offer(new DefaultHttpContent(((BufferInternal)data).getByteBuf()));
       } catch (Exception e) {
         handleException(e);
       }

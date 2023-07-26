@@ -25,6 +25,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
@@ -340,18 +341,18 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public Future<Void> write(Buffer chunk) {
-    ByteBuf buf = chunk.getByteBuf();
+    ByteBuf buf = ((BufferInternal)chunk).getByteBuf();
     return write(buf, false);
   }
 
   @Override
   public Future<Void> write(String chunk, String enc) {
-    return write(Buffer.buffer(chunk, enc).getByteBuf(), false);
+    return write(BufferInternal.buffer(chunk, enc).getByteBuf(), false);
   }
 
   @Override
   public Future<Void> write(String chunk) {
-    return write(Buffer.buffer(chunk).getByteBuf(), false);
+    return write(BufferInternal.buffer(chunk).getByteBuf(), false);
   }
 
   @Override
@@ -366,7 +367,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public Future<Void> end(Buffer chunk) {
-    return write(chunk.getByteBuf(), true);
+    return write(((BufferInternal)chunk).getByteBuf(), true);
   }
 
   @Override
@@ -488,7 +489,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     synchronized (conn) {
       checkValid();
       checkSendHeaders(false);
-      stream.writeFrame(type, flags, payload.getByteBuf(), promise);
+      stream.writeFrame(type, flags, ((BufferInternal)payload).getByteBuf(), promise);
     }
     return promise.future();
   }

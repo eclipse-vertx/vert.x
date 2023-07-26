@@ -16,6 +16,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.util.CharsetUtil;
 import io.netty.util.ReferenceCounted;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.http.WebSocketFrameType;
 
@@ -31,7 +32,7 @@ import java.nio.charset.StandardCharsets;
 public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCounted {
 
   public static WebSocketFrame binaryFrame(Buffer data, boolean isFinal) {
-    return new WebSocketFrameImpl(WebSocketFrameType.BINARY, data.getByteBuf(), isFinal);
+    return new WebSocketFrameImpl(WebSocketFrameType.BINARY, ((BufferInternal)data).getByteBuf(), isFinal);
   }
 
   public static WebSocketFrame textFrame(String str, boolean isFinal) {
@@ -39,15 +40,15 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
   }
 
   public static WebSocketFrame continuationFrame(Buffer data, boolean isFinal) {
-    return new WebSocketFrameImpl(WebSocketFrameType.CONTINUATION, data.getByteBuf(), isFinal);
+    return new WebSocketFrameImpl(WebSocketFrameType.CONTINUATION, ((BufferInternal)data).getByteBuf(), isFinal);
   }
 
   public static WebSocketFrame pingFrame(Buffer data) {
-    return new WebSocketFrameImpl(WebSocketFrameType.PING, data.getByteBuf(), true);
+    return new WebSocketFrameImpl(WebSocketFrameType.PING, ((BufferInternal)data).getByteBuf(), true);
   }
 
   public static WebSocketFrame pongFrame(Buffer data) {
-    return new WebSocketFrameImpl(WebSocketFrameType.PONG, data.getByteBuf(), true);
+    return new WebSocketFrameImpl(WebSocketFrameType.PONG, ((BufferInternal)data).getByteBuf(), true);
   }
 
   private final WebSocketFrameType type;
@@ -145,7 +146,7 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
   }
 
   public Buffer binaryData() {
-    return Buffer.buffer(binaryData);
+    return BufferInternal.buffer(binaryData);
   }
 
   public void setBinaryData(ByteBuf binaryData) {

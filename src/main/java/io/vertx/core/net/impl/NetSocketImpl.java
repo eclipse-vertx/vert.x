@@ -24,6 +24,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.impl.ContextInternal;
@@ -142,7 +143,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
   @Override
   public Future<Void> write(Buffer data) {
-    return writeMessage(data.getByteBuf());
+    return writeMessage(((BufferInternal)data).getByteBuf());
   }
 
   @Override
@@ -324,7 +325,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
       if (msg instanceof ByteBuf) {
         msg = VertxHandler.safeBuffer((ByteBuf) msg);
         ByteBuf byteBuf = (ByteBuf) msg;
-        Buffer buffer = Buffer.buffer(byteBuf);
+        Buffer buffer = BufferInternal.buffer(byteBuf);
         if (!pending.write(buffer)) {
           doPause();
         }

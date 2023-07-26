@@ -22,6 +22,7 @@ import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.ByteBufOutputStream;
 import io.netty.buffer.Unpooled;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.EncodeException;
 import io.vertx.core.json.JsonArray;
@@ -113,7 +114,7 @@ public class JacksonCodec implements JsonCodec {
     try {
       encodeJson(object, generator);
       generator.flush();
-      return Buffer.buffer(buf);
+      return BufferInternal.buffer(buf);
     } catch (IOException e) {
       throw new EncodeException(e.getMessage(), e);
     } finally {
@@ -131,7 +132,7 @@ public class JacksonCodec implements JsonCodec {
 
   public static JsonParser createParser(Buffer buf) {
     try {
-      return factory.createParser((InputStream) new ByteBufInputStream(buf.getByteBuf()));
+      return factory.createParser((InputStream) new ByteBufInputStream(((BufferInternal)buf).getByteBuf()));
     } catch (IOException e) {
       throw new DecodeException("Failed to decode:" + e.getMessage(), e);
     }

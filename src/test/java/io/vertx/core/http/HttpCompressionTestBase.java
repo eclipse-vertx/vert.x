@@ -18,6 +18,7 @@ import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.util.CharsetUtil;
 import io.netty.util.internal.StringUtil;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.impl.BufferInternal;
 import org.junit.Test;
 
 import java.util.Queue;
@@ -59,7 +60,7 @@ public abstract class HttpCompressionTestBase extends HttpTestBase {
   protected Buffer compress(Buffer src) {
     EmbeddedChannel channel = new EmbeddedChannel();
     channel.pipeline().addFirst(encoder());
-    channel.writeAndFlush(Unpooled.copiedBuffer(src.getByteBuf()));
+    channel.writeAndFlush(Unpooled.copiedBuffer(((BufferInternal)src).getByteBuf()));
     channel.close();
     Queue<Object> messages = channel.outboundMessages();
     Buffer dst = Buffer.buffer();

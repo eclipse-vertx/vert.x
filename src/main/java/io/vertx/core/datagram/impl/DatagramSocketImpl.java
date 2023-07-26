@@ -27,6 +27,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.impl.AddressResolver;
@@ -266,7 +267,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
     io.netty.util.concurrent.Future<InetSocketAddress> f1 = resolver.resolveHostname(context.nettyEventLoop(), host);
     f1.addListener((GenericFutureListener<io.netty.util.concurrent.Future<InetSocketAddress>>) res1 -> {
       if (res1.isSuccess()) {
-        ChannelFuture f2 = channel.writeAndFlush(new DatagramPacket(packet.getByteBuf(), new InetSocketAddress(f1.getNow().getAddress(), port)));
+        ChannelFuture f2 = channel.writeAndFlush(new DatagramPacket(((BufferInternal)packet).getByteBuf(), new InetSocketAddress(f1.getNow().getAddress(), port)));
         if (metrics != null) {
           f2.addListener(fut -> {
             if (fut.isSuccess()) {
@@ -384,7 +385,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
         if (content.isDirect())  {
           content = VertxHandler.safeBuffer(content);
         }
-        handlePacket(new DatagramPacketImpl(packet.sender(), Buffer.buffer(content)));
+        handlePacket(new DatagramPacketImpl(packet.sender(), BufferInternal.buffer(content)));
       }
     }
 
