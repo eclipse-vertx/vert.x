@@ -34,7 +34,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class SharedDataImpl implements SharedData {
 
-  private static final long DEFAULT_LOCK_TIMEOUT = 10 * 1000;
+  public static final long DEFAULT_LOCK_TIMEOUT = 10 * 1000;
 
   private final VertxInternal vertx;
   private final ClusterManager clusterManager;

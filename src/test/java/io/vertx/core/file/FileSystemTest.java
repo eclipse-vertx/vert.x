@@ -41,9 +41,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 
 import static io.vertx.test.core.TestUtils.*;
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -2219,5 +2221,73 @@ public class FileSystemTest extends VertxTestBase {
 
     file1.close();
     file2.close();
+  }
+
+  @Test
+  public void testFileWithLock1() throws Exception {
+    testFileWithLock((val, promise) -> promise.complete(val));
+  }
+
+  @Test
+  public void testFileWithLock2() throws Exception {
+    testFileWithLock((val, promise) -> promise.fail(val));
+  }
+
+  private void testFileWithLock(BiConsumer<String, Promise<String>> completer) throws Exception {
+    Assume.assumeFalse(Utils.isWindows());
+    String path = tmpFile(".lock").getAbsolutePath();
+    FileSystem fs = vertx.fileSystem();
+    fs.writeFileBlocking(path, Buffer.buffer("HelloLocks"));
+    AsyncFile file = fs.openBlocking(path, new OpenOptions());
+    Promise<String> promise = Promise.promise();
+    CountDownLatch latch = new CountDownLatch(1);
+    Future<String> res = file.withLock(() -> {
+      latch.countDown();
+      return promise.future();
+    });
+    awaitLatch(latch);
+    CountDownLatch latch2 = new CountDownLatch(1);
+    file.lock().onComplete(onFailure(err -> {
+      latch2.countDown();
+    }));
+    awaitLatch(latch2);
+    String expected = TestUtils.randomAlphaString(10);
+    completer.accept(expected, promise);
+    CountDownLatch latch3 = new CountDownLatch(1);
+    file.lock().onComplete(onSuccess(lock -> {
+      latch3.countDown();
+      lock.release();
+    }));
+    awaitLatch(latch3);
+    res.onComplete(ar -> {
+      if (ar.succeeded()) {
+        assertEquals(expected, ar.result());
+      } else {
+        assertEquals(expected, ar.cause().getMessage());
+      }
+      testComplete();
+    });
+    file.close();
+  }
+
+  @Test
+  public void testFileWithLockFailure() throws Exception {
+    Assume.assumeFalse(Utils.isWindows());
+    String path = tmpFile(".lock").getAbsolutePath();
+    FileSystem fs = vertx.fileSystem();
+    fs.writeFileBlocking(path, Buffer.buffer("HelloLocks"));
+    AsyncFile file = fs.openBlocking(path, new OpenOptions());
+    RuntimeException failure = new RuntimeException();
+    Future<String> res = file.withLock(() -> {
+      throw failure;
+    });
+    waitUntil(res::failed);
+    CountDownLatch latch1 = new CountDownLatch(1);
+    file.lock().onComplete(onSuccess(lock -> {
+      latch1.countDown();
+      lock.release();
+    }));
+    awaitLatch(latch1);
+    file.close();
   }
 }

@@ -143,6 +143,16 @@ If your application doesn't need the lock to be shared with every other node, yo
 {@link examples.SharedDataExamples#localLock}
 ----
 
+Sometimes, you use the lock API to retrieve an asynchronous result and apply the acquire/release pattern around the asynchronous call. Vert.x provides a simplified lock API to simplify this pattern.
+
+[source,$lang]
+----
+{@link examples.SharedDataExamples#withLock}
+----
+
+The lock is acquired before calling the supplier and released when the future returned by the supplier
+completes.
+
 === Asynchronous counters
 
 It's often useful to maintain an atomic counter locally or across the different nodes of your application.
