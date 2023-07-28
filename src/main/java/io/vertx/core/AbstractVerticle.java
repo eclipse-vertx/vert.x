@@ -87,9 +87,7 @@ public abstract class AbstractVerticle implements Verticle {
   }
 
   /**
-   * Get the arguments used when deploying the Vert.x process.
-   *
-   * @return the list of arguments
+   * @return an empty list
    * @deprecated As of version 5, Vert.x is no longer tightly coupled to the CLI
    */
   @Deprecated

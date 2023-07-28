@@ -155,6 +155,7 @@ public interface Context {
   @Nullable JsonObject config();
 
   /**
+   * @return an empty list
    * @deprecated As of version 5, Vert.x is no longer tightly coupled to the CLI
    */
   @Deprecated
