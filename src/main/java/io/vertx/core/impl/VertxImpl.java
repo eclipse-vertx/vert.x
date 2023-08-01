@@ -62,10 +62,12 @@ import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.ref.Cleaner;
 import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -77,6 +79,8 @@ import java.util.function.Supplier;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class VertxImpl implements VertxInternal, MetricsProvider {
+
+  private static String version;
 
   /**
    * Default shared cleaner for Vert.x
@@ -1126,4 +1130,24 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       Thread.currentThread().setContextClassLoader(tccl);
     }
   }
-}
+
+  /**
+   * Reads the version from the {@code vertx-version.txt} file.
+   *
+   * @return the version
+   */
+  public static String version() {
+    if (version != null) {
+      return version;
+    }
+    try (InputStream is = VertxImpl.class.getClassLoader().getResourceAsStream("META-INF/vertx/vertx-version.txt")) {
+      if (is == null) {
+        throw new IllegalStateException("Cannot find vertx-version.txt on classpath");
+      }
+      try (Scanner scanner = new Scanner(is, StandardCharsets.UTF_8).useDelimiter("\\A")) {
+        return version = scanner.hasNext() ? scanner.next().trim() : "";
+      }
+    } catch (IOException e) {
+      throw new IllegalStateException(e.getMessage());
+    }
+  }}

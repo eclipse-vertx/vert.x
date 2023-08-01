@@ -520,4 +520,9 @@ public class VertxTest extends AsyncTestBase {
     }
     await();
   }
+
+  @Test
+  public void testVersion() {
+    assertNotNull(VertxInternal.version());
+  }
 }

@@ -368,6 +368,7 @@
               <optionMap>
                 <codegen.output>${project.basedir}/src/main</codegen.output>
                 <codegen.output.data_object_converters>generated</codegen.output.data_object_converters>
+                <codegen.the_options>${project.version}</codegen.the_options>
                 <docgen.source>${asciidoc.dir}</docgen.source>
                 <docgen.output>${project.build.directory}/asciidoc/java</docgen.output>
                 <maven.groupId>${project.groupId}</maven.groupId>

@@ -47,6 +47,13 @@ import java.util.function.Function;
 public interface VertxInternal extends Vertx {
 
   /**
+   * @return the Vert.x version
+   */
+  static String version() {
+    return VertxImpl.version();
+  }
+
+  /**
    * @return a promise associated with the context returned by {@link #getOrCreateContext()}.
    */
   <T> PromiseInternal<T> promise();
