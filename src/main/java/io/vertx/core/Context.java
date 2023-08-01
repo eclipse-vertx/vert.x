@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2023 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -16,9 +16,9 @@ import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.impl.VertxThread;
-import io.vertx.core.impl.launcher.VertxCommandLauncher;
 import io.vertx.core.json.JsonObject;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -46,10 +46,10 @@ import java.util.concurrent.Callable;
  * of the verticle.
  * <p>
  * This means (in the case of a standard verticle) that the verticle code will always be executed with the exact same
- * thread, so you don't have to worry about multi-threaded acccess to the verticle state and you can code your application
+ * thread, so you don't have to worry about multithreaded acccess to the verticle state, and you can code your application
  * as single threaded.
  * <p>
- * This class also allows arbitrary data to be {@link #put} and {@link #get} on the context so it can be shared easily
+ * This class also allows arbitrary data to be {@link #put} and {@link #get} on the context, so it can be shared easily
  * amongst different handlers of, for example, a verticle instance.
  * <p>
  * This class also provides {@link #runOnContext} which allows an action to be executed asynchronously using the same context.
@@ -109,7 +109,7 @@ public interface Context {
    * The returned future will be completed with the result on the original context (i.e. on the original event loop of the caller)
    * or failed when the handler throws an exception.
    * <p>
-   * The blocking code should block for a reasonable amount of time (i.e no more than a few seconds). Long blocking operations
+   * The blocking code should block for a reasonable amount of time (i.e. no more than a few seconds). Long blocking operations
    * or polling operations (i.e a thread that spin in a loop polling events in a blocking fashion) are precluded.
    * <p>
    * When the blocking operation lasts more than the 10 seconds, a message will be printed on the console by the
@@ -155,10 +155,12 @@ public interface Context {
   @Nullable JsonObject config();
 
   /**
-   * The process args
+   * @return an empty list
+   * @deprecated As of version 5, Vert.x is no longer tightly coupled to the CLI
    */
+  @Deprecated
   default List<String> processArgs() {
-    return VertxCommandLauncher.getProcessArguments();
+    return Collections.emptyList();
   }
 
   /**
@@ -168,7 +170,7 @@ public interface Context {
    * standard (not worker) verticle, the context will still an event loop context and this {@link this#isEventLoopContext()}
    * will return true.
    *
-   * @return true if  false otherwise
+   * @return {@code true} if the current context is an event-loop context, {@code false} otherwise
    */
   boolean isEventLoopContext();
 
@@ -179,7 +181,7 @@ public interface Context {
    * standard (not worker) verticle, the context will still an event loop context and this {@link this#isWorkerContext()}
    * will return false.
    *
-   * @return true if the current context is a worker context, false otherwise
+   * @return {@code true} if the current context is a worker context, {@code false} otherwise
    */
   boolean isWorkerContext();
 

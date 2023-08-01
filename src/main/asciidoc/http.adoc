@@ -1668,14 +1668,17 @@ Let's take a verticle creating a HTTP server such as:
 {@link examples.HTTPExamples#serversharing(io.vertx.core.Vertx)}
 ----
 
-This service is listening on the port 8080. So, when this verticle is instantiated multiple times as with:
-`vertx run io.vertx.examples.http.sharing.HttpServerVerticle -instances 2`, what's happening ? If both
-verticles would bind to the same port, you would receive a socket exception. Fortunately, vert.x is handling
-this case for you. When you deploy another server on the same host and port as an existing server it doesn't
-actually try and create a new server listening on the same host/port. It binds only once to the socket. When
-receiving a request it calls the server handlers following a round robin strategy.
+This service is listening on the port 8080.
+
+So, when this verticle is instantiated multiple times as with: `deploymentOptions.setInstances(2)`, what's happening ?
+If both verticles bound to the same port, you would receive a socket exception.
+Fortunately, vert.x is handling this case for you.
+When you deploy another server on the same host and port as an existing server it doesn't actually try and create a new server listening on the same host/port.
+It binds only once to the socket.
+When receiving a request it calls the server handlers following a round-robin strategy.
 
 Let's now imagine a client such as:
+
 [source,$lang]
 ----
 {@link examples.HTTPExamples#serversharingclient(io.vertx.core.Vertx)}

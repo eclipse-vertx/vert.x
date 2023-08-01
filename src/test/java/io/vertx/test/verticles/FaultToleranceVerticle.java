@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2023 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -11,17 +11,14 @@
 
 package io.vertx.test.verticles;
 
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.CompositeFuture;
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
+import io.vertx.core.*;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +28,13 @@ import java.util.List;
  */
 public class FaultToleranceVerticle extends AbstractVerticle {
   private static final Logger log = LoggerFactory.getLogger(FaultToleranceVerticle.class);
+
+  public static void main(String[] args) {
+    Vertx.clusteredVertx(new VertxOptions()).compose(vertx -> {
+      JsonObject config = new JsonObject(args[0]);
+      return vertx.deployVerticle(new FaultToleranceVerticle(), new DeploymentOptions().setConfig(config));
+    }).onFailure(Throwable::printStackTrace);
+  }
 
   private int id;
   private int numAddresses;

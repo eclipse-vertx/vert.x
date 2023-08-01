@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2023 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -13,6 +13,7 @@ package io.vertx.core;
 
 import io.vertx.core.json.JsonObject;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -86,11 +87,12 @@ public abstract class AbstractVerticle implements Verticle {
   }
 
   /**
-   * Get the arguments used when deploying the Vert.x process.
-   * @return the list of arguments
+   * @return an empty list
+   * @deprecated As of version 5, Vert.x is no longer tightly coupled to the CLI
    */
+  @Deprecated
   public List<String> processArgs() {
-    return context.processArgs();
+    return Collections.emptyList();
   }
 
   /**

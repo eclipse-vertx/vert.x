@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2023 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -19,7 +19,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.impl.future.PromiseInternal;
-import io.vertx.core.impl.launcher.commands.ExecUtils;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.spi.resolver.ResolverProvider;
@@ -31,6 +30,8 @@ import java.nio.file.Files;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static io.vertx.core.impl.Utils.isLinux;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -51,7 +52,7 @@ public class AddressResolver {
   static {
     int ndots = 1;
     boolean rotate = false;
-    if (ExecUtils.isLinux()) {
+    if (isLinux()) {
       File f = new File("/etc/resolv.conf");
       try {
         if (f.exists() && f.isFile()) {
