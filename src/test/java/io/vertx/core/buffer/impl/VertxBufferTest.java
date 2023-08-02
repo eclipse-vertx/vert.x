@@ -73,4 +73,5 @@ public class VertxBufferTest {
     assertEquals(3, duplicate.readerIndex());
     assertEquals(0, byteBuf.readerIndex());
   }
+
 }
