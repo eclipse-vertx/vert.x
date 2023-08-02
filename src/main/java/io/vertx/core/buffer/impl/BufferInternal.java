@@ -108,7 +108,13 @@ public interface BufferInternal extends Buffer {
   BufferInternal appendFloat(float f);
 
   @Override
+  Buffer appendFloatLE(float f);
+
+  @Override
   BufferInternal appendDouble(double d);
+
+  @Override
+  Buffer appendDoubleLE(double d);
 
   @Override
   BufferInternal appendString(String str, String enc);
@@ -150,7 +156,13 @@ public interface BufferInternal extends Buffer {
   BufferInternal setDouble(int pos, double d);
 
   @Override
+  Buffer setDoubleLE(int pos, double d);
+
+  @Override
   BufferInternal setFloat(int pos, float f);
+
+  @Override
+  Buffer setFloatLE(int pos, float f);
 
   @Override
   BufferInternal setShort(int pos, short s);
