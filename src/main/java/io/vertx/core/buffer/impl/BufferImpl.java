@@ -349,7 +349,7 @@ public class BufferImpl implements BufferInternal {
   }
 
   @Override
-  public Buffer appendFloatLE(float f) {
+  public BufferImpl appendFloatLE(float f) {
     buffer.writeFloatLE(f);
     return this;
   }
@@ -360,7 +360,7 @@ public class BufferImpl implements BufferInternal {
   }
 
   @Override
-  public Buffer appendDoubleLE(double d) {
+  public BufferImpl appendDoubleLE(double d) {
     buffer.writeDoubleLE(d);
     return this;
   }
@@ -440,7 +440,7 @@ public class BufferImpl implements BufferInternal {
   }
 
   @Override
-  public Buffer setDoubleLE(int pos, double d) {
+  public BufferImpl setDoubleLE(int pos, double d) {
     ensureLength(pos + 8);
     buffer.setDoubleLE(pos, d);
     return this;
@@ -453,7 +453,7 @@ public class BufferImpl implements BufferInternal {
   }
 
   @Override
-  public Buffer setFloatLE(int pos, float f) {
+  public BufferImpl setFloatLE(int pos, float f) {
     ensureLength(pos + 4);
     buffer.setFloatLE(pos, f);
     return this;
