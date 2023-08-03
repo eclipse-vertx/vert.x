@@ -137,7 +137,7 @@ public class BufferImpl implements BufferInternal {
   }
 
   public double getDoubleLE(int pos) {
-    checkUpperBound(pos, 4);
+    checkUpperBound(pos, 8);
     return buffer.getDoubleLE(pos);
   }
 
