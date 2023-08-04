@@ -75,6 +75,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   private Object metric;
   private Handler<Buffer> handler;
   private Handler<WebSocketFrameInternal> frameHandler;
+  private FrameAggregator frameAggregator;
   private Handler<Buffer> pongHandler;
   private Handler<Void> drainHandler;
   private Handler<Throwable> exceptionHandler;
@@ -525,9 +526,14 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   private void receiveFrame(WebSocketFrameInternal frame) {
+    Handler<WebSocketFrameInternal> frameAggregator;
     Handler<WebSocketFrameInternal> frameHandler;
     synchronized (conn) {
       frameHandler = this.frameHandler;
+      frameAggregator = this.frameAggregator;
+    }
+    if (frameAggregator != null) {
+      context.dispatch(frame, frameAggregator);
     }
     if (frameHandler != null) {
       context.dispatch(frame, frameHandler);
@@ -670,10 +676,21 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   public WebSocketBase textMessageHandler(Handler<String> handler) {
     synchronized (conn) {
       checkClosed();
-      if (frameHandler == null || frameHandler.getClass() != FrameAggregator.class) {
-        frameHandler = new FrameAggregator();
+      if (handler != null) {
+        if (frameAggregator == null) {
+          frameAggregator = new FrameAggregator();
+        }
+        frameAggregator.textMessageHandler = handler;
+      } else {
+        if (frameAggregator != null) {
+          if (frameAggregator.binaryMessageHandler == null) {
+            frameAggregator = null;
+          } else {
+            frameAggregator.textMessageHandler = null;
+            frameAggregator.textMessageBuffer = null;
+          }
+        }
       }
-      ((FrameAggregator) frameHandler).textMessageHandler = handler;
       return this;
     }
   }
@@ -682,10 +699,21 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   public S binaryMessageHandler(Handler<Buffer> handler) {
     synchronized (conn) {
       checkClosed();
-      if (frameHandler == null || frameHandler.getClass() != FrameAggregator.class) {
-        frameHandler = new FrameAggregator();
+      if (handler != null) {
+        if (frameAggregator == null) {
+          frameAggregator = new FrameAggregator();
+        }
+        frameAggregator.binaryMessageHandler = handler;
+      } else {
+        if (frameAggregator != null) {
+          if (frameAggregator.textMessageHandler == null) {
+            frameAggregator = null;
+          } else {
+            frameAggregator.binaryMessageHandler = null;
+            frameAggregator.binaryMessageBuffer = null;
+          }
+        }
       }
-      ((FrameAggregator) frameHandler).binaryMessageHandler = handler;
       return (S) this;
     }
   }
