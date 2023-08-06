@@ -32,7 +32,7 @@ public class ProxyOptions {
   /**
    * The default port for proxy connect = 3128
    *
-   * 3128 is the default port for e.g. Squid
+   * 3128 is the default port for Squid
    */
   public static final int DEFAULT_PORT = 3128;
 
