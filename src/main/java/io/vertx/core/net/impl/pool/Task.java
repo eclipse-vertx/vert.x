@@ -20,13 +20,21 @@ public abstract class Task {
     return oldNext;
   }
 
+  public Task last() {
+    Task current = this;
+    Task next;
+    while ((next = current.next) != null) {
+      current = next;
+    }
+    return current;
+  }
+
   public Task next() {
     return next;
   }
 
-  public Task next(Task next) {
+  public void next(Task next) {
     this.next = next;
-    return next;
   }
 
   protected final void runNextTasks() {
