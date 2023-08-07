@@ -1642,7 +1642,7 @@ public class Http1xTest extends HttpTest {
   public void testSharedServersRoundRobin() throws Exception {
     client.close();
     server.close();
-    client = vertx.createHttpClient(createBaseClientOptions().setKeepAlive(false));
+    client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1).setKeepAlive(false));
     int numServers = VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE / 2- 1;
     int numRequests = numServers * 100;
 
