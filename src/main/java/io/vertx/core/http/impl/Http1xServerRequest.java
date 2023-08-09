@@ -155,11 +155,11 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
     }
   }
 
-  void handleBegin(boolean writable) {
+  void handleBegin(boolean writable, boolean keepAlive) {
     if (METRICS_ENABLED) {
       reportRequestBegin();
     }
-    response = new Http1xServerResponse((VertxInternal) conn.vertx(), context, conn, request, metric, writable);
+    response = new Http1xServerResponse((VertxInternal) conn.vertx(), context, conn, request, metric, writable, keepAlive);
     if (conn.handle100ContinueAutomatically) {
       check100();
     }
