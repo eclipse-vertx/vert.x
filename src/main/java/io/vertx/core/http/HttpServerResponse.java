@@ -12,7 +12,6 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.*;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -357,11 +356,6 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * @return a future completed with the body result
    */
   Future<Void> sendFile(String filename, long offset, long length);
-
-  /**
-   * Close the underlying TCP connection corresponding to the request.
-   */
-  void close();
 
   /**
    * @return has the response already ended?

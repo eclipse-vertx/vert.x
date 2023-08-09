@@ -62,7 +62,7 @@ public class Http1xServerRequestHandler implements Handler<HttpServerRequest> {
     } else if (req.version() == null) {
       // Invalid HTTP version, i.e not HTTP/1.1 or HTTP/1.0
       req.response().setStatusCode(501).end();
-      req.response().close();
+      req.connection().close();
     } else {
       reqHandler.handle(req);
     }

@@ -75,7 +75,7 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
   public void testConnectionClose() throws Exception {
     waitFor(2);
     server.requestHandler(req -> {
-      req.response().close();
+      req.connection().close();
     });
     startServer(testAddress);
     client.connect(testAddress, peerAddress).onComplete(onSuccess(conn -> {

@@ -457,7 +457,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
           failed[0] = true;
           // Request Entity Too Large
           response.setStatusCode(413).end();
-          response.close();
+          conn.close();
         }
       }
     });

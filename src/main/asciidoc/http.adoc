@@ -491,9 +491,9 @@ calling write with a string or buffer followed by calling end with no arguments.
 {@link examples.HTTPExamples#example20}
 ----
 
-==== Closing the underlying connection
+==== Closing the underlying TCP connection
 
-You can close the underlying TCP connection with {@link io.vertx.core.http.HttpServerResponse#close}.
+You can close the underlying TCP connection with {@link io.vertx.core.http.HttpConnection#close}.
 
 Non keep-alive connections will be automatically closed by Vert.x when the response is ended.
 
