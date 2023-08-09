@@ -74,7 +74,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
     }
     HttpServerResponse response = request.response();
     response.setStatusCode(status.code()).end();
-    response.close();
+    request.connection().close();
   };
 
   @Override

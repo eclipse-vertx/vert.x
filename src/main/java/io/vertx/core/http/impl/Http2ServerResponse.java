@@ -560,11 +560,6 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public void close() {
-    conn.close();
-  }
-
-  @Override
   public boolean ended() {
     synchronized (conn) {
       return ended;

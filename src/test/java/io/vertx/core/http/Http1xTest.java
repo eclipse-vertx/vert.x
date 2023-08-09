@@ -1217,7 +1217,7 @@ public class Http1xTest extends HttpTest {
     int n = 5;
     server.requestHandler(req -> {
       vertx.setTimer(100, id -> {
-        req.response().close();
+        req.connection().close();
       });
     });
     startServer(testAddress);
@@ -1249,7 +1249,7 @@ public class Http1xTest extends HttpTest {
     server.requestHandler(req -> {
       if (first.compareAndSet(true, false)) {
         latch.whenComplete((v, err) -> {
-          req.response().close();
+          req.connection().close();
         });
       } else {
         req.response().end();
@@ -1410,7 +1410,7 @@ public class Http1xTest extends HttpTest {
         HttpServerResponse resp = req.response();
         resp.end();
         if (count[0] == n) {
-          resp.close();
+          req.connection().close();
         }
       });
     });
@@ -2091,7 +2091,7 @@ public class Http1xTest extends HttpTest {
   public void testRequestExceptionHandlerContext() throws Exception {
     waitFor(2);
     server.requestHandler(req -> {
-      req.response().close();
+      req.connection().close();
     });
     startServer(testAddress);
     Context clientCtx = vertx.getOrCreateContext();
@@ -4741,7 +4741,7 @@ public class Http1xTest extends HttpTest {
   public void testHttpClientRequestShouldCallExceptionHandlerWhenTheClosedHandlerIsCalled() throws Exception {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).requestHandler(req -> {
       vertx.setTimer(1000, id -> {
-        req.response().close();
+        req.connection().close();
       });
     });
     startServer(testAddress);

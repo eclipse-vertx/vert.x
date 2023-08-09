@@ -1406,7 +1406,7 @@ public abstract class HttpTest extends HttpTestBase {
     int numReqs = 10;
     waitFor(numReqs);
     server.requestHandler(request -> {
-      request.response().close();
+      request.connection().close();
     });
     startServer(testAddress);
     // Exception handler should be called for any requests in the pipeline if connection is closed
@@ -1424,7 +1424,7 @@ public abstract class HttpTest extends HttpTestBase {
       //Write partial response then close connection before completing it
       HttpServerResponse resp = request.response().setChunked(true);
       resp.write("foo");
-      resp.close();
+      request.connection().close();
     });
     startServer(testAddress);
     // Exception handler should be called for any requests in the pipeline if connection is closed
@@ -4036,7 +4036,7 @@ public abstract class HttpTest extends HttpTestBase {
             if (expectFail) {
               resp.setChunked(true).write("whatever");
               vertx.runOnContext(v -> {
-                resp.close();
+                req.connection().close();
               });
             } else {
               resp.end();

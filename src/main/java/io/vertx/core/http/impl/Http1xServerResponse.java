@@ -427,20 +427,6 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public void close() {
-    synchronized (conn) {
-      if (!closed) {
-        if (headWritten) {
-          closeConnAfterWrite();
-        } else {
-          conn.close();
-        }
-        closed = true;
-      }
-    }
-  }
-
-  @Override
   public Future<Void> end() {
     return end(EMPTY_BUFFER);
   }
@@ -553,12 +539,6 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
       this.bodyEndHandler = handler;
       return this;
     }
-  }
-
-  private void closeConnAfterWrite() {
-    ChannelPromise channelFuture = conn.channelFuture();
-    conn.writeToChannel(Unpooled.EMPTY_BUFFER, channelFuture);
-    channelFuture.addListener(fut -> conn.close());
   }
 
   void handleWritabilityChanged(boolean writable) {
@@ -727,7 +707,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
         return false;
       }
     }
-    close();
+    conn.close();
     return true;
   }
 

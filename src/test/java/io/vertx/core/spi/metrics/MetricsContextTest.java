@@ -140,7 +140,7 @@ public class MetricsContextTest extends VertxTestBase {
       HttpServer server = vertx.createHttpServer().requestHandler(req -> {
         HttpServerResponse response = req.response();
         response.setStatusCode(200).setChunked(true).end("bye");
-        response.close();
+        req.connection().close();
       });
       server.listen(8080, "localhost").onComplete(onSuccess(s -> {
         expectedThread.set(Thread.currentThread());
@@ -434,7 +434,7 @@ public class MetricsContextTest extends VertxTestBase {
       req.endHandler(buf -> {
         HttpServerResponse resp = req.response();
         resp.setChunked(true).end(Buffer.buffer("bye"));
-        resp.close();
+        req.connection().close();
       });
     });
     awaitFuture(server.listen(8080, "localhost"));
