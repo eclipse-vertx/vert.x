@@ -98,6 +98,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
 
   private Http1xServerRequest requestInProgress;
   private Http1xServerRequest responseInProgress;
+  private boolean keepAlive;
   private boolean channelPaused;
   private boolean writable;
   private Handler<HttpServerRequest> requestHandler;
@@ -123,6 +124,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     this.handle100ContinueAutomatically = options.isHandle100ContinueAutomatically();
     this.tracingPolicy = options.getTracingPolicy();
     this.writable = true;
+    this.keepAlive = true;
   }
 
   TracingPolicy tracingPolicy() {
@@ -148,6 +150,10 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
 
   public void handleMessage(Object msg) {
     assert msg != null;
+    if (requestInProgress == null && !keepAlive) {
+      // Discard message
+      return;
+    }
     // fast-path first
     if (msg == LastHttpContent.EMPTY_LAST_CONTENT) {
       onEnd();
@@ -162,7 +168,8 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
           return;
         }
         responseInProgress = requestInProgress;
-        req.handleBegin(writable);
+        keepAlive = HttpUtils.isKeepAlive(request);
+        req.handleBegin(writable, keepAlive);
         Handler<HttpServerRequest> handler = request.decoderResult().isSuccess() ? requestHandler : invalidRequestHandler;
         req.context.emit(req, handler);
     } else {
@@ -204,12 +211,23 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   }
 
   private void onEnd() {
+    boolean close;
     Http1xServerRequest request;
     synchronized (this) {
       request = requestInProgress;
       requestInProgress = null;
+      close = !keepAlive && responseInProgress == null;
     }
     request.context.execute(request, Http1xServerRequest::handleEnd);
+    if (close) {
+      flushAndClose();
+    }
+  }
+
+  private void flushAndClose() {
+    ChannelPromise channelFuture = channelFuture();
+    writeToChannel(Unpooled.EMPTY_BUFFER, channelFuture);
+    channelFuture.addListener(fut -> close());
   }
 
   void responseComplete() {
@@ -222,10 +240,18 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       responseInProgress = null;
       DecoderResult result = request.decoderResult();
       if (result.isSuccess()) {
-        Http1xServerRequest next = request.next();
-        if (next != null) {
-          // Handle pipelined request
-          handleNext(next);
+        if (keepAlive) {
+          Http1xServerRequest next = request.next();
+          if (next != null) {
+            // Handle pipelined request
+            handleNext(next);
+          }
+        } else {
+          if (requestInProgress == request) {
+            // Deferred
+          } else {
+            flushAndClose();
+          }
         }
       } else {
         ChannelPromise channelFuture = channelFuture();
@@ -239,7 +265,8 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
 
   private void handleNext(Http1xServerRequest next) {
     responseInProgress = next;
-    next.handleBegin(writable);
+    keepAlive = HttpUtils.isKeepAlive(next.nettyRequest());
+    next.handleBegin(writable, keepAlive);
     next.context.emit(next, next_ -> {
       next_.resume();
       Handler<HttpServerRequest> handler = next_.nettyRequest().decoderResult().isSuccess() ? requestHandler : invalidRequestHandler;

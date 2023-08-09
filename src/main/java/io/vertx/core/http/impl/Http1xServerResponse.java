@@ -104,7 +104,8 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
                        Http1xServerConnection conn,
                        HttpRequest request,
                        Object requestMetric,
-                       boolean writable) {
+                       boolean writable,
+                       boolean keepAlive) {
     this.vertx = vertx;
     this.conn = conn;
     this.context = context;
@@ -114,8 +115,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
     this.status = HttpResponseStatus.OK;
     this.requestMetric = requestMetric;
     this.writable = writable;
-    this.keepAlive = (version == HttpVersion.HTTP_1_1 && !request.headers().contains(io.vertx.core.http.HttpHeaders.CONNECTION, HttpHeaders.CLOSE, true))
-      || (version == HttpVersion.HTTP_1_0 && request.headers().contains(io.vertx.core.http.HttpHeaders.CONNECTION, HttpHeaders.KEEP_ALIVE, true));
+    this.keepAlive = keepAlive;
     this.head = request.method() == io.netty.handler.codec.http.HttpMethod.HEAD;
   }
 
@@ -442,7 +442,6 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
         endHandler.handle(null);
       }
       if (!keepAlive) {
-        closeConnAfterWrite();
         closed = true;
       }
     }
@@ -594,16 +593,10 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
 
       ContextInternal ctx = vertx.getOrCreateContext();
       channelFuture.addListener(future -> {
-
         // write an empty last content to let the http encoder know the response is complete
         if (future.isSuccess()) {
           ChannelPromise pr = conn.channelHandlerContext().newPromise();
           conn.writeToChannel(LastHttpContent.EMPTY_LAST_CONTENT, pr);
-          if (!keepAlive) {
-            pr.addListener(a -> {
-              closeConnAfterWrite();
-            });
-          }
         }
 
         // signal completion handler when there is one
