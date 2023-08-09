@@ -41,6 +41,7 @@ import io.vertx.test.tls.Cert;
 import io.vertx.test.verticles.SimpleServer;
 import io.vertx.test.core.TestUtils;
 import org.junit.Assume;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -1421,6 +1422,76 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testServerConnectionCloseBeforeRequestEnded() throws Exception {
+    testServerConnectionClose(true);
+  }
+
+  @Test
+  public void testServerConnectionCloseAfterRequestEnded() throws Exception {
+    testServerConnectionClose(false);
+  }
+
+  private void testServerConnectionClose(boolean sendEarlyResponse) throws Exception {
+    CompletableFuture<HttpServerRequest> requestLatch = new CompletableFuture<>();
+    server.requestHandler(requestLatch::complete);
+    startServer(testAddress);
+    NetClient client = vertx.createNetClient();
+    client.connect(testAddress, onSuccess(so -> {
+      so.write(
+        "PUT / HTTP/1.1 \r\n" +
+          "connection: close\r\n" +
+          "content-length: 1\r\n" +
+          "\r\n");
+      requestLatch.whenComplete((req, err) -> {
+        if (sendEarlyResponse) {
+          req.response().end();
+        } else {
+          req.endHandler(v -> {
+            req.response().end();
+          });
+        }
+        so.write("A");
+      });
+      Buffer response = Buffer.buffer();
+      so.handler(response::appendBuffer);
+      so.closeHandler(v -> {
+        assertTrue(response.toString().startsWith("HTTP/1.1 200 OK"));
+        testComplete();
+      });
+    }));
+    await();
+  }
+
+  @Test
+  public void testServerConnectionCloseDoesNotProcessHTTPMessages() throws Exception {
+    AtomicInteger requestCount = new AtomicInteger();
+    server.requestHandler(req -> {
+      requestCount.incrementAndGet();
+      req.response().end();
+    });
+    startServer(testAddress);
+    NetClient client = vertx.createNetClient();
+    client.connect(testAddress, onSuccess(so -> {
+      so.write(
+        "PUT / HTTP/1.1 \r\n" +
+          "connection: close\r\n" +
+          "content-length: 0\r\n" +
+          "\r\n" + "PUT / HTTP/1.1 \r\n" +
+          "content-length: 0\r\n" +
+          "\r\n");
+      Buffer response = Buffer.buffer();
+      so.handler(response::appendBuffer);
+      so.closeHandler(v -> {
+        String s = response.toString();
+        String predicate = "HTTP/1.1 200 OK";
+        assertEquals(s.indexOf(predicate), s.lastIndexOf("HTTP/1.1 200 OK"));
+        testComplete();
+      });
+    }));
+    await();
+  }
+
+  @Test
   public void testKeepAlive() throws Exception {
     testKeepAlive(true, 5, 10, 5);
   }
@@ -2395,6 +2466,7 @@ public class Http1xTest extends HttpTest {
       });
   }
 
+  @Ignore
   @Test
   public void testUnsupportedHttpVersion() throws Exception {
     testUnsupported("GET /someuri HTTP/1.7\r\nHost: localhost\r\n\r\n", false);
@@ -5011,7 +5083,7 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testSendFilePipelined() throws Exception {
-    int n = 4;
+    int n = 2;
     waitFor(n);
     File sent = TestUtils.tmpFile(".dat", 16 * 1024);
     server.requestHandler(

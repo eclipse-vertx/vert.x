@@ -960,4 +960,11 @@ public final class HttpUtils {
   static boolean isConnectOrUpgrade(io.vertx.core.http.HttpMethod method, MultiMap headers) {
     return method == io.vertx.core.http.HttpMethod.CONNECT || (method == io.vertx.core.http.HttpMethod.GET && headers.contains(io.vertx.core.http.HttpHeaders.CONNECTION, io.vertx.core.http.HttpHeaders.UPGRADE, true));
   }
+
+  static boolean isKeepAlive(HttpRequest request) {
+    HttpVersion version = request.protocolVersion();
+    return (version == HttpVersion.HTTP_1_1 && !request.headers().contains(io.vertx.core.http.HttpHeaders.CONNECTION, io.vertx.core.http.HttpHeaders.CLOSE, true))
+      || (version == HttpVersion.HTTP_1_0 && request.headers().contains(io.vertx.core.http.HttpHeaders.CONNECTION, io.vertx.core.http.HttpHeaders.KEEP_ALIVE, true));
+  }
+
 }
