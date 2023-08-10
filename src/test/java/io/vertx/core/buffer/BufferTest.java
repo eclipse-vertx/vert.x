@@ -277,6 +277,8 @@ public class BufferTest {
     checkBEAndLE(4, Buffer.buffer().appendInt(Integer.MAX_VALUE), Buffer.buffer().appendIntLE(Integer.MAX_VALUE));
     checkBEAndLE(4, Buffer.buffer().appendUnsignedInt(Integer.MAX_VALUE), Buffer.buffer().appendUnsignedIntLE(Integer.MAX_VALUE));
     checkBEAndLE(8, Buffer.buffer().appendLong(Long.MAX_VALUE), Buffer.buffer().appendLongLE(Long.MAX_VALUE));
+    checkBEAndLE(4, Buffer.buffer().appendFloat(Float.MAX_VALUE), Buffer.buffer().appendFloatLE(Float.MAX_VALUE));
+    checkBEAndLE(8, Buffer.buffer().appendDouble(Double.MAX_VALUE), Buffer.buffer().appendDoubleLE(Double.MAX_VALUE));
   }
 
   private void checkBEAndLE(int size, Buffer big, Buffer little) {
@@ -529,30 +531,65 @@ public class BufferTest {
     testGetSetLong(true);
   }
 
-  @Test
-  public void testGetFloat() throws Exception {
+  public void testGetFloat(boolean isLE) throws Exception {
     int numFloats = 100;
     Buffer b = Buffer.buffer(numFloats * 4);
     for (int i = 0; i < numFloats; i++) {
-      b.setFloat(i * 4, i);
+      if (isLE) {
+        b.setFloatLE(i * 4, i);
+      } else {
+        b.setFloat(i * 4, i);
+      }
+
     }
 
     for (int i = 0; i < numFloats; i++) {
-      assertEquals((float) i, b.getFloat(i * 4), 0);
+      if (isLE) {
+        assertEquals((float) i, b.getFloatLE(i * 4), 0);
+      } else {
+        assertEquals((float) i, b.getFloat(i * 4), 0);
+      }
+    }
+  }
+
+  @Test
+  public void testGetFloat() throws Exception {
+    testGetFloat(false);
+  }
+
+  @Test
+  public void testGetFloatLE() throws Exception {
+    testGetFloat(true);
+  }
+
+  public void testGetDouble(boolean isLE) throws Exception {
+    int numDoubles = 100;
+    Buffer b = Buffer.buffer(numDoubles * 8);
+    for (int i = 0; i < numDoubles; i++) {
+      if (isLE) {
+        b.setDoubleLE(i * 8, i);
+      } else {
+        b.setDouble(i * 8, i);
+      }
+    }
+
+    for (int i = 0; i < numDoubles; i++) {
+      if (isLE) {
+        assertEquals((double) i, b.getDoubleLE(i * 8), 0);
+      } else {
+        assertEquals((double) i, b.getDouble(i * 8), 0);
+      }
     }
   }
 
   @Test
   public void testGetDouble() throws Exception {
-    int numDoubles = 100;
-    Buffer b = Buffer.buffer(numDoubles * 8);
-    for (int i = 0; i < numDoubles; i++) {
-      b.setDouble(i * 8, i);
-    }
+    testGetDouble(false);
+  }
 
-    for (int i = 0; i < numDoubles; i++) {
-      assertEquals((double) i, b.getDouble(i * 8), 0);
-    }
+  @Test
+  public void testGetDoubleLE() throws Exception {
+    testGetDouble(true);
   }
 
   private void testGetSetShort(boolean isLE) throws Exception {

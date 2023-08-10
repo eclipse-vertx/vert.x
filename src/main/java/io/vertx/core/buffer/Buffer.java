@@ -191,11 +191,25 @@ public interface Buffer extends ClusterSerializable, Shareable {
   double getDouble(int pos);
 
   /**
+   * Gets a double at the specified absolute {@code index} in this buffer in Little Endian Byte Order.
+   *
+   * @throws IndexOutOfBoundsException if the specified {@code pos} is less than {@code 0} or {@code pos + 8} is greater than the length of the Buffer.
+   */
+  double getDoubleLE(int pos);
+
+  /**
    * Returns the {@code float} at position {@code pos} in the Buffer.
    *
    * @throws IndexOutOfBoundsException if the specified {@code pos} is less than {@code 0} or {@code pos + 4} is greater than the length of the Buffer.
    */
   float getFloat(int pos);
+
+  /**
+   * Gets a float at the specified absolute {@code index} in this buffer in Little Endian Byte Order.
+   *
+   * @throws IndexOutOfBoundsException if the specified {@code pos} is less than {@code 0} or {@code pos + 4} is greater than the length of the Buffer.
+   */
+  float getFloatLE(int pos);
 
   /**
    * Returns the {@code short} at position {@code pos} in the Buffer.
@@ -465,11 +479,25 @@ public interface Buffer extends ClusterSerializable, Shareable {
   Buffer appendFloat(float f);
 
   /**
+   * Appends the specified unsigned {@code float} to the end of the Buffer in the Little Endian Byte Order.The buffer will expand as necessary to accommodate any bytes written.<p>
+   * Returns a reference to {@code this} so multiple operations can be appended together.
+   */
+  @Fluent
+  Buffer appendFloatLE(float f);
+
+  /**
    * Appends the specified {@code double} to the end of the Buffer. The buffer will expand as necessary to accommodate any bytes written.<p>
    * Returns a reference to {@code this} so multiple operations can be appended together.
    */
   @Fluent
   Buffer appendDouble(double d);
+
+  /**
+   * Appends the specified unsigned {@code double} to the end of the Buffer in the Little Endian Byte Order.The buffer will expand as necessary to accommodate any bytes written.<p>
+   * Returns a reference to {@code this} so multiple operations can be appended together.
+   */
+  @Fluent
+  Buffer appendDoubleLE(double d);
 
   /**
    * Appends the specified {@code String} to the end of the Buffer with the encoding as specified by {@code enc}.<p>
@@ -565,11 +593,25 @@ public interface Buffer extends ClusterSerializable, Shareable {
   Buffer setDouble(int pos, double d);
 
   /**
+   * Sets the {@code double} at position {@code pos} in the Buffer to the value {@code d} in the Little Endian Byte Order.<p>
+   * The buffer will expand as necessary to accommodate any value written.
+   */
+  @Fluent
+  Buffer setDoubleLE(int pos, double d);
+
+  /**
    * Sets the {@code float} at position {@code pos} in the Buffer to the value {@code f}.<p>
    * The buffer will expand as necessary to accommodate any value written.
    */
   @Fluent
   Buffer setFloat(int pos, float f);
+
+  /**
+   * Sets the {@code float} at position {@code pos} in the Buffer to the value {@code f} in the Little Endian Byte Order.<p>
+   * The buffer will expand as necessary to accommodate any value written.
+   */
+  @Fluent
+  Buffer setFloatLE(int pos, float f);
 
   /**
    * Sets the {@code short} at position {@code pos} in the Buffer to the value {@code s}.<p>

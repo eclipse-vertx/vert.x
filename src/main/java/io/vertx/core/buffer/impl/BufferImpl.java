@@ -136,9 +136,19 @@ public class BufferImpl implements BufferInternal {
     return buffer.getDouble(pos);
   }
 
+  public double getDoubleLE(int pos) {
+    checkUpperBound(pos, 8);
+    return buffer.getDoubleLE(pos);
+  }
+
   public float getFloat(int pos) {
     checkUpperBound(pos, 4);
     return buffer.getFloat(pos);
+  }
+
+  public float getFloatLE(int pos) {
+    checkUpperBound(pos, 4);
+    return buffer.getFloatLE(pos);
   }
 
   public short getShort(int pos) {
@@ -338,8 +348,20 @@ public class BufferImpl implements BufferInternal {
     return this;
   }
 
+  @Override
+  public BufferImpl appendFloatLE(float f) {
+    buffer.writeFloatLE(f);
+    return this;
+  }
+
   public BufferImpl appendDouble(double d) {
     buffer.writeDouble(d);
+    return this;
+  }
+
+  @Override
+  public BufferImpl appendDoubleLE(double d) {
+    buffer.writeDoubleLE(d);
     return this;
   }
 
@@ -417,9 +439,23 @@ public class BufferImpl implements BufferInternal {
     return this;
   }
 
+  @Override
+  public BufferImpl setDoubleLE(int pos, double d) {
+    ensureLength(pos + 8);
+    buffer.setDoubleLE(pos, d);
+    return this;
+  }
+
   public BufferImpl setFloat(int pos, float f) {
     ensureLength(pos + 4);
     buffer.setFloat(pos, f);
+    return this;
+  }
+
+  @Override
+  public BufferImpl setFloatLE(int pos, float f) {
+    ensureLength(pos + 4);
+    buffer.setFloatLE(pos, f);
     return this;
   }
 
