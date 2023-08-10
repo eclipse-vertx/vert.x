@@ -464,7 +464,10 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
 
   /**
    * Close the underlying TCP connection corresponding to the request.
+   *
+   * @deprecated instead use {@link HttpConnection#close()} or {@link #reset(long)}, this method is removed in Vert.x 5
    */
+  @Deprecated
   void close();
 
   /**
