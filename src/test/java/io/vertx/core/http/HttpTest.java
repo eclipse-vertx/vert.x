@@ -3200,9 +3200,7 @@ public abstract class HttpTest extends HttpTestBase {
           AtomicInteger count = new AtomicInteger();
           resp.exceptionHandler(t -> {
             if (count.getAndIncrement() == 0) {
-              assertTrue(
-                t instanceof TimeoutException || /* HTTP/1 */
-                  t instanceof VertxException /* HTTP/2: connection closed */);
+              assertTrue(t instanceof TimeoutException);
               assertEquals(expected, received);
               complete();
             }
@@ -3222,9 +3220,7 @@ public abstract class HttpTest extends HttpTestBase {
         AtomicInteger count = new AtomicInteger();
         req.exceptionHandler(t -> {
           if (count.getAndIncrement() == 0) {
-            assertTrue(
-              t instanceof TimeoutException || /* HTTP/1 */
-                t instanceof VertxException /* HTTP/2: connection closed */);
+            assertTrue(t instanceof TimeoutException);
             assertEquals(expected, received);
             complete();
           }

@@ -16,10 +16,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpClientResponse;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.StreamResetException;
+import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.HostAndPort;
@@ -48,6 +45,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   private long currentTimeoutTimerId = -1;
   private long currentTimeoutMs;
   private long lastDataReceived;
+  private Throwable timeoutFired;
 
   HttpClientRequestBase(HttpClientImpl client, HttpClientStream stream, PromiseInternal<HttpClientResponse> responsePromise, boolean ssl, HttpMethod method, SocketAddress server, String host, int port, String uri) {
     this.client = client;
@@ -169,6 +167,13 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     return this;
   }
 
+  protected Throwable mapException(Throwable t) {
+    if (t instanceof HttpClosedException && timeoutFired != null) {
+      t = timeoutFired;
+    }
+    return t;
+  }
+
   void handleException(Throwable t) {
     fail(t);
   }
@@ -209,6 +214,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   private void handleTimeout(long timeoutMs) {
+    NoStackTraceTimeoutException cause;
     synchronized (this) {
       currentTimeoutTimerId = -1;
       currentTimeoutMs = 0;
@@ -222,8 +228,10 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
           return;
         }
       }
+      cause = timeoutEx(timeoutMs, method, server, uri);
+      timeoutFired = cause;
     }
-    reset(timeoutEx(timeoutMs, method, server, uri));
+    reset(cause);
   }
 
   static NoStackTraceTimeoutException timeoutEx(long timeoutMs, HttpMethod method, SocketAddress server, String uri) {

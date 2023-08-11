@@ -77,6 +77,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   @Override
   void handleException(Throwable t) {
+    t = mapException(t);
     super.handleException(t);
     if (endPromise.tryFail(t)) {
       Handler<Throwable> handler = exceptionHandler();
