@@ -19,10 +19,8 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.util.CharsetUtil;
 import io.netty.util.ReferenceCounted;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.eventbus.Message;
@@ -62,7 +60,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   private final InboundBuffer<Object> pending;
   private final String negotiatedApplicationLayerProtocol;
   private Handler<Void> endHandler;
-  private Handler<Void> drainHandler;
+  private volatile Handler<Void> drainHandler;
   private MessageConsumer registration;
   private Handler<Buffer> handler;
   private Handler<Object> messageHandler;
@@ -130,7 +128,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   }
 
   @Override
-  public synchronized Future<Void> writeMessage(Object message) {
+  public Future<Void> writeMessage(Object message) {
     PromiseInternal<Void> promise = context.promise();
     writeToChannel(message, promise);
     return promise.future();
@@ -207,7 +205,15 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
   @Override
   public boolean writeQueueFull() {
-    return isNotWritable();
+    return super.writeQueueFull();
+  }
+
+  @Override
+  protected void writeQueueDrained() {
+    Handler<Void> handler = drainHandler;
+    if (handler != null) {
+      context.emit(null, handler);
+    }
   }
 
   private synchronized Handler<Void> endHandler() {
@@ -223,7 +229,6 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   @Override
   public synchronized NetSocket drainHandler(Handler<Void> drainHandler) {
     this.drainHandler = drainHandler;
-    vertx.runOnContext(v -> callDrainHandler()); //If the channel is already drained, we want to call it immediately
     return this;
   }
 
@@ -285,11 +290,6 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   }
 
   @Override
-  protected void handleInterestedOpsChanged() {
-    context.emit(null, v -> callDrainHandler());
-  }
-
-  @Override
   public Future<Void> end() {
     return close();
   }
@@ -339,14 +339,6 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
       if (msg instanceof ReferenceCounted && (!(msg instanceof ByteBuf))) {
         ReferenceCounted refCounter = (ReferenceCounted) msg;
         refCounter.release();
-      }
-    }
-  }
-
-  private synchronized void callDrainHandler() {
-    if (drainHandler != null) {
-      if (!writeQueueFull()) {
-        drainHandler.handle(null);
       }
     }
   }
