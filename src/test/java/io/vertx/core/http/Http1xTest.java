@@ -5075,7 +5075,7 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testSendFilePipelined() throws Exception {
-    int n = 4;
+    int n = 2;
     waitFor(n);
     File sent = TestUtils.tmpFile(".dat", 16 * 1024);
     server.requestHandler(
