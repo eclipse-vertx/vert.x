@@ -73,11 +73,8 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
-import io.vertx.core.net.impl.ShutdownEvent;
+import io.vertx.core.net.impl.*;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.impl.NetSocketImpl;
-import io.vertx.core.net.impl.NetSocketInternal;
-import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.tracing.SpanKind;
@@ -140,20 +137,18 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   private long expirationTimestamp;
   private int seq = 1;
   private long readWindow;
-  private long writeWindow;
-  private boolean writeOverflow;
   private Deque<WebSocketFrame> pendingFrames;
 
   private long lastResponseReceivedTimestamp;
 
   Http1xClientConnection(HttpVersion version,
                          HttpClientImpl client,
-                         ChannelHandlerContext channel,
+                         ChannelHandlerContext chctx,
                          boolean ssl,
                          SocketAddress server,
                          ContextInternal context,
                          ClientMetrics metrics) {
-    super(context, channel);
+    super(context, chctx);
     this.client = client;
     this.options = client.options();
     this.ssl = ssl;
@@ -161,9 +156,8 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     this.metrics = metrics;
     this.version = version;
     this.readWindow = 0L;
-    this.writeWindow = 0L;
-    this.highWaterMark = channel.channel().config().getWriteBufferHighWaterMark();
-    this.lowWaterMark = channel.channel().config().getWriteBufferLowWaterMark();
+    this.highWaterMark = chctx.channel().config().getWriteBufferHighWaterMark();
+    this.lowWaterMark = chctx.channel().config().getWriteBufferLowWaterMark();
     this.keepAliveTimeout = options.getKeepAliveTimeout();
     this.expirationTimestamp = expirationTimestampOf(keepAliveTimeout);
   }
@@ -286,7 +280,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
         stream.trace = tracer.sendRequest(stream.context, SpanKind.RPC, options.getTracingPolicy(), request, operation, headers, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
       }
     }
-    writeToChannel(nettyRequest, promise);
+    write(nettyRequest, false, promise);
     if (end) {
       endRequest(stream);
     }
@@ -298,12 +292,12 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     if (isConnect) {
       msg = buff != null ? buff : Unpooled.EMPTY_BUFFER;
       if (end) {
-        writeToChannel(msg, channelFuture()
+        write(msg, false, channelFuture()
           .addListener(listener)
           .addListener(v -> close())
         );
       } else {
-        writeToChannel(msg);
+        write(msg, false, voidPromise);
       }
     } else {
       if (end) {
@@ -315,7 +309,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       } else {
         msg = new DefaultHttpContent(buff);
       }
-      writeToChannel(msg, listener);
+      write(msg, false, listener);
       if (end) {
         endRequest(s);
       }
@@ -396,6 +390,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     private boolean responseEnded;
     private long bytesRead;
     private long bytesWritten;
+
 
     Stream(ContextInternal context, Promise<HttpClientStream> promise, int id) {
       this.context = context;
@@ -499,7 +494,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
 
     @Override
     public boolean writeQueueFull() {
-      return false;
+      return conn.writeQueueFull();
     }
 
     @Override
@@ -565,13 +560,30 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     }
 
     private void writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, PromiseInternal<Void> handler) {
-      EventLoop eventLoop = conn.context.nettyEventLoop();
-      if (eventLoop.inEventLoop()) {
-        this.request = request;
-        conn.beginRequest(this, request, chunked, buf, end, connect, handler);
-      } else {
-        eventLoop.execute(() -> writeHead(request, chunked, buf, end, connect, handler));
-      }
+      MessageWrite task = new MessageWrite() {
+        @Override
+        public void write() {
+          StreamImpl.this.request = request;
+          conn.beginRequest(StreamImpl.this, request, chunked, buf, end, connect, handler);
+        }
+
+        @Override
+        public void cancel(Throwable cause) {
+          handler.fail(cause);
+        }
+      };
+      conn.writeToChannel(new MessageWrite() {
+        @Override
+        public void write() {
+          StreamImpl.this.request = request;
+          conn.beginRequest(StreamImpl.this, request, chunked, buf, end, connect, handler);
+        }
+
+        @Override
+        public void cancel(Throwable cause) {
+          handler.fail(cause);
+        }
+      });
     }
 
     @Override
@@ -585,43 +597,18 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       }
     }
 
-    private void writeBuffer(ByteBuf buff, boolean end, FutureListener<Void> listener) {
-      FutureListener<Void> l;
-      if (buff != null) {
-        int size = buff.readableBytes();
-        l = future -> {
-          Handler<Void> drain;
-          synchronized (conn) {
-            conn.writeWindow -= size;
-            if (conn.writeOverflow && conn.writeWindow < conn.lowWaterMark) {
-              drain = drainHandler;
-              conn.writeOverflow = false;
-            } else {
-              drain = null;
-            }
-          }
-          if (drain != null) {
-            context.emit(drain);
-          }
-          if (listener != null) {
-            listener.operationComplete(future);
-          }
-        };
-        synchronized (conn) {
-          conn.writeWindow += size;
-          if (conn.writeWindow > conn.highWaterMark) {
-            conn.writeOverflow = true;
-          }
+    private void writeBuffer(ByteBuf buff, boolean end, PromiseInternal<Void> listener) {
+      conn.writeToChannel(new MessageWrite() {
+        @Override
+        public void write() {
+          conn.writeBuffer(StreamImpl.this, buff, end, listener);
         }
-      } else {
-        l = listener;
-      }
-      EventLoop eventLoop = conn.context.nettyEventLoop();
-      if (eventLoop.inEventLoop()) {
-        conn.writeBuffer(this, buff, end, l);
-      } else {
-        eventLoop.execute(() -> writeBuffer(buff, end, l));
-      }
+
+        @Override
+        public void cancel(Throwable cause) {
+          listener.fail(cause);
+        }
+      });
     }
 
     @Override
@@ -636,9 +623,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
 
     @Override
     public boolean isNotWritable() {
-      synchronized (conn) {
-        return conn.writeWindow > conn.highWaterMark;
-      }
+      return conn.writeQueueFull();
     }
 
     @Override
@@ -686,6 +671,15 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
 
     @Override
     void handleWritabilityChanged(boolean writable) {
+      if (writable) {
+        Handler<Void> drain;
+        synchronized (conn) {
+          drain = drainHandler;
+          if (drain != null) {
+            context.emit(drain);
+          }
+        }
+      }
     }
 
     void handleContinue() {
@@ -1179,16 +1173,12 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   }
 
   @Override
-  public  void handleInterestedOpsChanged() {
-    boolean writable = !isNotWritable();
+  protected void handleInterestedOpsChanged(boolean writable) {
     ContextInternal context;
     Handler<Boolean> handler;
     synchronized (this) {
       Stream current = requests.peek();
-      if (current != null) {
-        context = current.context;
-        handler = current::handleWritabilityChanged;
-      } else if (webSocket != null) {
+      if (webSocket != null) {
         context = webSocket.context;
         handler = webSocket::handleWritabilityChanged;
       } else {
@@ -1196,6 +1186,14 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       }
     }
     context.execute(writable, handler);
+  }
+
+  @Override
+  protected void writeQueueDrained() {
+    Stream s = requests.peek();
+    if (s != null) {
+      s.context.emit(true, s::handleWritabilityChanged);
+    }
   }
 
   protected void handleClosed() {
