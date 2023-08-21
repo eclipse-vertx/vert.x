@@ -268,6 +268,7 @@ public class VertxTest extends AsyncTestBase {
     }
   }
 
+  @Repeat(times = 10)
   @Test
   public void testFinalizeNetClient() throws Exception {
     VertxInternal vertx = (VertxInternal) Vertx.vertx();
