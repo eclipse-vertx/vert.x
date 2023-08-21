@@ -28,7 +28,6 @@ import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.impl.cgbystrom.FlashPolicyHandler;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.VertxInternal;
@@ -265,9 +264,6 @@ public class HttpServerWorker implements BiConsumer<Channel, SslChannelProvider>
   private void configureHttp1OrH2C(ChannelPipeline pipeline, SslChannelProvider sslChannelProvider) {
     if (logEnabled) {
       pipeline.addLast("logging", new LoggingHandler(options.getActivityLogDataFormat()));
-    }
-    if (HttpServerImpl.USE_FLASH_POLICY_HANDLER) {
-      pipeline.addLast("flashpolicy", new FlashPolicyHandler());
     }
     pipeline.addLast("httpDecoder", new VertxHttpRequestDecoder(options));
     pipeline.addLast("httpEncoder", new VertxHttpResponseEncoder());

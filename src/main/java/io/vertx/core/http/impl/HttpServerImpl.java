@@ -42,11 +42,9 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
 
   private static final Handler<Throwable> DEFAULT_EXCEPTION_HANDLER = t -> log.trace("Connection failure", t);
 
-  private static final String FLASH_POLICY_HANDLER_PROP_NAME = "vertx.flashPolicyHandler";
   private static final String DISABLE_WEBSOCKETS_PROP_NAME = "vertx.disableWebsockets";
   private static final String DISABLE_H2C_PROP_NAME = "vertx.disableH2c";
 
-  static final boolean USE_FLASH_POLICY_HANDLER = Boolean.getBoolean(FLASH_POLICY_HANDLER_PROP_NAME);
   static final boolean DISABLE_WEBSOCKETS = Boolean.getBoolean(DISABLE_WEBSOCKETS_PROP_NAME);
 
   final HttpServerOptions options;
