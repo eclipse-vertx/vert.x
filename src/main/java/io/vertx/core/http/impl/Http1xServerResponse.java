@@ -14,7 +14,6 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.EmptyHttpHeaders;
 import io.netty.handler.codec.http.HttpObject;
@@ -24,7 +23,6 @@ import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -48,7 +46,6 @@ import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.observability.HttpResponse;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.RandomAccessFile;
 import java.util.Set;
 
@@ -536,7 +533,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
     }
   }
 
-  void handleWritabilityChanged(Void v) {
+  void handleWriteQueueDrained(Void v) {
     Handler<Void> handler;
     synchronized (conn) {
       handler = drainHandler;

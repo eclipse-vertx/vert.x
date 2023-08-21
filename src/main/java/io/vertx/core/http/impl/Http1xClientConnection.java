@@ -412,7 +412,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     abstract void handleHead(HttpResponseHead response);
     abstract void handleChunk(Buffer buff);
     abstract void handleEnd(LastHttpContent trailer);
-    abstract void handleWritabilityChanged(boolean writable);
+    abstract void handleWriteQueueDrained(Void v);
     abstract void handleException(Throwable cause);
     abstract void handleClosed();
 
@@ -670,15 +670,13 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     }
 
     @Override
-    void handleWritabilityChanged(boolean writable) {
-      if (writable) {
-        Handler<Void> drain;
-        synchronized (conn) {
-          drain = drainHandler;
-          if (drain != null) {
-            context.emit(drain);
-          }
-        }
+    void handleWriteQueueDrained(Void v) {
+      Handler<Void> handler;
+      synchronized (conn) {
+        handler = drainHandler;
+      }
+      if (handler != null) {
+        context.dispatch(handler);
       }
     }
 
@@ -1173,26 +1171,12 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   }
 
   @Override
-  protected void handleInterestedOpsChanged(boolean writable) {
-    ContextInternal context;
-    Handler<Boolean> handler;
-    synchronized (this) {
-      Stream current = requests.peek();
-      if (webSocket != null) {
-        context = webSocket.context;
-        handler = webSocket::handleWritabilityChanged;
-      } else {
-        return;
-      }
-    }
-    context.execute(writable, handler);
-  }
-
-  @Override
   protected void writeQueueDrained() {
     Stream s = requests.peek();
     if (s != null) {
-      s.context.emit(true, s::handleWritabilityChanged);
+      s.context.execute(s::handleWriteQueueDrained);
+    } else {
+      super.writeQueueDrained();
     }
   }
 

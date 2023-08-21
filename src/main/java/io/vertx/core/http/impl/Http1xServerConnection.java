@@ -473,26 +473,11 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   protected void writeQueueDrained() {
     if (responseInProgress != null) {
       ContextInternal context = responseInProgress.context;
-      Handler<Void> handler = responseInProgress.response()::handleWritabilityChanged;
-      context.emit(null, handler);
+      Handler<Void> handler = responseInProgress.response()::handleWriteQueueDrained;
+      context.execute(handler);
+    } else {
+      super.writeQueueDrained();
     }
-  }
-
-  @Override
-  protected void handleInterestedOpsChanged(boolean w) {
-    ContextInternal context;
-    Handler<Boolean> handler;
-    synchronized (this) {
-      if (responseInProgress != null) {
-        return;
-      } else if (webSocket != null) {
-        context = webSocket.context;
-        handler = webSocket::handleWritabilityChanged;
-      } else {
-        return;
-      }
-    }
-    context.execute(w, handler);
   }
 
   void write100Continue(FutureListener<Void> listener) {

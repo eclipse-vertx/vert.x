@@ -20,12 +20,9 @@ import io.netty.handler.codec.http.websocketx.ContinuationWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
-import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
-import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.eventbus.EventBus;
@@ -83,7 +80,6 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   private Handler<Void> closeHandler;
   private Handler<Void> endHandler;
   protected final Http1xConnectionBase conn;
-  private boolean writable;
   private boolean closed;
   private Short closeStatusCode;
   private String closeReason;
@@ -109,7 +105,6 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     this.maxWebSocketFrameSize = maxWebSocketFrameSize;
     this.maxWebSocketMessageSize = maxWebSocketMessageSize;
     this.pending = new InboundBuffer<>(context);
-    this.writable = !conn.isNotWritable();
     this.chctx = conn.channelHandlerContext();
     this.headers = headers;
 
@@ -147,7 +142,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   public boolean writeQueueFull() {
     synchronized (conn) {
       checkClosed();
-      return conn.isNotWritable();
+      return conn.writeQueueFull();
     }
   }
 
@@ -650,17 +645,12 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     }
   }
 
-  void handleWritabilityChanged(boolean writable) {
+  void handleWriteQueueDrained(Void v) {
     Handler<Void> handler;
     synchronized (conn) {
-      boolean skip = this.writable && !writable;
-      this.writable = writable;
       handler = drainHandler;
-      if (handler == null || skip) {
-        return;
-      }
     }
-    context.dispatch(null, handler);
+    context.dispatch(handler);
   }
 
   void handleException(Throwable t) {

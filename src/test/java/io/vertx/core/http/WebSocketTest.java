@@ -35,6 +35,7 @@ import io.vertx.core.http.impl.Http1xServerConnection;
 import io.vertx.core.http.impl.WebSocketInternal;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.impl.ConcurrentHashSet;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
@@ -3376,6 +3377,15 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testDrainClientWebSocket() throws InterruptedException {
+    testDrainClientWebSocket(vertx.getOrCreateContext());
+  }
+
+  @Test
+  public void testDrainClientWorkerWebSocket() throws InterruptedException {
+    testDrainClientWebSocket(((VertxInternal)vertx).createWorkerContext());
+  }
+
+  private void testDrainClientWebSocket(Context ctx) throws InterruptedException {
     Promise<Void> resume = Promise.promise();
     server = vertx.createHttpServer()
       .webSocketHandler(ws -> {
@@ -3386,15 +3396,17 @@ public class WebSocketTest extends VertxTestBase {
       });
     awaitFuture(server.listen(DEFAULT_HTTP_PORT));
     client = vertx.createHttpClient();
-    client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri").onComplete(onSuccess(ws -> {
-      while (!ws.writeQueueFull()) {
-        ws.writeFrame(WebSocketFrame.textFrame(randomAlphaString(512), true));
-      }
-      ws.drainHandler(v -> {
-        testComplete();
-      });
-      resume.complete();
-    }));
+    ctx.runOnContext(v1 -> {
+      client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri").onComplete(onSuccess(ws -> {
+        while (!ws.writeQueueFull()) {
+          ws.writeFrame(WebSocketFrame.textFrame(randomAlphaString(512), true));
+        }
+        ws.drainHandler(v2 -> {
+          testComplete();
+        });
+        resume.complete();
+      }));
+    });
     await();
   }
 
