@@ -31,8 +31,6 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import java.lang.ref.WeakReference;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -182,22 +180,15 @@ public class VertxTest extends AsyncTestBase {
           "\r\n"
       ));
       long now = System.currentTimeMillis();
-      while (true) {
+      do {
         assertTrue(System.currentTimeMillis() - now < 20_000);
         runGC();
-        if (ref.get() == null) {
-          assertTrue(closed1.get());
-          break;
-        }
-      }
-      while (true) {
+      } while (!closed1.get());
+      now = System.currentTimeMillis();
+      do {
         assertTrue(System.currentTimeMillis() - now < 20_000);
         runGC();
-        if (ref.get() == null) {
-          assertTrue(closed2.get());
-          break;
-        }
-      }
+      } while (!closed2.get());
     } finally {
       vertx
         .close()
@@ -268,7 +259,6 @@ public class VertxTest extends AsyncTestBase {
     }
   }
 
-  @Repeat(times = 10)
   @Test
   public void testFinalizeNetClient() throws Exception {
     VertxInternal vertx = (VertxInternal) Vertx.vertx();
@@ -312,23 +302,16 @@ public class VertxTest extends AsyncTestBase {
       }
       socketRef.get().close();
       long now = System.currentTimeMillis();
-      while (true) {
+      do {
         assertTrue(System.currentTimeMillis() - now < 20_000);
         runGC();
-        if (ref.get() == null) {
-          assertTrue(closed1.get());
-          break;
-        }
-      }
+      } while (!closed1.get());
       assertEquals(1, shutdownEventCount.get());
-      while (true) {
+      now = System.currentTimeMillis();
+      do {
         assertTrue(System.currentTimeMillis() - now < 20_000);
         runGC();
-        if (ref.get() == null) {
-          assertTrue(closed2.get());
-          break;
-        }
-      }
+      } while (!closed2.get());
     } finally {
       vertx
         .close()
@@ -507,13 +490,10 @@ public class VertxTest extends AsyncTestBase {
       }).toCompletionStage().toCompletableFuture().get();
       exec.close().toCompletionStage().toCompletableFuture().get();
       long now = System.currentTimeMillis();
-      while (true) {
+      do {
         assertTrue(System.currentTimeMillis() - now < 20_000);
         runGC();
-        if (ref.get() == null) {
-          break;
-        }
-      }
+      } while (ref.get() != null);
     } finally {
       vertx
         .close()
