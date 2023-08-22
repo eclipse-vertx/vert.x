@@ -11,32 +11,27 @@
 
 package io.vertx.core.dns;
 
-import static io.vertx.test.core.TestUtils.assertIllegalStateException;
 import static io.vertx.test.core.TestUtils.assertNullPointerException;
 
 import java.net.InetSocketAddress;
-import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.apache.directory.server.dns.messages.DnsMessage;
+import org.apache.directory.server.dns.store.RecordStore;
 import org.junit.Test;
 
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
 import io.vertx.core.VertxOptions;
-import io.vertx.core.dns.DnsClient;
-import io.vertx.core.dns.DnsClientOptions;
-import io.vertx.core.dns.DnsException;
-import io.vertx.core.dns.DnsResponseCode;
-import io.vertx.core.dns.MxRecord;
-import io.vertx.core.dns.SrvRecord;
 import io.vertx.core.dns.impl.DnsClientImpl;
 import io.vertx.test.fakedns.FakeDNSServer;
 import io.vertx.test.netty.TestLoggerFactory;
+
+import java.util.List;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
@@ -441,6 +436,37 @@ public class DNSTest extends VertxTestBase {
         assertEquals(0, (int)num);
         testComplete();
       });
+    }));
+    await();
+  }
+
+  @Test
+  public void testClose() throws Exception {
+    waitFor(2);
+    String ip = "10.0.0.1";
+    RecordStore store = dnsServer.testResolveA(ip).store();
+    CountDownLatch latch1 = new CountDownLatch(1);
+    CountDownLatch latch2 = new CountDownLatch(1);
+    dnsServer.store(question -> {
+      latch1.countDown();
+      try {
+        latch2.await(10, TimeUnit.SECONDS);
+      } catch (Exception e) {
+        fail(e);
+      }
+      return store.getRecords(question);
+    });
+    DnsClient dns = prepareDns();
+    dns
+      .resolveA("vertx.io")
+      .onComplete(onFailure(timeout -> {
+        assertTrue(timeout.getMessage().contains("closed"));
+        complete();
+      }));
+    awaitLatch(latch1);
+    dns.close().onComplete(onSuccess(v -> {
+      complete();
+      latch2.countDown();
     }));
     await();
   }
