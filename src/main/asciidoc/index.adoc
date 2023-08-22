@@ -34,11 +34,68 @@ Instead, we automatically generate an *idiomatic* equivalent of the core Java AP
 
 From now on we'll just use the word *core* to refer to Vert.x core.
 
-include::override/dependencies.adoc[]
+If you are using Maven or Gradle, add the following dependency to the _dependencies_ section of your
+project descriptor to access the Vert.x Core API:
+
+* Maven (in your `pom.xml`):
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+  <groupId>io.vertx</groupId>
+  <artifactId>vertx-core</artifactId>
+  <version>${maven.version}</version>
+</dependency>
+----
+
+* Gradle (in your `build.gradle` file):
+
+[source,groovy,subs="+attributes"]
+----
+dependencies {
+  compile 'io.vertx:vertx-core:${maven.version}'
+}
+----
 
 Let's discuss the different concepts and features in core.
 
-include::override/in-the-beginning.adoc[]
+== In the beginning there was Vert.x
+
+You can't do much in Vert.x-land unless you can communicate with a {@link io.vertx.core.Vertx} object!
+
+It's the control centre of Vert.x and is how you do pretty much everything, including creating clients and servers,
+getting a reference to the event bus, setting timers, as well as many other things.
+
+So how do you get an instance?
+
+If you're embedding Vert.x then you simply create an instance as follows:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#example1}
+----
+
+NOTE: Most applications will only need a single Vert.x instance, but it's possible to create multiple Vert.x instances if you
+require, for example, isolation between the event bus or different groups of servers and clients.
+
+=== Specifying options when creating a Vertx object
+
+When creating a Vert.x object you can also specify options if the defaults aren't right for you:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#example2}
+----
+
+The {@link io.vertx.core.VertxOptions} object has many settings and allows you to configure things like clustering, high availability, pool sizes and various other settings.
+
+=== Creating a clustered Vert.x object
+
+If you're creating a *clustered Vert.x* (See the section on the <<event_bus, event bus>> for more information on clustering the event bus),
+then you will normally use the asynchronous variant to create the Vertx object.
+
+This is because it usually takes some time (maybe a few seconds) for the different Vert.x instances in a cluster to group together.
+During that time, we don't want to block the calling thread, so we give the result to you asynchronously.
 
 == Are you fluent?
 
@@ -223,7 +280,93 @@ You can think of a verticle as a bit like an actor in the http://en.wikipedia.or
 An application would typically be composed of many verticle instances running in the same Vert.x instance at the same
 time. The different verticle instances communicate with each other by sending messages on the <<event_bus, event bus>>.
 
-include::override/verticles.adoc[]
+=== Writing Verticles
+
+Verticle classes must implement the {@link io.vertx.core.Verticle} interface.
+
+They can implement it directly if you like but usually it's simpler to extend
+the abstract class {@link io.vertx.core.AbstractVerticle}.
+
+Here's an example verticle:
+
+----
+public class MyVerticle extends AbstractVerticle {
+
+  // Called when verticle is deployed
+  public void start() {
+  }
+
+  // Optional - called when verticle is undeployed
+  public void stop() {
+  }
+
+}
+----
+
+Normally you would override the start method like in the example above.
+
+When Vert.x deploys the verticle it will call the start method, and when the method has completed the verticle will
+be considered started.
+
+You can also optionally override the stop method. This will be called by Vert.x when the verticle is undeployed and when
+the method has completed the verticle will be considered stopped.
+
+=== Asynchronous Verticle start and stop
+
+Sometimes you want to do something in your verticle start-up which takes some time and you don't want the verticle to
+be considered deployed until that happens. For example you might want to start an HTTP server in the start method and
+propagate the asynchronous result of the server `listen` method.
+
+You can't block waiting for the HTTP server to bind in your start method as that would break the <<golden_rule, Golden Rule>>.
+
+So how can you do this?
+
+The way to do it is to implement the *asynchronous* start method. This version of the method takes a Future as a parameter.
+When the method returns the verticle will *not* be considered deployed.
+
+Some time later, after you've done everything you need to do (e.g. start the HTTP server), you can call complete
+on the Future (or fail) to signal that you're done.
+
+Here's an example:
+
+----
+public class MyVerticle extends AbstractVerticle {
+
+  private HttpServer server;
+
+  @Override
+  public void start(Promise<Void> startPromise) {
+    server = vertx.createHttpServer().requestHandler(req -> {
+      req.response()
+        .putHeader("content-type", "text/plain")
+        .end("Hello from Vert.x!");
+      });
+
+    // Now bind the server:
+    server.listen(8080)
+      .<Void>mapEmpty()
+      .onComplete(startPromise);
+  }
+}
+----
+
+Similarly, there is an asynchronous version of the stop method too. You use this if you want to do some verticle
+cleanup that takes some time.
+
+----
+public class MyVerticle extends AbstractVerticle {
+
+  @Override
+  public void stop(Promise<Void> stopPromise) {
+    doSomethingThatTakesTime()
+      .<Void>mapEmpty()
+      .onComplete(stopPromise);
+  }
+}
+----
+
+INFO: You don't need to manually stop the HTTP server started by a verticle, in the verticle's stop method. Vert.x
+will automatically stop any running server when the verticle is undeployed.
 
 === Verticle Types
 
@@ -368,7 +511,32 @@ want to deploy:
 This is useful for scaling easily across multiple cores. For example you might have a web-server verticle to deploy
 and multiple cores on your machine, so you want to deploy multiple instances to utilise all the cores.
 
-include::override/verticle-configuration.adoc[]
+=== Passing configuration to a verticle
+
+Configuration in the form of JSON can be passed to a verticle at deployment time:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#example13}
+----
+
+This configuration is then available via the {@link io.vertx.core.Context} object or directly using the
+{@link io.vertx.core.AbstractVerticle#config()} method. The configuration is returned as a JSON object so you
+can retrieve data as follows:
+
+[source,$lang]
+----
+{@link examples.ConfigurableVerticleExamples#start()}
+----
+
+=== Accessing environment variables in a Verticle
+
+Environment variables and system properties are accessible using the Java API:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#systemAndEnvProperties()}
+----
 
 === Causing Vert.x to exit
 
@@ -493,7 +661,7 @@ A different worker pool can be specified in deployment options:
 [[event_bus]]
 include::eventbus.adoc[]
 
-include::override/json.adoc[]
+include::json.adoc[]
 
 include::json-pointers.adoc[]
 
@@ -730,13 +898,143 @@ SEVERE: java.io.IOException: Connection reset by peer
 It means that the client is resetting the HTTP connection instead of closing it. This message also indicates that you
 may have not consumed the complete payload (the connection was cut before you were able to).
 
-include::override/hostname-resolution.adoc[]
+== Host name resolution
+
+Vert.x uses an an address resolver for resolving host name into IP addresses instead of
+the JVM built-in blocking resolver.
+
+An host name resolves to an IP address using:
+
+- the _hosts_ file of the operating system
+- otherwise DNS queries against a list of servers
+
+By default it will use the list of the system DNS server addresses from the environment, if that list cannot be
+retrieved it will use Google's public DNS servers `"8.8.8.8"` and `"8.8.4.4"`.
+
+DNS servers can be also configured when creating a {@link io.vertx.core.Vertx} instance:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#configureDNSServers}
+----
+
+The default port of a DNS server is `53`, when a server uses a different port, this port can be set
+using a colon delimiter: `192.168.0.2:40000`.
+
+NOTE: sometimes it can be desirable to use the JVM built-in resolver, the JVM system property
+_-Dvertx.disableDnsResolver=true_ activates this behavior
+
+=== Failover
+
+When a server does not reply in a timely manner, the resolver will try the next one from the list, the search
+is limited by {@link io.vertx.core.dns.AddressResolverOptions#setMaxQueries(int)} (the default value is `4` queries).
+
+A DNS query is considered as failed when the resolver has not received a correct answer within
+{@link io.vertx.core.dns.AddressResolverOptions#getQueryTimeout()} milliseconds (the default value is `5` seconds).
+
+=== Server list rotation
+
+By default the dns server selection uses the first one, the remaining servers are used for failover.
+
+You can configure {@link io.vertx.core.dns.AddressResolverOptions#setRotateServers(boolean)} to `true` to let
+the resolver perform a round-robin selection instead. It spreads the query load among the servers and avoids
+all lookup to hit the first server of the list.
+
+Failover still applies and will use the next server in the list.
+
+=== Hosts mapping
+
+The _hosts_ file of the operating system is used to perform an hostname lookup for an ipaddress.
+
+An alternative _hosts_ file can be used instead:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#configureHosts}
+----
+
+=== Search domains
+
+By default the resolver will use the system DNS search domains from the environment. Alternatively an explicit search domain
+list can be provided:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#configureSearchDomains()}
+----
+
+When a search domain list is used, the threshold for the number of dots is `1` or loaded from `/etc/resolv.conf`
+on Linux, it can be configured to a specific value with {@link io.vertx.core.dns.AddressResolverOptions#setNdots(int)}.
+
+=== MacOS configuration
+
+MacOS has a specific native extension to get the name server configuration of the system based on
+<a href="https://opensource.apple.com/tarballs/mDNSResponder/">Apple's open source mDNSResponder</a>. When this extension is not present,
+Netty logs the following warning.
+
+----
+[main] WARN io.netty.resolver.dns.DnsServerAddressStreamProviders - Can not find io.netty.resolver.dns.macos.MacOSDnsServerAddressStreamProvider in the classpath, fallback to system defaults. This may result in incorrect DNS resolutions on MacOS.
+----
+
+This extension is not required as its absence does not prevent Vert.x to execute, yet is *recommended*.
+
+You can use add it to your classpath to improve the integration and remove the warning.
+
+.Intel-based Mac
+[source,xml]
+----
+<profile>
+  <id>mac-intel</id>
+  <activation>
+    <os>
+      <family>mac</family>
+      <arch>x86_64</arch>
+    </os>
+  </activation>
+  <dependencies>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-resolver-dns-native-macos</artifactId>
+      <classifier>osx-x86_64</classifier>
+      <!--<version>Should align with netty version that Vert.x uses</version>-->
+    </dependency>
+  </dependencies>
+</profile>
+----
+
+.M1/M2 Mac
+[source,xml]
+----
+<profile>
+  <id>mac-silicon</id>
+  <activation>
+    <os>
+      <family>mac</family>
+      <arch>aarch64</arch>
+    </os>
+  </activation>
+  <dependencies>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-resolver-dns-native-macos</artifactId>
+      <classifier>osx-aarch_64</classifier>
+      <!--<version>Should align with netty version that Vert.x uses</version>-->
+    </dependency>
+  </dependencies>
+</profile>
+----
 
 == Native transports
 
 Vert.x can run with http://netty.io/wiki/native-transports.html[native transports] (when available) on BSD (OSX) and Linux:
 
-include::override/configuring-native.adoc[]
+[source,$lang]
+----
+{@link examples.CoreExamples#configureNative()}
+----
+
+NOTE: preferring native transport will not prevent the application to execute (for example if a JAR is missing).
+If your application requires native transport, you need to check {@link io.vertx.core.Vertx#isNativeTransportEnabled()}.
 
 === Native Linux Transport
 

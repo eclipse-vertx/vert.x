@@ -1,6 +1,0 @@
-Create a buffer from a byte[]
-
-[source,java]
-----
-{@link docoverride.buffer.Examples#example4}
-----

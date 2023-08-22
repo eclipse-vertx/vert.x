@@ -9,16 +9,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package docoverride.json;
+package examples;
 
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.json.pointer.JsonPointer;
 import io.vertx.docgen.Source;
 
-import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -26,7 +24,7 @@ import java.util.Map;
  * Created by tim on 09/01/15.
  */
 @Source
-public class Examples {
+public class JsonExamples {
 
   public void example0_1() {
     String jsonString = "{\"foo\":\"bar\"}";

@@ -175,7 +175,15 @@ You can send a message with {@link io.vertx.core.eventbus.EventBus#send}.
 {@link examples.EventBusExamples#example6}
 ----
 
-include::override/eventbus_headers.adoc[]
+==== Setting headers on messages
+
+Messages sent over the event bus can also contain headers. This can be specified by providing a
+{@link io.vertx.core.eventbus.DeliveryOptions} when sending or publishing:
+
+[source,$lang]
+----
+{@link examples.EventBusExamples#headers(io.vertx.core.eventbus.EventBus)}
+----
 
 ==== Message ordering
 
@@ -249,7 +257,47 @@ Message sends can fail for other reasons, including:
 
 In all cases, the reply handler will be called with the specific failure.
 
-include::override/eventbus.adoc[]
+==== Message Codecs
+
+You can send any object you like across the event bus if you define and register a {@link io.vertx.core.eventbus.MessageCodec message codec} for it.
+
+Message codecs have a name and you specify that name in the {@link io.vertx.core.eventbus.DeliveryOptions}
+when sending or publishing the message:
+
+[source,java]
+----
+{@link examples.EventBusExamples#example10}
+----
+
+If you always want the same codec to be used for a particular type then you can register a default codec for it, then
+you don't have to specify the codec on each send in the delivery options:
+
+[source,java]
+----
+{@link examples.EventBusExamples#example11}
+----
+
+You unregister a message codec with {@link io.vertx.core.eventbus.EventBus#unregisterCodec}.
+
+Message codecs don't always have to encode and decode as the same type. For example you can write a codec that
+allows a MyPOJO class to be sent, but when that message is sent to a handler it arrives as a MyOtherPOJO class.
+
+Vert.x has built-in codecs for certain data types:
+
+- basic types (string, byte array, byte, int, long, double, boolean, short, char), or
+- some Vert.x data types (buffers, JSON array, JSON objects), or
+- types implementing the {@link io.vertx.core.shareddata.ClusterSerializable} interface, or
+- types implementing the `java.io.Serializable` interface.
+
+[IMPORTANT]
+====
+In clustered mode, {@link io.vertx.core.shareddata.ClusterSerializable} and `java.io.Serializable` objects are rejected by default, for security reasons.
+
+You can define which classes are allowed for encoding and decoding by providing functions which inspect the name of the class:
+
+- {@link io.vertx.core.eventbus.EventBus#clusterSerializableChecker EventBus.clusterSerializableChecker()}, and
+- {@link io.vertx.core.eventbus.EventBus#serializableChecker EventBus.serializableChecker()}.
+====
 
 ==== Clustered Event Bus
 
@@ -272,4 +320,27 @@ when the verticle is undeployed.
 
 == Configuring the event bus
 
-include::override/configuring-eventbus.adoc[]
+The event bus can be configured.It is particularly useful when the event bus is clustered.
+Under the hood the event bus uses TCP connections to send and receive messages, so the {@link io.vertx.core.eventbus.EventBusOptions} let you configure all aspects of these TCP connections.
+As the event bus acts as a server and client, the configuration is close to {@link io.vertx.core.net.NetClientOptions} and {@link io.vertx.core.net.NetServerOptions}.
+
+[source,$lang]
+----
+{@link examples.EventBusExamples#example13}
+----
+
+The previous snippet depicts how you can use SSL connections for the event bus, instead of plain TCP connections.
+
+WARNING: To enforce the security in clustered mode, you **must** configure the cluster manager to use encryption or enforce security.
+Refer to the documentation of the cluster manager for further details.
+
+The event bus configuration needs to be consistent in all the cluster nodes.
+
+The {@link io.vertx.core.eventbus.EventBusOptions} also lets you specify whether the event bus is clustered, the port and host.
+
+When used in containers, you can also configure the public host and port:
+
+[source,$lang]
+----
+{@link examples.EventBusExamples#example14}
+----
