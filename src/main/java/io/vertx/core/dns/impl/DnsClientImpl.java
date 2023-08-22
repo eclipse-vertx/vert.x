@@ -27,6 +27,7 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
+import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.transport.Transport;
 
 import java.net.Inet4Address;
@@ -49,17 +50,16 @@ public final class DnsClientImpl implements DnsClient {
   private final VertxInternal vertx;
   private final LongObjectMap<Query> inProgressMap = new LongObjectHashMap<>();
   private final InetSocketAddress dnsServer;
-  private final ContextInternal actualCtx;
+  private final ContextInternal context;
   private final DatagramChannel channel;
   private final DnsClientOptions options;
+  private volatile Future<Void> closed;
 
   public DnsClientImpl(VertxInternal vertx, DnsClientOptions options) {
     Objects.requireNonNull(options, "no null options accepted");
     Objects.requireNonNull(options.getHost(), "no null host accepted");
 
     this.options = new DnsClientOptions(options);
-
-    ContextInternal creatingContext = vertx.getContext();
 
     this.dnsServer = new InetSocketAddress(options.getHost(), options.getPort());
     if (this.dnsServer.isUnresolved()) {
@@ -68,13 +68,13 @@ public final class DnsClientImpl implements DnsClient {
     this.vertx = vertx;
 
     Transport transport = vertx.transport();
-    actualCtx = vertx.getOrCreateContext();
+    context = vertx.getOrCreateContext();
     channel = transport.datagramChannel(this.dnsServer.getAddress() instanceof Inet4Address ? InternetProtocolFamily.IPv4 : InternetProtocolFamily.IPv6);
     channel.config().setOption(ChannelOption.DATAGRAM_CHANNEL_ACTIVE_ON_REGISTRATION, true);
     MaxMessagesRecvByteBufAllocator bufAllocator = channel.config().getRecvByteBufAllocator();
     bufAllocator.maxMessagesPerRead(1);
     channel.config().setAllocator(PartialPooledByteBufAllocator.INSTANCE);
-    actualCtx.nettyEventLoop().register(channel);
+    context.nettyEventLoop().register(channel);
     if (options.getLogActivity()) {
       channel.pipeline().addLast("logging", new LoggingHandler(options.getActivityLogFormat()));
     }
@@ -82,7 +82,7 @@ public final class DnsClientImpl implements DnsClient {
     channel.pipeline().addLast(new DatagramDnsResponseDecoder());
     channel.pipeline().addLast(new SimpleChannelInboundHandler<DnsResponse>() {
       @Override
-      protected void channelRead0(ChannelHandlerContext ctx, DnsResponse msg) throws Exception {
+      protected void channelRead0(ChannelHandlerContext ctx, DnsResponse msg) {
         DefaultDnsQuestion question = msg.recordAt(DnsSection.QUESTION);
         Query query = inProgressMap.get(dnsMessageId(msg.id(), question.name()));
         if (query != null) {
@@ -194,9 +194,12 @@ public final class DnsClientImpl implements DnsClient {
   @SuppressWarnings("unchecked")
   private <T> Future<List<T>> lookupList(String name, DnsRecordType... types) {
     ContextInternal ctx = vertx.getOrCreateContext();
+    if (closed != null) {
+      return ctx.failedFuture(ConnectionBase.CLOSED_EXCEPTION);
+    }
     PromiseInternal<List<T>> promise = ctx.promise();
     Objects.requireNonNull(name, "no null name accepted");
-    EventLoop el = actualCtx.nettyEventLoop();
+    EventLoop el = context.nettyEventLoop();
     Query query = new Query(name, types);
     query.promise.addListener(promise);
     if (el.inEventLoop()) {
@@ -213,7 +216,7 @@ public final class DnsClientImpl implements DnsClient {
 
   // Testing purposes
   public void inProgressQueries(Handler<Integer> handler) {
-    actualCtx.runOnContext(v -> {
+    context.runOnContext(v -> {
       handler.handle(inProgressMap.size());
     });
   }
@@ -234,7 +237,7 @@ public final class DnsClientImpl implements DnsClient {
       for (DnsRecordType type: types) {
         msg.addRecord(DnsSection.QUESTION, new DefaultDnsQuestion(name, type, DnsRecord.CLASS_IN));
       }
-      this.promise = actualCtx.nettyEventLoop().newPromise();
+      this.promise = context.nettyEventLoop().newPromise();
       this.types = types;
       this.name = name;
     }
@@ -276,13 +279,13 @@ public final class DnsClientImpl implements DnsClient {
       inProgressMap.put(dnsMessageId(msg.id(), name), this);
       timerID = vertx.setTimer(options.getQueryTimeout(), id -> {
         timerID = -1;
-        actualCtx.runOnContext(v -> {
+        context.runOnContext(v -> {
           fail(new VertxException("DNS query timeout for " + name));
         });
       });
       channel.writeAndFlush(msg).addListener((ChannelFutureListener) future -> {
         if (!future.isSuccess()) {
-          actualCtx.emit(future.cause(), this::fail);
+          context.emit(future.cause(), this::fail);
         }
       });
     }
@@ -295,5 +298,24 @@ public final class DnsClientImpl implements DnsClient {
       }
       return false;
     }
+  }
+
+  @Override
+  public Future<Void> close() {
+    PromiseInternal<Void> promise;
+    synchronized (this) {
+      if (closed != null) {
+        return closed;
+      }
+      promise = vertx.promise();
+      closed = promise.future();
+    }
+    context.runOnContext(v -> {
+      new ArrayList<>(inProgressMap.values()).forEach(query -> {
+        query.fail(ConnectionBase.CLOSED_EXCEPTION);
+      });
+      channel.close().addListener(promise);
+    });
+    return promise.future();
   }
 }

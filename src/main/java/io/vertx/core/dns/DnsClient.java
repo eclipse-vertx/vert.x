@@ -21,6 +21,8 @@ import java.util.List;
  * Provides a way to asynchronously lookup information from DNS servers.
  * <p>
  * Please consult the documentation for more information on DNS clients.
+ * <p>
+ * The client is thread safe and can be used from any thread.
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
@@ -138,4 +140,12 @@ public interface DnsClient {
    *                 get notified with {@code null}. If an error occurs it will get failed.
    */
   Future<@Nullable String> reverseLookup(String ipaddress);
+
+  /**
+   * Close the client.
+   *
+   * @return the future completed when the client resources have been released
+   */
+  Future<Void> close();
+
 }

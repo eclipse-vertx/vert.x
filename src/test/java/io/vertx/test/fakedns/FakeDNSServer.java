@@ -93,6 +93,10 @@ public final class FakeDNSServer extends DnsServer {
   public FakeDNSServer() {
   }
 
+  public RecordStore store() {
+    return store;
+  }
+
   public FakeDNSServer store(RecordStore store) {
     this.store = store;
     return this;

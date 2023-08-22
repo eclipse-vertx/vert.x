@@ -26,6 +26,8 @@ for non blocking address resolution.
 {@link examples.DNSExamples#example1__}
 ----
 
+A client uses a single event loop for querying purposes, it can safely be used from any thread, including non Vert.x thread.
+
 === lookup
 
 Try to lookup the A (ipv4) or AAAA (ipv6) record for a given name. The first which is returned will be used,
