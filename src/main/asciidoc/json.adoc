@@ -21,14 +21,14 @@ You can create a JSON object from a string JSON representation as follows:
 
 [source,java]
 ----
-{@link docoverride.json.Examples#example0_1}
+{@link examples.JsonExamples#example0_1}
 ----
 
 You can create a JSON object from a map as follows:
 
 [source,java]
 ----
-{@link docoverride.json.Examples#exampleCreateFromMap}
+{@link examples.JsonExamples#exampleCreateFromMap}
 ----
 
 ==== Putting entries into a JSON object
@@ -39,7 +39,7 @@ The method invocations can be chained because of the fluent API:
 
 [source,java]
 ----
-{@link docoverride.json.Examples#example1}
+{@link examples.JsonExamples#example1}
 ----
 
 ==== Getting values from a JSON object
@@ -48,7 +48,7 @@ You get values from a JSON object using the `getXXX` methods, for example:
 
 [source,java]
 ----
-{@link docoverride.json.Examples#example2}
+{@link examples.JsonExamples#example2}
 ----
 
 ==== Mapping between JSON objects and Java objects
@@ -59,7 +59,7 @@ You can instantiate a Java object and populate its fields from a JSON object as 
 
 [source,java]
 ----
-{@link docoverride.json.Examples#mapToPojo}
+{@link examples.JsonExamples#mapToPojo}
 ----
 
 Note that both of the above mapping directions use Jackson's `ObjectMapper#convertValue()` to perform the
@@ -92,7 +92,7 @@ You can create a JSON array from a string JSON representation as follows:
 
 [source,java]
 ----
-{@link docoverride.json.Examples#example0_2}
+{@link examples.JsonExamples#example0_2}
 ----
 
 ==== Adding entries into a JSON array
@@ -101,7 +101,7 @@ You add entries to a JSON array using the {@link io.vertx.core.json.JsonArray#ad
 
 [source,java]
 ----
-{@link docoverride.json.Examples#example3}
+{@link examples.JsonExamples#example3}
 ----
 
 ==== Getting values from a JSON array
@@ -110,7 +110,7 @@ You get values from a JSON array using the `getXXX` methods, for example:
 
 [source,java]
 ----
-{@link docoverride.json.Examples#example4}
+{@link examples.JsonExamples#example4}
 ----
 
 ==== Encoding a JSON array to a String
@@ -125,5 +125,5 @@ When you are unsure of the string validity then you should use instead `{@link i
 
 [source,java]
 ----
-{@link docoverride.json.Examples#example5}
+{@link examples.JsonExamples#example5}
 ----

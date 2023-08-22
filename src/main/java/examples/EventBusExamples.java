@@ -13,9 +13,7 @@ package examples;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
-import io.vertx.core.eventbus.EventBus;
-import io.vertx.core.eventbus.EventBusOptions;
-import io.vertx.core.eventbus.MessageConsumer;
+import io.vertx.core.eventbus.*;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.net.JksOptions;
 
@@ -150,5 +148,29 @@ public class EventBusExamples {
       });
   }
 
+  public void example10(EventBus eventBus, MessageCodec myCodec) {
 
+    eventBus.registerCodec(myCodec);
+
+    DeliveryOptions options = new DeliveryOptions().setCodecName(myCodec.name());
+
+    eventBus.send("orders", new MyPOJO(), options);
+  }
+
+  public void example11(EventBus eventBus, MessageCodec myCodec) {
+
+    eventBus.registerDefaultCodec(MyPOJO.class, myCodec);
+
+    eventBus.send("orders", new MyPOJO());
+  }
+
+  public void headers(EventBus eventBus) {
+    DeliveryOptions options = new DeliveryOptions();
+    options.addHeader("some-header", "some-value");
+    eventBus.send("news.uk.sport", "Yay! Someone kicked a ball", options);
+  }
+
+  class MyPOJO {
+
+  }
 }

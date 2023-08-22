@@ -12,10 +12,7 @@
 package examples;
 
 import io.vertx.core.Vertx;
-import io.vertx.core.dns.DnsClient;
-import io.vertx.core.dns.DnsClientOptions;
-import io.vertx.core.dns.MxRecord;
-import io.vertx.core.dns.SrvRecord;
+import io.vertx.core.dns.*;
 
 import java.util.List;
 
@@ -237,6 +234,27 @@ public class DNSExamples {
           System.out.println(record);
         } else {
           System.out.println("Failed to resolve entry" + ar.cause());
+        }
+      });
+  }
+
+  public void example16(Vertx vertx) {
+    DnsClient client = vertx.createDnsClient(53, "10.0.0.1");
+    client
+      .lookup("nonexisting.vert.xio")
+      .onComplete(ar -> {
+        if (ar.succeeded()) {
+          String record = ar.result();
+          System.out.println(record);
+        } else {
+          Throwable cause = ar.cause();
+          if (cause instanceof DnsException) {
+            DnsException exception = (DnsException) cause;
+            DnsResponseCode code = exception.code();
+            // ...
+          } else {
+            System.out.println("Failed to resolve entry" + ar.cause());
+          }
         }
       });
   }
