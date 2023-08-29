@@ -30,7 +30,7 @@ import java.util.function.Predicate;
  *
  * The consumer side uses a {@link Predicate} to handle elements and decide whether it can accept them, when a
  * consumer returns {@code false} it refuses the element and the queue will propose this element later when the
- * consumer signals it can again accept elements.
+ * consumer signals it can accept elements again.
  *
  * <h3>Emitting elements</h3>
  *
