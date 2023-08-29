@@ -39,7 +39,7 @@ import java.util.function.Predicate;
  * <h4>Adding elements</h4>
  *
  * Only the consumer thread can add elements, when the consumer threads add an element to the queue is tries
- * to get the ownership of the queue, when it does the {@link #consumer} is directly called. When ownership
+ * to get the ownership of the queue and directly invoke the {@link #consumer}. When ownership
  * is not acquired, the element is added to the queue, until it is handled by the consumer thread later.
  *
  * <h4>Submitting elements</h4>
