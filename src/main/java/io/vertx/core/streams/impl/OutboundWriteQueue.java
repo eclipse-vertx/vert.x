@@ -23,7 +23,7 @@ import java.util.function.Predicate;
 /**
  * A concurrent multi producers back-pressured queue fronting a single consumer back-pressured system.
  *
- * The queue let multiple producers emit elements ({@link #add}/{@link #submit}) to the consumer with back-pressure
+ * The queue lets multiple producers emit elements ({@link #add}/{@link #submit}) to the consumer with back-pressure
  * to signal producers when they should stop emitting.
  *
  * <h3>Handling elements</h3>
