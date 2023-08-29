@@ -222,7 +222,12 @@ public class OutboundWriteQueue<E> {
       return drainLoop();
     } else {
       queue.add(element);
-      return WIP_UPDATER.incrementAndGet(this) == highWaterMark ? QUEUE_UNWRITABLE_MASK : 0;
+      long v = WIP_UPDATER.incrementAndGet(this);
+      if (v == 1) {
+        return drainLoop();
+      } else {
+        return v == highWaterMark ? QUEUE_UNWRITABLE_MASK : 0;
+      }
     }
   }
 
