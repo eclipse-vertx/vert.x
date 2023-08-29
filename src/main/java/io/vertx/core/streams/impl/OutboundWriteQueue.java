@@ -109,7 +109,7 @@ public class OutboundWriteQueue<E> {
    * When the masked bit is set, the queue became unwritable, this triggers only when the queue transitions
    * from the <i>writable</i>> state to the <i>unwritable</i>> state.
    */
-  public static int QUEUE_UNWRITABLE_MASK = 0x01;
+  public static final int QUEUE_UNWRITABLE_MASK = 0x01;
 
   /**
    * When the masked bit is set, the queue became writable, this triggers only when the queue transitions
