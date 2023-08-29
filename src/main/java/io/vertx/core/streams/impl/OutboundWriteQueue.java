@@ -86,7 +86,7 @@ import java.util.function.Predicate;
  *
  * <p>After a drain if the internal queue has shrunk under {@link #lowWaterMark}, the queue is considered as {@code writable}.
  * {@link #add}/{@link #drain} methods return {@link #QUEUE_WRITABLE_MASK} to signal producers should start emitting. Note
- * the consumer thread handle this signal and should transmit it to the producers.</p>
+ * that the consumer thread handles this signal and should forward it to the producers.</p>
  *
  * <p>When {@link #QUEUE_WRITABLE_MASK} is signalled, the number of {@link #QUEUE_UNWRITABLE_MASK} signals emitted is encoded
  * in the flags. This number allows the producer flow controller to correctly account the producer writability:
