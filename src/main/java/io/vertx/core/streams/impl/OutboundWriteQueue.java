@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.function.Predicate;
 
 /**
@@ -115,41 +117,43 @@ public class OutboundWriteQueue<E> {
    * When the masked bit is set, the queue became writable, this triggers only when the queue transitions
    * from the <i>unwritable</i>> state to the <i>writable</i> state.
    */
-  public static int QUEUE_WRITABLE_MASK = 0x02;
+  public static final int QUEUE_WRITABLE_MASK = 0x02;
 
   /**
    * When the masked bit is set, the caller has acquired the ownership of the queue and must drain it
    * to attempt to release the ownership.
    */
-  public static int DRAIN_REQUIRED_MASK = 0x04;
+  public static final int DRAIN_REQUIRED_MASK = 0x04;
 
   /**
    * The default high-water mark value: {@code 16}
    */
-  public static int DEFAULT_HIGH_WATER_MARK = 16;
+  public static final int DEFAULT_HIGH_WATER_MARK = 16;
 
   /**
    * The default low-water mark value: {@code 8}
    */
-  public static int DEFAULT_LOW_WATER_MARK = 8;
+  public static final int DEFAULT_LOW_WATER_MARK = 8;
+
+  private static final AtomicLongFieldUpdater<OutboundWriteQueue<?>> WIP_UPDATER = (AtomicLongFieldUpdater<OutboundWriteQueue<?>>) (AtomicLongFieldUpdater)AtomicLongFieldUpdater.newUpdater(OutboundWriteQueue.class, "wip");
 
   // Immutable
 
   private final Predicate<E> consumer;
-  private final int highWaterMark;
-  private final int lowWaterMark;
+  private final long highWaterMark;
+  private final long lowWaterMark;
 
   // Concurrent part accessed by any producer thread
 
   private final Queue<E> queue = PlatformDependent.newMpscQueue();
-  private final AtomicInteger wip = new AtomicInteger();
+  private volatile long wip = 0L;
 
   // Consumer thread only
 
   // The element refused by the consumer (null <=> overflow)
   private E overflow;
   // The number of times the queue was observed to be unwritable
-  private int writeQueueFull;
+  private long writeQueueFull;
 
   /**
    * Create a new instance.
@@ -171,8 +175,8 @@ public class OutboundWriteQueue<E> {
    * @throws NullPointerException if consumer is null
    * @throws IllegalArgumentException if any mark violates the condition
    */
-  public OutboundWriteQueue(Predicate<E> consumer, int lowWaterMark, int highWaterMark) {
-    Arguments.require(lowWaterMark >= 0, "The low-water mark must be > 0");
+  public OutboundWriteQueue(Predicate<E> consumer, long lowWaterMark, long highWaterMark) {
+    Arguments.require(lowWaterMark >= 0, "The low-water mark must be >= 0");
     Arguments.require(lowWaterMark <= highWaterMark, "The high-water mark must greater or equals to the low-water mark");
     this.consumer = Objects.requireNonNull(consumer, "Consumer must be not null");
     this.lowWaterMark = lowWaterMark;
@@ -182,14 +186,14 @@ public class OutboundWriteQueue<E> {
   /**
    * @return the queue high-water mark
    */
-  public int highWaterMark() {
+  public long highWaterMark() {
     return highWaterMark;
   }
 
   /**
    * @return the queue low-water mark
    */
-  public int lowWaterMark() {
+  public long lowWaterMark() {
     return lowWaterMark;
   }
 
@@ -207,10 +211,10 @@ public class OutboundWriteQueue<E> {
    * @return a bitset of [{@link #DRAIN_REQUIRED_MASK}, {@link #QUEUE_UNWRITABLE_MASK}, {@link #QUEUE_WRITABLE_MASK}] flags
    */
   public int add(E element) {
-    if (wip.compareAndSet(0, 1)) {
+    if (WIP_UPDATER.compareAndSet(this, 0, 1)) {
       if (!consumer.test(element)) {
         overflow = element;
-        return DRAIN_REQUIRED_MASK | (wip.get() == highWaterMark ? QUEUE_UNWRITABLE_MASK : 0);
+        return DRAIN_REQUIRED_MASK | (WIP_UPDATER.get(this) == highWaterMark ? QUEUE_UNWRITABLE_MASK : 0);
       }
       if (consume(1) == 0) {
         return 0;
@@ -218,7 +222,7 @@ public class OutboundWriteQueue<E> {
       return drainLoop();
     } else {
       queue.add(element);
-      return wip.incrementAndGet() == highWaterMark ? QUEUE_UNWRITABLE_MASK : 0;
+      return WIP_UPDATER.incrementAndGet(this) == highWaterMark ? QUEUE_UNWRITABLE_MASK : 0;
     }
   }
 
@@ -233,7 +237,7 @@ public class OutboundWriteQueue<E> {
   public int submit(E element) {
     queue.add(element);
     // winning this => overflow == null
-    int pending = wip.incrementAndGet();
+    long pending = WIP_UPDATER.incrementAndGet(this);
     if (pending == highWaterMark) {
       hook2();
     }
@@ -288,7 +292,7 @@ public class OutboundWriteQueue<E> {
    */
   // Note : we can optimize this by passing pending as argument of this method to avoid the initial
   private int drainLoop() {
-    int pending = wip.get();
+    long pending = WIP_UPDATER.get(this);
     if (pending == 0) {
       throw new IllegalStateException();
     }
@@ -306,7 +310,7 @@ public class OutboundWriteQueue<E> {
       pending = consume(consumed);
     } while (pending != 0 && overflow == null);
     boolean writabilityChanged = pending < lowWaterMark && writeQueueFull > 0;
-    int val = writeQueueFull << 4;
+    long val = writeQueueFull << 4;
     if (writabilityChanged) {
       writeQueueFull = 0;
     }
@@ -323,9 +327,9 @@ public class OutboundWriteQueue<E> {
    * @param amount the amount to consume
    * @return the number of pending elements after consuming from the queue
    */
-  private int consume(int amount) {
-    int pending = wip.addAndGet(-amount);
-    int size = pending + amount;
+  private long consume(int amount) {
+    long pending = WIP_UPDATER.addAndGet(this, -amount);
+    long size = pending + amount;
     if (size >= highWaterMark && (size - amount) < highWaterMark) {
       writeQueueFull++;
     }
@@ -347,11 +351,11 @@ public class OutboundWriteQueue<E> {
     if (overflow != null) {
       elts.add(overflow);
       overflow = null;
-      if (wip.decrementAndGet() == 0) {
+      if (WIP_UPDATER.decrementAndGet(this) == 0) {
         return elts;
       }
     }
-    for (int pending = wip.get();pending != 0;pending = wip.addAndGet(-pending)) {
+    for (long pending = WIP_UPDATER.get(this);pending != 0;pending = WIP_UPDATER.addAndGet(this, -pending)) {
       for (int i = 0;i < pending;i++) {
         elts.add(queue.poll());
       }
