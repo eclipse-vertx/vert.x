@@ -94,6 +94,13 @@ public interface HttpClient extends Measured {
   Future<HttpClientRequest> request(HttpMethod method, String requestURI);
 
   /**
+   * Create a WebSocket that is not yet connected to the server.
+   *
+   * @return the client WebSocket
+   */
+  ClientWebSocket webSocket();
+
+  /**
    * Connect a WebSocket to the specified port, host and relative request URI.
    *
    * @param port  the port
@@ -101,7 +108,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @return a future notified when the WebSocket when connected
    */
-  Future<WebSocket> webSocket(int port, String host, String requestURI);
+  default Future<WebSocket> webSocket(int port, String host, String requestURI) {
+    return webSocket(new WebSocketConnectOptions().setURI(requestURI).setHost(host).setPort(port));
+  }
 
   /**
    * Connect a WebSocket to the host and relative request URI and default port.
