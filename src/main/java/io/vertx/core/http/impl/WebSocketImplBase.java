@@ -31,10 +31,7 @@ import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
-import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.WebSocketBase;
-import io.vertx.core.http.WebSocketFrame;
-import io.vertx.core.http.WebSocketFrameType;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextInternal;
@@ -60,7 +57,7 @@ import static io.vertx.core.net.impl.VertxHandler.*;
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @param <S> self return type
  */
-public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebSocketInternal {
+public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocketInternal {
 
   private final boolean supportsContinuation;
   private final String textHandlerID;
@@ -590,7 +587,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   @Override
-  public WebSocketBase textMessageHandler(Handler<String> handler) {
+  public WebSocket textMessageHandler(Handler<String> handler) {
     synchronized (conn) {
       checkClosed();
       if (handler != null) {
@@ -636,7 +633,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   @Override
-  public WebSocketBase pongHandler(Handler<Buffer> handler) {
+  public WebSocket pongHandler(Handler<Buffer> handler) {
     synchronized (conn) {
       checkClosed();
       this.pongHandler = handler;

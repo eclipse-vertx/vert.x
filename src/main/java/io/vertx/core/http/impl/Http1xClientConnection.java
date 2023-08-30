@@ -975,7 +975,10 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     return client.metrics();
   }
 
-  synchronized Future<WebSocket> toWebSocket(
+  /**
+   * @return a future of a paused WebSocket
+   */
+  synchronized void toWebSocket(
     ContextInternal context,
     String requestURI,
     MultiMap headers,
@@ -984,8 +987,8 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     List<String> subProtocols,
     long handshakeTimeout,
     boolean registerWriteHandlers,
-    int maxWebSocketFrameSize) {
-    Promise<WebSocket> promise = context.promise();
+    int maxWebSocketFrameSize,
+    Promise<WebSocket> promise) {
     try {
       URI wsuri = new URI(requestURI);
       if (!wsuri.isAbsolute()) {
@@ -1057,7 +1060,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
           if (metrics != null) {
             ws.setMetric(metrics.connected(ws));
           }
-          promise.complete(ws);
+          ws.pause();
           Deque<WebSocketFrame> toResubmit = pendingFrames;
           if (toResubmit != null) {
             pendingFrames = null;
@@ -1066,6 +1069,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
               handleWsFrame(frame);
             }
           }
+          promise.complete(ws);
         } else {
           close();
           promise.fail(future.cause());
@@ -1074,7 +1078,6 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     } catch (Exception e) {
       handleException(e);
     }
-    return promise.future();
   }
 
   static WebSocketClientHandshaker newHandshaker(

@@ -31,7 +31,7 @@ import javax.net.ssl.SSLSession;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface ServerWebSocket extends WebSocketBase {
+public interface ServerWebSocket extends WebSocket {
 
   @Override
   ServerWebSocket exceptionHandler(Handler<Throwable> handler);

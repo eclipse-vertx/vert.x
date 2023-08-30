@@ -15,19 +15,9 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpClientResponse;
-import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.HttpHeaders;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.RequestOptions;
-import io.vertx.core.http.WebSocket;
-import io.vertx.core.http.WebSocketConnectOptions;
-import io.vertx.core.http.WebsocketVersion;
+import io.vertx.core.http.*;
 import io.vertx.core.impl.*;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.NetClientBuilder;
 import io.vertx.core.net.impl.NetClientInternal;
@@ -116,7 +106,7 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider {
   };
 
   private final VertxInternal vertx;
-  private final HttpClientOptions options;
+  final HttpClientOptions options;
   private final EndpointProvider<EndpointKey, Lease<HttpClientConnection>> httpEndpointProvider;
   private final ConnectionManager<EndpointKey, HttpClientConnection> webSocketCM;
   private final ConnectionManager<EndpointKey, Lease<HttpClientConnection>> httpCM;
@@ -333,7 +323,22 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider {
     return connector.httpConnect(context);
   }
 
-  private Future<WebSocket> webSocket(ContextInternal ctx, WebSocketConnectOptions connectOptions) {
+  @Override
+  public ClientWebSocket webSocket() {
+    return new ClientWebSocketImpl(this);
+  }
+
+  Future<WebSocket> webSocket(ContextInternal ctx, WebSocketConnectOptions connectOptions) {
+    PromiseInternal<WebSocket> promise = ctx.promise();
+    webSocket(ctx, connectOptions, promise);
+    return promise.andThen(ar -> {
+      if (ar.succeeded()) {
+        ar.result().resume();
+      }
+    });
+  }
+
+  void webSocket(ContextInternal ctx, WebSocketConnectOptions connectOptions, Promise<WebSocket> promise) {
     int port = getPort(connectOptions);
     String host = getHost(connectOptions);
     SocketAddress addr = SocketAddress.inetSocketAddress(port, host);
@@ -345,28 +350,26 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider {
     } else {
       eventLoopContext = vertx.createEventLoopContext(ctx.nettyEventLoop(), ctx.workerPool(), ctx.classLoader());
     }
-    // Work around for workers
-    return ctx
-      .succeededFuture()
-      .compose(v -> webSocketCM.getConnection(eventLoopContext, key))
-      .compose(c -> {
-        Http1xClientConnection conn = (Http1xClientConnection) c;
-        return conn.toWebSocket(
-          ctx,
-          connectOptions.getURI(),
-          connectOptions.getHeaders(),
-          connectOptions.getAllowOriginHeader(),
-          connectOptions.getVersion(),
-          connectOptions.getSubProtocols(),
-          connectOptions.getTimeout(),
-          connectOptions.isRegisterWriteHandlers(),
-          HttpClientImpl.this.options.getMaxWebSocketFrameSize());
-      });
-  }
-
-  @Override
-  public Future<WebSocket> webSocket(int port, String host, String requestURI) {
-    return webSocket(new WebSocketConnectOptions().setURI(requestURI).setHost(host).setPort(port));
+    webSocketCM
+      .getConnection(eventLoopContext, key)
+      .onComplete(c -> {
+        if (c.succeeded()) {
+          Http1xClientConnection conn = (Http1xClientConnection) c.result();
+          conn.toWebSocket(
+            ctx,
+            connectOptions.getURI(),
+            connectOptions.getHeaders(),
+            connectOptions.getAllowOriginHeader(),
+            connectOptions.getVersion(),
+            connectOptions.getSubProtocols(),
+            connectOptions.getTimeout(),
+            connectOptions.isRegisterWriteHandlers(),
+            HttpClientImpl.this.options.getMaxWebSocketFrameSize(),
+            promise);
+        } else {
+          promise.fail(c.cause());
+        }
+    });
   }
 
   @Override
@@ -384,8 +387,7 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider {
     return webSocket(vertx.getOrCreateContext(), options);
   }
 
-  @Override
-  public Future<WebSocket> webSocketAbs(String url, MultiMap headers, WebsocketVersion version, List<String> subProtocols) {
+  static WebSocketConnectOptions webSocketConnectOptionsAbs(String url, MultiMap headers, WebsocketVersion version, List<String> subProtocols) {
     URI uri;
     try {
       uri = new URI(url);
@@ -409,14 +411,18 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider {
     if (uri.getRawFragment() != null) {
       relativeUri.append('#').append(uri.getRawFragment());
     }
-    WebSocketConnectOptions options = new WebSocketConnectOptions()
+    return new WebSocketConnectOptions()
       .setHost(uri.getHost())
       .setPort(port).setSsl(ssl)
       .setURI(relativeUri.toString())
       .setHeaders(headers)
       .setVersion(version)
       .setSubProtocols(subProtocols);
-    return webSocket(options);
+  }
+
+  @Override
+  public Future<WebSocket> webSocketAbs(String url, MultiMap headers, WebsocketVersion version, List<String> subProtocols) {
+    return webSocket(webSocketConnectOptionsAbs(url, headers, version, subProtocols));
   }
 
   @Override
