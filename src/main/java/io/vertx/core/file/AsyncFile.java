@@ -252,7 +252,7 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
           lock.release();
           throw new VertxException(e);
         }
-        return res.eventually(v -> lock.release());
+        return res.eventually(() -> lock.release());
       });
   }
 }
