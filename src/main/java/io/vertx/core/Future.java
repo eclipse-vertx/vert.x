@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Represents the result of an action that may, or may not, have occurred yet.
@@ -417,7 +418,7 @@ public interface Future<T> extends AsyncResult<T> {
    * @param mapper the function returning the future.
    * @return the composed future
    */
-  <U> Future<T> eventually(Function<Void, Future<U>> mapper);
+  <U> Future<T> eventually(Supplier<Future<U>> mapper);
 
   /**
    * Apply a {@code mapper} function on this future.<p>

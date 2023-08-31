@@ -200,7 +200,7 @@ class HttpNetSocket implements NetSocket {
         .pipe()
         .endOnComplete(false)
         .to(this)
-        .eventually(v -> file.close())
+        .eventually(file::close)
       );
   }
 

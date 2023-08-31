@@ -165,7 +165,7 @@ public class FileSystemExamples {
       .open("target/classes/les_miserables.txt", new OpenOptions())
       .compose(file -> file
         .pipeTo(output)
-        .eventually(v -> file.close()))
+        .eventually(() -> file.close()))
       .onComplete(result -> {
         if (result.succeeded()) {
           System.out.println("Copy done");

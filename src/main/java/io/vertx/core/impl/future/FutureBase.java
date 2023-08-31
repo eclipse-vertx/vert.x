@@ -18,6 +18,7 @@ import io.vertx.core.impl.ContextInternal;
 
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Future base implementation.
@@ -94,9 +95,9 @@ public abstract class FutureBase<T> implements FutureInternal<T> {
   }
 
   @Override
-  public <U> Future<T> eventually(Function<Void, Future<U>> mapper) {
-    Objects.requireNonNull(mapper, "No null mapper accepted");
-    Eventually<T, U> operation = new Eventually<>(context, mapper);
+  public <U> Future<T> eventually(Supplier<Future<U>> supplier) {
+    Objects.requireNonNull(supplier, "No null supplier accepted");
+    Eventually<T, U> operation = new Eventually<>(context, supplier);
     addListener(operation);
     return operation;
   }
