@@ -29,9 +29,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.function.Function;
+import java.util.function.*;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -381,22 +379,32 @@ public class FutureTest extends FutureTestBase {
   }
 
   @Test
-  public void testEventuallySuccessToSuccess() {
-    testEventuallySuccessTo(p -> p.complete(6));
+  public void testEventuallyFunctionSuccessToSuccess() {
+    testEventuallySuccessTo(p -> p.complete(6), (f, s) -> f.eventually(v -> s.get()));
   }
 
   @Test
-  public void testEventuallySuccessToFailure() {
-    testEventuallySuccessTo(p -> p.fail("it-failed"));
+  public void testEventuallyFunctionSuccessToFailure() {
+    testEventuallySuccessTo(p -> p.fail("it-failed"), (f, s) -> f.eventually(v -> s.get()));
   }
 
-  private void testEventuallySuccessTo(Consumer<Promise<Integer>> op) {
+  @Test
+  public void testEventuallySupplierSuccessToSuccess() {
+    testEventuallySuccessTo(p -> p.complete(6), Future::eventually);
+  }
+
+  @Test
+  public void testEventuallySupplierSuccessToFailure() {
+    testEventuallySuccessTo(p -> p.fail("it-failed"), Future::eventually);
+  }
+
+  private void testEventuallySuccessTo(Consumer<Promise<Integer>> op, BiFunction<Future<String>, Supplier<Future<Integer>>, Future<String>> impl) {
     AtomicInteger cnt = new AtomicInteger();
     Promise<Integer> p = Promise.promise();
     Future<Integer> c = p.future();
     Promise<String> p3 = Promise.promise();
     Future<String> f3 = p3.future();
-    Future<String> f4 = f3.eventually(v -> {
+    Future<String> f4 = impl.apply(f3, () -> {
       cnt.incrementAndGet();
       return c;
     });
@@ -823,7 +831,7 @@ public class FutureTest extends FutureTestBase {
       public boolean failed() { throw new UnsupportedOperationException(); }
       public <U> Future<U> compose(Function<T, Future<U>> successMapper, Function<Throwable, Future<U>> failureMapper) { throw new UnsupportedOperationException(); }
       public <U> Future<U> transform(Function<AsyncResult<T>, Future<U>> mapper) { throw new UnsupportedOperationException(); }
-      public <U> Future<T> eventually(Function<Void, Future<U>> mapper) { throw new UnsupportedOperationException(); }
+      public <U> Future<T> eventually(Function<Void, Future<U>> function) { throw new UnsupportedOperationException(); }
       public <U> Future<U> map(Function<T, U> mapper) { throw new UnsupportedOperationException(); }
       public <V> Future<V> map(V value) { throw new UnsupportedOperationException(); }
       public Future<T> otherwise(Function<Throwable, T> mapper) { throw new UnsupportedOperationException(); }
