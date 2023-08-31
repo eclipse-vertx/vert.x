@@ -268,6 +268,26 @@ public interface Future<T> extends AsyncResult<T> {
   Future<T> onComplete(Handler<AsyncResult<T>> handler);
 
   /**
+   * Add handlers to be notified on succeeded result and failed result.
+   * <p>
+   * <em><strong>WARNING</strong></em>: this is a terminal operation.
+   * If several {@code handler}s are registered, there is no guarantee that they will be invoked in order of registration.
+   *
+   * @param successHandler the handler that will be called with the succeeded result
+   * @param failureHandler the handler that will be called with the failed result
+   * @return a reference to this, so it can be used fluently
+   */
+  default Future<T> onComplete(Handler<T> successHandler, Handler<Throwable> failureHandler) {
+      return onComplete(ar -> {
+        if (successHandler != null && ar.succeeded()) {
+          successHandler.handle(ar.result());
+        } else if (failureHandler != null && ar.failed()) {
+          failureHandler.handle(ar.cause());
+        }
+      });
+  }
+
+  /**
    * Add a handler to be notified of the succeeded result.
    * <p>
    * <em><strong>WARNING</strong></em>: this is a terminal operation.
@@ -278,11 +298,7 @@ public interface Future<T> extends AsyncResult<T> {
    */
   @Fluent
   default Future<T> onSuccess(Handler<T> handler) {
-    return onComplete(ar -> {
-      if (ar.succeeded()) {
-        handler.handle(ar.result());
-      }
-    });
+    return onComplete(handler, null);
   }
 
   /**
@@ -296,11 +312,7 @@ public interface Future<T> extends AsyncResult<T> {
    */
   @Fluent
   default Future<T> onFailure(Handler<Throwable> handler) {
-    return onComplete(ar -> {
-      if (ar.failed()) {
-        handler.handle(ar.cause());
-      }
-    });
+    return onComplete(null, handler);
   }
 
   /**
