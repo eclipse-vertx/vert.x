@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Represents the result of an action that may, or may not, have occurred yet.
@@ -405,19 +406,38 @@ public interface Future<T> extends AsyncResult<T> {
   <U> Future<U> transform(Function<AsyncResult<T>, Future<U>> mapper);
 
   /**
-   * Compose this future with a {@code mapper} that will be always be called.
+   * Compose this future with a {@code function} that will be always be called.
    *
-   * <p>When this future (the one on which {@code eventually} is called) completes, the {@code mapper} will be called
+   * <p>When this future (the one on which {@code eventually} is called) completes, the {@code function} will be called
    * and this mapper returns another future object. This returned future completion will complete the future returned
    * by this method call with the original result of the future.
    *
-   * <p>The outcome of the future returned by the {@code mapper} will not influence the nature
+   * <p>The outcome of the future returned by the {@code function} will not influence the nature
    * of the returned future.
    *
-   * @param mapper the function returning the future.
+   * @param function the function returning the future.
+   * @return the composed future
+   * @deprecated instead use {@link #eventually(Supplier)}, this method will be removed in Vert.x 5
+   */
+  @Deprecated
+  <U> Future<T> eventually(Function<Void, Future<U>> function);
+
+  /**
+   * Compose this future with a {@code supplier} that will be always be called.
+   *
+   * <p>When this future (the one on which {@code eventually} is called) completes, the {@code supplier} will be called
+   * and this mapper returns another future object. This returned future completion will complete the future returned
+   * by this method call with the original result of the future.
+   *
+   * <p>The outcome of the future returned by the {@code supplier} will not influence the nature
+   * of the returned future.
+   *
+   * @param supplier the function returning the future.
    * @return the composed future
    */
-  <U> Future<T> eventually(Function<Void, Future<U>> mapper);
+  default <U> Future<T> eventually(Supplier<Future<U>> supplier) {
+    return eventually(v -> supplier.get());
+  }
 
   /**
    * Apply a {@code mapper} function on this future.<p>
