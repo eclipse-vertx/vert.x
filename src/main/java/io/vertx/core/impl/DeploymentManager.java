@@ -337,7 +337,7 @@ public class DeploymentManager {
             Promise<Void> stopPromise = undeployingContext.promise();
             Future<Void> stopFuture = stopPromise.future();
             stopFuture
-              .eventually(v2 -> {
+              .eventually(() -> {
                 deployments.remove(deploymentID);
                 return verticleHolder
                   .close()

@@ -14,6 +14,7 @@ import io.vertx.core.Future;
 import io.vertx.core.impl.ContextInternal;
 
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Eventually operation.
@@ -22,18 +23,18 @@ import java.util.function.Function;
  */
 class Eventually<T, U> extends Operation<T> implements Listener<T> {
 
-  private final Function<Void, Future<U>> mapper;
+  private final Supplier<Future<U>> supplier;
 
-  Eventually(ContextInternal context, Function<Void, Future<U>> mapper) {
+  Eventually(ContextInternal context, Supplier<Future<U>> supplier) {
     super(context);
-    this.mapper = mapper;
+    this.supplier = supplier;
   }
 
   @Override
   public void onSuccess(T value) {
     FutureInternal<U> future;
     try {
-      future = (FutureInternal<U>) mapper.apply(null);
+      future = (FutureInternal<U>) supplier.get();
     } catch (Throwable e) {
       tryFail(e);
       return;
@@ -54,7 +55,7 @@ class Eventually<T, U> extends Operation<T> implements Listener<T> {
   public void onFailure(Throwable failure) {
     FutureInternal<U> future;
     try {
-      future = (FutureInternal<U>) mapper.apply(null);
+      future = (FutureInternal<U>) supplier.get();
     } catch (Throwable e) {
       tryFail(e);
       return;

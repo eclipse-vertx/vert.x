@@ -3609,7 +3609,7 @@ public class WebSocketTest extends VertxTestBase {
       assertNull(ws.binaryHandlerID());
       ws.binaryMessageHandler(data -> {
         assertEquals(hello, data);
-        ws.writeBinaryMessage(bye).eventually(v -> ws.close());
+        ws.writeBinaryMessage(bye).eventually(ws::close);
       });
     });
 
