@@ -12,7 +12,6 @@
 package io.vertx.core.net.impl.pool;
 
 import io.vertx.core.*;
-import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
@@ -44,7 +43,7 @@ public class StressTest extends VertxTestBase {
     }
 
     @Override
-    public void connect(EventLoopContext context, Listener listener, Handler<AsyncResult<ConnectResult<FakeConnection>>> handler) {
+    public void connect(ContextInternal context, Listener listener, Handler<AsyncResult<ConnectResult<FakeConnection>>> handler) {
       int i = ThreadLocalRandom.current().nextInt(100);
       Promise<ConnectResult<FakeConnection>> promise = Promise.promise();
       Future<ConnectResult<FakeConnection>> future = promise.future();
@@ -65,11 +64,11 @@ public class StressTest extends VertxTestBase {
 
   class FakeWaiter {
 
-    protected final EventLoopContext context;
+    protected final ContextInternal context;
     private Object result;
 
     FakeWaiter() {
-      context = (EventLoopContext) vertx.getOrCreateContext();
+      context = (ContextInternal) vertx.getOrCreateContext();
     }
 
     protected void onSuccess(FakeConnection conn) {

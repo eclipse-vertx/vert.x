@@ -525,28 +525,34 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
   }
 
-  @Override
-  public EventLoopContext createEventLoopContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
-    return new EventLoopContext(this, eventLoopGroup.next(), internalWorkerPool, workerPool != null ? workerPool : this.workerPool, deployment, closeFuture, disableTCCL ? null : tccl);
+  private ContextImpl createEventLoopContext(EventLoop eventLoop, CloseFuture closeFuture, WorkerPool workerPool, Deployment deployment, ClassLoader tccl) {
+    return new ContextImpl(this, true, eventLoop, new EventLoopExecutor(eventLoop), internalWorkerPool, workerPool != null ? workerPool : this.workerPool, new TaskQueue(), deployment, closeFuture, disableTCCL ? null : tccl);
   }
 
   @Override
-  public EventLoopContext createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
-    return new EventLoopContext(this, eventLoop, internalWorkerPool, workerPool != null ? workerPool : this.workerPool, null, closeFuture, disableTCCL ? tccl : null);
+  public ContextImpl createEventLoopContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
+    return createEventLoopContext(eventLoopGroup.next(), closeFuture, workerPool, deployment, tccl);
   }
 
   @Override
-  public EventLoopContext createEventLoopContext() {
+  public ContextImpl createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
+    return createEventLoopContext(eventLoop, closeFuture, workerPool, null, tccl);
+  }
+
+  @Override
+  public ContextImpl createEventLoopContext() {
     return createEventLoopContext(null, closeFuture, null, Thread.currentThread().getContextClassLoader());
   }
 
   @Override
-  public WorkerContext createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
-    return new WorkerContext(this, internalWorkerPool, workerPool != null ? workerPool : this.workerPool, deployment, closeFuture, disableTCCL ? null : tccl);
+  public ContextImpl createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
+    TaskQueue orderedTasks = new TaskQueue();
+    WorkerPool wp = workerPool != null ? workerPool : this.workerPool;
+    return new ContextImpl(this, false, eventLoopGroup.next(), new WorkerExecutor(wp, orderedTasks), internalWorkerPool, wp, orderedTasks, deployment, closeFuture, disableTCCL ? null : tccl);
   }
 
   @Override
-  public WorkerContext createWorkerContext() {
+  public ContextImpl createWorkerContext() {
     return createWorkerContext(null, closeFuture, null, Thread.currentThread().getContextClassLoader());
   }
 
@@ -1270,7 +1276,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     if (thread instanceof VertxThread) {
       VertxThread vertxThread = (VertxThread) thread;
       prev = vertxThread.context;
-      if (!ContextBase.DISABLE_TIMINGS) {
+      if (!ContextImpl.DISABLE_TIMINGS) {
         vertxThread.executeStart();
       }
       vertxThread.context = context;
@@ -1331,7 +1337,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         }
         Thread.currentThread().setContextClassLoader(tccl);
       }
-      if (!ContextBase.DISABLE_TIMINGS) {
+      if (!ContextImpl.DISABLE_TIMINGS) {
         vertxThread.executeEnd();
       }
     } else {

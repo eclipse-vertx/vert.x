@@ -27,7 +27,6 @@ import io.vertx.core.eventbus.impl.MessageImpl;
 import io.vertx.core.eventbus.impl.OutboundDeliveryContext;
 import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -71,7 +70,7 @@ public class ClusteredEventBus extends EventBusImpl {
 
   private final ConcurrentMap<String, ConnectionHolder> connections = new ConcurrentHashMap<>();
   private final CloseFuture closeFuture;
-  private final EventLoopContext ebContext;
+  private final ContextInternal ebContext;
 
   private NodeInfo nodeInfo;
   private String nodeId;

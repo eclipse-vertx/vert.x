@@ -31,7 +31,6 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.tracing.SpanKind;
@@ -54,7 +53,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   private boolean evicted;
 
   Http2ClientConnection(HttpClientBase client,
-                        EventLoopContext context,
+                        ContextInternal context,
                         VertxHttp2ConnectionHandler connHandler,
                         ClientMetrics metrics) {
     super(context, connHandler);
@@ -681,7 +680,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   public static VertxHttp2ConnectionHandler<Http2ClientConnection> createHttp2ConnectionHandler(
     HttpClientBase client,
     ClientMetrics metrics,
-    EventLoopContext context,
+    ContextInternal context,
     boolean upgrade,
     Object socketMetric) {
     HttpClientOptions options = client.options();

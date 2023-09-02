@@ -16,7 +16,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.http.ConnectionPoolTooBusyException;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.EventLoopContext;
 
 import java.util.AbstractList;
 import java.util.ArrayList;
@@ -115,7 +114,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
   static class Slot<C> implements PoolConnector.Listener, PoolConnection<C> {
 
     private final SimpleConnectionPool<C> pool;
-    private final EventLoopContext context;
+    private final ContextInternal context;
     private final Promise<C> result;
     private PoolWaiter<C> initiator;
     private C connection;    // The actual connection, might be null
@@ -124,7 +123,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
     private long concurrency; // The total number of times the connection can be acquired
     private int capacity;      // The connection capacity
 
-    public Slot(SimpleConnectionPool<C> pool, EventLoopContext context, int index, int capacity) {
+    public Slot(SimpleConnectionPool<C> pool, ContextInternal context, int index, int capacity) {
       this.pool = pool;
       this.context = context;
       this.connection = null;
@@ -182,7 +181,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
 
   // Selectors
   private BiFunction<PoolWaiter<C>, List<PoolConnection<C>>, PoolConnection<C>> selector;
-  private Function<ContextInternal, EventLoopContext> contextProvider;
+  private Function<ContextInternal, ContextInternal> contextProvider;
   private BiFunction<PoolWaiter<C>, List<PoolConnection<C>>, PoolConnection<C>> fallbackSelector;
 
   // Connection state
@@ -236,7 +235,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
   }
 
   @Override
-  public ConnectionPool<C> contextProvider(Function<ContextInternal, EventLoopContext> contextProvider) {
+  public ConnectionPool<C> contextProvider(Function<ContextInternal, ContextInternal> contextProvider) {
     this.contextProvider = contextProvider;
     return this;
   }
@@ -414,7 +413,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
       removed.capacity = 0;
       PoolWaiter<C> waiter = pool.waiters.poll();
       if (waiter != null) {
-        EventLoopContext connectionContext = pool.contextProvider.apply(waiter.context);
+        ContextInternal connectionContext = pool.contextProvider.apply(waiter.context);
         Slot<C> slot = new Slot<>(pool, connectionContext, removed.index, waiter.capacity);
         pool.capacity -= w;
         pool.capacity += waiter.capacity;
@@ -583,7 +582,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
       // 2. Try create connection
       if (pool.capacity < pool.maxCapacity) {
         pool.capacity += capacity;
-        EventLoopContext connectionContext = pool.contextProvider.apply(context);
+        ContextInternal connectionContext = pool.contextProvider.apply(context);
         Slot<C> slot2 = new Slot<>(pool, connectionContext, pool.size, capacity);
         pool.slots[pool.size++] = slot2;
         pool.requests++;
