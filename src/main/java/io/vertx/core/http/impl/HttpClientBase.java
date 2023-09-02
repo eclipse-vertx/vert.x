@@ -14,7 +14,7 @@ package io.vertx.core.http.impl;
 import io.vertx.core.*;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.CloseSequence;
-import io.vertx.core.impl.EventLoopContext;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.NetClientBuilder;
@@ -150,7 +150,7 @@ public class HttpClientBase implements MetricsProvider, Closeable {
    * Connect to a server.
    */
   public Future<HttpClientConnection> connect(SocketAddress server, SocketAddress peer) {
-    EventLoopContext context = (EventLoopContext) vertx.getOrCreateContext();
+    ContextInternal context = vertx.getOrCreateContext();
     HttpChannelConnector connector = new HttpChannelConnector(this, netClient, null, null, options.getProtocolVersion(), options.isSsl(), options.isUseAlpn(), peer, server);
     return connector.httpConnect(context);
   }

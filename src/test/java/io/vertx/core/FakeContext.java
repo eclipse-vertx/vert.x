@@ -34,11 +34,6 @@ class FakeContext implements ContextInternal {
   }
 
   @Override
-  public void runOnContext(Handler<Void> action) {
-
-  }
-
-  @Override
   public boolean inThread() {
     return false;
   }

@@ -17,7 +17,6 @@ import io.vertx.core.Promise;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.impl.pool.ConnectResult;
 import io.vertx.core.net.impl.pool.ConnectionPool;
@@ -80,7 +79,7 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
   }
 
   @Override
-  public Future<ConnectResult<HttpClientConnection>> connect(EventLoopContext context, Listener listener) {
+  public Future<ConnectResult<HttpClientConnection>> connect(ContextInternal context, Listener listener) {
     return connector
       .httpConnect(context)
       .map(connection -> {

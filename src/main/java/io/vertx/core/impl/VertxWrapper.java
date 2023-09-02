@@ -351,27 +351,27 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public EventLoopContext createEventLoopContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
+  public ContextInternal createEventLoopContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
     return delegate.createEventLoopContext(deployment, closeFuture, workerPool, tccl);
   }
 
   @Override
-  public EventLoopContext createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
+  public ContextInternal createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
     return delegate.createEventLoopContext(eventLoop, workerPool, tccl);
   }
 
   @Override
-  public EventLoopContext createEventLoopContext() {
+  public ContextInternal createEventLoopContext() {
     return delegate.createEventLoopContext();
   }
 
   @Override
-  public WorkerContext createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool pool, ClassLoader tccl) {
+  public ContextInternal createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool pool, ClassLoader tccl) {
     return delegate.createWorkerContext(deployment, closeFuture, pool, tccl);
   }
 
   @Override
-  public WorkerContext createWorkerContext() {
+  public ContextInternal createWorkerContext() {
     return delegate.createWorkerContext();
   }
 

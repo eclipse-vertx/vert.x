@@ -10,10 +10,8 @@
  */
 package io.vertx.core.net.impl.pool;
 
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.impl.EventLoopContext;
+import io.vertx.core.impl.ContextInternal;
 
 /**
  * Defines the interactions with the actual back-end managing connections.
@@ -29,7 +27,7 @@ public interface PoolConnector<C> {
    * @param listener the listener
    * @return a future notified with the result
    */
-  Future<ConnectResult<C>> connect(EventLoopContext context, Listener listener);
+  Future<ConnectResult<C>> connect(ContextInternal context, Listener listener);
 
   /**
    * Checks whether the connection is still valid.

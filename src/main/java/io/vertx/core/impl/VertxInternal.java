@@ -102,18 +102,18 @@ public interface VertxInternal extends Vertx {
   /**
    * @return event loop context
    */
-  EventLoopContext createEventLoopContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl);
+  ContextInternal createEventLoopContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl);
 
-  EventLoopContext createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl);
+  ContextInternal createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl);
 
-  EventLoopContext createEventLoopContext();
+  ContextInternal createEventLoopContext();
 
   /**
    * @return worker loop context
    */
-  WorkerContext createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool pool, ClassLoader tccl);
+  ContextInternal createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool pool, ClassLoader tccl);
 
-  WorkerContext createWorkerContext();
+  ContextInternal createWorkerContext();
 
   @Override
   WorkerExecutorInternal createSharedWorkerExecutor(String name);

@@ -14,7 +14,6 @@ import io.netty.channel.EventLoop;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.tracing.VertxTracer;
 
@@ -36,10 +35,10 @@ import java.util.concurrent.Executor;
  */
 class DuplicatedContext implements ContextInternal {
 
-  protected final ContextBase delegate;
+  protected final ContextImpl delegate;
   private ConcurrentMap<Object, Object> localData;
 
-  DuplicatedContext(ContextBase delegate) {
+  DuplicatedContext(ContextImpl delegate) {
     this.delegate = delegate;
   }
 
@@ -126,27 +125,22 @@ class DuplicatedContext implements ContextInternal {
 
   @Override
   public <T> Future<T> executeBlockingInternal(Callable<T> action) {
-    return ContextBase.executeBlocking(this, action, delegate.internalWorkerPool, delegate.internalOrderedTasks);
+    return ContextImpl.executeBlocking(this, action, delegate.internalWorkerPool, delegate.internalOrderedTasks);
   }
 
   @Override
   public <T> Future<T> executeBlockingInternal(Callable<T> action, boolean ordered) {
-    return ContextBase.executeBlocking(this, action, delegate.internalWorkerPool, ordered ? delegate.internalOrderedTasks : null);
+    return ContextImpl.executeBlocking(this, action, delegate.internalWorkerPool, ordered ? delegate.internalOrderedTasks : null);
   }
 
   @Override
   public final <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, boolean ordered) {
-    return ContextBase.executeBlocking(this, blockingCodeHandler, delegate.workerPool, ordered ? delegate.orderedTasks : null);
+    return ContextImpl.executeBlocking(this, blockingCodeHandler, delegate.workerPool, ordered ? delegate.orderedTasks : null);
   }
 
   @Override
   public final <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, TaskQueue queue) {
-    return ContextBase.executeBlocking(this, blockingCodeHandler, delegate.workerPool, queue);
-  }
-
-  @Override
-  public final void runOnContext(Handler<Void> action) {
-    delegate.runOnContext(this, action);
+    return ContextImpl.executeBlocking(this, blockingCodeHandler, delegate.workerPool, queue);
   }
 
   @Override
