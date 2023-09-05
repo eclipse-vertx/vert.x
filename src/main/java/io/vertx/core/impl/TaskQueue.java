@@ -16,6 +16,7 @@ import io.vertx.core.impl.logging.LoggerFactory;
 
 import java.util.LinkedList;
 import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 
 /**
  * A task queue that always run all tasks in order. The executor to run the tasks is passed
@@ -33,22 +34,10 @@ public class TaskQueue {
 
   static final Logger log = LoggerFactory.getLogger(TaskQueue.class);
 
-  private static class Task {
-
-    private final Runnable runnable;
-    private final Executor exec;
-
-    public Task(Runnable runnable, Executor exec) {
-      this.runnable = runnable;
-      this.exec = exec;
-    }
-  }
-
   // @protectedby tasks
   private final LinkedList<Task> tasks = new LinkedList<>();
-
-  // @protectedby tasks
-  private Executor current;
+  private Executor currentExecutor;
+  private Thread currentThread;
 
   private final Runnable runner;
 
@@ -58,27 +47,75 @@ public class TaskQueue {
 
   private void run() {
     for (; ; ) {
-      final Task task;
+      final ExecuteTask execute;
       synchronized (tasks) {
-        task = tasks.poll();
+        Task task = tasks.poll();
         if (task == null) {
-          current = null;
+          currentExecutor = null;
           return;
         }
-        if (task.exec != current) {
-          tasks.addFirst(task);
-          task.exec.execute(runner);
-          current = task.exec;
+        if (task instanceof ResumeTask) {
+          ResumeTask resume = (ResumeTask) task;
+          currentExecutor = resume.executor;
+          currentThread = resume.thread;
+          resume.latch.run();
+          return;
+        }
+        execute = (ExecuteTask) task;
+        if (execute.exec != currentExecutor) {
+          tasks.addFirst(execute);
+          execute.exec.execute(runner);
+          currentExecutor = execute.exec;
           return;
         }
       }
       try {
-        task.runnable.run();
+        currentThread = Thread.currentThread();
+        execute.runnable.run();
       } catch (Throwable t) {
         log.error("Caught unexpected Throwable", t);
+      } finally {
+        currentThread = null;
       }
     }
-  };
+  }
+
+  /**
+   * Unschedule the current task from execution, the next task in the queue will be executed
+   * when there is one.
+   *
+   * <p>When the current task wants to be resumed, it should call the returned consumer with a command
+   * to unpark the thread (e.g most likely yielding a latch), this task will be executed immediately if there
+   * is no tasks being executed, otherwise it will be added first in the queue.
+   *
+   * @return a mean to signal to resume the thread when it shall be resumed
+   * @throws IllegalStateException if the current thread is not currently being executed by the queue
+   */
+  public Consumer<Runnable> unschedule() {
+    Thread thread;
+    Executor executor;
+    synchronized (tasks) {
+      if (Thread.currentThread() != currentThread) {
+        throw new IllegalStateException();
+      }
+      thread = currentThread;
+      executor = currentExecutor;
+      currentThread = null;
+    }
+    executor.execute(runner);
+    return r -> {
+      synchronized (tasks) {
+        if (currentExecutor != null) {
+          tasks.addFirst(new ResumeTask(r, executor, thread));
+          return;
+        } else {
+          currentExecutor = executor;
+          currentThread = thread;
+        }
+      }
+      r.run();
+    };
+  }
 
   /**
    * Run a task.
@@ -87,11 +124,43 @@ public class TaskQueue {
    */
   public void execute(Runnable task, Executor executor) {
     synchronized (tasks) {
-      tasks.add(new Task(task, executor));
-      if (current == null) {
-        current = executor;
+      tasks.add(new ExecuteTask(task, executor));
+      if (this.currentExecutor == null) {
+        this.currentExecutor = executor;
         executor.execute(runner);
       }
+    }
+  }
+
+  /**
+   * A task of this queue.
+   */
+  private interface Task {
+  }
+
+  /**
+   * Execute another task
+   */
+  private static class ExecuteTask implements Task {
+    private final Runnable runnable;
+    private final Executor exec;
+    public ExecuteTask(Runnable runnable, Executor exec) {
+      this.runnable = runnable;
+      this.exec = exec;
+    }
+  }
+
+  /**
+   * Resume an existing task blocked on a thread
+   */
+  private static class ResumeTask implements Task {
+    private final Runnable latch;
+    private final Executor executor;
+    private final Thread thread;
+    ResumeTask(Runnable latch, Executor executor, Thread thread) {
+      this.latch = latch;
+      this.executor = executor;
+      this.thread = thread;
     }
   }
 }
