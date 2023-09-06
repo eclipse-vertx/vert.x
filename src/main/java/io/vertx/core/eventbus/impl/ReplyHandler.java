@@ -23,21 +23,15 @@ import io.vertx.core.spi.tracing.VertxTracer;
 
 class ReplyHandler<T> extends HandlerRegistration<T> implements Handler<Long> {
 
-  private final EventBusImpl eventBus;
-  private final ContextInternal context;
   private final Promise<Message<T>> result;
   private final long timeoutID;
   private final long timeout;
-  private final boolean src;
   private final String repliedAddress;
   Object trace;
 
   ReplyHandler(EventBusImpl eventBus, ContextInternal context, String address, String repliedAddress, boolean src, long timeout) {
     super(context, eventBus, address, src);
-    this.eventBus = eventBus;
-    this.context = context;
     this.result = context.promise();
-    this.src = src;
     this.repliedAddress = repliedAddress;
     this.timeoutID = eventBus.vertx.setTimer(timeout, this);
     this.timeout = timeout;
@@ -56,7 +50,7 @@ class ReplyHandler<T> extends HandlerRegistration<T> implements Handler<Long> {
   }
 
   void fail(ReplyException failure) {
-    if (eventBus.vertx.cancelTimer(timeoutID)) {
+    if (bus.vertx.cancelTimer(timeoutID)) {
       unregister();
       doFail(failure);
     }
@@ -65,8 +59,8 @@ class ReplyHandler<T> extends HandlerRegistration<T> implements Handler<Long> {
   private void doFail(ReplyException failure) {
     trace(null, failure);
     result.fail(failure);
-    if (eventBus.metrics != null) {
-      eventBus.metrics.replyFailure(repliedAddress, failure.failureType());
+    if (bus.metrics != null) {
+      bus.metrics.replyFailure(repliedAddress, failure.failureType());
     }
   }
 
@@ -88,7 +82,7 @@ class ReplyHandler<T> extends HandlerRegistration<T> implements Handler<Long> {
 
   @Override
   protected void dispatch(Message<T> reply, ContextInternal context, Handler<Message<T>> handler /* null */) {
-    if (eventBus.vertx.cancelTimer(timeoutID)) {
+    if (bus.vertx.cancelTimer(timeoutID)) {
       unregister();
       if (reply.body() instanceof ReplyException) {
         doFail((ReplyException) reply.body());
