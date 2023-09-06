@@ -22,12 +22,14 @@ import io.vertx.core.streams.ReadStream;
 
 import java.util.*;
 
-/*
- * This class is optimised for performance when used on the same event loop it was created on.
+/**
+ * This class is optimized for performance when used on the same event loop it was created on.
  * However it can be used safely from other threads.
  *
  * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
  * we benefit from biased locking which makes the overhead of synchronized near zero.
+ * https://quarkus.io/blog/biased-locking-help/
+ * @see ReplyHandler
  */
 public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements MessageConsumer<T> {
 
@@ -36,9 +38,6 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
   private static final int DEFAULT_MAX_BUFFERED_MESSAGES = 1000;
 
   private final Vertx vertx;
-  private final ContextInternal context;
-  private final EventBusImpl eventBus;
-  private final String address;
   private final boolean localOnly;
   private Handler<Message<T>> handler;
   private Handler<Void> endHandler;
@@ -52,9 +51,6 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
   MessageConsumerImpl(Vertx vertx, ContextInternal context, EventBusImpl eventBus, String address, boolean localOnly) {
     super(context, eventBus, address, false);
     this.vertx = vertx;
-    this.context = context;
-    this.eventBus = eventBus;
-    this.address = address;
     this.localOnly = localOnly;
     this.result = context.promise();
   }
@@ -93,6 +89,10 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
     return maxBufferedMessages;
   }
 
+  public synchronized int getPendingQueueSize() {
+    return pending.size();
+  }
+
   @Override
   public String address() {
     return address;
@@ -112,7 +112,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
     if (pending.size() > 0) {
       Queue<Message<T>> discarded = pending;
       Handler<Message<T>> handler = discardHandler;
-      pending = new ArrayDeque<>();
+      pending = new ArrayDeque<>(8);
       for (Message<T> msg : discarded) {
         discard(msg);
         if (handler != null) {
@@ -131,6 +131,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
     return fut;
   }
 
+  @Override
   protected boolean doReceive(Message<T> message) {
     Handler<Message<T>> theHandler;
     synchronized (this) {
@@ -167,9 +168,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
 
   @Override
   protected void dispatch(Message<T> msg, ContextInternal context, Handler<Message<T>> handler) {
-    if (handler == null) {
-      throw new NullPointerException();
-    }
+    Objects.requireNonNull(handler, "dispatch: handler cannot be null");
     context.dispatch(msg, handler);
   }
 
