@@ -53,6 +53,7 @@ import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -338,6 +339,11 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
+  public Throwable unavailableNativeTransportCause() {
+    return delegate.unavailableNativeTransportCause();
+  }
+
+  @Override
   public Vertx exceptionHandler(Handler<Throwable> handler) {
     return delegate.exceptionHandler(handler);
   }
@@ -485,6 +491,11 @@ public abstract class VertxWrapper implements VertxInternal {
   @Override
   public WorkerPool createSharedWorkerPool(String name, int poolSize, long maxExecuteTime, TimeUnit maxExecuteTimeUnit) {
     return delegate.createSharedWorkerPool(name, poolSize, maxExecuteTime, maxExecuteTimeUnit);
+  }
+
+  @Override
+  public WorkerPool wrapWorkerPool(ExecutorService executor) {
+    return delegate.wrapWorkerPool(executor);
   }
 
   @Override

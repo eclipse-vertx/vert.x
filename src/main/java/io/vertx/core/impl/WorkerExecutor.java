@@ -10,8 +10,9 @@
  */
 package io.vertx.core.impl;
 
-import io.vertx.core.Context;
 import io.vertx.core.spi.metrics.PoolMetrics;
+
+import java.util.function.Consumer;
 
 /**
  * Execute events on a worker pool.
@@ -22,6 +23,7 @@ public class WorkerExecutor implements EventExecutor {
 
   private final WorkerPool workerPool;
   private final TaskQueue orderedTasks;
+  private final ThreadLocal<Boolean> inThread = new ThreadLocal<>();
 
   public WorkerExecutor(WorkerPool workerPool, TaskQueue orderedTasks) {
     this.workerPool = workerPool;
@@ -30,8 +32,9 @@ public class WorkerExecutor implements EventExecutor {
 
   @Override
   public boolean inThread() {
-    return Context.isOnWorkerThread();
+    return inThread.get() == Boolean.TRUE;
   }
+
   @Override
   public void execute(Runnable command) {
     PoolMetrics metrics = workerPool.metrics();
@@ -42,12 +45,24 @@ public class WorkerExecutor implements EventExecutor {
         execMetric = metrics.begin(queueMetric);
       }
       try {
-        command.run();
+        inThread.set(true);
+        try {
+          command.run();
+        } finally {
+          inThread.remove();
+        }
       } finally {
         if (metrics != null) {
           metrics.end(execMetric, true);
         }
       }
     }, workerPool.executor());
+  }
+
+  /**
+   * See {@link TaskQueue#unschedule()}.
+   */
+  public Consumer<Runnable> unschedule() {
+    return orderedTasks.unschedule();
   }
 }

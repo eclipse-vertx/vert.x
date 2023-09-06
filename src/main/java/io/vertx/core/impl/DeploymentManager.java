@@ -11,13 +11,7 @@
 
 package io.vertx.core.impl;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
-import io.vertx.core.Verticle;
+import io.vertx.core.*;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -33,6 +27,7 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -172,20 +167,29 @@ public class DeploymentManager {
                         ContextInternal callingContext,
                         ClassLoader tccl, Verticle... verticles) {
     Promise<Deployment> promise = callingContext.promise();
-    String poolName = options.getWorkerPoolName();
-
     Deployment parent = parentContext.getDeployment();
     String deploymentID = generateDeploymentID();
-    DeploymentImpl deployment = new DeploymentImpl(parent, deploymentID, identifier, options);
 
     AtomicInteger deployCount = new AtomicInteger();
     AtomicBoolean failureReported = new AtomicBoolean();
+    WorkerPool workerPool = null;
+    WorkerOptions workerOptions = options.getWorkerOptions();
+    if (workerOptions instanceof WorkerPoolOptions) {
+      WorkerPoolOptions workerPoolOptions = (WorkerPoolOptions) workerOptions;
+      if (workerPoolOptions.getName() != null) {
+        workerPool = vertx.createSharedWorkerPool(options.getWorkerPoolName(), options.getWorkerPoolSize(), options.getMaxWorkerExecuteTime(), options.getMaxWorkerExecuteTimeUnit());
+      }
+    } else {
+      ExecutorService pool = workerOptions.createExecutor(vertx);
+      workerPool = vertx.wrapWorkerPool(pool);
+    }
+    DeploymentImpl deployment = new DeploymentImpl(parent, workerPool, deploymentID, identifier, options);
+
     for (Verticle verticle: verticles) {
       CloseFuture closeFuture = new CloseFuture(log);
-      WorkerPool workerPool = poolName != null ? vertx.createSharedWorkerPool(poolName, options.getWorkerPoolSize(), options.getMaxWorkerExecuteTime(), options.getMaxWorkerExecuteTimeUnit()) : null;
       ContextImpl context = (options.isWorker() ? vertx.createWorkerContext(deployment, closeFuture, workerPool, tccl) :
         vertx.createEventLoopContext(deployment, closeFuture, workerPool, tccl));
-      VerticleHolder holder = new VerticleHolder(verticle, context, workerPool, closeFuture);
+      VerticleHolder holder = new VerticleHolder(verticle, context, closeFuture);
       deployment.addVerticle(holder);
       context.runOnContext(v -> {
         try {
@@ -226,23 +230,16 @@ public class DeploymentManager {
 
     final Verticle verticle;
     final ContextImpl context;
-    final WorkerPool workerPool;
     final CloseFuture closeFuture;
 
-    VerticleHolder(Verticle verticle, ContextImpl context, WorkerPool workerPool, CloseFuture closeFuture) {
+    VerticleHolder(Verticle verticle, ContextImpl context, CloseFuture closeFuture) {
       this.verticle = verticle;
       this.context = context;
-      this.workerPool = workerPool;
       this.closeFuture = closeFuture;
     }
 
     void close(Handler<AsyncResult<Void>> completionHandler) {
-      closeFuture.close().onComplete(ar -> {
-        if (workerPool != null) {
-          workerPool.close();
-        }
-        completionHandler.handle(ar);
-      });
+      closeFuture.close().onComplete(completionHandler);
     }
   }
 
@@ -256,17 +253,19 @@ public class DeploymentManager {
     private final String verticleIdentifier;
     private final List<VerticleHolder> verticles = new CopyOnWriteArrayList<>();
     private final Set<Deployment> children = new ConcurrentHashSet<>();
+    private final WorkerPool workerPool;
     private final DeploymentOptions options;
     private Handler<Void> undeployHandler;
     private int status = ST_DEPLOYED;
     private volatile boolean child;
 
-    private DeploymentImpl(Deployment parent, String deploymentID, String verticleIdentifier, DeploymentOptions options) {
+    private DeploymentImpl(Deployment parent, WorkerPool workerPool, String deploymentID, String verticleIdentifier, DeploymentOptions options) {
       this.parent = parent;
       this.deploymentID = deploymentID;
       this.conf = options.getConfig() != null ? options.getConfig().copy() : new JsonObject();
       this.verticleIdentifier = verticleIdentifier;
       this.options = options;
+      this.workerPool = workerPool;
     }
 
     public void addVerticle(VerticleHolder holder) {
@@ -277,6 +276,9 @@ public class DeploymentManager {
       if (status == ST_DEPLOYED) {
         status = ST_UNDEPLOYING;
         doUndeployChildren(callingContext).onComplete(childrenResult -> {
+          if (workerPool != null) {
+            workerPool.close();
+          }
           Handler<Void> handler;
           synchronized (DeploymentImpl.this) {
             status = ST_UNDEPLOYED;
@@ -324,6 +326,9 @@ public class DeploymentManager {
         status = ST_UNDEPLOYING;
         return doUndeployChildren(undeployingContext).compose(v -> doUndeploy(undeployingContext));
       } else {
+        if (workerPool != null) {
+          workerPool.close();
+        }
         status = ST_UNDEPLOYED;
         List<Future<?>> undeployFutures = new ArrayList<>();
         if (parent != null) {
