@@ -1002,6 +1002,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     };
   }
 
+  @Override
+  public WorkerPool wrapWorkerPool(ExecutorService executor) {
+    PoolMetrics workerMetrics = metrics != null ? metrics.createPoolMetrics("worker", null, -1) : null;
+    return new WorkerPool(executor, workerMetrics);
+  }
+
   private static ThreadFactory createThreadFactory(VertxThreadFactory threadFactory, BlockedThreadChecker checker, Boolean useDaemonThread, long maxExecuteTime, TimeUnit maxExecuteTimeUnit, String prefix, boolean worker) {
     AtomicInteger threadCount = new AtomicInteger(0);
     return runnable -> {
