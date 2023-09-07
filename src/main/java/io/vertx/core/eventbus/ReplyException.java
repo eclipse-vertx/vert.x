@@ -23,8 +23,24 @@ import io.vertx.core.VertxException;
  */
 public class ReplyException extends VertxException {
 
+  /** You can enable stack trace generation for debug purposes */
+  public static boolean NO_STACK_TRACE = true;
+
   private final ReplyFailure failureType;
   private final int failureCode;
+
+  /**
+   * Create a ReplyException with all attributes
+   *
+   * @param failureType  the failure type
+   * @param failureCode  the failure code
+   * @param message  the failure message
+   */
+  public ReplyException(ReplyFailure failureType, int failureCode, String message, boolean noStackTrace) {
+    super(message, noStackTrace);
+    this.failureType = failureType;
+    this.failureCode = failureCode;
+  }
 
   /**
    * Create a ReplyException
@@ -34,9 +50,9 @@ public class ReplyException extends VertxException {
    * @param message  the failure message
    */
   public ReplyException(ReplyFailure failureType, int failureCode, String message) {
-      super(message);
-      this.failureType = failureType;
-      this.failureCode = failureCode;
+    super(message, NO_STACK_TRACE);
+    this.failureType = failureType;
+    this.failureCode = failureCode;
   }
 
   /**
