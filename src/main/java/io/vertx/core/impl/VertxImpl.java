@@ -518,7 +518,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     String host = options.getHost();
     int port = options.getPort();
     if (host == null || port < 0) {
-      DnsResolverProvider provider = new DnsResolverProvider(this, addressResolverOptions);
+      DnsResolverProvider provider = DnsResolverProvider.create(this, addressResolverOptions);
       InetSocketAddress address = provider.nameServerAddresses().get(0);
       // provide the host and port
       options = new DnsClientOptions(options)

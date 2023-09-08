@@ -18,6 +18,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.impl.VertxImpl;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.resolver.DnsResolverProvider;
 import io.vertx.core.impl.resolver.DefaultResolverProvider;
 import io.vertx.core.impl.logging.Logger;
@@ -37,7 +38,7 @@ public interface ResolverProvider {
     // that use an unstable API and fallback on the default (blocking) provider
     try {
       if (!Boolean.getBoolean(DISABLE_DNS_RESOLVER_PROP_NAME)) {
-        return new DnsResolverProvider((VertxImpl) vertx, options);
+        return DnsResolverProvider.create((VertxInternal) vertx, options);
       }
     } catch (Throwable e) {
       if (e instanceof VertxException) {
