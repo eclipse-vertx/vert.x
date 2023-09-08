@@ -59,6 +59,11 @@ public class AddressResolverOptions {
   public static final int DEFAULT_QUERY_TIMEOUT = 5000;
 
   /**
+   * The default value for the hosts refresh value in millis = 0 (disabled)
+   */
+  public static final int DEFAULT_HOSTS_REFRESH_PERIOD = 0;
+
+  /**
    * The default value for the max dns queries per query = 4
    */
   public static final int DEFAULT_MAX_QUERIES = 4;
@@ -90,6 +95,7 @@ public class AddressResolverOptions {
 
   private String hostsPath;
   private Buffer hostsValue;
+  private int hostsRefreshPeriod;
   private List<String> servers;
   private boolean optResourceEnabled;
   private int cacheMinTimeToLive;
@@ -116,11 +122,13 @@ public class AddressResolverOptions {
     ndots = DEFAULT_NDOTS;
     rotateServers = DEFAULT_ROTATE_SERVERS;
     roundRobinInetAddress = DEFAULT_ROUND_ROBIN_INET_ADDRESS;
+    hostsRefreshPeriod = DEFAULT_HOSTS_REFRESH_PERIOD;
   }
 
   public AddressResolverOptions(AddressResolverOptions other) {
     this.hostsPath = other.hostsPath;
     this.hostsValue = other.hostsValue != null ? other.hostsValue.copy() : null;
+    this.hostsRefreshPeriod = other.hostsRefreshPeriod;
     this.servers = other.servers != null ? new ArrayList<>(other.servers) : null;
     this.optResourceEnabled = other.optResourceEnabled;
     this.cacheMinTimeToLive = other.cacheMinTimeToLive;
@@ -179,6 +187,30 @@ public class AddressResolverOptions {
    */
   public AddressResolverOptions setHostsValue(Buffer hostsValue) {
     this.hostsValue = hostsValue;
+    return this;
+  }
+
+  /**
+   * @return the hosts configuration refresh period in millis
+   */
+  public int getHostsRefreshPeriod() {
+    return hostsRefreshPeriod;
+  }
+
+  /**
+   * Set the hosts configuration refresh period in millis, {@code 0} disables it.
+   * <p/>
+   * The resolver caches the hosts configuration {@link #hostsPath file} after it has read it. When
+   * the content of this file can change, setting a positive refresh period will load the configuration
+   * file again when necessary.
+   *
+   * @param hostsRefreshPeriod the hosts configuration refresh period
+   */
+  public AddressResolverOptions setHostsRefreshPeriod(int hostsRefreshPeriod) {
+    if (hostsRefreshPeriod < 0) {
+      throw new IllegalArgumentException("hostsRefreshPeriod must be >= 0");
+    }
+    this.hostsRefreshPeriod = hostsRefreshPeriod;
     return this;
   }
 

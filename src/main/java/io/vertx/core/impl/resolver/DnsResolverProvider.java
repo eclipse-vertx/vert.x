@@ -11,21 +11,17 @@
 
 package io.vertx.core.impl.resolver;
 
-import io.netty.channel.ChannelFactory;
 import io.netty.channel.EventLoop;
-import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.resolver.*;
 import io.netty.resolver.dns.*;
 import io.netty.util.NetUtil;
-import io.netty.util.concurrent.EventExecutor;
-import io.vertx.core.Context;
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxException;
+import io.vertx.core.*;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.impl.AddressResolver;
-import io.vertx.core.impl.VertxImpl;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.resolver.ResolverProvider;
 
 import java.io.File;
@@ -34,27 +30,32 @@ import java.io.StringReader;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static io.netty.util.internal.ObjectUtil.intValue;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class DnsResolverProvider implements ResolverProvider {
+public class DnsResolverProvider implements ResolverProvider, HostsFileEntriesResolver {
 
-  private final Vertx vertx;
+  public static DnsResolverProvider create(VertxInternal vertx, AddressResolverOptions options) {
+    DnsResolverProvider provider = new DnsResolverProvider(vertx, options);
+    provider.refresh();
+    return provider;
+  }
+
+  private final VertxInternal vertx;
   private final List<ResolverRegistration> resolvers = Collections.synchronizedList(new ArrayList<>());
   private AddressResolverGroup<InetSocketAddress> resolverGroup;
   private final List<InetSocketAddress> serverList = new ArrayList<>();
+  private final String hostsPath;
+  private final Buffer hostsValue;
+  private final AtomicLong refreshTimestamp = new AtomicLong();
+  private final long hostsRefreshPeriodNanos;
+  private volatile HostsFileEntries parsedHostsFile = new HostsFileEntries(Collections.emptyMap(), Collections.emptyMap());
 
-  /**
-   * @return a list of DNS servers available to use
-   */
-  public List<InetSocketAddress> nameServerAddresses() {
-    return serverList;
-  }
-
-  public DnsResolverProvider(VertxImpl vertx, AddressResolverOptions options) {
+  private DnsResolverProvider(VertxInternal vertx, AddressResolverOptions options) {
     List<String> dnsServers = options.getServers();
     if (dnsServers != null && dnsServers.size() > 0) {
       for (String dnsServer : dnsServers) {
@@ -87,30 +88,8 @@ public class DnsResolverProvider implements ResolverProvider {
       }
     }
     DnsServerAddresses nameServerAddresses = options.isRotateServers() ? DnsServerAddresses.rotational(serverList) : DnsServerAddresses.sequential(serverList);
-    DnsServerAddressStreamProvider nameServerAddressProvider = hostname -> {
-      return nameServerAddresses.stream();
-    };
+    DnsServerAddressStreamProvider nameServerAddressProvider = hostname -> nameServerAddresses.stream();
 
-    HostsFileEntries entries;
-    if (options.getHostsPath() != null) {
-      File file = vertx.resolveFile(options.getHostsPath()).getAbsoluteFile();
-      try {
-        if (!file.exists() || !file.isFile()) {
-          throw new IOException();
-        }
-        entries = HostsFileParser.parse(file);
-      } catch (IOException e) {
-        throw new VertxException("Cannot read hosts file " + file.getAbsolutePath());
-      }
-    } else if (options.getHostsValue() != null) {
-      try {
-        entries = HostsFileParser.parse(new StringReader(options.getHostsValue().toString()));
-      } catch (IOException e) {
-        throw new VertxException("Cannot read hosts config ", e);
-      }
-    } else {
-      entries = HostsFileParser.parseSilently();
-    }
 
     int minTtl = intValue(options.getCacheMinTimeToLive(), 0);
     int maxTtl = intValue(options.getCacheMaxTimeToLive(), Integer.MAX_VALUE);
@@ -119,38 +98,12 @@ public class DnsResolverProvider implements ResolverProvider {
     DnsCache authoritativeDnsServerCache = new DefaultDnsCache(minTtl, maxTtl, negativeTtl);
 
     this.vertx = vertx;
-
+    this.hostsPath = options.getHostsPath();
+    this.hostsValue = options.getHostsValue();
+    this.hostsRefreshPeriodNanos = options.getHostsRefreshPeriod();
 
     DnsNameResolverBuilder builder = new DnsNameResolverBuilder();
-    builder.hostsFileEntriesResolver(new HostsFileEntriesResolver() {
-      @Override
-      public InetAddress address(String inetHost, ResolvedAddressTypes resolvedAddressTypes) {
-        if (inetHost.endsWith(".")) {
-          inetHost = inetHost.substring(0, inetHost.length() - 1);
-        }
-        InetAddress address = lookup(inetHost, resolvedAddressTypes);
-        if (address == null) {
-          address = lookup(inetHost.toLowerCase(Locale.ENGLISH), resolvedAddressTypes);
-        }
-        return address;
-      }
-      InetAddress lookup(String inetHost, ResolvedAddressTypes resolvedAddressTypes) {
-        switch (resolvedAddressTypes) {
-          case IPV4_ONLY:
-            return entries.inet4Entries().get(inetHost);
-          case IPV6_ONLY:
-            return entries.inet6Entries().get(inetHost);
-          case IPV4_PREFERRED:
-            Inet4Address inet4Address = entries.inet4Entries().get(inetHost);
-            return inet4Address != null? inet4Address : entries.inet6Entries().get(inetHost);
-          case IPV6_PREFERRED:
-            Inet6Address inet6Address = entries.inet6Entries().get(inetHost);
-            return inet6Address != null? inet6Address : entries.inet4Entries().get(inetHost);
-          default:
-            throw new IllegalArgumentException("Unknown ResolvedAddressTypes " + resolvedAddressTypes);
-        }
-      }
-    });
+    builder.hostsFileEntriesResolver(this);
     builder.channelFactory(() -> vertx.transport().datagramChannel());
     builder.socketChannelFactory(() -> (SocketChannel) vertx.transport().channelFactory(false).newChannel());
     builder.nameServerProvider(nameServerAddressProvider);
@@ -184,13 +137,42 @@ public class DnsResolverProvider implements ResolverProvider {
     };
   }
 
-  private static class ResolverRegistration {
-    private final io.netty.resolver.AddressResolver<InetSocketAddress> resolver;
-    private final EventLoop executor;
-    ResolverRegistration(io.netty.resolver.AddressResolver<InetSocketAddress> resolver, EventLoop executor) {
-      this.resolver = resolver;
-      this.executor = executor;
+  @Override
+  public InetAddress address(String inetHost, ResolvedAddressTypes resolvedAddressTypes) {
+    if (inetHost.endsWith(".")) {
+      inetHost = inetHost.substring(0, inetHost.length() - 1);
     }
+    if (hostsRefreshPeriodNanos > 0) {
+      ensureHostsFileFresh(hostsRefreshPeriodNanos);
+    }
+    InetAddress address = lookup(inetHost, resolvedAddressTypes);
+    if (address == null) {
+      address = lookup(inetHost.toLowerCase(Locale.ENGLISH), resolvedAddressTypes);
+    }
+    return address;
+  }
+  InetAddress lookup(String inetHost, ResolvedAddressTypes resolvedAddressTypes) {
+    switch (resolvedAddressTypes) {
+      case IPV4_ONLY:
+        return parsedHostsFile.inet4Entries().get(inetHost);
+      case IPV6_ONLY:
+        return parsedHostsFile.inet6Entries().get(inetHost);
+      case IPV4_PREFERRED:
+        Inet4Address inet4Address = parsedHostsFile.inet4Entries().get(inetHost);
+        return inet4Address != null? inet4Address : parsedHostsFile.inet6Entries().get(inetHost);
+      case IPV6_PREFERRED:
+        Inet6Address inet6Address = parsedHostsFile.inet6Entries().get(inetHost);
+        return inet6Address != null? inet6Address : parsedHostsFile.inet4Entries().get(inetHost);
+      default:
+        throw new IllegalArgumentException("Unknown ResolvedAddressTypes " + resolvedAddressTypes);
+    }
+  }
+
+  /**
+   * @return a list of DNS servers available to use
+   */
+  public List<InetSocketAddress> nameServerAddresses() {
+    return serverList;
   }
 
   @Override
@@ -200,7 +182,7 @@ public class DnsResolverProvider implements ResolverProvider {
 
   @Override
   public void close(Handler<Void> doneHandler) {
-    Context context = vertx.getOrCreateContext();
+    ContextInternal context = vertx.getOrCreateContext();
     ResolverRegistration[] registrations = this.resolvers.toArray(new ResolverRegistration[0]);
     if (registrations.length == 0) {
       context.runOnContext(doneHandler);
@@ -219,6 +201,51 @@ public class DnsResolverProvider implements ResolverProvider {
       } else {
         registration.executor.execute(task);
       }
+    }
+  }
+
+  public void refresh() {
+    ensureHostsFileFresh(0);
+  }
+
+  private void ensureHostsFileFresh(long refreshPeriodNanos) {
+    long prev = refreshTimestamp.get();
+    long now = System.nanoTime();
+    if ((now - prev) >= refreshPeriodNanos && refreshTimestamp.compareAndSet(prev, now)) {
+      refreshHostsFile();
+    }
+  }
+
+  private void refreshHostsFile() {
+    HostsFileEntries entries;
+    if (hostsPath != null) {
+      File file = vertx.resolveFile(hostsPath).getAbsoluteFile();
+      try {
+        if (!file.exists() || !file.isFile()) {
+          throw new IOException();
+        }
+        entries = HostsFileParser.parse(file);
+      } catch (IOException e) {
+        throw new VertxException("Cannot read hosts file " + file.getAbsolutePath());
+      }
+    } else if (hostsValue != null) {
+      try {
+        entries = HostsFileParser.parse(new StringReader(hostsValue.toString()));
+      } catch (IOException e) {
+        throw new VertxException("Cannot read hosts config ", e);
+      }
+    } else {
+      entries = HostsFileParser.parseSilently();
+    }
+    parsedHostsFile = entries;
+  }
+
+  private static class ResolverRegistration {
+    private final io.netty.resolver.AddressResolver<InetSocketAddress> resolver;
+    private final EventLoop executor;
+    ResolverRegistration(io.netty.resolver.AddressResolver<InetSocketAddress> resolver, EventLoop executor) {
+      this.resolver = resolver;
+      this.executor = executor;
     }
   }
 }
