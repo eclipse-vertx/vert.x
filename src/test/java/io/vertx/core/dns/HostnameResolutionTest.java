@@ -15,6 +15,7 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
+import io.vertx.core.Future;
 import io.vertx.core.VertxException;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
@@ -22,6 +23,7 @@ import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.impl.AddressResolver;
+import io.vertx.core.impl.Utils;
 import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
@@ -32,12 +34,14 @@ import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakedns.FakeDNSServer;
 import org.apache.directory.server.dns.messages.ResourceRecord;
+import org.junit.Assume;
 import org.junit.Test;
 
 import java.io.File;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -413,6 +417,43 @@ public class HostnameResolutionTest extends VertxTestBase {
       testComplete();
     }));
     await();
+  }
+
+  @Test
+  public void testRefreshHosts1() throws Exception {
+    Assume.assumeFalse(Utils.isWindows());
+    InetAddress addr = testRefreshHosts((int) TimeUnit.SECONDS.toNanos(1));
+    assertEquals("192.168.0.16", addr.getHostAddress());
+    assertEquals("server.net", addr.getHostName());
+  }
+
+  @Test
+  public void testRefreshHosts2() throws Exception {
+    InetAddress addr = testRefreshHosts(0);
+    assertEquals("192.168.0.15", addr.getHostAddress());
+    assertEquals("server.net", addr.getHostName());
+  }
+
+  private InetAddress testRefreshHosts(int period) throws Exception {
+    File hosts = File.createTempFile("vertx", "hosts");
+    hosts.deleteOnExit();
+    Files.write(hosts.toPath(), "192.168.0.15 server.net".getBytes());
+    AddressResolverOptions options = new AddressResolverOptions()
+      .setHostsPath(hosts.getAbsolutePath())
+      .setHostsRefreshPeriod(period);
+    VertxInternal vertx = (VertxInternal) vertx(new VertxOptions().setAddressResolverOptions(options));
+    InetAddress addr = Future.<InetAddress>future(p -> vertx.resolveAddress("server.net", p))
+      .toCompletionStage()
+      .toCompletableFuture()
+      .get(20, TimeUnit.SECONDS);
+    assertEquals("192.168.0.15", addr.getHostAddress());
+    assertEquals("server.net", addr.getHostName());
+    Files.write(hosts.toPath(), "192.168.0.16 server.net".getBytes());
+    Thread.sleep(1000);
+    return Future.<InetAddress>future(p -> vertx.resolveAddress("server.net", p))
+      .toCompletionStage()
+      .toCompletableFuture()
+      .get(20, TimeUnit.SECONDS);
   }
 
   @Test

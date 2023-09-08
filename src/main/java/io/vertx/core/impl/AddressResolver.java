@@ -21,6 +21,7 @@ import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.launcher.commands.ExecUtils;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.impl.resolver.DnsResolverProvider;
 import io.vertx.core.spi.resolver.ResolverProvider;
 
 import java.io.File;
