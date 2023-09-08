@@ -598,9 +598,11 @@ public abstract class HttpTest extends HttpTestBase {
     waitFor(2);
     AtomicInteger cnt = new AtomicInteger();
     server.requestHandler(req -> {
+      req.response().putHeader("removedheader", "foo");
       req.response().headersEndHandler(v -> {
         // Insert another header
         req.response().putHeader("extraheader", "wibble");
+        req.response().headers().remove("removedheader");
         assertEquals(0, cnt.getAndIncrement());
       });
       req.response().bodyEndHandler(v -> {
@@ -617,6 +619,7 @@ public abstract class HttpTest extends HttpTestBase {
         .map(resp -> {
           assertEquals(200, resp.statusCode());
           assertEquals("wibble", resp.headers().get("extraheader"));
+          assertNull(resp.headers().get("removedheader"));
           return null;
         }))
       .onComplete(onSuccess(v -> testComplete()));
