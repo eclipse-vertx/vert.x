@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.impl.resolver;
+package io.vertx.core.dns.impl;
 
 import io.netty.channel.EventLoop;
 import io.netty.channel.socket.SocketChannel;
@@ -22,14 +22,13 @@ import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.impl.AddressResolver;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.spi.resolver.ResolverProvider;
+import io.vertx.core.spi.dns.AddressResolverProvider;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.*;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -38,10 +37,10 @@ import static io.netty.util.internal.ObjectUtil.intValue;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class DnsResolverProvider implements ResolverProvider, HostsFileEntriesResolver {
+public class DnsAddressResolverProvider implements AddressResolverProvider, HostsFileEntriesResolver {
 
-  public static DnsResolverProvider create(VertxInternal vertx, AddressResolverOptions options) {
-    DnsResolverProvider provider = new DnsResolverProvider(vertx, options);
+  public static DnsAddressResolverProvider create(VertxInternal vertx, AddressResolverOptions options) {
+    DnsAddressResolverProvider provider = new DnsAddressResolverProvider(vertx, options);
     provider.refresh();
     return provider;
   }
@@ -56,7 +55,7 @@ public class DnsResolverProvider implements ResolverProvider, HostsFileEntriesRe
   private final long hostsRefreshPeriodNanos;
   private volatile HostsFileEntries parsedHostsFile = new HostsFileEntries(Collections.emptyMap(), Collections.emptyMap());
 
-  private DnsResolverProvider(VertxInternal vertx, AddressResolverOptions options) {
+  private DnsAddressResolverProvider(VertxInternal vertx, AddressResolverOptions options) {
     List<String> dnsServers = options.getServers();
     if (dnsServers != null && dnsServers.size() > 0) {
       for (String dnsServer : dnsServers) {

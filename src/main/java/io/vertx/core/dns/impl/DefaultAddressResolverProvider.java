@@ -9,21 +9,20 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.impl.resolver;
+package io.vertx.core.dns.impl;
 
 import io.netty.resolver.AddressResolverGroup;
 import io.netty.resolver.DefaultAddressResolverGroup;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.dns.AddressResolverOptions;
-import io.vertx.core.spi.resolver.ResolverProvider;
+import io.vertx.core.spi.dns.AddressResolverProvider;
 
 import java.net.InetSocketAddress;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class DefaultResolverProvider implements ResolverProvider {
+public class DefaultAddressResolverProvider implements AddressResolverProvider {
 
   @Override
   public AddressResolverGroup<InetSocketAddress> resolver(AddressResolverOptions options) {

@@ -45,7 +45,7 @@ import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
-import io.vertx.core.impl.resolver.DnsResolverProvider;
+import io.vertx.core.dns.impl.DnsAddressResolverProvider;
 import io.vertx.core.spi.transport.Transport;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.shareddata.impl.SharedDataImpl;
@@ -518,7 +518,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     String host = options.getHost();
     int port = options.getPort();
     if (host == null || port < 0) {
-      DnsResolverProvider provider = DnsResolverProvider.create(this, addressResolverOptions);
+      DnsAddressResolverProvider provider = DnsAddressResolverProvider.create(this, addressResolverOptions);
       InetSocketAddress address = provider.nameServerAddresses().get(0);
       // provide the host and port
       options = new DnsClientOptions(options)
