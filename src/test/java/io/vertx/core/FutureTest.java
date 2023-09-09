@@ -1304,13 +1304,20 @@ public class FutureTest extends FutureTestBase {
 
   @Test
   public void testSuccessNotification() {
-    waitFor(2);
+    waitFor(3);
     Promise<String> promise = Promise.promise();
     Future<String> fut = promise.future();
     fut.onComplete(onSuccess(res -> {
       assertEquals("foo", res);
       complete();
     }));
+    fut.onComplete(
+      res -> {
+        assertEquals("foo", res);
+        complete();
+      },
+      err -> fail()
+    );
     fut.onSuccess(res -> {
       assertEquals("foo", res);
       complete();
@@ -1324,7 +1331,7 @@ public class FutureTest extends FutureTestBase {
 
   @Test
   public void testFailureNotification() {
-    waitFor(2);
+    waitFor(3);
     Promise<String> promise = Promise.promise();
     Future<String> fut = promise.future();
     Throwable failure = new Throwable();
@@ -1332,6 +1339,13 @@ public class FutureTest extends FutureTestBase {
       assertEquals(failure, err);
       complete();
     }));
+    fut.onComplete(
+      res -> fail(),
+      err -> {
+        assertEquals(failure, err);
+        complete();
+      }
+    );
     fut.onSuccess(res -> {
       fail();
     });
