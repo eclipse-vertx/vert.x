@@ -72,7 +72,7 @@ class ReplyHandler<T> extends HandlerRegistration<T> implements Handler<Long> {
 
   @Override
   protected boolean doReceive(Message<T> reply) {
-    dispatch(null, reply, context);
+    dispatchUsingInboundDeliveryContext(reply, context);
     return true;
   }
 
@@ -81,7 +81,7 @@ class ReplyHandler<T> extends HandlerRegistration<T> implements Handler<Long> {
   }
 
   @Override
-  protected void dispatch(Message<T> reply, ContextInternal context, Handler<Message<T>> handler /* null */) {
+  protected void dispatch(Message<T> reply, ContextInternal context) {
     if (bus.vertx.cancelTimer(timeoutID)) {
       unregister();
       if (reply.body() instanceof ReplyException) {

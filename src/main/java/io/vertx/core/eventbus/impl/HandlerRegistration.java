@@ -54,7 +54,7 @@ public abstract class HandlerRegistration<T> implements Closeable {
 
   protected abstract boolean doReceive(Message<T> msg);
 
-  protected abstract void dispatch(Message<T> msg, ContextInternal context, Handler<Message<T>> handler);
+  protected abstract void dispatch(Message<T> msg, ContextInternal context);
 
   synchronized void register(String repliedAddress, boolean localOnly, Promise<Void> promise) {
     if (registered != null) {
@@ -86,8 +86,8 @@ public abstract class HandlerRegistration<T> implements Closeable {
     return promise.future();
   }
 
-  void dispatch(Handler<Message<T>> theHandler, Message<T> message, ContextInternal context) {
-    InboundDeliveryContext deliveryCtx = new InboundDeliveryContext((MessageImpl<?, T>) message, theHandler, context);
+  final void dispatchUsingInboundDeliveryContext (Message<T> message, ContextInternal context) {
+    InboundDeliveryContext deliveryCtx = new InboundDeliveryContext((MessageImpl<?, T>) message, context);
     deliveryCtx.dispatch();
   }
 
@@ -102,14 +102,10 @@ public abstract class HandlerRegistration<T> implements Closeable {
     }
   }
 
-  private class InboundDeliveryContext extends DeliveryContextBase<T> {
+  private final class InboundDeliveryContext extends DeliveryContextBase<T> {
 
-    private final Handler<Message<T>> handler;
-
-    private InboundDeliveryContext(MessageImpl<?, T> message, Handler<Message<T>> handler, ContextInternal context) {
+    private InboundDeliveryContext(MessageImpl<?, T> message, ContextInternal context) {
       super(message, message.bus.inboundInterceptors(), context);
-
-      this.handler = handler;
     }
 
     protected void execute() {
@@ -121,13 +117,13 @@ public abstract class HandlerRegistration<T> implements Closeable {
       }
       if (tracer != null && !src) {
         message.trace = tracer.receiveRequest(ctx, SpanKind.RPC, TracingPolicy.PROPAGATE, message, message.isSend() ? "send" : "publish", message.headers(), MessageTagExtractor.INSTANCE);
-        HandlerRegistration.this.dispatch(message, ctx, handler);
+        HandlerRegistration.this.dispatch(message, ctx);
         Object trace = message.trace;
         if (message.replyAddress == null && trace != null) {
           tracer.sendResponse(this.context, null, trace, null, TagExtractor.empty());
         }
       } else {
-        HandlerRegistration.this.dispatch(message, ctx, handler);
+        HandlerRegistration.this.dispatch(message, ctx);
       }
     }
 
