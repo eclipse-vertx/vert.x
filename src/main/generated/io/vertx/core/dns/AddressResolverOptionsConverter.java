@@ -40,6 +40,11 @@ public class AddressResolverOptionsConverter {
             obj.setHostsPath((String)member.getValue());
           }
           break;
+        case "hostsRefreshPeriod":
+          if (member.getValue() instanceof Number) {
+            obj.setHostsRefreshPeriod(((Number)member.getValue()).intValue());
+          }
+          break;
         case "hostsValue":
           if (member.getValue() instanceof String) {
             obj.setHostsValue(io.vertx.core.buffer.Buffer.buffer(BASE64_DECODER.decode((String)member.getValue())));
@@ -115,6 +120,7 @@ public class AddressResolverOptionsConverter {
     if (obj.getHostsPath() != null) {
       json.put("hostsPath", obj.getHostsPath());
     }
+    json.put("hostsRefreshPeriod", obj.getHostsRefreshPeriod());
     if (obj.getHostsValue() != null) {
       json.put("hostsValue", BASE64_ENCODER.encodeToString(obj.getHostsValue().getBytes()));
     }

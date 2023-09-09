@@ -21,8 +21,7 @@ import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
-import io.vertx.core.impl.resolver.DnsResolverProvider;
-import io.vertx.core.spi.resolver.ResolverProvider;
+import io.vertx.core.spi.dns.AddressResolverProvider;
 
 import java.io.File;
 import java.net.InetAddress;
@@ -74,10 +73,10 @@ public class AddressResolver {
 
   private final Vertx vertx;
   private final AddressResolverGroup<InetSocketAddress> resolverGroup;
-  private final ResolverProvider provider;
+  private final AddressResolverProvider provider;
 
   public AddressResolver(Vertx vertx, AddressResolverOptions options) {
-    this.provider = ResolverProvider.factory(vertx, options);
+    this.provider = AddressResolverProvider.factory(vertx, options);
     this.resolverGroup = provider.resolver(options);
     this.vertx = vertx;
   }

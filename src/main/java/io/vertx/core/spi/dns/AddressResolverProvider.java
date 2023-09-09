@@ -9,18 +9,16 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.spi.resolver;
+package io.vertx.core.spi.dns;
 
 import io.netty.resolver.AddressResolverGroup;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
 import io.vertx.core.dns.AddressResolverOptions;
-import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.impl.resolver.DnsResolverProvider;
-import io.vertx.core.impl.resolver.DefaultResolverProvider;
+import io.vertx.core.dns.impl.DnsAddressResolverProvider;
+import io.vertx.core.dns.impl.DefaultAddressResolverProvider;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 
@@ -29,25 +27,25 @@ import java.net.InetSocketAddress;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface ResolverProvider {
+public interface AddressResolverProvider {
 
   String DISABLE_DNS_RESOLVER_PROP_NAME = "vertx.disableDnsResolver";
 
-  static ResolverProvider factory(Vertx vertx, AddressResolverOptions options) {
+  static AddressResolverProvider factory(Vertx vertx, AddressResolverOptions options) {
     // For now not really plugable, we just want to not fail when we can't load the async provider
     // that use an unstable API and fallback on the default (blocking) provider
     try {
       if (!Boolean.getBoolean(DISABLE_DNS_RESOLVER_PROP_NAME)) {
-        return DnsResolverProvider.create((VertxInternal) vertx, options);
+        return DnsAddressResolverProvider.create((VertxInternal) vertx, options);
       }
     } catch (Throwable e) {
       if (e instanceof VertxException) {
         throw e;
       }
-      Logger logger = LoggerFactory.getLogger(ResolverProvider.class);
+      Logger logger = LoggerFactory.getLogger(AddressResolverProvider.class);
       logger.info("Using the default address resolver as the dns resolver could not be loaded");
     }
-    return new DefaultResolverProvider();
+    return new DefaultAddressResolverProvider();
   }
 
   AddressResolverGroup<InetSocketAddress> resolver(AddressResolverOptions options);
