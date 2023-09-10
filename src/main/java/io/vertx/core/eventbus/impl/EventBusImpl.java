@@ -11,8 +11,19 @@
 
 package io.vertx.core.eventbus.impl;
 
-import io.vertx.core.*;
-import io.vertx.core.eventbus.*;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
+import io.vertx.core.eventbus.DeliveryContext;
+import io.vertx.core.eventbus.DeliveryOptions;
+import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.eventbus.Message;
+import io.vertx.core.eventbus.MessageCodec;
+import io.vertx.core.eventbus.MessageConsumer;
+import io.vertx.core.eventbus.MessageProducer;
+import io.vertx.core.eventbus.ReplyException;
+import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.utils.ConcurrentCyclicSequence;
@@ -277,11 +288,10 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
 
     HandlerHolder<T> holder = createHandlerHolder(registration, replyHandler, localOnly, context);
 
-    ConcurrentCyclicSequence<HandlerHolder> handlers = new ConcurrentCyclicSequence<HandlerHolder>().add(holder);
-    ConcurrentCyclicSequence<HandlerHolder> actualHandlers = handlerMap.merge(
-      address,
-      handlers,
-      (old, prev) -> old.add(prev.first()));
+    ConcurrentCyclicSequence<HandlerHolder> actualHandlers = handlerMap.compute(address,
+      (adr, prev) -> prev == null // first insert
+        ? new ConcurrentCyclicSequence<HandlerHolder>().add(holder)
+        : prev.add(holder));
 
     if (context.isDeployment()) {
       context.addCloseHook(registration);
