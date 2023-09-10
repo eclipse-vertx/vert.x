@@ -10,9 +10,7 @@
  */
 package io.vertx.core.eventbus.impl;
 
-import io.vertx.core.Closeable;
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
+import io.vertx.core.*;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
