@@ -11,7 +11,10 @@
 
 package io.vertx.core.eventbus.impl;
 
-import io.vertx.core.*;
+import io.vertx.core.Context;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.impl.Arguments;
@@ -20,7 +23,10 @@ import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.streams.ReadStream;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Queue;
 
 /**
  * This class is optimized for performance when used on the same event loop it was created on.
@@ -45,7 +51,6 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
   private Queue<Message<T>> pending = new ArrayDeque<>(8);
   private long demand = Long.MAX_VALUE;
   private Promise<Void> result;
-  boolean registered;
 
   MessageConsumerImpl (ContextInternal context, EventBusImpl eventBus, String address, boolean localOnly) {
     super(context, eventBus, address, false);
@@ -103,8 +108,6 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
 
   @Override
   public synchronized Future<Void> unregister() {
-    boolean mustUnregister = registered;
-    registered = false;// ~ handler = null
     if (endHandler != null) {
       endHandler.handle(null);
     }
@@ -120,7 +123,8 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
       }
     }
     discardHandler = null;
-    Future<Void> fut = super.unregister();
+    boolean mustUnregister = isRegistered();
+    Future<Void> fut = super.unregister();// ~ handler = null
     if (mustUnregister) {
       Promise<Void> res = result; // Alias reference because result can become null when the onComplete callback executes
       fut.onComplete(ar -> res.tryFail("Consumer unregistered before registration completed"));
@@ -132,7 +136,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
   @Override
   protected boolean doReceive(Message<T> message) {
     synchronized (this) {
-      if (messageHandler == null || !registered) {
+      if (messageHandler == null || !isRegistered()) {
         return false;
       }
       if (demand == 0L) {
@@ -204,11 +208,10 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
     if (h != null) {
       synchronized (this) {
         messageHandler = h;
-        if (!registered) {
-          registered = true;
+        if (!isRegistered()) {
           Promise<Void> p = result;
           Promise<Void> registration = context.promise();
-          register(null, localOnly, registration);
+          register(null, localOnly, registration);// registered = true;
           registration.future().onComplete(ar -> {
             if (ar.succeeded()) {
               p.tryComplete();

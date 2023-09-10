@@ -9,6 +9,7 @@ import org.junit.Test;
 
 import java.util.BitSet;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -18,6 +19,7 @@ import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -46,7 +48,6 @@ public class MessageConsumerImplTest {
 
     var consumer = (MessageConsumerImpl<Integer>) eb.consumer("x.y.z", add);
     assertSame(add, consumer.getHandler());
-    assertTrue(consumer.registered);
     assertTrue(consumer.isRegistered());
 
     eb.send("x.y.z", 42);
@@ -54,10 +55,10 @@ public class MessageConsumerImplTest {
     assertEquals(42, msg.body().intValue());
     assertTrue(msg.isSend());
     assertEquals("x.y.z", msg.address());
+    assertNull(msg.replyAddress());
 
     consumer.handler(null);
     assertSame(add, consumer.getHandler());// not null! :-)
-    assertFalse(consumer.registered);
     assertFalse(consumer.isRegistered());
 
     // dev/null
@@ -70,14 +71,12 @@ public class MessageConsumerImplTest {
 
     var consumer = (MessageConsumerImpl<Integer>) eb.<Integer>consumer("x.y.z");
     assertNull(consumer.getHandler());
-    assertFalse(consumer.registered);
     assertFalse(consumer.isRegistered());
 
     eb.send("x.y.z", 42);
 
     consumer.handler(null);
     assertNull(consumer.getHandler());
-    assertFalse(consumer.registered);
     assertFalse(consumer.isRegistered());
   }
 
@@ -105,7 +104,6 @@ public class MessageConsumerImplTest {
 
     var consumer = (MessageConsumerImpl<Integer>) eb.consumer("MessageConsumerImplTest.testHighload", add);
     assertSame(add, consumer.getHandler());
-    assertTrue(consumer.registered);
     assertTrue(consumer.isRegistered());
 
     var pool = (ThreadPoolExecutor) Executors.newFixedThreadPool(THREADS);
@@ -146,5 +144,27 @@ public class MessageConsumerImplTest {
     assertEquals(MAX, numbers.size());
 
     System.out.println("Msg/sec = "+MAX*1_000_000_000L/t);
+  }
+
+  @Test public void testReply () throws InterruptedException, ExecutionException{
+    var q = new LinkedBlockingQueue<Message<Integer>>();
+    var eb = vertx.eventBus();
+    Handler<Message<Integer>> add = q::add;
+
+    var consumer = (MessageConsumerImpl<Integer>) eb.consumer("x.y.z", add);
+    assertSame(add, consumer.getHandler());
+    assertTrue(consumer.isRegistered());
+
+    var requestFuture = eb.<Integer>request("x.y.z", 42);
+    var msg = q.take();
+    assertEquals(42, msg.body().intValue());
+    assertTrue(msg.isSend());
+    assertEquals("x.y.z", msg.address());
+    assertNotNull(msg.replyAddress());
+
+    msg.reply(2023);
+
+    int recvdReplyBody = requestFuture.toCompletionStage().toCompletableFuture().get().body();
+    assertEquals(2023, recvdReplyBody);
   }
 }
