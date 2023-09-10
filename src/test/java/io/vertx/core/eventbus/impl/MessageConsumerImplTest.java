@@ -187,31 +187,39 @@ public class MessageConsumerImplTest {
       for (int i = 0; i<100_000; i++){
         if (i%2 == 0){
           synchronized(consumer){
-            consumer.handler(null);// unregister
+            Future<Void> f = consumer.unregister();
             if (consumer.isRegistered()){
               failedToUnregister.incrementAndGet();// must be unregistered after unregister()
+            }
+            if (!f.isComplete() || f.failed()){
+              failedToUnregister.incrementAndGet();
             }
           }
 
         } else {
           final boolean registered;
           final Future<Void> f;
+          final Future<Void> f2;
           synchronized(consumer){
             registered = consumer.isRegistered();
             f = consumer.completion();
-            var mc = consumer.handler(handler);
-            try {
-              assertSame(mc, consumer);
-              if (registered){
-                f.toCompletionStage().toCompletableFuture().get();
-                //ok ^ completed
-              }
-              if (!consumer.isRegistered()){
-                failedToRegister.incrementAndGet();
-              }
-            } catch (Exception e){
+            consumer.handler(handler);// register
+            if (!consumer.isRegistered()){
               failedToRegister.incrementAndGet();
             }
+            f2 = consumer.completion();
+          }
+          try {
+            if (registered){
+              f.toCompletionStage().toCompletableFuture().get();//ok completed
+            }
+          } catch (Exception e){
+            failedToRegister.incrementAndGet();
+          }
+          try {
+            f2.toCompletionStage().toCompletableFuture().get();//ok completed
+          } catch (Exception e){
+            failedToRegister.incrementAndGet();
           }
         }
       }//f
