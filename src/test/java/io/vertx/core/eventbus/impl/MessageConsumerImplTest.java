@@ -1,8 +1,13 @@
 package io.vertx.core.eventbus.impl;
 
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.VertxInternal;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,19 +36,20 @@ import static org.junit.Assert.fail;
 public class MessageConsumerImplTest {
 
   Vertx vertx;
+  EventBus eb;
 
   @Before public void setUp () throws Exception{
     vertx = Vertx.vertx();
+    eb = vertx.eventBus();
   }
 
   @After public void tearDown () throws Exception{
     vertx.close();
-    vertx = null;
+    eb = null;  vertx = null;
   }
 
   @Test public void testSimple () throws InterruptedException{
     var q = new LinkedBlockingQueue<Message<Integer>>();
-    var eb = vertx.eventBus();
     Handler<Message<Integer>> add = q::add;
 
     var consumer = (MessageConsumerImpl<Integer>) eb.consumer("x.y.z", add);
@@ -67,8 +73,6 @@ public class MessageConsumerImplTest {
   }
 
   @Test public void testNoHandler () throws InterruptedException{
-    var eb = vertx.eventBus();
-
     var consumer = (MessageConsumerImpl<Integer>) eb.<Integer>consumer("x.y.z");
     assertNull(consumer.getHandler());
     assertFalse(consumer.isRegistered());
@@ -78,14 +82,14 @@ public class MessageConsumerImplTest {
     consumer.handler(null);
     assertNull(consumer.getHandler());
     assertFalse(consumer.isRegistered());
+
+    assertFalse(consumer.doReceive(null));
   }
 
-  static final int THREADS = 17;
+  static final int THREADS = 14; // < 1.2G RAM
   static final int MAX = 1_000_000*THREADS;
 
   @Test public void testHighload () throws InterruptedException{
-    var eb = vertx.eventBus();
-
     var cnt = new AtomicInteger();
     var inFlight = new AtomicBoolean();
     var numbers = new BitSet(MAX);
@@ -148,7 +152,6 @@ public class MessageConsumerImplTest {
 
   @Test public void testReply () throws InterruptedException, ExecutionException{
     var q = new LinkedBlockingQueue<Message<Integer>>();
-    var eb = vertx.eventBus();
     Handler<Message<Integer>> add = q::add;
 
     var consumer = (MessageConsumerImpl<Integer>) eb.consumer("x.y.z", add);
@@ -166,5 +169,105 @@ public class MessageConsumerImplTest {
 
     int recvdReplyBody = requestFuture.toCompletionStage().toCompletableFuture().get().body();
     assertEquals(2023, recvdReplyBody);
+  }
+
+  @Test public void testHandlerRace () throws InterruptedException{
+    var pool = (ThreadPoolExecutor) Executors.newFixedThreadPool(THREADS);
+    var startSignal = new CountDownLatch(1);
+
+    var consumer = eb.consumer("testHandlerRace");
+    Handler<Message<Object>> handler = m->{};
+    var failedToRegister = new AtomicInteger();
+    var failedToUnregister = new AtomicInteger();
+
+
+    IntStream.range(0, 100).forEach(idx -> pool.execute(()->{
+      try { startSignal.await(); } catch (InterruptedException ignore){}
+
+      for (int i = 0; i<100_000; i++){
+        if (i%2 == 0){
+          synchronized(consumer){
+            consumer.handler(null);// unregister
+            if (consumer.isRegistered()){
+              failedToUnregister.incrementAndGet();// must be unregistered after unregister()
+            }
+          }
+
+        } else {
+          final boolean registered;
+          final Future<Void> f;
+          synchronized(consumer){
+            registered = consumer.isRegistered();
+            f = consumer.completion();
+            var mc = consumer.handler(handler);
+            try {
+              assertSame(mc, consumer);
+              if (registered){
+                f.toCompletionStage().toCompletableFuture().get();
+                //ok ^ completed
+              }
+              if (!consumer.isRegistered()){
+                failedToRegister.incrementAndGet();
+              }
+            } catch (Exception e){
+              failedToRegister.incrementAndGet();
+            }
+          }
+        }
+      }//f
+    }));
+
+    startSignal.countDown();
+    while (pool.getActiveCount() != 0){
+      System.out.println("Active threads = "+pool.getActiveCount());
+      Thread.sleep(500);
+    }
+    assertEquals(0, failedToRegister.get());
+    assertEquals(0, failedToUnregister.get());
+  }
+
+  @Test public void testUnregisterDuringRegister () throws ExecutionException, InterruptedException{
+    //1. normal flow: register > registered > unregister > unregistered
+    var consumer = (MessageConsumerImpl<Object>) eb.consumer("testUnregisterDuringRegister");
+    assertFalse(consumer.isRegistered());
+    var f = consumer.unregister();
+    f.toCompletionStage().toCompletableFuture().get();// must complete with Void (null), without exception
+    assertFalse(consumer.isRegistered());
+
+    Handler<Message<Object>> messageHandler = m->{ };
+    var me = consumer.handler(messageHandler);
+    assertSame(me, consumer);
+    assertSame(messageHandler, consumer.getHandler());
+    assertTrue(consumer.isRegistered());
+    assertNull(consumer.completion().toCompletionStage().toCompletableFuture().get());// must complete with Void (null), without exception
+    assertNull(consumer.completion().cause());
+    assertNull(consumer.completion().result());// Void == null
+
+    f = consumer.unregister();
+    assertFalse(consumer.isRegistered());
+    assertNull(f.toCompletionStage().toCompletableFuture().get());// must complete with Void (null), without exception
+    assertFalse(consumer.isRegistered());
+
+    //2. long register e.g. cluster: register > unregister > register failed / unregistered
+
+    EventBusImpl registrationNeverCompletesBus = new EventBusImpl((VertxInternal) vertx) {
+      @Override protected <T> void onLocalRegistration (HandlerHolder<T> handlerHolder, Promise<Void> promise){
+        assertNotNull(promise);
+      }
+    };
+    registrationNeverCompletesBus.start(((ContextInternal) vertx.getOrCreateContext()).promise());
+    consumer = (MessageConsumerImpl<Object>) registrationNeverCompletesBus.consumer("testUnregisterDuringRegister", m->{});
+    assertTrue(consumer.isRegistered());
+    var oldResult = consumer.completion();
+    assertFalse(oldResult.isComplete());// never completes
+
+    f = consumer.unregister();// unregister during registration
+    assertFalse(consumer.isRegistered());
+    assertFalse(consumer.completion().isComplete());// new `result`
+    assertNull(f.toCompletionStage().toCompletableFuture().get());// successful unregister
+
+    assertTrue(oldResult.isComplete());// completed with exception ^ in unregister()
+    assertEquals("Future{cause=Consumer unregistered before registration completed}", oldResult.toString());
+    assertEquals("io.vertx.core.impl.NoStackTraceThrowable: Consumer unregistered before registration completed", oldResult.cause().toString());
   }
 }

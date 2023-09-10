@@ -10,7 +10,9 @@
  */
 package io.vertx.core.eventbus.impl;
 
-import io.vertx.core.*;
+import io.vertx.core.Closeable;
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
@@ -29,10 +31,7 @@ public abstract class HandlerRegistration<T> implements Closeable {
   private HandlerHolder<T> registered;
   private Object metric;
 
-  HandlerRegistration(ContextInternal context,
-                      EventBusImpl bus,
-                      String address,
-                      boolean src) {
+  HandlerRegistration (ContextInternal context, EventBusImpl bus, String address, boolean src) {
     this.context = context;
     this.bus = bus;
     this.src = src;
@@ -58,7 +57,7 @@ public abstract class HandlerRegistration<T> implements Closeable {
 
   synchronized void register(String repliedAddress, boolean localOnly, Promise<Void> promise) {
     if (registered != null) {
-      throw new IllegalStateException();
+      throw new IllegalStateException("already registered: "+repliedAddress+" - "+registered);
     }
     registered = bus.addRegistration(address, this, repliedAddress != null, localOnly, promise);
     if (bus.metrics != null) {
