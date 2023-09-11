@@ -28,10 +28,7 @@ import io.vertx.core.dns.DnsClient;
 import io.vertx.core.dns.DnsClientOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.file.FileSystem;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.impl.btc.BlockedThreadChecker;
 import io.vertx.core.impl.future.PromiseInternal;
@@ -423,6 +420,11 @@ public abstract class VertxWrapper implements VertxInternal {
   @Override
   public Transport transport() {
     return delegate.transport();
+  }
+
+  @Override
+  public WebSocketClient createWebSocketClient(WebSocketClientOptions options) {
+    return delegate.createWebSocketClient(options);
   }
 
   @Override

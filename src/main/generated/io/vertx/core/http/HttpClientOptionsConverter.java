@@ -283,6 +283,7 @@ public class HttpClientOptionsConverter {
       json.put("tracingPolicy", obj.getTracingPolicy().name());
     }
     json.put("tryUseCompression", obj.isTryUseCompression());
+    json.put("tryUsePerFrameWebSocketCompression", obj.getTryUsePerFrameWebSocketCompression());
     json.put("tryUsePerMessageWebSocketCompression", obj.getTryUsePerMessageWebSocketCompression());
     json.put("tryWebSocketDeflateFrameCompression", obj.getTryWebSocketDeflateFrameCompression());
     json.put("verifyHost", obj.isVerifyHost());

@@ -19,6 +19,8 @@ import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.*;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.WebSocketClient;
+import io.vertx.core.http.WebSocketClientOptions;
 import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.impl.btc.BlockedThreadChecker;
 import io.vertx.core.impl.future.PromiseInternal;
@@ -84,6 +86,15 @@ public interface VertxInternal extends Vertx {
   VertxMetrics metricsSPI();
 
   Transport transport();
+
+  /**
+   * Create a WebSocket client using the specified options and close future
+   *
+   * @param options  the options to use
+   * @param closeFuture  the close future
+   * @return the client
+   */
+  WebSocketClient createWebSocketClient(WebSocketClientOptions options, CloseFuture closeFuture);
 
   /**
    * Create a HTTP/HTTPS client using the specified options and close future

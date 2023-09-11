@@ -288,6 +288,16 @@ public class HttpClientOptions extends ClientOptionsBase {
    *
    * @param other  the options to copy
    */
+  public HttpClientOptions(ClientOptionsBase other) {
+    super(other);
+    init();
+  }
+
+  /**
+   * Copy constructor
+   *
+   * @param other  the options to copy
+   */
   public HttpClientOptions(HttpClientOptions other) {
     super(other);
     this.verifyHost = other.isVerifyHost();
@@ -1254,8 +1264,17 @@ public class HttpClientOptions extends ClientOptionsBase {
 
   /**
    * @return {@code true} when the WebSocket per-frame deflate compression extension will be offered
+   * @deprecated instead use {@link #tryUsePerFrameWebSocketCompression}
    */
+  @Deprecated
   public boolean getTryWebSocketDeflateFrameCompression() {
+    return this.tryUsePerFrameWebSocketCompression;
+  }
+
+  /**
+   * @return {@code true} when the WebSocket per-frame deflate compression extension will be offered
+   */
+  public boolean getTryUsePerFrameWebSocketCompression() {
     return this.tryUsePerFrameWebSocketCompression;
   }
 

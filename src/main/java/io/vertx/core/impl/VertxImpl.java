@@ -30,7 +30,10 @@ import io.vertx.core.eventbus.impl.EventBusImpl;
 import io.vertx.core.eventbus.impl.EventBusInternal;
 import io.vertx.core.eventbus.impl.clustered.ClusteredEventBus;
 import io.vertx.core.file.FileSystem;
+import io.vertx.core.http.*;
+import io.vertx.core.http.impl.*;
 import io.vertx.core.impl.btc.BlockedThreadChecker;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.impl.NetClientBuilder;
 import io.vertx.core.impl.transports.JDKTransport;
 import io.vertx.core.spi.file.FileResolver;
@@ -352,6 +355,41 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   public HttpServer createHttpServer(HttpServerOptions serverOptions) {
     return new HttpServerImpl(this, serverOptions);
+  }
+
+  @Override
+  public WebSocketClient createWebSocketClient(WebSocketClientOptions options, CloseFuture closeFuture) {
+    HttpClientOptions o = new HttpClientOptions(options);
+    o.setVerifyHost(options.isVerifyHost());
+    o.setMaxWebSocketFrameSize(options.getMaxFrameSize());
+    o.setMaxWebSocketMessageSize(options.getMaxMessageSize());
+    o.setMaxWebSockets(options.getMaxConnections());
+    o.setSendUnmaskedFrames(options.isSendUnmaskedFrames());
+    o.setTryUsePerFrameWebSocketCompression(options.getTryUsePerFrameCompression());
+    o.setTryUsePerMessageWebSocketCompression(options.getTryUsePerMessageCompression());
+    o.setWebSocketCompressionLevel(options.getCompressionLevel());
+    o.setWebSocketCompressionAllowClientNoContext(options.getCompressionAllowClientNoContext());
+    o.setWebSocketCompressionRequestServerNoContext(options.getCompressionRequestServerNoContext());
+    o.setWebSocketClosingTimeout(options.getClosingTimeout());
+    o.setShared(options.isShared());
+    o.setName(options.getName());
+    WebSocketClientImpl client = new WebSocketClientImpl(this, o, closeFuture);
+    closeFuture.add(client);
+    return client;
+  }
+
+  @Override
+  public WebSocketClient createWebSocketClient(WebSocketClientOptions options) {
+    CloseFuture closeFuture = new CloseFuture();
+    WebSocketClient client;
+    if (options.isShared()) {
+      client = createSharedClient(SharedWebSocketClient.SHARED_MAP_NAME, options.getName(), closeFuture, cf -> createWebSocketClient(options, cf));
+      client = new SharedWebSocketClient(this, closeFuture, client);
+    } else {
+      client = createWebSocketClient(options, closeFuture);
+    }
+    resolveCloseFuture().add(closeFuture);
+    return client;
   }
 
   @Override
