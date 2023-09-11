@@ -10,7 +10,9 @@
  */
 package io.vertx.core.eventbus.impl;
 
-import io.vertx.core.*;
+import io.vertx.core.Closeable;
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
@@ -27,7 +29,7 @@ public abstract class HandlerRegistration<T> implements Closeable {
   public final String address;
   public final boolean src;
   private HandlerHolder<T> registered;
-  private Object metric;
+  Object metric;
 
   HandlerRegistration (ContextInternal context, EventBusImpl bus, String address, boolean src) {
     this.context = context;
@@ -105,12 +107,12 @@ public abstract class HandlerRegistration<T> implements Closeable {
       super(message, message.bus.inboundInterceptors(), context);
     }
 
+    @Override
     protected void execute() {
       ContextInternal ctx = InboundDeliveryContext.super.context;
-      Object m = metric;
       VertxTracer tracer = ctx.tracer();
       if (bus.metrics != null) {
-        bus.metrics.messageDelivered(m, message.isLocal());
+        bus.metrics.messageDelivered(metric, message.isLocal());
       }
       if (tracer != null && !src) {
         message.trace = tracer.receiveRequest(ctx, SpanKind.RPC, TracingPolicy.PROPAGATE, message, message.isSend() ? "send" : "publish", message.headers(), MessageTagExtractor.INSTANCE);
