@@ -321,17 +321,22 @@ public class HTTPExamples {
   }
 
   public void example28(Vertx vertx) {
-    HttpClient client = vertx.createHttpClient();
+    HttpClient client = vertx.createHttpPool();
   }
 
   public void example29(Vertx vertx) {
     HttpClientOptions options = new HttpClientOptions().setKeepAlive(false);
-    HttpClient client = vertx.createHttpClient(options);
+    HttpClient client = vertx.createHttpPool(options);
+  }
+
+  public void examplePoolConfiguration(Vertx vertx) {
+    PoolOptions options = new PoolOptions().setHttp1MaxSize(10);
+    HttpClient client = vertx.createHttpPool(options);
   }
 
   public void exampleClientLogging(Vertx vertx) {
     HttpClientOptions options = new HttpClientOptions().setLogActivity(true);
-    HttpClient client = vertx.createHttpClient(options);
+    HttpClient client = vertx.createHttpPool(options);
   }
 
   public void example30(HttpClient client) {
@@ -350,7 +355,7 @@ public class HTTPExamples {
     HttpClientOptions options = new HttpClientOptions().setDefaultHost("wibble.com");
 
     // Can also set default port if you want...
-    HttpClient client = vertx.createHttpClient(options);
+    HttpClient client = vertx.createHttpPool(options);
     client
       .request(HttpMethod.GET, "/some-uri")
       .onComplete(ar1 -> {
@@ -370,7 +375,7 @@ public class HTTPExamples {
 
   public void example32(Vertx vertx) {
 
-    HttpClient client = vertx.createHttpClient();
+    HttpClient client = vertx.createHttpPool();
 
     // Write some headers using the headers multi-map
     MultiMap headers = HttpHeaders.set("content-type", "application/json").set("other-header", "foo");
@@ -476,7 +481,7 @@ public class HTTPExamples {
       });
   }
   public void example34(Vertx vertx, String body) {
-    HttpClient client = vertx.createHttpClient();
+    HttpClient client = vertx.createHttpPool();
 
     client.request(HttpMethod.POST, "some-uri")
       .onSuccess(request -> {
@@ -771,7 +776,7 @@ public class HTTPExamples {
 
   public void exampleFollowRedirect02(Vertx vertx) {
 
-    HttpClient client = vertx.createHttpClient(
+    HttpClient client = vertx.createHttpPool(
         new HttpClientOptions()
             .setMaxRedirects(32));
 
@@ -799,9 +804,9 @@ public class HTTPExamples {
     throw new UnsupportedOperationException();
   }
 
-  public void exampleFollowRedirect03(HttpClient client) {
+  public void exampleFollowRedirect03(HttpPool pool) {
 
-    client.redirectHandler(response -> {
+    pool.redirectHandler(response -> {
 
       // Only follow 301 code
       if (response.statusCode() == 301 && response.getHeader("Location") != null) {
@@ -1060,7 +1065,7 @@ public class HTTPExamples {
         .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP)
             .setHost("localhost").setPort(3128)
             .setUsername("username").setPassword("secret"));
-    HttpClient client = vertx.createHttpClient(options);
+    HttpClient client = vertx.createHttpPool(options);
 
   }
 
@@ -1070,7 +1075,7 @@ public class HTTPExamples {
         .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5)
             .setHost("localhost").setPort(1080)
             .setUsername("username").setPassword("secret"));
-    HttpClient client = vertx.createHttpClient(options);
+    HttpClient client = vertx.createHttpPool(options);
 
   }
 
@@ -1082,7 +1087,7 @@ public class HTTPExamples {
         .setUsername("username").setPassword("secret"))
       .addNonProxyHost("*.foo.com")
       .addNonProxyHost("localhost");
-    HttpClient client = vertx.createHttpClient(options);
+    HttpClient client = vertx.createHttpPool(options);
 
   }
 
@@ -1103,7 +1108,7 @@ public class HTTPExamples {
 
     HttpClientOptions options = new HttpClientOptions()
         .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP));
-    HttpClient client = vertx.createHttpClient(options);
+    HttpClient client = vertx.createHttpPool(options);
     client
       .request(HttpMethod.GET, "ftp://ftp.gnu.org/gnu/")
       .onComplete(ar -> {
@@ -1146,7 +1151,7 @@ public class HTTPExamples {
   public void serversharingclient(Vertx vertx) {
     vertx.setPeriodic(100, (l) -> {
       vertx
-        .createHttpClient()
+        .createHttpPool()
         .request(HttpMethod.GET, 8080, "localhost", "/")
         .onComplete(ar1 -> {
           if (ar1.succeeded()) {
@@ -1214,7 +1219,7 @@ public class HTTPExamples {
   }
 
   public static void httpClientSharing1(Vertx vertx) {
-    HttpClient client = vertx.createHttpClient(new HttpClientOptions().setShared(true));
+    HttpClient client = vertx.createHttpPool(new HttpClientOptions().setShared(true));
     vertx.deployVerticle(() -> new AbstractVerticle() {
       @Override
       public void start() throws Exception {
@@ -1231,7 +1236,7 @@ public class HTTPExamples {
         // Get or create a shared client
         // this actually creates a lease to the client
         // when the verticle is undeployed, the lease will be released automaticaly
-        client = vertx.createHttpClient(new HttpClientOptions().setShared(true).setName("my-client"));
+        client = vertx.createHttpPool(new HttpClientOptions().setShared(true).setName("my-client"));
       }
     }, new DeploymentOptions().setInstances(4));
   }
@@ -1242,7 +1247,7 @@ public class HTTPExamples {
       @Override
       public void start() {
         // The client creates and use two event-loops for 4 instances
-        client = vertx.createHttpClient(new HttpClientOptions().setPoolEventLoopSize(2).setShared(true).setName("my-client"));
+        client = vertx.createHttpPool(new HttpClientOptions().setPoolEventLoopSize(2).setShared(true).setName("my-client"));
       }
     }, new DeploymentOptions().setInstances(4));
   }
