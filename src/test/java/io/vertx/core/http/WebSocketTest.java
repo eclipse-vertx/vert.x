@@ -35,6 +35,7 @@ import io.vertx.core.http.impl.Http1xServerConnection;
 import io.vertx.core.http.impl.WebSocketInternal;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.impl.ConcurrentHashSet;
+import io.vertx.core.impl.Utils;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
@@ -519,7 +520,7 @@ public class WebSocketTest extends VertxTestBase {
     int numConnections = numServers * 100;
 
     List<HttpServer> servers = new ArrayList<>();
-    Set<HttpServer> connectedServers = new ConcurrentHashSet<>();
+    Set<HttpServer> connectedServers = Utils.concurrentHashSet();
     Map<HttpServer, Integer> connectCount = new ConcurrentHashMap<>();
 
     CountDownLatch latchConns = new CountDownLatch(numConnections);
@@ -3651,7 +3652,7 @@ public class WebSocketTest extends VertxTestBase {
     String path = "/some/path";
     int numConnections = 10;
 
-    Set<String> connections = new ConcurrentHashSet<>();
+    Set<String> connections = Utils.concurrentHashSet();
     HttpServerOptions httpServerOptions = new HttpServerOptions()
       .setPort(DEFAULT_HTTP_PORT)
       .setRegisterWebSocketWriteHandlers(true);

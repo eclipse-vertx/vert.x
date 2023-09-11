@@ -13,6 +13,10 @@ package io.vertx.core.impl;
 
 import io.netty.util.internal.PlatformDependent;
 
+import java.util.Collections;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * Simple generic utility methods and constants
  *
@@ -45,4 +49,11 @@ public class Utils {
     return isWindows;
   }
 
+  public static <E> Set<E> concurrentHashSet (){
+    return Collections.newSetFromMap(new ConcurrentHashMap<>());
+  }
+
+  public static <E> Set<E> concurrentHashSet (int initialSize){
+    return Collections.newSetFromMap(new ConcurrentHashMap<>(initialSize));
+  }
 }

@@ -11,11 +11,8 @@
 
 package io.vertx.core;
 
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
-import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.Deployment;
+import io.vertx.core.impl.Utils;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.cluster.ClusterManager;
@@ -40,11 +37,11 @@ import java.util.function.BooleanSupplier;
  */
 public class ComplexHATest extends VertxTestBase {
 
-  protected ClusterManager getClusterManager() {
+  @Override protected ClusterManager getClusterManager() {
     return new FakeClusterManager();
   }
 
-  private Random random = new Random();
+  private final Random random = new Random();
 
   protected final int maxVerticlesPerNode = 20;
   protected Set<Deployment>[] deploymentSnapshots;
@@ -162,7 +159,7 @@ public class ComplexHATest extends VertxTestBase {
   }
 
   protected Set<Deployment> takeDeploymentSnapshot(int pos) {
-    Set<Deployment> snapshot = new ConcurrentHashSet<>();
+    Set<Deployment> snapshot = Utils.concurrentHashSet();
     VertxInternal v = (VertxInternal)vertices[pos];
     for (String depID: v.deploymentIDs()) {
       snapshot.add(v.getDeployment(depID));

@@ -12,7 +12,6 @@
 package io.vertx.core.impl;
 
 import io.vertx.core.AsyncResult;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
@@ -75,9 +74,9 @@ public class DeploymentManager {
 
   public Future<Void> undeployVerticle(String deploymentID) {
     Deployment deployment = deployments.get(deploymentID);
-    Context currentContext = vertx.getOrCreateContext();
+    ContextInternal currentContext = vertx.getOrCreateContext();
     if (deployment == null) {
-      return ((ContextInternal) currentContext).failedFuture(new IllegalStateException("Unknown deployment"));
+      return currentContext.failedFuture(new IllegalStateException("Unknown deployment"));
     } else {
       return deployment.doUndeploy(vertx.getOrCreateContext());
     }
@@ -255,7 +254,7 @@ public class DeploymentManager {
     private final JsonObject conf;
     private final String verticleIdentifier;
     private final List<VerticleHolder> verticles = new CopyOnWriteArrayList<>();
-    private final Set<Deployment> children = new ConcurrentHashSet<>();
+    private final Set<Deployment> children = Utils.concurrentHashSet();
     private final DeploymentOptions options;
     private Handler<Void> undeployHandler;
     private int status = ST_DEPLOYED;

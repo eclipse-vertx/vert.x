@@ -18,8 +18,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
+ * @deprecated use {@link Utils#concurrentHashSet}
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@Deprecated
 public class ConcurrentHashSet<E> implements Set<E> {
 
   private final Map<E, Object> map;

@@ -1975,8 +1975,8 @@ public class NetTest extends VertxTestBase {
     int numConnections = numServers * (domainSocket ? 10 : 20);
 
     List<NetServer> servers = new ArrayList<>();
-    Set<NetServer> connectedServers = new ConcurrentHashSet<>();
-    Set<Thread> threads = new ConcurrentHashSet<>();
+    Set<NetServer> connectedServers = Utils.concurrentHashSet();
+    Set<Thread> threads = Utils.concurrentHashSet();
 
     Future<String> listenLatch = vertx.deployVerticle(() -> new AbstractVerticle() {
       NetServer server;
@@ -2105,7 +2105,7 @@ public class NetTest extends VertxTestBase {
 
     int numConnections = 10;
 
-    Set<String> connections = new ConcurrentHashSet<>();
+    Set<String> connections = Utils.concurrentHashSet();
     server.connectHandler(socket -> {
       connections.add(socket.writeHandlerID());
       if (connections.size() == numConnections) {
@@ -2552,7 +2552,7 @@ public class NetTest extends VertxTestBase {
     }));
     awaitLatch(listenLatch);
 
-    Set<Context> contexts = new ConcurrentHashSet<>();
+    Set<Context> contexts = Utils.concurrentHashSet();
     AtomicInteger connectCount = new AtomicInteger();
     CountDownLatch clientLatch = new CountDownLatch(1);
     // Each connect should be in its own context
