@@ -805,7 +805,7 @@ You can configure compressors according to your needs
 
 === Creating an HTTP client
 
-You create an {@link io.vertx.core.http.HttpPool} instance with default options as follows:
+You create an {@link io.vertx.core.http.HttpClientPool} instance with default options as follows:
 
 [source,$lang]
 ----

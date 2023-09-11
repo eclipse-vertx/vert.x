@@ -18,6 +18,13 @@ import io.vertx.core.net.SSLOptions;
 
 import java.util.function.Function;
 
+/**
+ * An asynchronous HTTP client.
+ * <p>
+ * It allows you to make requests to HTTP servers, and a single client can make requests to any server.
+ *
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
 @VertxGen
 public interface HttpClientPool extends HttpClient {
 
