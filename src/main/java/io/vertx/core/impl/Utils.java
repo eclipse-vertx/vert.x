@@ -50,10 +50,7 @@ public class Utils {
   }
 
   public static <E> Set<E> concurrentHashSet (){
-    return Collections.newSetFromMap(new ConcurrentHashMap<>());
-  }
-
-  public static <E> Set<E> concurrentHashSet (int initialSize){
-    return Collections.newSetFromMap(new ConcurrentHashMap<>(initialSize));
+    //return Collections.newSetFromMap(new ConcurrentHashMap<>());
+    return ConcurrentHashMap.newKeySet();// we can change implementation
   }
 }

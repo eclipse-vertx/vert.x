@@ -25,7 +25,6 @@ import io.vertx.core.http.impl.Http1xUpgradeToH2CHandler;
 import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.http.impl.HttpServerRequestInternal;
 import io.vertx.core.http.impl.HttpUtils;
-import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.Utils;

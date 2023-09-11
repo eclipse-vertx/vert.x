@@ -41,7 +41,8 @@ public class LocalEventBusTest extends EventBusTestBase {
   private EventBusInternal eb;
   private boolean running;
 
-  @Override public void setUp() throws Exception {
+  @Override
+  public void setUp() throws Exception {
     super.setUp();
     vertx.close();
     vertx = Vertx.vertx();
@@ -52,7 +53,8 @@ public class LocalEventBusTest extends EventBusTestBase {
     running = true;
   }
 
-  @Override protected void tearDown() throws Exception {
+  @Override
+  protected void tearDown() throws Exception {
     closeVertx();
     super.tearDown();
   }

@@ -37,7 +37,8 @@ import java.util.function.BooleanSupplier;
  */
 public class ComplexHATest extends VertxTestBase {
 
-  @Override protected ClusterManager getClusterManager() {
+  @Override
+  protected ClusterManager getClusterManager() {
     return new FakeClusterManager();
   }
 
@@ -49,6 +50,7 @@ public class ComplexHATest extends VertxTestBase {
   protected volatile int killedNode;
   protected List<Integer> aliveNodes;
 
+  @Override
   public void setUp() throws Exception {
     super.setUp();
     deploymentSnapshots = null;

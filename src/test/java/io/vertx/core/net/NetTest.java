@@ -48,7 +48,6 @@ import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.*;
-import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonArray;
