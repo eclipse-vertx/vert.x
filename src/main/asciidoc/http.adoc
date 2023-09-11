@@ -1815,12 +1815,11 @@ The {@link io.vertx.core.http.ServerWebSocket} instance enables you to retrieve 
 
 ==== WebSockets on the client
 
-The Vert.x {@link io.vertx.core.http.HttpClient} supports WebSockets.
+The Vert.x {@link io.vertx.core.http.WebSocketClient} supports WebSockets.
 
-You can connect a WebSocket to a server using one of the {@link io.vertx.core.http.HttpClient#webSocket} operations and
-providing a handler.
+You can connect a WebSocket to a server using one of the {@link io.vertx.core.http.WebSocketClient#connect} operations.
 
-The handler will be called with an instance of {@link io.vertx.core.http.WebSocket} when the connection has been made:
+The returned future will be completed with an instance of {@link io.vertx.core.http.WebSocket} when the connection has been made:
 
 [source,$lang]
 ----
