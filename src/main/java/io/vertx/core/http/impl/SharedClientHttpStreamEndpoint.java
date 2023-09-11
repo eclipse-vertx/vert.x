@@ -56,11 +56,11 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
     return selected;
   };
 
-  private final HttpClientImpl client;
+  private final HttpClientPoolImpl client;
   private final HttpChannelConnector connector;
   private final ConnectionPool<HttpClientConnection> pool;
 
-  public SharedClientHttpStreamEndpoint(HttpClientImpl client,
+  public SharedClientHttpStreamEndpoint(HttpClientPoolImpl client,
                                         ClientMetrics metrics,
                                         int queueMaxSize,
                                         int http1MaxSize,

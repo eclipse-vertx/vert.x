@@ -11,11 +11,11 @@
 
 package io.vertx.core.http.impl;
 
-import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpClientPool;
 import io.vertx.core.impl.VertxInternal;
 
-public interface HttpClientInternal extends HttpClient {
+public interface HttpClientPoolInternal extends HttpClientPool {
 
   /**
    * @return the vertx, for use in package related classes only.

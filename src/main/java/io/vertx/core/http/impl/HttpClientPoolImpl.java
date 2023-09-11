@@ -17,15 +17,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpClientResponse;
-import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.HttpHeaders;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.RequestOptions;
+import io.vertx.core.http.*;
 import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
@@ -57,7 +49,7 @@ import static io.vertx.core.http.HttpHeaders.*;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class HttpClientImpl extends HttpClientBase implements HttpClientInternal, MetricsProvider, Closeable {
+public class HttpClientPoolImpl extends HttpClientBase implements HttpClientPoolInternal, MetricsProvider, Closeable {
 
   // Pattern to check we are not dealing with an absoluate URI
   private static final Pattern ABS_URI_START_PATTERN = Pattern.compile("^\\p{Alpha}[\\p{Alpha}\\p{Digit}+.\\-]*:");
@@ -118,14 +110,16 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   private static final Consumer<Endpoint<Lease<HttpClientConnection>>> EXPIRED_CHECKER = endpoint -> ((ClientHttpEndpointBase)endpoint).checkExpired();
 
   private final ConnectionManager<EndpointKey, Lease<HttpClientConnection>> httpCM;
+  private final PoolOptions poolOptions;
   private volatile Handler<HttpConnection> connectionHandler;
   private volatile Function<HttpClientResponse, Future<RequestOptions>> redirectHandler = DEFAULT_HANDLER;
   private long timerID;
 
-  public HttpClientImpl(VertxInternal vertx, HttpClientOptions options, CloseFuture closeFuture) {
+  public HttpClientPoolImpl(VertxInternal vertx, HttpClientOptions options, PoolOptions poolOptions, CloseFuture closeFuture) {
     super(vertx, options, closeFuture);
-    httpCM = httpConnectionManager();
-    if (options.getPoolCleanerPeriod() > 0 && (options.getKeepAliveTimeout() > 0L || options.getHttp2KeepAliveTimeout() > 0L)) {
+    this.poolOptions = new PoolOptions(poolOptions);
+    this.httpCM = httpConnectionManager();
+    if (poolOptions.getCleanerPeriod() > 0 && (options.getKeepAliveTimeout() > 0L || options.getHttp2KeepAliveTimeout() > 0L)) {
       PoolChecker checker = new PoolChecker(this);
       ContextInternal timerContext = vertx.createEventLoopContext();
       timerID = timerContext.setTimer(options.getPoolCleanerPeriod(), checker);
@@ -141,15 +135,15 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
    */
   private static class PoolChecker implements Handler<Long> {
 
-    final WeakReference<HttpClientImpl> ref;
+    final WeakReference<HttpClientPoolImpl> ref;
 
-    private PoolChecker(HttpClientImpl client) {
+    private PoolChecker(HttpClientPoolImpl client) {
       ref = new WeakReference<>(client);
     }
 
     @Override
     public void handle(Long event) {
-      HttpClientImpl client = ref.get();
+      HttpClientPoolImpl client = ref.get();
       if (client != null) {
         client.checkExpired(this);
       }
@@ -160,7 +154,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     httpCM.forEach(EXPIRED_CHECKER);
     synchronized (this) {
       if (!closeFuture.isClosed()) {
-        timerID = vertx.setTimer(options.getPoolCleanerPeriod(), checker);
+        timerID = vertx.setTimer(poolOptions.getCleanerPeriod(), checker);
       }
     }
   }
@@ -245,17 +239,17 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   }
 
   @Override
-  public HttpClient connectionHandler(Handler<HttpConnection> handler) {
+  public HttpClientPool connectionHandler(Handler<HttpConnection> handler) {
     connectionHandler = handler;
     return this;
   }
 
-  Handler<HttpConnection> connectionHandler() {
+  public Handler<HttpConnection> connectionHandler() {
     return connectionHandler;
   }
 
   @Override
-  public HttpClient redirectHandler(Function<HttpClientResponse, Future<RequestOptions>> handler) {
+  public HttpClientPool redirectHandler(Function<HttpClientResponse, Future<RequestOptions>> handler) {
     if (handler == null) {
       handler = DEFAULT_HANDLER;
     }
@@ -341,15 +335,15 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     EndpointProvider<Lease<HttpClientConnection>> provider = new EndpointProvider<Lease<HttpClientConnection>>() {
       @Override
       public Endpoint<Lease<HttpClientConnection>> create(ContextInternal ctx, Runnable dispose) {
-        int maxPoolSize = Math.max(options.getMaxPoolSize(), options.getHttp2MaxPoolSize());
-        ClientMetrics metrics = HttpClientImpl.this.metrics != null ? HttpClientImpl.this.metrics.createEndpointMetrics(key.serverAddr, maxPoolSize) : null;
-        HttpChannelConnector connector = new HttpChannelConnector(HttpClientImpl.this, netClient, proxyOptions, metrics, options.getProtocolVersion(), key.ssl, options.isUseAlpn(), key.peerAddr, key.serverAddr);
+        int maxPoolSize = Math.max(poolOptions.getHttp1MaxSize(), poolOptions.getHttp2MaxSize());
+        ClientMetrics metrics = HttpClientPoolImpl.this.metrics != null ? HttpClientPoolImpl.this.metrics.createEndpointMetrics(key.serverAddr, maxPoolSize) : null;
+        HttpChannelConnector connector = new HttpChannelConnector(HttpClientPoolImpl.this, netClient, proxyOptions, metrics, options.getProtocolVersion(), key.ssl, options.isUseAlpn(), key.peerAddr, key.serverAddr);
         return new SharedClientHttpStreamEndpoint(
-          HttpClientImpl.this,
+          HttpClientPoolImpl.this,
           metrics,
-          options.getMaxWaitQueueSize(),
-          options.getMaxPoolSize(),
-          options.getHttp2MaxPoolSize(),
+          poolOptions.getMaxWaitQueueSize(),
+          poolOptions.getHttp1MaxSize(),
+          poolOptions.getHttp2MaxSize(),
           connector,
           dispose);
       }

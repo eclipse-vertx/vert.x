@@ -20,6 +20,7 @@ import io.vertx.core.dns.DnsClientOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
+import io.vertx.core.http.HttpClientPool;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxBuilder;
 import io.vertx.core.impl.resolver.DnsResolverProvider;
@@ -194,6 +195,42 @@ public interface Vertx extends Measured {
    */
   default HttpClient createHttpClient() {
     return createHttpClient(new HttpClientOptions());
+  }
+
+  /**
+   * Create a HTTP/HTTPS pooling client using the specified client options and default pool options
+   *
+   * @param options  the options to use
+   * @return the client
+   */
+  default HttpClientPool createHttpClientPool(HttpClientOptions options) {
+    return createHttpClientPool(options, new PoolOptions());
+  }
+
+  /**
+   * Create a HTTP/HTTPS pooling client using the specified options
+   *
+   * @param options  the options to use
+   * @return the client
+   */
+  HttpClientPool createHttpClientPool(HttpClientOptions options, PoolOptions poolOptions);
+
+  /**
+   * Create a HTTP/HTTPS pooling client using default options
+   *
+   * @return the client
+   */
+  default HttpClientPool createHttpClientPool() {
+    return createHttpClientPool(new HttpClientOptions());
+  }
+
+  /**
+   * Create a HTTP/HTTPS pooling client using the specified pool options and the default client options
+   *
+   * @return the client
+   */
+  default HttpClientPool createHttpClientPool(PoolOptions poolOptions) {
+    return createHttpClientPool(new HttpClientOptions(), poolOptions);
   }
 
   /**

@@ -18,15 +18,11 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.metrics.Measured;
 import io.vertx.core.net.SSLOptions;
-import io.vertx.core.net.SocketAddress;
-import io.vertx.core.streams.ReadStream;
 
 import java.util.List;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 /**
  * An asynchronous HTTP client.
@@ -196,7 +192,9 @@ public interface HttpClient extends Measured {
    *
    * @param options the new SSL options
    * @return a future signaling the update success
+   * @deprecated instead use {@link HttpClientPool#updateSSLOptions(SSLOptions)}
    */
+  @Deprecated
   Future<Void> updateSSLOptions(SSLOptions options);
 
   /**
@@ -205,7 +203,9 @@ public interface HttpClient extends Measured {
    *
    * @param options the new SSL options
    * @param handler the update handler
+   * @deprecated instead use {@link HttpClientPool#updateSSLOptions(SSLOptions, Handler)}
    */
+  @Deprecated
   default void updateSSLOptions(SSLOptions options, Handler<AsyncResult<Void>> handler) {
     Future<Void> fut = updateSSLOptions(options);
     if (handler != null) {
@@ -217,7 +217,9 @@ public interface HttpClient extends Measured {
    * Set a connection handler for the client. This handler is called when a new connection is established.
    *
    * @return a reference to this, so the API can be used fluently
+   * @deprecated instead use {@link HttpClientPool#connectionHandler(Handler)}
    */
+  @Deprecated
   @Fluent
   HttpClient connectionHandler(Handler<HttpConnection> handler);
 
@@ -239,13 +241,17 @@ public interface HttpClient extends Measured {
    *
    * @param handler the new redirect handler
    * @return a reference to this, so the API can be used fluently
+   * @deprecated instead use {@link HttpClientPool#redirectHandler(Function)}
    */
+  @Deprecated
   @Fluent
   HttpClient redirectHandler(Function<HttpClientResponse, Future<RequestOptions>> handler);
 
   /**
    * @return the current redirect handler.
+   * @deprecated instead use {@link HttpClientPool#redirectHandler()}
    */
+  @Deprecated
   @GenIgnore
   Function<HttpClientResponse, Future<RequestOptions>> redirectHandler();
 

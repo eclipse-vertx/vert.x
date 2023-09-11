@@ -29,7 +29,7 @@ import java.util.Objects;
  */
 public abstract class HttpClientRequestBase implements HttpClientRequest {
 
-  protected final HttpClientImpl client;
+  protected final HttpClientPoolImpl client;
   protected final ContextInternal context;
   protected final HttpClientStream stream;
   protected final SocketAddress server;
@@ -47,7 +47,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   private long lastDataReceived;
   private Throwable timeoutFired;
 
-  HttpClientRequestBase(HttpClientImpl client, HttpClientStream stream, PromiseInternal<HttpClientResponse> responsePromise, boolean ssl, HttpMethod method, SocketAddress server, String host, int port, String uri) {
+  HttpClientRequestBase(HttpClientPoolImpl client, HttpClientStream stream, PromiseInternal<HttpClientResponse> responsePromise, boolean ssl, HttpMethod method, SocketAddress server, String host, int port, String uri) {
     this.client = client;
     this.stream = stream;
     this.responsePromise = responsePromise;

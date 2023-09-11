@@ -11,10 +11,7 @@
 
 package io.vertx.core;
 
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.*;
 import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.NetClient;
@@ -152,7 +149,7 @@ public class VertxTest extends AsyncTestBase {
       // No keep alive so the connection is not held in the pool ????
       CloseFuture closeFuture = new CloseFuture();
       closeFuture.future().onComplete(ar -> closed.set(true));
-      HttpClient client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(false), closeFuture);
+      HttpClient client = vertx.createHttpPoolClient(new HttpClientOptions().setKeepAlive(false), new PoolOptions(), closeFuture);
       vertx.addCloseHook(closeFuture);
       client.request(HttpMethod.GET, 8080, "localhost", "/")
         .compose(HttpClientRequest::send)
