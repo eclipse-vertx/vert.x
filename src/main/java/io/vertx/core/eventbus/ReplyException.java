@@ -27,6 +27,19 @@ public class ReplyException extends VertxException {
   private final int failureCode;
 
   /**
+   * Create a ReplyException with all attributes.
+   *
+   * @param failureType  the failure type
+   * @param failureCode  the failure code (e.g. 404)
+   * @param message  the failure message
+   */
+  public ReplyException(ReplyFailure failureType, int failureCode, String message, boolean noStackTrace) {
+    super(message, noStackTrace);
+    this.failureType = failureType;
+    this.failureCode = failureCode;
+  }
+
+  /**
    * Create a ReplyException
    *
    * @param failureType  the failure type
@@ -34,9 +47,9 @@ public class ReplyException extends VertxException {
    * @param message  the failure message
    */
   public ReplyException(ReplyFailure failureType, int failureCode, String message) {
-      super(message);
-      this.failureType = failureType;
-      this.failureCode = failureCode;
+    super(message, true);
+    this.failureType = failureType;
+    this.failureCode = failureCode;
   }
 
   /**
@@ -81,5 +94,4 @@ public class ReplyException extends VertxException {
     String message = getMessage();
     return "(" + failureType + "," + failureCode + ") " + (message != null ? message : "");
   }
-
 }
