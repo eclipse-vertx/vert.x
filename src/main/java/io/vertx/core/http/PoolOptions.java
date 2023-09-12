@@ -30,6 +30,9 @@ public class PoolOptions {
   private int eventLoopSize;
   private int maxWaitQueueSize;
 
+  /**
+   * Default constructor
+   */
   public PoolOptions() {
     http1MaxSize = DEFAULT_MAX_POOL_SIZE;
     http2MaxSize = DEFAULT_HTTP2_MAX_POOL_SIZE;
@@ -38,6 +41,11 @@ public class PoolOptions {
     maxWaitQueueSize = DEFAULT_MAX_WAIT_QUEUE_SIZE;
   }
 
+  /**
+   * Copy constructor
+   *
+   * @param other  the options to copy
+   */
   public PoolOptions(PoolOptions other) {
     this.http1MaxSize = other.http1MaxSize;
     this.http2MaxSize = other.http2MaxSize;
@@ -46,6 +54,11 @@ public class PoolOptions {
     this.maxWaitQueueSize = other.maxWaitQueueSize;
   }
 
+  /**
+   * Constructor to create an options from JSON
+   *
+   * @param json  the JSON
+   */
   public PoolOptions(JsonObject json) {
     PoolOptionsConverter.fromJson(json, this);
   }

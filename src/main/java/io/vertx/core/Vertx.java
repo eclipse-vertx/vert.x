@@ -174,10 +174,21 @@ public interface Vertx extends Measured {
     return createHttpServer(new HttpServerOptions());
   }
 
+  /**
+   * Create a WebSocket client using default options
+   *
+   * @return the client
+   */
   default WebSocketClient createWebSocketClient() {
     return createWebSocketClient(new WebSocketClientOptions());
   }
 
+  /**
+   * Create a WebSocket client using the specified options
+   *
+   * @param options  the options to use
+   * @return the client
+   */
   WebSocketClient createWebSocketClient(WebSocketClientOptions options);
 
   /**

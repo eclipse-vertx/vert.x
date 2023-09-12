@@ -41,10 +41,18 @@ public class WebSocketClientOptions extends ClientOptionsBase {
   private boolean shared;
   private String name;
 
+  /**
+   * Default constructor
+   */
   public WebSocketClientOptions() {
     init();
   }
 
+  /**
+   * Copy constructor
+   *
+   * @param other  the options to copy
+   */
   public WebSocketClientOptions(WebSocketClientOptions other) {
     super(other);
 

@@ -209,8 +209,8 @@ public class HTTP2Examples {
     HttpConnection connection = request.connection();
   }
 
-  public void example19(HttpClientPool pool) {
-    pool.connectionHandler(connection -> {
+  public void example19(HttpClientPool client) {
+    client.connectionHandler(connection -> {
       System.out.println("Connected to the server");
     });
   }
