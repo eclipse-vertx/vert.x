@@ -18,12 +18,7 @@ import io.vertx.core.dns.DnsClient;
 import io.vertx.core.dns.DnsClientOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.file.FileSystem;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.WebSocketClient;
-import io.vertx.core.http.WebSocketClientOptions;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxBuilder;
 import io.vertx.core.dns.impl.DnsAddressResolverProvider;
@@ -192,6 +187,22 @@ public interface Vertx extends Measured {
    * @return the client
    */
   HttpClient createHttpClient(HttpClientOptions options);
+
+  /**
+   * Create a HTTP/HTTPS client using the specified options
+   *
+   * @param options  the options to use
+   * @return the client
+   */
+  HttpClient createHttpClient(HttpClientOptions options, PoolOptions poolOptions);
+
+  /**
+   * Create a HTTP/HTTPS client using the specified options
+   *
+   * @param poolOptions  the pool options to use
+   * @return the client
+   */
+  HttpClient createHttpClient(PoolOptions poolOptions);
 
   /**
    * Create a HTTP/HTTPS client using default options

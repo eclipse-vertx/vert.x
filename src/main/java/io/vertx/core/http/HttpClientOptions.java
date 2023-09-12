@@ -35,16 +35,6 @@ import java.util.concurrent.TimeUnit;
 public class HttpClientOptions extends ClientOptionsBase {
 
   /**
-   * The default maximum number of HTTP/1 connections a client will pool = 5
-   */
-  public static final int DEFAULT_MAX_POOL_SIZE = 5;
-
-  /**
-   * The default maximum number of connections an HTTP/2 client will pool = 1
-   */
-  public static final int DEFAULT_HTTP2_MAX_POOL_SIZE = 1;
-
-  /**
    * The default maximum number of concurrent streams per connection for HTTP/2 = -1
    */
   public static final int DEFAULT_HTTP2_MULTIPLEXING_LIMIT = -1;
@@ -120,11 +110,6 @@ public class HttpClientOptions extends ClientOptionsBase {
   public static final int DEFAULT_MAX_HEADER_SIZE = 8192;
 
   /**
-   * Default max wait queue size = -1 (unbounded)
-   */
-  public static final int DEFAULT_MAX_WAIT_QUEUE_SIZE = -1;
-
-  /**
    * Default Application-Layer Protocol Negotiation versions = [] (automatic according to protocol version)
    */
   public static final List<HttpVersion> DEFAULT_ALPN_VERSIONS = Collections.emptyList();
@@ -155,16 +140,6 @@ public class HttpClientOptions extends ClientOptionsBase {
   public static final int DEFAULT_DECODER_INITIAL_BUFFER_SIZE = 128;
 
   /**
-   * Default pool cleaner period = 1000 ms (1 second)
-   */
-  public static final int DEFAULT_POOL_CLEANER_PERIOD = 1000;
-
-  /**
-   * Default pool event loop size = 0 (reuse current event-loop)
-   */
-  public static final int DEFAULT_POOL_EVENT_LOOP_SIZE = 0;
-
-  /**
    * Default tracing control = {@link TracingPolicy#PROPAGATE}
    */
   public static final TracingPolicy DEFAULT_TRACING_POLICY = TracingPolicy.PROPAGATE;
@@ -180,17 +155,13 @@ public class HttpClientOptions extends ClientOptionsBase {
   public static final String DEFAULT_NAME = "__vertx.DEFAULT";
 
   private boolean verifyHost = true;
-  private int maxPoolSize;
   private boolean keepAlive;
   private int keepAliveTimeout;
   private int pipeliningLimit;
   private boolean pipelining;
-  private int http2MaxPoolSize;
   private int http2MultiplexingLimit;
   private int http2ConnectionWindowSize;
   private int http2KeepAliveTimeout;
-  private int poolCleanerPeriod;
-  private int poolEventLoopSize;
 
   private boolean tryUseCompression;
   private String defaultHost;
@@ -199,7 +170,6 @@ public class HttpClientOptions extends ClientOptionsBase {
   private int maxChunkSize;
   private int maxInitialLineLength;
   private int maxHeaderSize;
-  private int maxWaitQueueSize;
   private Http2Settings initialSettings;
   private List<HttpVersion> alpnVersions;
   private boolean http2ClearTextUpgrade;
@@ -239,12 +209,10 @@ public class HttpClientOptions extends ClientOptionsBase {
   public HttpClientOptions(HttpClientOptions other) {
     super(other);
     this.verifyHost = other.isVerifyHost();
-    this.maxPoolSize = other.getMaxPoolSize();
     this.keepAlive = other.isKeepAlive();
     this.keepAliveTimeout = other.getKeepAliveTimeout();
     this.pipelining = other.isPipelining();
     this.pipeliningLimit = other.getPipeliningLimit();
-    this.http2MaxPoolSize = other.getHttp2MaxPoolSize();
     this.http2MultiplexingLimit = other.http2MultiplexingLimit;
     this.http2ConnectionWindowSize = other.http2ConnectionWindowSize;
     this.http2KeepAliveTimeout = other.getHttp2KeepAliveTimeout();
@@ -255,7 +223,6 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.maxChunkSize = other.maxChunkSize;
     this.maxInitialLineLength = other.getMaxInitialLineLength();
     this.maxHeaderSize = other.getMaxHeaderSize();
-    this.maxWaitQueueSize = other.maxWaitQueueSize;
     this.initialSettings = other.initialSettings != null ? new Http2Settings(other.initialSettings) : null;
     this.alpnVersions = other.alpnVersions != null ? new ArrayList<>(other.alpnVersions) : null;
     this.http2ClearTextUpgrade = other.http2ClearTextUpgrade;
@@ -263,8 +230,6 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.maxRedirects = other.maxRedirects;
     this.forceSni = other.forceSni;
     this.decoderInitialBufferSize = other.getDecoderInitialBufferSize();
-    this.poolCleanerPeriod = other.getPoolCleanerPeriod();
-    this.poolEventLoopSize = other.getPoolEventLoopSize();
     this.tracingPolicy = other.tracingPolicy;
     this.shared = other.shared;
     this.name = other.name;
@@ -294,13 +259,11 @@ public class HttpClientOptions extends ClientOptionsBase {
 
   private void init() {
     verifyHost = DEFAULT_VERIFY_HOST;
-    maxPoolSize = DEFAULT_MAX_POOL_SIZE;
     keepAlive = DEFAULT_KEEP_ALIVE;
     keepAliveTimeout = DEFAULT_KEEP_ALIVE_TIMEOUT;
     pipelining = DEFAULT_PIPELINING;
     pipeliningLimit = DEFAULT_PIPELINING_LIMIT;
     http2MultiplexingLimit = DEFAULT_HTTP2_MULTIPLEXING_LIMIT;
-    http2MaxPoolSize = DEFAULT_HTTP2_MAX_POOL_SIZE;
     http2ConnectionWindowSize = DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE;
     http2KeepAliveTimeout = DEFAULT_HTTP2_KEEP_ALIVE_TIMEOUT;
     tryUseCompression = DEFAULT_TRY_USE_COMPRESSION;
@@ -310,7 +273,6 @@ public class HttpClientOptions extends ClientOptionsBase {
     maxChunkSize = DEFAULT_MAX_CHUNK_SIZE;
     maxInitialLineLength = DEFAULT_MAX_INITIAL_LINE_LENGTH;
     maxHeaderSize = DEFAULT_MAX_HEADER_SIZE;
-    maxWaitQueueSize = DEFAULT_MAX_WAIT_QUEUE_SIZE;
     initialSettings = new Http2Settings();
     alpnVersions = new ArrayList<>(DEFAULT_ALPN_VERSIONS);
     http2ClearTextUpgrade = DEFAULT_HTTP2_CLEAR_TEXT_UPGRADE;
@@ -318,8 +280,6 @@ public class HttpClientOptions extends ClientOptionsBase {
     maxRedirects = DEFAULT_MAX_REDIRECTS;
     forceSni = DEFAULT_FORCE_SNI;
     decoderInitialBufferSize = DEFAULT_DECODER_INITIAL_BUFFER_SIZE;
-    poolCleanerPeriod = DEFAULT_POOL_CLEANER_PERIOD;
-    poolEventLoopSize = DEFAULT_POOL_EVENT_LOOP_SIZE;
     tracingPolicy = DEFAULT_TRACING_POLICY;
     shared = DEFAULT_SHARED;
     name = DEFAULT_NAME;
@@ -531,29 +491,6 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   /**
-   * Get the maximum pool size for connections
-   *
-   * @return  the maximum pool size
-   */
-  public int getMaxPoolSize() {
-    return maxPoolSize;
-  }
-
-  /**
-   * Set the maximum pool size for connections
-   *
-   * @param maxPoolSize  the maximum pool size
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientOptions setMaxPoolSize(int maxPoolSize) {
-    if (maxPoolSize < 1) {
-      throw new IllegalArgumentException("maxPoolSize must be > 0");
-    }
-    this.maxPoolSize = maxPoolSize;
-    return this;
-  }
-
-  /**
    * @return the maximum number of concurrent streams for an HTTP/2 connection, {@code -1} means
    * the value sent by the server
    */
@@ -577,29 +514,6 @@ public class HttpClientOptions extends ClientOptionsBase {
       throw new IllegalArgumentException("maxPoolSize must be > 0 or -1 (disabled)");
     }
     this.http2MultiplexingLimit = limit;
-    return this;
-  }
-
-  /**
-   * Get the maximum pool size for HTTP/2 connections
-   *
-   * @return  the maximum pool size
-   */
-  public int getHttp2MaxPoolSize() {
-    return http2MaxPoolSize;
-  }
-
-  /**
-   * Set the maximum pool size for HTTP/2 connections
-   *
-   * @param max  the maximum pool size
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientOptions setHttp2MaxPoolSize(int max) {
-    if (max < 1) {
-      throw new IllegalArgumentException("http2MaxPoolSize must be > 0");
-    }
-    this.http2MaxPoolSize = max;
     return this;
   }
 
@@ -892,25 +806,6 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   /**
-   * Set the maximum requests allowed in the wait queue, any requests beyond the max size will result in
-   * a ConnectionPoolTooBusyException.  If the value is set to a negative number then the queue will be unbounded.
-   * @param maxWaitQueueSize the maximum number of waiting requests
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientOptions setMaxWaitQueueSize(int maxWaitQueueSize) {
-    this.maxWaitQueueSize = maxWaitQueueSize;
-    return this;
-  }
-
-  /**
-   * Returns the maximum wait queue size
-   * @return the maximum wait queue size
-   */
-  public int getMaxWaitQueueSize() {
-    return maxWaitQueueSize;
-  }
-
-  /**
    * @return the initial HTTP/2 connection settings
    */
   public Http2Settings getInitialSettings() {
@@ -1096,52 +991,6 @@ public class HttpClientOptions extends ClientOptionsBase {
   public HttpClientOptions setDecoderInitialBufferSize(int decoderInitialBufferSize) {
     Arguments.require(decoderInitialBufferSize > 0, "initialBufferSizeHttpDecoder must be > 0");
     this.decoderInitialBufferSize = decoderInitialBufferSize;
-    return this;
-  }
-
-  /**
-   * @return the connection pool cleaner period in ms.
-   */
-  public int getPoolCleanerPeriod() {
-    return poolCleanerPeriod;
-  }
-
-  /**
-   * Set the connection pool cleaner period in milli seconds, a non positive value disables expiration checks and connections
-   * will remain in the pool until they are closed.
-   *
-   * @param poolCleanerPeriod the pool cleaner period
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientOptions setPoolCleanerPeriod(int poolCleanerPeriod) {
-    this.poolCleanerPeriod = poolCleanerPeriod;
-    return this;
-  }
-
-  /**
-   * @return the max number of event-loop a pool will use, the default value is {@code 0} which implies
-   * to reuse the current event-loop
-   */
-  public int getPoolEventLoopSize() {
-    return poolEventLoopSize;
-  }
-
-  /**
-   * Set the number of event-loop the pool use.
-   *
-   * <ul>
-   *   <li>when the size is {@code 0}, the client pool will use the current event-loop</li>
-   *   <li>otherwise the client will create and use its own event loop</li>
-   * </ul>
-   *
-   * The default size is {@code 0}.
-   *
-   * @param poolEventLoopSize  the new size
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientOptions setPoolEventLoopSize(int poolEventLoopSize) {
-    Arguments.require(poolEventLoopSize >= 0, "poolEventLoopSize must be >= 0");
-    this.poolEventLoopSize = poolEventLoopSize;
     return this;
   }
 

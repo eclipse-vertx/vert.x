@@ -20,19 +20,9 @@ public class HttpClientOptionsConverter {
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, HttpClientOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
-        case "maxPoolSize":
-          if (member.getValue() instanceof Number) {
-            obj.setMaxPoolSize(((Number)member.getValue()).intValue());
-          }
-          break;
         case "http2MultiplexingLimit":
           if (member.getValue() instanceof Number) {
             obj.setHttp2MultiplexingLimit(((Number)member.getValue()).intValue());
-          }
-          break;
-        case "http2MaxPoolSize":
-          if (member.getValue() instanceof Number) {
-            obj.setHttp2MaxPoolSize(((Number)member.getValue()).intValue());
           }
           break;
         case "http2ConnectionWindowSize":
@@ -105,11 +95,6 @@ public class HttpClientOptionsConverter {
             obj.setMaxHeaderSize(((Number)member.getValue()).intValue());
           }
           break;
-        case "maxWaitQueueSize":
-          if (member.getValue() instanceof Number) {
-            obj.setMaxWaitQueueSize(((Number)member.getValue()).intValue());
-          }
-          break;
         case "initialSettings":
           if (member.getValue() instanceof JsonObject) {
             obj.setInitialSettings(new io.vertx.core.http.Http2Settings((io.vertx.core.json.JsonObject)member.getValue()));
@@ -150,16 +135,6 @@ public class HttpClientOptionsConverter {
             obj.setDecoderInitialBufferSize(((Number)member.getValue()).intValue());
           }
           break;
-        case "poolCleanerPeriod":
-          if (member.getValue() instanceof Number) {
-            obj.setPoolCleanerPeriod(((Number)member.getValue()).intValue());
-          }
-          break;
-        case "poolEventLoopSize":
-          if (member.getValue() instanceof Number) {
-            obj.setPoolEventLoopSize(((Number)member.getValue()).intValue());
-          }
-          break;
         case "tracingPolicy":
           if (member.getValue() instanceof String) {
             obj.setTracingPolicy(io.vertx.core.tracing.TracingPolicy.valueOf((String)member.getValue()));
@@ -184,9 +159,7 @@ public class HttpClientOptionsConverter {
   }
 
    static void toJson(HttpClientOptions obj, java.util.Map<String, Object> json) {
-    json.put("maxPoolSize", obj.getMaxPoolSize());
     json.put("http2MultiplexingLimit", obj.getHttp2MultiplexingLimit());
-    json.put("http2MaxPoolSize", obj.getHttp2MaxPoolSize());
     json.put("http2ConnectionWindowSize", obj.getHttp2ConnectionWindowSize());
     json.put("http2KeepAliveTimeout", obj.getHttp2KeepAliveTimeout());
     json.put("keepAlive", obj.isKeepAlive());
@@ -205,7 +178,6 @@ public class HttpClientOptionsConverter {
     json.put("maxChunkSize", obj.getMaxChunkSize());
     json.put("maxInitialLineLength", obj.getMaxInitialLineLength());
     json.put("maxHeaderSize", obj.getMaxHeaderSize());
-    json.put("maxWaitQueueSize", obj.getMaxWaitQueueSize());
     if (obj.getInitialSettings() != null) {
       json.put("initialSettings", obj.getInitialSettings().toJson());
     }
@@ -219,8 +191,6 @@ public class HttpClientOptionsConverter {
     json.put("maxRedirects", obj.getMaxRedirects());
     json.put("forceSni", obj.isForceSni());
     json.put("decoderInitialBufferSize", obj.getDecoderInitialBufferSize());
-    json.put("poolCleanerPeriod", obj.getPoolCleanerPeriod());
-    json.put("poolEventLoopSize", obj.getPoolEventLoopSize());
     if (obj.getTracingPolicy() != null) {
       json.put("tracingPolicy", obj.getTracingPolicy().name());
     }

@@ -213,7 +213,7 @@ public class VertxTest extends AsyncTestBase {
         .listen(8080, "localhost")
         .onComplete(onSuccess(server -> latch.countDown()));
       awaitLatch(latch);
-      HttpClient client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(1));
+      HttpClient client = vertx.createHttpClient(new PoolOptions().setHttp1MaxSize(1));
       Future<HttpClientRequest> fut = client.request(HttpMethod.GET, 8080, "localhost", "/");
       assertWaitUntil(fut::succeeded);
       WeakReference<HttpClient> ref = new WeakReference<>(client);

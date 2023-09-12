@@ -432,7 +432,7 @@ public class Http1xProxyTest extends HttpTestBase {
     }
 
     client.close();
-    client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(2).setKeepAlive(true));
+    client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(true), new PoolOptions().setHttp2MaxSize(2));
 
     CompletableFuture<List<String>> ret = new CompletableFuture<>();
 
