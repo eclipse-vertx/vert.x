@@ -394,14 +394,15 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return client;
   }
 
-  public HttpClientPool createHttpClient(HttpClientOptions options) {
+  @Override
+  public HttpClientPool createHttpClient(HttpClientOptions clientOptions, PoolOptions poolOptions) {
     CloseFuture closeFuture = new CloseFuture();
     HttpClient client;
-    if (options.isShared()) {
-      client = createSharedClient(SharedHttpClientPool.SHARED_MAP_NAME, options.getName(), closeFuture, cf -> createHttpPoolClient(options, options.getPoolOptions(), cf));
+    if (clientOptions.isShared()) {
+      client = createSharedClient(SharedHttpClientPool.SHARED_MAP_NAME, clientOptions.getName(), closeFuture, cf -> createHttpPoolClient(clientOptions, poolOptions, cf));
       client = new SharedHttpClientPool(this, closeFuture, client);
     } else {
-      client = createHttpPoolClient(options, options.getPoolOptions(), closeFuture);
+      client = createHttpPoolClient(clientOptions, poolOptions, closeFuture);
     }
     resolveCloseFuture().add(closeFuture);
     return (HttpClientPool) client;

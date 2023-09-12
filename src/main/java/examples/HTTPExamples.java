@@ -330,7 +330,7 @@ public class HTTPExamples {
   }
 
   public void examplePoolConfiguration(Vertx vertx) {
-    HttpClient client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(10));
+    HttpClient client = vertx.createHttpClient(new PoolOptions().setHttp1MaxSize(10));
   }
 
   public void exampleClientLogging(Vertx vertx) {

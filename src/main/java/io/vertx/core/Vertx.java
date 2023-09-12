@@ -192,12 +192,33 @@ public interface Vertx extends Measured {
   WebSocketClient createWebSocketClient(WebSocketClientOptions options);
 
   /**
-   * Create a HTTP/HTTPS client using the specified options
+   * Create a HTTP/HTTPS client using the specified client and pool options
    *
-   * @param options  the options to use
+   * @param clientOptions  the client options to use
+   * @param poolOptions  the pool options to use
    * @return the client
    */
-  HttpClientPool createHttpClient(HttpClientOptions options);
+  HttpClientPool createHttpClient(HttpClientOptions clientOptions, PoolOptions poolOptions);
+
+  /**
+   * Create a HTTP/HTTPS client using the specified client options
+   *
+   * @param clientOptions  the options to use
+   * @return the client
+   */
+  default HttpClientPool createHttpClient(HttpClientOptions clientOptions) {
+    return createHttpClient(clientOptions, clientOptions.getPoolOptions());
+  }
+
+  /**
+   * Create a HTTP/HTTPS client using the specified pool options
+   *
+   * @param poolOptions  the pool options to use
+   * @return the client
+   */
+  default HttpClientPool createHttpClient(PoolOptions poolOptions) {
+    return createHttpClient(new HttpClientOptions(), poolOptions);
+  }
 
   /**
    * Create a HTTP/HTTPS client using default options
@@ -205,7 +226,7 @@ public interface Vertx extends Measured {
    * @return the client
    */
   default HttpClientPool createHttpClient() {
-    return createHttpClient(new HttpClientOptions());
+    return createHttpClient(new HttpClientOptions(), new PoolOptions());
   }
 
   /**

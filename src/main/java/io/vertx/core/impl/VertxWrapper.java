@@ -113,11 +113,6 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public HttpClientPool createHttpClient() {
-    return delegate.createHttpClient();
-  }
-
-  @Override
   public DatagramSocket createDatagramSocket(DatagramSocketOptions options) {
     return delegate.createDatagramSocket(options);
   }
