@@ -18,11 +18,19 @@ import io.vertx.core.VertxException;
  */
 public class NoStackTraceException extends VertxException {
 
+  public NoStackTraceException (String message, Throwable cause) {
+    super(message, cause, true);
+  }
+
   public NoStackTraceException(String message) {
-    super(message, null, true);
+    super(message, null, true);// disable cause too
   }
 
   public NoStackTraceException(Throwable cause) {
     super(cause, true);
+  }
+
+  public NoStackTraceException() {
+    super((Throwable) null, true);// disable cause too
   }
 }
