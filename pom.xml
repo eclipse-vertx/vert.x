@@ -363,7 +363,7 @@
             <configuration>
               <processors>
                 <processor>io.vertx.codegen.CodeGenProcessor</processor>
-<!--                <processor>io.vertx.docgen.JavaDocGenProcessor</processor>-->
+                <processor>io.vertx.docgen.JavaDocGenProcessor</processor>
               </processors>
               <optionMap>
                 <codegen.output>${project.basedir}/src/main</codegen.output>

@@ -329,6 +329,11 @@ public class HTTPExamples {
     HttpClient client = vertx.createHttpClient(options);
   }
 
+  public void examplePoolConfiguration(Vertx vertx) {
+    PoolOptions options = new PoolOptions().setHttp1MaxSize(10);
+    HttpClient client = vertx.createHttpClient(options);
+  }
+
   public void exampleClientLogging(Vertx vertx) {
     HttpClientOptions options = new HttpClientOptions().setLogActivity(true);
     HttpClient client = vertx.createHttpClient(options);
@@ -965,13 +970,35 @@ public class HTTPExamples {
     });
   }
 
-  public void example54(WebSocketClient client, int port, String host) {
+
+  public void example54(Vertx vertx) {
+    WebSocketClient client = vertx.createWebSocketClient();
+
     client
-      .connect(port, host, "/some-uri")
+      .connect(80, "example.com", "/some-uri")
       .onComplete(res -> {
         if (res.succeeded()) {
           WebSocket ws = res.result();
+          ws.textMessageHandler(msg -> {
+            // Handle msg
+          });
           System.out.println("Connected!");
+        }
+      });
+  }
+
+  public void example54_bis(Vertx vertx) {
+    WebSocketClient client = vertx.createWebSocketClient();
+
+    client
+      .webSocket()
+      .textMessageHandler(msg -> {
+        // Handle msg
+      })
+      .connect(80, "example.com", "/some-uri")
+      .onComplete(res -> {
+        if (res.succeeded()) {
+          WebSocket ws = res.result();
         }
       });
   }
