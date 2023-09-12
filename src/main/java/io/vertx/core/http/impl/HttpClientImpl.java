@@ -105,6 +105,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     }
   };
 
+  private final PoolOptions poolOptions;
   private final EndpointProvider<EndpointKey, Lease<HttpClientConnection>> httpEndpointProvider;
   private final ConnectionManager<EndpointKey, Lease<HttpClientConnection>> httpCM;
   private EndpointResolver<?, EndpointKey, Lease<HttpClientConnection>, ?> endpointResolver;
@@ -113,18 +114,19 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   private volatile Handler<HttpConnection> connectionHandler;
   private final Function<ContextInternal, EventLoopContext> contextProvider;
 
-  public HttpClientImpl(VertxInternal vertx, HttpClientOptions options) {
+  public HttpClientImpl(VertxInternal vertx, HttpClientOptions options, PoolOptions poolOptions) {
     super(vertx, options);
 
+    this.poolOptions = poolOptions;
     httpEndpointProvider = httpEndpointProvider();
     httpCM = new ConnectionManager<>(httpEndpointProvider);
     endpointResolver = null;
-    if (options.getPoolCleanerPeriod() > 0 && (options.getKeepAliveTimeout() > 0L || options.getHttp2KeepAliveTimeout() > 0L)) {
+    if (poolOptions.getCleanerPeriod() > 0 && (options.getKeepAliveTimeout() > 0L || options.getHttp2KeepAliveTimeout() > 0L)) {
       PoolChecker checker = new PoolChecker(this);
       ContextInternal timerContext = vertx.createEventLoopContext();
-      timerID = timerContext.setTimer(options.getPoolCleanerPeriod(), checker);
+      timerID = timerContext.setTimer(poolOptions.getCleanerPeriod(), checker);
     }
-    int eventLoopSize = options.getPoolEventLoopSize();
+    int eventLoopSize = poolOptions.getEventLoopSize();
     if (eventLoopSize > 0) {
       EventLoopContext[] eventLoops = new EventLoopContext[eventLoopSize];
       for (int i = 0;i < eventLoopSize;i++) {
@@ -167,7 +169,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   protected void checkExpired(Handler<Long> checker) {
     synchronized (this) {
       if (!closeSequence.started()) {
-        timerID = vertx.setTimer(options.getPoolCleanerPeriod(), checker);
+        timerID = vertx.setTimer(poolOptions.getCleanerPeriod(), checker);
       }
     }
     httpCM.checkExpired();
@@ -178,7 +180,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
 
   private EndpointProvider<EndpointKey, Lease<HttpClientConnection>> httpEndpointProvider() {
     return (key, dispose) -> {
-      int maxPoolSize = Math.max(options.getMaxPoolSize(), options.getHttp2MaxPoolSize());
+      int maxPoolSize = Math.max(poolOptions.getHttp1MaxSize(), poolOptions.getHttp2MaxSize());
       ClientMetrics metrics = HttpClientImpl.this.metrics != null ? HttpClientImpl.this.metrics.createEndpointMetrics(key.serverAddr, maxPoolSize) : null;
       ProxyOptions proxyOptions = key.proxyOptions;
       if (proxyOptions != null && !key.ssl && proxyOptions.getType() == ProxyType.HTTP) {
@@ -190,9 +192,9 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       return new SharedClientHttpStreamEndpoint(
         HttpClientImpl.this,
         metrics,
-        options.getMaxWaitQueueSize(),
-        options.getMaxPoolSize(),
-        options.getHttp2MaxPoolSize(),
+        poolOptions.getMaxWaitQueueSize(),
+        poolOptions.getHttp1MaxSize(),
+        poolOptions.getHttp2MaxSize(),
         connector,
         dispose);
     };

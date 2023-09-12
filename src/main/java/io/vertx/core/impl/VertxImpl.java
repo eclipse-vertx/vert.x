@@ -375,21 +375,32 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return client;
   }
 
+  @Override
   public HttpClient createHttpClient(HttpClientOptions options) {
+    return createHttpClient(options, new PoolOptions());
+  }
+
+  @Override
+  public HttpClient createHttpClient(PoolOptions poolOptions) {
+    return createHttpClient(new HttpClientOptions(), poolOptions);
+  }
+
+  @Override
+  public HttpClient createHttpClient(HttpClientOptions options, PoolOptions poolOptions) {
     CloseFuture cf = resolveCloseFuture();
     HttpClient client;
     Closeable closeable;
     if (options.isShared()) {
       CloseFuture closeFuture = new CloseFuture();
       client = createSharedResource("__vertx.shared.httpClients", options.getName(), closeFuture, cf_ -> {
-        HttpClientImpl impl = new HttpClientImpl(this, options);
+        HttpClientImpl impl = new HttpClientImpl(this, options, poolOptions);
         cf_.add(completion -> impl.close().onComplete(completion));
         return impl;
       });
       client = new CleanableHttpClient((HttpClientInternal) client, cleaner, (timeout, timeunit) -> closeFuture.close());
       closeable = closeFuture;
     } else {
-      HttpClientImpl impl = new HttpClientImpl(this, options);
+      HttpClientImpl impl = new HttpClientImpl(this, options, poolOptions);
       closeable = impl;
       client = new CleanableHttpClient(impl, cleaner, impl::close);
     }

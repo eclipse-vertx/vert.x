@@ -203,11 +203,10 @@ public class Http1xTLSTest extends HttpTLSTest {
     List<String> expected = Arrays.asList("chunk-1", "chunk-2", "chunk-3");
     HttpClientOptions options = new HttpClientOptions()
       .setEnabledSecureTransportProtocols(Collections.singleton("TLSv1.2"))
-      .setMaxPoolSize(num)
       .setSsl(true)
       .setTrustAll(true);
     client.close();
-    client = vertx.createHttpClient(options);
+    client = vertx.createHttpClient(options, new PoolOptions().setHttp1MaxSize(num));
     AtomicInteger connCount = new AtomicInteger();
     List<String> sessionIds = Collections.synchronizedList(new ArrayList<>());
     client.connectionHandler(conn -> {

@@ -70,11 +70,6 @@ public class HttpClientOptionsConverter {
             obj.setHttp2KeepAliveTimeout(((Number)member.getValue()).intValue());
           }
           break;
-        case "http2MaxPoolSize":
-          if (member.getValue() instanceof Number) {
-            obj.setHttp2MaxPoolSize(((Number)member.getValue()).intValue());
-          }
-          break;
         case "http2MultiplexingLimit":
           if (member.getValue() instanceof Number) {
             obj.setHttp2MultiplexingLimit(((Number)member.getValue()).intValue());
@@ -110,19 +105,9 @@ public class HttpClientOptionsConverter {
             obj.setMaxInitialLineLength(((Number)member.getValue()).intValue());
           }
           break;
-        case "maxPoolSize":
-          if (member.getValue() instanceof Number) {
-            obj.setMaxPoolSize(((Number)member.getValue()).intValue());
-          }
-          break;
         case "maxRedirects":
           if (member.getValue() instanceof Number) {
             obj.setMaxRedirects(((Number)member.getValue()).intValue());
-          }
-          break;
-        case "maxWaitQueueSize":
-          if (member.getValue() instanceof Number) {
-            obj.setMaxWaitQueueSize(((Number)member.getValue()).intValue());
           }
           break;
         case "name":
@@ -138,16 +123,6 @@ public class HttpClientOptionsConverter {
         case "pipeliningLimit":
           if (member.getValue() instanceof Number) {
             obj.setPipeliningLimit(((Number)member.getValue()).intValue());
-          }
-          break;
-        case "poolCleanerPeriod":
-          if (member.getValue() instanceof Number) {
-            obj.setPoolCleanerPeriod(((Number)member.getValue()).intValue());
-          }
-          break;
-        case "poolEventLoopSize":
-          if (member.getValue() instanceof Number) {
-            obj.setPoolEventLoopSize(((Number)member.getValue()).intValue());
           }
           break;
         case "protocolVersion":
@@ -199,7 +174,6 @@ public class HttpClientOptionsConverter {
     json.put("http2ClearTextUpgradeWithPreflightRequest", obj.isHttp2ClearTextUpgradeWithPreflightRequest());
     json.put("http2ConnectionWindowSize", obj.getHttp2ConnectionWindowSize());
     json.put("http2KeepAliveTimeout", obj.getHttp2KeepAliveTimeout());
-    json.put("http2MaxPoolSize", obj.getHttp2MaxPoolSize());
     json.put("http2MultiplexingLimit", obj.getHttp2MultiplexingLimit());
     if (obj.getInitialSettings() != null) {
       json.put("initialSettings", obj.getInitialSettings().toJson());
@@ -209,16 +183,12 @@ public class HttpClientOptionsConverter {
     json.put("maxChunkSize", obj.getMaxChunkSize());
     json.put("maxHeaderSize", obj.getMaxHeaderSize());
     json.put("maxInitialLineLength", obj.getMaxInitialLineLength());
-    json.put("maxPoolSize", obj.getMaxPoolSize());
     json.put("maxRedirects", obj.getMaxRedirects());
-    json.put("maxWaitQueueSize", obj.getMaxWaitQueueSize());
     if (obj.getName() != null) {
       json.put("name", obj.getName());
     }
     json.put("pipelining", obj.isPipelining());
     json.put("pipeliningLimit", obj.getPipeliningLimit());
-    json.put("poolCleanerPeriod", obj.getPoolCleanerPeriod());
-    json.put("poolEventLoopSize", obj.getPoolEventLoopSize());
     if (obj.getProtocolVersion() != null) {
       json.put("protocolVersion", obj.getProtocolVersion().name());
     }

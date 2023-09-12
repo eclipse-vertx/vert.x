@@ -44,8 +44,10 @@ public class SharedHttpClientTest extends VertxTestBase {
 
     vertx.deployVerticle(serverVerticle).onComplete(onSuccess(serverId -> {
 
-      HttpClientOptions clientOptions = httpClientOptions(serverVerticle, SHARED_POOL_SIZE);
-      DeploymentOptions deploymentOptions = deploymentOptions(CLIENT_VERTICLE_INSTANCES, clientOptions);
+      DeploymentOptions deploymentOptions = deploymentOptions(
+        CLIENT_VERTICLE_INSTANCES,
+        new HttpClientOptions().setDefaultPort(HttpTest.DEFAULT_HTTP_PORT),
+        new PoolOptions().setHttp1MaxSize(SHARED_POOL_SIZE));
 
       Supplier<Verticle> verticleSupplier = () -> new ClientVerticle(clientVerticle -> {
         // Verify the reply context is the same as of the deployment
@@ -73,10 +75,11 @@ public class SharedHttpClientTest extends VertxTestBase {
 
     vertx.deployVerticle(serverVerticle).onComplete(onSuccess(serverId -> {
 
-      HttpClientOptions clientOptions = httpClientOptions(serverVerticle, SHARED_POOL_SIZE)
+      HttpClientOptions clientOptions = new HttpClientOptions()
+        .setDefaultPort(HttpTest.DEFAULT_HTTP_PORT)
         // Make sure connections stay alive for the duration of the test if the server is not closed
         .setKeepAliveTimeout(3600);
-      DeploymentOptions deploymentOptions = deploymentOptions(CLIENT_VERTICLE_INSTANCES, clientOptions);
+      DeploymentOptions deploymentOptions = deploymentOptions(CLIENT_VERTICLE_INSTANCES, clientOptions, new PoolOptions().setHttp1MaxSize(SHARED_POOL_SIZE));
 
       Supplier<Verticle> verticleSupplier = () -> new ClientVerticle(clientVerticle -> receivedLatch.countDown());
 
@@ -109,9 +112,10 @@ public class SharedHttpClientTest extends VertxTestBase {
 
     vertx.deployVerticle(serverVerticle).onComplete(onSuccess(serverId -> {
 
-      HttpClientOptions clientOptions = httpClientOptions(serverVerticle, SHARED_POOL_SIZE)
+      HttpClientOptions clientOptions = new HttpClientOptions()
+        .setDefaultPort(HttpTest.DEFAULT_HTTP_PORT)
         .setKeepAliveTimeout(keepAliveTimeoutSeconds);
-      DeploymentOptions deploymentOptions = deploymentOptions(CLIENT_VERTICLE_INSTANCES, clientOptions);
+      DeploymentOptions deploymentOptions = deploymentOptions(CLIENT_VERTICLE_INSTANCES, clientOptions, new PoolOptions().setHttp1MaxSize(SHARED_POOL_SIZE));
 
       Supplier<Verticle> verticleSupplier = () -> new ClientVerticle(clientVerticle -> receivedLatch.countDown());
 
@@ -177,7 +181,9 @@ public class SharedHttpClientTest extends VertxTestBase {
     @Override
     public void start(Promise<Void> startPromise) throws Exception {
       context = super.context;
-      client = vertx.createHttpClient(new HttpClientOptions(config().getJsonObject("httpClientOptions")).setShared(true).setName(SHARED_CLIENT_NAME));
+      HttpClientOptions options = new HttpClientOptions(config().getJsonObject("httpClientOptions")).setShared(true).setName(SHARED_CLIENT_NAME);
+      PoolOptions poolOptions = new PoolOptions(config().getJsonObject("poolOptions"));
+      client = vertx.createHttpClient(options, poolOptions);
       vertx.eventBus().consumer(TRIGGER_ADDRESS, this).completion().onComplete(startPromise);
     }
 
@@ -216,16 +222,12 @@ public class SharedHttpClientTest extends VertxTestBase {
     }
   }
 
-  private static HttpClientOptions httpClientOptions(ServerVerticle serverVerticle, int sharedPoolSize) {
-    return new HttpClientOptions()
-      .setDefaultPort(HttpTest.DEFAULT_HTTP_PORT)
-      .setMaxPoolSize(sharedPoolSize);
-  }
-
-  private static DeploymentOptions deploymentOptions(int instances, HttpClientOptions options) {
+  private static DeploymentOptions deploymentOptions(int instances, HttpClientOptions options, PoolOptions poolOptions) {
     return new DeploymentOptions()
       .setInstances(instances)
       .setConfig(new JsonObject()
-        .put("httpClientOptions", options.toJson()));
+        .put("httpClientOptions", options.toJson())
+        .put("poolOptions", poolOptions.toJson())
+      );
   }
 }

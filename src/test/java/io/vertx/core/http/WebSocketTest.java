@@ -1019,7 +1019,7 @@ public class WebSocketTest extends VertxTestBase {
   // Test if WebSocket compression is enabled by checking that the switch protocols response header contains the requested compression
   public void testWSPermessageDeflateCompressionEnabled() throws InterruptedException {
     waitFor(2);
-    HttpClient client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(1));
+    HttpClient client = vertx.createHttpClient(new PoolOptions().setHttp1MaxSize(1));
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).webSocketHandler(ws -> {
       assertEquals("upgrade", ws.headers().get("Connection"));
       assertEquals("permessage-deflate", ws.headers().get("sec-websocket-extensions"));
@@ -1266,7 +1266,7 @@ public class WebSocketTest extends VertxTestBase {
                                     boolean expectEvent,
                                     boolean upgradeRequest,
                                     int expectedStatus) {
-    HttpClient client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(1));
+    HttpClient client = vertx.createHttpClient(new PoolOptions().setHttp1MaxSize(1));
     if (upgradeRequest) {
       server = vertx.createHttpServer()
         .webSocketHandler(ws -> {

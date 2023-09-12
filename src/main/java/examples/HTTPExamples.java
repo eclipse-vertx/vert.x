@@ -1242,7 +1242,7 @@ public class HTTPExamples {
       @Override
       public void start() {
         // The client creates and use two event-loops for 4 instances
-        client = vertx.createHttpClient(new HttpClientOptions().setPoolEventLoopSize(2).setShared(true).setName("my-client"));
+        client = vertx.createHttpClient(new HttpClientOptions().setShared(true).setName("my-client"), new PoolOptions().setEventLoopSize(2));
       }
     }, new DeploymentOptions().setInstances(4));
   }

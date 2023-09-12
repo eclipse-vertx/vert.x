@@ -238,7 +238,7 @@ public class MetricsContextTest extends VertxTestBase {
       latch.countDown();
     }));
     awaitLatch(latch);
-    HttpClient client = vertx.createHttpClient(new HttpClientOptions().setPipelining(true).setMaxPoolSize(1));
+    HttpClient client = vertx.createHttpClient(new HttpClientOptions().setPipelining(true), new PoolOptions().setHttp1MaxSize(1));
     vertx.runOnContext(v -> {
       for (int i = 0;i < 2;i++) {
         client.request(HttpMethod.GET, 8080, "localhost", "/" + (i + 1)).onComplete(onSuccess(req -> {
