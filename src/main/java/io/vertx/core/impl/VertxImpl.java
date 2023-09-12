@@ -376,19 +376,19 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public HttpClient createHttpClient(HttpClientOptions options) {
+  public HttpClientPool createHttpClient(HttpClientOptions options) {
     return createHttpClient(options, new PoolOptions());
   }
 
   @Override
-  public HttpClient createHttpClient(PoolOptions poolOptions) {
+  public HttpClientPool createHttpClient(PoolOptions poolOptions) {
     return createHttpClient(new HttpClientOptions(), poolOptions);
   }
 
   @Override
-  public HttpClient createHttpClient(HttpClientOptions options, PoolOptions poolOptions) {
+  public HttpClientPool createHttpClient(HttpClientOptions options, PoolOptions poolOptions) {
     CloseFuture cf = resolveCloseFuture();
-    HttpClient client;
+    HttpClientPool client;
     Closeable closeable;
     if (options.isShared()) {
       CloseFuture closeFuture = new CloseFuture();

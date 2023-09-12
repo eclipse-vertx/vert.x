@@ -25,7 +25,7 @@ public class Http2TLSTest extends HttpTLSTest {
   }
 
   @Override
-  HttpClient createHttpClient(HttpClientOptions options) {
+  HttpClientPool createHttpClient(HttpClientOptions options) {
     return vertx.createHttpClient(options.setUseAlpn(true));
   }
 

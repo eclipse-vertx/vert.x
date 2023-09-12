@@ -56,7 +56,7 @@ public class MetricsTest extends VertxTestBase {
   private static final String ADDRESS1 = "some-address1";
 
   private HttpServer server;
-  private HttpClient client;
+  private HttpClientPool client;
   private WebSocketClient wsClient;
 
   protected void tearDown() throws Exception {
@@ -635,12 +635,12 @@ public class MetricsTest extends VertxTestBase {
 
   @Test
   public void testHttpClientName() throws Exception {
-    HttpClient client1 = vertx.createHttpClient();
+    HttpClientPool client1 = vertx.createHttpClient();
     try {
       FakeHttpClientMetrics metrics1 = FakeMetricsBase.getMetrics(client1);
       assertEquals("", metrics1.getName());
       String name = TestUtils.randomAlphaString(10);
-      HttpClient client2 = vertx.createHttpClient(new HttpClientOptions().setMetricsName(name));
+      HttpClientPool client2 = vertx.createHttpClient(new HttpClientOptions().setMetricsName(name));
       try {
         FakeHttpClientMetrics metrics2 = FakeMetricsBase.getMetrics(client2);
         assertEquals(name, metrics2.getName());

@@ -149,7 +149,7 @@ public class MetricsContextTest extends VertxTestBase {
       }));
     });
     awaitLatch(latch);
-    HttpClient client = vertx.createHttpClient();
+    HttpClientPool client = vertx.createHttpClient();
     client.connectionHandler(conn -> {
       conn.closeHandler(v -> {
         vertx.close().onComplete(v4 -> {

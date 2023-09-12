@@ -186,7 +186,7 @@ public interface Vertx extends Measured {
    * @param options  the options to use
    * @return the client
    */
-  HttpClient createHttpClient(HttpClientOptions options);
+  HttpClientPool createHttpClient(HttpClientOptions options);
 
   /**
    * Create a HTTP/HTTPS client using the specified options
@@ -194,7 +194,7 @@ public interface Vertx extends Measured {
    * @param options  the options to use
    * @return the client
    */
-  HttpClient createHttpClient(HttpClientOptions options, PoolOptions poolOptions);
+  HttpClientPool createHttpClient(HttpClientOptions options, PoolOptions poolOptions);
 
   /**
    * Create a HTTP/HTTPS client using the specified options
@@ -202,14 +202,14 @@ public interface Vertx extends Measured {
    * @param poolOptions  the pool options to use
    * @return the client
    */
-  HttpClient createHttpClient(PoolOptions poolOptions);
+  HttpClientPool createHttpClient(PoolOptions poolOptions);
 
   /**
    * Create a HTTP/HTTPS client using default options
    *
    * @return the client
    */
-  default HttpClient createHttpClient() {
+  default HttpClientPool createHttpClient() {
     return createHttpClient(new HttpClientOptions());
   }
 
