@@ -12,12 +12,13 @@
 package io.vertx.core.impl;
 
 /**
- * @deprecated Use {@link NoStackTraceException} instead.
+ * @deprecated Please use {@link NoStackTraceException} instead. NoStackTraceThrowable extends Throwable, which is generally considered a bad practice.
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @Deprecated
-public class NoStackTraceThrowable extends NoStackTraceException {
+public class NoStackTraceThrowable extends Throwable {
+
   public NoStackTraceThrowable (String message){
-    super(message);
+    super(message, null, false, false);
   }
 }
