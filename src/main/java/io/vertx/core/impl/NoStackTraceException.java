@@ -15,22 +15,39 @@ import io.vertx.core.VertxException;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ * @see VertxException
  */
-public class NoStackTraceException extends VertxException {
+public class NoStackTraceException extends NoStackTraceThrowable {
 
-  public NoStackTraceException (String message, Throwable cause) {
-    super(message, cause, true);
+  public NoStackTraceException (String message, Throwable cause){
+    super(message, cause);
   }
 
-  public NoStackTraceException(String message) {
-    super(message, null, true);// disable cause too
+  public NoStackTraceException (String message){
+    super(message);
   }
 
-  public NoStackTraceException(Throwable cause) {
-    super(cause, true);
+  public NoStackTraceException (Throwable cause){
+    super(cause);
   }
 
-  public NoStackTraceException() {
-    super((Throwable) null, true);// disable cause too
+  public NoStackTraceException (){
   }
+
+// after removing NoStackTraceThrowable
+//  public NoStackTraceException (String message, Throwable cause) {
+//    super(message, cause, true);
+//  }
+//
+//  public NoStackTraceException(String message) {
+//    super(message, null, true);// disable cause too
+//  }
+//
+//  public NoStackTraceException(Throwable cause) {
+//    super(cause, true);
+//  }
+//
+//  public NoStackTraceException() {
+//    super((Throwable) null, true);// disable cause too
+//  }
 }
