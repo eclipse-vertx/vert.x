@@ -209,7 +209,7 @@ public class HTTP2Examples {
     HttpConnection connection = request.connection();
   }
 
-  public void example19(HttpClient client) {
+  public void example19(HttpClientPool client) {
     client.connectionHandler(connection -> {
       System.out.println("Connected to the server");
     });

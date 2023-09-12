@@ -799,7 +799,7 @@ public class HTTPExamples {
     throw new UnsupportedOperationException();
   }
 
-  public void exampleFollowRedirect03(HttpClient client) {
+  public void exampleFollowRedirect03(HttpClientPool client) {
 
     client.redirectHandler(response -> {
 

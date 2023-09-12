@@ -51,7 +51,7 @@ import java.util.function.Function;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface HttpClient extends Measured {
+public interface HttpClient {
 
   /**
    * Create an HTTP request to send to the server.
@@ -90,52 +90,6 @@ public interface HttpClient extends Measured {
    * @return a future notified when the request is ready to be sent
    */
   Future<HttpClientRequest> request(HttpMethod method, String requestURI);
-
-  /**
-   * Update the client SSL options.
-   *
-   * Update only happens if the SSL options is valid.
-   *
-   * @param options the new SSL options
-   * @return a future signaling the update success
-   */
-  Future<Void> updateSSLOptions(ClientSSLOptions options);
-
-  /**
-   * Set a connection handler for the client. This handler is called when a new connection is established.
-   *
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  HttpClient connectionHandler(Handler<HttpConnection> handler);
-
-  /**
-   * Set a redirect handler for the http client.
-   * <p>
-   * The redirect handler is called when a {@code 3xx} response is received and the request is configured to
-   * follow redirects with {@link HttpClientRequest#setFollowRedirects(boolean)}.
-   * <p>
-   * The redirect handler is passed the {@link HttpClientResponse}, it can return an {@link HttpClientRequest} or {@code null}.
-   * <ul>
-   *   <li>when null is returned, the original response is processed by the original request response handler</li>
-   *   <li>when a new {@code Future<HttpClientRequest>} is returned, the client will send this new request</li>
-   * </ul>
-   * The new request will get a copy of the previous request headers unless headers are set. In this case,
-   * the client assumes that the redirect handler exclusively managers the headers of the new request.
-   * <p>
-   * The handler must return a {@code Future<HttpClientRequest>} unsent so the client can further configure it and send it.
-   *
-   * @param handler the new redirect handler
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  HttpClient redirectHandler(Function<HttpClientResponse, Future<RequestOptions>> handler);
-
-  /**
-   * @return the current redirect handler.
-   */
-  @GenIgnore
-  Function<HttpClientResponse, Future<RequestOptions>> redirectHandler();
 
   /**
    * Close the client immediately ({@code close(0, TimeUnit.SECONDS}).

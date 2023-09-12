@@ -242,7 +242,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   }
 
   @Override
-  public HttpClient redirectHandler(Function<HttpClientResponse, Future<RequestOptions>> handler) {
+  public HttpClientPool redirectHandler(Function<HttpClientResponse, Future<RequestOptions>> handler) {
     if (handler == null) {
       handler = DEFAULT_HANDLER;
     }
@@ -256,7 +256,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   }
 
   @Override
-  public HttpClient connectionHandler(Handler<HttpConnection> handler) {
+  public HttpClientPool connectionHandler(Handler<HttpConnection> handler) {
     connectionHandler = handler;
     return this;
   }

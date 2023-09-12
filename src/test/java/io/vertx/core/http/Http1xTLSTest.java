@@ -43,7 +43,7 @@ public class Http1xTLSTest extends HttpTLSTest {
   }
 
   @Override
-  HttpClient createHttpClient(HttpClientOptions options) {
+  HttpClientPool createHttpClient(HttpClientOptions options) {
     return vertx.createHttpClient(options);
   }
 

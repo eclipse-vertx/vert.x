@@ -89,13 +89,13 @@ public class CleanableHttpClient implements HttpClientInternal {
 
   @Override
   @Fluent
-  public HttpClient connectionHandler(Handler<HttpConnection> handler) {
+  public HttpClientPool connectionHandler(Handler<HttpConnection> handler) {
     return delegate.connectionHandler(handler);
   }
 
   @Override
   @Fluent
-  public HttpClient redirectHandler(Function<HttpClientResponse, Future<RequestOptions>> handler) {
+  public HttpClientPool redirectHandler(Function<HttpClientResponse, Future<RequestOptions>> handler) {
     return delegate.redirectHandler(handler);
   }
 
