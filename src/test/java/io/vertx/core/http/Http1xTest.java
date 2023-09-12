@@ -259,10 +259,6 @@ public class Http1xTest extends HttpTest {
     assertEquals(null, options.getLocalAddress());
 
 
-    assertEquals(false,options.isSendUnmaskedFrames());
-    assertEquals(options,options.setSendUnmaskedFrames(true));
-    assertEquals(true,options.isSendUnmaskedFrames());
-
     assertEquals(HttpClientOptions.DEFAULT_DECODER_INITIAL_BUFFER_SIZE, options.getDecoderInitialBufferSize());
     assertEquals(options, options.setDecoderInitialBufferSize(256));
     assertEquals(256, options.getDecoderInitialBufferSize());
@@ -504,7 +500,6 @@ public class Http1xTest extends HttpTest {
     options.setAlpnVersions(alpnVersions);
     options.setHttp2ClearTextUpgrade(h2cUpgrade);
     options.setLocalAddress(localAddress);
-    options.setSendUnmaskedFrames(sendUnmaskedFrame);
     options.setDecoderInitialBufferSize(decoderInitialBufferSize);
     options.setKeepAliveTimeout(keepAliveTimeout);
     options.setHttp2KeepAliveTimeout(http2KeepAliveTimeout);
@@ -1693,11 +1688,12 @@ public class Http1xTest extends HttpTest {
   public void testServerWebSocketIdleTimeout() {
     server.close();
     server = vertx.createHttpServer(createBaseServerOptions().setIdleTimeout(1).setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST));
+    WebSocketClient client = vertx.createWebSocketClient();
     server
       .webSocketHandler(ws -> {})
       .listen()
       .onComplete(onSuccess(v1 -> {
-        client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
+        client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
           .onComplete(onSuccess(ws -> {
             ws.closeHandler(v2 -> testComplete());
           }));
@@ -1708,12 +1704,11 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testClientWebSocketIdleTimeout() {
-    client.close();
-    client = vertx.createHttpClient(new HttpClientOptions().setIdleTimeout(1));
+    WebSocketClient client = vertx.createWebSocketClient(new WebSocketClientOptions().setIdleTimeout(1));
     server
       .webSocketHandler(ws -> {})
       .listen().onComplete(onSuccess(v1 -> {
-      client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
+      client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
         .onComplete(onSuccess(ws -> {
           ws.closeHandler(v2 -> testComplete());
         }));

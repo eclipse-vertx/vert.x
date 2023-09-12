@@ -965,9 +965,9 @@ public class HTTPExamples {
     });
   }
 
-  public void example54(HttpClient client) {
+  public void example54(WebSocketClient client, int port, String host) {
     client
-      .webSocket("/some-uri")
+      .connect(port, host, "/some-uri")
       .onComplete(res -> {
         if (res.succeeded()) {
           WebSocket ws = res.result();
@@ -976,14 +976,14 @@ public class HTTPExamples {
       });
   }
 
-  public void exampleWebSocketDisableOriginHeader(HttpClient client, String host, int port, String requestUri) {
+  public void exampleWebSocketDisableOriginHeader(WebSocketClient client, String host, int port, String requestUri) {
     WebSocketConnectOptions options = new WebSocketConnectOptions()
       .setHost(host)
       .setPort(port)
       .setURI(requestUri)
       .setAllowOriginHeader(false);
     client
-      .webSocket(options)
+      .connect(options)
       .onComplete(res -> {
         if (res.succeeded()) {
           WebSocket ws = res.result();
@@ -992,14 +992,14 @@ public class HTTPExamples {
       });
   }
 
-  public void exampleWebSocketSetOriginHeader(HttpClient client, String host, int port, String requestUri, String origin) {
+  public void exampleWebSocketSetOriginHeader(WebSocketClient client, String host, int port, String requestUri, String origin) {
     WebSocketConnectOptions options = new WebSocketConnectOptions()
       .setHost(host)
       .setPort(port)
       .setURI(requestUri)
       .addHeader(HttpHeaders.ORIGIN, origin);
     client
-      .webSocket(options)
+      .connect(options)
       .onComplete(res -> {
         if (res.succeeded()) {
           WebSocket ws = res.result();

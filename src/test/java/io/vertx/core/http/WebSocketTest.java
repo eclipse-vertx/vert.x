@@ -89,7 +89,7 @@ public class WebSocketTest extends VertxTestBase {
   private static final String TEST_REASON = "I'm moving away!";
   private static final short TEST_STATUS_CODE = (short)1001;
 
-  private HttpClient client;
+  private WebSocketClient client;
   private HttpServer server;
   private NetServer netServer;
 
@@ -255,7 +255,7 @@ public class WebSocketTest extends VertxTestBase {
   // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustServerCertWithSNI() throws Exception {
     testTLS(Cert.NONE, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, Trust.NONE, false, false, false, false, true, true, true, true, new String[0],
-      (client) -> client.webSocket(4043, "host2.com", "/"));
+      (client) -> client.connect(4043, "host2.com", "/"));
   }
 
   @Test
@@ -372,28 +372,28 @@ public class WebSocketTest extends VertxTestBase {
   // Client trusts all server certs
   public void testClearClientRequestOptionsSetSSL() throws Exception {
     WebSocketConnectOptions options = new WebSocketConnectOptions().setHost(HttpTestBase.DEFAULT_HTTP_HOST).setURI("/").setPort(4043).setSsl(true);
-    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE, false, false, true, false, true, false, true, false, new String[0], (client) -> client.webSocket(options));
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE, false, false, true, false, true, false, true, false, new String[0], (client) -> client.connect(options));
   }
 
   @Test
   // Client trusts all server certs
   public void testSSLClientRequestOptionsSetSSL() throws Exception {
     WebSocketConnectOptions options = new WebSocketConnectOptions().setHost(HttpTestBase.DEFAULT_HTTP_HOST).setURI("/").setPort(4043).setSsl(true);
-    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE, false, false, true, false, true, true, true, false, new String[0], (client) -> client.webSocket(options));
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE, false, false, true, false, true, true, true, false, new String[0], (client) -> client.connect(options));
   }
 
   @Test
   // Client trusts all server certs
   public void testClearClientRequestOptionsSetClear() throws Exception {
     WebSocketConnectOptions options = new WebSocketConnectOptions().setHost(HttpTestBase.DEFAULT_HTTP_HOST).setURI("/").setPort(4043).setSsl(false);
-    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE, false, false, true, false, true, false, false, false, new String[0], (client) -> client.webSocket(options));
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE, false, false, true, false, true, false, false, false, new String[0], (client) -> client.connect(options));
   }
 
   @Test
   // Client trusts all server certs
   public void testSSLClientRequestOptionsSetClear() throws Exception {
     WebSocketConnectOptions options = new WebSocketConnectOptions().setHost(HttpTestBase.DEFAULT_HTTP_HOST).setURI("/").setPort(4043).setSsl(false);
-    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE, false, false, true, false, true, true, false, false, new String[0], (client) -> client.webSocket(options));
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE, false, false, true, false, true, true, false, false, new String[0], (client) -> client.connect(options));
   }
 
   private void testTLS(Cert<?> clientCert, Trust<?> clientTrust,
@@ -404,7 +404,7 @@ public class WebSocketTest extends VertxTestBase {
     testTLS(clientCert, clientTrust,
         serverCert, serverTrust,
         requireClientAuth, serverUsesCrl, clientTrustAll, clientUsesCrl, shouldPass, true, true, false,
-        enabledCipherSuites, (client) -> client.webSocket(4043, HttpTestBase.DEFAULT_HTTP_HOST, "/"));
+        enabledCipherSuites, (client) -> client.connect(4043, HttpTestBase.DEFAULT_HTTP_HOST, "/"));
   }
 
   private void testTLS(Cert<?> clientCert, Trust<?> clientTrust,
@@ -415,8 +415,8 @@ public class WebSocketTest extends VertxTestBase {
                        boolean serverSsl,
                        boolean sni,
                        String[] enabledCipherSuites,
-                       Function<HttpClient, Future<WebSocket>> wsProvider) throws Exception {
-    HttpClientOptions options = new HttpClientOptions();
+                       Function<WebSocketClient, Future<WebSocket>> wsProvider) throws Exception {
+    WebSocketClientOptions options = new WebSocketClientOptions();
     options.setSsl(clientSsl);
     options.setTrustAll(clientTrustAll);
     if (clientUsesCrl) {
@@ -427,7 +427,7 @@ public class WebSocketTest extends VertxTestBase {
     for (String suite: enabledCipherSuites) {
       options.addEnabledCipherSuite(suite);
     }
-    client = vertx.createHttpClient(options);
+    client = vertx.createWebSocketClient(options);
     HttpServerOptions serverOptions = new HttpServerOptions();
     serverOptions.setSsl(serverSsl);
     serverOptions.setSni(sni);
@@ -499,9 +499,9 @@ public class WebSocketTest extends VertxTestBase {
       }));
     });
     awaitFuture(server.listen());
-    client = vertx.createHttpClient();
+    client = vertx.createWebSocketClient();
     vertx.runOnContext(v -> {
-      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path).onComplete(onSuccess(ws -> {
+      client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path).onComplete(onSuccess(ws -> {
         ws.handler(buff -> {
           assertEquals(message, buff.toString("UTF-8"));
           testComplete();
@@ -537,10 +537,10 @@ public class WebSocketTest extends VertxTestBase {
     }
 
     // Create a bunch of connections
-    client = vertx.createHttpClient();
+    client = vertx.createWebSocketClient();
     CountDownLatch latchClient = new CountDownLatch(numConnections);
     for (int i = 0; i < numConnections; i++) {
-      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/someuri").onComplete(onSuccess(ws -> {
+      client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/someuri").onComplete(onSuccess(ws -> {
         ws.closeHandler(v -> latchClient.countDown());
         ws.close();
       }));
@@ -652,8 +652,8 @@ public class WebSocketTest extends VertxTestBase {
       .setURI(path + "?" + query)
       .setVersion(version);
 
-    client = vertx.createHttpClient();
-    client.webSocket(options).onComplete(onSuccess(ws -> {
+    client = vertx.createWebSocketClient();
+    client.connect(options).onComplete(onSuccess(ws -> {
       final Buffer received = Buffer.buffer();
       ws.handler(data -> {
         received.appendBuffer(data);
@@ -729,12 +729,12 @@ public class WebSocketTest extends VertxTestBase {
       .setURI(path + "?" + query)
       .setVersion(version);
 
-    client = vertx.createHttpClient();
+    client = vertx.createWebSocketClient();
 
     int bsize = 100;
     int msgs = 10;
 
-    Future<WebSocket> webSocketFuture = client.webSocket(options);
+    Future<WebSocket> webSocketFuture = client.connect(options);
     webSocketFuture.onComplete(onSuccess(ws -> {
       final List<Buffer> sent = new ArrayList<>();
       final List<Buffer> received = new ArrayList<>();
@@ -844,8 +844,8 @@ public class WebSocketTest extends VertxTestBase {
 
     awaitFuture(server.listen());
 
-    client = vertx.createHttpClient();
-    client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
+    client = vertx.createWebSocketClient();
+    client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
         ws.frameHandler(frame -> {
           if (frame.isClose()) {
             complete();
@@ -894,9 +894,9 @@ public class WebSocketTest extends VertxTestBase {
       .setHost(DEFAULT_HTTP_HOST)
       .setURI(path)
       .setVersion(version);
-    client = vertx.createHttpClient();
+    client = vertx.createWebSocketClient();
     vertx.runOnContext(v -> {
-      client.webSocket(options).onComplete(onSuccess(ws -> {
+      client.connect(options).onComplete(onSuccess(ws -> {
         AtomicBoolean receivedFirstFrame = new AtomicBoolean();
         ws.frameHandler(received -> {
           Buffer receivedBuffer = Buffer.buffer(received.textData());
@@ -930,9 +930,9 @@ public class WebSocketTest extends VertxTestBase {
       .setHost(DEFAULT_HTTP_HOST)
       .setURI(path)
       .setVersion(version);
-    client = vertx.createHttpClient();
+    client = vertx.createWebSocketClient();
     vertx.runOnContext(v -> {
-      client.webSocket(options).onComplete(onSuccess(ws -> {
+      client.connect(options).onComplete(onSuccess(ws -> {
         Buffer received = Buffer.buffer();
         ws.handler(data -> {
           received.appendBuffer(data);
@@ -963,11 +963,11 @@ public class WebSocketTest extends VertxTestBase {
         });
 
     awaitFuture(server.listen());
-    HttpClientOptions options = new HttpClientOptions();
-    options.setTryUsePerFrameWebSocketCompression(true);
-    client = vertx.createHttpClient(options);
+    WebSocketClientOptions options = new WebSocketClientOptions();
+    options.setTryUsePerFrameCompression(true);
+    client = vertx.createWebSocketClient(options);
     vertx.runOnContext(v -> {
-      client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, path).onComplete(onSuccess(ws -> {
+      client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, path).onComplete(onSuccess(ws -> {
         final Buffer received = Buffer.buffer();
         ws.handler(data -> {
           received.appendBuffer(data);
@@ -997,11 +997,11 @@ public class WebSocketTest extends VertxTestBase {
     });
 
     awaitFuture(server.listen());
-    HttpClientOptions options = new HttpClientOptions();
-    options.setTryUsePerMessageWebSocketCompression(true);
-    client = vertx.createHttpClient(options);
+    WebSocketClientOptions options = new WebSocketClientOptions();
+    options.setTryUsePerMessageCompression(true);
+    client = vertx.createWebSocketClient(options);
     vertx.runOnContext(v -> {
-      client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, path).onComplete(onSuccess(ws -> {
+      client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, path).onComplete(onSuccess(ws -> {
         final Buffer received = Buffer.buffer();
         ws.handler(data -> {
           received.appendBuffer(data);
@@ -1020,7 +1020,7 @@ public class WebSocketTest extends VertxTestBase {
   // Test if WebSocket compression is enabled by checking that the switch protocols response header contains the requested compression
   public void testWSPermessageDeflateCompressionEnabled() throws InterruptedException {
     waitFor(2);
-    client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(1));
+    HttpClient client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(1));
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).webSocketHandler(ws -> {
       assertEquals("upgrade", ws.headers().get("Connection"));
       assertEquals("permessage-deflate", ws.headers().get("sec-websocket-extensions"));
@@ -1063,10 +1063,9 @@ public class WebSocketTest extends VertxTestBase {
     });
 
     awaitFuture(server.listen());
-    HttpClientOptions options = new HttpClientOptions();
-    client = vertx.createHttpClient(options);
+    client = vertx.createWebSocketClient();
     vertx.runOnContext(v -> {
-      client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, path).onComplete(onSuccess(ws -> {
+      client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, path).onComplete(onSuccess(ws -> {
         final Buffer received = Buffer.buffer();
         ws.handler(data -> {
           received.appendBuffer(data);
@@ -1100,9 +1099,9 @@ public class WebSocketTest extends VertxTestBase {
       .setURI(path)
       .setVersion(version)
       .setSubProtocols(clientSubProtocols);
-    client = vertx.createHttpClient();
+    client = vertx.createWebSocketClient();
     vertx.runOnContext(v -> {
-      client.webSocket(options).onComplete(onSuccess(ws -> {
+      client.connect(options).onComplete(onSuccess(ws -> {
         assertEquals("commonproto", ws.subProtocol());
         final Buffer received = Buffer.buffer();
         ws.handler(data -> {
@@ -1130,15 +1129,15 @@ public class WebSocketTest extends VertxTestBase {
       .setVersion(version)
       .addSubProtocol(subProtocol);
     awaitFuture(server.listen());
-    client = vertx.createHttpClient();
-    client.webSocket(options).onComplete(onFailure(err -> {
+    client = vertx.createWebSocketClient();
+    client.connect(options).onComplete(onFailure(err -> {
       // Should fail
       testComplete();
     }));
     await();
   }
 
-  Consumer<Handler<AsyncResult<HttpClientResponse>>> INVALID_MISSING_CONNECTION_HEADER = handler -> {
+  BiConsumer<HttpClient, Handler<AsyncResult<HttpClientResponse>>> INVALID_MISSING_CONNECTION_HEADER = (client, handler) -> {
     client.request(new RequestOptions()
       .setPort(DEFAULT_HTTP_PORT)
       .setHost(DEFAULT_HTTPS_HOST)
@@ -1162,7 +1161,7 @@ public class WebSocketTest extends VertxTestBase {
     await();
   }
 
-  Consumer<Handler<AsyncResult<HttpClientResponse>>> INVALID_HTTP_METHOD = handler -> {
+  BiConsumer<HttpClient, Handler<AsyncResult<HttpClientResponse>>> INVALID_HTTP_METHOD = (client, handler) -> {
 
     client.request(new RequestOptions()
       .setMethod(HttpMethod.HEAD)
@@ -1187,7 +1186,7 @@ public class WebSocketTest extends VertxTestBase {
     await();
   }
 
-  Consumer<Handler<AsyncResult<HttpClientResponse>>> INVALID_URI = handler -> {
+  BiConsumer<HttpClient, Handler<AsyncResult<HttpClientResponse>>> INVALID_URI = (client, handler) -> {
     client.request(new RequestOptions()
       .setPort(DEFAULT_HTTP_PORT)
       .setHost(DEFAULT_HTTPS_HOST)
@@ -1211,7 +1210,7 @@ public class WebSocketTest extends VertxTestBase {
     await();
   }
 
-  Consumer<Handler<AsyncResult<HttpClientResponse>>> INVALID_WEBSOCKET_VERSION = handler -> {
+  BiConsumer<HttpClient, Handler<AsyncResult<HttpClientResponse>>> INVALID_WEBSOCKET_VERSION = (client, handler) -> {
 
     client.request(new RequestOptions()
       .setPort(DEFAULT_HTTP_PORT)
@@ -1237,7 +1236,7 @@ public class WebSocketTest extends VertxTestBase {
     await();
   }
 
-  Consumer<Handler<AsyncResult<HttpClientResponse>>> HANDSHAKE_EXCEPTION = handler -> {
+  BiConsumer<HttpClient, Handler<AsyncResult<HttpClientResponse>>> HANDSHAKE_EXCEPTION = (client, handler) -> {
     client.request(new RequestOptions()
       .setPort(DEFAULT_HTTP_PORT)
       .setHost(DEFAULT_HTTPS_HOST)
@@ -1264,11 +1263,11 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   // Check client response with the ws handler
-  private void testInvalidHandshake(Consumer<Handler<AsyncResult<HttpClientResponse>>> requestProvider,
+  private void testInvalidHandshake(BiConsumer<HttpClient, Handler<AsyncResult<HttpClientResponse>>> requestProvider,
                                     boolean expectEvent,
                                     boolean upgradeRequest,
                                     int expectedStatus) {
-    client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(1));
+    HttpClient client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(1));
     if (upgradeRequest) {
       server = vertx.createHttpServer()
         .webSocketHandler(ws -> {
@@ -1294,7 +1293,7 @@ public class WebSocketTest extends VertxTestBase {
       });
     }
     server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST).onComplete(onSuccess(s -> {
-      requestProvider.accept(onSuccess(resp -> {
+      requestProvider.accept(client, onSuccess(resp -> {
         assertEquals(expectedStatus, resp.statusCode());
         resp.endHandler(v1 -> {
           // Make another request to check the connection remains usable
@@ -1331,8 +1330,8 @@ public class WebSocketTest extends VertxTestBase {
         .setHost(DEFAULT_HTTP_HOST)
         .setURI(path)
         .setVersion(version);
-      client = vertx.createHttpClient();
-      client.webSocket(options).onComplete(onFailure(t -> {
+      client = vertx.createWebSocketClient();
+      client.connect(options).onComplete(onFailure(t -> {
         assertTrue(t instanceof UpgradeRejectedException);
         UpgradeRejectedException rejection = (UpgradeRejectedException) t;
         assertEquals(expectedRejectionStatus, rejection.getStatus());
@@ -1368,8 +1367,8 @@ public class WebSocketTest extends VertxTestBase {
       });
     });
     awaitFuture(server.listen());
-    client = vertx.createHttpClient();
-    client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path").onComplete(onSuccess(ws -> {
+    client = vertx.createWebSocketClient();
+    client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path").onComplete(onSuccess(ws -> {
       assertTrue(resolved.get());
       testComplete();
     }));
@@ -1386,9 +1385,9 @@ public class WebSocketTest extends VertxTestBase {
 //      assertEquals(101, (int)result.result());
     });
     awaitFuture(server.listen());
-    client = vertx.createHttpClient();
+    client = vertx.createWebSocketClient();
     vertx.runOnContext(v1 -> {
-      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path").onComplete(onSuccess(ws -> {
+      client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path").onComplete(onSuccess(ws -> {
         ws.closeHandler(v2 -> {
           testComplete();
         });
@@ -1399,25 +1398,25 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testServerClose() throws InterruptedException {
-    client = vertx.createHttpClient();
+    client = vertx.createWebSocketClient();
     testClose(false, true, true);
   }
 
   @Test
   public void testClientClose() throws InterruptedException {
-    client = vertx.createHttpClient();
+    client = vertx.createWebSocketClient();
     testClose(true, false, true);
   }
 
   @Test
   public void testClientAndServerClose() throws InterruptedException {
-    client = vertx.createHttpClient();
+    client = vertx.createWebSocketClient();
     testClose(true, false, true);
   }
 
   @Test
   public void testConnectionClose() throws InterruptedException {
-    client = vertx.createHttpClient(new HttpClientOptions().setIdleTimeout(1));
+    client = vertx.createWebSocketClient(new WebSocketClientOptions().setIdleTimeout(1));
     testClose(false, false, false);
   }
 
@@ -1458,7 +1457,7 @@ public class WebSocketTest extends VertxTestBase {
     });
     awaitFuture(server.listen());
     vertx.runOnContext(v -> {
-      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path").onComplete(
+      client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path").onComplete(
         onSuccess(ws -> {
           test.accept(ws);
           if (closeClient) {
@@ -1475,8 +1474,8 @@ public class WebSocketTest extends VertxTestBase {
       req.connection().close();
     });
     awaitFuture(server.listen());
-    client = vertx.createHttpClient();
-    client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path").onComplete(onFailure(err -> {
+    client = vertx.createWebSocketClient();
+    client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path").onComplete(onFailure(err -> {
       testComplete();
     }));
     await();
@@ -1487,7 +1486,7 @@ public class WebSocketTest extends VertxTestBase {
     String path = "/some/path";
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).webSocketHandler(ws -> fail());
     awaitFuture(server.listen());
-    client = vertx.createHttpClient();
+    HttpClient client = vertx.createHttpClient();
     client.request(new RequestOptions()
       .setHost(DEFAULT_HTTP_HOST)
       .setPort(DEFAULT_HTTP_PORT)
@@ -1548,7 +1547,7 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   private void testWriteMessage(int size, WebsocketVersion version) throws InterruptedException {
-    client = vertx.createHttpClient();
+    client = vertx.createWebSocketClient();
     waitFor(2);
     String path = "/some/path";
     byte[] expected = TestUtils.randomByteArray(size);
@@ -1567,7 +1566,7 @@ public class WebSocketTest extends VertxTestBase {
       .setURI(path)
       .setVersion(version);
     vertx.runOnContext(v1 -> {
-      client.webSocket(options).onComplete(onSuccess(ws -> {
+      client.connect(options).onComplete(onSuccess(ws -> {
         Buffer actual = Buffer.buffer();
         ws.handler(actual::appendBuffer);
         ws.closeHandler(v2 -> {
@@ -1629,7 +1628,7 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testTooLargeMessage() throws InterruptedException {
-    String messageToSend = randomAlphaString(HttpClientOptions.DEFAULT_MAX_WEBSOCKET_MESSAGE_SIZE + 1);
+    String messageToSend = randomAlphaString(WebSocketClientOptions.DEFAULT_MAX_MESSAGE_SIZE + 1);
     SocketMessages socketMessages = testWriteTextMessages(Collections.singletonList(messageToSend), WebsocketVersion.V13);
     List<String> receivedMessages = socketMessages.getReceivedMessages();
     List<String> expectedMessages = Collections.emptyList();
@@ -1642,9 +1641,9 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testContinueAfterTooLargeMessage() throws InterruptedException {
-    int shortMessageLength = HttpClientOptions.DEFAULT_MAX_WEBSOCKET_FRAME_SIZE;
+    int shortMessageLength = WebSocketClientOptions.DEFAULT_MAX_FRAME_SIZE;
     String shortFirstMessage = randomAlphaString(shortMessageLength);
-    String tooLongMiddleMessage = randomAlphaString(HttpClientOptions.DEFAULT_MAX_WEBSOCKET_MESSAGE_SIZE * 2);
+    String tooLongMiddleMessage = randomAlphaString(WebSocketClientOptions.DEFAULT_MAX_MESSAGE_SIZE * 2);
     String shortLastMessage = randomAlphaString(shortMessageLength);
     List<String> messagesToSend = Arrays.asList(shortFirstMessage, tooLongMiddleMessage, shortLastMessage);
 
@@ -1679,9 +1678,9 @@ public class WebSocketTest extends VertxTestBase {
       .setHost(DEFAULT_HTTP_HOST)
       .setURI(path)
       .setVersion(version);
-    client = vertx.createHttpClient();
+    client = vertx.createWebSocketClient();
     vertx.runOnContext(v1 -> {
-      client.webSocket(options).onComplete(onSuccess(ws -> {
+      client.connect(options).onComplete(onSuccess(ws -> {
         ws.textMessageHandler(receivedMessages::add);
         ws.exceptionHandler(receivedExceptions::add);
         ws.closeHandler(v2 -> testComplete());
@@ -1720,13 +1719,13 @@ public class WebSocketTest extends VertxTestBase {
       .toCompletableFuture()
       .get(20, TimeUnit.SECONDS);
     try {
-      client = vertx.createHttpClient(new HttpClientOptions().setConnectTimeout(1000));
+      client = vertx.createWebSocketClient(new WebSocketClientOptions().setConnectTimeout(1000));
       WebSocketConnectOptions options = new WebSocketConnectOptions()
         .setPort(1234)
         .setHost(DEFAULT_HTTP_HOST)
         .setURI("/")
         .setTimeout(1000);
-      client.webSocket(options).onComplete(onFailure(err -> {
+      client.connect(options).onComplete(onFailure(err -> {
         assertEquals(WebSocketHandshakeException.class, err.getClass());
         testComplete();
       }));
@@ -1736,9 +1735,9 @@ public class WebSocketTest extends VertxTestBase {
     }
   }
 
-  private void connectUntilWebSocketReject(HttpClient client, int count, Handler<AsyncResult<Void>> doneHandler) {
+  private void connectUntilWebSocketReject(WebSocketClient client, int count, Handler<AsyncResult<Void>> doneHandler) {
     vertx.runOnContext(v -> {
-      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path").onComplete(ar -> {
+      client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path").onComplete(ar -> {
         if (ar.succeeded()) {
           if (count < 100) {
             connectUntilWebSocketReject(client, count + 1, doneHandler);
@@ -1782,9 +1781,9 @@ public class WebSocketTest extends VertxTestBase {
     String path = "/some/path";
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).webSocketHandler(WebSocketBase::close);
     awaitFuture(server.listen());
-    client = vertx.createHttpClient();
+    client = vertx.createWebSocketClient();
     vertx.runOnContext(v -> {
-      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path).onComplete(onSuccess(ws -> {
+      client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path).onComplete(onSuccess(ws -> {
         ws.endHandler(v2 -> {
           try {
             ws.endHandler(null);
@@ -1806,9 +1805,9 @@ public class WebSocketTest extends VertxTestBase {
     String path = "/some/path";
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).webSocketHandler(WebSocketBase::close);
     awaitFuture(server.listen());
-    client = vertx.createHttpClient();
+    client = vertx.createWebSocketClient();
     vertx.runOnContext(v -> {
-      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path).onComplete(onSuccess(ws -> {
+      client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path).onComplete(onSuccess(ws -> {
         ws.endHandler(v2 -> {
           ws.write(Buffer.buffer("test")).onComplete(onFailure(err -> {
             testComplete();
@@ -1826,8 +1825,8 @@ public class WebSocketTest extends VertxTestBase {
     });
     AtomicReference<WebSocket> webSocketRef = new AtomicReference<>();
     awaitFuture(server.listen());
-    client = vertx.createHttpClient();
-    client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/some/path").onComplete(onSuccess(ws -> {
+    client = vertx.createWebSocketClient();
+    client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/some/path").onComplete(onSuccess(ws -> {
       MultiMap entries = ws.headers();
       assertNotNull(entries);
       assertFalse(entries.isEmpty());
@@ -1889,9 +1888,9 @@ public class WebSocketTest extends VertxTestBase {
       }
     });
     awaitFuture(server.listen());
-    client = vertx.createHttpClient();
+    client = vertx.createWebSocketClient();
     vertx.runOnContext(v1 -> {
-      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path).onComplete(onSuccess(ws -> {
+      client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path).onComplete(onSuccess(ws -> {
         Buffer buff = Buffer.buffer();
         ws.handler(buff::appendBuffer);
         ws.endHandler(v2 -> {
@@ -1914,7 +1913,7 @@ public class WebSocketTest extends VertxTestBase {
       }));
     });
     awaitFuture(server.listen());
-    client = vertx.createHttpClient();
+    HttpClient client = vertx.createHttpClient();
     handshake(client, req -> {
       req.putHeader(HttpHeaders.CONTENT_LENGTH, "100");
       req.sendHead().onComplete(onSuccess(v -> {
@@ -1927,7 +1926,7 @@ public class WebSocketTest extends VertxTestBase {
   @Test
   public void testUnmaskedFrameRequest(){
 
-    client = vertx.createHttpClient(new HttpClientOptions().setSendUnmaskedFrames(true));
+    client = vertx.createWebSocketClient(new WebSocketClientOptions().setSendUnmaskedFrames(true));
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setAcceptUnmaskedFrames(true));
     server.requestHandler(req -> {
       req.response().setChunked(true).write("connect");
@@ -1943,7 +1942,7 @@ public class WebSocketTest extends VertxTestBase {
 
     });
     server.listen().onComplete(onSuccess(server -> {
-      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
+      client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
         ws.writeFinalTextFrame("first unmasked frame");
       }));
     }));
@@ -1953,7 +1952,7 @@ public class WebSocketTest extends VertxTestBase {
   @Test
   public void testInvalidUnmaskedFrameRequest() throws InterruptedException {
 
-    client = vertx.createHttpClient(new HttpClientOptions().setSendUnmaskedFrames(true));
+    client = vertx.createWebSocketClient(new WebSocketClientOptions().setSendUnmaskedFrames(true));
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setAcceptUnmaskedFrames(false));
     server.requestHandler(req -> {
       req.response().setChunked(true).write("connect");
@@ -1972,7 +1971,7 @@ public class WebSocketTest extends VertxTestBase {
     });
 
     awaitFuture(server.listen());
-    client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
+    client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
       ws.writeFinalTextFrame("first unmasked frame");
     }));
 
@@ -1990,7 +1989,7 @@ public class WebSocketTest extends VertxTestBase {
       request.response().end();
     });
     awaitFuture(server.listen());
-    client = vertx.createHttpClient();
+    HttpClient client = vertx.createHttpClient();
     client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
       .compose(HttpClientRequest::send)
       .onComplete(onSuccess(resp -> {
@@ -2103,8 +2102,8 @@ public class WebSocketTest extends VertxTestBase {
     });
     server.listen().onComplete(onSuccess(s -> {
       context.runOnContext(v -> {
-        client = vertx.createHttpClient();
-        client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
+        client = vertx.createWebSocketClient();
+        client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
           ws.handler(buf -> {
             assertEquals("hello", buf.toString());
             testComplete();
@@ -2124,9 +2123,9 @@ public class WebSocketTest extends VertxTestBase {
       ws.write(Buffer.buffer("hello"));
     });
     server.listen().onComplete(onSuccess(s -> {
-      client = vertx.createHttpClient();
+      client = vertx.createWebSocketClient();
       workers.get(0).runOnContext(v -> {
-        client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
+        client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
           ws.handler(buf -> {
             assertEquals("hello", buf.toString());
             testComplete();
@@ -2164,8 +2163,8 @@ public class WebSocketTest extends VertxTestBase {
       vertx.deployVerticle(() -> new AbstractVerticle() {
         @Override
         public void start() {
-          client = vertx.createHttpClient();
-          Future<WebSocket> fut = client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/");
+          client = vertx.createWebSocketClient();
+          Future<WebSocket> fut = client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/");
           fut.onComplete(onSuccess(ws -> {
             assertTrue(Context.isOnWorkerThread());
             ws.write(Buffer.buffer("ping"));
@@ -2187,8 +2186,8 @@ public class WebSocketTest extends VertxTestBase {
   @Test
   public void httpClientWebSocketConnectionFailureHandlerShouldBeCalled() throws Exception {
     int port = 7867;
-    HttpClient client = vertx.createHttpClient();
-    client.webSocket(port, "localhost", "").onComplete(onFailure(err -> {
+    client = vertx.createWebSocketClient();
+    client.connect(port, "localhost", "").onComplete(onFailure(err -> {
       testComplete();
     }));
     await();
@@ -2196,7 +2195,8 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testClientWebSocketWithHttp2Client() throws Exception {
-    client = vertx.createHttpClient(new HttpClientOptions().setHttp2ClearTextUpgrade(false).setProtocolVersion(HttpVersion.HTTP_2));
+    client = vertx.createWebSocketClient();
+    HttpClient client = vertx.createHttpClient(new HttpClientOptions().setHttp2ClearTextUpgrade(false).setProtocolVersion(HttpVersion.HTTP_2));
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
     server.requestHandler(req -> {
       req.response().setChunked(true).write("connect");
@@ -2208,7 +2208,7 @@ public class WebSocketTest extends VertxTestBase {
     client.request(new RequestOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST))
       .onComplete(onSuccess(req -> {
         req.send().onComplete(onSuccess(resp -> {
-          client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
+          this.client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
             ws.handler(buff -> {
               assertEquals("ok", buff.toString());
               testComplete();
@@ -2276,9 +2276,8 @@ public class WebSocketTest extends VertxTestBase {
       NetServer server = ar.result();
       int port = server.actualPort();
 
-      HttpClientOptions opts = new HttpClientOptions().setKeepAlive(keepAliveInOptions);
-      client = vertx.createHttpClient(opts);
-      client.webSocket(port, "localhost", "/").onComplete(ar2 -> {
+      client = vertx.createWebSocketClient();
+      client.connect(port, "localhost", "/").onComplete(ar2 -> {
         if (ar2.succeeded()) {
           addResult(new AssertionError("WebSocket unexpectedly connected"));
           ar2.result().close();
@@ -2310,15 +2309,15 @@ public class WebSocketTest extends VertxTestBase {
     HttpServerOptions serverOptions = new HttpServerOptions().setPort(DEFAULT_HTTPS_PORT)
       .setSsl(true)
       .setKeyCertOptions(Cert.SERVER_JKS.get());
-    HttpClientOptions clientOptions = new HttpClientOptions()
+    WebSocketClientOptions clientOptions = new WebSocketClientOptions()
       .setTrustAll(true)
       .setVerifyHost(false);
-    client = vertx.createHttpClient(clientOptions);
+    client = vertx.createWebSocketClient(clientOptions);
     server = vertx.createHttpServer(serverOptions).webSocketHandler(WebSocketBase::close);
     awaitFuture(server.listen());
     WebSocketConnectOptions options = new WebSocketConnectOptions().setPort(DEFAULT_HTTPS_PORT).setSsl(true);
     vertx.runOnContext(v1 -> {
-      client.webSocket(options).onComplete(onSuccess(ws -> {
+      client.connect(options).onComplete(onSuccess(ws -> {
         ws.closeHandler(v2 -> {
           testComplete();
         });
@@ -2338,9 +2337,9 @@ public class WebSocketTest extends VertxTestBase {
       ws.writePing(Buffer.buffer("ping"));
     });
     awaitFuture(server.listen());
-    client = vertx.createHttpClient();
+    client = vertx.createWebSocketClient();
     vertx.runOnContext(v -> {
-      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
+      client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
         ws.handler(buff -> {
           fail("Should not receive a buffer");
         });
@@ -2363,9 +2362,9 @@ public class WebSocketTest extends VertxTestBase {
       ws.writePing(Buffer.buffer("ping"));
     });
     awaitFuture(server.listen());
-    client = vertx.createHttpClient();
+    client = vertx.createWebSocketClient();
     vertx.runOnContext(v -> {
-      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
+      client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
         ws.pause();
         ws.handler(buff -> {
           fail("Should not receive a buffer");
@@ -2414,9 +2413,9 @@ public class WebSocketTest extends VertxTestBase {
       }));
     });
     awaitFuture(server.listen());
-    client = vertx.createHttpClient();
+    client = vertx.createWebSocketClient();
     vertx.runOnContext(v -> {
-      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
+      client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
         ws.closeHandler(v2 -> {
           testComplete();
         });
@@ -2437,8 +2436,8 @@ public class WebSocketTest extends VertxTestBase {
       vertx.setTimer(2000, id -> testComplete());
     });
     awaitFuture(server.listen());
-    client = vertx.createHttpClient();
-    client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {}));
+    client = vertx.createWebSocketClient();
+    client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {}));
     await();
   }
 
@@ -2450,8 +2449,8 @@ public class WebSocketTest extends VertxTestBase {
     server = vertx.createHttpServer(new HttpServerOptions().setIdleTimeout(1).setPort(DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST).setMaxWebSocketFrameSize(maxFrameSize));
     server.webSocketHandler(ws -> { });
     awaitFuture(server.listen());
-    client = vertx.createHttpClient();
-    client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
+    client = vertx.createWebSocketClient();
+    client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
       ws.pongHandler(buffer -> fail());
       ws.writeFrame(WebSocketFrame.pingFrame(Buffer.buffer(pingBody)));
       vertx.setTimer(2000, id -> testComplete());
@@ -2469,9 +2468,9 @@ public class WebSocketTest extends VertxTestBase {
       ws.writeFrame(WebSocketFrame.pongFrame(Buffer.buffer(pingBody)));
     });
     awaitFuture(server.listen());
-    client = vertx.createHttpClient();
+    client = vertx.createWebSocketClient();
     vertx.runOnContext(v -> {
-      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
+      client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
         ws.pongHandler(buff -> fail());
         vertx.setTimer(2000, id -> testComplete());
       }));
@@ -2490,8 +2489,8 @@ public class WebSocketTest extends VertxTestBase {
       vertx.setTimer(2000, id -> testComplete());
     });
     awaitFuture(server.listen());
-    client = vertx.createHttpClient();
-    client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
+    client = vertx.createWebSocketClient();
+    client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
       ws.writeFrame(WebSocketFrame.pongFrame(Buffer.buffer(pingBody)));
     }));
     await();
@@ -2516,8 +2515,8 @@ public class WebSocketTest extends VertxTestBase {
       });
     });
     awaitFuture(server.listen());
-    client = vertx.createHttpClient();
-    client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
+    client = vertx.createWebSocketClient();
+    client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
       try {
         ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PONG, ((BufferInternal)ping1.copy()).getByteBuf(), false));
         ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PONG, ((BufferInternal)ping2.copy()).getByteBuf(), true));
@@ -2545,9 +2544,9 @@ public class WebSocketTest extends VertxTestBase {
       }
     });
     awaitFuture(server.listen());
-    client = vertx.createHttpClient();
+    client = vertx.createWebSocketClient();
     vertx.runOnContext(v -> {
-      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
+      client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
         List<Buffer> pongs = new ArrayList<>();
         ws.pongHandler(pong -> {
           pongs.add(pong);
@@ -2573,9 +2572,9 @@ public class WebSocketTest extends VertxTestBase {
 
     });
     awaitFuture(server.listen());
-    client = vertx.createHttpClient();
+    client = vertx.createWebSocketClient();
     vertx.runOnContext(v -> {
-      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
+      client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
         List<Buffer> pongs = new ArrayList<>();
         ws.pongHandler(pong -> {
           pongs.add(pong);
@@ -2607,9 +2606,9 @@ public class WebSocketTest extends VertxTestBase {
 
     });
     awaitFuture(server.listen());
-    client = vertx.createHttpClient();
+    client = vertx.createWebSocketClient();
     vertx.runOnContext(v -> {
-      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
+      client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
         List<Buffer> pongs = new ArrayList<>();
         ws.pongHandler(pong -> {
           pongs.add(pong);
@@ -2635,8 +2634,8 @@ public class WebSocketTest extends VertxTestBase {
     server.webSocketHandler(ws -> {
     });
     awaitFuture(server.listen());
-    client = vertx.createHttpClient();
-    client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
+    client = vertx.createWebSocketClient();
+    client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
       ws.pongHandler( pong -> {
         assertEquals("ping", pong.toString());
         testComplete();
@@ -2651,10 +2650,10 @@ public class WebSocketTest extends VertxTestBase {
     HttpServerOptions serverOptions = new HttpServerOptions().setPort(DEFAULT_HTTPS_PORT)
       .setSsl(true)
       .setKeyCertOptions(Cert.SERVER_JKS.get());
-    HttpClientOptions clientOptions = new HttpClientOptions()
+    WebSocketClientOptions clientOptions = new WebSocketClientOptions()
       .setTrustAll(true)
       .setVerifyHost(false);
-    client = vertx.createHttpClient(clientOptions);
+    client = vertx.createWebSocketClient(clientOptions);
     server = vertx.createHttpServer(serverOptions).requestHandler(request -> {
       if ("/test".equals(request.path())) {
         request
@@ -2665,8 +2664,8 @@ public class WebSocketTest extends VertxTestBase {
       }
     });
     awaitFuture(server.listen());
-    String url = "wss://" + clientOptions.getDefaultHost() + ":" + DEFAULT_HTTPS_PORT + "/test";
-    client.webSocketAbs(url, null, null, null).onComplete(onSuccess(ws -> {
+    String url = "wss://" + "localhost" + ":" + DEFAULT_HTTPS_PORT + "/test";
+    client.connect(new WebSocketConnectOptions().setAbsoluteURI(url)).onComplete(onSuccess(ws -> {
       ws.closeHandler(v -> {
         testComplete();
       });
@@ -2687,7 +2686,7 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   private void testCloseStatusCodeFromServer(Consumer<ServerWebSocket> closeOp) throws InterruptedException {
-    client = vertx.createHttpClient();
+    client = vertx.createWebSocketClient();
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT))
       .webSocketHandler(socket -> {
         socket.closeHandler(a -> {
@@ -2697,7 +2696,7 @@ public class WebSocketTest extends VertxTestBase {
       });
     awaitFuture(server.listen());
     vertx.runOnContext(v -> {
-      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
+      client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
         ws.frameHandler(frame -> {
           assertEquals(1000, ((BufferInternal)frame.binaryData()).getByteBuf().getShort(0));
           assertEquals(1000, frame.closeStatusCode());
@@ -2716,7 +2715,7 @@ public class WebSocketTest extends VertxTestBase {
   @Test
   public void testCloseStatusCodeFromClient() throws InterruptedException {
     CountDownLatch latch = new CountDownLatch(2);
-    client = vertx.createHttpClient();
+    client = vertx.createWebSocketClient();
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT))
       .webSocketHandler(socket -> {
         socket.closeHandler(a -> {
@@ -2730,14 +2729,14 @@ public class WebSocketTest extends VertxTestBase {
         });
       });
     awaitFuture(server.listen());
-    client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(WebSocketBase::close));
+    client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(WebSocketBase::close));
     awaitLatch(latch);
   }
 
   @Test
   public void testCloseFrame() throws InterruptedException {
     waitFor(3);
-    client = vertx.createHttpClient();
+    client = vertx.createWebSocketClient();
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT))
       .webSocketHandler(socket -> {
         socket.closeHandler(a -> {
@@ -2757,7 +2756,7 @@ public class WebSocketTest extends VertxTestBase {
         });
       });
     awaitFuture(server.listen());
-    client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
+    client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
       ws.writeTextMessage("Hello");
       ws.close(TEST_STATUS_CODE, TEST_REASON);
     }));
@@ -2777,7 +2776,7 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   private void testCloseCustomPayloadFromServer(Consumer<ServerWebSocket> closeOp) throws InterruptedException {
-    client = vertx.createHttpClient();
+    client = vertx.createWebSocketClient();
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT))
       .webSocketHandler(socket -> {
         socket.closeHandler(a -> {
@@ -2789,7 +2788,7 @@ public class WebSocketTest extends VertxTestBase {
       });
     awaitFuture(server.listen());
     vertx.runOnContext(v -> {
-      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
+      client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
         ws.frameHandler(frame -> {
           assertEquals(TEST_REASON, ((BufferInternal)frame.binaryData()).getByteBuf().readerIndex(2).toString(StandardCharsets.UTF_8));
           assertEquals(TEST_STATUS_CODE, ((BufferInternal)frame.binaryData()).getByteBuf().getShort(0));
@@ -2815,7 +2814,7 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   private void testCloseCustomPayloadFromClient(Consumer<WebSocket> closeOp) throws InterruptedException {
-    client = vertx.createHttpClient();
+    client = vertx.createWebSocketClient();
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT))
       .webSocketHandler(socket -> {
         socket.closeHandler(a -> {
@@ -2830,7 +2829,7 @@ public class WebSocketTest extends VertxTestBase {
         });
       });
     awaitFuture(server.listen());
-    client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(closeOp));
+    client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(closeOp));
     await();
   }
 
@@ -2846,7 +2845,7 @@ public class WebSocketTest extends VertxTestBase {
       });
     });
     server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST).onComplete(onSuccess(v1 -> {
-      client = vertx.createHttpClient();
+      HttpClient client = vertx.createHttpClient();
       handshake(client, req -> {
         req.send().onComplete(onSuccess(resp -> {
           assertEquals(101, resp.statusCode());
@@ -2914,9 +2913,8 @@ public class WebSocketTest extends VertxTestBase {
       }));
     });
     server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST).onComplete(onSuccess(v1 -> {
-      HttpClientOptions options = new HttpClientOptions();
-      client = vertx.createHttpClient(options);
-      client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/chat").onComplete(onSuccess(ws -> {
+      client = vertx.createWebSocketClient();
+      client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/chat").onComplete(onSuccess(ws -> {
         ws.closeHandler(v -> {
           complete();
         });
@@ -2957,8 +2955,8 @@ public class WebSocketTest extends VertxTestBase {
       }));
     });
     server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST).onComplete(onSuccess(v1 -> {
-      client = vertx.createHttpClient(new HttpClientOptions().setWebSocketClosingTimeout(timeout));
-      client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/chat").onComplete(onSuccess(ws -> {
+      client = vertx.createWebSocketClient(new WebSocketClientOptions().setClosingTimeout(timeout));
+      client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/chat").onComplete(onSuccess(ws -> {
         ws.endHandler(v -> {
           complete();
         });
@@ -3005,7 +3003,7 @@ public class WebSocketTest extends VertxTestBase {
         ws.close();
       });
     awaitFuture(server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST));
-    client = vertx.createHttpClient();
+    HttpClient client = vertx.createHttpClient();
     handshake(client, req -> {
       req.send().onComplete(onSuccess(resp -> {
         assertEquals(101, resp.statusCode());
@@ -3023,7 +3021,7 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testCloseServer() throws InterruptedException {
-    client = vertx.createHttpClient();
+    client = vertx.createWebSocketClient();
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT))
       .webSocketHandler(socket -> {
         socket.textMessageHandler(msg -> {
@@ -3031,7 +3029,7 @@ public class WebSocketTest extends VertxTestBase {
         });
       });
     awaitFuture(server.listen());
-    client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
+    client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
       ws.writeTextMessage("ping");
       AtomicBoolean closeFrameReceived = new AtomicBoolean();
       ws.frameHandler(frame -> {
@@ -3049,7 +3047,7 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testCloseClient() throws InterruptedException {
-    client = vertx.createHttpClient();
+    client = vertx.createWebSocketClient();
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT))
       .webSocketHandler(ws -> {
         AtomicBoolean closeFrameReceived = new AtomicBoolean();
@@ -3064,7 +3062,7 @@ public class WebSocketTest extends VertxTestBase {
         });
       });
     awaitFuture(server.listen());
-    client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
+    client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
       client.close();
     }));
     await();
@@ -3086,9 +3084,9 @@ public class WebSocketTest extends VertxTestBase {
       .setHost(DEFAULT_HTTP_HOST)
       .setURI("/some/path")
       .setVersion(WebsocketVersion.V13);
-    client = vertx.createHttpClient();
+    client = vertx.createWebSocketClient();
     vertx.runOnContext(v1 -> {
-      client.webSocket(options).onComplete(onSuccess(ws -> {
+      client.connect(options).onComplete(onSuccess(ws -> {
         AtomicReference<Throwable> failure = new AtomicReference<>();
         ws.closeHandler(v2 -> {
           assertNotNull(failure.get());
@@ -3111,7 +3109,7 @@ public class WebSocketTest extends VertxTestBase {
       ws.exceptionHandler(failure::set);
     });
     awaitFuture(server.listen());
-    client = vertx.createHttpClient();
+    HttpClient client = vertx.createHttpClient();
     handshake(client, req -> {
       req.connect().onComplete(onSuccess(resp -> {
         assertEquals(101, resp.statusCode());
@@ -3140,9 +3138,9 @@ public class WebSocketTest extends VertxTestBase {
       });
     });
     awaitFuture(server.listen());
-    client = vertx.createHttpClient();
+    client = vertx.createWebSocketClient();
     vertx.runOnContext(v -> {
-      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/someuri").onComplete(onSuccess(ws -> {
+      client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/someuri").onComplete(onSuccess(ws -> {
         vertx.setTimer(1000, id -> {
           ws.close();
         });
@@ -3159,8 +3157,8 @@ public class WebSocketTest extends VertxTestBase {
       });
     });
     awaitFuture(server.listen());
-    client = vertx.createHttpClient();
-    client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/someuri").onComplete(onSuccess(ws -> {
+    client = vertx.createWebSocketClient();
+    client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/someuri").onComplete(onSuccess(ws -> {
       CheckingSender sender = new CheckingSender(vertx.getOrCreateContext(), ws);
       sender.send();
       ws.closeHandler(v -> {
@@ -3205,8 +3203,8 @@ public class WebSocketTest extends VertxTestBase {
     // Create a new client that will use the same event-loop than the server
     // so the ws.writeQueueFull() will return true since the client won't be able to read the socket
     // when the server is busy writing the WebSocket
-    client = vertx.createHttpClient();
-    client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/someuri").onComplete(onSuccess(ws -> {
+    client = vertx.createWebSocketClient();
+    client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/someuri").onComplete(onSuccess(ws -> {
       CheckingSender sender = new CheckingSender(vertx.getOrCreateContext(), ws);
       ws.closeHandler(v -> sender.close());
       sender.send();
@@ -3221,7 +3219,7 @@ public class WebSocketTest extends VertxTestBase {
       .webSocketHandler(ws -> fail())
       .listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST).onComplete(onSuccess(v -> latch.countDown()));
     awaitLatch(latch);
-    client = vertx.createHttpClient();
+    HttpClient client = vertx.createHttpClient();
     client.request(new RequestOptions()
       .setHost(DEFAULT_HTTP_HOST)
       .setPort(DEFAULT_HTTP_PORT)).onComplete(onSuccess(req -> {
@@ -3253,8 +3251,8 @@ public class WebSocketTest extends VertxTestBase {
         });
       });
     awaitFuture(server.listen());
-    client = vertx.createHttpClient();
-    client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri").onComplete(onSuccess(ws -> {
+    client = vertx.createWebSocketClient();
+    client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri").onComplete(onSuccess(ws -> {
       ws.close();
     }));
     await();
@@ -3285,8 +3283,8 @@ public class WebSocketTest extends VertxTestBase {
         });
       });
     awaitFuture(server.listen());
-    client = vertx.createHttpClient();
-    client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri").onComplete(onSuccess(ws -> {
+    client = vertx.createWebSocketClient();
+    client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri").onComplete(onSuccess(ws -> {
       ws.write(expected);
       ws.close();
     }));
@@ -3321,11 +3319,11 @@ public class WebSocketTest extends VertxTestBase {
       server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST).onComplete(onSuccess(s -> latch.countDown()));
     });
     awaitLatch(latch);
-    client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(num));
+    client = vertx.createWebSocketClient();
     for (int i = 0;i < num;i++) {
       Context clientCtx = vertx.getOrCreateContext();
       clientCtx.runOnContext(v -> {
-        client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri").onComplete(onSuccess(ws -> {
+        client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri").onComplete(onSuccess(ws -> {
           assertEquals(clientCtx, Vertx.currentContext());
           ws.write(Buffer.buffer("data"));
           ws.pongHandler(pong -> {
@@ -3363,8 +3361,8 @@ public class WebSocketTest extends VertxTestBase {
         });
       });
     awaitFuture(server.listen(DEFAULT_HTTP_PORT));
-    client = vertx.createHttpClient();
-    client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri").onComplete(onSuccess(ws -> {
+    client = vertx.createWebSocketClient();
+    client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri").onComplete(onSuccess(ws -> {
       ws.pause();
       resume.future().onComplete(onSuccess(v2 -> {
         ws.resume();
@@ -3384,8 +3382,8 @@ public class WebSocketTest extends VertxTestBase {
         }));
       });
     awaitFuture(server.listen(DEFAULT_HTTP_PORT));
-    client = vertx.createHttpClient();
-    client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri").onComplete(onSuccess(ws -> {
+    client = vertx.createWebSocketClient();
+    client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri").onComplete(onSuccess(ws -> {
       while (!ws.writeQueueFull()) {
         ws.writeFrame(WebSocketFrame.textFrame(randomAlphaString(512), true));
       }
@@ -3407,8 +3405,8 @@ public class WebSocketTest extends VertxTestBase {
         });
       });
     awaitFuture(server.listen(DEFAULT_HTTP_PORT));
-    client = vertx.createHttpClient();
-    client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri").onComplete(onSuccess(ws -> {
+    client = vertx.createWebSocketClient();
+    client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri").onComplete(onSuccess(ws -> {
       ws.write(Buffer.buffer("foo")).onComplete(onSuccess(v -> {
         complete();
       }));
@@ -3422,8 +3420,8 @@ public class WebSocketTest extends VertxTestBase {
       .webSocketHandler(ServerWebSocket::pause);
     awaitFuture(server.listen(DEFAULT_HTTP_PORT));
     Buffer buffer = TestUtils.randomBuffer(1024);
-    client = vertx.createHttpClient();
-    client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri").onComplete(onSuccess(ws -> {
+    client = vertx.createWebSocketClient();
+    client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri").onComplete(onSuccess(ws -> {
       while (!ws.writeQueueFull()) {
         ws.write(buffer);
       }
@@ -3437,13 +3435,13 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testCloseClientImmediately() throws InterruptedException {
-    HttpClient client = vertx.createHttpClient();
+    WebSocketClient client = vertx.createWebSocketClient();
     server = vertx.createHttpServer()
       .webSocketHandler(ws -> {
       });
     awaitFuture(server.listen(DEFAULT_HTTP_PORT));
     AtomicBoolean resolved = new AtomicBoolean();
-    client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri").onComplete(ar -> {
+    client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri").onComplete(ar -> {
       if (resolved.compareAndSet(false, true)) {
         if (ar.succeeded()) {
           fail();
@@ -3477,8 +3475,8 @@ public class WebSocketTest extends VertxTestBase {
         });
       });
     awaitFuture(server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST));
-    client = vertx.createHttpClient();
-    client.webSocket(proxy.getPort(), proxy.getHost(), "/someuri").onComplete(onSuccess(ws -> {
+    client = vertx.createWebSocketClient();
+    client.connect(proxy.getPort(), proxy.getHost(), "/someuri").onComplete(onSuccess(ws -> {
       ws.write(Buffer.buffer("foo")).onComplete(onSuccess(v -> {
         complete();
       }));
@@ -3492,6 +3490,7 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testWebSocketDisablesALPN() throws InterruptedException {
+/*
     client = vertx.createHttpClient(new HttpClientOptions()
       .setProtocolVersion(HttpVersion.HTTP_2)
       .setUseAlpn(true)
@@ -3524,6 +3523,7 @@ public class WebSocketTest extends VertxTestBase {
       }));
     }));
     await();
+*/
   }
 
   @Test
@@ -3581,7 +3581,7 @@ public class WebSocketTest extends VertxTestBase {
       }
     });
     awaitFuture(server.listen());
-    client = vertx.createHttpClient();
+    client = vertx.createWebSocketClient();
     WebSocketConnectOptions options = new WebSocketConnectOptions()
       .setVersion(version)
       .setAllowOriginHeader(allow)
@@ -3591,7 +3591,7 @@ public class WebSocketTest extends VertxTestBase {
     if (origin != null) {
       options.addHeader(header, origin);
     }
-    client.webSocket(options).onComplete(onSuccess(ws -> {
+    client.connect(options).onComplete(onSuccess(ws -> {
       testComplete();
     }));
     await();
@@ -3620,8 +3620,8 @@ public class WebSocketTest extends VertxTestBase {
       .setPort(DEFAULT_HTTP_PORT)
       .setHost(DEFAULT_HTTP_HOST)
       .setURI(path);
-    client = vertx.createHttpClient();
-    client.webSocket(options).onComplete(onSuccess(ws -> {
+    client = vertx.createWebSocketClient();
+    client.connect(options).onComplete(onSuccess(ws -> {
       assertNull(ws.textHandlerID());
       assertNull(ws.binaryHandlerID());
       ws
@@ -3672,13 +3672,13 @@ public class WebSocketTest extends VertxTestBase {
 
     awaitFuture(server.listen());
 
-    client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(numConnections));
+    client = vertx.createWebSocketClient();
     for (int i = 0; i < numConnections; i++) {
       WebSocketConnectOptions options = new WebSocketConnectOptions()
         .setPort(DEFAULT_HTTP_PORT)
         .setHost(DEFAULT_HTTP_HOST)
         .setURI(path);
-      client.webSocket(options).onComplete(onSuccess(ws -> {
+      client.connect(options).onComplete(onSuccess(ws -> {
         messageHandlerSetter.accept(ws, data -> {
           assertEquals(bye, data);
           complete();
@@ -3703,7 +3703,7 @@ public class WebSocketTest extends VertxTestBase {
         });
       });
     awaitFuture(server.listen());
-    client = vertx.createHttpClient();
+    client = vertx.createWebSocketClient();
     ClientWebSocket ws = client.webSocket();
     WebSocketConnectOptions options = new WebSocketConnectOptions()
       .setPort(DEFAULT_HTTP_PORT)

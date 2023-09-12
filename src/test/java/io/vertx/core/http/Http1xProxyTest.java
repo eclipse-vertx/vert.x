@@ -477,7 +477,7 @@ public class Http1xProxyTest extends HttpTestBase {
   public void testWssHttpProxy() throws Exception {
     startProxy(null, ProxyType.HTTP);
     testWebSocket(createBaseServerOptions().setSsl(true)
-      .setKeyCertOptions(Cert.SERVER_JKS.get()), new HttpClientOptions()
+      .setKeyCertOptions(Cert.SERVER_JKS.get()), new WebSocketClientOptions()
       .setSsl(true)
       .setTrustOptions(Cert.SERVER_JKS.get())
       .setProxyOptions(new ProxyOptions()
@@ -489,7 +489,7 @@ public class Http1xProxyTest extends HttpTestBase {
   @Test
   public void testWsHttpProxy() throws Exception {
     startProxy(null, ProxyType.HTTP);
-    testWebSocket(createBaseServerOptions(), new HttpClientOptions()
+    testWebSocket(createBaseServerOptions(), new WebSocketClientOptions()
       .setProxyOptions(new ProxyOptions()
         .setType(ProxyType.HTTP)
         .setHost(DEFAULT_HTTP_HOST)
@@ -500,7 +500,7 @@ public class Http1xProxyTest extends HttpTestBase {
   public void testWssSocks5Proxy() throws Exception {
     startProxy(null, ProxyType.SOCKS5);
     testWebSocket(createBaseServerOptions().setSsl(true)
-      .setKeyCertOptions(Cert.SERVER_JKS.get()), new HttpClientOptions()
+      .setKeyCertOptions(Cert.SERVER_JKS.get()), new WebSocketClientOptions()
       .setSsl(true)
       .setTrustOptions(Cert.SERVER_JKS.get())
       .setProxyOptions(new ProxyOptions()
@@ -512,7 +512,7 @@ public class Http1xProxyTest extends HttpTestBase {
   @Test
   public void testWsSocks5Proxy() throws Exception {
     startProxy(null, ProxyType.SOCKS5);
-    testWebSocket(createBaseServerOptions(), new HttpClientOptions()
+    testWebSocket(createBaseServerOptions(), new WebSocketClientOptions()
       .setProxyOptions(new ProxyOptions()
         .setType(ProxyType.SOCKS5)
         .setHost(DEFAULT_HTTP_HOST)
@@ -522,7 +522,7 @@ public class Http1xProxyTest extends HttpTestBase {
   @Test
   public void testWsNonProxyHosts() throws Exception {
     startProxy(null, ProxyType.HTTP);
-    testWebSocket(createBaseServerOptions(), new HttpClientOptions()
+    testWebSocket(createBaseServerOptions(), new WebSocketClientOptions()
       .addNonProxyHost("localhost")
       .setProxyOptions(new ProxyOptions()
         .setType(ProxyType.HTTP)
@@ -530,19 +530,18 @@ public class Http1xProxyTest extends HttpTestBase {
         .setPort(proxy.port())), false);
   }
 
-  private void testWebSocket(HttpServerOptions serverOptions, HttpClientOptions clientOptions, boolean proxied) throws Exception {
+  private void testWebSocket(HttpServerOptions serverOptions, WebSocketClientOptions clientOptions, boolean proxied) throws Exception {
     server.close();
     server = vertx.createHttpServer(serverOptions);
-    client.close();
-    client = vertx.createHttpClient(clientOptions);
     server.webSocketHandler(ws -> {
       ws.handler(buff -> {
         ws.write(buff);
         ws.close();
       });
     });
+    WebSocketClient client = vertx.createWebSocketClient(clientOptions);
     server.listen(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST).onSuccess(s -> {
-      client.webSocket(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/").onSuccess(ws -> {
+      client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/").onSuccess(ws -> {
         ws.handler(buff -> {
           ws.close().onComplete(onSuccess(v -> {
             if (proxied) {

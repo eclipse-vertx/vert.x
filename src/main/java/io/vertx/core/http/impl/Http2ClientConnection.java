@@ -43,14 +43,14 @@ import java.util.function.BiConsumer;
  */
 class Http2ClientConnection extends Http2ConnectionBase implements HttpClientConnection {
 
-  private final HttpClientImpl client;
+  private final HttpClientBase client;
   private final ClientMetrics metrics;
   private Handler<Void> evictionHandler = DEFAULT_EVICTION_HANDLER;
   private Handler<Long> concurrencyChangeHandler = DEFAULT_CONCURRENCY_CHANGE_HANDLER;
   private long expirationTimestamp;
   private boolean evicted;
 
-  Http2ClientConnection(HttpClientImpl client,
+  Http2ClientConnection(HttpClientBase client,
                         EventLoopContext context,
                         VertxHttp2ConnectionHandler connHandler,
                         ClientMetrics metrics) {
@@ -665,7 +665,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   public static VertxHttp2ConnectionHandler<Http2ClientConnection> createHttp2ConnectionHandler(
-    HttpClientImpl client,
+    HttpClientBase client,
     ClientMetrics metrics,
     EventLoopContext context,
     boolean upgrade,
