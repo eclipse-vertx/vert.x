@@ -1519,7 +1519,7 @@ public class Http1xTest extends HttpTest {
     // Start the servers
     HttpServer[] servers = new HttpServer[numServers];
     CountDownLatch startServerLatch = new CountDownLatch(numServers);
-    Set<HttpServer> connectedServers = Utils.concurrentHashSet();
+    Set<HttpServer> connectedServers = ConcurrentHashMap.newKeySet();
     for (int i = 0; i < numServers; i++) {
       HttpServer server = vertx.createHttpServer(new HttpServerOptions().setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT));
       server.requestHandler(req -> {
@@ -1735,7 +1735,7 @@ public class Http1xTest extends HttpTest {
     Map<HttpServer, Integer> requestCount = new ConcurrentHashMap<>();
 
     CountDownLatch latchConns = new CountDownLatch(numRequests);
-    Set<Thread> threads = Utils.concurrentHashSet();
+    Set<Thread> threads = ConcurrentHashMap.newKeySet();
     Future<String> listenLatch = vertx.deployVerticle(() -> new AbstractVerticle() {
       Thread thread;
       @Override
@@ -2198,7 +2198,7 @@ public class Http1xTest extends HttpTest {
       });
       expectedThreads.add(th.get());
     }
-    Set<Thread> threads = Utils.concurrentHashSet();
+    Set<Thread> threads = ConcurrentHashMap.newKeySet();
     for (int i = 0; i < numReqs; i++) {
       Context requestCtx = contexts.get(i);
       CompletableFuture<Long> cf = new CompletableFuture<>();

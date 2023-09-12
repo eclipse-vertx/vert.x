@@ -714,7 +714,7 @@ public class LocalEventBusTest extends EventBusTestBase {
 
   @Test
   public void testContextsSend() throws Exception {
-    Set<ContextInternal> contexts = Utils.concurrentHashSet();
+    Set<ContextInternal> contexts = ConcurrentHashMap.newKeySet();
     CountDownLatch latch = new CountDownLatch(2);
     vertx.eventBus().consumer(ADDRESS1).handler(msg -> {
       msg.reply("bar");
@@ -732,7 +732,7 @@ public class LocalEventBusTest extends EventBusTestBase {
 
   @Test
   public void testContextsPublish() throws Exception {
-    Set<ContextInternal> contexts = Utils.concurrentHashSet();
+    Set<ContextInternal> contexts = ConcurrentHashMap.newKeySet();
     AtomicInteger cnt = new AtomicInteger();
     int numHandlers = 10;
     for (int i = 0; i < numHandlers; i++) {

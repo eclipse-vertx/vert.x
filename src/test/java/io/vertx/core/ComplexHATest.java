@@ -12,7 +12,6 @@
 package io.vertx.core;
 
 import io.vertx.core.impl.Deployment;
-import io.vertx.core.impl.Utils;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.cluster.ClusterManager;
@@ -26,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -161,7 +161,7 @@ public class ComplexHATest extends VertxTestBase {
   }
 
   protected Set<Deployment> takeDeploymentSnapshot(int pos) {
-    Set<Deployment> snapshot = Utils.concurrentHashSet();
+    Set<Deployment> snapshot = ConcurrentHashMap.newKeySet();
     VertxInternal v = (VertxInternal)vertices[pos];
     for (String depID: v.deploymentIDs()) {
       snapshot.add(v.getDeployment(depID));

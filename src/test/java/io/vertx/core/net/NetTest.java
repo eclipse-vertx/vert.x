@@ -87,6 +87,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -114,6 +115,7 @@ public class NetTest extends VertxTestBase {
   @Rule
   public TemporaryFolder testFolder = new TemporaryFolder();
 
+  @Override
   public void setUp() throws Exception {
     super.setUp();
     if (USE_DOMAIN_SOCKETS) {
@@ -138,6 +140,7 @@ public class NetTest extends VertxTestBase {
     return options;
   }
 
+  @Override
   protected void tearDown() throws Exception {
     if (tmp != null) {
       tmp.delete();
@@ -1974,8 +1977,8 @@ public class NetTest extends VertxTestBase {
     int numConnections = numServers * (domainSocket ? 10 : 20);
 
     List<NetServer> servers = new ArrayList<>();
-    Set<NetServer> connectedServers = Utils.concurrentHashSet();
-    Set<Thread> threads = Utils.concurrentHashSet();
+    Set<NetServer> connectedServers = ConcurrentHashMap.newKeySet();
+    Set<Thread> threads = ConcurrentHashMap.newKeySet();
 
     Future<String> listenLatch = vertx.deployVerticle(() -> new AbstractVerticle() {
       NetServer server;
@@ -2104,7 +2107,7 @@ public class NetTest extends VertxTestBase {
 
     int numConnections = 10;
 
-    Set<String> connections = Utils.concurrentHashSet();
+    Set<String> connections = ConcurrentHashMap.newKeySet();
     server.connectHandler(socket -> {
       connections.add(socket.writeHandlerID());
       if (connections.size() == numConnections) {
@@ -2551,7 +2554,7 @@ public class NetTest extends VertxTestBase {
     }));
     awaitLatch(listenLatch);
 
-    Set<Context> contexts = Utils.concurrentHashSet();
+    Set<Context> contexts = ConcurrentHashMap.newKeySet();
     AtomicInteger connectCount = new AtomicInteger();
     CountDownLatch clientLatch = new CountDownLatch(1);
     // Each connect should be in its own context

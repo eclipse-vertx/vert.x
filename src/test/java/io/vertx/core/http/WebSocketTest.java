@@ -94,10 +94,12 @@ public class WebSocketTest extends VertxTestBase {
   private HttpServer server;
   private NetServer netServer;
 
+  @Override
   public void setUp() throws Exception {
     super.setUp();
   }
 
+  @Override
   protected void tearDown() throws Exception {
     if (client != null) {
       client.close();
@@ -517,7 +519,7 @@ public class WebSocketTest extends VertxTestBase {
     int numConnections = numServers * 100;
 
     List<HttpServer> servers = new ArrayList<>();
-    Set<HttpServer> connectedServers = Utils.concurrentHashSet();
+    Set<HttpServer> connectedServers = ConcurrentHashMap.newKeySet();
     Map<HttpServer, Integer> connectCount = new ConcurrentHashMap<>();
 
     CountDownLatch latchConns = new CountDownLatch(numConnections);
@@ -3649,7 +3651,7 @@ public class WebSocketTest extends VertxTestBase {
     String path = "/some/path";
     int numConnections = 10;
 
-    Set<String> connections = Utils.concurrentHashSet();
+    Set<String> connections = ConcurrentHashMap.newKeySet();
     HttpServerOptions httpServerOptions = new HttpServerOptions()
       .setPort(DEFAULT_HTTP_PORT)
       .setRegisterWebSocketWriteHandlers(true);

@@ -121,24 +121,24 @@ public class DeploymentManager {
     }
   }
 
-  private <T> void reportFailure(Throwable t, ContextInternal context, Promise<T> completionHandler) {
-    if (completionHandler != null) {
-      reportResult(context, completionHandler, Future.failedFuture(t));
-    } else {
-      log.error(t.getMessage(), t);
-    }
-  }
-
-  private <T> void reportResult(Context context, Promise<T> completionHandler, AsyncResult<T> result) {
-    context.runOnContext(v -> {
-      try {
-        completionHandler.handle(result);
-      } catch (Throwable t) {
-        log.error("Failure in calling handler", t);
-        throw t;
-      }
-    });
-  }
+//  private <T> void reportFailure(Throwable t, ContextInternal context, Promise<T> completionHandler) {
+//    if (completionHandler != null) {
+//      reportResult(context, completionHandler, Future.failedFuture(t));
+//    } else {
+//      log.error(t.getMessage(), t);
+//    }
+//  }
+//
+//  private <T> void reportResult(Context context, Promise<T> completionHandler, AsyncResult<T> result) {
+//    context.runOnContext(v -> {
+//      try {
+//        completionHandler.handle(result);
+//      } catch (Throwable t) {
+//        log.error("Failure in calling handler", t);
+//        throw t;
+//      }
+//    });
+//  }
 
   Future<Deployment> doDeploy(DeploymentOptions options,
                                   Function<Verticle, String> identifierProvider,
@@ -254,7 +254,7 @@ public class DeploymentManager {
     private final JsonObject conf;
     private final String verticleIdentifier;
     private final List<VerticleHolder> verticles = new CopyOnWriteArrayList<>();
-    private final Set<Deployment> children = Utils.concurrentHashSet();
+    private final Set<Deployment> children = ConcurrentHashMap.newKeySet();
     private final DeploymentOptions options;
     private Handler<Void> undeployHandler;
     private int status = ST_DEPLOYED;
