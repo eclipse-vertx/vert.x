@@ -1826,6 +1826,14 @@ The returned future will be completed with an instance of {@link io.vertx.core.h
 {@link examples.HTTPExamples#example54}
 ----
 
+When connecting from a non Vert.x thread, you can create a {@link io.vertx.core.http.ClientWebSocket}, configure its handlers and
+then connect to the server:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example54_bis}
+----
+
 By default, the client sets the `origin` header to the server host, e.g http://www.example.com. Some servers will refuse
 such request, you can configure the client to not set this header.
 

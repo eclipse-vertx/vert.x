@@ -8,33 +8,22 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-
 package io.vertx.core.http;
 
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.metrics.Measured;
-import io.vertx.core.net.SSLOptions;
+import io.vertx.core.buffer.Buffer;
 
 /**
- * An asynchronous WebSocket client.
- * <p>
- * It allows you to open WebSockets to servers.
- * <p>
+ * Represents a client-side WebSocket initially not connected.
  *
- * @author <a href="http://tfox.org">Tim Fox</a>
+ * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @VertxGen
-public interface WebSocketClient extends Measured {
-
-  /**
-   * Create a WebSocket that is not yet connected to the server.
-   *
-   * @return the client WebSocket
-   */
-  ClientWebSocket webSocket();
+public interface ClientWebSocket extends WebSocket {
 
   /**
    * Connect a WebSocket to the specified port, host and relative request URI
@@ -62,39 +51,29 @@ public interface WebSocketClient extends Measured {
    */
   Future<WebSocket> connect(WebSocketConnectOptions options);
 
-  /**
-   * Update the client SSL options.
-   *
-   * Update only happens if the SSL options is valid.
-   *
-   * @param options the new SSL options
-   * @return a future signaling the update success
-   */
-  Future<Void> updateSSLOptions(SSLOptions options);
+  @Override
+  ClientWebSocket handler(Handler<Buffer> handler);
 
-  /**
-   * Like {@link #updateSSLOptions(SSLOptions)}  but supplying a handler that will be called when the update
-   * happened (or has failed).
-   *
-   * @param options the new SSL options
-   * @param handler the update handler
-   */
-  default void updateSSLOptions(SSLOptions options, Handler<AsyncResult<Void>> handler) {
-    Future<Void> fut = updateSSLOptions(options);
-    if (handler != null) {
-      fut.onComplete(handler);
-    }
-  }
+  @Override
+  ClientWebSocket endHandler(Handler<Void> endHandler);
 
-  /**
-   * Close the client. Closing will close down any pooled connections.
-   * Clients should always be closed after use.
-   */
-  void close(Handler<AsyncResult<Void>> handler);
+  @Override
+  ClientWebSocket drainHandler(Handler<Void> handler);
 
-  /**
-   * Like {@link #close(Handler)} but returns a {@code Future} of the asynchronous result
-   */
-  Future<Void> close();
+  @Override
+  ClientWebSocket closeHandler(Handler<Void> handler);
 
-}
+  @Override
+  ClientWebSocket frameHandler(Handler<WebSocketFrame> handler);
+
+  @Override
+  ClientWebSocket textMessageHandler(@Nullable Handler<String> handler);
+
+  @Override
+  ClientWebSocket binaryMessageHandler(@Nullable Handler<Buffer> handler);
+
+  @Override
+  ClientWebSocket pongHandler(@Nullable Handler<Buffer> handler);
+
+  @Override
+  ClientWebSocket exceptionHandler(Handler<Throwable> handler);}

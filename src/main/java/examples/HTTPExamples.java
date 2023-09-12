@@ -978,6 +978,26 @@ public class HTTPExamples {
       .onComplete(res -> {
         if (res.succeeded()) {
           WebSocket ws = res.result();
+          ws.textMessageHandler(msg -> {
+            // Handle msg
+          });
+          System.out.println("Connected!");
+        }
+      });
+  }
+
+  public void example54_bis(Vertx vertx) {
+    WebSocketClient client = vertx.createWebSocketClient();
+
+    client
+      .webSocket()
+      .textMessageHandler(msg -> {
+        // Handle msg
+      })
+      .connect(80, "example.com", "/some-uri")
+      .onComplete(res -> {
+        if (res.succeeded()) {
+          WebSocket ws = res.result();
           System.out.println("Connected!");
         }
       });

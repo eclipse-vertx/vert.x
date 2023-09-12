@@ -13,11 +13,10 @@ package io.vertx.core.http.impl;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
+import io.vertx.core.http.ClientWebSocket;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebSocketClient;
 import io.vertx.core.http.WebSocketConnectOptions;
-import io.vertx.core.http.WebsocketVersion;
 import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -52,6 +51,11 @@ public class SharedWebSocketClient implements WebSocketClient {
     PromiseInternal<Void> promise = closingCtx.promise();
     closeFuture.close(promise);
     return promise.future();
+  }
+
+  @Override
+  public ClientWebSocket webSocket() {
+    return delegate.webSocket();
   }
 
   @Override

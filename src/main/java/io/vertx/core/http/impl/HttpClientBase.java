@@ -162,18 +162,34 @@ public class HttpClientBase implements MetricsProvider, Closeable {
     return metrics;
   }
 
-//  @Override
   public void webSocket(WebSocketConnectOptions connectOptions, Handler<AsyncResult<WebSocket>> handler) {
-    webSocket(connectOptions, vertx.promise(handler));
+    PromiseInternal<WebSocket> promise = vertx.promise();
+    promise.future().onComplete(ar -> {
+      if (ar.succeeded()) {
+        ar.result().resume();
+      }
+      handler.handle(ar);
+    });
+    webSocket(connectOptions, promise);
+  }
+
+  Future<WebSocket> webSocket(ContextInternal ctx, WebSocketConnectOptions connectOptions) {
+    PromiseInternal<WebSocket> promise = ctx.promise();
+    webSocket(connectOptions, promise);
+    return promise.andThen(ar -> {
+      if (ar.succeeded()) {
+        ar.result().resume();
+      }
+    });
   }
 
   private void webSocket(WebSocketConnectOptions connectOptions, PromiseInternal<WebSocket> promise) {
+    ContextInternal ctx = promise.context();
     int port = getPort(connectOptions);
     String host = getHost(connectOptions);
     SocketAddress addr = SocketAddress.inetSocketAddress(port, host);
     ProxyOptions proxyOptions = resolveProxyOptions(connectOptions.getProxyOptions(), addr);
     EndpointKey key = new EndpointKey(connectOptions.isSsl() != null ? connectOptions.isSsl() : options.isSsl(), proxyOptions, addr, addr);
-    ContextInternal ctx = promise.context();
     EventLoopContext eventLoopContext;
     if (ctx instanceof EventLoopContext) {
       eventLoopContext = (EventLoopContext) ctx;

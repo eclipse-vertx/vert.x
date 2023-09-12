@@ -64,6 +64,12 @@ public interface WebSocket extends WebSocketBase {
   WebSocket writeTextMessage(String text, Handler<AsyncResult<Void>> handler);
 
   @Override
+  WebSocket writePing(Buffer data, Handler<AsyncResult<Void>> handler);
+
+  @Override
+  WebSocket writePong(Buffer data, Handler<AsyncResult<Void>> handler);
+
+  @Override
   WebSocket closeHandler(Handler<Void> handler);
 
   @Override

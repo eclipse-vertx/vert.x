@@ -27,6 +27,11 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
   }
 
   @Override
+  public ClientWebSocket webSocket() {
+    return new ClientWebSocketImpl(this);
+  }
+
+  @Override
   public void connect(int port, String host, String requestURI, Handler<AsyncResult<WebSocket>> handler) {
     webSocket(port, host, requestURI, handler);
   }

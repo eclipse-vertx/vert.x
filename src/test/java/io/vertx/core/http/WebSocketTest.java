@@ -3811,4 +3811,35 @@ public class WebSocketTest extends VertxTestBase {
 
     await();
   }
-}
+
+  @Test
+  public void testConnect() throws Exception {
+    waitFor(2);
+    server = vertx.createHttpServer(new HttpServerOptions()
+        .setPort(DEFAULT_HTTP_PORT)
+        .setHost(HttpTestBase.DEFAULT_HTTP_HOST))
+      .webSocketHandler(ws -> {
+        ws.write(Buffer.buffer("Ping"));
+        ws.handler(buff -> {
+          ws.close();
+        });
+      });
+    server.listen().toCompletionStage().toCompletableFuture().get();
+    client = vertx.createWebSocketClient();
+    ClientWebSocket ws = client.webSocket();
+    WebSocketConnectOptions options = new WebSocketConnectOptions()
+      .setPort(DEFAULT_HTTP_PORT)
+      .setHost(DEFAULT_HTTP_HOST);
+    ws.handler(buff -> {
+        ws.write(buff);
+        ws.connect(options)
+          .onComplete(onFailure(err -> {
+            complete();
+          }));
+      })
+      .closeHandler(v -> complete()).connect(options
+      ).onComplete(onSuccess(v -> {
+
+      }));
+    await();
+  }}

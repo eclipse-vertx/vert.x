@@ -1019,6 +1019,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
         } else {
           WebSocketImpl ws = finish(context, version, registerWriteHandlers, handshaker, ar.result());
           webSocket = ws;
+          ws.pause();
           getContext().emit(ws, w -> {
             promise.handle(Future.succeededFuture(w));
             webSocket.headers(null);
