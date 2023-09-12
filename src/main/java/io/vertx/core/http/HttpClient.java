@@ -11,16 +11,10 @@
 
 package io.vertx.core.http;
 
-import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.metrics.Measured;
-import io.vertx.core.net.SSLOptions;
 
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 /**
  * An asynchronous HTTP client.
@@ -97,7 +91,16 @@ public interface HttpClient {
    * @return a future notified when the client is closed
    */
   default Future<Void> close() {
-    return close(0, TimeUnit.SECONDS);
+    return shutdown(0, TimeUnit.SECONDS);
+  }
+
+  /**
+   * Initiate the close sequence with a 30 seconds timeout.
+   *
+   * see {@link #shutdown(long, TimeUnit)}
+   */
+  default Future<Void> shutdown() {
+    return shutdown(30, TimeUnit.SECONDS);
   }
 
   /**
@@ -114,6 +117,6 @@ public interface HttpClient {
    *
    * @return a future notified when the client is closed
    */
-  Future<Void> close(long timeout, TimeUnit timeUnit);
+  Future<Void> shutdown(long timeout, TimeUnit timeUnit);
 
 }
