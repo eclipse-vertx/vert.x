@@ -197,51 +197,15 @@ public interface Vertx extends Measured {
    * @param options  the options to use
    * @return the client
    */
-  HttpClient createHttpClient(HttpClientOptions options);
+  HttpClientPool createHttpClient(HttpClientOptions options);
 
   /**
    * Create a HTTP/HTTPS client using default options
    *
    * @return the client
    */
-  default HttpClient createHttpClient() {
+  default HttpClientPool createHttpClient() {
     return createHttpClient(new HttpClientOptions());
-  }
-
-  /**
-   * Create a HTTP/HTTPS pooling client using the specified client options and default pool options
-   *
-   * @param options  the options to use
-   * @return the client
-   */
-  default HttpClientPool createHttpClientPool(HttpClientOptions options) {
-    return createHttpClientPool(options, new PoolOptions());
-  }
-
-  /**
-   * Create a HTTP/HTTPS pooling client using the specified options
-   *
-   * @param options  the options to use
-   * @return the client
-   */
-  HttpClientPool createHttpClientPool(HttpClientOptions options, PoolOptions poolOptions);
-
-  /**
-   * Create a HTTP/HTTPS pooling client using default options
-   *
-   * @return the client
-   */
-  default HttpClientPool createHttpClientPool() {
-    return createHttpClientPool(new HttpClientOptions());
-  }
-
-  /**
-   * Create a HTTP/HTTPS pooling client using the specified pool options and the default client options
-   *
-   * @return the client
-   */
-  default HttpClientPool createHttpClientPool(PoolOptions poolOptions) {
-    return createHttpClientPool(new HttpClientOptions(), poolOptions);
   }
 
   /**

@@ -108,12 +108,12 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public HttpClient createHttpClient(HttpClientOptions options) {
+  public HttpClientPool createHttpClient(HttpClientOptions options) {
     return delegate.createHttpClient(options);
   }
 
   @Override
-  public HttpClient createHttpClient() {
+  public HttpClientPool createHttpClient() {
     return delegate.createHttpClient();
   }
 
