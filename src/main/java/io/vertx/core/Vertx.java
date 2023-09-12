@@ -20,6 +20,8 @@ import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.WebSocketClient;
+import io.vertx.core.http.WebSocketClientOptions;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.impl.ContextInternal;
@@ -164,6 +166,24 @@ public interface Vertx extends Measured {
   default HttpServer createHttpServer() {
     return createHttpServer(new HttpServerOptions());
   }
+
+
+  /**
+   * Create a WebSocket client using default options
+   *
+   * @return the client
+   */
+  default WebSocketClient createWebSocketClient() {
+    return createWebSocketClient(new WebSocketClientOptions());
+  }
+
+  /**
+   * Create a WebSocket client using the specified options
+   *
+   * @param options  the options to use
+   * @return the client
+   */
+  WebSocketClient createWebSocketClient(WebSocketClientOptions options);
 
   /**
    * Create a HTTP/HTTPS client using the specified options

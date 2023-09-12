@@ -16,11 +16,9 @@ import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
 import io.vertx.core.metrics.Measured;
 import io.vertx.core.net.SSLOptions;
 
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -92,62 +90,6 @@ public interface HttpClient extends Measured {
    * @return a future notified when the request is ready to be sent
    */
   Future<HttpClientRequest> request(HttpMethod method, String requestURI);
-
-  /**
-   * Create a WebSocket that is not yet connected to the server.
-   *
-   * @return the client WebSocket
-   */
-  ClientWebSocket webSocket();
-
-  /**
-   * Connect a WebSocket to the specified port, host and relative request URI.
-   *
-   * @param port  the port
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @return a future notified when the WebSocket when connected
-   */
-  default Future<WebSocket> webSocket(int port, String host, String requestURI) {
-    return webSocket(new WebSocketConnectOptions().setURI(requestURI).setHost(host).setPort(port));
-  }
-
-  /**
-   * Connect a WebSocket to the host and relative request URI and default port.
-   *
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @return a future notified when the WebSocket when connected
-   */
-  Future<WebSocket> webSocket(String host, String requestURI);
-
-  /**
-   * Connect a WebSocket at the relative request URI using the default host and port.
-   *
-   * @param requestURI  the relative URI
-   * @return a future notified when the WebSocket when connected
-   */
-  Future<WebSocket> webSocket(String requestURI);
-
-  /**
-   * Connect a WebSocket with the specified options.
-   *
-   * @param options  the request options
-   * @return a future notified when the WebSocket when connected
-   */
-  Future<WebSocket> webSocket(WebSocketConnectOptions options);
-
-  /**
-   * Connect a WebSocket with the specified absolute url, with the specified headers, using
-   * the specified version of WebSockets, and the specified WebSocket sub protocols.
-   *
-   * @param url            the absolute url
-   * @param headers        the headers
-   * @param version        the WebSocket version
-   * @param subProtocols   the subprotocols to use
-   * @return a future notified when the WebSocket when connected
-   */
-  Future<WebSocket> webSocketAbs(String url, MultiMap headers, WebsocketVersion version, List<String> subProtocols);
 
   /**
    * Update the client SSL options.

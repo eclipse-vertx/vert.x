@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class ClientWebSocketImpl implements ClientWebSocket {
 
-  private HttpClientImpl client;
+  private WebSocketClientImpl client;
   private final AtomicReference<Promise<WebSocket>> connect = new AtomicReference<>();
   private volatile WebSocket ws;
   private Handler<Throwable> exceptionHandler;
@@ -43,7 +43,7 @@ public class ClientWebSocketImpl implements ClientWebSocket {
   private Handler<Buffer> binaryMessageHandler;
   private Handler<Buffer> pongHandler;
 
-  ClientWebSocketImpl(HttpClientImpl client) {
+  ClientWebSocketImpl(WebSocketClientImpl client) {
     this.client = client;
   }
 
@@ -75,20 +75,20 @@ public class ClientWebSocketImpl implements ClientWebSocket {
       }).mapEmpty();
   }
 
-  @Override
-  public Future<WebSocket> connect(String host, String requestURI) {
-    return connect(client.options.getDefaultPort(), host, requestURI);
-  }
-
-  @Override
-  public Future<WebSocket> connect(String requestURI) {
-    return connect(client.options.getDefaultPort(), client.options.getDefaultHost(), requestURI);
-  }
-
-  @Override
-  public Future<WebSocket> connect(String url, MultiMap headers, WebsocketVersion version, List<String> subProtocols) {
-    return connect(HttpClientImpl.webSocketConnectOptionsAbs(url, headers, version, subProtocols));
-  }
+//  @Override
+//  public Future<WebSocket> connect(String host, String requestURI) {
+//    return connect(client.options.getDefaultPort(), host, requestURI);
+//  }
+//
+//  @Override
+//  public Future<WebSocket> connect(String requestURI) {
+//    return connect(client.options.getDefaultPort(), client.options.getDefaultHost(), requestURI);
+//  }
+//
+//  @Override
+//  public Future<WebSocket> connect(String url, MultiMap headers, WebsocketVersion version, List<String> subProtocols) {
+//    return connect(HttpClientImpl.webSocketConnectOptionsAbs(url, headers, version, subProtocols));
+//  }
 
   @Override
   public ClientWebSocket exceptionHandler(Handler<Throwable> handler) {

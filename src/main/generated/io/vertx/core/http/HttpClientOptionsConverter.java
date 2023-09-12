@@ -125,21 +125,6 @@ public class HttpClientOptionsConverter {
             obj.setMaxWaitQueueSize(((Number)member.getValue()).intValue());
           }
           break;
-        case "maxWebSocketFrameSize":
-          if (member.getValue() instanceof Number) {
-            obj.setMaxWebSocketFrameSize(((Number)member.getValue()).intValue());
-          }
-          break;
-        case "maxWebSocketMessageSize":
-          if (member.getValue() instanceof Number) {
-            obj.setMaxWebSocketMessageSize(((Number)member.getValue()).intValue());
-          }
-          break;
-        case "maxWebSockets":
-          if (member.getValue() instanceof Number) {
-            obj.setMaxWebSockets(((Number)member.getValue()).intValue());
-          }
-          break;
         case "name":
           if (member.getValue() instanceof String) {
             obj.setName((String)member.getValue());
@@ -170,11 +155,6 @@ public class HttpClientOptionsConverter {
             obj.setProtocolVersion(io.vertx.core.http.HttpVersion.valueOf((String)member.getValue()));
           }
           break;
-        case "sendUnmaskedFrames":
-          if (member.getValue() instanceof Boolean) {
-            obj.setSendUnmaskedFrames((Boolean)member.getValue());
-          }
-          break;
         case "shared":
           if (member.getValue() instanceof Boolean) {
             obj.setShared((Boolean)member.getValue());
@@ -190,41 +170,9 @@ public class HttpClientOptionsConverter {
             obj.setTryUseCompression((Boolean)member.getValue());
           }
           break;
-        case "tryUsePerFrameWebSocketCompression":
-          if (member.getValue() instanceof Boolean) {
-            obj.setTryUsePerFrameWebSocketCompression((Boolean)member.getValue());
-          }
-          break;
-        case "tryUsePerMessageWebSocketCompression":
-          if (member.getValue() instanceof Boolean) {
-            obj.setTryUsePerMessageWebSocketCompression((Boolean)member.getValue());
-          }
-          break;
-        case "tryWebSocketDeflateFrameCompression":
-          break;
         case "verifyHost":
           if (member.getValue() instanceof Boolean) {
             obj.setVerifyHost((Boolean)member.getValue());
-          }
-          break;
-        case "webSocketClosingTimeout":
-          if (member.getValue() instanceof Number) {
-            obj.setWebSocketClosingTimeout(((Number)member.getValue()).intValue());
-          }
-          break;
-        case "webSocketCompressionAllowClientNoContext":
-          if (member.getValue() instanceof Boolean) {
-            obj.setWebSocketCompressionAllowClientNoContext((Boolean)member.getValue());
-          }
-          break;
-        case "webSocketCompressionLevel":
-          if (member.getValue() instanceof Number) {
-            obj.setWebSocketCompressionLevel(((Number)member.getValue()).intValue());
-          }
-          break;
-        case "webSocketCompressionRequestServerNoContext":
-          if (member.getValue() instanceof Boolean) {
-            obj.setWebSocketCompressionRequestServerNoContext((Boolean)member.getValue());
           }
           break;
       }
@@ -264,9 +212,6 @@ public class HttpClientOptionsConverter {
     json.put("maxPoolSize", obj.getMaxPoolSize());
     json.put("maxRedirects", obj.getMaxRedirects());
     json.put("maxWaitQueueSize", obj.getMaxWaitQueueSize());
-    json.put("maxWebSocketFrameSize", obj.getMaxWebSocketFrameSize());
-    json.put("maxWebSocketMessageSize", obj.getMaxWebSocketMessageSize());
-    json.put("maxWebSockets", obj.getMaxWebSockets());
     if (obj.getName() != null) {
       json.put("name", obj.getName());
     }
@@ -277,18 +222,11 @@ public class HttpClientOptionsConverter {
     if (obj.getProtocolVersion() != null) {
       json.put("protocolVersion", obj.getProtocolVersion().name());
     }
-    json.put("sendUnmaskedFrames", obj.isSendUnmaskedFrames());
     json.put("shared", obj.isShared());
     if (obj.getTracingPolicy() != null) {
       json.put("tracingPolicy", obj.getTracingPolicy().name());
     }
     json.put("tryUseCompression", obj.isTryUseCompression());
-    json.put("tryUsePerMessageWebSocketCompression", obj.getTryUsePerMessageWebSocketCompression());
-    json.put("tryWebSocketDeflateFrameCompression", obj.getTryWebSocketDeflateFrameCompression());
     json.put("verifyHost", obj.isVerifyHost());
-    json.put("webSocketClosingTimeout", obj.getWebSocketClosingTimeout());
-    json.put("webSocketCompressionAllowClientNoContext", obj.getWebSocketCompressionAllowClientNoContext());
-    json.put("webSocketCompressionLevel", obj.getWebSocketCompressionLevel());
-    json.put("webSocketCompressionRequestServerNoContext", obj.getWebSocketCompressionRequestServerNoContext());
   }
 }

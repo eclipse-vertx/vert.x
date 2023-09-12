@@ -48,7 +48,7 @@ import static io.vertx.core.http.HttpMethod.OPTIONS;
  */
 public class HttpChannelConnector {
 
-  private final HttpClientImpl client;
+  private final HttpClientBase client;
   private final NetClientInternal netClient;
   private final HttpClientOptions options;
   private final ProxyOptions proxyOptions;
@@ -59,7 +59,7 @@ public class HttpChannelConnector {
   private final SocketAddress peerAddress;
   private final SocketAddress server;
 
-  public HttpChannelConnector(HttpClientImpl client,
+  public HttpChannelConnector(HttpClientBase client,
                               NetClientInternal netClient,
                               ProxyOptions proxyOptions,
                               ClientMetrics metrics,

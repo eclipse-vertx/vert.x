@@ -344,8 +344,8 @@ public class MetricsContextTest extends VertxTestBase {
       }));
     });
     awaitLatch(latch);
-    HttpClient client = vertx.createHttpClient();
-    client.webSocket(8080, "localhost", "/").onComplete(onSuccess(ws -> {
+    WebSocketClient client = vertx.createWebSocketClient();
+    client.connect(8080, "localhost", "/").onComplete(onSuccess(ws -> {
       ws.handler(buf -> {
         ws.closeHandler(v -> {
           vertx.close().onComplete(v4 -> {
@@ -535,8 +535,8 @@ public class MetricsContextTest extends VertxTestBase {
     awaitFuture(server.listen(8080, "localhost"));
     Context ctx = contextFactory.apply(vertx);
     ctx.runOnContext(v1 -> {
-      HttpClient client = vertx.createHttpClient();
-      client.webSocket(8080, "localhost", "/").onComplete(onSuccess(ws -> {
+      WebSocketClient client = vertx.createWebSocketClient();
+      client.connect(8080, "localhost", "/").onComplete(onSuccess(ws -> {
         ws.handler(buf -> {
           ws.closeHandler(v2 -> {
             TestUtils.executeInVanillaVertxThread(() -> {

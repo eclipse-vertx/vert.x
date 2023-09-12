@@ -83,31 +83,6 @@ public class CleanableHttpClient implements HttpClientInternal {
   }
 
   @Override
-  public Future<WebSocket> webSocket(String host, String requestURI) {
-    return delegate.webSocket(host, requestURI);
-  }
-
-  @Override
-  public Future<WebSocket> webSocket(String requestURI) {
-    return delegate.webSocket(requestURI);
-  }
-
-  @Override
-  public Future<WebSocket> webSocket(WebSocketConnectOptions options) {
-    return delegate.webSocket(options);
-  }
-
-  @Override
-  public Future<WebSocket> webSocketAbs(String url, MultiMap headers, WebsocketVersion version, List<String> subProtocols) {
-    return delegate.webSocketAbs(url, headers, version, subProtocols);
-  }
-
-  @Override
-  public ClientWebSocket webSocket() {
-    return delegate.webSocket();
-  }
-
-  @Override
   public Future<Void> updateSSLOptions(SSLOptions options) {
     return delegate.updateSSLOptions(options);
   }
@@ -188,6 +163,5 @@ public class CleanableHttpClient implements HttpClientInternal {
   public void close(Promise<Void> completion) {
     delegate.close(completion);
   }
-
 
 }
