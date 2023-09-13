@@ -126,6 +126,6 @@ public interface NetServer extends Measured {
    * @param options the new SSL options
    * @return a future signaling the update success
    */
-  Future<Void> updateSSLOptions(SSLOptions options);
+  Future<Void> updateSSLOptions(ServerSSLOptions options);
 
 }

@@ -16,6 +16,7 @@ import io.vertx.core.Vertx;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.X509KeyManager;
+import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -83,5 +84,22 @@ class KeyManagerFactoryOptions implements KeyCertOptions {
   @Override
   public Function<String, KeyManagerFactory> keyManagerFactoryMapper(Vertx vertx) throws Exception {
     return name -> null;
+  }
+
+  @Override
+  public int hashCode() {
+    return keyManagerFactory.hashCode();
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj == this) {
+      return true;
+    }
+    if (obj instanceof KeyManagerFactoryOptions) {
+      KeyManagerFactoryOptions that = (KeyManagerFactoryOptions) obj;
+      return Objects.equals(keyManagerFactory, that.keyManagerFactory);
+    }
+    return false;
   }
 }

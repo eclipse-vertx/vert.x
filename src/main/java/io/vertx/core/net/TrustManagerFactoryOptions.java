@@ -15,6 +15,7 @@ import io.vertx.core.Vertx;
 
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
+import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -84,4 +85,20 @@ class TrustManagerFactoryOptions implements TrustOptions {
     return serverName -> trustManagerFactory.getTrustManagers();
   }
 
+  @Override
+  public int hashCode() {
+    return trustManagerFactory.hashCode();
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj == this) {
+      return true;
+    }
+    if (obj instanceof TrustManagerFactoryOptions) {
+      TrustManagerFactoryOptions that = (TrustManagerFactoryOptions) obj;
+      return Objects.equals(trustManagerFactory, that.trustManagerFactory);
+    }
+    return false;
+  }
 }

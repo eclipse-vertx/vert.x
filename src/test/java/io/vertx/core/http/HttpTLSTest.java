@@ -36,7 +36,7 @@ import javax.net.ssl.*;
 
 import io.vertx.core.*;
 import io.vertx.core.impl.VertxThread;
-import io.vertx.core.net.SSLOptions;
+import io.vertx.core.net.*;
 import io.vertx.core.net.impl.KeyStoreHelper;
 import org.junit.Assume;
 import org.junit.Rule;
@@ -45,17 +45,6 @@ import org.junit.rules.TemporaryFolder;
 
 import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.net.JdkSSLEngineOptions;
-import io.vertx.core.net.JksOptions;
-import io.vertx.core.net.KeyCertOptions;
-import io.vertx.core.net.KeyStoreOptions;
-import io.vertx.core.net.OpenSSLEngineOptions;
-import io.vertx.core.net.PemTrustOptions;
-import io.vertx.core.net.ProxyOptions;
-import io.vertx.core.net.ProxyType;
-import io.vertx.core.net.SelfSignedCertificate;
-import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.TrustOptions;
 import io.vertx.core.net.impl.TrustAllTrustManager;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.proxy.HAProxy;
@@ -1672,9 +1661,9 @@ public abstract class HttpTLSTest extends HttpTestBase {
     client = createHttpClient(new HttpClientOptions().setKeepAlive(false).setSsl(true).setTrustOptions(Trust.SERVER_JKS.get()));
     request.get().onComplete(onSuccess(body1 -> {
       assertEquals("Hello World", body1.toString());
-      server.updateSSLOptions(new SSLOptions().setKeyCertOptions(Cert.SERVER_JKS_ROOT_CA.get())).onComplete(onSuccess(v -> {
+      server.updateSSLOptions(new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS_ROOT_CA.get())).onComplete(onSuccess(v -> {
         request.get().onComplete(onFailure(err -> {
-          client.updateSSLOptions(new SSLOptions().setTrustOptions(Trust.SERVER_JKS_ROOT_CA.get())).onComplete(onSuccess(v2 -> {
+          client.updateSSLOptions(new ClientSSLOptions().setTrustOptions(Trust.SERVER_JKS_ROOT_CA.get())).onComplete(onSuccess(v2 -> {
             request.get().onComplete(onSuccess(body2 -> {
               assertEquals("Hello World", body2.toString());
               testComplete();
@@ -1694,7 +1683,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
       });
     startServer(testAddress);
     client = createHttpClient(new HttpClientOptions().setKeepAlive(false).setSsl(true).setTrustOptions(Trust.SERVER_JKS.get()));
-    Future<Void> last = server.updateSSLOptions(new SSLOptions().setKeyCertOptions(new JksOptions().setValue(TestUtils.randomBuffer(20)).setPassword("invalid")));
+    Future<Void> last = server.updateSSLOptions(new ServerSSLOptions().setKeyCertOptions(new JksOptions().setValue(TestUtils.randomBuffer(20)).setPassword("invalid")));
     last.onComplete(onFailure(err -> {
       client
         .request(requestOptions)
@@ -1719,12 +1708,13 @@ public abstract class HttpTLSTest extends HttpTestBase {
       Cert.SERVER_PKCS12.get(),
       Cert.SERVER_PEM.get(),
       Cert.SERVER_PEM.get(),
-      Cert.SERVER_JKS_ROOT_CA.get());
+      Cert.SERVER_JKS_ROOT_CA.get()
+    );
     AtomicInteger seq = new AtomicInteger();
     Future<Void> last = null;
     for (int i = 0;i < list.size();i++) {
       int val = i;
-      last = server.updateSSLOptions(new SSLOptions().setKeyCertOptions(list.get(i)));
+      last = server.updateSSLOptions(new ServerSSLOptions().setKeyCertOptions(list.get(i)));
       last.onComplete(onSuccess(v -> {
         assertEquals(val, seq.getAndIncrement());
       }));
@@ -1760,7 +1750,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
     }
     client.close();
     for (int i = 0;i < numServers;i++) {
-      awaitFuture(servers[i].updateSSLOptions(new SSLOptions().setKeyCertOptions(Cert.SERVER_PKCS12.get())));
+      awaitFuture(servers[i].updateSSLOptions(new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_PKCS12.get())));
     }
     client = createHttpClient(new HttpClientOptions().setKeepAlive(false).setSsl(true).setTrustOptions(Trust.SERVER_PKCS12.get()));
     for (int i = 0;i < numServers;i++) {

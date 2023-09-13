@@ -26,9 +26,7 @@ import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
-import io.vertx.core.net.NetSocket;
-import io.vertx.core.net.ProxyOptions;
-import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.*;
 import io.vertx.core.net.impl.NetClientInternal;
 import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.VertxHandler;
@@ -85,7 +83,25 @@ public class HttpChannelConnector {
   }
 
   private void connect(EventLoopContext context, Promise<NetSocket> promise) {
-    netClient.connectInternal(proxyOptions, server, peerAddress, this.options.isForceSni() ? peerAddress.host() : null, ssl, useAlpn, false, promise, context, 0);
+    ConnectOptions connectOptions = new ConnectOptions();
+    connectOptions.setRemoteAddress(server);
+    if (peerAddress != null) {
+      connectOptions.setHost(peerAddress.host());
+      connectOptions.setPort(peerAddress.port());
+      if (ssl && options.isForceSni()) {
+        connectOptions.setSniServerName(peerAddress.hostName());
+      }
+    }
+    connectOptions.setSsl(ssl);
+    if (ssl) {
+      if (client.sslOptions != null) {
+        connectOptions.setSslOptions(client.sslOptions.copy().setUseAlpn(useAlpn));
+      } else {
+        // should not be possible
+      }
+    }
+    connectOptions.setProxyOptions(proxyOptions);
+    netClient.connectInternal(connectOptions, promise, context);
   }
 
   public Future<HttpClientConnection> wrap(EventLoopContext context, NetSocket so_) {

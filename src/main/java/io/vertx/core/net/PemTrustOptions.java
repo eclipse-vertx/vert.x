@@ -188,6 +188,13 @@ public class PemTrustOptions implements TrustOptions, Cloneable {
   }
 
   @Override
+  public int hashCode() {
+    int hashCode = Objects.hashCode(certPaths);
+    hashCode = 31 * hashCode + Objects.hashCode(certValues);
+    return hashCode;
+  }
+
+  @Override
   public PemTrustOptions copy() {
     return new PemTrustOptions(this);
   }

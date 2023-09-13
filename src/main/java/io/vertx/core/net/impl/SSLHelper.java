@@ -12,25 +12,13 @@
 package io.vertx.core.net.impl;
 
 import io.netty.handler.ssl.OpenSsl;
-import io.netty.handler.ssl.SslProvider;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.NoStackTraceException;
-import io.vertx.core.net.ClientOptionsBase;
-import io.vertx.core.net.JdkSSLEngineOptions;
-import io.vertx.core.net.KeyCertOptions;
-import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.net.OpenSSLEngineOptions;
-import io.vertx.core.net.SSLEngineOptions;
-import io.vertx.core.net.SSLOptions;
-import io.vertx.core.net.TCPSSLOptions;
-import io.vertx.core.net.TrustOptions;
-import io.vertx.core.spi.tls.DefaultSslContextFactory;
+import io.vertx.core.net.*;
 import io.vertx.core.spi.tls.SslContextFactory;
 
 import javax.net.ssl.*;
@@ -47,6 +35,8 @@ import java.util.stream.Collectors;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class SSLHelper {
+
+  private static final Config NULL_CONFIG = new Config(null, null, null, null, null);
 
   static final EnumMap<ClientAuth, io.netty.handler.ssl.ClientAuth> CLIENT_AUTH_MAPPING = new EnumMap<>(ClientAuth.class);
 
@@ -97,109 +87,35 @@ public class SSLHelper {
     return engineOptions;
   }
 
-  private final boolean ssl;
-  private final boolean sni;
-  private final boolean trustAll;
-  private final ClientAuth clientAuth;
-  private final boolean client;
-  private final boolean useAlpn;
-  private final String endpointIdentificationAlgorithm;
-  private final SSLEngineOptions sslEngineOptions;
-  private final List<String> applicationProtocols;
-  private KeyManagerFactory keyManagerFactory;
-  private TrustManagerFactory trustManagerFactory;
-  private Function<String, KeyManagerFactory> keyManagerFactoryMapper;
-  private Function<String, TrustManager[]> trustManagerMapper;
-  private List<CRL> crls;
-  private Future<CachedProvider> cachedProvider;
+  private final Supplier<SslContextFactory> supplier;
+  private final boolean useWorkerPool;
+  private final Map<ConfigKey, Future<Config>> configMap;
+  private final Map<ConfigKey, Future<SslChannelProvider>> sslChannelProviderMap;
 
-  public SSLHelper(TCPSSLOptions options, List<String> applicationProtocols) {
-    this.sslEngineOptions = options.getSslEngineOptions();
-    this.ssl = options.isSsl();
-    this.useAlpn = options.isUseAlpn();
-    this.client = options instanceof ClientOptionsBase;
-    this.trustAll = options instanceof ClientOptionsBase && ((ClientOptionsBase)options).isTrustAll();
-    this.clientAuth = options instanceof NetServerOptions ? ((NetServerOptions)options).getClientAuth() : ClientAuth.NONE;
-    this.endpointIdentificationAlgorithm = options instanceof NetClientOptions ? ((NetClientOptions)options).getHostnameVerificationAlgorithm() : "";
-    this.sni = options instanceof NetServerOptions && ((NetServerOptions) options).isSni();
-    this.applicationProtocols = applicationProtocols;
+  public SSLHelper(SSLEngineOptions sslEngineOptions, int cacheMaxSize) {
+    this.configMap = new LruCache<>(cacheMaxSize);
+    this.sslChannelProviderMap = new LruCache<>(cacheMaxSize);
+    this.supplier = sslEngineOptions::sslContextFactory;
+    this.useWorkerPool = sslEngineOptions.getUseWorkerThread();
   }
 
-  private static class CachedProvider {
-    final SSLOptions options;
-    final SslChannelProvider sslChannelProvider;
-    final Throwable failure;
-    CachedProvider(SSLOptions options, SslChannelProvider sslChannelProvider, Throwable failure) {
-      this.options = options;
-      this.sslChannelProvider = sslChannelProvider;
-      this.failure = failure;
-    }
+  public SSLHelper(SSLEngineOptions sslEngineOptions) {
+    this(sslEngineOptions, 256);
   }
 
-  private class EngineConfig {
-
-    private final SSLOptions sslOptions;
-    private final Supplier<SslContextFactory> supplier;
-    private final boolean useWorkerPool;
-
-    public EngineConfig(SSLOptions sslOptions, Supplier<SslContextFactory> supplier, boolean useWorkerPool) {
-      this.sslOptions = sslOptions;
-      this.supplier = supplier;
-      this.useWorkerPool = useWorkerPool;
-    }
-
-    SslContextProvider sslContextProvider() {
-      return new SslContextProvider(
-        clientAuth,
-        endpointIdentificationAlgorithm,
-        applicationProtocols,
-        sslOptions.getEnabledCipherSuites(),
-        sslOptions.getEnabledSecureTransportProtocols(),
-        keyManagerFactory,
-        keyManagerFactoryMapper,
-        trustManagerFactory,
-        trustManagerMapper,
-        crls,
-        supplier);
-    }
-  }
-
-  /**
-   * Update cached options. This method ensures updates are serialized a nd performed when options is different
-   * (based on {@code equals}). Updates only happen when transforming {@code options} to a {@link SslChannelProvider}
-   * succeeds.
-   *
-   * @param options the options to use
-   * @param ctx the vertx context
-   * @return a future of the resolved channel provider
-   */
-  public Future<SslContextUpdate> updateSslContext(SSLOptions options, ContextInternal ctx) {
+  public Future<SslChannelProvider> resolveSslChannelProvider(SSLOptions options, String endpointIdentificationAlgorithm, boolean useSNI, ClientAuth clientAuth, List<String> applicationProtocols, ContextInternal ctx) {
+    Promise<SslChannelProvider> promise;
+    ConfigKey k = new ConfigKey(options);
     synchronized (this) {
-      if (cachedProvider == null) {
-        cachedProvider = this.buildChannelProvider(options, ctx).map(a -> new CachedProvider(options, a, null));
-      } else {
-        cachedProvider = cachedProvider.transform(prev -> {
-          if (prev.succeeded() && prev.result().options.equals(options)) {
-            return Future.succeededFuture(prev.result());
-          } else {
-            return this
-              .buildChannelProvider(options, ctx)
-              .transform(ar -> {
-                if (ar.succeeded()) {
-                  return ctx.succeededFuture(new CachedProvider(options, ar.result(), null));
-                } else {
-                  if (prev.succeeded()) {
-                    return ctx.succeededFuture(new CachedProvider(prev.result().options, prev.result().sslChannelProvider, ar.cause()));
-                  } else {
-                    return ctx.failedFuture(prev.cause());
-                  }
-                }
-              });
-          }
-        });
+      Future<SslChannelProvider> v = sslChannelProviderMap.get(k);
+      if (v != null) {
+        return v;
       }
-      return cachedProvider.map(c -> new SslContextUpdate(c.sslChannelProvider, c.failure));
+      promise = Promise.promise();
+      sslChannelProviderMap.put(k, promise.future());
     }
+    buildChannelProvider(options, endpointIdentificationAlgorithm, useSNI, clientAuth, applicationProtocols, ctx).onComplete(promise);
+    return promise.future();
   }
 
   /**
@@ -208,8 +124,23 @@ public class SSLHelper {
    * @param ctx the context
    * @return a future resolved when the helper is initialized
    */
-  public Future<SslContextProvider> buildContextProvider(SSLOptions sslOptions, ContextInternal ctx) {
-    return build(new SSLOptions(sslOptions), ctx).map(EngineConfig::sslContextProvider);
+  Future<SslContextProvider> buildContextProvider(SSLOptions sslOptions, String endpointIdentificationAlgorithm, ClientAuth clientAuth, List<String> applicationProtocols, ContextInternal ctx) {
+    return buildConfig(sslOptions, ctx).map(config -> buildSslContextProvider(sslOptions, endpointIdentificationAlgorithm, supplier, clientAuth, applicationProtocols, config));
+  }
+
+  private SslContextProvider buildSslContextProvider(SSLOptions sslOptions, String endpointIdentificationAlgorithm, Supplier<SslContextFactory> supplier, ClientAuth clientAuth, List<String> applicationProtocols, Config config) {
+    return new SslContextProvider(
+      clientAuth,
+      endpointIdentificationAlgorithm,
+      applicationProtocols,
+      sslOptions.getEnabledCipherSuites(),
+      sslOptions.getEnabledSecureTransportProtocols(),
+      config.keyManagerFactory,
+      config.keyManagerFactoryMapper,
+      config.trustManagerFactory,
+      config.trustManagerMapper,
+      config.crls,
+      supplier);
   }
 
   /**
@@ -218,78 +149,128 @@ public class SSLHelper {
    * @param ctx the context
    * @return a future resolved when the helper is initialized
    */
-  public Future<SslChannelProvider> buildChannelProvider(SSLOptions sslOptions, ContextInternal ctx) {
-    return build(new SSLOptions(sslOptions), ctx).map(c -> new SslChannelProvider(
-      c.sslContextProvider(), c.sslOptions.getSslHandshakeTimeout(), c.sslOptions.getSslHandshakeTimeoutUnit(), sni,
-      trustAll,
-      useAlpn,
+  protected Future<SslChannelProvider> buildChannelProvider(SSLOptions sslOptions, String endpointIdentificationAlgorithm, boolean useSNI, ClientAuth clientAuth, List<String> applicationProtocols, ContextInternal ctx) {
+    Future<SslContextProvider> f;
+    boolean useWorker;
+    f = buildConfig(sslOptions, ctx).map(config -> buildSslContextProvider(sslOptions, endpointIdentificationAlgorithm, supplier, clientAuth, applicationProtocols, config));
+    useWorker = useWorkerPool;
+    return f.map(c -> new SslChannelProvider(
+      c,
+      useSNI,
       ctx.owner().getInternalWorkerPool().executor(),
-      c.useWorkerPool
-    ));
+      useWorker));
   }
 
-  /**
-   * Initialize the helper, this loads and validates the configuration.
-   *
-   * @param ctx the context
-   * @return a future resolved when the helper is initialized
-   */
-  private Future<EngineConfig> build(SSLOptions sslOptions, ContextInternal ctx) {
-    Future<EngineConfig> sslContextFactorySupplier;
-    KeyCertOptions keyCertOptions = sslOptions.getKeyCertOptions();
-    TrustOptions trustOptions = sslOptions.getTrustOptions();
-    if (keyCertOptions != null || trustOptions != null || trustAll || ssl) {
-      Promise<EngineConfig> promise = Promise.promise();
-      sslContextFactorySupplier = promise.future();
-      ctx.<Void>executeBlockingInternal(() -> {
-        try {
-          if (sslOptions.getKeyCertOptions() != null) {
-            keyManagerFactory = sslOptions.getKeyCertOptions().getKeyManagerFactory(ctx.owner());
-            keyManagerFactoryMapper = sslOptions.getKeyCertOptions().keyManagerFactoryMapper(ctx.owner());
-          }
-          if (sslOptions.getTrustOptions() != null) {
-            trustManagerFactory = sslOptions.getTrustOptions().getTrustManagerFactory(ctx.owner());
-            trustManagerMapper = sslOptions.getTrustOptions().trustManagerMapper(ctx.owner());
-          }
-          crls = new ArrayList<>();
-          List<Buffer> tmp = new ArrayList<>();
-          if (sslOptions.getCrlPaths() != null) {
-            tmp.addAll(sslOptions.getCrlPaths()
-              .stream()
-              .map(path -> ctx.owner().resolveFile(path).getAbsolutePath())
-              .map(ctx.owner().fileSystem()::readFileBlocking)
-              .collect(Collectors.toList()));
-          }
-          if (sslOptions.getCrlValues() != null) {
-            tmp.addAll(sslOptions.getCrlValues());
-          }
-          CertificateFactory certificatefactory = CertificateFactory.getInstance("X.509");
-          for (Buffer crlValue : tmp) {
-            crls.addAll(certificatefactory.generateCRLs(new ByteArrayInputStream(crlValue.getBytes())));
-          }
-        } catch (Exception e) {
-          throw e;
-        }
-        if (client || sslOptions.getKeyCertOptions() != null) {
-          return null;
-        } else {
-          throw new NoStackTraceException("Key/certificate is mandatory for SSL");
-        }
-      }).compose(v2 -> ctx.<EngineConfig>executeBlockingInternal(() -> {
-        Supplier<SslContextFactory> supplier;
-        boolean useWorkerPool;
-        try {
-          SSLEngineOptions resolvedEngineOptions = resolveEngineOptions(sslEngineOptions, useAlpn);
-          supplier = resolvedEngineOptions::sslContextFactory;
-          useWorkerPool = resolvedEngineOptions.getUseWorkerThread();
-        } catch (Exception e) {
-          throw e;
-        }
-        return new EngineConfig(sslOptions, supplier, useWorkerPool);
-      })).onComplete(promise);
-    } else {
-      sslContextFactorySupplier = Future.succeededFuture(new EngineConfig(sslOptions, () -> new DefaultSslContextFactory(SslProvider.JDK, false), SSLEngineOptions.DEFAULT_USE_WORKER_POOL));
+  private Future<Config> buildConfig(SSLOptions sslOptions, ContextInternal ctx) {
+    if (sslOptions.getTrustOptions() == null && sslOptions.getKeyCertOptions() == null) {
+      return Future.succeededFuture(NULL_CONFIG);
     }
-    return sslContextFactorySupplier;
+    Promise<Config> promise = Promise.promise();
+    ConfigKey k = new ConfigKey(sslOptions);
+    synchronized (this) {
+      Future<Config> fut = configMap.get(k);
+      if (fut != null) {
+        return fut;
+      }
+      configMap.put(k, promise.future());
+    }
+    ctx.executeBlockingInternal(() -> {
+      KeyManagerFactory keyManagerFactory = null;
+      Function<String, KeyManagerFactory> keyManagerFactoryMapper = null;
+      TrustManagerFactory trustManagerFactory = null;
+      Function<String, TrustManager[]> trustManagerMapper = null;
+      List<CRL> crls = new ArrayList<>();
+      if (sslOptions.getKeyCertOptions() != null) {
+        keyManagerFactory = sslOptions.getKeyCertOptions().getKeyManagerFactory(ctx.owner());
+        keyManagerFactoryMapper = sslOptions.getKeyCertOptions().keyManagerFactoryMapper(ctx.owner());
+      }
+      if (sslOptions.getTrustOptions() != null) {
+        trustManagerFactory = sslOptions.getTrustOptions().getTrustManagerFactory(ctx.owner());
+        trustManagerMapper = sslOptions.getTrustOptions().trustManagerMapper(ctx.owner());
+      }
+      List<Buffer> tmp = new ArrayList<>();
+      if (sslOptions.getCrlPaths() != null) {
+        tmp.addAll(sslOptions.getCrlPaths()
+          .stream()
+          .map(path -> ctx.owner().resolveFile(path).getAbsolutePath())
+          .map(ctx.owner().fileSystem()::readFileBlocking)
+          .collect(Collectors.toList()));
+      }
+      if (sslOptions.getCrlValues() != null) {
+        tmp.addAll(sslOptions.getCrlValues());
+      }
+      CertificateFactory certificatefactory = CertificateFactory.getInstance("X.509");
+      for (Buffer crlValue : tmp) {
+        crls.addAll(certificatefactory.generateCRLs(new ByteArrayInputStream(crlValue.getBytes())));
+      }
+      return new Config(keyManagerFactory, trustManagerFactory, keyManagerFactoryMapper, trustManagerMapper, crls);
+    }).onComplete(promise);
+    return promise.future();
+  }
+
+  private static class LruCache<K, V> extends LinkedHashMap<K, V> {
+
+    private final int maxSize;
+
+    public LruCache(int maxSize) {
+      if (maxSize < 1) {
+        throw new UnsupportedOperationException();
+      }
+      this.maxSize = maxSize;
+    }
+
+    @Override
+    protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
+      return size() > maxSize;
+    }
+  }
+
+  private final static class ConfigKey {
+    private final KeyCertOptions keyCertOptions;
+    private final TrustOptions trustOptions;
+    private final List<Buffer> crlValues;
+    public ConfigKey(SSLOptions options) {
+      this(options.getKeyCertOptions(), options.getTrustOptions(), options.getCrlValues());
+    }
+    public ConfigKey(KeyCertOptions keyCertOptions, TrustOptions trustOptions, List<Buffer> crlValues) {
+      this.keyCertOptions = keyCertOptions;
+      this.trustOptions = trustOptions;
+      this.crlValues = crlValues != null ? new ArrayList<>(crlValues) : null;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (obj == this) {
+        return true;
+      }
+      if (obj instanceof ConfigKey) {
+        ConfigKey that = (ConfigKey) obj;
+        return Objects.equals(keyCertOptions, that.keyCertOptions) && Objects.equals(trustOptions, that.trustOptions) && Objects.equals(crlValues, that.crlValues);
+      }
+      return false;
+    }
+
+    @Override
+    public int hashCode() {
+      int hashCode = Objects.hashCode(keyCertOptions);
+      hashCode = 31 * hashCode + Objects.hashCode(trustOptions);
+      hashCode = 31 * hashCode + Objects.hashCode(crlValues);
+      return hashCode;
+    }
+  }
+
+  private final static class Config {
+    private final KeyManagerFactory keyManagerFactory;
+    private final TrustManagerFactory trustManagerFactory;
+    private final Function<String, KeyManagerFactory> keyManagerFactoryMapper;
+    private final Function<String, TrustManager[]> trustManagerMapper;
+    private final List<CRL> crls;
+    public Config(KeyManagerFactory keyManagerFactory, TrustManagerFactory trustManagerFactory, Function<String, KeyManagerFactory> keyManagerFactoryMapper, Function<String, TrustManager[]> trustManagerMapper, List<CRL> crls) {
+      this.keyManagerFactory = keyManagerFactory;
+      this.trustManagerFactory = trustManagerFactory;
+      this.keyManagerFactoryMapper = keyManagerFactoryMapper;
+      this.trustManagerMapper = trustManagerMapper;
+      this.crls = crls;
+    }
   }
 }

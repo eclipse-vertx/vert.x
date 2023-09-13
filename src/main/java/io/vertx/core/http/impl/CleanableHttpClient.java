@@ -19,7 +19,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.Address;
-import io.vertx.core.net.SSLOptions;
+import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.impl.NetClientInternal;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.resolver.AddressResolver;
@@ -108,7 +108,7 @@ public class CleanableHttpClient implements HttpClientInternal {
   }
 
   @Override
-  public Future<Void> updateSSLOptions(SSLOptions options) {
+  public Future<Void> updateSSLOptions(ClientSSLOptions options) {
     return delegate.updateSSLOptions(options);
   }
 

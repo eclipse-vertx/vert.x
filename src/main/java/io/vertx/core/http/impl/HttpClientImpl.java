@@ -124,7 +124,9 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider {
   private final HttpClientMetrics metrics;
   private final boolean keepAlive;
   private final boolean pipelining;
+  private final List<HttpVersion> alpnVersions;
   private final CloseSequence closeSequence;
+  volatile ClientSSLOptions sslOptions;
   private EndpointResolver<?, EndpointKey, Lease<HttpClientConnection>, ?> endpointResolver;
   private long closeTimeout = 0L;
   private TimeUnit closeTimeoutUnit = TimeUnit.SECONDS;
@@ -150,19 +152,23 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider {
           break;
       }
     }
+    this.alpnVersions = alpnVersions;
     this.keepAlive = options.isKeepAlive();
     this.pipelining = options.isPipelining();
     if (!keepAlive && pipelining) {
       throw new IllegalStateException("Cannot have pipelining with no keep alive");
     }
     this.proxyFilter = options.getNonProxyHosts() != null ? ProxyFilter.nonProxyHosts(options.getNonProxyHosts()) : ProxyFilter.DEFAULT_PROXY_FILTER;
-    this.netClient = new NetClientBuilder(vertx, new NetClientOptions(options)
-      .setHostnameVerificationAlgorithm(options.isVerifyHost() ? "HTTPS": "")
-      .setProxyOptions(null)
-      .setApplicationLayerProtocols(alpnVersions
-        .stream()
-        .map(HttpVersion::alpnName)
-        .collect(Collectors.toList())))
+    ClientSSLOptions sslOptions = options
+      .getSslOptions();
+    if (sslOptions != null) {
+      sslOptions = sslOptions.copy();
+      sslOptions
+        .setHostnameVerificationAlgorithm(this.options.isVerifyHost() ? "HTTPS" : "")
+        .setApplicationLayerProtocols(alpnVersions.stream().map(HttpVersion::alpnName).collect(Collectors.toList()));
+    }
+    this.sslOptions = sslOptions;
+    this.netClient = new NetClientBuilder(vertx, new NetClientOptions(options).setProxyOptions(null))
       .metrics(metrics)
       .build();
     httpEndpointProvider = httpEndpointProvider();
@@ -500,8 +506,12 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider {
   }
 
   @Override
-  public Future<Void> updateSSLOptions(SSLOptions options) {
-    return netClient.updateSSLOptions(options);
+  public Future<Void> updateSSLOptions(ClientSSLOptions options) {
+    sslOptions = options
+      .copy()
+      .setHostnameVerificationAlgorithm(this.options.isVerifyHost() ? "HTTPS" : "")
+      .setApplicationLayerProtocols(alpnVersions.stream().map(HttpVersion::alpnName).collect(Collectors.toList()));;
+    return Future.succeededFuture();
   }
 
   @Override

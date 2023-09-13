@@ -9,16 +9,16 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.net;
+package io.vertx.core.net.impl;
 
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.ssl.*;
-import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.Future;
+import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.impl.SSLHelper;
-import io.vertx.core.net.impl.SslContextProvider;
+import io.vertx.core.net.*;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
@@ -41,10 +41,9 @@ public class SSLHelperTest extends VertxTestBase {
     context.init(null, null, null);
     SSLEngine engine = context.createSSLEngine();
     String[] expected = engine.getEnabledCipherSuites();
-    SSLHelper helper = new SSLHelper(new HttpClientOptions().setKeyStoreOptions(Cert.CLIENT_JKS.get()).setTrustOptions(Trust.SERVER_JKS.get()),
-      null);
+    SSLHelper helper = new SSLHelper(SSLHelper.resolveEngineOptions(null, false));
     helper
-      .buildContextProvider(new SSLOptions().setKeyCertOptions(Cert.CLIENT_JKS.get()).setTrustOptions(Trust.SERVER_JKS.get()), (ContextInternal) vertx.getOrCreateContext())
+      .buildContextProvider(new SSLOptions().setKeyCertOptions(Cert.CLIENT_JKS.get()).setTrustOptions(Trust.SERVER_JKS.get()), null, ClientAuth.NONE, null, (ContextInternal) vertx.getOrCreateContext())
       .onComplete(onSuccess(provider -> {
         SslContext ctx = provider.createClientContext(null, false, false);
         assertEquals(new HashSet<>(Arrays.asList(expected)), new HashSet<>(ctx.cipherSuites()));
@@ -56,10 +55,8 @@ public class SSLHelperTest extends VertxTestBase {
   @Test
   public void testUseOpenSSLCiphersWhenNotSpecified() throws Exception {
     Set<String> expected = OpenSsl.availableOpenSslCipherSuites();
-    SSLHelper helper = new SSLHelper(
-        new HttpClientOptions().setOpenSslEngineOptions(new OpenSSLEngineOptions()).setPemKeyCertOptions(Cert.CLIENT_PEM.get()).setTrustOptions(Trust.SERVER_PEM.get()),
-      null);
-    helper.buildContextProvider(new SSLOptions().setKeyCertOptions(Cert.CLIENT_PEM.get()).setTrustOptions(Trust.SERVER_PEM.get()), (ContextInternal) vertx.getOrCreateContext()).onComplete(onSuccess(provider -> {
+    SSLHelper helper = new SSLHelper(new OpenSSLEngineOptions());
+    helper.buildContextProvider(new SSLOptions().setKeyCertOptions(Cert.CLIENT_PEM.get()).setTrustOptions(Trust.SERVER_PEM.get()), null, ClientAuth.NONE, null, (ContextInternal) vertx.getOrCreateContext()).onComplete(onSuccess(provider -> {
       SslContext ctx = provider.createClientContext(null, false, false);
       assertEquals(expected, new HashSet<>(ctx.cipherSuites()));
       testComplete();
@@ -78,17 +75,21 @@ public class SSLHelperTest extends VertxTestBase {
   }
 
   private void testOpenSslServerSessionContext(boolean testDefault){
-    HttpServerOptions httpServerOptions = new HttpServerOptions().setOpenSslEngineOptions(new OpenSSLEngineOptions());
 
-    if(!testDefault) {
-      httpServerOptions.setOpenSslEngineOptions(new OpenSSLEngineOptions().setSessionCacheEnabled(false));
+    SSLEngineOptions engineOptions;
+    if (!testDefault) {
+      engineOptions = new OpenSSLEngineOptions().setSessionCacheEnabled(false);
+    } else {
+      engineOptions = new OpenSSLEngineOptions();
     }
 
-    SSLHelper defaultHelper = new SSLHelper(httpServerOptions.setPemKeyCertOptions(Cert.SERVER_PEM.get()).setTrustOptions(Trust.SERVER_PEM.get()),
-      null);
+    SSLHelper defaultHelper = new SSLHelper(engineOptions);
+
+    SSLOptions sslOptions = new SSLOptions();
+    sslOptions.setKeyCertOptions(Cert.SERVER_PEM.get()).setTrustOptions(Trust.SERVER_PEM.get());
 
     defaultHelper
-      .buildContextProvider(httpServerOptions.getSslOptions(), (ContextInternal) vertx.getOrCreateContext())
+      .buildContextProvider(sslOptions, null, ClientAuth.NONE, null, (ContextInternal) vertx.getOrCreateContext())
       .onComplete(onSuccess(provider -> {
         SslContext ctx = provider.createServerContext(false);
 
@@ -109,17 +110,16 @@ public class SSLHelperTest extends VertxTestBase {
     SSLContext context = SSLContext.getInstance("TLS");
     context.init(null, null, null);
     SSLEngine engine = context.createSSLEngine();
-    HttpServerOptions options = new HttpServerOptions();
+    SSLOptions options = new SSLOptions();
     for (String suite : engine.getEnabledCipherSuites()) {
       options.addEnabledCipherSuite(suite);
     }
     assertEquals(new ArrayList<>(options.getEnabledCipherSuites()), Arrays.asList(engine.getEnabledCipherSuites()));
-    assertEquals(new ArrayList<>(new HttpServerOptions(options).getEnabledCipherSuites()), Arrays.asList(engine.getEnabledCipherSuites()));
     JsonObject json = options.toJson();
     assertEquals(new ArrayList<>(new HttpServerOptions(json).getEnabledCipherSuites()), Arrays.asList(engine.getEnabledCipherSuites()));
-    SSLHelper helper = new SSLHelper(options.setKeyCertOptions(Cert.SERVER_JKS.get()), null);
+    SSLHelper helper = new SSLHelper(SSLHelper.resolveEngineOptions(null, false));
     helper
-      .buildContextProvider(options.getSslOptions(), (ContextInternal) vertx.getOrCreateContext())
+      .buildContextProvider(options, null, ClientAuth.NONE, null, (ContextInternal) vertx.getOrCreateContext())
       .onComplete(onSuccess(sslContextProvider -> {
         assertEquals(new HashSet<>(Arrays.asList(createEngine(sslContextProvider).getEnabledCipherSuites())), new HashSet<>(Arrays.asList(engine.getEnabledCipherSuites())));
         testComplete();
@@ -144,8 +144,24 @@ public class SSLHelperTest extends VertxTestBase {
   }
 
   @Test
+  public void testCache() throws Exception {
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+    SSLHelper helper = new SSLHelper(new JdkSSLEngineOptions(), 4);
+    SSLOptions options = new SSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
+    SslChannelProvider f1 = awaitFuture(helper.resolveSslChannelProvider(options, "", false, ClientAuth.NONE, null, ctx));
+    SslChannelProvider f2 = awaitFuture(helper.resolveSslChannelProvider(options, "", false, ClientAuth.NONE, null, ctx));
+    assertSame(f1, f2);
+    awaitFuture(helper.resolveSslChannelProvider(new SSLOptions().setKeyCertOptions(Cert.SERVER_PKCS12.get()), "", false, ClientAuth.NONE, null, ctx));
+    awaitFuture(helper.resolveSslChannelProvider(new SSLOptions().setKeyCertOptions(Cert.SERVER_PEM.get()), "", false, ClientAuth.NONE, null, ctx));
+    awaitFuture(helper.resolveSslChannelProvider(new SSLOptions().setKeyCertOptions(Cert.CLIENT_PEM.get()), "", false, ClientAuth.NONE, null, ctx));
+    awaitFuture(helper.resolveSslChannelProvider(new SSLOptions().setKeyCertOptions(Cert.SNI_PEM.get()), "", false, ClientAuth.NONE, null, ctx));
+    f2 = awaitFuture(helper.resolveSslChannelProvider(options, "", false, ClientAuth.NONE, null, ctx));
+    assertNotSame(f1, f2);
+  }
+
+  @Test
   public void testDefaultVersions() {
-    testTLSVersions(new HttpServerOptions(), engine -> {
+    testTLSVersions(new SSLOptions(), engine -> {
       List<String> protocols = Arrays.asList(engine.getEnabledProtocols());
       assertEquals(2, protocols.size());
       assertTrue(protocols.contains("TLSv1.2"));
@@ -155,7 +171,7 @@ public class SSLHelperTest extends VertxTestBase {
 
   @Test
   public void testSetVersion() {
-    testTLSVersions(new HttpServerOptions().setEnabledSecureTransportProtocols(new HashSet<>(Arrays.asList("TLSv1.3"))), engine -> {
+    testTLSVersions(new SSLOptions().setEnabledSecureTransportProtocols(new HashSet<>(Arrays.asList("TLSv1.3"))), engine -> {
       List<String> protocols = Arrays.asList(engine.getEnabledProtocols());
       assertEquals(1, protocols.size());
       assertTrue(protocols.contains("TLSv1.3"));
@@ -164,7 +180,7 @@ public class SSLHelperTest extends VertxTestBase {
 
   @Test
   public void testSetVersions() {
-    testTLSVersions(new HttpServerOptions().setEnabledSecureTransportProtocols(new HashSet<>(Arrays.asList("TLSv1", "TLSv1.3"))), engine -> {
+    testTLSVersions(new SSLOptions().setEnabledSecureTransportProtocols(new HashSet<>(Arrays.asList("TLSv1", "TLSv1.3"))), engine -> {
       List<String> protocols = Arrays.asList(engine.getEnabledProtocols());
       assertEquals(2, protocols.size());
       assertTrue(protocols.contains("TLSv1"));
@@ -172,10 +188,10 @@ public class SSLHelperTest extends VertxTestBase {
     });
   }
 
-  private void testTLSVersions(HttpServerOptions options, Consumer<SSLEngine> check) {
-    SSLHelper helper = new SSLHelper(options.setSsl(true).setKeyCertOptions(Cert.SERVER_JKS.get()), null);
+  private void testTLSVersions(SSLOptions options, Consumer<SSLEngine> check) {
+    SSLHelper helper = new SSLHelper(SSLHelper.resolveEngineOptions(null, false));
     helper
-      .buildContextProvider(options.getSslOptions(), (ContextInternal) vertx.getOrCreateContext())
+      .buildContextProvider(options, null, ClientAuth.NONE, null, (ContextInternal) vertx.getOrCreateContext())
       .onComplete(onSuccess(sslContextProvider -> {
         SSLEngine engine = createEngine(sslContextProvider);
         check.accept(engine);

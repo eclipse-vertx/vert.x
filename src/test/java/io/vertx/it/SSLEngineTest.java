@@ -11,8 +11,6 @@
 
 package io.vertx.it;
 
-import io.netty.handler.ssl.JdkSslContext;
-import io.netty.handler.ssl.OpenSslContext;
 import io.netty.handler.ssl.OpenSslSessionContext;
 import io.netty.handler.ssl.SslContext;
 import io.vertx.core.http.*;

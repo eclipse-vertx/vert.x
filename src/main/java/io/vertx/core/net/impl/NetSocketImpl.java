@@ -27,12 +27,12 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
+import io.vertx.core.http.ClientAuth;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
-import io.vertx.core.net.NetSocket;
-import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.*;
 import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.streams.impl.InboundBuffer;
 
@@ -40,6 +40,7 @@ import java.io.File;
 import java.io.RandomAccessFile;
 import java.nio.charset.Charset;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 /**
  *
@@ -53,10 +54,9 @@ import java.util.UUID;
  */
 public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
-  private static final Logger log = LoggerFactory.getLogger(NetSocketImpl.class);
-
   private final String writeHandlerID;
-  private final SslChannelProvider sslChannelProvider;
+  private final SSLHelper sslHelper;
+  private final SSLOptions sslOptions;
   private final SocketAddress remoteAddress;
   private final TCPMetrics metrics;
   private final InboundBuffer<Object> pending;
@@ -68,19 +68,26 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   private Handler<Object> messageHandler;
   private Handler<Object> eventHandler;
 
-  public NetSocketImpl(ContextInternal context, ChannelHandlerContext channel, SslChannelProvider sslChannelProvider, TCPMetrics metrics, boolean registerWriteHandler) {
-    this(context, channel, null, sslChannelProvider, metrics, null, registerWriteHandler);
+  public NetSocketImpl(ContextInternal context,
+                       ChannelHandlerContext channel,
+                       SSLHelper sslHelper,
+                       SSLOptions sslOptions,
+                       TCPMetrics metrics,
+                       boolean registerWriteHandler) {
+    this(context, channel, null, sslHelper, sslOptions, metrics, null, registerWriteHandler);
   }
 
   public NetSocketImpl(ContextInternal context,
                        ChannelHandlerContext channel,
                        SocketAddress remoteAddress,
-                       SslChannelProvider sslChannelProvider,
+                       SSLHelper sslHelper,
+                       SSLOptions sslOptions,
                        TCPMetrics metrics,
                        String negotiatedApplicationLayerProtocol,
                        boolean registerWriteHandler) {
     super(context, channel);
-    this.sslChannelProvider = sslChannelProvider;
+    this.sslHelper = sslHelper;
+    this.sslOptions = sslOptions;
     this.writeHandlerID = registerWriteHandler ? "__vertx.net." + UUID.randomUUID() : null;
     this.remoteAddress = remoteAddress;
     this.metrics = metrics;
@@ -260,28 +267,59 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
   @Override
   public Future<Void> upgradeToSsl(String serverName) {
-    PromiseInternal<Void> promise = context.promise();
     if (chctx.pipeline().get("ssl") == null) {
-      ChannelPromise flush = chctx.newPromise();
+      doPause();
+      PromiseInternal<Void> flush = context.promise();
       flush(flush);
-      flush.addListener(fut -> {
-        if (fut.isSuccess()) {
-          ChannelPromise channelPromise = chctx.newPromise();
-          chctx.pipeline().addFirst("handshaker", new SslHandshakeCompletionHandler(channelPromise));
-          channelPromise.addListener(promise);
-          ChannelHandler sslHandler;
-          if (remoteAddress != null) {
-            sslHandler = sslChannelProvider.createClientSslHandler(remoteAddress, serverName, false);
+      return flush
+        .compose(v -> {
+          if (sslOptions instanceof ClientSSLOptions) {
+            ClientSSLOptions clientSSLOptions =  (ClientSSLOptions) sslOptions;
+            return sslHelper.resolveSslChannelProvider(
+              sslOptions,
+              clientSSLOptions.getHostnameVerificationAlgorithm(),
+              false,
+              null,
+              null,
+              context);
           } else {
-            sslHandler = sslChannelProvider.createServerHandler();
+            ServerSSLOptions serverSSLOptions = (ServerSSLOptions) sslOptions;
+            return sslHelper.resolveSslChannelProvider(
+              sslOptions,
+              "",
+              serverSSLOptions.isSni(),
+              serverSSLOptions.getClientAuth(),
+              null, context);
           }
-          chctx.pipeline().addFirst("ssl", sslHandler);
-        } else {
-          promise.fail(fut.cause());
-        }
-      });
+        })
+        .transform(ar -> {
+          Future<Void> f;
+          if (ar.succeeded()) {
+            SslChannelProvider sslChannelProvider = ar.result();
+            ChannelPromise channelPromise = chctx.newPromise();
+            chctx.pipeline().addFirst("handshaker", new SslHandshakeCompletionHandler(channelPromise));
+            ChannelHandler sslHandler;
+            if (remoteAddress != null) {
+              ClientSSLOptions clientSSLOptions = (ClientSSLOptions) sslOptions;
+              sslHandler = sslChannelProvider.createClientSslHandler(remoteAddress, serverName, sslOptions.isUseAlpn(), clientSSLOptions.isTrustAll(), clientSSLOptions.getSslHandshakeTimeout(), clientSSLOptions.getSslHandshakeTimeoutUnit());
+            } else {
+              sslHandler = sslChannelProvider.createServerHandler(sslOptions.isUseAlpn(), sslOptions.getSslHandshakeTimeout(), sslOptions.getSslHandshakeTimeoutUnit());
+            }
+            chctx.pipeline().addFirst("ssl", sslHandler);
+            PromiseInternal<Void> p = context.promise();
+            channelPromise.addListener(p);
+            f = p.future();
+          } else {
+            f = context.failedFuture(ar.cause());
+          }
+          if (!pending.isPaused()) {
+            doResume();
+          }
+          return f;
+        });
+    } else {
+      throw new IllegalStateException(); // ???
     }
-    return promise.future();
   }
 
   @Override

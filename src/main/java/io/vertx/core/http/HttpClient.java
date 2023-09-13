@@ -18,7 +18,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.metrics.Measured;
-import io.vertx.core.net.SSLOptions;
+import io.vertx.core.net.ClientSSLOptions;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -148,7 +148,7 @@ public interface HttpClient extends Measured {
    * @param options the new SSL options
    * @return a future signaling the update success
    */
-  Future<Void> updateSSLOptions(SSLOptions options);
+  Future<Void> updateSSLOptions(ClientSSLOptions options);
 
   /**
    * Set a connection handler for the client. This handler is called when a new connection is established.
