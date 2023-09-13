@@ -33,13 +33,9 @@ import java.util.concurrent.TimeUnit;
  */
 public class SslChannelProvider {
 
-  private final long sslHandshakeTimeout;
-  private final TimeUnit sslHandshakeTimeoutUnit;
   private final Executor workerPool;
   private final boolean useWorkerPool;
   private final boolean sni;
-  private final boolean useAlpn;
-  private final boolean trustAll;
   private final SslContextProvider sslContextProvider;
   private final SslContext[] sslContexts = new SslContext[2];
   private final Map<String, SslContext>[] sslContextMaps = new Map[]{
@@ -47,29 +43,17 @@ public class SslChannelProvider {
   };
 
   public SslChannelProvider(SslContextProvider sslContextProvider,
-                            long sslHandshakeTimeout,
-                            TimeUnit sslHandshakeTimeoutUnit,
                             boolean sni,
-                            boolean trustAll,
-                            boolean useAlpn,
                             Executor workerPool,
                             boolean useWorkerPool) {
     this.workerPool = workerPool;
     this.useWorkerPool = useWorkerPool;
-    this.useAlpn = useAlpn;
     this.sni = sni;
-    this.trustAll = trustAll;
-    this.sslHandshakeTimeout = sslHandshakeTimeout;
-    this.sslHandshakeTimeoutUnit = sslHandshakeTimeoutUnit;
     this.sslContextProvider = sslContextProvider;
   }
 
   public SslContextProvider sslContextProvider() {
     return sslContextProvider;
-  }
-
-  public SslContext sslClientContext(String serverName, boolean useAlpn) {
-    return sslClientContext(serverName, useAlpn, trustAll);
   }
 
   public SslContext sslClientContext(String serverName, boolean useAlpn, boolean trustAll) {
@@ -94,7 +78,7 @@ public class SslChannelProvider {
    *
    * @return the {@link AsyncMapping}
    */
-  public AsyncMapping<? super String, ? extends SslContext> serverNameMapping() {
+  public AsyncMapping<? super String, ? extends SslContext> serverNameMapping(boolean useAlpn) {
     return (AsyncMapping<String, SslContext>) (serverName, promise) -> {
       workerPool.execute(() -> {
         if (serverName == null) {
@@ -123,28 +107,28 @@ public class SslChannelProvider {
     };
   }
 
-  public SslHandler createClientSslHandler(SocketAddress remoteAddress, String serverName, boolean useAlpn) {
-    SslContext sslContext = sslClientContext(serverName, useAlpn);
+  public SslHandler createClientSslHandler(SocketAddress peerAddress, String serverName, boolean useAlpn, boolean trustAll, long sslHandshakeTimeout, TimeUnit sslHandshakeTimeoutUnit) {
+    SslContext sslContext = sslClientContext(serverName, useAlpn, trustAll);
     SslHandler sslHandler;
     Executor delegatedTaskExec = useWorkerPool ? workerPool : ImmediateExecutor.INSTANCE;
-    if (remoteAddress.isDomainSocket()) {
-      sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, delegatedTaskExec);
+    if (peerAddress != null && peerAddress.isInetSocket()) {
+      sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, peerAddress.host(), peerAddress.port(), delegatedTaskExec);
     } else {
-      sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, remoteAddress.host(), remoteAddress.port(), delegatedTaskExec);
+      sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, delegatedTaskExec);
     }
     sslHandler.setHandshakeTimeout(sslHandshakeTimeout, sslHandshakeTimeoutUnit);
     return sslHandler;
   }
 
-  public ChannelHandler createServerHandler() {
+  public ChannelHandler createServerHandler(boolean useAlpn, long sslHandshakeTimeout, TimeUnit sslHandshakeTimeoutUnit) {
     if (sni) {
-      return createSniHandler();
+      return createSniHandler(useAlpn, sslHandshakeTimeout, sslHandshakeTimeoutUnit);
     } else {
-      return createServerSslHandler(useAlpn);
+      return createServerSslHandler(useAlpn, sslHandshakeTimeout, sslHandshakeTimeoutUnit);
     }
   }
 
-  private SslHandler createServerSslHandler(boolean useAlpn) {
+  private SslHandler createServerSslHandler(boolean useAlpn, long sslHandshakeTimeout, TimeUnit sslHandshakeTimeoutUnit) {
     SslContext sslContext = sslServerContext(useAlpn);
     Executor delegatedTaskExec = useWorkerPool ? workerPool : ImmediateExecutor.INSTANCE;
     SslHandler sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, delegatedTaskExec);
@@ -152,9 +136,9 @@ public class SslChannelProvider {
     return sslHandler;
   }
 
-  private SniHandler createSniHandler() {
+  private SniHandler createSniHandler(boolean useAlpn, long sslHandshakeTimeout, TimeUnit sslHandshakeTimeoutUnit) {
     Executor delegatedTaskExec = useWorkerPool ? workerPool : ImmediateExecutor.INSTANCE;
-    return new VertxSniHandler(serverNameMapping(), sslHandshakeTimeoutUnit.toMillis(sslHandshakeTimeout), delegatedTaskExec);
+    return new VertxSniHandler(serverNameMapping(useAlpn), sslHandshakeTimeoutUnit.toMillis(sslHandshakeTimeout), delegatedTaskExec);
   }
 
   private static int idx(boolean useAlpn) {

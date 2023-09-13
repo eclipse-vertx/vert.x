@@ -401,6 +401,15 @@ public class PemKeyCertOptions implements KeyCertOptions {
   }
 
   @Override
+  public int hashCode() {
+    int hashCode = Objects.hashCode(keyPaths);
+    hashCode = 31 * hashCode + Objects.hashCode(keyValues);
+    hashCode = 31 * hashCode + Objects.hashCode(certPaths);
+    hashCode = 31 * hashCode + Objects.hashCode(certValues);
+    return hashCode;
+  }
+
+  @Override
   public PemKeyCertOptions copy() {
     return new PemKeyCertOptions(this);
   }

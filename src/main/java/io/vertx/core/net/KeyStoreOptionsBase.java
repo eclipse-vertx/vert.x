@@ -245,4 +245,16 @@ public abstract class KeyStoreOptionsBase implements KeyCertOptions, TrustOption
     }
     return false;
   }
+
+  @Override
+  public int hashCode() {
+    int hashCode = Objects.hashCode(provider);
+    hashCode = 31 * hashCode + Objects.hashCode(type);
+    hashCode = 31 * hashCode + Objects.hashCode(password);
+    hashCode = 31 * hashCode + Objects.hashCode(path);
+    hashCode = 31 * hashCode + Objects.hashCode(value);
+    hashCode = 31 * hashCode + Objects.hashCode(alias);
+    hashCode = 31 * hashCode + Objects.hashCode(aliasPassword);
+    return hashCode;
+  }
 }

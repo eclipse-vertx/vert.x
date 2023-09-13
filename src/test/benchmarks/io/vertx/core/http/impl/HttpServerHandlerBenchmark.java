@@ -226,6 +226,7 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
       Http1xServerConnection conn = new Http1xServerConnection(
         () -> context,
         null,
+        null,
         new HttpServerOptions(),
         chctx,
         context,

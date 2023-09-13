@@ -17,7 +17,7 @@ import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.metrics.Measured;
-import io.vertx.core.net.SSLOptions;
+import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.SocketAddressImpl;
 
@@ -107,7 +107,7 @@ public interface HttpServer extends Measured {
    * @param options the new SSL options
    * @return a future signaling the update success
    */
-  Future<Void> updateSSLOptions(SSLOptions options);
+  Future<Void> updateSSLOptions(ServerSSLOptions options);
 
   /**
    * Tell the server to start listening. The server will listen on the port and host specified in the

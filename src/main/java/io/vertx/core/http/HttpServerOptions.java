@@ -287,6 +287,15 @@ public class HttpServerOptions extends NetServerOptions {
     registerWebSocketWriteHandlers = DEFAULT_REGISTER_WEBSOCKET_WRITE_HANDLERS;
   }
 
+  /**
+   * Copy these options.
+   *
+   * @return a copy of this
+   */
+  public HttpServerOptions copy() {
+    return new HttpServerOptions(this);
+  }
+
   @Override
   public HttpServerOptions setSendBufferSize(int sendBufferSize) {
     super.setSendBufferSize(sendBufferSize);

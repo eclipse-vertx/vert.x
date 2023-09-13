@@ -200,7 +200,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
    */
   public NetSocketInternal toNetSocket() {
     removeChannelHandlers();
-    NetSocketImpl socket = new NetSocketImpl(context, chctx, null, metrics(), false);
+    NetSocketImpl socket = new NetSocketImpl(context, chctx, null, null, metrics(), false);
     socket.metric(metric());
     evictionHandler.handle(null);
     chctx.pipeline().replace("handler", "handler", VertxHandler.create(ctx -> socket));

@@ -251,7 +251,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(options, options.setSslEngineOptions(new JdkSSLEngineOptions()));
     assertTrue(options.getSslEngineOptions() instanceof JdkSSLEngineOptions);
 
-    assertEquals(TCPSSLOptions.DEFAULT_SSL_HANDSHAKE_TIMEOUT, options.getSslHandshakeTimeout());
+    assertEquals(SSLOptions.DEFAULT_SSL_HANDSHAKE_TIMEOUT, options.getSslHandshakeTimeout());
     long randLong = TestUtils.randomPositiveLong();
     assertEquals(options, options.setSslHandshakeTimeout(randLong));
     assertEquals(randLong, options.getSslHandshakeTimeout());
@@ -359,7 +359,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(options, options.setSni(true));
     assertTrue(options.isSni());
 
-    assertEquals(TCPSSLOptions.DEFAULT_SSL_HANDSHAKE_TIMEOUT, options.getSslHandshakeTimeout());
+    assertEquals(SSLOptions.DEFAULT_SSL_HANDSHAKE_TIMEOUT, options.getSslHandshakeTimeout());
     long randomSslTimeout = TestUtils.randomPositiveLong();
     assertEquals(options, options.setSslHandshakeTimeout(randomSslTimeout));
     assertEquals(randomSslTimeout, options.getSslHandshakeTimeout());
@@ -2413,12 +2413,10 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testAttemptConnectAfterClose() {
     client.close();
-    try {
-      client.connect(testAddress);
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      //OK
-    }
+    client.connect(testAddress).onComplete(onFailure(err -> {
+      testComplete();
+    }));
+    await();
   }
 
   @Test
@@ -3408,20 +3406,15 @@ public class NetTest extends VertxTestBase {
       .setSslEngineOptions(new JdkSSLEngineOptions() {
         @Override
         public SslContextFactory sslContextFactory() {
-          return new SslContextFactory() {
-            @Override
-            public SslContext create() {
-              return new JdkSslContext(
-                sslContext,
-                true,
-                null,
-                IdentityCipherSuiteFilter.INSTANCE,
-                ApplicationProtocolConfig.DISABLED,
-                io.netty.handler.ssl.ClientAuth.NONE,
-                null,
-                false);
-            }
-          };
+          return () -> new JdkSslContext(
+            sslContext,
+            true,
+            null,
+            IdentityCipherSuiteFilter.INSTANCE,
+            ApplicationProtocolConfig.DISABLED,
+            io.netty.handler.ssl.ClientAuth.NONE,
+            null,
+            false);
         }
       }));
 

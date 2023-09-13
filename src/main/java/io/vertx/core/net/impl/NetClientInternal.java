@@ -24,27 +24,13 @@ public interface NetClientInternal extends NetClient, MetricsProvider, Closeable
   /**
    * Open a socket to the {@code remoteAddress} server.
    *
-   * @param proxyOptions optional proxy configuration
-   * @param remoteAddress the server address
-   * @param peerAddress the peer address (along with SSL)
-   * @param serverName the SNI server name (along with SSL)
-   * @param ssl whether to use SSL
-   * @param useAlpn wether to use ALPN (along with SSL)
-   * @param registerWriteHandlers whether to register event-bus write handlers
+   * @param connectOptions the connect options
    * @param connectHandler the promise to resolve with the connect result
-   * @param context the socket context
-   * @param remainingAttempts how many times reconnection is reattempted
+   * @param context        the socket context
    */
-  void connectInternal(ProxyOptions proxyOptions,
-                              SocketAddress remoteAddress,
-                              SocketAddress peerAddress,
-                              String serverName,
-                              boolean ssl,
-                              boolean useAlpn,
-                              boolean registerWriteHandlers,
-                              Promise<NetSocket> connectHandler,
-                              ContextInternal context,
-                              int remainingAttempts);
+  void connectInternal(ConnectOptions connectOptions,
+                       Promise<NetSocket> connectHandler,
+                       ContextInternal context);
 
   @Override
   default Future<Void> close() {
