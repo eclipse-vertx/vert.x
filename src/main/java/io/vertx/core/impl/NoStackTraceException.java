@@ -17,6 +17,7 @@ import io.vertx.core.VertxException;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  * @see VertxException
  */
+@SuppressWarnings("deprecation")
 public class NoStackTraceException extends NoStackTraceThrowable {
 
   public NoStackTraceException (String message, Throwable cause){
