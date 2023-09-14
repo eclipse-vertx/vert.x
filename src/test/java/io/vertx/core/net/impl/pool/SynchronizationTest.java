@@ -10,7 +10,6 @@
  */
 package io.vertx.core.net.impl.pool;
 
-import io.vertx.core.impl.Utils;
 import io.vertx.test.core.AsyncTestBase;
 import org.junit.Assume;
 import org.junit.Test;

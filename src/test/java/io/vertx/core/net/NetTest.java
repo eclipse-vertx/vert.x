@@ -48,7 +48,6 @@ import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.*;
-import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonArray;
@@ -88,6 +87,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -115,6 +115,7 @@ public class NetTest extends VertxTestBase {
   @Rule
   public TemporaryFolder testFolder = new TemporaryFolder();
 
+  @Override
   public void setUp() throws Exception {
     super.setUp();
     if (USE_DOMAIN_SOCKETS) {
@@ -139,6 +140,7 @@ public class NetTest extends VertxTestBase {
     return options;
   }
 
+  @Override
   protected void tearDown() throws Exception {
     if (tmp != null) {
       tmp.delete();
@@ -1975,8 +1977,8 @@ public class NetTest extends VertxTestBase {
     int numConnections = numServers * (domainSocket ? 10 : 20);
 
     List<NetServer> servers = new ArrayList<>();
-    Set<NetServer> connectedServers = new ConcurrentHashSet<>();
-    Set<Thread> threads = new ConcurrentHashSet<>();
+    Set<NetServer> connectedServers = ConcurrentHashMap.newKeySet();
+    Set<Thread> threads = ConcurrentHashMap.newKeySet();
 
     Future<String> listenLatch = vertx.deployVerticle(() -> new AbstractVerticle() {
       NetServer server;
@@ -2105,7 +2107,7 @@ public class NetTest extends VertxTestBase {
 
     int numConnections = 10;
 
-    Set<String> connections = new ConcurrentHashSet<>();
+    Set<String> connections = ConcurrentHashMap.newKeySet();
     server.connectHandler(socket -> {
       connections.add(socket.writeHandlerID());
       if (connections.size() == numConnections) {
@@ -2552,7 +2554,7 @@ public class NetTest extends VertxTestBase {
     }));
     awaitLatch(listenLatch);
 
-    Set<Context> contexts = new ConcurrentHashSet<>();
+    Set<Context> contexts = ConcurrentHashMap.newKeySet();
     AtomicInteger connectCount = new AtomicInteger();
     CountDownLatch clientLatch = new CountDownLatch(1);
     // Each connect should be in its own context

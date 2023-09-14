@@ -11,8 +11,6 @@
 
 package io.vertx.core.impl;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
@@ -75,9 +73,9 @@ public class DeploymentManager {
 
   public Future<Void> undeployVerticle(String deploymentID) {
     Deployment deployment = deployments.get(deploymentID);
-    Context currentContext = vertx.getOrCreateContext();
+    ContextInternal currentContext = vertx.getOrCreateContext();
     if (deployment == null) {
-      return ((ContextInternal) currentContext).failedFuture(new IllegalStateException("Unknown deployment"));
+      return currentContext.failedFuture(new IllegalStateException("Unknown deployment"));
     } else {
       return deployment.doUndeploy(vertx.getOrCreateContext());
     }
@@ -120,25 +118,6 @@ public class DeploymentManager {
     } else {
       return vertx.getOrCreateContext().succeededFuture();
     }
-  }
-
-  private <T> void reportFailure(Throwable t, ContextInternal context, Promise<T> completionHandler) {
-    if (completionHandler != null) {
-      reportResult(context, completionHandler, Future.failedFuture(t));
-    } else {
-      log.error(t.getMessage(), t);
-    }
-  }
-
-  private <T> void reportResult(Context context, Promise<T> completionHandler, AsyncResult<T> result) {
-    context.runOnContext(v -> {
-      try {
-        completionHandler.handle(result);
-      } catch (Throwable t) {
-        log.error("Failure in calling handler", t);
-        throw t;
-      }
-    });
   }
 
   Future<Deployment> doDeploy(DeploymentOptions options,
@@ -255,7 +234,7 @@ public class DeploymentManager {
     private final JsonObject conf;
     private final String verticleIdentifier;
     private final List<VerticleHolder> verticles = new CopyOnWriteArrayList<>();
-    private final Set<Deployment> children = new ConcurrentHashSet<>();
+    private final Set<Deployment> children = ConcurrentHashMap.newKeySet();
     private final DeploymentOptions options;
     private Handler<Void> undeployHandler;
     private int status = ST_DEPLOYED;
