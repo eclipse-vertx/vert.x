@@ -25,6 +25,11 @@ public class DeploymentOptionsConverter {
             obj.setConfig(((JsonObject)member.getValue()).copy());
           }
           break;
+        case "worker":
+          if (member.getValue() instanceof Boolean) {
+            obj.setWorker((Boolean)member.getValue());
+          }
+          break;
         case "ha":
           if (member.getValue() instanceof Boolean) {
             obj.setHa((Boolean)member.getValue());
@@ -35,21 +40,6 @@ public class DeploymentOptionsConverter {
             obj.setInstances(((Number)member.getValue()).intValue());
           }
           break;
-        case "maxWorkerExecuteTime":
-          if (member.getValue() instanceof Number) {
-            obj.setMaxWorkerExecuteTime(((Number)member.getValue()).longValue());
-          }
-          break;
-        case "maxWorkerExecuteTimeUnit":
-          if (member.getValue() instanceof String) {
-            obj.setMaxWorkerExecuteTimeUnit(java.util.concurrent.TimeUnit.valueOf((String)member.getValue()));
-          }
-          break;
-        case "worker":
-          if (member.getValue() instanceof Boolean) {
-            obj.setWorker((Boolean)member.getValue());
-          }
-          break;
         case "workerPoolName":
           if (member.getValue() instanceof String) {
             obj.setWorkerPoolName((String)member.getValue());
@@ -58,6 +48,16 @@ public class DeploymentOptionsConverter {
         case "workerPoolSize":
           if (member.getValue() instanceof Number) {
             obj.setWorkerPoolSize(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "maxWorkerExecuteTime":
+          if (member.getValue() instanceof Number) {
+            obj.setMaxWorkerExecuteTime(((Number)member.getValue()).longValue());
+          }
+          break;
+        case "maxWorkerExecuteTimeUnit":
+          if (member.getValue() instanceof String) {
+            obj.setMaxWorkerExecuteTimeUnit(java.util.concurrent.TimeUnit.valueOf((String)member.getValue()));
           }
           break;
       }
@@ -72,16 +72,16 @@ public class DeploymentOptionsConverter {
     if (obj.getConfig() != null) {
       json.put("config", obj.getConfig());
     }
+    json.put("worker", obj.isWorker());
     json.put("ha", obj.isHa());
     json.put("instances", obj.getInstances());
-    json.put("maxWorkerExecuteTime", obj.getMaxWorkerExecuteTime());
-    if (obj.getMaxWorkerExecuteTimeUnit() != null) {
-      json.put("maxWorkerExecuteTimeUnit", obj.getMaxWorkerExecuteTimeUnit().name());
-    }
-    json.put("worker", obj.isWorker());
     if (obj.getWorkerPoolName() != null) {
       json.put("workerPoolName", obj.getWorkerPoolName());
     }
     json.put("workerPoolSize", obj.getWorkerPoolSize());
+    json.put("maxWorkerExecuteTime", obj.getMaxWorkerExecuteTime());
+    if (obj.getMaxWorkerExecuteTimeUnit() != null) {
+      json.put("maxWorkerExecuteTimeUnit", obj.getMaxWorkerExecuteTimeUnit().name());
+    }
   }
 }

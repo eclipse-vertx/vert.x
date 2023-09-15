@@ -20,19 +20,24 @@ public class ClientOptionsBaseConverter {
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, ClientOptionsBase obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
+        case "trustAll":
+          if (member.getValue() instanceof Boolean) {
+            obj.setTrustAll((Boolean)member.getValue());
+          }
+          break;
         case "connectTimeout":
           if (member.getValue() instanceof Number) {
             obj.setConnectTimeout(((Number)member.getValue()).intValue());
           }
           break;
-        case "localAddress":
-          if (member.getValue() instanceof String) {
-            obj.setLocalAddress((String)member.getValue());
-          }
-          break;
         case "metricsName":
           if (member.getValue() instanceof String) {
             obj.setMetricsName((String)member.getValue());
+          }
+          break;
+        case "proxyOptions":
+          if (member.getValue() instanceof JsonObject) {
+            obj.setProxyOptions(new io.vertx.core.net.ProxyOptions((io.vertx.core.json.JsonObject)member.getValue()));
           }
           break;
         case "nonProxyHosts":
@@ -45,14 +50,9 @@ public class ClientOptionsBaseConverter {
             obj.setNonProxyHosts(list);
           }
           break;
-        case "proxyOptions":
-          if (member.getValue() instanceof JsonObject) {
-            obj.setProxyOptions(new io.vertx.core.net.ProxyOptions((io.vertx.core.json.JsonObject)member.getValue()));
-          }
-          break;
-        case "trustAll":
-          if (member.getValue() instanceof Boolean) {
-            obj.setTrustAll((Boolean)member.getValue());
+        case "localAddress":
+          if (member.getValue() instanceof String) {
+            obj.setLocalAddress((String)member.getValue());
           }
           break;
       }
@@ -64,21 +64,21 @@ public class ClientOptionsBaseConverter {
   }
 
    static void toJson(ClientOptionsBase obj, java.util.Map<String, Object> json) {
+    json.put("trustAll", obj.isTrustAll());
     json.put("connectTimeout", obj.getConnectTimeout());
-    if (obj.getLocalAddress() != null) {
-      json.put("localAddress", obj.getLocalAddress());
-    }
     if (obj.getMetricsName() != null) {
       json.put("metricsName", obj.getMetricsName());
+    }
+    if (obj.getProxyOptions() != null) {
+      json.put("proxyOptions", obj.getProxyOptions().toJson());
     }
     if (obj.getNonProxyHosts() != null) {
       JsonArray array = new JsonArray();
       obj.getNonProxyHosts().forEach(item -> array.add(item));
       json.put("nonProxyHosts", array);
     }
-    if (obj.getProxyOptions() != null) {
-      json.put("proxyOptions", obj.getProxyOptions().toJson());
+    if (obj.getLocalAddress() != null) {
+      json.put("localAddress", obj.getLocalAddress());
     }
-    json.put("trustAll", obj.isTrustAll());
   }
 }

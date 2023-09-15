@@ -20,36 +20,6 @@ public class PemKeyCertOptionsConverter {
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, PemKeyCertOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
-        case "certPath":
-          if (member.getValue() instanceof String) {
-            obj.setCertPath((String)member.getValue());
-          }
-          break;
-        case "certPaths":
-          if (member.getValue() instanceof JsonArray) {
-            java.util.ArrayList<java.lang.String> list =  new java.util.ArrayList<>();
-            ((Iterable<Object>)member.getValue()).forEach( item -> {
-              if (item instanceof String)
-                list.add((String)item);
-            });
-            obj.setCertPaths(list);
-          }
-          break;
-        case "certValue":
-          if (member.getValue() instanceof String) {
-            obj.setCertValue(io.vertx.core.buffer.Buffer.buffer(BASE64_DECODER.decode((String)member.getValue())));
-          }
-          break;
-        case "certValues":
-          if (member.getValue() instanceof JsonArray) {
-            java.util.ArrayList<io.vertx.core.buffer.Buffer> list =  new java.util.ArrayList<>();
-            ((Iterable<Object>)member.getValue()).forEach( item -> {
-              if (item instanceof String)
-                list.add(io.vertx.core.buffer.Buffer.buffer(BASE64_DECODER.decode((String)item)));
-            });
-            obj.setCertValues(list);
-          }
-          break;
         case "keyPath":
           if (member.getValue() instanceof String) {
             obj.setKeyPath((String)member.getValue());
@@ -80,6 +50,36 @@ public class PemKeyCertOptionsConverter {
             obj.setKeyValues(list);
           }
           break;
+        case "certPath":
+          if (member.getValue() instanceof String) {
+            obj.setCertPath((String)member.getValue());
+          }
+          break;
+        case "certPaths":
+          if (member.getValue() instanceof JsonArray) {
+            java.util.ArrayList<java.lang.String> list =  new java.util.ArrayList<>();
+            ((Iterable<Object>)member.getValue()).forEach( item -> {
+              if (item instanceof String)
+                list.add((String)item);
+            });
+            obj.setCertPaths(list);
+          }
+          break;
+        case "certValue":
+          if (member.getValue() instanceof String) {
+            obj.setCertValue(io.vertx.core.buffer.Buffer.buffer(BASE64_DECODER.decode((String)member.getValue())));
+          }
+          break;
+        case "certValues":
+          if (member.getValue() instanceof JsonArray) {
+            java.util.ArrayList<io.vertx.core.buffer.Buffer> list =  new java.util.ArrayList<>();
+            ((Iterable<Object>)member.getValue()).forEach( item -> {
+              if (item instanceof String)
+                list.add(io.vertx.core.buffer.Buffer.buffer(BASE64_DECODER.decode((String)item)));
+            });
+            obj.setCertValues(list);
+          }
+          break;
       }
     }
   }
@@ -89,16 +89,6 @@ public class PemKeyCertOptionsConverter {
   }
 
    static void toJson(PemKeyCertOptions obj, java.util.Map<String, Object> json) {
-    if (obj.getCertPaths() != null) {
-      JsonArray array = new JsonArray();
-      obj.getCertPaths().forEach(item -> array.add(item));
-      json.put("certPaths", array);
-    }
-    if (obj.getCertValues() != null) {
-      JsonArray array = new JsonArray();
-      obj.getCertValues().forEach(item -> array.add(BASE64_ENCODER.encodeToString(item.getBytes())));
-      json.put("certValues", array);
-    }
     if (obj.getKeyPaths() != null) {
       JsonArray array = new JsonArray();
       obj.getKeyPaths().forEach(item -> array.add(item));
@@ -108,6 +98,16 @@ public class PemKeyCertOptionsConverter {
       JsonArray array = new JsonArray();
       obj.getKeyValues().forEach(item -> array.add(BASE64_ENCODER.encodeToString(item.getBytes())));
       json.put("keyValues", array);
+    }
+    if (obj.getCertPaths() != null) {
+      JsonArray array = new JsonArray();
+      obj.getCertPaths().forEach(item -> array.add(item));
+      json.put("certPaths", array);
+    }
+    if (obj.getCertValues() != null) {
+      JsonArray array = new JsonArray();
+      obj.getCertValues().forEach(item -> array.add(BASE64_ENCODER.encodeToString(item.getBytes())));
+      json.put("certValues", array);
     }
   }
 }

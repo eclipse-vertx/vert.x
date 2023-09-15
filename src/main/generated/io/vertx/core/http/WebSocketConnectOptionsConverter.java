@@ -20,14 +20,9 @@ public class WebSocketConnectOptionsConverter {
   public static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, WebSocketConnectOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
-        case "allowOriginHeader":
-          if (member.getValue() instanceof Boolean) {
-            obj.setAllowOriginHeader((Boolean)member.getValue());
-          }
-          break;
-        case "registerWriteHandlers":
-          if (member.getValue() instanceof Boolean) {
-            obj.setRegisterWriteHandlers((Boolean)member.getValue());
+        case "version":
+          if (member.getValue() instanceof String) {
+            obj.setVersion(io.vertx.core.http.WebsocketVersion.valueOf((String)member.getValue()));
           }
           break;
         case "subProtocols":
@@ -40,9 +35,14 @@ public class WebSocketConnectOptionsConverter {
             obj.setSubProtocols(list);
           }
           break;
-        case "version":
-          if (member.getValue() instanceof String) {
-            obj.setVersion(io.vertx.core.http.WebsocketVersion.valueOf((String)member.getValue()));
+        case "allowOriginHeader":
+          if (member.getValue() instanceof Boolean) {
+            obj.setAllowOriginHeader((Boolean)member.getValue());
+          }
+          break;
+        case "registerWriteHandlers":
+          if (member.getValue() instanceof Boolean) {
+            obj.setRegisterWriteHandlers((Boolean)member.getValue());
           }
           break;
       }
@@ -54,15 +54,15 @@ public class WebSocketConnectOptionsConverter {
   }
 
   public static void toJson(WebSocketConnectOptions obj, java.util.Map<String, Object> json) {
-    json.put("allowOriginHeader", obj.getAllowOriginHeader());
-    json.put("registerWriteHandlers", obj.isRegisterWriteHandlers());
+    if (obj.getVersion() != null) {
+      json.put("version", obj.getVersion().name());
+    }
     if (obj.getSubProtocols() != null) {
       JsonArray array = new JsonArray();
       obj.getSubProtocols().forEach(item -> array.add(item));
       json.put("subProtocols", array);
     }
-    if (obj.getVersion() != null) {
-      json.put("version", obj.getVersion().name());
-    }
+    json.put("allowOriginHeader", obj.getAllowOriginHeader());
+    json.put("registerWriteHandlers", obj.isRegisterWriteHandlers());
   }
 }

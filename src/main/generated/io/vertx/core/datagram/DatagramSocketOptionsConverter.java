@@ -25,14 +25,14 @@ public class DatagramSocketOptionsConverter {
             obj.setBroadcast((Boolean)member.getValue());
           }
           break;
-        case "ipV6":
-          if (member.getValue() instanceof Boolean) {
-            obj.setIpV6((Boolean)member.getValue());
-          }
-          break;
         case "loopbackModeDisabled":
           if (member.getValue() instanceof Boolean) {
             obj.setLoopbackModeDisabled((Boolean)member.getValue());
+          }
+          break;
+        case "multicastTimeToLive":
+          if (member.getValue() instanceof Number) {
+            obj.setMulticastTimeToLive(((Number)member.getValue()).intValue());
           }
           break;
         case "multicastNetworkInterface":
@@ -40,9 +40,9 @@ public class DatagramSocketOptionsConverter {
             obj.setMulticastNetworkInterface((String)member.getValue());
           }
           break;
-        case "multicastTimeToLive":
-          if (member.getValue() instanceof Number) {
-            obj.setMulticastTimeToLive(((Number)member.getValue()).intValue());
+        case "ipV6":
+          if (member.getValue() instanceof Boolean) {
+            obj.setIpV6((Boolean)member.getValue());
           }
           break;
       }
@@ -55,11 +55,11 @@ public class DatagramSocketOptionsConverter {
 
    static void toJson(DatagramSocketOptions obj, java.util.Map<String, Object> json) {
     json.put("broadcast", obj.isBroadcast());
-    json.put("ipV6", obj.isIpV6());
     json.put("loopbackModeDisabled", obj.isLoopbackModeDisabled());
+    json.put("multicastTimeToLive", obj.getMulticastTimeToLive());
     if (obj.getMulticastNetworkInterface() != null) {
       json.put("multicastNetworkInterface", obj.getMulticastNetworkInterface());
     }
-    json.put("multicastTimeToLive", obj.getMulticastTimeToLive());
+    json.put("ipV6", obj.isIpV6());
   }
 }

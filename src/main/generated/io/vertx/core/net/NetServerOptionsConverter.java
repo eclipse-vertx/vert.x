@@ -25,9 +25,9 @@ public class NetServerOptionsConverter {
             obj.setAcceptBacklog(((Number)member.getValue()).intValue());
           }
           break;
-        case "clientAuth":
-          if (member.getValue() instanceof String) {
-            obj.setClientAuth(io.vertx.core.http.ClientAuth.valueOf((String)member.getValue()));
+        case "port":
+          if (member.getValue() instanceof Number) {
+            obj.setPort(((Number)member.getValue()).intValue());
           }
           break;
         case "host":
@@ -35,9 +35,19 @@ public class NetServerOptionsConverter {
             obj.setHost((String)member.getValue());
           }
           break;
-        case "port":
-          if (member.getValue() instanceof Number) {
-            obj.setPort(((Number)member.getValue()).intValue());
+        case "clientAuth":
+          if (member.getValue() instanceof String) {
+            obj.setClientAuth(io.vertx.core.http.ClientAuth.valueOf((String)member.getValue()));
+          }
+          break;
+        case "sni":
+          if (member.getValue() instanceof Boolean) {
+            obj.setSni((Boolean)member.getValue());
+          }
+          break;
+        case "useProxyProtocol":
+          if (member.getValue() instanceof Boolean) {
+            obj.setUseProxyProtocol((Boolean)member.getValue());
           }
           break;
         case "proxyProtocolTimeout":
@@ -50,24 +60,14 @@ public class NetServerOptionsConverter {
             obj.setProxyProtocolTimeoutUnit(java.util.concurrent.TimeUnit.valueOf((String)member.getValue()));
           }
           break;
-        case "registerWriteHandler":
-          if (member.getValue() instanceof Boolean) {
-            obj.setRegisterWriteHandler((Boolean)member.getValue());
-          }
-          break;
-        case "sni":
-          if (member.getValue() instanceof Boolean) {
-            obj.setSni((Boolean)member.getValue());
-          }
-          break;
         case "trafficShapingOptions":
           if (member.getValue() instanceof JsonObject) {
             obj.setTrafficShapingOptions(new io.vertx.core.net.TrafficShapingOptions((io.vertx.core.json.JsonObject)member.getValue()));
           }
           break;
-        case "useProxyProtocol":
+        case "registerWriteHandler":
           if (member.getValue() instanceof Boolean) {
-            obj.setUseProxyProtocol((Boolean)member.getValue());
+            obj.setRegisterWriteHandler((Boolean)member.getValue());
           }
           break;
       }
@@ -80,22 +80,22 @@ public class NetServerOptionsConverter {
 
    static void toJson(NetServerOptions obj, java.util.Map<String, Object> json) {
     json.put("acceptBacklog", obj.getAcceptBacklog());
-    if (obj.getClientAuth() != null) {
-      json.put("clientAuth", obj.getClientAuth().name());
-    }
+    json.put("port", obj.getPort());
     if (obj.getHost() != null) {
       json.put("host", obj.getHost());
     }
-    json.put("port", obj.getPort());
+    if (obj.getClientAuth() != null) {
+      json.put("clientAuth", obj.getClientAuth().name());
+    }
+    json.put("sni", obj.isSni());
+    json.put("useProxyProtocol", obj.isUseProxyProtocol());
     json.put("proxyProtocolTimeout", obj.getProxyProtocolTimeout());
     if (obj.getProxyProtocolTimeoutUnit() != null) {
       json.put("proxyProtocolTimeoutUnit", obj.getProxyProtocolTimeoutUnit().name());
     }
-    json.put("registerWriteHandler", obj.isRegisterWriteHandler());
-    json.put("sni", obj.isSni());
     if (obj.getTrafficShapingOptions() != null) {
       json.put("trafficShapingOptions", obj.getTrafficShapingOptions().toJson());
     }
-    json.put("useProxyProtocol", obj.isUseProxyProtocol());
+    json.put("registerWriteHandler", obj.isRegisterWriteHandler());
   }
 }
