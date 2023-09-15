@@ -23,29 +23,26 @@ import io.vertx.core.tracing.TracingPolicy;
 public abstract class HandlerRegistration<T> implements Closeable {
 
   public final ContextInternal context;
-  public final EventBusImpl bus;
+  public final EventBusImpl eventBus;
   public final String address;
   public final boolean src;
   private HandlerHolder<T> registered;
-  private Object metric;
+  Object metric;
 
-  HandlerRegistration(ContextInternal context,
-                      EventBusImpl bus,
-                      String address,
-                      boolean src) {
+  HandlerRegistration(ContextInternal context, EventBusImpl bus, String address, boolean src) {
     this.context = context;
-    this.bus = bus;
+    this.eventBus = bus;
     this.src = src;
     this.address = address;
   }
 
   void receive(MessageImpl msg) {
-    if (bus.metrics != null) {
-      bus.metrics.scheduleMessage(metric, msg.isLocal());
+    if (eventBus.metrics != null) {
+      eventBus.metrics.scheduleMessage(metric, msg.isLocal());
     }
     context.executor().execute(() -> {
-      // Need to check handler is still there - the handler might have been removed after the message were sent but
-      // before it was received
+      // Need to check handler is still there:
+      // the handler might have been removed AFTER the message was sent BUT BEFORE it was received
       if (!doReceive(msg)) {
         discard(msg);
       }
@@ -58,11 +55,11 @@ public abstract class HandlerRegistration<T> implements Closeable {
 
   synchronized void register(String repliedAddress, boolean localOnly, Promise<Void> promise) {
     if (registered != null) {
-      throw new IllegalStateException();
+      throw new IllegalStateException("already registered: "+repliedAddress+" - "+registered);
     }
-    registered = bus.addRegistration(address, this, repliedAddress != null, localOnly, promise);
-    if (bus.metrics != null) {
-      metric = bus.metrics.handlerRegistered(address, repliedAddress);
+    registered = eventBus.addRegistration(address, this, repliedAddress != null, localOnly, promise);
+    if (eventBus.metrics != null) {
+      metric = eventBus.metrics.handlerRegistered(address, repliedAddress);
     }
   }
 
@@ -74,10 +71,10 @@ public abstract class HandlerRegistration<T> implements Closeable {
     Promise<Void> promise = context.promise();
     synchronized (this) {
       if (registered != null) {
-        bus.removeRegistration(registered, promise);
+        eventBus.removeRegistration(registered, promise);
         registered = null;
-        if (bus.metrics != null) {
-          bus.metrics.handlerUnregistered(metric);
+        if (eventBus.metrics != null) {
+          eventBus.metrics.handlerUnregistered(metric);
         }
       } else {
         promise.complete();
@@ -86,14 +83,14 @@ public abstract class HandlerRegistration<T> implements Closeable {
     return promise.future();
   }
 
-  void dispatch(Handler<Message<T>> theHandler, Message<T> message, ContextInternal context) {
+  final void dispatchUsingInboundDeliveryContext (Handler<Message<T>> theHandler, Message<T> message, ContextInternal context) {
     InboundDeliveryContext deliveryCtx = new InboundDeliveryContext((MessageImpl<?, T>) message, theHandler, context);
     deliveryCtx.dispatch();
   }
 
   void discard(Message<T> msg) {
-    if (bus.metrics != null) {
-      bus.metrics.discardMessage(metric, ((MessageImpl)msg).isLocal(), msg);
+    if (eventBus.metrics != null) {
+      eventBus.metrics.discardMessage(metric, ((MessageImpl)msg).isLocal(), msg);
     }
 
     String replyAddress = msg.replyAddress();
@@ -102,7 +99,7 @@ public abstract class HandlerRegistration<T> implements Closeable {
     }
   }
 
-  private class InboundDeliveryContext extends DeliveryContextBase<T> {
+  private final class InboundDeliveryContext extends DeliveryContextBase<T> {
 
     private final Handler<Message<T>> handler;
 
@@ -112,12 +109,13 @@ public abstract class HandlerRegistration<T> implements Closeable {
       this.handler = handler;
     }
 
+    @Override
     protected void execute() {
       ContextInternal ctx = InboundDeliveryContext.super.context;
       Object m = metric;
       VertxTracer tracer = ctx.tracer();
-      if (bus.metrics != null) {
-        bus.metrics.messageDelivered(m, message.isLocal());
+      if (eventBus.metrics != null) {
+        eventBus.metrics.messageDelivered(m, message.isLocal());
       }
       if (tracer != null && !src) {
         message.trace = tracer.receiveRequest(ctx, SpanKind.RPC, TracingPolicy.PROPAGATE, message, message.isSend() ? "send" : "publish", message.headers(), MessageTagExtractor.INSTANCE);
@@ -145,5 +143,9 @@ public abstract class HandlerRegistration<T> implements Closeable {
   @Override
   public void close(Promise<Void> completion) {
     unregister().onComplete(completion);
+  }
+
+  public final Vertx vertx() {
+    return eventBus.vertx;
   }
 }

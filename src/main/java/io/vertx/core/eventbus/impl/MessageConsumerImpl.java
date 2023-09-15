@@ -35,7 +35,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
 
   private static final Logger log = LoggerFactory.getLogger(MessageConsumerImpl.class);
 
-  private static final int DEFAULT_MAX_BUFFERED_MESSAGES = 1000;
+  public static final int DEFAULT_MAX_BUFFERED_MESSAGES = 1000;
 
   private final boolean localOnly;
   private Handler<Message<T>> handler;
@@ -124,7 +124,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
       registered = false;
       Promise<Void> res = result; // Alias reference because result can become null when the onComplete callback executes
       fut.onComplete(ar -> res.tryFail("Consumer unregistered before registration completed"));
-      result = context.promise();
+      result = context.promise();// old result is-Complete or will be-Complete shortly
     }
     return fut;
   }
@@ -173,7 +173,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
   private void deliver(Handler<Message<T>> theHandler, Message<T> message) {
     // Handle the message outside the sync block
     // https://bugs.eclipse.org/bugs/show_bug.cgi?id=473714
-    dispatch(theHandler, message, context.duplicate());
+    dispatchUsingInboundDeliveryContext(theHandler, message, context.duplicate());
     checkNextTick();
   }
 
@@ -247,9 +247,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
 
   @Override
   public synchronized MessageConsumer<T> fetch(long amount) {
-    if (amount < 0) {
-      throw new IllegalArgumentException();
-    }
+    Arguments.require(amount >= 0, "fetch(amount) must be positive, but: "+amount);
     demand += amount;
     if (demand < 0L) {
       demand = Long.MAX_VALUE;
@@ -264,7 +262,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
   public synchronized MessageConsumer<T> endHandler(Handler<Void> endHandler) {
     if (endHandler != null) {
       // We should use the HandlerHolder context to properly do this (needs small refactoring)
-      Context endCtx = bus.vertx.getOrCreateContext();
+      Context endCtx = vertx().getOrCreateContext();
       this.endHandler = v1 -> endCtx.runOnContext(v2 -> endHandler.handle(null));
     } else {
       this.endHandler = null;

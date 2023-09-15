@@ -50,7 +50,7 @@ class ReplyHandler<T> extends HandlerRegistration<T> implements Handler<Long> {
   }
 
   void fail(ReplyException failure) {
-    if (bus.vertx.cancelTimer(timeoutID)) {
+    if (vertx().cancelTimer(timeoutID)) {
       unregister();
       doFail(failure);
     }
@@ -59,8 +59,8 @@ class ReplyHandler<T> extends HandlerRegistration<T> implements Handler<Long> {
   private void doFail(ReplyException failure) {
     trace(null, failure);
     result.fail(failure);
-    if (bus.metrics != null) {
-      bus.metrics.replyFailure(repliedAddress, failure.failureType());
+    if (eventBus.metrics != null) {
+      eventBus.metrics.replyFailure(repliedAddress, failure.failureType());
     }
   }
 
@@ -72,7 +72,7 @@ class ReplyHandler<T> extends HandlerRegistration<T> implements Handler<Long> {
 
   @Override
   protected boolean doReceive(Message<T> reply) {
-    dispatch(null, reply, context);
+    dispatchUsingInboundDeliveryContext(null, reply, context);
     return true;
   }
 
@@ -82,7 +82,7 @@ class ReplyHandler<T> extends HandlerRegistration<T> implements Handler<Long> {
 
   @Override
   protected void dispatch(Message<T> reply, ContextInternal context, Handler<Message<T>> handler /* null */) {
-    if (bus.vertx.cancelTimer(timeoutID)) {
+    if (vertx().cancelTimer(timeoutID)) {
       unregister();
       if (reply.body() instanceof ReplyException) {
         doFail((ReplyException) reply.body());
