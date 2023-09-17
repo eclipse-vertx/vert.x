@@ -347,9 +347,15 @@ TCP server (Net/Http) can be configured with traffic shaping options to enable b
 bandwidth can be limited through {@link io.vertx.core.net.TrafficShapingOptions}. For NetServer, traffic shaping options can be set
 through {@link io.vertx.core.net.NetServerOptions} and for HttpServer it can be set through {@link io.vertx.core.http.HttpServerOptions}.
 
+[source,$lang]
+----
 {@link examples.NetExamples#configureTrafficShapingForNetServer}
+----
 
+[source,$lang]
+----
 {@link examples.NetExamples#configureTrafficShapingForHttpServer}
+----
 
 [[ssl]]
 === Configuring servers and clients to work with SSL/TLS
@@ -369,7 +375,7 @@ By default it is disabled.
 
 ==== Specifying key/certificate for the server
 
-SSL/TLS servers usually provide certificates to clients in order verify their identity to clients.
+SSL/TLS servers usually provide certificates to clients in order to verify their identity to clients.
 
 Certificates/keys can be configured for servers in several ways:
 
@@ -807,7 +813,7 @@ OpenSSL to be installed on your OS depending on the tcnative implementation.
 
 === Using a proxy for client connections
 
-The {@link io.vertx.core.net.NetClient} supports either a HTTP/1.x _CONNECT_, _SOCKS4a_ or _SOCKS5_ proxy.
+The {@link io.vertx.core.net.NetClient} supports either an HTTP/1.x _CONNECT_, _SOCKS4a_ or _SOCKS5_ proxy.
 
 The proxy can be configured in the {@link io.vertx.core.net.NetClientOptions} by setting a
 {@link io.vertx.core.net.ProxyOptions} object containing proxy type, hostname, port and optionally username and password.

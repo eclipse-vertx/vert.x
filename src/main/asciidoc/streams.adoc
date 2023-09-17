@@ -119,7 +119,7 @@ Let's now look at the methods on `ReadStream` and `WriteStream` in more detail:
 `ReadStream` is implemented by {@link io.vertx.core.http.HttpClientResponse}, {@link io.vertx.core.datagram.DatagramSocket},
 {@link io.vertx.core.http.HttpClientRequest}, {@link io.vertx.core.http.HttpServerFileUpload},
 {@link io.vertx.core.http.HttpServerRequest}, {@link io.vertx.core.eventbus.MessageConsumer},
-{@link io.vertx.core.net.NetSocket}, {@link io.vertx.core.http.WebSocket}, {@link io.vertx.core.file.AsyncFile}.
+{@link io.vertx.core.net.NetSocket}, {@link io.vertx.core.http.WebSocket} and {@link io.vertx.core.file.AsyncFile}.
 
 - {@link io.vertx.core.streams.ReadStream#handler}:
 set a handler which will receive items from the ReadStream.

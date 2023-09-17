@@ -26,7 +26,7 @@ and NetClient (see above).
 
 === Creating a DatagramSocket
 
-To use UDP you first need t create a {@link io.vertx.core.datagram.DatagramSocket}. It does not matter here if you only want to send data or send
+To use UDP you first need to create a {@link io.vertx.core.datagram.DatagramSocket}. It does not matter here if you only want to send data or send
 and receive.
 
 [source,$lang]
@@ -54,7 +54,7 @@ Sending packets is as easy as shown here:
 === Receiving Datagram packets
 
 If you want to receive packets you need to bind the {@link io.vertx.core.datagram.DatagramSocket} by calling
-`listen(...)}` on it.
+`listen(...)` on it.
 
 This way you will be able to receive {@link io.vertx.core.datagram.DatagramPacket}s that were sent to the address and port on
 which the {@link io.vertx.core.datagram.DatagramSocket} listens.

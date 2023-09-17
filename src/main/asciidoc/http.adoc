@@ -562,7 +562,7 @@ Or use {@link io.vertx.core.http.HttpServerResponse#putTrailer}.
 If you were writing a web server, one way to serve a file from disk would be to open it as an {@link io.vertx.core.file.AsyncFile}
 and pipe it to the HTTP response.
 
-Or you could load it it one go using {@link io.vertx.core.file.FileSystem#readFile} and write it straight to the response.
+Or you could load it in one go using {@link io.vertx.core.file.FileSystem#readFile} and write it straight to the response.
 
 Alternatively, Vert.x provides a method which allows you to serve a file from disk or the filesystem to an HTTP response
 in one operation.
@@ -580,7 +580,7 @@ Here's a very simple web server that serves files from the file system using sen
 ----
 
 Sending a file is asynchronous and may not complete until some time after the call has returned. If you want to
-be notified when the file has been written you can use {@link io.vertx.core.http.HttpServerResponse#sendFile(String)}
+be notified when the file has been written you can use {@link io.vertx.core.http.HttpServerResponse#sendFile(String)}.
 
 Please see the chapter about <<classpath, serving files from the classpath>> for restrictions about the classpath resolution or disabling it.
 
@@ -1020,7 +1020,7 @@ An {@link io.vertx.core.http.HttpClientRequest} instance is also a {@link io.ver
 
 You can pipe to it from any {@link io.vertx.core.streams.ReadStream} instance.
 
-For, example, you could pipe a file on disk to a http request body as follows:
+For, example, you could pipe a file on disk to an http request body as follows:
 
 [source,$lang]
 ----
@@ -1229,7 +1229,7 @@ Alternatively you can just parse the `Set-Cookie` headers yourself in the respon
 
 The client can be configured to follow HTTP redirections provided by the `Location` response header when the client receives:
 
-* a `301`, `302`, `307` or `308` status code along with a HTTP GET or HEAD method
+* a `301`, `302`, `307` or `308` status code along with an HTTP GET or HEAD method
 * a `303` status code, in addition the directed request perform an HTTP GET method
 
 Here's an example:
@@ -1621,7 +1621,7 @@ NOTE: this only applies to the HTTP/2 protocol
 Connection {@link io.vertx.core.http.HttpConnection#close} closes the connection:
 
 - it closes the socket for HTTP/1.x
-- a shutdown with no delay for HTTP/2, the {@literal GOAWAY} frame will still be sent before the connection is closed. *
+- a shutdown with no delay for HTTP/2, the {@literal GOAWAY} frame will still be sent before the connection is closed.
 
 The {@link io.vertx.core.http.HttpConnection#closeHandler} notifies when a connection is closed.
 
@@ -1660,7 +1660,7 @@ You can assign a number of event loop a client will use independently of the cli
 When several HTTP servers listen on the same port, vert.x orchestrates the request handling using a
 round-robin strategy.
 
-Let's take a verticle creating a HTTP server such as:
+Let's take a verticle creating an HTTP server such as:
 
 .io.vertx.examples.http.sharing.HttpServerVerticle
 [source,$lang]
@@ -1912,7 +1912,7 @@ The addresses of the handlers are given by {@link io.vertx.core.http.WebSocket#b
 
 === Using a proxy for HTTP/HTTPS connections
 
-The http client supports accessing http/https URLs via a HTTP proxy (e.g. Squid) or _SOCKS4a_ or _SOCKS5_ proxy.
+The http client supports accessing http/https URLs via an HTTP proxy (e.g. Squid) or _SOCKS4a_ or _SOCKS5_ proxy.
 The CONNECT protocol uses HTTP/1.x but can connect to HTTP/1.x and HTTP/2 servers.
 
 Connecting to h2c (unencrypted HTTP/2 servers) is likely not supported by http proxies since they will support
