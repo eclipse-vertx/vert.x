@@ -23,11 +23,9 @@ import io.vertx.core.net.impl.ProxyFilter;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
-import io.vertx.core.spi.resolver.AddressResolver;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -189,18 +187,6 @@ public class HttpClientBase implements MetricsProvider, Closeable {
       .setApplicationLayerProtocols(alpnVersions.stream().map(HttpVersion::alpnName).collect(Collectors.toList()));;    return Future.succeededFuture();
   }
 
-  public HttpClient connectionHandler(Handler<HttpConnection> handler) {
-    throw new UnsupportedOperationException();
-  }
-
-  public HttpClient redirectHandler(Function<HttpClientResponse, Future<RequestOptions>> handler) {
-    throw new UnsupportedOperationException();
-  }
-
-  public Function<HttpClientResponse, Future<RequestOptions>> redirectHandler() {
-    throw new UnsupportedOperationException();
-  }
-
   public HttpClientBase proxyFilter(Predicate<SocketAddress> filter) {
     proxyFilter = filter;
     return this;
@@ -212,10 +198,6 @@ public class HttpClientBase implements MetricsProvider, Closeable {
 
   public VertxInternal vertx() {
     return vertx;
-  }
-
-  public void addressResolver(AddressResolver<?, ?, ?> addressResolver) {
-    throw new UnsupportedOperationException();
   }
 
   protected void checkClosed() {
