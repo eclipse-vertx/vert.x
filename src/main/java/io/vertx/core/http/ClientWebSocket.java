@@ -123,4 +123,26 @@ public interface ClientWebSocket extends WebSocket {
   ClientWebSocket pongHandler(@Nullable Handler<Buffer> handler);
 
   @Override
-  ClientWebSocket exceptionHandler(Handler<Throwable> handler);}
+  ClientWebSocket exceptionHandler(Handler<Throwable> handler);
+
+  @Override
+  ClientWebSocket writeFrame(WebSocketFrame frame, Handler<AsyncResult<Void>> handler);
+
+  @Override
+  ClientWebSocket writeFinalTextFrame(String text, Handler<AsyncResult<Void>> handler);
+
+  @Override
+  ClientWebSocket writeFinalBinaryFrame(Buffer data, Handler<AsyncResult<Void>> handler);
+
+  @Override
+  ClientWebSocket writeBinaryMessage(Buffer data, Handler<AsyncResult<Void>> handler);
+
+  @Override
+  ClientWebSocket writeTextMessage(String text, Handler<AsyncResult<Void>> handler);
+
+  @Override
+  ClientWebSocket writePing(Buffer data, Handler<AsyncResult<Void>> handler);
+
+  @Override
+  ClientWebSocket writePong(Buffer data, Handler<AsyncResult<Void>> handler);
+}

@@ -202,7 +202,7 @@ public class ClientWebSocketImpl implements ClientWebSocket {
   }
 
   @Override
-  public WebSocket writeFrame(WebSocketFrame frame, Handler<AsyncResult<Void>> handler) {
+  public ClientWebSocket writeFrame(WebSocketFrame frame, Handler<AsyncResult<Void>> handler) {
     delegate().writeFrame(frame, handler);
     return this;
   }
@@ -213,7 +213,7 @@ public class ClientWebSocketImpl implements ClientWebSocket {
   }
 
   @Override
-  public WebSocket writeFinalTextFrame(String text, Handler<AsyncResult<Void>> handler) {
+  public ClientWebSocket writeFinalTextFrame(String text, Handler<AsyncResult<Void>> handler) {
     delegate().writeFinalTextFrame(text, handler);
     return this;
   }
@@ -224,7 +224,7 @@ public class ClientWebSocketImpl implements ClientWebSocket {
   }
 
   @Override
-  public WebSocket writeFinalBinaryFrame(Buffer data, Handler<AsyncResult<Void>> handler) {
+  public ClientWebSocket writeFinalBinaryFrame(Buffer data, Handler<AsyncResult<Void>> handler) {
     delegate().writeFinalBinaryFrame(data, handler);
     return this;
   }
@@ -235,7 +235,7 @@ public class ClientWebSocketImpl implements ClientWebSocket {
   }
 
   @Override
-  public WebSocket writeBinaryMessage(Buffer data, Handler<AsyncResult<Void>> handler) {
+  public ClientWebSocket writeBinaryMessage(Buffer data, Handler<AsyncResult<Void>> handler) {
     delegate().writeBinaryMessage(data, handler);
     return this;
   }
@@ -246,7 +246,7 @@ public class ClientWebSocketImpl implements ClientWebSocket {
   }
 
   @Override
-  public WebSocket writeTextMessage(String text, Handler<AsyncResult<Void>> handler) {
+  public ClientWebSocket writeTextMessage(String text, Handler<AsyncResult<Void>> handler) {
     delegate().writeTextMessage(text, handler);
     return this;
   }
@@ -257,7 +257,7 @@ public class ClientWebSocketImpl implements ClientWebSocket {
   }
 
   @Override
-  public WebSocket writePing(Buffer data, Handler<AsyncResult<Void>> handler) {
+  public ClientWebSocket writePing(Buffer data, Handler<AsyncResult<Void>> handler) {
     delegate().writePing(data, handler);
     return this;
   }
@@ -268,7 +268,7 @@ public class ClientWebSocketImpl implements ClientWebSocket {
   }
 
   @Override
-  public WebSocket writePong(Buffer data, Handler<AsyncResult<Void>> handler) {
+  public ClientWebSocket writePong(Buffer data, Handler<AsyncResult<Void>> handler) {
     delegate().writePong(data, handler);
     return this;
   }
