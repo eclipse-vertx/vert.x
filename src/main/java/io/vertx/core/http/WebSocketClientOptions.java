@@ -78,6 +78,18 @@ public class WebSocketClientOptions extends ClientOptionsBase {
    */
   public static final int DEFAULT_MAX_FRAME_SIZE = 65536;
 
+  /**
+   * The default value for host name = "localhost"
+   */
+  public static final String DEFAULT_DEFAULT_HOST = "localhost";
+
+  /**
+   * The default value for port = 80
+   */
+  public static final int DEFAULT_DEFAULT_PORT = 80;
+
+  private String defaultHost;
+  private int defaultPort;
   private boolean verifyHost;
   private int maxFrameSize;
   private int maxMessageSize;
@@ -107,6 +119,8 @@ public class WebSocketClientOptions extends ClientOptionsBase {
   public WebSocketClientOptions(WebSocketClientOptions other) {
     super(other);
 
+    this.defaultHost = other.defaultHost;
+    this.defaultPort = other.defaultPort;
     this.verifyHost = other.verifyHost;
     this.maxFrameSize = other.maxFrameSize;
     this.maxMessageSize = other.maxMessageSize;
@@ -135,6 +149,8 @@ public class WebSocketClientOptions extends ClientOptionsBase {
 
   private void init() {
     verifyHost = true;
+    defaultHost = DEFAULT_DEFAULT_HOST;
+    defaultPort = DEFAULT_DEFAULT_PORT;
     maxFrameSize = DEFAULT_MAX_FRAME_SIZE;
     maxMessageSize = DEFAULT_MAX_MESSAGE_SIZE;
     maxConnections = DEFAULT_MAX_CONNECTIONS;
@@ -147,6 +163,44 @@ public class WebSocketClientOptions extends ClientOptionsBase {
     closingTimeout = DEFAULT_CLOSING_TIMEOUT;
     shared = DEFAULT_SHARED;
     name = DEFAULT_NAME;
+  }
+
+  /**
+   * Get the default host name to be used by this client in requests if none is provided when making the request.
+   *
+   * @return  the default host name
+   */
+  public String getDefaultHost() {
+    return defaultHost;
+  }
+
+  /**
+   * Set the default host name to be used by this client in requests if none is provided when making the request.
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  public WebSocketClientOptions setDefaultHost(String defaultHost) {
+    this.defaultHost = defaultHost;
+    return this;
+  }
+
+  /**
+   * Get the default port to be used by this client in requests if none is provided when making the request.
+   *
+   * @return  the default port
+   */
+  public int getDefaultPort() {
+    return defaultPort;
+  }
+
+  /**
+   * Set the default port to be used by this client in requests if none is provided when making the request.
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  public WebSocketClientOptions setDefaultPort(int defaultPort) {
+    this.defaultPort = defaultPort;
+    return this;
   }
 
   /**

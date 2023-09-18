@@ -47,6 +47,27 @@ public interface WebSocketClient extends Measured {
   }
 
   /**
+   * Connect a WebSocket to the default client port and specified host and relative request URI.
+   *
+   * @param host  the host
+   * @param requestURI  the relative URI
+   * @return a future notified when the WebSocket when connected
+   */
+  default Future<WebSocket> connect(String host, String requestURI) {
+    return connect(new WebSocketConnectOptions().setURI(requestURI).setHost(host));
+  }
+
+  /**
+   * Connect a WebSocket to the default client port, default client host and specified, relative request URI.
+   *
+   * @param requestURI  the relative URI
+   * @return a future notified when the WebSocket when connected
+   */
+  default Future<WebSocket> connect(String requestURI) {
+    return connect(new WebSocketConnectOptions().setURI(requestURI));
+  }
+
+  /**
    * Connect a WebSocket with the specified options.
    *
    * @param options  the request options

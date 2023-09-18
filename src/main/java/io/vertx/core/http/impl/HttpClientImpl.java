@@ -17,28 +17,18 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.*;
-import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.*;
-import io.vertx.core.net.impl.NetClientBuilder;
-import io.vertx.core.net.impl.NetClientInternal;
-import io.vertx.core.net.impl.ProxyFilter;
 import io.vertx.core.net.impl.pool.*;
 import io.vertx.core.spi.metrics.ClientMetrics;
-import io.vertx.core.spi.metrics.HttpClientMetrics;
-import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.resolver.AddressResolver;
 
 import java.lang.ref.WeakReference;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static io.vertx.core.http.HttpHeaders.*;
 
@@ -251,21 +241,6 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   }
 
   @Override
-  public Future<HttpClientRequest> request(HttpMethod method, int port, String host, String requestURI) {
-    return request(new RequestOptions().setMethod(method).setPort(port).setHost(host).setURI(requestURI));
-  }
-
-  @Override
-  public Future<HttpClientRequest> request(HttpMethod method, String host, String requestURI) {
-    return request(method, options.getDefaultPort(), host, requestURI);
-  }
-
-  @Override
-  public Future<HttpClientRequest> request(HttpMethod method, String requestURI) {
-    return request(method, options.getDefaultPort(), options.getDefaultHost(), requestURI);
-  }
-
-  @Override
   public Future<HttpClientRequest> request(RequestOptions request) {
     SocketAddress server = request.getServer();
     Integer port = request.getPort();
@@ -286,7 +261,6 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         host = server.host();
       }
     }
-
     return doRequest(server, port, host, request);
   }
 
