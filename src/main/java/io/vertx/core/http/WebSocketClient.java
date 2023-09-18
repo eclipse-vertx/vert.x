@@ -43,12 +43,51 @@ public interface WebSocketClient extends Measured {
    * @param requestURI  the relative URI
    * @param handler  handler that will be called with the WebSocket when connected
    */
-  void connect(int port, String host, String requestURI, Handler<AsyncResult<WebSocket>> handler);
+  default void connect(int port, String host, String requestURI, Handler<AsyncResult<WebSocket>> handler) {
+    connect(new WebSocketConnectOptions().setPort(port).setHost(host).setURI(requestURI), handler);
+  }
 
   /**
    * Like {@link #connect(int, String, String, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  Future<WebSocket> connect(int port, String host, String requestURI);
+  default Future<WebSocket> connect(int port, String host, String requestURI) {
+    return connect(new WebSocketConnectOptions().setPort(port).setHost(host).setURI(requestURI));
+  }
+
+  /**
+   * Connect a WebSocket to the default client port and specified host and relative request URI.
+   *
+   * @param host  the host
+   * @param requestURI  the relative URI
+   * @param handler  handler that will be called with the WebSocket when connected
+   */
+  default void connect(String host, String requestURI, Handler<AsyncResult<WebSocket>> handler) {
+    connect(new WebSocketConnectOptions().setURI(requestURI).setHost(host), handler);
+  }
+
+  /**
+   * Like {@link #connect(String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<WebSocket> connect(String host, String requestURI) {
+    return connect(new WebSocketConnectOptions().setURI(requestURI).setHost(host));
+  }
+
+  /**
+   * Connect a WebSocket to the default client port, default client host and specified, relative request URI.
+   *
+   * @param requestURI  the relative URI
+   * @param handler  handler that will be called with the WebSocket when connected
+   */
+  default void connect(String requestURI, Handler<AsyncResult<WebSocket>> handler) {
+    connect(new WebSocketConnectOptions().setURI(requestURI), handler);
+  }
+
+  /**
+   * Like {@link #connect(String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<WebSocket> connect(String requestURI) {
+    return connect(new WebSocketConnectOptions().setURI(requestURI));
+  }
 
   /**
    * Connect a WebSocket with the specified options.

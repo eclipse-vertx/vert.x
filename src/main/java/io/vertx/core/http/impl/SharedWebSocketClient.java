@@ -59,16 +59,6 @@ public class SharedWebSocketClient implements WebSocketClient {
   }
 
   @Override
-  public void connect(int port, String host, String requestURI, Handler<AsyncResult<WebSocket>> handler) {
-    delegate.connect(port, host, requestURI, handler);
-  }
-
-  @Override
-  public Future<WebSocket> connect(int port, String host, String requestURI) {
-    return delegate.connect(port, host, requestURI);
-  }
-
-  @Override
   public void connect(WebSocketConnectOptions options, Handler<AsyncResult<WebSocket>> handler) {
     delegate.connect(options, handler);
   }

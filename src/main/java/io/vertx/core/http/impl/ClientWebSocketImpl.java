@@ -47,16 +47,6 @@ public class ClientWebSocketImpl implements ClientWebSocket {
   }
 
   @Override
-  public void connect(int port, String host, String requestURI, Handler<AsyncResult<WebSocket>> handler) {
-    connect(new WebSocketConnectOptions().setPort(port).setHost(host).setURI(requestURI), handler);
-  }
-
-  @Override
-  public Future<WebSocket> connect(int port, String host, String requestURI) {
-    return connect(new WebSocketConnectOptions().setPort(port).setHost(host).setURI(requestURI));
-  }
-
-  @Override
   public Future<WebSocket> connect(WebSocketConnectOptions options) {
     ContextInternal ctx = client.vertx().getOrCreateContext();
     Promise<WebSocket> promise = ctx.promise();

@@ -40,6 +40,16 @@ public class WebSocketClientOptionsConverter {
             obj.setCompressionRequestServerNoContext((Boolean)member.getValue());
           }
           break;
+        case "defaultHost":
+          if (member.getValue() instanceof String) {
+            obj.setDefaultHost((String)member.getValue());
+          }
+          break;
+        case "defaultPort":
+          if (member.getValue() instanceof Number) {
+            obj.setDefaultPort(((Number)member.getValue()).intValue());
+          }
+          break;
         case "maxConnections":
           if (member.getValue() instanceof Number) {
             obj.setMaxConnections(((Number)member.getValue()).intValue());
@@ -98,6 +108,10 @@ public class WebSocketClientOptionsConverter {
     json.put("compressionAllowClientNoContext", obj.getCompressionAllowClientNoContext());
     json.put("compressionLevel", obj.getCompressionLevel());
     json.put("compressionRequestServerNoContext", obj.getCompressionRequestServerNoContext());
+    if (obj.getDefaultHost() != null) {
+      json.put("defaultHost", obj.getDefaultHost());
+    }
+    json.put("defaultPort", obj.getDefaultPort());
     json.put("maxConnections", obj.getMaxConnections());
     json.put("maxFrameSize", obj.getMaxFrameSize());
     json.put("maxMessageSize", obj.getMaxMessageSize());

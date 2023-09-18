@@ -68,7 +68,9 @@ public interface HttpClient extends Measured {
   /**
    * Like {@link #request(HttpMethod, int, String, String, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  Future<HttpClientRequest> request(HttpMethod method, int port, String host, String requestURI);
+  default Future<HttpClientRequest> request(HttpMethod method, int port, String host, String requestURI) {
+    return request(new RequestOptions().setMethod(method).setPort(port).setHost(host).setURI(requestURI));
+  }
 
   /**
    * Create an HTTP request to send to the server at the {@code host} and default port. The {@code handler}
@@ -84,7 +86,9 @@ public interface HttpClient extends Measured {
   /**
    * Like {@link #request(HttpMethod, String, String, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  Future<HttpClientRequest> request(HttpMethod method, String host, String requestURI);
+  default Future<HttpClientRequest> request(HttpMethod method, String host, String requestURI) {
+    return request(new RequestOptions().setMethod(method).setHost(host).setURI(requestURI));
+  }
 
   /**
    * Create an HTTP request to send to the server at the default host and port. The {@code handler}
@@ -99,7 +103,9 @@ public interface HttpClient extends Measured {
   /**
    * Like {@link #request(HttpMethod, String, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  Future<HttpClientRequest> request(HttpMethod method, String requestURI);
+  default Future<HttpClientRequest> request(HttpMethod method, String requestURI) {
+    return request(new RequestOptions().setMethod(method).setURI(requestURI));
+  }
 
   /**
    * Connect a WebSocket to the specified port, host and relative request URI

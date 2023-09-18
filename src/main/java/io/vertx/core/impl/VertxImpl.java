@@ -355,6 +355,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public WebSocketClient createWebSocketClient(WebSocketClientOptions options, CloseFuture closeFuture) {
     HttpClientOptions o = new HttpClientOptions(options);
+    o.setDefaultHost(options.getDefaultHost());
+    o.setDefaultPort(options.getDefaultPort());
     o.setVerifyHost(options.isVerifyHost());
     o.setMaxWebSocketFrameSize(options.getMaxFrameSize());
     o.setMaxWebSocketMessageSize(options.getMaxMessageSize());
