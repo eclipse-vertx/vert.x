@@ -2878,7 +2878,7 @@ public abstract class HttpTest extends HttpTestBase {
     });
     startServer(testAddress);
     client.close();
-    client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1).setKeepAlive(true));
+    client = vertx.createHttpClient(createBaseClientOptions().setKeepAlive(true), new PoolOptions().setHttp1MaxSize(1));
     for (int i = 0;i < num;i++) {
       int idx = i;
       client.request(new RequestOptions(requestOptions).setURI("/" + i)).onComplete(onSuccess(req -> {
@@ -2912,7 +2912,7 @@ public abstract class HttpTest extends HttpTestBase {
     });
     startServer(testAddress);
     client.close();
-    client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1).setKeepAlive(true));
+    client = vertx.createHttpClient(createBaseClientOptions().setKeepAlive(true), new PoolOptions().setHttp1MaxSize(1));
     for (int i = 0;i < num;i++) {
       client.request(requestOptions).onComplete(onSuccess(req -> {
         req.send().onComplete(onSuccess(resp -> {
@@ -3008,7 +3008,7 @@ public abstract class HttpTest extends HttpTestBase {
     });
     startServer(testAddress);
     client.close();
-    client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1));
+    client = vertx.createHttpClient(createBaseClientOptions(), new PoolOptions().setHttp1MaxSize(1));
     client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.PUT)).onComplete(onSuccess(req -> {
       req
         .send(Buffer.buffer("small")).onComplete(onSuccess(resp -> {
@@ -3034,7 +3034,7 @@ public abstract class HttpTest extends HttpTestBase {
     });
     startServer(testAddress);
     client.close();
-    client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1));
+    client = vertx.createHttpClient(createBaseClientOptions(), new PoolOptions().setHttp1MaxSize(1));
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req.send().onComplete(onSuccess(resp -> {
         AtomicBoolean ended = new AtomicBoolean();
@@ -3347,7 +3347,7 @@ public abstract class HttpTest extends HttpTestBase {
       HttpClient client;
       @Override
       public void start(Promise<Void> startPromise) {
-        client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1));
+        client = vertx.createHttpClient(createBaseClientOptions(), new PoolOptions().setHttp1MaxSize(1));
         for (int i = 0; i < numReq; i++) {
           client.request(requestOptions)
             .compose(req -> req
@@ -3393,7 +3393,7 @@ public abstract class HttpTest extends HttpTestBase {
       HttpClient client;
       @Override
       public void start(Promise<Void> startPromise) {
-        client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1));
+        client = vertx.createHttpClient(createBaseClientOptions(), new PoolOptions().setHttp1MaxSize(1));
         for (int i = 0; i < numReq; i++) {
           client.request(requestOptions).
             compose(req -> req
@@ -4845,7 +4845,7 @@ public abstract class HttpTest extends HttpTestBase {
     try {
       int poolSize = 2;
       client.close();
-      client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(poolSize));
+      client = vertx.createHttpClient(new HttpClientOptions(), new PoolOptions().setHttp1MaxSize(poolSize));
       AtomicInteger failures = new AtomicInteger();
       vertx.runOnContext(v -> {
         for (int i = 0; i < (poolSize + 1); i++) {
@@ -4983,9 +4983,7 @@ public abstract class HttpTest extends HttpTestBase {
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions()
       .setIdleTimeout(1)
-      .setMaxPoolSize(1)
-      .setKeepAliveTimeout(10)
-    );
+      .setKeepAliveTimeout(10), new PoolOptions().setHttp1MaxSize(1));
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req.send().onComplete(onSuccess(resp -> {
         resp.endHandler(v1 -> {
@@ -5011,13 +5009,13 @@ public abstract class HttpTest extends HttpTestBase {
     HttpClientOptions options = createBaseClientOptions()
       .setKeepAliveTimeout(3)
       .setHttp2KeepAliveTimeout(3);
-    testKeepAliveTimeout(options, 1);
+    testKeepAliveTimeout(options, new PoolOptions(), 1);
   }
 
-  protected void testKeepAliveTimeout(HttpClientOptions options, int numReqs) throws Exception {
+  protected void testKeepAliveTimeout(HttpClientOptions options, PoolOptions poolOptions, int numReqs) throws Exception {
     startServer(testAddress);
     client.close();
-    client = vertx.createHttpClient(options.setPoolCleanerPeriod(1));
+    client = vertx.createHttpClient(options, poolOptions.setCleanerPeriod(1));
     AtomicInteger respCount = new AtomicInteger();
     for (int i = 0;i < numReqs;i++) {
       int current = 1 + i;
@@ -5044,15 +5042,15 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testPoolNotExpiring1() throws Exception {
-    testPoolNotExpiring(createBaseClientOptions().setPoolCleanerPeriod(0).setKeepAliveTimeout(100).setHttp2KeepAliveTimeout(100));
+    testPoolNotExpiring(createBaseClientOptions().setKeepAliveTimeout(100).setHttp2KeepAliveTimeout(100), new PoolOptions().setCleanerPeriod(0));
   }
 
   @Test
   public void testPoolNotExpiring2() throws Exception {
-    testPoolNotExpiring(createBaseClientOptions().setPoolCleanerPeriod(10).setKeepAliveTimeout(0).setHttp2KeepAliveTimeout(0));
+    testPoolNotExpiring(createBaseClientOptions().setKeepAliveTimeout(0).setHttp2KeepAliveTimeout(0), new PoolOptions().setCleanerPeriod(10));
   }
 
-  private void testPoolNotExpiring(HttpClientOptions options) throws Exception {
+  private void testPoolNotExpiring(HttpClientOptions options, PoolOptions poolOptions) throws Exception {
     AtomicLong now = new AtomicLong();
     server.requestHandler(req -> {
       req.response().end();
@@ -5063,7 +5061,7 @@ public abstract class HttpTest extends HttpTestBase {
     });
     startServer(testAddress);
     client.close();
-    client = vertx.createHttpClient(options);
+    client = vertx.createHttpClient(options, poolOptions);
     client.request(requestOptions)
       .onComplete(onSuccess(req -> req.send().onComplete(onSuccess(resp -> {
         resp.endHandler(v1 -> {
@@ -6158,7 +6156,7 @@ public abstract class HttpTest extends HttpTestBase {
     });
     startServer(testAddress);
     client.close();
-    client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1));
+    client = vertx.createHttpClient(createBaseClientOptions(), new PoolOptions().setHttp1MaxSize(1));
     Buffer chunk = Buffer.buffer(TestUtils.randomAlphaString(1024));
     client.request(requestOptions).onComplete(onSuccess(req1 -> {
       assertTrue(req1.reset());

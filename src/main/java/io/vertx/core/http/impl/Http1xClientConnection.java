@@ -61,13 +61,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.buffer.impl.BufferInternal;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpFrame;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.StreamPriority;
-import io.vertx.core.http.WebSocket;
-import io.vertx.core.http.WebsocketVersion;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
@@ -116,7 +110,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     throw new IllegalStateException("Invalid object " + msg);
   };
 
-  private final HttpClientImpl client;
+  private final HttpClientBase client;
   private final HttpClientOptions options;
   private final boolean ssl;
   private final SocketAddress server;
@@ -147,7 +141,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   private long lastResponseReceivedTimestamp;
 
   Http1xClientConnection(HttpVersion version,
-                         HttpClientImpl client,
+                         HttpClientBase client,
                          ChannelHandlerContext channel,
                          boolean ssl,
                          SocketAddress server,
@@ -975,17 +969,21 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     return client.metrics();
   }
 
-  synchronized Future<WebSocket> toWebSocket(
+  /**
+   * @return a future of a paused WebSocket
+   */
+  synchronized void toWebSocket(
     ContextInternal context,
     String requestURI,
     MultiMap headers,
     boolean allowOriginHeader,
+    WebSocketClientOptions options,
     WebsocketVersion vers,
     List<String> subProtocols,
     long handshakeTimeout,
     boolean registerWriteHandlers,
-    int maxWebSocketFrameSize) {
-    Promise<WebSocket> promise = context.promise();
+    int maxWebSocketFrameSize,
+    Promise<WebSocket> promise) {
     try {
       URI wsuri = new URI(requestURI);
       if (!wsuri.isAbsolute()) {
@@ -1013,7 +1011,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       }
 
       ChannelPipeline p = chctx.channel().pipeline();
-      ArrayList<WebSocketClientExtensionHandshaker> extensionHandshakers = initializeWebSocketExtensionHandshakers(client.options());
+      ArrayList<WebSocketClientExtensionHandshaker> extensionHandshakers = initializeWebSocketExtensionHandshakers(options);
       if (!extensionHandshakers.isEmpty()) {
         p.addBefore("handler", "webSocketsExtensionsHandler", new WebSocketClientExtensionHandler(
           extensionHandshakers.toArray(new WebSocketClientExtensionHandshaker[0])));
@@ -1045,9 +1043,9 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
             context,
             Http1xClientConnection.this,
             version != V00,
-            options.getWebSocketClosingTimeout(),
-            options.getMaxWebSocketFrameSize(),
-            options.getMaxWebSocketMessageSize(),
+            options.getClosingTimeout(),
+            options.getMaxFrameSize(),
+            options.getMaxMessageSize(),
             registerWriteHandlers);
           ws.headers(new HeadersAdaptor(future.getNow()));
           ws.subProtocol(handshaker.actualSubprotocol());
@@ -1057,7 +1055,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
           if (metrics != null) {
             ws.setMetric(metrics.connected(ws));
           }
-          promise.complete(ws);
+          ws.pause();
           Deque<WebSocketFrame> toResubmit = pendingFrames;
           if (toResubmit != null) {
             pendingFrames = null;
@@ -1066,6 +1064,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
               handleWsFrame(frame);
             }
           }
+          promise.complete(ws);
         } else {
           close();
           promise.fail(future.cause());
@@ -1074,7 +1073,6 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     } catch (Exception e) {
       handleException(e);
     }
-    return promise.future();
   }
 
   static WebSocketClientHandshaker newHandshaker(
@@ -1162,17 +1160,17 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     throw new WebSocketHandshakeException("Protocol version " + version + " not supported.");
   }
 
-  ArrayList<WebSocketClientExtensionHandshaker> initializeWebSocketExtensionHandshakers(HttpClientOptions options) {
+  ArrayList<WebSocketClientExtensionHandshaker> initializeWebSocketExtensionHandshakers(WebSocketClientOptions options) {
     ArrayList<WebSocketClientExtensionHandshaker> extensionHandshakers = new ArrayList<>();
-    if (options.getTryWebSocketDeflateFrameCompression()) {
-      extensionHandshakers.add(new DeflateFrameClientExtensionHandshaker(options.getWebSocketCompressionLevel(),
+    if (options.getTryUsePerFrameCompression()) {
+      extensionHandshakers.add(new DeflateFrameClientExtensionHandshaker(options.getCompressionLevel(),
         false));
     }
 
-    if (options.getTryUsePerMessageWebSocketCompression()) {
-      extensionHandshakers.add(new PerMessageDeflateClientExtensionHandshaker(options.getWebSocketCompressionLevel(),
+    if (options.getTryUsePerMessageCompression()) {
+      extensionHandshakers.add(new PerMessageDeflateClientExtensionHandshaker(options.getCompressionLevel(),
         ZlibCodecFactory.isSupportingWindowSizeAndMemLevel(), PerMessageDeflateServerExtensionHandshaker.MAX_WINDOW_SIZE,
-        options.getWebSocketCompressionAllowClientNoContext(), options.getWebSocketCompressionRequestServerNoContext()));
+        options.getCompressionAllowClientNoContext(), options.getCompressionRequestServerNoContext()));
     }
 
     return extensionHandshakers;

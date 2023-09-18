@@ -35,16 +35,6 @@ import java.util.concurrent.TimeUnit;
 public class HttpClientOptions extends ClientOptionsBase {
 
   /**
-   * The default maximum number of HTTP/1 connections a client will pool = 5
-   */
-  public static final int DEFAULT_MAX_POOL_SIZE = 5;
-
-  /**
-   * The default maximum number of connections an HTTP/2 client will pool = 1
-   */
-  public static final int DEFAULT_HTTP2_MAX_POOL_SIZE = 1;
-
-  /**
    * The default maximum number of concurrent streams per connection for HTTP/2 = -1
    */
   public static final int DEFAULT_HTTP2_MULTIPLEXING_LIMIT = -1;
@@ -90,22 +80,6 @@ public class HttpClientOptions extends ClientOptionsBase {
   public static final boolean DEFAULT_VERIFY_HOST = true;
 
   /**
-   * The default value for maximum WebSocket frame size = 65536 bytes
-   */
-  public static final int DEFAULT_MAX_WEBSOCKET_FRAME_SIZE = 65536;
-
-  /**
-   * The default value for maximum WebSocket messages (could be assembled from multiple frames) is 4 full frames
-   * worth of data
-   */
-  public static final int DEFAULT_MAX_WEBSOCKET_MESSAGE_SIZE = 65536 * 4;
-
-  /**
-   * The default value for the maximum number of WebSocket = 50
-   */
-  public static final int DEFAULT_MAX_WEBSOCKETS = 50;
-
-  /**
    * The default value for host name = "localhost"
    */
   public static final String DEFAULT_DEFAULT_HOST = "localhost";
@@ -136,11 +110,6 @@ public class HttpClientOptions extends ClientOptionsBase {
   public static final int DEFAULT_MAX_HEADER_SIZE = 8192;
 
   /**
-   * Default max wait queue size = -1 (unbounded)
-   */
-  public static final int DEFAULT_MAX_WAIT_QUEUE_SIZE = -1;
-
-  /**
    * Default Application-Layer Protocol Negotiation versions = [] (automatic according to protocol version)
    */
   public static final List<HttpVersion> DEFAULT_ALPN_VERSIONS = Collections.emptyList();
@@ -154,11 +123,6 @@ public class HttpClientOptions extends ClientOptionsBase {
    * Default to use a preflight OPTIONS request for <i>h2C</i> without prior knowledge connection = {@code false}
    */
   public static final boolean DEFAULT_HTTP2_CLEAR_TEXT_UPGRADE_WITH_PREFLIGHT_REQUEST = false;
-
-  /**
-   * Default WebSocket masked bit is true as depicted by RFC = {@code false}
-   */
-  public static final boolean DEFAULT_SEND_UNMASKED_FRAMES = false;
 
   /*
    * Default max redirect = 16
@@ -176,46 +140,6 @@ public class HttpClientOptions extends ClientOptionsBase {
   public static final int DEFAULT_DECODER_INITIAL_BUFFER_SIZE = 128;
 
   /**
-   * Default offer WebSocket per-frame deflate compression extension = {@code false}
-   */
-  public static final boolean DEFAULT_TRY_USE_PER_FRAME_WEBSOCKET_COMPRESSION = false;
-
-  /**
-   * Default offer WebSocket per-message deflate compression extension = {@code false}
-   */
-  public static final boolean DEFAULT_TRY_USE_PER_MESSAGE_WEBSOCKET_COMPRESSION = false;
-
-  /**
-   * Default WebSocket deflate compression level = 6
-   */
-  public static final int DEFAULT_WEBSOCKET_COMPRESSION_LEVEL = 6;
-
-  /**
-   * Default offering of the {@code server_no_context_takeover} WebSocket parameter deflate compression extension = {@code false}
-   */
-  public static final boolean DEFAULT_WEBSOCKET_ALLOW_CLIENT_NO_CONTEXT = false;
-
-  /**
-   * Default offering of the {@code client_no_context_takeover} WebSocket parameter deflate compression extension = {@code false}
-   */
-  public static final boolean DEFAULT_WEBSOCKET_REQUEST_SERVER_NO_CONTEXT = false;
-
-  /**
-   * Default pool cleaner period = 1000 ms (1 second)
-   */
-  public static final int DEFAULT_POOL_CLEANER_PERIOD = 1000;
-
-  /**
-   * Default pool event loop size = 0 (reuse current event-loop)
-   */
-  public static final int DEFAULT_POOL_EVENT_LOOP_SIZE = 0;
-
-  /**
-   * Default WebSocket closing timeout = 10 second
-   */
-  public static final int DEFAULT_WEBSOCKET_CLOSING_TIMEOUT = 10;
-
-  /**
    * Default tracing control = {@link TracingPolicy#PROPAGATE}
    */
   public static final TracingPolicy DEFAULT_TRACING_POLICY = TracingPolicy.PROPAGATE;
@@ -231,44 +155,28 @@ public class HttpClientOptions extends ClientOptionsBase {
   public static final String DEFAULT_NAME = "__vertx.DEFAULT";
 
   private boolean verifyHost = true;
-  private int maxPoolSize;
   private boolean keepAlive;
   private int keepAliveTimeout;
   private int pipeliningLimit;
   private boolean pipelining;
-  private int http2MaxPoolSize;
   private int http2MultiplexingLimit;
   private int http2ConnectionWindowSize;
   private int http2KeepAliveTimeout;
-  private int poolCleanerPeriod;
-  private int poolEventLoopSize;
 
   private boolean tryUseCompression;
-  private int maxWebSocketFrameSize;
-  private int maxWebSocketMessageSize;
-  private int maxWebSockets;
   private String defaultHost;
   private int defaultPort;
   private HttpVersion protocolVersion;
   private int maxChunkSize;
   private int maxInitialLineLength;
   private int maxHeaderSize;
-  private int maxWaitQueueSize;
   private Http2Settings initialSettings;
   private List<HttpVersion> alpnVersions;
   private boolean http2ClearTextUpgrade;
   private boolean http2ClearTextUpgradeWithPreflightRequest;
-  private boolean sendUnmaskedFrames;
   private int maxRedirects;
   private boolean forceSni;
   private int decoderInitialBufferSize;
-
-  private boolean tryUsePerFrameWebSocketCompression;
-  private boolean tryUsePerMessageWebSocketCompression;
-  private int webSocketCompressionLevel;
-  private boolean webSocketAllowClientNoContext;
-  private boolean webSocketRequestServerNoContext;
-  private int webSocketClosingTimeout;
 
   private TracingPolicy tracingPolicy;
 
@@ -288,45 +196,40 @@ public class HttpClientOptions extends ClientOptionsBase {
    *
    * @param other  the options to copy
    */
+  public HttpClientOptions(ClientOptionsBase other) {
+    super(other);
+    init();
+  }
+
+  /**
+   * Copy constructor
+   *
+   * @param other  the options to copy
+   */
   public HttpClientOptions(HttpClientOptions other) {
     super(other);
     this.verifyHost = other.isVerifyHost();
-    this.maxPoolSize = other.getMaxPoolSize();
     this.keepAlive = other.isKeepAlive();
     this.keepAliveTimeout = other.getKeepAliveTimeout();
     this.pipelining = other.isPipelining();
     this.pipeliningLimit = other.getPipeliningLimit();
-    this.http2MaxPoolSize = other.getHttp2MaxPoolSize();
     this.http2MultiplexingLimit = other.http2MultiplexingLimit;
     this.http2ConnectionWindowSize = other.http2ConnectionWindowSize;
     this.http2KeepAliveTimeout = other.getHttp2KeepAliveTimeout();
     this.tryUseCompression = other.isTryUseCompression();
-    this.maxWebSocketFrameSize = other.maxWebSocketFrameSize;
-    this.maxWebSocketMessageSize = other.maxWebSocketMessageSize;
-    this.maxWebSockets = other.maxWebSockets;
     this.defaultHost = other.defaultHost;
     this.defaultPort = other.defaultPort;
     this.protocolVersion = other.protocolVersion;
     this.maxChunkSize = other.maxChunkSize;
     this.maxInitialLineLength = other.getMaxInitialLineLength();
     this.maxHeaderSize = other.getMaxHeaderSize();
-    this.maxWaitQueueSize = other.maxWaitQueueSize;
     this.initialSettings = other.initialSettings != null ? new Http2Settings(other.initialSettings) : null;
     this.alpnVersions = other.alpnVersions != null ? new ArrayList<>(other.alpnVersions) : null;
     this.http2ClearTextUpgrade = other.http2ClearTextUpgrade;
     this.http2ClearTextUpgradeWithPreflightRequest = other.http2ClearTextUpgradeWithPreflightRequest;
-    this.sendUnmaskedFrames = other.isSendUnmaskedFrames();
     this.maxRedirects = other.maxRedirects;
     this.forceSni = other.forceSni;
     this.decoderInitialBufferSize = other.getDecoderInitialBufferSize();
-    this.poolCleanerPeriod = other.getPoolCleanerPeriod();
-    this.poolEventLoopSize = other.getPoolEventLoopSize();
-    this.tryUsePerFrameWebSocketCompression = other.tryUsePerFrameWebSocketCompression;
-    this.tryUsePerMessageWebSocketCompression = other.tryUsePerMessageWebSocketCompression;
-    this.webSocketAllowClientNoContext = other.webSocketAllowClientNoContext;
-    this.webSocketCompressionLevel = other.webSocketCompressionLevel;
-    this.webSocketRequestServerNoContext = other.webSocketRequestServerNoContext;
-    this.webSocketClosingTimeout = other.webSocketClosingTimeout;
     this.tracingPolicy = other.tracingPolicy;
     this.shared = other.shared;
     this.name = other.name;
@@ -356,42 +259,27 @@ public class HttpClientOptions extends ClientOptionsBase {
 
   private void init() {
     verifyHost = DEFAULT_VERIFY_HOST;
-    maxPoolSize = DEFAULT_MAX_POOL_SIZE;
     keepAlive = DEFAULT_KEEP_ALIVE;
     keepAliveTimeout = DEFAULT_KEEP_ALIVE_TIMEOUT;
     pipelining = DEFAULT_PIPELINING;
     pipeliningLimit = DEFAULT_PIPELINING_LIMIT;
     http2MultiplexingLimit = DEFAULT_HTTP2_MULTIPLEXING_LIMIT;
-    http2MaxPoolSize = DEFAULT_HTTP2_MAX_POOL_SIZE;
     http2ConnectionWindowSize = DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE;
     http2KeepAliveTimeout = DEFAULT_HTTP2_KEEP_ALIVE_TIMEOUT;
     tryUseCompression = DEFAULT_TRY_USE_COMPRESSION;
-    maxWebSocketFrameSize = DEFAULT_MAX_WEBSOCKET_FRAME_SIZE;
-    maxWebSocketMessageSize = DEFAULT_MAX_WEBSOCKET_MESSAGE_SIZE;
-    maxWebSockets = DEFAULT_MAX_WEBSOCKETS;
     defaultHost = DEFAULT_DEFAULT_HOST;
     defaultPort = DEFAULT_DEFAULT_PORT;
     protocolVersion = DEFAULT_PROTOCOL_VERSION;
     maxChunkSize = DEFAULT_MAX_CHUNK_SIZE;
     maxInitialLineLength = DEFAULT_MAX_INITIAL_LINE_LENGTH;
     maxHeaderSize = DEFAULT_MAX_HEADER_SIZE;
-    maxWaitQueueSize = DEFAULT_MAX_WAIT_QUEUE_SIZE;
     initialSettings = new Http2Settings();
     alpnVersions = new ArrayList<>(DEFAULT_ALPN_VERSIONS);
     http2ClearTextUpgrade = DEFAULT_HTTP2_CLEAR_TEXT_UPGRADE;
     http2ClearTextUpgradeWithPreflightRequest = DEFAULT_HTTP2_CLEAR_TEXT_UPGRADE_WITH_PREFLIGHT_REQUEST;
-    sendUnmaskedFrames = DEFAULT_SEND_UNMASKED_FRAMES;
     maxRedirects = DEFAULT_MAX_REDIRECTS;
     forceSni = DEFAULT_FORCE_SNI;
     decoderInitialBufferSize = DEFAULT_DECODER_INITIAL_BUFFER_SIZE;
-    tryUsePerFrameWebSocketCompression = DEFAULT_TRY_USE_PER_FRAME_WEBSOCKET_COMPRESSION;
-    tryUsePerMessageWebSocketCompression = DEFAULT_TRY_USE_PER_MESSAGE_WEBSOCKET_COMPRESSION;
-    webSocketCompressionLevel = DEFAULT_WEBSOCKET_COMPRESSION_LEVEL;
-    webSocketAllowClientNoContext = DEFAULT_WEBSOCKET_ALLOW_CLIENT_NO_CONTEXT;
-    webSocketRequestServerNoContext = DEFAULT_WEBSOCKET_REQUEST_SERVER_NO_CONTEXT;
-    webSocketClosingTimeout = DEFAULT_WEBSOCKET_CLOSING_TIMEOUT;
-    poolCleanerPeriod = DEFAULT_POOL_CLEANER_PERIOD;
-    poolEventLoopSize = DEFAULT_POOL_EVENT_LOOP_SIZE;
     tracingPolicy = DEFAULT_TRACING_POLICY;
     shared = DEFAULT_SHARED;
     name = DEFAULT_NAME;
@@ -603,29 +491,6 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   /**
-   * Get the maximum pool size for connections
-   *
-   * @return  the maximum pool size
-   */
-  public int getMaxPoolSize() {
-    return maxPoolSize;
-  }
-
-  /**
-   * Set the maximum pool size for connections
-   *
-   * @param maxPoolSize  the maximum pool size
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientOptions setMaxPoolSize(int maxPoolSize) {
-    if (maxPoolSize < 1) {
-      throw new IllegalArgumentException("maxPoolSize must be > 0");
-    }
-    this.maxPoolSize = maxPoolSize;
-    return this;
-  }
-
-  /**
    * @return the maximum number of concurrent streams for an HTTP/2 connection, {@code -1} means
    * the value sent by the server
    */
@@ -649,29 +514,6 @@ public class HttpClientOptions extends ClientOptionsBase {
       throw new IllegalArgumentException("maxPoolSize must be > 0 or -1 (disabled)");
     }
     this.http2MultiplexingLimit = limit;
-    return this;
-  }
-
-  /**
-   * Get the maximum pool size for HTTP/2 connections
-   *
-   * @return  the maximum pool size
-   */
-  public int getHttp2MaxPoolSize() {
-    return http2MaxPoolSize;
-  }
-
-  /**
-   * Set the maximum pool size for HTTP/2 connections
-   *
-   * @param max  the maximum pool size
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientOptions setHttp2MaxPoolSize(int max) {
-    if (max < 1) {
-      throw new IllegalArgumentException("http2MaxPoolSize must be > 0");
-    }
-    this.http2MaxPoolSize = max;
     return this;
   }
 
@@ -848,93 +690,6 @@ public class HttpClientOptions extends ClientOptionsBase {
     return this;
   }
 
-
-  /**
-  * @return {@code true} when frame masking is skipped
-  */
-  public boolean isSendUnmaskedFrames() {
-    return sendUnmaskedFrames;
-  }
-
-  /**
-   * Set {@code true} when the client wants to skip frame masking.
-   * <p>
-   * You may want to set it {@code true} on server by server WebSocket communication: in this case you are by passing
-   * RFC6455 protocol.
-   * <p>
-   * It's {@code false} as default.
-   *
-   * @param sendUnmaskedFrames  true if enabled
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientOptions setSendUnmaskedFrames(boolean sendUnmaskedFrames) {
-    this.sendUnmaskedFrames = sendUnmaskedFrames;
-    return this;
-  }
-
-  /**
-   * Get the maximum WebSocket frame size to use
-   *
-   * @return  the max WebSocket frame size
-   */
-  public int getMaxWebSocketFrameSize() {
-    return maxWebSocketFrameSize;
-  }
-
-  /**
-   * Set the max WebSocket frame size
-   *
-   * @param maxWebSocketFrameSize  the max frame size, in bytes
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientOptions setMaxWebSocketFrameSize(int maxWebSocketFrameSize) {
-    this.maxWebSocketFrameSize = maxWebSocketFrameSize;
-    return this;
-  }
-
-  /**
-   * Get the maximum WebSocket message size to use
-   *
-   * @return  the max WebSocket message size
-   */
-  public int getMaxWebSocketMessageSize() {
-    return maxWebSocketMessageSize;
-  }
-
-  /**
-   * Set the max WebSocket message size
-   *
-   * @param maxWebSocketMessageSize  the max message size, in bytes
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientOptions setMaxWebSocketMessageSize(int maxWebSocketMessageSize) {
-    this.maxWebSocketMessageSize = maxWebSocketMessageSize;
-    return this;
-  }
-
-  /**
-   * Get the maximum of WebSockets per endpoint.
-   *
-   * @return  the max number of WebSockets
-   */
-  public int getMaxWebSockets() {
-    return maxWebSockets;
-  }
-
-  /**
-   * Set the max number of WebSockets per endpoint.
-   *
-   * @param maxWebSockets  the max value
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientOptions setMaxWebSockets(int maxWebSockets) {
-    if (maxWebSockets == 0 || maxWebSockets < -1) {
-      throw new IllegalArgumentException("maxWebSockets must be > 0 or -1 (disabled)");
-    }
-    this.maxWebSockets = maxWebSockets;
-    return this;
-  }
-
   /**
    * Get the default host name to be used by this client in requests if none is provided when making the request.
    *
@@ -1048,25 +803,6 @@ public class HttpClientOptions extends ClientOptionsBase {
   public HttpClientOptions setMaxHeaderSize(int maxHeaderSize) {
     this.maxHeaderSize = maxHeaderSize;
     return this;
-  }
-
-  /**
-   * Set the maximum requests allowed in the wait queue, any requests beyond the max size will result in
-   * a ConnectionPoolTooBusyException.  If the value is set to a negative number then the queue will be unbounded.
-   * @param maxWaitQueueSize the maximum number of waiting requests
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientOptions setMaxWaitQueueSize(int maxWaitQueueSize) {
-    this.maxWaitQueueSize = maxWaitQueueSize;
-    return this;
-  }
-
-  /**
-   * Returns the maximum wait queue size
-   * @return the maximum wait queue size
-   */
-  public int getMaxWaitQueueSize() {
-    return maxWaitQueueSize;
   }
 
   /**
@@ -1242,125 +978,6 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   /**
-   * Set whether the client will offer the WebSocket per-frame deflate compression extension.
-   *
-   * @param offer {@code true} to offer the per-frame deflate compression extension
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientOptions setTryUsePerFrameWebSocketCompression(boolean offer) {
-    this.tryUsePerFrameWebSocketCompression = offer;
-    return this;
-  }
-
-  /**
-   * @return {@code true} when the WebSocket per-frame deflate compression extension will be offered
-   */
-  public boolean getTryWebSocketDeflateFrameCompression() {
-    return this.tryUsePerFrameWebSocketCompression;
-  }
-
-  /**
-   * Set whether the client will offer the WebSocket per-message deflate compression extension.
-   *
-   * @param offer {@code true} to offer the per-message deflate compression extension
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientOptions setTryUsePerMessageWebSocketCompression(boolean offer) {
-    this.tryUsePerMessageWebSocketCompression = offer;
-    return this;
-  }
-
-  /**
-   * @return {@code true} when the WebSocket per-message deflate compression extension will be offered
-   */
-  public boolean getTryUsePerMessageWebSocketCompression() {
-    return this.tryUsePerMessageWebSocketCompression;
-  }
-
-  /**
-   * Set the WebSocket deflate compression level.
-   *
-   * @param compressionLevel the WebSocket deflate compression level
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientOptions setWebSocketCompressionLevel(int compressionLevel) {
-    this.webSocketCompressionLevel = compressionLevel;
-    return this;
-  }
-
-  /**
-   * @return the WebSocket deflate compression level
-   */
-  public int getWebSocketCompressionLevel() {
-    return this.webSocketCompressionLevel;
-  }
-
-  /**
-   * Set whether the {@code client_no_context_takeover} parameter of the WebSocket per-message
-   * deflate compression extension will be offered.
-   *
-   * @param offer {@code true} to offer the {@code client_no_context_takeover} parameter
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientOptions setWebSocketCompressionAllowClientNoContext(boolean offer) {
-    this.webSocketAllowClientNoContext = offer;
-    return this;
-  }
-
-  /**
-   * @return {@code true} when the {@code client_no_context_takeover} parameter for the WebSocket per-message
-   * deflate compression extension will be offered
-   */
-  public boolean getWebSocketCompressionAllowClientNoContext() {
-    return this.webSocketAllowClientNoContext;
-  }
-
-  /**
-   * Set whether the {@code server_no_context_takeover} parameter of the WebSocket per-message
-   * deflate compression extension will be offered.
-   *
-   * @param offer {@code true} to offer the {@code server_no_context_takeover} parameter
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientOptions setWebSocketCompressionRequestServerNoContext(boolean offer) {
-    this.webSocketRequestServerNoContext = offer;
-    return this;
-  }
-
-  /**
-   * @return {@code true} when the {@code server_no_context_takeover} parameter for the WebSocket per-message
-   * deflate compression extension will be offered
-   */
-  public boolean getWebSocketCompressionRequestServerNoContext() {
-    return this.webSocketRequestServerNoContext;
-  }
-
-  /**
-   * @return the amount of time (in seconds) a client WebSocket will wait until it closes TCP connection after receiving a close frame
-   */
-  public int getWebSocketClosingTimeout() {
-    return webSocketClosingTimeout;
-  }
-
-  /**
-   * Set the amount of time a client WebSocket will wait until it closes the TCP connection after receiving a close frame.
-   *
-   * <p> When a WebSocket is closed, the server should close the TCP connection. This timeout will close
-   * the TCP connection on the client when it expires.
-   *
-   * <p> Set to {@code 0L} closes the TCP connection immediately after receiving the close frame.
-   *
-   * <p> Set to a negative value to disable it.
-   *
-   * @param webSocketClosingTimeout the timeout is seconds
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientOptions setWebSocketClosingTimeout(int webSocketClosingTimeout) {
-    this.webSocketClosingTimeout = webSocketClosingTimeout;
-    return this;
-  }
-
-  /**
    * @return the initial buffer size for the HTTP decoder
    */
   public int getDecoderInitialBufferSize() { return decoderInitialBufferSize; }
@@ -1374,52 +991,6 @@ public class HttpClientOptions extends ClientOptionsBase {
   public HttpClientOptions setDecoderInitialBufferSize(int decoderInitialBufferSize) {
     Arguments.require(decoderInitialBufferSize > 0, "initialBufferSizeHttpDecoder must be > 0");
     this.decoderInitialBufferSize = decoderInitialBufferSize;
-    return this;
-  }
-
-  /**
-   * @return the connection pool cleaner period in ms.
-   */
-  public int getPoolCleanerPeriod() {
-    return poolCleanerPeriod;
-  }
-
-  /**
-   * Set the connection pool cleaner period in milli seconds, a non positive value disables expiration checks and connections
-   * will remain in the pool until they are closed.
-   *
-   * @param poolCleanerPeriod the pool cleaner period
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientOptions setPoolCleanerPeriod(int poolCleanerPeriod) {
-    this.poolCleanerPeriod = poolCleanerPeriod;
-    return this;
-  }
-
-  /**
-   * @return the max number of event-loop a pool will use, the default value is {@code 0} which implies
-   * to reuse the current event-loop
-   */
-  public int getPoolEventLoopSize() {
-    return poolEventLoopSize;
-  }
-
-  /**
-   * Set the number of event-loop the pool use.
-   *
-   * <ul>
-   *   <li>when the size is {@code 0}, the client pool will use the current event-loop</li>
-   *   <li>otherwise the client will create and use its own event loop</li>
-   * </ul>
-   *
-   * The default size is {@code 0}.
-   *
-   * @param poolEventLoopSize  the new size
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientOptions setPoolEventLoopSize(int poolEventLoopSize) {
-    Arguments.require(poolEventLoopSize >= 0, "poolEventLoopSize must be >= 0");
-    this.poolEventLoopSize = poolEventLoopSize;
     return this;
   }
 

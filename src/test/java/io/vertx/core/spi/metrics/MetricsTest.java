@@ -56,12 +56,20 @@ public class MetricsTest extends VertxTestBase {
   private static final String ADDRESS1 = "some-address1";
 
   private HttpServer server;
-  private HttpClient client;
+  private HttpClientPool client;
+  private WebSocketClient wsClient;
 
   protected void tearDown() throws Exception {
     if (client != null) {
       try {
         client.close();
+      } catch (IllegalStateException ignore) {
+        // Client was already closed by the test
+      }
+    }
+    if (wsClient != null) {
+      try {
+        wsClient.close();
       } catch (IllegalStateException ignore) {
         // Client was already closed by the test
       }
@@ -563,8 +571,8 @@ public class MetricsTest extends VertxTestBase {
       });
     });
     awaitFuture(server.listen(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST));
-    client = vertx.createHttpClient();
-    client.webSocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
+    wsClient = vertx.createWebSocketClient();
+    wsClient.connect(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
       ws.write(Buffer.buffer("wibble"));
       ws.handler(buff -> ws.close());
     }));
@@ -590,8 +598,8 @@ public class MetricsTest extends VertxTestBase {
       }));
     });
     awaitFuture(server.listen(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST));
-    client = vertx.createHttpClient();
-    client.webSocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/" + TestUtils.randomAlphaString(16))
+    wsClient = vertx.createWebSocketClient();
+    wsClient.connect(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/" + TestUtils.randomAlphaString(16))
       .onComplete(onSuccess(ws -> {
         ws.write(Buffer.buffer("wibble"));
         ws.handler(buff -> {
@@ -609,10 +617,10 @@ public class MetricsTest extends VertxTestBase {
       ws.handler(buff -> ws.close());
     });
     awaitFuture(server.listen(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST));
-    client = vertx.createHttpClient();
+    wsClient = vertx.createWebSocketClient();
     vertx.runOnContext(v -> {
-      client.webSocket(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
-        FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
+      wsClient.connect(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
+        FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(wsClient);
         WebSocketMetric metric = metrics.getMetric(ws);
         assertNotNull(metric);
         ws.closeHandler(closed -> {
@@ -627,12 +635,12 @@ public class MetricsTest extends VertxTestBase {
 
   @Test
   public void testHttpClientName() throws Exception {
-    HttpClient client1 = vertx.createHttpClient();
+    HttpClientPool client1 = vertx.createHttpClient();
     try {
       FakeHttpClientMetrics metrics1 = FakeMetricsBase.getMetrics(client1);
       assertEquals("", metrics1.getName());
       String name = TestUtils.randomAlphaString(10);
-      HttpClient client2 = vertx.createHttpClient(new HttpClientOptions().setMetricsName(name));
+      HttpClientPool client2 = vertx.createHttpClient(new HttpClientOptions().setMetricsName(name));
       try {
         FakeHttpClientMetrics metrics2 = FakeMetricsBase.getMetrics(client2);
         assertEquals(name, metrics2.getName());

@@ -1710,7 +1710,7 @@ public class Http2ClientTest extends Http2TestBase {
       });
       startServer(testAddress);
       client.close();
-      client = vertx.createHttpClient(clientOptions.setUseAlpn(false).setSsl(false).setMaxPoolSize(1));
+      client = vertx.createHttpClient(clientOptions.setUseAlpn(false).setSsl(false), new PoolOptions().setHttp1MaxSize(1));
       waitFor(5);
       for (int i = 0;i < 5;i++) {
         client.request(requestOptions).onComplete(onSuccess(req -> {
@@ -1946,8 +1946,7 @@ public class Http2ClientTest extends Http2TestBase {
     startServer();
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions(clientOptions).
-        setHttp2MaxPoolSize(poolSize).
-        setHttp2MultiplexingLimit(maxConcurrency));
+        setHttp2MultiplexingLimit(maxConcurrency), new PoolOptions().setHttp2MaxSize(poolSize));
     AtomicInteger respCount = new AtomicInteger();
     Set<HttpConnection> clientConnections = Collections.synchronizedSet(new HashSet<>());
     client.connectionHandler(clientConnections::add);

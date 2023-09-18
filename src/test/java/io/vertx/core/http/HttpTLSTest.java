@@ -1308,7 +1308,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
   abstract HttpServer createHttpServer(HttpServerOptions options);
 
-  abstract HttpClient createHttpClient(HttpClientOptions options);
+  abstract HttpClientPool createHttpClient(HttpClientOptions options);
 
   protected TLSTest testTLS(Cert<?> clientCert, Trust<?> clientTrust,
                           Cert<?> serverCert, Trust<?> serverTrust) throws Exception {

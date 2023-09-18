@@ -31,8 +31,7 @@ import io.vertx.core.eventbus.impl.EventBusInternal;
 import io.vertx.core.eventbus.impl.clustered.ClusteredEventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.CleanableHttpClient;
-import io.vertx.core.http.impl.HttpClientInternal;
+import io.vertx.core.http.impl.*;
 import io.vertx.core.impl.btc.BlockedThreadChecker;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.*;
@@ -40,8 +39,6 @@ import io.vertx.core.impl.transports.JDKTransport;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.file.impl.FileSystemImpl;
 import io.vertx.core.file.impl.WindowsFileSystem;
-import io.vertx.core.http.impl.HttpClientImpl;
-import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -352,23 +349,60 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return new HttpServerImpl(this, serverOptions);
   }
 
-  public HttpClient createHttpClient(HttpClientOptions options) {
+  @Override
+  public WebSocketClient createWebSocketClient(WebSocketClientOptions options) {
+    HttpClientOptions o = new HttpClientOptions(options);
+    o.setVerifyHost(options.isVerifyHost());
+    o.setShared(options.isShared());
+    o.setName(options.getName());    CloseFuture cf = resolveCloseFuture();
+    WebSocketClient client;
+    Closeable closeable;
+    if (options.isShared()) {
+      CloseFuture closeFuture = new CloseFuture();
+      client = createSharedResource("__vertx.shared.webSocketClients", options.getName(), closeFuture, cf_ -> {
+        WebSocketClientImpl impl = new WebSocketClientImpl(this, o, options);
+        cf_.add(completion -> impl.close().onComplete(completion));
+        return impl;
+      });
+      client = new CleanableWebSocketClient(client, cleaner, (timeout, timeunit) -> closeFuture.close());
+      closeable = closeFuture;
+    } else {
+      WebSocketClientImpl impl = new WebSocketClientImpl(this, o, options);
+      closeable = impl;
+      client = new CleanableWebSocketClient(impl, cleaner, impl::shutdown);
+    }
+    cf.add(closeable);
+    return client;
+  }
+
+  @Override
+  public HttpClientPool createHttpClient(HttpClientOptions options) {
+    return createHttpClient(options, new PoolOptions());
+  }
+
+  @Override
+  public HttpClientPool createHttpClient(PoolOptions poolOptions) {
+    return createHttpClient(new HttpClientOptions(), poolOptions);
+  }
+
+  @Override
+  public HttpClientPool createHttpClient(HttpClientOptions options, PoolOptions poolOptions) {
     CloseFuture cf = resolveCloseFuture();
-    HttpClient client;
+    HttpClientPool client;
     Closeable closeable;
     if (options.isShared()) {
       CloseFuture closeFuture = new CloseFuture();
       client = createSharedResource("__vertx.shared.httpClients", options.getName(), closeFuture, cf_ -> {
-        HttpClientImpl impl = new HttpClientImpl(this, options);
+        HttpClientImpl impl = new HttpClientImpl(this, options, poolOptions);
         cf_.add(completion -> impl.close().onComplete(completion));
         return impl;
       });
       client = new CleanableHttpClient((HttpClientInternal) client, cleaner, (timeout, timeunit) -> closeFuture.close());
       closeable = closeFuture;
     } else {
-      HttpClientImpl impl = new HttpClientImpl(this, options);
+      HttpClientImpl impl = new HttpClientImpl(this, options, poolOptions);
       closeable = impl;
-      client = new CleanableHttpClient(impl, cleaner, impl::close);
+      client = new CleanableHttpClient(impl, cleaner, impl::shutdown);
     }
     cf.add(closeable);
     return client;

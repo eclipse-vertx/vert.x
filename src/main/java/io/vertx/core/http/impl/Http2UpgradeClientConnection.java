@@ -51,7 +51,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
 
   private static final Logger log = LoggerFactory.getLogger(Http2UpgradeClientConnection.class);
 
-  private HttpClientImpl client;
+  private HttpClientBase client;
   private HttpClientConnection current;
   private boolean upgradeProcessed;
 
@@ -64,7 +64,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
   private Handler<Long> concurrencyChangeHandler;
   private Handler<Http2Settings> remoteSettingsHandler;
 
-  Http2UpgradeClientConnection(HttpClientImpl client, Http1xClientConnection connection) {
+  Http2UpgradeClientConnection(HttpClientBase client, Http1xClientConnection connection) {
     this.client = client;
     this.current = connection;
   }

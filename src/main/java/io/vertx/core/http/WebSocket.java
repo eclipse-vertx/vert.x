@@ -11,12 +11,18 @@
 
 package io.vertx.core.http;
 
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.streams.ReadStream;
+import io.vertx.core.streams.WriteStream;
 
 /**
- * Represents a client-side WebSocket.
+ * Common WebSocket implementation.
+ * <p>
+ * It implements both {@link ReadStream} and {@link WriteStream} so it can be used with
+ * {@link io.vertx.core.streams.Pipe} to pipe data with flow control.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -52,4 +58,14 @@ public interface WebSocket extends WebSocketBase {
 
   @Override
   WebSocket frameHandler(Handler<WebSocketFrame> handler);
+
+  @Override
+  WebSocket textMessageHandler(@Nullable Handler<String> handler);
+
+  @Override
+  WebSocket binaryMessageHandler(@Nullable Handler<Buffer> handler);
+
+  @Override
+  WebSocket pongHandler(@Nullable Handler<Buffer> handler);
+
 }

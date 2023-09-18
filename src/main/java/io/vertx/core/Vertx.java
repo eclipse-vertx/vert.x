@@ -18,10 +18,7 @@ import io.vertx.core.dns.DnsClient;
 import io.vertx.core.dns.DnsClientOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.file.FileSystem;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxBuilder;
 import io.vertx.core.dns.impl.DnsAddressResolverProvider;
@@ -165,23 +162,61 @@ public interface Vertx extends Measured {
     return createHttpServer(new HttpServerOptions());
   }
 
+
   /**
-   * Create a HTTP/HTTPS client using the specified options
+   * Create a WebSocket client using default options
+   *
+   * @return the client
+   */
+  default WebSocketClient createWebSocketClient() {
+    return createWebSocketClient(new WebSocketClientOptions());
+  }
+
+  /**
+   * Create a WebSocket client using the specified options
    *
    * @param options  the options to use
    * @return the client
    */
-  HttpClient createHttpClient(HttpClientOptions options);
+  WebSocketClient createWebSocketClient(WebSocketClientOptions options);
+
+  /**
+   * Create a HTTP/HTTPS client using the specified client and pool options
+   *
+   * @param clientOptions  the client options to use
+   * @param poolOptions  the pool options to use
+   * @return the client
+   */
+  HttpClientPool createHttpClient(HttpClientOptions clientOptions, PoolOptions poolOptions);
+
+  /**
+   * Create a HTTP/HTTPS client using the specified client options
+   *
+   * @param clientOptions  the options to use
+   * @return the client
+   */
+  default HttpClientPool createHttpClient(HttpClientOptions clientOptions) {
+    return createHttpClient(clientOptions, new PoolOptions());
+  }
+
+  /**
+   * Create a HTTP/HTTPS client using the specified pool options
+   *
+   * @param poolOptions  the pool options to use
+   * @return the client
+   */
+  default HttpClientPool createHttpClient(PoolOptions poolOptions) {
+    return createHttpClient(new HttpClientOptions(), poolOptions);
+  }
 
   /**
    * Create a HTTP/HTTPS client using default options
    *
    * @return the client
    */
-  default HttpClient createHttpClient() {
-    return createHttpClient(new HttpClientOptions());
+  default HttpClientPool createHttpClient() {
+    return createHttpClient(new HttpClientOptions(), new PoolOptions());
   }
-
   /**
    * Create a datagram socket using the specified options
    *

@@ -83,44 +83,19 @@ public class CleanableHttpClient implements HttpClientInternal {
   }
 
   @Override
-  public Future<WebSocket> webSocket(int port, String host, String requestURI) {
-    return delegate.webSocket(port, host, requestURI);
-  }
-
-  @Override
-  public Future<WebSocket> webSocket(String host, String requestURI) {
-    return delegate.webSocket(host, requestURI);
-  }
-
-  @Override
-  public Future<WebSocket> webSocket(String requestURI) {
-    return delegate.webSocket(requestURI);
-  }
-
-  @Override
-  public Future<WebSocket> webSocket(WebSocketConnectOptions options) {
-    return delegate.webSocket(options);
-  }
-
-  @Override
-  public Future<WebSocket> webSocketAbs(String url, MultiMap headers, WebsocketVersion version, List<String> subProtocols) {
-    return delegate.webSocketAbs(url, headers, version, subProtocols);
-  }
-
-  @Override
   public Future<Void> updateSSLOptions(ClientSSLOptions options) {
     return delegate.updateSSLOptions(options);
   }
 
   @Override
   @Fluent
-  public HttpClient connectionHandler(Handler<HttpConnection> handler) {
+  public HttpClientPool connectionHandler(Handler<HttpConnection> handler) {
     return delegate.connectionHandler(handler);
   }
 
   @Override
   @Fluent
-  public HttpClient redirectHandler(Function<HttpClientResponse, Future<RequestOptions>> handler) {
+  public HttpClientPool redirectHandler(Function<HttpClientResponse, Future<RequestOptions>> handler) {
     return delegate.redirectHandler(handler);
   }
 
@@ -131,7 +106,7 @@ public class CleanableHttpClient implements HttpClientInternal {
   }
 
   @Override
-  public Future<Void> close(long timeout, TimeUnit timeUnit) {
+  public Future<Void> shutdown(long timeout, TimeUnit timeUnit) {
     if (timeout < 0L) {
       throw new IllegalArgumentException();
     }
@@ -188,6 +163,5 @@ public class CleanableHttpClient implements HttpClientInternal {
   public void close(Promise<Void> completion) {
     delegate.close(completion);
   }
-
 
 }
