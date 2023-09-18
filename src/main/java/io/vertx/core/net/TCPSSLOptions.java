@@ -142,7 +142,16 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     this.tcpCork = other.isTcpCork();
     this.tcpQuickAck = other.isTcpQuickAck();
     this.tcpUserTimeout = other.getTcpUserTimeout();
-    this.sslOptions = other.sslOptions != null ? other.sslOptions.copy() : null;
+
+    SSLOptions sslOptions = other.sslOptions;
+    if (sslOptions != null) {
+      this.sslOptions = sslOptions.copy();
+      if (this.sslOptions != null) {
+        enabledCipherSuites = this.sslOptions.enabledCipherSuites;
+        crlPaths = this.sslOptions.crlPaths;
+        crlValues = this.sslOptions.crlValues;
+      }
+    }
   }
 
   /**
