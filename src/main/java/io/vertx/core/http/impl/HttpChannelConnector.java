@@ -23,7 +23,6 @@ import io.vertx.core.Promise;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.*;
@@ -82,7 +81,7 @@ public class HttpChannelConnector {
     return server;
   }
 
-  private void connect(EventLoopContext context, Promise<NetSocket> promise) {
+  private void connect(ContextInternal context, Promise<NetSocket> promise) {
     ConnectOptions connectOptions = new ConnectOptions();
     connectOptions.setRemoteAddress(server);
     if (peerAddress != null) {
@@ -104,7 +103,7 @@ public class HttpChannelConnector {
     netClient.connectInternal(connectOptions, promise, context);
   }
 
-  public Future<HttpClientConnection> wrap(EventLoopContext context, NetSocket so_) {
+  public Future<HttpClientConnection> wrap(ContextInternal context, NetSocket so_) {
     NetSocketImpl so = (NetSocketImpl) so_;
     Object metric = so.metric();
     PromiseInternal<HttpClientConnection> promise = context.promise();
@@ -155,7 +154,7 @@ public class HttpChannelConnector {
     return promise.future();
   }
 
-  public Future<HttpClientConnection> httpConnect(EventLoopContext context) {
+  public Future<HttpClientConnection> httpConnect(ContextInternal context) {
     Promise<NetSocket> promise = context.promise();
     Future<NetSocket> future = promise.future();
     // We perform the compose operation before calling connect to be sure that the composition happens
@@ -247,7 +246,7 @@ public class HttpChannelConnector {
     ch.pipeline().addLast("handler", clientHandler);
   }
 
-  private void http2Connected(EventLoopContext context,
+  private void http2Connected(ContextInternal context,
                               Object metric,
                               Channel ch,
                               PromiseInternal<HttpClientConnection> promise) {

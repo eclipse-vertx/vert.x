@@ -15,7 +15,6 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.ProxyOptions;
@@ -71,9 +70,9 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
     SocketAddress addr = SocketAddress.inetSocketAddress(port, host);
     ProxyOptions proxyOptions = computeProxyOptions(connectOptions.getProxyOptions(), addr);
     EndpointKey key = new EndpointKey(connectOptions.isSsl() != null ? connectOptions.isSsl() : options.isSsl(), proxyOptions, addr, addr);
-    EventLoopContext eventLoopContext;
-    if (ctx instanceof EventLoopContext) {
-      eventLoopContext = (EventLoopContext) ctx;
+    ContextInternal eventLoopContext;
+    if (ctx.isEventLoopContext()) {
+      eventLoopContext = ctx;
     } else {
       eventLoopContext = vertx.createEventLoopContext(ctx.nettyEventLoop(), ctx.workerPool(), ctx.classLoader());
     }

@@ -35,7 +35,7 @@ import io.vertx.core.http.GoAway;
 import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.StreamPriority;
-import io.vertx.core.impl.EventLoopContext;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
@@ -76,7 +76,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   private int windowSize;
   private long maxConcurrentStreams;
 
-  public Http2ConnectionBase(EventLoopContext context, VertxHttp2ConnectionHandler handler) {
+  public Http2ConnectionBase(ContextInternal context, VertxHttp2ConnectionHandler handler) {
     super(context, handler.context());
     this.handler = handler;
     this.handlerContext = chctx;

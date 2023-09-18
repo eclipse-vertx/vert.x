@@ -26,7 +26,6 @@ import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.http.impl.HttpServerRequestInternal;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonArray;
@@ -2152,7 +2151,7 @@ public class Http1xTest extends HttpTest {
     });
     waitUntil(() -> client != null);
     // There should be a context per request
-    List<EventLoopContext> contexts = Stream.generate(() -> ((VertxInternal) vertx).createEventLoopContext())
+    List<ContextInternal> contexts = Stream.generate(() -> ((VertxInternal) vertx).createEventLoopContext())
       .limit(numReqs)
       .collect(Collectors.toList());
     Set<Thread> expectedThreads = new HashSet<>();
@@ -2165,7 +2164,7 @@ public class Http1xTest extends HttpTest {
     }
     Set<Thread> threads = ConcurrentHashMap.newKeySet();
     for (int i = 0; i < numReqs; i++) {
-      Context requestCtx = contexts.get(i);
+      ContextInternal requestCtx = contexts.get(i);
       CompletableFuture<Long> cf = new CompletableFuture<>();
       String path = "/" + i;
       requestResumeMap.put(path, cf);

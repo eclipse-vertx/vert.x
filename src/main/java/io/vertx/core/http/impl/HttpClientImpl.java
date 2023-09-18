@@ -102,7 +102,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   private volatile Function<HttpClientResponse, Future<RequestOptions>> redirectHandler = DEFAULT_HANDLER;
   private long timerID;
   private volatile Handler<HttpConnection> connectionHandler;
-  private final Function<ContextInternal, EventLoopContext> contextProvider;
+  private final Function<ContextInternal, ContextInternal> contextProvider;
 
   public HttpClientImpl(VertxInternal vertx, HttpClientOptions options, PoolOptions poolOptions) {
     super(vertx, options);
@@ -117,7 +117,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     }
     int eventLoopSize = poolOptions.getEventLoopSize();
     if (eventLoopSize > 0) {
-      EventLoopContext[] eventLoops = new EventLoopContext[eventLoopSize];
+      ContextInternal[] eventLoops = new ContextInternal[eventLoopSize];
       for (int i = 0;i < eventLoopSize;i++) {
         eventLoops[i] = vertx.createEventLoopContext();
       }
@@ -131,7 +131,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     }
   }
 
-  Function<ContextInternal, EventLoopContext> contextProvider() {
+  Function<ContextInternal, ContextInternal> contextProvider() {
     return contextProvider;
   }
 
