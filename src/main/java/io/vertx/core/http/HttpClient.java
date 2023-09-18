@@ -64,7 +64,9 @@ public interface HttpClient {
    * @param requestURI the relative URI
    * @return a future notified when the request is ready to be sent
    */
-  Future<HttpClientRequest> request(HttpMethod method, int port, String host, String requestURI);
+  default Future<HttpClientRequest> request(HttpMethod method, int port, String host, String requestURI) {
+    return request(new RequestOptions().setMethod(method).setPort(port).setHost(host).setURI(requestURI));
+  }
 
   /**
    * Create an HTTP request to send to the server at the {@code host} and default port.
@@ -74,7 +76,9 @@ public interface HttpClient {
    * @param requestURI the relative URI
    * @return a future notified when the request is ready to be sent
    */
-  Future<HttpClientRequest> request(HttpMethod method, String host, String requestURI);
+  default Future<HttpClientRequest> request(HttpMethod method, String host, String requestURI) {
+    return request(new RequestOptions().setMethod(method).setHost(host).setURI(requestURI));
+  }
 
   /**
    * Create an HTTP request to send to the server at the default host and port.
@@ -83,7 +87,9 @@ public interface HttpClient {
    * @param requestURI the relative URI
    * @return a future notified when the request is ready to be sent
    */
-  Future<HttpClientRequest> request(HttpMethod method, String requestURI);
+  default Future<HttpClientRequest> request(HttpMethod method, String requestURI) {
+    return request(new RequestOptions().setMethod(method).setURI(requestURI));
+  }
 
   /**
    * Close the client immediately ({@code close(0, TimeUnit.SECONDS}).

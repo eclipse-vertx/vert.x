@@ -14,7 +14,6 @@ import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.VertxInternal;
@@ -25,7 +24,6 @@ import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.resolver.AddressResolver;
 
 import java.lang.ref.Cleaner;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -65,21 +63,6 @@ public class CleanableHttpClient implements HttpClientInternal {
   @Override
   public Future<HttpClientRequest> request(RequestOptions options) {
     return delegate.request(options);
-  }
-
-  @Override
-  public Future<HttpClientRequest> request(HttpMethod method, int port, String host, String requestURI) {
-    return delegate.request(method, port, host, requestURI);
-  }
-
-  @Override
-  public Future<HttpClientRequest> request(HttpMethod method, String host, String requestURI) {
-    return delegate.request(method, host, requestURI);
-  }
-
-  @Override
-  public Future<HttpClientRequest> request(HttpMethod method, String requestURI) {
-    return delegate.request(method, requestURI);
   }
 
   @Override

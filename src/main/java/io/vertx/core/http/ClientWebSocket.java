@@ -47,34 +47,26 @@ public interface ClientWebSocket extends WebSocket {
     return connect(new WebSocketConnectOptions().setURI(requestURI).setHost(host).setPort(port));
   }
 
-//  /**
-//   * Connect this WebSocket to the host and relative request URI and default port.
-//   *
-//   * @param host  the host
-//   * @param requestURI  the relative URI
-//   * @return a future notified when the WebSocket when connected
-//   */
-//  Future<WebSocket> connect(String host, String requestURI);
-//
-//  /**
-//   * Connect this WebSocket at the relative request URI using the default host and port.
-//   *
-//   * @param requestURI  the relative URI
-//   * @return a future notified when the WebSocket when connected
-//   */
-//  Future<WebSocket> connect(String requestURI);
+  /**
+   * Connect this WebSocket to the host and relative request URI and default port.
+   *
+   * @param host  the host
+   * @param requestURI  the relative URI
+   * @return a future notified when the WebSocket when connected
+   */
+  default Future<WebSocket> connect(String host, String requestURI) {
+    return connect(new WebSocketConnectOptions().setHost(host).setURI(requestURI));
+  }
 
-//  /**
-//   * Connect this WebSocket with the specified absolute url, with the specified headers, using
-//   * the specified version of WebSockets, and the specified WebSocket sub protocols.
-//   *
-//   * @param url            the absolute url
-//   * @param headers        the headers
-//   * @param version        the WebSocket version
-//   * @param subProtocols   the subprotocols to use
-//   * @return a future notified when the WebSocket when connected
-//   */
-//  Future<WebSocket> connect(String url, MultiMap headers, WebsocketVersion version, List<String> subProtocols);
+  /**
+   * Connect this WebSocket at the relative request URI using the default host and port.
+   *
+   * @param requestURI  the relative URI
+   * @return a future notified when the WebSocket when connected
+   */
+  default Future<WebSocket> connect(String requestURI) {
+    return connect(new WebSocketConnectOptions().setURI(requestURI));
+  }
 
   @Override
   ClientWebSocket handler(Handler<Buffer> handler);

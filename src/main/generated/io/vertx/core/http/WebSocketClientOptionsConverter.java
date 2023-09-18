@@ -20,6 +20,16 @@ public class WebSocketClientOptionsConverter {
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, WebSocketClientOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
+        case "defaultHost":
+          if (member.getValue() instanceof String) {
+            obj.setDefaultHost((String)member.getValue());
+          }
+          break;
+        case "defaultPort":
+          if (member.getValue() instanceof Number) {
+            obj.setDefaultPort(((Number)member.getValue()).intValue());
+          }
+          break;
         case "verifyHost":
           if (member.getValue() instanceof Boolean) {
             obj.setVerifyHost((Boolean)member.getValue());
@@ -94,6 +104,10 @@ public class WebSocketClientOptionsConverter {
   }
 
    static void toJson(WebSocketClientOptions obj, java.util.Map<String, Object> json) {
+    if (obj.getDefaultHost() != null) {
+      json.put("defaultHost", obj.getDefaultHost());
+    }
+    json.put("defaultPort", obj.getDefaultPort());
     json.put("verifyHost", obj.isVerifyHost());
     json.put("sendUnmaskedFrames", obj.isSendUnmaskedFrames());
     json.put("maxFrameSize", obj.getMaxFrameSize());
