@@ -903,7 +903,7 @@ may have not consumed the complete payload (the connection was cut before you we
 Vert.x uses an an address resolver for resolving host name into IP addresses instead of
 the JVM built-in blocking resolver.
 
-An host name resolves to an IP address using:
+A host name resolves to an IP address using:
 
 - the _hosts_ file of the operating system
 - otherwise DNS queries against a list of servers
@@ -944,7 +944,7 @@ Failover still applies and will use the next server in the list.
 
 === Hosts mapping
 
-The _hosts_ file of the operating system is used to perform an hostname lookup for an ipaddress.
+The _hosts_ file of the operating system is used to perform a hostname lookup for an ipaddress.
 
 An alternative _hosts_ file can be used instead:
 
@@ -968,8 +968,7 @@ on Linux, it can be configured to a specific value with {@link io.vertx.core.dns
 
 === MacOS configuration
 
-MacOS has a specific native extension to get the name server configuration of the system based on
-<a href="https://opensource.apple.com/tarballs/mDNSResponder/">Apple's open source mDNSResponder</a>. When this extension is not present,
+MacOS has a specific native extension to get the name server configuration of the system based on https://opensource.apple.com/tarballs/mDNSResponder/[Apple's open source mDNSResponder]. When this extension is not present,
 Netty logs the following warning.
 
 ----
@@ -978,7 +977,7 @@ Netty logs the following warning.
 
 This extension is not required as its absence does not prevent Vert.x to execute, yet is *recommended*.
 
-You can use add it to your classpath to improve the integration and remove the warning.
+You can add it to your classpath to improve the integration and remove the warning.
 
 .Intel-based Mac
 [source,xml]
@@ -1192,4 +1191,4 @@ directory and serves it from there. Do not use this setting in production, it ca
 
 Finally, you can disable completely the cache by using `-Dvertx.disableFileCPResolving=true`. This setting is not
 without consequences. Vert.x would be unable to read any files from the classpath (only from the file system). Be
-very careful when using this settings.
+very careful when using this setting.
