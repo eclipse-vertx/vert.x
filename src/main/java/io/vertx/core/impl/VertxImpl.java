@@ -30,19 +30,17 @@ import io.vertx.core.eventbus.impl.EventBusImpl;
 import io.vertx.core.eventbus.impl.EventBusInternal;
 import io.vertx.core.eventbus.impl.clustered.ClusteredEventBus;
 import io.vertx.core.file.FileSystem;
+import io.vertx.core.http.*;
+import io.vertx.core.http.impl.*;
 import io.vertx.core.impl.btc.BlockedThreadChecker;
 import io.vertx.core.net.impl.NetClientBuilder;
 import io.vertx.core.impl.transports.JDKTransport;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.file.impl.FileSystemImpl;
 import io.vertx.core.file.impl.WindowsFileSystem;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.impl.HttpClientImpl;
+import io.vertx.core.http.impl.HttpClientPoolImpl;
 import io.vertx.core.http.impl.HttpServerImpl;
-import io.vertx.core.http.impl.SharedHttpClient;
+import io.vertx.core.http.impl.SharedHttpClientPool;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -355,23 +353,61 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public HttpClient createHttpClient(HttpClientOptions options, CloseFuture closeFuture) {
-    HttpClientImpl client = new HttpClientImpl(this, options, closeFuture);
+  public WebSocketClient createWebSocketClient(WebSocketClientOptions options, CloseFuture closeFuture) {
+    HttpClientOptions o = new HttpClientOptions(options);
+    o.setDefaultHost(options.getDefaultHost());
+    o.setDefaultPort(options.getDefaultPort());
+    o.setVerifyHost(options.isVerifyHost());
+    o.setMaxWebSocketFrameSize(options.getMaxFrameSize());
+    o.setMaxWebSocketMessageSize(options.getMaxMessageSize());
+    o.setMaxWebSockets(options.getMaxConnections());
+    o.setSendUnmaskedFrames(options.isSendUnmaskedFrames());
+    o.setTryUsePerFrameWebSocketCompression(options.getTryUsePerFrameCompression());
+    o.setTryUsePerMessageWebSocketCompression(options.getTryUsePerMessageCompression());
+    o.setWebSocketCompressionLevel(options.getCompressionLevel());
+    o.setWebSocketCompressionAllowClientNoContext(options.getCompressionAllowClientNoContext());
+    o.setWebSocketCompressionRequestServerNoContext(options.getCompressionRequestServerNoContext());
+    o.setWebSocketClosingTimeout(options.getClosingTimeout());
+    o.setShared(options.isShared());
+    o.setName(options.getName());
+    WebSocketClientImpl client = new WebSocketClientImpl(this, o, closeFuture);
     closeFuture.add(client);
     return client;
   }
 
-  public HttpClient createHttpClient(HttpClientOptions options) {
+  @Override
+  public WebSocketClient createWebSocketClient(WebSocketClientOptions options) {
     CloseFuture closeFuture = new CloseFuture();
-    HttpClient client;
+    WebSocketClient client;
     if (options.isShared()) {
-      client = createSharedClient(SharedHttpClient.SHARED_MAP_NAME, options.getName(), closeFuture, cf -> createHttpClient(options, cf));
-      client = new SharedHttpClient(this, closeFuture, client);
+      client = createSharedClient(SharedWebSocketClient.SHARED_MAP_NAME, options.getName(), closeFuture, cf -> createWebSocketClient(options, cf));
+      client = new SharedWebSocketClient(this, closeFuture, client);
     } else {
-      client = createHttpClient(options, closeFuture);
+      client = createWebSocketClient(options, closeFuture);
     }
     resolveCloseFuture().add(closeFuture);
     return client;
+  }
+
+  @Override
+  public HttpClient createHttpPoolClient(HttpClientOptions clientOptions, PoolOptions poolOptions, CloseFuture closeFuture) {
+    HttpClientPoolImpl client = new HttpClientPoolImpl(this, clientOptions, poolOptions, closeFuture);
+    closeFuture.add(client);
+    return client;
+  }
+
+  @Override
+  public HttpClientPool createHttpClient(HttpClientOptions clientOptions, PoolOptions poolOptions) {
+    CloseFuture closeFuture = new CloseFuture();
+    HttpClient client;
+    if (clientOptions.isShared()) {
+      client = createSharedClient(SharedHttpClientPool.SHARED_MAP_NAME, clientOptions.getName(), closeFuture, cf -> createHttpPoolClient(clientOptions, poolOptions, cf));
+      client = new SharedHttpClientPool(this, closeFuture, client);
+    } else {
+      client = createHttpPoolClient(clientOptions, poolOptions, closeFuture);
+    }
+    resolveCloseFuture().add(closeFuture);
+    return (HttpClientPool) client;
   }
 
   public EventBus eventBus() {

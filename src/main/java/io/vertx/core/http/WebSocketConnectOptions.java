@@ -16,7 +16,11 @@ import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.MultiMap;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.ProxyOptions;
+import io.vertx.core.net.SocketAddress;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -235,6 +239,76 @@ public class WebSocketConnectOptions extends RequestOptions {
   @Override
   public WebSocketConnectOptions setHeaders(MultiMap headers) {
     return (WebSocketConnectOptions) super.setHeaders(headers);
+  }
+
+  @Override
+  public WebSocketConnectOptions setServer(SocketAddress server) {
+    return (WebSocketConnectOptions) super.setServer(server);
+  }
+
+  @Override
+  public WebSocketConnectOptions setMethod(HttpMethod method) {
+    return (WebSocketConnectOptions) super.setMethod(method);
+  }
+
+  @Override
+  public WebSocketConnectOptions setFollowRedirects(Boolean followRedirects) {
+    return (WebSocketConnectOptions) super.setFollowRedirects(followRedirects);
+  }
+
+  @Override
+  public WebSocketConnectOptions setAbsoluteURI(String absoluteURI) {
+    URI uri;
+    try {
+      uri = new URI(absoluteURI);
+    } catch (URISyntaxException e) {
+      throw new IllegalArgumentException(e);
+    }
+    setAbsoluteURI(uri);
+    return this;
+  }
+
+  @Override
+  public WebSocketConnectOptions setAbsoluteURI(URL url) {
+    URI uri;
+    try {
+      uri = url.toURI();
+    } catch (URISyntaxException e) {
+      throw new IllegalArgumentException(e);
+    }
+    setAbsoluteURI(uri);
+    return this;
+  }
+
+  private void setAbsoluteURI(URI uri) {
+    String scheme = uri.getScheme();
+    if (!"ws".equals(scheme) && !"wss".equals(scheme)) {
+      throw new IllegalArgumentException("Scheme: " + scheme);
+    }
+    boolean ssl = scheme.length() == 3;
+    int port = uri.getPort();
+    if (port == -1) {
+      port = ssl ? 443 : 80;
+    };
+    StringBuilder relativeUri = new StringBuilder();
+    if (uri.getRawPath() != null) {
+      relativeUri.append(uri.getRawPath());
+    }
+    if (uri.getRawQuery() != null) {
+      relativeUri.append('?').append(uri.getRawQuery());
+    }
+    if (uri.getRawFragment() != null) {
+      relativeUri.append('#').append(uri.getRawFragment());
+    }
+    setHost(uri.getHost());
+    setPort(port);
+    setSsl(ssl);
+    setURI(relativeUri.toString());
+  }
+
+  @Override
+  public WebSocketConnectOptions setTraceOperation(String op) {
+    return (WebSocketConnectOptions) super.setTraceOperation(op);
   }
 
   @Override

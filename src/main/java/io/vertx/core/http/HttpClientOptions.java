@@ -12,6 +12,7 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
@@ -231,17 +232,13 @@ public class HttpClientOptions extends ClientOptionsBase {
   public static final String DEFAULT_NAME = "__vertx.DEFAULT";
 
   private boolean verifyHost = true;
-  private int maxPoolSize;
   private boolean keepAlive;
   private int keepAliveTimeout;
   private int pipeliningLimit;
   private boolean pipelining;
-  private int http2MaxPoolSize;
   private int http2MultiplexingLimit;
   private int http2ConnectionWindowSize;
   private int http2KeepAliveTimeout;
-  private int poolCleanerPeriod;
-  private int poolEventLoopSize;
 
   private boolean tryUseCompression;
   private int maxWebSocketFrameSize;
@@ -253,7 +250,6 @@ public class HttpClientOptions extends ClientOptionsBase {
   private int maxChunkSize;
   private int maxInitialLineLength;
   private int maxHeaderSize;
-  private int maxWaitQueueSize;
   private Http2Settings initialSettings;
   private List<HttpVersion> alpnVersions;
   private boolean http2ClearTextUpgrade;
@@ -275,6 +271,8 @@ public class HttpClientOptions extends ClientOptionsBase {
   private boolean shared;
   private String name;
 
+  private PoolOptions poolOptions;
+
   /**
    * Default constructor
    */
@@ -288,15 +286,23 @@ public class HttpClientOptions extends ClientOptionsBase {
    *
    * @param other  the options to copy
    */
+  public HttpClientOptions(ClientOptionsBase other) {
+    super(other);
+    init();
+  }
+
+  /**
+   * Copy constructor
+   *
+   * @param other  the options to copy
+   */
   public HttpClientOptions(HttpClientOptions other) {
     super(other);
     this.verifyHost = other.isVerifyHost();
-    this.maxPoolSize = other.getMaxPoolSize();
     this.keepAlive = other.isKeepAlive();
     this.keepAliveTimeout = other.getKeepAliveTimeout();
     this.pipelining = other.isPipelining();
     this.pipeliningLimit = other.getPipeliningLimit();
-    this.http2MaxPoolSize = other.getHttp2MaxPoolSize();
     this.http2MultiplexingLimit = other.http2MultiplexingLimit;
     this.http2ConnectionWindowSize = other.http2ConnectionWindowSize;
     this.http2KeepAliveTimeout = other.getHttp2KeepAliveTimeout();
@@ -310,7 +316,6 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.maxChunkSize = other.maxChunkSize;
     this.maxInitialLineLength = other.getMaxInitialLineLength();
     this.maxHeaderSize = other.getMaxHeaderSize();
-    this.maxWaitQueueSize = other.maxWaitQueueSize;
     this.initialSettings = other.initialSettings != null ? new Http2Settings(other.initialSettings) : null;
     this.alpnVersions = other.alpnVersions != null ? new ArrayList<>(other.alpnVersions) : null;
     this.http2ClearTextUpgrade = other.http2ClearTextUpgrade;
@@ -319,8 +324,6 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.maxRedirects = other.maxRedirects;
     this.forceSni = other.forceSni;
     this.decoderInitialBufferSize = other.getDecoderInitialBufferSize();
-    this.poolCleanerPeriod = other.getPoolCleanerPeriod();
-    this.poolEventLoopSize = other.getPoolEventLoopSize();
     this.tryUsePerFrameWebSocketCompression = other.tryUsePerFrameWebSocketCompression;
     this.tryUsePerMessageWebSocketCompression = other.tryUsePerMessageWebSocketCompression;
     this.webSocketAllowClientNoContext = other.webSocketAllowClientNoContext;
@@ -330,6 +333,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.tracingPolicy = other.tracingPolicy;
     this.shared = other.shared;
     this.name = other.name;
+    this.poolOptions = other.poolOptions != null ? new PoolOptions(other.poolOptions) : new PoolOptions();
   }
 
   /**
@@ -356,13 +360,11 @@ public class HttpClientOptions extends ClientOptionsBase {
 
   private void init() {
     verifyHost = DEFAULT_VERIFY_HOST;
-    maxPoolSize = DEFAULT_MAX_POOL_SIZE;
     keepAlive = DEFAULT_KEEP_ALIVE;
     keepAliveTimeout = DEFAULT_KEEP_ALIVE_TIMEOUT;
     pipelining = DEFAULT_PIPELINING;
     pipeliningLimit = DEFAULT_PIPELINING_LIMIT;
     http2MultiplexingLimit = DEFAULT_HTTP2_MULTIPLEXING_LIMIT;
-    http2MaxPoolSize = DEFAULT_HTTP2_MAX_POOL_SIZE;
     http2ConnectionWindowSize = DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE;
     http2KeepAliveTimeout = DEFAULT_HTTP2_KEEP_ALIVE_TIMEOUT;
     tryUseCompression = DEFAULT_TRY_USE_COMPRESSION;
@@ -375,7 +377,6 @@ public class HttpClientOptions extends ClientOptionsBase {
     maxChunkSize = DEFAULT_MAX_CHUNK_SIZE;
     maxInitialLineLength = DEFAULT_MAX_INITIAL_LINE_LENGTH;
     maxHeaderSize = DEFAULT_MAX_HEADER_SIZE;
-    maxWaitQueueSize = DEFAULT_MAX_WAIT_QUEUE_SIZE;
     initialSettings = new Http2Settings();
     alpnVersions = new ArrayList<>(DEFAULT_ALPN_VERSIONS);
     http2ClearTextUpgrade = DEFAULT_HTTP2_CLEAR_TEXT_UPGRADE;
@@ -390,11 +391,10 @@ public class HttpClientOptions extends ClientOptionsBase {
     webSocketAllowClientNoContext = DEFAULT_WEBSOCKET_ALLOW_CLIENT_NO_CONTEXT;
     webSocketRequestServerNoContext = DEFAULT_WEBSOCKET_REQUEST_SERVER_NO_CONTEXT;
     webSocketClosingTimeout = DEFAULT_WEBSOCKET_CLOSING_TIMEOUT;
-    poolCleanerPeriod = DEFAULT_POOL_CLEANER_PERIOD;
-    poolEventLoopSize = DEFAULT_POOL_EVENT_LOOP_SIZE;
     tracingPolicy = DEFAULT_TRACING_POLICY;
     shared = DEFAULT_SHARED;
     name = DEFAULT_NAME;
+    poolOptions = new PoolOptions();
   }
 
   @Override
@@ -608,7 +608,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return  the maximum pool size
    */
   public int getMaxPoolSize() {
-    return maxPoolSize;
+    return poolOptions.getHttp1MaxSize();
   }
 
   /**
@@ -618,10 +618,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientOptions setMaxPoolSize(int maxPoolSize) {
-    if (maxPoolSize < 1) {
-      throw new IllegalArgumentException("maxPoolSize must be > 0");
-    }
-    this.maxPoolSize = maxPoolSize;
+    poolOptions.setHttp1MaxSize(maxPoolSize);
     return this;
   }
 
@@ -658,7 +655,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return  the maximum pool size
    */
   public int getHttp2MaxPoolSize() {
-    return http2MaxPoolSize;
+    return poolOptions.getHttp2MaxSize();
   }
 
   /**
@@ -668,10 +665,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientOptions setHttp2MaxPoolSize(int max) {
-    if (max < 1) {
-      throw new IllegalArgumentException("http2MaxPoolSize must be > 0");
-    }
-    this.http2MaxPoolSize = max;
+    poolOptions.setHttp2MaxSize(max);
     return this;
   }
 
@@ -1057,7 +1051,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientOptions setMaxWaitQueueSize(int maxWaitQueueSize) {
-    this.maxWaitQueueSize = maxWaitQueueSize;
+    poolOptions.setMaxWaitQueueSize(maxWaitQueueSize);
     return this;
   }
 
@@ -1066,7 +1060,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return the maximum wait queue size
    */
   public int getMaxWaitQueueSize() {
-    return maxWaitQueueSize;
+    return poolOptions.getMaxWaitQueueSize();
   }
 
   /**
@@ -1254,8 +1248,17 @@ public class HttpClientOptions extends ClientOptionsBase {
 
   /**
    * @return {@code true} when the WebSocket per-frame deflate compression extension will be offered
+   * @deprecated instead use {@link #tryUsePerFrameWebSocketCompression}
    */
+  @Deprecated
   public boolean getTryWebSocketDeflateFrameCompression() {
+    return this.tryUsePerFrameWebSocketCompression;
+  }
+
+  /**
+   * @return {@code true} when the WebSocket per-frame deflate compression extension will be offered
+   */
+  public boolean getTryUsePerFrameWebSocketCompression() {
     return this.tryUsePerFrameWebSocketCompression;
   }
 
@@ -1381,7 +1384,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return the connection pool cleaner period in ms.
    */
   public int getPoolCleanerPeriod() {
-    return poolCleanerPeriod;
+    return poolOptions.getCleanerPeriod();
   }
 
   /**
@@ -1392,7 +1395,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientOptions setPoolCleanerPeriod(int poolCleanerPeriod) {
-    this.poolCleanerPeriod = poolCleanerPeriod;
+    poolOptions.setCleanerPeriod(poolCleanerPeriod);
     return this;
   }
 
@@ -1401,7 +1404,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * to reuse the current event-loop
    */
   public int getPoolEventLoopSize() {
-    return poolEventLoopSize;
+    return poolOptions.getEventLoopSize();
   }
 
   /**
@@ -1418,8 +1421,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientOptions setPoolEventLoopSize(int poolEventLoopSize) {
-    Arguments.require(poolEventLoopSize >= 0, "poolEventLoopSize must be >= 0");
-    this.poolEventLoopSize = poolEventLoopSize;
+    poolOptions.setEventLoopSize(poolEventLoopSize);
     return this;
   }
 
@@ -1478,5 +1480,13 @@ public class HttpClientOptions extends ClientOptionsBase {
     Objects.requireNonNull(name, "Client name cannot be null");
     this.name = name;
     return this;
+  }
+
+  /**
+   * @return the pool options
+   */
+  @GenIgnore
+  public PoolOptions getPoolOptions() {
+    return poolOptions;
   }
 }

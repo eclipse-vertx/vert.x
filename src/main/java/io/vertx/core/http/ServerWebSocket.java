@@ -76,6 +76,12 @@ public interface ServerWebSocket extends WebSocketBase {
   ServerWebSocket writeTextMessage(String text, Handler<AsyncResult<Void>> handler);
 
   @Override
+  ServerWebSocket writePing(Buffer data, Handler<AsyncResult<Void>> handler);
+
+  @Override
+  ServerWebSocket writePong(Buffer data, Handler<AsyncResult<Void>> handler);
+
+  @Override
   ServerWebSocket closeHandler(Handler<Void> handler);
 
   @Override

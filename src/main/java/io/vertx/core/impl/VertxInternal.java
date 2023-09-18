@@ -15,10 +15,8 @@ package io.vertx.core.impl;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.resolver.AddressResolverGroup;
-import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.*;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.impl.btc.BlockedThreadChecker;
 import io.vertx.core.impl.future.PromiseInternal;
@@ -86,13 +84,23 @@ public interface VertxInternal extends Vertx {
   Transport transport();
 
   /**
-   * Create a HTTP/HTTPS client using the specified options and close future
+   * Create a WebSocket client using the specified options and close future
    *
    * @param options  the options to use
    * @param closeFuture  the close future
    * @return the client
    */
-  HttpClient createHttpClient(HttpClientOptions options, CloseFuture closeFuture);
+  WebSocketClient createWebSocketClient(WebSocketClientOptions options, CloseFuture closeFuture);
+
+  /**
+   * Create a HTTP/HTTPS client using the specified options and close future
+   *
+   * @param clientOptions the http client options to use
+   * @param poolOptions the pool options to use
+   * @param closeFuture  the close future
+   * @return the client
+   */
+  HttpClient createHttpPoolClient(HttpClientOptions clientOptions, PoolOptions poolOptions, CloseFuture closeFuture);
 
   default <C> C createSharedClient(String clientKey, String clientName, CloseFuture closeFuture, Function<CloseFuture, C> supplier) {
     return SharedClientHolder.createSharedClient(this, clientKey, clientName, closeFuture, supplier);

@@ -25,18 +25,18 @@ import io.vertx.core.net.SSLOptions;
 import java.util.List;
 import java.util.function.Function;
 
-public class SharedHttpClient implements HttpClientInternal {
+public class SharedHttpClientPool implements HttpClientPoolInternal {
 
   public static final String SHARED_MAP_NAME = "__vertx.shared.httpClients";
 
   private final VertxInternal vertx;
   private final CloseFuture closeFuture;
-  private final HttpClientInternal delegate;
+  private final HttpClientPoolInternal delegate;
 
-  public SharedHttpClient(VertxInternal vertx, CloseFuture closeFuture, HttpClient delegate) {
+  public SharedHttpClientPool(VertxInternal vertx, CloseFuture closeFuture, HttpClient delegate) {
     this.vertx = vertx;
     this.closeFuture = closeFuture;
-    this.delegate = (HttpClientInternal) delegate;
+    this.delegate = (HttpClientPoolInternal) delegate;
   }
 
   @Override
@@ -149,12 +149,12 @@ public class SharedHttpClient implements HttpClientInternal {
   }
 
   @Override
-  public HttpClient connectionHandler(Handler<HttpConnection> handler) {
+  public HttpClientPool connectionHandler(Handler<HttpConnection> handler) {
     return delegate.connectionHandler(handler);
   }
 
   @Override
-  public HttpClient redirectHandler(Function<HttpClientResponse, Future<RequestOptions>> handler) {
+  public HttpClientPool redirectHandler(Function<HttpClientResponse, Future<RequestOptions>> handler) {
     return delegate.redirectHandler(handler);
   }
 

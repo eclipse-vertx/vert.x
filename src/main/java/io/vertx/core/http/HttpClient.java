@@ -18,39 +18,19 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.metrics.Measured;
 import io.vertx.core.net.SSLOptions;
-import io.vertx.core.net.SocketAddress;
-import io.vertx.core.streams.ReadStream;
 
 import java.util.List;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 /**
  * An asynchronous HTTP client.
  * <p>
  * It allows you to make requests to HTTP servers, and a single client can make requests to any server.
  * <p>
- * It also allows you to open WebSockets to servers.
- * <p>
- * The client can also pool HTTP connections.
- * <p>
- * For pooling to occur, keep-alive must be true on the {@link io.vertx.core.http.HttpClientOptions} (default is true).
- * In this case connections will be pooled and re-used if there are pending HTTP requests waiting to get a connection,
- * otherwise they will be closed.
- * <p>
  * This gives the benefits of keep alive when the client is loaded but means we don't keep connections hanging around
  * unnecessarily when there would be no benefits anyway.
- * <p>
- * The client also supports pipe-lining of requests. Pipe-lining means another request is sent on the same connection
- * before the response from the preceding one has returned. Pipe-lining is not appropriate for all requests.
- * <p>
- * To enable pipe-lining, it must be enabled on the {@link io.vertx.core.http.HttpClientOptions} (default is false).
- * <p>
- * When pipe-lining is enabled the connection will be automatically closed when all in-flight responses have returned
- * and there are no outstanding pending requests to write.
  * <p>
  * The client is designed to be reused between requests.
  *
@@ -88,7 +68,9 @@ public interface HttpClient extends Measured {
   /**
    * Like {@link #request(HttpMethod, int, String, String, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  Future<HttpClientRequest> request(HttpMethod method, int port, String host, String requestURI);
+  default Future<HttpClientRequest> request(HttpMethod method, int port, String host, String requestURI) {
+    return request(new RequestOptions().setMethod(method).setPort(port).setHost(host).setURI(requestURI));
+  }
 
   /**
    * Create an HTTP request to send to the server at the {@code host} and default port. The {@code handler}
@@ -104,7 +86,9 @@ public interface HttpClient extends Measured {
   /**
    * Like {@link #request(HttpMethod, String, String, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  Future<HttpClientRequest> request(HttpMethod method, String host, String requestURI);
+  default Future<HttpClientRequest> request(HttpMethod method, String host, String requestURI) {
+    return request(new RequestOptions().setMethod(method).setHost(host).setURI(requestURI));
+  }
 
   /**
    * Create an HTTP request to send to the server at the default host and port. The {@code handler}
@@ -119,7 +103,9 @@ public interface HttpClient extends Measured {
   /**
    * Like {@link #request(HttpMethod, String, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  Future<HttpClientRequest> request(HttpMethod method, String requestURI);
+  default Future<HttpClientRequest> request(HttpMethod method, String requestURI) {
+    return request(new RequestOptions().setMethod(method).setURI(requestURI));
+  }
 
   /**
    * Connect a WebSocket to the specified port, host and relative request URI
@@ -127,12 +113,16 @@ public interface HttpClient extends Measured {
    * @param host  the host
    * @param requestURI  the relative URI
    * @param handler  handler that will be called with the WebSocket when connected
+   * @deprecated instead use {@link WebSocketClient#connect(int, String, String, Handler)}
    */
+  @Deprecated
   void webSocket(int port, String host, String requestURI, Handler<AsyncResult<WebSocket>> handler);
 
   /**
    * Like {@link #webSocket(int, String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @deprecated instead use {@link WebSocketClient#connect(int, String, String)}
    */
+  @Deprecated
   Future<WebSocket> webSocket(int port, String host, String requestURI);
 
   /**
@@ -140,36 +130,48 @@ public interface HttpClient extends Measured {
    * @param host  the host
    * @param requestURI  the relative URI
    * @param handler  handler that will be called with the WebSocket when connected
+   * @deprecated instead use {@link WebSocketClient#connect(int, String, String, Handler)}
    */
+  @Deprecated
   void webSocket(String host, String requestURI, Handler<AsyncResult<WebSocket>> handler);
 
   /**
    * Like {@link #webSocket(String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @deprecated instead use {@link WebSocketClient#connect(int, String, String)}
    */
+  @Deprecated
   Future<WebSocket> webSocket(String host, String requestURI);
 
   /**
    * Connect a WebSocket at the relative request URI using the default host and port
    * @param requestURI  the relative URI
    * @param handler  handler that will be called with the WebSocket when connected
+   * @deprecated instead use {@link WebSocketClient#connect(int, String, String, Handler)}
    */
+  @Deprecated
   void webSocket(String requestURI, Handler<AsyncResult<WebSocket>> handler);
 
   /**
    * Like {@link #webSocket(String, Handler)} but returns a {@code Future} of the asynchronous result
+   * @deprecated instead use {@link WebSocketClient#connect(int, String, String)}
    */
+  @Deprecated
   Future<WebSocket> webSocket(String requestURI);
 
   /**
    * Connect a WebSocket with the specified options.
    *
    * @param options  the request options
+   * @deprecated instead use {@link WebSocketClient#connect(WebSocketConnectOptions, Handler)}
    */
+  @Deprecated
   void webSocket(WebSocketConnectOptions options, Handler<AsyncResult<WebSocket>> handler);
 
   /**
    * Like {@link #webSocket(WebSocketConnectOptions, Handler)} but returns a {@code Future} of the asynchronous result
+   * @deprecated instead use {@link WebSocketClient#connect(WebSocketConnectOptions)}
    */
+  @Deprecated
   Future<WebSocket> webSocket(WebSocketConnectOptions options);
 
   /**
@@ -181,12 +183,16 @@ public interface HttpClient extends Measured {
    * @param version        the WebSocket version
    * @param subProtocols   the subprotocols to use
    * @param handler handler that will be called if WebSocket connection fails
+   * @deprecated instead use {@link WebSocketClient#connect(WebSocketConnectOptions, Handler)}
    */
+  @Deprecated
   void webSocketAbs(String url, MultiMap headers, WebsocketVersion version, List<String> subProtocols, Handler<AsyncResult<WebSocket>> handler);
 
   /**
    * Like {@link #webSocketAbs(String, MultiMap, WebsocketVersion, List, Handler)} but returns a {@code Future} of the asynchronous result
+   * @deprecated instead use {@link WebSocketClient#connect(WebSocketConnectOptions)}
    */
+  @Deprecated
   Future<WebSocket> webSocketAbs(String url, MultiMap headers, WebsocketVersion version, List<String> subProtocols);
 
   /**
@@ -196,7 +202,9 @@ public interface HttpClient extends Measured {
    *
    * @param options the new SSL options
    * @return a future signaling the update success
+   * @deprecated instead use {@link HttpClientPool#updateSSLOptions(SSLOptions)}
    */
+  @Deprecated
   Future<Void> updateSSLOptions(SSLOptions options);
 
   /**
@@ -205,7 +213,9 @@ public interface HttpClient extends Measured {
    *
    * @param options the new SSL options
    * @param handler the update handler
+   * @deprecated instead use {@link HttpClientPool#updateSSLOptions(SSLOptions, Handler)}
    */
+  @Deprecated
   default void updateSSLOptions(SSLOptions options, Handler<AsyncResult<Void>> handler) {
     Future<Void> fut = updateSSLOptions(options);
     if (handler != null) {
@@ -217,7 +227,9 @@ public interface HttpClient extends Measured {
    * Set a connection handler for the client. This handler is called when a new connection is established.
    *
    * @return a reference to this, so the API can be used fluently
+   * @deprecated instead use {@link HttpClientPool#connectionHandler(Handler)}
    */
+  @Deprecated
   @Fluent
   HttpClient connectionHandler(Handler<HttpConnection> handler);
 
@@ -239,13 +251,17 @@ public interface HttpClient extends Measured {
    *
    * @param handler the new redirect handler
    * @return a reference to this, so the API can be used fluently
+   * @deprecated instead use {@link HttpClientPool#redirectHandler(Function)}
    */
+  @Deprecated
   @Fluent
   HttpClient redirectHandler(Function<HttpClientResponse, Future<RequestOptions>> handler);
 
   /**
    * @return the current redirect handler.
+   * @deprecated instead use {@link HttpClientPool#redirectHandler()}
    */
+  @Deprecated
   @GenIgnore
   Function<HttpClientResponse, Future<RequestOptions>> redirectHandler();
 

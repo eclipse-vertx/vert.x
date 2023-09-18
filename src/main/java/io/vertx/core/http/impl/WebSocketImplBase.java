@@ -343,7 +343,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   @Override
-  public final WebSocketBase writePing(Buffer data, Handler<AsyncResult<Void>> handler) {
+  public final S writePing(Buffer data, Handler<AsyncResult<Void>> handler) {
     Future<Void> fut = writePing(data);
     if (handler != null) {
       fut.onComplete(handler);
@@ -360,7 +360,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   @Override
-  public final WebSocketBase writePong(Buffer data, Handler<AsyncResult<Void>> handler) {
+  public final S writePong(Buffer data, Handler<AsyncResult<Void>> handler) {
     Future<Void> fut = writePong(data);
     if (handler != null) {
       fut.onComplete(handler);

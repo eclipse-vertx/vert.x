@@ -114,7 +114,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     throw new IllegalStateException("Invalid object " + msg);
   };
 
-  private final HttpClientImpl client;
+  private final HttpClientBase client;
   private final HttpClientOptions options;
   private final boolean ssl;
   private final SocketAddress server;
@@ -144,7 +144,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   private long lastResponseReceivedTimestamp;
 
   Http1xClientConnection(HttpVersion version,
-                         HttpClientImpl client,
+                         HttpClientBase client,
                          ChannelHandlerContext channel,
                          boolean ssl,
                          SocketAddress server,
@@ -1019,6 +1019,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
         } else {
           WebSocketImpl ws = finish(context, version, registerWriteHandlers, handshaker, ar.result());
           webSocket = ws;
+          ws.pause();
           getContext().emit(ws, w -> {
             promise.handle(Future.succeededFuture(w));
             webSocket.headers(null);
@@ -1143,7 +1144,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
 
   ArrayList<WebSocketClientExtensionHandshaker> initializeWebSocketExtensionHandshakers(HttpClientOptions options) {
     ArrayList<WebSocketClientExtensionHandshaker> extensionHandshakers = new ArrayList<>();
-    if (options.getTryWebSocketDeflateFrameCompression()) {
+    if (options.getTryUsePerFrameWebSocketCompression()) {
       extensionHandshakers.add(new DeflateFrameClientExtensionHandshaker(options.getWebSocketCompressionLevel(),
         false));
     }

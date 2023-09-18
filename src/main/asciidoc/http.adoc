@@ -805,7 +805,7 @@ You can configure compressors according to your needs
 
 === Creating an HTTP client
 
-You create an {@link io.vertx.core.http.HttpClient} instance with default options as follows:
+You create an {@link io.vertx.core.http.HttpClientPool} instance with default options as follows:
 
 [source,$lang]
 ----
@@ -849,6 +849,26 @@ with {@link io.vertx.core.http.HttpClientResponse#version()} when the response a
 When a clients connects to an HTTP/2 server, it sends to the server its {@link io.vertx.core.http.HttpClientOptions#getInitialSettings initial settings}.
 The settings define how the server can use the connection, the default initial settings for a client are the default
 values defined by the HTTP/2 RFC.
+
+=== Pool configuration
+
+For performance purpose, the client uses connection pooling when interacting with HTTP/1.1 servers. The pool creates up
+to 5 connections per server. You can override the pool configuration like this:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#examplePoolConfiguration}
+----
+
+You can configure various pool {@link io.vertx.core.http.PoolOptions options} as follows
+
+- {@link io.vertx.core.http.PoolOptions options#setHttp1MaxSize} the maximum number of opened per HTTP/1.x server (5 by default)
+- {@link io.vertx.core.http.PoolOptions options#setHttp2MaxSize} the maximum number of opened per HTTP/2 server (1 by default), you *should* not change this value since a single HTTP/2 connection is capable of delivering the same performance level than multiple HTTP/1.x connections
+- {@link io.vertx.core.http.PoolOptions options#setCleanerPeriod} the period in milliseconds at which the pool checks expired connections (1 second by default)
+- {@link io.vertx.core.http.PoolOptions options#setEventLoopSize} sets the number of event loops the pool use (0 by default)
+  - a value of 0 configures the pool to use the event loop of the caller
+  - a positive value configures the pool load balance the creation of connection over a list of event loops determined by the value
+- {@link io.vertx.core.http.PoolOptions options#setMaxWaitQueueSize} the maximum number of HTTP requests waiting until a connection is available, when the queue is full, the request is rejected
 
 === Logging network client activity
 
@@ -1795,16 +1815,23 @@ The {@link io.vertx.core.http.ServerWebSocket} instance enables you to retrieve 
 
 ==== WebSockets on the client
 
-The Vert.x {@link io.vertx.core.http.HttpClient} supports WebSockets.
+The Vert.x {@link io.vertx.core.http.WebSocketClient} supports WebSockets.
 
-You can connect a WebSocket to a server using one of the {@link io.vertx.core.http.HttpClient#webSocket} operations and
-providing a handler.
+You can connect a WebSocket to a server using one of the {@link io.vertx.core.http.WebSocketClient#connect} operations.
 
-The handler will be called with an instance of {@link io.vertx.core.http.WebSocket} when the connection has been made:
+The returned future will be completed with an instance of {@link io.vertx.core.http.WebSocket} when the connection has been made:
 
 [source,$lang]
 ----
 {@link examples.HTTPExamples#example54}
+----
+
+When connecting from a non Vert.x thread, you can create a {@link io.vertx.core.http.ClientWebSocket}, configure its handlers and
+then connect to the server:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example54_bis}
 ----
 
 By default, the client sets the `origin` header to the server host, e.g http://www.example.com. Some servers will refuse

@@ -28,10 +28,7 @@ import io.vertx.core.dns.DnsClient;
 import io.vertx.core.dns.DnsClientOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.file.FileSystem;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.impl.btc.BlockedThreadChecker;
 import io.vertx.core.impl.future.PromiseInternal;
@@ -111,13 +108,8 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public HttpClient createHttpClient(HttpClientOptions options) {
+  public HttpClientPool createHttpClient(HttpClientOptions options) {
     return delegate.createHttpClient(options);
-  }
-
-  @Override
-  public HttpClient createHttpClient() {
-    return delegate.createHttpClient();
   }
 
   @Override
@@ -426,8 +418,13 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public HttpClient createHttpClient(HttpClientOptions options, CloseFuture closeFuture) {
-    return delegate.createHttpClient(options, closeFuture);
+  public WebSocketClient createWebSocketClient(WebSocketClientOptions options) {
+    return delegate.createWebSocketClient(options);
+  }
+
+  @Override
+  public HttpClient createHttpPoolClient(HttpClientOptions clientOptions, PoolOptions poolOptions, CloseFuture closeFuture) {
+    return delegate.createHttpPoolClient(clientOptions, poolOptions, closeFuture);
   }
 
   @Override
