@@ -108,7 +108,6 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   private final PoolOptions poolOptions;
   private final EndpointProvider<EndpointKey, Lease<HttpClientConnection>> httpEndpointProvider;
   private final ConnectionManager<EndpointKey, Lease<HttpClientConnection>> httpCM;
-  private final List<HttpVersion> alpnVersions;
   private EndpointResolver<?, EndpointKey, Lease<HttpClientConnection>, ?> endpointResolver;
   private volatile Function<HttpClientResponse, Future<RequestOptions>> redirectHandler = DEFAULT_HANDLER;
   private long timerID;
@@ -117,20 +116,6 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
 
   public HttpClientImpl(VertxInternal vertx, HttpClientOptions options, PoolOptions poolOptions) {
     super(vertx, options);
-    List<HttpVersion> alpnVersions = options.getAlpnVersions();
-    if (alpnVersions == null || alpnVersions.isEmpty()) {
-      switch (options.getProtocolVersion()) {
-        case HTTP_2:
-          this.alpnVersions = Arrays.asList(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1);
-          break;
-        default:
-          this.alpnVersions = Collections.singletonList(options.getProtocolVersion());
-          break;
-      }
-    } else {
-      this.alpnVersions = alpnVersions;
-    }
-
     this.poolOptions = poolOptions;
     httpEndpointProvider = httpEndpointProvider();
     httpCM = new ConnectionManager<>(httpEndpointProvider);
