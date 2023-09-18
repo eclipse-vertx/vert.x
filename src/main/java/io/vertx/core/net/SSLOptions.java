@@ -60,9 +60,9 @@ public class SSLOptions {
   private TimeUnit sslHandshakeTimeoutUnit;
   private KeyCertOptions keyCertOptions;
   private TrustOptions trustOptions;
-  private Set<String> enabledCipherSuites;
-  private ArrayList<String> crlPaths;
-  private ArrayList<Buffer> crlValues;
+  Set<String> enabledCipherSuites;
+  List<String> crlPaths;
+  List<Buffer> crlValues;
   private boolean useAlpn;
   private Set<String> enabledSecureTransportProtocols;
   private List<String> applicationLayerProtocols;

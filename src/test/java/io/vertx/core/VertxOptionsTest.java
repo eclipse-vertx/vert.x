@@ -20,7 +20,6 @@ import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import io.vertx.test.faketracer.FakeTracerFactory;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Random;
@@ -319,7 +318,6 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(def.getUseDaemonThread(), json.getUseDaemonThread());
   }
 
-  @Ignore
   @Test
   public void testDefaultJsonVertxOptions() {
     VertxOptions vertxOptions1 = new VertxOptions();

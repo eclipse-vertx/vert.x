@@ -110,6 +110,10 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   private boolean tcpQuickAck;
   private int tcpUserTimeout;
 
+  private Set<String> enabledCipherSuites;
+  private List<String> crlPaths;
+  private List<Buffer> crlValues;
+
   /**
    * Default constructor
    */
@@ -183,6 +187,22 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   protected SSLOptions getOrCreateSSLOptions() {
     if (sslOptions == null) {
       sslOptions = this instanceof ClientOptionsBase ? new ClientSSLOptions() : new ServerSSLOptions();
+      // Necessary hacks because we return lazy created collections so we need to care about that
+      if (enabledCipherSuites != null) {
+        sslOptions.enabledCipherSuites = enabledCipherSuites;
+      } else {
+        enabledCipherSuites = sslOptions.enabledCipherSuites;
+      }
+      if (crlPaths != null) {
+        sslOptions.crlPaths = crlPaths;
+      } else {
+        crlPaths = sslOptions.crlPaths;
+      }
+      if (crlValues != null) {
+        sslOptions.crlValues = crlValues;
+      } else {
+        crlValues = sslOptions.crlValues;
+      }
     }
     return sslOptions;
   }
@@ -546,8 +566,10 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return the enabled cipher suites
    */
   public Set<String> getEnabledCipherSuites() {
-    SSLOptions o = sslOptions;
-    return o != null ? o.getEnabledCipherSuites() : null;
+    if (enabledCipherSuites == null) {
+      enabledCipherSuites = new LinkedHashSet<>();
+    }
+    return enabledCipherSuites;
   }
 
   /**
@@ -555,8 +577,10 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return the CRL (Certificate revocation list) paths
    */
   public List<String> getCrlPaths() {
-    SSLOptions o = sslOptions;
-    return o != null ? o.getCrlPaths() : null;
+    if (crlPaths == null) {
+      crlPaths = new ArrayList<>();
+    }
+    return crlPaths;
   }
 
   /**
@@ -576,8 +600,10 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return the list of values
    */
   public List<Buffer> getCrlValues() {
-    SSLOptions o = sslOptions;
-    return o != null ? o.getCrlValues() : null;
+    if (crlValues == null) {
+      crlValues =  new ArrayList<>();
+    }
+    return crlValues;
   }
 
   /**
