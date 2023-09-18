@@ -14,7 +14,6 @@ package io.vertx.core.net.impl;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
-import io.netty.channel.EventLoopGroup;
 import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
@@ -31,9 +30,6 @@ import io.vertx.core.net.*;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
-import io.vertx.core.streams.ReadStream;
-
-import java.util.function.BiConsumer;
 
 /**
  *
@@ -253,54 +249,6 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
     int writeIdleTimeout = options.getWriteIdleTimeout();
     if (idleTimeout > 0 || readIdleTimeout > 0 || writeIdleTimeout > 0) {
       pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, options.getIdleTimeoutUnit()));
-    }
-  }
-
-  /*
-          Needs to be protected using the NetServerImpl monitor as that protects the listening variable
-          In practice synchronized overhead should be close to zero assuming most access is from the same thread due
-          to biased locks
-        */
-  private class NetSocketStream implements ReadStream<NetSocket> {
-
-
-
-    @Override
-    public NetSocketStream handler(Handler<NetSocket> handler) {
-      connectHandler(handler);
-      return this;
-    }
-
-    @Override
-    public NetSocketStream pause() {
-      pauseAccepting();
-      return this;
-    }
-
-    @Override
-    public NetSocketStream resume() {
-      resumeAccepting();
-      return this;
-    }
-
-    @Override
-    public ReadStream<NetSocket> fetch(long amount) {
-      fetchAccepting(amount);
-      return this;
-    }
-
-    @Override
-    public NetSocketStream endHandler(Handler<Void> handler) {
-      synchronized (NetServerImpl.this) {
-        endHandler = handler;
-        return this;
-      }
-    }
-
-    @Override
-    public NetSocketStream exceptionHandler(Handler<Throwable> handler) {
-      // Should we use it in the server close exception handler ?
-      return this;
     }
   }
 }
