@@ -15,7 +15,6 @@ import io.vertx.core.*;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.*;
@@ -28,8 +27,6 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -52,7 +49,7 @@ public class HttpClientBase implements MetricsProvider, Closeable {
   private final boolean pipelining;
   protected final CloseFuture closeFuture;
   private Predicate<SocketAddress> proxyFilter;
-  private final Function<ContextInternal, EventLoopContext> contextProvider;
+  private final Function<ContextInternal, ContextInternal> contextProvider;
 
   public HttpClientBase(VertxInternal vertx, HttpClientOptions options, CloseFuture closeFuture) {
     this.vertx = vertx;
@@ -89,7 +86,7 @@ public class HttpClientBase implements MetricsProvider, Closeable {
     webSocketCM = webSocketConnectionManager();
     int eventLoopSize = options.getPoolEventLoopSize();
     if (eventLoopSize > 0) {
-      EventLoopContext[] eventLoops = new EventLoopContext[eventLoopSize];
+      ContextInternal[] eventLoops = new ContextInternal[eventLoopSize];
       for (int i = 0;i < eventLoopSize;i++) {
         eventLoops[i] = vertx.createEventLoopContext();
       }
@@ -113,7 +110,7 @@ public class HttpClientBase implements MetricsProvider, Closeable {
     return new ConnectionManager<>();
   }
 
-  Function<ContextInternal, EventLoopContext> contextProvider() {
+  Function<ContextInternal, ContextInternal> contextProvider() {
     return contextProvider;
   }
 
@@ -190,9 +187,9 @@ public class HttpClientBase implements MetricsProvider, Closeable {
     SocketAddress addr = SocketAddress.inetSocketAddress(port, host);
     ProxyOptions proxyOptions = resolveProxyOptions(connectOptions.getProxyOptions(), addr);
     EndpointKey key = new EndpointKey(connectOptions.isSsl() != null ? connectOptions.isSsl() : options.isSsl(), proxyOptions, addr, addr);
-    EventLoopContext eventLoopContext;
-    if (ctx instanceof EventLoopContext) {
-      eventLoopContext = (EventLoopContext) ctx;
+    ContextInternal eventLoopContext;
+    if (ctx.isEventLoopContext()) {
+      eventLoopContext = ctx;
     } else {
       eventLoopContext = vertx.createEventLoopContext(ctx.nettyEventLoop(), ctx.workerPool(), ctx.classLoader());
     }

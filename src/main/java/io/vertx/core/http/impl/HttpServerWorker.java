@@ -30,7 +30,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.impl.cgbystrom.FlashPolicyHandler;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.*;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
@@ -49,7 +48,7 @@ import java.util.function.Supplier;
  */
 public class HttpServerWorker implements BiConsumer<Channel, SslChannelProvider> {
 
-  final EventLoopContext context;
+  final ContextInternal context;
   private final Supplier<ContextInternal> streamContextSupplier;
   private final VertxInternal vertx;
   private final HttpServerImpl server;
@@ -63,7 +62,7 @@ public class HttpServerWorker implements BiConsumer<Channel, SslChannelProvider>
   private final Function<String, String> encodingDetector;
   private final GlobalTrafficShapingHandler trafficShapingHandler;
 
-  public HttpServerWorker(EventLoopContext context,
+  public HttpServerWorker(ContextInternal context,
                           Supplier<ContextInternal> streamContextSupplier,
                           HttpServerImpl server,
                           VertxInternal vertx,
@@ -237,7 +236,7 @@ public class HttpServerWorker implements BiConsumer<Channel, SslChannelProvider>
     }
   }
 
-  VertxHttp2ConnectionHandler<Http2ServerConnection> buildHttp2ConnectionHandler(EventLoopContext ctx, Handler<HttpServerConnection> handler_) {
+  VertxHttp2ConnectionHandler<Http2ServerConnection> buildHttp2ConnectionHandler(ContextInternal ctx, Handler<HttpServerConnection> handler_) {
     HttpServerMetrics metrics = (HttpServerMetrics) server.getMetrics();
     VertxHttp2ConnectionHandler<Http2ServerConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ServerConnection>()
       .server(true)

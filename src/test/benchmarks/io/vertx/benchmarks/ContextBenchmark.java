@@ -14,6 +14,7 @@ package io.vertx.benchmarks;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.impl.BenchmarkContext;
+import io.vertx.core.impl.ContextInternal;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Fork;
@@ -35,7 +36,7 @@ public class ContextBenchmark extends BenchmarkBase {
   public static class BaselineState {
 
     Vertx vertx;
-    BenchmarkContext context;
+    ContextInternal context;
     Handler<Void> task;
 
     @Setup

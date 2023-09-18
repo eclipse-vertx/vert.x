@@ -14,7 +14,6 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.VertxInternal;
 
 import java.util.List;
@@ -31,10 +30,10 @@ public interface ConnectionPool<C> {
    * This provider reuse the context argument when it can be cast or unwrapped to an event-loop context, otherwise
    * it returns a new event-loop context that reuses the Netty event-loop of the context argument.
    */
-  Function<ContextInternal, EventLoopContext> EVENT_LOOP_CONTEXT_PROVIDER = ctx -> {
+  Function<ContextInternal, ContextInternal> EVENT_LOOP_CONTEXT_PROVIDER = ctx -> {
     ctx = ctx.unwrap();
-    if (ctx instanceof EventLoopContext) {
-      return (EventLoopContext)ctx;
+    if (ctx.isEventLoopContext()) {
+      return ctx;
     } else {
       VertxInternal vertx = ctx.owner();
       return vertx.createEventLoopContext(ctx.nettyEventLoop(), ctx.workerPool(), ctx.classLoader());
@@ -72,7 +71,7 @@ public interface ConnectionPool<C> {
    * @param contextProvider the provider to be used by the pool
    * @return a reference to this, so the API can be used fluently
    */
-  ConnectionPool<C> contextProvider(Function<ContextInternal, EventLoopContext> contextProvider);
+  ConnectionPool<C> contextProvider(Function<ContextInternal, ContextInternal> contextProvider);
 
   /**
    * Acquire a connection from the pool.

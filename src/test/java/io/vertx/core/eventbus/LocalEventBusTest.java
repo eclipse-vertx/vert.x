@@ -16,7 +16,6 @@ import io.vertx.core.eventbus.impl.EventBusInternal;
 import io.vertx.core.eventbus.impl.MessageConsumerImpl;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.TestUtils;
@@ -684,7 +683,7 @@ public class LocalEventBusTest extends EventBusTestBase {
         if (worker) {
           assertTrue(ctx.isWorkerContext());
         } else {
-          assertTrue(ctx instanceof EventLoopContext);
+          assertTrue(ctx.isEventLoopContext());
         }
         Thread thr = Thread.currentThread();
         MessageConsumer<?> reg = vertx.eventBus().consumer(ADDRESS1).handler(msg -> {

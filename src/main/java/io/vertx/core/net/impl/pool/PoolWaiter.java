@@ -11,10 +11,8 @@
 package io.vertx.core.net.impl.pool;
 
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.EventLoopContext;
 
 /**
  * A waiter for a connection.

@@ -12,7 +12,6 @@
 package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
-import io.netty.util.concurrent.FastThreadLocalThread;
 import io.vertx.core.*;
 import io.vertx.core.impl.future.FailedFuture;
 import io.vertx.core.impl.future.PromiseImpl;
@@ -25,7 +24,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
-import static io.vertx.core.impl.ContextBase.setResultHandler;
+import static io.vertx.core.impl.ContextImpl.setResultHandler;
 
 /**
  * This interface provides an api for vert.x core internal use only

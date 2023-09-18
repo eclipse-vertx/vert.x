@@ -12,7 +12,7 @@ package io.vertx.core.net.impl.pool;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
-import io.vertx.core.impl.EventLoopContext;
+import io.vertx.core.impl.ContextInternal;
 
 /**
  * Defines the interactions with the actual back-end managing connections.
@@ -28,7 +28,7 @@ public interface PoolConnector<C> {
    * @param listener the listener
    * @param handler the callback handler with the result
    */
-  void connect(EventLoopContext context, Listener listener, Handler<AsyncResult<ConnectResult<C>>> handler);
+  void connect(ContextInternal context, Listener listener, Handler<AsyncResult<ConnectResult<C>>> handler);
 
   /**
    * Checks whether the connection is still valid.

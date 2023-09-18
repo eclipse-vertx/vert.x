@@ -25,7 +25,6 @@ import io.vertx.core.Promise;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.NetSocket;
@@ -86,11 +85,11 @@ public class HttpChannelConnector {
     return server;
   }
 
-  private void connect(EventLoopContext context, Promise<NetSocket> promise) {
+  private void connect(ContextInternal context, Promise<NetSocket> promise) {
     netClient.connectInternal(proxyOptions, server, peerAddress, this.options.isForceSni() ? peerAddress.host() : null, ssl, useAlpn, false, promise, context, 0);
   }
 
-  public Future<HttpClientConnection> wrap(EventLoopContext context, NetSocket so_) {
+  public Future<HttpClientConnection> wrap(ContextInternal context, NetSocket so_) {
     NetSocketImpl so = (NetSocketImpl) so_;
     Object metric = so.metric();
     PromiseInternal<HttpClientConnection> promise = context.promise();
@@ -141,7 +140,7 @@ public class HttpChannelConnector {
     return promise.future();
   }
 
-  public void httpConnect(EventLoopContext context, Handler<AsyncResult<HttpClientConnection>> handler) {
+  public void httpConnect(ContextInternal context, Handler<AsyncResult<HttpClientConnection>> handler) {
     Promise<NetSocket> promise = context.promise();
     Future<HttpClientConnection> fut = promise.future().flatMap(so -> wrap(context, so));
     fut.onComplete(handler);
@@ -230,7 +229,7 @@ public class HttpChannelConnector {
     ch.pipeline().addLast("handler", clientHandler);
   }
 
-  private void http2Connected(EventLoopContext context,
+  private void http2Connected(ContextInternal context,
                               Object metric,
                               Channel ch,
                               PromiseInternal<HttpClientConnection> promise) {

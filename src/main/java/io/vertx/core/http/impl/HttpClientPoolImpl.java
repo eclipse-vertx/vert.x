@@ -20,7 +20,6 @@ import io.vertx.core.Promise;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.NetClient;
@@ -174,7 +173,7 @@ public class HttpClientPoolImpl extends HttpClientBase implements HttpClientPool
    * Connect to a server.
    */
   public Future<HttpClientConnection> connect(SocketAddress server, SocketAddress peer) {
-    EventLoopContext context = (EventLoopContext) vertx.getOrCreateContext();
+    ContextInternal context = vertx.getOrCreateContext();
     Promise<HttpClientConnection> promise = context.promise();
     HttpChannelConnector connector = new HttpChannelConnector(this, netClient, null, null, options.getProtocolVersion(), options.isSsl(), options.isUseAlpn(), peer, server);
     connector.httpConnect(context, promise);

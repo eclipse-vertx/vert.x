@@ -11,72 +11,37 @@
 
 package io.vertx.core.impl;
 
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-
-import java.util.concurrent.Executor;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class BenchmarkContext extends ContextBase {
+public class BenchmarkContext {
 
-  public static BenchmarkContext create(Vertx vertx) {
+  private static final EventExecutor EXECUTOR = new EventExecutor() {
+    @Override
+    public boolean inThread() {
+      throw new UnsupportedOperationException();
+    }
+    @Override
+    public void execute(Runnable command) {
+      command.run();
+    }
+  };
+
+  public static ContextInternal create(Vertx vertx) {
     VertxImpl impl = (VertxImpl) vertx;
-    return new BenchmarkContext(
+    return new ContextImpl(
       impl,
+      false,
+      impl.getEventLoopGroup().next(),
+      EXECUTOR,
       impl.internalWorkerPool,
       impl.workerPool,
+      new TaskQueue(),
+      null,
+      null,
       Thread.currentThread().getContextClassLoader()
     );
-  }
-
-  public BenchmarkContext(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool, ClassLoader tccl) {
-    super(vertx, vertx.getEventLoopGroup().next(), internalBlockingPool, workerPool, null, null, tccl);
-  }
-
-  @Override
-  public Executor executor() {
-    return Runnable::run;
-  }
-
-  @Override
-  public boolean inThread() {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  protected <T> void emit(ContextInternal ctx, T argument, Handler<T> task) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  protected void runOnContext(ContextInternal ctx, Handler<Void> action) {
-    ctx.dispatch(null, action);
-  }
-
-  @Override
-  protected <T> void execute(ContextInternal ctx, T argument, Handler<T> task) {
-    task.handle(argument);
-  }
-
-  @Override
-  protected void execute(ContextInternal ctx, Runnable task) {
-    task.run();
-  }
-
-  @Override
-  public void execute(Runnable task) {
-    task.run();
-  }
-
-  @Override
-  public boolean isEventLoopContext() {
-    return false;
-  }
-
-  @Override
-  public boolean isWorkerContext() {
-    return false;
   }
 }
