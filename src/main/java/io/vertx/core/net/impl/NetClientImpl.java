@@ -265,7 +265,7 @@ class NetClientImpl implements NetClientInternal {
           }
         });
       } else {
-        connectInternal2(connectOptions, null, null, registerWriteHandlers, connectHandler, context, remainingAttempts);
+        connectInternal2(connectOptions, connectOptions.getSslOptions(), null, registerWriteHandlers, connectHandler, context, remainingAttempts);
       }
     }
   }
@@ -324,6 +324,7 @@ class NetClientImpl implements NetClientInternal {
       SocketAddress peerAddress = peerHost != null && peerPort != null ? SocketAddress.inetSocketAddress(peerPort, peerHost) : null;
       channelProvider.handler(ch -> connected(
         context,
+        sslOptions,
         ch,
         connectHandler,
         captured,
@@ -365,6 +366,7 @@ class NetClientImpl implements NetClientInternal {
   }
 
   private void connected(ContextInternal context,
+                         ClientSSLOptions sslOptions,
                          Channel ch,
                          Promise<NetSocket> connectHandler,
                          SocketAddress remoteAddress,

@@ -19,19 +19,14 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.util.CharsetUtil;
 import io.netty.util.ReferenceCounted;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
-import io.vertx.core.http.ClientAuth;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.*;
 import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.streams.impl.InboundBuffer;
@@ -40,7 +35,6 @@ import java.io.File;
 import java.io.RandomAccessFile;
 import java.nio.charset.Charset;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 /**
  *
@@ -261,12 +255,24 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   }
 
   @Override
-  public Future<Void> upgradeToSsl() {
-    return upgradeToSsl((String) null);
+  public Future<Void> upgradeToSsl(String serverName) {
+    return sslUpgrade(serverName, sslOptions);
   }
 
   @Override
-  public Future<Void> upgradeToSsl(String serverName) {
+  public Future<Void> upgradeToSsl(SSLOptions sslOptions, String serverName) {
+    return sslUpgrade(serverName, sslOptions);
+  }
+
+  private Future<Void> sslUpgrade(String serverName, SSLOptions sslOptions) {
+    if (sslOptions == null) {
+      return context.failedFuture("Missing SSL options");
+    }
+    if (remoteAddress != null && !(sslOptions instanceof ClientSSLOptions)) {
+      return context.failedFuture("Client socket upgrade must use ClientSSLOptions");
+    } else if (remoteAddress == null && !(sslOptions instanceof ServerSSLOptions)) {
+      return context.failedFuture("Server socket upgrade must use ServerSSLOptions");
+    }
     if (chctx.pipeline().get("ssl") == null) {
       doPause();
       PromiseInternal<Void> flush = context.promise();
@@ -299,7 +305,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
             ChannelPromise channelPromise = chctx.newPromise();
             chctx.pipeline().addFirst("handshaker", new SslHandshakeCompletionHandler(channelPromise));
             ChannelHandler sslHandler;
-            if (remoteAddress != null) {
+            if (sslOptions instanceof ClientSSLOptions) {
               ClientSSLOptions clientSSLOptions = (ClientSSLOptions) sslOptions;
               sslHandler = sslChannelProvider.createClientSslHandler(remoteAddress, serverName, sslOptions.isUseAlpn(), clientSSLOptions.isTrustAll(), clientSSLOptions.getSslHandshakeTimeout(), clientSSLOptions.getSslHandshakeTimeoutUnit());
             } else {

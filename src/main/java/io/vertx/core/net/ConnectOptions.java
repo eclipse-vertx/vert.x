@@ -27,7 +27,7 @@ public class ConnectOptions {
   public static final boolean DEFAULT_SSL = false;
 
   private String host;
-  private int port;
+  private Integer port;
   private String sniServerName;
   private SocketAddress remoteAddress;
   private ProxyOptions proxyOptions;
@@ -39,7 +39,7 @@ public class ConnectOptions {
     */
   public ConnectOptions() {
     host = null;
-    port = 0;
+    port = null;
     sniServerName = null;
     remoteAddress = null;
     proxyOptions = null;
@@ -202,10 +202,12 @@ public class ConnectOptions {
    * Set the SSL options to use.
    * <p>
    * When none is provided, the {@link NetClientOptions} SSL options will be used instead.
-   * @param sslOptions the SSL optiosn to use
+   * @param sslOptions the SSL options to use
+   * @return a reference to this, so the API can be used fluently
    */
-  public void setSslOptions(ClientSSLOptions sslOptions) {
+  public ConnectOptions setSslOptions(ClientSSLOptions sslOptions) {
     this.sslOptions = sslOptions;
+    return this;
   }
 
    /**

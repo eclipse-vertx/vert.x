@@ -194,7 +194,9 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
    *
    * @return a future completed when the connection has been upgraded to SSL
    */
-  Future<Void> upgradeToSsl();
+  default Future<Void> upgradeToSsl() {
+    return upgradeToSsl((String) null);
+  }
 
   /**
    * Upgrade channel to use SSL/TLS. Be aware that for this to work SSL must be configured.
@@ -203,6 +205,25 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @return a future completed when the connection has been upgraded to SSL
    */
   Future<Void> upgradeToSsl(String serverName);
+
+  /**
+   * Upgrade channel to use SSL/TLS. Be aware that for this to work SSL must be configured.
+   *
+   * @param sslOptions the SSL options
+   * @param serverName the server name
+   * @return a future completed when the connection has been upgraded to SSL
+   */
+  Future<Void> upgradeToSsl(SSLOptions sslOptions, String serverName);
+
+  /**
+   * Upgrade channel to use SSL/TLS. Be aware that for this to work SSL must be configured.
+   *
+   * @param sslOptions the SSL options
+   * @return a future completed when the connection has been upgraded to SSL
+   */
+  default Future<Void> upgradeToSsl(SSLOptions sslOptions) {
+    return upgradeToSsl(sslOptions, null);
+  }
 
   /**
    * @return true if this {@link io.vertx.core.net.NetSocket} is encrypted via SSL/TLS.
