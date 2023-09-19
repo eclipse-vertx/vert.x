@@ -97,6 +97,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static io.vertx.test.core.TestUtils.*;
 import static org.hamcrest.CoreMatchers.*;
@@ -3158,14 +3160,70 @@ public class NetTest extends VertxTestBase {
    * Test that NetSocket.upgradeToSsl() should fail the handler if no TLS configuration was set.
    */
   @Test
-  public void testUpgradeToSSLIncorrectClientOptions() {
+  public void testUpgradeToSSLIncorrectClientOptions1() {
+    NetClient client = vertx.createNetClient();
+    try {
+      testUpgradeToSSLIncorrectClientOptions(() -> client.connect(4043, "127.0.0.1"));
+    } finally {
+      client.close();
+    }
+  }
+
+  /**
+   * Test that NetSocket.upgradeToSsl() should fail the handler if no TLS configuration was set.
+   */
+  @Test
+  public void testUpgradeToSSLIncorrectClientOptions2() {
+    NetClient client = vertx.createNetClient();
+    try {
+      testUpgradeToSSLIncorrectClientOptions(() -> client.connect(new ConnectOptions().setPort(4043).setHost("127.0.0.1")));
+    } finally {
+      client.close();
+    }
+  }
+
+  /**
+   * Test that NetSocket.upgradeToSsl() should fail the handler if no TLS configuration was set.
+   */
+  private void testUpgradeToSSLIncorrectClientOptions(Supplier<Future<NetSocket>> connect) {
     server.close();
     server = vertx.createNetServer(new NetServerOptions().setSsl(true).setPort(4043)
       .setKeyCertOptions(Cert.SERVER_JKS_ROOT_CA.get()));
-    NetClient client = vertx.createNetClient();
     server.connectHandler(ns -> {}).listen().onComplete(onSuccess(v -> {
-      client.connect(4043, "127.0.0.1").onComplete(onSuccess(ns -> {
-        ns.upgradeToSsl().onComplete(onFailure(err -> client.close().onComplete(onSuccess(s -> testComplete()))));
+      connect.get().onComplete(onSuccess(ns -> {
+        ns.upgradeToSsl().onComplete(onFailure(err -> {
+          assertTrue(err.getMessage().contains("Missing SSL options"));
+          testComplete();
+        }));
+      }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testOverrideClientSSLOptions() {
+    waitFor(4);
+    server.close();
+    server = vertx.createNetServer(new NetServerOptions().setSsl(true).setPort(4043)
+      .setKeyCertOptions(Cert.SERVER_JKS.get()));
+    server.connectHandler(ns -> {
+      complete();
+    }).listen().onComplete(onSuccess(v -> {
+      NetClient client = vertx.createNetClient(new NetClientOptions().setTrustOptions(Trust.CLIENT_JKS.get()));
+      client.connect(4043, "localhost").onComplete(onSuccess(ns -> {
+        ns.upgradeToSsl().onComplete(onFailure(err -> {
+          ClientSSLOptions sslOptions = new ClientSSLOptions().setTrustOptions(Trust.SERVER_JKS.get());
+          client.connect(4043, "localhost").onComplete(onSuccess(ns2 -> {
+            ns2.upgradeToSsl(sslOptions).onComplete(onSuccess(v2 -> {
+              complete();
+            }));
+          }));
+          client.connect(new ConnectOptions().setPort(4043).setHost("localhost").setSslOptions(sslOptions)).onComplete(onSuccess(ns2 -> {
+            ns2.upgradeToSsl().onComplete(onSuccess(v2 -> {
+              complete();
+            }));
+          }));
+        }));
       }));
     }));
     await();
