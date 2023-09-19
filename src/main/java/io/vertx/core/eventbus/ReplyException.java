@@ -41,13 +41,14 @@ public class ReplyException extends VertxException {
 
   /**
    * Create a ReplyException with all attributes, including cause.<br>
-   * Default {@link io.vertx.core.eventbus.impl.codecs.ReplyExceptionMessageCodec} doesn't support Cause!
+   * Default {@link io.vertx.core.eventbus.impl.codecs.ReplyExceptionMessageCodec ReplyExceptionMessageCodec} doesn't support Cause!<br>
+   * This ctor is meant to be used for extension, together with a custom codec.
    *
    * @param failureType  the failure type
    * @param failureCode  the failure code (e.g. 404)
    * @param message  the failure message
    */
-  public ReplyException(ReplyFailure failureType, int failureCode, String message, Throwable cause, boolean noStackTrace) {
+  protected ReplyException(ReplyFailure failureType, int failureCode, String message, Throwable cause, boolean noStackTrace) {
     super(message, cause, noStackTrace);
     this.failureType = failureType;
     this.failureCode = failureCode;
