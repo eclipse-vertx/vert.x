@@ -26,6 +26,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.concurrent.TimeUnit.*;
@@ -298,12 +299,12 @@ public class NamedWorkerPoolTest extends VertxTestBase {
   }
 
   @Test
-  public void testDeployUsingNamedPool() throws Exception {
+  public void testDeployUsingNamedPool() {
     AtomicReference<Thread> thread = new AtomicReference<>();
     String poolName = "vert.x-" + TestUtils.randomAlphaString(10);
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
-      public void start() throws Exception {
+      public void start() {
         vertx.executeBlocking(fut -> {
           thread.set(Thread.currentThread());
           assertTrue(Context.isOnVertxThread());
@@ -312,11 +313,34 @@ public class NamedWorkerPoolTest extends VertxTestBase {
           assertTrue(Thread.currentThread().getName().startsWith(poolName + "-"));
           fut.complete();
         }, onSuccess(v -> {
-          vertx.undeploy(context.deploymentID());
+          vertx.undeploy(context.deploymentID()).onComplete(ar -> {
+            System.out.println("UNDEPLOYED " + ar.succeeded());
+          });
         }));
       }
     }, new DeploymentOptions().setWorkerPoolName(poolName), onSuccess(v -> {}));
     assertWaitUntil(() -> thread.get() != null && thread.get().getState() == Thread.State.TERMINATED);
+  }
+
+  @Test
+  public void testNamedWorkerPoolShouldBeClosedAfterVerticleIsUndeployed() {
+    AtomicReference<String> threadName = new AtomicReference<>();
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start() {
+      }
+      @Override
+      public void stop() {
+        threadName.set(Thread.currentThread().getName());
+      }
+    }, new DeploymentOptions().setWorker(true).setWorkerPoolName("test-worker"), onSuccess(id -> {
+      vertx.undeploy(id).onComplete(onSuccess(v -> {
+        assertNotNull(threadName.get());
+        assertTrue(threadName.get().startsWith("test-worker"));
+        testComplete();
+      }));
+    }));
+    await();
   }
 
   @Test
