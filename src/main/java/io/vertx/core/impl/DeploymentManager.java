@@ -306,9 +306,6 @@ public class DeploymentManager {
         status = ST_UNDEPLOYING;
         return doUndeployChildren(undeployingContext).compose(v -> doUndeploy(undeployingContext));
       } else {
-        if (workerPool != null) {
-          workerPool.close();
-        }
         status = ST_UNDEPLOYED;
         List<Future<?>> undeployFutures = new ArrayList<>();
         if (parent != null) {
@@ -340,6 +337,9 @@ public class DeploymentManager {
         Promise<Void> resolvingPromise = undeployingContext.promise();
         Future.all(undeployFutures).<Void>mapEmpty().onComplete(resolvingPromise);
         Future<Void> fut = resolvingPromise.future();
+        if (workerPool != null) {
+          fut = fut.andThen(ar -> workerPool.close());
+        }
         Handler<Void> handler = undeployHandler;
         if (handler != null) {
           undeployHandler = null;

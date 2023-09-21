@@ -22,6 +22,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.concurrent.TimeUnit.*;
@@ -268,7 +269,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
   }
 
   @Test
-  public void testDeployUsingNamedPool() throws Exception {
+  public void testDeployUsingNamedPool() {
     AtomicReference<Thread> thread = new AtomicReference<>();
     String poolName = "vert.x-" + TestUtils.randomAlphaString(10);
     Promise<Void> undeployed = Promise.promise();
@@ -290,6 +291,27 @@ public class NamedWorkerPoolTest extends VertxTestBase {
       }
     }, new DeploymentOptions().setWorkerPoolName(poolName));
     assertWaitUntil(() -> thread.get() != null && thread.get().getState() == Thread.State.TERMINATED);
+  }
+
+  @Test
+  public void testNamedWorkerPoolShouldBeClosedAfterVerticleIsUndeployed() {
+    AtomicReference<String> threadName = new AtomicReference<>();
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start() {
+      }
+      @Override
+      public void stop() {
+        threadName.set(Thread.currentThread().getName());
+      }
+    }, new DeploymentOptions().setWorker(true).setWorkerPoolName("test-worker")).onComplete(onSuccess(id -> {
+      vertx.undeploy(id).onComplete(onSuccess(v -> {
+        assertNotNull(threadName.get());
+        assertTrue(threadName.get().startsWith("test-worker"));
+        testComplete();
+      }));
+    }));
+    await();
   }
 
   @Test
