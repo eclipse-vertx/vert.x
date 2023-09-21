@@ -314,7 +314,6 @@ public class NamedWorkerPoolTest extends VertxTestBase {
           fut.complete();
         }, onSuccess(v -> {
           vertx.undeploy(context.deploymentID()).onComplete(ar -> {
-            System.out.println("UNDEPLOYED " + ar.succeeded());
           });
         }));
       }
