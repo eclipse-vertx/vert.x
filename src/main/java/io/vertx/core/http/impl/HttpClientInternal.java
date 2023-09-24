@@ -20,7 +20,7 @@ import io.vertx.core.net.impl.NetClientInternal;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.resolver.AddressResolver;
 
-public interface HttpClientInternal extends HttpClientPool, MetricsProvider, Closeable {
+public interface HttpClientInternal extends HttpClient, MetricsProvider, Closeable {
 
   /**
    * @return the vertx, for use in package related classes only.

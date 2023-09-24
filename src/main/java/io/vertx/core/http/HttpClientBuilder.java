@@ -11,27 +11,35 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.net.ClientSSLOptions;
-import io.vertx.core.net.SSLOptions;
 
 import java.util.function.Function;
 
+/**
+ * A builder for {@link HttpClient}.
+ *
+ * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ */
 @VertxGen
-public interface HttpClientPool extends HttpClient, io.vertx.core.metrics.Measured {
+public interface HttpClientBuilder {
 
   /**
-   * Update the client SSL options.
-   *
-   * Update only happens if the SSL options is valid.
-   *
-   * @param options the new SSL options
-   * @return a future signaling the update success
+   * Configure the client options.
+   * @param options the client options
+   * @return a reference to this, so the API can be used fluently
    */
-  Future<Void> updateSSLOptions(ClientSSLOptions options);
+  @Fluent
+  HttpClientBuilder with(HttpClientOptions options);
+
+  /**
+   * Configure the client with the given pool {@code options}.
+   * @param options the pool options
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpClientBuilder with(PoolOptions options);
 
   /**
    * Set a connection handler for the client. This handler is called when a new connection is established.
@@ -39,7 +47,7 @@ public interface HttpClientPool extends HttpClient, io.vertx.core.metrics.Measur
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpClientPool connectionHandler(Handler<HttpConnection> handler);
+  HttpClientBuilder withConnectHandler(Handler<HttpConnection> handler);
 
   /**
    * Set a redirect handler for the http client.
@@ -61,12 +69,12 @@ public interface HttpClientPool extends HttpClient, io.vertx.core.metrics.Measur
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpClientPool redirectHandler(Function<HttpClientResponse, Future<RequestOptions>> handler);
+  HttpClientBuilder withRedirectHandler(Function<HttpClientResponse, Future<RequestOptions>> handler);
 
   /**
-   * @return the current redirect handler.
+   * Build and return the client.
+   * @return the client as configured by this builder
    */
-  @GenIgnore
-  Function<HttpClientResponse, Future<RequestOptions>> redirectHandler();
+  HttpClient build();
 
 }

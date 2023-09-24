@@ -10,10 +10,7 @@
  */
 package io.vertx.core.http.impl;
 
-import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.VertxInternal;
@@ -26,7 +23,6 @@ import io.vertx.core.spi.resolver.AddressResolver;
 import java.lang.ref.Cleaner;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
 /**
  * A lightweight proxy of Vert.x {@link HttpClient} that can be collected by the garbage collector and release
@@ -68,24 +64,6 @@ public class CleanableHttpClient implements HttpClientInternal {
   @Override
   public Future<Void> updateSSLOptions(ClientSSLOptions options) {
     return delegate.updateSSLOptions(options);
-  }
-
-  @Override
-  @Fluent
-  public HttpClientPool connectionHandler(Handler<HttpConnection> handler) {
-    return delegate.connectionHandler(handler);
-  }
-
-  @Override
-  @Fluent
-  public HttpClientPool redirectHandler(Function<HttpClientResponse, Future<RequestOptions>> handler) {
-    return delegate.redirectHandler(handler);
-  }
-
-  @Override
-  @GenIgnore
-  public Function<HttpClientResponse, Future<RequestOptions>> redirectHandler() {
-    return delegate.redirectHandler();
   }
 
   @Override

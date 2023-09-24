@@ -209,10 +209,14 @@ public class HTTP2Examples {
     HttpConnection connection = request.connection();
   }
 
-  public void example19(HttpClientPool client) {
-    client.connectionHandler(connection -> {
-      System.out.println("Connected to the server");
-    });
+  public void example19(Vertx vertx, HttpClientOptions options) {
+    vertx
+      .httpClientBuilder()
+      .with(options)
+      .withConnectHandler(connection -> {
+        System.out.println("Connected to the server");
+      })
+      .build();
   }
 
   public void example20(HttpConnection connection) {

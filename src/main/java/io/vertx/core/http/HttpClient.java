@@ -13,6 +13,7 @@ package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
+import io.vertx.core.net.ClientSSLOptions;
 
 import java.util.concurrent.TimeUnit;
 
@@ -45,7 +46,7 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface HttpClient {
+public interface HttpClient extends io.vertx.core.metrics.Measured {
 
   /**
    * Create an HTTP request to send to the server.
@@ -125,4 +126,13 @@ public interface HttpClient {
    */
   Future<Void> shutdown(long timeout, TimeUnit timeUnit);
 
+  /**
+   * Update the client SSL options.
+   *
+   * Update only happens if the SSL options is valid.
+   *
+   * @param options the new SSL options
+   * @return a future signaling the update success
+   */
+  Future<Void> updateSSLOptions(ClientSSLOptions options);
 }

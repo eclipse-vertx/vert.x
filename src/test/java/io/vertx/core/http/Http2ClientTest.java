@@ -119,16 +119,18 @@ public class Http2ClientTest extends Http2TestBase {
     });
     startServer();
     client.close();
-    client = vertx.createHttpClient(clientOptions.setInitialSettings(initialSettings));
-    client.connectionHandler(conn -> {
-      vertx.runOnContext(v -> {
-        conn.updateSettings(updatedSettings)
-          .onComplete(onSuccess(v2 -> {
-              end.complete();
-            })
-          );
-      });
-    });
+    client = vertx.httpClientBuilder()
+      .with(clientOptions.setInitialSettings(initialSettings))
+      .withConnectHandler(conn -> {
+        vertx.runOnContext(v -> {
+          conn.updateSettings(updatedSettings)
+            .onComplete(onSuccess(v2 -> {
+                end.complete();
+              })
+            );
+        });
+      })
+      .build();
     client.request(requestOptions)
       .compose(req -> req
         .send()
@@ -171,21 +173,25 @@ public class Http2ClientTest extends Http2TestBase {
     });
     startServer();
     AtomicInteger count = new AtomicInteger();
-    client.connectionHandler(conn -> {
-      conn.remoteSettingsHandler(settings -> {
-        switch (count.getAndIncrement()) {
-          case 0:
-            assertEquals(expectedSettings.getMaxHeaderListSize(), settings.getMaxHeaderListSize());
-            assertEquals(expectedSettings.getMaxFrameSize(), settings.getMaxFrameSize());
-            assertEquals(expectedSettings.getInitialWindowSize(), settings.getInitialWindowSize());
-            assertEquals(expectedSettings.getMaxConcurrentStreams(), settings.getMaxConcurrentStreams());
-            assertEquals(expectedSettings.getHeaderTableSize(), settings.getHeaderTableSize());
-            assertEquals(expectedSettings.get('\u0007'), settings.get(7));
-            complete();
-            break;
-        }
-      });
-    });
+    client.close();
+    client = vertx.httpClientBuilder()
+      .with(clientOptions)
+      .withConnectHandler(conn -> {
+        conn.remoteSettingsHandler(settings -> {
+          switch (count.getAndIncrement()) {
+            case 0:
+              assertEquals(expectedSettings.getMaxHeaderListSize(), settings.getMaxHeaderListSize());
+              assertEquals(expectedSettings.getMaxFrameSize(), settings.getMaxFrameSize());
+              assertEquals(expectedSettings.getInitialWindowSize(), settings.getInitialWindowSize());
+              assertEquals(expectedSettings.getMaxConcurrentStreams(), settings.getMaxConcurrentStreams());
+              assertEquals(expectedSettings.getHeaderTableSize(), settings.getHeaderTableSize());
+              assertEquals(expectedSettings.get('\u0007'), settings.get(7));
+              complete();
+              break;
+          }
+        });
+      })
+      .build();
     client
       .request(requestOptions)
       .onComplete(onSuccess(v -> complete()));
@@ -215,11 +221,15 @@ public class Http2ClientTest extends Http2TestBase {
       }
     });
     startServer();
-    client.connectionHandler(conn -> {
-      conn.remoteSettingsHandler(settings -> {
-        conn.ping(Buffer.buffer("settings"));
-      });
-    });
+    client.close();
+    client = vertx.httpClientBuilder()
+      .with(clientOptions)
+      .withConnectHandler(conn -> {
+        conn.remoteSettingsHandler(settings -> {
+          conn.ping(Buffer.buffer("settings"));
+        });
+      })
+      .build();
     waitFor(10 * 5);
     for (int i = 0;i < 10 * 5;i++) {
       client
@@ -616,10 +626,14 @@ public class Http2ClientTest extends Http2TestBase {
     });
     startServer();
     CountDownLatch latch = new CountDownLatch(1);
-    client.connectionHandler(conn -> {
-      assertEquals(max == null ? 0xFFFFFFFFL : max, conn.remoteSettings().getMaxConcurrentStreams());
-      latch.countDown();
-    });
+    client.close();
+    client = vertx.httpClientBuilder()
+      .with(clientOptions)
+      .withConnectHandler(conn -> {
+        assertEquals(max == null ? 0xFFFFFFFFL : max, conn.remoteSettings().getMaxConcurrentStreams());
+        latch.countDown();
+      })
+      .build();
     client.request(requestOptions).onComplete(onSuccess(HttpClientRequest::end));
     awaitLatch(latch);
     for (int i = 0;i < numReq;i++) {
@@ -944,15 +958,19 @@ public class Http2ClientTest extends Http2TestBase {
     startServer();
     AtomicReference<HttpConnection> connection = new AtomicReference<>();
     AtomicInteger count = new AtomicInteger();
-    client.connectionHandler(conn -> {
-      if (count.getAndIncrement() == 0) {
-        Context ctx = Vertx.currentContext();
-        assertOnIOContext(ctx);
-        assertTrue(connection.compareAndSet(null, conn));
-      } else {
-        fail();
-      }
-    });
+    client.close();
+    client = vertx.httpClientBuilder()
+      .with(clientOptions)
+      .withConnectHandler(conn -> {
+        if (count.getAndIncrement() == 0) {
+          Context ctx = Vertx.currentContext();
+          assertOnIOContext(ctx);
+          assertTrue(connection.compareAndSet(null, conn));
+        } else {
+          fail();
+        }
+      })
+      .build();
     for (int i = 0;i < 2;i++) {
       client.request(requestOptions).onComplete(onSuccess(req -> {
         req.send().onComplete(onSuccess(resp -> {
@@ -989,17 +1007,21 @@ public class Http2ClientTest extends Http2TestBase {
     });
     startServer(testAddress);
     AtomicInteger clientStatus = new AtomicInteger();
-    client.connectionHandler(conn -> {
-      Context ctx = Vertx.currentContext();
-      if (clientStatus.getAndIncrement() == 0) {
-        conn.shutdownHandler(v -> {
-          assertOnIOContext(ctx);
-          clientStatus.compareAndSet(1, 2);
-          complete();
-        });
-        conn.shutdown();
-      }
-    });
+    client.close();
+    client = vertx.httpClientBuilder()
+      .with(clientOptions)
+      .withConnectHandler(conn -> {
+        Context ctx = Vertx.currentContext();
+        if (clientStatus.getAndIncrement() == 0) {
+          conn.shutdownHandler(v -> {
+            assertOnIOContext(ctx);
+            clientStatus.compareAndSet(1, 2);
+            complete();
+          });
+          conn.shutdown();
+        }
+      })
+      .build();
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req
         .exceptionHandler(err -> complete())
@@ -1017,13 +1039,17 @@ public class Http2ClientTest extends Http2TestBase {
     server.connectionHandler(HttpConnection::shutdown);
     server.requestHandler(req -> fail());
     startServer();
-    client.connectionHandler(conn -> {
-      Context ctx = Vertx.currentContext();
-      conn.goAwayHandler(ga -> {
-        assertOnIOContext(ctx);
-        complete();
-      });
-    });
+    client.close();
+    client = vertx.httpClientBuilder()
+      .with(clientOptions)
+      .withConnectHandler(conn -> {
+        Context ctx = Vertx.currentContext();
+        conn.goAwayHandler(ga -> {
+          assertOnIOContext(ctx);
+          complete();
+        });
+      })
+      .build();
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req.send().onComplete(onFailure(err -> {
         assertEquals("Was expecting HttpClosedException instead of " + err.getClass().getName() + " / " + err.getMessage(),
@@ -1240,14 +1266,17 @@ public class Http2ClientTest extends Http2TestBase {
       Context ctx = vertx.getOrCreateContext();
       ctx.runOnContext(v -> {
         client = vertx.createHttpClient(createBaseClientOptions());
-        client.connectionHandler(conn -> {
-          conn.exceptionHandler(err -> {
-            assertOnIOContext(ctx);
-            if (err instanceof Http2Exception) {
-              complete();
-            }
-          });
-        });
+        client = vertx.httpClientBuilder()
+          .with(clientOptions)
+          .withConnectHandler(conn -> {
+            conn.exceptionHandler(err -> {
+              assertOnIOContext(ctx);
+              if (err instanceof Http2Exception) {
+                complete();
+              }
+            });
+          })
+          .build();
         client.request(new RequestOptions()
           .setMethod(HttpMethod.PUT)
           .setHost(DEFAULT_HTTPS_HOST)
@@ -1295,14 +1324,17 @@ public class Http2ClientTest extends Http2TestBase {
       client.close();
       ctx.runOnContext(v -> {
         client = vertx.createHttpClient(createBaseClientOptions());
-        client.connectionHandler(conn -> {
-          conn.exceptionHandler(err -> {
-            assertSame(ctx, Vertx.currentContext());
-            if (err instanceof Http2Exception) {
-              complete();
-            }
-          });
-        });
+        client = vertx.httpClientBuilder()
+          .with(clientOptions)
+          .withConnectHandler(conn -> {
+            conn.exceptionHandler(err -> {
+              assertSame(ctx, Vertx.currentContext());
+              if (err instanceof Http2Exception) {
+                complete();
+              }
+            });
+          })
+          .build();
         client.request(new RequestOptions()
           .setMethod(HttpMethod.PUT)
           .setHost(DEFAULT_HTTPS_HOST)
@@ -1345,10 +1377,12 @@ public class Http2ClientTest extends Http2TestBase {
       Context ctx = vertx.getOrCreateContext();
       client.close();
       ctx.runOnContext(v -> {
-        client = vertx.createHttpClient(createBaseClientOptions());
-        client.connectionHandler(conn -> {
-          conn.exceptionHandler(err -> fail());
-        });
+        client = vertx.httpClientBuilder()
+          .with(clientOptions)
+          .withConnectHandler(conn -> {
+            conn.exceptionHandler(err -> fail());
+          })
+          .build();
         client.request(requestOptions).onComplete(onSuccess(req -> {
           req.send().onComplete(onFailure(err -> {
             assertOnIOContext(ctx);
@@ -1787,13 +1821,15 @@ public class Http2ClientTest extends Http2TestBase {
     client.close();
     Context ctx = vertx.getOrCreateContext();
     ctx.runOnContext(v1 -> {
-      client = vertx.createHttpClient(clientOptions.setIdleTimeout(2));
-      client.connectionHandler(conn -> {
-        conn.closeHandler(v2 -> {
-          assertSame(ctx, Vertx.currentContext());
-          complete();
-        });
-      });
+      client = vertx.httpClientBuilder()
+        .with(clientOptions.setIdleTimeout(2))
+        .withConnectHandler(conn -> {
+          conn.closeHandler(v2 -> {
+            assertSame(ctx, Vertx.currentContext());
+            complete();
+          });
+        })
+        .build();
       client.request(requestOptions).onComplete(onSuccess(req -> {
         req
           .exceptionHandler(err -> {
@@ -1818,13 +1854,15 @@ public class Http2ClientTest extends Http2TestBase {
     });
     startServer(testAddress);
     client.close();
-    client = vertx.createHttpClient(clientOptions.setHttp2KeepAliveTimeout(5).setIdleTimeout(2));
-    client.connectionHandler(conn -> {
-      conn.closeHandler(v -> {
-        assertTrue(System.currentTimeMillis() - time.get() > 1000);
-        complete();
-      });
-    });
+    client = vertx.httpClientBuilder()
+      .with(clientOptions.setHttp2KeepAliveTimeout(5).setIdleTimeout(2))
+      .withConnectHandler(conn -> {
+        conn.closeHandler(v -> {
+          assertTrue(System.currentTimeMillis() - time.get() > 1000);
+          complete();
+        });
+      })
+      .build();
     client.request(requestOptions)
       .compose(req -> req.send().compose(HttpClientResponse::body))
       .onComplete(onSuccess(resp -> {
@@ -1877,14 +1915,18 @@ public class Http2ClientTest extends Http2TestBase {
     });
     server.requestHandler(req -> {});
     startServer(ctx);
-    client.connectionHandler(conn -> {
-      conn.ping(expected).onComplete(ar -> {
-        assertTrue(ar.succeeded());
-        Buffer buff = ar.result();
-        assertEquals(expected, buff);
-        complete();
-      });
-    });
+    client.close();
+    client = vertx.httpClientBuilder()
+      .with(clientOptions)
+      .withConnectHandler(conn -> {
+        conn.ping(expected).onComplete(ar -> {
+          assertTrue(ar.succeeded());
+          Buffer buff = ar.result();
+          assertEquals(expected, buff);
+          complete();
+        });
+      })
+      .build();
     client.request(requestOptions).onComplete(onSuccess(HttpClientRequest::send));
     await();
   }
@@ -1900,12 +1942,16 @@ public class Http2ClientTest extends Http2TestBase {
     });
     server.requestHandler(req -> {});
     startServer(ctx);
-    client.connectionHandler(conn -> {
-      conn.pingHandler(data -> {
-        assertEquals(expected, data);
-        complete();
-      });
-    });
+    client.close();
+    client = vertx.httpClientBuilder()
+      .with(clientOptions)
+      .withConnectHandler(conn -> {
+        conn.pingHandler(data -> {
+          assertEquals(expected, data);
+          complete();
+        });
+      })
+      .build();
     client.request(requestOptions).onComplete(onSuccess(HttpClientRequest::send));
     await();
   }
@@ -1945,11 +1991,14 @@ public class Http2ClientTest extends Http2TestBase {
     });
     startServer();
     client.close();
-    client = vertx.createHttpClient(new HttpClientOptions(clientOptions).
-        setHttp2MultiplexingLimit(maxConcurrency), new PoolOptions().setHttp2MaxSize(poolSize));
     AtomicInteger respCount = new AtomicInteger();
     Set<HttpConnection> clientConnections = Collections.synchronizedSet(new HashSet<>());
-    client.connectionHandler(clientConnections::add);
+    client = vertx.httpClientBuilder()
+      .with(new HttpClientOptions(clientOptions).
+        setHttp2MultiplexingLimit(maxConcurrency))
+      .with(new PoolOptions().setHttp2MaxSize(poolSize))
+      .withConnectHandler(clientConnections::add)
+      .build();
     for (int j = 0;j < rounds;j++) {
       for (int i = 0;i < maxConcurrency;i++) {
         client.request(requestOptions).onComplete(onSuccess(req -> {
@@ -2001,13 +2050,17 @@ public class Http2ClientTest extends Http2TestBase {
       }
     });
     ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
-    client.connectionHandler(conn -> {
-      assertEquals(65535, conn.getWindowSize());
-      conn.setWindowSize(65535 + 10000);
-      assertEquals(65535 + 10000, conn.getWindowSize());
-      conn.setWindowSize(65535 + 65535);
-      assertEquals(65535 + 65535, conn.getWindowSize());
-    });
+    client.close();
+    client = vertx.httpClientBuilder()
+      .with(clientOptions)
+      .withConnectHandler(conn -> {
+        assertEquals(65535, conn.getWindowSize());
+        conn.setWindowSize(65535 + 10000);
+        assertEquals(65535 + 10000, conn.getWindowSize());
+        conn.setWindowSize(65535 + 65535);
+        assertEquals(65535 + 65535, conn.getWindowSize());
+      })
+      .build();
     client.request(requestOptions).onComplete(onSuccess(HttpClientRequest::send));
     await();
   }

@@ -30,6 +30,8 @@ import io.vertx.core.VertxException;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
+import io.vertx.core.http.impl.CleanableHttpClient;
+import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.http.impl.HttpServerRequestInternal;
 import io.vertx.core.http.impl.ServerCookie;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
@@ -3581,10 +3583,14 @@ public abstract class HttpTest extends HttpTestBase {
     });
     startServer(testAddress);
     Context ctx = vertx.getOrCreateContext();
-    client.connectionHandler(conn -> {
-      assertSame(ctx, Vertx.currentContext());
-      complete();
-    });
+    client.close();
+    client = vertx.httpClientBuilder()
+      .with(createBaseClientOptions())
+      .withConnectHandler(conn -> {
+        assertSame(ctx, Vertx.currentContext());
+        complete();
+      })
+      .build();
     ctx.runOnContext(v -> {
       client.request(requestOptions)
         .compose(HttpClientRequest::send)
@@ -3626,11 +3632,15 @@ public abstract class HttpTest extends HttpTestBase {
     server.requestHandler(req -> {
     });
     startServer(testAddress, serverCtx, server);
-    client.connectionHandler(conn -> {
-      conn.closeHandler(v -> {
-        complete();
-      });
-    });
+    client.close();
+    client = vertx.httpClientBuilder()
+      .with(createBaseClientOptions())
+      .withConnectHandler(conn -> {
+        conn.closeHandler(v -> {
+          complete();
+        });
+      })
+      .build();
     client.request(requestOptions).compose(HttpClientRequest::send);
     await();
   }
@@ -3670,11 +3680,15 @@ public abstract class HttpTest extends HttpTestBase {
       req.connection().close();
     });
     startServer(testAddress);
-    client.connectionHandler(conn -> {
-      conn.closeHandler(v -> {
-        complete();
-      });
-    });
+    client.close();
+    client = vertx.httpClientBuilder()
+      .with(createBaseClientOptions())
+      .withConnectHandler(conn -> {
+        conn.closeHandler(v -> {
+          complete();
+        });
+      })
+      .build();
     client.request(requestOptions)
       .compose(HttpClientRequest::send)
       .onComplete(onFailure(req -> complete()));
@@ -4235,14 +4249,18 @@ public abstract class HttpTest extends HttpTestBase {
     });
     startServer(server2);
     Context ctx = vertx.getOrCreateContext();
-    client.redirectHandler(resp -> {
-      assertEquals(ctx, Vertx.currentContext());
-      Promise<RequestOptions> fut = Promise.promise();
-      vertx.setTimer(25, id -> {
-        fut.complete(new RequestOptions().setAbsoluteURI(scheme + "://localhost:" + port + "/custom"));
-      });
-      return fut.future();
-    });
+    client.close();
+    client = vertx.httpClientBuilder()
+      .with(createBaseClientOptions())
+      .withRedirectHandler(resp -> {
+        assertEquals(ctx, Vertx.currentContext());
+        Promise<RequestOptions> fut = Promise.promise();
+        vertx.setTimer(25, id -> {
+          fut.complete(new RequestOptions().setAbsoluteURI(scheme + "://localhost:" + port + "/custom"));
+        });
+        return fut.future();
+      })
+      .build();
     ctx.runOnContext(v -> {
       client.request(new RequestOptions()
         .setHost(DEFAULT_HTTP_HOST)
@@ -4374,7 +4392,7 @@ public abstract class HttpTest extends HttpTestBase {
       public Future<Void> end() { throw new UnsupportedOperationException(); }
     }
     MockResp resp = new MockResp();
-    Function<HttpClientResponse, Future<RequestOptions>> handler = client.redirectHandler();
+    Function<HttpClientResponse, Future<RequestOptions>> handler = ((HttpClientImpl)((CleanableHttpClient)client).delegate).redirectHandler();
     Future<RequestOptions> redirection = handler.apply(resp);
     if (expectedAbsoluteURI != null) {
       RequestOptions expectedOptions = new RequestOptions().setAbsoluteURI(location);
@@ -4645,7 +4663,11 @@ public abstract class HttpTest extends HttpTestBase {
       clientConn.get().close();
     });
     startServer(testAddress);
-    client.connectionHandler(clientConn::set);
+    client.close();
+    client = vertx.httpClientBuilder()
+      .with(createBaseClientOptions())
+      .withConnectHandler(clientConn::set)
+      .build();
     client.request(requestOptions).compose(HttpClientRequest::send).onComplete(onFailure(err -> {
     }));
     await();
@@ -6418,13 +6440,15 @@ public abstract class HttpTest extends HttpTestBase {
         servers.add(server);
       }
       client.close();
-      client = vertx.createHttpClient(createBaseClientOptions());
-      client.connectionHandler(conn -> {
-        inflight.incrementAndGet();
-        conn.closeHandler(v -> {
-          inflight.decrementAndGet();
-        });
-      });
+      client = vertx.httpClientBuilder()
+        .with(createBaseClientOptions())
+        .withConnectHandler(conn -> {
+          inflight.incrementAndGet();
+          conn.closeHandler(v -> {
+            inflight.decrementAndGet();
+          });
+        })
+        .build();
       for (int i = 0;i < num;i++) {
         client.request(new RequestOptions()
           .setHost(DEFAULT_HTTP_HOST)

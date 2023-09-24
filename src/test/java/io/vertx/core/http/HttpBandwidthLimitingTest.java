@@ -63,10 +63,10 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
   }
 
   private Function<Vertx, HttpServer> serverFactory;
-  private Function<Vertx, HttpClientPool> clientFactory;
+  private Function<Vertx, HttpClient> clientFactory;
 
   public HttpBandwidthLimitingTest(double protoVersion, Function<Vertx, HttpServer> serverFactory,
-                                   Function<Vertx, HttpClientPool> clientFactory) {
+                                   Function<Vertx, HttpClient> clientFactory) {
     this.serverFactory = serverFactory;
     this.clientFactory = clientFactory;
   }

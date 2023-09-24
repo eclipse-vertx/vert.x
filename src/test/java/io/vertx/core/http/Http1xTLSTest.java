@@ -43,7 +43,7 @@ public class Http1xTLSTest extends HttpTLSTest {
   }
 
   @Override
-  HttpClientPool createHttpClient(HttpClientOptions options) {
+  HttpClient createHttpClient(HttpClientOptions options) {
     return vertx.createHttpClient(options);
   }
 
@@ -204,14 +204,17 @@ public class Http1xTLSTest extends HttpTLSTest {
       .setEnabledSecureTransportProtocols(Collections.singleton("TLSv1.2"))
       .setSsl(true)
       .setTrustAll(true);
-    client.close();
-    client = vertx.createHttpClient(options, new PoolOptions().setHttp1MaxSize(num));
     AtomicInteger connCount = new AtomicInteger();
     List<String> sessionIds = Collections.synchronizedList(new ArrayList<>());
-    client.connectionHandler(conn -> {
-      sessionIds.add(ByteBufUtil.hexDump(conn.sslSession().getId()));
-      connCount.incrementAndGet();
-    });
+    client.close();
+    client = vertx.httpClientBuilder()
+      .with(options)
+      .with(new PoolOptions().setHttp1MaxSize(num))
+      .withConnectHandler(conn -> {
+        sessionIds.add(ByteBufUtil.hexDump(conn.sslSession().getId()));
+        connCount.incrementAndGet();
+      })
+      .build();
     CountDownLatch listenLatch = new CountDownLatch(1);
     vertx.deployVerticle(() -> new AbstractVerticle() {
       HttpServer server;

@@ -29,6 +29,7 @@ import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.io.File;
+import java.lang.ref.Cleaner;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Map;
@@ -89,6 +90,8 @@ public interface VertxInternal extends Vertx {
   VertxMetrics metricsSPI();
 
   Transport transport();
+
+  Cleaner cleaner();
 
   default <C> C createSharedResource(String resourceKey, String resourceName, CloseFuture closeFuture, Function<CloseFuture, C> supplier) {
     return SharedResourceHolder.createSharedResource(this, resourceKey, resourceName, closeFuture, supplier);
