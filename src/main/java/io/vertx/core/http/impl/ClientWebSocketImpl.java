@@ -72,7 +72,7 @@ public class ClientWebSocketImpl implements ClientWebSocket {
           w.pongHandler(pongHandler);
           w.resume();
         }
-      }).mapEmpty();
+      });
   }
 
 //  @Override

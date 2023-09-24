@@ -19,7 +19,6 @@ import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.HostAndPort;
-import io.vertx.core.net.SocketAddress;
 
 import java.util.Objects;
 
@@ -31,7 +30,6 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   protected final HttpClientImpl client;
   protected final ContextInternal context;
   protected final HttpClientStream stream;
-  protected final SocketAddress server;
   protected final boolean ssl;
   private io.vertx.core.http.HttpMethod method;
   private String host;
@@ -46,14 +44,13 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   private long lastDataReceived;
   private Throwable timeoutFired;
 
-  HttpClientRequestBase(HttpClientImpl client, HttpClientStream stream, PromiseInternal<HttpClientResponse> responsePromise, boolean ssl, HttpMethod method, SocketAddress server, String host, int port, String uri) {
+  HttpClientRequestBase(HttpClientImpl client, HttpClientStream stream, PromiseInternal<HttpClientResponse> responsePromise, boolean ssl, HttpMethod method, String host, int port, String uri) {
     this.client = client;
     this.stream = stream;
     this.responsePromise = responsePromise;
     this.context = responsePromise.context();
     this.uri = uri;
     this.method = method;
-    this.server = server;
     this.host = host;
     this.port = port;
     this.ssl = ssl;
@@ -205,14 +202,14 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
           return;
         }
       }
-      cause = timeoutEx(timeoutMs, method, server, uri);
+      cause = timeoutEx(timeoutMs, method, host, port, uri);
       timeoutFired = cause;
     }
     reset(cause);
   }
 
-  static NoStackTraceTimeoutException timeoutEx(long timeoutMs, HttpMethod method, SocketAddress server, String uri) {
-    return new NoStackTraceTimeoutException("The timeout period of " + timeoutMs + "ms has been exceeded while executing " + method + " " + uri + " for server " + server);
+  static NoStackTraceTimeoutException timeoutEx(long timeoutMs, HttpMethod method, String host, int port, String uri) {
+    return new NoStackTraceTimeoutException("The timeout period of " + timeoutMs + "ms has been exceeded while executing " + method + " " + uri + " for server " + host + ":" + port);
   }
 
   synchronized void dataReceived() {

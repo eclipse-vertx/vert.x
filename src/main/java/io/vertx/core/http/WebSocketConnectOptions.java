@@ -15,6 +15,7 @@ import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.MultiMap;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.Address;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.SocketAddress;
 
@@ -243,7 +244,7 @@ public class WebSocketConnectOptions extends RequestOptions {
   }
 
   @Override
-  public WebSocketConnectOptions setServer(SocketAddress server) {
+  public WebSocketConnectOptions setServer(Address server) {
     return (WebSocketConnectOptions) super.setServer(server);
   }
 

@@ -20,6 +20,8 @@ import io.vertx.core.http.HttpConnection;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.net.HostAndPort;
+import io.vertx.core.net.SocketAddress;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -33,6 +35,8 @@ public interface HttpClientConnection extends HttpConnection {
   };
 
   Handler<Long> DEFAULT_CONCURRENCY_CHANGE_HANDLER = concurrency -> {};
+
+  HostAndPort peer();
 
   /**
    * Set a {@code handler} called when the connection should be evicted from a pool.

@@ -38,7 +38,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
     String host,
     int port,
     MultiMap headers) {
-    super(client, stream, stream.connection().getContext().promise(), ssl, method, SocketAddress.inetSocketAddress(port, host), host, port, uri);
+    super(client, stream, stream.connection().getContext().promise(), ssl, method, host, port, uri);
     this.stream = stream;
     this.headers = headers;
   }

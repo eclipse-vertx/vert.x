@@ -27,6 +27,7 @@ import java.lang.ref.WeakReference;
 import java.net.URI;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
@@ -95,21 +96,65 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     }
   };
 
+  static class Foo {
+    final boolean ssl;
+    final ProxyOptions proxyOptions;
+    final Integer port;
+    final String host;
+    Foo(boolean ssl, ProxyOptions proxyOptions, Integer port, String host) {
+      this.ssl = ssl;
+      this.proxyOptions = proxyOptions;
+      this.port = port;
+      this.host = host;
+    }
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      Foo foo = (Foo) o;
+      return ssl == foo.ssl && Objects.equals(proxyOptions, foo.proxyOptions) && Objects.equals(port, foo.port) && Objects.equals(host, foo.host);
+    }
+    @Override
+    public int hashCode() {
+      return Objects.hash(ssl, proxyOptions, port, host);
+    }
+  }
+
   private final PoolOptions poolOptions;
-  private final EndpointProvider<EndpointKey, Lease<HttpClientConnection>> httpEndpointProvider;
   private final ConnectionManager<EndpointKey, Lease<HttpClientConnection>> httpCM;
-  private EndpointResolver<?, EndpointKey, Lease<HttpClientConnection>, ?> endpointResolver;
+  private final EndpointResolver<?, Foo, EndpointKey, Lease<HttpClientConnection>, ?> endpointResolver;
   private volatile Function<HttpClientResponse, Future<RequestOptions>> redirectHandler = DEFAULT_HANDLER;
   private long timerID;
   private volatile Handler<HttpConnection> connectionHandler;
   private final Function<ContextInternal, ContextInternal> contextProvider;
 
-  public HttpClientImpl(VertxInternal vertx, HttpClientOptions options, PoolOptions poolOptions) {
+  public HttpClientImpl(VertxInternal vertx, AddressResolver<?, ?, ?> addressResolver, HttpClientOptions options, PoolOptions poolOptions) {
     super(vertx, options);
+
+    EndpointProvider<EndpointKey, Lease<HttpClientConnection>> httpEndpointProvider = httpEndpointProvider();
+
+    if (addressResolver != null) {
+      this.endpointResolver = new EndpointResolver<>(httpEndpointProvider, addressResolver,
+        new BiFunction<Foo, SocketAddress, EndpointKey>() {
+          @Override
+          public EndpointKey apply(Foo foo, SocketAddress socketAddress) {
+
+            SocketAddress peerAddr;
+            if (foo.port != null && foo.host != null) {
+              peerAddr = SocketAddress.inetSocketAddress(foo.port, foo.host);
+            } else {
+              peerAddr = socketAddress;
+            }
+
+            return new EndpointKey(foo.ssl, foo.proxyOptions, socketAddress, peerAddr);
+          }
+        });
+    } else {
+      this.endpointResolver = null;
+    }
+
     this.poolOptions = poolOptions;
-    httpEndpointProvider = httpEndpointProvider();
     httpCM = new ConnectionManager<>(httpEndpointProvider);
-    endpointResolver = null;
     if (poolOptions.getCleanerPeriod() > 0 && (options.getKeepAliveTimeout() > 0L || options.getHttp2KeepAliveTimeout() > 0L)) {
       PoolChecker checker = new PoolChecker(this);
       ContextInternal timerContext = vertx.createEventLoopContext();
@@ -207,15 +252,6 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     super.doClose(p);
   }
 
-  public void addressResolver(AddressResolver<?, ?, ?> addressResolver) {
-    if (addressResolver != null) {
-      this.endpointResolver = new EndpointResolver<>(httpEndpointProvider, addressResolver,
-        (key, addr) -> new EndpointKey(key.ssl, key.proxyOptions, addr, addr));
-    } else {
-      this.endpointResolver = null;
-    }
-  }
-
   public void redirectHandler(Function<HttpClientResponse, Future<RequestOptions>> handler) {
     if (handler == null) {
       handler = DEFAULT_HANDLER;
@@ -237,34 +273,36 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
 
   @Override
   public Future<HttpClientRequest> request(RequestOptions request) {
-    SocketAddress server = request.getServer();
+    Address addr = request.getServer();
     Integer port = request.getPort();
     String host = request.getHost();
-    if (server == null) {
+    if (addr == null) {
       if (port == null) {
         port = options.getDefaultPort();
       }
       if (host == null) {
         host = options.getDefaultHost();
       }
-      server = SocketAddress.inetSocketAddress(port, host);
-    } else {
+      addr = SocketAddress.inetSocketAddress(port, host);
+    } else if (addr instanceof SocketAddress) {
+      SocketAddress socketAddr = (SocketAddress) addr;
       if (port == null) {
-        port = server.port();
+        port = request.getPort();
       }
       if (host == null) {
-        host = server.host();
+        host = request.getHost();
+      }
+      if (port == null) {
+        port = socketAddr.port();
+      }
+      if (host == null) {
+        host = socketAddr.host();
       }
     }
-    return doRequest(server, port, host, request);
+    return doRequest(addr, port, host, request);
   }
 
-  @Override
-  public Future<HttpClientRequest> request(Address address, HttpMethod method, int port, String host, String requestURI) {
-    return doRequest(address, port, host, new RequestOptions().setMethod(method).setPort(port).setHost(host).setURI(requestURI));
-  }
-
-  private Future<HttpClientRequest> doRequest(Address server, int port, String host, RequestOptions request) {
+  private Future<HttpClientRequest> doRequest(Address server, Integer port, String host, RequestOptions request) {
     if (server == null) {
       throw new NullPointerException();
     }
@@ -275,7 +313,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     long timeout = request.getTimeout();
     Boolean followRedirects = request.getFollowRedirects();
     Objects.requireNonNull(method, "no null method accepted");
-    Objects.requireNonNull(host, "no null host accepted");
+//    Objects.requireNonNull(host, "no null host accepted");
     Objects.requireNonNull(requestURI, "no null requestURI accepted");
     boolean useAlpn = this.options.isUseAlpn();
     boolean useSSL = ssl != null ? ssl : this.options.isSsl();
@@ -283,11 +321,16 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       return vertx.getOrCreateContext().failedFuture("Must enable ALPN when using H2");
     }
     checkClosed();
-    String peerHost = host;
-    if (peerHost.endsWith(".")) {
-      peerHost = peerHost.substring(0, peerHost.length() -  1);
+    SocketAddress peerAddress;
+    if (host != null && port != null) {
+      String peerHost = host;
+      if (peerHost.endsWith(".")) {
+        peerHost = peerHost.substring(0, peerHost.length() -  1);
+      }
+      peerAddress = SocketAddress.inetSocketAddress(port, peerHost);
+    } else {
+      peerAddress = null;
     }
-    SocketAddress peerAddress = SocketAddress.inetSocketAddress(port, peerHost);
     return doRequest(method, peerAddress, server, host, port, useSSL, requestURI, headers, request.getTraceOperation(), timeout, followRedirects, request.getProxyOptions());
   }
 
@@ -296,7 +339,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     SocketAddress peerAddress,
     Address server,
     String host,
-    int port,
+    Integer port,
     Boolean useSSL,
     String requestURI,
     MultiMap headers,
@@ -331,8 +374,8 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         }
       });
     } else {
-      EndpointKey key = new EndpointKey(useSSL, proxyConfig, SocketAddress.inetSocketAddress(port, host), peerAddress);
-      future = endpointResolver.withEndpoint(server, key, endpoint -> createDecoratedHttpClientStream(
+      Foo foo = new Foo(useSSL, proxyConfig, port, host);
+      future = endpointResolver.withEndpoint(server, foo, endpoint -> createDecoratedHttpClientStream(
         timeout,
         ctx,
         connCtx,
@@ -347,35 +390,53 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       return connCtx.failedFuture("Cannot resolve address " + server);
     } else {
       future.map(stream -> {
-        String u = requestURI;
-        if (proxyOptions != null && !useSSL && proxyOptions.getType() == ProxyType.HTTP) {
-          if (!ABS_URI_START_PATTERN.matcher(u).find()) {
-            int defaultPort = 80;
-            String addPort = (port != -1 && port != defaultPort) ? (":" + port) : "";
-            u = (useSSL == Boolean.TRUE ? "https://" : "http://") + host + addPort + requestURI;
-          }
-        }
-        HttpClientRequest req = new HttpClientRequestImpl(this, stream, ctx.promise(), useSSL, method, peerAddress, host, port, u, traceOperation);
-        if (headers != null) {
-          req.headers().setAll(headers);
-        }
-        if (proxyOptions != null && !useSSL && proxyOptions.getType() == ProxyType.HTTP) {
-          if (proxyOptions.getUsername() != null && proxyOptions.getPassword() != null) {
-            req.headers().add("Proxy-Authorization", "Basic " + Base64.getEncoder()
-              .encodeToString((proxyOptions.getUsername() + ":" + proxyOptions.getPassword()).getBytes()));
-          }
-        }
-        if (followRedirects != null) {
-          req.setFollowRedirects(followRedirects);
-        }
-        if (timeout > 0L) {
-          // Maybe later ?
-          req.setTimeout(timeout);
-        }
-        return req;
+        return createRequest(ctx, stream, method, headers, requestURI, proxyOptions, useSSL, timeout, followRedirects, traceOperation);
       }).onComplete(promise);
       return promise.future();
     }
+  }
+
+  // MOVE THIS TO STREAM ???
+  private HttpClientRequest createRequest(
+    ContextInternal ctx,
+    HttpClientStream stream,
+    HttpMethod method,
+    MultiMap headers,
+    String requestURI,
+    ProxyOptions proxyOptions,
+    Boolean useSSL,
+    long timeout,
+    Boolean followRedirects,
+    String traceOperation) {
+    String u = requestURI;
+    HostAndPort peerAddress = stream.connection().peer();
+    int port = peerAddress.port();
+    String host = peerAddress.host();
+    if (proxyOptions != null && !useSSL && proxyOptions.getType() == ProxyType.HTTP) {
+      if (!ABS_URI_START_PATTERN.matcher(u).find()) {
+        int defaultPort = 80;
+        String addPort = (port != -1 && port != defaultPort) ? (":" + port) : "";
+        u = (useSSL == Boolean.TRUE ? "https://" : "http://") + host + addPort + requestURI;
+      }
+    }
+    HttpClientRequest req = new HttpClientRequestImpl(this, stream, ctx.promise(), useSSL, method, host, port, u, traceOperation);
+    if (headers != null) {
+      req.headers().setAll(headers);
+    }
+    if (proxyOptions != null && !useSSL && proxyOptions.getType() == ProxyType.HTTP) {
+      if (proxyOptions.getUsername() != null && proxyOptions.getPassword() != null) {
+        req.headers().add("Proxy-Authorization", "Basic " + Base64.getEncoder()
+          .encodeToString((proxyOptions.getUsername() + ":" + proxyOptions.getPassword()).getBytes()));
+      }
+    }
+    if (followRedirects != null) {
+      req.setFollowRedirects(followRedirects);
+    }
+    if (timeout > 0L) {
+      // Maybe later ?
+      req.setTimeout(timeout);
+    }
+    return req;
   }
 
   /**

@@ -205,7 +205,7 @@ public class HttpChannelConnector {
     boolean upgrade = version == HttpVersion.HTTP_2 && options.isHttp2ClearTextUpgrade();
     VertxHandler<Http1xClientConnection> clientHandler = VertxHandler.create(chctx -> {
       HttpClientMetrics met = client.metrics();
-      Http1xClientConnection conn = new Http1xClientConnection(upgrade ? HttpVersion.HTTP_1_1 : version, client, chctx, ssl, server, context, this.metrics);
+      Http1xClientConnection conn = new Http1xClientConnection(upgrade ? HttpVersion.HTTP_1_1 : version, client, chctx, ssl, server, peerAddress.port(), peerAddress.host(), context, this.metrics);
       if (met != null) {
         conn.metric(socketMetric);
         met.endpointConnected(metrics);
@@ -252,7 +252,7 @@ public class HttpChannelConnector {
                               PromiseInternal<HttpClientConnection> promise) {
     VertxHttp2ConnectionHandler<Http2ClientConnection> clientHandler;
     try {
-      clientHandler = Http2ClientConnection.createHttp2ConnectionHandler(client, metrics, context, false, metric);
+      clientHandler = Http2ClientConnection.createHttp2ConnectionHandler(client, metrics, context, false, metric, peerAddress.port(), peerAddress.host());
       ch.pipeline().addLast("handler", clientHandler);
       ch.flush();
     } catch (Exception e) {

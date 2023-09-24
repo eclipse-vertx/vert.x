@@ -99,7 +99,7 @@ public class HttpClientBase implements MetricsProvider, Closeable {
     if (port != null) {
       return port;
     }
-    SocketAddress server = request.getServer();
+    SocketAddress server = (SocketAddress) request.getServer();
     if (server != null && server.isInetSocket()) {
       return server.port();
     }
@@ -118,7 +118,7 @@ public class HttpClientBase implements MetricsProvider, Closeable {
     if (host != null) {
       return host;
     }
-    SocketAddress server = request.getServer();
+    SocketAddress server = (SocketAddress) request.getServer();
     if (server != null && server.isInetSocket()) {
       return server.host();
     }

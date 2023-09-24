@@ -26,19 +26,19 @@ import java.util.function.Function;
  * A {@link ConnectionManager} decorator that resolves a socket address from a name string.
  *
  * @param <S> the resolver state type
- * @param <K> the resolution key type
+ * @param <KI> the resolution key type
  * @param <C> the connection type
  * @param <A> the resolved address type
  */
-public class EndpointResolver<S, K, C, A extends Address> extends ConnectionManager<ResolvingKey<K, A>, C> {
+public class EndpointResolver<S, KI, KO, C, A extends Address> extends ConnectionManager<ResolvingKey<KI, A>, C> {
 
   private final AddressResolver<S, A, ?> resolver;
 
-  public EndpointResolver(EndpointProvider<K, C> provider, AddressResolver<S, A, ?> endpointProvider, BiFunction<K, SocketAddress, K> resolver) {
+  public EndpointResolver(EndpointProvider<KO, C> provider, AddressResolver<S, A, ?> endpointProvider, BiFunction<KI, SocketAddress, KO> resolver) {
     super(new EndpointProvider<>() {
       @Override
-      public Endpoint<C> create(ResolvingKey<K, A> key, Runnable dispose) {
-        ConnectionManager<EndpointKey<K>, C> connectionManager = new ConnectionManager<>((key_, dispose_) -> {
+      public Endpoint<C> create(ResolvingKey<KI, A> key, Runnable dispose) {
+        ConnectionManager<EndpointKey<KI>, C> connectionManager = new ConnectionManager<>((key_, dispose_) -> {
           class Disposer implements Runnable {
             @Override
             public void run() {
@@ -64,7 +64,7 @@ public class EndpointResolver<S, K, C, A extends Address> extends ConnectionMana
    * @param function the function to apply on the endpoint
    * @return the value returned by the function when applied on the resolved endpoint.
    */
-  public <T> T withEndpoint(Address address, K key, Function<Endpoint<C>, Optional<T>> function) {
+  public <T> T withEndpoint(Address address, KI key, Function<Endpoint<C>, Optional<T>> function) {
     A resolverAddress = resolver.tryCast(address);
     if (resolverAddress == null) {
       return null;

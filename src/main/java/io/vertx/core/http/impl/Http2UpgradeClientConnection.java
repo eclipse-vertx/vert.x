@@ -29,6 +29,7 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.streams.WriteStream;
 
@@ -70,6 +71,11 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
 
   public HttpClientConnection unwrap() {
     return current;
+  }
+
+  @Override
+  public HostAndPort peer() {
+    return current.peer();
   }
 
   @Override
@@ -347,7 +353,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
         public void upgradeTo(ChannelHandlerContext ctx, FullHttpResponse upgradeResponse) throws Exception {
 
           // Now we need to upgrade this to an HTTP2
-          VertxHttp2ConnectionHandler<Http2ClientConnection> handler = Http2ClientConnection.createHttp2ConnectionHandler(upgradedConnection.client, upgradingConnection.metrics, upgradingConnection.getContext(), true, upgradedConnection.current.metric());
+          VertxHttp2ConnectionHandler<Http2ClientConnection> handler = Http2ClientConnection.createHttp2ConnectionHandler(upgradedConnection.client, upgradingConnection.metrics, upgradingConnection.getContext(), true, upgradedConnection.current.metric(), upgradedConnection.current.peer().port(), upgradedConnection.current.peer().host());
           upgradingConnection.channel().pipeline().addLast(handler);
           handler.connectFuture().addListener(future -> {
             if (!future.isSuccess()) {
