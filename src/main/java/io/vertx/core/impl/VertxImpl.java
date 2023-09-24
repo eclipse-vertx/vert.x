@@ -38,9 +38,9 @@ import io.vertx.core.impl.transports.JDKTransport;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.file.impl.FileSystemImpl;
 import io.vertx.core.file.impl.WindowsFileSystem;
-import io.vertx.core.http.impl.HttpClientPoolImpl;
+import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.http.impl.HttpServerImpl;
-import io.vertx.core.http.impl.SharedHttpClientPool;
+import io.vertx.core.http.impl.SharedHttpClient;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -391,23 +391,14 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public HttpClient createHttpPoolClient(HttpClientOptions clientOptions, PoolOptions poolOptions, CloseFuture closeFuture) {
-    HttpClientPoolImpl client = new HttpClientPoolImpl(this, clientOptions, poolOptions, closeFuture);
+    HttpClientImpl client = new HttpClientImpl(this, clientOptions, poolOptions, closeFuture);
     closeFuture.add(client);
     return client;
   }
 
   @Override
-  public HttpClientPool createHttpClient(HttpClientOptions clientOptions, PoolOptions poolOptions) {
-    CloseFuture closeFuture = new CloseFuture();
-    HttpClient client;
-    if (clientOptions.isShared()) {
-      client = createSharedClient(SharedHttpClientPool.SHARED_MAP_NAME, clientOptions.getName(), closeFuture, cf -> createHttpPoolClient(clientOptions, poolOptions, cf));
-      client = new SharedHttpClientPool(this, closeFuture, client);
-    } else {
-      client = createHttpPoolClient(clientOptions, poolOptions, closeFuture);
-    }
-    resolveCloseFuture().add(closeFuture);
-    return (HttpClientPool) client;
+  public HttpClientBuilder httpClientBuilder() {
+    return new HttpClientBuilderImpl(this);
   }
 
   public EventBus eventBus() {

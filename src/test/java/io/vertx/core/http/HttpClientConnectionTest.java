@@ -12,7 +12,7 @@ package io.vertx.core.http;
 
 import io.netty.buffer.Unpooled;
 import io.vertx.core.MultiMap;
-import io.vertx.core.http.impl.HttpClientPoolImpl;
+import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.http.impl.HttpRequestHead;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.SocketAddress;
@@ -26,7 +26,7 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
 
   protected SocketAddress peerAddress;
   private File tmp;
-  protected HttpClientPoolImpl client;
+  protected HttpClientImpl client;
 
   @Override
   public void setUp() throws Exception {
@@ -38,7 +38,7 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
       testAddress = SocketAddress.domainSocketAddress(tmp.getAbsolutePath());
       requestOptions.setServer(testAddress);
     }
-    this.client = (HttpClientPoolImpl) super.client;
+    this.client = (HttpClientImpl) super.client;
   }
 
   @Test

@@ -31,7 +31,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
 
   public HttpClientRequestPushPromise(
     HttpClientStream stream,
-    HttpClientPoolImpl client,
+    HttpClientImpl client,
     boolean ssl,
     HttpMethod method,
     String uri,

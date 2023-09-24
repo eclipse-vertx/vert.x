@@ -805,7 +805,7 @@ You can configure compressors according to your needs
 
 === Creating an HTTP client
 
-You create an {@link io.vertx.core.http.HttpClientPool} instance with default options as follows:
+You create an {@link io.vertx.core.http.HttpClient} instance with default options as follows:
 
 [source,$lang]
 ----
@@ -880,6 +880,23 @@ For debugging purposes, network activity can be logged.
 ----
 
 See the chapter on <<logging_network_activity, logging network activity>> for a detailed explanation.
+
+=== Advanced HTTP client creation
+
+You can pass options {@link io.vertx.core.Vertx#createHttpClient} methods to configure the HTTP client.
+
+Alternatively you can build a client with the builder {@link io.vertx.core.http.HttpClientBuilder API} :
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#exampleClientBuilder01}
+----
+
+In addition to {@link io.vertx.core.http.HttpClientOptions} and {@link io.vertx.core.http.PoolOptions}, you
+can set
+
+- a connection event handler notified when the client <<_client_connections,connects>> to a server
+- a redirection handler to implement an alternative HTTP <<_30x_redirection_handling,redirect>> behavior
 
 === Making requests
 
@@ -1527,7 +1544,7 @@ The {@link io.vertx.core.http.HttpClientRequest#connection()} method returns the
 {@link examples.HTTP2Examples#example18}
 ----
 
-A connection handler can be set on the client to be notified when a connection has been established happens:
+A connection handler can be set on a client builder to be notified when a connection has been established happens:
 
 [source,$lang]
 ----

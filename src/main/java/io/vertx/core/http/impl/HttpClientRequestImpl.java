@@ -59,7 +59,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private boolean isConnect;
   private String traceOperation;
 
-  HttpClientRequestImpl(HttpClientPoolImpl client, HttpClientStream stream, PromiseInternal<HttpClientResponse> responsePromise, boolean ssl, HttpMethod method,
+  HttpClientRequestImpl(HttpClientImpl client, HttpClientStream stream, PromiseInternal<HttpClientResponse> responsePromise, boolean ssl, HttpMethod method,
                         SocketAddress server, String host, int port, String requestURI, String traceOperation) {
     super(client, stream, responsePromise, ssl, method, server, host, port, requestURI);
     this.chunked = false;

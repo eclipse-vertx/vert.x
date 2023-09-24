@@ -202,9 +202,7 @@ public interface HttpClient extends Measured {
    *
    * @param options the new SSL options
    * @return a future signaling the update success
-   * @deprecated instead use {@link HttpClientPool#updateSSLOptions(SSLOptions)}
    */
-  @Deprecated
   Future<Void> updateSSLOptions(SSLOptions options);
 
   /**
@@ -213,9 +211,7 @@ public interface HttpClient extends Measured {
    *
    * @param options the new SSL options
    * @param handler the update handler
-   * @deprecated instead use {@link HttpClientPool#updateSSLOptions(SSLOptions, Handler)}
    */
-  @Deprecated
   default void updateSSLOptions(SSLOptions options, Handler<AsyncResult<Void>> handler) {
     Future<Void> fut = updateSSLOptions(options);
     if (handler != null) {
@@ -227,7 +223,7 @@ public interface HttpClient extends Measured {
    * Set a connection handler for the client. This handler is called when a new connection is established.
    *
    * @return a reference to this, so the API can be used fluently
-   * @deprecated instead use {@link HttpClientPool#connectionHandler(Handler)}
+   * @deprecated instead use {@link HttpClientBuilder#withConnectHandler(Handler)}
    */
   @Deprecated
   @Fluent
@@ -251,7 +247,7 @@ public interface HttpClient extends Measured {
    *
    * @param handler the new redirect handler
    * @return a reference to this, so the API can be used fluently
-   * @deprecated instead use {@link HttpClientPool#redirectHandler(Function)}
+   * @deprecated instead use {@link HttpClientBuilder#withRedirectHandler(Function)}
    */
   @Deprecated
   @Fluent
@@ -259,7 +255,6 @@ public interface HttpClient extends Measured {
 
   /**
    * @return the current redirect handler.
-   * @deprecated instead use {@link HttpClientPool#redirectHandler()}
    */
   @Deprecated
   @GenIgnore
