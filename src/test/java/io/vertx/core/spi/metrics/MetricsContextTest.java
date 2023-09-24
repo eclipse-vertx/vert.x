@@ -149,21 +149,22 @@ public class MetricsContextTest extends VertxTestBase {
       }));
     });
     awaitLatch(latch);
-    HttpClientPool client = vertx.createHttpClient();
-    client.connectionHandler(conn -> {
-      conn.closeHandler(v -> {
-        vertx.close().onComplete(v4 -> {
-          assertTrue(requestBeginCalled.get());
-          assertTrue(responseEndCalled.get());
-          assertTrue(bytesReadCalled.get());
-          assertTrue(bytesWrittenCalled.get());
-          assertTrue(socketConnectedCalled.get());
-          assertTrue(socketDisconnectedCalled.get());
-          assertTrue(closeCalled.get());
-          complete();
+    HttpClient client = vertx.httpClientBuilder()
+      .withConnectHandler(conn -> {
+        conn.closeHandler(v -> {
+          vertx.close().onComplete(v4 -> {
+            assertTrue(requestBeginCalled.get());
+            assertTrue(responseEndCalled.get());
+            assertTrue(bytesReadCalled.get());
+            assertTrue(bytesWrittenCalled.get());
+            assertTrue(socketConnectedCalled.get());
+            assertTrue(socketDisconnectedCalled.get());
+            assertTrue(closeCalled.get());
+            complete();
+          });
         });
-      });
-    });
+      })
+      .build();
     client.request(HttpMethod.PUT, 8080, "localhost", "/")
       .compose(req -> req.send(Buffer.buffer("hello"))
         .onComplete(onSuccess(resp -> {

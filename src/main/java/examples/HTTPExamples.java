@@ -339,6 +339,14 @@ public class HTTPExamples {
     HttpClient client = vertx.createHttpClient(options);
   }
 
+  public void exampleClientBuilder01(Vertx vertx, HttpClientOptions options) {
+    // Pretty much like vertx.createHttpClient(options)
+    HttpClient build = vertx
+      .httpClientBuilder()
+      .with(options)
+      .build();
+  }
+
   public void example30(HttpClient client) {
     client
       .request(HttpMethod.GET, 8080, "myserver.mycompany.com", "/some-uri")
@@ -804,23 +812,24 @@ public class HTTPExamples {
     throw new UnsupportedOperationException();
   }
 
-  public void exampleFollowRedirect03(HttpClientPool client) {
+  public void exampleFollowRedirect03(Vertx vertx) {
+    HttpClient client = vertx.httpClientBuilder()
+      .withRedirectHandler(response -> {
 
-    client.redirectHandler(response -> {
+        // Only follow 301 code
+        if (response.statusCode() == 301 && response.getHeader("Location") != null) {
 
-      // Only follow 301 code
-      if (response.statusCode() == 301 && response.getHeader("Location") != null) {
+          // Compute the redirect URI
+          String absoluteURI = resolveURI(response.request().absoluteURI(), response.getHeader("Location"));
 
-        // Compute the redirect URI
-        String absoluteURI = resolveURI(response.request().absoluteURI(), response.getHeader("Location"));
+          // Create a new ready to use request that the client will use
+          return Future.succeededFuture(new RequestOptions().setAbsoluteURI(absoluteURI));
+        }
 
-        // Create a new ready to use request that the client will use
-        return Future.succeededFuture(new RequestOptions().setAbsoluteURI(absoluteURI));
-      }
-
-      // We don't redirect
-      return null;
-    });
+        // We don't redirect
+        return null;
+      })
+      .build();
   }
 
   public void example50(HttpClient client) {

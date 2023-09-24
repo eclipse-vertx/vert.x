@@ -17,7 +17,6 @@ import io.vertx.core.Closeable;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Promise;
 import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
 import io.vertx.core.datagram.DatagramSocket;
@@ -46,6 +45,7 @@ import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.io.File;
+import java.lang.ref.Cleaner;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Map;
@@ -107,12 +107,12 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public HttpClientPool createHttpClient(HttpClientOptions options) {
+  public HttpClient createHttpClient(HttpClientOptions options) {
     return delegate.createHttpClient(options);
   }
 
   @Override
-  public HttpClientPool createHttpClient() {
+  public HttpClient createHttpClient() {
     return delegate.createHttpClient();
   }
 
@@ -344,6 +344,11 @@ public abstract class VertxWrapper implements VertxInternal {
   @Override
   public Transport transport() {
     return delegate.transport();
+  }
+
+  @Override
+  public Cleaner cleaner() {
+    return delegate.cleaner();
   }
 
   @Override

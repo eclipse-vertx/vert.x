@@ -53,7 +53,7 @@ public class HttpProxy extends TestProxyBase<HttpProxy> {
   private static final Logger log = LoggerFactory.getLogger(HttpProxy.class);
 
   private HttpServer server;
-  private Map<HttpConnection, HttpClientPool> clientMap = new ConcurrentHashMap<>();
+  private Map<HttpConnection, HttpClient> clientMap = new ConcurrentHashMap<>();
 
   private int error = 0;
 
@@ -145,10 +145,12 @@ public class HttpProxy extends TestProxyBase<HttpProxy> {
         RequestOptions opts = new RequestOptions();
         opts.setAbsoluteURI(uri);
         HttpConnection serverConn = request.connection();
-        HttpClientPool client = clientMap.get(serverConn);
+        HttpClient client = clientMap.get(serverConn);
         if (client == null) {
-          client = vertx.createHttpClient(new PoolOptions().setHttp1MaxSize(1));
-          client.connectionHandler(conn -> localAddresses.add(conn.localAddress().toString()));
+          client = vertx.httpClientBuilder()
+            .with(new PoolOptions().setHttp1MaxSize(1))
+            .withConnectHandler(conn -> localAddresses.add(conn.localAddress().toString()))
+            .build();
           clientMap.put(serverConn, client);
           serverConn.closeHandler(v -> clientMap.remove(serverConn));
         }

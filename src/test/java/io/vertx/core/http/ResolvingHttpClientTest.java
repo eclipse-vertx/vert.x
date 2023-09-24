@@ -343,16 +343,18 @@ public class ResolvingHttpClientTest extends VertxTestBase {
   public void testKeepAliveTimeout() throws Exception {
     startServers(1);
     requestHandler = (idx, req) -> req.response().end("server-" + idx);
-    HttpClientInternal client = (HttpClientInternal) vertx.createHttpClient(new HttpClientOptions().setKeepAliveTimeout(1));
+    CountDownLatch closedLatch = new CountDownLatch(1);
+    HttpClientInternal client = (HttpClientInternal) vertx.httpClientBuilder()
+      .with(new HttpClientOptions().setKeepAliveTimeout(1))
+      .withConnectHandler(conn -> {
+        conn.closeHandler(v -> {
+          closedLatch.countDown();
+        });
+      })
+      .build();
     FixedAddressResolver resolver = new FixedAddressResolver();
     resolver.map.put("example.com", new FakeState("example.com", SocketAddress.inetSocketAddress(8080, "localhost")));
     client.addressResolver(resolver);
-    CountDownLatch closedLatch = new CountDownLatch(1);
-    client.connectionHandler(conn -> {
-      conn.closeHandler(v -> {
-        closedLatch.countDown();
-      });
-    });
     client.request(new FakeAddress("example.com"), HttpMethod.GET, 8080, "example.com", "/").compose(req -> req
       .send()
       .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))

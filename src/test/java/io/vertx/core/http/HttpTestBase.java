@@ -39,7 +39,7 @@ public class HttpTestBase extends VertxTestBase {
   public static final String DEFAULT_TEST_URI = "some-uri";
 
   protected HttpServer server;
-  protected HttpClientPool client;
+  protected HttpClient client;
   protected TestProxyBase proxy;
   protected SocketAddress testAddress;
   protected RequestOptions requestOptions;

@@ -2650,7 +2650,11 @@ public class Http2ServerTest extends Http2TestBase {
 
   private void doRequest(HttpMethod method, Buffer expected, Handler<HttpConnection> connHandler, Promise<HttpClientResponse> fut) {
     if (connHandler != null) {
-      client.connectionHandler(connHandler);
+      client.close();
+      client = vertx.httpClientBuilder()
+        .with(createBaseClientOptions())
+        .withConnectHandler(connHandler)
+        .build();
     }
     client.request(new RequestOptions(requestOptions).setMethod(method)).onComplete(onSuccess(req -> {
       req

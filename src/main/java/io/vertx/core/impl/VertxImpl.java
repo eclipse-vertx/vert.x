@@ -325,6 +325,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
+  public Cleaner cleaner() {
+    return cleaner;
+  }
+
+  @Override
   public boolean isNativeTransportEnabled() {
     return !(transport instanceof JDKTransport);
   }
@@ -378,36 +383,18 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public HttpClientPool createHttpClient(HttpClientOptions options) {
+  public HttpClient createHttpClient(HttpClientOptions options) {
     return createHttpClient(options, new PoolOptions());
   }
 
   @Override
-  public HttpClientPool createHttpClient(PoolOptions poolOptions) {
+  public HttpClient createHttpClient(PoolOptions poolOptions) {
     return createHttpClient(new HttpClientOptions(), poolOptions);
   }
 
   @Override
-  public HttpClientPool createHttpClient(HttpClientOptions options, PoolOptions poolOptions) {
-    CloseFuture cf = resolveCloseFuture();
-    HttpClientPool client;
-    Closeable closeable;
-    if (options.isShared()) {
-      CloseFuture closeFuture = new CloseFuture();
-      client = createSharedResource("__vertx.shared.httpClients", options.getName(), closeFuture, cf_ -> {
-        HttpClientImpl impl = new HttpClientImpl(this, options, poolOptions);
-        cf_.add(completion -> impl.close().onComplete(completion));
-        return impl;
-      });
-      client = new CleanableHttpClient((HttpClientInternal) client, cleaner, (timeout, timeunit) -> closeFuture.close());
-      closeable = closeFuture;
-    } else {
-      HttpClientImpl impl = new HttpClientImpl(this, options, poolOptions);
-      closeable = impl;
-      client = new CleanableHttpClient(impl, cleaner, impl::shutdown);
-    }
-    cf.add(closeable);
-    return client;
+  public HttpClientBuilder httpClientBuilder() {
+    return new HttpClientBuilderImpl(this);
   }
 
   public EventBus eventBus() {

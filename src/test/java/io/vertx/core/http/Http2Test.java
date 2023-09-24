@@ -359,7 +359,11 @@ public class Http2Test extends HttpTest {
     });
     startServer(testAddress);
     AtomicInteger closed = new AtomicInteger();
-    client.connectionHandler(conn -> conn.closeHandler(v -> closed.incrementAndGet()));
+    client.close();
+    client = vertx.httpClientBuilder()
+      .with(createBaseClientOptions())
+      .withConnectHandler(conn -> conn.closeHandler(v -> closed.incrementAndGet()))
+      .build();
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req.send().onComplete(onFailure(err -> {}));
     }));
@@ -459,13 +463,17 @@ public class Http2Test extends HttpTest {
       });
     });
     startServer(testAddress);
-    client.connectionHandler(conn -> {
-      assertEquals(0, conn.remoteSettings().getMaxConcurrentStreams());
-      conn.remoteSettingsHandler(settings -> {
-        assertEquals(10, conn.remoteSettings().getMaxConcurrentStreams());
-        complete();
-      });
-    });
+    client.close();
+    client = vertx.httpClientBuilder()
+      .with(createBaseClientOptions())
+      .withConnectHandler(conn -> {
+        assertEquals(0, conn.remoteSettings().getMaxConcurrentStreams());
+        conn.remoteSettingsHandler(settings -> {
+          assertEquals(10, conn.remoteSettings().getMaxConcurrentStreams());
+          complete();
+        });
+      })
+      .build();
     client.request(new RequestOptions(requestOptions).setTimeout(10000))
       .compose(HttpClientRequest::send)
       .onComplete(onSuccess(resp -> complete()));
@@ -837,11 +845,14 @@ public class Http2Test extends HttpTest {
     startServer(testAddress);
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2));
-    client.connectionHandler(conn -> {
-      conn.goAwayHandler(ga -> {
-        assertEquals(0, ga.getErrorCode());
-      });
-    });
+    client = vertx.httpClientBuilder()
+      .with(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2))
+      .withConnectHandler(conn -> {
+        conn.goAwayHandler(ga -> {
+          assertEquals(0, ga.getErrorCode());
+        });
+      })
+      .build();
     Buffer payload = Buffer.buffer("some-data");
     client.request(new RequestOptions(requestOptions).setSsl(false)).onComplete(onSuccess(req -> {
       req.response()
