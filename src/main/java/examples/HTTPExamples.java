@@ -45,7 +45,7 @@ public class HTTPExamples {
 
   public void example2(Vertx vertx) {
 
-    HttpServerOptions options = new HttpServerOptions().setIdleTimeout(2);
+    HttpServerOptions options = new HttpServerOptions().setMaxWebSocketFrameSize(1000000);
 
     HttpServer server = vertx.createHttpServer(options);
   }
@@ -330,12 +330,21 @@ public class HTTPExamples {
   }
 
   public void examplePoolConfiguration(Vertx vertx) {
-    HttpClient client = vertx.createHttpClient(new PoolOptions().setHttp1MaxSize(10));
+    PoolOptions options = new PoolOptions().setHttp1MaxSize(10);
+    HttpClient client = vertx.createHttpClient(options);
   }
 
   public void exampleClientLogging(Vertx vertx) {
     HttpClientOptions options = new HttpClientOptions().setLogActivity(true);
     HttpClient client = vertx.createHttpClient(options);
+  }
+
+  public void exampleClientBuilder01(Vertx vertx, HttpClientOptions options) {
+    // Pretty much like vertx.createHttpClient(options)
+    HttpClient build = vertx
+      .httpClientBuilder()
+      .with(options)
+      .build();
   }
 
   public void example30(HttpClient client) {
@@ -402,7 +411,7 @@ public class HTTPExamples {
     // Write some headers using the putHeader method
 
     request.putHeader("content-type", "application/json")
-           .putHeader("other-header", "foo");
+      .putHeader("other-header", "foo");
   }
 
   public void sendRequest01(HttpClient client) {
@@ -495,7 +504,7 @@ public class HTTPExamples {
 
         // Make sure the request is ended when you're done with it
         request.end();
-    });
+      });
   }
 
   public void example35(HttpClientRequest request) {
@@ -711,7 +720,7 @@ public class HTTPExamples {
         .compose(response -> {
           // Process the response on the event-loop which guarantees no races
           if (response.statusCode() == 200 &&
-              response.getHeader(HttpHeaders.CONTENT_TYPE).equals("application/json")) {
+            response.getHeader(HttpHeaders.CONTENT_TYPE).equals("application/json")) {
             return response
               .body()
               .map(buffer -> buffer.toJsonObject());
@@ -776,8 +785,8 @@ public class HTTPExamples {
   public void exampleFollowRedirect02(Vertx vertx) {
 
     HttpClient client = vertx.createHttpClient(
-        new HttpClientOptions()
-            .setMaxRedirects(32));
+      new HttpClientOptions()
+        .setMaxRedirects(32));
 
     client
       .request(HttpMethod.GET, "some-uri")
@@ -803,23 +812,24 @@ public class HTTPExamples {
     throw new UnsupportedOperationException();
   }
 
-  public void exampleFollowRedirect03(HttpClientPool pool) {
+  public void exampleFollowRedirect03(Vertx vertx) {
+    HttpClient client = vertx.httpClientBuilder()
+      .withRedirectHandler(response -> {
 
-    pool.redirectHandler(response -> {
+        // Only follow 301 code
+        if (response.statusCode() == 301 && response.getHeader("Location") != null) {
 
-      // Only follow 301 code
-      if (response.statusCode() == 301 && response.getHeader("Location") != null) {
+          // Compute the redirect URI
+          String absoluteURI = resolveURI(response.request().absoluteURI(), response.getHeader("Location"));
 
-        // Compute the redirect URI
-        String absoluteURI = resolveURI(response.request().absoluteURI(), response.getHeader("Location"));
+          // Create a new ready to use request that the client will use
+          return Future.succeededFuture(new RequestOptions().setAbsoluteURI(absoluteURI));
+        }
 
-        // Create a new ready to use request that the client will use
-        return Future.succeededFuture(new RequestOptions().setAbsoluteURI(absoluteURI));
-      }
-
-      // We don't redirect
-      return null;
-    });
+        // We don't redirect
+        return null;
+      })
+      .build();
   }
 
   public void example50(HttpClient client) {
@@ -840,7 +850,7 @@ public class HTTPExamples {
         });
 
         request.sendHead();
-    });
+      });
   }
 
   public void example50_1(HttpServer httpServer) {
@@ -875,16 +885,16 @@ public class HTTPExamples {
           // Reject with a failure code and close the connection
           // this is probably best with persistent connection
           request.response()
-              .setStatusCode(405)
-              .putHeader("Connection", "close")
-              .end();
+            .setStatusCode(405)
+            .putHeader("Connection", "close")
+            .end();
         } else {
 
           // Reject with a failure code and ignore the body
           // this may be appropriate if the body is small
           request.response()
-              .setStatusCode(405)
-              .end();
+            .setStatusCode(405)
+            .end();
         }
       }
     });
@@ -910,7 +920,7 @@ public class HTTPExamples {
               }
             }
           });
-    });
+      });
   }
 
   public void example51(HttpServer server) {
@@ -969,6 +979,7 @@ public class HTTPExamples {
     });
   }
 
+
   public void example54(Vertx vertx) {
     WebSocketClient client = vertx.createWebSocketClient();
 
@@ -997,7 +1008,6 @@ public class HTTPExamples {
       .onComplete(res -> {
         if (res.succeeded()) {
           WebSocket ws = res.result();
-          System.out.println("Connected!");
         }
       });
   }
@@ -1083,9 +1093,9 @@ public class HTTPExamples {
   public void example58(Vertx vertx) {
 
     HttpClientOptions options = new HttpClientOptions()
-        .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP)
-            .setHost("localhost").setPort(3128)
-            .setUsername("username").setPassword("secret"));
+      .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP)
+        .setHost("localhost").setPort(3128)
+        .setUsername("username").setPassword("secret"));
     HttpClient client = vertx.createHttpClient(options);
 
   }
@@ -1093,9 +1103,9 @@ public class HTTPExamples {
   public void example59(Vertx vertx) {
 
     HttpClientOptions options = new HttpClientOptions()
-        .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5)
-            .setHost("localhost").setPort(1080)
-            .setUsername("username").setPassword("secret"));
+      .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5)
+        .setHost("localhost").setPort(1080)
+        .setUsername("username").setPassword("secret"));
     HttpClient client = vertx.createHttpClient(options);
 
   }
@@ -1115,8 +1125,8 @@ public class HTTPExamples {
   public void perRequestProxyOptions(HttpClient client, ProxyOptions proxyOptions) {
 
     client.request(new RequestOptions()
-      .setHost("example.com")
-      .setProxyOptions(proxyOptions))
+        .setHost("example.com")
+        .setProxyOptions(proxyOptions))
       .compose(request -> request
         .send()
         .compose(HttpClientResponse::body))
@@ -1128,7 +1138,7 @@ public class HTTPExamples {
   public void example60(Vertx vertx) {
 
     HttpClientOptions options = new HttpClientOptions()
-        .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP));
+      .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP));
     HttpClient client = vertx.createHttpClient(options);
     client
       .request(HttpMethod.GET, "ftp://ftp.gnu.org/gnu/")
@@ -1268,7 +1278,7 @@ public class HTTPExamples {
       @Override
       public void start() {
         // The client creates and use two event-loops for 4 instances
-        client = vertx.createHttpClient(new HttpClientOptions().setPoolEventLoopSize(2).setShared(true).setName("my-client"));
+        client = vertx.createHttpClient(new HttpClientOptions().setShared(true).setName("my-client"), new PoolOptions().setEventLoopSize(2));
       }
     }, new DeploymentOptions().setInstances(4));
   }

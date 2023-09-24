@@ -20,10 +20,8 @@ import io.vertx.core.dns.DnsClientOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
-import io.vertx.core.http.HttpClientPool;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxBuilder;
-import io.vertx.core.impl.resolver.DnsResolverProvider;
 import io.vertx.core.metrics.Measured;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
@@ -192,13 +190,23 @@ public interface Vertx extends Measured {
   WebSocketClient createWebSocketClient(WebSocketClientOptions options);
 
   /**
+   * Provide a builder for {@link HttpClient}, it can be used to configure advanced
+   * HTTP client settings like a redirect handler or a connection handler.
+   * <p>
+   * Example usage: {@code HttpClient client = vertx.httpClientBuilder().with(options).withConnectHandler(conn -> ...).build()}
+   */
+  HttpClientBuilder httpClientBuilder();
+
+  /**
    * Create a HTTP/HTTPS client using the specified client and pool options
    *
    * @param clientOptions  the client options to use
    * @param poolOptions  the pool options to use
    * @return the client
    */
-  HttpClientPool createHttpClient(HttpClientOptions clientOptions, PoolOptions poolOptions);
+  default HttpClient createHttpClient(HttpClientOptions clientOptions, PoolOptions poolOptions) {
+    return httpClientBuilder().with(clientOptions).with(poolOptions).build();
+  }
 
   /**
    * Create a HTTP/HTTPS client using the specified client options
@@ -206,7 +214,7 @@ public interface Vertx extends Measured {
    * @param clientOptions  the options to use
    * @return the client
    */
-  default HttpClientPool createHttpClient(HttpClientOptions clientOptions) {
+  default HttpClient createHttpClient(HttpClientOptions clientOptions) {
     return createHttpClient(clientOptions, clientOptions.getPoolOptions());
   }
 
@@ -216,7 +224,7 @@ public interface Vertx extends Measured {
    * @param poolOptions  the pool options to use
    * @return the client
    */
-  default HttpClientPool createHttpClient(PoolOptions poolOptions) {
+  default HttpClient createHttpClient(PoolOptions poolOptions) {
     return createHttpClient(new HttpClientOptions(), poolOptions);
   }
 
@@ -225,7 +233,7 @@ public interface Vertx extends Measured {
    *
    * @return the client
    */
-  default HttpClientPool createHttpClient() {
+  default HttpClient createHttpClient() {
     return createHttpClient(new HttpClientOptions(), new PoolOptions());
   }
 

@@ -48,7 +48,7 @@ import static io.vertx.core.http.HttpHeaders.*;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class HttpClientPoolImpl extends HttpClientBase implements HttpClientPoolInternal, MetricsProvider, Closeable {
+public class HttpClientImpl extends HttpClientBase implements HttpClientInternal, MetricsProvider, Closeable {
 
   // Pattern to check we are not dealing with an absoluate URI
   private static final Pattern ABS_URI_START_PATTERN = Pattern.compile("^\\p{Alpha}[\\p{Alpha}\\p{Digit}+.\\-]*:");
@@ -114,7 +114,7 @@ public class HttpClientPoolImpl extends HttpClientBase implements HttpClientPool
   private volatile Function<HttpClientResponse, Future<RequestOptions>> redirectHandler = DEFAULT_HANDLER;
   private long timerID;
 
-  public HttpClientPoolImpl(VertxInternal vertx, HttpClientOptions options, PoolOptions poolOptions, CloseFuture closeFuture) {
+  public HttpClientImpl(VertxInternal vertx, HttpClientOptions options, PoolOptions poolOptions, CloseFuture closeFuture) {
     super(vertx, options, closeFuture);
     this.poolOptions = new PoolOptions(poolOptions);
     this.httpCM = httpConnectionManager();
@@ -134,15 +134,15 @@ public class HttpClientPoolImpl extends HttpClientBase implements HttpClientPool
    */
   private static class PoolChecker implements Handler<Long> {
 
-    final WeakReference<HttpClientPoolImpl> ref;
+    final WeakReference<HttpClientImpl> ref;
 
-    private PoolChecker(HttpClientPoolImpl client) {
+    private PoolChecker(HttpClientImpl client) {
       ref = new WeakReference<>(client);
     }
 
     @Override
     public void handle(Long event) {
-      HttpClientPoolImpl client = ref.get();
+      HttpClientImpl client = ref.get();
       if (client != null) {
         client.checkExpired(this);
       }
@@ -238,7 +238,7 @@ public class HttpClientPoolImpl extends HttpClientBase implements HttpClientPool
   }
 
   @Override
-  public HttpClientPool connectionHandler(Handler<HttpConnection> handler) {
+  public HttpClient connectionHandler(Handler<HttpConnection> handler) {
     connectionHandler = handler;
     return this;
   }
@@ -248,7 +248,7 @@ public class HttpClientPoolImpl extends HttpClientBase implements HttpClientPool
   }
 
   @Override
-  public HttpClientPool redirectHandler(Function<HttpClientResponse, Future<RequestOptions>> handler) {
+  public HttpClient redirectHandler(Function<HttpClientResponse, Future<RequestOptions>> handler) {
     if (handler == null) {
       handler = DEFAULT_HANDLER;
     }
@@ -335,10 +335,10 @@ public class HttpClientPoolImpl extends HttpClientBase implements HttpClientPool
       @Override
       public Endpoint<Lease<HttpClientConnection>> create(ContextInternal ctx, Runnable dispose) {
         int maxPoolSize = Math.max(poolOptions.getHttp1MaxSize(), poolOptions.getHttp2MaxSize());
-        ClientMetrics metrics = HttpClientPoolImpl.this.metrics != null ? HttpClientPoolImpl.this.metrics.createEndpointMetrics(key.serverAddr, maxPoolSize) : null;
-        HttpChannelConnector connector = new HttpChannelConnector(HttpClientPoolImpl.this, netClient, proxyOptions, metrics, options.getProtocolVersion(), key.ssl, options.isUseAlpn(), key.peerAddr, key.serverAddr);
+        ClientMetrics metrics = HttpClientImpl.this.metrics != null ? HttpClientImpl.this.metrics.createEndpointMetrics(key.serverAddr, maxPoolSize) : null;
+        HttpChannelConnector connector = new HttpChannelConnector(HttpClientImpl.this, netClient, proxyOptions, metrics, options.getProtocolVersion(), key.ssl, options.isUseAlpn(), key.peerAddr, key.serverAddr);
         return new SharedClientHttpStreamEndpoint(
-          HttpClientPoolImpl.this,
+          HttpClientImpl.this,
           metrics,
           poolOptions.getMaxWaitQueueSize(),
           poolOptions.getHttp1MaxSize(),
