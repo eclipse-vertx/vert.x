@@ -16,6 +16,7 @@ import io.vertx.core.http.impl.CleanableHttpClient;
 import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.http.impl.HttpRequestHead;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.test.core.TestUtils;
 import org.junit.Test;
@@ -25,14 +26,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class HttpClientConnectionTest extends HttpTestBase {
 
-  protected SocketAddress peerAddress;
+  protected HostAndPort peerAddress;
   private File tmp;
   protected HttpClientImpl client;
 
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    peerAddress = testAddress;
+    peerAddress = HostAndPort.create(testAddress.host(), testAddress.port());
     if (USE_DOMAIN_SOCKETS) {
       assertTrue("Native transport not enabled", USE_NATIVE_TRANSPORT);
       tmp = TestUtils.tmpFile(".sock");

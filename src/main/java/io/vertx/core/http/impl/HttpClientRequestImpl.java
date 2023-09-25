@@ -22,6 +22,7 @@ import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
 
 import java.util.Objects;
@@ -61,8 +62,8 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private String traceOperation;
 
   HttpClientRequestImpl(HttpClientImpl client, HttpClientStream stream, PromiseInternal<HttpClientResponse> responsePromise, boolean ssl, HttpMethod method,
-                        String host, int port, String requestURI, String traceOperation) {
-    super(client, stream, responsePromise, ssl, method, host, port, requestURI);
+                        HostAndPort authority, String requestURI, String traceOperation) {
+    super(client, stream, responsePromise, ssl, method, authority, requestURI);
     this.chunked = false;
     this.endPromise = context.promise();
     this.endFuture = endPromise.future();

@@ -17,6 +17,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.future.PromiseInternal;
+import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.pool.ConnectionManager;
@@ -40,13 +41,7 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
   }
 
   private ConnectionManager<EndpointKey, HttpClientConnection> webSocketConnectionManager() {
-    EndpointProvider<EndpointKey, HttpClientConnection> provider = (key, dispose) -> {
-      int maxPoolSize = options.getMaxConnections();
-      ClientMetrics metrics = WebSocketClientImpl.this.metrics != null ? WebSocketClientImpl.this.metrics.createEndpointMetrics(key.serverAddr, maxPoolSize) : null;
-      HttpChannelConnector connector = new HttpChannelConnector(WebSocketClientImpl.this, netClient, key.proxyOptions, metrics, HttpVersion.HTTP_1_1, key.ssl, false, key.peerAddr, key.serverAddr);
-      return new WebSocketEndpoint(null, maxPoolSize, connector, dispose);
-    };
-    return new ConnectionManager<>(provider);
+    return new ConnectionManager<>();
   }
 
   protected void doShutdown(Promise<Void> p) {
@@ -68,16 +63,24 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
     int port = getPort(connectOptions);
     String host = getHost(connectOptions);
     SocketAddress addr = SocketAddress.inetSocketAddress(port, host);
+    HostAndPort peer = HostAndPort.create(host, port);
     ProxyOptions proxyOptions = computeProxyOptions(connectOptions.getProxyOptions(), addr);
-    EndpointKey key = new EndpointKey(connectOptions.isSsl() != null ? connectOptions.isSsl() : options.isSsl(), proxyOptions, addr, addr);
+    EndpointKey key = new EndpointKey(connectOptions.isSsl() != null ? connectOptions.isSsl() : options.isSsl(), proxyOptions, addr, peer);
     ContextInternal eventLoopContext;
     if (ctx.isEventLoopContext()) {
       eventLoopContext = ctx;
     } else {
       eventLoopContext = vertx.createEventLoopContext(ctx.nettyEventLoop(), ctx.workerPool(), ctx.classLoader());
     }
+    // todo: cache
+    EndpointProvider<EndpointKey, HttpClientConnection> provider = (key_, dispose) -> {
+      int maxPoolSize = options.getMaxConnections();
+      ClientMetrics metrics = WebSocketClientImpl.this.metrics != null ? WebSocketClientImpl.this.metrics.createEndpointMetrics(key_.server, maxPoolSize) : null;
+      HttpChannelConnector connector = new HttpChannelConnector(WebSocketClientImpl.this, netClient, key_.proxyOptions, metrics, HttpVersion.HTTP_1_1, key_.ssl, false, key_.authority, key_.server);
+      return new WebSocketEndpoint(null, maxPoolSize, connector, dispose);
+    };
     webSocketCM
-      .getConnection(eventLoopContext, key)
+      .getConnection(eventLoopContext, provider, key)
       .onComplete(c -> {
         if (c.succeeded()) {
           Http1xClientConnection conn = (Http1xClientConnection) c.result();

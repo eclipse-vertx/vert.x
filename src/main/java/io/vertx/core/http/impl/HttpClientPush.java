@@ -14,6 +14,7 @@ import io.netty.handler.codec.http2.Http2Headers;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
+import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.observability.HttpRequest;
 
@@ -22,10 +23,9 @@ import io.vertx.core.spi.observability.HttpRequest;
  */
 public class HttpClientPush implements HttpRequest {
 
-  final int port;
   final String uri;
   final HttpMethod method;
-  final String host;
+  final HostAndPort authority;
   final HttpClientStream stream;
   final MultiMap headers;
 
@@ -36,11 +36,9 @@ public class HttpClientPush implements HttpRequest {
     MultiMap headersMap = new Http2HeadersAdaptor(headers);
     int pos = authority == null ? -1 : authority.indexOf(':');
     if (pos == -1) {
-      this.host = authority;
-      this.port = 80;
+      this.authority = HostAndPort.create(authority, 80);
     } else {
-      this.host = authority.substring(0, pos);
-      this.port = Integer.parseInt(authority.substring(pos + 1));
+      this.authority = HostAndPort.create(authority.substring(0, pos), Integer.parseInt(authority.substring(pos + 1)));
     }
     this.method = HttpMethod.valueOf(rawMethod);
     this.uri = headers.path().toString();

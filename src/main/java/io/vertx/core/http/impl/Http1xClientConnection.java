@@ -115,7 +115,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   private final HttpClientOptions options;
   private final boolean ssl;
   private final SocketAddress server;
-  private final HostAndPort peer;
+  private final HostAndPort authority;
   public final ClientMetrics metrics;
   private final HttpVersion version;
   private final long lowWaterMark;
@@ -147,8 +147,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
                          ChannelHandlerContext channel,
                          boolean ssl,
                          SocketAddress server,
-                         int port,
-                         String host,
+                         HostAndPort authority,
                          ContextInternal context,
                          ClientMetrics metrics) {
     super(context, channel);
@@ -156,7 +155,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     this.options = client.options();
     this.ssl = ssl;
     this.server = server;
-    this.peer = HostAndPort.create(host, port);
+    this.authority = authority;
     this.metrics = metrics;
     this.version = version;
     this.readWindow = 0L;
@@ -168,8 +167,8 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   }
 
   @Override
-  public HostAndPort peer() {
-    return peer;
+  public HostAndPort authority() {
+    return authority;
   }
 
   @Override

@@ -74,8 +74,8 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
   }
 
   @Override
-  public HostAndPort peer() {
-    return current.peer();
+  public HostAndPort authority() {
+    return current.authority();
   }
 
   @Override
@@ -353,7 +353,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
         public void upgradeTo(ChannelHandlerContext ctx, FullHttpResponse upgradeResponse) throws Exception {
 
           // Now we need to upgrade this to an HTTP2
-          VertxHttp2ConnectionHandler<Http2ClientConnection> handler = Http2ClientConnection.createHttp2ConnectionHandler(upgradedConnection.client, upgradingConnection.metrics, upgradingConnection.getContext(), true, upgradedConnection.current.metric(), upgradedConnection.current.peer().port(), upgradedConnection.current.peer().host());
+          VertxHttp2ConnectionHandler<Http2ClientConnection> handler = Http2ClientConnection.createHttp2ConnectionHandler(upgradedConnection.client, upgradingConnection.metrics, upgradingConnection.getContext(), true, upgradedConnection.current.metric(), upgradedConnection.current.authority());
           upgradingConnection.channel().pipeline().addLast(handler);
           handler.connectFuture().addListener(future -> {
             if (!future.isSuccess()) {

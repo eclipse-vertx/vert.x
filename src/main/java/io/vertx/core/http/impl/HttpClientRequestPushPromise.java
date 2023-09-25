@@ -19,6 +19,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
 
 /**
@@ -35,10 +36,9 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
     boolean ssl,
     HttpMethod method,
     String uri,
-    String host,
-    int port,
+    HostAndPort authority,
     MultiMap headers) {
-    super(client, stream, stream.connection().getContext().promise(), ssl, method, host, port, uri);
+    super(client, stream, stream.connection().getContext().promise(), ssl, method, authority, uri);
     this.stream = stream;
     this.headers = headers;
   }

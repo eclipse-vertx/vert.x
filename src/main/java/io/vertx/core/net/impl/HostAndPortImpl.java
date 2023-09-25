@@ -156,6 +156,23 @@ public class HostAndPortImpl implements HostAndPort {
   }
 
   @Override
+  public int hashCode() {
+    return host.hashCode() ^ port;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj == this) {
+      return true;
+    }
+    if (obj instanceof HostAndPort) {
+      HostAndPort that = (HostAndPort) obj;
+      return port == that.port() && host.equals(that.host());
+    }
+    return false;
+  }
+
+  @Override
   public String toString() {
     if (port >= 0) {
       return host + ':' + port;

@@ -4,9 +4,12 @@ import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.HttpClientInternal;
 import io.vertx.core.net.Address;
+import io.vertx.core.net.ProxyOptions;
+import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.resolver.AddressResolver;
 import io.vertx.test.core.VertxTestBase;
+import io.vertx.test.proxy.HttpProxy;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 import org.junit.Assert;
@@ -292,6 +295,39 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     awaitFuture(result);
     awaitFuture(servers.get(0).close());
     assertWaitUntil(() -> resolver.map.keySet().isEmpty());
+  }
+
+  @Test
+  public void testResolveToSameSocketAddressWithProxy() throws Exception {
+    requestHandler = (idx, req) -> req.response().end("server-" + idx);
+    startServers(1);
+
+    HttpProxy proxy = new HttpProxy();
+    proxy.start(vertx);
+
+    FixedAddressResolver resolver = new FixedAddressResolver();
+    SocketAddress address = SocketAddress.inetSocketAddress(8080, "localhost");
+    resolver.map.put("example.com", new FakeState("example.com", address));
+    HttpClientInternal client = (HttpClientInternal) vertx.httpClientBuilder()
+      .withAddressResolver(resolver)
+      .build();
+    RequestOptions request1 = new RequestOptions().setServer(new FakeAddress("example.com"));
+    RequestOptions request2 = new RequestOptions(request1).setProxyOptions(new ProxyOptions()
+        .setHost("localhost")
+        .setPort(proxy.defaultPort())
+      .setType(ProxyType.HTTP));
+    List<RequestOptions> requests = Arrays.asList(request1, request2);
+    List<Buffer> responses = new ArrayList<>();
+    for (RequestOptions request : requests) {
+      Future<Buffer> result = client.request(request).compose(req -> req
+        .send()
+        .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+        .compose(HttpClientResponse::body)
+      );
+      Buffer response = awaitFuture(result);
+      responses.add(response);
+    }
+    assertNotNull(proxy.lastLocalAddress());
   }
 
   @Test

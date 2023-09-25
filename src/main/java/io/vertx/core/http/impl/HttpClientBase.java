@@ -149,7 +149,7 @@ public class HttpClientBase implements MetricsProvider, Closeable {
   /**
    * Connect to a server.
    */
-  public Future<HttpClientConnection> connect(SocketAddress server, SocketAddress peer) {
+  public Future<HttpClientConnection> connect(SocketAddress server, HostAndPort peer) {
     ContextInternal context = vertx.getOrCreateContext();
     HttpChannelConnector connector = new HttpChannelConnector(this, netClient, null, null, options.getProtocolVersion(), options.isSsl(), options.isUseAlpn(), peer, server);
     return connector.httpConnect(context);

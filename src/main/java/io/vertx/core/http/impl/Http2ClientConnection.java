@@ -45,7 +45,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
   private final HttpClientBase client;
   private final ClientMetrics metrics;
-  private final HostAndPort peer;
+  private final HostAndPort authority;
   private Handler<Void> evictionHandler = DEFAULT_EVICTION_HANDLER;
   private Handler<Long> concurrencyChangeHandler = DEFAULT_CONCURRENCY_CHANGE_HANDLER;
   private long expirationTimestamp;
@@ -53,19 +53,18 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
   Http2ClientConnection(HttpClientBase client,
                         ContextInternal context,
-                        int port,
-                        String host,
+                        HostAndPort authority,
                         VertxHttp2ConnectionHandler connHandler,
                         ClientMetrics metrics) {
     super(context, connHandler);
     this.metrics = metrics;
     this.client = client;
-    this.peer = HostAndPort.create(host, port);
+    this.authority = authority;
   }
 
   @Override
-  public HostAndPort peer() {
-    return peer;
+  public HostAndPort authority() {
+    return authority;
   }
 
   @Override
@@ -679,8 +678,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     ContextInternal context,
     boolean upgrade,
     Object socketMetric,
-    int port,
-    String host) {
+    HostAndPort authority) {
     HttpClientOptions options = client.options();
     HttpClientMetrics met = client.metrics();
     VertxHttp2ConnectionHandler<Http2ClientConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ClientConnection>()
@@ -689,7 +687,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       .gracefulShutdownTimeoutMillis(0) // So client close tests don't hang 30 seconds - make this configurable later but requires HTTP/1 impl
       .initialSettings(client.options().getInitialSettings())
       .connectionFactory(connHandler -> {
-        Http2ClientConnection conn = new Http2ClientConnection(client, context, port, host, connHandler, metrics);
+        Http2ClientConnection conn = new Http2ClientConnection(client, context, authority, connHandler, metrics);
         if (metrics != null) {
           Object m = socketMetric;
           conn.metric(m);
