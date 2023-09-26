@@ -53,7 +53,7 @@ public class HttpChannelConnector {
   private final boolean ssl;
   private final boolean useAlpn;
   private final HttpVersion version;
-  private final SocketAddress peerAddress;
+  private final HostAndPort authority;
   private final SocketAddress server;
 
   public HttpChannelConnector(HttpClientBase client,
@@ -63,7 +63,7 @@ public class HttpChannelConnector {
                               HttpVersion version,
                               boolean ssl,
                               boolean useAlpn,
-                              SocketAddress peerAddress,
+                              HostAndPort authority,
                               SocketAddress server) {
     this.client = client;
     this.netClient = netClient;
@@ -73,7 +73,7 @@ public class HttpChannelConnector {
     this.ssl = ssl;
     this.useAlpn = useAlpn;
     this.version = version;
-    this.peerAddress = peerAddress;
+    this.authority = authority;
     this.server = server;
   }
 
@@ -84,11 +84,11 @@ public class HttpChannelConnector {
   private void connect(ContextInternal context, Promise<NetSocket> promise) {
     ConnectOptions connectOptions = new ConnectOptions();
     connectOptions.setRemoteAddress(server);
-    if (peerAddress != null) {
-      connectOptions.setHost(peerAddress.host());
-      connectOptions.setPort(peerAddress.port());
+    if (authority != null) {
+      connectOptions.setHost(authority.host());
+      connectOptions.setPort(authority.port());
       if (ssl && options.isForceSni()) {
-        connectOptions.setSniServerName(peerAddress.hostName());
+        connectOptions.setSniServerName(authority.host());
       }
     }
     connectOptions.setSsl(ssl);
@@ -205,7 +205,7 @@ public class HttpChannelConnector {
     boolean upgrade = version == HttpVersion.HTTP_2 && options.isHttp2ClearTextUpgrade();
     VertxHandler<Http1xClientConnection> clientHandler = VertxHandler.create(chctx -> {
       HttpClientMetrics met = client.metrics();
-      Http1xClientConnection conn = new Http1xClientConnection(upgrade ? HttpVersion.HTTP_1_1 : version, client, chctx, ssl, server, context, this.metrics);
+      Http1xClientConnection conn = new Http1xClientConnection(upgrade ? HttpVersion.HTTP_1_1 : version, client, chctx, ssl, server, authority, context, this.metrics);
       if (met != null) {
         conn.metric(socketMetric);
         met.endpointConnected(metrics);
@@ -252,7 +252,7 @@ public class HttpChannelConnector {
                               PromiseInternal<HttpClientConnection> promise) {
     VertxHttp2ConnectionHandler<Http2ClientConnection> clientHandler;
     try {
-      clientHandler = Http2ClientConnection.createHttp2ConnectionHandler(client, metrics, context, false, metric);
+      clientHandler = Http2ClientConnection.createHttp2ConnectionHandler(client, metrics, context, false, metric, authority);
       ch.pipeline().addLast("handler", clientHandler);
       ch.flush();
     } catch (Exception e) {

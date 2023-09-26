@@ -4,9 +4,14 @@ import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.HttpClientInternal;
 import io.vertx.core.net.Address;
+import io.vertx.core.net.ProxyOptions;
+import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.resolver.AddressResolver;
 import io.vertx.test.core.VertxTestBase;
+import io.vertx.test.proxy.HttpProxy;
+import io.vertx.test.tls.Cert;
+import io.vertx.test.tls.Trust;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -22,13 +27,19 @@ public class ResolvingHttpClientTest extends VertxTestBase {
   private List<HttpServer> servers;
 
   private void startServers(int numServers) throws Exception {
+    startServers(numServers, new HttpServerOptions());
+  }
+
+  private void startServers(int numServers, HttpServerOptions options) throws Exception {
     if (servers != null) {
       throw new IllegalStateException();
     }
     servers = new ArrayList<>();
     for (int i = 0;i < numServers;i++) {
       int val = i;
-      HttpServer server = vertx.createHttpServer().requestHandler(req -> {
+      HttpServer server = vertx
+        .createHttpServer(options)
+        .requestHandler(req -> {
         BiConsumer<Integer, HttpServerRequest> handler = requestHandler;
         if (handler != null) {
           handler.accept(val, req);
@@ -176,13 +187,14 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     waitFor(numServers * 2);
     startServers(numServers);
     requestHandler = (idx, req) -> req.response().end("server-" + idx);
-    HttpClientInternal client = (HttpClientInternal) vertx.createHttpClient();
     FixedAddressResolver resolver = new FixedAddressResolver();
     resolver.map.put("example.com", new FakeState("example.com", SocketAddress.inetSocketAddress(8080, "localhost"), SocketAddress.inetSocketAddress(8081, "localhost")));
-    client.addressResolver(resolver);
+    HttpClientInternal client = (HttpClientInternal) vertx.httpClientBuilder()
+      .withAddressResolver(resolver)
+      .build();
     Set<String> responses = Collections.synchronizedSet(new HashSet<>());
     for (int i = 0;i < numServers * 2;i++) {
-      client.request(new FakeAddress("example.com"), HttpMethod.GET, 8080, "example.com", "/").compose(req -> req
+      client.request(new RequestOptions().setServer(new FakeAddress("example.com"))).compose(req -> req
         .send()
         .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
         .compose(HttpClientResponse::body)
@@ -198,11 +210,12 @@ public class ResolvingHttpClientTest extends VertxTestBase {
   @Test
   public void testResolveConnectFailure() throws Exception {
     requestHandler = (idx, req) -> req.response().end("server-" + idx);
-    HttpClientInternal client = (HttpClientInternal) vertx.createHttpClient();
     FixedAddressResolver resolver = new FixedAddressResolver();
     resolver.map.put("example.com", new FakeState("example.com", SocketAddress.inetSocketAddress(8080, "localhost"), SocketAddress.inetSocketAddress(8081, "localhost")));
-    client.addressResolver(resolver);
-    client.request(new FakeAddress("example.com"), HttpMethod.GET, 8080, "example.com", "/").compose(req -> req
+    HttpClientInternal client = (HttpClientInternal) vertx.httpClientBuilder()
+      .withAddressResolver(resolver)
+      .build();
+    client.request(new RequestOptions().setServer(new FakeAddress("example.com"))).compose(req -> req
       .send()
       .compose(HttpClientResponse::body)
     ).transform(ar -> {
@@ -234,11 +247,12 @@ public class ResolvingHttpClientTest extends VertxTestBase {
       SocketAddress.inetSocketAddress(8082, "localhost"),
       SocketAddress.inetSocketAddress(8083, "localhost")
     ));
-    HttpClientInternal client = (HttpClientInternal) vertx.createHttpClient();
-    client.addressResolver(resolver);
+    HttpClientInternal client = (HttpClientInternal) vertx.httpClientBuilder()
+      .withAddressResolver(resolver)
+      .build();
     CountDownLatch latch = new CountDownLatch(numServers);
     for (int i = 0;i < numServers;i++) {
-      client.request(new FakeAddress("example.com"), HttpMethod.GET, 8080, "example.com", "/").compose(req -> req
+      client.request(new RequestOptions().setServer(new FakeAddress("example.com"))).compose(req -> req
         .send()
         .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
         .compose(HttpClientResponse::body)
@@ -264,14 +278,15 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     SocketAddress address = SocketAddress.inetSocketAddress(8080, "localhost");
     resolver.map.put("server1.com", new FakeState("server1.com", address));
     resolver.map.put("server2.com", new FakeState("server2.com", address));
-    HttpClientInternal client = (HttpClientInternal) vertx.createHttpClient();
-    client.addressResolver(resolver);
-    Future<Buffer> result = client.request(new FakeAddress("server1.com"), HttpMethod.GET, 8080, "server1.com", "/").compose(req -> req
+    HttpClientInternal client = (HttpClientInternal) vertx.httpClientBuilder()
+      .withAddressResolver(resolver)
+      .build();
+    Future<Buffer> result = client.request(new RequestOptions().setServer(new FakeAddress("server1.com"))).compose(req -> req
       .send()
       .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
       .compose(HttpClientResponse::body)
     ).compose(body -> client
-      .request(new FakeAddress("server2.com"), HttpMethod.GET, 8080, "server2.com", "/")
+      .request(new RequestOptions().setServer(new FakeAddress("server2.com")))
       .compose(req -> req
         .send()
         .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
@@ -283,8 +298,40 @@ public class ResolvingHttpClientTest extends VertxTestBase {
   }
 
   @Test
+  public void testResolveToSameSocketAddressWithProxy() throws Exception {
+    requestHandler = (idx, req) -> req.response().end("server-" + idx);
+    startServers(1);
+
+    HttpProxy proxy = new HttpProxy();
+    proxy.start(vertx);
+
+    FixedAddressResolver resolver = new FixedAddressResolver();
+    SocketAddress address = SocketAddress.inetSocketAddress(8080, "localhost");
+    resolver.map.put("example.com", new FakeState("example.com", address));
+    HttpClientInternal client = (HttpClientInternal) vertx.httpClientBuilder()
+      .withAddressResolver(resolver)
+      .build();
+    RequestOptions request1 = new RequestOptions().setServer(new FakeAddress("example.com"));
+    RequestOptions request2 = new RequestOptions(request1).setProxyOptions(new ProxyOptions()
+        .setHost("localhost")
+        .setPort(proxy.defaultPort())
+      .setType(ProxyType.HTTP));
+    List<RequestOptions> requests = Arrays.asList(request1, request2);
+    List<Buffer> responses = new ArrayList<>();
+    for (RequestOptions request : requests) {
+      Future<Buffer> result = client.request(request).compose(req -> req
+        .send()
+        .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+        .compose(HttpClientResponse::body)
+      );
+      Buffer response = awaitFuture(result);
+      responses.add(response);
+    }
+    assertNotNull(proxy.lastLocalAddress());
+  }
+
+  @Test
   public void testResolveFailure() {
-    HttpClientInternal client = (HttpClientInternal) vertx.createHttpClient();
     Exception cause = new Exception("Not found");
     FixedAddressResolver resolver = new FixedAddressResolver() {
       @Override
@@ -292,8 +339,10 @@ public class ResolvingHttpClientTest extends VertxTestBase {
         return Future.failedFuture(cause);
       }
     };
-    client.addressResolver(resolver);
-    client.request(new FakeAddress("foo.com"), HttpMethod.GET, 8080, "foo.com", "/").compose(req -> req
+    HttpClientInternal client = (HttpClientInternal) vertx.httpClientBuilder()
+      .withAddressResolver(resolver)
+      .build();
+    client.request(new RequestOptions().setServer(new FakeAddress("foo.com"))).compose(req -> req
       .send()
       .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
       .compose(HttpClientResponse::body)
@@ -306,11 +355,12 @@ public class ResolvingHttpClientTest extends VertxTestBase {
 
   @Test
   public void testUseInvalidAddress() {
-    HttpClientInternal client = (HttpClientInternal) vertx.createHttpClient();
     FixedAddressResolver resolver = new FixedAddressResolver();
-    client.addressResolver(resolver);
-    client.request(new Address() {
-    }, HttpMethod.GET, 8080, "foo.com", "/").compose(req -> req
+    HttpClientInternal client = (HttpClientInternal) vertx.httpClientBuilder()
+      .withAddressResolver(resolver)
+      .build();
+    client.request(new RequestOptions().setServer(new Address() {
+    })).compose(req -> req
       .send()
       .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
       .compose(HttpClientResponse::body)
@@ -322,28 +372,12 @@ public class ResolvingHttpClientTest extends VertxTestBase {
   }
 
   @Test
-  public void testUseSocketAddressAddress() throws Exception {
-    requestHandler = (idx, req) -> req.response().end("server");
-    startServers(1);
-    HttpClientInternal client = (HttpClientInternal) vertx.createHttpClient();
-    FixedAddressResolver resolver = new FixedAddressResolver();
-    resolver.map.put("example.com", new FakeState("example.com", SocketAddress.inetSocketAddress(8080, "localhost")));
-    client.addressResolver(resolver);
-    client.request(SocketAddress.inetSocketAddress(servers.get(0).actualPort(), "localhost"), HttpMethod.GET, 8080, "foo.com", "/").compose(req -> req
-      .send()
-      .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
-      .compose(HttpClientResponse::body)
-    ).onComplete(onSuccess(body -> {
-      testComplete();
-    }));
-    await();
-  }
-
-  @Test
   public void testKeepAliveTimeout() throws Exception {
     startServers(1);
     requestHandler = (idx, req) -> req.response().end("server-" + idx);
     CountDownLatch closedLatch = new CountDownLatch(1);
+    FixedAddressResolver resolver = new FixedAddressResolver();
+    resolver.map.put("example.com", new FakeState("example.com", SocketAddress.inetSocketAddress(8080, "localhost")));
     HttpClientInternal client = (HttpClientInternal) vertx.httpClientBuilder()
       .with(new HttpClientOptions().setKeepAliveTimeout(1))
       .withConnectHandler(conn -> {
@@ -351,11 +385,9 @@ public class ResolvingHttpClientTest extends VertxTestBase {
           closedLatch.countDown();
         });
       })
+      .withAddressResolver(resolver)
       .build();
-    FixedAddressResolver resolver = new FixedAddressResolver();
-    resolver.map.put("example.com", new FakeState("example.com", SocketAddress.inetSocketAddress(8080, "localhost")));
-    client.addressResolver(resolver);
-    client.request(new FakeAddress("example.com"), HttpMethod.GET, 8080, "example.com", "/").compose(req -> req
+    client.request(new RequestOptions().setServer(new FakeAddress("example.com"))).compose(req -> req
       .send()
       .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
       .compose(HttpClientResponse::body)
@@ -373,12 +405,14 @@ public class ResolvingHttpClientTest extends VertxTestBase {
         req.response().end();
       });
     };
-    HttpClientInternal client = (HttpClientInternal) vertx.createHttpClient(new HttpClientOptions().setKeepAliveTimeout(1));
     FixedAddressResolver resolver = new FixedAddressResolver();
     SocketAddress addr = SocketAddress.inetSocketAddress(8080, "localhost");
     resolver.map.put("example.com", new FakeState("example.com", addr));
-    client.addressResolver(resolver);
-    awaitFuture(client.request(new FakeAddress("example.com"), HttpMethod.GET, 8080, "example.com", "/").compose(req -> req
+    HttpClientInternal client = (HttpClientInternal) vertx.httpClientBuilder()
+      .with(new HttpClientOptions().setKeepAliveTimeout(1))
+      .withAddressResolver(resolver)
+      .build();
+    awaitFuture(client.request(new RequestOptions().setServer(new FakeAddress("example.com"))).compose(req -> req
       .send()
       .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
       .compose(HttpClientResponse::body)
@@ -398,24 +432,84 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     requestHandler = (idx, req) -> {
       req.response().end("" + idx);
     };
-    HttpClientInternal client = (HttpClientInternal) vertx.createHttpClient();
     FixedAddressResolver resolver = new FixedAddressResolver();
     SocketAddress addr1 = SocketAddress.inetSocketAddress(8080, "localhost");
     SocketAddress addr2 = SocketAddress.inetSocketAddress(8081, "localhost");
     resolver.map.put("example.com", new FakeState("example.com", addr1));
-    client.addressResolver(resolver);
-    String res = awaitFuture(client.request(new FakeAddress("example.com"), HttpMethod.GET, 8080, "example.com", "/").compose(req -> req
+    HttpClientInternal client = (HttpClientInternal) vertx.httpClientBuilder()
+      .withAddressResolver(resolver)
+      .build();
+    String res = awaitFuture(client.request(new RequestOptions().setServer(new FakeAddress("example.com"))).compose(req -> req
       .send()
       .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
       .compose(HttpClientResponse::body)
     )).toString();
     assertEquals("0", res);
     resolver.map.put("example.com", new FakeState("example.com", addr2)).valid = false;
-    res = awaitFuture(client.request(new FakeAddress("example.com"), HttpMethod.GET, 8080, "example.com", "/").compose(req -> req
+    res = awaitFuture(client.request(new RequestOptions().setServer(new FakeAddress("example.com"))).compose(req -> req
       .send()
       .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
       .compose(HttpClientResponse::body)
     )).toString();
     assertEquals("1", res);
+  }
+
+  @Test
+  public void testSSL() throws Exception {
+    testSSL(new RequestOptions()
+      .setMethod(HttpMethod.GET)
+      .setServer(new FakeAddress("example.com"))
+      .setURI("/"), false, true);
+  }
+
+  @Test
+  public void testSSLOverridePeer() throws Exception {
+    testSSL(new RequestOptions()
+      .setMethod(HttpMethod.GET)
+      .setServer(new FakeAddress("example.com"))
+      .setHost("example.com")
+      .setPort(8080)
+      .setURI("/"), true, true);
+  }
+
+  @Test
+  public void testSSLOverridePeerNoVerify() throws Exception {
+    testSSL(new RequestOptions()
+      .setMethod(HttpMethod.GET)
+      .setServer(new FakeAddress("example.com"))
+      .setHost("example.com")
+      .setPort(8080)
+      .setURI("/"), false, false);
+  }
+
+  private void testSSL(RequestOptions request, boolean expectFailure, boolean verifyHost) throws Exception {
+    startServers(1, new HttpServerOptions()
+      .setSsl(true)
+      .setKeyCertOptions(Cert.SERVER_JKS.get()));
+    requestHandler = (idx, req) -> {
+      req.response().end("" + idx);
+    };
+    FixedAddressResolver resolver = new FixedAddressResolver();
+    SocketAddress addr1 = SocketAddress.inetSocketAddress(8080, "localhost");
+    resolver.map.put("example.com", new FakeState("example.com", addr1));
+    HttpClient client = vertx.httpClientBuilder()
+      .with(new HttpClientOptions()
+        .setSsl(true)
+        .setTrustOptions(Trust.SERVER_JKS.get())
+        .setVerifyHost(verifyHost)
+      )
+      .withAddressResolver(resolver)
+      .build();
+    try {
+      String res = awaitFuture(client.request(request).compose(req -> req
+        .send()
+        .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+        .compose(HttpClientResponse::body)
+      )).toString();
+      assertFalse(expectFailure);
+      assertEquals("0", res);
+    } catch (Exception e) {
+      assertTrue(expectFailure);
+    }
   }
 }

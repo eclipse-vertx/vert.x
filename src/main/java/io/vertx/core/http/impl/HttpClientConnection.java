@@ -13,13 +13,13 @@ package io.vertx.core.http.impl;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.net.HostAndPort;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -33,6 +33,8 @@ public interface HttpClientConnection extends HttpConnection {
   };
 
   Handler<Long> DEFAULT_CONCURRENCY_CHANGE_HANDLER = concurrency -> {};
+
+  HostAndPort authority();
 
   /**
    * Set a {@code handler} called when the connection should be evicted from a pool.

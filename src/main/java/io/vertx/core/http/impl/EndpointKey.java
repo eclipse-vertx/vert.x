@@ -10,6 +10,7 @@
  */
 package io.vertx.core.http.impl;
 
+import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.SocketAddress;
 
@@ -18,21 +19,21 @@ import java.util.Objects;
 class EndpointKey {
 
   final boolean ssl;
-  final SocketAddress serverAddr;
-  final SocketAddress peerAddr;
+  final SocketAddress server;
+  final HostAndPort authority;
   final ProxyOptions proxyOptions;
 
-  EndpointKey(boolean ssl, ProxyOptions proxyOptions, SocketAddress serverAddr, SocketAddress peerAddr) {
-    if (serverAddr == null) {
+  EndpointKey(boolean ssl, ProxyOptions proxyOptions, SocketAddress server, HostAndPort authority) {
+    if (server == null) {
       throw new NullPointerException("No null server address");
     }
-    if (peerAddr == null) {
-      throw new NullPointerException("No null peer address");
+    if (authority == null) {
+      throw new NullPointerException("No null authority address");
     }
     this.ssl = ssl;
     this.proxyOptions = proxyOptions;
-    this.peerAddr = peerAddr;
-    this.serverAddr = serverAddr;
+    this.authority = authority;
+    this.server = server;
   }
 
   @Override
@@ -40,14 +41,14 @@ class EndpointKey {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     EndpointKey that = (EndpointKey) o;
-    return ssl == that.ssl && serverAddr.equals(that.serverAddr) && peerAddr.equals(that.peerAddr) && equals(proxyOptions, that.proxyOptions);
+    return ssl == that.ssl && server.equals(that.server) && authority.equals(that.authority) && equals(proxyOptions, that.proxyOptions);
   }
 
   @Override
   public int hashCode() {
     int result = ssl ? 1 : 0;
-    result = 31 * result + peerAddr.hashCode();
-    result = 31 * result + serverAddr.hashCode();
+    result = 31 * result + authority.hashCode();
+    result = 31 * result + server.hashCode();
     if (proxyOptions != null) {
       result = 31 * result + hashCode(proxyOptions);
     }
@@ -77,6 +78,6 @@ class EndpointKey {
 
   @Override
   public String toString() {
-    return serverAddr.toString();
+    return server.toString();
   }
 }

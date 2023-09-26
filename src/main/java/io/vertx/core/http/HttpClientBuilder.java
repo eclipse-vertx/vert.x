@@ -11,9 +11,12 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.net.Address;
+import io.vertx.core.spi.resolver.AddressResolver;
 
 import java.util.function.Function;
 
@@ -70,6 +73,14 @@ public interface HttpClientBuilder {
    */
   @Fluent
   HttpClientBuilder withRedirectHandler(Function<HttpClientResponse, Future<RequestOptions>> handler);
+
+  /**
+   * Configure the client to use an address resolver.
+   *
+   * @param addressResolver the address resolver
+   */
+  @GenIgnore
+  <S, A extends Address, M> HttpClientBuilder withAddressResolver(AddressResolver<S, A, M> addressResolver);
 
   /**
    * Build and return the client.

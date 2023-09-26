@@ -16,6 +16,7 @@ import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.MultiMap;
 import io.vertx.core.VertxException;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.Address;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.SocketAddress;
 
@@ -81,7 +82,7 @@ public class RequestOptions {
   public static final long DEFAULT_TIMEOUT = 0;
 
   private ProxyOptions proxyOptions;
-  private SocketAddress server;
+  private Address server;
   private HttpMethod method;
   private String host;
   private Integer port;
@@ -195,7 +196,7 @@ public class RequestOptions {
    *
    * @return the server address
    */
-  public SocketAddress getServer() {
+  public Address getServer() {
     return server;
   }
 
@@ -209,7 +210,7 @@ public class RequestOptions {
    *
    * @return a reference to this, so the API can be used fluently
    */
-  public RequestOptions setServer(SocketAddress server) {
+  public RequestOptions setServer(Address server) {
     this.server = server;
     return this;
   }
@@ -555,13 +556,15 @@ public class RequestOptions {
     if (method != null) {
       json.put("method", method.name());
     }
-    if (this.server != null) {
+    Address serverAddr = this.server;
+    if (serverAddr instanceof SocketAddress) {
+      SocketAddress socketAddr = (SocketAddress) serverAddr;
       JsonObject server = new JsonObject();
-      if (this.server.isInetSocket()) {
-        server.put("host", this.server.host());
-        server.put("port", this.server.port());
+      if (socketAddr.isInetSocket()) {
+        server.put("host", socketAddr.host());
+        server.put("port", socketAddr.port());
       } else {
-        server.put("path", this.server.path());
+        server.put("path", socketAddr.path());
       }
       json.put("server", server);
     }

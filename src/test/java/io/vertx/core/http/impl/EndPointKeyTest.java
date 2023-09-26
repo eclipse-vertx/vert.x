@@ -10,6 +10,7 @@
  */
 package io.vertx.core.http.impl;
 
+import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.SocketAddress;
 import org.junit.Test;
@@ -25,16 +26,17 @@ public class EndPointKeyTest {
   @Test
   public void testEndPointKey() {
     final SocketAddress addr = SocketAddress.inetSocketAddress(8080, "localhost");
-    EndpointKey key1 = new EndpointKey(false, new ProxyOptions(), addr, addr);
-    EndpointKey key2 = new EndpointKey(false, new ProxyOptions(), addr, addr);
+    final HostAndPort peer = HostAndPort.create("localhost", 8080);
+    EndpointKey key1 = new EndpointKey(false, new ProxyOptions(), addr, peer);
+    EndpointKey key2 = new EndpointKey(false, new ProxyOptions(), addr, peer);
     assertEquals(key1, key2);
     assertEquals(key1.hashCode(), key2.hashCode());
-    EndpointKey key3 = new EndpointKey(false, new ProxyOptions().setUsername("foo").setPassword("bar"), addr, addr);
-    EndpointKey key4 = new EndpointKey(false, new ProxyOptions().setUsername("foo").setPassword("bar"), addr, addr);
+    EndpointKey key3 = new EndpointKey(false, new ProxyOptions().setUsername("foo").setPassword("bar"), addr, peer);
+    EndpointKey key4 = new EndpointKey(false, new ProxyOptions().setUsername("foo").setPassword("bar"), addr, peer);
     assertEquals(key3, key4);
     assertEquals(key3.hashCode(), key4.hashCode());
-    EndpointKey key5 = new EndpointKey(false, new ProxyOptions().setHost("localhost"), addr, addr);
-    EndpointKey key6 = new EndpointKey(false, new ProxyOptions().setHost("127.0.0.1"), addr, addr);
+    EndpointKey key5 = new EndpointKey(false, new ProxyOptions().setHost("localhost"), addr, peer);
+    EndpointKey key6 = new EndpointKey(false, new ProxyOptions().setHost("127.0.0.1"), addr, peer);
     assertNotEquals(key5, key6);
     assertNotEquals(key5.hashCode(), key6.hashCode());
     assertNotEquals(key1.hashCode(), key6.hashCode());

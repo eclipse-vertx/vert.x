@@ -57,8 +57,8 @@ public class ConnectionManagerTest extends VertxTestBase {
         };
       }
     };
-    ConnectionManager<Object, Connection> mgr = new ConnectionManager<>(provider);
-    mgr.getConnection(ctx, TEST_KEY).onComplete(ar -> {
+    ConnectionManager<Object, Connection> mgr = new ConnectionManager<>();
+    mgr.getConnection(ctx, provider, TEST_KEY).onComplete(ar -> {
       if (ar.succeeded()) {
         assertTrue(success);
         assertSame(result, ar.result());
@@ -117,8 +117,8 @@ public class ConnectionManagerTest extends VertxTestBase {
         };
       }
     };
-    ConnectionManager<Object, Connection> mgr = new ConnectionManager<>(provider);
-    mgr.getConnection(ctx, TEST_KEY).onComplete(onSuccess(conn -> {
+    ConnectionManager<Object, Connection> mgr = new ConnectionManager<>();
+    mgr.getConnection(ctx, provider, TEST_KEY).onComplete(onSuccess(conn -> {
       assertEquals(expected, conn);
       postCheck.get().run();
     }));
@@ -153,9 +153,9 @@ public class ConnectionManagerTest extends VertxTestBase {
         };
       }
     };
-    ConnectionManager<Object, Connection> mgr = new ConnectionManager<>(provider);
+    ConnectionManager<Object, Connection> mgr = new ConnectionManager<>();
     CountDownLatch latch = new CountDownLatch(1);
-    mgr.getConnection(ctx, TEST_KEY).onComplete(onSuccess(conn -> {
+    mgr.getConnection(ctx, provider, TEST_KEY).onComplete(onSuccess(conn -> {
       assertEquals(expected, conn);
       latch.countDown();
     }));
@@ -180,8 +180,8 @@ public class ConnectionManagerTest extends VertxTestBase {
         return ctx1.promise();
       }
     };
-    ConnectionManager<Object, Connection> mgr = new ConnectionManager<>(provider);
-    mgr.getConnection(ctx, TEST_KEY).onComplete(onSuccess(conn -> {
+    ConnectionManager<Object, Connection> mgr = new ConnectionManager<>();
+    mgr.getConnection(ctx, provider, TEST_KEY).onComplete(onSuccess(conn -> {
     }));
     waitUntil(() -> adder.get() != null);
     mgr.close();
@@ -219,7 +219,7 @@ public class ConnectionManagerTest extends VertxTestBase {
         };
       }
     };
-    ConnectionManager<Object, Connection> mgr = new ConnectionManager<>(provider);
+    ConnectionManager<Object, Connection> mgr = new ConnectionManager<>();
     int num = 100000;
     int concurrency = 4;
     CountDownLatch[] latches = new CountDownLatch[concurrency];
@@ -228,7 +228,7 @@ public class ConnectionManagerTest extends VertxTestBase {
       latches[i] = cc;
       new Thread(() -> {
         for (int j = 0;j < num;j++) {
-          mgr.getConnection(ctx, TEST_KEY).onComplete(onSuccess(conn -> {
+          mgr.getConnection(ctx, provider, TEST_KEY).onComplete(onSuccess(conn -> {
             cc.countDown();
           }));
         }

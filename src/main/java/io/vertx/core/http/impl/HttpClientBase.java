@@ -99,7 +99,7 @@ public class HttpClientBase implements MetricsProvider, Closeable {
     if (port != null) {
       return port;
     }
-    SocketAddress server = request.getServer();
+    SocketAddress server = (SocketAddress) request.getServer();
     if (server != null && server.isInetSocket()) {
       return server.port();
     }
@@ -118,7 +118,7 @@ public class HttpClientBase implements MetricsProvider, Closeable {
     if (host != null) {
       return host;
     }
-    SocketAddress server = request.getServer();
+    SocketAddress server = (SocketAddress) request.getServer();
     if (server != null && server.isInetSocket()) {
       return server.host();
     }
@@ -149,7 +149,7 @@ public class HttpClientBase implements MetricsProvider, Closeable {
   /**
    * Connect to a server.
    */
-  public Future<HttpClientConnection> connect(SocketAddress server, SocketAddress peer) {
+  public Future<HttpClientConnection> connect(SocketAddress server, HostAndPort peer) {
     ContextInternal context = vertx.getOrCreateContext();
     HttpChannelConnector connector = new HttpChannelConnector(this, netClient, null, null, options.getProtocolVersion(), options.isSsl(), options.isUseAlpn(), peer, server);
     return connector.httpConnect(context);
