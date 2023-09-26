@@ -8,7 +8,6 @@ import io.vertx.core.http.*;
 import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.Address;
 import io.vertx.core.spi.resolver.AddressResolver;
 
 import java.util.function.Function;
@@ -51,8 +50,8 @@ public class HttpClientBuilderImpl implements HttpClientBuilder {
   }
 
   @Override
-  public <S, A extends Address, M> HttpClientBuilder withAddressResolver(AddressResolver<S, A, M> addressResolver) {
-    this.addressResolver = addressResolver;
+  public HttpClientBuilder withAddressResolver(io.vertx.core.net.AddressResolver addressResolver) {
+    this.addressResolver = (AddressResolver<?, ?, ?>) addressResolver;
     return this;
   }
 

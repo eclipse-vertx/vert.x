@@ -15,8 +15,7 @@ import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.net.Address;
-import io.vertx.core.spi.resolver.AddressResolver;
+import io.vertx.core.net.AddressResolver;
 
 import java.util.function.Function;
 
@@ -79,8 +78,8 @@ public interface HttpClientBuilder {
    *
    * @param addressResolver the address resolver
    */
-  @GenIgnore
-  <S, A extends Address, M> HttpClientBuilder withAddressResolver(AddressResolver<S, A, M> addressResolver);
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  HttpClientBuilder withAddressResolver(AddressResolver addressResolver);
 
   /**
    * Build and return the client.
