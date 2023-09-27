@@ -204,21 +204,22 @@ class FutureImpl<T> extends FutureBase<T> {
   public void addListener(Listener<T> listener) {
     Object v;
     synchronized (this) {
+      Listener<T> current = this.listener;
+      if (current != null) {
+        ListenerArray<T> listeners;
+        if (current instanceof FutureImpl.ListenerArray) {
+          listeners = (ListenerArray<T>) current;
+        } else {
+          listeners = new ListenerArray<>();
+          listeners.add(current);
+          this.listener = listeners;
+        }
+        listeners.add(listener);
+        return;
+      }
       v = value;
       if (v == null) {
-        if (this.listener == null) {
-          this.listener = listener;
-        } else {
-          ListenerArray<T> listeners;
-          if (this.listener instanceof FutureImpl.ListenerArray) {
-            listeners = (ListenerArray<T>) this.listener;
-          } else {
-            listeners = new ListenerArray<>();
-            listeners.add(this.listener);
-            this.listener = listeners;
-          }
-          listeners.add(listener);
-        }
+        this.listener = listener;
         return;
       }
     }
@@ -233,38 +234,96 @@ class FutureImpl<T> extends FutureBase<T> {
   }
 
   public boolean tryComplete(T result) {
-    Listener<T> l;
+    boolean notify;
     synchronized (this) {
       if (value != null) {
         return false;
       }
       value = result == null ? NULL_VALUE : result;
+      notify = listener != null;
+    }
+    if (notify) {
+      if (context != null && !context.isRunningOnContext()) {
+        notifySuccessOnContext(result);
+      } else {
+        notifySuccess(result);
+      }
+    }
+    return true;
+  }
+
+  private void notifySuccess(T result) {
+    Listener<T> l;
+    synchronized (this) {
       l = listener;
       listener = null;
     }
     if (l != null) {
-      emitSuccess(result, l);
+      l.onSuccess(result);
     }
-    return true;
+  }
+
+  private void notifySuccessOnContext(T result) {
+    context.execute(() -> {
+      ContextInternal prev = context.beginDispatch();
+      try {
+        Listener<T> l;
+        synchronized (FutureImpl.this) {
+          l = listener;
+          listener = null;
+        }
+        l.onSuccess(result);
+      } finally {
+        context.endDispatch(prev);
+      }
+    });
   }
 
   public boolean tryFail(Throwable cause) {
     if (cause == null) {
       cause = new NoStackTraceThrowable(null);
     }
-    Listener<T> l;
+    boolean notify;
     synchronized (this) {
       if (value != null) {
         return false;
       }
       value = new CauseHolder(cause);
+      notify = listener != null;
+    }
+    if (notify) {
+      if (context != null && !context.isRunningOnContext()) {
+        notifyFailureOnContext(cause);
+      } else {
+        notifyFailure(cause);
+      }
+    }
+    return true;
+  }
+
+  private void notifyFailure(Throwable cause) {
+    Listener<T> l;
+    synchronized (this) {
       l = listener;
       listener = null;
     }
-    if (l != null) {
-      emitFailure(cause, l);
-    }
-    return true;
+    l.onFailure(cause);
+  }
+
+  private void notifyFailureOnContext(Throwable cause) {
+    context.execute(() -> {
+      ContextInternal prev = context.beginDispatch();
+      try {
+        Listener<T> l;
+        synchronized (FutureImpl.this) {
+          l = listener;
+          listener = null;
+        }
+        l.onFailure(cause);
+      } finally {
+        context.endDispatch(prev);
+      }
+    });
   }
 
   @Override
