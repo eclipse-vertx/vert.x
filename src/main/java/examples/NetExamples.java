@@ -512,7 +512,7 @@ public class NetExamples {
   }
 
   public void updateSSLOptions(HttpServer server) {
-    Future<Void> fut = server.updateSSLOptions(new SSLOptions()
+    Future<Void> fut = server.updateSSLOptions(new ServerSSLOptions()
       .setKeyCertOptions(
         new JksOptions()
           .setPath("/path/to/your/server-keystore.jks").

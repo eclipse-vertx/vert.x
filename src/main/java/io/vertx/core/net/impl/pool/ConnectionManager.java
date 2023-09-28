@@ -30,11 +30,9 @@ public class ConnectionManager<K, C> {
 
   private static final Consumer<Endpoint<?>> EXPIRED_CHECKER = Endpoint::checkExpired;
 
-  private final EndpointProvider<K, C> provider;
   private final Map<K, Endpoint<C>> endpointMap = new ConcurrentHashMap<>();
 
-  public ConnectionManager(EndpointProvider<K, C> provider) {
-    this.provider = provider;
+  public ConnectionManager() {
   }
 
   /**
@@ -62,7 +60,7 @@ public class ConnectionManager<K, C> {
    * @param function the function to apply on the endpoint
    * @return the value returned by the function when applied on the resolved endpoint.
    */
-  public <T> T withEndpoint(K key, Function<Endpoint<C>, Optional<T>> function) {
+  public <T> T withEndpoint(K key, EndpointProvider<K, C> provider, Function<Endpoint<C>, Optional<T>> function) {
     while (true) {
       Endpoint<C> endpoint = endpointMap.computeIfAbsent(key, k -> {
         Endpoint<C>[] ref = new Endpoint[1];
@@ -84,21 +82,21 @@ public class ConnectionManager<K, C> {
    * @param key the endpoint key
    * @return the future resolved with the connection
    */
-  public Future<C> getConnection(ContextInternal ctx, K key) {
-    return getConnection(ctx, key, 0);
+  public Future<C> getConnection(ContextInternal ctx, EndpointProvider<K, C> provider, K key) {
+    return getConnection(ctx, key, provider, 0);
   }
 
   /**
    * Like {@link #getConnection(ContextInternal, Object)} but with an acquisition timeout.
    */
-  public Future<C> getConnection(ContextInternal ctx, K key, long timeout) {
+  public Future<C> getConnection(ContextInternal ctx, K key, EndpointProvider<K, C> provider, long timeout) {
     int st = status.get();
     if (st == 1) {
       return ctx.failedFuture("Pool shutdown");
     } else if (st == 2) {
       return ctx.failedFuture("Pool closed");
     }
-    return withEndpoint(key, endpoint -> {
+    return withEndpoint(key, provider, endpoint -> {
       Future<C> fut = endpoint.getConnection(ctx, timeout);
       return Optional.ofNullable(fut);
     });

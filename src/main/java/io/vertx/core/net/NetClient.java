@@ -15,8 +15,6 @@ import io.vertx.core.Future;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.metrics.Measured;
 
-import java.util.concurrent.TimeUnit;
-
 /**
  * A TCP client.
  * <p>
@@ -77,6 +75,16 @@ public interface NetClient extends Measured {
   Future<NetSocket> connect(SocketAddress remoteAddress, String serverName);
 
   /**
+   * Open a connection to a server at the specific {@code connectOptions}.
+   * <p>
+   * The connect is done asynchronously and on success, a {@link NetSocket} instance is supplied via the {@code connectHandler} instance
+   *
+   * @param connectOptions the options describing how to connect to the remote server
+   * @return a future notified when the socket is connected
+   */
+  Future<NetSocket> connect(ConnectOptions connectOptions);
+
+  /**
    * Close the client.
    * <p>
    * Any sockets which have not been closed manually will be closed here. The close is asynchronous and may not
@@ -93,6 +101,6 @@ public interface NetClient extends Measured {
    * @param options the new SSL options
    * @return a future signaling the update success
    */
-  Future<Void> updateSSLOptions(SSLOptions options);
+  Future<Void> updateSSLOptions(ClientSSLOptions options);
 
 }

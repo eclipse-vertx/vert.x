@@ -128,6 +128,41 @@ class FutureImpl<T> extends FutureBase<T> {
   }
 
   @Override
+  public Future<T> onComplete(Handler<T> successHandler, Handler<Throwable> failureHandler) {
+    addListener(new Listener<T>() {
+      @Override
+      public void onSuccess(T value) {
+        try {
+          if (successHandler != null) {
+            successHandler.handle(value);
+          }
+        } catch (Throwable t) {
+          if (context != null) {
+            context.reportException(t);
+          } else {
+            throw t;
+          }
+        }
+      }
+      @Override
+      public void onFailure(Throwable failure) {
+        try {
+          if (failureHandler != null) {
+            failureHandler.handle(failure);
+          }
+        } catch (Throwable t) {
+          if (context != null) {
+            context.reportException(t);
+          } else {
+            throw t;
+          }
+        }
+      }
+    });
+    return this;
+  }
+
+  @Override
   public Future<T> onComplete(Handler<AsyncResult<T>> handler) {
     Objects.requireNonNull(handler, "No null handler accepted");
     Listener<T> listener;

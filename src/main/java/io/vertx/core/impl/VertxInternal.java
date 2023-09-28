@@ -29,10 +29,12 @@ import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.io.File;
+import java.lang.ref.Cleaner;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -89,6 +91,8 @@ public interface VertxInternal extends Vertx {
 
   Transport transport();
 
+  Cleaner cleaner();
+
   default <C> C createSharedResource(String resourceKey, String resourceName, CloseFuture closeFuture, Function<CloseFuture, C> supplier) {
     return SharedResourceHolder.createSharedResource(this, resourceKey, resourceName, closeFuture, supplier);
   }
@@ -102,18 +106,18 @@ public interface VertxInternal extends Vertx {
   /**
    * @return event loop context
    */
-  EventLoopContext createEventLoopContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl);
+  ContextInternal createEventLoopContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl);
 
-  EventLoopContext createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl);
+  ContextInternal createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl);
 
-  EventLoopContext createEventLoopContext();
+  ContextInternal createEventLoopContext();
 
   /**
    * @return worker loop context
    */
-  WorkerContext createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool pool, ClassLoader tccl);
+  ContextInternal createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool pool, ClassLoader tccl);
 
-  WorkerContext createWorkerContext();
+  ContextInternal createWorkerContext();
 
   @Override
   WorkerExecutorInternal createSharedWorkerExecutor(String name);
@@ -128,6 +132,8 @@ public interface VertxInternal extends Vertx {
   WorkerExecutorInternal createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime, TimeUnit maxExecuteTimeUnit);
 
   WorkerPool createSharedWorkerPool(String name, int poolSize, long maxExecuteTime, TimeUnit maxExecuteTimeUnit);
+
+  WorkerPool wrapWorkerPool(ExecutorService executor);
 
   void simulateKill();
 

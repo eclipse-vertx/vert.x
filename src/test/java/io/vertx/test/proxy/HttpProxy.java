@@ -147,8 +147,10 @@ public class HttpProxy extends TestProxyBase<HttpProxy> {
         HttpConnection serverConn = request.connection();
         HttpClient client = clientMap.get(serverConn);
         if (client == null) {
-          client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(1));
-          client.connectionHandler(conn -> localAddresses.add(conn.localAddress().toString()));
+          client = vertx.httpClientBuilder()
+            .with(new PoolOptions().setHttp1MaxSize(1))
+            .withConnectHandler(conn -> localAddresses.add(conn.localAddress().toString()))
+            .build();
           clientMap.put(serverConn, client);
           serverConn.closeHandler(v -> clientMap.remove(serverConn));
         }

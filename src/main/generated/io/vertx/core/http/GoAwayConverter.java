@@ -20,11 +20,6 @@ public class GoAwayConverter {
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, GoAway obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
-        case "debugData":
-          if (member.getValue() instanceof String) {
-            obj.setDebugData(io.vertx.core.buffer.Buffer.buffer(BASE64_DECODER.decode((String)member.getValue())));
-          }
-          break;
         case "errorCode":
           if (member.getValue() instanceof Number) {
             obj.setErrorCode(((Number)member.getValue()).longValue());
@@ -33,6 +28,11 @@ public class GoAwayConverter {
         case "lastStreamId":
           if (member.getValue() instanceof Number) {
             obj.setLastStreamId(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "debugData":
+          if (member.getValue() instanceof String) {
+            obj.setDebugData(io.vertx.core.buffer.Buffer.buffer(BASE64_DECODER.decode((String)member.getValue())));
           }
           break;
       }
@@ -44,10 +44,10 @@ public class GoAwayConverter {
   }
 
    static void toJson(GoAway obj, java.util.Map<String, Object> json) {
+    json.put("errorCode", obj.getErrorCode());
+    json.put("lastStreamId", obj.getLastStreamId());
     if (obj.getDebugData() != null) {
       json.put("debugData", BASE64_ENCODER.encodeToString(obj.getDebugData().getBytes()));
     }
-    json.put("errorCode", obj.getErrorCode());
-    json.put("lastStreamId", obj.getLastStreamId());
   }
 }

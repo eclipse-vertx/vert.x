@@ -13,6 +13,11 @@ package io.vertx.core.shareddata;
 
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
+import io.vertx.core.VertxException;
+import io.vertx.core.shareddata.impl.SharedDataImpl;
+
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Shared data allows you to share data safely between different parts of your application in a safe way.
@@ -71,7 +76,7 @@ public interface SharedData {
   <K, V> Future<AsyncMap<K, V>> getLocalAsyncMap(String name);
 
   /**
-   * Get an asynchronous lock with the specified name. The lock will be passed to the handler when it is available.
+   * Get an asynchronous lock with the specified name. The returned future will be completed with the lock when it is available.
    * <p>
    *   In general lock acquision is unordered, so that sequential attempts to acquire a lock,
    *   even from a single thread, can happen in non-sequential order.
@@ -83,8 +88,8 @@ public interface SharedData {
   Future<Lock> getLock(String name);
 
   /**
-   * Like {@link #getLock(String)} but specifying a timeout. If the lock is not obtained within the timeout
-   * a failure will be sent to the handler.
+   * Like {@link #getLock(String)} but specifying a timeout. If the lock is not obtained within the timeout the returned
+   * future is failed.
    * <p>
    *   In general lock acquision is unordered, so that sequential attempts to acquire a lock,
    *   even from a single thread, can happen in non-sequential order.
@@ -97,7 +102,50 @@ public interface SharedData {
   Future<Lock> getLockWithTimeout(String name, long timeout);
 
   /**
-   * Get an asynchronous local lock with the specified name. The lock will be passed to the handler when it is available.
+   * Get an asynchronous lock with the specified name.
+   *
+   * <p>When the {@code block} is called, the lock is already acquired, it will be released when the
+   * {@code Future<T>} returned by the block completes.
+   *
+   * <p>When the {@code block} fails, the lock is released and the returned future is failed with the cause of the failure.
+   *
+   * <p>In general lock acquision is unordered, so that sequential attempts to acquire a lock, even from a single thread,
+   * can happen in non-sequential order.
+   *
+   * @param name  the name of the lock
+   * @return the future returned by the {@code block}
+   */
+  default <T> Future<T> withLock(String name, Supplier<Future<T>> block) {
+    return withLock(name, SharedDataImpl.DEFAULT_LOCK_TIMEOUT, block);
+  }
+
+  /**
+   * Like {@link #withLock(String, Supplier)} but specifying a timeout. If the lock is not obtained within the timeout
+   * the returned future is failed.
+   *
+   * @param name  the name of the lock
+   * @param timeout  the timeout in ms
+   * @param block the code block called after lock acquisition
+   * @return the future returned by the {@code block}
+   */
+  default <T> Future<T> withLock(String name, long timeout, Supplier<Future<T>> block) {
+    return getLockWithTimeout(name, timeout)
+      .compose(lock -> {
+        Future<T> res;
+        try {
+          res = block.get();
+        } catch (Exception e) {
+          lock.release();
+          throw new VertxException(e);
+        }
+        return res.andThen(ar -> {
+          lock.release();
+        });
+      });
+  }
+
+  /**
+   * Get an asynchronous local lock with the specified name. The returned future will be completed with the lock when it is available.
    * <p>
    *   In general lock acquision is unordered, so that sequential attempts to acquire a lock,
    *   even from a single thread, can happen in non-sequential order.
@@ -109,8 +157,8 @@ public interface SharedData {
   Future<Lock> getLocalLock(String name);
 
   /**
-   * Like {@link #getLocalLock(String)} but specifying a timeout. If the lock is not obtained within the timeout
-   * a failure will be sent to the handler.
+   * Like {@link #getLocalLock(String)} but specifying a timeout.  If the lock is not obtained within the timeout the returned
+   * future is failed.
    * <p>
    *   In general lock acquision is unordered, so that sequential attempts to acquire a lock,
    *   even from a single thread, can happen in non-sequential order.
@@ -121,6 +169,49 @@ public interface SharedData {
    * @return a future notified with the lock
    */
   Future<Lock> getLocalLockWithTimeout(String name, long timeout);
+
+  /**
+   * Get an asynchronous local lock with the specified name.
+   *
+   * <p>When the {@code block} is called, the lock is already acquired, it will be released when the
+   * {@code Future<T>} returned by the block completes.
+   *
+   * <p>When the {@code block} fails, the lock is released and the returned future is failed with the cause of the failure.
+   *
+   * <p>In general lock acquision is unordered, so that sequential attempts to acquire a lock, even from a single thread,
+   * can happen in non-sequential order.
+   *
+   * @param name  the name of the lock
+   * @return the future returned by the {@code block}
+   */
+  default <T> Future<T> withLocalLock(String name, Supplier<Future<T>> block) {
+    return withLocalLock(name, SharedDataImpl.DEFAULT_LOCK_TIMEOUT, block);
+  }
+
+  /**
+   * Like {@link #withLocalLock(String, Supplier)} but specifying a timeout. If the lock is not obtained within the timeout
+   * the returned future is failed.
+   *
+   * @param name  the name of the lock
+   * @param timeout  the timeout in ms
+   * @param block the code block called after lock acquisition
+   * @return the future returned by the {@code block}
+   */
+  default <T> Future<T> withLocalLock(String name, long timeout, Supplier<Future<T>> block) {
+    return getLocalLockWithTimeout(name, timeout)
+      .compose(lock -> {
+        Future<T> res;
+        try {
+          res = block.get();
+        } catch (Exception e) {
+          lock.release();
+          throw new VertxException(e);
+        }
+        return res.andThen(ar -> {
+          lock.release();
+        });
+      });
+  }
 
   /**
    * Get an asynchronous counter. The counter will be passed to the handler.

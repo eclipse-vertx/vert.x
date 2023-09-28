@@ -19,7 +19,6 @@ import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.HostAndPort;
-import io.vertx.core.net.SocketAddress;
 
 import java.util.Objects;
 
@@ -31,11 +30,9 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   protected final HttpClientImpl client;
   protected final ContextInternal context;
   protected final HttpClientStream stream;
-  protected final SocketAddress server;
   protected final boolean ssl;
   private io.vertx.core.http.HttpMethod method;
-  private String host;
-  private int port;
+  private HostAndPort authority;
   private String uri;
   private String path;
   private String query;
@@ -46,16 +43,14 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   private long lastDataReceived;
   private Throwable timeoutFired;
 
-  HttpClientRequestBase(HttpClientImpl client, HttpClientStream stream, PromiseInternal<HttpClientResponse> responsePromise, boolean ssl, HttpMethod method, SocketAddress server, String host, int port, String uri) {
+  HttpClientRequestBase(HttpClientImpl client, HttpClientStream stream, PromiseInternal<HttpClientResponse> responsePromise, boolean ssl, HttpMethod method, HostAndPort authority, String uri) {
     this.client = client;
     this.stream = stream;
     this.responsePromise = responsePromise;
     this.context = responsePromise.context();
     this.uri = uri;
     this.method = method;
-    this.server = server;
-    this.host = host;
-    this.port = port;
+    this.authority = authority;
     this.ssl = ssl;
 
     //
@@ -71,10 +66,10 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   protected String authority() {
-    if ((port == 80 && !ssl) || (port == 443 && ssl) || port < 0) {
-      return host;
+    if ((authority.port() == 80 && !ssl) || (authority.port() == 443 && ssl) || authority.port() < 0) {
+      return authority.host();
     } else {
-      return host + ':' + port;
+      return authority.host() + ':' + authority.port();
     }
   }
 
@@ -119,8 +114,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   @Override
   public synchronized HttpClientRequest authority(HostAndPort authority) {
     Objects.requireNonNull(authority);
-    this.host = authority.host();
-    this.port = authority.port();
+    this.authority = authority;
     return this;
   }
 
@@ -165,7 +159,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   void handlePush(HttpClientPush push) {
-    HttpClientRequestPushPromise pushReq = new HttpClientRequestPushPromise(push.stream, client, ssl, push.method, push.uri, push.host, push.port, push.headers);
+    HttpClientRequestPushPromise pushReq = new HttpClientRequestPushPromise(push.stream, client, ssl, push.method, push.uri, push.authority, push.headers);
     if (pushHandler != null) {
       pushHandler.handle(pushReq);
     } else {
@@ -205,14 +199,14 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
           return;
         }
       }
-      cause = timeoutEx(timeoutMs, method, server, uri);
+      cause = timeoutEx(timeoutMs, method, authority, uri);
       timeoutFired = cause;
     }
     reset(cause);
   }
 
-  static NoStackTraceTimeoutException timeoutEx(long timeoutMs, HttpMethod method, SocketAddress server, String uri) {
-    return new NoStackTraceTimeoutException("The timeout period of " + timeoutMs + "ms has been exceeded while executing " + method + " " + uri + " for server " + server);
+  static NoStackTraceTimeoutException timeoutEx(long timeoutMs, HttpMethod method, HostAndPort peer, String uri) {
+    return new NoStackTraceTimeoutException("The timeout period of " + timeoutMs + "ms has been exceeded while executing " + method + " " + uri + " for server " + peer);
   }
 
   synchronized void dataReceived() {

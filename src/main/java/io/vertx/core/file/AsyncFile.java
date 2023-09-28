@@ -17,9 +17,13 @@ import io.vertx.codegen.annotations.Unstable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
+
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Represents a file on the file-system which can be read from, or written to asynchronously.
@@ -171,7 +175,9 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @return the lock if it can be acquired immediately, otherwise {@code null}
    */
   @Unstable
-  @Nullable AsyncFileLock tryLock();
+  default @Nullable AsyncFileLock tryLock() {
+    return tryLock(0, Long.MAX_VALUE, false);
+  }
 
   /**
    * Try to acquire a lock on a portion of this file.
@@ -190,7 +196,9 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @return a future indicating the completion of this operation
    */
   @Unstable
-  Future<AsyncFileLock> lock();
+  default Future<AsyncFileLock> lock() {
+    return lock(0, Long.MAX_VALUE, false);
+  }
 
   /**
    * Acquire a lock on a portion of this file.
@@ -203,4 +211,48 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
   @Unstable
   Future<AsyncFileLock> lock(long position, long size, boolean shared);
 
+  /**
+   * Acquire a non-shared lock on the entire file.
+   *
+   * <p>When the {@code block} is called, the lock is already acquired, it will be released when the
+   * {@code Future<T>} returned by the block completes.
+   *
+   * <p>When the {@code block} fails, the lock is released and the returned future is failed with the cause of the failure.
+   *
+   * @param block the code block called after lock acquisition
+   * @return the future returned by the {@code block}
+   */
+  @Unstable
+  default <T> Future<T> withLock(Supplier<Future<T>> block) {
+    return withLock(0, Long.MAX_VALUE, false, block);
+  }
+
+  /**
+   * Acquire a lock on a portion of this file.
+   *
+   * <p>When the {@code block} is called, the lock is already acquired , it will be released when the
+   * {@code Future<T>} returned by the block completes.
+   *
+   * <p>When the {@code block} fails, the lock is released and the returned future is failed with the cause of the failure.
+   *
+   * @param position where the region starts
+   * @param size the size of the region
+   * @param shared whether the lock should be shared
+   * @param block the code block called after lock acquisition
+   * @return the future returned by the {@code block}
+   */
+  @Unstable
+  default <T> Future<T> withLock(long position, long size, boolean shared, Supplier<Future<T>> block) {
+    return lock(position, size, shared)
+      .compose(lock -> {
+        Future<T> res;
+        try {
+          res = block.get();
+        } catch (Exception e) {
+          lock.release();
+          throw new VertxException(e);
+        }
+        return res.eventually(() -> lock.release());
+      });
+  }
 }

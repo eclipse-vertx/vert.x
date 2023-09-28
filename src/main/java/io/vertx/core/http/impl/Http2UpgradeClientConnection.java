@@ -25,11 +25,11 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.streams.WriteStream;
 
@@ -51,7 +51,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
 
   private static final Logger log = LoggerFactory.getLogger(Http2UpgradeClientConnection.class);
 
-  private HttpClientImpl client;
+  private HttpClientBase client;
   private HttpClientConnection current;
   private boolean upgradeProcessed;
 
@@ -64,13 +64,18 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
   private Handler<Long> concurrencyChangeHandler;
   private Handler<Http2Settings> remoteSettingsHandler;
 
-  Http2UpgradeClientConnection(HttpClientImpl client, Http1xClientConnection connection) {
+  Http2UpgradeClientConnection(HttpClientBase client, Http1xClientConnection connection) {
     this.client = client;
     this.current = connection;
   }
 
   public HttpClientConnection unwrap() {
     return current;
+  }
+
+  @Override
+  public HostAndPort authority() {
+    return current.authority();
   }
 
   @Override
@@ -348,7 +353,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
         public void upgradeTo(ChannelHandlerContext ctx, FullHttpResponse upgradeResponse) throws Exception {
 
           // Now we need to upgrade this to an HTTP2
-          VertxHttp2ConnectionHandler<Http2ClientConnection> handler = Http2ClientConnection.createHttp2ConnectionHandler(upgradedConnection.client, upgradingConnection.metrics, (EventLoopContext) upgradingConnection.getContext(), true, upgradedConnection.current.metric());
+          VertxHttp2ConnectionHandler<Http2ClientConnection> handler = Http2ClientConnection.createHttp2ConnectionHandler(upgradedConnection.client, upgradingConnection.metrics, upgradingConnection.getContext(), true, upgradedConnection.current.metric(), upgradedConnection.current.authority());
           upgradingConnection.channel().pipeline().addLast(handler);
           handler.connectFuture().addListener(future -> {
             if (!future.isSuccess()) {

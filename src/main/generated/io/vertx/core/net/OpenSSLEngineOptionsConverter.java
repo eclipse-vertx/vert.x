@@ -20,14 +20,14 @@ public class OpenSSLEngineOptionsConverter {
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, OpenSSLEngineOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
-        case "sessionCacheEnabled":
-          if (member.getValue() instanceof Boolean) {
-            obj.setSessionCacheEnabled((Boolean)member.getValue());
-          }
-          break;
         case "useWorkerThread":
           if (member.getValue() instanceof Boolean) {
             obj.setUseWorkerThread((Boolean)member.getValue());
+          }
+          break;
+        case "sessionCacheEnabled":
+          if (member.getValue() instanceof Boolean) {
+            obj.setSessionCacheEnabled((Boolean)member.getValue());
           }
           break;
       }
@@ -39,7 +39,7 @@ public class OpenSSLEngineOptionsConverter {
   }
 
    static void toJson(OpenSSLEngineOptions obj, java.util.Map<String, Object> json) {
-    json.put("sessionCacheEnabled", obj.isSessionCacheEnabled());
     json.put("useWorkerThread", obj.getUseWorkerThread());
+    json.put("sessionCacheEnabled", obj.isSessionCacheEnabled());
   }
 }

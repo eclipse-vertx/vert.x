@@ -19,6 +19,7 @@ import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.SSLOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.streams.ReadStream;
@@ -200,7 +201,7 @@ class HttpNetSocket implements NetSocket {
         .pipe()
         .endOnComplete(false)
         .to(this)
-        .eventually(v -> file.close())
+        .eventually(file::close)
       );
   }
 
@@ -244,12 +245,12 @@ class HttpNetSocket implements NetSocket {
   }
 
   @Override
-  public Future<Void> upgradeToSsl() {
+  public Future<Void> upgradeToSsl(String serverName) {
     return Future.failedFuture("Cannot upgrade stream to SSL");
   }
 
   @Override
-  public Future<Void> upgradeToSsl(String serverName) {
+  public Future<Void> upgradeToSsl(SSLOptions sslOptions, String serverName) {
     return Future.failedFuture("Cannot upgrade stream to SSL");
   }
 

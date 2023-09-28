@@ -20,9 +20,9 @@ public class CopyOptionsConverter {
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, CopyOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
-        case "atomicMove":
+        case "replaceExisting":
           if (member.getValue() instanceof Boolean) {
-            obj.setAtomicMove((Boolean)member.getValue());
+            obj.setReplaceExisting((Boolean)member.getValue());
           }
           break;
         case "copyAttributes":
@@ -30,14 +30,14 @@ public class CopyOptionsConverter {
             obj.setCopyAttributes((Boolean)member.getValue());
           }
           break;
+        case "atomicMove":
+          if (member.getValue() instanceof Boolean) {
+            obj.setAtomicMove((Boolean)member.getValue());
+          }
+          break;
         case "nofollowLinks":
           if (member.getValue() instanceof Boolean) {
             obj.setNofollowLinks((Boolean)member.getValue());
-          }
-          break;
-        case "replaceExisting":
-          if (member.getValue() instanceof Boolean) {
-            obj.setReplaceExisting((Boolean)member.getValue());
           }
           break;
       }
@@ -49,9 +49,9 @@ public class CopyOptionsConverter {
   }
 
    static void toJson(CopyOptions obj, java.util.Map<String, Object> json) {
-    json.put("atomicMove", obj.isAtomicMove());
-    json.put("copyAttributes", obj.isCopyAttributes());
-    json.put("nofollowLinks", obj.isNofollowLinks());
     json.put("replaceExisting", obj.isReplaceExisting());
+    json.put("copyAttributes", obj.isCopyAttributes());
+    json.put("atomicMove", obj.isAtomicMove());
+    json.put("nofollowLinks", obj.isNofollowLinks());
   }
 }

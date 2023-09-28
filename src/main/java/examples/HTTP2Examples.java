@@ -13,19 +13,7 @@ package examples;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.Http2Settings;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpClientResponse;
-import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.StreamResetException;
+import io.vertx.core.http.*;
 import io.vertx.core.net.JksOptions;
 
 /**
@@ -221,10 +209,14 @@ public class HTTP2Examples {
     HttpConnection connection = request.connection();
   }
 
-  public void example19(HttpClient client) {
-    client.connectionHandler(connection -> {
-      System.out.println("Connected to the server");
-    });
+  public void example19(Vertx vertx, HttpClientOptions options) {
+    vertx
+      .httpClientBuilder()
+      .with(options)
+      .withConnectHandler(connection -> {
+        System.out.println("Connected to the server");
+      })
+      .build();
   }
 
   public void example20(HttpConnection connection) {
@@ -284,11 +276,10 @@ public class HTTP2Examples {
 
   public void useMaxStreams(Vertx vertx) {
 
-    HttpClientOptions clientOptions = new HttpClientOptions().
-        setHttp2MultiplexingLimit(10).
-        setHttp2MaxPoolSize(3);
-
     // Uses up to 3 connections and up to 10 streams per connection
-    HttpClient client = vertx.createHttpClient(clientOptions);
+    HttpClient client = vertx.createHttpClient(
+      new HttpClientOptions().setHttp2MultiplexingLimit(10),
+      new PoolOptions().setHttp2MaxSize(3)
+    );
   }
 }

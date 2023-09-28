@@ -12,6 +12,7 @@
 package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.netty.handler.logging.ByteBufFormat;
@@ -34,17 +35,11 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   public static final int DEFAULT_CONNECT_TIMEOUT = 60000;
 
   /**
-   * The default value of whether all servers (SSL/TLS) should be trusted = false
-   */
-  public static final boolean DEFAULT_TRUST_ALL = false;
-
-  /**
    * The default value of the client metrics = "":
    */
   public static final String DEFAULT_METRICS_NAME = "";
 
   private int connectTimeout;
-  private boolean trustAll;
   private String metricsName;
   private ProxyOptions proxyOptions;
   private String localAddress;
@@ -66,7 +61,6 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   public ClientOptionsBase(ClientOptionsBase other) {
     super(other);
     this.connectTimeout = other.getConnectTimeout();
-    this.trustAll = other.isTrustAll();
     this.metricsName = other.metricsName;
     this.proxyOptions = other.proxyOptions != null ? new ProxyOptions(other.proxyOptions) : null;
     this.localAddress = other.localAddress;
@@ -97,10 +91,20 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
 
   private void init() {
     this.connectTimeout = DEFAULT_CONNECT_TIMEOUT;
-    this.trustAll = DEFAULT_TRUST_ALL;
     this.metricsName = DEFAULT_METRICS_NAME;
     this.proxyOptions = null;
     this.localAddress = null;
+  }
+
+  @GenIgnore
+  @Override
+  public ClientSSLOptions getSslOptions() {
+    return (ClientSSLOptions) super.getSslOptions();
+  }
+
+  @Override
+  protected ClientSSLOptions getOrCreateSSLOptions() {
+    return (ClientSSLOptions) super.getOrCreateSSLOptions();
   }
 
   /**
@@ -108,7 +112,8 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
    * @return true if all server certificates should be trusted
    */
   public boolean isTrustAll() {
-    return trustAll;
+    ClientSSLOptions o = getSslOptions();
+    return o != null ? o.isTrustAll() : ClientSSLOptions.DEFAULT_TRUST_ALL;
   }
 
   /**
@@ -118,7 +123,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public ClientOptionsBase setTrustAll(boolean trustAll) {
-    this.trustAll = trustAll;
+    getOrCreateSSLOptions().setTrustAll(trustAll);
     return this;
   }
 

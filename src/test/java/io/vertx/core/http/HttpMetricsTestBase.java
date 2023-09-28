@@ -15,7 +15,6 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.http.impl.HttpClientInternal;
 import io.vertx.core.http.impl.HttpServerRequestInternal;
 import io.vertx.core.metrics.MetricsOptions;

@@ -11,6 +11,7 @@
 
 package examples;
 
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.shareddata.*;
@@ -114,6 +115,21 @@ public class SharedDataExamples {
           // Something went wrong
         }
       });
+  }
+
+  private Future<String> getAsyncString() {
+    throw new UnsupportedOperationException();
+  }
+
+  public void withLock(Vertx vertx) {
+    SharedData sharedData = vertx.sharedData();
+
+    Future<String> res = sharedData.withLock("mylock", () -> {
+      // Obtained the lock!
+      Future<String> future = getAsyncString();
+      // It will be released upon completion of this future
+      return future;
+    });
   }
 
   public void lockWithTimeout(Vertx vertx) {

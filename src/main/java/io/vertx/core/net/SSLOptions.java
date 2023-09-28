@@ -25,7 +25,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
- * SSL options
+ * Client/Server SSL options.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -60,21 +60,12 @@ public class SSLOptions {
   private TimeUnit sslHandshakeTimeoutUnit;
   private KeyCertOptions keyCertOptions;
   private TrustOptions trustOptions;
-  private Set<String> enabledCipherSuites;
-  private ArrayList<String> crlPaths;
-  private ArrayList<Buffer> crlValues;
+  Set<String> enabledCipherSuites;
+  List<String> crlPaths;
+  List<Buffer> crlValues;
   private boolean useAlpn;
   private Set<String> enabledSecureTransportProtocols;
-
-  /**
-   * Create options from JSON
-   *
-   * @param json the JSON
-   */
-  public SSLOptions(JsonObject json) {
-    this();
-    SSLOptionsConverter.fromJson(json ,this);
-  }
+  private List<String> applicationLayerProtocols;
 
   /**
    * Default constructor
@@ -98,10 +89,21 @@ public class SSLOptions {
     this.crlValues = new ArrayList<>(other.getCrlValues());
     this.useAlpn = other.useAlpn;
     this.enabledSecureTransportProtocols = other.getEnabledSecureTransportProtocols() == null ? new LinkedHashSet<>() : new LinkedHashSet<>(other.getEnabledSecureTransportProtocols());
+    this.applicationLayerProtocols = other.getApplicationLayerProtocols() != null ? new ArrayList<>(other.getApplicationLayerProtocols()) : null;
+  }
+
+  /**
+   * Create options from JSON
+   *
+   * @param json the JSON
+   */
+  public SSLOptions(JsonObject json) {
+    this();
+    SSLOptionsConverter.fromJson(json ,this);
   }
 
 
-  private void init() {
+  protected void init() {
     sslHandshakeTimeout = DEFAULT_SSL_HANDSHAKE_TIMEOUT;
     sslHandshakeTimeoutUnit = DEFAULT_SSL_HANDSHAKE_TIMEOUT_TIME_UNIT;
     enabledCipherSuites = new LinkedHashSet<>();
@@ -109,6 +111,11 @@ public class SSLOptions {
     crlValues = new ArrayList<>();
     useAlpn = DEFAULT_USE_ALPN;
     enabledSecureTransportProtocols = new LinkedHashSet<>(DEFAULT_ENABLED_SECURE_TRANSPORT_PROTOCOLS);
+    applicationLayerProtocols = null;
+  }
+
+  public SSLOptions copy() {
+    return new SSLOptions(this);
   }
 
   /**
@@ -324,6 +331,24 @@ public class SSLOptions {
     return this;
   }
 
+  /**
+   * @return the list of application-layer protocols send during the Application-Layer Protocol Negotiation.
+   */
+  public List<String> getApplicationLayerProtocols() {
+    return applicationLayerProtocols;
+  }
+
+  /**
+   * Set the list of application-layer protocols to provide to the server during the Application-Layer Protocol Negotiation.
+   *
+   * @param protocols the protocols
+   * @return a reference to this, so the API can be used fluently
+   */
+  public SSLOptions setApplicationLayerProtocols(List<String> protocols) {
+    this.applicationLayerProtocols = protocols;
+    return this;
+  }
+
   @Override
   public boolean equals(Object obj) {
     if (obj == this) {
@@ -341,6 +366,11 @@ public class SSLOptions {
          Objects.equals(enabledSecureTransportProtocols, that.enabledSecureTransportProtocols);
     }
     return false;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(sslHandshakeTimeoutUnit.toNanos(sslHandshakeTimeout), keyCertOptions, trustOptions, enabledCipherSuites, crlPaths, crlValues, useAlpn, enabledSecureTransportProtocols);
   }
 
   /**

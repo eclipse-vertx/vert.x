@@ -26,7 +26,7 @@ import io.vertx.core.net.SocketAddress;
  * @param <A> the type of {@link Address} resolved
  * @param <M> the type of metrics, implementations can use {@code Void} when metrics are not managed
  */
-public interface AddressResolver<S, A extends Address, M> {
+public interface AddressResolver<S, A extends Address, M> extends io.vertx.core.net.AddressResolver {
 
   /**
    * Try to cast the {@code address} to an address instance that can be resolved by this resolver instance.

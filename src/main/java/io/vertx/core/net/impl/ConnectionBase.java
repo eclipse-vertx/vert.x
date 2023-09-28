@@ -325,6 +325,15 @@ public abstract class ConnectionBase {
     writeToChannel(Unpooled.EMPTY_BUFFER, true, promise);
   }
 
+  /**
+   * Asynchronous flush.
+   *
+   * @param listener the listener notified when flush occurred
+   */
+  public final void flush(FutureListener<Void> listener) {
+    writeToChannel(Unpooled.EMPTY_BUFFER, true, listener == null ? voidPromise : wrap(listener));
+  }
+
   // This is a volatile read inside the Netty channel implementation
   public boolean isNotWritable() {
     return !chctx.channel().isWritable();

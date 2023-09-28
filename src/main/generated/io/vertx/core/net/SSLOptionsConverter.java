@@ -20,6 +20,14 @@ public class SSLOptionsConverter {
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, SSLOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
+        case "enabledCipherSuites":
+          if (member.getValue() instanceof JsonArray) {
+            ((Iterable<Object>)member.getValue()).forEach( item -> {
+              if (item instanceof String)
+                obj.addEnabledCipherSuite((String)item);
+            });
+          }
+          break;
         case "crlPaths":
           if (member.getValue() instanceof JsonArray) {
             ((Iterable<Object>)member.getValue()).forEach( item -> {
@@ -36,12 +44,9 @@ public class SSLOptionsConverter {
             });
           }
           break;
-        case "enabledCipherSuites":
-          if (member.getValue() instanceof JsonArray) {
-            ((Iterable<Object>)member.getValue()).forEach( item -> {
-              if (item instanceof String)
-                obj.addEnabledCipherSuite((String)item);
-            });
+        case "useAlpn":
+          if (member.getValue() instanceof Boolean) {
+            obj.setUseAlpn((Boolean)member.getValue());
           }
           break;
         case "enabledSecureTransportProtocols":
@@ -64,9 +69,14 @@ public class SSLOptionsConverter {
             obj.setSslHandshakeTimeoutUnit(java.util.concurrent.TimeUnit.valueOf((String)member.getValue()));
           }
           break;
-        case "useAlpn":
-          if (member.getValue() instanceof Boolean) {
-            obj.setUseAlpn((Boolean)member.getValue());
+        case "applicationLayerProtocols":
+          if (member.getValue() instanceof JsonArray) {
+            java.util.ArrayList<java.lang.String> list =  new java.util.ArrayList<>();
+            ((Iterable<Object>)member.getValue()).forEach( item -> {
+              if (item instanceof String)
+                list.add((String)item);
+            });
+            obj.setApplicationLayerProtocols(list);
           }
           break;
       }
@@ -78,6 +88,11 @@ public class SSLOptionsConverter {
   }
 
    static void toJson(SSLOptions obj, java.util.Map<String, Object> json) {
+    if (obj.getEnabledCipherSuites() != null) {
+      JsonArray array = new JsonArray();
+      obj.getEnabledCipherSuites().forEach(item -> array.add(item));
+      json.put("enabledCipherSuites", array);
+    }
     if (obj.getCrlPaths() != null) {
       JsonArray array = new JsonArray();
       obj.getCrlPaths().forEach(item -> array.add(item));
@@ -88,11 +103,7 @@ public class SSLOptionsConverter {
       obj.getCrlValues().forEach(item -> array.add(BASE64_ENCODER.encodeToString(item.getBytes())));
       json.put("crlValues", array);
     }
-    if (obj.getEnabledCipherSuites() != null) {
-      JsonArray array = new JsonArray();
-      obj.getEnabledCipherSuites().forEach(item -> array.add(item));
-      json.put("enabledCipherSuites", array);
-    }
+    json.put("useAlpn", obj.isUseAlpn());
     if (obj.getEnabledSecureTransportProtocols() != null) {
       JsonArray array = new JsonArray();
       obj.getEnabledSecureTransportProtocols().forEach(item -> array.add(item));
@@ -102,6 +113,10 @@ public class SSLOptionsConverter {
     if (obj.getSslHandshakeTimeoutUnit() != null) {
       json.put("sslHandshakeTimeoutUnit", obj.getSslHandshakeTimeoutUnit().name());
     }
-    json.put("useAlpn", obj.isUseAlpn());
+    if (obj.getApplicationLayerProtocols() != null) {
+      JsonArray array = new JsonArray();
+      obj.getApplicationLayerProtocols().forEach(item -> array.add(item));
+      json.put("applicationLayerProtocols", array);
+    }
   }
 }

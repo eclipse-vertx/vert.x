@@ -14,9 +14,7 @@ package io.vertx.core.eventbus;
 import io.vertx.core.*;
 import io.vertx.core.eventbus.impl.EventBusInternal;
 import io.vertx.core.eventbus.impl.MessageConsumerImpl;
-import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.TestUtils;
@@ -41,6 +39,7 @@ public class LocalEventBusTest extends EventBusTestBase {
   private EventBusInternal eb;
   private boolean running;
 
+  @Override
   public void setUp() throws Exception {
     super.setUp();
     vertx.close();
@@ -52,6 +51,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     running = true;
   }
 
+  @Override
   protected void tearDown() throws Exception {
     closeVertx();
     super.tearDown();
@@ -678,7 +678,7 @@ public class LocalEventBusTest extends EventBusTestBase {
         if (worker) {
           assertTrue(ctx.isWorkerContext());
         } else {
-          assertTrue(ctx instanceof EventLoopContext);
+          assertTrue(ctx.isEventLoopContext());
         }
         Thread thr = Thread.currentThread();
         MessageConsumer<?> reg = vertx.eventBus().consumer(ADDRESS1).handler(msg -> {
@@ -712,7 +712,7 @@ public class LocalEventBusTest extends EventBusTestBase {
 
   @Test
   public void testContextsSend() throws Exception {
-    Set<ContextInternal> contexts = new ConcurrentHashSet<>();
+    Set<ContextInternal> contexts = ConcurrentHashMap.newKeySet();
     CountDownLatch latch = new CountDownLatch(2);
     vertx.eventBus().consumer(ADDRESS1).handler(msg -> {
       msg.reply("bar");
@@ -730,7 +730,7 @@ public class LocalEventBusTest extends EventBusTestBase {
 
   @Test
   public void testContextsPublish() throws Exception {
-    Set<ContextInternal> contexts = new ConcurrentHashSet<>();
+    Set<ContextInternal> contexts = ConcurrentHashMap.newKeySet();
     AtomicInteger cnt = new AtomicInteger();
     int numHandlers = 10;
     for (int i = 0; i < numHandlers; i++) {
@@ -1449,4 +1449,3 @@ public class LocalEventBusTest extends EventBusTestBase {
     await();
   }
 }
-

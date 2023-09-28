@@ -558,26 +558,12 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   @Override
-  public AsyncFileLock tryLock() {
-    try {
-      return new AsyncFileLockImpl(vertx, ch.tryLock());
-    } catch (IOException e) {
-      throw new FileSystemException(e);
-    }
-  }
-
-  @Override
   public AsyncFileLock tryLock(long position, long size, boolean shared) {
     try {
       return new AsyncFileLockImpl(vertx, ch.tryLock(position, size, shared));
     } catch (IOException e) {
       throw new FileSystemException(e);
     }
-  }
-
-  @Override
-  public Future<AsyncFileLock> lock() {
-    return lock(0, Long.MAX_VALUE, false);
   }
 
   private static CompletionHandler<FileLock, PromiseInternal<AsyncFileLock>> LOCK_COMPLETION = new CompletionHandler<FileLock, PromiseInternal<AsyncFileLock>>() {

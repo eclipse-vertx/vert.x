@@ -20,9 +20,19 @@ public class OpenOptionsConverter {
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, OpenOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
-        case "append":
+        case "perms":
+          if (member.getValue() instanceof String) {
+            obj.setPerms((String)member.getValue());
+          }
+          break;
+        case "read":
           if (member.getValue() instanceof Boolean) {
-            obj.setAppend((Boolean)member.getValue());
+            obj.setRead((Boolean)member.getValue());
+          }
+          break;
+        case "write":
+          if (member.getValue() instanceof Boolean) {
+            obj.setWrite((Boolean)member.getValue());
           }
           break;
         case "create":
@@ -40,19 +50,9 @@ public class OpenOptionsConverter {
             obj.setDeleteOnClose((Boolean)member.getValue());
           }
           break;
-        case "dsync":
+        case "truncateExisting":
           if (member.getValue() instanceof Boolean) {
-            obj.setDsync((Boolean)member.getValue());
-          }
-          break;
-        case "perms":
-          if (member.getValue() instanceof String) {
-            obj.setPerms((String)member.getValue());
-          }
-          break;
-        case "read":
-          if (member.getValue() instanceof Boolean) {
-            obj.setRead((Boolean)member.getValue());
+            obj.setTruncateExisting((Boolean)member.getValue());
           }
           break;
         case "sparse":
@@ -65,14 +65,14 @@ public class OpenOptionsConverter {
             obj.setSync((Boolean)member.getValue());
           }
           break;
-        case "truncateExisting":
+        case "dsync":
           if (member.getValue() instanceof Boolean) {
-            obj.setTruncateExisting((Boolean)member.getValue());
+            obj.setDsync((Boolean)member.getValue());
           }
           break;
-        case "write":
+        case "append":
           if (member.getValue() instanceof Boolean) {
-            obj.setWrite((Boolean)member.getValue());
+            obj.setAppend((Boolean)member.getValue());
           }
           break;
       }
@@ -84,18 +84,18 @@ public class OpenOptionsConverter {
   }
 
    static void toJson(OpenOptions obj, java.util.Map<String, Object> json) {
-    json.put("append", obj.isAppend());
-    json.put("create", obj.isCreate());
-    json.put("createNew", obj.isCreateNew());
-    json.put("deleteOnClose", obj.isDeleteOnClose());
-    json.put("dsync", obj.isDsync());
     if (obj.getPerms() != null) {
       json.put("perms", obj.getPerms());
     }
     json.put("read", obj.isRead());
+    json.put("write", obj.isWrite());
+    json.put("create", obj.isCreate());
+    json.put("createNew", obj.isCreateNew());
+    json.put("deleteOnClose", obj.isDeleteOnClose());
+    json.put("truncateExisting", obj.isTruncateExisting());
     json.put("sparse", obj.isSparse());
     json.put("sync", obj.isSync());
-    json.put("truncateExisting", obj.isTruncateExisting());
-    json.put("write", obj.isWrite());
+    json.put("dsync", obj.isDsync());
+    json.put("append", obj.isAppend());
   }
 }

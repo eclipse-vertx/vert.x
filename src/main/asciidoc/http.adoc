@@ -562,7 +562,7 @@ Or use {@link io.vertx.core.http.HttpServerResponse#putTrailer}.
 If you were writing a web server, one way to serve a file from disk would be to open it as an {@link io.vertx.core.file.AsyncFile}
 and pipe it to the HTTP response.
 
-Or you could load it it one go using {@link io.vertx.core.file.FileSystem#readFile} and write it straight to the response.
+Or you could load it in one go using {@link io.vertx.core.file.FileSystem#readFile} and write it straight to the response.
 
 Alternatively, Vert.x provides a method which allows you to serve a file from disk or the filesystem to an HTTP response
 in one operation.
@@ -580,7 +580,7 @@ Here's a very simple web server that serves files from the file system using sen
 ----
 
 Sending a file is asynchronous and may not complete until some time after the call has returned. If you want to
-be notified when the file has been written you can use {@link io.vertx.core.http.HttpServerResponse#sendFile(String)}
+be notified when the file has been written you can use {@link io.vertx.core.http.HttpServerResponse#sendFile(String)}.
 
 Please see the chapter about <<classpath, serving files from the classpath>> for restrictions about the classpath resolution or disabling it.
 
@@ -850,6 +850,26 @@ When a clients connects to an HTTP/2 server, it sends to the server its {@link i
 The settings define how the server can use the connection, the default initial settings for a client are the default
 values defined by the HTTP/2 RFC.
 
+=== Pool configuration
+
+ For performance purpose, the client uses connection pooling when interacting with HTTP/1.1 servers. The pool creates up
+ to 5 connections per server. You can override the pool configuration like this:
+
+ [source,$lang]
+ ----
+ {@link examples.HTTPExamples#examplePoolConfiguration}
+ ----
+
+ You can configure various pool {@link io.vertx.core.http.PoolOptions options} as follows
+
+- {@link io.vertx.core.http.PoolOptions options#setHttp1MaxSize} the maximum number of opened per HTTP/1.x server (5 by default)
+- {@link io.vertx.core.http.PoolOptions options#setHttp2MaxSize} the maximum number of opened per HTTP/2 server (1 by default), you *should* not change this value since a single HTTP/2 connection is capable of delivering the same performance level than multiple HTTP/1.x connections
+- {@link io.vertx.core.http.PoolOptions options#setCleanerPeriod} the period in milliseconds at which the pool checks expired connections (1 second by default)
+- {@link io.vertx.core.http.PoolOptions options#setEventLoopSize} sets the number of event loops the pool use (0 by default)
+- a value of 0 configures the pool to use the event loop of the caller
+- a positive value configures the pool load balance the creation of connection over a list of event loops determined by the value
+- {@link io.vertx.core.http.PoolOptions options#setMaxWaitQueueSize} the maximum number of HTTP requests waiting until a connection is available, when the queue is full, the request is rejected
+
 === Logging network client activity
 
 For debugging purposes, network activity can be logged.
@@ -860,6 +880,23 @@ For debugging purposes, network activity can be logged.
 ----
 
 See the chapter on <<logging_network_activity, logging network activity>> for a detailed explanation.
+
+=== Advanced HTTP client creation
+
+You can pass options {@link io.vertx.core.Vertx#createHttpClient} methods to configure the HTTP client.
+
+Alternatively you can build a client with the builder {@link io.vertx.core.http.HttpClientBuilder API} :
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#exampleClientBuilder01}
+----
+
+In addition to {@link io.vertx.core.http.HttpClientOptions} and {@link io.vertx.core.http.PoolOptions}, you
+can set
+
+- a connection event handler notified when the client <<_client_connections,connects>> to a server
+- a redirection handler to implement an alternative HTTP <<_30x_redirection_handling,redirect>> behavior
 
 === Making requests
 
@@ -1020,7 +1057,7 @@ An {@link io.vertx.core.http.HttpClientRequest} instance is also a {@link io.ver
 
 You can pipe to it from any {@link io.vertx.core.streams.ReadStream} instance.
 
-For, example, you could pipe a file on disk to a http request body as follows:
+For, example, you could pipe a file on disk to an http request body as follows:
 
 [source,$lang]
 ----
@@ -1229,7 +1266,7 @@ Alternatively you can just parse the `Set-Cookie` headers yourself in the respon
 
 The client can be configured to follow HTTP redirections provided by the `Location` response header when the client receives:
 
-* a `301`, `302`, `307` or `308` status code along with a HTTP GET or HEAD method
+* a `301`, `302`, `307` or `308` status code along with an HTTP GET or HEAD method
 * a `303` status code, in addition the directed request perform an HTTP GET method
 
 Here's an example:
@@ -1413,7 +1450,7 @@ When keep alive is enabled. Vert.x will add a `Connection: Keep-Alive` header to
 When keep alive is disabled. Vert.x will add a `Connection: Close` header to each HTTP/1.1 request sent to signal
 that the connection will be closed after completion of the response.
 
-The maximum number of connections to pool *for each server* is configured using {@link io.vertx.core.http.HttpClientOptions#setMaxPoolSize(int)}
+The maximum number of connections to pool *for each server* is configured using {@link io.vertx.core.http.PoolOptions#setHttp1MaxSize(int)}
 
 When making a request with pooling enabled, Vert.x will create a new connection if there are less than the maximum number of
 connections already created for that server, otherwise it will add the request to a queue.
@@ -1449,7 +1486,7 @@ fairness of the distribution of the client requests over the connections to the 
 HTTP/2 advocates to use a single connection to a server, by default the http client uses a single
 connection for each server, all the streams to the same server are multiplexed over the same connection.
 
-When the clients needs to use more than a single connection and use pooling, the {@link io.vertx.core.http.HttpClientOptions#setHttp2MaxPoolSize(int)}
+When the clients needs to use more than a single connection and use pooling, the {@link io.vertx.core.http.PoolOptions#setHttp2MaxSize(int)}
 shall be used.
 
 When it is desirable to limit the number of multiplexed streams per connection and use a connection
@@ -1507,7 +1544,7 @@ The {@link io.vertx.core.http.HttpClientRequest#connection()} method returns the
 {@link examples.HTTP2Examples#example18}
 ----
 
-A connection handler can be set on the client to be notified when a connection has been established happens:
+A connection handler can be set on a client builder to be notified when a connection has been established happens:
 
 [source,$lang]
 ----
@@ -1621,7 +1658,7 @@ NOTE: this only applies to the HTTP/2 protocol
 Connection {@link io.vertx.core.http.HttpConnection#close} closes the connection:
 
 - it closes the socket for HTTP/1.x
-- a shutdown with no delay for HTTP/2, the {@literal GOAWAY} frame will still be sent before the connection is closed. *
+- a shutdown with no delay for HTTP/2, the {@literal GOAWAY} frame will still be sent before the connection is closed.
 
 The {@link io.vertx.core.http.HttpConnection#closeHandler} notifies when a connection is closed.
 
@@ -1660,7 +1697,7 @@ You can assign a number of event loop a client will use independently of the cli
 When several HTTP servers listen on the same port, vert.x orchestrates the request handling using a
 round-robin strategy.
 
-Let's take a verticle creating a HTTP server such as:
+Let's take a verticle creating an HTTP server such as:
 
 .io.vertx.examples.http.sharing.HttpServerVerticle
 [source,$lang]
@@ -1798,17 +1835,23 @@ The {@link io.vertx.core.http.ServerWebSocket} instance enables you to retrieve 
 
 ==== WebSockets on the client
 
-The Vert.x {@link io.vertx.core.http.HttpClient} supports WebSockets.
+e Vert.x {@link io.vertx.core.http.WebSocketClient} supports WebSockets.
 
-You can connect a WebSocket to a server using one of the {@link io.vertx.core.http.HttpClient#webSocket} operations and
-providing a handler.
+ You can connect a WebSocket to a server using one of the {@link io.vertx.core.http.WebSocketClient#connect} operations.
 
-The handler will be called with an instance of {@link io.vertx.core.http.WebSocket} when the connection has been made:
-
+ The returned future will be completed with an instance of {@link io.vertx.core.http.WebSocket} when the connection has been made:
 [source,$lang]
 ----
 {@link examples.HTTPExamples#example54}
 ----
+
+en connecting from a non Vert.x thread, you can create a {@link io.vertx.core.http.ClientWebSocket}, configure its handlers and
+then connect to the server:
+
+ [source,$lang]
+ ----
+ {@link examples.HTTPExamples#example54_bis}
+ ----
 
 By default, the client sets the `origin` header to the server host, e.g http://www.example.com. Some servers will refuse
 such request, you can configure the client to not set this header.
@@ -1839,7 +1882,7 @@ If you wish to write a single WebSocket message to the WebSocket you can do this
 ----
 
 If the WebSocket message is larger than the maximum WebSocket frame size as configured with
-{@link io.vertx.core.http.HttpClientOptions#setMaxWebSocketFrameSize(int)}
+{@link io.vertx.core.http.WebSocketClientOptions#setMaxFrameSize(int)}
 then Vert.x will split it into multiple WebSocket frames before sending it on the wire.
 
 ==== Writing frames to WebSockets
@@ -1912,7 +1955,7 @@ The addresses of the handlers are given by {@link io.vertx.core.http.WebSocket#b
 
 === Using a proxy for HTTP/HTTPS connections
 
-The http client supports accessing http/https URLs via a HTTP proxy (e.g. Squid) or _SOCKS4a_ or _SOCKS5_ proxy.
+The http client supports accessing http/https URLs via an HTTP proxy (e.g. Squid) or _SOCKS4a_ or _SOCKS5_ proxy.
 The CONNECT protocol uses HTTP/1.x but can connect to HTTP/1.x and HTTP/2 servers.
 
 Connecting to h2c (unencrypted HTTP/2 servers) is likely not supported by http proxies since they will support

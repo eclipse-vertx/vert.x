@@ -25,24 +25,24 @@ public class ProxyOptionsConverter {
             obj.setHost((String)member.getValue());
           }
           break;
-        case "password":
-          if (member.getValue() instanceof String) {
-            obj.setPassword((String)member.getValue());
-          }
-          break;
         case "port":
           if (member.getValue() instanceof Number) {
             obj.setPort(((Number)member.getValue()).intValue());
           }
           break;
-        case "type":
-          if (member.getValue() instanceof String) {
-            obj.setType(io.vertx.core.net.ProxyType.valueOf((String)member.getValue()));
-          }
-          break;
         case "username":
           if (member.getValue() instanceof String) {
             obj.setUsername((String)member.getValue());
+          }
+          break;
+        case "password":
+          if (member.getValue() instanceof String) {
+            obj.setPassword((String)member.getValue());
+          }
+          break;
+        case "type":
+          if (member.getValue() instanceof String) {
+            obj.setType(io.vertx.core.net.ProxyType.valueOf((String)member.getValue()));
           }
           break;
       }
@@ -57,15 +57,15 @@ public class ProxyOptionsConverter {
     if (obj.getHost() != null) {
       json.put("host", obj.getHost());
     }
+    json.put("port", obj.getPort());
+    if (obj.getUsername() != null) {
+      json.put("username", obj.getUsername());
+    }
     if (obj.getPassword() != null) {
       json.put("password", obj.getPassword());
     }
-    json.put("port", obj.getPort());
     if (obj.getType() != null) {
       json.put("type", obj.getType().name());
-    }
-    if (obj.getUsername() != null) {
-      json.put("username", obj.getUsername());
     }
   }
 }

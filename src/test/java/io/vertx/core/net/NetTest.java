@@ -48,7 +48,6 @@ import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.*;
-import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonArray;
@@ -88,6 +87,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -97,6 +97,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static io.vertx.test.core.TestUtils.*;
 import static org.hamcrest.CoreMatchers.*;
@@ -115,6 +117,7 @@ public class NetTest extends VertxTestBase {
   @Rule
   public TemporaryFolder testFolder = new TemporaryFolder();
 
+  @Override
   public void setUp() throws Exception {
     super.setUp();
     if (USE_DOMAIN_SOCKETS) {
@@ -139,6 +142,7 @@ public class NetTest extends VertxTestBase {
     return options;
   }
 
+  @Override
   protected void tearDown() throws Exception {
     if (tmp != null) {
       tmp.delete();
@@ -249,7 +253,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(options, options.setSslEngineOptions(new JdkSSLEngineOptions()));
     assertTrue(options.getSslEngineOptions() instanceof JdkSSLEngineOptions);
 
-    assertEquals(TCPSSLOptions.DEFAULT_SSL_HANDSHAKE_TIMEOUT, options.getSslHandshakeTimeout());
+    assertEquals(SSLOptions.DEFAULT_SSL_HANDSHAKE_TIMEOUT, options.getSslHandshakeTimeout());
     long randLong = TestUtils.randomPositiveLong();
     assertEquals(options, options.setSslHandshakeTimeout(randLong));
     assertEquals(randLong, options.getSslHandshakeTimeout());
@@ -357,7 +361,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(options, options.setSni(true));
     assertTrue(options.isSni());
 
-    assertEquals(TCPSSLOptions.DEFAULT_SSL_HANDSHAKE_TIMEOUT, options.getSslHandshakeTimeout());
+    assertEquals(SSLOptions.DEFAULT_SSL_HANDSHAKE_TIMEOUT, options.getSslHandshakeTimeout());
     long randomSslTimeout = TestUtils.randomPositiveLong();
     assertEquals(options, options.setSslHandshakeTimeout(randomSslTimeout));
     assertEquals(randomSslTimeout, options.getSslHandshakeTimeout());
@@ -1975,8 +1979,8 @@ public class NetTest extends VertxTestBase {
     int numConnections = numServers * (domainSocket ? 10 : 20);
 
     List<NetServer> servers = new ArrayList<>();
-    Set<NetServer> connectedServers = new ConcurrentHashSet<>();
-    Set<Thread> threads = new ConcurrentHashSet<>();
+    Set<NetServer> connectedServers = ConcurrentHashMap.newKeySet();
+    Set<Thread> threads = ConcurrentHashMap.newKeySet();
 
     Future<String> listenLatch = vertx.deployVerticle(() -> new AbstractVerticle() {
       NetServer server;
@@ -2105,7 +2109,7 @@ public class NetTest extends VertxTestBase {
 
     int numConnections = 10;
 
-    Set<String> connections = new ConcurrentHashSet<>();
+    Set<String> connections = ConcurrentHashMap.newKeySet();
     server.connectHandler(socket -> {
       connections.add(socket.writeHandlerID());
       if (connections.size() == numConnections) {
@@ -2411,12 +2415,10 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testAttemptConnectAfterClose() {
     client.close();
-    try {
-      client.connect(testAddress);
-      fail("Should throw exception");
-    } catch (IllegalStateException e) {
-      //OK
-    }
+    client.connect(testAddress).onComplete(onFailure(err -> {
+      testComplete();
+    }));
+    await();
   }
 
   @Test
@@ -2552,7 +2554,7 @@ public class NetTest extends VertxTestBase {
     }));
     awaitLatch(listenLatch);
 
-    Set<Context> contexts = new ConcurrentHashSet<>();
+    Set<Context> contexts = ConcurrentHashMap.newKeySet();
     AtomicInteger connectCount = new AtomicInteger();
     CountDownLatch clientLatch = new CountDownLatch(1);
     // Each connect should be in its own context
@@ -3158,14 +3160,70 @@ public class NetTest extends VertxTestBase {
    * Test that NetSocket.upgradeToSsl() should fail the handler if no TLS configuration was set.
    */
   @Test
-  public void testUpgradeToSSLIncorrectClientOptions() {
+  public void testUpgradeToSSLIncorrectClientOptions1() {
+    NetClient client = vertx.createNetClient();
+    try {
+      testUpgradeToSSLIncorrectClientOptions(() -> client.connect(4043, "127.0.0.1"));
+    } finally {
+      client.close();
+    }
+  }
+
+  /**
+   * Test that NetSocket.upgradeToSsl() should fail the handler if no TLS configuration was set.
+   */
+  @Test
+  public void testUpgradeToSSLIncorrectClientOptions2() {
+    NetClient client = vertx.createNetClient();
+    try {
+      testUpgradeToSSLIncorrectClientOptions(() -> client.connect(new ConnectOptions().setPort(4043).setHost("127.0.0.1")));
+    } finally {
+      client.close();
+    }
+  }
+
+  /**
+   * Test that NetSocket.upgradeToSsl() should fail the handler if no TLS configuration was set.
+   */
+  private void testUpgradeToSSLIncorrectClientOptions(Supplier<Future<NetSocket>> connect) {
     server.close();
     server = vertx.createNetServer(new NetServerOptions().setSsl(true).setPort(4043)
       .setKeyCertOptions(Cert.SERVER_JKS_ROOT_CA.get()));
-    NetClient client = vertx.createNetClient();
     server.connectHandler(ns -> {}).listen().onComplete(onSuccess(v -> {
-      client.connect(4043, "127.0.0.1").onComplete(onSuccess(ns -> {
-        ns.upgradeToSsl().onComplete(onFailure(err -> client.close().onComplete(onSuccess(s -> testComplete()))));
+      connect.get().onComplete(onSuccess(ns -> {
+        ns.upgradeToSsl().onComplete(onFailure(err -> {
+          assertTrue(err.getMessage().contains("Missing SSL options"));
+          testComplete();
+        }));
+      }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testOverrideClientSSLOptions() {
+    waitFor(4);
+    server.close();
+    server = vertx.createNetServer(new NetServerOptions().setSsl(true).setPort(4043)
+      .setKeyCertOptions(Cert.SERVER_JKS.get()));
+    server.connectHandler(ns -> {
+      complete();
+    }).listen().onComplete(onSuccess(v -> {
+      NetClient client = vertx.createNetClient(new NetClientOptions().setTrustOptions(Trust.CLIENT_JKS.get()));
+      client.connect(4043, "localhost").onComplete(onSuccess(ns -> {
+        ns.upgradeToSsl().onComplete(onFailure(err -> {
+          ClientSSLOptions sslOptions = new ClientSSLOptions().setTrustOptions(Trust.SERVER_JKS.get());
+          client.connect(4043, "localhost").onComplete(onSuccess(ns2 -> {
+            ns2.upgradeToSsl(sslOptions).onComplete(onSuccess(v2 -> {
+              complete();
+            }));
+          }));
+          client.connect(new ConnectOptions().setPort(4043).setHost("localhost").setSslOptions(sslOptions)).onComplete(onSuccess(ns2 -> {
+            ns2.upgradeToSsl().onComplete(onSuccess(v2 -> {
+              complete();
+            }));
+          }));
+        }));
       }));
     }));
     await();
@@ -3406,20 +3464,15 @@ public class NetTest extends VertxTestBase {
       .setSslEngineOptions(new JdkSSLEngineOptions() {
         @Override
         public SslContextFactory sslContextFactory() {
-          return new SslContextFactory() {
-            @Override
-            public SslContext create() {
-              return new JdkSslContext(
-                sslContext,
-                true,
-                null,
-                IdentityCipherSuiteFilter.INSTANCE,
-                ApplicationProtocolConfig.DISABLED,
-                io.netty.handler.ssl.ClientAuth.NONE,
-                null,
-                false);
-            }
-          };
+          return () -> new JdkSslContext(
+            sslContext,
+            true,
+            null,
+            IdentityCipherSuiteFilter.INSTANCE,
+            ApplicationProtocolConfig.DISABLED,
+            io.netty.handler.ssl.ClientAuth.NONE,
+            null,
+            false);
         }
       }));
 

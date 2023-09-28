@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -396,7 +397,7 @@ public class FutureTest extends FutureTestBase {
     Future<Integer> c = p.future();
     Promise<String> p3 = Promise.promise();
     Future<String> f3 = p3.future();
-    Future<String> f4 = f3.eventually(v -> {
+    Future<String> f4 = f3.eventually(() -> {
       cnt.incrementAndGet();
       return c;
     });
@@ -425,7 +426,7 @@ public class FutureTest extends FutureTestBase {
     Future<Integer> c = p.future();
     Promise<String> p3 = Promise.promise();
     Future<String> f3 = p3.future();
-    Future<String> f4 = f3.eventually(v -> {
+    Future<String> f4 = f3.eventually(() -> {
       cnt.incrementAndGet();
       return c;
     });
@@ -823,7 +824,7 @@ public class FutureTest extends FutureTestBase {
       public boolean failed() { throw new UnsupportedOperationException(); }
       public <U> Future<U> compose(Function<T, Future<U>> successMapper, Function<Throwable, Future<U>> failureMapper) { throw new UnsupportedOperationException(); }
       public <U> Future<U> transform(Function<AsyncResult<T>, Future<U>> mapper) { throw new UnsupportedOperationException(); }
-      public <U> Future<T> eventually(Function<Void, Future<U>> mapper) { throw new UnsupportedOperationException(); }
+      public <U> Future<T> eventually(Supplier<Future<U>> mapper) { throw new UnsupportedOperationException(); }
       public <U> Future<U> map(Function<T, U> mapper) { throw new UnsupportedOperationException(); }
       public <V> Future<V> map(V value) { throw new UnsupportedOperationException(); }
       public Future<T> otherwise(Function<Throwable, T> mapper) { throw new UnsupportedOperationException(); }
@@ -1303,13 +1304,20 @@ public class FutureTest extends FutureTestBase {
 
   @Test
   public void testSuccessNotification() {
-    waitFor(2);
+    waitFor(3);
     Promise<String> promise = Promise.promise();
     Future<String> fut = promise.future();
     fut.onComplete(onSuccess(res -> {
       assertEquals("foo", res);
       complete();
     }));
+    fut.onComplete(
+      res -> {
+        assertEquals("foo", res);
+        complete();
+      },
+      err -> fail()
+    );
     fut.onSuccess(res -> {
       assertEquals("foo", res);
       complete();
@@ -1323,7 +1331,7 @@ public class FutureTest extends FutureTestBase {
 
   @Test
   public void testFailureNotification() {
-    waitFor(2);
+    waitFor(3);
     Promise<String> promise = Promise.promise();
     Future<String> fut = promise.future();
     Throwable failure = new Throwable();
@@ -1331,6 +1339,13 @@ public class FutureTest extends FutureTestBase {
       assertEquals(failure, err);
       complete();
     }));
+    fut.onComplete(
+      res -> fail(),
+      err -> {
+        assertEquals(failure, err);
+        complete();
+      }
+    );
     fut.onSuccess(res -> {
       fail();
     });

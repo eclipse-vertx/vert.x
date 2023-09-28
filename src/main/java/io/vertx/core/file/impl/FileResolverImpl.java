@@ -50,7 +50,6 @@ public class FileResolverImpl implements FileResolver {
   private static final boolean NON_UNIX_FILE_SEP = File.separatorChar != '/';
   private static final String JAR_URL_SEP = "!/";
 
-  private final File cwd;
   private final boolean enableCaching;
   private final boolean enableCPResolving;
   private final FileCache cache;
@@ -67,13 +66,6 @@ public class FileResolverImpl implements FileResolver {
       cache = FileCache.setupCache(fileSystemOptions.getFileCacheDir());
     } else {
       cache = null;
-    }
-
-    String cwdOverride = System.getProperty("vertx.cwd");
-    if (cwdOverride != null) {
-      cwd = new File(cwdOverride).getAbsoluteFile();
-    } else {
-      cwd = null;
     }
   }
 
@@ -102,20 +94,14 @@ public class FileResolverImpl implements FileResolver {
   public File resolveFile(String fileName) {
     // First look for file with that name on disk
     File file = new File(fileName);
-    File resolved;
     boolean absolute = file.isAbsolute();
 
-    if (cwd != null && !absolute) {
-      resolved = new File(cwd, fileName);
-    } else {
-      resolved = file;
-    }
     if (this.cache == null) {
-      return resolved;
+      return file;
     }
     // We need to synchronized here to avoid 2 different threads to copy the file to the cache directory and so
     // corrupting the content.
-    if (!resolved.exists()) {
+    if (!file.exists()) {
       synchronized (cache) {
         // When an absolute file is here, if it falls under the cache directory, then it should be made relative as it
         // could mean that a previous resolution has been used to resolve a non local file system resource

@@ -14,7 +14,6 @@ package io.vertx.core.net.impl;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
-import io.netty.channel.EventLoopGroup;
 import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
@@ -27,17 +26,10 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.NetServer;
-import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.net.NetSocket;
-import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.TrafficShapingOptions;
+import io.vertx.core.net.*;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
-import io.vertx.core.streams.ReadStream;
-
-import java.util.function.BiConsumer;
 
 /**
  *
@@ -122,7 +114,7 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
   }
 
   @Override
-  protected BiConsumer<Channel, SslChannelProvider> childHandler(ContextInternal context, SocketAddress socketAddress, GlobalTrafficShapingHandler trafficShapingHandler) {
+  protected Worker childHandler(ContextInternal context, SocketAddress socketAddress, GlobalTrafficShapingHandler trafficShapingHandler) {
     return new NetServerWorker(context, handler, exceptionHandler, trafficShapingHandler);
   }
 
@@ -156,7 +148,7 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
     return !isListening();
   }
 
-  private class NetServerWorker implements BiConsumer<Channel, SslChannelProvider> {
+  private class NetServerWorker implements Worker {
 
     private final ContextInternal context;
     private final Handler<NetSocket> connectionHandler;
@@ -171,7 +163,7 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
     }
 
     @Override
-    public void accept(Channel ch, SslChannelProvider sslChannelProvider) {
+    public void accept(Channel ch, SslChannelProvider sslChannelProvider, SSLHelper sslHelper, ServerSSLOptions sslOptions) {
       if (!NetServerImpl.this.accept()) {
         ch.close();
         return;
@@ -191,31 +183,31 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
             if (idle != null) {
               ch.pipeline().remove(idle);
             }
-            configurePipeline(future.getNow(), sslChannelProvider);
+            configurePipeline(future.getNow(), sslChannelProvider, sslHelper, sslOptions);
           } else {
             //No need to close the channel.HAProxyMessageDecoder already did
             handleException(future.cause());
           }
         });
       } else {
-        configurePipeline(ch, sslChannelProvider);
+        configurePipeline(ch, sslChannelProvider, sslHelper, sslOptions);
       }
     }
 
-    private void configurePipeline(Channel ch, SslChannelProvider sslChannelProvider) {
+    private void configurePipeline(Channel ch, SslChannelProvider sslChannelProvider, SSLHelper sslHelper, SSLOptions sslOptions) {
       if (options.isSsl()) {
-        ch.pipeline().addLast("ssl", sslChannelProvider.createServerHandler());
+        ch.pipeline().addLast("ssl", sslChannelProvider.createServerHandler(options.isUseAlpn(), options.getSslHandshakeTimeout(), options.getSslHandshakeTimeoutUnit()));
         ChannelPromise p = ch.newPromise();
         ch.pipeline().addLast("handshaker", new SslHandshakeCompletionHandler(p));
         p.addListener(future -> {
           if (future.isSuccess()) {
-            connected(ch, sslChannelProvider);
+            connected(ch, sslHelper, sslOptions);
           } else {
             handleException(future.cause());
           }
         });
       } else {
-        connected(ch, sslChannelProvider);
+        connected(ch, sslHelper, sslOptions);
       }
       if (trafficShapingHandler != null) {
         ch.pipeline().addFirst("globalTrafficShaping", trafficShapingHandler);
@@ -228,10 +220,10 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
       }
     }
 
-    private void connected(Channel ch, SslChannelProvider sslChannelProvider) {
+    private void connected(Channel ch, SSLHelper sslHelper, SSLOptions sslOptions) {
       NetServerImpl.this.initChannel(ch.pipeline(), options.isSsl());
       TCPMetrics<?> metrics = getMetrics();
-      VertxHandler<NetSocketImpl> handler = VertxHandler.create(ctx -> new NetSocketImpl(context, ctx, sslChannelProvider, metrics, options.isRegisterWriteHandler()));
+      VertxHandler<NetSocketImpl> handler = VertxHandler.create(ctx -> new NetSocketImpl(context, ctx, sslHelper, sslOptions, metrics, options.isRegisterWriteHandler()));
       handler.removeHandler(NetSocketImpl::unregisterEventBusHandler);
       handler.addHandler(conn -> {
         if (metrics != null) {
@@ -257,54 +249,6 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
     int writeIdleTimeout = options.getWriteIdleTimeout();
     if (idleTimeout > 0 || readIdleTimeout > 0 || writeIdleTimeout > 0) {
       pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, options.getIdleTimeoutUnit()));
-    }
-  }
-
-  /*
-          Needs to be protected using the NetServerImpl monitor as that protects the listening variable
-          In practice synchronized overhead should be close to zero assuming most access is from the same thread due
-          to biased locks
-        */
-  private class NetSocketStream implements ReadStream<NetSocket> {
-
-
-
-    @Override
-    public NetSocketStream handler(Handler<NetSocket> handler) {
-      connectHandler(handler);
-      return this;
-    }
-
-    @Override
-    public NetSocketStream pause() {
-      pauseAccepting();
-      return this;
-    }
-
-    @Override
-    public NetSocketStream resume() {
-      resumeAccepting();
-      return this;
-    }
-
-    @Override
-    public ReadStream<NetSocket> fetch(long amount) {
-      fetchAccepting(amount);
-      return this;
-    }
-
-    @Override
-    public NetSocketStream endHandler(Handler<Void> handler) {
-      synchronized (NetServerImpl.this) {
-        endHandler = handler;
-        return this;
-      }
-    }
-
-    @Override
-    public NetSocketStream exceptionHandler(Handler<Throwable> handler) {
-      // Should we use it in the server close exception handler ?
-      return this;
     }
   }
 }

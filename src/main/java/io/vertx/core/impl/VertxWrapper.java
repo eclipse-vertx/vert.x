@@ -17,7 +17,6 @@ import io.vertx.core.Closeable;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Promise;
 import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
 import io.vertx.core.datagram.DatagramSocket;
@@ -26,10 +25,7 @@ import io.vertx.core.dns.DnsClient;
 import io.vertx.core.dns.DnsClientOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.file.FileSystem;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.impl.btc.BlockedThreadChecker;
 import io.vertx.core.impl.future.PromiseInternal;
@@ -49,11 +45,13 @@ import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.io.File;
+import java.lang.ref.Cleaner;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -269,6 +267,11 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
+  public Throwable unavailableNativeTransportCause() {
+    return delegate.unavailableNativeTransportCause();
+  }
+
+  @Override
   public Vertx exceptionHandler(Handler<Throwable> handler) {
     return delegate.exceptionHandler(handler);
   }
@@ -344,6 +347,11 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
+  public Cleaner cleaner() {
+    return delegate.cleaner();
+  }
+
+  @Override
   public <C> C createSharedResource(String resourceKey, String resourceName, CloseFuture closeFuture, Function<CloseFuture, C> supplier) {
     return delegate.createSharedResource(resourceKey, resourceName, closeFuture, supplier);
   }
@@ -354,27 +362,27 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public EventLoopContext createEventLoopContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
+  public ContextInternal createEventLoopContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
     return delegate.createEventLoopContext(deployment, closeFuture, workerPool, tccl);
   }
 
   @Override
-  public EventLoopContext createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
+  public ContextInternal createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
     return delegate.createEventLoopContext(eventLoop, workerPool, tccl);
   }
 
   @Override
-  public EventLoopContext createEventLoopContext() {
+  public ContextInternal createEventLoopContext() {
     return delegate.createEventLoopContext();
   }
 
   @Override
-  public WorkerContext createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool pool, ClassLoader tccl) {
+  public ContextInternal createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool pool, ClassLoader tccl) {
     return delegate.createWorkerContext(deployment, closeFuture, pool, tccl);
   }
 
   @Override
-  public WorkerContext createWorkerContext() {
+  public ContextInternal createWorkerContext() {
     return delegate.createWorkerContext();
   }
 
@@ -401,6 +409,11 @@ public abstract class VertxWrapper implements VertxInternal {
   @Override
   public WorkerPool createSharedWorkerPool(String name, int poolSize, long maxExecuteTime, TimeUnit maxExecuteTimeUnit) {
     return delegate.createSharedWorkerPool(name, poolSize, maxExecuteTime, maxExecuteTimeUnit);
+  }
+
+  @Override
+  public WorkerPool wrapWorkerPool(ExecutorService executor) {
+    return delegate.wrapWorkerPool(executor);
   }
 
   @Override

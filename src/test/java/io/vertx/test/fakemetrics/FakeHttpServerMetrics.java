@@ -15,12 +15,12 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.WebSocketBase;
-import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.observability.HttpRequest;
 import io.vertx.core.spi.observability.HttpResponse;
 
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -30,7 +30,7 @@ import java.util.concurrent.ConcurrentMap;
 public class FakeHttpServerMetrics extends FakeTCPMetrics implements HttpServerMetrics<HttpServerMetric, WebSocketMetric, SocketMetric> {
 
   private final ConcurrentMap<WebSocketBase, WebSocketMetric> webSockets = new ConcurrentHashMap<>();
-  private final ConcurrentHashSet<HttpServerMetric> requests = new ConcurrentHashSet<>();
+  private final Set<HttpServerMetric> requests = ConcurrentHashMap.newKeySet();
 
   public WebSocketMetric getWebSocketMetric(ServerWebSocket ws) {
     return webSockets.get(ws);

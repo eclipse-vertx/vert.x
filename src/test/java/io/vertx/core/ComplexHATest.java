@@ -11,10 +11,6 @@
 
 package io.vertx.core;
 
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
-import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.Deployment;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
@@ -29,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -40,11 +37,12 @@ import java.util.function.BooleanSupplier;
  */
 public class ComplexHATest extends VertxTestBase {
 
+  @Override
   protected ClusterManager getClusterManager() {
     return new FakeClusterManager();
   }
 
-  private Random random = new Random();
+  private final Random random = new Random();
 
   protected final int maxVerticlesPerNode = 20;
   protected Set<Deployment>[] deploymentSnapshots;
@@ -52,6 +50,7 @@ public class ComplexHATest extends VertxTestBase {
   protected volatile int killedNode;
   protected List<Integer> aliveNodes;
 
+  @Override
   public void setUp() throws Exception {
     super.setUp();
     deploymentSnapshots = null;
@@ -162,7 +161,7 @@ public class ComplexHATest extends VertxTestBase {
   }
 
   protected Set<Deployment> takeDeploymentSnapshot(int pos) {
-    Set<Deployment> snapshot = new ConcurrentHashSet<>();
+    Set<Deployment> snapshot = ConcurrentHashMap.newKeySet();
     VertxInternal v = (VertxInternal)vertices[pos];
     for (String depID: v.deploymentIDs()) {
       snapshot.add(v.getDeployment(depID));

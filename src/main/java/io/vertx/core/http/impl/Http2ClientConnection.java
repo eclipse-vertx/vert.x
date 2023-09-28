@@ -27,8 +27,8 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.future.PromiseInternal;
+import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.tracing.SpanKind;
@@ -43,20 +43,28 @@ import java.util.function.BiConsumer;
  */
 class Http2ClientConnection extends Http2ConnectionBase implements HttpClientConnection {
 
-  private final HttpClientImpl client;
+  private final HttpClientBase client;
   private final ClientMetrics metrics;
+  private final HostAndPort authority;
   private Handler<Void> evictionHandler = DEFAULT_EVICTION_HANDLER;
   private Handler<Long> concurrencyChangeHandler = DEFAULT_CONCURRENCY_CHANGE_HANDLER;
   private long expirationTimestamp;
   private boolean evicted;
 
-  Http2ClientConnection(HttpClientImpl client,
-                        EventLoopContext context,
+  Http2ClientConnection(HttpClientBase client,
+                        ContextInternal context,
+                        HostAndPort authority,
                         VertxHttp2ConnectionHandler connHandler,
                         ClientMetrics metrics) {
     super(context, connHandler);
     this.metrics = metrics;
     this.client = client;
+    this.authority = authority;
+  }
+
+  @Override
+  public HostAndPort authority() {
+    return authority;
   }
 
   @Override
@@ -665,11 +673,12 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   public static VertxHttp2ConnectionHandler<Http2ClientConnection> createHttp2ConnectionHandler(
-    HttpClientImpl client,
+    HttpClientBase client,
     ClientMetrics metrics,
-    EventLoopContext context,
+    ContextInternal context,
     boolean upgrade,
-    Object socketMetric) {
+    Object socketMetric,
+    HostAndPort authority) {
     HttpClientOptions options = client.options();
     HttpClientMetrics met = client.metrics();
     VertxHttp2ConnectionHandler<Http2ClientConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ClientConnection>()
@@ -678,7 +687,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       .gracefulShutdownTimeoutMillis(0) // So client close tests don't hang 30 seconds - make this configurable later but requires HTTP/1 impl
       .initialSettings(client.options().getInitialSettings())
       .connectionFactory(connHandler -> {
-        Http2ClientConnection conn = new Http2ClientConnection(client, context, connHandler, metrics);
+        Http2ClientConnection conn = new Http2ClientConnection(client, context, authority, connHandler, metrics);
         if (metrics != null) {
           Object m = socketMetric;
           conn.metric(m);

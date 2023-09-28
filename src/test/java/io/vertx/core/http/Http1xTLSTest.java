@@ -29,7 +29,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -203,17 +202,19 @@ public class Http1xTLSTest extends HttpTLSTest {
     List<String> expected = Arrays.asList("chunk-1", "chunk-2", "chunk-3");
     HttpClientOptions options = new HttpClientOptions()
       .setEnabledSecureTransportProtocols(Collections.singleton("TLSv1.2"))
-      .setMaxPoolSize(num)
       .setSsl(true)
       .setTrustAll(true);
-    client.close();
-    client = vertx.createHttpClient(options);
     AtomicInteger connCount = new AtomicInteger();
     List<String> sessionIds = Collections.synchronizedList(new ArrayList<>());
-    client.connectionHandler(conn -> {
-      sessionIds.add(ByteBufUtil.hexDump(conn.sslSession().getId()));
-      connCount.incrementAndGet();
-    });
+    client.close();
+    client = vertx.httpClientBuilder()
+      .with(options)
+      .with(new PoolOptions().setHttp1MaxSize(num))
+      .withConnectHandler(conn -> {
+        sessionIds.add(ByteBufUtil.hexDump(conn.sslSession().getId()));
+        connCount.incrementAndGet();
+      })
+      .build();
     CountDownLatch listenLatch = new CountDownLatch(1);
     vertx.deployVerticle(() -> new AbstractVerticle() {
       HttpServer server;

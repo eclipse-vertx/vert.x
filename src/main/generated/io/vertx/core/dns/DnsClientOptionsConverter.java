@@ -20,9 +20,9 @@ public class DnsClientOptionsConverter {
   public static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, DnsClientOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
-        case "activityLogFormat":
-          if (member.getValue() instanceof String) {
-            obj.setActivityLogFormat(io.netty.handler.logging.ByteBufFormat.valueOf((String)member.getValue()));
+        case "port":
+          if (member.getValue() instanceof Number) {
+            obj.setPort(((Number)member.getValue()).intValue());
           }
           break;
         case "host":
@@ -30,19 +30,19 @@ public class DnsClientOptionsConverter {
             obj.setHost((String)member.getValue());
           }
           break;
+        case "queryTimeout":
+          if (member.getValue() instanceof Number) {
+            obj.setQueryTimeout(((Number)member.getValue()).longValue());
+          }
+          break;
         case "logActivity":
           if (member.getValue() instanceof Boolean) {
             obj.setLogActivity((Boolean)member.getValue());
           }
           break;
-        case "port":
-          if (member.getValue() instanceof Number) {
-            obj.setPort(((Number)member.getValue()).intValue());
-          }
-          break;
-        case "queryTimeout":
-          if (member.getValue() instanceof Number) {
-            obj.setQueryTimeout(((Number)member.getValue()).longValue());
+        case "activityLogFormat":
+          if (member.getValue() instanceof String) {
+            obj.setActivityLogFormat(io.netty.handler.logging.ByteBufFormat.valueOf((String)member.getValue()));
           }
           break;
         case "recursionDesired":
@@ -59,15 +59,15 @@ public class DnsClientOptionsConverter {
   }
 
   public static void toJson(DnsClientOptions obj, java.util.Map<String, Object> json) {
-    if (obj.getActivityLogFormat() != null) {
-      json.put("activityLogFormat", obj.getActivityLogFormat().name());
-    }
+    json.put("port", obj.getPort());
     if (obj.getHost() != null) {
       json.put("host", obj.getHost());
     }
-    json.put("logActivity", obj.getLogActivity());
-    json.put("port", obj.getPort());
     json.put("queryTimeout", obj.getQueryTimeout());
+    json.put("logActivity", obj.getLogActivity());
+    if (obj.getActivityLogFormat() != null) {
+      json.put("activityLogFormat", obj.getActivityLogFormat().name());
+    }
     json.put("recursionDesired", obj.isRecursionDesired());
   }
 }

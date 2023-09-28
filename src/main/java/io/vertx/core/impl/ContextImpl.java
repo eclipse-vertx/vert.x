@@ -12,7 +12,6 @@
 package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.Future;
 import io.vertx.core.impl.logging.Logger;
@@ -29,19 +28,21 @@ import java.util.concurrent.*;
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class ContextBase implements ContextInternal {
+public final class ContextImpl implements ContextInternal {
 
-  private static final Logger log = LoggerFactory.getLogger(ContextBase.class);
+  private static final Logger log = LoggerFactory.getLogger(ContextImpl.class);
 
   private static final String DISABLE_TIMINGS_PROP_NAME = "vertx.disableContextTimings";
   static final boolean DISABLE_TIMINGS = Boolean.getBoolean(DISABLE_TIMINGS_PROP_NAME);
 
+  private final boolean isEventLoop;
   private final VertxInternal owner;
   private final JsonObject config;
   private final Deployment deployment;
   private final CloseFuture closeFuture;
   private final ClassLoader tccl;
   private final EventLoop eventLoop;
+  private final EventExecutor executor;
   private ConcurrentMap<Object, Object> data;
   private ConcurrentMap<Object, Object> localData;
   private volatile Handler<Throwable> exceptionHandler;
@@ -50,22 +51,27 @@ public abstract class ContextBase implements ContextInternal {
   final WorkerPool workerPool;
   final TaskQueue orderedTasks;
 
-  protected ContextBase(VertxInternal vertx,
+  protected ContextImpl(VertxInternal vertx,
+                        boolean isEventLoop,
                         EventLoop eventLoop,
+                        EventExecutor executor,
                         WorkerPool internalWorkerPool,
                         WorkerPool workerPool,
+                        TaskQueue orderedTasks,
                         Deployment deployment,
                         CloseFuture closeFuture,
                         ClassLoader tccl) {
+    this.isEventLoop = isEventLoop;
     this.deployment = deployment;
     this.config = deployment != null ? deployment.config() : new JsonObject();
     this.eventLoop = eventLoop;
+    this.executor = executor;
     this.tccl = tccl;
     this.owner = vertx;
     this.workerPool = workerPool;
     this.closeFuture = closeFuture;
     this.internalWorkerPool = internalWorkerPool;
-    this.orderedTasks = new TaskQueue();
+    this.orderedTasks = orderedTasks;
     this.internalOrderedTasks = new TaskQueue();
   }
 
@@ -107,23 +113,23 @@ public abstract class ContextBase implements ContextInternal {
   }
 
   @Override
+  public EventExecutor executor() {
+    return executor;
+  }
+
+  @Override
   public boolean isEventLoopContext() {
-    return false;
+    return isEventLoop;
   }
 
   @Override
   public boolean isWorkerContext() {
-    return false;
-  }
-
-  @Override
-  public Executor executor() {
-    return null;
+    return !isEventLoop;
   }
 
   @Override
   public boolean inThread() {
-    return false;
+    return executor.inThread();
   }
 
   @Override
@@ -232,33 +238,67 @@ public abstract class ContextBase implements ContextInternal {
     return exceptionHandler;
   }
 
-  @Override
-  public final void runOnContext(Handler<Void> action) {
-    runOnContext(this, action);
+  protected void runOnContext(ContextInternal ctx, Handler<Void> action) {
+    try {
+      Executor exec = ctx.executor();
+      exec.execute(() -> ctx.dispatch(action));
+    } catch (RejectedExecutionException ignore) {
+      // Pool is already shut down
+    }
   }
-
-  protected abstract void runOnContext(ContextInternal ctx, Handler<Void> action);
 
   @Override
   public void execute(Runnable task) {
     execute(this, task);
   }
 
-  protected abstract <T> void execute(ContextInternal ctx, Runnable task);
-
   @Override
   public final <T> void execute(T argument, Handler<T> task) {
     execute(this, argument, task);
   }
 
-  protected abstract <T> void execute(ContextInternal ctx, T argument, Handler<T> task);
+  protected void execute(ContextInternal ctx, Runnable task) {
+    if (inThread()) {
+      task.run();
+    } else {
+      executor.execute(task);
+    }
+  }
+
+  /**
+   * <ul>
+   *   <li>When the current thread is event-loop thread of this context the implementation will execute the {@code task} directly</li>
+   *   <li>When the current thread is a worker thread of this context the implementation will execute the {@code task} directly</li>
+   *   <li>Otherwise the task will be scheduled on the context thread for execution</li>
+   * </ul>
+   */
+  protected <T> void execute(ContextInternal ctx, T argument, Handler<T> task) {
+    if (inThread()) {
+      task.handle(argument);
+    } else {
+      executor.execute(() -> task.handle(argument));
+    }
+  }
 
   @Override
   public <T> void emit(T argument, Handler<T> task) {
     emit(this, argument, task);
   }
 
-  protected abstract <T> void emit(ContextInternal ctx, T argument, Handler<T> task);
+  protected <T> void emit(ContextInternal ctx, T argument, Handler<T> task) {
+    if (inThread()) {
+      ContextInternal prev = ctx.beginDispatch();
+      try {
+        task.handle(argument);
+      } catch (Throwable t) {
+        reportException(t);
+      } finally {
+        ctx.endDispatch(prev);
+      }
+    } else {
+      executor.execute(() -> emit(ctx, argument, task));
+    }
+  }
 
   @Override
   public ContextInternal duplicate() {

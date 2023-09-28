@@ -31,8 +31,7 @@ import io.vertx.core.eventbus.impl.EventBusInternal;
 import io.vertx.core.eventbus.impl.clustered.ClusteredEventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.CleanableHttpClient;
-import io.vertx.core.http.impl.HttpClientInternal;
+import io.vertx.core.http.impl.*;
 import io.vertx.core.impl.btc.BlockedThreadChecker;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.*;
@@ -40,12 +39,10 @@ import io.vertx.core.impl.transports.JDKTransport;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.file.impl.FileSystemImpl;
 import io.vertx.core.file.impl.WindowsFileSystem;
-import io.vertx.core.http.impl.HttpClientImpl;
-import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
-import io.vertx.core.impl.resolver.DnsResolverProvider;
+import io.vertx.core.dns.impl.DnsAddressResolverProvider;
 import io.vertx.core.spi.transport.Transport;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.shareddata.impl.SharedDataImpl;
@@ -328,6 +325,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
+  public Cleaner cleaner() {
+    return cleaner;
+  }
+
+  @Override
   public boolean isNativeTransportEnabled() {
     return !(transport instanceof JDKTransport);
   }
@@ -352,26 +354,47 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return new HttpServerImpl(this, serverOptions);
   }
 
-  public HttpClient createHttpClient(HttpClientOptions options) {
-    CloseFuture cf = resolveCloseFuture();
-    HttpClient client;
+  @Override
+  public WebSocketClient createWebSocketClient(WebSocketClientOptions options) {
+    HttpClientOptions o = new HttpClientOptions(options);
+    o.setDefaultHost(options.getDefaultHost());
+    o.setDefaultPort(options.getDefaultPort());
+    o.setVerifyHost(options.isVerifyHost());
+    o.setShared(options.isShared());
+    o.setName(options.getName());    CloseFuture cf = resolveCloseFuture();
+    WebSocketClient client;
     Closeable closeable;
     if (options.isShared()) {
       CloseFuture closeFuture = new CloseFuture();
-      client = createSharedResource("__vertx.shared.httpClients", options.getName(), closeFuture, cf_ -> {
-        HttpClientImpl impl = new HttpClientImpl(this, options);
+      client = createSharedResource("__vertx.shared.webSocketClients", options.getName(), closeFuture, cf_ -> {
+        WebSocketClientImpl impl = new WebSocketClientImpl(this, o, options);
         cf_.add(completion -> impl.close().onComplete(completion));
         return impl;
       });
-      client = new CleanableHttpClient((HttpClientInternal) client, cleaner, (timeout, timeunit) -> closeFuture.close());
+      client = new CleanableWebSocketClient(client, cleaner, (timeout, timeunit) -> closeFuture.close());
       closeable = closeFuture;
     } else {
-      HttpClientImpl impl = new HttpClientImpl(this, options);
+      WebSocketClientImpl impl = new WebSocketClientImpl(this, o, options);
       closeable = impl;
-      client = new CleanableHttpClient(impl, cleaner, impl::close);
+      client = new CleanableWebSocketClient(impl, cleaner, impl::shutdown);
     }
     cf.add(closeable);
     return client;
+  }
+
+  @Override
+  public HttpClient createHttpClient(HttpClientOptions options) {
+    return createHttpClient(options, new PoolOptions());
+  }
+
+  @Override
+  public HttpClient createHttpClient(PoolOptions poolOptions) {
+    return createHttpClient(new HttpClientOptions(), poolOptions);
+  }
+
+  @Override
+  public HttpClientBuilder httpClientBuilder() {
+    return new HttpClientBuilderImpl(this);
   }
 
   public EventBus eventBus() {
@@ -478,28 +501,34 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
   }
 
-  @Override
-  public EventLoopContext createEventLoopContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
-    return new EventLoopContext(this, eventLoopGroup.next(), internalWorkerPool, workerPool != null ? workerPool : this.workerPool, deployment, closeFuture, disableTCCL ? null : tccl);
+  private ContextImpl createEventLoopContext(EventLoop eventLoop, CloseFuture closeFuture, WorkerPool workerPool, Deployment deployment, ClassLoader tccl) {
+    return new ContextImpl(this, true, eventLoop, new EventLoopExecutor(eventLoop), internalWorkerPool, workerPool != null ? workerPool : this.workerPool, new TaskQueue(), deployment, closeFuture, disableTCCL ? null : tccl);
   }
 
   @Override
-  public EventLoopContext createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
-    return new EventLoopContext(this, eventLoop, internalWorkerPool, workerPool != null ? workerPool : this.workerPool, null, closeFuture, disableTCCL ? tccl : null);
+  public ContextImpl createEventLoopContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
+    return createEventLoopContext(eventLoopGroup.next(), closeFuture, workerPool, deployment, tccl);
   }
 
   @Override
-  public EventLoopContext createEventLoopContext() {
+  public ContextImpl createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
+    return createEventLoopContext(eventLoop, closeFuture, workerPool, null, tccl);
+  }
+
+  @Override
+  public ContextImpl createEventLoopContext() {
     return createEventLoopContext(null, closeFuture, null, Thread.currentThread().getContextClassLoader());
   }
 
   @Override
-  public WorkerContext createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
-    return new WorkerContext(this, internalWorkerPool, workerPool != null ? workerPool : this.workerPool, deployment, closeFuture, disableTCCL ? null : tccl);
+  public ContextImpl createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
+    TaskQueue orderedTasks = new TaskQueue();
+    WorkerPool wp = workerPool != null ? workerPool : this.workerPool;
+    return new ContextImpl(this, false, eventLoopGroup.next(), new WorkerExecutor(wp, orderedTasks), internalWorkerPool, wp, orderedTasks, deployment, closeFuture, disableTCCL ? null : tccl);
   }
 
   @Override
-  public WorkerContext createWorkerContext() {
+  public ContextImpl createWorkerContext() {
     return createWorkerContext(null, closeFuture, null, Thread.currentThread().getContextClassLoader());
   }
 
@@ -518,7 +547,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     String host = options.getHost();
     int port = options.getPort();
     if (host == null || port < 0) {
-      DnsResolverProvider provider = new DnsResolverProvider(this, addressResolverOptions);
+      DnsAddressResolverProvider provider = DnsAddressResolverProvider.create(this, addressResolverOptions);
       InetSocketAddress address = provider.nameServerAddresses().get(0);
       // provide the host and port
       options = new DnsClientOptions(options)
@@ -960,6 +989,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     };
   }
 
+  @Override
+  public WorkerPool wrapWorkerPool(ExecutorService executor) {
+    PoolMetrics workerMetrics = metrics != null ? metrics.createPoolMetrics("worker", null, -1) : null;
+    return new WorkerPool(executor, workerMetrics);
+  }
+
   private static ThreadFactory createThreadFactory(VertxThreadFactory threadFactory, BlockedThreadChecker checker, Boolean useDaemonThread, long maxExecuteTime, TimeUnit maxExecuteTimeUnit, String prefix, boolean worker) {
     AtomicInteger threadCount = new AtomicInteger(0);
     return runnable -> {
@@ -1047,7 +1082,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     if (thread instanceof VertxThread) {
       VertxThread vertxThread = (VertxThread) thread;
       prev = vertxThread.context;
-      if (!ContextBase.DISABLE_TIMINGS) {
+      if (!ContextImpl.DISABLE_TIMINGS) {
         vertxThread.executeStart();
       }
       vertxThread.context = context;
@@ -1108,7 +1143,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         }
         Thread.currentThread().setContextClassLoader(tccl);
       }
-      if (!ContextBase.DISABLE_TIMINGS) {
+      if (!ContextImpl.DISABLE_TIMINGS) {
         vertxThread.executeEnd();
       }
     } else {

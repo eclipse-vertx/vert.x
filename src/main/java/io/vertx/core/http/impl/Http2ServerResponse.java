@@ -555,7 +555,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
         checkSendHeaders(false);
         return file
           .pipeTo(this)
-          .eventually(v -> file.close());
+          .eventually(() -> file.close());
     });
   }
 

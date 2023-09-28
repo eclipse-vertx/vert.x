@@ -11,7 +11,6 @@
 
 package io.vertx.core;
 
-import io.netty.channel.EventLoopGroup;
 import io.vertx.codegen.annotations.*;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
@@ -19,13 +18,10 @@ import io.vertx.core.dns.DnsClient;
 import io.vertx.core.dns.DnsClientOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.file.FileSystem;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxBuilder;
-import io.vertx.core.impl.resolver.DnsResolverProvider;
+import io.vertx.core.dns.impl.DnsAddressResolverProvider;
 import io.vertx.core.metrics.Measured;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
@@ -167,12 +163,60 @@ public interface Vertx extends Measured {
   }
 
   /**
-   * Create a HTTP/HTTPS client using the specified options
+   * Create a WebSocket client using default options
+   *
+   * @return the client
+   */
+  default WebSocketClient createWebSocketClient() {
+    return createWebSocketClient(new WebSocketClientOptions());
+  }
+
+  /**
+   * Create a WebSocket client using the specified options
    *
    * @param options  the options to use
    * @return the client
    */
-  HttpClient createHttpClient(HttpClientOptions options);
+  WebSocketClient createWebSocketClient(WebSocketClientOptions options);
+
+  /**
+   * Provide a builder for {@link HttpClient}, it can be used to configure advanced
+   * HTTP client settings like a redirect handler or a connection handler.
+   * <p>
+   * Example usage: {@code HttpClient client = vertx.httpClientBuilder().with(options).withConnectHandler(conn -> ...).build()}
+   */
+  HttpClientBuilder httpClientBuilder();
+
+  /**
+   * Create a HTTP/HTTPS client using the specified client and pool options
+   *
+   * @param clientOptions  the client options to use
+   * @param poolOptions  the pool options to use
+   * @return the client
+   */
+  default HttpClient createHttpClient(HttpClientOptions clientOptions, PoolOptions poolOptions) {
+    return httpClientBuilder().with(clientOptions).with(poolOptions).build();
+  }
+
+  /**
+   * Create a HTTP/HTTPS client using the specified client options
+   *
+   * @param clientOptions  the options to use
+   * @return the client
+   */
+  default HttpClient createHttpClient(HttpClientOptions clientOptions) {
+    return createHttpClient(clientOptions, new PoolOptions());
+  }
+
+  /**
+   * Create a HTTP/HTTPS client using the specified pool options
+   *
+   * @param poolOptions  the pool options to use
+   * @return the client
+   */
+  default HttpClient createHttpClient(PoolOptions poolOptions) {
+    return createHttpClient(new HttpClientOptions(), poolOptions);
+  }
 
   /**
    * Create a HTTP/HTTPS client using default options
@@ -180,9 +224,8 @@ public interface Vertx extends Measured {
    * @return the client
    */
   default HttpClient createHttpClient() {
-    return createHttpClient(new HttpClientOptions());
+    return createHttpClient(new HttpClientOptions(), new PoolOptions());
   }
-
   /**
    * Create a datagram socket using the specified options
    *
@@ -229,7 +272,7 @@ public interface Vertx extends Measured {
   /**
    * Create a DNS client to connect to the DNS server configured by {@link VertxOptions#getAddressResolverOptions()}
    * <p>
-   * DNS client takes the first configured resolver address provided by {@link DnsResolverProvider#nameServerAddresses()}}
+   * DNS client takes the first configured resolver address provided by {@link DnsAddressResolverProvider#nameServerAddresses()}}
    *
    * @return the DNS client
    */

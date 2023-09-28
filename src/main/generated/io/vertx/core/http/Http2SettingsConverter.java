@@ -25,14 +25,19 @@ public class Http2SettingsConverter {
             obj.setHeaderTableSize(((Number)member.getValue()).longValue());
           }
           break;
-        case "initialWindowSize":
-          if (member.getValue() instanceof Number) {
-            obj.setInitialWindowSize(((Number)member.getValue()).intValue());
+        case "pushEnabled":
+          if (member.getValue() instanceof Boolean) {
+            obj.setPushEnabled((Boolean)member.getValue());
           }
           break;
         case "maxConcurrentStreams":
           if (member.getValue() instanceof Number) {
             obj.setMaxConcurrentStreams(((Number)member.getValue()).longValue());
+          }
+          break;
+        case "initialWindowSize":
+          if (member.getValue() instanceof Number) {
+            obj.setInitialWindowSize(((Number)member.getValue()).intValue());
           }
           break;
         case "maxFrameSize":
@@ -45,11 +50,6 @@ public class Http2SettingsConverter {
             obj.setMaxHeaderListSize(((Number)member.getValue()).longValue());
           }
           break;
-        case "pushEnabled":
-          if (member.getValue() instanceof Boolean) {
-            obj.setPushEnabled((Boolean)member.getValue());
-          }
-          break;
       }
     }
   }
@@ -60,10 +60,10 @@ public class Http2SettingsConverter {
 
    static void toJson(Http2Settings obj, java.util.Map<String, Object> json) {
     json.put("headerTableSize", obj.getHeaderTableSize());
-    json.put("initialWindowSize", obj.getInitialWindowSize());
+    json.put("pushEnabled", obj.isPushEnabled());
     json.put("maxConcurrentStreams", obj.getMaxConcurrentStreams());
+    json.put("initialWindowSize", obj.getInitialWindowSize());
     json.put("maxFrameSize", obj.getMaxFrameSize());
     json.put("maxHeaderListSize", obj.getMaxHeaderListSize());
-    json.put("pushEnabled", obj.isPushEnabled());
   }
 }

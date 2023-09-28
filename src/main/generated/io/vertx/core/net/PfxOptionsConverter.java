@@ -20,16 +20,6 @@ public class PfxOptionsConverter {
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, PfxOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
-        case "alias":
-          if (member.getValue() instanceof String) {
-            obj.setAlias((String)member.getValue());
-          }
-          break;
-        case "aliasPassword":
-          if (member.getValue() instanceof String) {
-            obj.setAliasPassword((String)member.getValue());
-          }
-          break;
         case "password":
           if (member.getValue() instanceof String) {
             obj.setPassword((String)member.getValue());
@@ -45,6 +35,16 @@ public class PfxOptionsConverter {
             obj.setValue(io.vertx.core.buffer.Buffer.buffer(BASE64_DECODER.decode((String)member.getValue())));
           }
           break;
+        case "alias":
+          if (member.getValue() instanceof String) {
+            obj.setAlias((String)member.getValue());
+          }
+          break;
+        case "aliasPassword":
+          if (member.getValue() instanceof String) {
+            obj.setAliasPassword((String)member.getValue());
+          }
+          break;
       }
     }
   }
@@ -54,12 +54,6 @@ public class PfxOptionsConverter {
   }
 
    static void toJson(PfxOptions obj, java.util.Map<String, Object> json) {
-    if (obj.getAlias() != null) {
-      json.put("alias", obj.getAlias());
-    }
-    if (obj.getAliasPassword() != null) {
-      json.put("aliasPassword", obj.getAliasPassword());
-    }
     if (obj.getPassword() != null) {
       json.put("password", obj.getPassword());
     }
@@ -68,6 +62,12 @@ public class PfxOptionsConverter {
     }
     if (obj.getValue() != null) {
       json.put("value", BASE64_ENCODER.encodeToString(obj.getValue().getBytes()));
+    }
+    if (obj.getAlias() != null) {
+      json.put("alias", obj.getAlias());
+    }
+    if (obj.getAliasPassword() != null) {
+      json.put("aliasPassword", obj.getAliasPassword());
     }
   }
 }

@@ -11,7 +11,6 @@
 package io.vertx.core.http.impl;
 
 import io.vertx.core.*;
-import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.metrics.ClientMetrics;
 
@@ -61,9 +60,9 @@ class WebSocketEndpoint extends ClientHttpEndpointBase<HttpClientConnection> {
   }
 
   private Future<HttpClientConnection> tryConnect(ContextInternal ctx) {
-    EventLoopContext eventLoopContext;
-    if (ctx instanceof EventLoopContext) {
-      eventLoopContext = (EventLoopContext) ctx;
+    ContextInternal eventLoopContext;
+    if (ctx.isEventLoopContext()) {
+      eventLoopContext = ctx;
     } else {
       eventLoopContext = ctx.owner().createEventLoopContext(ctx.nettyEventLoop(), ctx.workerPool(), ctx.classLoader());
     }
