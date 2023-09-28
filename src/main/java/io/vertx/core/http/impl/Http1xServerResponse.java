@@ -14,7 +14,6 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.EmptyHttpHeaders;
 import io.netty.handler.codec.http.HttpObject;
@@ -24,7 +23,6 @@ import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -48,7 +46,6 @@ import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.observability.HttpResponse;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.RandomAccessFile;
 import java.util.Set;
 
@@ -90,7 +87,6 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   private Handler<Void> endHandler;
   private Handler<Void> headersEndHandler;
   private Handler<Void> bodyEndHandler;
-  private boolean writable;
   private boolean closed;
   private final HeadersMultiMap headers;
   private CookieJar cookies;
@@ -105,7 +101,6 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
                        Http1xServerConnection conn,
                        HttpRequest request,
                        Object requestMetric,
-                       boolean writable,
                        boolean keepAlive) {
     this.vertx = vertx;
     this.conn = conn;
@@ -115,7 +110,6 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
     this.request = request;
     this.status = HttpResponseStatus.OK;
     this.requestMetric = requestMetric;
-    this.writable = writable;
     this.keepAlive = keepAlive;
     this.head = request.method() == io.netty.handler.codec.http.HttpMethod.HEAD;
   }
@@ -273,7 +267,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   public boolean writeQueueFull() {
     synchronized (conn) {
       checkValid();
-      return !writable;
+      return conn.writeQueueFull();
     }
   }
 
@@ -400,8 +394,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
       } else {
         msg = new AssembledLastHttpContent(data, trailingHeaders);
       }
-      conn.writeToChannel(msg, listener);
-      conn.responseComplete();
+      conn.write(msg, listener);
       if (bodyEndHandler != null) {
         bodyEndHandler.handle(null);
       }
@@ -458,15 +451,14 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
       bytesWritten = actualLength;
       written = true;
 
-      conn.writeToChannel(new AssembledHttpResponse(head, version, status, headers));
+      conn.write(new AssembledHttpResponse(head, version, status, headers), null);
 
       ChannelFuture channelFut = conn.sendFile(raf, actualOffset, actualLength);
       channelFut.addListener(future -> {
 
         // write an empty last content to let the http encoder know the response is complete
         if (future.isSuccess()) {
-          ChannelPromise pr = conn.channelHandlerContext().newPromise();
-          conn.writeToChannel(LastHttpContent.EMPTY_LAST_CONTENT, pr);
+          conn.write(LastHttpContent.EMPTY_LAST_CONTENT, null);
         }
 
         // signal body end handler
@@ -479,7 +471,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
         }
 
         // allow to write next response
-        conn.responseComplete();
+        // conn.responseComplete();
 
         // signal end handler
         Handler<Void> end;
@@ -541,17 +533,14 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
     }
   }
 
-  void handleWritabilityChanged(boolean writable) {
+  void handleWriteQueueDrained(Void v) {
     Handler<Void> handler;
     synchronized (conn) {
-      boolean skip = this.writable && !writable;
-      this.writable = writable;
       handler = drainHandler;
-      if (handler == null || skip) {
-        return;
-      }
     }
-    context.dispatch(null, handler);
+    if (handler != null) {
+      context.dispatch(null, handler);
+    }
   }
 
   void handleException(Throwable t) {
@@ -668,7 +657,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
       } else {
         msg = new DefaultHttpContent(chunk);
       }
-      conn.writeToChannel(msg, promise);
+      conn.write(msg, promise);
       return this;
     }
   }
@@ -685,7 +674,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
         status = requestMethod == HttpMethod.CONNECT ? HttpResponseStatus.OK : HttpResponseStatus.SWITCHING_PROTOCOLS;
         prepareHeaders(-1);
         PromiseInternal<Void> upgradePromise = context.promise();
-        conn.writeToChannel(new AssembledHttpResponse(head, version, status, headers), upgradePromise);
+        conn.write(new AssembledHttpResponse(head, version, status, headers), upgradePromise);
         written = true;
         Promise<NetSocket> promise = context.promise();
         netSocket = promise.future();

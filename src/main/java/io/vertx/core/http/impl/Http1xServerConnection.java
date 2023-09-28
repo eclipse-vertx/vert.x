@@ -18,18 +18,7 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.EventLoop;
 import io.netty.handler.codec.DecoderResult;
-import io.netty.handler.codec.http.DefaultFullHttpResponse;
-import io.netty.handler.codec.http.DefaultHttpRequest;
-import io.netty.handler.codec.http.EmptyHttpHeaders;
-import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.HttpContent;
-import io.netty.handler.codec.http.DefaultHttpContent;
-import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpObject;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.websocketx.WebSocketDecoderConfig;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
@@ -53,6 +42,7 @@ import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.impl.MessageWrite;
 import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.net.impl.SslChannelProvider;
@@ -101,7 +91,6 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   private Http1xServerRequest responseInProgress;
   private boolean keepAlive;
   private boolean channelPaused;
-  private boolean writable;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<HttpServerRequest> invalidRequestHandler;
 
@@ -127,7 +116,6 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     this.metrics = metrics;
     this.handle100ContinueAutomatically = options.isHandle100ContinueAutomatically();
     this.tracingPolicy = options.getTracingPolicy();
-    this.writable = true;
     this.keepAlive = true;
   }
 
@@ -173,7 +161,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
         }
         responseInProgress = requestInProgress;
         keepAlive = HttpUtils.isKeepAlive(request);
-        req.handleBegin(writable, keepAlive);
+        req.handleBegin(keepAlive);
         Handler<HttpServerRequest> handler = request.decoderResult().isSuccess() ? requestHandler : invalidRequestHandler;
         req.context.emit(req, handler);
     } else {
@@ -234,6 +222,22 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     channelFuture.addListener(fut -> close());
   }
 
+  void write(HttpObject msg, PromiseInternal<Void> promise) {
+    writeToChannel(new MessageWrite() {
+      @Override
+      public void write() {
+        Http1xServerConnection.this.write(msg, false, promise == null ? voidPromise : wrap(promise));
+        if (msg instanceof LastHttpContent) {
+          responseComplete();
+        }
+      }
+      @Override
+      public void cancel(Throwable cause) {
+        promise.fail(cause);
+      }
+    });
+  }
+
   void responseComplete() {
     EventLoop eventLoop = context.nettyEventLoop();
     if (eventLoop.inEventLoop()) {
@@ -270,7 +274,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   private void handleNext(Http1xServerRequest next) {
     responseInProgress = next;
     keepAlive = HttpUtils.isKeepAlive(next.nettyRequest());
-    next.handleBegin(writable, keepAlive);
+    next.handleBegin(keepAlive);
     next.context.emit(next, next_ -> {
       next_.resume();
       Handler<HttpServerRequest> handler = next_.nettyRequest().decoderResult().isSuccess() ? requestHandler : invalidRequestHandler;
@@ -468,22 +472,14 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   }
 
   @Override
-  public void handleInterestedOpsChanged() {
-    writable = !isNotWritable();
-    ContextInternal context;
-    Handler<Boolean> handler;
-    synchronized (this) {
-      if (responseInProgress != null) {
-        context = responseInProgress.context;
-        handler = responseInProgress.response()::handleWritabilityChanged;
-      } else if (webSocket != null) {
-        context = webSocket.context;
-        handler = webSocket::handleWritabilityChanged;
-      } else {
-        return;
-      }
+  protected void writeQueueDrained() {
+    if (responseInProgress != null) {
+      ContextInternal context = responseInProgress.context;
+      Handler<Void> handler = responseInProgress.response()::handleWriteQueueDrained;
+      context.execute(handler);
+    } else {
+      super.writeQueueDrained();
     }
-    context.execute(writable, handler);
   }
 
   void write100Continue(FutureListener<Void> listener) {

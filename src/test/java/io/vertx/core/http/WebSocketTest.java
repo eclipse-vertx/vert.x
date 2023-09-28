@@ -28,6 +28,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.http.impl.Http1xClientConnection;
@@ -3373,6 +3374,15 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testDrainClientWebSocket() throws InterruptedException {
+    testDrainClientWebSocket(vertx.getOrCreateContext());
+  }
+
+  @Test
+  public void testDrainClientWorkerWebSocket() throws InterruptedException {
+    testDrainClientWebSocket(((VertxInternal)vertx).createWorkerContext());
+  }
+
+  private void testDrainClientWebSocket(Context ctx) throws InterruptedException {
     Promise<Void> resume = Promise.promise();
     server = vertx.createHttpServer()
       .webSocketHandler(ws -> {
