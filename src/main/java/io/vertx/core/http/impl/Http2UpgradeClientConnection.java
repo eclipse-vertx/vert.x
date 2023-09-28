@@ -35,7 +35,6 @@ import io.vertx.core.streams.WriteStream;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
-import javax.security.cert.X509Certificate;
 import java.security.cert.Certificate;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -928,11 +927,6 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
   @Override
   public SSLSession sslSession() {
     return current.sslSession();
-  }
-
-  @Override
-  public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
-    return current.peerCertificateChain();
   }
 
   @Override
