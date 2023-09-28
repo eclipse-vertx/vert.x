@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.spi.resolver;
+package io.vertx.core.spi.lookup;
 
 import io.vertx.core.Future;
 import io.vertx.core.net.Address;
@@ -26,7 +26,7 @@ import io.vertx.core.net.SocketAddress;
  * @param <A> the type of {@link Address} resolved
  * @param <M> the type of metrics, implementations can use {@code Void} when metrics are not managed
  */
-public interface AddressResolver<S, A extends Address, M> extends io.vertx.core.net.AddressResolver {
+public interface AddressResolver<S, A extends Address, M> {
 
   /**
    * Try to cast the {@code address} to an address instance that can be resolved by this resolver instance.

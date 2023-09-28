@@ -8,7 +8,8 @@ import io.vertx.core.http.*;
 import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.spi.resolver.AddressResolver;
+import io.vertx.core.net.AddressLookup;
+import io.vertx.core.spi.lookup.AddressResolver;
 
 import java.util.function.Function;
 
@@ -19,7 +20,7 @@ public class HttpClientBuilderImpl implements HttpClientBuilder {
   private PoolOptions poolOptions;
   private Handler<HttpConnection> connectHandler;
   private Function<HttpClientResponse, Future<RequestOptions>> redirectHandler;
-  private AddressResolver<?, ?, ?> addressResolver;
+  private AddressLookup addressLookup;
 
   public HttpClientBuilderImpl(VertxInternal vertx) {
     this.vertx = vertx;
@@ -50,8 +51,8 @@ public class HttpClientBuilderImpl implements HttpClientBuilder {
   }
 
   @Override
-  public HttpClientBuilder withAddressResolver(io.vertx.core.net.AddressResolver addressResolver) {
-    this.addressResolver = (AddressResolver<?, ?, ?>) addressResolver;
+  public HttpClientBuilder withLookup(AddressLookup addressLookup) {
+    this.addressLookup = addressLookup;
     return this;
   }
 
@@ -70,14 +71,16 @@ public class HttpClientBuilderImpl implements HttpClientBuilder {
     if (co.isShared()) {
       CloseFuture closeFuture = new CloseFuture();
       client = vertx.createSharedResource("__vertx.shared.httpClients", co.getName(), closeFuture, cf_ -> {
-        HttpClientImpl impl = new HttpClientImpl(vertx, addressResolver, co, po);
+        AddressResolver<?, ?, ?> resolver = addressLookup != null ? addressLookup.resolver(vertx) : null;
+        HttpClientImpl impl = new HttpClientImpl(vertx, resolver, co, po);
         cf_.add(completion -> impl.close().onComplete(completion));
         return impl;
       });
       client = new CleanableHttpClient((HttpClientInternal) client, vertx.cleaner(), (timeout, timeunit) -> closeFuture.close());
       closeable = closeFuture;
     } else {
-      HttpClientImpl impl = new HttpClientImpl(vertx, addressResolver, co, po);
+      AddressResolver<?, ?, ?> resolver = addressLookup != null ? addressLookup.resolver(vertx) : null;
+      HttpClientImpl impl = new HttpClientImpl(vertx, resolver, co, po);
       closeable = impl;
       client = new CleanableHttpClient(impl, vertx.cleaner(), impl::shutdown);
     }

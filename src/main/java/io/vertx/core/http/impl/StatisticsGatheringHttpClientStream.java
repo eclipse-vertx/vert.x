@@ -22,7 +22,7 @@ import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.spi.resolver.AddressResolver;
+import io.vertx.core.spi.lookup.AddressResolver;
 import io.vertx.core.streams.WriteStream;
 
 /**
