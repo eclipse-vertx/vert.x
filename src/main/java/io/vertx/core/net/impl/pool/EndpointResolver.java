@@ -30,12 +30,12 @@ import java.util.function.Function;
  * @param <C> the connection type
  * @param <A> the resolved address type
  */
-public class EndpointResolver<S, K, C, A extends Address> {
+public class EndpointResolver<S, K, C, A extends Address, E> {
 
-  private final AddressResolver<S, A, ?> addressResolver;
-  private final ConnectionManager<A, C> connectionManager;
+  private final AddressResolver<S, A, ?, E> addressResolver;
+  private final ConnectionManager<A, ConnectionLookup<C, E, ?>> connectionManager;
 
-  public EndpointResolver(AddressResolver<S, A, ?> addressResolver) {
+  public EndpointResolver(AddressResolver<S, A, ?, E> addressResolver) {
     this.addressResolver = addressResolver;
     this.connectionManager = new ConnectionManager<>();
   }
@@ -56,12 +56,12 @@ public class EndpointResolver<S, K, C, A extends Address> {
                             P payload,
                             EndpointProvider<K, C> endpointProvider,
                             BiFunction<P, SocketAddress, K> zfn,
-                            Function<Endpoint<C>, Optional<T>> fn) {
+                            Function<Endpoint<ConnectionLookup<C, E, ?>>, Optional<T>> fn) {
     A resolverAddress = addressResolver.tryCast(address);
     if (resolverAddress == null) {
       return null;
     } else {
-      EndpointProvider<A, C> provider = (key, disposer) -> new ResolvedEndpoint(
+      EndpointProvider<A, ConnectionLookup<C, E, ?>> provider = (key, disposer) -> new AddressEndpoint<>(
         addressResolver.resolve(key),
         disposer,
         key,
@@ -81,16 +81,16 @@ public class EndpointResolver<S, K, C, A extends Address> {
   // Trick to pass payload (as we have synchronous calls)
   final ThreadLocal<Object> thread_local = new ThreadLocal<>();
 
-  public class ResolvedEndpoint<P> extends Endpoint<C> {
+  public class AddressEndpoint<P> extends Endpoint<ConnectionLookup<C, E, ?>> {
 
     private final AtomicReference<S> state;
     private final AtomicReference<Future<S>> stateRef;
-    private final ConnectionManager<EndpointKeyWrapper, C> connectionManager;
+    private final ConnectionManager<K, C> connectionManager;
     private final A address;
     private final EndpointProvider<K, C> endpointProvider;
     private final BiFunction<P, SocketAddress, K> zfn;
 
-    public ResolvedEndpoint(Future<S> stateRef, Runnable disposer, A address, EndpointProvider<K, C> endpointProvider, BiFunction<P, SocketAddress, K> zfn) {
+    public AddressEndpoint(Future<S> stateRef, Runnable disposer, A address, EndpointProvider<K, C> endpointProvider, BiFunction<P, SocketAddress, K> zfn) {
       super(() -> {
         if (stateRef.result() != null) {
           addressResolver.dispose(stateRef.result());
@@ -115,17 +115,13 @@ public class EndpointResolver<S, K, C, A extends Address> {
       return state.get();
     }
 
-    public AddressResolver<S, A, ?> addressResolver() {
-      return addressResolver;
-    }
-
     @Override
     public void checkExpired() {
       connectionManager.checkExpired();
     }
 
     @Override
-    public Future<C> requestConnection(ContextInternal ctx, long timeout) {
+    public Future<ConnectionLookup<C, E, ?>> requestConnection(ContextInternal ctx, long timeout) {
       P payload = (P) thread_local.get();
       Future<S> fut = stateRef.get();
       return fut.transform(ar -> {
@@ -138,7 +134,7 @@ public class EndpointResolver<S, K, C, A extends Address> {
             if (stateRef.compareAndSet(fut, promise.future())) {
               addressResolver.resolve(address).andThen(ar2 -> {
                 if (ar2.succeeded()) {
-                  ResolvedEndpoint.this.state.set(ar2.result());
+                  AddressEndpoint.this.state.set(ar2.result());
                 }
               }).onComplete(promise);
               return promise.future();
@@ -150,54 +146,24 @@ public class EndpointResolver<S, K, C, A extends Address> {
           return (Future<S>) ar;
         }
       }).compose(state -> addressResolver
-        .pickAddress(state)
-        .compose(origin -> {
+        .pickEndpoint(state)
+        .compose(endpoint -> {
           incRefCount();
+          SocketAddress origin = addressResolver.addressOf(endpoint);
           K apply = zfn.apply(payload, origin);
-          return connectionManager.getConnection(ctx, new EndpointKeyWrapper(apply) {
-            @Override
-            void cleanup() {
-              addressResolver.removeAddress(state, origin);
-              decRefCount();
-            }
-          }, (key, dispose) -> {
+          Future<C> f = connectionManager.getConnection(ctx, apply, (key, dispose) -> {
             class Disposer implements Runnable {
               @Override
               public void run() {
-                key.cleanup();
+                addressResolver.removeAddress(state, endpoint);
+                decRefCount();
                 dispose.run();
               }
             }
             return endpointProvider.create(apply, new Disposer());
           }, timeout);
+          return f.map(c -> new ConnectionLookup<>(c, addressResolver, endpoint));
         }));
-    }
-  }
-
-  private abstract class EndpointKeyWrapper {
-    final K address;
-    public EndpointKeyWrapper(K address) {
-      this.address = address;
-    }
-    abstract void cleanup();
-    @Override
-    public int hashCode() {
-      return address.hashCode();
-    }
-    @Override
-    public boolean equals(Object obj) {
-      if (obj == this) {
-        return true;
-      }
-      if (obj instanceof EndpointResolver.EndpointKeyWrapper) {
-        EndpointKeyWrapper that = (EndpointKeyWrapper) obj;
-        return address.equals(that.address);
-      }
-      return false;
-    }
-    @Override
-    public String toString() {
-      return "EndpointKey(z=" + address + ")";
     }
   }
 }

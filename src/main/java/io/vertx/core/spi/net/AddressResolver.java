@@ -18,15 +18,16 @@ import io.vertx.core.net.SocketAddress;
  * Name resolver Service Provider Interface (SPI).
  *
  * <p> {@link #resolve(Address)} resolves an address to resolver managed state {@code <S>}. Such state can be queried
- * and mutated by the resolver, e.g. {@link #pickAddress(Object)} chooses an {@code SocketAddress} address and might
+ * and mutated by the resolver, e.g. {@link #pickEndpoint(Object)} chooses an {@code SocketAddress} address and might
  * update the provided state. State modifying methods can be called concurrently, the implementation is responsible
  * to manage the concurrent state modifications.
  *
  * @param <S> the type of the state managed by the resolver
  * @param <A> the type of {@link Address} resolved
  * @param <M> the type of metrics, implementations can use {@code Void} when metrics are not managed
+ * @param <E> the type of the endpoint
  */
-public interface AddressResolver<S, A extends Address, M> {
+public interface AddressResolver<S, A extends Address, M, E> {
 
   /**
    * Try to cast the {@code address} to an address instance that can be resolved by this resolver instance.
@@ -55,20 +56,30 @@ public interface AddressResolver<S, A extends Address, M> {
   }
 
   /**
-   * Pick a socket address for the state.
+   * Pick an endpoint for the state.
+   *
+   * todo: make this synchronous
    *
    * @param state the state
    * @return the resolved socket address
    */
-  Future<SocketAddress> pickAddress(S state);
+  Future<E> pickEndpoint(S state);
+
+  /**
+   * Returns the socket address of a given {@code endpoint}.
+   *
+   * @param endpoint the endpoint
+   * @return the endpoint socket address
+   */
+  SocketAddress addressOf(E endpoint);
 
   /**
    * Remove a stale address from the state.
    *
    * @param state the state to update
-   * @param address the stale address
+   * @param endpoint the stale endpoint
    */
-  void removeAddress(S state, SocketAddress address);
+  void removeAddress(S state, E endpoint);
 
   /**
    * Dispose the state.
@@ -79,12 +90,10 @@ public interface AddressResolver<S, A extends Address, M> {
 
   /**
    * Signal the beginning of a request operated by the client
-   *
-   * @param state the state
-   * @param address the resolved address of the request
+   * @param endpoint the endpoint to which the request is made
    * @return the request/response metric
    */
-  default M requestBegin(S state, SocketAddress address) {
+  default M requestBegin(E endpoint) {
     return null;
   }
 

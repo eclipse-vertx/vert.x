@@ -97,13 +97,13 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
 
   private final PoolOptions poolOptions;
   private final ConnectionManager<EndpointKey, Lease<HttpClientConnection>> httpCM;
-  private final EndpointResolver<?, EndpointKey, Lease<HttpClientConnection>, ?> endpointResolver;
+  private final EndpointResolver<?, EndpointKey, Lease<HttpClientConnection>, ?, ?> endpointResolver;
   private volatile Function<HttpClientResponse, Future<RequestOptions>> redirectHandler = DEFAULT_HANDLER;
   private long timerID;
   private volatile Handler<HttpConnection> connectionHandler;
   private final Function<ContextInternal, ContextInternal> contextProvider;
 
-  public HttpClientImpl(VertxInternal vertx, AddressResolver<?, ?, ?> addressResolver, HttpClientOptions options, PoolOptions poolOptions) {
+  public HttpClientImpl(VertxInternal vertx, AddressResolver<?, ?, ?, ?> addressResolver, HttpClientOptions options, PoolOptions poolOptions) {
     super(vertx, options);
     if (addressResolver != null) {
       this.endpointResolver = new EndpointResolver<>(addressResolver);
@@ -335,7 +335,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         timeout,
         ctx,
         connCtx,
-        (EndpointResolver.ResolvedEndpoint) endpoint));
+        (EndpointResolver.AddressEndpoint) endpoint));
       if (future != null) {
         proxyOptions = proxyConfig;
       } else {
@@ -396,22 +396,22 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   /**
    * Create a decorated {@link HttpClientStream} that will gather stream statistics reported to the {@link AddressResolver}
    */
-  private static <S, A extends Address> Optional<Future<HttpClientStream>> createDecoratedHttpClientStream(
+  private static <S, A extends Address, E> Optional<Future<HttpClientStream>> createDecoratedHttpClientStream(
     long timeout,
     ContextInternal ctx,
     ContextInternal connCtx,
-    EndpointResolver.ResolvedEndpoint resolvedEndpoint) {
-    Future<Lease<HttpClientConnection>> f = resolvedEndpoint.getConnection(connCtx, timeout);
+    EndpointResolver.AddressEndpoint addressEndpoint) {
+    Future<ConnectionLookup<Lease<HttpClientConnection>, E, ?>> f = addressEndpoint.getConnection(connCtx, timeout);
     if (f == null) {
       return Optional.empty();
     } else {
-      return Optional.of(f.compose(lease -> {
+      return Optional.of(f.compose(res -> {
+        Lease<HttpClientConnection> lease = res.connection();
         HttpClientConnection conn = lease.get();
         return conn
           .createStream(ctx)
           .map(stream -> {
-            AddressResolver<S, A, ?> resolver = resolvedEndpoint.addressResolver();
-            HttpClientStream wrapped = new StatisticsGatheringHttpClientStream<>(stream, (AddressResolver)resolver, resolvedEndpoint.state(), conn.remoteAddress());
+            HttpClientStream wrapped = new StatisticsGatheringHttpClientStream<>(stream, res);
             wrapped.closeHandler(v -> lease.recycle());
             return wrapped;
           });

@@ -21,8 +21,7 @@ import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.net.SocketAddress;
-import io.vertx.core.spi.net.AddressResolver;
+import io.vertx.core.net.impl.pool.ConnectionLookup;
 import io.vertx.core.streams.WriteStream;
 
 /**
@@ -30,19 +29,14 @@ import io.vertx.core.streams.WriteStream;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class StatisticsGatheringHttpClientStream<S, M> implements HttpClientStream {
+class StatisticsGatheringHttpClientStream<M, E> implements HttpClientStream {
 
   private final HttpClientStream delegate;
-  private final AddressResolver<S, ?, M> resolver;
-  private final S state;
-  private final SocketAddress server;
-  private M metric;
+  private final ConnectionLookup<?, E, M> lookup;
 
-  StatisticsGatheringHttpClientStream(HttpClientStream delegate, AddressResolver<S, ?, M> resolver, S state, SocketAddress server) {
+  StatisticsGatheringHttpClientStream(HttpClientStream delegate, ConnectionLookup<?, E, M> lookup) {
     this.delegate = delegate;
-    this.resolver = resolver;
-    this.state = state;
-    this.server = server;
+    this.lookup = lookup;
   }
 
   @Override
@@ -77,9 +71,9 @@ class StatisticsGatheringHttpClientStream<S, M> implements HttpClientStream {
 
   @Override
   public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect) {
-    metric = resolver.requestBegin(state, server);
+    lookup.beginRequest();
     if (end) {
-      resolver.requestEnd(metric);
+      lookup.endRequest();
     }
     return delegate.writeHead(request, chunked, buf, end, priority, connect);
   }
@@ -87,7 +81,7 @@ class StatisticsGatheringHttpClientStream<S, M> implements HttpClientStream {
   @Override
   public Future<Void> writeBuffer(ByteBuf buf, boolean end) {
     if (end) {
-      resolver.requestEnd(metric);
+      lookup.endRequest();
     }
     return delegate.writeBuffer(buf, end);
   }
@@ -121,7 +115,7 @@ class StatisticsGatheringHttpClientStream<S, M> implements HttpClientStream {
   public void headHandler(Handler<HttpResponseHead> handler) {
     if (handler != null) {
       delegate.headHandler(multimap -> {
-        resolver.responseBegin(metric);
+        lookup.beginResponse();
         handler.handle(multimap);
       });
     } else {
@@ -138,7 +132,7 @@ class StatisticsGatheringHttpClientStream<S, M> implements HttpClientStream {
   public void endHandler(Handler<MultiMap> handler) {
     if (handler != null) {
       delegate.endHandler(multimap -> {
-        resolver.responseEnd(metric);
+        lookup.endResponse();
         handler.handle(multimap);
       });
     } else {
