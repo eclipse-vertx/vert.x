@@ -10,9 +10,21 @@
  */
 package io.vertx.core.net;
 
+import io.vertx.core.Vertx;
+import io.vertx.core.spi.lookup.AddressResolver;
+
 /**
- * A generic address resolver market interface. Implementation must also implement the SPI interface {@link io.vertx.core.spi.resolver.AddressResolver}
+ * A generic address resolver market interface. Implementation must also implement the SPI interface {@link io.vertx.core.spi.lookup.AddressResolver}
  * and can be cast to this type.
  */
-public interface AddressResolver {
+public interface AddressLookup {
+
+  /**
+   * Return a resolver capable of resolving addresses for a client.
+   *
+   * @param vertx the vertx instance
+   * @return the resolver
+   */
+  AddressResolver<?, ?, ?> resolver(Vertx vertx);
+
 }

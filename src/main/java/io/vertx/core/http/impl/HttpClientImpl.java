@@ -21,7 +21,7 @@ import io.vertx.core.net.*;
 import io.vertx.core.net.impl.pool.*;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
-import io.vertx.core.spi.resolver.AddressResolver;
+import io.vertx.core.spi.lookup.AddressResolver;
 
 import java.lang.ref.WeakReference;
 import java.net.URI;
