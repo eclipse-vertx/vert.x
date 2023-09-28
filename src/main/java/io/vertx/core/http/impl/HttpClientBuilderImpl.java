@@ -70,7 +70,7 @@ public class HttpClientBuilderImpl implements HttpClientBuilder {
     if (co.isShared()) {
       CloseFuture closeFuture = new CloseFuture();
       client = vertx.createSharedResource("__vertx.shared.httpClients", co.getName(), closeFuture, cf_ -> {
-        io.vertx.core.spi.net.AddressResolver<?, ?, ?> resolver = addressResolver != null ? addressResolver.resolver(vertx) : null;
+        io.vertx.core.spi.net.AddressResolver<?, ?, ?, ?> resolver = addressResolver != null ? addressResolver.resolver(vertx) : null;
         HttpClientImpl impl = new HttpClientImpl(vertx, resolver, co, po);
         cf_.add(completion -> impl.close().onComplete(completion));
         return impl;
@@ -78,7 +78,7 @@ public class HttpClientBuilderImpl implements HttpClientBuilder {
       client = new CleanableHttpClient((HttpClientInternal) client, vertx.cleaner(), (timeout, timeunit) -> closeFuture.close());
       closeable = closeFuture;
     } else {
-      io.vertx.core.spi.net.AddressResolver<?, ?, ?> resolver = addressResolver != null ? addressResolver.resolver(vertx) : null;
+      io.vertx.core.spi.net.AddressResolver<?, ?, ?, ?> resolver = addressResolver != null ? addressResolver.resolver(vertx) : null;
       HttpClientImpl impl = new HttpClientImpl(vertx, resolver, co, po);
       closeable = impl;
       client = new CleanableHttpClient(impl, vertx.cleaner(), impl::shutdown);

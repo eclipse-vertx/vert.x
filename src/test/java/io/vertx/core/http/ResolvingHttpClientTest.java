@@ -17,6 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 public class ResolvingHttpClientTest extends VertxTestBase {
 
@@ -51,19 +52,20 @@ public class ResolvingHttpClientTest extends VertxTestBase {
 
   static class FakeState {
     final String name;
-    final List<SocketAddress> addresses;
+    final List<FakeEndpoint> endpoints;
     int index;
     final List<FakeMetric> metrics = Collections.synchronizedList(new ArrayList<>());
     volatile boolean valid;
-    FakeState(String name, List<SocketAddress> addresses) {
+    FakeState(String name, List<SocketAddress> endpoints) {
       this.name = name;
-      this.addresses = addresses;
+      this.endpoints = endpoints.stream().map(s -> new FakeEndpoint(this, s)).collect(Collectors.toList());
       this.valid = true;
     }
-    FakeState(String name, SocketAddress... addresses) {
-      this.name = name;
-      this.addresses = new ArrayList<>(Arrays.asList(addresses));
-      this.valid = true;
+    FakeState(String name, SocketAddress... endpoints) {
+      this(name, Arrays.asList(endpoints));
+    }
+    List<SocketAddress> addresses() {
+      return endpoints.stream().map(e -> e.address).collect(Collectors.toList());
     }
   }
 
@@ -102,23 +104,32 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     }
   }
 
+  static class FakeEndpoint {
+    final FakeState state;
+    final SocketAddress address;
+    FakeEndpoint(FakeState state, SocketAddress address) {
+      this.state = state;
+      this.address = address;
+    }
+  }
+
   static class FakeMetric {
-    final SocketAddress server;
+    final FakeEndpoint endpoint;
     long requestBegin;
     long requestEnd;
     long responseBegin;
     long responseEnd;
-    FakeMetric(SocketAddress server) {
-      this.server = server;
+    FakeMetric(FakeEndpoint endpoint) {
+      this.endpoint = endpoint;
     }
   }
 
-  private static class FixedAddressResolver implements AddressResolver, io.vertx.core.spi.net.AddressResolver<FakeState, FakeAddress, FakeMetric> {
+  private static class FixedAddressResolver implements AddressResolver, io.vertx.core.spi.net.AddressResolver<FakeState, FakeAddress, FakeMetric, FakeEndpoint> {
 
     private final ConcurrentMap<String, FakeState> map = new ConcurrentHashMap<>();
 
     @Override
-    public io.vertx.core.spi.net.AddressResolver<?, ?, ?> resolver(Vertx vertx) {
+    public io.vertx.core.spi.net.AddressResolver<?, ?, ?, ?> resolver(Vertx vertx) {
       return this;
     }
 
@@ -128,11 +139,16 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     }
 
     @Override
-    public FakeMetric requestBegin(FakeState state, SocketAddress address) {
-      FakeMetric metric = new FakeMetric(address);
+    public FakeMetric requestBegin(FakeEndpoint endpoint) {
+      FakeMetric metric = new FakeMetric(endpoint);
       metric.requestBegin = System.currentTimeMillis();
-      state.metrics.add(metric);
+      endpoint.state.metrics.add(metric);
       return metric;
+    }
+
+    @Override
+    public SocketAddress addressOf(FakeEndpoint endpoint) {
+      return endpoint.address;
     }
 
     @Override
@@ -166,15 +182,15 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     }
 
     @Override
-    public Future<SocketAddress> pickAddress(FakeState state) {
+    public Future<FakeEndpoint> pickEndpoint(FakeState state) {
       int idx = state.index++;
-      SocketAddress result = state.addresses.get(idx % state.addresses.size());
+      FakeEndpoint result = state.endpoints.get(idx % state.endpoints.size());
       return Future.succeededFuture(result);
     }
 
     @Override
-    public void removeAddress(FakeState state, SocketAddress address) {
-      state.addresses.remove(address);
+    public void removeAddress(FakeState state, FakeEndpoint endpoint) {
+      state.endpoints.remove(endpoint);
     }
 
     @Override
@@ -222,7 +238,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
       .compose(HttpClientResponse::body)
     ).transform(ar -> {
       if (ar.failed()) {
-        List<SocketAddress> addresses = lookup.map.get("example.com").addresses;
+        List<SocketAddress> addresses = lookup.map.get("example.com").addresses();
         assertEquals(Collections.singletonList(SocketAddress.inetSocketAddress(8081, "localhost")), addresses);
         return client.request(HttpMethod.GET, 8080, "example.com", "/").compose(req -> req
           .send()
@@ -265,9 +281,9 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     awaitLatch(latch);
     FakeState state = lookup.map.get("example.com");
     for (int i = 0;i < servers.size();i++) {
-      int expected = state.addresses.size() - 1;
+      int expected = state.endpoints.size() - 1;
       awaitFuture(servers.get(i).close());
-      assertWaitUntil(() -> state.addresses.size() == expected);
+      assertWaitUntil(() -> state.endpoints.size() == expected);
     }
     assertWaitUntil(lookup.map::isEmpty);
   }
@@ -422,7 +438,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     FakeState state = lookup.map.get("example.com");
     assertWaitUntil(() -> state.metrics.size() == 1);
     FakeMetric metric = state.metrics.get(0);
-    assertEquals(addr, metric.server);
+    assertEquals(addr, metric.endpoint.address);
     assertTrue(metric.requestEnd - metric.requestBegin >= 0);
     assertTrue(metric.responseBegin - metric.requestEnd > 500);
     assertTrue(metric.responseEnd - metric.responseBegin >= 0);

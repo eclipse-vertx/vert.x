@@ -24,6 +24,6 @@ public interface AddressResolver {
    * @param vertx the vertx instance
    * @return the resolver
    */
-  io.vertx.core.spi.net.AddressResolver<?, ?, ?> resolver(Vertx vertx);
+  io.vertx.core.spi.net.AddressResolver<?, ?, ?, ?> resolver(Vertx vertx);
 
 }
