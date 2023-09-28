@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.spi.lookup;
+package io.vertx.core.spi.net;
 
 import io.vertx.core.Future;
 import io.vertx.core.net.Address;

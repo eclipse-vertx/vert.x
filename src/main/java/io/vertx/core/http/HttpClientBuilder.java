@@ -15,7 +15,7 @@ import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.net.AddressLookup;
+import io.vertx.core.net.AddressResolver;
 
 import java.util.function.Function;
 
@@ -79,7 +79,7 @@ public interface HttpClientBuilder {
    * @param lookup the address lookup
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  HttpClientBuilder withLookup(AddressLookup lookup);
+  HttpClientBuilder withAddressResolver(AddressResolver lookup);
 
   /**
    * Build and return the client.

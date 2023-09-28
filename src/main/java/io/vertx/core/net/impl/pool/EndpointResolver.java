@@ -15,7 +15,7 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.Address;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.spi.lookup.AddressResolver;
+import io.vertx.core.spi.net.AddressResolver;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
