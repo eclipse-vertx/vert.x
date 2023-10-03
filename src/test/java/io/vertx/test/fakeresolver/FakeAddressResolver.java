@@ -6,6 +6,7 @@ import io.vertx.core.net.Address;
 import io.vertx.core.net.AddressResolver;
 import io.vertx.core.net.SocketAddress;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -42,11 +43,15 @@ public class FakeAddressResolver implements AddressResolver, io.vertx.core.spi.n
 
 
   @Override
-  public FakeMetric requestBegin(FakeEndpoint endpoint) {
+  public FakeMetric initiateRequest(FakeEndpoint endpoint) {
     FakeMetric metric = new FakeMetric(endpoint);
-    metric.requestBegin = System.currentTimeMillis();
     endpoint.metrics.add(metric);
     return metric;
+  }
+
+  @Override
+  public void requestBegin(FakeMetric metric) {
+    metric.requestBegin = System.currentTimeMillis();
   }
 
   @Override
@@ -70,6 +75,11 @@ public class FakeAddressResolver implements AddressResolver, io.vertx.core.spi.n
   }
 
   @Override
+  public void requestFailed(FakeMetric metric, Throwable failure) {
+    metric.failure = failure;
+  }
+
+  @Override
   public FakeAddress tryCast(Address address) {
     return address instanceof FakeAddress ? (FakeAddress) address : null;
   }
@@ -85,10 +95,10 @@ public class FakeAddressResolver implements AddressResolver, io.vertx.core.spi.n
   }
 
   @Override
-  public Future<FakeEndpoint> pickEndpoint(FakeState state) {
+  public FakeEndpoint pickEndpoint(FakeState state) {
     int idx = state.index++;
     FakeEndpoint result = state.endpoints.get(idx % state.endpoints.size());
-    return Future.succeededFuture(result);
+    return result;
   }
 
   @Override

@@ -20,31 +20,36 @@ public class ConnectionLookup<C, E, M> {
   private final AddressResolver<?, ?, M, E> resolver;
   private final C connection;
   private final E endpoint;
-  private M metric;
+  private final M metric;
 
-  public ConnectionLookup(C connection, AddressResolver<?, ?, M, E> resolver, E endpoint) {
+  public ConnectionLookup(C connection, AddressResolver<?, ?, M, E> resolver, E endpoint, M metric) {
     this.connection = connection;
     this.endpoint = endpoint;
     this.resolver = resolver;
+    this.metric = metric;
   }
 
   public C connection() {
     return connection;
   }
 
-  public void beginRequest() {
-    metric = resolver.requestBegin(endpoint);
+  public void reportRequestBegin() {
+    resolver.requestBegin(metric);
   }
 
-  public void endRequest() {
+  public void reportRequestEnd() {
     resolver.requestEnd(metric);
   }
 
-  public void beginResponse() {
+  public void reportResponseBegin() {
     resolver.responseBegin(metric);
   }
 
-  public void endResponse() {
+  public void reportResponseEnd() {
     resolver.responseEnd(metric);
+  }
+
+  public void reportFailure(Throwable error) {
+    resolver.requestFailed(metric, error);
   }
 }

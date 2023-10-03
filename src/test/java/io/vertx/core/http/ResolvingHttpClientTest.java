@@ -14,7 +14,10 @@ import org.junit.Test;
 
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 public class ResolvingHttpClientTest extends VertxTestBase {
 
@@ -287,6 +290,145 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     assertTrue(metric.requestEnd() - metric.requestBegin() >= 0);
     assertTrue(metric.responseBegin() - metric.requestEnd() > 500);
     assertTrue(metric.responseEnd() - metric.responseBegin() >= 0);
+  }
+
+  @Test
+  public void testStatisticsReportingFailure0() throws Exception {
+    startServers(1);
+    AtomicBoolean mode = new AtomicBoolean();
+    AtomicInteger count = new AtomicInteger();
+    requestHandler = (idx, req) -> {
+      count.incrementAndGet();
+    };
+    FakeAddressResolver resolver = new FakeAddressResolver();
+    resolver.registerAddress("example.com", Arrays.asList(SocketAddress.inetSocketAddress(8080, "localhost")));
+    HttpClientInternal client = (HttpClientInternal) vertx.httpClientBuilder()
+      .with(new HttpClientOptions().setKeepAliveTimeout(1))
+      .withAddressResolver(resolver)
+      .build();
+    List<Future<Buffer>> futures = new ArrayList<>();
+    for (int i = 0;i < 5;i++) {
+      Future<Buffer> fut = client.request(new RequestOptions().setServer(new FakeAddress("example.com"))).compose(req -> req
+        .send()
+        .compose(HttpClientResponse::body));
+      futures.add(fut);
+    }
+    assertWaitUntil(() -> count.get() == 5);
+    try {
+      awaitFuture(client.request(new RequestOptions().setServer(new FakeAddress("example.com")).setTimeout(100)));
+    } catch (RuntimeException e) {
+      assertTrue(e.getMessage().contains("timeout"));
+    }
+    FakeEndpoint endpoint = resolver.endpoints("example.com").get(0);
+    assertWaitUntil(() -> endpoint.metrics().size() == 6);
+    FakeMetric metric = endpoint.metrics().get(5);
+    assertNotNull(metric.failure());
+
+
+//    awaitFuture(Future.join(futures));
+
+  }
+
+  @Test
+  public void testStatisticsReportingFailure1() throws Exception {
+    FakeMetric metric = testStatisticsReportingFailure((fail, req) -> {
+      if (fail) {
+        req.connection().close();
+      } else {
+        req.response().end();
+      }
+    }, req -> {
+      req.setChunked(true);
+      req.write("chunk");
+      return req.response().compose(HttpClientResponse::body);
+    });
+    assertNotSame(0, metric.responseBegin());
+    assertEquals(0, metric.requestEnd());
+    assertEquals(0, metric.responseBegin());
+    assertEquals(0, metric.responseEnd());
+    assertNotNull(metric.failure());
+    assertTrue(metric.failure() instanceof HttpClosedException);
+  }
+
+  @Test
+  public void testStatisticsReportingFailure2() throws Exception {
+    FakeMetric metric = testStatisticsReportingFailure((fail, req) -> {
+      if (fail) {
+        req.connection().close();
+      } else {
+        req.response().end();
+      }
+    }, req -> req
+      .send()
+      .compose(HttpClientResponse::body));
+    assertTrue(metric.requestEnd() - metric.requestBegin() >= 0);
+    assertEquals(0, metric.responseBegin());
+    assertEquals(0, metric.responseEnd());
+    assertNotNull(metric.failure());
+    assertTrue(metric.failure() instanceof HttpClosedException);
+  }
+
+  @Test
+  public void testStatisticsReportingFailure3() throws Exception {
+    FakeMetric metric = testStatisticsReportingFailure((fail, req) -> {
+      HttpServerResponse resp = req.response();
+      resp.setChunked(true).write("chunk");
+      vertx.setTimer(100, id -> {
+        if (fail) {
+          req.connection().close();
+        } else {
+          resp.end();
+        }
+      });
+    }, req -> req
+      .send()
+      .compose(HttpClientResponse::body)
+    );
+    assertTrue(metric.requestEnd() - metric.requestBegin() >= 0);
+    assertTrue(metric.responseBegin() - metric.requestEnd() >= 0);
+    assertEquals(0, metric.responseEnd());
+    assertNotNull(metric.failure());
+    assertTrue(metric.failure() instanceof HttpClosedException);
+  }
+
+  private FakeMetric testStatisticsReportingFailure(BiConsumer<Boolean, HttpServerRequest> handler, Function<HttpClientRequest, Future<Buffer>> sender) throws Exception {
+    startServers(1);
+    AtomicBoolean mode = new AtomicBoolean();
+    requestHandler = (idx, req) -> handler.accept(mode.get(), req);
+    FakeAddressResolver resolver = new FakeAddressResolver();
+    resolver.registerAddress("example.com", Arrays.asList(SocketAddress.inetSocketAddress(8080, "localhost")));
+    HttpClientInternal client = (HttpClientInternal) vertx.httpClientBuilder()
+      .with(new HttpClientOptions().setKeepAliveTimeout(1))
+      .withAddressResolver(resolver)
+      .build();
+    List<Future<Buffer>> futures = new ArrayList<>();
+    for (int i = 0;i < 10;i++) {
+      Future<Buffer> fut = client.request(new RequestOptions().setServer(new FakeAddress("example.com"))).compose(req -> req
+        .send()
+        .andThen(onSuccess(resp -> {
+          assertEquals(200, resp.statusCode());
+        }))
+        .compose(HttpClientResponse::body));
+      futures.add(fut);
+    }
+    awaitFuture(Future.join(futures));
+    mode.set(true);
+    try {
+      awaitFuture(client
+        .request(new RequestOptions().setServer(new FakeAddress("example.com")))
+        .compose(sender::apply));
+    } catch (RuntimeException e) {
+      assertTrue(e.getMessage().contains("Connection was closed"));
+    }
+    FakeEndpoint endpoint = resolver.endpoints("example.com").get(0);
+    assertWaitUntil(() -> endpoint.metrics().size() == 11);
+    for (int i = 0;i < 10;i++) {
+      FakeMetric metric = endpoint.metrics().get(i);
+      assertTrue(metric.requestEnd() - metric.requestBegin() >= 0);
+      assertTrue(metric.responseBegin() - metric.requestEnd() >= 0);
+      assertTrue(metric.responseEnd() - metric.responseBegin() >= 0);
+    }
+    return endpoint.metrics().get(10);
   }
 
   @Test
