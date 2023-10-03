@@ -97,7 +97,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
 
   private final PoolOptions poolOptions;
   private final ConnectionManager<EndpointKey, Lease<HttpClientConnection>> httpCM;
-  private final EndpointResolver<?, EndpointKey, Lease<HttpClientConnection>, ?, ?> endpointResolver;
+  private final EndpointResolver<?, EndpointKey, Lease<HttpClientConnection>, ?, ?, ?> endpointResolver;
   private volatile Function<HttpClientResponse, Future<RequestOptions>> redirectHandler = DEFAULT_HANDLER;
   private long timerID;
   private volatile Handler<HttpConnection> connectionHandler;

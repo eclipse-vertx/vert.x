@@ -58,12 +58,10 @@ public interface AddressResolver<S, A extends Address, M, E> {
   /**
    * Pick an endpoint for the state.
    *
-   * todo: make this synchronous
-   *
    * @param state the state
    * @return the resolved socket address
    */
-  Future<E> pickEndpoint(S state);
+  E pickEndpoint(S state);
 
   /**
    * Returns the socket address of a given {@code endpoint}.
@@ -89,12 +87,19 @@ public interface AddressResolver<S, A extends Address, M, E> {
   void dispose(S state);
 
   /**
-   * Signal the beginning of a request operated by the client
+   * Initiate a request.
    * @param endpoint the endpoint to which the request is made
    * @return the request/response metric
    */
-  default M requestBegin(E endpoint) {
+  default M initiateRequest(E endpoint) {
     return null;
+  }
+
+  /**
+   * Signal the beginning of the request attached to the {@code metric}
+   * @param metric the request/response metric
+   */
+  default void requestBegin(M metric) {
   }
 
   /**
@@ -114,4 +119,11 @@ public interface AddressResolver<S, A extends Address, M, E> {
    * @param metric the request metric
    */
   default void responseEnd(M metric) {}
+
+  /**
+   * Signal the failure of a request/response to the {@code metric}
+   * @param metric the request metric
+   * @param failure the failure
+   */
+  default void requestFailed(M metric, Throwable failure) {}
 }

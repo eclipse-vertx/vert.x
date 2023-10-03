@@ -71,9 +71,9 @@ class StatisticsGatheringHttpClientStream<M, E> implements HttpClientStream {
 
   @Override
   public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect) {
-    lookup.beginRequest();
+    lookup.reportRequestBegin();
     if (end) {
-      lookup.endRequest();
+      lookup.reportRequestEnd();
     }
     return delegate.writeHead(request, chunked, buf, end, priority, connect);
   }
@@ -81,7 +81,7 @@ class StatisticsGatheringHttpClientStream<M, E> implements HttpClientStream {
   @Override
   public Future<Void> writeBuffer(ByteBuf buf, boolean end) {
     if (end) {
-      lookup.endRequest();
+      lookup.reportRequestEnd();
     }
     return delegate.writeBuffer(buf, end);
   }
@@ -115,7 +115,7 @@ class StatisticsGatheringHttpClientStream<M, E> implements HttpClientStream {
   public void headHandler(Handler<HttpResponseHead> handler) {
     if (handler != null) {
       delegate.headHandler(multimap -> {
-        lookup.beginResponse();
+        lookup.reportResponseBegin();
         handler.handle(multimap);
       });
     } else {
@@ -132,7 +132,7 @@ class StatisticsGatheringHttpClientStream<M, E> implements HttpClientStream {
   public void endHandler(Handler<MultiMap> handler) {
     if (handler != null) {
       delegate.endHandler(multimap -> {
-        lookup.endResponse();
+        lookup.reportResponseEnd();
         handler.handle(multimap);
       });
     } else {
@@ -187,7 +187,15 @@ class StatisticsGatheringHttpClientStream<M, E> implements HttpClientStream {
 
   @Override
   public WriteStream<Buffer> exceptionHandler(@Nullable Handler<Throwable> handler) {
-    return delegate.exceptionHandler(handler);
+    if (handler != null) {
+      delegate.exceptionHandler(err -> {
+        lookup.reportFailure(err);
+        handler.handle(err);
+      });
+    } else {
+      delegate.exceptionHandler(null);
+    }
+    return this;
   }
 
   @Override
