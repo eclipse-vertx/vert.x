@@ -256,6 +256,8 @@ class FutureImpl<T> extends FutureBase<T> {
   }
 
   private static class ListenerArray<T> extends ArrayList<Listener<T>> implements Listener<T> {
+    private static final long serialVersionUID = -5473212942546597080L;
+    
     @Override
     public void onSuccess(T value) {
       for (Listener<T> handler : this) {
