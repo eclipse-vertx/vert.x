@@ -77,13 +77,17 @@ class ReplyHandler<T> extends HandlerRegistration<T> implements Handler<Long> {
   }
 
   @Override
-  protected boolean doReceive(Message<T> reply) {
-    dispatch(null, reply, context);
-    return true;
+  protected boolean doReceive(Frame msg) {
+    if (msg instanceof Message) {
+      dispatch(null, (Message<T>) msg, context);
+      return true;
+    } else {
+      return false;
+    }
   }
 
   void register() {
-    register(repliedAddress, true, null);
+    register(false, false, null);
   }
 
   @Override

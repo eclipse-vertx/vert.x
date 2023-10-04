@@ -35,8 +35,7 @@ public class Selectors {
     this.clusterManager = clusterManager;
   }
 
-  public <T> void withSelector(Message<?> message, Promise<T> promise, BiConsumer<Promise<T>, RoundRobinSelector> task) {
-    String address = message.address();
+  public <T> void withSelector(String address, Promise<T> promise, BiConsumer<Promise<T>, RoundRobinSelector> task) {
     SelectorEntry entry = map.compute(address, (addr, curr) -> {
       return curr == null ? new SelectorEntry() : (curr.isNotReady() ? curr.increment() : curr);
     });

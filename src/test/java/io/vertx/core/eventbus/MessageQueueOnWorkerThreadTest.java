@@ -89,7 +89,7 @@ public class MessageQueueOnWorkerThreadTest extends VertxTestBase {
     }
 
     @Override
-    public void selectForSend(Message<?> message, Promise<String> promise) {
+    public void selectForSend(String address, Promise<String> promise) {
       try {
         NANOSECONDS.sleep(150);
       } catch (InterruptedException e) {
@@ -99,7 +99,7 @@ public class MessageQueueOnWorkerThreadTest extends VertxTestBase {
     }
 
     @Override
-    public void selectForPublish(Message<?> message, Promise<Iterable<String>> promise) {
+    public void selectForPublish(String address, Promise<Iterable<String>> promise) {
       throw new UnsupportedOperationException();
     }
 

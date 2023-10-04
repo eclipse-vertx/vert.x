@@ -11,20 +11,13 @@
 
 package io.vertx.core.eventbus.impl.clustered;
 
-import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
-import io.vertx.core.Promise;
-import io.vertx.core.VertxOptions;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.AddressHelper;
+import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.EventBusOptions;
 import io.vertx.core.eventbus.MessageCodec;
-import io.vertx.core.eventbus.impl.CodecManager;
-import io.vertx.core.eventbus.impl.EventBusImpl;
-import io.vertx.core.eventbus.impl.HandlerHolder;
-import io.vertx.core.eventbus.impl.HandlerRegistration;
-import io.vertx.core.eventbus.impl.MessageImpl;
-import io.vertx.core.eventbus.impl.OutboundDeliveryContext;
+import io.vertx.core.eventbus.impl.*;
 import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -158,76 +151,68 @@ public class ClusteredEventBus extends EventBusImpl {
 
   @Override
   protected <T> void onLocalRegistration(HandlerHolder<T> handlerHolder, Promise<Void> promise) {
-    if (!handlerHolder.isReplyHandler()) {
-      RegistrationInfo registrationInfo = new RegistrationInfo(
-        nodeId,
-        handlerHolder.getSeq(),
-        handlerHolder.isLocalOnly()
-      );
-      clusterManager.addRegistration(handlerHolder.getHandler().address, registrationInfo, Objects.requireNonNull(promise));
-    } else if (promise != null) {
-      promise.complete();
-    }
+    RegistrationInfo registrationInfo = new RegistrationInfo(
+      nodeId,
+      handlerHolder.getSeq(),
+      handlerHolder.isLocalOnly()
+    );
+    clusterManager.addRegistration(handlerHolder.getHandler().address, registrationInfo, Objects.requireNonNull(promise));
   }
 
   @Override
-  protected <T> HandlerHolder<T> createHandlerHolder(HandlerRegistration<T> registration, boolean replyHandler, boolean localOnly, ContextInternal context) {
-    return new ClusteredHandlerHolder<>(registration, replyHandler, localOnly, context, handlerSequence.getAndIncrement());
+  protected <T> HandlerHolder<T> createHandlerHolder(HandlerRegistration<T> registration, boolean localOnly, ContextInternal context) {
+    return new ClusteredHandlerHolder<>(registration, localOnly, context, handlerSequence.getAndIncrement());
   }
 
   @Override
   protected <T> void onLocalUnregistration(HandlerHolder<T> handlerHolder, Promise<Void> completionHandler) {
-    if (!handlerHolder.isReplyHandler()) {
-      RegistrationInfo registrationInfo = new RegistrationInfo(
-        nodeId,
-        handlerHolder.getSeq(),
-        handlerHolder.isLocalOnly()
-      );
-      Promise<Void> promise = Promise.promise();
-      clusterManager.removeRegistration(handlerHolder.getHandler().address, registrationInfo, promise);
-      promise.future().onComplete(completionHandler);
-    } else {
-      completionHandler.complete();
-    }
+    RegistrationInfo registrationInfo = new RegistrationInfo(
+      nodeId,
+      handlerHolder.getSeq(),
+      handlerHolder.isLocalOnly()
+    );
+    Promise<Void> promise = Promise.promise();
+    clusterManager.removeRegistration(handlerHolder.getHandler().address, registrationInfo, promise);
+    promise.future().onComplete(completionHandler);
   }
 
   @Override
-  protected <T> void sendOrPub(OutboundDeliveryContext<T> sendContext) {
-    if (((ClusteredMessage) sendContext.message).getRepliedTo() != null) {
-      clusteredSendReply(((ClusteredMessage) sendContext.message).getRepliedTo(), sendContext);
-    } else if (sendContext.options.isLocalOnly()) {
-      super.sendOrPub(sendContext);
+  protected <T> void sendOrPub(ContextInternal ctx, MessageImpl<?, T> message, DeliveryOptions options, Promise<Void> writePromise) {
+    if (((ClusteredMessage) message).getRepliedTo() != null) {
+      clusteredSendReply(message, writePromise, ((ClusteredMessage) message).getRepliedTo());
+    } else if (options.isLocalOnly()) {
+      sendLocally(message, writePromise);
     } else {
-      Serializer serializer = Serializer.get(sendContext.ctx);
-      if (sendContext.message.isSend()) {
-        Promise<String> promise = sendContext.ctx.promise();
-        serializer.queue(sendContext.message, nodeSelector::selectForSend, promise);
+      Serializer serializer = Serializer.get(ctx);
+      if (message.isSend()) {
+        Promise<String> promise = Promise.promise();
+        serializer.queue(message, nodeSelector::selectForSend, promise);
         promise.future().onComplete(ar -> {
           if (ar.succeeded()) {
-            sendToNode(sendContext, ar.result());
+            sendToNode(ar.result(), message, writePromise);
           } else {
-            sendOrPublishFailed(sendContext, ar.cause());
+            sendOrPublishFailed(writePromise, ar.cause());
           }
         });
       } else {
-        Promise<Iterable<String>> promise = sendContext.ctx.promise();
-        serializer.queue(sendContext.message, nodeSelector::selectForPublish, promise);
+        Promise<Iterable<String>> promise = Promise.promise();
+        serializer.queue(message, nodeSelector::selectForPublish, promise);
         promise.future().onComplete(ar -> {
           if (ar.succeeded()) {
-            sendToNodes(sendContext, ar.result());
+            sendToNodes(ar.result(), message, writePromise);
           } else {
-            sendOrPublishFailed(sendContext, ar.cause());
+            sendOrPublishFailed(writePromise, ar.cause());
           }
         });
       }
     }
   }
 
-  private void sendOrPublishFailed(OutboundDeliveryContext<?> sendContext, Throwable cause) {
+  private void sendOrPublishFailed(Promise<Void> promise, Throwable cause) {
     if (log.isDebugEnabled()) {
       log.error("Failed to send message", cause);
     }
-    sendContext.written(cause);
+    promise.tryFail(cause);
   }
 
   @Override
@@ -237,7 +222,7 @@ public class ClusteredEventBus extends EventBusImpl {
   }
 
   @Override
-  protected boolean isMessageLocal(MessageImpl msg) {
+  protected boolean isMessageLocal(Frame msg) {
     ClusteredMessage clusteredMessage = (ClusteredMessage) msg;
     return !clusteredMessage.isFromWire();
   }
@@ -251,7 +236,7 @@ public class ClusteredEventBus extends EventBusImpl {
       Iterator<HandlerHolder> iterator = handlers.iterator(false);
       while (iterator.hasNext()) {
         HandlerHolder next = iterator.next();
-        if (next.isReplyHandler() || !next.isLocalOnly()) {
+        if (!next.isLocalOnly()) {
           handlerHolder = next;
           break;
         }
@@ -328,39 +313,39 @@ public class ClusteredEventBus extends EventBusImpl {
     };
   }
 
-  private <T> void sendToNode(OutboundDeliveryContext<T> sendContext, String nodeId) {
+  private <T> void sendToNode(String nodeId, Frame message, Promise<Void> writePromise) {
     if (nodeId != null && !nodeId.equals(this.nodeId)) {
-      sendRemote(sendContext, nodeId, sendContext.message);
+      sendRemote(nodeId, message, writePromise);
     } else {
-      super.sendOrPub(sendContext);
+      sendLocally(message, writePromise);
     }
   }
 
-  private <T> void sendToNodes(OutboundDeliveryContext<T> sendContext, Iterable<String> nodeIds) {
+  private <T> void sendToNodes(Iterable<String> nodeIds, Frame message, Promise<Void> writePromise) {
     boolean sentRemote = false;
     if (nodeIds != null) {
       for (String nid : nodeIds) {
         if (!sentRemote) {
           sentRemote = true;
         }
-        sendToNode(sendContext, nid);
+        // Write promise might be completed several times!!!!
+        sendToNode(nid, message, writePromise);
       }
     }
     if (!sentRemote) {
-      super.sendOrPub(sendContext);
+      sendLocally(message, writePromise);
     }
   }
 
-  private <T> void clusteredSendReply(String replyDest, OutboundDeliveryContext<T> sendContext) {
-    MessageImpl message = sendContext.message;
+  private <T> void clusteredSendReply(MessageImpl<?, T> message, Promise<Void> writePromise, String replyDest) {
     if (!replyDest.equals(nodeId)) {
-      sendRemote(sendContext, replyDest, message);
+      sendRemote(replyDest, message, writePromise);
     } else {
-      super.sendOrPub(sendContext);
+      sendLocally(message, writePromise);
     }
   }
 
-  private void sendRemote(OutboundDeliveryContext<?> sendContext, String remoteNodeId, MessageImpl message) {
+  private void sendRemote(String remoteNodeId, Frame message, Promise<Void> writePromise) {
     // We need to deal with the fact that connecting can take some time and is async, and we cannot
     // block to wait for it. So we add any sends to a pending list if not connected yet.
     // Once we connect we send them.
@@ -379,7 +364,7 @@ public class ClusteredEventBus extends EventBusImpl {
         holder.connect();
       }
     }
-    holder.writeMessage(sendContext);
+    holder.writeMessage(message, writePromise);
   }
 
   ConcurrentMap<String, ConnectionHolder> connections() {

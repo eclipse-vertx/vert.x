@@ -131,6 +131,15 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
     return fut;
   }
 
+  @Override
+  protected boolean doReceive(Frame msg) {
+    if (msg instanceof Message) {
+      return doReceive((Message<T>) msg);
+    } else {
+      return false;
+    }
+  }
+
   protected boolean doReceive(Message<T> message) {
     Handler<Message<T>> theHandler;
     synchronized (this) {
@@ -216,7 +225,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
           registered = true;
           Promise<Void> p = result;
           Promise<Void> registration = context.promise();
-          register(null, localOnly, registration);
+          register(true, localOnly, registration);
           registration.future().onComplete(ar -> {
             if (ar.succeeded()) {
               p.tryComplete();
