@@ -115,9 +115,6 @@ public class HostAndPortImpl implements HostAndPort {
    */
   public static HostAndPortImpl parseHostAndPort(String s, int schemePort) {
     int pos = parseHost(s, 0, s.length());
-    if (pos < 1) {
-      return null;
-    }
     if (pos == s.length()) {
       return new HostAndPortImpl(s, schemePort);
     }
