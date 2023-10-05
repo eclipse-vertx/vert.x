@@ -189,7 +189,7 @@ public class ClusteredEventBus extends EventBusImpl {
     } else {
       Serializer serializer = Serializer.get(ctx);
       if (message.isSend()) {
-        Promise<String> promise = Promise.promise();
+        Promise<String> promise = ctx.promise();
         serializer.queue(message, nodeSelector::selectForSend, promise);
         promise.future().onComplete(ar -> {
           if (ar.succeeded()) {
@@ -199,7 +199,7 @@ public class ClusteredEventBus extends EventBusImpl {
           }
         });
       } else {
-        Promise<Iterable<String>> promise = Promise.promise();
+        Promise<Iterable<String>> promise = ctx.promise();
         serializer.queue(message, nodeSelector::selectForPublish, promise);
         promise.future().onComplete(ar -> {
           if (ar.succeeded()) {
