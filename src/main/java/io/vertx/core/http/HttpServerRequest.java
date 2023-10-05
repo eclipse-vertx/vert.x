@@ -136,8 +136,10 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   String query();
 
   /**
-   * @return the request authority. For HTTP2 it returns the {@literal :authority} pseudo header otherwise it returns the {@literal Host} header.
-   *         When the authority string does not carry a port, the {@link HostAndPort#port()} returns {@code -1} to indicate the scheme port is prevalent.
+   * @return the request authority. For HTTP/2 the {@literal :authority} pseudo header is returned, for HTTP/1.x the
+   *         {@literal Host} header is returned or {@code null} when no such header is present. When the authority
+   *         string does not carry a port, the {@link HostAndPort#port()} returns {@code -1} to indicate the
+   *         scheme port is prevalent.
    */
   @Nullable
   HostAndPort authority();

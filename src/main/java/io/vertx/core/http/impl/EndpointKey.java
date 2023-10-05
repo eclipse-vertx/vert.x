@@ -16,7 +16,7 @@ import io.vertx.core.net.SocketAddress;
 
 import java.util.Objects;
 
-class EndpointKey {
+final class EndpointKey {
 
   final boolean ssl;
   final SocketAddress server;
@@ -27,9 +27,6 @@ class EndpointKey {
     if (server == null) {
       throw new NullPointerException("No null server address");
     }
-    if (authority == null) {
-      throw new NullPointerException("No null authority address");
-    }
     this.ssl = ssl;
     this.proxyOptions = proxyOptions;
     this.authority = authority;
@@ -38,17 +35,23 @@ class EndpointKey {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    EndpointKey that = (EndpointKey) o;
-    return ssl == that.ssl && server.equals(that.server) && authority.equals(that.authority) && equals(proxyOptions, that.proxyOptions);
+    if (this == o) {
+      return true;
+    };
+    if (o instanceof EndpointKey) {
+      EndpointKey that = (EndpointKey) o;
+      return ssl == that.ssl && server.equals(that.server) && Objects.equals(authority, that.authority) && equals(proxyOptions, that.proxyOptions);
+    }
+    return false;
   }
 
   @Override
   public int hashCode() {
     int result = ssl ? 1 : 0;
-    result = 31 * result + authority.hashCode();
     result = 31 * result + server.hashCode();
+    if (authority != null) {
+      result = 31 * result + authority.hashCode();
+    }
     if (proxyOptions != null) {
       result = 31 * result + hashCode(proxyOptions);
     }
