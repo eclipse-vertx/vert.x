@@ -827,13 +827,12 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicReference<Thread> deliveredThread = new AtomicReference<>();
     AtomicBoolean registeredCalled = new AtomicBoolean();
     AtomicBoolean unregisteredCalled = new AtomicBoolean();
-    AtomicBoolean messageDelivered = new AtomicBoolean();
     VertxMetricsFactory factory = (options) -> new DummyVertxMetrics() {
       @Override
       public EventBusMetrics createEventBusMetrics() {
         return new DummyEventBusMetrics() {
           @Override
-          public Void handlerRegistered(String address, String repliedAddress) {
+          public Void handlerRegistered(String address) {
             registeredCalled.set(true);
             return null;
           }

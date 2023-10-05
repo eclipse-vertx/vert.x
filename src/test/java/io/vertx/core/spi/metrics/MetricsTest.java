@@ -342,7 +342,6 @@ public class MetricsTest extends VertxTestBase {
     assertEquals(1, metrics.getRegistrations().size());
     HandlerMetric registration = metrics.getRegistrations().get(0);
     assertEquals(ADDRESS1, registration.address);
-    assertEquals(null, registration.repliedAddress);
     consumer.unregister().onComplete(onSuccess(v1 -> {
       assertEquals(0, metrics.getRegistrations().size());
       consumer.unregister().onComplete(onSuccess(v2 -> {
@@ -397,7 +396,6 @@ public class MetricsTest extends VertxTestBase {
       to.eventBus().consumer(ADDRESS1, msg -> {
         HandlerMetric registration = assertRegistration(metrics);
         assertEquals(ADDRESS1, registration.address);
-        assertEquals(null, registration.repliedAddress);
         assertEquals(1, registration.scheduleCount.get());
         assertEquals(expectedLocalCount, registration.localScheduleCount.get());
         assertEquals(1, registration.deliveredCount.get());
@@ -416,7 +414,6 @@ public class MetricsTest extends VertxTestBase {
     }
     HandlerMetric registration = assertRegistration(metrics);
     assertEquals(ADDRESS1, registration.address);
-    assertEquals(null, registration.repliedAddress);
     from.eventBus().request(ADDRESS1, "ping").onComplete(onSuccess(reply -> {
       assertEquals(1, registration.scheduleCount.get());
       // This might take a little time
@@ -438,7 +435,6 @@ public class MetricsTest extends VertxTestBase {
       assertEquals(ADDRESS1, metrics.getRegistrations().get(0).address);
       assertWaitUntil(() -> metrics.getRegistrations().size() == 2);
       HandlerMetric registration = metrics.getRegistrations().get(1);
-      assertEquals(null, registration.repliedAddress); // new behavior
       assertEquals(0, registration.scheduleCount.get());
       assertEquals(0, registration.deliveredCount.get());
       assertEquals(0, registration.localDeliveredCount.get());
@@ -452,13 +448,11 @@ public class MetricsTest extends VertxTestBase {
     vertx.eventBus().request(ADDRESS1, "ping").onComplete(onSuccess(reply -> {
       assertEquals(ADDRESS1, metrics.getRegistrations().get(0).address);
       HandlerMetric registration = replyRegistration.get();
-      assertEquals(null, registration.repliedAddress);
       assertEquals(1, registration.scheduleCount.get());
       assertEquals(1, registration.deliveredCount.get());
       assertEquals(1, registration.localDeliveredCount.get());
       vertx.runOnContext(v -> {
         assertEquals(ADDRESS1, metrics.getRegistrations().get(0).address);
-        assertEquals(null, registration.repliedAddress);
         assertEquals(1, registration.scheduleCount.get());
         assertEquals(1, registration.deliveredCount.get());
         assertEquals(1, registration.localDeliveredCount.get());

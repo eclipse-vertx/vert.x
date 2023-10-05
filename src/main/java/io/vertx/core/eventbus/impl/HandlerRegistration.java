@@ -64,7 +64,7 @@ public abstract class HandlerRegistration<T> implements Closeable {
     }
     registered = bus.addRegistration(address, this, broadcast, localOnly, promise);
     if (bus.metrics != null) {
-      metric = bus.metrics.handlerRegistered(address, null /* regression */);
+      metric = bus.metrics.handlerRegistered(address);
     }
   }
 

@@ -23,13 +23,12 @@ public interface EventBusMetrics<H> extends Metrics {
 
   /**
    * Called when a handler is registered on the event bus.<p/>
-   *
+   * <p>
    * No specific thread and context can be expected when this method is called.
    *
    * @param address the address used to register the handler
-   * @param repliedAddress null when the handler is not a reply handler, otherwise the address this handler is replying to
    */
-  default H handlerRegistered(String address, String repliedAddress) {
+  default H handlerRegistered(String address) {
     return null;
   }
 

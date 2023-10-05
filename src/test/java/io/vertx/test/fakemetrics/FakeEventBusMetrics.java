@@ -76,8 +76,8 @@ public class FakeEventBusMetrics extends FakeMetricsBase implements EventBusMetr
   }
 
   @Override
-  public HandlerMetric handlerRegistered(String address, String repliedAddress) {
-    HandlerMetric registration = new HandlerMetric(address, repliedAddress);
+  public HandlerMetric handlerRegistered(String address) {
+    HandlerMetric registration = new HandlerMetric(address);
     registrations.add(registration);
     return registration;
   }
