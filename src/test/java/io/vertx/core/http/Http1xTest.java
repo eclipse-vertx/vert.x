@@ -15,6 +15,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.EventLoop;
 import io.netty.handler.codec.TooLongFrameException;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.TooLongHttpHeaderException;
 import io.vertx.core.*;
 import io.vertx.core.Future;
@@ -5506,6 +5507,45 @@ public class Http1xTest extends HttpTest {
     Future<Void> shutdown = client.shutdown(10, TimeUnit.SECONDS);
     ref.get().response().end("hello");
     awaitFuture(shutdown);
+    await();
+  }
+
+  @Test
+  public void testEmptyHostHeader() throws Exception {
+    testEmptyHostPortionOfHostHeader("", -1);
+  }
+
+  @Test
+  public void testEmptyHostPortionOfHostHeader() throws Exception {
+    testEmptyHostPortionOfHostHeader(":8080", 8080);
+  }
+
+  private void testEmptyHostPortionOfHostHeader(String hostHeader, int expectedPort) throws Exception {
+    server.requestHandler(req -> {
+      assertEquals("", req.authority().host());
+      assertEquals(expectedPort, req.authority().port());
+      req.response().end();
+    });
+    startServer(testAddress);
+    client.request(new RequestOptions().setServer(testAddress).putHeader(HttpHeaderNames.HOST, hostHeader))
+      .compose(req -> req
+        .send()
+        .compose(HttpClientResponse::body))
+      .onComplete(onSuccess(v -> testComplete()));
+    await();
+  }
+
+  @Test
+  public void testMissingHostHeader() throws Exception {
+    server.requestHandler(req -> {
+      assertEquals(null, req.authority());
+      testComplete();
+    });
+    startServer(testAddress);
+    NetClient nc = vertx.createNetClient();
+    nc.connect(testAddress).onComplete(onSuccess(so -> {
+      so.write("GET / HTTP/1.1\r\n\r\n");
+    }));
     await();
   }
 }
