@@ -19,21 +19,19 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class HandlerMetric {
 
   public final String address;
-  public final String repliedAddress;
   public final AtomicInteger scheduleCount = new AtomicInteger();
   public final AtomicInteger localScheduleCount = new AtomicInteger();
   public final AtomicInteger discardCount = new AtomicInteger();
   public final AtomicInteger deliveredCount = new AtomicInteger();
   public final AtomicInteger localDeliveredCount = new AtomicInteger();
 
-  public HandlerMetric(String address, String repliedAddress) {
+  public HandlerMetric(String address) {
     this.address = address;
-    this.repliedAddress = repliedAddress;
   }
 
   @Override
   public String toString() {
-    return "HandlerRegistration[address=" + address + ",repliedAddress=" + repliedAddress +
+    return "HandlerRegistration[address=" + address +
         ",deliveredCount=" + deliveredCount.get() + ",discardCount="  + discardCount + ",localCount=" + localDeliveredCount.get() + "]";
   }
 }
