@@ -57,7 +57,8 @@ public class HostAndPortTest {
     assertHostAndPort("example.com", -1, "example.com");
     assertHostAndPort("0.1.2.3", -1, "0.1.2.3");
     assertHostAndPort("[0::]", -1, "[0::]");
-    assertNull(HostAndPortImpl.parseHostAndPort("", -1));
+    assertHostAndPort("", -1, "");
+    assertHostAndPort("", 8080, ":8080");
     assertNull(HostAndPortImpl.parseHostAndPort("/", -1));
   }
 
