@@ -41,20 +41,11 @@ class ConnectionHolder {
   private final VertxInternal vertx;
   private final EventBusMetrics metrics;
 
-  private Queue<SomeTask> pending;
+  private Queue<MessageWrite> pendingWrites;
   private NetSocket socket;
   private boolean connected;
   private long timeoutID = -1;
   private long pingTimeoutID = -1;
-
-  private static class SomeTask {
-    final MessageImpl<?, ?> message;
-    final Promise<Void> writePromise;
-    SomeTask(MessageImpl<?, ?> message, Promise<Void> writePromise) {
-      this.message = message;
-      this.writePromise = writePromise;
-    }
-  }
 
   ConnectionHolder(ClusteredEventBus eventBus, String remoteNodeId) {
     this.eventBus = eventBus;
@@ -87,13 +78,13 @@ class ConnectionHolder {
       }
       socket.write(data).onComplete(writePromise);
     } else {
-      if (pending == null) {
+      if (pendingWrites == null) {
         if (log.isDebugEnabled()) {
           log.debug("Not connected to server " + remoteNodeId + " - starting queuing");
         }
-        pending = new ArrayDeque<>();
+        pendingWrites = new ArrayDeque<>();
       }
-      pending.add(new SomeTask(message, writePromise));
+      pendingWrites.add(new MessageWrite(message, writePromise));
     }
   }
 
@@ -109,9 +100,9 @@ class ConnectionHolder {
       vertx.cancelTimer(pingTimeoutID);
     }
     synchronized (this) {
-      SomeTask msg;
-      if (pending != null) {
-        while ((msg = pending.poll()) != null) {
+      MessageWrite msg;
+      if (pendingWrites != null) {
+        while ((msg = pendingWrites.poll()) != null) {
           msg.writePromise.tryFail(cause);
         }
       }
@@ -155,11 +146,11 @@ class ConnectionHolder {
     });
     // Start a pinger
     schedulePing();
-    if (pending != null) {
+    if (pendingWrites != null) {
       if (log.isDebugEnabled()) {
         log.debug("Draining the queue for server " + remoteNodeId);
       }
-      for (SomeTask ctx : pending) {
+      for (MessageWrite ctx : pendingWrites) {
         Buffer data = ((ClusteredMessage<?, ?>)ctx.message).encodeToWire();
         if (metrics != null) {
           metrics.messageWritten(ctx.message.address(), data.length());
@@ -167,6 +158,15 @@ class ConnectionHolder {
         socket.write(data).onComplete(ctx.writePromise);
       }
     }
-    pending = null;
+    pendingWrites = null;
+  }
+
+  private static class MessageWrite {
+    final MessageImpl<?, ?> message;
+    final Promise<Void> writePromise;
+    MessageWrite(MessageImpl<?, ?> message, Promise<Void> writePromise) {
+      this.message = message;
+      this.writePromise = writePromise;
+    }
   }
 }
