@@ -1603,6 +1603,7 @@ public class FileSystemTest extends VertxTestBase {
     String fileName = "some-file.txt";
     createFileWithJunk(fileName, 1234);
     testFSProps(fileName, props -> {
+      assertNotNull(props.name());
       assertTrue(props.totalSpace() > 0);
       assertTrue(props.unallocatedSpace() > 0);
       assertTrue(props.usableSpace() > 0);
