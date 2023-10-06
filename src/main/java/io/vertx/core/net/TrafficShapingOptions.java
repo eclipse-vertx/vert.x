@@ -127,7 +127,7 @@ public class TrafficShapingOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public TrafficShapingOptions setCheckIntervalForStatsTimeUnit(TimeUnit checkIntervalForStatsTimeUnit) {
-    this.maxDelayToWaitTimeUnit = maxDelayToWaitTimeUnit;
+    this.maxDelayToWaitTimeUnit = checkIntervalForStatsTimeUnit;
     return this;
   }
 
