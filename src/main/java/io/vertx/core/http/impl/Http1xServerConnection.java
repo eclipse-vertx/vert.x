@@ -150,7 +150,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
 
   public void handleMessage(Object msg) {
     assert msg != null;
-    if (requestInProgress == null && !keepAlive) {
+    if (requestInProgress == null && !keepAlive && webSocket == null) {
       // Discard message
       return;
     }
@@ -247,7 +247,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
             handleNext(next);
           }
         } else {
-          if (requestInProgress == request) {
+          if (requestInProgress == request || webSocket != null) {
             // Deferred
           } else {
             flushAndClose();
