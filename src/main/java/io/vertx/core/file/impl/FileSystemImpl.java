@@ -12,10 +12,7 @@
 package io.vertx.core.file.impl;
 
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.CopyOptions;
@@ -959,7 +956,7 @@ public class FileSystemImpl implements FileSystem {
         try {
           Path target = vertx.resolveFile(path).toPath();
           FileStore fs = Files.getFileStore(target);
-          return new FileSystemPropsImpl(fs.getTotalSpace(), fs.getUnallocatedSpace(), fs.getUsableSpace());
+          return new FileSystemPropsImpl(fs.name(), fs.getTotalSpace(), fs.getUnallocatedSpace(), fs.getUsableSpace());
         } catch (IOException e) {
           throw new FileSystemException(getFileAccessErrorMessage("analyse", path), e);
         }

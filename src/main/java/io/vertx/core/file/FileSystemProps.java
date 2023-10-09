@@ -23,6 +23,11 @@ import io.vertx.codegen.annotations.VertxGen;
 public interface FileSystemProps {
 
   /**
+   * @return The name of this file store
+   */
+  String name();
+
+  /**
    * @return The total space on the file system, in bytes
    */
   long totalSpace();

@@ -15,14 +15,21 @@ import io.vertx.core.file.FileSystemProps;
 
 public class FileSystemPropsImpl implements FileSystemProps {
 
+  private final String name;
   private final long totalSpace;
   private final long unallocatedSpace;
   private final long usableSpace;
 
-  public FileSystemPropsImpl(long totalSpace, long unallocatedSpace, long usableSpace) {
+  public FileSystemPropsImpl(String name, long totalSpace, long unallocatedSpace, long usableSpace) {
+    this.name = name;
     this.totalSpace = totalSpace;
     this.unallocatedSpace = unallocatedSpace;
     this.usableSpace = usableSpace;
+  }
+
+  @Override
+  public String name() {
+    return name;
   }
 
   @Override
