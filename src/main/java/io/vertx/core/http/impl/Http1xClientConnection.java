@@ -383,6 +383,34 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     }
   }
 
+  private void writeHead(Stream stream, HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, PromiseInternal<Void> handler) {
+    writeToChannel(new MessageWrite() {
+      @Override
+      public void write() {
+        stream.request = request;
+        beginRequest(stream, request, chunked, buf, end, connect, handler);
+      }
+      @Override
+      public void cancel(Throwable cause) {
+        handler.fail(cause);
+      }
+    });
+  }
+
+  private void writeBuffer(Stream stream, ByteBuf buff, boolean end, PromiseInternal<Void> listener) {
+    writeToChannel(new MessageWrite() {
+      @Override
+      public void write() {
+        writeBuffer(stream, buff, end, (FutureListener<Void>)listener);
+      }
+
+      @Override
+      public void cancel(Throwable cause) {
+        listener.fail(cause);
+      }
+    });
+  }
+
   private abstract static class Stream {
 
     protected final Promise<HttpClientStream> promise;
@@ -391,6 +419,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
 
     private Object trace;
     private Object metric;
+    private HttpRequestHead request;
     private HttpResponseHead response;
     private boolean responseEnded;
     private long bytesRead;
@@ -433,7 +462,6 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     private final InboundBuffer<Object> queue;
     private boolean reset;
     private boolean closed;
-    private HttpRequestHead request;
     private Handler<HttpResponseHead> headHandler;
     private Handler<Buffer> chunkHandler;
     private Handler<MultiMap> endHandler;
@@ -560,48 +588,19 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     @Override
     public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect) {
       PromiseInternal<Void> promise = context.promise();
-      writeHead(request, chunked, buf, end, connect, promise);
+      conn.writeHead(this, request, chunked, buf, end, connect, promise);
       return promise.future();
-    }
-
-    private void writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, PromiseInternal<Void> handler) {
-      conn.writeToChannel(new MessageWrite() {
-        @Override
-        public void write() {
-          StreamImpl.this.request = request;
-          conn.beginRequest(StreamImpl.this, request, chunked, buf, end, connect, handler);
-        }
-
-        @Override
-        public void cancel(Throwable cause) {
-          handler.fail(cause);
-        }
-      });
     }
 
     @Override
     public Future<Void> writeBuffer(ByteBuf buff, boolean end) {
       if (buff != null || end) {
         PromiseInternal<Void> listener = context.promise();
-        writeBuffer(buff, end, listener);
+        conn.writeBuffer(this, buff, end, listener);
         return listener.future();
       } else {
         throw new IllegalStateException("???");
       }
-    }
-
-    private void writeBuffer(ByteBuf buff, boolean end, PromiseInternal<Void> listener) {
-      conn.writeToChannel(new MessageWrite() {
-        @Override
-        public void write() {
-          conn.writeBuffer(StreamImpl.this, buff, end, listener);
-        }
-
-        @Override
-        public void cancel(Throwable cause) {
-          listener.fail(cause);
-        }
-      });
     }
 
     @Override
@@ -849,40 +848,13 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     } else {
       HttpRequestHead request;
       synchronized (this) {
-        request = ((StreamImpl)stream).request;
+        request = stream.request;
         stream.response = response;
-
         if (metrics != null) {
           metrics.responseBegin(stream.metric, response);
         }
-
-        //
-        if (response.statusCode != 100 && request.method != HttpMethod.CONNECT) {
-          // See https://tools.ietf.org/html/rfc7230#section-6.3
-          String responseConnectionHeader = response.headers.get(HttpHeaderNames.CONNECTION);
-          String requestConnectionHeader = request.headers != null ? request.headers.get(HttpHeaderNames.CONNECTION) : null;
-          // We don't need to protect against concurrent changes on forceClose as it only goes from false -> true
-          if (HttpHeaderValues.CLOSE.contentEqualsIgnoreCase(responseConnectionHeader) || HttpHeaderValues.CLOSE.contentEqualsIgnoreCase(requestConnectionHeader)) {
-            // In all cases, if we have a close connection option then we SHOULD NOT treat the connection as persistent
-            this.close = true;
-          } else if (response.version == HttpVersion.HTTP_1_0 && !HttpHeaderValues.KEEP_ALIVE.contentEqualsIgnoreCase(responseConnectionHeader)) {
-            // In the HTTP/1.0 case both request/response need a keep-alive connection header the connection to be persistent
-            // currently Vertx forces the Connection header if keepalive is enabled for 1.0
-            this.close = true;
-          }
-          String keepAliveHeader = response.headers.get(HttpHeaderNames.KEEP_ALIVE);
-          if (keepAliveHeader != null) {
-            int timeout = HttpUtils.parseKeepAliveHeaderTimeout(keepAliveHeader);
-            if (timeout != -1) {
-              this.keepAliveTimeout = timeout;
-            }
-          }
-        }
       }
-
-      //
       stream.handleHead(response);
-
       if (isConnect) {
         if ((request.method == HttpMethod.CONNECT &&
              response.statusCode == 200) || (
@@ -931,19 +903,44 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
 
   private void handleResponseEnd(Stream stream, LastHttpContent trailer) {
     boolean check;
+    HttpResponseHead response ;
     synchronized (this) {
-      if (stream.response == null) {
+      response = stream.response;
+      if (response == null) {
         // 100-continue
         return;
       }
       responses.pop();
-      close |= !options.isKeepAlive();
+      HttpRequestHead request = stream.request;
+      if ((request.method != HttpMethod.CONNECT && response.statusCode != 101)) {
+        // See https://tools.ietf.org/html/rfc7230#section-6.3
+        String responseConnectionHeader = response.headers.get(HttpHeaderNames.CONNECTION);
+        String requestConnectionHeader = request.headers != null ? request.headers.get(HttpHeaderNames.CONNECTION) : null;
+        // We don't need to protect against concurrent changes on forceClose as it only goes from false -> true
+        boolean close = !options.isKeepAlive();
+        if (HttpHeaderValues.CLOSE.contentEqualsIgnoreCase(responseConnectionHeader) || HttpHeaderValues.CLOSE.contentEqualsIgnoreCase(requestConnectionHeader)) {
+          // In all cases, if we have a close connection option then we SHOULD NOT treat the connection as persistent
+          close = true;
+        } else if (response.version == HttpVersion.HTTP_1_0 && !HttpHeaderValues.KEEP_ALIVE.contentEqualsIgnoreCase(responseConnectionHeader)) {
+          // In the HTTP/1.0 case both request/response need a keep-alive connection header the connection to be persistent
+          // currently Vertx forces the Connection header if keepalive is enabled for 1.0
+          close = true;
+        }
+        this.close = close;
+        String keepAliveHeader = response.headers.get(HttpHeaderNames.KEEP_ALIVE);
+        if (keepAliveHeader != null) {
+          int timeout = HttpUtils.parseKeepAliveHeaderTimeout(keepAliveHeader);
+          if (timeout != -1) {
+            this.keepAliveTimeout = timeout;
+          }
+        }
+      }
       stream.responseEnded = true;
       check = requests.peek() != stream;
     }
     VertxTracer tracer = context.tracer();
     if (tracer != null) {
-      tracer.receiveResponse(stream.context, stream.response, stream.trace, null, HttpUtils.CLIENT_RESPONSE_TAG_EXTRACTOR);
+      tracer.receiveResponse(stream.context, response, stream.trace, null, HttpUtils.CLIENT_RESPONSE_TAG_EXTRACTOR);
     }
     if (metrics != null) {
       metrics.responseEnd(stream.metric, stream.bytesRead);
