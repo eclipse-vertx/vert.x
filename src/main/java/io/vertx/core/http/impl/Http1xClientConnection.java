@@ -193,15 +193,17 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   }
 
   /**
-   * @return a raw {@code NetSocket} - for internal use
+   * @return a raw {@code NetSocket} - for internal use - must be called from event-loop
    */
   public NetSocketInternal toNetSocket() {
-    removeChannelHandlers();
-    NetSocketImpl socket = new NetSocketImpl(context, chctx, null, null, metrics(), false);
-    socket.metric(metric());
     evictionHandler.handle(null);
-    chctx.pipeline().replace("handler", "handler", VertxHandler.create(ctx -> socket));
-    return socket;
+    chctx.pipeline().replace("handler", "handler", VertxHandler.create(ctx -> {
+      NetSocketImpl socket = new NetSocketImpl(context, ctx, null, null, metrics(), false);
+      socket.metric(metric());
+      return socket;
+    }));
+    VertxHandler<NetSocketImpl> handler = (VertxHandler<NetSocketImpl>) chctx.pipeline().get(VertxHandler.class);
+    return handler.getConnection();
   }
 
   private HttpRequest createRequest(

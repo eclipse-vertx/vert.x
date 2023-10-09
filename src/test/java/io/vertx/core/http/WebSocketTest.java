@@ -12,11 +12,9 @@
 package io.vertx.core.http;
 
 
+import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
-import io.netty.handler.codec.http.websocketx.WebSocket13FrameDecoder;
-import io.netty.handler.codec.http.websocketx.WebSocket13FrameEncoder;
-import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
+import io.netty.handler.codec.http.websocketx.*;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
@@ -2835,6 +2833,44 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   @Test
+  public void testServerWebSocketHandshakeWithNonPersistentConnection() {
+    server = vertx.createHttpServer();
+    server.webSocketHandler(ws -> {
+      ws.frameHandler(frame -> {
+        ws.close();
+      });
+    });
+    server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST).onComplete(onSuccess(v1 -> {
+      handshake(vertx.createHttpClient(), req -> {
+        MultiMap headers = req.headers();
+        headers.add("Connection", "close");
+        req.send().onComplete(onSuccess(resp -> {
+          assertEquals(101, resp.statusCode());
+          resp.endHandler(v -> {
+            Http1xClientConnection conn = (Http1xClientConnection) req.connection();
+            NetSocketInternal soi = conn.toNetSocket();
+            soi.messageHandler(msg -> {
+              if (msg instanceof CloseWebSocketFrame) {
+                soi.close();
+              }
+            });
+            ChannelPipeline pipeline = soi.channelHandlerContext().pipeline();
+            pipeline.addBefore("handler", "encoder", new WebSocket13FrameEncoder(true));
+            pipeline.addBefore("handler", "decoder", new WebSocket13FrameDecoder(false, false, 1000));
+            pipeline.remove("codec");
+            soi.writeMessage(new PingWebSocketFrame()).onComplete(onSuccess(written -> {
+            }));
+            soi.closeHandler(v2 -> {
+              testComplete();
+            });
+          });
+        }));
+      });
+    }));
+    await();
+  }
+
+  @Test
   public void testServerCloseHandshake() {
     short status = (short)(4000 + TestUtils.randomPositiveInt() % 100);
     waitFor(2);
@@ -2852,8 +2888,10 @@ public class WebSocketTest extends VertxTestBase {
           assertEquals(101, resp.statusCode());
           Http1xClientConnection conn = (Http1xClientConnection) req.connection();
           NetSocketInternal soi = conn.toNetSocket();
-          soi.channelHandlerContext().pipeline().addBefore("handler", "encoder", new WebSocket13FrameEncoder(true));
-          soi.channelHandlerContext().pipeline().addBefore("handler", "decoder", new WebSocket13FrameDecoder(false, false, 1000));
+          ChannelPipeline pipeline = soi.channelHandlerContext().pipeline();
+          pipeline.addBefore("handler", "encoder", new WebSocket13FrameEncoder(true));
+          pipeline.addBefore("handler", "decoder", new WebSocket13FrameDecoder(false, false, 1000));
+          pipeline.remove("codec");
           String reason = randomAlphaString(10);
           soi.writeMessage(new CloseWebSocketFrame(status, reason));
           AtomicBoolean closeFrameReceived = new AtomicBoolean();
