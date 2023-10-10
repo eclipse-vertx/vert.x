@@ -112,12 +112,12 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
     }
     GlobalTrafficShapingHandler trafficShapingHandler;
     if (options.getMaxDelayToWait() != 0 && options.getCheckIntervalForStats() != 0) {
-      long maxDelayToWaitInSeconds = options.getMaxDelayToWaitTimeUnit().toSeconds(options.getMaxDelayToWait());
-      long checkIntervalForStatsInSeconds = options.getCheckIntervalForStatsTimeUnit().toSeconds(options.getCheckIntervalForStats());
-      trafficShapingHandler = new GlobalTrafficShapingHandler(eventLoopGroup, options.getOutboundGlobalBandwidth(), options.getInboundGlobalBandwidth(), checkIntervalForStatsInSeconds, maxDelayToWaitInSeconds);
+      long maxDelayToWaitInMillis = options.getMaxDelayToWaitTimeUnit().toMillis(options.getMaxDelayToWait());
+      long checkIntervalForStatsInMillis = options.getCheckIntervalForStatsTimeUnit().toMillis(options.getCheckIntervalForStats());
+      trafficShapingHandler = new GlobalTrafficShapingHandler(eventLoopGroup, options.getOutboundGlobalBandwidth(), options.getInboundGlobalBandwidth(), checkIntervalForStatsInMillis, maxDelayToWaitInMillis);
     } else if (options.getCheckIntervalForStats() != 0) {
-      long checkIntervalForStatsInSeconds = options.getCheckIntervalForStatsTimeUnit().toSeconds(options.getCheckIntervalForStats());
-      trafficShapingHandler = new GlobalTrafficShapingHandler(eventLoopGroup, options.getOutboundGlobalBandwidth(), options.getInboundGlobalBandwidth(), checkIntervalForStatsInSeconds);
+      long checkIntervalForStatsInMillis = options.getCheckIntervalForStatsTimeUnit().toMillis(options.getCheckIntervalForStats());
+      trafficShapingHandler = new GlobalTrafficShapingHandler(eventLoopGroup, options.getOutboundGlobalBandwidth(), options.getInboundGlobalBandwidth(), checkIntervalForStatsInMillis);
     } else {
       trafficShapingHandler = new GlobalTrafficShapingHandler(eventLoopGroup, options.getOutboundGlobalBandwidth(), options.getInboundGlobalBandwidth());
     }
