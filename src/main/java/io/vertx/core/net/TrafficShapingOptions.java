@@ -11,6 +11,7 @@
 
 package io.vertx.core.net;
 
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import io.netty.util.internal.ObjectUtil;
@@ -24,7 +25,7 @@ import io.vertx.core.json.JsonObject;
 @Unstable
 @DataObject(generateConverter = true, publicConverter = false)
 public class TrafficShapingOptions {
-  /*
+  /**
    * Default inbound bandwidth limit in bytes/sec = 0 (0 implies unthrottled)
    */
   public static final long DEFAULT_INBOUND_GLOBAL_BANDWIDTH_LIMIT = 0;
@@ -33,6 +34,24 @@ public class TrafficShapingOptions {
    * Default outbound bandwidth limit in bytes/sec = 0 (0 implies unthrottled)
    */
   public static final long DEFAULT_OUTBOUND_GLOBAL_BANDWIDTH_LIMIT = 0;
+
+  /**
+   * Default peak outbound bandwidth limit in bytes/sec = 400 Mbps (aligns with netty's default in
+   * {@code io.netty.handler.traffic.AbstractTrafficShapingHandler#DEFAULT_MAX_SIZE})
+   */
+  public static final long DEFAULT_PEAK_OUTBOUND_GLOBAL_BANDWIDTH = 400 * 1024 * 1024L;
+
+  /**
+   * Default check interval for stats = 1 second. The units are in milliseconds. (Aligns with netty's
+   * default in {@link io.netty.handler.traffic.AbstractTrafficShapingHandler#DEFAULT_CHECK_INTERVAL})
+   */
+  public static final long DEFAULT_CHECK_INTERVAL = TimeUnit.SECONDS.toMillis(1);
+
+  /**
+   * Default max delay to wait = 15 seconds. The units are in milliseconds. (Aligns with netty's
+   * default in {@link io.netty.handler.traffic.AbstractTrafficShapingHandler#DEFAULT_MAX_TIME})
+   */
+  public static final long DEFAULT_MAX_TIME = TimeUnit.SECONDS.toMillis(15);
 
   private long inboundGlobalBandwidth;
   private long outboundGlobalBandwidth;
@@ -43,6 +62,13 @@ public class TrafficShapingOptions {
   private TimeUnit checkIntervalForStatsTimeUnit;
 
   public TrafficShapingOptions() {
+    inboundGlobalBandwidth = DEFAULT_INBOUND_GLOBAL_BANDWIDTH_LIMIT;
+    outboundGlobalBandwidth = DEFAULT_OUTBOUND_GLOBAL_BANDWIDTH_LIMIT;
+    peakOutboundGlobalBandwidth = DEFAULT_PEAK_OUTBOUND_GLOBAL_BANDWIDTH;
+    maxDelayToWait = DEFAULT_MAX_TIME;
+    maxDelayToWaitTimeUnit = TimeUnit.MILLISECONDS;
+    checkIntervalForStats = DEFAULT_CHECK_INTERVAL;
+    checkIntervalForStatsTimeUnit = TimeUnit.MILLISECONDS;
   }
 
   public TrafficShapingOptions(TrafficShapingOptions other) {
@@ -51,6 +77,8 @@ public class TrafficShapingOptions {
     this.peakOutboundGlobalBandwidth = other.getPeakOutboundGlobalBandwidth();
     this.maxDelayToWait = other.getMaxDelayToWait();
     this.checkIntervalForStats = other.getCheckIntervalForStats();
+    this.maxDelayToWaitTimeUnit = other.getMaxDelayToWaitTimeUnit();
+    this.checkIntervalForStatsTimeUnit = other.getCheckIntervalForStatsTimeUnit();
   }
 
   public TrafficShapingOptions(JsonObject json) {
@@ -104,7 +132,7 @@ public class TrafficShapingOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public TrafficShapingOptions setMaxDelayToWaitUnit(TimeUnit maxDelayToWaitTimeUnit) {
-    this.maxDelayToWaitTimeUnit = maxDelayToWaitTimeUnit;
+    this.maxDelayToWaitTimeUnit = Objects.requireNonNull(maxDelayToWaitTimeUnit, "maxDelayToWaitTimeUnit");
     return this;
   }
 
@@ -127,7 +155,7 @@ public class TrafficShapingOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public TrafficShapingOptions setCheckIntervalForStatsTimeUnit(TimeUnit checkIntervalForStatsTimeUnit) {
-    this.maxDelayToWaitTimeUnit = checkIntervalForStatsTimeUnit;
+    this.checkIntervalForStatsTimeUnit = Objects.requireNonNull(checkIntervalForStatsTimeUnit, "checkIntervalForStatsTimeUnit");
     return this;
   }
 
@@ -159,7 +187,7 @@ public class TrafficShapingOptions {
   }
 
   /**
-   * @return max outbound bandwdith limit in bytes
+   * @return max outbound bandwidth limit in bytes
    */
   public long getPeakOutboundGlobalBandwidth() {
     return peakOutboundGlobalBandwidth;
