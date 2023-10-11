@@ -16,6 +16,7 @@ import io.vertx.core.impl.logging.LoggerFactory;
 
 import java.util.LinkedList;
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Consumer;
 
 /**
@@ -124,11 +125,27 @@ public class TaskQueue {
    */
   public void execute(Runnable task, Executor executor) {
     synchronized (tasks) {
-      tasks.add(new ExecuteTask(task, executor));
-      if (this.currentExecutor == null) {
-        this.currentExecutor = executor;
-        executor.execute(runner);
+      if (currentExecutor == null) {
+        currentExecutor = executor;
+        try {
+          executor.execute(runner);
+        } catch (RejectedExecutionException e) {
+          currentExecutor = null;
+          throw e;
+        }
       }
+      // Add the task after the runner has been accepted to the executor
+      // to cover the case of a rejected execution exception.
+      tasks.add(new ExecuteTask(task, executor));
+    }
+  }
+
+  /**
+   * Test if the task queue is empty and no current executor is running anymore.
+   */
+  public boolean isEmpty() {
+    synchronized (tasks) {
+      return tasks.isEmpty() && currentExecutor == null;
     }
   }
 
