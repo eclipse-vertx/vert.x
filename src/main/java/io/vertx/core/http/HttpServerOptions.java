@@ -169,6 +169,21 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public static final boolean DEFAULT_REGISTER_WEBSOCKET_WRITE_HANDLERS = false;
 
+  /**
+   * HTTP/2 RST floods DDOS protection, max number of RST frame per time window allowed = 200.
+   */
+  public static final int DEFAULT_HTTP2_RST_FLOOD_MAX_RST_FRAME_PER_WINDOW = 200;
+
+  /**
+   * HTTP/2 RST floods DDOS protection, time window duration = 30.
+   */
+  public static final int DEFAULT_HTTP2_RST_FLOOD_WINDOW_DURATION = 30;
+
+  /**
+   * HTTP/2 RST floods DDOS protection, time window duration unit = {@link TimeUnit#SECONDS}.
+   */
+  public static final TimeUnit DEFAULT_HTTP2_RST_FLOOD_WINDOW_DURATION_TIME_UNIT = TimeUnit.SECONDS;
+
   private boolean compressionSupported;
   private int compressionLevel;
   private List<CompressionOptions> compressors;
@@ -194,6 +209,9 @@ public class HttpServerOptions extends NetServerOptions {
   private int webSocketClosingTimeout;
   private TracingPolicy tracingPolicy;
   private boolean registerWebSocketWriteHandlers;
+  private int http2RstFloodMaxRstFramePerWindow;
+  private int http2RstFloodWindowDuration;
+  private TimeUnit http2RstFloodWindowDurationTimeUnit;
 
   /**
    * Default constructor
@@ -236,6 +254,9 @@ public class HttpServerOptions extends NetServerOptions {
     this.webSocketClosingTimeout = other.webSocketClosingTimeout;
     this.tracingPolicy = other.tracingPolicy;
     this.registerWebSocketWriteHandlers = other.registerWebSocketWriteHandlers;
+    this.http2RstFloodMaxRstFramePerWindow = other.http2RstFloodMaxRstFramePerWindow;
+    this.http2RstFloodWindowDuration = other.http2RstFloodWindowDuration;
+    this.http2RstFloodWindowDurationTimeUnit = other.http2RstFloodWindowDurationTimeUnit;
   }
 
   /**
@@ -285,6 +306,9 @@ public class HttpServerOptions extends NetServerOptions {
     webSocketClosingTimeout = DEFAULT_WEBSOCKET_CLOSING_TIMEOUT;
     tracingPolicy = DEFAULT_TRACING_POLICY;
     registerWebSocketWriteHandlers = DEFAULT_REGISTER_WEBSOCKET_WRITE_HANDLERS;
+    http2RstFloodMaxRstFramePerWindow = DEFAULT_HTTP2_RST_FLOOD_MAX_RST_FRAME_PER_WINDOW;
+    http2RstFloodWindowDuration = DEFAULT_HTTP2_RST_FLOOD_WINDOW_DURATION;
+    http2RstFloodWindowDurationTimeUnit = DEFAULT_HTTP2_RST_FLOOD_WINDOW_DURATION_TIME_UNIT;
   }
 
   @Override
@@ -1094,6 +1118,67 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public HttpServerOptions setRegisterWebSocketWriteHandlers(boolean registerWebSocketWriteHandlers) {
     this.registerWebSocketWriteHandlers = registerWebSocketWriteHandlers;
+    return this;
+  }
+
+  /**
+   * @return the max number of RST frame allowed per time window
+   */
+  public int getHttp2RstFloodMaxRstFramePerWindow() {
+    return http2RstFloodMaxRstFramePerWindow;
+  }
+
+  /**
+   * Set the max number of RST frame allowed per time window, this is used to prevent HTTP/2 RST frame flood DDOS
+   * attacks. The default value is {@link #DEFAULT_HTTP2_RST_FLOOD_MAX_RST_FRAME_PER_WINDOW}, setting zero or a negative value, disables flood protection.
+   *
+   * @param http2RstFloodMaxRstFramePerWindow the new maximum
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setHttp2RstFloodMaxRstFramePerWindow(int http2RstFloodMaxRstFramePerWindow) {
+    this.http2RstFloodMaxRstFramePerWindow = http2RstFloodMaxRstFramePerWindow;
+    return this;
+  }
+
+  /**
+   * @return the duration of the time window when checking the max number of RST frames.
+   */
+  public int getHttp2RstFloodWindowDuration() {
+    return http2RstFloodWindowDuration;
+  }
+
+  /**
+   * Set the duration of the time window when checking the max number of RST frames, this is used to prevent HTTP/2 RST frame flood DDOS
+   * attacks. The default value is {@link #DEFAULT_HTTP2_RST_FLOOD_WINDOW_DURATION}, setting zero or a negative value, disables flood protection.
+   *
+   * @param http2RstFloodWindowDuration the new duration
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setHttp2RstFloodWindowDuration(int http2RstFloodWindowDuration) {
+    this.http2RstFloodWindowDuration = http2RstFloodWindowDuration;
+    return this;
+  }
+
+  /**
+   * @return the time unit of the duration of the time window when checking the max number of RST frames.
+   */
+  public TimeUnit getHttp2RstFloodWindowDurationTimeUnit() {
+    return http2RstFloodWindowDurationTimeUnit;
+  }
+
+  /**
+   * Set the time unit of the duration of the time window when checking the max number of RST frames, this is used to
+   * prevent HTTP/2 RST frame flood DDOS attacks. The default value is {@link #DEFAULT_HTTP2_RST_FLOOD_WINDOW_DURATION_TIME_UNIT},
+   * setting zero or a negative value, disables the flood protection.
+   *
+   * @param http2RstFloodWindowDurationTimeUnit the new duration
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setHttp2RstFloodWindowDurationTimeUnit(TimeUnit http2RstFloodWindowDurationTimeUnit) {
+    if (http2RstFloodWindowDurationTimeUnit == null) {
+      throw new NullPointerException();
+    }
+    this.http2RstFloodWindowDurationTimeUnit = http2RstFloodWindowDurationTimeUnit;
     return this;
   }
 }
