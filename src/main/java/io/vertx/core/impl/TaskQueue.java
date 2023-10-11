@@ -125,7 +125,6 @@ public class TaskQueue {
    */
   public void execute(Runnable task, Executor executor) {
     synchronized (tasks) {
-      tasks.add(new ExecuteTask(task, executor));
       if (currentExecutor == null) {
         currentExecutor = executor;
         try {
@@ -135,6 +134,18 @@ public class TaskQueue {
           throw e;
         }
       }
+      // Add the task after the runner has been accepted to the executor
+      // to cover the case of a rejected execution exception.
+      tasks.add(new ExecuteTask(task, executor));
+    }
+  }
+
+  /**
+   * Test if the task queue is empty and no current executor is running anymore.
+   */
+  public boolean isEmpty() {
+    synchronized (tasks) {
+      return tasks.isEmpty() && currentExecutor == null;
     }
   }
 
