@@ -1706,16 +1706,16 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testResponseTrailersPutAll() {
+  public void testResponseTrailersPutAll() throws Exception {
     testResponseTrailers(false);
   }
 
   @Test
-  public void testResponseTrailersPutIndividually() {
+  public void testResponseTrailersPutIndividually() throws Exception {
     testResponseTrailers(true);
   }
 
-  private void testResponseTrailers(boolean individually) {
+  private void testResponseTrailers(boolean individually) throws Exception {
     MultiMap trailers = randomMultiMap(10);
 
     server.requestHandler(req -> {
@@ -1730,21 +1730,21 @@ public abstract class HttpTest extends HttpTestBase {
       req.response().end();
     });
 
-    server.listen(testAddress, onSuccess(s -> {
-      client.request(requestOptions).onComplete(onSuccess(req -> {
-        req.send(onSuccess(resp -> {
-          resp.endHandler(v -> {
-            assertEquals(trailers.size(), resp.trailers().size());
-            for (Map.Entry<String, String> entry : trailers) {
-              assertEquals(entry.getValue(), resp.trailers().get(entry.getKey()));
-              assertEquals(entry.getValue(), resp.getTrailer(entry.getKey()));
-            }
-            testComplete();
-          });
-        }));
-      }));
+    startServer(testAddress);
+    client.request(requestOptions).compose(req -> req
+      .send()
+      .compose(resp -> resp
+        .end()
+        .map(v -> {
+          assertEquals(trailers.size(), resp.trailers().size());
+          for (Map.Entry<String, String> entry : trailers) {
+            assertEquals(entry.getValue(), resp.trailers().get(entry.getKey()));
+            assertEquals(entry.getValue(), resp.getTrailer(entry.getKey()));
+          }
+          return v;
+        }))).onComplete(onSuccess(v -> {
+      testComplete();
     }));
-
     await();
   }
 
