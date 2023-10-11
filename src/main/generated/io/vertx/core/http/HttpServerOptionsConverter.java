@@ -65,6 +65,21 @@ public class HttpServerOptionsConverter {
             obj.setHttp2ConnectionWindowSize(((Number)member.getValue()).intValue());
           }
           break;
+        case "http2RstFloodMaxRstFramePerWindow":
+          if (member.getValue() instanceof Number) {
+            obj.setHttp2RstFloodMaxRstFramePerWindow(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "http2RstFloodWindowDuration":
+          if (member.getValue() instanceof Number) {
+            obj.setHttp2RstFloodWindowDuration(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "http2RstFloodWindowDurationTimeUnit":
+          if (member.getValue() instanceof String) {
+            obj.setHttp2RstFloodWindowDurationTimeUnit(java.util.concurrent.TimeUnit.valueOf((String)member.getValue()));
+          }
+          break;
         case "initialSettings":
           if (member.getValue() instanceof JsonObject) {
             obj.setInitialSettings(new io.vertx.core.http.Http2Settings((io.vertx.core.json.JsonObject)member.getValue()));
@@ -171,6 +186,11 @@ public class HttpServerOptionsConverter {
     json.put("decompressionSupported", obj.isDecompressionSupported());
     json.put("handle100ContinueAutomatically", obj.isHandle100ContinueAutomatically());
     json.put("http2ConnectionWindowSize", obj.getHttp2ConnectionWindowSize());
+    json.put("http2RstFloodMaxRstFramePerWindow", obj.getHttp2RstFloodMaxRstFramePerWindow());
+    json.put("http2RstFloodWindowDuration", obj.getHttp2RstFloodWindowDuration());
+    if (obj.getHttp2RstFloodWindowDurationTimeUnit() != null) {
+      json.put("http2RstFloodWindowDurationTimeUnit", obj.getHttp2RstFloodWindowDurationTimeUnit().name());
+    }
     if (obj.getInitialSettings() != null) {
       json.put("initialSettings", obj.getInitialSettings().toJson());
     }
