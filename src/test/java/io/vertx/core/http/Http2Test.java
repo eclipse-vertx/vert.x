@@ -1047,4 +1047,29 @@ public class Http2Test extends HttpTest {
     }));
     await();
   }
+
+  @Test
+  public void testRstFloodProtection() throws Exception {
+    server.requestHandler(req -> {
+    });
+    startServer(testAddress);
+    int num = HttpServerOptions.DEFAULT_HTTP2_RST_FLOOD_MAX_RST_FRAME_PER_WINDOW + 1;
+    for (int i = 0;i < num;i++) {
+      int val = i;
+      client.request(requestOptions, onSuccess(req -> {
+        if (val == 0) {
+          req
+            .connection()
+            .goAwayHandler(ga -> {
+              assertEquals(11, ga.getErrorCode()); // Enhance your calm
+              testComplete();
+            });
+        }
+        req.end().onComplete(onSuccess(v -> {
+          req.reset();
+        }));
+      }));
+    }
+    await();
+  }
 }
