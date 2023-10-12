@@ -1130,6 +1130,14 @@ The request handler are notified of stream reset events with the {@link io.vertx
 {@link examples.HTTP2Examples#example12}
 ----
 
+=== HTTP/2 RST flood protection
+
+An HTTP/2 server is protected against RST flood DDOS attacks (CVE-2023-44487): there is an upper bound to the number of RST
+frames a server can receive in a time window. The default configuration sets the upper bound to `200` for a duration of
+`30` seconds.
+
+You can use {@link io.vertx.core.http.HttpServerOptions#setHttp2RstFloodMaxRstFramePerWindow} and {@link io.vertx.core.http.HttpServerOptions#setHttp2RstFloodWindowDuration} to override these settings.
+
 === Handling HTTP responses
 
 You receive an instance of {@link io.vertx.core.http.HttpClientResponse} into the handler that you specify in of
