@@ -262,6 +262,24 @@ public final class FakeDNSServer extends DnsServer {
     });
   }
 
+  public FakeDNSServer testResolveDNAME(final String dname) {
+    return store(new RecordStore() {
+      @Override
+      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
+        Set<ResourceRecord> set = new HashSet<>();
+
+        ResourceRecordModifier rm = new ResourceRecordModifier();
+        rm.setDnsClass(RecordClass.IN);
+        rm.setDnsName("dns.vertx.io");
+        rm.setDnsTtl(100);
+        rm.setDnsType(RecordType.DNAME);
+        rm.put(DnsAttribute.DOMAIN_NAME, dname);
+        set.add(rm.getEntry());
+        return set;
+      }
+    });
+  }
+
   public FakeDNSServer testLookup4(final String ip) {
     return store(new RecordStore() {
       @Override
