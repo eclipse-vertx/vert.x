@@ -220,7 +220,7 @@ public class RecordDecoder {
         DnsRecordType type = record.type();
         Function<DnsRecord, ?> decoder = decoders.get(type);
         if (decoder == null) {
-            throw new IllegalStateException("Unsupported resource record type [id: " + type + "].");
+            throw new DecoderException("DNS record decoding error occurred: Unsupported resource record type [id: " + type + "].");
         }
         T result = null;
         try {

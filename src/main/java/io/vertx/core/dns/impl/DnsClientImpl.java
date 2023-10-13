@@ -14,6 +14,7 @@ package io.vertx.core.dns.impl;
 import io.netty.channel.*;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
+import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.dns.*;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.collection.LongObjectHashMap;
@@ -333,7 +334,14 @@ public final class DnsClientImpl implements DnsClient {
         List<T> records = new ArrayList<>(count);
         for (int idx = 0;idx < count;idx++) {
           DnsRecord a = msg.recordAt(DnsSection.ANSWER, idx);
-          T record = RecordDecoder.decode(a);
+          T record;
+          try {
+            record = RecordDecoder.decode(a);
+          } catch (DecoderException e) {
+            fail(e);
+            return;
+          }
+
           if (isRequestedType(a.type(), types)) {
             records.add(record);
           }
