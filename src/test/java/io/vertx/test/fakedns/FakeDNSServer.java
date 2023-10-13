@@ -13,7 +13,6 @@ package io.vertx.test.fakedns;
 
 import org.apache.directory.server.dns.DnsException;
 import org.apache.directory.server.dns.DnsServer;
-import org.apache.directory.server.dns.io.encoder.DnsMessageEncoder;
 import org.apache.directory.server.dns.io.encoder.ResourceRecordEncoder;
 import org.apache.directory.server.dns.messages.DnsMessage;
 import org.apache.directory.server.dns.messages.DnsMessageModifier;
