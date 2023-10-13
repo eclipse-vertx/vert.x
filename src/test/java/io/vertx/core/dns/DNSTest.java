@@ -372,6 +372,19 @@ public class DNSTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testResolveMXWhenDNSRepliesWithDNAMERecord() throws Exception {
+    final DnsClient dns = prepareDns();
+    dnsServer.testResolveDNAME("mail.vertx.io");
+
+    dns.resolveMX("vertx.io")
+      .onComplete(ar -> {
+        assertTrue(ar.failed());
+        testComplete();
+      });
+    await();
+  }
+
   private TestLoggerFactory testLogging(DnsClientOptions options) {
     final String ip = "10.0.0.1";
     dnsServer.testResolveA(ip);
