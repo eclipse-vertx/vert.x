@@ -535,11 +535,20 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return createEventLoopContext(null, closeFuture, null, Thread.currentThread().getContextClassLoader());
   }
 
-  @Override
-  public ContextImpl createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
+  private ContextImpl createWorkerContext(EventLoop eventLoop, CloseFuture closeFuture, WorkerPool workerPool, Deployment deployment, ClassLoader tccl) {
     TaskQueue orderedTasks = new TaskQueue();
     WorkerPool wp = workerPool != null ? workerPool : this.workerPool;
-    return new ContextImpl(this, false, eventLoopGroup.next(), new WorkerExecutor(wp, orderedTasks), internalWorkerPool, wp, orderedTasks, deployment, closeFuture, disableTCCL ? null : tccl);
+    return new ContextImpl(this, false, eventLoop, new WorkerExecutor(wp, orderedTasks), internalWorkerPool, wp, orderedTasks, deployment, closeFuture, disableTCCL ? null : tccl);
+  }
+
+  @Override
+  public ContextInternal createWorkerContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
+    return createWorkerContext(eventLoop, closeFuture, workerPool, null, tccl);
+  }
+
+  @Override
+  public ContextImpl createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
+    return createWorkerContext(eventLoopGroup.next(), closeFuture, workerPool, deployment, tccl);
   }
 
   @Override
