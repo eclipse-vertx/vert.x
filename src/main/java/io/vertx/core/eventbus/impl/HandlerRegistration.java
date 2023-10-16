@@ -24,10 +24,10 @@ import java.util.function.Consumer;
 
 public abstract class HandlerRegistration<T> implements Closeable {
 
-  public final ContextInternal context;
-  public final EventBusImpl bus;
-  public final String address;
-  public final boolean src;
+  protected final ContextInternal context;
+  protected final EventBusImpl bus;
+  protected final String address;
+  protected final boolean src;
   private Consumer<Promise<Void>> registered;
   private Object metric;
 
@@ -52,6 +52,10 @@ public abstract class HandlerRegistration<T> implements Closeable {
         discard(msg);
       }
     });
+  }
+
+  public String address() {
+    return address;
   }
 
   protected abstract boolean doReceive(Message<T> msg);
