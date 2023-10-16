@@ -150,6 +150,21 @@ public class HttpServerOptionsConverter {
             obj.setRegisterWebSocketWriteHandlers((Boolean)member.getValue());
           }
           break;
+        case "http2RstFloodMaxRstFramePerWindow":
+          if (member.getValue() instanceof Number) {
+            obj.setHttp2RstFloodMaxRstFramePerWindow(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "http2RstFloodWindowDuration":
+          if (member.getValue() instanceof Number) {
+            obj.setHttp2RstFloodWindowDuration(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "http2RstFloodWindowDurationTimeUnit":
+          if (member.getValue() instanceof String) {
+            obj.setHttp2RstFloodWindowDurationTimeUnit(java.util.concurrent.TimeUnit.valueOf((String)member.getValue()));
+          }
+          break;
       }
     }
   }
@@ -195,5 +210,10 @@ public class HttpServerOptionsConverter {
       json.put("tracingPolicy", obj.getTracingPolicy().name());
     }
     json.put("registerWebSocketWriteHandlers", obj.isRegisterWebSocketWriteHandlers());
+    json.put("http2RstFloodMaxRstFramePerWindow", obj.getHttp2RstFloodMaxRstFramePerWindow());
+    json.put("http2RstFloodWindowDuration", obj.getHttp2RstFloodWindowDuration());
+    if (obj.getHttp2RstFloodWindowDurationTimeUnit() != null) {
+      json.put("http2RstFloodWindowDurationTimeUnit", obj.getHttp2RstFloodWindowDurationTimeUnit().name());
+    }
   }
 }
