@@ -65,7 +65,7 @@ import io.vertx.core.net.impl.pkcs1.PrivateKeyParser;
 public class KeyStoreHelper {
 
   // Dummy password for encrypting pem based stores in memory
-  public static final String DUMMY_PASSWORD = "dummy";
+  public static final String DUMMY_PASSWORD = "dummdummydummydummydummydummydummy";  // at least 32 characters for compat with FIPS mode
   private static final String DUMMY_CERT_ALIAS = "cert-";
 
   private static final Pattern BEGIN_PATTERN = Pattern.compile("-----BEGIN ([A-Z ]+)-----");
@@ -159,10 +159,10 @@ public class KeyStoreHelper {
     String keyStoreType = KeyStore.getDefaultType();
     KeyStore ks = KeyStore.getInstance(keyStoreType);
     ks.load(null, null);
-    ks.setKeyEntry("key", mgr.getPrivateKey(null), new char[0], mgr.getCertificateChain(null));
+    ks.setKeyEntry("key", mgr.getPrivateKey(null), DUMMY_PASSWORD.toCharArray(), mgr.getCertificateChain(null));
     String keyAlgorithm = KeyManagerFactory.getDefaultAlgorithm();
     KeyManagerFactory kmf = KeyManagerFactory.getInstance(keyAlgorithm);
-    kmf.init(ks, new char[0]);
+    kmf.init(ks, DUMMY_PASSWORD.toCharArray());
     return kmf;
   }
 
