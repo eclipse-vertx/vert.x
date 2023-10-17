@@ -1,6 +1,7 @@
 package io.vertx.core;
 
 import io.vertx.core.impl.TaskQueue;
+import io.vertx.core.impl.WorkerExecutor;
 import io.vertx.test.core.AsyncTestBase;
 import org.junit.Test;
 
@@ -8,9 +9,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 
 public class TaskQueueTest extends AsyncTestBase {
 
@@ -40,6 +41,14 @@ public class TaskQueueTest extends AsyncTestBase {
     super.tearDown();
   }
 
+  private void suspendAndAwaitResume(WorkerExecutor.TaskController controller) {
+    try {
+      controller.suspendAndAwaitResume();
+    } catch (InterruptedException e) {
+      fail(e);
+    }
+  }
+
   @Test
   public void testCreateThread() throws Exception {
     AtomicReference<Thread> thread = new AtomicReference<>();
@@ -57,18 +66,14 @@ public class TaskQueueTest extends AsyncTestBase {
 
   @Test
   public void testAwaitSchedulesOnNewThread() {
-    CountDownLatch latch = new CountDownLatch(1);
     taskQueue.execute(() -> {
       Thread current = Thread.currentThread();
       taskQueue.execute(() -> {
         assertNotSame(current, Thread.currentThread());
         testComplete();
       }, executor);
-      taskQueue.unschedule();
-      try {
-        latch.await();
-      } catch (InterruptedException ignore) {
-      }
+      WorkerExecutor.TaskController cont = taskQueue.current();
+      suspendAndAwaitResume(cont);
     }, executor);
     await();
   }
@@ -76,22 +81,15 @@ public class TaskQueueTest extends AsyncTestBase {
   @Test
   public void testResumeFromAnotherThread() {
     taskQueue.execute(() -> {
-      CountDownLatch latch = new CountDownLatch(1);
-      Consumer<Runnable> detach = taskQueue.unschedule();
+      WorkerExecutor.TaskController continuation = taskQueue.current();
       new Thread(() -> {
         try {
           Thread.sleep(100);
         } catch (InterruptedException e) {
           throw new RuntimeException(e);
         }
-        detach.accept(() -> {
-          latch.countDown();
-        });
-        try {
-          latch.await(10, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-          fail(e);
-        }
+        continuation.resume();
+        suspendAndAwaitResume(continuation);
       }).start();
       testComplete();
     }, executor);
@@ -101,8 +99,7 @@ public class TaskQueueTest extends AsyncTestBase {
   @Test
   public void testResumeFromContextThread() {
     taskQueue.execute(() -> {
-      CountDownLatch latch = new CountDownLatch(1);
-      Consumer<Runnable> detach = taskQueue.unschedule();
+      WorkerExecutor.TaskController continuation = taskQueue.current();
       taskQueue.execute(() -> {
         // Make sure the awaiting thread will block on the internal future before resolving it (could use thread status)
         try {
@@ -110,15 +107,9 @@ public class TaskQueueTest extends AsyncTestBase {
         } catch (InterruptedException e) {
           throw new RuntimeException(e);
         }
-        detach.accept(() -> {
-          latch.countDown();
-        });
+        continuation.resume();
       }, executor);
-      try {
-        latch.await(10, TimeUnit.SECONDS);
-      } catch (InterruptedException e) {
-        fail(e);
-      }
+      suspendAndAwaitResume(continuation);
       testComplete();
     }, executor);
     await();
@@ -127,8 +118,7 @@ public class TaskQueueTest extends AsyncTestBase {
   @Test
   public void testResumeWhenIdle() {
     taskQueue.execute(() -> {
-      CountDownLatch latch = new CountDownLatch(1);
-      Consumer<Runnable> l = taskQueue.unschedule();
+      WorkerExecutor.TaskController cont = taskQueue.current();
       AtomicReference<Thread> ref = new AtomicReference<>();
       new Thread(() -> {
         Thread th;
@@ -143,15 +133,70 @@ public class TaskQueueTest extends AsyncTestBase {
         } catch (InterruptedException ignore) {
           ignore.printStackTrace(System.out);
         }
-        l.accept(latch::countDown);
+        cont.resume();
       }).start();
       taskQueue.execute(() -> ref.set(Thread.currentThread()), executor);
-      try {
-        latch.await();
-      } catch (InterruptedException ignore) {
-      }
+      suspendAndAwaitResume(cont);
       testComplete();
     }, executor);
+    await();
+  }
+
+  @Test
+  public void testRaceResumeBeforeSuspend() {
+    AtomicInteger seq = new AtomicInteger();
+    taskQueue.execute(() -> {
+      taskQueue.execute(() -> {
+        WorkerExecutor.TaskController cont = taskQueue.current();
+        cont.resume(() -> {
+          assertEquals(1, seq.getAndIncrement());
+        });
+        assertEquals(0, seq.getAndIncrement());
+        suspendAndAwaitResume(cont);
+        assertEquals(2, seq.getAndIncrement());
+      }, executor);
+      taskQueue.execute(() -> {
+        assertEquals(3, seq.getAndIncrement());
+        testComplete();
+      }, executor);
+    }, executor);
+    await();
+  }
+
+  // Need to do unschedule when nested test!
+
+  @Test
+  public void testUnscheduleRace2() {
+    AtomicInteger seq = new AtomicInteger();
+    taskQueue.execute(() -> {
+      CompletableFuture<Void> cf = new CompletableFuture<>();
+      taskQueue.execute(() -> {
+        assertEquals("vert.x-0", Thread.currentThread().getName());
+        assertEquals(0, seq.getAndIncrement());
+        WorkerExecutor.TaskController cont = taskQueue.current();
+        cf.whenComplete((v, e) -> cont.resume(() -> {
+          assertEquals("vert.x-1", Thread.currentThread().getName());
+          assertEquals(2, seq.getAndIncrement());
+        }));
+        suspendAndAwaitResume(cont);
+      }, executor);
+      AtomicBoolean enqueued = new AtomicBoolean();
+      taskQueue.execute(() -> {
+        assertEquals("vert.x-1", Thread.currentThread().getName());
+        assertEquals(1, seq.getAndIncrement());
+        while (!enqueued.get()) {
+          // Wait until next task is enqueued
+        }
+        cf.complete(null);
+      }, executor);
+      taskQueue.execute(() -> {
+        assertEquals("vert.x-0", Thread.currentThread().getName());
+        assertEquals(3, seq.getAndIncrement());
+        testComplete();
+      }, executor);
+      enqueued.set(true);
+    }, executor);
+
     await();
   }
 }
