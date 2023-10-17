@@ -15,9 +15,10 @@ import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 
 import java.util.LinkedList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.function.Consumer;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A task queue that always run all tasks in order. The executor to run the tasks is passed
@@ -82,17 +83,12 @@ public class TaskQueue {
   }
 
   /**
-   * Unschedule the current task from execution, the next task in the queue will be executed
-   * when there is one.
+   * Return a controller for the current task.
    *
-   * <p>When the current task wants to be resumed, it should call the returned consumer with a command
-   * to unpark the thread (e.g most likely yielding a latch), this task will be executed immediately if there
-   * is no tasks being executed, otherwise it will be added first in the queue.
-   *
-   * @return a mean to signal to resume the thread when it shall be resumed
+   * @return the controller
    * @throws IllegalStateException if the current thread is not currently being executed by the queue
    */
-  public Consumer<Runnable> unschedule() {
+  public WorkerExecutor.TaskController current() {
     Thread thread;
     Executor executor;
     synchronized (tasks) {
@@ -101,20 +97,42 @@ public class TaskQueue {
       }
       thread = currentThread;
       executor = currentExecutor;
-      currentThread = null;
     }
-    executor.execute(runner);
-    return r -> {
-      synchronized (tasks) {
-        if (currentExecutor != null) {
-          tasks.addFirst(new ResumeTask(r, executor, thread));
-          return;
-        } else {
+    return new WorkerExecutor.TaskController() {
+
+      final CountDownLatch latch = new CountDownLatch(1);
+
+      @Override
+      public void resume(Runnable callback) {
+        Runnable task = () -> {
+          callback.run();
+          latch.countDown();
+        };
+        synchronized (tasks) {
+          if (currentExecutor != null) {
+            tasks.addFirst(new ResumeTask(task, executor, thread));
+            return;
+          }
           currentExecutor = executor;
           currentThread = thread;
         }
+        task.run();
       }
-      r.run();
+
+      @Override
+      public CountDownLatch suspend() {
+        if (Thread.currentThread() != thread) {
+          throw new IllegalStateException();
+        }
+        synchronized (tasks) {
+          if (currentThread == null || currentThread != Thread.currentThread()) {
+            throw new IllegalStateException();
+          }
+          currentThread = null;
+        }
+        executor.execute(runner);
+        return latch;
+      }
     };
   }
 

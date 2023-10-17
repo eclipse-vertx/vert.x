@@ -12,7 +12,8 @@ package io.vertx.core.impl;
 
 import io.vertx.core.spi.metrics.PoolMetrics;
 
-import java.util.function.Consumer;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Execute events on a worker pool.
@@ -60,9 +61,46 @@ public class WorkerExecutor implements EventExecutor {
   }
 
   /**
-   * See {@link TaskQueue#unschedule()}.
+   * See {@link TaskQueue#current()}.
    */
-  public Consumer<Runnable> unschedule() {
-    return orderedTasks.unschedule();
+  public TaskController current() {
+    return orderedTasks.current();
+  }
+
+  public interface TaskController {
+
+    /**
+     * Resume the task, the {@code callback} will be executed when the task is resumed, before the task thread
+     * is unparked.
+     *
+     * @param callback called when the task is resumed
+     */
+    void resume(Runnable callback);
+
+    /**
+     * Like {@link #resume(Runnable)}.
+     */
+    default void resume() {
+      resume(() -> {});
+    }
+
+    /**
+     * Suspend the task execution and park the current thread until the task is resumed.
+     * The next task in the queue will be executed, when there is one.
+     *
+     * <p>When the task wants to be resumed, it should call {@link #resume}, this will be executed immediately if there
+     * is no other tasks being executed, otherwise it will be added first in the queue.
+     */
+    default void suspendAndAwaitResume() throws InterruptedException {
+      suspend().await();
+    }
+
+    /**
+     * Like {@link #suspendAndAwaitResume()} but does not await the task to be resumed.
+     *
+     * @return the latch to await
+     */
+    CountDownLatch suspend();
+
   }
 }
