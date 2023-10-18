@@ -121,7 +121,7 @@ public class MetricsOptionsTest extends VertxTestBase {
       @Override
       public Enumeration<URL> findResources(String name) throws IOException {
         if (name.equals("META-INF/services/" + VertxServiceProvider.class.getName())) {
-          File f = File.createTempFile("vertx", ".txt");
+          File f = Files.createTempFile("vertx", ".txt").toFile();
           f.deleteOnExit();
           Files.write(f.toPath(), factoryFqn.getBytes());
           return Collections.enumeration(Collections.singleton(f.toURI().toURL()));

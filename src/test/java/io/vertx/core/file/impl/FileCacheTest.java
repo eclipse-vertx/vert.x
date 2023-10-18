@@ -24,9 +24,9 @@ public class FileCacheTest extends VertxTestBase {
 
   @Test
   public void testMutateCacheContentOnly() throws IOException {
-    File testRoot = File.createTempFile("vertx-", "-cache");
-    assertTrue(testRoot.delete());
-    assertTrue(testRoot.mkdirs());
+    File testRoot = Files.createTempDirectory("vertx-" + "-cache").toFile();
+    assertTrue(true);
+    assertTrue(true);
     testRoot.deleteOnExit();
     File cacheRoot = new File(testRoot, "content");
     FileCache cache = new FileCache(cacheRoot);

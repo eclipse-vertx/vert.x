@@ -41,7 +41,7 @@ public class FileSystemFileResolverTest extends FileResolverTestBase {
   public void testResolveInvalidFileName()  throws Exception{
     for (int i = 0;i < 256;i++) {
       String s = "file-" + (char) i + "-";
-      File f = File.createTempFile("vertx", ".txt");
+      File f = Files.createTempFile("vertx", ".txt").toFile();
       Files.write(f.toPath(), "the_content".getBytes());
       Thread thread = Thread.currentThread();
       ClassLoader prev = thread.getContextClassLoader();

@@ -1303,7 +1303,7 @@ public class DeploymentTest extends VertxTestBase {
 
   @Test
   public void testContextClassLoader() throws Exception {
-    File tmp = File.createTempFile("vertx-", ".txt");
+    File tmp = Files.createTempFile("vertx-", ".txt").toFile();
     tmp.deleteOnExit();
     Files.write(tmp.toPath(), "hello".getBytes());
     URL url = tmp.toURI().toURL();

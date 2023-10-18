@@ -76,6 +76,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
@@ -1400,7 +1401,7 @@ public class Http2ServerTest extends Http2TestBase {
   }
 
   private static File createTempFile(Buffer buffer) throws Exception {
-    File f = File.createTempFile("vertx", ".bin");
+    File f = Files.createTempFile("vertx", ".bin").toFile();
     f.deleteOnExit();
     try(FileOutputStream out = new FileOutputStream(f)) {
       out.write(buffer.getBytes());

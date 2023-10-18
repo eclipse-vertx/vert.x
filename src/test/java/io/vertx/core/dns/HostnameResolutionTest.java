@@ -434,7 +434,7 @@ public class HostnameResolutionTest extends VertxTestBase {
   }
 
   private InetAddress testRefreshHosts(int period) throws Exception {
-    File hosts = File.createTempFile("vertx", "hosts");
+    File hosts = Files.createTempFile("vertx", "hosts").toFile();
     hosts.deleteOnExit();
     Files.writeString(hosts.toPath(), "192.168.0.15 server.net");
     AddressResolverOptions options = new AddressResolverOptions()

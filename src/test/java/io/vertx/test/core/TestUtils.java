@@ -493,7 +493,7 @@ public class TestUtils {
    * Create a temp file that exists and with a specified {@code length}. The file will be deleted at VM exit.
    */
   public static File tmpFile(String suffix, long length) throws Exception {
-    File tmp = File.createTempFile("vertx", suffix);
+    File tmp = Files.createTempFile("vertx", suffix).toFile();
     tmp.deleteOnExit();
     RandomAccessFile f = new RandomAccessFile(tmp, "rw");
     f.setLength(length);
@@ -556,7 +556,7 @@ public class TestUtils {
       @Override
       public Enumeration<URL> findResources(String name) throws IOException {
         if (name.equals("META-INF/services/" + service.getName())) {
-          File f = File.createTempFile("vertx", ".txt");
+          File f = Files.createTempFile("vertx", ".txt").toFile();
           f.deleteOnExit();
           Files.write(f.toPath(), impl.getName().getBytes());
           return Collections.enumeration(Collections.singleton(f.toURI().toURL()));
