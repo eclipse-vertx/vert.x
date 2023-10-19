@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.dns.impl.decoder;
+package io.vertx.core.dns.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.DecoderException;
@@ -17,8 +17,8 @@ import io.netty.handler.codec.dns.DnsRawRecord;
 import io.netty.handler.codec.dns.DnsRecord;
 import io.netty.handler.codec.dns.DnsRecordType;
 import io.netty.util.CharsetUtil;
-import io.vertx.core.dns.impl.MxRecordImpl;
-import io.vertx.core.dns.impl.SrvRecordImpl;
+import io.vertx.core.dns.MxRecord;
+import io.vertx.core.dns.SrvRecord;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 
@@ -34,26 +34,30 @@ import java.util.function.Function;
  * Handles the decoding of resource records. Some default decoders are mapped to
  * their resource types in the map {@code decoders}.
  */
-public class RecordDecoder {
+class RecordDecoder {
 
     private static final Logger log = LoggerFactory.getLogger(RecordDecoder.class);
 
     /**
      * Decodes MX (mail exchanger) resource records.
      */
-    public static final Function<DnsRecord, MxRecordImpl> MX = record -> {
+    static Function<DnsRecord, MxRecord> MX = record -> {
+      if (record.type() == DnsRecordType.MX) {
         ByteBuf packet = ((DnsRawRecord)record).content();
         int priority = packet.readShort();
         String name = RecordDecoder.readName(packet);
         long ttl = record.timeToLive();
         return new MxRecordImpl(ttl, priority, name);
+      } else {
+        return null;
+      }
     };
 
     /**
      * Decodes any record that simply returns a domain name, such as NS (name
      * server) and CNAME (canonical name) resource records.
      */
-    public static final Function<DnsRecord, String> DOMAIN = record -> {
+    static Function<DnsRecord, String> DOMAIN = record -> {
         if (record instanceof DnsPtrRecord) {
             String val = ((DnsPtrRecord)record).hostname();
             if (val.endsWith(".")) {
@@ -69,17 +73,18 @@ public class RecordDecoder {
     /**
      * Decodes A resource records into IPv4 addresses.
      */
-    public static final Function<DnsRecord, String> A = address(4);
+    static Function<DnsRecord, String> A = address(DnsRecordType.A, 4);
 
     /**
      * Decodes AAAA resource records into IPv6 addresses.
      */
-    public static final Function<DnsRecord, String> AAAA = address(16);
+    static Function<DnsRecord, String> AAAA = address(DnsRecordType.AAAA, 16);
 
     /**
      * Decodes SRV (service) resource records.
      */
-    public static final Function<DnsRecord, SrvRecordImpl> SRV = record -> {
+    static Function<DnsRecord, SrvRecord> SRV = record -> {
+      if (record.type() == DnsRecordType.SRV) {
         ByteBuf packet = ((DnsRawRecord)record).content();
         int priority = packet.readShort();
         int weight = packet.readShort();
@@ -91,12 +96,16 @@ public class RecordDecoder {
         String protocol = parts[1];
         String name = parts[2];
         return new SrvRecordImpl(ttl, priority, weight, port, name, protocol, service, target);
+      } else {
+        return null;
+      }
     };
 
     /**
      * Decodes SOA (start of authority) resource records.
      */
-    public static final Function<DnsRecord, StartOfAuthorityRecord> SOA = record -> {
+    static Function<DnsRecord, StartOfAuthorityRecord> SOA = record -> {
+      if (record.type() == DnsRecordType.SOA) {
         ByteBuf packet = ((DnsRawRecord)record).content();
         String mName = RecordDecoder.readName(packet);
         String rName = RecordDecoder.readName(packet);
@@ -106,36 +115,47 @@ public class RecordDecoder {
         int expire = packet.readInt();
         long minimum = packet.readUnsignedInt();
         return new StartOfAuthorityRecord(mName, rName, serial, refresh, retry, expire, minimum);
+      } else {
+        return null;
+      }
     };
 
-    public static final Function<DnsRecord, List<String>> TXT = record -> {
+    static Function<DnsRecord, List<String>> TXT = record -> {
+      if (record.type() == DnsRecordType.TXT) {
         List<String> list = new ArrayList<>();
         ByteBuf data = ((DnsRawRecord)record).content();
         int index = data.readerIndex();
         while (index < data.writerIndex()) {
-            int len = data.getUnsignedByte(index++);
-            list.add(data.toString(index, len, CharsetUtil.UTF_8));
-            index += len;
+          int len = data.getUnsignedByte(index++);
+          list.add(data.toString(index, len, CharsetUtil.UTF_8));
+          index += len;
         }
         return list;
+      } else {
+        return null;
+      }
     };
 
-    static Function<DnsRecord, String> address(int octets) {
+    static Function<DnsRecord, String> address(DnsRecordType type, int octets) {
         return record -> {
+          if (record.type() == type) {
             ByteBuf data = ((DnsRawRecord)record).content();
             int size = data.readableBytes();
             if (size != octets) {
-                throw new DecoderException("Invalid content length, or reader index when decoding address [index: "
-                    + data.readerIndex() + ", expected length: " + octets + ", actual: " + size + "].");
+              throw new DecoderException("Invalid content length, or reader index when decoding address [index: "
+                + data.readerIndex() + ", expected length: " + octets + ", actual: " + size + "].");
             }
             byte[] address = new byte[octets];
             data.getBytes(data.readerIndex(), address);
             try {
-                return InetAddress.getByAddress(address).getHostAddress();
+              return InetAddress.getByAddress(address).getHostAddress();
             } catch (UnknownHostException e) {
-                throw new DecoderException("Could not convert address "
-                    + data.toString(data.readerIndex(), size, CharsetUtil.UTF_8) + " to InetAddress.");
+              throw new DecoderException("Could not convert address "
+                + data.toString(data.readerIndex(), size, CharsetUtil.UTF_8) + " to InetAddress.");
             }
+          } else {
+            return null;
+          }
         };
     }
 
@@ -218,7 +238,7 @@ public class RecordDecoder {
      * @return the decoded resource record
      */
     @SuppressWarnings("unchecked")
-    public static <T> T decode(DnsRecord record) {
+    static <T> T decode(DnsRecord record) {
         DnsRecordType type = record.type();
         Function<DnsRecord, ?> decoder = decoders.get(type);
         if (decoder == null) {

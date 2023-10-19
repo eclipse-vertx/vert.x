@@ -16,7 +16,7 @@ import io.vertx.core.dns.SrvRecord;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public final class SrvRecordImpl implements SrvRecord, Comparable<SrvRecord>{
+final class SrvRecordImpl implements SrvRecord, Comparable<SrvRecord>{
 
   private final long ttl;
   private final int priority;
@@ -27,7 +27,7 @@ public final class SrvRecordImpl implements SrvRecord, Comparable<SrvRecord>{
   private final String service;
   private final String target;
 
-  public SrvRecordImpl(long ttl, int priority, int weight, int port, String name, String protocol, String service, String target) {
+  SrvRecordImpl(long ttl, int priority, int weight, int port, String name, String protocol, String service, String target) {
     this.ttl = ttl;
     this.priority = priority;
     this.weight = weight;

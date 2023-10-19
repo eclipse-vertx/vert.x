@@ -16,6 +16,7 @@ import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.resolver.AddressResolverGroup;
 import io.vertx.core.*;
+import io.vertx.core.dns.impl.DnsAddressResolverProvider;
 import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.impl.btc.BlockedThreadChecker;
 import io.vertx.core.impl.future.PromiseInternal;
@@ -202,6 +203,8 @@ public interface VertxInternal extends Vertx {
    * @return the default hostname resolver
    */
   HostnameResolver hostnameResolver();
+
+  DnsAddressResolverProvider dnsAddressResolverProvider(InetSocketAddress addr);
 
   /**
    * @return the file resolver

@@ -47,6 +47,7 @@ public class DnsAddressResolverProvider implements AddressResolverProvider, Host
 
   private final VertxInternal vertx;
   private final List<ResolverRegistration> resolvers = Collections.synchronizedList(new ArrayList<>());
+  private final DnsNameResolverBuilder dnsNameResolverBuilder;
   private AddressResolverGroup<InetSocketAddress> resolverGroup;
   private final List<InetSocketAddress> serverList = new ArrayList<>();
   private final String hostsPath;
@@ -113,6 +114,9 @@ public class DnsAddressResolverProvider implements AddressResolverProvider, Host
     builder.queryTimeoutMillis(options.getQueryTimeout());
     builder.maxQueriesPerResolve(options.getMaxQueries());
     builder.recursionDesired(options.getRdFlag());
+    builder.completeOncePreferredResolved(true);
+    builder.consolidateCacheSize(1024);
+    builder.ndots(1);
     if (options.getSearchDomains() != null) {
       builder.searchDomains(options.getSearchDomains());
       int ndots = options.getNdots();
@@ -122,6 +126,7 @@ public class DnsAddressResolverProvider implements AddressResolverProvider, Host
       builder.ndots(ndots);
     }
 
+    this.dnsNameResolverBuilder = builder;
     this.resolverGroup = new DnsAddressResolverGroup(builder) {
       @Override
       protected io.netty.resolver.AddressResolver<InetSocketAddress> newAddressResolver(EventLoop eventLoop, NameResolver<InetAddress> resolver) throws Exception {
@@ -166,6 +171,10 @@ public class DnsAddressResolverProvider implements AddressResolverProvider, Host
       default:
         throw new IllegalArgumentException("Unknown ResolvedAddressTypes " + resolvedAddressTypes);
     }
+  }
+
+  public DnsNameResolverBuilder getDnsNameResolverBuilder() {
+    return dnsNameResolverBuilder;
   }
 
   /**

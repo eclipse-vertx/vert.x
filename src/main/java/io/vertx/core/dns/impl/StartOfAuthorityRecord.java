@@ -9,13 +9,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.dns.impl.decoder;
+package io.vertx.core.dns.impl;
 
 /**
  * Represents an SOA (start of authority) record, which defines global
  * parameters for a zone (domain). There can only be one SOA record per zone.
  */
-public class StartOfAuthorityRecord {
+class StartOfAuthorityRecord {
 
     private final String primaryNameServer;
     private final String responsiblePerson;
