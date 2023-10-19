@@ -18,6 +18,7 @@ import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.dns.DnsClient;
 import io.vertx.core.dns.DnsClientOptions;
+import io.vertx.core.dns.impl.DnsAddressResolverProvider;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
@@ -109,6 +110,11 @@ public abstract class VertxWrapper implements VertxInternal {
   @Override
   public EventBus eventBus() {
     return delegate.eventBus();
+  }
+
+  @Override
+  public DnsAddressResolverProvider dnsAddressResolverProvider(InetSocketAddress addr) {
+    return delegate.dnsAddressResolverProvider(addr);
   }
 
   @Override

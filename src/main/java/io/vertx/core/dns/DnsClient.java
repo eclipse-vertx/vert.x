@@ -15,7 +15,12 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.codegen.annotations.VertxGen;
 
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.List;
+
+import static io.vertx.core.dns.impl.DnsClientImpl.HEX_TABLE;
 
 /**
  * Provides a way to asynchronously lookup information from DNS servers.
@@ -139,7 +144,38 @@ public interface DnsClient {
    * @return a future notified with the resolved {@link String} if a record was found. If none was found it will
    *                 get notified with {@code null}. If an error occurs it will get failed.
    */
-  Future<@Nullable String> reverseLookup(String ipaddress);
+  default Future<@Nullable String> reverseLookup(String ipaddress) {
+    try {
+      InetAddress inetAddress = InetAddress.getByName(ipaddress);
+      byte[] addr = inetAddress.getAddress();
+
+      StringBuilder reverseName = new StringBuilder(64);
+      if (inetAddress instanceof Inet4Address) {
+        // reverse ipv4 address
+        reverseName.append(addr[3] & 0xff).append(".")
+          .append(addr[2]& 0xff).append(".")
+          .append(addr[1]& 0xff).append(".")
+          .append(addr[0]& 0xff);
+      } else {
+        // It is an ipv 6 address time to reverse it
+        for (int i = 0; i < 16; i++) {
+          reverseName.append(HEX_TABLE[(addr[15 - i] & 0xf)]);
+          reverseName.append(".");
+          reverseName.append(HEX_TABLE[(addr[15 - i] >> 4) & 0xf]);
+          if (i != 15) {
+            reverseName.append(".");
+          }
+        }
+      }
+      reverseName.append(".in-addr.arpa");
+
+      return resolvePTR(reverseName.toString());
+    } catch (UnknownHostException e) {
+      // Should never happen as we work with ip addresses as input
+      // anyway just in case notify the handler
+      return Future.failedFuture(e);
+    }
+  }
 
   /**
    * Close the client.

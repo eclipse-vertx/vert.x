@@ -861,6 +861,14 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
+  public DnsAddressResolverProvider dnsAddressResolverProvider(InetSocketAddress addr) {
+    AddressResolverOptions options = new AddressResolverOptions(addressResolverOptions);
+    options.setServers(Collections.singletonList(addr.getHostString() + ":" + addr.getPort()));
+    options.setOptResourceEnabled(false);
+    return DnsAddressResolverProvider.create(this, options);
+  }
+
+  @Override
   public AddressResolverGroup<InetSocketAddress> nettyAddressResolverGroup() {
     return hostnameResolver.nettyAddressResolverGroup();
   }

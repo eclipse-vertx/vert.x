@@ -16,13 +16,13 @@ import io.vertx.core.dns.MxRecord;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public final class MxRecordImpl implements MxRecord, Comparable<MxRecord> {
+final class MxRecordImpl implements MxRecord, Comparable<MxRecord> {
 
   private final long ttl;
   private final int priority;
   private final String name;
 
-  public MxRecordImpl(long ttl, int priority, String name) {
+  MxRecordImpl(long ttl, int priority, String name) {
     this.ttl = ttl;
     this.priority = priority;
     this.name = name;
