@@ -45,6 +45,11 @@ public class DeploymentOptionsConverter {
             obj.setMaxWorkerExecuteTimeUnit(java.util.concurrent.TimeUnit.valueOf((String)member.getValue()));
           }
           break;
+        case "threadingModel":
+          if (member.getValue() instanceof String) {
+            obj.setThreadingModel(io.vertx.core.ThreadingModel.valueOf((String)member.getValue()));
+          }
+          break;
         case "worker":
           if (member.getValue() instanceof Boolean) {
             obj.setWorker((Boolean)member.getValue());
@@ -77,6 +82,9 @@ public class DeploymentOptionsConverter {
     json.put("maxWorkerExecuteTime", obj.getMaxWorkerExecuteTime());
     if (obj.getMaxWorkerExecuteTimeUnit() != null) {
       json.put("maxWorkerExecuteTimeUnit", obj.getMaxWorkerExecuteTimeUnit().name());
+    }
+    if (obj.getThreadingModel() != null) {
+      json.put("threadingModel", obj.getThreadingModel().name());
     }
     json.put("worker", obj.isWorker());
     if (obj.getWorkerPoolName() != null) {

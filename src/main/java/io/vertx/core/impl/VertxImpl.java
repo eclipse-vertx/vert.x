@@ -40,7 +40,6 @@ import io.vertx.core.file.impl.FileSystemImpl;
 import io.vertx.core.file.impl.WindowsFileSystem;
 import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.http.impl.HttpServerImpl;
-import io.vertx.core.http.impl.SharedHttpClient;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -69,6 +68,7 @@ import io.vertx.core.spi.tracing.VertxTracer;
 import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -99,6 +99,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private static final String NETTY_IO_RATIO_PROPERTY_NAME = "vertx.nettyIORatio";
   private static final int NETTY_IO_RATIO = Integer.getInteger(NETTY_IO_RATIO_PROPERTY_NAME, 50);
 
+  public static final ThreadFactory VIRTUAL_THREAD_FACTORY;
+  private static final Throwable VIRTUAL_THREAD_FACTORY_UNAVAILABILITY_CAUSE;
+
   static {
     // Disable Netty's resource leak detection to reduce the performance overhead if not set by user
     // Supports both the default netty leak detection system property and the deprecated one
@@ -106,6 +109,23 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         System.getProperty("io.netty.leakDetectionLevel") == null) {
       ResourceLeakDetector.setLevel(ResourceLeakDetector.Level.DISABLED);
     }
+
+    ThreadFactory factory = null;
+    Throwable unavailabilityCause = null;
+    try {
+      Class<?> builderClass = ClassLoader.getSystemClassLoader().loadClass("java.lang.Thread$Builder");
+      Class<?> ofVirtualClass = ClassLoader.getSystemClassLoader().loadClass("java.lang.Thread$Builder$OfVirtual");
+      Method ofVirtualMethod = Thread.class.getDeclaredMethod("ofVirtual");
+      Object builder = ofVirtualMethod.invoke(null);
+      Method nameMethod = ofVirtualClass.getDeclaredMethod("name", String.class, long.class);
+      Method factoryMethod = builderClass.getDeclaredMethod("factory");
+      builder = nameMethod.invoke(builder, "vert.x-virtual-thread-", 0L);
+      factory = (ThreadFactory) factoryMethod.invoke(builder);
+    } catch (Exception e) {
+      unavailabilityCause = e;
+    }
+    VIRTUAL_THREAD_FACTORY = factory;
+    VIRTUAL_THREAD_FACTORY_UNAVAILABILITY_CAUSE = unavailabilityCause;
   }
 
   private final FileSystem fileSystem = getFileSystem();
@@ -122,11 +142,13 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final Map<ServerID, NetServerImpl> sharedNetServers = new HashMap<>();
   final WorkerPool workerPool;
   final WorkerPool internalWorkerPool;
+  final WorkerPool virtualThreaWorkerPool;
   private final VertxThreadFactory threadFactory;
   private final ExecutorServiceFactory executorServiceFactory;
   private final ThreadFactory eventLoopThreadFactory;
   private final EventLoopGroup eventLoopGroup;
   private final EventLoopGroup acceptorEventLoopGroup;
+  private final ExecutorService virtualThreadExecutor;
   private final BlockedThreadChecker checker;
   private final AddressResolver addressResolver;
   private final AddressResolverOptions addressResolverOptions;
@@ -180,6 +202,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     // The acceptor event loop thread needs to be from a different pool otherwise can get lags in accepted connections
     // under a lot of load
     acceptorEventLoopGroup = transport.eventLoopGroup(Transport.ACCEPTOR_EVENT_LOOP_GROUP, 1, acceptorEventLoopThreadFactory, 100);
+    virtualThreadExecutor = VIRTUAL_THREAD_FACTORY != null ? new ThreadPerTaskExecutorService(VIRTUAL_THREAD_FACTORY) : null;
+    virtualThreaWorkerPool = new WorkerPool(virtualThreadExecutor, null);
     internalWorkerPool = new WorkerPool(internalWorkerExec, internalBlockingPoolMetrics);
     namedWorkerPools = new HashMap<>();
     workerPool = new WorkerPool(workerExec, workerPoolMetrics);
@@ -517,7 +541,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   private ContextImpl createEventLoopContext(EventLoop eventLoop, CloseFuture closeFuture, WorkerPool workerPool, Deployment deployment, ClassLoader tccl) {
-    return new ContextImpl(this, true, eventLoop, new EventLoopExecutor(eventLoop), internalWorkerPool, workerPool != null ? workerPool : this.workerPool, new TaskQueue(), deployment, closeFuture, disableTCCL ? null : tccl);
+    return new ContextImpl(this, ThreadingModel.EVENT_LOOP, eventLoop, new EventLoopExecutor(eventLoop), internalWorkerPool, workerPool != null ? workerPool : this.workerPool, new TaskQueue(), deployment, closeFuture, disableTCCL ? null : tccl);
   }
 
   @Override
@@ -538,7 +562,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private ContextImpl createWorkerContext(EventLoop eventLoop, CloseFuture closeFuture, WorkerPool workerPool, Deployment deployment, ClassLoader tccl) {
     TaskQueue orderedTasks = new TaskQueue();
     WorkerPool wp = workerPool != null ? workerPool : this.workerPool;
-    return new ContextImpl(this, false, eventLoop, new WorkerExecutor(wp, orderedTasks), internalWorkerPool, wp, orderedTasks, deployment, closeFuture, disableTCCL ? null : tccl);
+    return new ContextImpl(this, ThreadingModel.WORKER, eventLoop, new WorkerExecutor(wp, orderedTasks), internalWorkerPool, wp, orderedTasks, deployment, closeFuture, disableTCCL ? null : tccl);
   }
 
   @Override
@@ -554,6 +578,29 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public ContextImpl createWorkerContext() {
     return createWorkerContext(null, closeFuture, null, Thread.currentThread().getContextClassLoader());
+  }
+
+  private ContextImpl createVirtualThreadContext(EventLoop eventLoop, CloseFuture closeFuture, Deployment deployment, ClassLoader tccl) {
+    if (!VertxInternal.isVirtualThreadAvailable()) {
+      throw new IllegalStateException("This Java runtime does not support virtual threads");
+    }
+    TaskQueue orderedTasks = new TaskQueue();
+    return new ContextImpl(this, ThreadingModel.VIRTUAL_THREAD, eventLoop, new WorkerExecutor(virtualThreaWorkerPool, orderedTasks), internalWorkerPool, virtualThreaWorkerPool, orderedTasks, deployment, closeFuture, disableTCCL ? null : tccl);
+  }
+
+  @Override
+  public ContextImpl createVirtualThreadContext(Deployment deployment, CloseFuture closeFuture, ClassLoader tccl) {
+    return createVirtualThreadContext(eventLoopGroup.next(), closeFuture, deployment, tccl);
+  }
+
+  @Override
+  public ContextImpl createVirtualThreadContext(EventLoop eventLoop, ClassLoader tccl) {
+    return createVirtualThreadContext(eventLoop, closeFuture, null, tccl);
+  }
+
+  @Override
+  public ContextImpl createVirtualThreadContext() {
+    return createVirtualThreadContext(null, closeFuture, Thread.currentThread().getContextClassLoader());
   }
 
   @Override
@@ -910,6 +957,14 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       workerPool.close();
       internalWorkerPool.close();
       new ArrayList<>(namedWorkerPools.values()).forEach(WorkerPool::close);
+
+      if (virtualThreadExecutor != null) {
+        virtualThreadExecutor.shutdown();
+        try {
+          virtualThreadExecutor.awaitTermination(10, TimeUnit.SECONDS);
+        } catch (InterruptedException ignore) {
+        }
+      }
 
       acceptorEventLoopGroup.shutdownGracefully(0, 10, TimeUnit.SECONDS).addListener(new GenericFutureListener() {
         @Override

@@ -16,6 +16,7 @@ Vert.x core provides functionality for things like:
 * Datagram Sockets
 * DNS client
 * File system access
+* Virtual threads
 * High availability
 * Native transports
 * Clustering
@@ -267,6 +268,21 @@ If you want to deploy a verticle as a worker verticle you do that with {@link io
 
 Worker verticle instances are never executed concurrently by Vert.x by more than one thread, but can executed by
 different threads at different times.
+
+=== Virtual thread verticles
+
+A virtual thread verticle is just like a standard verticle but it's executed using virtual threads, rather than using an event loop.
+
+Virtual thread verticles are designed to use an async/await model with Vert.x futures.
+
+If you want to deploy a verticle as a <<virtual_threads, virtual thread verticle>> you do that with {@link io.vertx.core.DeploymentOptions#setThreadingModel}.
+
+[source,$lang]
+----
+{@link examples.CoreExamples#example7_1}
+----
+
+NOTE: this feature requires Java 21
 
 === Deploying verticles programmatically
 
@@ -567,6 +583,9 @@ include::filesystem.adoc[]
 include::datagrams.adoc[]
 
 include::dns.adoc[]
+
+[[virtual_threads]]
+include::virtualthreads.adoc[]
 
 [[streams]]
 include::streams.adoc[]
