@@ -43,7 +43,7 @@ public final class ContextImpl implements ContextInternal {
   private static final String DISABLE_TIMINGS_PROP_NAME = "vertx.disableContextTimings";
   static final boolean DISABLE_TIMINGS = Boolean.getBoolean(DISABLE_TIMINGS_PROP_NAME);
 
-  private final boolean isEventLoop;
+  private final ThreadingModel threadingModel;
   private final VertxInternal owner;
   private final JsonObject config;
   private final Deployment deployment;
@@ -60,7 +60,7 @@ public final class ContextImpl implements ContextInternal {
   final TaskQueue orderedTasks;
 
   public ContextImpl(VertxInternal vertx,
-                     boolean isEventLoop,
+                     ThreadingModel threadingModel,
                      EventLoop eventLoop,
                      EventExecutor executor,
                      WorkerPool internalWorkerPool,
@@ -69,7 +69,7 @@ public final class ContextImpl implements ContextInternal {
                      Deployment deployment,
                      CloseFuture closeFuture,
                      ClassLoader tccl) {
-    this.isEventLoop = isEventLoop;
+    this.threadingModel = threadingModel;
     this.deployment = deployment;
     this.config = deployment != null ? deployment.config() : new JsonObject();
     this.eventLoop = eventLoop;
@@ -142,12 +142,16 @@ public final class ContextImpl implements ContextInternal {
 
   @Override
   public boolean isEventLoopContext() {
-    return isEventLoop;
+    return threadingModel == ThreadingModel.EVENT_LOOP;
   }
 
   @Override
   public boolean isWorkerContext() {
-    return !isEventLoop;
+    return threadingModel == ThreadingModel.WORKER;
+  }
+
+  public ThreadingModel threadingModel() {
+    return threadingModel;
   }
 
   @Override

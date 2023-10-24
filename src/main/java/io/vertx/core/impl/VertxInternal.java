@@ -15,6 +15,7 @@ package io.vertx.core.impl;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.resolver.AddressResolverGroup;
+import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.core.*;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpServerImpl;
@@ -143,6 +144,21 @@ public interface VertxInternal extends Vertx {
    */
   ContextInternal createWorkerContext();
 
+  /**
+   * @return virtual thread context
+   */
+  ContextInternal createVirtualThreadContext(Deployment deployment, CloseFuture closeFuture, ClassLoader tccl);
+
+  /**
+   * @return virtual thread context
+   */
+  ContextInternal createVirtualThreadContext(EventLoop eventLoop, ClassLoader tccl);
+
+  /**
+   * @return virtual thread context
+   */
+  ContextInternal createVirtualThreadContext();
+
   @Override
   WorkerExecutorInternal createSharedWorkerExecutor(String name);
 
@@ -236,4 +252,10 @@ public interface VertxInternal extends Vertx {
 
   void removeCloseHook(Closeable hook);
 
+  /**
+   * @return whether virtual threads are available
+   */
+  static boolean isVirtualThreadAvailable() {
+    return VertxImpl.VIRTUAL_THREAD_FACTORY != null;
+  }
 }

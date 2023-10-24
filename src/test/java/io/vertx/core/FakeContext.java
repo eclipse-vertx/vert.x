@@ -34,6 +34,11 @@ class FakeContext implements ContextInternal {
   }
 
   @Override
+  public ThreadingModel threadingModel() {
+    return null;
+  }
+
+  @Override
   public boolean inThread() {
     return false;
   }

@@ -224,6 +224,11 @@ public class CoreExamples {
     vertx.deployVerticle("com.mycompany.MyOrderProcessorVerticle", options);
   }
 
+  public void example7_2(Vertx vertx) {
+    DeploymentOptions options = new DeploymentOptions().setThreadingModel(ThreadingModel.VIRTUAL_THREAD);
+    vertx.deployVerticle("com.mycompany.MyOrderProcessorVerticle", options);
+  }
+
   public void example8(Vertx vertx) {
 
     Verticle myVerticle = new MyVerticle();

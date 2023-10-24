@@ -10,9 +10,11 @@
  */
 package io.vertx.core.impl;
 
+import io.vertx.core.Vertx;
 import io.vertx.core.spi.metrics.PoolMetrics;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -21,6 +23,21 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class WorkerExecutor implements EventExecutor {
+
+  public static io.vertx.core.impl.WorkerExecutor unwrapWorkerExecutor() {
+    ContextInternal ctx = (ContextInternal) Vertx.currentContext();
+    if (ctx != null) {
+      ctx = ctx.unwrap();
+      Executor executor = ctx.executor();
+      if (executor instanceof io.vertx.core.impl.WorkerExecutor) {
+        return (io.vertx.core.impl.WorkerExecutor) executor;
+      } else {
+        throw new IllegalStateException("Cannot be called on a Vert.x event-loop thread");
+      }
+    }
+    // Technically it works also for worker threads but we don't want to encourage this
+    throw new IllegalStateException("Not running from a Vert.x virtual thread");
+  }
 
   private final WorkerPool workerPool;
   private final TaskQueue orderedTasks;

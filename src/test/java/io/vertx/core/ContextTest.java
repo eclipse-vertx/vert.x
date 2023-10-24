@@ -13,9 +13,9 @@ package io.vertx.core;
 
 import io.netty.channel.EventLoop;
 import io.vertx.core.impl.*;
-import io.vertx.core.impl.btc.BlockedThreadChecker;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.test.core.VertxTestBase;
+import org.junit.Assume;
 import org.junit.Test;
 
 import java.net.URL;
@@ -1012,5 +1012,39 @@ public class ContextTest extends VertxTestBase {
     assertNull(Vertx.currentContext());
     assertSame(current, thread.getContextClassLoader());
     assertEquals(2, exec.get());
+  }
+
+  @Test
+  public void testAwaitFromEventLoopThread() {
+    testAwaitFromContextThread(ThreadingModel.EVENT_LOOP, true);
+  }
+
+  @Test
+  public void testAwaitFromWorkerThread() {
+    testAwaitFromContextThread(ThreadingModel.WORKER, false);
+  }
+
+  @Test
+  public void testAwaitFromVirtualThreadThread() {
+    Assume.assumeTrue(VertxInternal.isVirtualThreadAvailable());
+    testAwaitFromContextThread(ThreadingModel.VIRTUAL_THREAD, false);
+  }
+
+  private void testAwaitFromContextThread(ThreadingModel threadMode, boolean fail) {
+    vertx.deployVerticle(() -> new AbstractVerticle() {
+      @Override
+      public void start() {
+        Promise<String> promise = Promise.promise();
+        vertx.setTimer(10, id -> promise.complete("foo"));
+        try {
+          String res = Future.await(promise.future());
+          assertFalse(fail);
+          assertEquals("foo", res);
+        } catch (IllegalStateException e) {
+          assertTrue(fail);
+        }
+      }
+    }, new DeploymentOptions().setThreadingModel(threadMode)).onComplete(onSuccess(v -> testComplete()));
+    await();
   }
 }

@@ -30,26 +30,32 @@ import java.util.concurrent.TimeUnit;
 @DataObject(generateConverter = true, publicConverter = false)
 public class DeploymentOptions {
 
+  public static final ThreadingModel DEFAULT_MODE = ThreadingModel.EVENT_LOOP;
   public static final boolean DEFAULT_WORKER = false;
   public static final boolean DEFAULT_HA = false;
   public static final int DEFAULT_INSTANCES = 1;
 
   private JsonObject config;
-  private boolean worker;
-  private WorkerOptions workerOptions;
+  private ThreadingModel threadingModel;
   private boolean ha;
   private int instances;
   private ClassLoader classLoader;
+  private String workerPoolName;
+  private int workerPoolSize;
+  private long maxWorkerExecuteTime;
+  private TimeUnit maxWorkerExecuteTimeUnit;
 
   /**
    * Default constructor
    */
   public DeploymentOptions() {
-    this.worker = DEFAULT_WORKER;
+    this.threadingModel = DEFAULT_MODE;
     this.config = null;
     this.ha = DEFAULT_HA;
     this.instances = DEFAULT_INSTANCES;
-    this.workerOptions = new WorkerPoolOptions();
+    this.workerPoolSize = VertxOptions.DEFAULT_WORKER_POOL_SIZE;
+    this.maxWorkerExecuteTime = VertxOptions.DEFAULT_MAX_WORKER_EXECUTE_TIME;
+    this.maxWorkerExecuteTimeUnit = VertxOptions.DEFAULT_MAX_WORKER_EXECUTE_TIME_UNIT;
   }
 
   /**
@@ -59,10 +65,13 @@ public class DeploymentOptions {
    */
   public DeploymentOptions(DeploymentOptions other) {
     this.config = other.getConfig() == null ? null : other.getConfig().copy();
-    this.worker = other.isWorker();
+    this.threadingModel = other.getThreadingModel();
     this.ha = other.isHa();
     this.instances = other.instances;
-    this.workerOptions = other.workerOptions.copy();
+    this.workerPoolName = other.workerPoolName;
+    this.workerPoolSize = other.workerPoolSize;
+    this.maxWorkerExecuteTime = other.maxWorkerExecuteTime;
+    this.maxWorkerExecuteTimeUnit = other.maxWorkerExecuteTimeUnit;
   }
 
   /**
@@ -82,7 +91,6 @@ public class DeploymentOptions {
    */
   public void fromJson(JsonObject json) {
     this.config = json.getJsonObject("config");
-    this.worker = json.getBoolean("worker", DEFAULT_WORKER);
     this.ha = json.getBoolean("ha", DEFAULT_HA);
     this.instances = json.getInteger("instances", DEFAULT_INSTANCES);
   }
@@ -108,22 +116,42 @@ public class DeploymentOptions {
   }
 
   /**
+   * Which threading model the verticle(s) should use?
+   *
+   * @return the verticle threading model
+   */
+  public ThreadingModel getThreadingModel() {
+    return threadingModel;
+  }
+
+  /**
+   * Set the verticle(s) verticle(s) threading model, e.g. a worker or a virtual thread verticle
+   *
+   * @param threadingModel the threading model
+   * @return a reference to this, so the API can be used fluently
+   */
+  public DeploymentOptions setThreadingModel(ThreadingModel threadingModel) {
+    this.threadingModel = threadingModel;
+    return this;
+  }
+
+  /**
    * Should the verticle(s) be deployed as a worker verticle?
    *
-   * @return true if will be deployed as worker, false otherwise
+   * @return {@code true} if will be deployed as worker, {@code false} otherwise
    */
   public boolean isWorker() {
-    return worker;
+    return threadingModel == ThreadingModel.WORKER;
   }
 
   /**
    * Set whether the verticle(s) should be deployed as a worker verticle
    *
-   * @param worker true for worker, false otherwise
+   * @param worker {@code true} for worker, {@code false} force event-loop
    * @return a reference to this, so the API can be used fluently
    */
   public DeploymentOptions setWorker(boolean worker) {
-    this.worker = worker;
+    this.threadingModel = worker ? ThreadingModel.WORKER : ThreadingModel.EVENT_LOOP;
     return this;
   }
 
@@ -168,32 +196,10 @@ public class DeploymentOptions {
   }
 
   /**
-   * @return the worker options
-   */
-  public WorkerOptions getWorkerOptions() {
-    return workerOptions;
-  }
-
-  /**
-   * Set the verticle worker options.
-   *
-   * @param workerOptions the worker options to use
-   * @return a reference to this, so the API can be used fluently
-   */
-  public DeploymentOptions setWorkerOptions(WorkerOptions workerOptions) {
-    this.workerOptions = workerOptions;
-    return this;
-  }
-
-  private WorkerPoolOptions assumeWorkerPool() {
-    return (WorkerPoolOptions) workerOptions;
-  }
-
-  /**
    * @return the worker pool name
    */
   public String getWorkerPoolName() {
-    return assumeWorkerPool().getName();
+    return workerPoolName;
   }
 
   /**
@@ -204,7 +210,7 @@ public class DeploymentOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public DeploymentOptions setWorkerPoolName(String workerPoolName) {
-    assumeWorkerPool().setName(workerPoolName);
+    this.workerPoolName = workerPoolName;
     return this;
   }
 
@@ -219,7 +225,7 @@ public class DeploymentOptions {
    * @return the maximum number of worker threads
    */
   public int getWorkerPoolSize() {
-    return assumeWorkerPool().getSize();
+    return workerPoolSize;
   }
 
   /**
@@ -231,7 +237,10 @@ public class DeploymentOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public DeploymentOptions setWorkerPoolSize(int workerPoolSize) {
-    assumeWorkerPool().setSize(workerPoolSize);
+    if (workerPoolSize < 1) {
+      throw new IllegalArgumentException("size must be > 0");
+    }
+    this.workerPoolSize = workerPoolSize;
     return this;
   }
 
@@ -248,7 +257,7 @@ public class DeploymentOptions {
    * @return The value of max worker execute time, the default value of {@link DeploymentOptions#setMaxWorkerExecuteTimeUnit} {@code maxWorkerExecuteTimeUnit} is {@link TimeUnit#NANOSECONDS}
    */
   public long getMaxWorkerExecuteTime() {
-    return assumeWorkerPool().getMaxExecuteTime();
+    return maxWorkerExecuteTime;
   }
 
   /**
@@ -262,7 +271,10 @@ public class DeploymentOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public DeploymentOptions setMaxWorkerExecuteTime(long maxWorkerExecuteTime) {
-    assumeWorkerPool().setMaxExecuteTime(maxWorkerExecuteTime);
+    if (maxWorkerExecuteTime < 1) {
+      throw new IllegalArgumentException("maxExecuteTime must be > 0");
+    }
+    this.maxWorkerExecuteTime = maxWorkerExecuteTime;
     return this;
   }
 
@@ -272,7 +284,7 @@ public class DeploymentOptions {
    * @return the time unit of {@code maxWorkerExecuteTime}
    */
   public TimeUnit getMaxWorkerExecuteTimeUnit() {
-    return assumeWorkerPool().getMaxExecuteTimeUnit();
+    return maxWorkerExecuteTimeUnit;
   }
 
   /**
@@ -284,7 +296,7 @@ public class DeploymentOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public DeploymentOptions setMaxWorkerExecuteTimeUnit(TimeUnit maxWorkerExecuteTimeUnit) {
-    assumeWorkerPool().setMaxExecuteTimeUnit(maxWorkerExecuteTimeUnit);
+    this.maxWorkerExecuteTimeUnit = maxWorkerExecuteTimeUnit;
     return this;
   }
 

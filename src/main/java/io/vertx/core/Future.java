@@ -14,6 +14,7 @@ package io.vertx.core;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.Utils;
 import io.vertx.core.impl.future.CompositeFutureImpl;
 import io.vertx.core.impl.future.FailedFuture;
 import io.vertx.core.impl.future.SucceededFuture;
@@ -617,4 +618,38 @@ public interface Future<T> extends AsyncResult<T> {
     });
     return promise.future();
   }
+
+  /**
+   * Park the current thread until the {@code future} is completed, when the future
+   * is completed the thread is un-parked and
+   *
+   * <ul>
+   *   <li>the result value is returned when the future was completed with a result</li>
+   *   <li>otherwise, the failure is thrown</li>
+   * </ul>
+   *
+   * This method must be called from a virtual thread.
+   *
+   * @param future the future to await
+   * @return the result
+   * @throws IllegalStateException when called from an event-loop thread or a non Vert.x thread
+   */
+  static <T> T await(Future<T> future) {
+    io.vertx.core.impl.WorkerExecutor executor = io.vertx.core.impl.WorkerExecutor.unwrapWorkerExecutor();
+    io.vertx.core.impl.WorkerExecutor.TaskController cont = executor.current();
+    future.onComplete(ar -> cont.resume());
+    try {
+      cont.suspendAndAwaitResume();
+    } catch (InterruptedException e) {
+      Utils.throwAsUnchecked(e.getCause());
+      return null;
+    }
+    if (future.succeeded()) {
+      return future.result();
+    } else {
+      Utils.throwAsUnchecked(future.cause());
+      return null;
+    }
+  }
+
 }

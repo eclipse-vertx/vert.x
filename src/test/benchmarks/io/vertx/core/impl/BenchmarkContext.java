@@ -11,6 +11,7 @@
 
 package io.vertx.core.impl;
 
+import io.vertx.core.ThreadingModel;
 import io.vertx.core.Vertx;
 
 /**
@@ -33,7 +34,7 @@ public class BenchmarkContext {
     VertxImpl impl = (VertxImpl) vertx;
     return new ContextImpl(
       impl,
-      false,
+      ThreadingModel.WORKER,
       impl.getEventLoopGroup().next(),
       EXECUTOR,
       impl.internalWorkerPool,
