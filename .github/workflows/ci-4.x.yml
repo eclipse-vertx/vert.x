@@ -20,7 +20,7 @@ jobs:
         jdk: [8]
         include:
           - os: ubuntu-latest
-            jdk: 17
+            jdk: 21
           - os: ubuntu-latest
             jdk: 8
             profile: '-PtestNativeTransport'
