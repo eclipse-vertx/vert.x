@@ -27,7 +27,6 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -154,21 +153,34 @@ public class DeploymentManager {
     AtomicInteger deployCount = new AtomicInteger();
     AtomicBoolean failureReported = new AtomicBoolean();
     WorkerPool workerPool = null;
-    WorkerOptions workerOptions = options.getWorkerOptions();
-    if (workerOptions instanceof WorkerPoolOptions) {
-      WorkerPoolOptions workerPoolOptions = (WorkerPoolOptions) workerOptions;
-      if (workerPoolOptions.getName() != null) {
+    ThreadingModel mode = options.getThreadingModel();
+    if (mode == null) {
+      mode = ThreadingModel.EVENT_LOOP;
+    }
+    if (mode != ThreadingModel.VIRTUAL_THREAD) {
+      if (options.getWorkerPoolName() != null) {
         workerPool = vertx.createSharedWorkerPool(options.getWorkerPoolName(), options.getWorkerPoolSize(), options.getMaxWorkerExecuteTime(), options.getMaxWorkerExecuteTimeUnit());
       }
     } else {
-      ExecutorService pool = workerOptions.createExecutor(vertx);
-      workerPool = vertx.wrapWorkerPool(pool);
+      if (!VertxInternal.isVirtualThreadAvailable()) {
+        return callingContext.failedFuture("This Java runtime does not support virtual threads");
+      }
     }
     DeploymentImpl deployment = new DeploymentImpl(parent, workerPool, deploymentID, identifier, options);
     for (Verticle verticle: verticles) {
       CloseFuture closeFuture = new CloseFuture(log);
-      ContextImpl context = (options.isWorker() ? vertx.createWorkerContext(deployment, closeFuture, workerPool, tccl) :
-        vertx.createEventLoopContext(deployment, closeFuture, workerPool, tccl));
+      ContextImpl context;
+      switch (mode) {
+        default:
+          context = vertx.createEventLoopContext(deployment, closeFuture, workerPool, tccl);
+          break;
+        case WORKER:
+          context = vertx.createWorkerContext(deployment, closeFuture, workerPool, tccl);
+          break;
+        case VIRTUAL_THREAD:
+          context = vertx.createVirtualThreadContext(deployment, closeFuture, tccl);
+          break;
+      }
       VerticleHolder holder = new VerticleHolder(verticle, context, closeFuture);
       deployment.addVerticle(holder);
       context.runOnContext(v -> {

@@ -25,6 +25,11 @@ public class DeploymentOptionsConverter {
             obj.setConfig(((JsonObject)member.getValue()).copy());
           }
           break;
+        case "threadingModel":
+          if (member.getValue() instanceof String) {
+            obj.setThreadingModel(io.vertx.core.ThreadingModel.valueOf((String)member.getValue()));
+          }
+          break;
         case "worker":
           if (member.getValue() instanceof Boolean) {
             obj.setWorker((Boolean)member.getValue());
@@ -71,6 +76,9 @@ public class DeploymentOptionsConverter {
    static void toJson(DeploymentOptions obj, java.util.Map<String, Object> json) {
     if (obj.getConfig() != null) {
       json.put("config", obj.getConfig());
+    }
+    if (obj.getThreadingModel() != null) {
+      json.put("threadingModel", obj.getThreadingModel().name());
     }
     json.put("worker", obj.isWorker());
     json.put("ha", obj.isHa());

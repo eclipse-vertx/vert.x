@@ -44,4 +44,9 @@ public class Utils {
   public static boolean isWindows() {
     return isWindows;
   }
+
+  @SuppressWarnings("unchecked")
+  public static <E extends Throwable> void throwAsUnchecked(Throwable t) throws E {
+    throw (E) t;
+  }
 }
