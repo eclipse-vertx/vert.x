@@ -1729,4 +1729,13 @@ public class FutureTest extends FutureTestBase {
 
     await();
   }
+
+  @Test
+  public void testAwaitFromPlainThread() {
+    try {
+      Future.await(Promise.promise().future());
+      fail();
+    } catch (IllegalStateException e) {
+    }
+  }
 }

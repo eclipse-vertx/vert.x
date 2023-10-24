@@ -186,6 +186,11 @@ public interface Context {
   boolean isWorkerContext();
 
   /**
+   * @return the context threading model
+   */
+  ThreadingModel threadingModel();
+
+  /**
    * Get some data from the context.
    *
    * @param key  the key of the data

@@ -14,6 +14,7 @@ import io.netty.channel.EventLoop;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.ThreadingModel;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.tracing.VertxTracer;
 
@@ -40,6 +41,11 @@ class DuplicatedContext implements ContextInternal {
 
   DuplicatedContext(ContextImpl delegate) {
     this.delegate = delegate;
+  }
+
+  @Override
+  public ThreadingModel threadingModel() {
+    return delegate.threadingModel();
   }
 
   @Override
