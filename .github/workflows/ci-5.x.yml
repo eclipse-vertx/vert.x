@@ -23,7 +23,7 @@ jobs:
             jdk: 11
             profile: '-PtestDomainSockets'
           - os: ubuntu-latest
-            jdk: 17
+            jdk: 21
             profile: ''
           - os: windows-latest
             jdk: 11
