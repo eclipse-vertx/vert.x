@@ -119,7 +119,9 @@ public class DeploymentOptions {
    * Which threading model the verticle(s) should use?
    *
    * @return the verticle threading model
+   * @deprecated instead use {@link #getThreadingModel()}
    */
+  @Deprecated
   public ThreadingModel getThreadingModel() {
     return threadingModel;
   }
@@ -129,7 +131,9 @@ public class DeploymentOptions {
    *
    * @param threadingModel the threading model
    * @return a reference to this, so the API can be used fluently
+   * @deprecated instead use {@link #setThreadingModel(ThreadingModel)}
    */
+  @Deprecated
   public DeploymentOptions setThreadingModel(ThreadingModel threadingModel) {
     this.threadingModel = threadingModel;
     return this;
