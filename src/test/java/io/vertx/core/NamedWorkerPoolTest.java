@@ -151,7 +151,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
           }, true).onComplete(onSuccess(v -> complete()));
         }
       }
-    }, new DeploymentOptions().setWorker(true)).onComplete(onSuccess(v -> {}));
+    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER)).onComplete(onSuccess(v -> {}));
     await();
   }
 
@@ -304,7 +304,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
       public void stop() {
         threadName.set(Thread.currentThread().getName());
       }
-    }, new DeploymentOptions().setWorker(true).setWorkerPoolName("test-worker")).onComplete(onSuccess(id -> {
+    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER).setWorkerPoolName("test-worker")).onComplete(onSuccess(id -> {
       vertx.undeploy(id).onComplete(onSuccess(v -> {
         assertNotNull(threadName.get());
         assertTrue(threadName.get().startsWith("test-worker"));
@@ -349,7 +349,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
           vertx.undeploy(context.deploymentID());
         });
       }
-    }, new DeploymentOptions().setWorker(true).setWorkerPoolName(poolName)).onComplete(onSuccess(deployment::set));
+    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER).setWorkerPoolName(poolName)).onComplete(onSuccess(deployment::set));
     assertWaitUntil(() -> thread.get() != null && thread.get().getState() == Thread.State.TERMINATED);
   }
 

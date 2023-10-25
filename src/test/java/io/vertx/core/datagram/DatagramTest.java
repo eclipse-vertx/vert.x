@@ -12,13 +12,7 @@ package io.vertx.core.datagram;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.UnpooledHeapByteBuf;
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.impl.Utils;
@@ -565,7 +559,7 @@ public class DatagramTest extends VertxTestBase {
             .<Void>mapEmpty()
             .onComplete(startPromise);
         }
-      }, new DeploymentOptions().setWorker(true))
+      }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER))
       .onComplete(onSuccess(id -> {
         peer1 = vertx.createDatagramSocket(new DatagramSocketOptions());
         peer1

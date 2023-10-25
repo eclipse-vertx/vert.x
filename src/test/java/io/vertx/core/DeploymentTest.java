@@ -53,9 +53,6 @@ public class DeploymentTest extends VertxTestBase {
     JsonObject config = new JsonObject().put("foo", "bar").put("obj", new JsonObject().put("quux", 123));
     assertEquals(options, options.setConfig(config));
     assertEquals(config, options.getConfig());
-    assertFalse(options.isWorker());
-    assertEquals(options, options.setWorker(true));
-    assertTrue(options.isWorker());
     String rand = TestUtils.randomUnicodeString(1000);
     assertFalse(options.isHa());
     assertEquals(options, options.setHa(true));
@@ -90,14 +87,12 @@ public class DeploymentTest extends VertxTestBase {
     long maxWorkerExecuteTime = TestUtils.randomPositiveLong();
     TimeUnit maxWorkerExecuteTimeUnit = TimeUnit.MILLISECONDS;
     options.setConfig(config);
-    options.setWorker(worker);
     options.setHa(ha);
     options.setWorkerPoolName(poolName);
     options.setWorkerPoolSize(poolSize);
     options.setMaxWorkerExecuteTime(maxWorkerExecuteTime);
     options.setMaxWorkerExecuteTimeUnit(maxWorkerExecuteTimeUnit);
     DeploymentOptions copy = new DeploymentOptions(options);
-    assertEquals(worker, copy.isWorker());
     assertNotSame(config, copy.getConfig());
     assertEquals("bar", copy.getConfig().getString("foo"));
     assertEquals(ha, copy.isHa());
@@ -112,7 +107,6 @@ public class DeploymentTest extends VertxTestBase {
     DeploymentOptions def = new DeploymentOptions();
     DeploymentOptions json = new DeploymentOptions(new JsonObject());
     assertEquals(def.getConfig(), json.getConfig());
-    assertEquals(def.isWorker(), json.isWorker());
     assertEquals(def.isHa(), json.isHa());
     assertEquals(def.getWorkerPoolName(), json.getWorkerPoolName());
     assertEquals(def.getWorkerPoolSize(), json.getWorkerPoolSize());
@@ -141,7 +135,6 @@ public class DeploymentTest extends VertxTestBase {
     json.put("maxWorkerExecuteTime", maxWorkerExecuteTime);
     json.put("maxWorkerExecuteTimeUnit", maxWorkerExecuteTimeUnit);
     DeploymentOptions options = new DeploymentOptions(json);
-    assertEquals(worker, options.isWorker());
     assertEquals("bar", options.getConfig().getString("foo"));
     assertEquals(ha, options.isHa());
     assertEquals(poolName, options.getWorkerPoolName());
@@ -164,7 +157,6 @@ public class DeploymentTest extends VertxTestBase {
     long maxWorkerExecuteTime = TestUtils.randomPositiveLong();
     TimeUnit maxWorkerExecuteTimeUnit = TimeUnit.MILLISECONDS;
     options.setConfig(config);
-    options.setWorker(worker);
     options.setHa(ha);
     options.setWorkerPoolName(poolName);
     options.setWorkerPoolSize(poolSize);
@@ -172,7 +164,6 @@ public class DeploymentTest extends VertxTestBase {
     options.setMaxWorkerExecuteTimeUnit(maxWorkerExecuteTimeUnit);
     JsonObject json = options.toJson();
     DeploymentOptions copy = new DeploymentOptions(json);
-    assertEquals(worker, copy.isWorker());
     assertEquals("bar", copy.getConfig().getString("foo"));
     assertEquals(ha, copy.isHa());
     assertEquals(poolName, copy.getWorkerPoolName());
@@ -231,7 +222,7 @@ public class DeploymentTest extends VertxTestBase {
   @Test
   public void testDeployWorkerFromTestThread() throws Exception {
     MyVerticle verticle = new MyVerticle();
-    vertx.deployVerticle(verticle, new DeploymentOptions().setWorker(true)).onComplete(ar -> {
+    vertx.deployVerticle(verticle, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER)).onComplete(ar -> {
       assertDeployment(1, verticle, null, ar);
       assertTrue(verticle.startContext.isWorkerContext());
       vertx.undeploy(ar.result()).onComplete(ar2 -> {
@@ -247,7 +238,7 @@ public class DeploymentTest extends VertxTestBase {
   public void testDeployWorkerWithConfig() throws Exception {
     MyVerticle verticle = new MyVerticle();
     JsonObject conf = generateJSONObject();
-    vertx.deployVerticle(verticle, new DeploymentOptions().setConfig(conf).setWorker(true)).onComplete(ar -> {
+    vertx.deployVerticle(verticle, new DeploymentOptions().setConfig(conf).setThreadingModel(ThreadingModel.WORKER)).onComplete(ar -> {
       assertDeployment(1, verticle, conf, ar);
       assertTrue(verticle.startContext.isWorkerContext());
       assertFalse(verticle.startContext.isEventLoopContext());
@@ -278,7 +269,7 @@ public class DeploymentTest extends VertxTestBase {
         assertFalse(Context.isOnEventLoopThread());
       }
     };
-    vertx.deployVerticle(verticle, new DeploymentOptions().setWorker(true))
+    vertx.deployVerticle(verticle, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER))
       .onComplete(onSuccess(res -> {
         assertTrue(Context.isOnVertxThread());
         assertFalse(Context.isOnWorkerThread());

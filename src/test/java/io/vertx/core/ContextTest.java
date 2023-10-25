@@ -307,7 +307,7 @@ public class ContextTest extends VertxTestBase {
           return null;
         }).onComplete(onSuccess(v -> complete()));
       }
-    }, new DeploymentOptions().setWorker(worker));
+    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER));
     awaitLatch(latch1);
     CountDownLatch latch3 = new CountDownLatch(1);
     vertx.deployVerticle(new AbstractVerticle() {
@@ -320,7 +320,7 @@ public class ContextTest extends VertxTestBase {
           complete();
         }));
       }
-    }, new DeploymentOptions().setWorker(worker));
+    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER));
     awaitLatch(latch3);
     latch2.countDown();
     await();

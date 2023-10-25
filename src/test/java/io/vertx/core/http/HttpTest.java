@@ -17,17 +17,7 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxException;
-import io.vertx.core.VertxOptions;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.http.impl.CleanableHttpClient;
@@ -3231,7 +3221,7 @@ public abstract class HttpTest extends HttpTestBase {
       }
     }
     MyVerticle verticle = new MyVerticle();
-    vertx.deployVerticle(verticle, new DeploymentOptions().setWorker(worker));
+    vertx.deployVerticle(verticle, new DeploymentOptions().setThreadingModel(worker ? ThreadingModel.WORKER : ThreadingModel.EVENT_LOOP));
     await();
   }
 
@@ -3269,7 +3259,7 @@ public abstract class HttpTest extends HttpTestBase {
           .<Void>mapEmpty()
           .onComplete(startPromise);
       }
-    }, new DeploymentOptions().setWorker(true))
+    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER))
       .onComplete(onSuccess(id -> latch.countDown()));
     awaitLatch(latch);
     for (int i = 0;i < numReq;i++) {
@@ -3322,7 +3312,7 @@ public abstract class HttpTest extends HttpTestBase {
           }));
         }));
       }
-    }, new DeploymentOptions().setWorker(true));
+    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER));
     await();
   }
 
@@ -3364,7 +3354,7 @@ public abstract class HttpTest extends HttpTestBase {
             .onComplete(onSuccess(v -> complete()));
         }
       }
-    }, new DeploymentOptions().setWorker(true));
+    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER));
     await();
   }
 
@@ -3387,7 +3377,7 @@ public abstract class HttpTest extends HttpTestBase {
           .<Void>mapEmpty()
           .onComplete(startPromise);
       }
-    }, new DeploymentOptions().setWorker(true))
+    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER))
       .toCompletionStage()
       .toCompletableFuture()
       .get(20, TimeUnit.SECONDS);

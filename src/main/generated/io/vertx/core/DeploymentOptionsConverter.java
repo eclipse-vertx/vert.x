@@ -30,11 +30,6 @@ public class DeploymentOptionsConverter {
             obj.setThreadingModel(io.vertx.core.ThreadingModel.valueOf((String)member.getValue()));
           }
           break;
-        case "worker":
-          if (member.getValue() instanceof Boolean) {
-            obj.setWorker((Boolean)member.getValue());
-          }
-          break;
         case "ha":
           if (member.getValue() instanceof Boolean) {
             obj.setHa((Boolean)member.getValue());
@@ -80,7 +75,6 @@ public class DeploymentOptionsConverter {
     if (obj.getThreadingModel() != null) {
       json.put("threadingModel", obj.getThreadingModel().name());
     }
-    json.put("worker", obj.isWorker());
     json.put("ha", obj.isHa());
     json.put("instances", obj.getInstances());
     if (obj.getWorkerPoolName() != null) {

@@ -34,15 +34,7 @@ import io.netty.handler.ssl.JdkSslContext;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.internal.PlatformDependent;
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.eventbus.Message;
@@ -2526,7 +2518,7 @@ public class NetTest extends VertxTestBase {
       }
     }
     MyVerticle verticle = new MyVerticle();
-    vertx.deployVerticle(verticle, new DeploymentOptions().setWorker(worker));
+    vertx.deployVerticle(verticle, new DeploymentOptions().setThreadingModel(worker ? ThreadingModel.WORKER : ThreadingModel.EVENT_LOOP));
     await();
   }
 
@@ -2655,7 +2647,7 @@ public class NetTest extends VertxTestBase {
           }));
         }));
       }
-    }, new DeploymentOptions().setWorker(true));
+    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER));
     await();
   }
 
@@ -3329,7 +3321,7 @@ public class NetTest extends VertxTestBase {
         }));
 
       }
-    }, new DeploymentOptions().setWorker(true));
+    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER));
     await();
   }
 
@@ -3360,7 +3352,7 @@ public class NetTest extends VertxTestBase {
         });
         server.listen(testAddress).<Void>mapEmpty().onComplete(startPromise);
       }
-    }, new DeploymentOptions().setWorker(true)).onComplete(onSuccess(v -> {
+    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER)).onComplete(onSuccess(v -> {
       client.connect(testAddress).onComplete(onSuccess(so -> {
         so.write(expected);
         so.close();

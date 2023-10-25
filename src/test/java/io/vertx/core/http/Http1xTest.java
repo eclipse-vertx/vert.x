@@ -3853,7 +3853,7 @@ public class Http1xTest extends HttpTest {
           }));
         }
       }
-    }, new DeploymentOptions().setWorker(true));
+    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER));
     await();
   }
 

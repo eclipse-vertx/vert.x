@@ -121,26 +121,6 @@ public class DeploymentOptions {
   }
 
   /**
-   * Should the verticle(s) be deployed as a worker verticle?
-   *
-   * @return {@code true} if will be deployed as worker, {@code false} otherwise
-   */
-  public boolean isWorker() {
-    return threadingModel == ThreadingModel.WORKER;
-  }
-
-  /**
-   * Set whether the verticle(s) should be deployed as a worker verticle
-   *
-   * @param worker {@code true} for worker, {@code false} force event-loop
-   * @return a reference to this, so the API can be used fluently
-   */
-  public DeploymentOptions setWorker(boolean worker) {
-    this.threadingModel = worker ? ThreadingModel.WORKER : ThreadingModel.EVENT_LOOP;
-    return this;
-  }
-
-  /**
    * Will the verticle(s) be deployed as HA (highly available) ?
    *
    * @return true if HA, false otherwise

@@ -171,7 +171,7 @@ public class TimerTest extends VertxTestBase {
         assertTrue(vertx.cancelTimer(id));
         testComplete();
       }
-    }, new DeploymentOptions().setWorker(true));
+    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER));
     await();
   }
 
@@ -185,7 +185,7 @@ public class TimerTest extends VertxTestBase {
           testComplete();
         });
       }
-    }, new DeploymentOptions().setWorker(true));
+    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER));
     await();
   }
 

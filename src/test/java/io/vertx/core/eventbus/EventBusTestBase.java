@@ -12,10 +12,7 @@
 package io.vertx.core.eventbus;
 
 import io.netty.util.CharsetUtil;
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.Context;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Vertx;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -469,7 +466,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
           latch.countDown();
         });
       }
-    }, new DeploymentOptions().setWorker(true));
+    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER));
     awaitLatch(latch);
     vertices[0].eventBus().request(ADDRESS1, "whatever").onComplete(onSuccess(reply -> {
       assertEquals(expectedBody, reply.body());
@@ -550,7 +547,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
           complete();
         }));
       }
-    }, new DeploymentOptions().setWorker(true));
+    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER));
 
     // Inside executeBlocking
     vertices[0].executeBlocking(() -> {
