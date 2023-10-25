@@ -35,7 +35,7 @@ public class VirtualThreadEventBusTest extends VertxTestBase {
       msg.reply(msg.body());
     });
     vertx.createVirtualThreadContext().runOnContext(v -> {
-      Message<String> ret = Future.await(eb.request("test-addr", "test"));
+      Message<String> ret = eb.<String>request("test-addr", "test").await();
       assertEquals("test", ret.body());
       testComplete();
     });

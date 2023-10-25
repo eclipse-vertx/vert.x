@@ -1013,7 +1013,7 @@ public class ContextTest extends VertxTestBase {
         Promise<String> promise = Promise.promise();
         vertx.setTimer(10, id -> promise.complete("foo"));
         try {
-          String res = Future.await(promise.future());
+          String res = promise.future().await();
           assertFalse(fail);
           assertEquals("foo", res);
         } catch (IllegalStateException e) {

@@ -66,7 +66,7 @@ public class VirtualThreadContextTest extends VertxTestBase {
         }
         promise.complete(result);
       }).start();
-      assertSame(result, Future.await(promise.future()));
+      assertSame(result, promise.future().await());
       testComplete();
     });
     await();
@@ -87,7 +87,7 @@ public class VirtualThreadContextTest extends VertxTestBase {
         promise.fail(failure);
       }).start();
       try {
-        Future.await(promise.future());
+        promise.future().await();
       } catch (Exception e) {
         assertSame(failure, e);
         testComplete();
@@ -112,7 +112,7 @@ public class VirtualThreadContextTest extends VertxTestBase {
         }
         promise.complete(result);
       }).start();
-      assertSame("HELLO", Future.await(promise.future().map(res -> "HELLO")));
+      assertSame("HELLO", promise.future().map(res -> "HELLO").await());
       testComplete();
     });
     await();
@@ -163,7 +163,7 @@ public class VirtualThreadContextTest extends VertxTestBase {
             });
           }
           Future<Void> f = promise.future();
-          Future.await(f);
+          f.await();
           complete();
         });
       }
@@ -180,7 +180,7 @@ public class VirtualThreadContextTest extends VertxTestBase {
       vertx.setTimer(100, id -> {
         promise.complete("foo");
       });
-      String res = Future.await(promise);
+      String res = promise.await();
       assertEquals("foo", res);
       testComplete();
     });

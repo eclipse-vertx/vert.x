@@ -61,7 +61,7 @@ public class VirtualThreadDeploymentTest extends VertxTestBase {
       public void start() {
         assertTrue(isVirtual(Thread.currentThread()));
         Future<Void> fut = Future.future(p -> vertx.setTimer(500, id -> p.complete()));
-        Future.await(fut);
+        fut.await();
         testComplete();
       }
     }, new DeploymentOptions().setThreadingModel(ThreadingModel.VIRTUAL_THREAD));
@@ -78,7 +78,7 @@ public class VirtualThreadDeploymentTest extends VertxTestBase {
           assertTrue(isVirtual(Thread.currentThread()));
           return Thread.currentThread().getName();
         });
-        String res = Future.await(fut);
+        String res = fut.await();
         assertNotSame(Thread.currentThread().getName(), res);
         testComplete();
       }
@@ -102,13 +102,13 @@ public class VirtualThreadDeploymentTest extends VertxTestBase {
             max.set(Math.max(val, max.get()));
             Future<Void> fut = Future.future(p -> vertx.setTimer(50, id -> p.complete()));
             processing.set(false);
-            Future.await(fut);
+            fut.await();
             assertFalse(processing.getAndSet(true));
             req.response().end();
             inflight.decrementAndGet();
             processing.set(false);
           });
-          Future.await(server.listen(8080, "localhost"));
+          server.listen(8080, "localhost").await();
         }
       }, new DeploymentOptions().setThreadingModel(ThreadingModel.VIRTUAL_THREAD))
       .toCompletionStage()

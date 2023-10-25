@@ -44,9 +44,9 @@ public class VirtualThreadHttpTest extends VertxTestBase {
     vertx.createVirtualThreadContext().runOnContext(v -> {
       HttpClient client = vertx.createHttpClient();
       for (int i = 0; i < 100; ++i) {
-        HttpClientRequest req = Future.await(client.request(HttpMethod.GET, 8088, "localhost", "/"));
-        HttpClientResponse resp = Future.await(req.send());
-        Buffer body = Future.await(resp.body());
+        HttpClientRequest req = client.request(HttpMethod.GET, 8088, "localhost", "/").await();
+        HttpClientResponse resp = req.send().await();
+        Buffer body = resp.body().await();
         String bodyString = body.toString(StandardCharsets.UTF_8);
         assertEquals("Hello World", body.toString());
       }
@@ -68,7 +68,7 @@ public class VirtualThreadHttpTest extends VertxTestBase {
     vertx.createVirtualThreadContext().runOnContext(v -> {
       for (int i = 0; i < 100; ++i) {
         client.request(HttpMethod.GET, 8088, "localhost", "/").onSuccess(req -> {
-          HttpClientResponse resp = Future.await(req.send());
+          HttpClientResponse resp = req.send().await();
           StringBuffer body = new StringBuffer();
           resp.handler(buff -> {
             body.append(buff.toString());
@@ -98,13 +98,13 @@ public class VirtualThreadHttpTest extends VertxTestBase {
     vertx.createVirtualThreadContext().runOnContext(v -> {
       HttpClient client = vertx.createHttpClient();
       ContextInternal ctx = vertx.getOrCreateContext();
-      HttpClientRequest req = Future.await(client.request(HttpMethod.GET, 8088, "localhost", "/"));
+      HttpClientRequest req = client.request(HttpMethod.GET, 8088, "localhost", "/").await();
       PromiseInternal<HttpClientResponse> promise = ctx.promise();
       req.send().onComplete(promise);
       Exception failure = new Exception("Too late");
       vertx.setTimer(500, id -> promise.tryFail(failure));
       try {
-        HttpClientResponse resp = Future.await(promise.future());
+        HttpClientResponse resp = promise.future().await();
       } catch (Exception e) {
         assertSame(failure, e);
         testComplete();
