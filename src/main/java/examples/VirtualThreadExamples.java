@@ -26,14 +26,14 @@ public class VirtualThreadExamples {
       @Override
       public void start() {
         HttpClient client = vertx.createHttpClient();
-        HttpClientRequest req = Future.await(client.request(
+        HttpClientRequest req = client.request(
           HttpMethod.GET,
           8080,
           "localhost",
-          "/"));
-        HttpClientResponse resp = Future.await(req.send());
+          "/").await();
+        HttpClientResponse resp = req.send().await();
         int status = resp.statusCode();
-        Buffer body = Future.await(resp.body());
+        Buffer body = resp.body().await();
       }
     };
 
@@ -45,13 +45,13 @@ public class VirtualThreadExamples {
 
   public void fieldVisibility1() {
     int value = counter;
-    value += Future.await(getRemoteValue());
+    value += getRemoteValue().await();
     // the counter value might have changed
     counter = value;
   }
 
   public void fieldVisibility2() {
-    counter += Future.await(getRemoteValue());
+    counter += getRemoteValue().await();
   }
 
   private Future<Buffer> callRemoteService() {
@@ -72,25 +72,25 @@ public class VirtualThreadExamples {
           .requestHandler(req -> {
             Buffer res;
             try {
-              res = Future.await(callRemoteService());
+              res = callRemoteService().await();
             } catch (Exception e) {
               req.response().setStatusCode(500).end();
               return;
             }
             req.response().end(res);
           });
-        Future.await(server.listen(port));
+        server.listen(port).await();
       }
     }, new DeploymentOptions()
       .setThreadingModel(ThreadingModel.VIRTUAL_THREAD));
   }
 
   public void awaitingFutures1(HttpClientResponse response) {
-    Buffer body = Future.await(response.body());
+    Buffer body = response.body().await();
   }
 
   public void awaitingFutures2(HttpClientResponse response, CompletionStage<Buffer> completionStage) {
-    Buffer body = Future.await(Future.fromCompletionStage(completionStage));
+    Buffer body = Future.fromCompletionStage(completionStage).await();
   }
 
   private Future<String> getRemoteString() {
@@ -100,7 +100,7 @@ public class VirtualThreadExamples {
   public void awaitingMultipleFutures() {
     Future<String> f1 = getRemoteString();
     Future<Integer> f2 = getRemoteValue();
-    CompositeFuture res = Future.await(Future.all(f1, f2));
+    CompositeFuture res = Future.all(f1, f2).await();
     String v1 = res.resultAt(0);
     Integer v2 = res.resultAt(1);
   }
@@ -108,8 +108,8 @@ public class VirtualThreadExamples {
   public void threadLocalSupport1(String userId, HttpClient client) {
     ThreadLocal<String> local = new ThreadLocal();
     local.set(userId);
-    HttpClientRequest req = Future.await(client.request(HttpMethod.GET, 8080, "localhost", "/"));
-    HttpClientResponse resp = Future.await(req.send());
+    HttpClientRequest req = client.request(HttpMethod.GET, 8080, "localhost", "/").await();
+    HttpClientResponse resp = req.send().await();
     // Thread local remains the same since it's the same virtual thread
   }
 }

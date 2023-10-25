@@ -611,26 +611,35 @@ public interface Future<T> extends AsyncResult<T> {
    *
    * This method must be called from a virtual thread.
    *
-   * @param future the future to await
    * @return the result
    * @throws IllegalStateException when called from an event-loop thread or a non Vert.x thread
    */
-  static <T> T await(Future<T> future) {
+  default T await() {
     io.vertx.core.impl.WorkerExecutor executor = io.vertx.core.impl.WorkerExecutor.unwrapWorkerExecutor();
     io.vertx.core.impl.WorkerExecutor.TaskController cont = executor.current();
-    future.onComplete(ar -> cont.resume());
+    onComplete(ar -> cont.resume());
     try {
       cont.suspendAndAwaitResume();
     } catch (InterruptedException e) {
       Utils.throwAsUnchecked(e.getCause());
       return null;
     }
-    if (future.succeeded()) {
-      return future.result();
+    if (succeeded()) {
+      return result();
     } else {
-      Utils.throwAsUnchecked(future.cause());
+      Utils.throwAsUnchecked(cause());
       return null;
     }
   }
 
+  /**
+   * Calls {@link #await()} on {@code future}.
+   *
+   * @param future the future to await
+   * @return the result
+   * @throws IllegalStateException when called from an event-loop thread or a non Vert.x thread
+   */
+  static <T> T await(Future<T> future) {
+    return future.await();
+  }
 }
