@@ -259,7 +259,7 @@ Worker verticles are designed for calling blocking code, as they won't block any
 If you don't want to use a worker verticle to run blocking code, you can also run <<blocking_code, inline blocking code>>
 directly while on an event loop.
 
-If you want to deploy a verticle as a worker verticle you do that with {@link io.vertx.core.DeploymentOptions#setWorker}.
+If you want to deploy a verticle as a worker verticle you do that with {@link io.vertx.core.DeploymentOptions#setThreadingModel}.
 
 [source,$lang]
 ----

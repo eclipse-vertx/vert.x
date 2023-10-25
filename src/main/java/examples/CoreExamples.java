@@ -220,7 +220,7 @@ public class CoreExamples {
   }
 
   public void example7_1(Vertx vertx) {
-    DeploymentOptions options = new DeploymentOptions().setWorker(true);
+    DeploymentOptions options = new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER);
     vertx.deployVerticle("com.mycompany.MyOrderProcessorVerticle", options);
   }
 
