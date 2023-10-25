@@ -228,7 +228,7 @@ public class VertxTestBase extends AsyncTestBase {
       public void start() throws Exception {
         fut.complete(context);
       }
-    }, new DeploymentOptions().setWorker(true)).onComplete(ar -> {
+    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER)).onComplete(ar -> {
       if (ar.failed()) {
         fut.completeExceptionally(ar.cause());
       }

@@ -57,7 +57,7 @@ public class MessageQueueOnWorkerThreadTest extends VertxTestBase {
     int senderInstances = 20, messagesToSend = 100, expected = senderInstances * messagesToSend;
     waitFor(expected);
     vertx.eventBus().consumer("foo", msg -> complete()).completion().onComplete(onSuccess(registered -> {
-      DeploymentOptions options = new DeploymentOptions().setWorker(worker).setInstances(senderInstances);
+      DeploymentOptions options = new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER).setInstances(senderInstances);
       vertx.deployVerticle(() -> new SenderVerticle(worker, messagesToSend), options);
     }));
     await(5, SECONDS);

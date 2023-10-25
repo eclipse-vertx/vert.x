@@ -115,7 +115,7 @@ public class BlockedThreadCheckerTest extends VertxTestBase {
     try {
       catchBlockedThreadEvents(newVertx);
       DeploymentOptions deploymentOptions = new DeploymentOptions();
-      deploymentOptions.setWorker(true);
+      deploymentOptions.setThreadingModel(ThreadingModel.WORKER);
       newVertx.deployVerticle(verticle, deploymentOptions);
       await();
       expectMessage("vert.x-worker-thread", maxWorkerExecuteTime, maxWorkerExecuteTimeUnit);
@@ -209,7 +209,7 @@ public class BlockedThreadCheckerTest extends VertxTestBase {
       complete();
     });
     DeploymentOptions deploymentOptions = new DeploymentOptions();
-    deploymentOptions.setWorker(true);
+    deploymentOptions.setThreadingModel(ThreadingModel.WORKER);
     newVertx.deployVerticle(verticle, deploymentOptions);
     await();
   }

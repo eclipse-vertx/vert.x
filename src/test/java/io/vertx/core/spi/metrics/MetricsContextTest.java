@@ -888,7 +888,7 @@ public class MetricsContextTest extends VertxTestBase {
         ctx.set(context);
         super.start();
       }
-    }, new DeploymentOptions().setWorker(true));
+    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER));
     assertWaitUntil(() -> ctx.get() != null);
     return ctx.get();
   };

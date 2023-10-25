@@ -16,16 +16,7 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.websocketx.*;
 import io.netty.util.ReferenceCountUtil;
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
+import io.vertx.core.*;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.buffer.impl.BufferInternal;
@@ -2011,7 +2002,7 @@ public class WebSocketTest extends VertxTestBase {
       public void start() {
         fut.complete(context);
       }
-    }, new DeploymentOptions().setWorker(true)).onComplete(ar -> {
+    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER)).onComplete(ar -> {
       if (ar.failed()) {
         fut.completeExceptionally(ar.cause());
       }
@@ -2139,7 +2130,7 @@ public class WebSocketTest extends VertxTestBase {
   @Test
   public void testWorker() {
     waitFor(2);
-    DeploymentOptions deploymentOptions = new DeploymentOptions().setWorker(true);
+    DeploymentOptions deploymentOptions = new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER);
     vertx.deployVerticle(() -> new AbstractVerticle() {
       @Override
       public void start(Promise<Void> startPromise) {
