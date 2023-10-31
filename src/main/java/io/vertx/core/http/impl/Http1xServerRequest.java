@@ -393,7 +393,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
 
   @Override
   public SocketAddress remoteAddress() {
-    return conn.remoteAddress();
+    return super.remoteAddress();
   }
 
   @Override

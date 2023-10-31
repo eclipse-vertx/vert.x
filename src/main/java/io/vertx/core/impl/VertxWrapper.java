@@ -13,12 +13,7 @@ package io.vertx.core.impl;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.resolver.AddressResolverGroup;
-import io.vertx.core.Closeable;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Verticle;
-import io.vertx.core.Vertx;
+import io.vertx.core.*;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.dns.DnsClient;
@@ -82,18 +77,8 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public NetServer createNetServer() {
-    return delegate.createNetServer();
-  }
-
-  @Override
   public NetClient createNetClient(NetClientOptions options) {
     return delegate.createNetClient(options);
-  }
-
-  @Override
-  public NetClient createNetClient() {
-    return delegate.createNetClient();
   }
 
   @Override
@@ -102,28 +87,18 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public HttpServer createHttpServer() {
-    return delegate.createHttpServer();
+  public HttpClientBuilder httpClientBuilder() {
+    return delegate.httpClientBuilder();
   }
 
   @Override
-  public HttpClient createHttpClient(HttpClientOptions options) {
-    return delegate.createHttpClient(options);
-  }
-
-  @Override
-  public HttpClient createHttpClient() {
-    return delegate.createHttpClient();
+  public WebSocketClient createWebSocketClient(WebSocketClientOptions options) {
+    return delegate.createWebSocketClient(options);
   }
 
   @Override
   public DatagramSocket createDatagramSocket(DatagramSocketOptions options) {
     return delegate.createDatagramSocket(options);
-  }
-
-  @Override
-  public DatagramSocket createDatagramSocket() {
-    return delegate.createDatagramSocket();
   }
 
   @Override
@@ -162,11 +137,6 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public long setPeriodic(long delay, Handler<Long> handler) {
-    return delegate.setPeriodic(delay, handler);
-  }
-
-  @Override
   public long setPeriodic(long initialDelay, long delay, Handler<Long> handler) {
     return delegate.setPeriodic(initialDelay, delay, handler);
   }
@@ -187,11 +157,6 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public Future<String> deployVerticle(Verticle verticle) {
-    return delegate.deployVerticle(verticle);
-  }
-
-  @Override
   public Future<String> deployVerticle(Verticle verticle, DeploymentOptions options) {
     return delegate.deployVerticle(verticle, options);
   }
@@ -204,11 +169,6 @@ public abstract class VertxWrapper implements VertxInternal {
   @Override
   public Future<String> deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options) {
     return delegate.deployVerticle(verticleSupplier, options);
-  }
-
-  @Override
-  public Future<String> deployVerticle(String name) {
-    return delegate.deployVerticle(name);
   }
 
   @Override
@@ -247,16 +207,6 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, boolean ordered) {
-    return delegate.executeBlockingInternal(blockingCodeHandler, ordered);
-  }
-
-  @Override
-  public <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler) {
-    return delegate.executeBlockingInternal(blockingCodeHandler);
-  }
-
-  @Override
   public EventLoopGroup nettyEventLoopGroup() {
     return delegate.nettyEventLoopGroup();
   }
@@ -284,6 +234,11 @@ public abstract class VertxWrapper implements VertxInternal {
   @Override
   public <T> PromiseInternal<T> promise() {
     return delegate.promise();
+  }
+
+  @Override
+  public <T> PromiseInternal<T> promise(Promise<T> promise) {
+    return delegate.promise(promise);
   }
 
   @Override
@@ -352,11 +307,6 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public <C> C createSharedResource(String resourceKey, String resourceName, CloseFuture closeFuture, Function<CloseFuture, C> supplier) {
-    return delegate.createSharedResource(resourceKey, resourceName, closeFuture, supplier);
-  }
-
-  @Override
   public ContextInternal getContext() {
     return delegate.getContext();
   }
@@ -374,6 +324,21 @@ public abstract class VertxWrapper implements VertxInternal {
   @Override
   public ContextInternal createEventLoopContext() {
     return delegate.createEventLoopContext();
+  }
+
+  @Override
+  public ContextInternal createVirtualThreadContext(Deployment deployment, CloseFuture closeFuture, ClassLoader tccl) {
+    return delegate.createVirtualThreadContext(deployment, closeFuture, tccl);
+  }
+
+  @Override
+  public ContextInternal createVirtualThreadContext(EventLoop eventLoop, ClassLoader tccl) {
+    return delegate.createVirtualThreadContext(eventLoop, tccl);
+  }
+
+  @Override
+  public ContextInternal createVirtualThreadContext() {
+    return delegate.createVirtualThreadContext();
   }
 
   @Override
@@ -449,16 +414,6 @@ public abstract class VertxWrapper implements VertxInternal {
   @Override
   public File resolveFile(String fileName) {
     return delegate.resolveFile(fileName);
-  }
-
-  @Override
-  public <T> Future<T> executeBlockingInternal(Callable<T> blockingCodeHandler) {
-    return delegate.executeBlockingInternal(blockingCodeHandler);
-  }
-
-  @Override
-  public <T> Future<T> executeBlockingInternal(Callable<T> blockingCodeHandler, boolean ordered) {
-    return delegate.executeBlockingInternal(blockingCodeHandler, ordered);
   }
 
   @Override

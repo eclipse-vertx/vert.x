@@ -92,12 +92,6 @@ public class HttpServerRequestWrapper extends HttpServerRequestInternal {
   }
 
   @Override
-  public boolean isSSL() {
-    return delegate.isSSL();
-  }
-
-  @Override
-  @Nullable
   public String scheme() {
     return delegate.scheme();
   }
@@ -108,19 +102,17 @@ public class HttpServerRequestWrapper extends HttpServerRequestInternal {
   }
 
   @Override
-  @Nullable
   public String path() {
     return delegate.path();
   }
 
   @Override
-  @Nullable
   public String query() {
     return delegate.query();
   }
 
   @Override
-  public @Nullable HostAndPort authority() {
+  public HostAndPort authority() {
     return delegate.authority();
   }
 
@@ -130,31 +122,16 @@ public class HttpServerRequestWrapper extends HttpServerRequestInternal {
   }
 
   @Override
-  @CacheReturn
   public HttpServerResponse response() {
     return delegate.response();
   }
 
   @Override
-  @CacheReturn
   public MultiMap headers() {
     return delegate.headers();
   }
 
   @Override
-  @Nullable
-  public String getHeader(String headerName) {
-    return delegate.getHeader(headerName);
-  }
-
-  @Override
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  public String getHeader(CharSequence headerName) {
-    return delegate.getHeader(headerName);
-  }
-
-  @Override
-  @Fluent
   public HttpServerRequest setParamsCharset(String charset) {
     return delegate.setParamsCharset(charset);
   }
@@ -165,38 +142,8 @@ public class HttpServerRequestWrapper extends HttpServerRequestInternal {
   }
 
   @Override
-  @CacheReturn
   public MultiMap params() {
     return delegate.params();
-  }
-
-  @Override
-  @Nullable
-  public String getParam(String paramName) {
-    return delegate.getParam(paramName);
-  }
-
-  @Override
-  public String getParam(String paramName, String defaultValue) {
-    return delegate.getParam(paramName, defaultValue);
-  }
-
-  @Override
-  @CacheReturn
-  public SocketAddress remoteAddress() {
-    return delegate.remoteAddress();
-  }
-
-  @Override
-  @CacheReturn
-  public SocketAddress localAddress() {
-    return delegate.localAddress();
-  }
-
-  @Override
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  public SSLSession sslSession() {
-    return delegate.sslSession();
   }
 
   @Override
@@ -208,12 +155,6 @@ public class HttpServerRequestWrapper extends HttpServerRequestInternal {
   @Override
   public String absoluteURI() {
     return delegate.absoluteURI();
-  }
-
-  @Override
-  @Fluent
-  public HttpServerRequest bodyHandler(@Nullable Handler<Buffer> bodyHandler) {
-    return delegate.bodyHandler(bodyHandler);
   }
 
   @Override
@@ -316,17 +257,6 @@ public class HttpServerRequestWrapper extends HttpServerRequestInternal {
   }
 
   @Override
-  public int cookieCount() {
-    return delegate.cookieCount();
-  }
-
-  @Override
-  @Deprecated
-  public Map<String, Cookie> cookieMap() {
-    return delegate.cookieMap();
-  }
-
-  @Override
   public Set<Cookie> cookies(String name) {
     return delegate.cookies(name);
   }
@@ -350,16 +280,6 @@ public class HttpServerRequestWrapper extends HttpServerRequestInternal {
   @Override
   public Object metric() {
     return delegate.metric();
-  }
-
-  @Override
-  public Pipe<Buffer> pipe() {
-    return delegate.pipe();
-  }
-
-  @Override
-  public Future<Void> pipeTo(WriteStream<Buffer> dst) {
-    return delegate.pipeTo(dst);
   }
 
 }
