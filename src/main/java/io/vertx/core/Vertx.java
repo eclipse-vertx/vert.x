@@ -359,7 +359,7 @@ public interface Vertx extends Measured {
    */
   @Deprecated
   default TimeoutStream periodicStream(long delay) {
-    return periodicStream(0, delay);
+    return periodicStream(0L, delay);
   }
 
   /**
