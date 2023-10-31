@@ -390,7 +390,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
 
   @Override
   public SocketAddress remoteAddress() {
-    return stream.conn.remoteAddress();
+    return super.remoteAddress();
   }
 
   @Override

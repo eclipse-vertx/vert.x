@@ -84,18 +84,8 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public NetServer createNetServer() {
-    return delegate.createNetServer();
-  }
-
-  @Override
   public NetClient createNetClient(NetClientOptions options) {
     return delegate.createNetClient(options);
-  }
-
-  @Override
-  public NetClient createNetClient() {
-    return delegate.createNetClient();
   }
 
   @Override
@@ -111,11 +101,6 @@ public abstract class VertxWrapper implements VertxInternal {
   @Override
   public DatagramSocket createDatagramSocket(DatagramSocketOptions options) {
     return delegate.createDatagramSocket(options);
-  }
-
-  @Override
-  public DatagramSocket createDatagramSocket() {
-    return delegate.createDatagramSocket();
   }
 
   @Override
@@ -159,18 +144,8 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public long setPeriodic(long delay, Handler<Long> handler) {
-    return delegate.setPeriodic(delay, handler);
-  }
-
-  @Override
   public long setPeriodic(long initialDelay, long delay, Handler<Long> handler) {
     return delegate.setPeriodic(initialDelay, delay, handler);
-  }
-
-  @Override
-  public TimeoutStream periodicStream(long delay) {
-    return delegate.periodicStream(delay);
   }
 
   @Override
@@ -196,11 +171,6 @@ public abstract class VertxWrapper implements VertxInternal {
   @Override
   public void close(Handler<AsyncResult<Void>> completionHandler) {
     delegate.close(completionHandler);
-  }
-
-  @Override
-  public Future<String> deployVerticle(Verticle verticle) {
-    return delegate.deployVerticle(verticle);
   }
 
   @Override
@@ -236,16 +206,6 @@ public abstract class VertxWrapper implements VertxInternal {
   @Override
   public void deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
     delegate.deployVerticle(verticleSupplier, options, completionHandler);
-  }
-
-  @Override
-  public Future<String> deployVerticle(String name) {
-    return delegate.deployVerticle(name);
-  }
-
-  @Override
-  public void deployVerticle(String name, Handler<AsyncResult<String>> completionHandler) {
-    delegate.deployVerticle(name, completionHandler);
   }
 
   @Override
@@ -291,36 +251,6 @@ public abstract class VertxWrapper implements VertxInternal {
   @Override
   public boolean isClustered() {
     return delegate.isClustered();
-  }
-
-  @Override
-  public <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> asyncResultHandler) {
-    delegate.executeBlocking(blockingCodeHandler, ordered, asyncResultHandler);
-  }
-
-  @Override
-  public <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<T>> asyncResultHandler) {
-    delegate.executeBlocking(blockingCodeHandler, asyncResultHandler);
-  }
-
-  @Override
-  public <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered) {
-    return delegate.executeBlocking(blockingCodeHandler, ordered);
-  }
-
-  @Override
-  public <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, boolean ordered) {
-    return delegate.executeBlockingInternal(blockingCodeHandler, ordered);
-  }
-
-  @Override
-  public <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler) {
-    return delegate.executeBlocking(blockingCodeHandler);
-  }
-
-  @Override
-  public <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler) {
-    return delegate.executeBlockingInternal(blockingCodeHandler);
   }
 
   @Override
@@ -429,8 +359,13 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public <C> C createSharedClient(String clientKey, String clientName, CloseFuture closeFuture, Function<CloseFuture, C> supplier) {
-    return delegate.createSharedClient(clientKey, clientName, closeFuture, supplier);
+  public HttpClientBuilder httpClientBuilder() {
+    return delegate.httpClientBuilder();
+  }
+
+  @Override
+  public WebSocketClient createWebSocketClient(WebSocketClientOptions options, CloseFuture closeFuture) {
+    return delegate.createWebSocketClient(options, closeFuture);
   }
 
   @Override
@@ -451,6 +386,21 @@ public abstract class VertxWrapper implements VertxInternal {
   @Override
   public ContextInternal createEventLoopContext() {
     return delegate.createEventLoopContext();
+  }
+
+  @Override
+  public ContextInternal createVirtualThreadContext(Deployment deployment, CloseFuture closeFuture, ClassLoader tccl) {
+    return delegate.createVirtualThreadContext(deployment, closeFuture, tccl);
+  }
+
+  @Override
+  public ContextInternal createVirtualThreadContext(EventLoop eventLoop, ClassLoader tccl) {
+    return delegate.createVirtualThreadContext(eventLoop, tccl);
+  }
+
+  @Override
+  public ContextInternal createVirtualThreadContext() {
+    return delegate.createVirtualThreadContext();
   }
 
   @Override
@@ -526,26 +476,6 @@ public abstract class VertxWrapper implements VertxInternal {
   @Override
   public File resolveFile(String fileName) {
     return delegate.resolveFile(fileName);
-  }
-
-  @Override
-  public <T> void executeBlockingInternal(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<T>> asyncResultHandler) {
-    delegate.executeBlockingInternal(blockingCodeHandler, asyncResultHandler);
-  }
-
-  @Override
-  public <T> Future<T> executeBlockingInternal(Callable<T> blockingCodeHandler) {
-    return delegate.executeBlockingInternal(blockingCodeHandler);
-  }
-
-  @Override
-  public <T> void executeBlockingInternal(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> asyncResultHandler) {
-    delegate.executeBlockingInternal(blockingCodeHandler, ordered, asyncResultHandler);
-  }
-
-  @Override
-  public <T> Future<T> executeBlockingInternal(Callable<T> blockingCodeHandler, boolean ordered) {
-    return delegate.executeBlockingInternal(blockingCodeHandler, ordered);
   }
 
   @Override
