@@ -19,6 +19,9 @@ import io.vertx.core.http.*;
 import io.vertx.core.impl.*;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.pool.*;
+import io.vertx.core.net.impl.resolver.EndpointRequest;
+import io.vertx.core.net.impl.resolver.EndpointResolverManager;
+import io.vertx.core.net.impl.resolver.EndpointLookup;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.net.AddressResolver;
@@ -97,7 +100,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
 
   private final PoolOptions poolOptions;
   private final ConnectionManager<EndpointKey, Lease<HttpClientConnection>> httpCM;
-  private final EndpointResolver<?, EndpointKey, Lease<HttpClientConnection>, ?, ?, ?> endpointResolver;
+  private final EndpointResolverManager<?, ?, ?, ?> endpointResolverManager;
   private volatile Function<HttpClientResponse, Future<RequestOptions>> redirectHandler = DEFAULT_HANDLER;
   private long timerID;
   private volatile Handler<HttpConnection> connectionHandler;
@@ -106,9 +109,9 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   public HttpClientImpl(VertxInternal vertx, AddressResolver<?, ?, ?, ?> addressResolver, HttpClientOptions options, PoolOptions poolOptions) {
     super(vertx, options);
     if (addressResolver != null) {
-      this.endpointResolver = new EndpointResolver<>(addressResolver);
+      this.endpointResolverManager = new EndpointResolverManager<>(addressResolver, options.getKeepAliveTimeout() * 1000);
     } else {
-      this.endpointResolver = null;
+      this.endpointResolverManager = null;
     }
 
     this.poolOptions = poolOptions;
@@ -165,8 +168,8 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       }
     }
     httpCM.checkExpired();
-    if (endpointResolver != null) {
-      endpointResolver.checkExpired();
+    if (endpointResolverManager != null) {
+      endpointResolverManager.checkExpired();
     }
   }
 
@@ -311,7 +314,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     if (server instanceof SocketAddress) {
       proxyOptions = computeProxyOptions(proxyConfig, (SocketAddress) server);
       EndpointKey key = new EndpointKey(useSSL, proxyOptions, (SocketAddress) server, authority);
-      future = httpCM.withEndpoint(key, httpEndpointProvider(), endpoint -> {
+      future = httpCM.withEndpoint(key, httpEndpointProvider(), (endpoint, created) -> {
         Future<Lease<HttpClientConnection>> fut = endpoint.getConnection(connCtx, timeout);
         if (fut == null) {
           return Optional.empty();
@@ -330,12 +333,31 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         }
       });
     } else {
-      future = endpointResolver.withEndpoint(server, proxyConfig, httpEndpointProvider(),
-        (payload, address) -> new EndpointKey(useSSL, payload, address, authority != null ? authority : HostAndPort.create(address.host(), address.port())), endpoint -> createDecoratedHttpClientStream(
-        timeout,
-        ctx,
-        connCtx,
-        (EndpointResolver.AddressEndpoint) endpoint));
+      Future<EndpointLookup> fut = endpointResolverManager.lookupEndpoint(ctx, server);
+      future = fut.compose(lookup -> {
+        SocketAddress address = lookup.address();
+        EndpointKey key = new EndpointKey(useSSL, proxyConfig, address, authority != null ? authority : HostAndPort.create(address.host(), address.port()));
+        return httpCM.withEndpoint(key, httpEndpointProvider(), (endpoint, created) -> {
+          Future<Lease<HttpClientConnection>> fut2 = endpoint.getConnection(connCtx, timeout);
+          if (fut2 == null) {
+            return Optional.empty();
+          } else {
+            EndpointRequest endpointRequest = lookup.initiateRequest();
+            return Optional.of(fut2.andThen(ar -> {
+              if (ar.failed()) {
+                endpointRequest.reportFailure(ar.cause());
+              }
+            }).compose(lease -> {
+              HttpClientConnection conn = lease.get();
+              return conn.createStream(ctx).map(stream -> {
+                HttpClientStream wrapped = new StatisticsGatheringHttpClientStream(stream, endpointRequest);
+                wrapped.closeHandler(v -> lease.recycle());
+                return wrapped;
+              });
+            }));
+          }
+        });
+      });
       if (future != null) {
         proxyOptions = proxyConfig;
       } else {
@@ -391,31 +413,5 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       req.setTimeout(timeout);
     }
     return req;
-  }
-
-  /**
-   * Create a decorated {@link HttpClientStream} that will gather stream statistics reported to the {@link AddressResolver}
-   */
-  private static <S, A extends Address, E> Optional<Future<HttpClientStream>> createDecoratedHttpClientStream(
-    long timeout,
-    ContextInternal ctx,
-    ContextInternal connCtx,
-    EndpointResolver.AddressEndpoint addressEndpoint) {
-    Future<ConnectionLookup<Lease<HttpClientConnection>, E, ?>> f = addressEndpoint.getConnection(connCtx, timeout);
-    if (f == null) {
-      return Optional.empty();
-    } else {
-      return Optional.of(f.compose(res -> {
-        Lease<HttpClientConnection> lease = res.connection();
-        HttpClientConnection conn = lease.get();
-        return conn
-          .createStream(ctx)
-          .map(stream -> {
-            HttpClientStream wrapped = new StatisticsGatheringHttpClientStream<>(stream, res);
-            wrapped.closeHandler(v -> lease.recycle());
-            return wrapped;
-          });
-      }));
-    }
   }
 }

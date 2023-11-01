@@ -17,6 +17,7 @@ import io.vertx.core.impl.ContextInternal;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -60,15 +61,16 @@ public class ConnectionManager<K, C> {
    * @param function the function to apply on the endpoint
    * @return the value returned by the function when applied on the resolved endpoint.
    */
-  public <T> T withEndpoint(K key, EndpointProvider<K, C> provider, Function<Endpoint<C>, Optional<T>> function) {
+  public <T> T withEndpoint(K key, EndpointProvider<K, C> provider, BiFunction<Endpoint<C>, Boolean, Optional<T>> function) {
+    Endpoint<C>[] ref = new Endpoint[1];
     while (true) {
+      ref[0] = null;
       Endpoint<C> endpoint = endpointMap.computeIfAbsent(key, k -> {
-        Endpoint<C>[] ref = new Endpoint[1];
         Endpoint<C> ep = provider.create(key, () -> endpointMap.remove(key, ref[0]));
         ref[0] = ep;
         return ep;
       });
-      Optional<T> opt = function.apply(endpoint);
+      Optional<T> opt = function.apply(endpoint, endpoint == ref[0]);
       if (opt.isPresent()) {
         return opt.get();
       }
@@ -96,7 +98,7 @@ public class ConnectionManager<K, C> {
     } else if (st == 2) {
       return ctx.failedFuture("Pool closed");
     }
-    return withEndpoint(key, provider, endpoint -> {
+    return withEndpoint(key, provider, (endpoint, created) -> {
       Future<C> fut = endpoint.getConnection(ctx, timeout);
       return Optional.ofNullable(fut);
     });

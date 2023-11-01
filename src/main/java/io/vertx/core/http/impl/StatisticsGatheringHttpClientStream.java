@@ -21,7 +21,7 @@ import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.net.impl.pool.ConnectionLookup;
+import io.vertx.core.net.impl.resolver.EndpointRequest;
 import io.vertx.core.streams.WriteStream;
 
 /**
@@ -29,14 +29,14 @@ import io.vertx.core.streams.WriteStream;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class StatisticsGatheringHttpClientStream<M, E> implements HttpClientStream {
+class StatisticsGatheringHttpClientStream implements HttpClientStream {
 
   private final HttpClientStream delegate;
-  private final ConnectionLookup<?, E, M> lookup;
+  private final EndpointRequest endpointRequest;
 
-  StatisticsGatheringHttpClientStream(HttpClientStream delegate, ConnectionLookup<?, E, M> lookup) {
+  StatisticsGatheringHttpClientStream(HttpClientStream delegate, EndpointRequest endpointRequest) {
     this.delegate = delegate;
-    this.lookup = lookup;
+    this.endpointRequest = endpointRequest;
   }
 
   @Override
@@ -71,9 +71,9 @@ class StatisticsGatheringHttpClientStream<M, E> implements HttpClientStream {
 
   @Override
   public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect) {
-    lookup.reportRequestBegin();
+    endpointRequest.reportRequestBegin();
     if (end) {
-      lookup.reportRequestEnd();
+      endpointRequest.reportRequestEnd();
     }
     return delegate.writeHead(request, chunked, buf, end, priority, connect);
   }
@@ -81,7 +81,7 @@ class StatisticsGatheringHttpClientStream<M, E> implements HttpClientStream {
   @Override
   public Future<Void> writeBuffer(ByteBuf buf, boolean end) {
     if (end) {
-      lookup.reportRequestEnd();
+      endpointRequest.reportRequestEnd();
     }
     return delegate.writeBuffer(buf, end);
   }
@@ -115,7 +115,7 @@ class StatisticsGatheringHttpClientStream<M, E> implements HttpClientStream {
   public void headHandler(Handler<HttpResponseHead> handler) {
     if (handler != null) {
       delegate.headHandler(multimap -> {
-        lookup.reportResponseBegin();
+        endpointRequest.reportResponseBegin();
         handler.handle(multimap);
       });
     } else {
@@ -132,7 +132,7 @@ class StatisticsGatheringHttpClientStream<M, E> implements HttpClientStream {
   public void endHandler(Handler<MultiMap> handler) {
     if (handler != null) {
       delegate.endHandler(multimap -> {
-        lookup.reportResponseEnd();
+        endpointRequest.reportResponseEnd();
         handler.handle(multimap);
       });
     } else {
@@ -189,7 +189,7 @@ class StatisticsGatheringHttpClientStream<M, E> implements HttpClientStream {
   public WriteStream<Buffer> exceptionHandler(@Nullable Handler<Throwable> handler) {
     if (handler != null) {
       delegate.exceptionHandler(err -> {
-        lookup.reportFailure(err);
+        endpointRequest.reportFailure(err);
         handler.handle(err);
       });
     } else {

@@ -2,9 +2,7 @@ package io.vertx.test.fakeresolver;
 
 import io.vertx.core.net.SocketAddress;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -26,6 +24,6 @@ public class FakeState {
   }
 
   List<SocketAddress> addresses() {
-    return endpoints.stream().map(e -> e.address).collect(Collectors.toList());
+    return endpoints.stream().map(e -> e.socketAddress).collect(Collectors.toList());
   }
 }
