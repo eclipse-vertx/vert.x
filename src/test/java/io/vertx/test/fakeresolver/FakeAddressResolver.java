@@ -6,7 +6,6 @@ import io.vertx.core.net.Address;
 import io.vertx.core.net.AddressResolver;
 import io.vertx.core.net.SocketAddress;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,7 +27,8 @@ public class FakeAddressResolver implements AddressResolver, io.vertx.core.spi.n
   }
 
   public List<FakeEndpoint> endpoints(String name) {
-    return map.get(name).endpoints;
+    FakeState state = map.get(name);
+    return state != null ? state.endpoints : null;
   }
 
   @Override
@@ -56,7 +56,7 @@ public class FakeAddressResolver implements AddressResolver, io.vertx.core.spi.n
 
   @Override
   public SocketAddress addressOf(FakeEndpoint endpoint) {
-    return endpoint.address;
+    return endpoint.socketAddress;
   }
 
   @Override

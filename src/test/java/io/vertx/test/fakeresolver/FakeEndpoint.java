@@ -9,12 +9,16 @@ import java.util.List;
 public class FakeEndpoint {
 
   final FakeState state;
-  final SocketAddress address;
+  final SocketAddress socketAddress;
   final List<FakeMetric> metrics = Collections.synchronizedList(new ArrayList<>());
 
-  FakeEndpoint(FakeState state, SocketAddress address) {
+  FakeEndpoint(FakeState state, SocketAddress socketAddress) {
     this.state = state;
-    this.address = address;
+    this.socketAddress = socketAddress;
+  }
+
+  public SocketAddress socketAddress() {
+    return socketAddress;
   }
 
   public List<FakeMetric> metrics() {
