@@ -19,7 +19,7 @@ import io.netty.util.NetUtil;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
-import io.vertx.core.impl.AddressResolver;
+import io.vertx.core.impl.HostnameResolver;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.spi.dns.AddressResolverProvider;
@@ -117,7 +117,7 @@ public class DnsAddressResolverProvider implements AddressResolverProvider, Host
       builder.searchDomains(options.getSearchDomains());
       int ndots = options.getNdots();
       if (ndots == -1) {
-        ndots = AddressResolver.DEFAULT_NDOTS_RESOLV_OPTION;
+        ndots = HostnameResolver.DEFAULT_NDOTS_RESOLV_OPTION;
       }
       builder.ndots(ndots);
     }

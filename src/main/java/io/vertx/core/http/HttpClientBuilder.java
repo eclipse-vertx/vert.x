@@ -15,6 +15,7 @@ import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.loadbalancing.LoadBalancer;
 import io.vertx.core.net.AddressResolver;
 
 import java.util.function.Function;
@@ -80,6 +81,14 @@ public interface HttpClientBuilder {
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   HttpClientBuilder withAddressResolver(AddressResolver lookup);
+
+  /**
+   * Configure the client to use a load balancer.
+   *
+   * @param loadBalancer the load balancer
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  HttpClientBuilder withLoadBalancer(LoadBalancer loadBalancer);
 
   /**
    * Build and return the client.

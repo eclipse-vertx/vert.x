@@ -1,5 +1,6 @@
 package io.vertx.test.fakeresolver;
 
+import io.vertx.core.http.ResolvingHttpClientTest;
 import io.vertx.core.net.SocketAddress;
 
 import java.util.ArrayList;
@@ -8,12 +9,9 @@ import java.util.List;
 
 public class FakeEndpoint {
 
-  final FakeState state;
   final SocketAddress socketAddress;
-  final List<FakeMetric> metrics = Collections.synchronizedList(new ArrayList<>());
 
-  FakeEndpoint(FakeState state, SocketAddress socketAddress) {
-    this.state = state;
+  FakeEndpoint(SocketAddress socketAddress) {
     this.socketAddress = socketAddress;
   }
 
@@ -21,7 +19,4 @@ public class FakeEndpoint {
     return socketAddress;
   }
 
-  public List<FakeMetric> metrics() {
-    return metrics;
-  }
 }

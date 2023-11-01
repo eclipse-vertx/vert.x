@@ -15,7 +15,6 @@ package io.vertx.core.impl;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.resolver.AddressResolverGroup;
-import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.core.*;
 import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.impl.btc.BlockedThreadChecker;
@@ -200,9 +199,9 @@ public interface VertxInternal extends Vertx {
   Future<InetAddress> resolveAddress(String hostname);
 
   /**
-   * @return the address resolver
+   * @return the default hostname resolver
    */
-  AddressResolver addressResolver();
+  HostnameResolver hostnameResolver();
 
   /**
    * @return the file resolver
