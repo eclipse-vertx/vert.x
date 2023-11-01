@@ -12,6 +12,8 @@ package io.vertx.core.net.impl.resolver;
 
 import io.vertx.core.Future;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.loadbalancing.EndpointMetrics;
+import io.vertx.core.loadbalancing.LoadBalancer;
 import io.vertx.core.net.Address;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.pool.ConnectionManager;
@@ -29,14 +31,14 @@ import java.util.function.BiFunction;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class EndpointResolverManager<S, A extends Address, E, M> {
+public class EndpointResolverManager<S, A extends Address, E> {
 
-  private final AddressResolver<S, A, M, E> addressResolver;
-  private final ConnectionManager<A, S> connectionManager;
+  private final ResolverImpl<A, E, S> addressResolver;
+  private final ConnectionManager<A, ManagedState<S>> connectionManager;
   private final long expirationMillis;
 
-  public EndpointResolverManager(AddressResolver<S, A, M, E> addressResolver, long expirationMillis) {
-    this.addressResolver = addressResolver;
+  public EndpointResolverManager(AddressResolver<A, E, S> addressResolver, LoadBalancer loadBalancer, long expirationMillis) {
+    this.addressResolver = new ResolverImpl<>(loadBalancer, addressResolver);
     this.connectionManager = new ConnectionManager<>();
     this.expirationMillis = expirationMillis;
   }
@@ -56,14 +58,25 @@ public class EndpointResolverManager<S, A extends Address, E, M> {
    * @return a future notified with the lookup
    */
   public Future<EndpointLookup> lookupEndpoint(ContextInternal ctx, Address address) {
+    return lookupEndpoint(ctx, address, 0);
+  }
+
+  private Future<EndpointLookup> lookupEndpoint(ContextInternal ctx, Address address, int attempts) {
     A casted = addressResolver.tryCast(address);
     if (casted == null) {
       return ctx.failedFuture("Cannot resolve address " + address);
     }
-    EndpointImpl ei = resolveAddress(ctx, casted);
-    return ei.fut.map(state -> {
-      E endpoint = addressResolver.pickEndpoint(state);
-      return new EndpointLookup() {
+    EndpointImpl ei = resolveAddress(ctx, casted, attempts > 0);
+    return ei.fut.compose(state -> {
+      if (!addressResolver.isValid(state.state)) {
+        if (attempts < 4) {
+          return lookupEndpoint(ctx, address, attempts + 1);
+        } else {
+          return ctx.failedFuture("Too many attempts");
+        }
+      }
+      ManagedEndpoint<E> endpoint = addressResolver.pickEndpoint(state);
+      return ctx.succeededFuture(new EndpointLookup() {
         @Override
         public SocketAddress address() {
           return addressResolver.addressOf(endpoint);
@@ -71,61 +84,63 @@ public class EndpointResolverManager<S, A extends Address, E, M> {
         @Override
         public EndpointRequest initiateRequest() {
           ei.lastAccessed.set(System.currentTimeMillis());
-          M metric = addressResolver.initiateRequest(endpoint);
+          EndpointMetrics abc = endpoint.endpoint;
+          Object metric = abc.initiateRequest();
           return new EndpointRequest() {
             @Override
             public void reportRequestBegin() {
-              addressResolver.requestBegin(metric);
+              abc.reportRequestBegin(metric);
             }
             @Override
             public void reportRequestEnd() {
-              addressResolver.requestEnd(metric);
+              abc.reportRequestEnd(metric);
             }
             @Override
             public void reportResponseBegin() {
-              addressResolver.responseBegin(metric);
+              abc.reportResponseBegin(metric);
             }
             @Override
             public void reportResponseEnd() {
-              addressResolver.responseEnd(metric);
+              abc.reportResponseEnd(metric);
             }
             @Override
             public void reportFailure(Throwable failure) {
-              addressResolver.requestFailed(metric, failure);
+              abc.reportFailure(metric, failure);
             }
           };
         }
-      };
+      });
     });
   }
 
-  private class EndpointImpl extends Endpoint<S> {
+  private class EndpointImpl extends Endpoint<ManagedState<S>> {
 
-    private final Future<S> fut;
+    private volatile Future<ManagedState<S>> fut;
     private final AtomicLong lastAccessed;
     private final AtomicBoolean disposed = new AtomicBoolean();
 
-    public EndpointImpl(Future<S> fut, Runnable dispose) {
+    public EndpointImpl(Future<ManagedState<S>> fut, Runnable dispose) {
       super(dispose);
       this.fut = fut;
       this.lastAccessed = new AtomicLong(System.currentTimeMillis());
     }
 
     @Override
-    public Future<S> requestConnection(ContextInternal ctx, long timeout) {
+    public Future<ManagedState<S>> requestConnection(ContextInternal ctx, long timeout) {
       return fut;
     }
 
     @Override
     protected void dispose() {
       if (fut.succeeded()) {
-        addressResolver.dispose(fut.result());
+        addressResolver.dispose(fut.result().state);
       }
     }
 
     @Override
     protected void checkExpired() {
-      if (expirationMillis > 0 && System.currentTimeMillis() - lastAccessed.get() >= expirationMillis) {
+//      Future<ManagedState<S>> f = fut;
+      if (/*(f.succeeded() && !addressResolver.isValid(f.result().state)) ||*/ expirationMillis > 0 && System.currentTimeMillis() - lastAccessed.get() >= expirationMillis) {
         if (disposed.compareAndSet(false, true)) {
           decRefCount();
         }
@@ -147,24 +162,27 @@ public class EndpointResolverManager<S, A extends Address, E, M> {
    * Internal structure.
    */
   private class Result {
-    final Future<S> fut;
+    final Future<ManagedState<S>> fut;
     final EndpointImpl endpoint;
     final boolean created;
-    public Result(Future<S> fut, EndpointImpl endpoint, boolean created) {
+    public Result(Future<ManagedState<S>> fut, EndpointImpl endpoint, boolean created) {
       this.fut = fut;
       this.endpoint = endpoint;
       this.created = created;
     }
   }
 
-  private EndpointImpl resolveAddress(ContextInternal ctx, A address) {
-    EndpointProvider<A, S> provider = (key, dispose) -> {
-      Future<S> fut = addressResolver.resolve(key);
+  private EndpointImpl resolveAddress(ContextInternal ctx, A address, boolean refresh) {
+    EndpointProvider<A, ManagedState<S>> provider = (key, dispose) -> {
+      Future<ManagedState<S>> fut = addressResolver.resolve(key);
       EndpointImpl endpoint = new EndpointImpl(fut, dispose);
       endpoint.incRefCount();
       return endpoint;
     };
-    BiFunction<Endpoint<S>, Boolean, Optional<Result>> fn = (endpoint, created) -> {
+    BiFunction<Endpoint<ManagedState<S>>, Boolean, Optional<Result>> fn = (endpoint, created) -> {
+      if (refresh) {
+        ((EndpointImpl) endpoint).fut = addressResolver.resolve(address);
+      }
       return Optional.of(new Result(endpoint.getConnection(ctx, 0), (EndpointImpl) endpoint, created));
     };
     Result sFuture = connectionManager.withEndpoint(address, provider, fn);

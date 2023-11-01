@@ -30,7 +30,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
-import io.vertx.core.impl.AddressResolver;
+import io.vertx.core.impl.HostnameResolver;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.ContextInternal;
@@ -234,7 +234,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
   }
 
   private Future<DatagramSocket> listen(SocketAddress local) {
-    AddressResolver resolver = context.owner().addressResolver();
+    HostnameResolver resolver = context.owner().hostnameResolver();
     PromiseInternal<Void> promise = context.promise();
     io.netty.util.concurrent.Future<InetSocketAddress> f1 = resolver.resolveHostname(context.nettyEventLoop(), local.host());
     f1.addListener((GenericFutureListener<io.netty.util.concurrent.Future<InetSocketAddress>>) res1 -> {
@@ -262,7 +262,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
     if (port < 0 || port > 65535) {
       throw new IllegalArgumentException("port out of range:" + port);
     }
-    AddressResolver resolver = context.owner().addressResolver();
+    HostnameResolver resolver = context.owner().hostnameResolver();
     PromiseInternal<Void> promise = context.promise();
     io.netty.util.concurrent.Future<InetSocketAddress> f1 = resolver.resolveHostname(context.nettyEventLoop(), host);
     f1.addListener((GenericFutureListener<io.netty.util.concurrent.Future<InetSocketAddress>>) res1 -> {

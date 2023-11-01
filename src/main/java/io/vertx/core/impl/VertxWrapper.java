@@ -477,8 +477,8 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public AddressResolver addressResolver() {
-    return delegate.addressResolver();
+  public HostnameResolver hostnameResolver() {
+    return delegate.hostnameResolver();
   }
 
   @Override

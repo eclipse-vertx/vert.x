@@ -13,7 +13,7 @@ package io.vertx.core.dns;
 
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.impl.AddressResolver;
+import io.vertx.core.impl.HostnameResolver;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
@@ -81,12 +81,12 @@ public class AddressResolverOptions {
   /**
    * The default ndots value = loads the value from the OS on Linux otherwise use the value 1
    */
-  public static final int DEFAULT_NDOTS = AddressResolver.DEFAULT_NDOTS_RESOLV_OPTION;
+  public static final int DEFAULT_NDOTS = HostnameResolver.DEFAULT_NDOTS_RESOLV_OPTION;
 
   /**
    * The default servers rotate value = loads the value from the OS on Linux otherwise use the value false
    */
-  public static final boolean DEFAULT_ROTATE_SERVERS = AddressResolver.DEFAULT_ROTATE_RESOLV_OPTION;
+  public static final boolean DEFAULT_ROTATE_SERVERS = HostnameResolver.DEFAULT_ROTATE_RESOLV_OPTION;
 
   /**
    * The default round robin inet address = false

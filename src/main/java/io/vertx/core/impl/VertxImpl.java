@@ -149,7 +149,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final EventLoopGroup acceptorEventLoopGroup;
   private final ExecutorService virtualThreadExecutor;
   private final BlockedThreadChecker checker;
-  private final AddressResolver addressResolver;
+  private final HostnameResolver hostnameResolver;
   private final AddressResolverOptions addressResolverOptions;
   private final EventBusInternal eventBus;
   private volatile HAManager haManager;
@@ -216,7 +216,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     this.transport = transport;
     this.fileResolver = fileResolver;
     this.addressResolverOptions = options.getAddressResolverOptions();
-    this.addressResolver = new AddressResolver(this, options.getAddressResolverOptions());
+    this.hostnameResolver = new HostnameResolver(this, options.getAddressResolverOptions());
     this.tracer = tracer == VertxTracer.NOOP ? null : tracer;
     this.clusterManager = clusterManager;
     this.nodeSelector = nodeSelector;
@@ -700,7 +700,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       }, false));
     }
     fut = fut
-      .transform(ar -> addressResolver.close())
+      .transform(ar -> hostnameResolver.close())
       .transform(ar -> Future.future(h -> eventBus.close((Promise) h)))
       .transform(ar -> closeClusterManager())
       .transform(ar -> {
@@ -852,17 +852,17 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public Future<InetAddress> resolveAddress(String hostname) {
-    return addressResolver.resolveHostname(hostname);
+    return hostnameResolver.resolveHostname(hostname);
   }
 
   @Override
-  public AddressResolver addressResolver() {
-    return addressResolver;
+  public HostnameResolver hostnameResolver() {
+    return hostnameResolver;
   }
 
   @Override
   public AddressResolverGroup<InetSocketAddress> nettyAddressResolverGroup() {
-    return addressResolver.nettyAddressResolverGroup();
+    return hostnameResolver.nettyAddressResolverGroup();
   }
 
   @Override

@@ -8,7 +8,8 @@ import io.vertx.core.http.*;
 import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.AddressResolver;
+import io.vertx.core.loadbalancing.LoadBalancer;
+import io.vertx.core.spi.net.AddressResolver;
 
 import java.util.function.Function;
 
@@ -19,7 +20,8 @@ public class HttpClientBuilderImpl implements HttpClientBuilder {
   private PoolOptions poolOptions;
   private Handler<HttpConnection> connectHandler;
   private Function<HttpClientResponse, Future<RequestOptions>> redirectHandler;
-  private AddressResolver addressResolver;
+  private io.vertx.core.net.AddressResolver addressResolver;
+  private LoadBalancer loadBalancer = LoadBalancer.ROUND_ROBIN;
 
   public HttpClientBuilderImpl(VertxInternal vertx) {
     this.vertx = vertx;
@@ -50,8 +52,14 @@ public class HttpClientBuilderImpl implements HttpClientBuilder {
   }
 
   @Override
-  public HttpClientBuilder withAddressResolver(AddressResolver addressResolver) {
+  public HttpClientBuilder withAddressResolver(io.vertx.core.net.AddressResolver addressResolver) {
     this.addressResolver = addressResolver;
+    return this;
+  }
+
+  @Override
+  public HttpClientBuilder withLoadBalancer(LoadBalancer loadBalancer) {
+    this.loadBalancer = loadBalancer;
     return this;
   }
 
@@ -67,19 +75,22 @@ public class HttpClientBuilderImpl implements HttpClientBuilder {
     CloseFuture cf = resolveCloseFuture();
     HttpClient client;
     Closeable closeable;
+    if (loadBalancer != null && addressResolver == null) {
+      addressResolver = vertx.hostnameResolver();
+    }
     if (co.isShared()) {
       CloseFuture closeFuture = new CloseFuture();
       client = vertx.createSharedResource("__vertx.shared.httpClients", co.getName(), closeFuture, cf_ -> {
-        io.vertx.core.spi.net.AddressResolver<?, ?, ?, ?> resolver = addressResolver != null ? addressResolver.resolver(vertx) : null;
-        HttpClientImpl impl = new HttpClientImpl(vertx, resolver, co, po);
+        AddressResolver<?, ?, ?> resolver = addressResolver != null ? addressResolver.resolver(vertx) : null;
+        HttpClientImpl impl = new HttpClientImpl(vertx, resolver, loadBalancer, co, po);
         cf_.add(completion -> impl.close().onComplete(completion));
         return impl;
       });
       client = new CleanableHttpClient((HttpClientInternal) client, vertx.cleaner(), (timeout, timeunit) -> closeFuture.close());
       closeable = closeFuture;
     } else {
-      io.vertx.core.spi.net.AddressResolver<?, ?, ?, ?> resolver = addressResolver != null ? addressResolver.resolver(vertx) : null;
-      HttpClientImpl impl = new HttpClientImpl(vertx, resolver, co, po);
+      AddressResolver<?, ?, ?> resolver = addressResolver != null ? addressResolver.resolver(vertx) : null;
+      HttpClientImpl impl = new HttpClientImpl(vertx, resolver, loadBalancer, co, po);
       closeable = impl;
       client = new CleanableHttpClient(impl, vertx.cleaner(), impl::shutdown);
     }

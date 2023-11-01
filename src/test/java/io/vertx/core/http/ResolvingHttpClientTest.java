@@ -4,7 +4,9 @@ import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.HttpClientInternal;
 import io.vertx.core.net.*;
+import io.vertx.core.spi.net.Endpoint;
 import io.vertx.test.core.VertxTestBase;
+import io.vertx.test.fakeloadbalancer.FakeLoadBalancer;
 import io.vertx.test.fakeresolver.*;
 import io.vertx.test.proxy.HttpProxy;
 import io.vertx.test.tls.Cert;
@@ -176,7 +178,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     Exception cause = new Exception("Not found");
     FakeAddressResolver lookup = new FakeAddressResolver() {
       @Override
-      public Future<FakeState> resolve(FakeAddress address) {
+      public Future<FakeState> resolve(Function<FakeEndpoint, Endpoint<FakeEndpoint>> factory, FakeAddress address) {
         return Future.failedFuture(cause);
       }
     };
@@ -247,18 +249,19 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     };
     FakeAddressResolver resolver = new FakeAddressResolver();
     resolver.registerAddress("example.com", Arrays.asList(SocketAddress.inetSocketAddress(8080, "localhost")));
+    FakeLoadBalancer lb = new FakeLoadBalancer();
     HttpClientInternal client = (HttpClientInternal) vertx.httpClientBuilder()
       .with(new HttpClientOptions().setKeepAliveTimeout(1))
       .withAddressResolver(resolver)
+      .withLoadBalancer(lb)
       .build();
     awaitFuture(client.request(new RequestOptions().setServer(new FakeAddress("example.com"))).compose(req -> req
       .send()
       .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
       .compose(HttpClientResponse::body)
     ));
-    FakeEndpoint endpoint = resolver.endpoints("example.com").get(0);
-    assertWaitUntil(() -> endpoint.metrics().size() == 1);
-    FakeMetric metric = endpoint.metrics().get(0);
+    FakeLoadBalancer.FakeEndpointMetrics endpoint = lb.endpoints().get(0);
+    FakeLoadBalancer.FakeMetric metric = endpoint.metrics().get(0);
     assertTrue(metric.requestEnd() - metric.requestBegin() >= 0);
     assertTrue(metric.responseBegin() - metric.requestEnd() > 500);
     assertTrue(metric.responseEnd() - metric.responseBegin() >= 0);
@@ -272,10 +275,12 @@ public class ResolvingHttpClientTest extends VertxTestBase {
       count.incrementAndGet();
     };
     FakeAddressResolver resolver = new FakeAddressResolver();
+    FakeLoadBalancer lb = new FakeLoadBalancer();
     resolver.registerAddress("example.com", Arrays.asList(SocketAddress.inetSocketAddress(8080, "localhost")));
     HttpClientInternal client = (HttpClientInternal) vertx.httpClientBuilder()
       .with(new HttpClientOptions().setKeepAliveTimeout(1))
       .withAddressResolver(resolver)
+      .withLoadBalancer(lb)
       .build();
     List<Future<Buffer>> futures = new ArrayList<>();
     for (int i = 0;i < 5;i++) {
@@ -290,19 +295,15 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     } catch (RuntimeException e) {
       assertTrue(e.getMessage().contains("timeout"));
     }
-    FakeEndpoint endpoint = resolver.endpoints("example.com").get(0);
+    FakeLoadBalancer.FakeEndpointMetrics endpoint = lb.endpoints().get(0);
     assertWaitUntil(() -> endpoint.metrics().size() == 6);
-    FakeMetric metric = endpoint.metrics().get(5);
-    assertNotNull(metric.failure());
-
-
-//    awaitFuture(Future.join(futures));
-
+    FakeLoadBalancer.FakeMetric metric = endpoint.metrics().get(5);
+    assertNotNull(metric.failure);
   }
 
   @Test
   public void testStatisticsReportingFailure1() throws Exception {
-    FakeMetric metric = testStatisticsReportingFailure((fail, req) -> {
+    FakeLoadBalancer.FakeMetric metric = testStatisticsReportingFailure((fail, req) -> {
       if (fail) {
         req.connection().close();
       } else {
@@ -323,7 +324,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
 
   @Test
   public void testStatisticsReportingFailure2() throws Exception {
-    FakeMetric metric = testStatisticsReportingFailure((fail, req) -> {
+    FakeLoadBalancer.FakeMetric metric = testStatisticsReportingFailure((fail, req) -> {
       if (fail) {
         req.connection().close();
       } else {
@@ -341,7 +342,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
 
   @Test
   public void testStatisticsReportingFailure3() throws Exception {
-    FakeMetric metric = testStatisticsReportingFailure((fail, req) -> {
+    FakeLoadBalancer.FakeMetric metric = testStatisticsReportingFailure((fail, req) -> {
       HttpServerResponse resp = req.response();
       resp.setChunked(true).write("chunk");
       vertx.setTimer(100, id -> {
@@ -362,15 +363,17 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     assertTrue(metric.failure() instanceof HttpClosedException);
   }
 
-  private FakeMetric testStatisticsReportingFailure(BiConsumer<Boolean, HttpServerRequest> handler, Function<HttpClientRequest, Future<Buffer>> sender) throws Exception {
+  private FakeLoadBalancer.FakeMetric testStatisticsReportingFailure(BiConsumer<Boolean, HttpServerRequest> handler, Function<HttpClientRequest, Future<Buffer>> sender) throws Exception {
     startServers(1);
     AtomicBoolean mode = new AtomicBoolean();
     requestHandler = (idx, req) -> handler.accept(mode.get(), req);
     FakeAddressResolver resolver = new FakeAddressResolver();
     resolver.registerAddress("example.com", Arrays.asList(SocketAddress.inetSocketAddress(8080, "localhost")));
+    FakeLoadBalancer lb = new FakeLoadBalancer();
     HttpClientInternal client = (HttpClientInternal) vertx.httpClientBuilder()
       .with(new HttpClientOptions().setKeepAliveTimeout(1))
       .withAddressResolver(resolver)
+      .withLoadBalancer(lb)
       .build();
     List<Future<Buffer>> futures = new ArrayList<>();
     for (int i = 0;i < 10;i++) {
@@ -391,10 +394,10 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     } catch (RuntimeException e) {
       assertTrue(e.getMessage().contains("Connection was closed"));
     }
-    FakeEndpoint endpoint = resolver.endpoints("example.com").get(0);
+    FakeLoadBalancer.FakeEndpointMetrics endpoint = lb.endpoints().get(0);
     assertWaitUntil(() -> endpoint.metrics().size() == 11);
     for (int i = 0;i < 10;i++) {
-      FakeMetric metric = endpoint.metrics().get(i);
+      FakeLoadBalancer.FakeMetric metric = endpoint.metrics().get(i);
       assertTrue(metric.requestEnd() - metric.requestBegin() >= 0);
       assertTrue(metric.responseBegin() - metric.requestEnd() >= 0);
       assertTrue(metric.responseEnd() - metric.responseBegin() >= 0);
@@ -402,7 +405,6 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     return endpoint.metrics().get(10);
   }
 
-  @Ignore
   @Test
   public void testInvalidation() throws Exception {
     startServers(2);
@@ -432,7 +434,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
   }
 
   @Test
-  public void testExpiration() throws Exception {
+  public void testTimeExpiration() throws Exception {
     startServers(1);
     requestHandler = (idx, req) -> {
       req.response().end("" + idx);
@@ -454,7 +456,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
   }
 
   @Test
-  public void testRefreshExpiration() throws Exception {
+  public void testTimeRefreshExpiration() throws Exception {
     startServers(1);
     requestHandler = (idx, req) -> {
       req.response().end("" + idx);
@@ -538,4 +540,5 @@ public class ResolvingHttpClientTest extends VertxTestBase {
       assertTrue(expectFailure);
     }
   }
+
 }

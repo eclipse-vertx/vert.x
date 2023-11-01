@@ -26,7 +26,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
-import io.vertx.core.impl.AddressResolver;
+import io.vertx.core.impl.HostnameResolver;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -412,7 +412,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
       if (impl.ipAddress() != null) {
         bind(bootstrap, impl.ipAddress(), socketAddress.port(), promise);
       } else {
-        AddressResolver resolver = vertx.addressResolver();
+        HostnameResolver resolver = vertx.hostnameResolver();
         io.netty.util.concurrent.Future<InetSocketAddress> fut = resolver.resolveHostname(context.nettyEventLoop(), socketAddress.host());
         fut.addListener((GenericFutureListener<io.netty.util.concurrent.Future<InetSocketAddress>>) future -> {
           if (future.isSuccess()) {

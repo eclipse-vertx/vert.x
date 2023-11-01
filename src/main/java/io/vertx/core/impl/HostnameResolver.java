@@ -13,32 +13,37 @@ package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
 import io.netty.resolver.AddressResolverGroup;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
+import io.vertx.core.*;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.net.Address;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.dns.AddressResolverProvider;
+import io.vertx.core.spi.net.AddressResolver;
+import io.vertx.core.spi.net.Endpoint;
 
 import java.io.File;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static io.vertx.core.impl.Utils.isLinux;
 
 /**
+ * Resolves host names, using DNS and /etc/hosts config based on {@link AddressResolverOptions}
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class AddressResolver {
+public class HostnameResolver implements io.vertx.core.net.AddressResolver {
 
-  private static final Logger log = LoggerFactory.getLogger(AddressResolver.class);
+  private static final Logger log = LoggerFactory.getLogger(HostnameResolver.class);
 
   private static Pattern resolvOption(String regex) {
     return Pattern.compile("^[ \\t\\f]*options[^\n]+" + regex + "(?=$|\\s)", Pattern.MULTILINE);
@@ -75,10 +80,15 @@ public class AddressResolver {
   private final AddressResolverGroup<InetSocketAddress> resolverGroup;
   private final AddressResolverProvider provider;
 
-  public AddressResolver(Vertx vertx, AddressResolverOptions options) {
+  public HostnameResolver(Vertx vertx, AddressResolverOptions options) {
     this.provider = AddressResolverProvider.factory(vertx, options);
     this.resolverGroup = provider.resolver(options);
     this.vertx = vertx;
+  }
+
+  @Override
+  public AddressResolver<?, ?, ?> resolver(Vertx vertx) {
+    return new Impl();
   }
 
   public Future<InetAddress> resolveHostname(String hostname) {
@@ -131,5 +141,53 @@ public class AddressResolver {
   public static boolean parseRotateOptionFromResolvConf(String s) {
     Matcher matcher = ROTATE_OPTIONS_PATTERN.matcher(s);
     return matcher.find();
+  }
+
+  class Impl implements AddressResolver<SocketAddress, SocketAddress, List<Endpoint<SocketAddress>>> {
+    @Override
+    public SocketAddress tryCast(Address address) {
+      return address instanceof SocketAddress ? (SocketAddress) address : null;
+    }
+
+    @Override
+    public SocketAddress addressOfEndpoint(SocketAddress endpoint) {
+      return endpoint;
+    }
+
+    @Override
+    public Future<List<Endpoint<SocketAddress>>> resolve(Function<SocketAddress, Endpoint<SocketAddress>> factory, SocketAddress address) {
+      Promise<List<Endpoint<SocketAddress>>> promise = Promise.promise();
+      resolveHostnameAll(address.host(), ar -> {
+        if (ar.succeeded()) {
+          List<Endpoint<SocketAddress>> endpoints = new ArrayList<>();
+          for (InetSocketAddress addr : ar.result()) {
+            endpoints.add(factory.apply(SocketAddress.inetSocketAddress(address.port(), addr.getAddress().getHostAddress())));
+          }
+          promise.complete(endpoints);
+        } else {
+          promise.fail(ar.cause());
+        }
+      });
+      return promise.future();
+    }
+
+    @Override
+    public List<Endpoint<SocketAddress>> endpoints(List<Endpoint<SocketAddress>> state) {
+      return state;
+    }
+
+    @Override
+    public boolean isValid(List<Endpoint<SocketAddress>> state) {
+      // NEED EXPIRATION
+      return true;
+    }
+
+    @Override
+    public void dispose(List<Endpoint<SocketAddress>> state) {
+    }
+
+    @Override
+    public void close() {
+    }
   }
 }

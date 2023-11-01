@@ -17,6 +17,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.*;
+import io.vertx.core.loadbalancing.LoadBalancer;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.pool.*;
 import io.vertx.core.net.impl.resolver.EndpointRequest;
@@ -100,16 +101,16 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
 
   private final PoolOptions poolOptions;
   private final ConnectionManager<EndpointKey, Lease<HttpClientConnection>> httpCM;
-  private final EndpointResolverManager<?, ?, ?, ?> endpointResolverManager;
+  private final EndpointResolverManager<?, ?, ?> endpointResolverManager;
   private volatile Function<HttpClientResponse, Future<RequestOptions>> redirectHandler = DEFAULT_HANDLER;
   private long timerID;
   private volatile Handler<HttpConnection> connectionHandler;
   private final Function<ContextInternal, ContextInternal> contextProvider;
 
-  public HttpClientImpl(VertxInternal vertx, AddressResolver<?, ?, ?, ?> addressResolver, HttpClientOptions options, PoolOptions poolOptions) {
+  public HttpClientImpl(VertxInternal vertx, AddressResolver<?, ?, ?> addressResolver, LoadBalancer loadBalancer, HttpClientOptions options, PoolOptions poolOptions) {
     super(vertx, options);
     if (addressResolver != null) {
-      this.endpointResolverManager = new EndpointResolverManager<>(addressResolver, options.getKeepAliveTimeout() * 1000);
+      this.endpointResolverManager = new EndpointResolverManager<>(addressResolver, loadBalancer, options.getKeepAliveTimeout() * 1000);
     } else {
       this.endpointResolverManager = null;
     }
