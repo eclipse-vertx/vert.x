@@ -32,12 +32,9 @@ public interface LoadBalancer {
    */
   LoadBalancer ROUND_ROBIN = () -> {
     AtomicInteger idx = new AtomicInteger();
-    return new EndpointSelector() {
-      @Override
-      public int selectEndpoint(List<EndpointMetrics<?>> endpoints) {
-        int next = idx.getAndIncrement();
-        return next % endpoints.size();
-      }
+    return (EndpointSelector) endpoints -> {
+      int next = idx.getAndIncrement();
+      return next % endpoints.size();
     };
   };
 
