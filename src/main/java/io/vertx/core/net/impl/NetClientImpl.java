@@ -39,7 +39,6 @@ import java.net.ConnectException;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 /**
  *
@@ -294,16 +293,8 @@ class NetClientImpl implements NetClientInternal {
         }
         remoteAddress = SocketAddress.inetSocketAddress(port, host);
       }
-      String peerHost = connectOptions.getHost();
-      Integer peerPort = connectOptions.getPort();
-      if (remoteAddress.isInetSocket()) {
-        if (peerHost == null) {
-          peerHost = remoteAddress.host();;
-        }
-        if (peerPort == null) {
-          peerPort = remoteAddress.port();
-        }
-      }
+
+      SocketAddress peerAddress = peerAddress(remoteAddress, connectOptions);
 
       vertx.transport().configure(options, remoteAddress.isDomainSocket(), bootstrap);
 
@@ -321,7 +312,7 @@ class NetClientImpl implements NetClientInternal {
         .proxyOptions(proxyOptions);
 
       SocketAddress captured = remoteAddress;
-      SocketAddress peerAddress = peerHost != null && peerPort != null ? SocketAddress.inetSocketAddress(peerPort, peerHost) : null;
+
       channelProvider.handler(ch -> connected(
         context,
         sslOptions,
@@ -363,6 +354,26 @@ class NetClientImpl implements NetClientInternal {
     } else {
       eventLoop.execute(() -> connectInternal2(connectOptions, sslOptions, sslChannelProvider, registerWriteHandlers, connectHandler, context, remainingAttempts));
     }
+  }
+
+  private static SocketAddress peerAddress(SocketAddress remoteAddress, ConnectOptions connectOptions) {
+    if (!connectOptions.isSsl()) {
+      return null;
+    }
+    String peerHost = connectOptions.getHost();
+    Integer peerPort = connectOptions.getPort();
+    if (remoteAddress.isInetSocket()) {
+      if (peerHost == null && peerPort == null) {
+        return remoteAddress;
+      }
+      if (peerHost == null) {
+        peerHost = remoteAddress.host();;
+      }
+      if (peerPort == null) {
+        peerPort = remoteAddress.port();
+      }
+    }
+    return peerHost != null && peerPort != null ? SocketAddress.inetSocketAddress(peerPort, peerHost) : null;
   }
 
   private void connected(ContextInternal context,
