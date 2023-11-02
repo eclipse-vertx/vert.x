@@ -314,7 +314,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     } else {
       key = new EndpointKey(useSSL, proxyOptions, server, peerAddress);
     }
-    doRequest(method, peerAddress, server, host, port, useSSL, requestURI, headers, request.getTraceOperation(), timeout, followRedirects, proxyOptions, key, promise);
+    doRequest(method, server, host, port, useSSL, requestURI, headers, request.getTraceOperation(), timeout, followRedirects, proxyOptions, key, promise);
   }
 
   private static SocketAddress peerAddress(SocketAddress remoteAddress, final String peerHost, int peerPort) {
@@ -326,7 +326,6 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
 
   private void doRequest(
     HttpMethod method,
-    SocketAddress peerAddress,
     SocketAddress server,
     String host,
     int port,
