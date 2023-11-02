@@ -4,7 +4,7 @@ import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.HttpClientInternal;
 import io.vertx.core.net.*;
-import io.vertx.core.spi.net.Endpoint;
+import io.vertx.core.spi.resolver.address.Endpoint;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakeloadbalancer.FakeLoadBalancer;
 import io.vertx.test.fakeresolver.*;

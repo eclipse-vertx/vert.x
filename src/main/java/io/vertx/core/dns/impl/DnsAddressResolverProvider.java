@@ -22,7 +22,7 @@ import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.impl.HostnameResolver;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.spi.dns.AddressResolverProvider;
+import io.vertx.core.spi.resolver.dns.AddressResolverProvider;
 
 import java.io.File;
 import java.io.IOException;

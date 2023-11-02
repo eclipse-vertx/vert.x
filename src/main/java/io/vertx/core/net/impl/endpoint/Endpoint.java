@@ -8,17 +8,14 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.net.impl.pool;
-
-import io.vertx.core.Future;
-import io.vertx.core.impl.ContextInternal;
+package io.vertx.core.net.impl.endpoint;
 
 /**
  * An endpoint, i.e a set of connection to the same address.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class Endpoint<C> {
+public abstract class Endpoint {
 
   private final Runnable dispose;
   private boolean closed;
@@ -30,28 +27,28 @@ public abstract class Endpoint<C> {
     this.dispose = dispose;
   }
 
-  public Future<C> getConnection(ContextInternal ctx, long timeout) {
+  boolean before() {
     synchronized (this) {
       if (disposed) {
-        return null;
+        return false;
       }
       pendingRequestCount++;
     }
-    return requestConnection(ctx, timeout).andThen(ar -> {
-      boolean dispose;
-      synchronized (Endpoint.this) {
-        pendingRequestCount--;
-        dispose = checkDispose();
-      }
-      // Dispose before callback otherwise we can have the callback handler retrying the same
-      // endpoint and never get the callback it expects to creating an infinite loop
-      if (dispose) {
-        disposeInternal();
-      }
-    });
+    return true;
   }
 
-  public abstract Future<C> requestConnection(ContextInternal ctx, long timeout);
+  void after() {
+    boolean dispose;
+    synchronized (Endpoint.this) {
+      pendingRequestCount--;
+      dispose = checkDispose();
+    }
+    // Dispose before callback otherwise we can have the callback handler retrying the same
+    // endpoint and never get the callback it expects to creating an infinite loop
+    if (dispose) {
+      disposeInternal();
+    }
+  }
 
   protected void checkExpired() {
   }
@@ -96,7 +93,7 @@ public abstract class Endpoint<C> {
   }
 
   /**
-   * Close the endpoint, this will close all connections, this method is called by the {@link ConnectionManager} when
+   * Close the endpoint, this will close all connections, this method is called by the {@link EndpointManager} when
    * it is closed.
    */
   protected void close() {

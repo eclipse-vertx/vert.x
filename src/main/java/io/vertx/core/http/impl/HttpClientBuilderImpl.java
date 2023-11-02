@@ -9,7 +9,7 @@ import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.loadbalancing.LoadBalancer;
-import io.vertx.core.spi.net.AddressResolver;
+import io.vertx.core.spi.resolver.address.AddressResolver;
 
 import java.util.function.Function;
 

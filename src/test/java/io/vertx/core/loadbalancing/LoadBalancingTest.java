@@ -10,6 +10,8 @@
  */
 package io.vertx.core.loadbalancing;
 
+import io.vertx.core.spi.loadbalancing.EndpointMetrics;
+import io.vertx.core.spi.loadbalancing.EndpointSelector;
 import org.junit.Test;
 
 import java.util.ArrayList;

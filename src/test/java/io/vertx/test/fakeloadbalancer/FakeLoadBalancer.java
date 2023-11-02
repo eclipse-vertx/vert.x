@@ -1,7 +1,8 @@
 package io.vertx.test.fakeloadbalancer;
 
-import io.vertx.core.loadbalancing.EndpointSelector;
+import io.vertx.core.spi.loadbalancing.EndpointSelector;
 import io.vertx.core.loadbalancing.LoadBalancer;
+import io.vertx.core.spi.loadbalancing.EndpointMetrics;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,12 +28,12 @@ public class FakeLoadBalancer implements LoadBalancer, EndpointSelector {
   }
 
   @Override
-  public int selectEndpoint(List<io.vertx.core.loadbalancing.EndpointMetrics<?>> endpoints) {
+  public int selectEndpoint(List<EndpointMetrics<?>> endpoints) {
     this.endpoints = (List) endpoints;
     return actual.selectEndpoint(endpoints);
   }
 
-  public static class FakeEndpointMetrics implements io.vertx.core.loadbalancing.EndpointMetrics<FakeMetric> {
+  public static class FakeEndpointMetrics implements EndpointMetrics<FakeMetric> {
 
     List<FakeMetric> metrics = new ArrayList<>();
 

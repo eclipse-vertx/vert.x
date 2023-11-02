@@ -13,7 +13,7 @@ package io.vertx.core.net;
 import io.vertx.core.Vertx;
 
 /**
- * A generic address resolver market interface. Implementation must also implement the SPI interface {@link io.vertx.core.spi.net.AddressResolver}
+ * A generic address resolver market interface. Implementation must also implement the SPI interface {@link io.vertx.core.spi.resolver.address.AddressResolver}
  * and can be cast to this type.
  */
 public interface AddressResolver {
@@ -24,6 +24,6 @@ public interface AddressResolver {
    * @param vertx the vertx instance
    * @return the resolver
    */
-  io.vertx.core.spi.net.AddressResolver<?, ?, ?> resolver(Vertx vertx);
+  io.vertx.core.spi.resolver.address.AddressResolver<?, ?, ?> resolver(Vertx vertx);
 
 }

@@ -20,8 +20,8 @@ import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.impl.pool.ConnectionManager;
-import io.vertx.core.net.impl.pool.EndpointProvider;
+import io.vertx.core.net.impl.endpoint.EndpointManager;
+import io.vertx.core.net.impl.endpoint.EndpointProvider;
 import io.vertx.core.spi.metrics.ClientMetrics;
 
 import java.net.URI;
@@ -31,7 +31,7 @@ import java.util.List;
 public class WebSocketClientImpl extends HttpClientBase implements WebSocketClient {
 
   private final WebSocketClientOptions options;
-  private final ConnectionManager<EndpointKey, HttpClientConnection> webSocketCM;
+  private final EndpointManager<EndpointKey, WebSocketEndpoint> webSocketCM;
 
   public WebSocketClientImpl(VertxInternal vertx, HttpClientOptions options, WebSocketClientOptions wsOptions) {
     super(vertx, options);
@@ -40,8 +40,8 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
     this.webSocketCM = webSocketConnectionManager();
   }
 
-  private ConnectionManager<EndpointKey, HttpClientConnection> webSocketConnectionManager() {
-    return new ConnectionManager<>();
+  private EndpointManager<EndpointKey, WebSocketEndpoint> webSocketConnectionManager() {
+    return new EndpointManager<>();
   }
 
   protected void doShutdown(Promise<Void> p) {
@@ -73,14 +73,14 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
       eventLoopContext = vertx.createEventLoopContext(ctx.nettyEventLoop(), ctx.workerPool(), ctx.classLoader());
     }
     // todo: cache
-    EndpointProvider<EndpointKey, HttpClientConnection> provider = (key_, dispose) -> {
+    EndpointProvider<EndpointKey, WebSocketEndpoint> provider = (key_, dispose) -> {
       int maxPoolSize = options.getMaxConnections();
       ClientMetrics metrics = WebSocketClientImpl.this.metrics != null ? WebSocketClientImpl.this.metrics.createEndpointMetrics(key_.server, maxPoolSize) : null;
       HttpChannelConnector connector = new HttpChannelConnector(WebSocketClientImpl.this, netClient, key_.proxyOptions, metrics, HttpVersion.HTTP_1_1, key_.ssl, false, key_.authority, key_.server);
       return new WebSocketEndpoint(null, maxPoolSize, connector, dispose);
     };
     webSocketCM
-      .getConnection(eventLoopContext, provider, key)
+      .withEndpointAsync(key, provider, (endpoint, created) -> endpoint.requestConnection(ctx, 0L))
       .onComplete(c -> {
         if (c.succeeded()) {
           Http1xClientConnection conn = (Http1xClientConnection) c.result();

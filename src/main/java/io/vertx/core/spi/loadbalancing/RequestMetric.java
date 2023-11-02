@@ -1,4 +1,4 @@
-package io.vertx.core.loadbalancing;
+package io.vertx.core.spi.loadbalancing;
 
 class RequestMetric {
 

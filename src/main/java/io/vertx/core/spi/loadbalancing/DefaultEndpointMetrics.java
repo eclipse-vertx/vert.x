@@ -8,12 +8,12 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.loadbalancing;
+package io.vertx.core.spi.loadbalancing;
 
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 
-class DefaultEndpointMetrics implements EndpointMetrics<RequestMetric> {
+public class DefaultEndpointMetrics implements EndpointMetrics<RequestMetric> {
 
   private final LongAdder numberOfInflightRequests = new LongAdder();
   private final LongAdder numberOfRequests = new LongAdder();

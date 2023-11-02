@@ -10,7 +10,7 @@
  */
 package io.vertx.core.net.impl.resolver;
 
-import io.vertx.core.loadbalancing.EndpointSelector;
+import io.vertx.core.spi.loadbalancing.EndpointSelector;
 
 /**
  */
