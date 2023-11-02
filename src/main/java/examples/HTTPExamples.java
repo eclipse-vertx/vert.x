@@ -27,6 +27,7 @@ import io.vertx.core.file.FileSystem;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.*;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.loadbalancing.LoadBalancer;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
@@ -1281,5 +1282,12 @@ public class HTTPExamples {
         client = vertx.createHttpClient(new HttpClientOptions().setShared(true).setName("my-client"), new PoolOptions().setEventLoopSize(2));
       }
     }, new DeploymentOptions().setInstances(4));
+  }
+
+  public static void httpClientSideLoadBalancing(Vertx vertx) {
+    HttpClient client = vertx
+      .httpClientBuilder()
+      .withLoadBalancer(LoadBalancer.ROUND_ROBIN)
+      .build();
   }
 }

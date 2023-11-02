@@ -1444,6 +1444,17 @@ used when creating the client.
 
 By default compression is disabled.
 
+=== Client side load balancing
+
+By default, when the client resolves a hostname to a list of several IP addresses, the client uses the first returned IP address.
+
+The http client can be configured to perform client side load balancing instead
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#httpClientSideLoadBalancing}
+----
+
 === HTTP/1.x pooling and keep alive
 
 Http keep alive allows http connections to be used for more than one request. This can be a more efficient use of
