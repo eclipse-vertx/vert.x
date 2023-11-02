@@ -10,6 +10,10 @@
  */
 package io.vertx.core.loadbalancing;
 
+import io.vertx.core.spi.loadbalancing.DefaultEndpointMetrics;
+import io.vertx.core.spi.loadbalancing.EndpointMetrics;
+import io.vertx.core.spi.loadbalancing.EndpointSelector;
+
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 

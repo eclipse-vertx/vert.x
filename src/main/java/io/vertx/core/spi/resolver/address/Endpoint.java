@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.spi.net;
+package io.vertx.core.spi.resolver.address;
 
 /**
  * An endpoint

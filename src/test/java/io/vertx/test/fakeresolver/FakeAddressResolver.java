@@ -4,8 +4,8 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.net.Address;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.spi.net.AddressResolver;
-import io.vertx.core.spi.net.Endpoint;
+import io.vertx.core.spi.resolver.address.AddressResolver;
+import io.vertx.core.spi.resolver.address.Endpoint;
 
 import java.util.ArrayList;
 import java.util.List;

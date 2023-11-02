@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.loadbalancing;
+package io.vertx.core.spi.loadbalancing;
 
 import java.util.List;
 

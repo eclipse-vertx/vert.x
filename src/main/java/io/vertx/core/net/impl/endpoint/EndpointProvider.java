@@ -8,22 +8,22 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.net.impl.pool;
+package io.vertx.core.net.impl.endpoint;
 
 /**
- * Provides endpoint to a {@link ConnectionManager}.
+ * Provides endpoint to a {@link EndpointManager}.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface EndpointProvider<K, C> {
+public interface EndpointProvider<K, E extends Endpoint> {
 
   /**
-   * Create an endpoint tracked by the {@link ConnectionManager}.
+   * Create an endpoint tracked by the {@link EndpointManager}.
    *
    * @param key     the endpoint key
    * @param dispose the callback to signal this endpoint should be destroyed
    * @return the created endpoint
    */
-  Endpoint<C> create(K key, Runnable dispose);
+  E create(K key, Runnable dispose);
 
 }

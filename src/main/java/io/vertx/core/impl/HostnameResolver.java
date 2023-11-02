@@ -20,9 +20,9 @@ import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.Address;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.spi.dns.AddressResolverProvider;
-import io.vertx.core.spi.net.AddressResolver;
-import io.vertx.core.spi.net.Endpoint;
+import io.vertx.core.spi.resolver.dns.AddressResolverProvider;
+import io.vertx.core.spi.resolver.address.AddressResolver;
+import io.vertx.core.spi.resolver.address.Endpoint;
 
 import java.io.File;
 import java.net.InetAddress;

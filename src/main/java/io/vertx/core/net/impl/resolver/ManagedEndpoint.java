@@ -10,9 +10,10 @@
  */
 package io.vertx.core.net.impl.resolver;
 
-import io.vertx.core.loadbalancing.EndpointMetrics;
+import io.vertx.core.spi.loadbalancing.EndpointMetrics;
+import io.vertx.core.spi.resolver.address.Endpoint;
 
-final class ManagedEndpoint<E> implements io.vertx.core.spi.net.Endpoint<E> {
+final class ManagedEndpoint<E> implements Endpoint<E> {
 
   final E value;
   final EndpointMetrics<?> endpoint;

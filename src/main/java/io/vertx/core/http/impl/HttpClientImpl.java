@@ -19,13 +19,15 @@ import io.vertx.core.http.*;
 import io.vertx.core.impl.*;
 import io.vertx.core.loadbalancing.LoadBalancer;
 import io.vertx.core.net.*;
+import io.vertx.core.net.impl.endpoint.EndpointManager;
+import io.vertx.core.net.impl.endpoint.EndpointProvider;
 import io.vertx.core.net.impl.pool.*;
 import io.vertx.core.net.impl.resolver.EndpointRequest;
 import io.vertx.core.net.impl.resolver.EndpointResolverManager;
 import io.vertx.core.net.impl.resolver.EndpointLookup;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
-import io.vertx.core.spi.net.AddressResolver;
+import io.vertx.core.spi.resolver.address.AddressResolver;
 
 import java.lang.ref.WeakReference;
 import java.net.URI;
@@ -100,7 +102,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   };
 
   private final PoolOptions poolOptions;
-  private final ConnectionManager<EndpointKey, Lease<HttpClientConnection>> httpCM;
+  private final EndpointManager<EndpointKey, SharedClientHttpStreamEndpoint> httpCM;
   private final EndpointResolverManager<?, ?, ?> endpointResolverManager;
   private volatile Function<HttpClientResponse, Future<RequestOptions>> redirectHandler = DEFAULT_HANDLER;
   private long timerID;
@@ -116,7 +118,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     }
 
     this.poolOptions = poolOptions;
-    httpCM = new ConnectionManager<>();
+    httpCM = new EndpointManager<>();
     if (poolOptions.getCleanerPeriod() > 0 && (options.getKeepAliveTimeout() > 0L || options.getHttp2KeepAliveTimeout() > 0L)) {
       PoolChecker checker = new PoolChecker(this);
       ContextInternal timerContext = vertx.createEventLoopContext();
@@ -174,7 +176,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     }
   }
 
-  private EndpointProvider<EndpointKey, Lease<HttpClientConnection>> httpEndpointProvider() {
+  private EndpointProvider<EndpointKey, SharedClientHttpStreamEndpoint> httpEndpointProvider() {
     return (key, dispose) -> {
       int maxPoolSize = Math.max(poolOptions.getHttp1MaxSize(), poolOptions.getHttp2MaxSize());
       ClientMetrics metrics = HttpClientImpl.this.metrics != null ? HttpClientImpl.this.metrics.createEndpointMetrics(key.server, maxPoolSize) : null;
@@ -315,12 +317,12 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     if (server instanceof SocketAddress) {
       proxyOptions = computeProxyOptions(proxyConfig, (SocketAddress) server);
       EndpointKey key = new EndpointKey(useSSL, proxyOptions, (SocketAddress) server, authority);
-      future = httpCM.withEndpoint(key, httpEndpointProvider(), (endpoint, created) -> {
-        Future<Lease<HttpClientConnection>> fut = endpoint.getConnection(connCtx, timeout);
+      future = httpCM.withEndpointAsync(key, httpEndpointProvider(), (endpoint, created) -> {
+        Future<Lease<HttpClientConnection>> fut = endpoint.requestConnection(connCtx, timeout);
         if (fut == null) {
-          return Optional.empty();
+          return null;
         } else {
-          return Optional.of(fut.compose(lease -> {
+          return fut.compose(lease -> {
             HttpClientConnection conn = lease.get();
             return conn.createStream(ctx).andThen(ar -> {
               if (ar.succeeded()) {
@@ -330,7 +332,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
                 });
               }
             });
-          }));
+          });
         }
       });
     } else {
@@ -338,13 +340,13 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       future = fut.compose(lookup -> {
         SocketAddress address = lookup.address();
         EndpointKey key = new EndpointKey(useSSL, proxyConfig, address, authority != null ? authority : HostAndPort.create(address.host(), address.port()));
-        return httpCM.withEndpoint(key, httpEndpointProvider(), (endpoint, created) -> {
-          Future<Lease<HttpClientConnection>> fut2 = endpoint.getConnection(connCtx, timeout);
+        return httpCM.withEndpointAsync(key, httpEndpointProvider(), (endpoint, created) -> {
+          Future<Lease<HttpClientConnection>> fut2 = endpoint.requestConnection(connCtx, timeout);
           if (fut2 == null) {
-            return Optional.empty();
+            return null;
           } else {
             EndpointRequest endpointRequest = lookup.initiateRequest();
-            return Optional.of(fut2.andThen(ar -> {
+            return fut2.andThen(ar -> {
               if (ar.failed()) {
                 endpointRequest.reportFailure(ar.cause());
               }
@@ -355,7 +357,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
                 wrapped.closeHandler(v -> lease.recycle());
                 return wrapped;
               });
-            }));
+            });
           }
         });
       });
