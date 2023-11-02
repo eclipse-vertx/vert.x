@@ -363,7 +363,8 @@ class NetClientImpl implements NetClientInternal {
     String peerHost = connectOptions.getHost();
     Integer peerPort = connectOptions.getPort();
     if (remoteAddress.isInetSocket()) {
-      if (peerHost == null && peerPort == null) {
+      if ((peerHost == null || peerHost.equals(remoteAddress.host()))
+        && (peerPort == null || peerPort.intValue() == remoteAddress.port())) {
         return remoteAddress;
       }
       if (peerHost == null) {
