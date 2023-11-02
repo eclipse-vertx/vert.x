@@ -262,8 +262,8 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   }
 
   private void doRequest(RequestOptions request, PromiseInternal<HttpClientRequest> promise) {
-    String host = getHost(request);
-    int port = getPort(request);
+    final String host = getHost(request);
+    final int port = getPort(request);
     SocketAddress server = request.getServer();
     if (server == null) {
       server = SocketAddress.inetSocketAddress(port, host);
@@ -285,11 +285,13 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     checkClosed();
     ProxyOptions proxyOptions = resolveProxyOptions(request.getProxyOptions(), server);
 
-    String peerHost = host;
-    if (peerHost.endsWith(".")) {
-      peerHost = peerHost.substring(0, peerHost.length() -  1);
+    final String peerHost;
+    if (host.charAt(host.length() - 1) == '.') {
+      peerHost = host.substring(0, host.length() - 1);
+    } else {
+      peerHost = host;
     }
-    SocketAddress peerAddress = SocketAddress.inetSocketAddress(port, peerHost);
+    SocketAddress peerAddress = peerAddress(server, peerHost, port);
 
     EndpointKey key;
     if (proxyOptions != null && !useSSL && proxyOptions.getType() == ProxyType.HTTP) {
@@ -312,12 +314,18 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     } else {
       key = new EndpointKey(useSSL, proxyOptions, server, peerAddress);
     }
-    doRequest(method, peerAddress, server, host, port, useSSL, requestURI, headers, request.getTraceOperation(), timeout, followRedirects, proxyOptions, key, promise);
+    doRequest(method, server, host, port, useSSL, requestURI, headers, request.getTraceOperation(), timeout, followRedirects, proxyOptions, key, promise);
+  }
+
+  private static SocketAddress peerAddress(SocketAddress remoteAddress, final String peerHost, int peerPort) {
+    if (remoteAddress.isInetSocket() && peerHost.equals(remoteAddress.host()) && peerPort == remoteAddress.port()) {
+      return remoteAddress;
+    }
+    return SocketAddress.inetSocketAddress(peerPort, peerHost);
   }
 
   private void doRequest(
     HttpMethod method,
-    SocketAddress peerAddress,
     SocketAddress server,
     String host,
     int port,
