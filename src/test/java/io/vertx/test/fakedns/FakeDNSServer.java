@@ -13,7 +13,6 @@ package io.vertx.test.fakedns;
 
 import org.apache.directory.server.dns.DnsException;
 import org.apache.directory.server.dns.DnsServer;
-import org.apache.directory.server.dns.io.encoder.DnsMessageEncoder;
 import org.apache.directory.server.dns.io.encoder.ResourceRecordEncoder;
 import org.apache.directory.server.dns.messages.DnsMessage;
 import org.apache.directory.server.dns.messages.DnsMessageModifier;
@@ -257,6 +256,24 @@ public final class FakeDNSServer extends DnsServer {
         rm.put(DnsAttribute.SERVICE_WEIGHT, String.valueOf(weight));
         rm.put(DnsAttribute.SERVICE_PORT, String.valueOf(port));
         rm.put(DnsAttribute.DOMAIN_NAME, target);
+        set.add(rm.getEntry());
+        return set;
+      }
+    });
+  }
+
+  public FakeDNSServer testResolveDNAME(final String dname) {
+    return store(new RecordStore() {
+      @Override
+      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
+        Set<ResourceRecord> set = new HashSet<>();
+
+        ResourceRecordModifier rm = new ResourceRecordModifier();
+        rm.setDnsClass(RecordClass.IN);
+        rm.setDnsName("dns.vertx.io");
+        rm.setDnsTtl(100);
+        rm.setDnsType(RecordType.DNAME);
+        rm.put(DnsAttribute.DOMAIN_NAME, dname);
         set.add(rm.getEntry());
         return set;
       }
