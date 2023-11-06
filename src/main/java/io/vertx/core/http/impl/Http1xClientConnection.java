@@ -13,38 +13,17 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.*;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoop;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.compression.Brotli;
 import io.netty.handler.codec.compression.ZlibCodecFactory;
-import io.netty.handler.codec.http.DefaultHttpContent;
-import io.netty.handler.codec.http.DefaultHttpHeaders;
-import io.netty.handler.codec.http.DefaultHttpRequest;
-import io.netty.handler.codec.http.DefaultLastHttpContent;
-import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.HttpContent;
-import io.netty.handler.codec.http.HttpContentDecompressor;
-import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpObject;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.HttpUtil;
-import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.handler.codec.http.websocketx.WebSocket07FrameDecoder;
-import io.netty.handler.codec.http.websocketx.WebSocket08FrameDecoder;
-import io.netty.handler.codec.http.websocketx.WebSocket13FrameDecoder;
-import io.netty.handler.codec.http.websocketx.WebSocketClientHandshaker;
-import io.netty.handler.codec.http.websocketx.WebSocketClientHandshaker00;
-import io.netty.handler.codec.http.websocketx.WebSocketClientHandshaker07;
-import io.netty.handler.codec.http.websocketx.WebSocketClientHandshaker08;
-import io.netty.handler.codec.http.websocketx.WebSocketClientHandshaker13;
-import io.netty.handler.codec.http.websocketx.WebSocketDecoderConfig;
+import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
-import io.netty.handler.codec.http.websocketx.WebSocketFrameDecoder;
-import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
-import io.netty.handler.codec.http.websocketx.WebSocketVersion;
+import io.netty.handler.codec.http.websocketx.*;
 import io.netty.handler.codec.http.websocketx.extensions.WebSocketClientExtensionHandler;
 import io.netty.handler.codec.http.websocketx.extensions.WebSocketClientExtensionHandshaker;
 import io.netty.handler.codec.http.websocketx.extensions.compression.DeflateFrameClientExtensionHandshaker;
@@ -54,13 +33,11 @@ import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.FutureListener;
 import io.netty.util.concurrent.GenericFutureListener;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
-import io.vertx.core.Promise;
-import io.vertx.core.VertxException;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.buffer.impl.BufferInternal;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
 import io.vertx.core.impl.ContextInternal;
@@ -68,8 +45,8 @@ import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.HostAndPort;
-import io.vertx.core.net.impl.*;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.impl.*;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.tracing.SpanKind;
@@ -79,12 +56,7 @@ import io.vertx.core.streams.WriteStream;
 import io.vertx.core.streams.impl.InboundBuffer;
 
 import java.net.URI;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiConsumer;
 
 import static io.netty.handler.codec.http.websocketx.WebSocketVersion.*;
@@ -229,7 +201,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     if (chunked) {
       HttpUtil.setTransferEncodingChunked(request, true);
     }
-    if (options.isTryUseCompression() && request.headers().get(ACCEPT_ENCODING) == null) {
+    if (options.isDecompressionSupported() && request.headers().get(ACCEPT_ENCODING) == null) {
       // if compression should be used but nothing is specified by the user support deflate and gzip.
       CharSequence acceptEncoding = determineCompressionAcceptEncoding();
       request.headers().set(ACCEPT_ENCODING, acceptEncoding);

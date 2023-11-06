@@ -14,7 +14,8 @@ package io.vertx.core.http.impl;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelPipeline;
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.HttpClientCodec;
+import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -190,7 +191,7 @@ public class HttpChannelConnector {
       false,
       !HttpHeaders.DISABLE_HTTP_HEADERS_VALIDATION,
       options.getDecoderInitialBufferSize()));
-    if (options.isTryUseCompression()) {
+    if (options.isDecompressionSupported()) {
       pipeline.addLast("inflater", new HttpContentDecompressor(false));
     }
   }

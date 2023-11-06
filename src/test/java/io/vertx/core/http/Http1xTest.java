@@ -17,15 +17,10 @@ import io.netty.channel.EventLoop;
 import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.TooLongHttpHeaderException;
-import io.vertx.core.*;
 import io.vertx.core.Future;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.impl.Http1xOrH2CHandler;
-import io.vertx.core.http.impl.Http1xServerConnection;
-import io.vertx.core.http.impl.Http1xUpgradeToH2CHandler;
-import io.vertx.core.http.impl.HttpServerImpl;
-import io.vertx.core.http.impl.HttpServerRequestInternal;
-import io.vertx.core.http.impl.HttpUtils;
+import io.vertx.core.http.impl.*;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.impl.VertxInternal;
@@ -34,11 +29,11 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.streams.WriteStream;
-import io.vertx.test.core.Repeat;
 import io.vertx.test.core.CheckingSender;
+import io.vertx.test.core.Repeat;
+import io.vertx.test.core.TestUtils;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.verticles.SimpleServer;
-import io.vertx.test.core.TestUtils;
 import org.junit.Assume;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -190,9 +185,9 @@ public class Http1xTest extends HttpTest {
     assertEquals(rand, options.getConnectTimeout());
     assertIllegalArgumentException(() -> options.setConnectTimeout(-2));
 
-    assertFalse(options.isTryUseCompression());
-    assertEquals(options, options.setTryUseCompression(true));
-    assertEquals(true, options.isTryUseCompression());
+    assertFalse(options.isDecompressionSupported());
+    assertEquals(options, options.setDecompressionSupported(true));
+    assertEquals(true, options.isDecompressionSupported());
 
     assertTrue(options.getEnabledCipherSuites().isEmpty());
     assertEquals(options, options.addEnabledCipherSuite("foo"));
@@ -432,7 +427,7 @@ public class Http1xTest extends HttpTest {
     int http2MaxPoolSize = TestUtils.randomPositiveInt();
     int http2MultiplexingLimit = TestUtils.randomPositiveInt();
     int http2ConnectionWindowSize = TestUtils.randomPositiveInt();
-    boolean tryUseCompression = rand.nextBoolean();
+    boolean decompressionSupported = rand.nextBoolean();
     HttpVersion protocolVersion = HttpVersion.HTTP_1_0;
     int maxChunkSize = TestUtils.randomPositiveInt();
     int maxInitialLineLength = TestUtils.randomPositiveInt();
@@ -470,7 +465,7 @@ public class Http1xTest extends HttpTest {
     options.setPipeliningLimit(pipeliningLimit);
     options.setHttp2MultiplexingLimit(http2MultiplexingLimit);
     options.setHttp2ConnectionWindowSize(http2ConnectionWindowSize);
-    options.setTryUseCompression(tryUseCompression);
+    options.setDecompressionSupported(decompressionSupported);
     options.setProtocolVersion(protocolVersion);
     options.setMaxChunkSize(maxChunkSize);
     options.setMaxInitialLineLength(maxInitialLineLength);
@@ -521,7 +516,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(def.getHttp2MultiplexingLimit(), json.getHttp2MultiplexingLimit());
     assertEquals(def.getHttp2ConnectionWindowSize(), json.getHttp2ConnectionWindowSize());
     assertEquals(def.isVerifyHost(), json.isVerifyHost());
-    assertEquals(def.isTryUseCompression(), json.isTryUseCompression());
+    assertEquals(def.isDecompressionSupported(), json.isDecompressionSupported());
     assertEquals(def.isTrustAll(), json.isTrustAll());
     assertEquals(def.getCrlPaths(), json.getCrlPaths());
     assertEquals(def.getCrlValues(), json.getCrlValues());
@@ -579,7 +574,7 @@ public class Http1xTest extends HttpTest {
     int http2MaxPoolSize = TestUtils.randomPositiveInt();
     int http2MultiplexingLimit = TestUtils.randomPositiveInt();
     int http2ConnectionWindowSize = TestUtils.randomPositiveInt();
-    boolean tryUseCompression = rand.nextBoolean();
+    boolean decompressionSupported = rand.nextBoolean();
     HttpVersion protocolVersion = HttpVersion.HTTP_1_1;
     int maxChunkSize = TestUtils.randomPositiveInt();
     int maxInitialLineLength = TestUtils.randomPositiveInt();
@@ -620,7 +615,7 @@ public class Http1xTest extends HttpTest {
       .put("http2MaxPoolSize", http2MaxPoolSize)
       .put("http2MultiplexingLimit", http2MultiplexingLimit)
       .put("http2ConnectionWindowSize", http2ConnectionWindowSize)
-      .put("tryUseCompression", tryUseCompression)
+      .put("decompressionSupported", decompressionSupported)
       .put("protocolVersion", protocolVersion.name())
       .put("maxChunkSize", maxChunkSize)
       .put("maxInitialLineLength", maxInitialLineLength)
@@ -671,7 +666,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(pipeliningLimit, options.getPipeliningLimit());
     assertEquals(http2MultiplexingLimit, options.getHttp2MultiplexingLimit());
     assertEquals(http2ConnectionWindowSize, options.getHttp2ConnectionWindowSize());
-    assertEquals(tryUseCompression, options.isTryUseCompression());
+    assertEquals(decompressionSupported, options.isDecompressionSupported());
     assertEquals(protocolVersion, options.getProtocolVersion());
     assertEquals(maxChunkSize, options.getMaxChunkSize());
     assertEquals(maxInitialLineLength, options.getMaxInitialLineLength());
