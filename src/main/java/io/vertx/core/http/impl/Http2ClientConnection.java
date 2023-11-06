@@ -15,17 +15,9 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http2.DefaultHttp2Headers;
-import io.netty.handler.codec.http2.Http2Error;
-import io.netty.handler.codec.http2.Http2Exception;
-import io.netty.handler.codec.http2.Http2Headers;
-import io.netty.handler.codec.http2.Http2Stream;
+import io.netty.handler.codec.http2.*;
 import io.netty.handler.timeout.IdleStateEvent;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
-import io.vertx.core.VertxException;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
@@ -574,7 +566,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
           headers.add(HttpUtils.toLowerCase(header.getKey()), header.getValue());
         }
       }
-      if (conn.client.options().isTryUseCompression() && headers.get(HttpHeaderNames.ACCEPT_ENCODING) == null) {
+      if (conn.client.options().isDecompressionSupported() && headers.get(HttpHeaderNames.ACCEPT_ENCODING) == null) {
         headers.set(HttpHeaderNames.ACCEPT_ENCODING, Http1xClientConnection.determineCompressionAcceptEncoding());
       }
       try {
@@ -687,7 +679,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     HttpClientMetrics met = client.metrics();
     VertxHttp2ConnectionHandler<Http2ClientConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ClientConnection>()
       .server(false)
-      .useDecompression(client.options().isTryUseCompression())
+      .useDecompression(client.options().isDecompressionSupported())
       .gracefulShutdownTimeoutMillis(0) // So client close tests don't hang 30 seconds - make this configurable later but requires HTTP/1 impl
       .initialSettings(client.options().getInitialSettings())
       .connectionFactory(connHandler -> {
