@@ -85,6 +85,11 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   @Override
+  public long activeStreams() {
+    return handler.connection().numActiveStreams();
+  }
+
+  @Override
   boolean onGoAwaySent(GoAway goAway) {
     boolean goneAway = super.onGoAwaySent(goAway);
     if (goneAway) {
