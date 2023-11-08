@@ -21,6 +21,7 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.SSLOptions;
+import io.vertx.core.net.SocketAddress;
 
 import java.util.List;
 import java.util.function.Function;
@@ -171,5 +172,10 @@ public class SharedHttpClient implements HttpClientInternal {
   @Override
   public HttpClientOptions options() {
     return delegate.options();
+  }
+
+  @Override
+  public Future<HttpClientConnection> connect(SocketAddress server, SocketAddress peer) {
+    return delegate.connect(server, peer);
   }
 }

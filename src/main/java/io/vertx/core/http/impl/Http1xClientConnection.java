@@ -1223,6 +1223,11 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   }
 
   @Override
+  public Future<HttpClientRequest> createRequest(ContextInternal context) {
+    return ((HttpClientImpl)client).createRequest(this, context);
+  }
+
+  @Override
   public void createStream(ContextInternal context, Handler<AsyncResult<HttpClientStream>> handler) {
     EventLoop eventLoop = context.nettyEventLoop();
     if (eventLoop.inEventLoop()) {

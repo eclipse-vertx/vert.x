@@ -794,6 +794,11 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
   }
 
   @Override
+  public Future<HttpClientRequest> createRequest(ContextInternal context) {
+    return ((HttpClientImpl)client).createRequest(this, context);
+  }
+
+  @Override
   public ContextInternal getContext() {
     return current.getContext();
   }

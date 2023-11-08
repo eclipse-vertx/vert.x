@@ -29,7 +29,6 @@ import java.util.Objects;
  */
 public abstract class HttpClientRequestBase implements HttpClientRequest {
 
-  protected final HttpClientImpl client;
   protected final ContextInternal context;
   protected final HttpClientStream stream;
   protected final SocketAddress server;
@@ -47,8 +46,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   private long lastDataReceived;
   private Throwable timeoutFired;
 
-  HttpClientRequestBase(HttpClientImpl client, HttpClientStream stream, PromiseInternal<HttpClientResponse> responsePromise, boolean ssl, HttpMethod method, SocketAddress server, String host, int port, String uri) {
-    this.client = client;
+  HttpClientRequestBase(HttpClientStream stream, PromiseInternal<HttpClientResponse> responsePromise, HttpMethod method, SocketAddress server, String host, int port, String uri) {
     this.stream = stream;
     this.responsePromise = responsePromise;
     this.context = responsePromise.context();
@@ -57,7 +55,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     this.server = server;
     this.host = host;
     this.port = port;
-    this.ssl = ssl;
+    this.ssl = stream.connection().isSsl();
 
     //
     stream.pushHandler(this::handlePush);
@@ -188,7 +186,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   void handlePush(HttpClientPush push) {
-    HttpClientRequestPushPromise pushReq = new HttpClientRequestPushPromise(push.stream, client, ssl, push.method, push.uri, push.host, push.port, push.headers);
+    HttpClientRequestPushPromise pushReq = new HttpClientRequestPushPromise(push.stream, push.method, push.uri, push.host, push.port, push.headers);
     if (pushHandler != null) {
       pushHandler.handle(pushReq);
     } else {
@@ -205,7 +203,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   private synchronized long cancelTimeout() {
     long ret;
     if ((ret = currentTimeoutTimerId) != -1) {
-      client.vertx().cancelTimer(currentTimeoutTimerId);
+      context.owner().cancelTimer(currentTimeoutTimerId);
       currentTimeoutTimerId = -1;
       ret = currentTimeoutMs;
       currentTimeoutMs = 0;

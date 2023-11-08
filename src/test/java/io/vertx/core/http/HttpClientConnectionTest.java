@@ -12,7 +12,7 @@ package io.vertx.core.http;
 
 import io.netty.buffer.Unpooled;
 import io.vertx.core.MultiMap;
-import io.vertx.core.http.impl.HttpClientImpl;
+import io.vertx.core.http.impl.HttpClientInternal;
 import io.vertx.core.http.impl.HttpRequestHead;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.SocketAddress;
@@ -26,7 +26,7 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
 
   protected SocketAddress peerAddress;
   private File tmp;
-  protected HttpClientImpl client;
+  protected HttpClientInternal client;
 
   @Override
   public void setUp() throws Exception {
@@ -38,14 +38,33 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
       testAddress = SocketAddress.domainSocketAddress(tmp.getAbsolutePath());
       requestOptions.setServer(testAddress);
     }
-    this.client = (HttpClientImpl) super.client;
+    this.client = (HttpClientInternal) super.client;
   }
 
   @Test
   public void testGet() throws Exception {
+    server.requestHandler(req -> {
+      req.response().end("Hello World");
+    });
+    startServer(testAddress);
+    client.connect(testAddress, peerAddress)
+      .compose(conn -> conn.createRequest((ContextInternal) vertx.getOrCreateContext()))
+      .compose(request -> request
+        .send()
+        .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+        .compose(HttpClientResponse::body))
+      .onComplete(onSuccess(body -> {
+        assertEquals("Hello World", body.toString());
+        testComplete();
+      }));
+    await();
+  }
+
+  @Test
+  public void testStreamGet() throws Exception {
     waitFor(3);
     server.requestHandler(req -> {
-      req.response().end();
+      req.response().end("Hello World");
     });
     startServer(testAddress);
     client.connect(testAddress, peerAddress).onComplete(onSuccess(conn -> {

@@ -11,9 +11,12 @@
 
 package io.vertx.core.http.impl;
 
+import io.vertx.core.Future;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.net.HostAndPort;
+import io.vertx.core.net.SocketAddress;
 
 public interface HttpClientInternal extends HttpClient {
 
@@ -23,4 +26,21 @@ public interface HttpClientInternal extends HttpClient {
   VertxInternal vertx();
 
   HttpClientOptions options();
+
+  /**
+   * Connect to a server.
+   *
+   * @param server the server address
+   */
+  default Future<HttpClientConnection> connect(SocketAddress server) {
+    return connect(server, null);
+  }
+
+  /**
+   * Connect to a server.
+   *
+   * @param server the server address
+   * @param peer the peer
+   */
+  Future<HttpClientConnection> connect(SocketAddress server, SocketAddress peer);
 }
