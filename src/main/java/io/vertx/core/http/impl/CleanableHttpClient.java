@@ -15,6 +15,8 @@ import io.vertx.core.Promise;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.ClientSSLOptions;
+import io.vertx.core.net.HostAndPort;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.NetClientInternal;
 import io.vertx.core.spi.metrics.Metrics;
 
@@ -113,4 +115,8 @@ public class CleanableHttpClient implements HttpClientInternal {
     delegate.close(completion);
   }
 
+  @Override
+  public Future<HttpClientConnection> connect(SocketAddress server, HostAndPort peer) {
+    return delegate.connect(server, peer);
+  }
 }

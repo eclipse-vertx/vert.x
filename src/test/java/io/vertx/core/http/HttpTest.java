@@ -4130,10 +4130,10 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testFollowRedirectLimit() throws Exception {
     Assume.assumeTrue(testAddress.isInetSocket());
-    AtomicInteger redirects = new AtomicInteger();
+    AtomicInteger numberOfRequests = new AtomicInteger();
     server.requestHandler(req -> {
-      int val = redirects.incrementAndGet();
-      if (val > 16) {
+      int val = numberOfRequests.incrementAndGet();
+      if (val > 17) {
         fail();
       } else {
         String scheme = createBaseServerOptions().isSsl() ? "https" : "http";
@@ -4145,7 +4145,7 @@ public abstract class HttpTest extends HttpTestBase {
       .onComplete(onSuccess(req -> {
         req.setFollowRedirects(true);
         req.send().onComplete(onSuccess(resp -> {
-          assertEquals(16, redirects.get());
+          assertEquals(17, numberOfRequests.get());
           assertEquals(301, resp.statusCode());
           assertEquals("/otherpath", resp.request().path());
           testComplete();
@@ -4312,11 +4312,16 @@ public abstract class HttpTest extends HttpTestBase {
       public HttpClientRequest putHeader(CharSequence name, Iterable<CharSequence> values) { throw new UnsupportedOperationException(); }
       public Future<Void> write(String chunk) { throw new UnsupportedOperationException(); }
       public Future<Void> write(String chunk, String enc) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest traceOperation(String op) { throw new UnsupportedOperationException(); }
+      public String traceOperation() { throw new UnsupportedOperationException(); }
       public void write(Buffer data, Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
       public void write(String chunk, Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
       public void write(String chunk, String enc, Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
       public HttpClientRequest continueHandler(@Nullable Handler<Void> handler) { throw new UnsupportedOperationException(); }
-
+      public boolean isFollowRedirects() { throw new UnsupportedOperationException(); }
+      public int getMaxRedirects() { throw new UnsupportedOperationException(); }
+      public int numberOfRedirections() { throw new UnsupportedOperationException(); }
+      public HttpClientRequest redirectHandler(@Nullable Function<HttpClientResponse, Future<HttpClientRequest>> handler) { throw new UnsupportedOperationException(); }
       public HttpClientRequest earlyHintsHandler(@Nullable Handler<MultiMap> handler) { throw new UnsupportedOperationException(); }
       public Future<Void> sendHead() { throw new UnsupportedOperationException(); }
       public HttpClientRequest sendHead(Handler<AsyncResult<Void>> completionHandler) { throw new UnsupportedOperationException(); }
