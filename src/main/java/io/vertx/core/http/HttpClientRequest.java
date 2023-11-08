@@ -21,6 +21,8 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
+import java.util.function.Function;
+
 /**
  * Represents a client-side HTTP request.
  * <p>
@@ -85,6 +87,11 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
   HttpClientRequest setFollowRedirects(boolean followRedirects);
 
   /**
+   * @return whether HTTP redirections should be followed
+   */
+  boolean isFollowRedirects();
+
+  /**
    * Set the max number of HTTP redirects this request will follow. The default is {@code 0} which means
    * no redirects.
    *
@@ -93,6 +100,16 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    */
   @Fluent
   HttpClientRequest setMaxRedirects(int maxRedirects);
+
+  /**
+   * @return the maximum number of HTTP redirections to follow
+   */
+  int getMaxRedirects();
+
+  /**
+   * @return the number of followed redirections for the current HTTP request
+   */
+  int numberOfRedirections();
 
   /**
    * If chunked is true then the request will be set into HTTP chunked mode
@@ -193,6 +210,19 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
   HttpClientRequest putHeader(CharSequence name, Iterable<CharSequence> values);
 
   /**
+   * Set the trace operation of this request.
+   *
+   * @param op the operation
+   * @return @return a reference to this, so the API can be used fluently
+   */
+  HttpClientRequest traceOperation(String op);
+
+  /**
+   * @return the trace operation of this request
+   */
+  String traceOperation();
+
+  /**
    * @return the HTTP version for this request
    */
   HttpVersion version();
@@ -237,6 +267,9 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    */
   @Fluent
   HttpClientRequest earlyHintsHandler(@Nullable Handler<MultiMap> handler);
+
+  @Fluent
+  HttpClientRequest redirectHandler(@Nullable Function<HttpClientResponse, Future<HttpClientRequest>>  handler);
 
   /**
    * Forces the head of the request to be written before {@link #end()} is called on the request or any data is

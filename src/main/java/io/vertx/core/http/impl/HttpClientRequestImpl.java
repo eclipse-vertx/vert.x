@@ -22,10 +22,9 @@ import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
-import io.vertx.core.net.HostAndPort;
-import io.vertx.core.net.SocketAddress;
 
 import java.util.Objects;
+import java.util.function.Function;
 
 import static io.vertx.core.http.HttpHeaders.CONTENT_LENGTH;
 
@@ -52,23 +51,26 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private Handler<MultiMap> earlyHintsHandler;
   private Handler<Void> drainHandler;
   private Handler<Throwable> exceptionHandler;
+  private Function<HttpClientResponse, Future<HttpClientRequest>> redirectHandler;
   private boolean ended;
   private Throwable reset;
-  private int followRedirects;
+  private boolean followRedirects;
+  private int maxRedirects;
+  private int numberOfRedirections;
   private HeadersMultiMap headers;
   private StreamPriority priority;
   private boolean headWritten;
   private boolean isConnect;
   private String traceOperation;
 
-  HttpClientRequestImpl(HttpClientImpl client, HttpClientStream stream, PromiseInternal<HttpClientResponse> responsePromise, boolean ssl, HttpMethod method,
-                        HostAndPort authority, String requestURI, String traceOperation) {
-    super(client, stream, responsePromise, ssl, method, authority, requestURI);
+  HttpClientRequestImpl(HttpClientStream stream, PromiseInternal<HttpClientResponse> responsePromise, HttpMethod method,
+                        String requestURI) {
+    super(stream, responsePromise, method, requestURI);
     this.chunked = false;
     this.endPromise = context.promise();
     this.endFuture = endPromise.future();
     this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
-    this.traceOperation = traceOperation;
+    this.numberOfRedirections = 0;
 
     //
     stream.continueHandler(this::handleContinue);
@@ -98,20 +100,31 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   @Override
   public synchronized HttpClientRequest setFollowRedirects(boolean followRedirects) {
     checkEnded();
-    if (followRedirects) {
-      this.followRedirects = client.options().getMaxRedirects() - 1;
-    } else {
-      this.followRedirects = 0;
-    }
+    this.followRedirects = followRedirects;
     return this;
+  }
+
+  @Override
+  public synchronized boolean isFollowRedirects() {
+    return followRedirects;
   }
 
   @Override
   public synchronized HttpClientRequest setMaxRedirects(int maxRedirects) {
     Arguments.require(maxRedirects >= 0, "Max redirects must be >= 0");
     checkEnded();
-    followRedirects = maxRedirects;
+    this.maxRedirects = maxRedirects;
     return this;
+  }
+
+  @Override
+  public synchronized int getMaxRedirects() {
+    return maxRedirects;
+  }
+
+  @Override
+  public int numberOfRedirections() {
+    return numberOfRedirections;
   }
 
   @Override
@@ -121,7 +134,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       throw new IllegalStateException("Cannot set chunked after data has been written on request");
     }
     // HTTP 1.0 does not support chunking so we ignore this if HTTP 1.0
-    if (client.options().getProtocolVersion() != io.vertx.core.http.HttpVersion.HTTP_1_0) {
+    if (version() != io.vertx.core.http.HttpVersion.HTTP_1_0) {
       this.chunked = chunked;
     }
     return this;
@@ -207,11 +220,20 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   @Override
-  public HttpClientRequest earlyHintsHandler(@Nullable Handler<MultiMap> handler) {
+  public synchronized HttpClientRequest earlyHintsHandler(@Nullable Handler<MultiMap> handler) {
     if (handler != null) {
       checkEnded();
     }
     this.earlyHintsHandler = handler;
+    return this;
+  }
+
+  @Override
+  public synchronized HttpClientRequest redirectHandler(@Nullable Function<HttpClientResponse, Future<HttpClientRequest>> handler) {
+    if (handler != null) {
+      checkEnded();
+    }
+    this.redirectHandler = handler;
     return this;
   }
 
@@ -223,9 +245,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   @Override
   public Future<HttpClientResponse> connect() {
-    if (client.options().isPipelining()) {
-      return context.failedFuture("Cannot upgrade a pipe-lined request");
-    }
     doWrite(null, false, true);
     return response();
   }
@@ -242,6 +261,18 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     checkEnded();
     headers().set(name, values);
     return this;
+  }
+
+  @Override
+  public synchronized HttpClientRequest traceOperation(String op) {
+    checkEnded();
+    traceOperation = op;
+    return this;
+  }
+
+  @Override
+  public String traceOperation() {
+    return traceOperation;
   }
 
   @Override
@@ -289,7 +320,9 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     next.exceptionHandler(exceptionHandler());
     exceptionHandler(null);
     next.pushHandler(pushHandler());
-    next.setMaxRedirects(followRedirects - 1);
+    next.setFollowRedirects(true);
+    next.setMaxRedirects(maxRedirects);
+    ((HttpClientRequestImpl)next).numberOfRedirections = numberOfRedirections + 1;
     endFuture.onComplete(ar -> {
       if (ar.succeeded()) {
         if (timeoutMs > 0) {
@@ -327,28 +360,23 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       return;
     }
     int statusCode = resp.statusCode();
-    if (followRedirects > 0 && statusCode >= 300 && statusCode < 400) {
-      Future<RequestOptions> next = client.redirectHandler().apply(resp);
-      if (next != null) {
-        resp
-          .end()
-          .compose(v -> next, err -> next)
-          .onComplete(ar1 -> {
-            if (ar1.succeeded()) {
-              RequestOptions options = ar1.result();
-              Future<HttpClientRequest> f = client.request(options);
-              f.onComplete(ar2 -> {
-                if (ar2.succeeded()) {
-                  handleNextRequest(ar2.result(), promise, timeoutMs);
-                } else {
-                  fail(ar2.cause());
-                }
-              });
-            } else {
-              fail(ar1.cause());
-            }
-        });
-        return;
+    if (followRedirects && numberOfRedirections < maxRedirects && statusCode >= 300 && statusCode < 400) {
+      Function<HttpClientResponse, Future<HttpClientRequest>> handler = redirectHandler;
+      if (handler != null) {
+        Future<HttpClientRequest> next = handler.apply(resp);
+        if (next != null) {
+          resp
+            .end()
+            .compose(v -> next, err -> next)
+            .onComplete(ar1 -> {
+              if (ar1.succeeded()) {
+                handleNextRequest(ar1.result(), promise, timeoutMs);
+              } else {
+                fail(ar1.cause());
+              }
+            });
+          return;
+        }
       }
     }
     promise.complete(resp);

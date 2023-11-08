@@ -15,6 +15,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.logging.Logger;
@@ -67,6 +68,14 @@ public interface HttpClientConnection extends HttpConnection {
    * @return the {@link ChannelHandlerContext} of the handler managing the connection
    */
   ChannelHandlerContext channelHandlerContext();
+
+  /**
+   * Create an HTTP stream.
+   *
+   * @param context the stream context
+   * @return a future notified with the created stream
+   */
+  Future<HttpClientRequest> createRequest(ContextInternal context);
 
   /**
    * Create an HTTP stream.

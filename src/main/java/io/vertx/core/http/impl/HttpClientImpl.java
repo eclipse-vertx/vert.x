@@ -371,15 +371,34 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       return connCtx.failedFuture("Cannot resolve address " + server);
     } else {
       future.map(stream -> {
-        return createRequest(ctx, stream, method, headers, requestURI, proxyOptions, useSSL, timeout, followRedirects, traceOperation);
+        return createRequest(stream, method, headers, requestURI, proxyOptions, useSSL, timeout, followRedirects, traceOperation);
       }).onComplete(promise);
       return promise.future();
     }
   }
 
-  // MOVE THIS TO STREAM ???
+  Future<HttpClientRequest> createRequest(HttpClientConnection conn, ContextInternal context) {
+    return conn.createStream(context).map(this::createRequest);
+  }
+
+  private HttpClientRequest createRequest(HttpClientStream stream) {
+    HttpClientRequest request = new HttpClientRequestImpl(stream, stream.getContext().promise(), HttpMethod.GET, "/");
+    Function<HttpClientResponse, Future<RequestOptions>> rHandler = redirectHandler;
+    if (rHandler != null) {
+      request.setMaxRedirects(options.getMaxRedirects());
+      request.redirectHandler(resp -> {
+        Future<RequestOptions> fut_ = rHandler.apply(resp);
+        if (fut_ != null) {
+          return fut_.compose(this::request);
+        } else {
+          return null;
+        }
+      });
+    }
+    return request;
+  }
+
   private HttpClientRequest createRequest(
-    ContextInternal ctx,
     HttpClientStream stream,
     HttpMethod method,
     MultiMap headers,
@@ -398,23 +417,24 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         u = (useSSL == Boolean.TRUE ? "https://" : "http://") + authority.host() + addPort + requestURI;
       }
     }
-    HttpClientRequest req = new HttpClientRequestImpl(this, stream, ctx.promise(), useSSL, method, authority, u, traceOperation);
+    HttpClientRequest request = createRequest(stream);
+    request.setURI(u);
+    request.setMethod(method);
+    request.traceOperation(traceOperation);
+    request.setFollowRedirects(followRedirects == Boolean.TRUE);
     if (headers != null) {
-      req.headers().setAll(headers);
+      request.headers().setAll(headers);
     }
     if (proxyOptions != null && !useSSL && proxyOptions.getType() == ProxyType.HTTP) {
       if (proxyOptions.getUsername() != null && proxyOptions.getPassword() != null) {
-        req.headers().add("Proxy-Authorization", "Basic " + Base64.getEncoder()
+        request.headers().add("Proxy-Authorization", "Basic " + Base64.getEncoder()
           .encodeToString((proxyOptions.getUsername() + ":" + proxyOptions.getPassword()).getBytes()));
       }
     }
-    if (followRedirects != null) {
-      req.setFollowRedirects(followRedirects);
-    }
     if (timeout > 0L) {
       // Maybe later ?
-      req.setTimeout(timeout);
+      request.setTimeout(timeout);
     }
-    return req;
+    return request;
   }
 }

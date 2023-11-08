@@ -151,6 +151,11 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
   }
 
+  @Override
+  public Future<HttpClientRequest> createRequest(ContextInternal context) {
+    return ((HttpClientImpl)client).createRequest(this, context);
+  }
+
   private StreamImpl createStream2(ContextInternal context) {
     return new StreamImpl(this, context, false);
   }

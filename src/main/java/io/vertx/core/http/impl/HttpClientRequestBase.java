@@ -27,7 +27,6 @@ import java.util.Objects;
  */
 public abstract class HttpClientRequestBase implements HttpClientRequest {
 
-  protected final HttpClientImpl client;
   protected final ContextInternal context;
   protected final HttpClientStream stream;
   protected final boolean ssl;
@@ -43,15 +42,14 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   private long lastDataReceived;
   private Throwable timeoutFired;
 
-  HttpClientRequestBase(HttpClientImpl client, HttpClientStream stream, PromiseInternal<HttpClientResponse> responsePromise, boolean ssl, HttpMethod method, HostAndPort authority, String uri) {
-    this.client = client;
+  HttpClientRequestBase(HttpClientStream stream, PromiseInternal<HttpClientResponse> responsePromise, HttpMethod method, String uri) {
     this.stream = stream;
     this.responsePromise = responsePromise;
     this.context = responsePromise.context();
     this.uri = uri;
     this.method = method;
-    this.authority = authority;
-    this.ssl = ssl;
+    this.authority = stream.connection().authority();
+    this.ssl = stream.connection().isSsl();
 
     //
     stream.pushHandler(this::handlePush);
@@ -161,7 +159,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   void handlePush(HttpClientPush push) {
-    HttpClientRequestPushPromise pushReq = new HttpClientRequestPushPromise(push.stream, client, ssl, push.method, push.uri, push.authority, push.headers);
+    HttpClientRequestPushPromise pushReq = new HttpClientRequestPushPromise(push.stream, push.method, push.uri, push.headers);
     if (pushHandler != null) {
       pushHandler.handle(pushReq);
     } else {
@@ -178,7 +176,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   private synchronized long cancelTimeout() {
     long ret;
     if ((ret = currentTimeoutTimerId) != -1) {
-      client.vertx().cancelTimer(currentTimeoutTimerId);
+      context.owner().cancelTimer(currentTimeoutTimerId);
       currentTimeoutTimerId = -1;
       ret = currentTimeoutMs;
       currentTimeoutMs = 0;

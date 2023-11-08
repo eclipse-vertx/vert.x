@@ -1220,6 +1220,11 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   }
 
   @Override
+  public Future<HttpClientRequest> createRequest(ContextInternal context) {
+    return ((HttpClientImpl)client).createRequest(this, context);
+  }
+
+  @Override
   public Future<HttpClientStream> createStream(ContextInternal context) {
     PromiseInternal<HttpClientStream> promise = context.promise();
     createStream(context, promise);
