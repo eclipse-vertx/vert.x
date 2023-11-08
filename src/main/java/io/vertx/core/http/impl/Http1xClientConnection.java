@@ -192,6 +192,11 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     return options.isPipelining() ? options.getPipeliningLimit() : 1;
   }
 
+  @Override
+  public synchronized long activeStreams() {
+    return requests.isEmpty() && responses.isEmpty() ? 0 : 1;
+  }
+
   /**
    * @return a raw {@code NetSocket} - for internal use - must be called from event-loop
    */

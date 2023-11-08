@@ -60,6 +60,11 @@ public interface HttpClientConnection extends HttpConnection {
   long concurrency();
 
   /**
+   * @return the number of active streams
+   */
+  long activeStreams();
+
+  /**
    * @return the connection channel
    */
   Channel channel();
