@@ -77,6 +77,11 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
   }
 
   @Override
+  public long activeStreams() {
+    return current.concurrency();
+  }
+
+  @Override
   public ChannelHandlerContext channelHandlerContext() {
     return current.channelHandlerContext();
   }
