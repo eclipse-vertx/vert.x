@@ -17,17 +17,8 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
-import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxException;
-import io.vertx.core.VertxOptions;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.http.impl.HttpServerRequestInternal;
@@ -50,49 +41,24 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.function.*;
 import java.util.stream.IntStream;
 
-import static io.vertx.core.http.HttpMethod.*;
+import static io.vertx.core.http.HttpMethod.PUT;
 import static io.vertx.test.core.TestUtils.*;
-import static java.util.Collections.*;
+import static java.util.Collections.singletonList;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -4792,7 +4758,7 @@ public abstract class HttpTest extends HttpTestBase {
     });
     startServer(testAddress);
     client.close();
-    client = vertx.createHttpClient(createBaseClientOptions().setTryUseCompression(true));
+    client = vertx.createHttpClient(createBaseClientOptions().setDecompressionSupported(true));
     client.request(requestOptions)
       .compose(req -> req.send().compose(HttpClientResponse::body))
       .onFailure(err -> {

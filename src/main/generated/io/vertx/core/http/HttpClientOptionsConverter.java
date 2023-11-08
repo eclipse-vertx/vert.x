@@ -35,6 +35,11 @@ public class HttpClientOptionsConverter {
             obj.setDecoderInitialBufferSize(((Number)member.getValue()).intValue());
           }
           break;
+        case "decompressionSupported":
+          if (member.getValue() instanceof Boolean) {
+            obj.setDecompressionSupported((Boolean)member.getValue());
+          }
+          break;
         case "defaultHost":
           if (member.getValue() instanceof String) {
             obj.setDefaultHost((String)member.getValue());
@@ -185,11 +190,6 @@ public class HttpClientOptionsConverter {
             obj.setTracingPolicy(io.vertx.core.tracing.TracingPolicy.valueOf((String)member.getValue()));
           }
           break;
-        case "tryUseCompression":
-          if (member.getValue() instanceof Boolean) {
-            obj.setTryUseCompression((Boolean)member.getValue());
-          }
-          break;
         case "tryUsePerFrameWebSocketCompression":
           if (member.getValue() instanceof Boolean) {
             obj.setTryUsePerFrameWebSocketCompression((Boolean)member.getValue());
@@ -242,6 +242,7 @@ public class HttpClientOptionsConverter {
       json.put("alpnVersions", array);
     }
     json.put("decoderInitialBufferSize", obj.getDecoderInitialBufferSize());
+    json.put("decompressionSupported", obj.isDecompressionSupported());
     if (obj.getDefaultHost() != null) {
       json.put("defaultHost", obj.getDefaultHost());
     }
@@ -282,7 +283,6 @@ public class HttpClientOptionsConverter {
     if (obj.getTracingPolicy() != null) {
       json.put("tracingPolicy", obj.getTracingPolicy().name());
     }
-    json.put("tryUseCompression", obj.isTryUseCompression());
     json.put("tryUsePerFrameWebSocketCompression", obj.getTryUsePerFrameWebSocketCompression());
     json.put("tryUsePerMessageWebSocketCompression", obj.getTryUsePerMessageWebSocketCompression());
     json.put("tryWebSocketDeflateFrameCompression", obj.getTryWebSocketDeflateFrameCompression());

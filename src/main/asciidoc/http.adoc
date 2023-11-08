@@ -1439,7 +1439,7 @@ If the body of the response was compressed via gzip it will include for example 
 
  Content-Encoding: gzip
 
-To enable compression set {@link io.vertx.core.http.HttpClientOptions#setTryUseCompression(boolean)} on the options
+To enable compression set {@link io.vertx.core.http.HttpClientOptions#setDecompressionSupported(boolean)} on the options
 used when creating the client.
 
 By default compression is disabled.

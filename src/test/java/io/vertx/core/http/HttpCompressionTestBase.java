@@ -23,7 +23,6 @@ import org.junit.Test;
 import java.util.Queue;
 
 import static io.vertx.core.http.HttpHeaders.ACCEPT_ENCODING;
-import static io.vertx.core.http.HttpHeaders.CONTENT_ENCODING;
 import static io.vertx.core.http.HttpMethod.PUT;
 
 public abstract class HttpCompressionTestBase extends HttpTestBase {
@@ -167,7 +166,7 @@ public abstract class HttpCompressionTestBase extends HttpTestBase {
     });
     startServer();
     client.close();
-    client = vertx.createHttpClient(createBaseClientOptions().setTryUseCompression(true));
+    client = vertx.createHttpClient(createBaseClientOptions().setDecompressionSupported(true));
     client.request(new RequestOptions())
       .onComplete(onSuccess(req -> {
         req.send()
@@ -191,7 +190,7 @@ public abstract class HttpCompressionTestBase extends HttpTestBase {
     });
     startServer();
     client.close();
-    client = vertx.createHttpClient(createBaseClientOptions().setTryUseCompression(true));
+    client = vertx.createHttpClient(createBaseClientOptions().setDecompressionSupported(true));
     client.request(new RequestOptions())
       .onComplete(onSuccess(req -> {
         req.send(onSuccess(resp -> {
