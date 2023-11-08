@@ -13,11 +13,7 @@ package io.vertx.core.eventbus;
 
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.http.RequestOptions;
-import io.vertx.core.streams.WriteStream;
 
 /**
  * Represents a stream of message that can be written to.
@@ -45,9 +41,16 @@ public interface MessageProducer<T> {
   /**
    * Write a message to the event-bus, either sending or publishing.
    *
+   * The returned {@link Future} completion depends on the producer type:
+   *
+   * <ul>
+   *   <li>send or request: the future is completed successfully if the message has been written; otherwise, the future is failed</li>
+   *   <li>publish: the future is failed if there is no recipient; otherwise, the future is completed successfully</li>
+   * </ul>
+   *
+   * In any case, a successfully completed {@link Future} is not a delivery guarantee.
+   *
    * @param body the message body
-   * @return a future called when the message has been successfully or failed to be written, this is not a delivery
-   *                guarantee
    */
   Future<Void> write(T body);
 

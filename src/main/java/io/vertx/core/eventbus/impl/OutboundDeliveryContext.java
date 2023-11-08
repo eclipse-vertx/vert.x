@@ -10,9 +10,7 @@
  */
 package io.vertx.core.eventbus.impl;
 
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.ReplyException;
@@ -95,9 +93,9 @@ public class OutboundDeliveryContext<T> extends DeliveryContextBase<T> implement
     // Notify promise finally
     if (writePromise != null) {
       if (failure == null) {
-        writePromise.complete();
+        writePromise.tryComplete();
       } else {
-        writePromise.fail(failure);
+        writePromise.tryFail(failure);
       }
     }
   }

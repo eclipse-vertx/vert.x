@@ -15,10 +15,7 @@ import io.vertx.core.*;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.shareddata.AsyncMapTest.SomeClusterSerializableObject;
 import io.vertx.core.shareddata.AsyncMapTest.SomeSerializableObject;
-import io.vertx.core.spi.cluster.NodeSelector;
-import io.vertx.core.spi.cluster.RegistrationUpdateEvent;
-import io.vertx.core.spi.cluster.WrappedClusterManager;
-import io.vertx.core.spi.cluster.WrappedNodeSelector;
+import io.vertx.core.spi.cluster.*;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.tls.Cert;
 import org.junit.Test;
@@ -518,6 +515,38 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     startNodes(options);
     assertNotNull(nodeSelectorRef.get());
     assertFalse(nodeSelectorRef.get().wantsUpdatesFor(ADDRESS1));
+  }
+
+  @Test
+  public void testPublisherCanReceiveNoHandlersFailure() {
+    Supplier<VertxOptions> options = () -> getOptions().setClusterManager(new WrappedClusterManager(getClusterManager()) {
+      @Override
+      public void removeRegistration(String address, RegistrationInfo registrationInfo, Promise<Void> promise) {
+        promise.complete();
+      }
+    });
+    startNodes(options.get(), options.get());
+
+    MessageConsumer<Object> consumer0 = vertices[0].eventBus().consumer("foo", msg -> {
+      fail();
+    });
+    MessageConsumer<Object> consumer1 = vertices[1].eventBus().consumer("foo", msg -> {
+      fail();
+    });
+    consumer0.completion().compose(v -> consumer1.completion()).onComplete(onSuccess(regs -> {
+      consumer0.unregister().compose(v -> consumer1.unregister()).onComplete(onSuccess(unregs -> {
+        vertices[0].eventBus().publisher("foo").write("bar").onComplete(onFailure(t -> {
+          if (t instanceof ReplyException) {
+            ReplyException replyException = (ReplyException) t;
+            assertEquals(ReplyFailure.NO_HANDLERS, replyException.failureType());
+            testComplete();
+          } else {
+            fail();
+          }
+        }));
+      }));
+    }));
+    await();
   }
 
   @Test
