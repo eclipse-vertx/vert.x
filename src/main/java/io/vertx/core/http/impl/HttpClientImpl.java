@@ -22,10 +22,7 @@ import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.future.PromiseInternal;
-import io.vertx.core.net.NetClient;
-import io.vertx.core.net.ProxyOptions;
-import io.vertx.core.net.ProxyType;
-import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.*;
 import io.vertx.core.net.impl.pool.ConnectionManager;
 import io.vertx.core.net.impl.pool.Endpoint;
 import io.vertx.core.net.impl.pool.EndpointProvider;
@@ -365,7 +362,11 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
             stream.closeHandler(v -> {
               lease.recycle();
             });
-            HttpClientRequestImpl req = new HttpClientRequestImpl(this, stream, ctx.promise(), useSSL, method, server, host, port, requestURI, traceOperation);
+            HttpClientRequest req = createRequest(stream);
+            req.setMethod(method);
+            req.authority(HostAndPort.create(host, port));
+            req.setURI(requestURI);
+            req.traceOperation(traceOperation);
             if (headers != null) {
               req.headers().setAll(headers);
             }
@@ -391,5 +392,28 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     if (closeFuture.isClosed()) {
       throw new IllegalStateException("Client is closed");
     }
+  }
+
+  Future<HttpClientRequest> createRequest(HttpClientConnection conn, ContextInternal context) {
+    PromiseInternal<HttpClientStream> promise = context.promise();
+    conn.createStream(context, promise);
+    return promise.map(this::createRequest);
+  }
+
+  private HttpClientRequest createRequest(HttpClientStream stream) {
+    HttpClientRequest request = new HttpClientRequestImpl(stream, stream.getContext().promise());
+    Function<HttpClientResponse, Future<RequestOptions>> rHandler = redirectHandler;
+    if (rHandler != null) {
+      request.setMaxRedirects(options.getMaxRedirects());
+      request.redirectHandler(resp -> {
+        Future<RequestOptions> fut_ = rHandler.apply(resp);
+        if (fut_ != null) {
+          return fut_.compose(this::request);
+        } else {
+          return null;
+        }
+      });
+    }
+    return request;
   }
 }
