@@ -11,19 +11,15 @@
 
 package io.vertx.core.http;
 
+import io.netty.handler.logging.ByteBufFormat;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 import io.vertx.core.tracing.TracingPolicy;
-import io.netty.handler.logging.ByteBufFormat;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -70,9 +66,9 @@ public class HttpClientOptions extends ClientOptionsBase {
   public static final int DEFAULT_KEEP_ALIVE_TIMEOUT = 60;
 
   /**
-   * Default value of whether the client will attempt to use compression = {@code false}
+   * Whether the client should send requests with an {@code accepting-encoding} header set to a compression algorithm by default = {@code false}
    */
-  public static final boolean DEFAULT_TRY_USE_COMPRESSION = false;
+  public static final boolean DEFAULT_DECOMPRESSION_SUPPORTED = false;
 
   /**
    * Default value of whether hostname verification (for SSL/TLS) is enabled = {@code true}
@@ -163,7 +159,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private int http2ConnectionWindowSize;
   private int http2KeepAliveTimeout;
 
-  private boolean tryUseCompression;
+  private boolean decompressionSupported;
   private String defaultHost;
   private int defaultPort;
   private HttpVersion protocolVersion;
@@ -216,7 +212,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.http2MultiplexingLimit = other.http2MultiplexingLimit;
     this.http2ConnectionWindowSize = other.http2ConnectionWindowSize;
     this.http2KeepAliveTimeout = other.getHttp2KeepAliveTimeout();
-    this.tryUseCompression = other.isTryUseCompression();
+    this.decompressionSupported = other.decompressionSupported;
     this.defaultHost = other.defaultHost;
     this.defaultPort = other.defaultPort;
     this.protocolVersion = other.protocolVersion;
@@ -266,7 +262,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     http2MultiplexingLimit = DEFAULT_HTTP2_MULTIPLEXING_LIMIT;
     http2ConnectionWindowSize = DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE;
     http2KeepAliveTimeout = DEFAULT_HTTP2_KEEP_ALIVE_TIMEOUT;
-    tryUseCompression = DEFAULT_TRY_USE_COMPRESSION;
+    decompressionSupported = DEFAULT_DECOMPRESSION_SUPPORTED;
     defaultHost = DEFAULT_DEFAULT_HOST;
     defaultPort = DEFAULT_DEFAULT_PORT;
     protocolVersion = DEFAULT_PROTOCOL_VERSION;
@@ -671,22 +667,20 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   /**
-   * Is compression enabled on the client?
-   *
-   * @return {@code true} if enabled
+   * @return {@code true} if the client should send requests with an {@code accepting-encoding} header set to a compression algorithm, {@code false} otherwise
    */
-  public boolean isTryUseCompression() {
-    return tryUseCompression;
+  public boolean isDecompressionSupported() {
+    return decompressionSupported;
   }
 
   /**
-   * Set whether compression is enabled
+   * Whether the client should send requests with an {@code accepting-encoding} header set to a compression algorithm.
    *
-   * @param tryUseCompression {@code true} if enabled
+   * @param decompressionSupported {@code true} if the client should send a request with an {@code accepting-encoding} header set to a compression algorithm, {@code false} otherwise
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpClientOptions setTryUseCompression(boolean tryUseCompression) {
-    this.tryUseCompression = tryUseCompression;
+  public HttpClientOptions setDecompressionSupported(boolean decompressionSupported) {
+    this.decompressionSupported = decompressionSupported;
     return this;
   }
 

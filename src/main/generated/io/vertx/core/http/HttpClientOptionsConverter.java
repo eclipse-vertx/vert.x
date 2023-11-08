@@ -60,9 +60,9 @@ public class HttpClientOptionsConverter {
             obj.setVerifyHost((Boolean)member.getValue());
           }
           break;
-        case "tryUseCompression":
+        case "decompressionSupported":
           if (member.getValue() instanceof Boolean) {
-            obj.setTryUseCompression((Boolean)member.getValue());
+            obj.setDecompressionSupported((Boolean)member.getValue());
           }
           break;
         case "defaultHost":
@@ -167,7 +167,7 @@ public class HttpClientOptionsConverter {
     json.put("pipelining", obj.isPipelining());
     json.put("pipeliningLimit", obj.getPipeliningLimit());
     json.put("verifyHost", obj.isVerifyHost());
-    json.put("tryUseCompression", obj.isTryUseCompression());
+    json.put("decompressionSupported", obj.isDecompressionSupported());
     if (obj.getDefaultHost() != null) {
       json.put("defaultHost", obj.getDefaultHost());
     }
