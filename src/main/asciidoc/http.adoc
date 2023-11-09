@@ -1099,6 +1099,12 @@ You can set a connect timeout to prevent your application from unresponsive busy
 The connect timeout option is not related to the TCP {@link io.vertx.core.http.HttpClientOptions#setConnectTimeout(int)} option, when a request is made against a pooled HTTP client, the timeout applies to the duration to obtain a connection from the pool to serve the request,
 the timeout might fire because the server does not respond in time or the pool is too busy to serve a request.
 
+You can configure both timeout using {@link io.vertx.core.http.RequestOptions#setTimeout(long)}
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#clientTimeout}
+----
 
 ==== Writing HTTP/2 frames
 

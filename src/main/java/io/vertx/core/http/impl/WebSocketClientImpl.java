@@ -83,6 +83,10 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
       .withEndpointAsync(key, provider, (endpoint, created) -> endpoint.requestConnection(ctx, 0L))
       .onComplete(c -> {
         if (c.succeeded()) {
+          long timeout = Math.max(connectOptions.getTimeout(), 0L);
+          if (connectOptions.getIdleTimeout() >= 0L) {
+            timeout = connectOptions.getIdleTimeout();
+          }
           Http1xClientConnection conn = (Http1xClientConnection) c.result();
           conn.toWebSocket(
             ctx,
@@ -92,7 +96,7 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
             options,
             connectOptions.getVersion(),
             connectOptions.getSubProtocols(),
-            connectOptions.getTimeout(),
+            timeout,
             connectOptions.isRegisterWriteHandlers(),
             WebSocketClientImpl.this.options.getMaxFrameSize(),
             promise);

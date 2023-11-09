@@ -274,8 +274,18 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     String requestURI = request.getURI();
     Boolean ssl = request.isSsl();
     MultiMap headers = request.getHeaders();
-    long idleTimeout = request.getIdleTimeout();
-    long connectTimeout = request.getConnectTimeout();
+    long connectTimeout = 0L;
+    long idleTimeout = 0L;
+    if (request.getTimeout() >= 0L) {
+      connectTimeout = request.getTimeout();
+      idleTimeout = request.getTimeout();
+    }
+    if (request.getConnectTimeout() >= 0L) {
+      connectTimeout = request.getConnectTimeout();
+    }
+    if (request.getIdleTimeout() >= 0L) {
+      idleTimeout = request.getIdleTimeout();
+    }
     Boolean followRedirects = request.getFollowRedirects();
     Objects.requireNonNull(method, "no null method accepted");
     Objects.requireNonNull(requestURI, "no null requestURI accepted");

@@ -399,15 +399,6 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
   Future<Void> end();
 
   /**
-   * Like {@link #setIdleTimeout(long)} but with a confusing name (hence the deprecation).
-   *
-   * @deprecated instead use {@link #setIdleTimeout(long)}
-   */
-  @Deprecated
-  @Fluent
-  HttpClientRequest setTimeout(long timeout);
-
-  /**
    * Sets the amount of time after which, if the request does not return any data within the timeout period,
    * the request/response is closed and the related futures are failed with a {@link java.util.concurrent.TimeoutException},
    * e.g. {@code Future<HttpClientResponse>} or {@code Future<Buffer>} response body.
@@ -416,9 +407,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  default HttpClientRequest setIdleTimeout(long timeout) {
-    return setTimeout(timeout);
-  }
+  HttpClientRequest setIdleTimeout(long timeout);
 
   /**
    * Set a push handler for this request.<p/>
