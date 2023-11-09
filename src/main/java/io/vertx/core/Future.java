@@ -22,6 +22,7 @@ import io.vertx.core.impl.future.SucceededFuture;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -553,6 +554,17 @@ public interface Future<T> extends AsyncResult<T> {
       return (Future<T>) ar;
     });
   }
+
+  /**
+   * Returns a future succeeded or failed with the outcome of this future when it happens before the timeout fires. When
+   * the timeout fires before, the future is failed with a {@link java.util.concurrent.TimeoutException}, guaranteeing
+   * the returned future to complete within the specified {@code delay}.
+   *
+   * @param delay the delay
+   * @param unit the unit of the delay
+   * @return the timeout future
+   */
+  Future<T> timeout(long delay, TimeUnit unit);
 
   /**
    * Bridges this Vert.x future to a {@link CompletionStage} instance.

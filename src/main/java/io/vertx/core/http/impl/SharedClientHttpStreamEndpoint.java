@@ -16,6 +16,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.NoStackTraceTimeoutException;
 import io.vertx.core.net.impl.pool.ConnectResult;
 import io.vertx.core.net.impl.pool.ConnectionPool;
 import io.vertx.core.net.impl.pool.PoolConnection;
