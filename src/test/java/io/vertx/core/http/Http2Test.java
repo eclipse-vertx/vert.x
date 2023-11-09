@@ -474,7 +474,7 @@ public class Http2Test extends HttpTest {
         });
       })
       .build();
-    client.request(new RequestOptions(requestOptions).setTimeout(10000))
+    client.request(new RequestOptions(requestOptions).setIdleTimeout(10000))
       .compose(HttpClientRequest::send)
       .onComplete(onSuccess(resp -> complete()));
     await();
@@ -488,7 +488,7 @@ public class Http2Test extends HttpTest {
       req.response().end();
     });
     startServer(testAddress);
-    client.request(new RequestOptions(requestOptions).setTimeout(10000))
+    client.request(new RequestOptions(requestOptions).setIdleTimeout(10000))
       .compose(HttpClientRequest::send)
       .onComplete(onSuccess(resp -> {
         assertEquals(Integer.MAX_VALUE, resp.request().connection().remoteSettings().getMaxHeaderListSize());

@@ -559,6 +559,26 @@ public class HTTPExamples {
     request.end();
   }
 
+  public void clientIdleTimeout(HttpClient client, int port, String host, String uri, int timeoutMS) {
+    Future<Buffer> fut = client
+      .request(new RequestOptions()
+        .setHost(host)
+        .setPort(port)
+        .setURI(uri)
+        .setIdleTimeout(timeoutMS))
+      .compose(request -> request.send().compose(HttpClientResponse::body));
+  }
+
+  public void clientConnectTimeout(HttpClient client, int port, String host, String uri, int timeoutMS) {
+    Future<Buffer> fut = client
+      .request(new RequestOptions()
+        .setHost(host)
+        .setPort(port)
+        .setURI(uri)
+        .setConnectTimeout(timeoutMS))
+      .compose(request -> request.send().compose(HttpClientResponse::body));
+  }
+
   public void useRequestAsStream(HttpClientRequest request) {
 
     request.setChunked(true);

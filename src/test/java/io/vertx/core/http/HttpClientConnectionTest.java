@@ -12,35 +12,24 @@ package io.vertx.core.http;
 
 import io.netty.buffer.Unpooled;
 import io.vertx.core.MultiMap;
-import io.vertx.core.http.impl.CleanableHttpClient;
 import io.vertx.core.http.impl.HttpClientInternal;
 import io.vertx.core.http.impl.HttpRequestHead;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.HostAndPort;
-import io.vertx.core.net.SocketAddress;
-import io.vertx.test.core.TestUtils;
 import org.junit.Test;
 
-import java.io.File;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class HttpClientConnectionTest extends HttpTestBase {
 
-  protected HostAndPort peerAddress;
-  private File tmp;
   protected HttpClientInternal client;
+  protected HostAndPort peerAddress;
 
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    peerAddress = HostAndPort.create(testAddress.host(), testAddress.port());
-    if (USE_DOMAIN_SOCKETS) {
-      assertTrue("Native transport not enabled", USE_NATIVE_TRANSPORT);
-      tmp = TestUtils.tmpFile(".sock");
-      testAddress = SocketAddress.domainSocketAddress(tmp.getAbsolutePath());
-      requestOptions.setServer(testAddress);
-    }
     this.client = (HttpClientInternal) super.client;
+    this.peerAddress = HostAndPort.create(requestOptions.getHost(), requestOptions.getPort());
   }
 
   @Test

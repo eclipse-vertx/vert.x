@@ -1083,11 +1083,22 @@ no need to set the `Content-Length` of the request up-front.
 
 ==== Request timeouts
 
-You can set a timeout for a specific http request using {@link io.vertx.core.http.RequestOptions#setTimeout(long)} or
-{@link io.vertx.core.http.HttpClientRequest#setTimeout(long)}.
+You can set an idle timeout to prevent your application from unresponsive servers using {@link io.vertx.core.http.RequestOptions#setIdleTimeout(long)} or {@link io.vertx.core.http.HttpClientRequest#setIdleTimeout(long)}. When the request does not return any data within the timeout period an exception will fail the result and the request will be reset.
 
-If the request does not return any data within the timeout period an exception will be passed to the exception handler
-(if provided) and the request will be closed.
+[source,$lang]
+----
+{@link examples.HTTPExamples#clientIdleTimeout}
+----
+
+NOTE: the timeout starts when the {@link io.vertx.core.http.HttpClientRequest} is available, implying a connection was
+obtained from the pool.
+
+You can set a connect timeout to prevent your application from unresponsive busy client connection pool. The
+`Future<HttpClientRequest>` is failed when a connection is not obtained before the timeout delay.
+
+The connect timeout option is not related to the TCP {@link io.vertx.core.http.HttpClientOptions#setConnectTimeout(int)} option, when a request is made against a pooled HTTP client, the timeout applies to the duration to obtain a connection from the pool to serve the request,
+the timeout might fire because the server does not respond in time or the pool is too busy to serve a request.
+
 
 ==== Writing HTTP/2 frames
 

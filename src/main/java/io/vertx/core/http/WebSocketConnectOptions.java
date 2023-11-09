@@ -195,6 +195,11 @@ public class WebSocketConnectOptions extends RequestOptions {
     return (WebSocketConnectOptions) super.setURI(uri);
   }
 
+  @Override
+  public WebSocketConnectOptions setConnectTimeout(long timeout) {
+    return (WebSocketConnectOptions) super.setConnectTimeout(timeout);
+  }
+
   /**
    * Sets the amount of time after which if the WebSocket handshake does not happen within the timeout period an
    * {@link WebSocketHandshakeException} will be passed to the exception handler and the connection will be closed.
@@ -203,8 +208,8 @@ public class WebSocketConnectOptions extends RequestOptions {
    * @return a reference to this, so the API can be used fluently
    */
   @Override
-  public WebSocketConnectOptions setTimeout(long timeout) {
-    return (WebSocketConnectOptions) super.setTimeout(timeout);
+  public WebSocketConnectOptions setIdleTimeout(long timeout) {
+    return (WebSocketConnectOptions) super.setIdleTimeout(timeout);
   }
 
   @Override

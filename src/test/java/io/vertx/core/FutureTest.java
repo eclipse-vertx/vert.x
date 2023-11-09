@@ -22,10 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -829,6 +826,7 @@ public class FutureTest extends FutureTestBase {
       public <V> Future<V> map(V value) { throw new UnsupportedOperationException(); }
       public Future<T> otherwise(Function<Throwable, T> mapper) { throw new UnsupportedOperationException(); }
       public Future<T> otherwise(T value) { throw new UnsupportedOperationException(); }
+      public Future<T> timeout(long delay, TimeUnit unit) { throw new UnsupportedOperationException(); }
 
       public void handle(AsyncResult<T> asyncResult) {
         if (asyncResult.succeeded()) {
@@ -1737,5 +1735,79 @@ public class FutureTest extends FutureTestBase {
       fail();
     } catch (IllegalStateException e) {
     }
+  }
+
+  @Test
+  public void contextFutureTimeoutFires() {
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+    Promise<String> promise = ctx.promise();
+    Future<String> fut = promise.future();
+    futureTimeoutFires(ctx, fut);
+  }
+
+  @Test
+  public void futureTimeoutFires() {
+    disableThreadChecks();
+    Promise<String> promise = Promise.promise();
+    Future<String> fut = promise.future();
+    futureTimeoutFires(null, fut);
+  }
+
+  private void futureTimeoutFires(Context ctx, Future<String> fut) {
+    Future<String> timeout = fut.timeout(100, TimeUnit.MILLISECONDS);
+    timeout.onComplete(onFailure(err -> {
+      assertTrue(err instanceof TimeoutException);
+      assertSame(Vertx.currentContext(), ctx);
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
+  public void contextFutureTimeoutExpires() throws Exception {
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+    Promise<String> promise = ctx.promise();
+    futureTimeoutExpires(ctx, promise);
+  }
+
+  @Test
+  public void futureTimeoutExpires() throws Exception {
+    disableThreadChecks();
+    Promise<String> promise = Promise.promise();
+    futureTimeoutExpires(null, promise);
+  }
+
+  private void futureTimeoutExpires(Context ctx, Promise<String> promise) throws Exception {
+    Future<String> timeout = promise.future().timeout(10, TimeUnit.SECONDS);
+    timeout.onComplete(onSuccess(val -> {
+      assertSame(Vertx.currentContext(), ctx);
+      assertEquals("value", val);
+      testComplete();
+    }));
+    Thread.sleep(100);
+    promise.complete("value");
+    await();
+  }
+
+  @Test
+  public void contextCompletedFutureTimeout() throws Exception {
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+    completedFutureTimeout(ctx, ctx.succeededFuture("value"));
+  }
+
+  @Test
+  public void completedFutureTimeout() throws Exception {
+    disableThreadChecks();
+    completedFutureTimeout(null, Future.succeededFuture("value"));
+  }
+
+  private void completedFutureTimeout(Context ctx, Future<String> future) throws Exception {
+    Future<String> timeout = future.timeout(10, TimeUnit.SECONDS);
+    timeout.onComplete(onSuccess(val -> {
+      assertSame(Vertx.currentContext(), ctx);
+      assertEquals("value", val);
+      testComplete();
+    }));
+    await();
   }
 }

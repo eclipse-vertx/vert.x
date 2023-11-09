@@ -17,6 +17,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.NoStackTraceTimeoutException;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.HostAndPort;
 
@@ -131,10 +132,10 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   @Override
-  public synchronized HttpClientRequest setTimeout(long timeoutMs) {
+  public synchronized HttpClientRequest setIdleTimeout(long timeout) {
     cancelTimeout();
-    currentTimeoutMs = timeoutMs;
-    currentTimeoutTimerId = context.setTimer(timeoutMs, id -> handleTimeout(timeoutMs));
+    currentTimeoutMs = timeout;
+    currentTimeoutTimerId = context.setTimer(timeout, id -> handleTimeout(timeout));
     return this;
   }
 
@@ -195,7 +196,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
         if (timeSinceLastData < timeoutMs) {
           // reschedule
           lastDataReceived = 0;
-          setTimeout(timeoutMs - timeSinceLastData);
+          setIdleTimeout(timeoutMs - timeSinceLastData);
           return;
         }
       }

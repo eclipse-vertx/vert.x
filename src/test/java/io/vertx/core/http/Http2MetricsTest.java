@@ -80,7 +80,7 @@ public class Http2MetricsTest extends HttpMetricsTestBase {
         });
       });
     });
-    startServer();
+    startServer(testAddress);
     client = vertx.createHttpClient(createBaseClientOptions());
     FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
     client.request(requestOptions).onComplete(onSuccess(req -> {

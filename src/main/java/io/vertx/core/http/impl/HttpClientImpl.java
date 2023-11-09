@@ -274,7 +274,8 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     String requestURI = request.getURI();
     Boolean ssl = request.isSsl();
     MultiMap headers = request.getHeaders();
-    long timeout = request.getTimeout();
+    long idleTimeout = request.getIdleTimeout();
+    long connectTimeout = request.getConnectTimeout();
     Boolean followRedirects = request.getFollowRedirects();
     Objects.requireNonNull(method, "no null method accepted");
     Objects.requireNonNull(requestURI, "no null requestURI accepted");
@@ -295,7 +296,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     } else {
       authority = null;
     }
-    return doRequest(method, authority, server, useSSL, requestURI, headers, request.getTraceOperation(), timeout, followRedirects, request.getProxyOptions());
+    return doRequest(method, authority, server, useSSL, requestURI, headers, request.getTraceOperation(), connectTimeout, idleTimeout, followRedirects, request.getProxyOptions());
   }
 
   private Future<HttpClientRequest> doRequest(
@@ -306,7 +307,8 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     String requestURI,
     MultiMap headers,
     String traceOperation,
-    long timeout,
+    long connectTimeout,
+    long idleTimeout,
     Boolean followRedirects,
     ProxyOptions proxyConfig) {
     ContextInternal ctx = vertx.getOrCreateContext();
@@ -318,7 +320,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       proxyOptions = computeProxyOptions(proxyConfig, (SocketAddress) server);
       EndpointKey key = new EndpointKey(useSSL, proxyOptions, (SocketAddress) server, authority);
       future = httpCM.withEndpointAsync(key, httpEndpointProvider(), (endpoint, created) -> {
-        Future<Lease<HttpClientConnection>> fut = endpoint.requestConnection(connCtx, timeout);
+        Future<Lease<HttpClientConnection>> fut = endpoint.requestConnection(connCtx, connectTimeout);
         if (fut == null) {
           return null;
         } else {
@@ -341,7 +343,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         SocketAddress address = lookup.address();
         EndpointKey key = new EndpointKey(useSSL, proxyConfig, address, authority != null ? authority : HostAndPort.create(address.host(), address.port()));
         return httpCM.withEndpointAsync(key, httpEndpointProvider(), (endpoint, created) -> {
-          Future<Lease<HttpClientConnection>> fut2 = endpoint.requestConnection(connCtx, timeout);
+          Future<Lease<HttpClientConnection>> fut2 = endpoint.requestConnection(connCtx, connectTimeout);
           if (fut2 == null) {
             return null;
           } else {
@@ -371,7 +373,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       return connCtx.failedFuture("Cannot resolve address " + server);
     } else {
       future.map(stream -> {
-        return createRequest(stream, method, headers, requestURI, proxyOptions, useSSL, timeout, followRedirects, traceOperation);
+        return createRequest(stream, method, headers, requestURI, proxyOptions, useSSL, idleTimeout, followRedirects, traceOperation);
       }).onComplete(promise);
       return promise.future();
     }
@@ -405,7 +407,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     String requestURI,
     ProxyOptions proxyOptions,
     Boolean useSSL,
-    long timeout,
+    long idleTimeout,
     Boolean followRedirects,
     String traceOperation) {
     String u = requestURI;
@@ -431,9 +433,9 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
           .encodeToString((proxyOptions.getUsername() + ":" + proxyOptions.getPassword()).getBytes()));
       }
     }
-    if (timeout > 0L) {
+    if (idleTimeout > 0L) {
       // Maybe later ?
-      request.setTimeout(timeout);
+      request.setIdleTimeout(idleTimeout);
     }
     return request;
   }
