@@ -269,7 +269,6 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     String requestURI = request.getURI();
     Boolean ssl = request.isSsl();
     MultiMap headers = request.getHeaders();
-    long timeout = request.getTimeout();
     Boolean followRedirects = request.getFollowRedirects();
     Objects.requireNonNull(method, "no null method accepted");
     Objects.requireNonNull(host, "no null host accepted");
@@ -311,7 +310,18 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     } else {
       key = new EndpointKey(useSSL, proxyOptions, server, peerAddress);
     }
-    doRequest(method, server, host, port, useSSL, requestURI, headers, request.getTraceOperation(), timeout, followRedirects, proxyOptions, key, promise);
+    long connectTimeout = request.getConnectTimeout();
+    long idleTimeout = request.getIdleTimeout();
+    long timeout = request.getTimeout();
+    if (timeout > 0L) {
+      if (connectTimeout == 0L) {
+        connectTimeout = timeout;
+      }
+      if (idleTimeout == 0L) {
+        idleTimeout = timeout;
+      }
+    }
+    doRequest(method, server, host, port, useSSL, requestURI, headers, request.getTraceOperation(), connectTimeout, idleTimeout, followRedirects, proxyOptions, key, promise);
   }
 
   private static SocketAddress peerAddress(SocketAddress remoteAddress, final String peerHost, int peerPort) {
@@ -330,7 +340,8 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     String requestURI,
     MultiMap headers,
     String traceOperation,
-    long timeout,
+    long connectTimeout,
+    long idleTimeout,
     Boolean followRedirects,
     ProxyOptions proxyOptions,
     EndpointKey key,
@@ -352,7 +363,8 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
           dispose);
       }
     };
-    httpCM.getConnection(ctx, key, provider, timeout, ar1 -> {
+    long now = System.currentTimeMillis();
+    httpCM.getConnection(ctx, key, provider, connectTimeout, ar1 -> {
       if (ar1.succeeded()) {
         Lease<HttpClientConnection> lease = ar1.result();
         HttpClientConnection conn = lease.get();
@@ -373,9 +385,8 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
             if (followRedirects != null) {
               req.setFollowRedirects(followRedirects);
             }
-            if (timeout > 0L) {
-              // Maybe later ?
-              req.setTimeout(timeout);
+            if (idleTimeout > 0L) {
+              req.setIdleTimeout(idleTimeout);
             }
             requestPromise.tryComplete(req);
           } else {

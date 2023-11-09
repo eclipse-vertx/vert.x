@@ -209,13 +209,17 @@ public class HttpClientBase implements MetricsProvider, Closeable {
       ar -> {
         if (ar.succeeded()) {
           Http1xClientConnection conn = (Http1xClientConnection) ar.result();
+          long timeout = connectOptions.getTimeout();
+          if (timeout == 0L) {
+            timeout = connectOptions.getIdleTimeout();
+          }
           conn.toWebSocket(ctx,
             connectOptions.getURI(),
             connectOptions.getHeaders(),
             connectOptions.getAllowOriginHeader(),
             connectOptions.getVersion(),
             connectOptions.getSubProtocols(),
-            connectOptions.getTimeout(),
+            timeout,
             connectOptions.isRegisterWriteHandlers(),
             HttpClientBase.this.options.getMaxWebSocketFrameSize(),
             promise);

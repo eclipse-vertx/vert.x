@@ -158,10 +158,10 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   @Override
-  public synchronized HttpClientRequest setTimeout(long timeoutMs) {
+  public synchronized HttpClientRequest setTimeout(long timeout) {
     cancelTimeout();
-    currentTimeoutMs = timeoutMs;
-    currentTimeoutTimerId = context.setTimer(timeoutMs, id -> handleTimeout(timeoutMs));
+    currentTimeoutMs = timeout;
+    currentTimeoutTimerId = context.setTimer(timeout, id -> handleTimeout(timeout));
     return this;
   }
 
