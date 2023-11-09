@@ -208,6 +208,16 @@ public class WebSocketConnectOptions extends RequestOptions {
   }
 
   @Override
+  public WebSocketConnectOptions setConnectTimeout(long timeout) {
+    return (WebSocketConnectOptions) super.setConnectTimeout(timeout);
+  }
+
+  @Override
+  public WebSocketConnectOptions setIdleTimeout(long timeout) {
+    return (WebSocketConnectOptions) super.setIdleTimeout(timeout);
+  }
+
+  @Override
   public WebSocketConnectOptions addHeader(String key, String value) {
     return (WebSocketConnectOptions) super.addHeader(key, value);
   }

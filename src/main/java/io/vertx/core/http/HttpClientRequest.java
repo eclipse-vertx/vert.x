@@ -399,18 +399,26 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
   Future<Void> end();
 
   /**
-   * Set's the amount of time after which if the request does not return any data within the timeout period an
-   * {@link java.util.concurrent.TimeoutException} will be passed to the exception handler (if provided) and
-   * the request will be closed.
-   * <p>
-   * Calling this method more than once has the effect of canceling any existing timeout and starting
-   * the timeout from scratch.
+   * Like {@link #setIdleTimeout(long)} but with a confusing name (hence the deprecation).
    *
-   * @param timeoutMs The quantity of time in milliseconds.
+   * @deprecated instead use {@link #setIdleTimeout(long)}
+   */
+  @Deprecated
+  @Fluent
+  HttpClientRequest setTimeout(long timeout);
+
+  /**
+   * Sets the amount of time after which, if the request does not return any data within the timeout period,
+   * the request/response is closed and the related futures are failed with a {@link java.util.concurrent.TimeoutException},
+   * e.g. {@code Future<HttpClientResponse>} or {@code Future<Buffer>} response body.
+   *
+   * @param timeout the amount of time in milliseconds.
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpClientRequest setTimeout(long timeoutMs);
+  default HttpClientRequest setIdleTimeout(long timeout) {
+    return setTimeout(timeout);
+  }
 
   /**
    * Set a push handler for this request.<p/>

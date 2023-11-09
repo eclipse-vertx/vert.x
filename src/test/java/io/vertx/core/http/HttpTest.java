@@ -95,7 +95,7 @@ public abstract class HttpTest extends HttpTestBase {
       assertNullPointerException(() -> req.end((String) null));
       assertNullPointerException(() -> req.end(null, "UTF-8"));
       assertNullPointerException(() -> req.end("someString", (String) null));
-      assertIllegalArgumentException(() -> req.setTimeout(0));
+      assertIllegalArgumentException(() -> req.setIdleTimeout(0));
       testComplete();
     }));
     await();
@@ -2373,89 +2373,6 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testRequestTimesOutWhenIndicatedPeriodExpiresWithoutAResponseFromRemoteServer() throws Exception {
-    server.requestHandler(noOpHandler()); // No response handler so timeout triggers
-    AtomicBoolean failed = new AtomicBoolean();
-    startServer(testAddress);
-    client.request(new RequestOptions(requestOptions).setTimeout(1000))
-      .compose(HttpClientRequest::send).onComplete(onFailure(t -> {
-        // Catch the first, the second is going to be a connection closed exception when the
-        // server is shutdown on testComplete
-        if (failed.compareAndSet(false, true)) {
-          testComplete();
-        }
-      }));
-
-    await();
-  }
-
-  @Test
-  public void testRequestTimeoutCanceledWhenRequestHasAnOtherError() {
-    Assume.assumeFalse(Utils.isWindows());
-    AtomicReference<Throwable> exception = new AtomicReference<>();
-    // There is no server running, should fail to connect
-    client.request(new RequestOptions().setPort(5000).setTimeout(800))
-      .onComplete(onFailure(exception::set));
-
-    vertx.setTimer(1500, id -> {
-      assertNotNull("Expected an exception to be set", exception.get());
-      assertFalse("Expected to not end with timeout exception, but did: " + exception.get(), exception.get() instanceof TimeoutException);
-      testComplete();
-    });
-
-    await();
-  }
-
-  @Test
-  public void testRequestTimeoutCanceledWhenRequestEndsNormally() throws Exception {
-    server.requestHandler(req -> req.response().end());
-
-    startServer(testAddress);
-    AtomicReference<Throwable> exception = new AtomicReference<>();
-
-    client.request(requestOptions).onComplete(onSuccess(req -> {
-      req
-        .exceptionHandler(exception::set)
-        .setTimeout(500)
-        .end();
-
-      vertx.setTimer(1000, id -> {
-        assertNull("Did not expect any exception", exception.get());
-        testComplete();
-      });
-    }));
-
-    await();
-  }
-
-  @Test
-  public void testHttpClientRequestTimeoutResetsTheConnection() throws Exception {
-    waitFor(3);
-    server.requestHandler(req -> {
-      AtomicBoolean errored = new AtomicBoolean();
-      req.exceptionHandler(err -> {
-        if (errored.compareAndSet(false, true)) {
-          complete();
-        }
-      });
-    });
-    startServer(testAddress);
-    client.request(requestOptions).onComplete(onSuccess(req -> {
-      req.response().onComplete(onFailure(err -> {
-        complete();
-      }));
-      req.setChunked(true).sendHead().onComplete(onSuccess(version -> req.setTimeout(500)));
-      AtomicBoolean errored = new AtomicBoolean();
-      req.exceptionHandler(err -> {
-        if (errored.compareAndSet(false, true)) {
-          complete();
-        }
-      });
-    }));
-    await();
-  }
-
-  @Test
   public void testConnectInvalidPort() {
     client.request(HttpMethod.GET, 9998, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI).onComplete(onFailure(err -> complete()));
     await();
@@ -3061,50 +2978,6 @@ public abstract class HttpTest extends HttpTestBase {
         testComplete();
       }));
 
-    await();
-  }
-
-  @Test
-  public void testResponseDataTimeout() throws Exception {
-    waitFor(2);
-    Buffer expected = TestUtils.randomBuffer(1000);
-    server.requestHandler(req -> {
-      req.response().setChunked(true).write(expected);
-    });
-    startServer(testAddress);
-    Buffer received = Buffer.buffer();
-    client.request(requestOptions).onComplete(onSuccess(req -> {
-      req.response().onComplete(onSuccess(resp -> {
-        AtomicInteger count = new AtomicInteger();
-        resp.exceptionHandler(t -> {
-          if (count.getAndIncrement() == 0) {
-            assertTrue(t instanceof TimeoutException);
-            assertEquals(expected, received);
-            complete();
-          }
-        });
-        resp.request().setTimeout(500);
-        resp.handler(buff -> {
-          received.appendBuffer(buff);
-          // Force the internal timer to be rescheduled with the remaining amount of time
-          // e.g around 100 ms
-          try {
-            Thread.sleep(100);
-          } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-          }
-        });
-      }));
-      AtomicInteger count = new AtomicInteger();
-      req.exceptionHandler(t -> {
-        if (count.getAndIncrement() == 0) {
-          assertTrue(t instanceof TimeoutException);
-          assertEquals(expected, received);
-          complete();
-        }
-      });
-      req.sendHead();
-    }));
     await();
   }
 
@@ -4138,7 +4011,7 @@ public abstract class HttpTest extends HttpTestBase {
     startServer();
     AtomicBoolean done = new AtomicBoolean();
     client.request(new RequestOptions(requestOptions)
-      .setTimeout(500)).onComplete(onSuccess(req -> {
+      .setIdleTimeout(500)).onComplete(onSuccess(req -> {
       req
         .setFollowRedirects(true)
         .send()

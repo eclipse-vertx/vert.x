@@ -81,6 +81,16 @@ public class RequestOptions {
    */
   public static final long DEFAULT_TIMEOUT = 0;
 
+  /**
+   * The default connect timeout = {@code 0} (disabled)
+   */
+  public static final long DEFAULT_CONNECT_TIMEOUT = 0;
+
+  /**
+   * The default idle timeout = {@code 0} (disabled)
+   */
+  public static final long DEFAULT_IDLE_TIMEOUT = 0;
+
   private ProxyOptions proxyOptions;
   private Address server;
   private HttpMethod method;
@@ -91,6 +101,8 @@ public class RequestOptions {
   private MultiMap headers;
   private boolean followRedirects;
   private long timeout;
+  private long connectTimeout;
+  private long idleTimeout;
   private String traceOperation;
 
   /**
@@ -106,6 +118,8 @@ public class RequestOptions {
     uri = DEFAULT_URI;
     followRedirects = DEFAULT_FOLLOW_REDIRECTS;
     timeout = DEFAULT_TIMEOUT;
+    connectTimeout = DEFAULT_CONNECT_TIMEOUT;
+    idleTimeout = DEFAULT_IDLE_TIMEOUT;
     traceOperation = null;
   }
 
@@ -123,6 +137,8 @@ public class RequestOptions {
     setSsl(other.ssl);
     setURI(other.uri);
     setFollowRedirects(other.followRedirects);
+    setIdleTimeout(other.idleTimeout);
+    setConnectTimeout(other.connectTimeout);
     setTimeout(other.timeout);
     if (other.headers != null) {
       setHeaders(MultiMap.caseInsensitiveMultiMap().setAll(other.headers));
@@ -329,24 +345,69 @@ public class RequestOptions {
   }
 
   /**
-   * @return the amount of time after which if the request does not return any data within the timeout period an
-   *         {@link java.util.concurrent.TimeoutException} will be passed to the exception handler and
-   *         the request will be closed.
+   * @see #setTimeout(long)
    */
+  @Deprecated
   public long getTimeout() {
     return timeout;
   }
 
   /**
-   * Sets the amount of time after which if the request does not return any data within the timeout period an
-   * {@link java.util.concurrent.TimeoutException} will be passed to the exception handler and
-   * the request will be closed.
+   * Equivalent to setting the same timeout value with {@link #setConnectTimeout(long)} and {@link #setIdleTimeout(long)}.
+   *
+   * @deprecated instead use {@link #setConnectTimeout(long)} or/and {@link #setIdleTimeout(long)}
+   */
+  @Deprecated
+  public RequestOptions setTimeout(long timeout) {
+    this.timeout = timeout;
+    return this;
+  }
+
+  /**
+   * @return the amount of time after which, if the request is not obtained from the client within the timeout period,
+   *         the {@code Future<HttpClientRequest>} obtained from the client is failed with a {@link java.util.concurrent.TimeoutException}
+   */
+  public long getConnectTimeout() {
+    return connectTimeout;
+  }
+
+  /**
+   * Sets the amount of time after which, if the request is not obtained from the client within the timeout period,
+   * the {@code Future<HttpClientRequest>} obtained from the client is failed with a {@link java.util.concurrent.TimeoutException}.
+   *
+   * Note this is not related to the TCP {@link HttpClientOptions#setConnectTimeout(int)} option, when a request is made against
+   * a pooled HTTP client, the timeout applies to the duration to obtain a connection from the pool to serve the request, the timeout
+   * might fire because the server does not respond in time or the pool is too busy to serve a request.
    *
    * @param timeout the amount of time in milliseconds.
    * @return a reference to this, so the API can be used fluently
    */
-  public RequestOptions setTimeout(long timeout) {
-    this.timeout = timeout;
+  public RequestOptions setConnectTimeout(long timeout) {
+    this.connectTimeout = timeout;
+    return this;
+  }
+
+  /**
+   * @return the amount of time after which, if the request does not return any data within the timeout period,
+   *         the request/response is closed and the related futures are failed with a {@link java.util.concurrent.TimeoutException}
+   */
+  public long getIdleTimeout() {
+    return idleTimeout;
+  }
+
+  /**
+   * Sets the amount of time after which, if the request does not return any data within the timeout period,
+   * the request/response is closed and the related futures are failed with a {@link java.util.concurrent.TimeoutException},
+   * e.g. {@code Future<HttpClientResponse>} or {@code Future<Buffer>} response body.
+   *
+   * <p/>The timeout starts after a connection is obtained from the client, similar to calling
+   * {@link HttpClientRequest#setIdleTimeout(long)}.
+   *
+   * @param timeout the amount of time in milliseconds.
+   * @return a reference to this, so the API can be used fluently
+   */
+  public RequestOptions setIdleTimeout(long timeout) {
+    this.idleTimeout = timeout;
     return this;
   }
 

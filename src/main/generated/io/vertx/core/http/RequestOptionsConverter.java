@@ -55,6 +55,16 @@ public class RequestOptionsConverter {
             obj.setTimeout(((Number)member.getValue()).longValue());
           }
           break;
+        case "connectTimeout":
+          if (member.getValue() instanceof Number) {
+            obj.setConnectTimeout(((Number)member.getValue()).longValue());
+          }
+          break;
+        case "idleTimeout":
+          if (member.getValue() instanceof Number) {
+            obj.setIdleTimeout(((Number)member.getValue()).longValue());
+          }
+          break;
         case "absoluteURI":
           if (member.getValue() instanceof String) {
             obj.setAbsoluteURI((String)member.getValue());
@@ -93,6 +103,8 @@ public class RequestOptionsConverter {
       json.put("followRedirects", obj.getFollowRedirects());
     }
     json.put("timeout", obj.getTimeout());
+    json.put("connectTimeout", obj.getConnectTimeout());
+    json.put("idleTimeout", obj.getIdleTimeout());
     if (obj.getTraceOperation() != null) {
       json.put("traceOperation", obj.getTraceOperation());
     }
