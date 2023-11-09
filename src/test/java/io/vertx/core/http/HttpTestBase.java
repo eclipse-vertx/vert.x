@@ -16,11 +16,13 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.proxy.HttpProxy;
 import io.vertx.test.proxy.SocksProxy;
 import io.vertx.test.proxy.TestProxyBase;
 
+import java.io.File;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -43,6 +45,7 @@ public class HttpTestBase extends VertxTestBase {
   protected TestProxyBase proxy;
   protected SocketAddress testAddress;
   protected RequestOptions requestOptions;
+  private File tmp;
 
   protected HttpServerOptions createBaseServerOptions() {
     return new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST);
@@ -55,13 +58,25 @@ public class HttpTestBase extends VertxTestBase {
   public void setUp() throws Exception {
     super.setUp();
     HttpServerOptions baseServerOptions = createBaseServerOptions();
-    server = vertx.createHttpServer(baseServerOptions);
-    client = vertx.createHttpClient(createBaseClientOptions());
     testAddress = SocketAddress.inetSocketAddress(baseServerOptions.getPort(), baseServerOptions.getHost());
     requestOptions = new RequestOptions()
       .setHost(baseServerOptions.getHost())
       .setPort(baseServerOptions.getPort())
       .setURI(DEFAULT_TEST_URI);
+    server = vertx.createHttpServer(baseServerOptions);
+    client = vertx.createHttpClient(createBaseClientOptions());
+  }
+
+  /**
+   * Override to disable domain sockets testing.
+   */
+  protected void configureDomainSockets() throws Exception {
+    if (USE_DOMAIN_SOCKETS) {
+      assertTrue("Native transport not enabled", USE_NATIVE_TRANSPORT);
+      tmp = TestUtils.tmpFile(".sock");
+      testAddress = SocketAddress.domainSocketAddress(tmp.getAbsolutePath());
+      requestOptions.setServer(testAddress);
+    }
   }
 
   protected void tearDown() throws Exception {

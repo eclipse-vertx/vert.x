@@ -24,21 +24,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class HttpClientConnectionTest extends HttpTestBase {
 
-  protected SocketAddress peerAddress;
   private File tmp;
   protected HttpClientInternal client;
+  protected SocketAddress peerAddress;
 
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    peerAddress = testAddress;
-    if (USE_DOMAIN_SOCKETS) {
-      assertTrue("Native transport not enabled", USE_NATIVE_TRANSPORT);
-      tmp = TestUtils.tmpFile(".sock");
-      testAddress = SocketAddress.domainSocketAddress(tmp.getAbsolutePath());
-      requestOptions.setServer(testAddress);
-    }
     this.client = (HttpClientInternal) super.client;
+    this.peerAddress = SocketAddress.inetSocketAddress(requestOptions.getPort(), requestOptions.getHost());
   }
 
   @Test

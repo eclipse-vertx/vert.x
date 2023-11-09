@@ -42,18 +42,11 @@ public abstract class HttpServerFileUploadTest extends HttpTestBase {
   public TemporaryFolder testFolder = new TemporaryFolder();
 
   protected File testDir;
-  private File tmp;
 
   @Override
   public void setUp() throws Exception {
     super.setUp();
     testDir = testFolder.newFolder();
-    if (USE_DOMAIN_SOCKETS) {
-      assertTrue("Native transport not enabled", USE_NATIVE_TRANSPORT);
-      tmp = TestUtils.tmpFile(".sock");
-      testAddress = SocketAddress.domainSocketAddress(tmp.getAbsolutePath());
-      requestOptions.setServer(testAddress);
-    }
   }
 
   @Test
