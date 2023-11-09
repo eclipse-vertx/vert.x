@@ -11,7 +11,10 @@
 
 package io.vertx.core.eventbus.impl;
 
-import io.vertx.core.*;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.eventbus.*;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -436,7 +439,17 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
     checkStarted();
     OutboundDeliveryContext<T> ctx = newSendContext(message, options, handler);
     sendOrPubInternal(ctx);
-    return ctx.writePromise.future();
+    Future<Void> future = ctx.writePromise.future();
+    if (message.send) {
+      return future;
+    }
+    return future.recover(throwable -> {
+      // For publish, we only care if there are no handlers
+      if (throwable instanceof ReplyException) {
+        return Future.failedFuture(throwable);
+      }
+      return Future.succeededFuture();
+    });
   }
 
   private Future<Void> unregisterAll() {
