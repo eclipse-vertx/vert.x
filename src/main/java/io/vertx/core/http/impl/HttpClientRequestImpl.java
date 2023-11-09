@@ -326,7 +326,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     endFuture.onComplete(ar -> {
       if (ar.succeeded()) {
         if (timeoutMs > 0) {
-          next.setIdleTimeout(timeoutMs);
+          next.setTimeout(timeoutMs);
         }
         next.end();
       } else {

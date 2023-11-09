@@ -291,7 +291,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     }
     assertWaitUntil(() -> count.get() == 5);
     try {
-      awaitFuture(client.request(new RequestOptions().setServer(new FakeAddress("example.com")).setConnectTimeout(100)));
+      awaitFuture(client.request(new RequestOptions().setServer(new FakeAddress("example.com")).setTimeout(100)));
     } catch (RuntimeException e) {
       assertTrue(e.getMessage().contains("timeout"));
     }

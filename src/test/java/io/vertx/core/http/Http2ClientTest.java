@@ -1068,7 +1068,7 @@ public class Http2ClientTest extends Http2TestBase {
       HttpConnection conn = req.connection();
       conn.goAwayHandler(ga -> {
         vertx.runOnContext(v -> {
-          client.request(new RequestOptions(requestOptions).setIdleTimeout(5000))
+          client.request(new RequestOptions(requestOptions).setTimeout(5000))
             .compose(HttpClientRequest::send)
             .onComplete(onSuccess(resp2 -> {
               assertEquals(2, connections.size());
@@ -1105,7 +1105,7 @@ public class Http2ClientTest extends Http2TestBase {
           .setHost(DEFAULT_HTTPS_HOST)
           .setPort(DEFAULT_HTTPS_PORT)
           .setURI("/somepath")
-          .setIdleTimeout(5000)).onComplete(onSuccess(req2 -> {
+          .setTimeout(5000)).onComplete(onSuccess(req2 -> {
             req2.send().onComplete(onSuccess(resp2 -> {
               testComplete();
             }));

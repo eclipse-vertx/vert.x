@@ -92,7 +92,7 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
             options,
             connectOptions.getVersion(),
             connectOptions.getSubProtocols(),
-            connectOptions.getIdleTimeout(),
+            connectOptions.getTimeout(),
             connectOptions.isRegisterWriteHandlers(),
             WebSocketClientImpl.this.options.getMaxFrameSize(),
             promise);

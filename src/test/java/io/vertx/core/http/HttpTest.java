@@ -4177,7 +4177,7 @@ public abstract class HttpTest extends HttpTestBase {
       public Future<Void> end() { throw new UnsupportedOperationException(); }
       public Future<Void> end(Buffer chunk) { throw new UnsupportedOperationException(); }
       public void end(Buffer chunk, Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
-      public HttpClientRequest setIdleTimeout(long timeoutMs) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest setTimeout(long timeoutMs) { throw new UnsupportedOperationException(); }
       public HttpClientRequest pushHandler(Handler<HttpClientRequest> handler) { throw new UnsupportedOperationException(); }
       public boolean reset(long code) { return false; }
       public boolean reset(long code, Throwable cause) { return false; }
