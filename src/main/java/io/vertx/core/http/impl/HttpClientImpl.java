@@ -310,16 +310,17 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     } else {
       key = new EndpointKey(useSSL, proxyOptions, server, peerAddress);
     }
-    long connectTimeout = request.getConnectTimeout();
-    long idleTimeout = request.getIdleTimeout();
-    long timeout = request.getTimeout();
-    if (timeout > 0L) {
-      if (connectTimeout == 0L) {
-        connectTimeout = timeout;
-      }
-      if (idleTimeout == 0L) {
-        idleTimeout = timeout;
-      }
+    long connectTimeout = 0L;
+    long idleTimeout = 0L;
+    if (request.getTimeout() >= 0L) {
+      connectTimeout = request.getTimeout();
+      idleTimeout = request.getTimeout();
+    }
+    if (request.getConnectTimeout() >= 0L) {
+      connectTimeout = request.getConnectTimeout();
+    }
+    if (request.getIdleTimeout() >= 0L) {
+      idleTimeout = request.getIdleTimeout();
     }
     doRequest(method, server, host, port, useSSL, requestURI, headers, request.getTraceOperation(), connectTimeout, idleTimeout, followRedirects, proxyOptions, key, promise);
   }

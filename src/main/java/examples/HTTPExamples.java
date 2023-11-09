@@ -578,6 +578,16 @@ public class HTTPExamples {
       .compose(request -> request.send().compose(HttpClientResponse::body));
   }
 
+  public void clientTimeout(HttpClient client, int port, String host, String uri, int timeoutMS) {
+    Future<Buffer> fut = client
+      .request(new RequestOptions()
+        .setHost(host)
+        .setPort(port)
+        .setURI(uri)
+        .setTimeout(timeoutMS))
+      .compose(request -> request.send().compose(HttpClientResponse::body));
+  }
+
   public void useRequestAsStream(HttpClientRequest request) {
 
     request.setChunked(true);

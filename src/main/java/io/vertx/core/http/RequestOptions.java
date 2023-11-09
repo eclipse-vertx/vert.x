@@ -76,19 +76,19 @@ public class RequestOptions {
   public static final boolean DEFAULT_FOLLOW_REDIRECTS = false;
 
   /**
-   * The default request timeout = {@code 0} (disabled)
+   * The default request timeout = {@code -1L} (disabled)
    */
-  public static final long DEFAULT_TIMEOUT = 0;
+  public static final long DEFAULT_TIMEOUT = -1L;
 
   /**
-   * The default connect timeout = {@code 0} (disabled)
+   * The default connect timeout = {@code -1L} (disabled)
    */
-  public static final long DEFAULT_CONNECT_TIMEOUT = 0;
+  public static final long DEFAULT_CONNECT_TIMEOUT = -1L;
 
   /**
-   * The default idle timeout = {@code 0} (disabled)
+   * The default idle timeout = {@code -1L} (disabled)
    */
-  public static final long DEFAULT_IDLE_TIMEOUT = 0;
+  public static final long DEFAULT_IDLE_TIMEOUT = -1L;
 
   private ProxyOptions proxyOptions;
   private SocketAddress server;
@@ -346,17 +346,23 @@ public class RequestOptions {
   /**
    * @see #setTimeout(long)
    */
-  @Deprecated
   public long getTimeout() {
     return timeout;
   }
 
   /**
-   * Equivalent to setting the same timeout value with {@link #setConnectTimeout(long)} and {@link #setIdleTimeout(long)}.
+   * Sets both connect and idle timeouts for the request
    *
-   * @deprecated instead use {@link #setConnectTimeout(long)} or/and {@link #setIdleTimeout(long)}
+   * <ul>
+   *   <li><i>connect timeout</i>: if the request is not obtained from the client within the timeout period, the {@code Future<HttpClientRequest>}
+   *   obtained from the client is failed with a {@link java.util.concurrent.TimeoutException}.</li>
+   *   <li><i>idle timeout</i>: if the request does not return any data within the timeout period, the request/response is closed and the
+   *   related futures are failed with a {@link java.util.concurrent.TimeoutException}, e.g. {@code Future<HttpClientResponse>}
+   *   or {@code Future<Buffer>} response body.</li>
+   * </ul>
+   *
+   * The connect and idle timeouts can be set separately using {@link #setConnectTimeout(long)} and {@link #setIdleTimeout(long)}
    */
-  @Deprecated
   public RequestOptions setTimeout(long timeout) {
     this.timeout = timeout;
     return this;
