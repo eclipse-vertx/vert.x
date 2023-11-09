@@ -8,16 +8,19 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http.impl;
+package io.vertx.core.impl;
 
 import java.util.concurrent.TimeoutException;
 
-class NoStackTraceTimeoutException extends TimeoutException {
-  NoStackTraceTimeoutException(String message) {
+public class NoStackTraceTimeoutException extends TimeoutException {
+
+  public NoStackTraceTimeoutException(String message) {
     super(message);
   }
+
   @Override
   public synchronized Throwable fillInStackTrace() {
     return this;
   }
+
 }
