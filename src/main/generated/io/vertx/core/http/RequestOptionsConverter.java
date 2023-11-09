@@ -50,11 +50,6 @@ public class RequestOptionsConverter {
             obj.setFollowRedirects((Boolean)member.getValue());
           }
           break;
-        case "timeout":
-          if (member.getValue() instanceof Number) {
-            obj.setTimeout(((Number)member.getValue()).longValue());
-          }
-          break;
         case "connectTimeout":
           if (member.getValue() instanceof Number) {
             obj.setConnectTimeout(((Number)member.getValue()).longValue());
@@ -102,7 +97,6 @@ public class RequestOptionsConverter {
     if (obj.getFollowRedirects() != null) {
       json.put("followRedirects", obj.getFollowRedirects());
     }
-    json.put("timeout", obj.getTimeout());
     json.put("connectTimeout", obj.getConnectTimeout());
     json.put("idleTimeout", obj.getIdleTimeout());
     if (obj.getTraceOperation() != null) {

@@ -1715,7 +1715,7 @@ public class WebSocketTest extends VertxTestBase {
         .setPort(1234)
         .setHost(DEFAULT_HTTP_HOST)
         .setURI("/")
-        .setTimeout(1000);
+        .setIdleTimeout(1000);
       client.connect(options).onComplete(onFailure(err -> {
         assertEquals(WebSocketHandshakeException.class, err.getClass());
         testComplete();

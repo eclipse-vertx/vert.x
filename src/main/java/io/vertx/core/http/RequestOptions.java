@@ -77,11 +77,6 @@ public class RequestOptions {
   public static final boolean DEFAULT_FOLLOW_REDIRECTS = false;
 
   /**
-   * The default request timeout = {@code 0} (disabled)
-   */
-  public static final long DEFAULT_TIMEOUT = 0;
-
-  /**
    * The default connect timeout = {@code 0} (disabled)
    */
   public static final long DEFAULT_CONNECT_TIMEOUT = 0;
@@ -100,7 +95,6 @@ public class RequestOptions {
   private String uri;
   private MultiMap headers;
   private boolean followRedirects;
-  private long timeout;
   private long connectTimeout;
   private long idleTimeout;
   private String traceOperation;
@@ -117,7 +111,6 @@ public class RequestOptions {
     ssl = DEFAULT_SSL;
     uri = DEFAULT_URI;
     followRedirects = DEFAULT_FOLLOW_REDIRECTS;
-    timeout = DEFAULT_TIMEOUT;
     connectTimeout = DEFAULT_CONNECT_TIMEOUT;
     idleTimeout = DEFAULT_IDLE_TIMEOUT;
     traceOperation = null;
@@ -139,7 +132,6 @@ public class RequestOptions {
     setFollowRedirects(other.followRedirects);
     setIdleTimeout(other.idleTimeout);
     setConnectTimeout(other.connectTimeout);
-    setTimeout(other.timeout);
     if (other.headers != null) {
       setHeaders(MultiMap.caseInsensitiveMultiMap().setAll(other.headers));
     }
@@ -341,25 +333,6 @@ public class RequestOptions {
    */
   public RequestOptions setFollowRedirects(Boolean followRedirects) {
     this.followRedirects = followRedirects;
-    return this;
-  }
-
-  /**
-   * @see #setTimeout(long)
-   */
-  @Deprecated
-  public long getTimeout() {
-    return timeout;
-  }
-
-  /**
-   * Equivalent to setting the same timeout value with {@link #setConnectTimeout(long)} and {@link #setIdleTimeout(long)}.
-   *
-   * @deprecated instead use {@link #setConnectTimeout(long)} or/and {@link #setIdleTimeout(long)}
-   */
-  @Deprecated
-  public RequestOptions setTimeout(long timeout) {
-    this.timeout = timeout;
     return this;
   }
 

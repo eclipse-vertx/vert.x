@@ -35,7 +35,6 @@ public class RequestOptionsTest {
     assertEquals(RequestOptions.DEFAULT_SSL, options.isSsl());
     assertEquals(RequestOptions.DEFAULT_URI, options.getURI());
     assertEquals(RequestOptions.DEFAULT_FOLLOW_REDIRECTS, options.getFollowRedirects());
-    assertEquals(RequestOptions.DEFAULT_TIMEOUT, options.getTimeout());
     assertEquals(RequestOptions.DEFAULT_CONNECT_TIMEOUT, options.getConnectTimeout());
     assertEquals(RequestOptions.DEFAULT_IDLE_TIMEOUT, options.getIdleTimeout());
   }
@@ -64,7 +63,6 @@ public class RequestOptionsTest {
       .addHeader("key", "value")
       .addHeader("foo", Arrays.asList("bar", "baz"));
     JsonObject expected = new JsonObject()
-      .put("timeout", RequestOptions.DEFAULT_TIMEOUT)
       .put("connectTimeout", RequestOptions.DEFAULT_CONNECT_TIMEOUT)
       .put("idleTimeout", RequestOptions.DEFAULT_IDLE_TIMEOUT)
       .put("uri", RequestOptions.DEFAULT_URI)
