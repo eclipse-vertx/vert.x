@@ -4156,9 +4156,6 @@ public abstract class HttpTest extends HttpTestBase {
       public Future<Void> write(String chunk, String enc) { throw new UnsupportedOperationException(); }
       public HttpClientRequest traceOperation(String op) { throw new UnsupportedOperationException(); }
       public String traceOperation() { throw new UnsupportedOperationException(); }
-      public void write(Buffer data, Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
-      public void write(String chunk, Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
-      public void write(String chunk, String enc, Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
       public HttpClientRequest continueHandler(@Nullable Handler<Void> handler) { throw new UnsupportedOperationException(); }
       public boolean isFollowRedirects() { throw new UnsupportedOperationException(); }
       public int getMaxRedirects() { throw new UnsupportedOperationException(); }
@@ -4166,17 +4163,11 @@ public abstract class HttpTest extends HttpTestBase {
       public HttpClientRequest redirectHandler(@Nullable Function<HttpClientResponse, Future<HttpClientRequest>> handler) { throw new UnsupportedOperationException(); }
       public HttpClientRequest earlyHintsHandler(@Nullable Handler<MultiMap> handler) { throw new UnsupportedOperationException(); }
       public Future<Void> sendHead() { throw new UnsupportedOperationException(); }
-      public HttpClientRequest sendHead(Handler<AsyncResult<Void>> completionHandler) { throw new UnsupportedOperationException(); }
       public Future<HttpClientResponse> connect() { throw new UnsupportedOperationException(); }
-      public void connect(Handler<AsyncResult<HttpClientResponse>> handler) { throw new UnsupportedOperationException(); }
       public Future<Void> end(String chunk) { throw new UnsupportedOperationException(); }
       public Future<Void> end(String chunk, String enc) { throw new UnsupportedOperationException(); }
-      public void end(String chunk, Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
-      public void end(String chunk, String enc, Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
-      public void end(Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
       public Future<Void> end() { throw new UnsupportedOperationException(); }
       public Future<Void> end(Buffer chunk) { throw new UnsupportedOperationException(); }
-      public void end(Buffer chunk, Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
       public HttpClientRequest setIdleTimeout(long timeoutMs) { throw new UnsupportedOperationException(); }
       public HttpClientRequest pushHandler(Handler<HttpClientRequest> handler) { throw new UnsupportedOperationException(); }
       public boolean reset(long code) { return false; }
@@ -4185,23 +4176,7 @@ public abstract class HttpTest extends HttpTestBase {
       public Future<Void> writeCustomFrame(int type, int flags, Buffer payload) { throw new UnsupportedOperationException(); }
       public boolean writeQueueFull() { throw new UnsupportedOperationException(); }
       public StreamPriority getStreamPriority() { return null; }
-      public HttpClientRequest onComplete(Handler<AsyncResult<HttpClientResponse>> handler) { throw new UnsupportedOperationException(); }
-      public boolean isComplete() { throw new UnsupportedOperationException(); }
-      public HttpClientResponse result() { throw new UnsupportedOperationException(); }
-      public Throwable cause() { throw new UnsupportedOperationException(); }
-      public boolean succeeded() { throw new UnsupportedOperationException(); }
-      public boolean failed() { throw new UnsupportedOperationException(); }
-      public <U> Future<U> compose(Function<HttpClientResponse, Future<U>> successMapper, Function<Throwable, Future<U>> failureMapper) { throw new UnsupportedOperationException(); }
-      public <U> Future<U> map(Function<HttpClientResponse, U> mapper) { throw new UnsupportedOperationException(); }
-      public <V> Future<V> map(V value) { throw new UnsupportedOperationException(); }
-      public Future<HttpClientResponse> otherwise(Function<Throwable, HttpClientResponse> mapper) { throw new UnsupportedOperationException(); }
-      public Future<HttpClientResponse> otherwise(HttpClientResponse value) { throw new UnsupportedOperationException(); }
-      public HttpClientRequest setHost(String host) { throw new UnsupportedOperationException(); }
-      public String getHost() { throw new UnsupportedOperationException(); }
-      public HttpClientRequest setPort(int port) { throw new UnsupportedOperationException(); }
-      public int getPort() { throw new UnsupportedOperationException(); }
       public HttpClientRequest setMethod(HttpMethod method) { throw new UnsupportedOperationException(); }
-      public HttpClientRequest response(Handler<AsyncResult<HttpClientResponse>> handler) { throw new UnsupportedOperationException(); }
       public Future<HttpClientResponse> response() { throw new UnsupportedOperationException(); }
     }
     HttpClientRequest req = new MockReq();
