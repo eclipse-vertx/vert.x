@@ -41,6 +41,7 @@ import io.vertx.test.core.TestUtils;
 
 @RunWith(Parameterized.class)
 public class HttpBandwidthLimitingTest extends Http2TestBase {
+
   private static final int OUTBOUND_LIMIT = 64 * 1024;  // 64KB/s
   private static final int INBOUND_LIMIT = 64 * 1024;   // 64KB/s
   private static final int TEST_CONTENT_SIZE = 64 * 1024 * 4;   // 64 * 4 = 256KB
