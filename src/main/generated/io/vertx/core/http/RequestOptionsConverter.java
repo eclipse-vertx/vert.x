@@ -25,6 +25,11 @@ public class RequestOptionsConverter {
             obj.setAbsoluteURI((String)member.getValue());
           }
           break;
+        case "connectTimeout":
+          if (member.getValue() instanceof Number) {
+            obj.setConnectTimeout(((Number)member.getValue()).longValue());
+          }
+          break;
         case "followRedirects":
           if (member.getValue() instanceof Boolean) {
             obj.setFollowRedirects((Boolean)member.getValue());
@@ -33,6 +38,11 @@ public class RequestOptionsConverter {
         case "host":
           if (member.getValue() instanceof String) {
             obj.setHost((String)member.getValue());
+          }
+          break;
+        case "idleTimeout":
+          if (member.getValue() instanceof Number) {
+            obj.setIdleTimeout(((Number)member.getValue()).longValue());
           }
           break;
         case "port":
@@ -74,12 +84,14 @@ public class RequestOptionsConverter {
   }
 
   public static void toJson(RequestOptions obj, java.util.Map<String, Object> json) {
+    json.put("connectTimeout", obj.getConnectTimeout());
     if (obj.getFollowRedirects() != null) {
       json.put("followRedirects", obj.getFollowRedirects());
     }
     if (obj.getHost() != null) {
       json.put("host", obj.getHost());
     }
+    json.put("idleTimeout", obj.getIdleTimeout());
     if (obj.getPort() != null) {
       json.put("port", obj.getPort());
     }

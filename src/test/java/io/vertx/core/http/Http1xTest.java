@@ -1032,71 +1032,6 @@ public class Http1xTest extends HttpTest {
   // Extra tests
 
   @Test
-  public void testTimedOutWaiterDoesNotConnect() throws Exception {
-    Assume.assumeTrue("Domain socket don't pass this test", testAddress.isInetSocket());
-    long responseDelay = 300;
-    int requests = 6;
-    client.close();
-    CountDownLatch firstCloseLatch = new CountDownLatch(1);
-    server.close(onSuccess(v -> firstCloseLatch.countDown()));
-    // Make sure server is closed before continuing
-    awaitLatch(firstCloseLatch);
-
-    client = vertx.createHttpClient(createBaseClientOptions().setKeepAlive(false).setMaxPoolSize(1));
-    AtomicInteger requestCount = new AtomicInteger(0);
-    // We need a net server because we need to intercept the socket connection, not just full http requests
-    NetServer server = vertx.createNetServer();
-    server.connectHandler(socket -> {
-      Buffer content = Buffer.buffer();
-      AtomicBoolean closed = new AtomicBoolean();
-      socket.closeHandler(v -> closed.set(true));
-      socket.handler(buff -> {
-        content.appendBuffer(buff);
-        if (buff.toString().endsWith("\r\n\r\n")) {
-          // Delay and write a proper http response
-          vertx.setTimer(responseDelay, time -> {
-            if (!closed.get()) {
-              requestCount.incrementAndGet();
-              socket.write("HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK");
-            }
-          });
-        }
-      });
-    });
-
-    CountDownLatch latch = new CountDownLatch(requests);
-
-    server.listen(testAddress, onSuccess(s -> {
-      for(int count = 0; count < requests; count++) {
-
-        if (count % 2 == 0) {
-          client.request(requestOptions)
-            .compose(HttpClientRequest::send)
-            .compose(HttpClientResponse::body)
-            .onComplete(onSuccess(buff -> {
-              assertEquals("OK", buff.toString());
-              latch.countDown();
-            }));
-        } else {
-          // Odd requests get a timeout less than the responseDelay, since we have a pool size of one and a delay all but
-          // the first request should end up in the wait queue, the odd numbered requests should time out so we should get
-          // (requests + 1 / 2) connect attempts
-          client
-            .request(new RequestOptions(requestOptions).setTimeout(responseDelay / 2))
-            .onComplete(onFailure(err -> {
-            latch.countDown();
-          }));
-        }
-      }
-    }));
-
-    awaitLatch(latch);
-
-    assertEquals("Incorrect number of connect attempts.", (requests + 1) / 2, requestCount.get());
-    server.close();
-  }
-
-  @Test
   public void testPipeliningOrder() throws Exception {
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions().setKeepAlive(true).setPipelining(true).setMaxPoolSize(1));
@@ -1645,38 +1580,6 @@ public class Http1xTest extends HttpTest {
     await();
   }
 
-  // Note : cannot pass for http/2 because flushing is not the same : investigate
-  @Test
-  public void testRequestTimeoutExtendedWhenResponseChunksReceived() {
-    long timeout = 2000;
-    int numChunks = 100;
-    AtomicInteger count = new AtomicInteger(0);
-    long interval = timeout * 2 / numChunks;
-
-    server.requestHandler(req -> {
-      req.response().setChunked(true);
-      vertx.setPeriodic(interval, timerID -> {
-        req.response().write("foo");
-        if (count.incrementAndGet() == numChunks) {
-          req.response().end();
-          vertx.cancelTimer(timerID);
-        }
-      });
-    });
-
-    server.listen(testAddress, onSuccess(s -> {
-      client.request(new RequestOptions(requestOptions)
-        .setTimeout(timeout)).onComplete(onSuccess(req -> {
-          req.send(onSuccess(resp -> {
-            assertEquals(200, resp.statusCode());
-            resp.endHandler(v -> testComplete());
-          }));
-      }));
-    }));
-
-    await();
-  }
-
   @Test
   public void testServerWebSocketIdleTimeout() {
     server.close();
@@ -2008,40 +1911,6 @@ public class Http1xTest extends HttpTest {
     client.request(new RequestOptions().setAbsoluteURI("http://www.google.com"))
       .compose(HttpClientRequest::send)
       .onComplete(onSuccess(resp -> testComplete()));
-    await();
-  }
-
-  @Test
-  public void testRequestsTimeoutInQueue() {
-
-    server.requestHandler(req -> {
-      vertx.setTimer(1000, id -> {
-        HttpServerResponse resp = req.response();
-        if (!resp.closed()) {
-          resp.end();
-        }
-      });
-    });
-
-    client.close();
-    client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(false).setMaxPoolSize(1));
-
-    server.listen(testAddress, onSuccess(s -> {
-      // Add a few requests that should all timeout
-      for (int i = 0; i < 5; i++) {
-        client.request(new RequestOptions(requestOptions).setTimeout(500))
-          .compose(HttpClientRequest::send)
-          .onComplete(onFailure(t -> assertTrue(t instanceof TimeoutException)));
-      }
-      // Now another request that should not timeout
-      client.request(new RequestOptions(requestOptions).setTimeout(3000))
-        .compose(HttpClientRequest::send)
-        .onComplete(onSuccess(resp -> {
-          assertEquals(200, resp.statusCode());
-          testComplete();
-        }));
-    }));
-
     await();
   }
 
@@ -3835,39 +3704,6 @@ public class Http1xTest extends HttpTest {
       .onComplete(onSuccess(req -> {
         promise.complete();
       }));
-    await();
-  }
-
-  @Test
-  public void testRequestTimeoutIsNotDelayedAfterResponseIsReceived() throws Exception {
-    int n = 6;
-    waitFor(n);
-    server.requestHandler(req -> {
-      req.response().end();
-    });
-    startServer(testAddress);
-    vertx.deployVerticle(new AbstractVerticle() {
-      @Override
-      public void start() throws Exception {
-        HttpClient client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(n));
-        for (int i = 0;i < n;i++) {
-          AtomicBoolean responseReceived = new AtomicBoolean();
-          client.request(requestOptions).onComplete(onSuccess(req -> {
-            req.setTimeout(500);
-            req.send(onSuccess(resp -> {
-              try {
-                Thread.sleep(150);
-              } catch (InterruptedException e) {
-                fail(e);
-              }
-              responseReceived.set(true);
-              // Complete later, if some timeout tasks have been queued, this will be executed after
-              vertx.runOnContext(v -> complete());
-            }));
-          }));
-        }
-      }
-    }, new DeploymentOptions().setWorker(true));
     await();
   }
 

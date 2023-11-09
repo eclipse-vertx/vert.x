@@ -10,7 +10,6 @@
  */
 package io.vertx.core.http;
 
-import io.vertx.test.fakemetrics.FakeHttpClientMetrics;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
@@ -26,7 +25,7 @@ public class Http1xMetricsTest extends HttpMetricsTestBase {
     server.requestHandler(req -> {
       fail();
     });
-    startServer();
+    startServer(testAddress);
     CountDownLatch latch = new CountDownLatch(1);
     client = vertx.createHttpClient(createBaseClientOptions().setIdleTimeout(2));
     client.request(requestOptions).onComplete(onSuccess(req -> {

@@ -11,12 +11,18 @@
 
 package io.vertx.core.impl.future;
 
+import io.netty.channel.EventLoop;
+import io.netty.util.concurrent.GlobalEventExecutor;
+import io.netty.util.concurrent.OrderedEventExecutor;
+import io.netty.util.concurrent.ScheduledFuture;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.NoStackTraceTimeoutException;
 
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 /**
@@ -129,5 +135,40 @@ abstract class FutureBase<T> implements FutureInternal<T> {
     FixedOtherwise<T> operation = new FixedOtherwise<>(context, value);
     addListener(operation);
     return operation;
+  }
+
+  @Override
+  public Future<T> timeout(long delay, TimeUnit unit) {
+    if (isComplete()) {
+      return this;
+    }
+    OrderedEventExecutor instance;
+    Promise<T> promise;
+    if (context != null) {
+      instance = context.nettyEventLoop();
+      promise = context.promise();
+    } else {
+      instance = GlobalEventExecutor.INSTANCE;
+      promise = Promise.promise();
+    }
+    ScheduledFuture<?> task = instance.schedule(() -> {
+      String msg = "Timeout " + unit.toMillis(delay) + " (ms) fired";
+      promise.fail(new NoStackTraceTimeoutException(msg));
+    }, delay, unit);
+    addListener(new Listener<T>() {
+      @Override
+      public void onSuccess(T value) {
+        if (task.cancel(false)) {
+          promise.complete(value);
+        }
+      }
+      @Override
+      public void onFailure(Throwable failure) {
+        if (task.cancel(false)) {
+          promise.fail(failure);
+        }
+      }
+    });
+    return promise.future();
   }
 }
