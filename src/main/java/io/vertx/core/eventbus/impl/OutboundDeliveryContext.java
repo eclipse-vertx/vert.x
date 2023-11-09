@@ -82,9 +82,9 @@ public class OutboundDeliveryContext<T> extends DeliveryContextBase<T> implement
     // Notify promise finally
     if (writePromise != null) {
       if (failure == null) {
-        writePromise.complete();
+        writePromise.tryComplete();
       } else {
-        writePromise.fail(failure);
+        writePromise.tryFail(failure);
       }
     }
   }

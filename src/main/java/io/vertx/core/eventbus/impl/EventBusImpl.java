@@ -425,7 +425,23 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
   public <T> void sendOrPubInternal(MessageImpl message, DeliveryOptions options,
                                     ReplyHandler<T> handler, Promise<Void> writePromise) {
     checkStarted();
-    sendOrPubInternal(newSendContext(message, options, handler, writePromise));
+    if (writePromise == null) {
+      sendOrPubInternal(newSendContext(message, options, handler, null));
+      return;
+    }
+    Promise<Void> promise = Promise.promise();
+    sendOrPubInternal(newSendContext(message, options, handler, promise));
+    Future<Void> future = promise.future();
+    if (!message.send) {
+      future = future.recover(throwable -> {
+        // For publish, we only care if there are no handlers
+        if (throwable instanceof ReplyException) {
+          return Future.failedFuture(throwable);
+        }
+        return Future.succeededFuture();
+      });
+    }
+    future.onComplete(writePromise);
   }
 
   private Future<Void> unregisterAll() {

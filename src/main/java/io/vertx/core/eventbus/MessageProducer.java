@@ -16,8 +16,6 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.http.RequestOptions;
-import io.vertx.core.streams.WriteStream;
 
 /**
  * Represents a stream of message that can be written to.
@@ -45,9 +43,16 @@ public interface MessageProducer<T> {
   /**
    * Write a message to the event-bus, either sending or publishing.
    *
+   * The {@code handler} completion depends on the producer type:
+   *
+   * <ul>
+   *   <li>send or request: the handler is completed successfully if the message has been written; otherwise, the handler is failed</li>
+   *   <li>publish: the handler is failed if there is no recipient; otherwise, the handler is completed successfully</li>
+   * </ul>
+   *
+   * In any case, a successfully completed {@code handler} is not a delivery guarantee.
+   *
    * @param body the message body
-   * @param handler the handler called when the message has been successfully or failed to be written, this is not a delivery
-   *                guarantee
    */
   void write(T body, Handler<AsyncResult<Void>> handler);
 

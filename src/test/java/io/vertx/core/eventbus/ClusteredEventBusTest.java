@@ -11,11 +11,7 @@
 
 package io.vertx.core.eventbus;
 
-import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
+import io.vertx.core.*;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.shareddata.AsyncMapTest.SomeClusterSerializableImplObject;
 import io.vertx.core.shareddata.AsyncMapTest.SomeClusterSerializableObject;
@@ -523,6 +519,21 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     startNodes(options);
     assertNotNull(nodeSelectorRef.get());
     assertFalse(nodeSelectorRef.get().wantsUpdatesFor(ADDRESS1));
+  }
+
+  @Test
+  public void testPublisherCanReceiveNoHandlersFailure() {
+    startNodes(2);
+    vertices[0].eventBus().publisher("foo").write("bar").onComplete(onFailure(t -> {
+      if (t instanceof ReplyException) {
+        ReplyException replyException = (ReplyException) t;
+        assertEquals(ReplyFailure.NO_HANDLERS, replyException.failureType());
+        testComplete();
+      } else {
+        fail();
+      }
+    }));
+    await();
   }
 
   @Test
