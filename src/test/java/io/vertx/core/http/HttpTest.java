@@ -28,16 +28,27 @@ import io.vertx.core.http.impl.ServerCookie;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.loadbalancing.LoadBalancer;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
+import io.vertx.core.spi.loadbalancing.EndpointMetrics;
+import io.vertx.core.spi.loadbalancing.EndpointSelector;
 import io.vertx.core.streams.Pump;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.DetectFileDescriptorLeaks;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
+import io.vertx.test.fakedns.FakeDNSServer;
 import io.vertx.test.fakestream.FakeStream;
 import io.vertx.test.netty.TestLoggerFactory;
 import io.vertx.test.proxy.HAProxy;
+import org.apache.directory.server.dns.DnsException;
+import org.apache.directory.server.dns.messages.QuestionRecord;
+import org.apache.directory.server.dns.messages.RecordClass;
+import org.apache.directory.server.dns.messages.RecordType;
+import org.apache.directory.server.dns.messages.ResourceRecord;
+import org.apache.directory.server.dns.store.DnsAttribute;
+import org.apache.directory.server.dns.store.RecordStore;
 import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
@@ -6557,6 +6568,49 @@ public abstract class HttpTest extends HttpTestBase {
       }).listen(65536);
       fail();
     } catch (IllegalArgumentException ignore) {
+    }
+  }
+
+  @Test
+  public void testDnsClientSideLoadBalancingDisabled() throws Exception {
+    testDnsClientSideLoadBalancing(false);
+  }
+
+  @Test
+  public void testDnsClientSideLoadBalancingEnabled() throws Exception {
+    testDnsClientSideLoadBalancing(true);
+  }
+
+  private void testDnsClientSideLoadBalancing(boolean enabled) throws Exception {
+    FakeDNSServer server = new FakeDNSServer();
+    server.store(question -> new HashSet<>(Arrays.asList(
+      new FakeDNSServer.Record("vertx.io", RecordType.A, RecordClass.IN, 100)
+        .set(DnsAttribute.IP_ADDRESS, "127.0.0.1"),
+      new FakeDNSServer.Record("vertx.io", RecordType.A, RecordClass.IN, 100)
+        .set(DnsAttribute.IP_ADDRESS, "127.0.0.2")
+      )));
+    server.start();
+    AddressResolverOptions resolverOptions = new AddressResolverOptions()
+      .addServer(server.localAddress().getAddress().getHostAddress() + ":" + server.localAddress().getPort());
+    Vertx vertx = Vertx.vertx(new VertxOptions().setAddressResolverOptions(resolverOptions));
+    try {
+      AtomicInteger val = new AtomicInteger();
+      HttpClient client = vertx
+        .httpClientBuilder()
+        .with(createBaseClientOptions())
+        .withLoadBalancer(enabled ? () -> endpoints -> {
+          val.set(endpoints.size());
+          return 0;
+        } : null)
+        .build();
+      client.request(HttpMethod.GET, 8080, "vertx.io", "/").onComplete(onFailure(err -> {
+        assertEquals(enabled ? 2 : 0, val.get());
+        testComplete();
+      }));
+      await();
+    } finally {
+      vertx.close().toCompletionStage().toCompletableFuture().get();
+      server.stop();
     }
   }
 }
