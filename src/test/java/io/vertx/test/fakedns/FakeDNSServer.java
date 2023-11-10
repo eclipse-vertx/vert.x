@@ -11,7 +11,6 @@
 
 package io.vertx.test.fakedns;
 
-import org.apache.directory.server.dns.DnsException;
 import org.apache.directory.server.dns.DnsServer;
 import org.apache.directory.server.dns.io.encoder.ResourceRecordEncoder;
 import org.apache.directory.server.dns.messages.*;
@@ -39,6 +38,7 @@ import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
@@ -47,13 +47,7 @@ public final class FakeDNSServer extends DnsServer {
 
   public static RecordStore A_store(Map<String, String> entries) {
     return questionRecord -> entries.entrySet().stream().map(entry -> {
-      ResourceRecordModifier rm = new ResourceRecordModifier();
-      rm.setDnsClass(RecordClass.IN);
-      rm.setDnsName(entry.getKey());
-      rm.setDnsTtl(100);
-      rm.setDnsType(RecordType.A);
-      rm.put(DnsAttribute.IP_ADDRESS, entry.getValue());
-      return rm.getEntry();
+      return a(entry.getKey(), 100).ipAddress(entry.getValue());
     }).collect(Collectors.toSet());
   }
 
@@ -61,14 +55,7 @@ public final class FakeDNSServer extends DnsServer {
     return questionRecord -> {
       String res = entries.apply(questionRecord.getDomainName());
       if (res != null) {
-        ResourceRecordModifier rm = new ResourceRecordModifier();
-        rm.setDnsClass(RecordClass.IN);
-        rm.setDnsName(questionRecord.getDomainName());
-        rm.setDnsTtl(100);
-        rm.setDnsType(RecordType.A);
-        rm.put(DnsAttribute.IP_ADDRESS, res);
-        rm.getEntry();
-        return Collections.singleton(rm.getEntry());
+        return Collections.singleton(a(questionRecord.getDomainName(), 100).ipAddress(res));
       }
       return Collections.emptySet();
     };
@@ -126,170 +113,98 @@ public final class FakeDNSServer extends DnsServer {
   }
 
   public FakeDNSServer testResolveAAAA(final String ipAddress) {
-    return store(new RecordStore() {
-      @Override
-      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) {
-        Set<ResourceRecord> set = new HashSet<>();
-
-        ResourceRecordModifier rm = new ResourceRecordModifier();
-        rm.setDnsClass(RecordClass.IN);
-        rm.setDnsName("vertx.io");
-        rm.setDnsTtl(100);
-        rm.setDnsType(RecordType.AAAA);
-        rm.put(DnsAttribute.IP_ADDRESS, ipAddress);
-
-        set.add(rm.getEntry());
-        return set;
-      }
-    });
+    return store(questionRecord -> Collections.singleton(aaaa("vertx.io", 100).ipAddress(ipAddress)));
   }
 
   public FakeDNSServer testResolveMX(final int prio, final String mxRecord) {
-    return store(new RecordStore() {
-      @Override
-      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) {
-        Set<ResourceRecord> set = new HashSet<>();
-
-        ResourceRecordModifier rm = new ResourceRecordModifier();
-        rm.setDnsClass(RecordClass.IN);
-        rm.setDnsName("vertx.io");
-        rm.setDnsTtl(100);
-        rm.setDnsType(RecordType.MX);
-        rm.put(DnsAttribute.MX_PREFERENCE, String.valueOf(prio));
-        rm.put(DnsAttribute.DOMAIN_NAME, mxRecord);
-        set.add(rm.getEntry());
-        return set;
-      }
-    });
+    return store(questionRecord -> Collections.singleton(mx("vertx.io", 100)
+      .set(DnsAttribute.MX_PREFERENCE, String.valueOf(prio))
+      .set(DnsAttribute.DOMAIN_NAME, mxRecord)));
   }
 
   public FakeDNSServer testResolveTXT(final String txt) {
-    return store(new RecordStore() {
-      @Override
-      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) {
-        Set<ResourceRecord> set = new HashSet<>();
-
-        ResourceRecordModifier rm = new ResourceRecordModifier();
-        rm.setDnsClass(RecordClass.IN);
-        rm.setDnsName("vertx.io");
-        rm.setDnsTtl(100);
-        rm.setDnsType(RecordType.TXT);
-        rm.put(DnsAttribute.CHARACTER_STRING, txt);
-        set.add(rm.getEntry());
-        return set;
-      }
-    });
+    return store(questionRecord -> Collections.singleton(txt("vertx.io", 100)
+      .set(DnsAttribute.CHARACTER_STRING, txt)));
   }
 
   public FakeDNSServer testResolveNS(final String ns) {
-    return store(new RecordStore() {
-      @Override
-      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
-        Set<ResourceRecord> set = new HashSet<>();
-
-        ResourceRecordModifier rm = new ResourceRecordModifier();
-        rm.setDnsClass(RecordClass.IN);
-        rm.setDnsName("vertx.io");
-        rm.setDnsTtl(100);
-        rm.setDnsType(RecordType.NS);
-        rm.put(DnsAttribute.DOMAIN_NAME, ns);
-        set.add(rm.getEntry());
-        return set;
-      }
-    });
+    return store(questionRecord -> Collections.singleton(ns("vertx.io", 100)
+      .set(DnsAttribute.DOMAIN_NAME, ns)));
   }
 
   public FakeDNSServer testResolveCNAME(final String cname) {
-    return store(new RecordStore() {
-      @Override
-      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
-        Set<ResourceRecord> set = new HashSet<>();
-
-        ResourceRecordModifier rm = new ResourceRecordModifier();
-        rm.setDnsClass(RecordClass.IN);
-        rm.setDnsName("vertx.io");
-        rm.setDnsTtl(100);
-        rm.setDnsType(RecordType.CNAME);
-        rm.put(DnsAttribute.DOMAIN_NAME, cname);
-        set.add(rm.getEntry());
-        return set;
-      }
-    });
+    return store(questionRecord -> Collections.singleton(cname("vertx.io", 100)
+      .set(DnsAttribute.DOMAIN_NAME, cname)));
   }
 
   public FakeDNSServer testResolvePTR(final String ptr) {
-    return store(new RecordStore() {
-      @Override
-      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
-        Set<ResourceRecord> set = new HashSet<>();
-
-        ResourceRecordModifier rm = new ResourceRecordModifier();
-        rm.setDnsClass(RecordClass.IN);
-        rm.setDnsName("vertx.io");
-        rm.setDnsTtl(100);
-        rm.setDnsType(RecordType.PTR);
-        rm.put(DnsAttribute.DOMAIN_NAME, ptr);
-        set.add(rm.getEntry());
-        return set;
-      }
-    });
+    return store(questionRecord -> Collections.singleton(ptr("vertx.io", 100)
+      .set(DnsAttribute.DOMAIN_NAME, ptr)));
   }
 
   public FakeDNSServer testResolveSRV(String name, int priority, int weight, int port, String target) {
-    return store(new RecordStore() {
-      @Override
-      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
-        Set<ResourceRecord> set = new HashSet<>();
-
-        ResourceRecordModifier rm = new ResourceRecordModifier();
-        rm.setDnsClass(RecordClass.IN);
-        rm.setDnsName(name);
-        rm.setDnsTtl(100);
-        rm.setDnsType(RecordType.SRV);
-        rm.put(DnsAttribute.SERVICE_PRIORITY, String.valueOf(priority));
-        rm.put(DnsAttribute.SERVICE_WEIGHT, String.valueOf(weight));
-        rm.put(DnsAttribute.SERVICE_PORT, String.valueOf(port));
-        rm.put(DnsAttribute.DOMAIN_NAME, target);
-        set.add(rm.getEntry());
-        return set;
-      }
-    });
+    return store(questionRecord -> Collections.singleton(srv(name, 100)
+      .set(DnsAttribute.SERVICE_PRIORITY, priority)
+      .set(DnsAttribute.SERVICE_WEIGHT, weight)
+      .set(DnsAttribute.SERVICE_PORT, port)
+      .set(DnsAttribute.DOMAIN_NAME, target)
+    ));
   }
 
   public FakeDNSServer testResolveDNAME(final String dname) {
-    return store(new RecordStore() {
-      @Override
-      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
-        Set<ResourceRecord> set = new HashSet<>();
-
-        ResourceRecordModifier rm = new ResourceRecordModifier();
-        rm.setDnsClass(RecordClass.IN);
-        rm.setDnsName("vertx.io");
-        rm.setDnsTtl(100);
-        rm.setDnsType(RecordType.DNAME);
-        rm.put(DnsAttribute.DOMAIN_NAME, dname);
-        set.add(rm.getEntry());
-        return set;
-      }
-    });
+    return store(questionRecord -> Collections.singleton(dname("vertx.io", 100)
+      .set(DnsAttribute.DOMAIN_NAME, dname)));
   }
 
   public FakeDNSServer testResolveSRV2(final int priority, final int weight, final int basePort, final String target) {
-    return store(new RecordStore() {
-      @Override
-      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
-        Set<ResourceRecord> set = new HashSet<>();
-        for (int i = 0;i < 2;i++) {
-          set.add(new Record(target, RecordType.SRV, RecordClass.IN, 100)
-            .set(DnsAttribute.SERVICE_PRIORITY, priority)
-            .set(DnsAttribute.SERVICE_WEIGHT, weight)
-            .set(DnsAttribute.SERVICE_PORT, basePort + i)
-            .set(DnsAttribute.DOMAIN_NAME, "svc" + i + ".vertx.io.")
-          );
-        }
-        return set;
-      }
-    });
+    return store(questionRecord -> IntStream
+      .range(0, 2)
+      .mapToObj(i -> srv(target, 100)
+        .set(DnsAttribute.SERVICE_PRIORITY, priority)
+        .set(DnsAttribute.SERVICE_WEIGHT, weight)
+        .set(DnsAttribute.SERVICE_PORT, basePort + i)
+        .set(DnsAttribute.DOMAIN_NAME, "svc" + i + ".vertx.io."))
+      .collect(Collectors.toSet()));
+  }
+
+  public static Record a(String domainName, int ttl) {
+    return new Record(domainName, RecordType.A, RecordClass.IN, ttl);
+  }
+
+  public static Record aaaa(String domainName, int ttl) {
+    return new Record(domainName, RecordType.AAAA, RecordClass.IN, ttl);
+  }
+
+  public static Record mx(String domainName, int ttl) {
+    return new Record(domainName, RecordType.MX, RecordClass.IN, ttl);
+  }
+
+  public static Record txt(String domainName, int ttl) {
+    return new Record(domainName, RecordType.TXT, RecordClass.IN, ttl);
+  }
+
+  public static Record ns(String domainName, int ttl) {
+    return new Record(domainName, RecordType.NS, RecordClass.IN, ttl);
+  }
+
+  public static Record cname(String domainName, int ttl) {
+    return new Record(domainName, RecordType.CNAME, RecordClass.IN, ttl);
+  }
+
+  public static Record ptr(String domainName, int ttl) {
+    return new Record(domainName, RecordType.PTR, RecordClass.IN, ttl);
+  }
+
+  public static Record srv(String domainName, int ttl) {
+    return new Record(domainName, RecordType.SRV, RecordClass.IN, ttl);
+  }
+
+  public static Record dname(String domainName, int ttl) {
+    return new Record(domainName, RecordType.DNAME, RecordClass.IN, ttl);
+  }
+
+  public static Record record(String domainName, RecordType recordType, RecordClass recordClass, int ttl) {
+    return new Record(domainName, recordType, recordClass, ttl);
   }
 
   public static class Record extends HashMap<String, String> implements ResourceRecord {
@@ -304,6 +219,10 @@ public final class FakeDNSServer extends DnsServer {
       this.recordType = recordType;
       this.recordClass = recordClass;
       this.ttl = ttl;
+    }
+
+    public Record ipAddress(String ipAddress) {
+      return set(DnsAttribute.IP_ADDRESS, ipAddress);
     }
 
     public Record set(String name, Object value) {
@@ -338,69 +257,32 @@ public final class FakeDNSServer extends DnsServer {
   }
 
   public FakeDNSServer testLookup4(String ip) {
-    return store(new RecordStore() {
-      @Override
-      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
-        Set<ResourceRecord> set = new HashSet<>();
-        if (questionRecord.getRecordType() == RecordType.A) {
-          ResourceRecordModifier rm = new ResourceRecordModifier();
-          rm.setDnsClass(RecordClass.IN);
-          rm.setDnsName("vertx.io");
-          rm.setDnsTtl(100);
-          rm.setDnsType(RecordType.A);
-          rm.put(DnsAttribute.IP_ADDRESS, ip);
-          set.add(rm.getEntry());
-        }
-        return set;
+    return store(questionRecord -> {
+      Set<ResourceRecord> set = new HashSet<>();
+      if (questionRecord.getRecordType() == RecordType.A) {
+        set.add(a("vertx.io", 100).ipAddress(ip));
       }
+      return set;
     });
   }
 
   public FakeDNSServer testLookup6(String ip) {
-    return store(new RecordStore() {
-      @Override
-      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
-        Set<ResourceRecord> set = new HashSet<>();
-        if (questionRecord.getRecordType() == RecordType.AAAA) {
-          ResourceRecordModifier rm = new ResourceRecordModifier();
-          rm.setDnsClass(RecordClass.IN);
-          rm.setDnsName("vertx.io");
-          rm.setDnsTtl(100);
-          rm.setDnsType(RecordType.AAAA);
-          rm.put(DnsAttribute.IP_ADDRESS, ip);
-
-          set.add(rm.getEntry());
-        }
-        return set;
+    return store(questionRecord -> {
+      Set<ResourceRecord> set = new HashSet<>();
+      if (questionRecord.getRecordType() == RecordType.AAAA) {
+        set.add(aaaa("vertx.io", 100).ipAddress(ip));
       }
+      return set;
     });
   }
 
   public FakeDNSServer testLookupNonExisting() {
-    return store(new RecordStore() {
-      @Override
-      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
-        return null;
-      }
-    });
+    return store(questionRecord -> null);
   }
 
   public FakeDNSServer testReverseLookup(final String ptr) {
-    return store(new RecordStore() {
-      @Override
-      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
-        Set<ResourceRecord> set = new HashSet<>();
-
-        ResourceRecordModifier rm = new ResourceRecordModifier();
-        rm.setDnsClass(RecordClass.IN);
-        rm.setDnsName(ptr);
-        rm.setDnsTtl(100);
-        rm.setDnsType(RecordType.PTR);
-        rm.put(DnsAttribute.DOMAIN_NAME, "vertx.io");
-        set.add(rm.getEntry());
-        return set;
-      }
-    });
+    return store(questionRecord -> Collections.singleton(ptr(ptr, 100)
+      .set(DnsAttribute.DOMAIN_NAME, "vertx.io")));
   }
 
   public FakeDNSServer testResolveASameServer(final String ipAddress) {
@@ -408,50 +290,29 @@ public final class FakeDNSServer extends DnsServer {
   }
 
   public FakeDNSServer testLookup4CNAME(final String cname, final String ip) {
-    return store(new RecordStore() {
-      @Override
-      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord)
-          throws org.apache.directory.server.dns.DnsException {
-        // use LinkedHashSet since the order of the result records has to be preserved to make sure the unit test fails
-        Set<ResourceRecord> set = new LinkedHashSet<>();
-
-        ResourceRecordModifier rm = new ResourceRecordModifier();
-        rm.setDnsClass(RecordClass.IN);
-        rm.setDnsName("vertx.io");
-        rm.setDnsTtl(100);
-        rm.setDnsType(RecordType.CNAME);
-        rm.put(DnsAttribute.DOMAIN_NAME, cname);
-        set.add(rm.getEntry());
-
-        ResourceRecordModifier rm2 = new ResourceRecordModifier();
-        rm2.setDnsClass(RecordClass.IN);
-        rm2.setDnsName(cname);
-        rm2.setDnsTtl(100);
-        rm2.setDnsType(RecordType.A);
-        rm2.put(DnsAttribute.IP_ADDRESS, ip);
-        set.add(rm2.getEntry());
-
-        return set;
-      }
+    return store(questionRecord -> {
+      // use LinkedHashSet since the order of the result records has to be preserved to make sure the unit test fails
+      Set<ResourceRecord> set = new LinkedHashSet<>();
+      ResourceRecordModifier rm = new ResourceRecordModifier();
+      set.add(cname("vertx.io", 100).set(DnsAttribute.DOMAIN_NAME, cname));
+      set.add(a(cname, 100).ipAddress(ip));
+      return set;
     });
   }
 
   @Override
   public void start() throws IOException {
 
-    DnsProtocolHandler handler = new DnsProtocolHandler(this, new RecordStore() {
-      @Override
-      public Set<ResourceRecord> getRecords(QuestionRecord question) throws DnsException {
-        RecordStore actual = store;
-        if (actual == null) {
-          return Collections.emptySet();
-        } else {
-          return actual.getRecords(question);
-        }
+    DnsProtocolHandler handler = new DnsProtocolHandler(this, question -> {
+      RecordStore actual = store;
+      if (actual == null) {
+        return Collections.emptySet();
+      } else {
+        return actual.getRecords(question);
       }
     }) {
       @Override
-      public void sessionCreated(IoSession session) throws Exception {
+      public void sessionCreated(IoSession session) {
         // Use our own codec to support AAAA testing
         if (session.getTransportMetadata().isConnectionless()) {
           session.getFilterChain().addFirst( "codec", new ProtocolCodecFilter(new TestDnsProtocolUdpCodecFactory()));
