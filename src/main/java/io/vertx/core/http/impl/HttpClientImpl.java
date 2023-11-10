@@ -378,7 +378,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         }
       });
     } else {
-      return ctx.failedFuture("Cannot resolver " + server + " address");
+      return ctx.failedFuture("Cannot resolve address " + server);
     }
     if (future == null) {
       return connCtx.failedFuture("Cannot resolve address " + server);
