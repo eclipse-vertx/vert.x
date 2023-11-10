@@ -27,7 +27,6 @@ import io.vertx.core.net.impl.resolver.EndpointResolverManager;
 import io.vertx.core.net.impl.resolver.EndpointLookup;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
-import io.vertx.core.spi.resolver.address.AddressResolver;
 
 import java.lang.ref.WeakReference;
 import java.net.URI;
@@ -109,10 +108,10 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   private volatile Handler<HttpConnection> connectionHandler;
   private final Function<ContextInternal, ContextInternal> contextProvider;
 
-  public HttpClientImpl(VertxInternal vertx, AddressResolver<?, ?, ?> addressResolver, LoadBalancer loadBalancer, HttpClientOptions options, PoolOptions poolOptions) {
+  public HttpClientImpl(VertxInternal vertx, io.vertx.core.net.AddressResolver addressResolver, LoadBalancer loadBalancer, HttpClientOptions options, PoolOptions poolOptions) {
     super(vertx, options);
     if (addressResolver != null) {
-      this.endpointResolverManager = new EndpointResolverManager<>(addressResolver, loadBalancer, options.getKeepAliveTimeout() * 1000);
+      this.endpointResolverManager = new EndpointResolverManager<>(addressResolver.resolver(vertx), loadBalancer, options.getKeepAliveTimeout() * 1000);
     } else {
       this.endpointResolverManager = null;
     }
@@ -326,28 +325,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     Promise<HttpClientRequest> promise = ctx.promise();
     Future<HttpClientStream> future;
     ProxyOptions proxyOptions;
-    if (server instanceof SocketAddress) {
-      proxyOptions = computeProxyOptions(proxyConfig, (SocketAddress) server);
-      EndpointKey key = new EndpointKey(useSSL, proxyOptions, (SocketAddress) server, authority);
-      future = httpCM.withEndpointAsync(key, httpEndpointProvider(), (endpoint, created) -> {
-        Future<Lease<HttpClientConnection>> fut = endpoint.requestConnection(connCtx, connectTimeout);
-        if (fut == null) {
-          return null;
-        } else {
-          return fut.compose(lease -> {
-            HttpClientConnection conn = lease.get();
-            return conn.createStream(ctx).andThen(ar -> {
-              if (ar.succeeded()) {
-                HttpClientStream stream = ar.result();
-                stream.closeHandler(v -> {
-                  lease.recycle();
-                });
-              }
-            });
-          });
-        }
-      });
-    } else {
+    if (endpointResolverManager != null && endpointResolverManager.accepts(server)) {
       Future<EndpointLookup> fut = endpointResolverManager.lookupEndpoint(ctx, server);
       future = fut.compose(lookup -> {
         SocketAddress address = lookup.address();
@@ -378,6 +356,29 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       } else {
         proxyOptions = null;
       }
+    } else if (server instanceof SocketAddress) {
+      proxyOptions = computeProxyOptions(proxyConfig, (SocketAddress) server);
+      EndpointKey key = new EndpointKey(useSSL, proxyOptions, (SocketAddress) server, authority);
+      future = httpCM.withEndpointAsync(key, httpEndpointProvider(), (endpoint, created) -> {
+        Future<Lease<HttpClientConnection>> fut = endpoint.requestConnection(connCtx, connectTimeout);
+        if (fut == null) {
+          return null;
+        } else {
+          return fut.compose(lease -> {
+            HttpClientConnection conn = lease.get();
+            return conn.createStream(ctx).andThen(ar -> {
+              if (ar.succeeded()) {
+                HttpClientStream stream = ar.result();
+                stream.closeHandler(v -> {
+                  lease.recycle();
+                });
+              }
+            });
+          });
+        }
+      });
+    } else {
+      return ctx.failedFuture("Cannot resolver " + server + " address");
     }
     if (future == null) {
       return connCtx.failedFuture("Cannot resolve address " + server);

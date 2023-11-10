@@ -36,7 +36,7 @@ import java.util.function.BiFunction;
 public class EndpointResolverManager<S, A extends Address, E> {
 
   private final LoadBalancer loadBalancer;
-  private final AddressResolver<A, E, S> plugin;
+  private final AddressResolver<A, E, S> addressResolver;
   private final EndpointManager<A, EndpointImpl> connectionManager;
   private final long expirationMillis;
 
@@ -47,9 +47,16 @@ public class EndpointResolverManager<S, A extends Address, E> {
     }
 
     this.loadBalancer = loadBalancer;
-    this.plugin = addressResolver;
+    this.addressResolver = addressResolver;
     this.connectionManager = new EndpointManager<>();
     this.expirationMillis = expirationMillis;
+  }
+
+  /**
+   * @return whether the resolver accepts the {@code address}
+   */
+  public boolean accepts(Address address) {
+    return addressResolver.tryCast(address) != null;
   }
 
   /**
@@ -61,7 +68,7 @@ public class EndpointResolverManager<S, A extends Address, E> {
 
   private Future<ManagedState<S>> resolve(A address) {
     EndpointSelector selector = loadBalancer.selector();
-    return plugin.resolve(e -> new ManagedEndpoint<>(e, selector.endpointMetrics()), address)
+    return addressResolver.resolve(e -> new ManagedEndpoint<>(e, selector.endpointMetrics()), address)
       .map(s -> new ManagedState<>(selector, s));
   }
 
@@ -73,7 +80,7 @@ public class EndpointResolverManager<S, A extends Address, E> {
    */
   private ManagedEndpoint<E> selectEndpoint(ManagedState<S> state) {
 
-    List<io.vertx.core.spi.resolver.address.Endpoint<E>> lst = plugin.endpoints(state.state);
+    List<io.vertx.core.spi.resolver.address.Endpoint<E>> lst = addressResolver.endpoints(state.state);
     List<EndpointMetrics<?>> other = new ArrayList<>();
     // TRY AVOID THAT
     for (int i = 0;i < lst.size();i++) {
@@ -98,13 +105,13 @@ public class EndpointResolverManager<S, A extends Address, E> {
   }
 
   private Future<EndpointLookup> lookupEndpoint(ContextInternal ctx, Address address, int attempts) {
-    A casted = plugin.tryCast(address);
+    A casted = addressResolver.tryCast(address);
     if (casted == null) {
       return ctx.failedFuture("Cannot resolve address " + address);
     }
     EndpointImpl ei = resolveAddress(ctx, casted, attempts > 0);
     return ei.fut.compose(state -> {
-      if (!plugin.isValid(state.state)) {
+      if (!addressResolver.isValid(state.state)) {
         // max 4
         if (attempts < 4) {
           return lookupEndpoint(ctx, address, attempts + 1);
@@ -116,7 +123,7 @@ public class EndpointResolverManager<S, A extends Address, E> {
       return ctx.succeededFuture(new EndpointLookup() {
         @Override
         public SocketAddress address() {
-          return plugin.addressOfEndpoint(endpoint.value);
+          return addressResolver.addressOfEndpoint(endpoint.value);
         }
         @Override
         public EndpointRequest initiateRequest() {
@@ -165,7 +172,7 @@ public class EndpointResolverManager<S, A extends Address, E> {
     @Override
     protected void dispose() {
       if (fut.succeeded()) {
-        plugin.dispose(fut.result().state);
+        addressResolver.dispose(fut.result().state);
       }
     }
 
