@@ -69,13 +69,8 @@ public class SharedWebSocketClient implements WebSocketClient {
   }
 
   @Override
-  public Future<Void> updateSSLOptions(SSLOptions options) {
-    return delegate.updateSSLOptions(options);
-  }
-
-  @Override
-  public void updateSSLOptions(SSLOptions options, Handler<AsyncResult<Void>> handler) {
-    delegate.updateSSLOptions(options, handler);
+  public Future<Boolean> updateSSLOptions(SSLOptions options, boolean force) {
+    return delegate.updateSSLOptions(options, force);
   }
 
   @Override

@@ -37,6 +37,7 @@ import java.io.ByteArrayInputStream;
 import java.security.cert.CRL;
 import java.security.cert.CertificateFactory;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -47,6 +48,7 @@ import java.util.stream.Collectors;
  */
 public class SSLHelper {
 
+  private static final AtomicLong seq = new AtomicLong();
   static final EnumMap<ClientAuth, io.netty.handler.ssl.ClientAuth> CLIENT_AUTH_MAPPING = new EnumMap<>(ClientAuth.class);
 
   static {
@@ -126,10 +128,12 @@ public class SSLHelper {
 
   private static class CachedProvider {
     final SSLOptions options;
+    final long id;
     final SslChannelProvider sslChannelProvider;
     final Throwable failure;
-    CachedProvider(SSLOptions options, SslChannelProvider sslChannelProvider, Throwable failure) {
+    CachedProvider(SSLOptions options, long id, SslChannelProvider sslChannelProvider, Throwable failure) {
       this.options = options;
+      this.id = id;
       this.sslChannelProvider = sslChannelProvider;
       this.failure = failure;
     }
@@ -172,23 +176,24 @@ public class SSLHelper {
    * @param ctx the vertx context
    * @return a future of the resolved channel provider
    */
-  public Future<SslContextUpdate> updateSslContext(SSLOptions options, ContextInternal ctx) {
+  public Future<SslContextUpdate> updateSslContext(SSLOptions options, boolean force, ContextInternal ctx) {
+    long id = seq.getAndIncrement();
     synchronized (this) {
       if (cachedProvider == null) {
-        cachedProvider = this.buildChannelProvider(options, ctx).map(a -> new CachedProvider(options, a, null));
+        cachedProvider = this.buildChannelProvider(options, ctx).map(a -> new CachedProvider(options, id, a, null));
       } else {
         cachedProvider = cachedProvider.transform(prev -> {
-          if (prev.succeeded() && prev.result().options.equals(options)) {
+          if (!force && prev.succeeded() && prev.result().options.equals(options)) {
             return Future.succeededFuture(prev.result());
           } else {
             return this
               .buildChannelProvider(options, ctx)
               .transform(ar -> {
                 if (ar.succeeded()) {
-                  return ctx.succeededFuture(new CachedProvider(options, ar.result(), null));
+                  return ctx.succeededFuture(new CachedProvider(options, id, ar.result(), null));
                 } else {
                   if (prev.succeeded()) {
-                    return ctx.succeededFuture(new CachedProvider(prev.result().options, prev.result().sslChannelProvider, ar.cause()));
+                    return ctx.succeededFuture(new CachedProvider(prev.result().options, prev.result().id, prev.result().sslChannelProvider, ar.cause()));
                   } else {
                     return ctx.failedFuture(prev.cause());
                   }
@@ -197,7 +202,7 @@ public class SSLHelper {
           }
         });
       }
-      return cachedProvider.map(c -> new SslContextUpdate(c.sslChannelProvider, c.failure));
+      return cachedProvider.map(c -> new SslContextUpdate(c.sslChannelProvider, c.id == id, c.failure));
     }
   }
 

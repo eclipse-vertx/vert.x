@@ -316,8 +316,8 @@ public class HttpClientBase implements MetricsProvider, Closeable {
   }
 
 //  @Override
-  public Future<Void> updateSSLOptions(SSLOptions options) {
-    return netClient.updateSSLOptions(options);
+  public Future<Boolean> updateSSLOptions(SSLOptions options, boolean force) {
+    return netClient.updateSSLOptions(options, force);
   }
 
   public HttpClientBase proxyFilter(Predicate<SocketAddress> filter) {

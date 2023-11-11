@@ -127,13 +127,13 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
     return trafficShapingHandler;
   }
 
-  public Future<Void> updateSSLOptions(SSLOptions options) {
+  public Future<Boolean> updateSSLOptions(SSLOptions options, boolean force) {
     TCPServerBase server = actualServer;
     if (server != null && server != this) {
-      return server.updateSSLOptions(options);
+      return server.updateSSLOptions(options, force);
     } else {
       ContextInternal ctx = vertx.getOrCreateContext();
-      Future<SslContextUpdate> update = sslHelper.updateSslContext(new SSLOptions(options), ctx);
+      Future<SslContextUpdate> update = sslHelper.updateSslContext(new SSLOptions(options), force, ctx);
       sslChannelProvider = update;
       return update.transform(ar -> {
         if (ar.failed()) {
@@ -141,7 +141,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
         } else if (ar.succeeded() && ar.result().error() != null) {
           return ctx.failedFuture(ar.result().error());
         } else {
-          return ctx.succeededFuture();
+          return ctx.succeededFuture(ar.result().isUpdated());
         }
       });
     }
@@ -208,7 +208,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
         listenContext.addCloseHook(this);
 
         // Initialize SSL before binding
-        sslChannelProvider = sslHelper.updateSslContext(options.getSslOptions(), listenContext).onComplete(ar -> {
+        sslChannelProvider = sslHelper.updateSslContext(options.getSslOptions(), true, listenContext).onComplete(ar -> {
           if (ar.succeeded()) {
 
             // Socket bind

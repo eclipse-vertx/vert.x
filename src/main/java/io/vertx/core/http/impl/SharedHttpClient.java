@@ -145,8 +145,8 @@ public class SharedHttpClient implements HttpClientInternal {
   }
 
   @Override
-  public Future<Void> updateSSLOptions(SSLOptions options) {
-    return delegate.updateSSLOptions(options);
+  public Future<Boolean> updateSSLOptions(SSLOptions options, boolean force) {
+    return delegate.updateSSLOptions(options, force);
   }
 
   @Override

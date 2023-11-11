@@ -179,11 +179,11 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
   }
 
   @Override
-  public Future<Void> updateSSLOptions(SSLOptions options) {
+  public Future<Boolean> updateSSLOptions(SSLOptions options, boolean force) {
     Future<SslContextUpdate> fut;
     ContextInternal ctx = vertx.getOrCreateContext();
     synchronized (this) {
-      fut = sslHelper.updateSslContext(new SSLOptions(options), ctx);
+      fut = sslHelper.updateSslContext(new SSLOptions(options), force, ctx);
       sslChannelProvider = fut;
     }
     return fut.transform(ar -> {
@@ -192,7 +192,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
       } else if (ar.succeeded() && ar.result().error() != null) {
         return ctx.failedFuture(ar.result().error());
       } else {
-        return ctx.succeededFuture();
+        return ctx.succeededFuture(ar.result().isUpdated());
       }
     });
   }
@@ -261,7 +261,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
       synchronized (NetClientImpl.this) {
         fut = sslChannelProvider;
         if (fut == null) {
-          fut = sslHelper.updateSslContext(options.getSslOptions(), context);
+          fut = sslHelper.updateSslContext(options.getSslOptions(), true, context);
           sslChannelProvider = fut;
         }
       }
