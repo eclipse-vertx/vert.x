@@ -229,12 +229,12 @@ class NetClientImpl implements NetClientInternal {
   }
 
   @Override
-  public Future<Void> updateSSLOptions(ClientSSLOptions options) {
+  public Future<Boolean> updateSSLOptions(ClientSSLOptions options, boolean force) {
     ContextInternal ctx = vertx.getOrCreateContext();
     synchronized (this) {
       this.sslOptions = options;
     }
-    return ctx.succeededFuture();
+    return ctx.succeededFuture(true);
   }
 
   private void connectInternal(ConnectOptions connectOptions,

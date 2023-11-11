@@ -180,11 +180,12 @@ public class HttpClientBase implements MetricsProvider, Closeable {
     return metrics;
   }
 
-  public Future<Void> updateSSLOptions(ClientSSLOptions options) {
+  public Future<Boolean> updateSSLOptions(ClientSSLOptions options, boolean force) {
     sslOptions = options
       .copy()
       .setHostnameVerificationAlgorithm(this.options.isVerifyHost() ? "HTTPS" : "")
-      .setApplicationLayerProtocols(alpnVersions.stream().map(HttpVersion::alpnName).collect(Collectors.toList()));;    return Future.succeededFuture();
+      .setApplicationLayerProtocols(alpnVersions.stream().map(HttpVersion::alpnName).collect(Collectors.toList()));;
+    return Future.succeededFuture(true);
   }
 
   public HttpClientBase proxyFilter(Predicate<SocketAddress> filter) {

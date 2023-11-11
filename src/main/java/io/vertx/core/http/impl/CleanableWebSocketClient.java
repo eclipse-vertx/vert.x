@@ -14,6 +14,7 @@ import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.http.*;
+import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 
@@ -60,6 +61,11 @@ public class CleanableWebSocketClient implements WebSocketClient, MetricsProvide
 
   public Future<WebSocket> connect(WebSocketConnectOptions options) {
     return delegate.connect(options);
+  }
+
+  @Override
+  public Future<Boolean> updateSSLOptions(ClientSSLOptions options, boolean force) {
+    return delegate.updateSSLOptions(options, force);
   }
 
   @Override
