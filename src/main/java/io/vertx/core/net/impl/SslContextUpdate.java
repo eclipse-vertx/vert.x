@@ -16,10 +16,12 @@ package io.vertx.core.net.impl;
 public class SslContextUpdate {
 
   private final SslChannelProvider sslChannelProvider;
+  private final boolean updated;
   private final Throwable error;
 
-  SslContextUpdate(SslChannelProvider sslChannelProvider, Throwable error) {
+  SslContextUpdate(SslChannelProvider sslChannelProvider, boolean updated, Throwable error) {
     this.sslChannelProvider = sslChannelProvider;
+    this.updated = updated;
     this.error = error;
   }
 
@@ -28,6 +30,13 @@ public class SslContextUpdate {
    */
   public SslChannelProvider sslChannelProvider() {
     return sslChannelProvider;
+  }
+
+  /**
+   * @return whether the update occurred
+   */
+  public boolean isUpdated() {
+    return updated;
   }
 
   /**
