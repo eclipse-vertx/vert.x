@@ -124,21 +124,30 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
   protected void configure(SSLOptions options) {
   }
 
-  public Future<Void> updateSSLOptions(ServerSSLOptions options) {
+  public Future<Boolean> updateSSLOptions(ServerSSLOptions options, boolean force) {
     TCPServerBase server = actualServer;
     if (server != null && server != this) {
-      return server.updateSSLOptions(options);
+      return server.updateSSLOptions(options, force);
     } else {
       ContextInternal ctx = vertx.getOrCreateContext();
       Future<SslChannelProvider> fut;
+      SslChannelProvider current;
       synchronized (this) {
+        current = sslChannelProvider.result();
         if (updateInProgress == null) {
-          ServerSSLOptions sslOptions = (ServerSSLOptions) options.copy();
+          ServerSSLOptions sslOptions = options.copy();
           configure(sslOptions);
-          updateInProgress = sslHelper.resolveSslChannelProvider(sslOptions, null, sslOptions.isSni(), sslOptions.getClientAuth(), sslOptions.getApplicationLayerProtocols(), ctx);
+          updateInProgress = sslHelper.resolveSslChannelProvider(
+            sslOptions,
+            null,
+            sslOptions.isSni(),
+            sslOptions.getClientAuth(),
+            sslOptions.getApplicationLayerProtocols(),
+            force,
+            ctx);
           fut = updateInProgress;
         } else {
-          return updateInProgress.mapEmpty().transform(ar -> updateSSLOptions(options));
+          return updateInProgress.mapEmpty().transform(ar -> updateSSLOptions(options, force));
         }
       }
       fut.onComplete(ar -> {
@@ -149,7 +158,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
           }
         }
       });
-      return fut.mapEmpty();
+      return fut.map(res -> res != current);
     }
   }
 

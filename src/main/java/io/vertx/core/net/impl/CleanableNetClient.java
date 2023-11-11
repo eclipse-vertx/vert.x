@@ -88,8 +88,8 @@ public class CleanableNetClient implements NetClientInternal {
   }
 
   @Override
-  public Future<Void> updateSSLOptions(ClientSSLOptions options) {
-    return client.updateSSLOptions(options);
+  public Future<Boolean> updateSSLOptions(ClientSSLOptions options, boolean force) {
+    return client.updateSSLOptions(options, force);
   }
 
   @Override

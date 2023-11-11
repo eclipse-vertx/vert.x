@@ -12,11 +12,13 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.metrics.Measured;
+import io.vertx.core.net.SSLOptions;
 import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.SocketAddressImpl;
@@ -100,14 +102,33 @@ public interface HttpServer extends Measured {
   Handler<ServerWebSocket> webSocketHandler();
 
   /**
-   * Update the server SSL options.
+   * Update the server with new SSL {@code options}, the update happens if the options object is valid and different
+   * from the existing options object.
    *
-   * Update only happens if the SSL options is valid.
+   * <p>The boolean succeeded future result indicates whether the update occurred.
    *
    * @param options the new SSL options
    * @return a future signaling the update success
    */
-  Future<Void> updateSSLOptions(ServerSSLOptions options);
+  default Future<Boolean> updateSSLOptions(ServerSSLOptions options) {
+    return updateSSLOptions(options, false);
+  }
+
+  /**
+   * <p>Update the server with new SSL {@code options}, the update happens if the options object is valid and different
+   * from the existing options object.
+   *
+   * <p>The {@code options} object is compared using its {@code equals} method against the existing options to prevent
+   * an update when the objects are equals since loading options can be costly, this can happen for share TCP servers.
+   * When object are equals, setting {@code force} to {@code true} forces the update.
+   *
+   * <p>The boolean succeeded future result indicates whether the update occurred.
+   *
+   * @param options the new SSL options
+   * @param force force the update when options are equals
+   * @return a future signaling the update success
+   */
+  Future<Boolean> updateSSLOptions(ServerSSLOptions options, boolean force);
 
   /**
    * Tell the server to start listening. The server will listen on the port and host specified in the

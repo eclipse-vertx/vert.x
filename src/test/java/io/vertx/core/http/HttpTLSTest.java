@@ -1625,50 +1625,92 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
   @Test
   public void testUpdateSSLOptions() throws Exception {
-    testUpdateSSLOptions(false);
+    testUpdateSSLOptions(idx -> {
+      switch (idx) {
+        case 0:
+          return Cert.SERVER_JKS.get();
+        case 1:
+          return Cert.SERVER_JKS_ROOT_CA.get();
+      }
+      return null;
+    }, idx -> {
+      switch (idx) {
+        case 0:
+          return Trust.SERVER_JKS.get();
+        case 1:
+          return Trust.SERVER_JKS_ROOT_CA.get();
+      }
+      return null;
+    }, false, true);
   }
 
   @Test
-  public void testUpdateSSLOptionsWithScaledServer() throws Exception {
-    testUpdateSSLOptions(true);
+  public void testUpdateSSLOptionsSamePath() throws Exception {
+    testUpdateSSLOptionsSamePath(false);
   }
 
-  private void testUpdateSSLOptions(boolean scaled) throws Exception {
-    server = vertx.createHttpServer(createBaseServerOptions().setSsl(true).setKeyCertOptions(Cert.SERVER_JKS.get()))
+  @Test
+  public void testUpdateSSLOptionsSamePathAndForce() throws Exception {
+    testUpdateSSLOptionsSamePath(true);
+  }
+
+  private void testUpdateSSLOptionsSamePath(boolean force) throws Exception {
+    Path cert = Files.createTempFile("vertx", ".jks").toAbsolutePath();
+    Buffer serverJks = vertx.fileSystem().readFileBlocking(Cert.SERVER_JKS.get().getPath());
+    Buffer serverJksRootCA = vertx.fileSystem().readFileBlocking(Cert.SERVER_JKS_ROOT_CA.get().getPath());
+    testUpdateSSLOptions(idx -> {
+      try {
+        switch (idx) {
+          case 0:
+            Files.write(cert, serverJks.getBytes());
+            return Cert.SERVER_JKS.get().copy().setPath(cert.toFile().getAbsolutePath());
+          case 1:
+            Files.write(cert, serverJksRootCA.getBytes());
+            return Cert.SERVER_JKS.get().copy().setPath(cert.toFile().getAbsolutePath());
+        }
+      } catch (IOException e) {
+        fail(e);
+      }
+      return null;
+    }, idx -> {
+      switch (idx) {
+        case 0:
+          return Trust.SERVER_JKS.get();
+        case 1:
+          return Trust.SERVER_JKS_ROOT_CA.get();
+      }
+      return null;
+    }, force, force);
+  }
+
+  private void testUpdateSSLOptions(Function<Integer, JksOptions> blah, Function<Integer, JksOptions> bluh, boolean force, boolean updateTrust) throws Exception {
+    server = vertx.createHttpServer(createBaseServerOptions().setKeyCertOptions(blah.apply(0)))
       .requestHandler(req -> {
         req.response().end("Hello World");
       });
     startServer(testAddress);
-    if (scaled) {
-      awaitFuture(vertx.deployVerticle(new AbstractVerticle() {
-        private HttpServer server;
-        @Override
-        public void start(Promise<Void> startPromise) {
-          server = vertx.createHttpServer(createBaseServerOptions().setKeyCertOptions(Cert.SERVER_JKS.get()))
-            .requestHandler(req -> {
-              req.response().end("Hello World");
-            });
-          server
-            .listen(testAddress)
-            .<Void>mapEmpty()
-            .onComplete(startPromise);
-        }
-      }));
-    }
     Function<HttpClient, Future<Buffer>> request = client -> client.request(requestOptions).compose(req -> req.send().compose(HttpClientResponse::body));
-    HttpClient client1 = vertx.createHttpClient(createBaseClientOptions().setVerifyHost(false).setTrustOptions(Trust.SERVER_JKS.get()));
-    HttpClient client2 = vertx.createHttpClient(createBaseClientOptions().setVerifyHost(false).setTrustOptions(Trust.SERVER_JKS.get()));
+    HttpClient client1 = vertx.createHttpClient(createBaseClientOptions().setVerifyHost(false).setTrustOptions(bluh.apply(0)));
+    HttpClient client2 = vertx.createHttpClient(createBaseClientOptions().setVerifyHost(false).setTrustOptions(bluh.apply(0)));
     request.apply(client1).onComplete(onSuccess(body1 -> {
       assertEquals("Hello World", body1.toString());
-      server.updateSSLOptions(createBaseServerOptions().setKeyCertOptions(Cert.SERVER_JKS_ROOT_CA.get()).getSslOptions()).onComplete(onSuccess(v -> {
-        request.apply(client2).onComplete(onFailure(err -> {
-          client2.updateSSLOptions(createBaseClientOptions().setTrustOptions(Trust.SERVER_JKS_ROOT_CA.get()).getSslOptions()).onComplete(onSuccess(v2 -> {
-            request.apply(client2).onComplete(onSuccess(body2 -> {
-              assertEquals("Hello World", body2.toString());
-              testComplete();
+      server.updateSSLOptions(createBaseServerOptions().setKeyCertOptions(blah.apply(1)).getSslOptions(), force).onComplete(onSuccess(updateOccurred -> {
+        request.apply(client2).onComplete(ar -> {
+          assertEquals(!updateTrust, ar.succeeded());
+          if (updateTrust) {
+            assertTrue(updateOccurred);
+            client2.updateSSLOptions(createBaseClientOptions().setTrustOptions(bluh.apply(1)).getSslOptions(), force).onComplete(onSuccess(v2 -> {
+              request.apply(client2).onComplete(onSuccess(body2 -> {
+                assertEquals("Hello World", body2.toString());
+                testComplete();
+              }));
             }));
-          }));
-        }));
+          } else {
+            // Same trust options since update did not occur
+            assertFalse(updateOccurred);
+            testComplete();
+          }
+        });
       }));
     }));
     await();
@@ -1682,7 +1724,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
       });
     startServer(testAddress);
     client = vertx.createHttpClient(createBaseClientOptions().setVerifyHost(false).setTrustOptions(Trust.SERVER_JKS.get()));
-    Future<Void> last = server.updateSSLOptions(createBaseServerOptions()
+    Future<Boolean> last = server.updateSSLOptions(createBaseServerOptions()
       .setKeyCertOptions(new JksOptions().setValue(TestUtils.randomBuffer(20)).setPassword("invalid"))
       .getSslOptions());
     last.onComplete(onFailure(err -> {
@@ -1704,7 +1746,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
         req.response().end("Hello World");
       });
     startServer(testAddress);
-    client = vertx.createHttpClient(createBaseClientOptions().setKeepAlive(false).setVerifyHost(false).setTrustOptions(Trust.SERVER_JKS_ROOT_CA.get()));
+    client = vertx.createHttpClient(createBaseClientOptions().setVerifyHost(false).setTrustOptions(Trust.SERVER_JKS_ROOT_CA.get()));
     List<KeyCertOptions> list = Arrays.asList(
       Cert.SERVER_PKCS12.get(),
       Cert.SERVER_PEM.get(),
@@ -1712,7 +1754,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
       Cert.SERVER_JKS_ROOT_CA.get()
     );
     AtomicInteger seq = new AtomicInteger();
-    Future<Void> last = null;
+    Future<Boolean> last = null;
     for (int i = 0;i < list.size();i++) {
       int val = i;
       last = server.updateSSLOptions(createBaseServerOptions().setKeyCertOptions(list.get(i)).getSslOptions());

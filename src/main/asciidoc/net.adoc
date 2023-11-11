@@ -638,7 +638,11 @@ implement certificate rotation).
 {@link examples.NetExamples#updateSSLOptions}
 ----
 
-When the update succeeds the new SSL configuration is used, otherwise the previous configuration is kept.
+When the update succeeds the new SSL configuration is used, otherwise the previous configuration is preserved.
+
+NOTE: The options object is compared (using `equals`) against the existing options to prevent an update when the objects
+are equals since loading options can be costly. When object are equals, you can use the `force` parameter to force
+the update.
 
 ==== Self-signed certificates for testing and development purposes
 

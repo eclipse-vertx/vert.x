@@ -26,6 +26,7 @@ import java.io.ByteArrayInputStream;
 import java.security.cert.CRL;
 import java.security.cert.CertificateFactory;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -36,8 +37,8 @@ import java.util.stream.Collectors;
  */
 public class SSLHelper {
 
+  private static final AtomicLong seq = new AtomicLong();
   private static final Config NULL_CONFIG = new Config(null, null, null, null, null);
-
   static final EnumMap<ClientAuth, io.netty.handler.ssl.ClientAuth> CLIENT_AUTH_MAPPING = new EnumMap<>(ClientAuth.class);
 
   static {
@@ -104,17 +105,26 @@ public class SSLHelper {
   }
 
   public Future<SslChannelProvider> resolveSslChannelProvider(SSLOptions options, String endpointIdentificationAlgorithm, boolean useSNI, ClientAuth clientAuth, List<String> applicationProtocols, ContextInternal ctx) {
+    return resolveSslChannelProvider(options, endpointIdentificationAlgorithm, useSNI, clientAuth, applicationProtocols, false, ctx);
+  }
+
+  public Future<SslChannelProvider> resolveSslChannelProvider(SSLOptions options, String endpointIdentificationAlgorithm, boolean useSNI, ClientAuth clientAuth, List<String> applicationProtocols, boolean force, ContextInternal ctx) {
     Promise<SslChannelProvider> promise;
     ConfigKey k = new ConfigKey(options);
     synchronized (this) {
-      Future<SslChannelProvider> v = sslChannelProviderMap.get(k);
-      if (v != null) {
-        return v;
+      if (force) {
+        sslChannelProviderMap.remove(k);
+      } else {
+        Future<SslChannelProvider> v = sslChannelProviderMap.get(k);
+        if (v != null) {
+          return v;
+        }
       }
       promise = Promise.promise();
       sslChannelProviderMap.put(k, promise.future());
     }
-    buildChannelProvider(options, endpointIdentificationAlgorithm, useSNI, clientAuth, applicationProtocols, ctx).onComplete(promise);
+    buildChannelProvider(options, endpointIdentificationAlgorithm, useSNI, clientAuth, applicationProtocols, force, ctx)
+      .onComplete(promise);
     return promise.future();
   }
 
@@ -124,8 +134,13 @@ public class SSLHelper {
    * @param ctx the context
    * @return a future resolved when the helper is initialized
    */
-  Future<SslContextProvider> buildContextProvider(SSLOptions sslOptions, String endpointIdentificationAlgorithm, ClientAuth clientAuth, List<String> applicationProtocols, ContextInternal ctx) {
-    return buildConfig(sslOptions, ctx).map(config -> buildSslContextProvider(sslOptions, endpointIdentificationAlgorithm, supplier, clientAuth, applicationProtocols, config));
+  Future<SslContextProvider> buildContextProvider(SSLOptions sslOptions,
+                                                  String endpointIdentificationAlgorithm,
+                                                  ClientAuth clientAuth,
+                                                  List<String> applicationProtocols,
+                                                  boolean force,
+                                                  ContextInternal ctx) {
+    return buildConfig(sslOptions, force, ctx).map(config -> buildSslContextProvider(sslOptions, endpointIdentificationAlgorithm, supplier, clientAuth, applicationProtocols, config));
   }
 
   private SslContextProvider buildSslContextProvider(SSLOptions sslOptions, String endpointIdentificationAlgorithm, Supplier<SslContextFactory> supplier, ClientAuth clientAuth, List<String> applicationProtocols, Config config) {
@@ -149,10 +164,17 @@ public class SSLHelper {
    * @param ctx the context
    * @return a future resolved when the helper is initialized
    */
-  protected Future<SslChannelProvider> buildChannelProvider(SSLOptions sslOptions, String endpointIdentificationAlgorithm, boolean useSNI, ClientAuth clientAuth, List<String> applicationProtocols, ContextInternal ctx) {
+  protected Future<SslChannelProvider> buildChannelProvider(SSLOptions sslOptions,
+                                                            String endpointIdentificationAlgorithm,
+                                                            boolean useSNI,
+                                                            ClientAuth clientAuth,
+                                                            List<String> applicationProtocols,
+                                                            boolean force,
+                                                            ContextInternal ctx) {
     Future<SslContextProvider> f;
     boolean useWorker;
-    f = buildConfig(sslOptions, ctx).map(config -> buildSslContextProvider(sslOptions, endpointIdentificationAlgorithm, supplier, clientAuth, applicationProtocols, config));
+    f = buildConfig(sslOptions, force, ctx).map(config -> buildSslContextProvider(sslOptions,
+      endpointIdentificationAlgorithm, supplier, clientAuth, applicationProtocols, config));
     useWorker = useWorkerPool;
     return f.map(c -> new SslChannelProvider(
       c,
@@ -161,17 +183,22 @@ public class SSLHelper {
       useWorker));
   }
 
-  private Future<Config> buildConfig(SSLOptions sslOptions, ContextInternal ctx) {
+  private Future<Config> buildConfig(SSLOptions sslOptions, boolean force, ContextInternal ctx) {
     if (sslOptions.getTrustOptions() == null && sslOptions.getKeyCertOptions() == null) {
       return Future.succeededFuture(NULL_CONFIG);
     }
-    Promise<Config> promise = Promise.promise();
+    Promise<Config> promise;
     ConfigKey k = new ConfigKey(sslOptions);
     synchronized (this) {
-      Future<Config> fut = configMap.get(k);
-      if (fut != null) {
-        return fut;
+      if (force) {
+        configMap.remove(k);
+      } else {
+        Future<Config> fut = configMap.get(k);
+        if (fut != null) {
+          return fut;
+        }
       }
+      promise = Promise.promise();
       configMap.put(k, promise.future());
     }
     ctx.executeBlockingInternal(() -> {

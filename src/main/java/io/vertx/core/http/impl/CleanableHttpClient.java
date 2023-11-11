@@ -62,8 +62,8 @@ public class CleanableHttpClient implements HttpClientInternal {
   }
 
   @Override
-  public Future<Void> updateSSLOptions(ClientSSLOptions options) {
-    return delegate.updateSSLOptions(options);
+  public Future<Boolean> updateSSLOptions(ClientSSLOptions options, boolean force) {
+    return delegate.updateSSLOptions(options, force);
   }
 
   @Override
