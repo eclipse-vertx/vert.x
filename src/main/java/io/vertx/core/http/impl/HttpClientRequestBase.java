@@ -132,7 +132,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   @Override
-  public synchronized HttpClientRequest setIdleTimeout(long timeout) {
+  public synchronized HttpClientRequest idleTimeout(long timeout) {
     cancelTimeout();
     currentTimeoutMs = timeout;
     currentTimeoutTimerId = context.setTimer(timeout, id -> handleTimeout(timeout));
@@ -196,7 +196,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
         if (timeSinceLastData < timeoutMs) {
           // reschedule
           lastDataReceived = 0;
-          setIdleTimeout(timeoutMs - timeSinceLastData);
+          idleTimeout(timeoutMs - timeSinceLastData);
           return;
         }
       }

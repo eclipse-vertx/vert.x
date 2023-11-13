@@ -167,7 +167,7 @@ public class HttpClientTimeoutTest extends HttpTestBase {
         for (int i = 0;i < n;i++) {
           AtomicBoolean responseReceived = new AtomicBoolean();
           client.request(requestOptions).onComplete(onSuccess(req -> {
-            req.setIdleTimeout(500);
+            req.idleTimeout(500);
             req.send().onComplete(onSuccess(resp -> {
               try {
                 Thread.sleep(150);
@@ -193,7 +193,7 @@ public class HttpClientTimeoutTest extends HttpTestBase {
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req
         .exceptionHandler(exception::set)
-        .setIdleTimeout(500)
+        .idleTimeout(500)
         .end();
       vertx.setTimer(1000, id -> {
         assertNull("Did not expect any exception", exception.get());
@@ -235,7 +235,7 @@ public class HttpClientTimeoutTest extends HttpTestBase {
       req.response().onComplete(onFailure(err -> {
         complete();
       }));
-      req.setChunked(true).sendHead().onComplete(onSuccess(version -> req.setIdleTimeout(500)));
+      req.setChunked(true).sendHead().onComplete(onSuccess(version -> req.idleTimeout(500)));
       AtomicBoolean errored = new AtomicBoolean();
       req.exceptionHandler(err -> {
         if (errored.compareAndSet(false, true)) {
@@ -265,7 +265,7 @@ public class HttpClientTimeoutTest extends HttpTestBase {
             complete();
           }
         });
-        resp.request().setIdleTimeout(500);
+        resp.request().idleTimeout(500);
         resp.handler(buff -> {
           received.appendBuffer(buff);
           // Force the internal timer to be rescheduled with the remaining amount of time

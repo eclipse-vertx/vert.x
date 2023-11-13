@@ -446,7 +446,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     }
     if (idleTimeout > 0L) {
       // Maybe later ?
-      request.setIdleTimeout(idleTimeout);
+      request.idleTimeout(idleTimeout);
     }
     return request;
   }

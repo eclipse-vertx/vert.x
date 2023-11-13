@@ -407,7 +407,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpClientRequest setIdleTimeout(long timeout);
+  HttpClientRequest idleTimeout(long timeout);
 
   /**
    * Set a push handler for this request.<p/>

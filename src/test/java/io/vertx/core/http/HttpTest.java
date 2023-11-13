@@ -26,13 +26,9 @@ import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.http.impl.HttpServerRequestInternal;
 import io.vertx.core.http.impl.ServerCookie;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
-import io.vertx.core.impl.Utils;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.loadbalancing.LoadBalancer;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
-import io.vertx.core.spi.loadbalancing.EndpointMetrics;
-import io.vertx.core.spi.loadbalancing.EndpointSelector;
 import io.vertx.core.streams.Pump;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.DetectFileDescriptorLeaks;
@@ -42,13 +38,9 @@ import io.vertx.test.fakedns.FakeDNSServer;
 import io.vertx.test.fakestream.FakeStream;
 import io.vertx.test.netty.TestLoggerFactory;
 import io.vertx.test.proxy.HAProxy;
-import org.apache.directory.server.dns.DnsException;
-import org.apache.directory.server.dns.messages.QuestionRecord;
 import org.apache.directory.server.dns.messages.RecordClass;
 import org.apache.directory.server.dns.messages.RecordType;
-import org.apache.directory.server.dns.messages.ResourceRecord;
 import org.apache.directory.server.dns.store.DnsAttribute;
-import org.apache.directory.server.dns.store.RecordStore;
 import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
@@ -106,7 +98,7 @@ public abstract class HttpTest extends HttpTestBase {
       assertNullPointerException(() -> req.end((String) null));
       assertNullPointerException(() -> req.end(null, "UTF-8"));
       assertNullPointerException(() -> req.end("someString", (String) null));
-      assertIllegalArgumentException(() -> req.setIdleTimeout(0));
+      assertIllegalArgumentException(() -> req.idleTimeout(0));
       testComplete();
     }));
     await();
@@ -4179,7 +4171,7 @@ public abstract class HttpTest extends HttpTestBase {
       public Future<Void> end(String chunk, String enc) { throw new UnsupportedOperationException(); }
       public Future<Void> end() { throw new UnsupportedOperationException(); }
       public Future<Void> end(Buffer chunk) { throw new UnsupportedOperationException(); }
-      public HttpClientRequest setIdleTimeout(long timeoutMs) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest idleTimeout(long timeoutMs) { throw new UnsupportedOperationException(); }
       public HttpClientRequest pushHandler(Handler<HttpClientRequest> handler) { throw new UnsupportedOperationException(); }
       public boolean reset(long code) { return false; }
       public boolean reset(long code, Throwable cause) { return false; }

@@ -1083,7 +1083,7 @@ no need to set the `Content-Length` of the request up-front.
 
 ==== Request timeouts
 
-You can set an idle timeout to prevent your application from unresponsive servers using {@link io.vertx.core.http.RequestOptions#setIdleTimeout(long)} or {@link io.vertx.core.http.HttpClientRequest#setIdleTimeout(long)}. When the request does not return any data within the timeout period an exception will fail the result and the request will be reset.
+You can set an idle timeout to prevent your application from unresponsive servers using {@link io.vertx.core.http.RequestOptions#setIdleTimeout(long)} or {@link io.vertx.core.http.HttpClientRequest#idleTimeout(long)}. When the request does not return any data within the timeout period an exception will fail the result and the request will be reset.
 
 [source,$lang]
 ----
