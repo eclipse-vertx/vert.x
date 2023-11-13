@@ -17,6 +17,7 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http2.*;
 import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.handler.timeout.TimeoutException;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
@@ -661,7 +662,14 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
     @Override
     public void reset(Throwable cause) {
-      long code = cause instanceof StreamResetException ? ((StreamResetException)cause).getCode() : 0;
+      long code;
+      if (cause instanceof StreamResetException) {
+        code = ((StreamResetException)cause).getCode();
+      } else if (cause instanceof java.util.concurrent.TimeoutException) {
+        code = 0x08L; // CANCEL
+      } else {
+        code = 0L;
+      }
       conn.context.emit(code, this::writeReset);
     }
 
