@@ -86,11 +86,6 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
   }
 
   @Override
-  public String address() {
-    return address;
-  }
-
-  @Override
   public synchronized Future<Void> completion() {
     return result.future();
   }
