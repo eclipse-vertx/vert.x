@@ -13,9 +13,7 @@ package io.vertx.core.http;
 
 import io.netty.buffer.ByteBufUtil;
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.VertxOptions;
 import io.vertx.test.tls.Cert;
@@ -38,17 +36,20 @@ import java.util.stream.Collectors;
 public class Http1xTLSTest extends HttpTLSTest {
 
   @Override
-  HttpServer createHttpServer(HttpServerOptions options) {
-    return vertx.createHttpServer(options);
-  }
+  protected HttpServerOptions createBaseServerOptions() {
+    return new HttpServerOptions()
+      .setPort(HttpTestBase.DEFAULT_HTTPS_PORT)
+      .setSsl(true);
+  };
 
   @Override
-  HttpClient createHttpClient(HttpClientOptions options) {
-    return vertx.createHttpClient(options);
+  protected HttpClientOptions createBaseClientOptions() {
+    return new HttpClientOptions()
+      .setSsl(true)
+      .setProtocolVersion(HttpVersion.HTTP_1_1);
   }
 
-
-  // ALPN tests
+// ALPN tests
 
   @Test
   // Client and server uses ALPN
