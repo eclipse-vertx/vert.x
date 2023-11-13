@@ -20,13 +20,19 @@ import io.vertx.test.tls.Trust;
 public class Http2TLSTest extends HttpTLSTest {
 
   @Override
-  HttpServer createHttpServer(HttpServerOptions options) {
-    return vertx.createHttpServer(options.setUseAlpn(true));
+  protected HttpServerOptions createBaseServerOptions() {
+    return new HttpServerOptions()
+      .setPort(HttpTestBase.DEFAULT_HTTPS_PORT)
+      .setUseAlpn(true)
+      .setSsl(true);
   }
 
   @Override
-  HttpClient createHttpClient(HttpClientOptions options) {
-    return vertx.createHttpClient(options.setUseAlpn(true));
+  protected HttpClientOptions createBaseClientOptions() {
+    return new HttpClientOptions()
+      .setUseAlpn(true)
+      .setSsl(true)
+      .setProtocolVersion(HttpVersion.HTTP_2);
   }
 
   @Override
