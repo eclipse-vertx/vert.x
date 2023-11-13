@@ -29,13 +29,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class HttpClientTimeoutTest extends HttpTestBase {
+public abstract class HttpClientTimeoutTest extends HttpTestBase {
 
   @Test
   public void testConnectTimeoutDoesFire() throws Exception {
     int timeout = 3000;
     server.requestHandler(req -> {
       req.response().end();
+    });
+    server.connectionHandler(conn -> {
+      if (conn.getWindowSize() != -1) {
+        conn.updateSettings(new Http2Settings().setMaxConcurrentStreams(5));
+      }
     });
     startServer(testAddress);
     List<HttpClientRequest> requests = new ArrayList<>();
@@ -58,6 +63,11 @@ public class HttpClientTimeoutTest extends HttpTestBase {
     int ratio = 80;
     server.requestHandler(req -> {
       req.response().end();
+    });
+    server.connectionHandler(conn -> {
+      if (conn.getWindowSize() != -1) {
+        conn.updateSettings(new Http2Settings().setMaxConcurrentStreams(5));
+      }
     });
     startServer(testAddress);
     List<HttpClientRequest> requests = new ArrayList<>();
@@ -84,6 +94,7 @@ public class HttpClientTimeoutTest extends HttpTestBase {
   @Test
   public void testTimedOutWaiterDoesNotConnect() throws Exception {
     Assume.assumeTrue("Domain socket don't pass this test", testAddress.isInetSocket());
+    Assume.assumeTrue("HTTP/2 don't pass this test", createBaseClientOptions().getProtocolVersion() == HttpVersion.HTTP_1_1);
     long responseDelay = 300;
     int requests = 6;
     CountDownLatch firstCloseLatch = new CountDownLatch(1);
@@ -163,7 +174,7 @@ public class HttpClientTimeoutTest extends HttpTestBase {
       @Override
       public void start() throws Exception {
         client.close();
-        client = vertx.createHttpClient(new PoolOptions().setHttp1MaxSize(1));
+        client = vertx.createHttpClient(createBaseClientOptions(), new PoolOptions().setHttp1MaxSize(1));
         for (int i = 0;i < n;i++) {
           AtomicBoolean responseReceived = new AtomicBoolean();
           client.request(requestOptions).onComplete(onSuccess(req -> {
@@ -226,6 +237,10 @@ public class HttpClientTimeoutTest extends HttpTestBase {
       AtomicBoolean errored = new AtomicBoolean();
       req.exceptionHandler(err -> {
         if (errored.compareAndSet(false, true)) {
+          if (req.version() == HttpVersion.HTTP_2) {
+            StreamResetException reset = (StreamResetException) err;
+            assertEquals(8, reset.getCode());
+          }
           complete();
         }
       });
@@ -307,7 +322,6 @@ public class HttpClientTimeoutTest extends HttpTestBase {
     await();
   }
 
-  // Note : cannot pass for http/2 because flushing is not the same : investigate
   @Test
   public void testRequestTimeoutExtendedWhenResponseChunksReceived() throws Exception {
     long timeout = 2000;
@@ -351,7 +365,7 @@ public class HttpClientTimeoutTest extends HttpTestBase {
     });
 
     client.close();
-    client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(false), new PoolOptions().setHttp1MaxSize(1));
+    client = vertx.createHttpClient(createBaseClientOptions().setKeepAlive(false), new PoolOptions().setHttp1MaxSize(1));
 
     startServer(testAddress);
 
