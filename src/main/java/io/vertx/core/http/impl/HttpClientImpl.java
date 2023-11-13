@@ -387,7 +387,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
               req.setFollowRedirects(followRedirects);
             }
             if (idleTimeout > 0L) {
-              req.setIdleTimeout(idleTimeout);
+              req.idleTimeout(idleTimeout);
             }
             requestPromise.tryComplete(req);
           } else {

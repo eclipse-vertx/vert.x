@@ -406,7 +406,7 @@ public class RequestOptions {
    * e.g. {@code Future<HttpClientResponse>} or {@code Future<Buffer>} response body.
    *
    * <p/>The timeout starts after a connection is obtained from the client, similar to calling
-   * {@link HttpClientRequest#setIdleTimeout(long)}.
+   * {@link HttpClientRequest#idleTimeout(long)}.
    *
    * @param timeout the amount of time in milliseconds.
    * @return a reference to this, so the API can be used fluently

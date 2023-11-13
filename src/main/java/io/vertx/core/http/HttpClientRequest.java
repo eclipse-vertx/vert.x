@@ -530,9 +530,9 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
   void end(Handler<AsyncResult<Void>> handler);
 
   /**
-   * Like {@link #setIdleTimeout(long)} but with a confusing name (hence the deprecation).
+   * Like {@link #idleTimeout(long)} but with a confusing name (hence the deprecation).
    *
-   * @deprecated instead use {@link #setIdleTimeout(long)}
+   * @deprecated instead use {@link #idleTimeout(long)}
    */
   @Deprecated
   @Fluent
@@ -547,7 +547,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  default HttpClientRequest setIdleTimeout(long timeout) {
+  default HttpClientRequest idleTimeout(long timeout) {
     return setTimeout(timeout);
   }
 
