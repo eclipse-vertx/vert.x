@@ -60,12 +60,6 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  boolean reset(Throwable cause) {
-    stream.reset(cause);
-    return true;
-  }
-
-  @Override
   public boolean isChunked() {
     return false;
   }

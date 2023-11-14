@@ -1065,4 +1065,24 @@ public class Http2Test extends HttpTest {
     }
     await();
   }
+
+  @Test
+  public void testStreamResetErrorMapping() throws Exception {
+    server.requestHandler(req -> {
+    });
+    startServer(testAddress);
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req.exceptionHandler(err -> {
+        assertTrue(err instanceof StreamResetException);
+        StreamResetException sre = (StreamResetException) err;
+        assertEquals(10, sre.getCode());
+        testComplete();
+      });
+      // Force stream allocation
+      req.sendHead().onComplete(onSuccess(v -> {
+        req.reset(10);
+      }));
+    }));
+    await();
+  }
 }
