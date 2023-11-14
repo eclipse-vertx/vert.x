@@ -45,7 +45,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   private long currentTimeoutTimerId = -1;
   private long currentTimeoutMs;
   private long lastDataReceived;
-  private Throwable timeoutFired;
+  private Throwable reset;
 
   HttpClientRequestBase(HttpClientStream stream, PromiseInternal<HttpClientResponse> responsePromise, HttpMethod method, SocketAddress server, String host, int port, String uri) {
     this.stream = stream;
@@ -167,8 +167,8 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   protected Throwable mapException(Throwable t) {
-    if (t instanceof HttpClosedException && timeoutFired != null) {
-      t = timeoutFired;
+    if (t instanceof HttpClosedException && reset != null) {
+      t = reset;
     }
     return t;
   }
@@ -196,7 +196,9 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   void handleResponse(HttpClientResponse resp) {
-    handleResponse(responsePromise, resp, cancelTimeout());
+    if (reset == null) {
+      handleResponse(responsePromise, resp, cancelTimeout());
+    }
   }
 
   abstract void handleResponse(Promise<HttpClientResponse> promise, HttpClientResponse resp, long timeoutMs);
@@ -228,7 +230,6 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
         }
       }
       cause = timeoutEx(timeoutMs, method, server, uri);
-      timeoutFired = cause;
     }
     reset(cause);
   }
@@ -253,7 +254,16 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     return reset(new StreamResetException(code, cause));
   }
 
-  abstract boolean reset(Throwable cause);
+  private boolean reset(Throwable cause) {
+    synchronized (this) {
+      if (reset != null) {
+        return false;
+      }
+      reset = cause;
+    }
+    stream.reset(cause);
+    return true;
+  }
 
   @Override
   public HttpClientRequest response(Handler<AsyncResult<HttpClientResponse>> handler) {
