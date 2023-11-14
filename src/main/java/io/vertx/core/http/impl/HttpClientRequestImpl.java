@@ -54,7 +54,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private Handler<Throwable> exceptionHandler;
   private Function<HttpClientResponse, Future<HttpClientRequest>> redirectHandler;
   private boolean ended;
-  private Throwable reset;
   private boolean followRedirects;
   private int maxRedirects;
   private int numberOfRedirections;
@@ -297,18 +296,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     return traceOperation;
   }
 
-  @Override
-  boolean reset(Throwable cause) {
-    synchronized (this) {
-      if (reset != null) {
-        return false;
-      }
-      reset = cause;
-    }
-    stream.reset(cause);
-    return true;
-  }
-
   private void tryComplete() {
     endPromise.tryComplete();
   }
@@ -379,9 +366,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   void handleResponse(Promise<HttpClientResponse> promise, HttpClientResponse resp, long timeoutMs) {
-    if (reset != null) {
-      return;
-    }
     int statusCode = resp.statusCode();
     if (followRedirects && numberOfRedirections < maxRedirects && statusCode >= 300 && statusCode < 400) {
       Function<HttpClientResponse, Future<HttpClientRequest>> handler = redirectHandler;
