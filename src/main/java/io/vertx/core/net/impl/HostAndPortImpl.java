@@ -30,7 +30,7 @@ public class HostAndPortImpl implements HostAndPort {
         return -1;
       }
     }
-    return from < to && s.charAt(from + 1) != ':' ? -1 : from;
+    return from;
   }
 
   static int parseDecOctet(String s, int from, int to) {
