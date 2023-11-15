@@ -119,14 +119,18 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
 
   @Override
   public EventBus send(String address, Object message, DeliveryOptions options) {
-    MessageImpl msg = createMessage(true, address, options.getHeaders(), message, options.getCodecName());
+    MessageImpl msg = createMessage(true, options.isLocalOnly(), address, options.getHeaders(), message, options.getCodecName());
     sendOrPubInternal(msg, options, null);
     return this;
   }
 
   @Override
   public <T> Future<Message<T>> request(String address, Object message, DeliveryOptions options) {
-    MessageImpl msg = createMessage(true, address, options.getHeaders(), message, options.getCodecName());
+    boolean local = false;
+    if (vertx.isClustered() && options.isLocalOnly()) {
+      local = true;
+    }
+    MessageImpl msg = createMessage(options.isLocalOnly(), local, address, options.getHeaders(), message, options.getCodecName());
     ReplyHandler<T> handler = createReplyHandler(msg, true, options);
     sendOrPubInternal(msg, options, handler);
     return handler.result();
@@ -165,7 +169,7 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
 
   @Override
   public EventBus publish(String address, Object message, DeliveryOptions options) {
-    sendOrPubInternal(createMessage(false, address, options.getHeaders(), message, options.getCodecName()), options, null);
+    sendOrPubInternal(createMessage(false, options.isLocalOnly(), address, options.getHeaders(), message, options.getCodecName()), options, null);
     return this;
   }
 
@@ -253,9 +257,13 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
     return metrics;
   }
 
-  public MessageImpl createMessage(boolean send, String address, MultiMap headers, Object body, String codecName) {
+  public MessageImpl createMessage(boolean send, boolean localOnly, String address, MultiMap headers, Object body, String codecName) {
     Objects.requireNonNull(address, "no null address accepted");
-    MessageCodec codec = codecManager.lookupCodec(body, codecName, true);
+    boolean local = true;
+    if (vertx.isClustered()) {
+      local = localOnly;
+    }
+    MessageCodec codec = codecManager.lookupCodec(body, codecName, local);
     @SuppressWarnings("unchecked")
     MessageImpl msg = new MessageImpl(address, headers, body, codec, send, this);
     return msg;

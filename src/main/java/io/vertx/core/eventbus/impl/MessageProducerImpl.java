@@ -45,7 +45,7 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
 
   @Override
   public Future<Void> write(T body) {
-    MessageImpl msg = bus.createMessage(send, address, options.getHeaders(), body, options.getCodecName());
+    MessageImpl msg = bus.createMessage(send, options.isLocalOnly(), address, options.getHeaders(), body, options.getCodecName());
     return bus.sendOrPubInternal(msg, options, null);
   }
 

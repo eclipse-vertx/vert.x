@@ -145,9 +145,9 @@ public class ClusteredEventBus extends EventBusImpl {
   }
 
   @Override
-  public MessageImpl createMessage(boolean send, String address, MultiMap headers, Object body, String codecName) {
+  public MessageImpl createMessage(boolean send, boolean local, String address, MultiMap headers, Object body, String codecName) {
     Objects.requireNonNull(address, "no null address accepted");
-    MessageCodec codec = codecManager.lookupCodec(body, codecName, false);
+    MessageCodec codec = codecManager.lookupCodec(body, codecName, local);
     @SuppressWarnings("unchecked")
     ClusteredMessage msg = new ClusteredMessage(nodeId, address, headers, body, codec, send, this);
     return msg;
