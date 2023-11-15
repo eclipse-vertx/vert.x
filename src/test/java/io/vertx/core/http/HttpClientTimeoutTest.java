@@ -37,11 +37,6 @@ public abstract class HttpClientTimeoutTest extends HttpTestBase {
     server.requestHandler(req -> {
       req.response().end();
     });
-    server.connectionHandler(conn -> {
-      if (conn.getWindowSize() != -1) {
-        conn.updateSettings(new Http2Settings().setMaxConcurrentStreams(5));
-      }
-    });
     startServer(testAddress);
     List<HttpClientRequest> requests = new ArrayList<>();
     for (int i = 0;i < 5;i++) {
@@ -63,11 +58,6 @@ public abstract class HttpClientTimeoutTest extends HttpTestBase {
     int ratio = 50;
     server.requestHandler(req -> {
       req.response().end();
-    });
-    server.connectionHandler(conn -> {
-      if (conn.getWindowSize() != -1) {
-        conn.updateSettings(new Http2Settings().setMaxConcurrentStreams(5));
-      }
     });
     startServer(testAddress);
     List<HttpClientRequest> requests = new ArrayList<>();
