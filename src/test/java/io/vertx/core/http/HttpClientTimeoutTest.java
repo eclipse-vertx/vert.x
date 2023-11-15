@@ -60,7 +60,7 @@ public abstract class HttpClientTimeoutTest extends HttpTestBase {
   @Test
   public void testConnectTimeoutDoesNotFire() throws Exception {
     int timeout = 3000;
-    int ratio = 80;
+    int ratio = 50;
     server.requestHandler(req -> {
       req.response().end();
     });
