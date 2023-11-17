@@ -171,6 +171,7 @@ public class VertxOptions {
     this.warningExceptionTime = other.warningExceptionTime;
     this.eventBusOptions = new EventBusOptions(other.eventBusOptions);
     this.addressResolverOptions = other.addressResolverOptions != null ? new AddressResolverOptions(other.getAddressResolverOptions()) : null;
+    this.preferNativeTransport = other.preferNativeTransport;
     this.maxEventLoopExecuteTimeUnit = other.maxEventLoopExecuteTimeUnit;
     this.maxWorkerExecuteTimeUnit = other.maxWorkerExecuteTimeUnit;
     this.warningExceptionTimeUnit = other.warningExceptionTimeUnit;
@@ -354,7 +355,9 @@ public class VertxOptions {
    *
    * @param clusterManager the cluster manager
    * @return a reference to this, so the API can be used fluently
+   * @deprecated instead use {@link io.vertx.core.VertxBuilder#withClusterManager(ClusterManager)}
    */
+  @Deprecated
   public VertxOptions setClusterManager(ClusterManager clusterManager) {
     this.clusterManager = clusterManager;
     return this;

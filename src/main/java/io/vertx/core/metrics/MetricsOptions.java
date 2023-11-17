@@ -14,6 +14,7 @@ package io.vertx.core.metrics;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.VertxMetricsFactory;
+import io.vertx.core.spi.cluster.ClusterManager;
 
 /**
  * Vert.x metrics base configuration, this class can be extended by provider implementations to configure
@@ -105,7 +106,9 @@ public class MetricsOptions {
    *
    * @param factory the metrics factory
    * @return a reference to this, so the API can be used fluently
+   * @deprecated instead use {@link io.vertx.core.VertxBuilder#withMetrics(VertxMetricsFactory)}
    */
+  @Deprecated
   public MetricsOptions setFactory(VertxMetricsFactory factory) {
     this.factory = factory;
     return this;
