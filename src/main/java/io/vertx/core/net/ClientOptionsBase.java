@@ -287,21 +287,25 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     return (ClientOptionsBase) super.setSsl(ssl);
   }
 
+  @Deprecated
   @Override
   public ClientOptionsBase setKeyCertOptions(KeyCertOptions options) {
     return (ClientOptionsBase) super.setKeyCertOptions(options);
   }
 
+  @Deprecated
   @Override
   public ClientOptionsBase setKeyStoreOptions(JksOptions options) {
     return (ClientOptionsBase) super.setKeyStoreOptions(options);
   }
 
+  @Deprecated
   @Override
   public ClientOptionsBase setPfxKeyCertOptions(PfxOptions options) {
     return (ClientOptionsBase) super.setPfxKeyCertOptions(options);
   }
 
+  @Deprecated
   @Override
   public ClientOptionsBase setPemKeyCertOptions(PemKeyCertOptions options) {
     return (ClientOptionsBase) super.setPemKeyCertOptions(options);
@@ -312,16 +316,19 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     return (ClientOptionsBase) super.setTrustOptions(options);
   }
 
+  @Deprecated
   @Override
   public ClientOptionsBase setTrustStoreOptions(JksOptions options) {
     return (ClientOptionsBase) super.setTrustStoreOptions(options);
   }
 
+  @Deprecated
   @Override
   public ClientOptionsBase setPfxTrustOptions(PfxOptions options) {
     return (ClientOptionsBase) super.setPfxTrustOptions(options);
   }
 
+  @Deprecated
   @Override
   public ClientOptionsBase setPemTrustOptions(PemTrustOptions options) {
     return (ClientOptionsBase) super.setPemTrustOptions(options);
@@ -337,11 +344,13 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     return (ClientOptionsBase) super.setSslEngineOptions(sslEngineOptions);
   }
 
+  @Deprecated
   @Override
   public ClientOptionsBase setJdkSslEngineOptions(JdkSSLEngineOptions sslEngineOptions) {
     return (ClientOptionsBase) super.setJdkSslEngineOptions(sslEngineOptions);
   }
 
+  @Deprecated
   @Override
   public ClientOptionsBase setOpenSslEngineOptions(OpenSSLEngineOptions sslEngineOptions) {
     return (ClientOptionsBase) super.setOpenSslEngineOptions(sslEngineOptions);

@@ -395,23 +395,27 @@ public class HttpServerOptions extends NetServerOptions {
     return this;
   }
 
+  @Deprecated
   @Override
   public HttpServerOptions setKeyCertOptions(KeyCertOptions options) {
     super.setKeyCertOptions(options);
     return this;
   }
 
+  @Deprecated
   @Override
   public HttpServerOptions setKeyStoreOptions(JksOptions options) {
     super.setKeyStoreOptions(options);
     return this;
   }
 
+  @Deprecated
   @Override
   public HttpServerOptions setPfxKeyCertOptions(PfxOptions options) {
     return (HttpServerOptions) super.setPfxKeyCertOptions(options);
   }
 
+  @Deprecated
   @Override
   public HttpServerOptions setPemKeyCertOptions(PemKeyCertOptions options) {
     return (HttpServerOptions) super.setPemKeyCertOptions(options);
@@ -423,17 +427,20 @@ public class HttpServerOptions extends NetServerOptions {
     return this;
   }
 
+  @Deprecated
   @Override
   public HttpServerOptions setTrustStoreOptions(JksOptions options) {
     super.setTrustStoreOptions(options);
     return this;
   }
 
+  @Deprecated
   @Override
   public HttpServerOptions setPemTrustOptions(PemTrustOptions options) {
     return (HttpServerOptions) super.setPemTrustOptions(options);
   }
 
+  @Deprecated
   @Override
   public HttpServerOptions setPfxTrustOptions(PfxOptions options) {
     return (HttpServerOptions) super.setPfxTrustOptions(options);
@@ -516,11 +523,13 @@ public class HttpServerOptions extends NetServerOptions {
     return this;
   }
 
+  @Deprecated
   @Override
   public HttpServerOptions setJdkSslEngineOptions(JdkSSLEngineOptions sslEngineOptions) {
     return (HttpServerOptions) super.setSslEngineOptions(sslEngineOptions);
   }
 
+  @Deprecated
   @Override
   public HttpServerOptions setOpenSslEngineOptions(OpenSSLEngineOptions sslEngineOptions) {
     return (HttpServerOptions) super.setSslEngineOptions(sslEngineOptions);

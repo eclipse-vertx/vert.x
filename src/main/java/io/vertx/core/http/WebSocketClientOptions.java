@@ -497,21 +497,25 @@ public class WebSocketClientOptions extends ClientOptionsBase {
     return (WebSocketClientOptions)super.setSsl(ssl);
   }
 
+  @Deprecated
   @Override
   public WebSocketClientOptions setKeyCertOptions(KeyCertOptions options) {
     return (WebSocketClientOptions)super.setKeyCertOptions(options);
   }
 
+  @Deprecated
   @Override
   public WebSocketClientOptions setKeyStoreOptions(JksOptions options) {
     return (WebSocketClientOptions)super.setKeyStoreOptions(options);
   }
 
+  @Deprecated
   @Override
   public WebSocketClientOptions setPfxKeyCertOptions(PfxOptions options) {
     return (WebSocketClientOptions)super.setPfxKeyCertOptions(options);
   }
 
+  @Deprecated
   @Override
   public WebSocketClientOptions setPemKeyCertOptions(PemKeyCertOptions options) {
     return (WebSocketClientOptions)super.setPemKeyCertOptions(options);
@@ -522,16 +526,19 @@ public class WebSocketClientOptions extends ClientOptionsBase {
     return (WebSocketClientOptions)super.setTrustOptions(options);
   }
 
+  @Deprecated
   @Override
   public WebSocketClientOptions setTrustStoreOptions(JksOptions options) {
     return (WebSocketClientOptions)super.setTrustStoreOptions(options);
   }
 
+  @Deprecated
   @Override
   public WebSocketClientOptions setPfxTrustOptions(PfxOptions options) {
     return (WebSocketClientOptions)super.setPfxTrustOptions(options);
   }
 
+  @Deprecated
   @Override
   public WebSocketClientOptions setPemTrustOptions(PemTrustOptions options) {
     return (WebSocketClientOptions)super.setPemTrustOptions(options);
@@ -547,11 +554,13 @@ public class WebSocketClientOptions extends ClientOptionsBase {
     return (WebSocketClientOptions)super.setSslEngineOptions(sslEngineOptions);
   }
 
+  @Deprecated
   @Override
   public WebSocketClientOptions setJdkSslEngineOptions(JdkSSLEngineOptions sslEngineOptions) {
     return (WebSocketClientOptions)super.setJdkSslEngineOptions(sslEngineOptions);
   }
 
+  @Deprecated
   @Override
   public WebSocketClientOptions setOpenSslEngineOptions(OpenSSLEngineOptions sslEngineOptions) {
     return (WebSocketClientOptions)super.setOpenSslEngineOptions(sslEngineOptions);
