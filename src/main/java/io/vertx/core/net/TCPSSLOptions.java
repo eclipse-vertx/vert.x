@@ -396,7 +396,9 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * Get the key/cert options in jks format, aka Java keystore.
    *
    * @return the key/cert options in jks format, aka Java keystore.
+   * @deprecated instead use {@link #getKeyCertOptions()}
    */
+  @Deprecated
   public JksOptions getKeyStoreOptions() {
     KeyCertOptions keyCertOptions = sslOptions.getKeyCertOptions();
     return keyCertOptions instanceof JksOptions ? (JksOptions) keyCertOptions : null;
@@ -406,7 +408,9 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * Set the key/cert options in jks format, aka Java keystore.
    * @param options the key store in jks format
    * @return a reference to this, so the API can be used fluently
+   * @deprecated instead use {@link #setKeyCertOptions(KeyCertOptions)}
    */
+  @Deprecated
   public TCPSSLOptions setKeyStoreOptions(JksOptions options) {
     return setKeyCertOptions(options);
   }
@@ -415,7 +419,9 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * Get the key/cert options in pfx format.
    *
    * @return the key/cert options in pfx format.
+   * @deprecated instead use {@link #getKeyCertOptions()}
    */
+  @Deprecated
   public PfxOptions getPfxKeyCertOptions() {
     KeyCertOptions keyCertOptions = sslOptions.getKeyCertOptions();
     return keyCertOptions instanceof PfxOptions ? (PfxOptions) keyCertOptions : null;
@@ -425,7 +431,9 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * Set the key/cert options in pfx format.
    * @param options the key cert options in pfx format
    * @return a reference to this, so the API can be used fluently
+   * @deprecated instead use {@link #setKeyCertOptions(KeyCertOptions)}
    */
+  @Deprecated
   public TCPSSLOptions setPfxKeyCertOptions(PfxOptions options) {
     return setKeyCertOptions(options);
   }
@@ -434,7 +442,9 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * Get the key/cert store options in pem format.
    *
    * @return the key/cert store options in pem format.
+   * @deprecated instead use {@link #getKeyCertOptions()}
    */
+  @Deprecated
   public PemKeyCertOptions getPemKeyCertOptions() {
     KeyCertOptions keyCertOptions = sslOptions.getKeyCertOptions();
     return keyCertOptions instanceof PemKeyCertOptions ? (PemKeyCertOptions) keyCertOptions : null;
@@ -444,7 +454,9 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * Set the key/cert store options in pem format.
    * @param options the options in pem format
    * @return a reference to this, so the API can be used fluently
+   * @deprecated instead use {@link #setKeyCertOptions(KeyCertOptions)}
    */
+  @Deprecated
   public TCPSSLOptions setPemKeyCertOptions(PemKeyCertOptions options) {
     return setKeyCertOptions(options);
   }
@@ -470,7 +482,9 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * Get the trust options in jks format, aka Java truststore
    *
    * @return the trust options in jks format, aka Java truststore
+   * @deprecated instead use {@link #getTrustOptions()}
    */
+  @Deprecated
   public JksOptions getTrustStoreOptions() {
     TrustOptions trustOptions = sslOptions.getTrustOptions();
     return trustOptions instanceof JksOptions ? (JksOptions) trustOptions : null;
@@ -480,7 +494,9 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * Set the trust options in jks format, aka Java truststore
    * @param options the trust options in jks format
    * @return a reference to this, so the API can be used fluently
+   * @deprecated instead use {@link #setTrustOptions(TrustOptions)}
    */
+  @Deprecated
   public TCPSSLOptions setTrustStoreOptions(JksOptions options) {
     return setTrustOptions(options);
   }
@@ -489,7 +505,9 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * Get the trust options in pfx format
    *
    * @return the trust options in pfx format
+   * @deprecated instead use {@link #getTrustOptions()}
    */
+  @Deprecated
   public PfxOptions getPfxTrustOptions() {
     TrustOptions trustOptions = sslOptions.getTrustOptions();
     return trustOptions instanceof PfxOptions ? (PfxOptions) trustOptions : null;
@@ -499,7 +517,9 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * Set the trust options in pfx format
    * @param options the trust options in pfx format
    * @return a reference to this, so the API can be used fluently
+   * @deprecated instead use {@link #setTrustOptions(TrustOptions)}
    */
+  @Deprecated
   public TCPSSLOptions setPfxTrustOptions(PfxOptions options) {
     return setTrustOptions(options);
   }
@@ -508,7 +528,9 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * Get the trust options in pem format
    *
    * @return the trust options in pem format
+   * @deprecated instead use {@link #getTrustOptions()}
    */
+  @Deprecated
   public PemTrustOptions getPemTrustOptions() {
     TrustOptions trustOptions = sslOptions.getTrustOptions();
     return trustOptions instanceof PemTrustOptions ? (PemTrustOptions) trustOptions : null;
@@ -518,7 +540,9 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * Set the trust options in pem format
    * @param options the trust options in pem format
    * @return a reference to this, so the API can be used fluently
+   * @deprecated instead use {@link #setTrustOptions(TrustOptions)}
    */
+  @Deprecated
   public TCPSSLOptions setPemTrustOptions(PemTrustOptions options) {
     return setTrustOptions(options);
   }
@@ -572,9 +596,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * Add a CRL path
    * @param crlPath  the path
    * @return a reference to this, so the API can be used fluently
-   * @throws NullPointerException
    */
-  public TCPSSLOptions addCrlPath(String crlPath) throws NullPointerException {
+  public TCPSSLOptions addCrlPath(String crlPath) {
     sslOptions.addCrlPath(crlPath);
     return this;
   }
@@ -593,9 +616,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    *
    * @param crlValue  the value
    * @return a reference to this, so the API can be used fluently
-   * @throws NullPointerException
    */
-  public TCPSSLOptions addCrlValue(Buffer crlValue) throws NullPointerException {
+  public TCPSSLOptions addCrlValue(Buffer crlValue) {
     sslOptions.addCrlValue(crlValue);
     return this;
   }
@@ -635,18 +657,34 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     return this;
   }
 
+  /**
+   * @deprecated instead use {@link #getSslEngineOptions()}
+   */
+  @Deprecated
   public JdkSSLEngineOptions getJdkSslEngineOptions() {
     return sslEngineOptions instanceof JdkSSLEngineOptions ? (JdkSSLEngineOptions) sslEngineOptions : null;
   }
 
+  /**
+   * @deprecated instead use {@link #setSslEngineOptions(SSLEngineOptions)}
+   */
+  @Deprecated
   public TCPSSLOptions setJdkSslEngineOptions(JdkSSLEngineOptions sslEngineOptions) {
     return setSslEngineOptions(sslEngineOptions);
   }
 
+  /**
+   * @deprecated instead use {@link #getSslEngineOptions()}
+   */
+  @Deprecated
   public OpenSSLEngineOptions getOpenSslEngineOptions() {
     return sslEngineOptions instanceof OpenSSLEngineOptions ? (OpenSSLEngineOptions) sslEngineOptions : null;
   }
 
+  /**
+   * @deprecated instead use {@link #setSslEngineOptions(SSLEngineOptions)}
+   */
+  @Deprecated
   public TCPSSLOptions setOpenSslEngineOptions(OpenSSLEngineOptions sslEngineOptions) {
     return setSslEngineOptions(sslEngineOptions);
   }

@@ -183,23 +183,27 @@ public class NetClientOptions extends ClientOptionsBase {
     return this;
   }
 
+  @Deprecated
   @Override
   public NetClientOptions setKeyCertOptions(KeyCertOptions options) {
     super.setKeyCertOptions(options);
     return this;
   }
 
+  @Deprecated
   @Override
   public NetClientOptions setKeyStoreOptions(JksOptions options) {
     super.setKeyStoreOptions(options);
     return this;
   }
 
+  @Deprecated
   @Override
   public NetClientOptions setPfxKeyCertOptions(PfxOptions options) {
     return (NetClientOptions) super.setPfxKeyCertOptions(options);
   }
 
+  @Deprecated
   @Override
   public NetClientOptions setPemKeyCertOptions(PemKeyCertOptions options) {
     return (NetClientOptions) super.setPemKeyCertOptions(options);
@@ -211,17 +215,20 @@ public class NetClientOptions extends ClientOptionsBase {
     return this;
   }
 
+  @Deprecated
   @Override
   public NetClientOptions setTrustStoreOptions(JksOptions options) {
     super.setTrustStoreOptions(options);
     return this;
   }
 
+  @Deprecated
   @Override
   public NetClientOptions setPemTrustOptions(PemTrustOptions options) {
     return (NetClientOptions) super.setPemTrustOptions(options);
   }
 
+  @Deprecated
   @Override
   public NetClientOptions setPfxTrustOptions(PfxOptions options) {
     return (NetClientOptions) super.setPfxTrustOptions(options);
@@ -260,6 +267,7 @@ public class NetClientOptions extends ClientOptionsBase {
     return (NetClientOptions) super.setSslEngineOptions(sslEngineOptions);
   }
 
+  @Deprecated
   @Override
   public NetClientOptions setJdkSslEngineOptions(JdkSSLEngineOptions sslEngineOptions) {
     return (NetClientOptions) super.setJdkSslEngineOptions(sslEngineOptions);
@@ -280,6 +288,7 @@ public class NetClientOptions extends ClientOptionsBase {
     return (NetClientOptions) super.setTcpQuickAck(tcpQuickAck);
   }
 
+  @Deprecated
   @Override
   public ClientOptionsBase setOpenSslEngineOptions(OpenSSLEngineOptions sslEngineOptions) {
     return super.setOpenSslEngineOptions(sslEngineOptions);

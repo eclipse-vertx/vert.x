@@ -230,33 +230,39 @@ public class NetServerOptions extends TCPSSLOptions {
     return this;
   }
 
+  @Deprecated
   @Override
   public NetServerOptions setJdkSslEngineOptions(JdkSSLEngineOptions sslEngineOptions) {
     return (NetServerOptions) super.setSslEngineOptions(sslEngineOptions);
   }
 
+  @Deprecated
   @Override
   public NetServerOptions setOpenSslEngineOptions(OpenSSLEngineOptions sslEngineOptions) {
     return (NetServerOptions) super.setSslEngineOptions(sslEngineOptions);
   }
 
+  @Deprecated
   @Override
   public NetServerOptions setKeyCertOptions(KeyCertOptions options) {
     super.setKeyCertOptions(options);
     return this;
   }
 
+  @Deprecated
   @Override
   public NetServerOptions setKeyStoreOptions(JksOptions options) {
     super.setKeyStoreOptions(options);
     return this;
   }
 
+  @Deprecated
   @Override
   public NetServerOptions setPfxKeyCertOptions(PfxOptions options) {
     return (NetServerOptions) super.setPfxKeyCertOptions(options);
   }
 
+  @Deprecated
   @Override
   public NetServerOptions setPemKeyCertOptions(PemKeyCertOptions options) {
     return (NetServerOptions) super.setPemKeyCertOptions(options);
@@ -268,17 +274,20 @@ public class NetServerOptions extends TCPSSLOptions {
     return this;
   }
 
+  @Deprecated
   @Override
   public NetServerOptions setTrustStoreOptions(JksOptions options) {
     super.setTrustStoreOptions(options);
     return this;
   }
 
+  @Deprecated
   @Override
   public NetServerOptions setPfxTrustOptions(PfxOptions options) {
     return (NetServerOptions) super.setPfxTrustOptions(options);
   }
 
+  @Deprecated
   @Override
   public NetServerOptions setPemTrustOptions(PemTrustOptions options) {
     return (NetServerOptions) super.setPemTrustOptions(options);

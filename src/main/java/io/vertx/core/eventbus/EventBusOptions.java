@@ -361,35 +361,41 @@ public class EventBusOptions extends TCPSSLOptions {
 
   @Override
   @GenIgnore
+  @Deprecated
   public EventBusOptions setKeyCertOptions(KeyCertOptions options) {
     super.setKeyCertOptions(options);
     return this;
   }
 
+  @Deprecated
   @Override
   public EventBusOptions setKeyStoreOptions(JksOptions options) {
     super.setKeyStoreOptions(options);
     return this;
   }
 
+  @Deprecated
   @Override
   public EventBusOptions setPemKeyCertOptions(PemKeyCertOptions options) {
     super.setPemKeyCertOptions(options);
     return this;
   }
 
+  @Deprecated
   @Override
   public EventBusOptions setPemTrustOptions(PemTrustOptions options) {
     super.setPemTrustOptions(options);
     return this;
   }
 
+  @Deprecated
   @Override
   public EventBusOptions setPfxKeyCertOptions(PfxOptions options) {
     super.setPfxKeyCertOptions(options);
     return this;
   }
 
+  @Deprecated
   @Override
   public EventBusOptions setPfxTrustOptions(PfxOptions options) {
     super.setPfxTrustOptions(options);
@@ -426,6 +432,7 @@ public class EventBusOptions extends TCPSSLOptions {
     return this;
   }
 
+  @Deprecated
   @Override
   public EventBusOptions setTrustStoreOptions(JksOptions options) {
     super.setTrustStoreOptions(options);
@@ -472,11 +479,13 @@ public class EventBusOptions extends TCPSSLOptions {
     return (EventBusOptions) super.setSslEngineOptions(sslEngineOptions);
   }
 
+  @Deprecated
   @Override
   public EventBusOptions setJdkSslEngineOptions(JdkSSLEngineOptions sslEngineOptions) {
     return (EventBusOptions) super.setJdkSslEngineOptions(sslEngineOptions);
   }
 
+  @Deprecated
   @Override
   public EventBusOptions setOpenSslEngineOptions(OpenSSLEngineOptions sslEngineOptions) {
     return (EventBusOptions) super.setOpenSslEngineOptions(sslEngineOptions);
