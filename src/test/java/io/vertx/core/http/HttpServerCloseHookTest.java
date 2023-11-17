@@ -37,7 +37,7 @@ public class HttpServerCloseHookTest extends VertxTestBase {
     public void start(Promise<Void> startPromise) {
       HttpServerOptions invalidOptions = new HttpServerOptions()
         .setSsl(true)
-        .setPfxTrustOptions(new PfxOptions().setValue(Buffer.buffer("boom")));
+        .setTrustOptions(new PfxOptions().setValue(Buffer.buffer("boom")));
 
       vertx.createHttpServer(invalidOptions).requestHandler(req -> {
         req.response().end("Hello World!");

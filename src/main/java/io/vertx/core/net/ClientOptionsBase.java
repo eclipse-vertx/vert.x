@@ -298,38 +298,8 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   }
 
   @Override
-  public ClientOptionsBase setKeyStoreOptions(JksOptions options) {
-    return (ClientOptionsBase) super.setKeyStoreOptions(options);
-  }
-
-  @Override
-  public ClientOptionsBase setPfxKeyCertOptions(PfxOptions options) {
-    return (ClientOptionsBase) super.setPfxKeyCertOptions(options);
-  }
-
-  @Override
-  public ClientOptionsBase setPemKeyCertOptions(PemKeyCertOptions options) {
-    return (ClientOptionsBase) super.setPemKeyCertOptions(options);
-  }
-
-  @Override
   public ClientOptionsBase setTrustOptions(TrustOptions options) {
     return (ClientOptionsBase) super.setTrustOptions(options);
-  }
-
-  @Override
-  public ClientOptionsBase setTrustStoreOptions(JksOptions options) {
-    return (ClientOptionsBase) super.setTrustStoreOptions(options);
-  }
-
-  @Override
-  public ClientOptionsBase setPfxTrustOptions(PfxOptions options) {
-    return (ClientOptionsBase) super.setPfxTrustOptions(options);
-  }
-
-  @Override
-  public ClientOptionsBase setPemTrustOptions(PemTrustOptions options) {
-    return (ClientOptionsBase) super.setPemTrustOptions(options);
   }
 
   @Override
@@ -340,11 +310,6 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   @Override
   public ClientOptionsBase setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
     return (ClientOptionsBase) super.setSslEngineOptions(sslEngineOptions);
-  }
-
-  @Override
-  public ClientOptionsBase setJdkSslEngineOptions(JdkSSLEngineOptions sslEngineOptions) {
-    return (ClientOptionsBase) super.setJdkSslEngineOptions(sslEngineOptions);
   }
 
   @Override

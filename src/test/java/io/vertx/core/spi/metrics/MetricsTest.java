@@ -1182,7 +1182,7 @@ public class MetricsTest extends VertxTestBase {
       .setSslEngineOptions(new JdkSSLEngineOptions())
       .setUseAlpn(true)
       .setSsl(true)
-      .setTrustStoreOptions(Trust.SERVER_JKS.get())
+      .setTrustOptions(Trust.SERVER_JKS.get())
       .setApplicationLayerProtocols(Collections.singletonList("h2")));
     CountDownLatch latch = new CountDownLatch(1);
     client.connect(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST).onComplete(onSuccess(so -> {

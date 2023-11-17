@@ -25,7 +25,7 @@ public class HTTP2Examples {
     HttpServerOptions options = new HttpServerOptions()
         .setUseAlpn(true)
         .setSsl(true)
-        .setKeyStoreOptions(new JksOptions().setPath("/path/to/my/keystore"));
+        .setKeyCertOptions(new JksOptions().setPath("/path/to/my/keystore"));
 
     HttpServer server = vertx.createHttpServer(options);
   }

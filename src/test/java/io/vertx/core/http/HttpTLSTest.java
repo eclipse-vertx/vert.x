@@ -1177,7 +1177,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
       if (clientOpenSSL) {
         options.setOpenSslEngineOptions(new OpenSSLEngineOptions());
       } else {
-        options.setJdkSslEngineOptions(new JdkSSLEngineOptions());
+        options.setSslEngineOptions(new JdkSSLEngineOptions());
       }
       if (clientUsesAlpn) {
         options.setUseAlpn(true);
@@ -1438,15 +1438,11 @@ public abstract class HttpTLSTest extends HttpTestBase {
   }
 
   private void testInvalidKeyStore(KeyCertOptions options, String expectedPrefix, String expectedSuffix) {
-    HttpServerOptions serverOptions = new HttpServerOptions();
-    setOptions(serverOptions, options);
-    testStore(serverOptions, Collections.singletonList(expectedPrefix), expectedSuffix);
+    testStore(new HttpServerOptions().setKeyCertOptions(options), Collections.singletonList(expectedPrefix), expectedSuffix);
   }
 
   private void testInvalidKeyStore(KeyCertOptions options, List<String> expectedPossiblePrefixes, String expectedSuffix) {
-    HttpServerOptions serverOptions = new HttpServerOptions();
-    setOptions(serverOptions, options);
-    testStore(serverOptions, expectedPossiblePrefixes, expectedSuffix);
+    testStore(new HttpServerOptions().setKeyCertOptions(options), expectedPossiblePrefixes, expectedSuffix);
   }
 
   private void testInvalidTrustStore(TrustOptions options, String expectedPrefix, String expectedSuffix) {
@@ -2019,7 +2015,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
     };
 
     server = vertx.createHttpServer(createBaseServerOptions()
-      .setJdkSslEngineOptions(new JdkSSLEngineOptions().setUseWorkerThread(useWorkerThreads))
+      .setSslEngineOptions(new JdkSSLEngineOptions().setUseWorkerThread(useWorkerThreads))
       .setSni(useSni)
       .setKeyCertOptions(testOptions)
     )

@@ -131,12 +131,12 @@ public class Http1xTest extends HttpTest {
 
     assertNull(options.getKeyCertOptions());
     JksOptions keyStoreOptions = new JksOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
-    assertEquals(options, options.setKeyStoreOptions(keyStoreOptions));
+    assertEquals(options, options.setKeyCertOptions(keyStoreOptions));
     assertEquals(keyStoreOptions, options.getKeyCertOptions());
 
     assertNull(options.getTrustOptions());
     JksOptions trustStoreOptions = new JksOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
-    assertEquals(options, options.setTrustStoreOptions(trustStoreOptions));
+    assertEquals(options, options.setTrustOptions(trustStoreOptions));
     assertEquals(trustStoreOptions, options.getTrustOptions());
 
     assertFalse(options.isTrustAll());
@@ -223,7 +223,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(true, options.isUseAlpn());
 
     assertNull(options.getSslEngineOptions());
-    assertEquals(options, options.setJdkSslEngineOptions(new JdkSSLEngineOptions()));
+    assertEquals(options, options.setSslEngineOptions(new JdkSSLEngineOptions()));
     assertTrue(options.getSslEngineOptions() instanceof JdkSSLEngineOptions);
 
     List<HttpVersion> alpnVersions = Collections.singletonList(HttpVersion.HTTP_1_1);
@@ -310,12 +310,12 @@ public class Http1xTest extends HttpTest {
 
     assertNull(options.getKeyCertOptions());
     JksOptions keyStoreOptions = new JksOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
-    assertEquals(options, options.setKeyStoreOptions(keyStoreOptions));
+    assertEquals(options, options.setKeyCertOptions(keyStoreOptions));
     assertEquals(keyStoreOptions, options.getKeyCertOptions());
 
     assertNull(options.getTrustOptions());
     JksOptions trustStoreOptions = new JksOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
-    assertEquals(options, options.setTrustStoreOptions(trustStoreOptions));
+    assertEquals(options, options.setTrustOptions(trustStoreOptions));
     assertEquals(trustStoreOptions, options.getTrustOptions());
 
     assertEquals(-1, options.getAcceptBacklog());
@@ -365,7 +365,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(true, options.isUseAlpn());
 
     assertNull(options.getSslEngineOptions());
-    assertEquals(options, options.setJdkSslEngineOptions(new JdkSSLEngineOptions()));
+    assertEquals(options, options.setSslEngineOptions(new JdkSSLEngineOptions()));
     assertTrue(options.getSslEngineOptions() instanceof JdkSSLEngineOptions);
 
     Http2Settings initialSettings = randomHttp2Settings();

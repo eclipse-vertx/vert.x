@@ -44,7 +44,7 @@ public class NettyCompatTest extends VertxTestBase {
           HttpClient client = vertx.createHttpClient(new HttpClientOptions()
               .setSsl(true)
               .setSslEngineOptions(new OpenSSLEngineOptions())
-              .setTrustStoreOptions(Trust.SERVER_JKS.get()));
+              .setTrustOptions(Trust.SERVER_JKS.get()));
           client
             .request(HttpMethod.GET, 8443, "localhost", "/somepath")
             .compose(req -> req.send().compose(HttpClientResponse::body))

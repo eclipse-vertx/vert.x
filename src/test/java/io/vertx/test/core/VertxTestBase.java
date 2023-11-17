@@ -194,13 +194,7 @@ public class VertxTestBase extends AsyncTestBase {
 
 
   protected static void setOptions(TCPSSLOptions sslOptions, KeyCertOptions options) {
-    if (options instanceof JksOptions) {
-      sslOptions.setKeyStoreOptions((JksOptions) options);
-    } else if (options instanceof PfxOptions) {
-      sslOptions.setPfxKeyCertOptions((PfxOptions) options);
-    } else {
-      sslOptions.setPemKeyCertOptions((PemKeyCertOptions) options);
-    }
+    sslOptions.setKeyCertOptions(options);
   }
 
   protected static final String[] ENABLED_CIPHER_SUITES;
