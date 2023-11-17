@@ -21,16 +21,21 @@ import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.VertxBuilder;
 import io.vertx.core.metrics.Measured;
+import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.spi.VerticleFactory;
+import io.vertx.core.spi.VertxMetricsFactory;
+import io.vertx.core.spi.VertxTracerFactory;
+import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.streams.ReadStream;
+import io.vertx.core.tracing.TracingOptions;
 
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -65,6 +70,67 @@ import java.util.function.Supplier;
 @VertxGen
 public interface Vertx extends Measured {
 
+  static VertxBuilder builder() {
+    return new io.vertx.core.VertxBuilder() {
+      VertxOptions options;
+      VertxTracerFactory tracerFactory;
+      VertxMetricsFactory metricsFactory;
+      ClusterManager clusterManager;
+      @Override
+      public VertxBuilder with(VertxOptions options) {
+        this.options = options;
+        return this;
+      }
+      @Override
+      public VertxBuilder withTracer(VertxTracerFactory factory) {
+        this.tracerFactory = factory;
+        return this;
+      }
+      @Override
+      public VertxBuilder withClusterManager(ClusterManager clusterManager) {
+        this.clusterManager = clusterManager;
+        return this;
+      }
+      @Override
+      public VertxBuilder withMetrics(VertxMetricsFactory factory) {
+        this.metricsFactory = factory;
+        return this;
+      }
+      private io.vertx.core.impl.VertxBuilder internalBuilder() {
+        VertxOptions opts = options != null ? options : new VertxOptions();
+        if (clusterManager != null) {
+          opts.setClusterManager(clusterManager);
+        }
+        if (metricsFactory != null) {
+          MetricsOptions metricsOptions = opts.getMetricsOptions();
+          if (metricsOptions != null) {
+            metricsOptions.setFactory(metricsFactory);
+          } else {
+            opts.setMetricsOptions(new MetricsOptions().setFactory(metricsFactory));
+          }
+          metricsOptions.setEnabled(true);
+        }
+        if (tracerFactory != null) {
+          TracingOptions tracingOptions = opts.getTracingOptions();
+          if (tracingOptions != null) {
+            tracingOptions.setFactory(tracerFactory);
+          } else {
+            opts.setTracingOptions(new TracingOptions().setFactory(tracerFactory));
+          }
+        }
+        return new io.vertx.core.impl.VertxBuilder(opts).init();
+      }
+      @Override
+      public Vertx build() {
+        return internalBuilder().vertx();
+      }
+      @Override
+      public Future<Vertx> buildClustered() {
+        return Future.future(p -> internalBuilder().clusteredVertx(p));
+      }
+    };
+  }
+
   /**
    * Creates a non clustered instance using default options.
    *
@@ -81,7 +147,7 @@ public interface Vertx extends Measured {
    * @return the instance
    */
   static Vertx vertx(VertxOptions options) {
-    return new VertxBuilder(options).init().vertx();
+    return builder().with(options).build();
   }
 
   /**
@@ -93,16 +159,16 @@ public interface Vertx extends Measured {
    * @param resultHandler  the result handler that will receive the result
    */
   static void clusteredVertx(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
-    new VertxBuilder(options).init().clusteredVertx(resultHandler);
+    Objects.requireNonNull(resultHandler);
+    Future<Vertx> fut = clusteredVertx(options);
+    fut.onComplete(resultHandler);
   }
 
   /**
    * Same as {@link #clusteredVertx(VertxOptions, Handler)} but with an {@code handler} called when the operation completes
    */
   static Future<Vertx> clusteredVertx(VertxOptions options) {
-    Promise<Vertx> promise = Promise.promise();
-    clusteredVertx(options, promise);
-    return promise.future();
+    return builder().with(options).buildClustered();
   }
 
   /**

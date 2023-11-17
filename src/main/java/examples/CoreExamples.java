@@ -23,6 +23,8 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.spi.VertxMetricsFactory;
+import io.vertx.core.spi.cluster.ClusterManager;
 
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
@@ -107,6 +109,20 @@ public class CoreExamples {
     String blockingMethod(String str) {
       return str;
     }
+  }
+
+  public void vertxBuilder(VertxOptions options, VertxMetricsFactory metricsFactory) {
+    Vertx vertx = Vertx.builder()
+      .with(options)
+      .withMetrics(metricsFactory)
+      .build();
+  }
+
+  public void clusteredVertxBuilder(VertxOptions options, ClusterManager clusterManager) {
+    Future<Vertx> vertx = Vertx.builder()
+      .with(options)
+      .withClusterManager(clusterManager)
+      .buildClustered();
   }
 
   public void exampleFuture1(Vertx vertx, Handler<HttpServerRequest> requestHandler) {

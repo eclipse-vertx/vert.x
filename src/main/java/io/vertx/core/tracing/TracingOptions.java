@@ -14,6 +14,7 @@ package io.vertx.core.tracing;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.VertxTracerFactory;
+import io.vertx.core.spi.cluster.ClusterManager;
 
 /**
  * Vert.x tracing base configuration, this class can be extended by provider implementations to configure
@@ -75,7 +76,9 @@ public class TracingOptions {
    *
    * @param factory the tracer factory
    * @return a reference to this, so the API can be used fluently
+   * @deprecated instead use {@link io.vertx.core.VertxBuilder#withTracer(VertxTracerFactory)}
    */
+  @Deprecated
   public TracingOptions setFactory(VertxTracerFactory factory) {
     this.factory = factory;
     return this;
