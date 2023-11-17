@@ -437,11 +437,6 @@ public class EventBusOptions extends TCPSSLOptions {
   }
 
   @Override
-  public EventBusOptions setOpenSslEngineOptions(OpenSSLEngineOptions sslEngineOptions) {
-    return (EventBusOptions) super.setOpenSslEngineOptions(sslEngineOptions);
-  }
-
-  @Override
   public EventBusOptions setEnabledSecureTransportProtocols(Set<String> enabledSecureTransportProtocols) {
     return (EventBusOptions) super.setEnabledSecureTransportProtocols(enabledSecureTransportProtocols);
   }

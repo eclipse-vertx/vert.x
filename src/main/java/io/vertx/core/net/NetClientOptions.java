@@ -238,11 +238,6 @@ public class NetClientOptions extends ClientOptionsBase {
   }
 
   @Override
-  public ClientOptionsBase setOpenSslEngineOptions(OpenSSLEngineOptions sslEngineOptions) {
-    return super.setOpenSslEngineOptions(sslEngineOptions);
-  }
-
-  @Override
   public NetClientOptions addCrlPath(String crlPath) throws NullPointerException {
     return (NetClientOptions) super.addCrlPath(crlPath);
   }

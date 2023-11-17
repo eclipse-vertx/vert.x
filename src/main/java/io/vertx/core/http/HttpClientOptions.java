@@ -795,11 +795,6 @@ public class HttpClientOptions extends ClientOptionsBase {
     return (HttpClientOptions) super.setSslEngineOptions(sslEngineOptions);
   }
 
-  @Override
-  public HttpClientOptions setOpenSslEngineOptions(OpenSSLEngineOptions sslEngineOptions) {
-    return (HttpClientOptions) super.setSslEngineOptions(sslEngineOptions);
-  }
-
   /**
    * @return the list of protocol versions to provide during the Application-Layer Protocol Negotiation. When
    * the list is empty, the client provides a best effort list according to {@link #setProtocolVersion}

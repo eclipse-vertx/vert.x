@@ -494,11 +494,6 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
-  public HttpServerOptions setOpenSslEngineOptions(OpenSSLEngineOptions sslEngineOptions) {
-    return (HttpServerOptions) super.setSslEngineOptions(sslEngineOptions);
-  }
-
-  @Override
   public HttpServerOptions setEnabledSecureTransportProtocols(Set<String> enabledSecureTransportProtocols) {
     return (HttpServerOptions) super.setEnabledSecureTransportProtocols(enabledSecureTransportProtocols);
   }

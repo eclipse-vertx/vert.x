@@ -313,11 +313,6 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   }
 
   @Override
-  public ClientOptionsBase setOpenSslEngineOptions(OpenSSLEngineOptions sslEngineOptions) {
-    return (ClientOptionsBase) super.setOpenSslEngineOptions(sslEngineOptions);
-  }
-
-  @Override
   public ClientOptionsBase setSendBufferSize(int sendBufferSize) {
     return (ClientOptionsBase) super.setSendBufferSize(sendBufferSize);
   }

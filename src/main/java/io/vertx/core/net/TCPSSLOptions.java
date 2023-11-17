@@ -597,10 +597,6 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     return sslEngineOptions instanceof OpenSSLEngineOptions ? (OpenSSLEngineOptions) sslEngineOptions : null;
   }
 
-  public TCPSSLOptions setOpenSslEngineOptions(OpenSSLEngineOptions sslEngineOptions) {
-    return setSslEngineOptions(sslEngineOptions);
-  }
-
   /**
    * Sets the list of enabled SSL/TLS protocols.
    *

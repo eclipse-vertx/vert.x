@@ -579,11 +579,6 @@ public class WebSocketClientOptions extends ClientOptionsBase {
   }
 
   @Override
-  public WebSocketClientOptions setOpenSslEngineOptions(OpenSSLEngineOptions sslEngineOptions) {
-    return (WebSocketClientOptions)super.setOpenSslEngineOptions(sslEngineOptions);
-  }
-
-  @Override
   public WebSocketClientOptions setSendBufferSize(int sendBufferSize) {
     return (WebSocketClientOptions)super.setSendBufferSize(sendBufferSize);
   }
