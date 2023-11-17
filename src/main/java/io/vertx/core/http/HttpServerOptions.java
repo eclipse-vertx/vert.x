@@ -411,41 +411,9 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
-  public HttpServerOptions setKeyStoreOptions(JksOptions options) {
-    super.setKeyStoreOptions(options);
-    return this;
-  }
-
-  @Override
-  public HttpServerOptions setPfxKeyCertOptions(PfxOptions options) {
-    return (HttpServerOptions) super.setPfxKeyCertOptions(options);
-  }
-
-  @Override
-  public HttpServerOptions setPemKeyCertOptions(PemKeyCertOptions options) {
-    return (HttpServerOptions) super.setPemKeyCertOptions(options);
-  }
-
-  @Override
   public HttpServerOptions setTrustOptions(TrustOptions options) {
     super.setTrustOptions(options);
     return this;
-  }
-
-  @Override
-  public HttpServerOptions setTrustStoreOptions(JksOptions options) {
-    super.setTrustStoreOptions(options);
-    return this;
-  }
-
-  @Override
-  public HttpServerOptions setPemTrustOptions(PemTrustOptions options) {
-    return (HttpServerOptions) super.setPemTrustOptions(options);
-  }
-
-  @Override
-  public HttpServerOptions setPfxTrustOptions(PfxOptions options) {
-    return (HttpServerOptions) super.setPfxTrustOptions(options);
   }
 
   @Override
@@ -523,11 +491,6 @@ public class HttpServerOptions extends NetServerOptions {
   public HttpServerOptions setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
     super.setSslEngineOptions(sslEngineOptions);
     return this;
-  }
-
-  @Override
-  public HttpServerOptions setJdkSslEngineOptions(JdkSSLEngineOptions sslEngineOptions) {
-    return (HttpServerOptions) super.setSslEngineOptions(sslEngineOptions);
   }
 
   @Override

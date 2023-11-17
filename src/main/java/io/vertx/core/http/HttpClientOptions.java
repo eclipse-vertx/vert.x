@@ -366,41 +366,9 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   @Override
-  public HttpClientOptions setKeyStoreOptions(JksOptions options) {
-    super.setKeyStoreOptions(options);
-    return this;
-  }
-
-  @Override
-  public HttpClientOptions setPfxKeyCertOptions(PfxOptions options) {
-    return (HttpClientOptions) super.setPfxKeyCertOptions(options);
-  }
-
-  @Override
   public HttpClientOptions setTrustOptions(TrustOptions options) {
     super.setTrustOptions(options);
     return this;
-  }
-
-  @Override
-  public HttpClientOptions setPemKeyCertOptions(PemKeyCertOptions options) {
-    return (HttpClientOptions) super.setPemKeyCertOptions(options);
-  }
-
-  @Override
-  public HttpClientOptions setTrustStoreOptions(JksOptions options) {
-    super.setTrustStoreOptions(options);
-    return this;
-  }
-
-  @Override
-  public HttpClientOptions setPfxTrustOptions(PfxOptions options) {
-    return (HttpClientOptions) super.setPfxTrustOptions(options);
-  }
-
-  @Override
-  public HttpClientOptions setPemTrustOptions(PemTrustOptions options) {
-    return (HttpClientOptions) super.setPemTrustOptions(options);
   }
 
   @Override
@@ -824,11 +792,6 @@ public class HttpClientOptions extends ClientOptionsBase {
 
   @Override
   public HttpClientOptions setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
-    return (HttpClientOptions) super.setSslEngineOptions(sslEngineOptions);
-  }
-
-  @Override
-  public HttpClientOptions setJdkSslEngineOptions(JdkSSLEngineOptions sslEngineOptions) {
     return (HttpClientOptions) super.setSslEngineOptions(sslEngineOptions);
   }
 

@@ -201,12 +201,12 @@ public class NetTest extends VertxTestBase {
 
     assertNull(options.getKeyCertOptions());
     JksOptions keyStoreOptions = new JksOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
-    assertEquals(options, options.setKeyStoreOptions(keyStoreOptions));
+    assertEquals(options, options.setKeyCertOptions(keyStoreOptions));
     assertEquals(keyStoreOptions, options.getKeyCertOptions());
 
     assertNull(options.getTrustOptions());
     JksOptions trustStoreOptions = new JksOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
-    assertEquals(options, options.setTrustStoreOptions(trustStoreOptions));
+    assertEquals(options, options.setTrustOptions(trustStoreOptions));
     assertEquals(trustStoreOptions, options.getTrustOptions());
 
     assertFalse(options.isTrustAll());
@@ -311,12 +311,12 @@ public class NetTest extends VertxTestBase {
 
     assertNull(options.getKeyCertOptions());
     JksOptions keyStoreOptions = new JksOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
-    assertEquals(options, options.setKeyStoreOptions(keyStoreOptions));
+    assertEquals(options, options.setKeyCertOptions(keyStoreOptions));
     assertEquals(keyStoreOptions, options.getKeyCertOptions());
 
     assertNull(options.getTrustOptions());
     JksOptions trustStoreOptions = new JksOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
-    assertEquals(options, options.setTrustStoreOptions(trustStoreOptions));
+    assertEquals(options, options.setTrustOptions(trustStoreOptions));
     assertEquals(trustStoreOptions, options.getTrustOptions());
 
     assertEquals(-1, options.getAcceptBacklog());
@@ -413,8 +413,8 @@ public class NetTest extends VertxTestBase {
     options.setTcpKeepAlive(tcpKeepAlive);
     options.setSoLinger(soLinger);
     options.setIdleTimeout(idleTimeout);
-    options.setKeyStoreOptions(keyStoreOptions);
-    options.setTrustStoreOptions(trustStoreOptions);
+    options.setKeyCertOptions(keyStoreOptions);
+    options.setTrustOptions(trustStoreOptions);
     options.addEnabledCipherSuite(enabledCipher);
     options.setConnectTimeout(connectTimeout);
     options.setTrustAll(trustAll);
@@ -624,8 +624,8 @@ public class NetTest extends VertxTestBase {
     options.setSoLinger(soLinger);
     options.setIdleTimeout(idleTimeout);
     options.setSsl(ssl);
-    options.setKeyStoreOptions(keyStoreOptions);
-    options.setTrustStoreOptions(trustStoreOptions);
+    options.setKeyCertOptions(keyStoreOptions);
+    options.setTrustOptions(trustStoreOptions);
     options.addEnabledCipherSuite(enabledCipher);
     options.addCrlPath(crlPath);
     options.addCrlValue(crlValue);
@@ -2789,7 +2789,7 @@ public class NetTest extends VertxTestBase {
             .setPort(1234)
             .setHost("localhost")
             .setSsl(true)
-            .setKeyStoreOptions(new JksOptions().setPath("tls/mim-server-keystore.jks").setPassword("wibble"));
+            .setKeyCertOptions(new JksOptions().setPath("tls/mim-server-keystore.jks").setPassword("wibble"));
     NetServer server = vertx.createNetServer(options);
 
     NetClientOptions clientOptions = new NetClientOptions()
@@ -2820,7 +2820,7 @@ public class NetTest extends VertxTestBase {
             .setPort(1234)
             .setHost("localhost")
             .setSsl(true)
-            .setKeyStoreOptions(new JksOptions().setPath("tls/server-keystore.jks").setPassword("wibble"));
+            .setKeyCertOptions(new JksOptions().setPath("tls/server-keystore.jks").setPassword("wibble"));
     NetServer server = vertx.createNetServer(options);
 
     NetClientOptions clientOptions = new NetClientOptions()
@@ -3373,10 +3373,10 @@ public class NetTest extends VertxTestBase {
       .setPort(1234)
       .setHost("localhost")
       .setSsl(true)
-      .setKeyStoreOptions(Cert.SERVER_JKS.get()));
+      .setKeyCertOptions(Cert.SERVER_JKS.get()));
     testNetServerInternal_(new HttpClientOptions()
       .setSsl(true)
-      .setTrustStoreOptions(Trust.SERVER_JKS.get())
+      .setTrustOptions(Trust.SERVER_JKS.get())
     , true);
   }
 
@@ -3421,12 +3421,12 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testNetClientInternalTLS() throws Exception {
     client.close();
-    client = vertx.createNetClient(new NetClientOptions().setSsl(true).setTrustStoreOptions(Trust.SERVER_JKS.get()));
+    client = vertx.createNetClient(new NetClientOptions().setSsl(true).setTrustOptions(Trust.SERVER_JKS.get()));
     testNetClientInternal_(new HttpServerOptions()
       .setHost("localhost")
       .setPort(1234)
       .setSsl(true)
-      .setKeyStoreOptions(Cert.SERVER_JKS.get()), true);
+      .setKeyCertOptions(Cert.SERVER_JKS.get()), true);
   }
 
   // This test is here to cover a WildFly use case for passing in an SSLContext for which there are no
@@ -3472,7 +3472,7 @@ public class NetTest extends VertxTestBase {
       .setHost("localhost")
       .setPort(1234)
       .setSsl(true)
-      .setKeyStoreOptions(Cert.SERVER_JKS.get()), true);
+      .setKeyCertOptions(Cert.SERVER_JKS.get()), true);
   }
 
   private void testNetClientInternal_(HttpServerOptions options, boolean expectSSL) throws Exception {
@@ -3610,7 +3610,7 @@ public class NetTest extends VertxTestBase {
     server = vertx.createNetServer(
       new NetServerOptions()
         .setSsl(true)
-        .setPemKeyCertOptions(new PemKeyCertOptions().setKeyPath("invalid")))
+        .setKeyCertOptions(new PemKeyCertOptions().setKeyPath("invalid")))
       .connectHandler(c -> {
     });
     server.listen(10000).onComplete(onFailure(err -> {
@@ -3804,7 +3804,7 @@ public class NetTest extends VertxTestBase {
     NetServerOptions serverOptions = new NetServerOptions()
       .setSsl(!onClient)
       .setSslHandshakeTimeout(200)
-      .setKeyStoreOptions(Cert.SERVER_JKS.get())
+      .setKeyCertOptions(Cert.SERVER_JKS.get())
       .setSni(sni)
       .setSslHandshakeTimeoutUnit(TimeUnit.MILLISECONDS);
     server = vertx.createNetServer(serverOptions);
@@ -3844,7 +3844,7 @@ public class NetTest extends VertxTestBase {
 
     NetServerOptions serverOptions = new NetServerOptions()
       .setSsl(true)
-      .setKeyStoreOptions(Cert.SERVER_JKS.get())
+      .setKeyCertOptions(Cert.SERVER_JKS.get())
       // set 100ms to let the connection established
       .setSslHandshakeTimeout(100)
       .setSslHandshakeTimeoutUnit(TimeUnit.MILLISECONDS);

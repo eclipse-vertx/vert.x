@@ -564,38 +564,8 @@ public class WebSocketClientOptions extends ClientOptionsBase {
   }
 
   @Override
-  public WebSocketClientOptions setKeyStoreOptions(JksOptions options) {
-    return (WebSocketClientOptions)super.setKeyStoreOptions(options);
-  }
-
-  @Override
-  public WebSocketClientOptions setPfxKeyCertOptions(PfxOptions options) {
-    return (WebSocketClientOptions)super.setPfxKeyCertOptions(options);
-  }
-
-  @Override
-  public WebSocketClientOptions setPemKeyCertOptions(PemKeyCertOptions options) {
-    return (WebSocketClientOptions)super.setPemKeyCertOptions(options);
-  }
-
-  @Override
   public WebSocketClientOptions setTrustOptions(TrustOptions options) {
     return (WebSocketClientOptions)super.setTrustOptions(options);
-  }
-
-  @Override
-  public WebSocketClientOptions setTrustStoreOptions(JksOptions options) {
-    return (WebSocketClientOptions)super.setTrustStoreOptions(options);
-  }
-
-  @Override
-  public WebSocketClientOptions setPfxTrustOptions(PfxOptions options) {
-    return (WebSocketClientOptions)super.setPfxTrustOptions(options);
-  }
-
-  @Override
-  public WebSocketClientOptions setPemTrustOptions(PemTrustOptions options) {
-    return (WebSocketClientOptions)super.setPemTrustOptions(options);
   }
 
   @Override
@@ -606,11 +576,6 @@ public class WebSocketClientOptions extends ClientOptionsBase {
   @Override
   public WebSocketClientOptions setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
     return (WebSocketClientOptions)super.setSslEngineOptions(sslEngineOptions);
-  }
-
-  @Override
-  public WebSocketClientOptions setJdkSslEngineOptions(JdkSSLEngineOptions sslEngineOptions) {
-    return (WebSocketClientOptions)super.setJdkSslEngineOptions(sslEngineOptions);
   }
 
   @Override

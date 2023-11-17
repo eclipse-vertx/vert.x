@@ -163,6 +163,24 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     super(json);
     init();
     TCPSSLOptionsConverter.fromJson(json ,this);
+    // Legacy
+    if (json.containsKey("pemKeyCertOptions")) {
+      setKeyCertOptions(new PemKeyCertOptions(json.getJsonObject("pemKeyCertOptions")));
+    } else if (json.containsKey("keyStoreOptions")) {
+      setKeyCertOptions(new JksOptions(json.getJsonObject("keyStoreOptions")));
+    } else if (json.containsKey("pfxKeyCertOptions")) {
+      setKeyCertOptions(new PfxOptions(json.getJsonObject("pfxKeyCertOptions")));
+    }
+    if (json.containsKey("pemTrustOptions")) {
+      setTrustOptions(new PemTrustOptions(json.getJsonObject("pemTrustOptions")));
+    } else if (json.containsKey("pfxTrustOptions")) {
+      setTrustOptions(new PfxOptions(json.getJsonObject("pfxTrustOptions")));
+    } else if (json.containsKey("trustStoreOptions")) {
+      setTrustOptions(new JksOptions(json.getJsonObject("trustStoreOptions")));
+    }
+    if (json.containsKey("jdkSslEngineOptions")) {
+      setSslEngineOptions(new JdkSSLEngineOptions(json.getJsonObject("jdkSslEngineOptions")));
+    }
   }
 
   /**
@@ -173,6 +191,32 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   public JsonObject toJson() {
     JsonObject json = super.toJson();
     TCPSSLOptionsConverter.toJson(this, json);
+    if (sslOptions != null) {
+      KeyCertOptions keyCertOptions = sslOptions.getKeyCertOptions();
+      if (keyCertOptions != null) {
+        if (keyCertOptions instanceof PemKeyCertOptions) {
+          json.put("pemKeyCertOptions", ((PemKeyCertOptions) keyCertOptions).toJson());
+        } else if (keyCertOptions instanceof JksOptions) {
+          json.put("keyStoreOptions", ((JksOptions) keyCertOptions).toJson());
+        } else if (keyCertOptions instanceof PfxOptions) {
+          json.put("pfxKeyCertOptions", ((PfxOptions) keyCertOptions).toJson());
+        }
+      }
+      TrustOptions trustOptions = sslOptions.getTrustOptions();
+      if (trustOptions instanceof PemTrustOptions) {
+        json.put("pemTrustOptions", ((PemTrustOptions) trustOptions).toJson());
+      } else if (trustOptions instanceof PfxOptions) {
+        json.put("pfxTrustOptions", ((PfxOptions) trustOptions).toJson());
+      } else if (trustOptions instanceof JksOptions) {
+        json.put("trustStoreOptions", ((JksOptions) trustOptions).toJson());
+      }
+    }
+    SSLEngineOptions engineOptions = sslEngineOptions;
+    if (engineOptions != null) {
+      if (engineOptions instanceof JdkSSLEngineOptions) {
+        json.put("jdkSslEngineOptions", ((JdkSSLEngineOptions) engineOptions).toJson());
+      }
+    }
     return json;
   }
 
@@ -410,63 +454,6 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   /**
-   * Get the key/cert options in jks format, aka Java keystore.
-   *
-   * @return the key/cert options in jks format, aka Java keystore.
-   */
-  public JksOptions getKeyStoreOptions() {
-    KeyCertOptions keyCertOptions = getKeyCertOptions();
-    return keyCertOptions instanceof JksOptions ? (JksOptions) keyCertOptions : null;
-  }
-
-  /**
-   * Set the key/cert options in jks format, aka Java keystore.
-   * @param options the key store in jks format
-   * @return a reference to this, so the API can be used fluently
-   */
-  public TCPSSLOptions setKeyStoreOptions(JksOptions options) {
-    return setKeyCertOptions(options);
-  }
-
-  /**
-   * Get the key/cert options in pfx format.
-   *
-   * @return the key/cert options in pfx format.
-   */
-  public PfxOptions getPfxKeyCertOptions() {
-    KeyCertOptions keyCertOptions = getKeyCertOptions();
-    return keyCertOptions instanceof PfxOptions ? (PfxOptions) keyCertOptions : null;
-  }
-
-  /**
-   * Set the key/cert options in pfx format.
-   * @param options the key cert options in pfx format
-   * @return a reference to this, so the API can be used fluently
-   */
-  public TCPSSLOptions setPfxKeyCertOptions(PfxOptions options) {
-    return setKeyCertOptions(options);
-  }
-
-  /**
-   * Get the key/cert store options in pem format.
-   *
-   * @return the key/cert store options in pem format.
-   */
-  public PemKeyCertOptions getPemKeyCertOptions() {
-    KeyCertOptions keyCertOptions = getKeyCertOptions();
-    return keyCertOptions instanceof PemKeyCertOptions ? (PemKeyCertOptions) keyCertOptions : null;
-  }
-
-  /**
-   * Set the key/cert store options in pem format.
-   * @param options the options in pem format
-   * @return a reference to this, so the API can be used fluently
-   */
-  public TCPSSLOptions setPemKeyCertOptions(PemKeyCertOptions options) {
-    return setKeyCertOptions(options);
-  }
-
-  /**
    * @return the trust options
    */
   public TrustOptions getTrustOptions() {
@@ -482,63 +469,6 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   public TCPSSLOptions setTrustOptions(TrustOptions options) {
     getOrCreateSSLOptions().setTrustOptions(options);
     return this;
-  }
-
-  /**
-   * Get the trust options in jks format, aka Java truststore
-   *
-   * @return the trust options in jks format, aka Java truststore
-   */
-  public JksOptions getTrustStoreOptions() {
-    TrustOptions trustOptions = getTrustOptions();
-    return trustOptions instanceof JksOptions ? (JksOptions) trustOptions : null;
-  }
-
-  /**
-   * Set the trust options in jks format, aka Java truststore
-   * @param options the trust options in jks format
-   * @return a reference to this, so the API can be used fluently
-   */
-  public TCPSSLOptions setTrustStoreOptions(JksOptions options) {
-    return setTrustOptions(options);
-  }
-
-  /**
-   * Get the trust options in pfx format
-   *
-   * @return the trust options in pfx format
-   */
-  public PfxOptions getPfxTrustOptions() {
-    TrustOptions trustOptions = getTrustOptions();
-    return trustOptions instanceof PfxOptions ? (PfxOptions) trustOptions : null;
-  }
-
-  /**
-   * Set the trust options in pfx format
-   * @param options the trust options in pfx format
-   * @return a reference to this, so the API can be used fluently
-   */
-  public TCPSSLOptions setPfxTrustOptions(PfxOptions options) {
-    return setTrustOptions(options);
-  }
-
-  /**
-   * Get the trust options in pem format
-   *
-   * @return the trust options in pem format
-   */
-  public PemTrustOptions getPemTrustOptions() {
-    TrustOptions trustOptions = getTrustOptions();
-    return trustOptions instanceof PemTrustOptions ? (PemTrustOptions) trustOptions : null;
-  }
-
-  /**
-   * Set the trust options in pem format
-   * @param options the trust options in pem format
-   * @return a reference to this, so the API can be used fluently
-   */
-  public TCPSSLOptions setPemTrustOptions(PemTrustOptions options) {
-    return setTrustOptions(options);
   }
 
   /**
@@ -661,14 +591,6 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   public TCPSSLOptions setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
     this.sslEngineOptions = sslEngineOptions;
     return this;
-  }
-
-  public JdkSSLEngineOptions getJdkSslEngineOptions() {
-    return sslEngineOptions instanceof JdkSSLEngineOptions ? (JdkSSLEngineOptions) sslEngineOptions : null;
-  }
-
-  public TCPSSLOptions setJdkSslEngineOptions(JdkSSLEngineOptions sslEngineOptions) {
-    return setSslEngineOptions(sslEngineOptions);
   }
 
   public OpenSSLEngineOptions getOpenSslEngineOptions() {

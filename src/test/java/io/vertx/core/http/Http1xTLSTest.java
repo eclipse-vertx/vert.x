@@ -145,7 +145,7 @@ public class Http1xTLSTest extends HttpTLSTest {
   public void testRedirectFromSSL() throws Exception {
     HttpServer redirectServer = vertx.createHttpServer(new HttpServerOptions()
         .setSsl(true)
-        .setKeyStoreOptions(Cert.SERVER_JKS.get())
+        .setKeyCertOptions(Cert.SERVER_JKS.get())
         .setHost(DEFAULT_HTTP_HOST)
         .setPort(DEFAULT_HTTP_PORT)
     ).requestHandler(req -> {
@@ -170,7 +170,7 @@ public class Http1xTLSTest extends HttpTLSTest {
     List<String> expected = Arrays.asList("chunk-1", "chunk-2", "chunk-3");
     server = vertx.createHttpServer(new HttpServerOptions()
       .setSsl(true)
-      .setKeyStoreOptions(Cert.SERVER_JKS.get())
+      .setKeyCertOptions(Cert.SERVER_JKS.get())
       .setHost(DEFAULT_HTTPS_HOST)
       .setPort(DEFAULT_HTTPS_PORT)
     ).requestHandler(req -> {
@@ -223,7 +223,7 @@ public class Http1xTLSTest extends HttpTLSTest {
       public void start(Promise<Void> startPromise) {
         server = vertx.createHttpServer(new HttpServerOptions()
           .setSsl(true)
-          .setKeyStoreOptions(Cert.SERVER_JKS.get())
+          .setKeyCertOptions(Cert.SERVER_JKS.get())
           .setHost(DEFAULT_HTTPS_HOST)
           .setPort(DEFAULT_HTTPS_PORT)
         ).requestHandler(req -> {

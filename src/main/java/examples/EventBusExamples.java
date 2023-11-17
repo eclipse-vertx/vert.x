@@ -110,8 +110,8 @@ public class EventBusExamples {
     VertxOptions options = new VertxOptions()
         .setEventBusOptions(new EventBusOptions()
             .setSsl(true)
-            .setKeyStoreOptions(new JksOptions().setPath("keystore.jks").setPassword("wibble"))
-            .setTrustStoreOptions(new JksOptions().setPath("keystore.jks").setPassword("wibble"))
+            .setKeyCertOptions(new JksOptions().setPath("keystore.jks").setPassword("wibble"))
+            .setTrustOptions(new JksOptions().setPath("keystore.jks").setPassword("wibble"))
             .setClientAuth(ClientAuth.REQUIRED)
         );
 

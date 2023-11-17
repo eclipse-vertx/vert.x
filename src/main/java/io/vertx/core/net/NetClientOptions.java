@@ -184,41 +184,9 @@ public class NetClientOptions extends ClientOptionsBase {
   }
 
   @Override
-  public NetClientOptions setKeyStoreOptions(JksOptions options) {
-    super.setKeyStoreOptions(options);
-    return this;
-  }
-
-  @Override
-  public NetClientOptions setPfxKeyCertOptions(PfxOptions options) {
-    return (NetClientOptions) super.setPfxKeyCertOptions(options);
-  }
-
-  @Override
-  public NetClientOptions setPemKeyCertOptions(PemKeyCertOptions options) {
-    return (NetClientOptions) super.setPemKeyCertOptions(options);
-  }
-
-  @Override
   public NetClientOptions setTrustOptions(TrustOptions options) {
     super.setTrustOptions(options);
     return this;
-  }
-
-  @Override
-  public NetClientOptions setTrustStoreOptions(JksOptions options) {
-    super.setTrustStoreOptions(options);
-    return this;
-  }
-
-  @Override
-  public NetClientOptions setPemTrustOptions(PemTrustOptions options) {
-    return (NetClientOptions) super.setPemTrustOptions(options);
-  }
-
-  @Override
-  public NetClientOptions setPfxTrustOptions(PfxOptions options) {
-    return (NetClientOptions) super.setPfxTrustOptions(options);
   }
 
   @Override
@@ -252,11 +220,6 @@ public class NetClientOptions extends ClientOptionsBase {
   @Override
   public NetClientOptions setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
     return (NetClientOptions) super.setSslEngineOptions(sslEngineOptions);
-  }
-
-  @Override
-  public NetClientOptions setJdkSslEngineOptions(JdkSSLEngineOptions sslEngineOptions) {
-    return (NetClientOptions) super.setJdkSslEngineOptions(sslEngineOptions);
   }
 
   @Override

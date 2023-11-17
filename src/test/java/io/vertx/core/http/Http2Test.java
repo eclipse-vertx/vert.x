@@ -191,7 +191,7 @@ public class Http2Test extends HttpTest {
       .setUseAlpn(true)
       .setSsl(true)
       .addEnabledCipherSuite("TLS_RSA_WITH_AES_128_CBC_SHA") // Non Diffie-helman -> debuggable in wireshark
-      .setPemKeyCertOptions(Cert.SERVER_PEM.get())
+      .setKeyCertOptions(Cert.SERVER_PEM.get())
       .setSslEngineOptions(new OpenSSLEngineOptions());
     server.close();
     client.close();

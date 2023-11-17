@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
-@DataObject(generateConverter = true, inheritConverter = true, publicConverter = false)
+@DataObject(generateConverter = true, publicConverter = false)
 public class EventBusOptions extends TCPSSLOptions {
 
   /**
@@ -160,7 +160,7 @@ public class EventBusOptions extends TCPSSLOptions {
    * @param json the json object
    */
   public EventBusOptions(JsonObject json) {
-    this();
+    super(json);
 
     EventBusOptionsConverter.fromJson(json, this);
   }
@@ -171,7 +171,7 @@ public class EventBusOptions extends TCPSSLOptions {
    * @return the JSON representation
    */
   public JsonObject toJson() {
-    JsonObject json = new JsonObject();
+    JsonObject json = super.toJson();
     EventBusOptionsConverter.toJson(this, json);
     final String clusterPublicPortName = "clusterPublicPort";
     if (json.containsKey(clusterPublicPortName) && json.getInteger(clusterPublicPortName) == DEFAULT_CLUSTER_PUBLIC_PORT) {
@@ -367,36 +367,6 @@ public class EventBusOptions extends TCPSSLOptions {
   }
 
   @Override
-  public EventBusOptions setKeyStoreOptions(JksOptions options) {
-    super.setKeyStoreOptions(options);
-    return this;
-  }
-
-  @Override
-  public EventBusOptions setPemKeyCertOptions(PemKeyCertOptions options) {
-    super.setPemKeyCertOptions(options);
-    return this;
-  }
-
-  @Override
-  public EventBusOptions setPemTrustOptions(PemTrustOptions options) {
-    super.setPemTrustOptions(options);
-    return this;
-  }
-
-  @Override
-  public EventBusOptions setPfxKeyCertOptions(PfxOptions options) {
-    super.setPfxKeyCertOptions(options);
-    return this;
-  }
-
-  @Override
-  public EventBusOptions setPfxTrustOptions(PfxOptions options) {
-    super.setPfxTrustOptions(options);
-    return this;
-  }
-
-  @Override
   public EventBusOptions setSoLinger(int soLinger) {
     super.setSoLinger(soLinger);
     return this;
@@ -423,12 +393,6 @@ public class EventBusOptions extends TCPSSLOptions {
   @Override
   public EventBusOptions setTrustOptions(TrustOptions options) {
     super.setTrustOptions(options);
-    return this;
-  }
-
-  @Override
-  public EventBusOptions setTrustStoreOptions(JksOptions options) {
-    super.setTrustStoreOptions(options);
     return this;
   }
 
@@ -470,11 +434,6 @@ public class EventBusOptions extends TCPSSLOptions {
   @Override
   public EventBusOptions setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
     return (EventBusOptions) super.setSslEngineOptions(sslEngineOptions);
-  }
-
-  @Override
-  public EventBusOptions setJdkSslEngineOptions(JdkSSLEngineOptions sslEngineOptions) {
-    return (EventBusOptions) super.setJdkSslEngineOptions(sslEngineOptions);
   }
 
   @Override
