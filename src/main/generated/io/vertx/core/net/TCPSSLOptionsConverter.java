@@ -90,9 +90,6 @@ public class TCPSSLOptionsConverter {
           }
           break;
         case "openSslEngineOptions":
-          if (member.getValue() instanceof JsonObject) {
-            obj.setOpenSslEngineOptions(new io.vertx.core.net.OpenSSLEngineOptions((io.vertx.core.json.JsonObject)member.getValue()));
-          }
           break;
         case "enabledSecureTransportProtocols":
           if (member.getValue() instanceof JsonArray) {

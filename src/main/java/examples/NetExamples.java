@@ -580,7 +580,7 @@ public class NetExamples {
     options = new NetServerOptions().
       setSsl(true).
       setKeyCertOptions(keyStoreOptions).
-      setOpenSslEngineOptions(new OpenSSLEngineOptions());
+      setSslEngineOptions(new OpenSSLEngineOptions());
   }
 
   public void example46(Vertx vertx, JksOptions keyStoreOptions) {

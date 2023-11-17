@@ -1175,7 +1175,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
         options.addCrlPath("tls/root-ca/crl.pem");
       }
       if (clientOpenSSL) {
-        options.setOpenSslEngineOptions(new OpenSSLEngineOptions());
+        options.setSslEngineOptions(new OpenSSLEngineOptions());
       } else {
         options.setSslEngineOptions(new JdkSSLEngineOptions());
       }
@@ -1217,7 +1217,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
         serverOptions.addCrlPath("tls/root-ca/crl.pem");
       }
       if (serverOpenSSL) {
-        serverOptions.setOpenSslEngineOptions(new OpenSSLEngineOptions());
+        serverOptions.setSslEngineOptions(new OpenSSLEngineOptions());
       }
       if (serverUsesAlpn == Boolean.TRUE) {
         serverOptions.setUseAlpn(serverUsesAlpn);
