@@ -29,6 +29,9 @@ import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.spi.VerticleFactory;
+import io.vertx.core.spi.VertxMetricsFactory;
+import io.vertx.core.spi.VertxTracerFactory;
+import io.vertx.core.spi.cluster.ClusterManager;
 
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -63,6 +66,57 @@ import java.util.function.Supplier;
  */
 @VertxGen
 public interface Vertx extends Measured {
+
+  /**
+   * Return a builder for Vert.x instances which allows to specify SPI such as cluster manager, metrics or tracing.
+   *
+   * @return a Vert.x instance builder
+   */
+  static io.vertx.core.VertxBuilder builder() {
+    return new io.vertx.core.VertxBuilder() {
+      private VertxOptions options;
+      private ClusterManager clusterManager;
+      private VertxMetricsFactory metricsFactory;
+      private VertxTracerFactory tracerFactory;
+      @Override
+      public io.vertx.core.VertxBuilder with(VertxOptions options) {
+        this.options = options;
+        return this;
+      }
+      @Override
+      public io.vertx.core.VertxBuilder withMetrics(VertxMetricsFactory factory) {
+        this.metricsFactory = factory;
+        return this;
+      }
+      @Override
+      public io.vertx.core.VertxBuilder withTracer(VertxTracerFactory factory) {
+        this.tracerFactory = factory;
+        return this;
+      }
+      @Override
+      public io.vertx.core.VertxBuilder withClusterManager(ClusterManager clusterManager) {
+        this.clusterManager = clusterManager;
+        return this;
+      }
+      @Override
+      public Vertx build() {
+        VertxBuilder builder = new VertxBuilder(options != null ? new VertxOptions(options) : new VertxOptions());
+        builder.metricsFactory(metricsFactory);
+        builder.tracerFactory(tracerFactory);
+        builder.init();
+        return builder.vertx();
+      }
+      @Override
+      public Future<Vertx> buildClustered() {
+        VertxBuilder builder = new VertxBuilder(options != null ? new VertxOptions(options) : new VertxOptions());
+        builder.clusterManager(clusterManager);
+        builder.metricsFactory(metricsFactory);
+        builder.tracerFactory(tracerFactory);
+        builder.init();
+        return builder.clusteredVertx();
+      }
+    };
+  }
 
   /**
    * Creates a non clustered instance using default options.

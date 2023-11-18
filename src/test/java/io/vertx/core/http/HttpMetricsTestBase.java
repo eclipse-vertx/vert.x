@@ -11,9 +11,7 @@
 
 package io.vertx.core.http;
 
-import io.vertx.core.Context;
-import io.vertx.core.Future;
-import io.vertx.core.VertxOptions;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.HttpClientInternal;
 import io.vertx.core.http.impl.HttpServerRequestInternal;
@@ -60,8 +58,15 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
   @Override
   protected VertxOptions getOptions() {
     VertxOptions options = super.getOptions();
-    options.setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(new FakeMetricsFactory()));
+    options.setMetricsOptions(new MetricsOptions().setEnabled(true));
     return options;
+  }
+
+  @Override
+  protected Vertx createVertx(VertxOptions options) {
+    return Vertx.builder().with(options)
+      .withMetrics(new FakeMetricsFactory())
+      .build();
   }
 
   @Test

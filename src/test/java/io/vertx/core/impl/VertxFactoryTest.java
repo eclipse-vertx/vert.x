@@ -89,11 +89,11 @@ public class VertxFactoryTest {
   @Test
   public void testFactoryMetricsFactoryOverridesOptions() {
     FakeVertxMetrics metrics = new FakeVertxMetrics();
-    MetricsOptions metricsOptions = new MetricsOptions().setEnabled(true).setFactory(options -> {
+    VertxBuilder factory = new VertxBuilder(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)));
+    factory.metrics(metrics);
+    factory.metricsFactory(options -> {
       throw new AssertionError();
     });
-    VertxBuilder factory = new VertxBuilder(new VertxOptions().setMetricsOptions(metricsOptions));
-    factory.metrics(metrics);
     factory.init();
     Vertx vertx = factory.vertx();
     assertSame(metrics, ((VertxInternal)vertx).metricsSPI());
@@ -115,13 +115,10 @@ public class VertxFactoryTest {
   @Test
   public void testFactoryTracerFactoryOverridesOptions() {
     FakeTracer tracer = new FakeTracer();
-    TracingOptions tracingOptions = new TracingOptions().setFactory(new VertxTracerFactory() {
-      @Override
-      public VertxTracer tracer(TracingOptions options) {
+    VertxBuilder factory = new VertxBuilder(new VertxOptions().setTracingOptions(new TracingOptions()))
+      .tracerFactory(options -> {
         throw new AssertionError();
-      }
-    });
-    VertxBuilder factory = new VertxBuilder(new VertxOptions().setTracingOptions(tracingOptions));
+      });
     factory.tracer(tracer);
     factory.init();
     Vertx vertx = factory.vertx();

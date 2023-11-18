@@ -152,9 +152,6 @@ public class VertxOptionsTest extends VertxTestBase {
       // OK
     }
     ClusterManager mgr = new FakeClusterManager();
-    assertNull(options.getClusterManager());
-    assertEquals(options, options.setClusterManager(mgr));
-    assertSame(mgr, options.getClusterManager());
     assertFalse(options.isHAEnabled());
     assertEquals(options, options.setHAEnabled(true));
     assertTrue(options.isHAEnabled());
@@ -249,12 +246,8 @@ public class VertxOptionsTest extends VertxTestBase {
     options.setHAEnabled(haEnabled);
     options.setQuorumSize(quorumSize);
     options.setHAGroup(haGroup);
-    options.setMetricsOptions(
-        new MetricsOptions().
-            setEnabled(metricsEnabled));
-    options.setTracingOptions(
-        new TracingOptions().setFactory(new FakeTracerFactory())
-    );
+    options.setMetricsOptions(new MetricsOptions().setEnabled(metricsEnabled));
+    options.setTracingOptions(new TracingOptions());
     options.setWarningExceptionTime(warningExceptionTime);
     options.setMaxEventLoopExecuteTimeUnit(maxEventLoopExecuteTimeUnit);
     options.setMaxWorkerExecuteTimeUnit(maxWorkerExecuteTimeUnit);
@@ -283,7 +276,6 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(metricsEnabled, metricsOptions.isEnabled());
     TracingOptions tracingOptions = options.getTracingOptions();
     assertNotNull(tracingOptions);
-    assertTrue(tracingOptions.getFactory() instanceof FakeTracerFactory);
     assertEquals(warningExceptionTime, options.getWarningExceptionTime());
     assertEquals(maxEventLoopExecuteTimeUnit, options.getMaxEventLoopExecuteTimeUnit());
     assertEquals(maxWorkerExecuteTimeUnit, options.getMaxWorkerExecuteTimeUnit());
@@ -340,7 +332,6 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(1000, options.getBlockedThreadCheckInterval());
     assertNull(options.getEventBusOptions().getHost());
     assertNull(options.getEventBusOptions().getClusterPublicHost());
-    assertEquals(null, options.getClusterManager());
     assertEquals(2000l * 1000000, options.getMaxEventLoopExecuteTime());
     assertEquals(1l * 60 * 1000 * 1000000, options.getMaxWorkerExecuteTime());
     assertFalse(options.isHAEnabled());
@@ -424,7 +415,6 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(workerPoolSize, options.getWorkerPoolSize());
     assertEquals(blockedThreadCheckInterval, options.getBlockedThreadCheckInterval());
     assertEquals(clusterHost, options.getEventBusOptions().getHost());
-    assertEquals(null, options.getClusterManager());
     assertEquals(maxEventLoopExecuteTime, options.getMaxEventLoopExecuteTime());
     assertEquals(maxWorkerExecuteTime, options.getMaxWorkerExecuteTime());
     assertEquals(haEnabled, options.isHAEnabled());

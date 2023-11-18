@@ -27,9 +27,11 @@ import io.vertx.core.spi.observability.HttpRequest;
 import io.vertx.core.spi.observability.HttpResponse;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
+import junit.framework.AssertionFailedError;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -50,7 +52,10 @@ public class MetricsContextTest extends VertxTestBase {
       metricsContext.set(Vertx.currentContext());
       return DummyVertxMetrics.INSTANCE;
     };
-    vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)));
+    vertx(() -> Vertx.builder()
+      .with(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)))
+      .withMetrics(factory)
+      .build());
     assertNull(metricsContext.get());
   }
 
@@ -64,14 +69,19 @@ public class MetricsContextTest extends VertxTestBase {
       metricsContext.set(Vertx.currentContext());
       return DummyVertxMetrics.INSTANCE;
     };
-    VertxOptions options = new VertxOptions()
-      .setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory))
-      .setEventBusOptions(new EventBusOptions());
-    clusteredVertx(options, onSuccess(vertx -> {
-      assertSame(testThread, metricsThread.get());
-      assertNull(metricsContext.get());
-      testComplete();
-    }));
+    VertxBuilder builder = Vertx.builder().with(new VertxOptions()
+        .setMetricsOptions(new MetricsOptions().setEnabled(true))
+        .setEventBusOptions(new EventBusOptions()))
+      .withClusterManager(getClusterManager())
+      .withMetrics(factory);
+    builder
+      .buildClustered()
+      .onComplete(onSuccess(vertx -> {
+        assertSame(testThread, metricsThread.get());
+        assertNull(metricsContext.get());
+        vertx.close();
+        testComplete();
+      }));
     await();
   }
 
@@ -134,7 +144,10 @@ public class MetricsContextTest extends VertxTestBase {
       }
     };
     CountDownLatch latch = new CountDownLatch(1);
-    Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)));
+    Vertx vertx = vertx(() -> Vertx.builder()
+      .with(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)))
+      .withMetrics(factory)
+      .build());
     Context ctx = contextFactory.apply(vertx);
     ctx.runOnContext(v1 -> {
       HttpServer server = vertx.createHttpServer().requestHandler(req -> {
@@ -227,7 +240,10 @@ public class MetricsContextTest extends VertxTestBase {
       }
     };
     CountDownLatch latch = new CountDownLatch(1);
-    Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)));
+    Vertx vertx = vertx(() -> Vertx.builder()
+      .with(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)))
+      .withMetrics(factory)
+      .build());
     HttpServer server = vertx.createHttpServer().requestHandler(req -> {
       count.incrementAndGet();
       vertx.setTimer(10, id -> {
@@ -330,7 +346,10 @@ public class MetricsContextTest extends VertxTestBase {
       }
     };
     CountDownLatch latch = new CountDownLatch(1);
-    Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)));
+    Vertx vertx = vertx(() -> Vertx.builder()
+      .with(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)))
+      .withMetrics(factory)
+      .build());
     Context ctx = contextFactory.apply(vertx);
     ctx.runOnContext(v1 -> {
       HttpServer server = vertx.createHttpServer().webSocketHandler(ws -> {
@@ -429,7 +448,10 @@ public class MetricsContextTest extends VertxTestBase {
         };
       }
     };
-    Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)));
+    Vertx vertx = vertx(() -> Vertx.builder()
+      .with(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)))
+      .withMetrics(factory)
+      .build());
     HttpServer server = vertx.createHttpServer();
     server.requestHandler(req -> {
       req.endHandler(buf -> {
@@ -526,7 +548,10 @@ public class MetricsContextTest extends VertxTestBase {
         };
       }
     };
-    Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)));
+    Vertx vertx = vertx(() -> Vertx.builder()
+      .with(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)))
+      .withMetrics(factory)
+      .build());
     HttpServer server = vertx.createHttpServer();
     server.webSocketHandler(ws -> {
       ws.handler(buf -> {
@@ -609,7 +634,10 @@ public class MetricsContextTest extends VertxTestBase {
       }
     };
     CountDownLatch latch = new CountDownLatch(1);
-    Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)));
+    Vertx vertx = vertx(() -> Vertx.builder()
+      .with(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)))
+      .withMetrics(factory)
+      .build());
     Context ctx = contextFactory.apply(vertx);
     ctx.runOnContext(v1 -> {
       NetServer server = vertx.createNetServer().connectHandler(so -> {
@@ -693,7 +721,10 @@ public class MetricsContextTest extends VertxTestBase {
         };
       }
     };
-    Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)));
+    Vertx vertx = vertx(() -> Vertx.builder()
+      .with(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)))
+      .withMetrics(factory)
+      .build());
     Context ctx = contextFactory.apply(vertx);
     NetServer server = vertx.createNetServer().connectHandler(so -> {
       so.handler(buf -> {
@@ -768,7 +799,10 @@ public class MetricsContextTest extends VertxTestBase {
         };
       }
     };
-    Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)));
+    Vertx vertx = vertx(() -> Vertx.builder()
+      .with(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)))
+      .withMetrics(factory)
+      .build());
     Context ctx = contextFactory.apply(vertx);
     ctx.runOnContext(v1 -> {
       expectedThread.set(Thread.currentThread());
@@ -801,7 +835,10 @@ public class MetricsContextTest extends VertxTestBase {
         };
       }
     };
-    Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)));
+    Vertx vertx = vertx(() -> Vertx.builder()
+      .with(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)))
+      .withMetrics(factory)
+      .build());
     vertx.eventBus();
     TestUtils.executeInVanillaVertxThread(() -> {
       vertx.close().onComplete(onSuccess(v -> {
@@ -851,7 +888,10 @@ public class MetricsContextTest extends VertxTestBase {
         };
       }
     };
-    Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)));
+    Vertx vertx = vertx(() -> Vertx.builder()
+      .with(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)))
+      .withMetrics(factory)
+      .build());
     EventBus eb = vertx.eventBus();
     Thread t = new Thread(() -> {
       eb.send("the_address", "the_msg");

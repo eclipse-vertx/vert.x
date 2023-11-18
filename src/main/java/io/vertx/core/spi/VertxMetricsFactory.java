@@ -28,10 +28,7 @@ public interface VertxMetricsFactory extends VertxServiceProvider {
   default void init(VertxBuilder builder) {
     if (builder.metrics() == null) {
       VertxOptions vertxOptions = builder.options();
-      MetricsOptions metricsOptions = vertxOptions.getMetricsOptions();
-      if (metricsOptions != null && metricsOptions.isEnabled()) {
-        builder.metrics(metrics(vertxOptions));
-      }
+      builder.metrics(metrics(vertxOptions));
     }
   }
 

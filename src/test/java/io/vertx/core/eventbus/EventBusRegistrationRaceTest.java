@@ -10,6 +10,7 @@
  */
 package io.vertx.core.eventbus;
 
+import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.spi.VertxMetricsFactory;
@@ -38,33 +39,26 @@ public class EventBusRegistrationRaceTest extends VertxTestBase {
   private final AtomicInteger count = new AtomicInteger();
 
   @Override
-  protected VertxOptions getOptions() {
-    VertxOptions options = super.getOptions();
-    options.setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(new VertxMetricsFactory() {
+  protected VertxMetricsFactory getMetrics() {
+    return o -> new VertxMetrics() {
       @Override
-      public VertxMetrics metrics(VertxOptions options) {
-        return new VertxMetrics() {
+      public EventBusMetrics<Void> createEventBusMetrics() {
+        return new EventBusMetrics<>() {
           @Override
-          public EventBusMetrics<Void> createEventBusMetrics() {
-            return new EventBusMetrics<Void>() {
-              @Override
-              public void scheduleMessage(Void handler, boolean local) {
-                count.incrementAndGet();
-              }
-              @Override
-              public void messageDelivered(Void handler, boolean local) {
-                count.decrementAndGet();
-              }
-              @Override
-              public void discardMessage(Void handler, boolean local, Message<?> msg) {
-                count.decrementAndGet();
-              }
-            };
+          public void scheduleMessage(Void handler, boolean local) {
+            count.incrementAndGet();
+          }
+          @Override
+          public void messageDelivered(Void handler, boolean local) {
+            count.decrementAndGet();
+          }
+          @Override
+          public void discardMessage(Void handler, boolean local, Message<?> msg) {
+            count.decrementAndGet();
           }
         };
       }
-    }));
-    return options;
+    };
   }
 
   @Test

@@ -12,6 +12,7 @@
 package io.vertx.core.spi.metrics;
 
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxBuilder;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
@@ -31,6 +32,7 @@ import java.nio.file.Files;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Random;
+import java.util.function.Supplier;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -85,35 +87,52 @@ public class MetricsOptionsTest extends VertxTestBase {
   public void testSetMetricsInstance() {
     DummyVertxMetrics metrics = DummyVertxMetrics.INSTANCE;
     vertx.close();
-    vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(new SimpleVertxMetricsFactory<>(metrics))));
+    vertx = Vertx
+      .builder()
+      .with(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)))
+      .withMetrics(new SimpleVertxMetricsFactory<>(metrics))
+      .build();
     assertSame(metrics, ((VertxInternal) vertx).metricsSPI());
   }
 
   @Test
   public void testMetricsFromServiceLoader() {
+    testMetricsFromServiceLoader(true);
+  }
+
+  @Test
+  public void testMetricsFromServiceLoaderDisabled() {
+    testMetricsFromServiceLoader(false);
+  }
+
+  private void testMetricsFromServiceLoader(boolean enabled) {
     vertx.close();
-    MetricsOptions metricsOptions = new MetricsOptions().setEnabled(true);
+    MetricsOptions metricsOptions = new MetricsOptions().setEnabled(enabled);
     VertxOptions options = new VertxOptions().setMetricsOptions(metricsOptions);
-    vertx = createVertxLoadingMetricsFromMetaInf(options, io.vertx.test.fakemetrics.FakeMetricsFactory.class);
+    vertx = createVertxLoadingMetricsFromMetaInf(() -> Vertx.vertx(options), io.vertx.test.fakemetrics.FakeMetricsFactory.class);
     VertxMetrics metrics = ((VertxInternal) vertx).metricsSPI();
-    assertNotNull(metrics);
-    assertTrue(metrics instanceof FakeVertxMetrics);
-    assertEquals(metricsOptions.isEnabled(), ((FakeVertxMetrics)metrics).options().isEnabled());
+    if (enabled) {
+      assertNotNull(metrics);
+      assertTrue(metrics instanceof FakeVertxMetrics);
+      assertEquals(metricsOptions.isEnabled(), ((FakeVertxMetrics)metrics).options().isEnabled());
+    } else {
+      assertNull(metrics);
+    }
   }
 
   @Test
   public void testSetMetricsInstanceTakesPrecedenceOverServiceLoader() {
     DummyVertxMetrics metrics = DummyVertxMetrics.INSTANCE;
     vertx.close();
-    VertxOptions options = new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(new SimpleVertxMetricsFactory<>(metrics)));
-    vertx = createVertxLoadingMetricsFromMetaInf(options, io.vertx.test.fakemetrics.FakeMetricsFactory.class);
+    VertxBuilder builder = Vertx.builder()
+      .with(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)))
+      .withMetrics(new SimpleVertxMetricsFactory<>(metrics));
+    vertx = createVertxLoadingMetricsFromMetaInf(builder::build, io.vertx.test.fakemetrics.FakeMetricsFactory.class);
     assertSame(metrics, ((VertxInternal) vertx).metricsSPI());
   }
 
-  static Vertx createVertxLoadingMetricsFromMetaInf(VertxOptions options, Class<? extends VertxServiceProvider> factory) {
-    return TestUtils.runWithServiceLoader(VertxServiceProvider.class, factory, () -> {
-      return Vertx.vertx(options);
-    });
+  static Vertx createVertxLoadingMetricsFromMetaInf(Supplier<Vertx> supplier, Class<? extends VertxServiceProvider> factory) {
+    return TestUtils.runWithServiceLoader(VertxServiceProvider.class, factory, supplier);
   }
 
   public static ClassLoader createMetricsFromMetaInfLoader(String factoryFqn) {
