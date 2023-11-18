@@ -14,8 +14,11 @@ package io.vertx.test.core;
 import io.vertx.core.*;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.net.*;
+import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingOptions;
 import io.vertx.test.fakecluster.FakeClusterManager;
@@ -31,6 +34,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -82,13 +86,13 @@ public class VertxTestBase extends AsyncTestBase {
     return null;
   }
 
+  protected VertxMetricsFactory getMetrics() {
+    return null;
+  }
+
   protected VertxOptions getOptions() {
     VertxOptions options = new VertxOptions();
     options.setPreferNativeTransport(USE_NATIVE_TRANSPORT);
-    VertxTracer tracer = getTracer();
-    if (tracer != null) {
-      options.setTracingOptions(new TracingOptions().setFactory(opts -> tracer));
-    }
     return options;
   }
 
@@ -120,14 +124,37 @@ public class VertxTestBase extends AsyncTestBase {
     return vertx(new VertxOptions());
   }
 
+  protected VertxBuilder createVertxBuilder(VertxOptions options) {
+    VertxBuilder builder = Vertx.builder();
+    VertxTracer<?, ?> tracer = getTracer();
+    if (tracer != null) {
+      builder.withTracer(o -> tracer);
+      options = new VertxOptions(options).setTracingOptions(new TracingOptions());
+    }
+    VertxMetricsFactory metrics = getMetrics();
+    if (metrics != null) {
+      builder.withMetrics(metrics);
+      options = new VertxOptions(options).setMetricsOptions(new MetricsOptions().setEnabled(true));
+    }
+    return builder.with(options);
+  }
+
+  protected Vertx createVertx(VertxOptions options) {
+    return createVertxBuilder(options).build();
+  }
+
   /**
    * @return create a blank new Vert.x instance with @{@code options} closed when tear down executes.
    */
   protected Vertx vertx(VertxOptions options) {
+    return vertx(() -> createVertx(options));
+  }
+
+  protected Vertx vertx(Supplier<Vertx> supplier) {
     if (created == null) {
       created = Collections.synchronizedList(new ArrayList<>());
     }
-    Vertx vertx = Vertx.vertx(options);
+    Vertx vertx = supplier.get();
     created.add(vertx);
     return vertx;
   }
@@ -136,15 +163,21 @@ public class VertxTestBase extends AsyncTestBase {
    * Create a blank new clustered Vert.x instance with @{@code options} closed when tear down executes.
    */
   protected void clusteredVertx(VertxOptions options, Handler<AsyncResult<Vertx>> ar) {
+    clusteredVertx(options, getClusterManager(), ar);
+  }
+
+  protected void clusteredVertx(VertxOptions options, ClusterManager clusterManager, Handler<AsyncResult<Vertx>> ar) {
     if (created == null) {
       created = Collections.synchronizedList(new ArrayList<>());
     }
-    Vertx.clusteredVertx(options).onComplete(event -> {
-      if (event.succeeded()) {
-        created.add(event.result());
-      }
-      ar.handle(event);
-    });
+    createVertxBuilder(options)
+      .withClusterManager(clusterManager)
+      .buildClustered().onComplete(event -> {
+        if (event.succeeded()) {
+          created.add(event.result());
+        }
+        ar.handle(event);
+      });
   }
 
   protected ClusterManager getClusterManager() {
@@ -156,24 +189,21 @@ public class VertxTestBase extends AsyncTestBase {
   }
 
   protected void startNodes(int numNodes, VertxOptions options) {
-    VertxOptions[] array = new VertxOptions[numNodes];
-    for (int i = 0;i < numNodes;i++) {
-      array[i] = new VertxOptions(options);
-    }
-    startNodes(array);
+    startNodes(numNodes, options, this::getClusterManager);
   }
 
-  protected void startNodes(VertxOptions... options) {
-    int numNodes = options.length;
+  protected void startNodes(int numNodes, Supplier<ClusterManager> clusterManagerSupplier) {
+    startNodes(numNodes, new VertxOptions(), clusterManagerSupplier);
+  }
+
+  private void startNodes(int numNodes, VertxOptions options, Supplier<ClusterManager> clusterManagerSupplier) {
     CountDownLatch latch = new CountDownLatch(numNodes);
     vertices = new Vertx[numNodes];
     for (int i = 0; i < numNodes; i++) {
       int index = i;
-      if (options[i].getClusterManager() == null) {
-        options[i].setClusterManager(getClusterManager());
-      }
-      options[i].getEventBusOptions().setHost("localhost").setPort(0);
-      clusteredVertx(options[i], ar -> {
+      VertxOptions toUse = new VertxOptions(options);
+      toUse.getEventBusOptions().setHost("localhost").setPort(0);
+      clusteredVertx(toUse, clusterManagerSupplier.get(), ar -> {
         try {
           if (ar.failed()) {
             ar.cause().printStackTrace();

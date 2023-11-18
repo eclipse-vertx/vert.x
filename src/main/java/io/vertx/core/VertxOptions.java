@@ -18,7 +18,6 @@ import io.vertx.core.file.FileSystemOptions;
 import io.vertx.core.impl.cpu.CpuCoreSensor;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.metrics.MetricsOptions;
-import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.tracing.TracingOptions;
 
 import java.util.Objects;
@@ -126,7 +125,6 @@ public class VertxOptions {
   private long blockedThreadCheckInterval = DEFAULT_BLOCKED_THREAD_CHECK_INTERVAL;
   private long maxEventLoopExecuteTime = DEFAULT_MAX_EVENT_LOOP_EXECUTE_TIME;
   private long maxWorkerExecuteTime = DEFAULT_MAX_WORKER_EXECUTE_TIME;
-  private ClusterManager clusterManager;
   private boolean haEnabled = DEFAULT_HA_ENABLED;
   private int quorumSize = DEFAULT_QUORUM_SIZE;
   private String haGroup = DEFAULT_HA_GROUP;
@@ -162,7 +160,6 @@ public class VertxOptions {
     this.maxEventLoopExecuteTime = other.getMaxEventLoopExecuteTime();
     this.maxWorkerExecuteTime = other.getMaxWorkerExecuteTime();
     this.internalBlockingPoolSize = other.getInternalBlockingPoolSize();
-    this.clusterManager = other.getClusterManager();
     this.haEnabled = other.isHAEnabled();
     this.quorumSize = other.getQuorumSize();
     this.haGroup = other.getHAGroup();
@@ -171,6 +168,7 @@ public class VertxOptions {
     this.warningExceptionTime = other.warningExceptionTime;
     this.eventBusOptions = new EventBusOptions(other.eventBusOptions);
     this.addressResolverOptions = other.addressResolverOptions != null ? new AddressResolverOptions(other.getAddressResolverOptions()) : null;
+    this.preferNativeTransport = other.preferNativeTransport;
     this.maxEventLoopExecuteTimeUnit = other.maxEventLoopExecuteTimeUnit;
     this.maxWorkerExecuteTimeUnit = other.maxWorkerExecuteTimeUnit;
     this.warningExceptionTimeUnit = other.warningExceptionTimeUnit;
@@ -328,35 +326,6 @@ public class VertxOptions {
       throw new IllegalArgumentException("maxWorkerpExecuteTime must be > 0");
     }
     this.maxWorkerExecuteTime = maxWorkerExecuteTime;
-    return this;
-  }
-
-  /**
-   * Get the cluster manager to be used when clustering.
-   * <p>
-   * If the cluster manager has been programmatically set here, then that will be used when clustering.
-   * <p>
-   * Otherwise Vert.x attempts to locate a cluster manager on the classpath.
-   *
-   * @return the cluster manager.
-   */
-  public ClusterManager getClusterManager() {
-    return clusterManager;
-  }
-
-  /**
-   * Programmatically set the cluster manager to be used when clustering.
-   * <p>
-   * Only valid if clustered = true.
-   * <p>
-   * Normally Vert.x will look on the classpath for a cluster manager, but if you want to set one
-   * programmatically you can use this method.
-   *
-   * @param clusterManager the cluster manager
-   * @return a reference to this, so the API can be used fluently
-   */
-  public VertxOptions setClusterManager(ClusterManager clusterManager) {
-    this.clusterManager = clusterManager;
     return this;
   }
 
@@ -725,7 +694,6 @@ public class VertxOptions {
         ", maxEventLoopExecuteTime=" + maxEventLoopExecuteTime +
         ", maxWorkerExecuteTimeUnit=" + maxWorkerExecuteTimeUnit +
         ", maxWorkerExecuteTime=" + maxWorkerExecuteTime +
-        ", clusterManager=" + clusterManager +
         ", haEnabled=" + haEnabled +
         ", preferNativeTransport=" + preferNativeTransport +
         ", quorumSize=" + quorumSize +

@@ -395,7 +395,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
   @Test
   public void testSendWriteHandler() throws Exception {
     CountDownLatch updateLatch = new CountDownLatch(3);
-    Supplier<VertxOptions> options = () -> getOptions().setClusterManager(new WrappedClusterManager(getClusterManager()) {
+    startNodes(2, () -> new WrappedClusterManager(getClusterManager()) {
       @Override
       public void init(Vertx vertx, NodeSelector nodeSelector) {
         super.init(vertx, new WrappedNodeSelector(nodeSelector) {
@@ -414,7 +414,6 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
         });
       }
     });
-    startNodes(options.get(), options.get());
     waitFor(2);
     vertices[1]
       .eventBus()
@@ -487,16 +486,15 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
   }
 
   @Test
-  public void testSelectorWantsUpdates() throws Exception {
+  public void testSelectorWantsUpdates() {
     AtomicReference<NodeSelector> nodeSelectorRef = new AtomicReference<>();
-    VertxOptions options = getOptions().setClusterManager(new WrappedClusterManager(getClusterManager()) {
+    startNodes(1, () -> new WrappedClusterManager(getClusterManager()) {
       @Override
       public void init(Vertx vertx, NodeSelector nodeSelector) {
         nodeSelectorRef.set(nodeSelector);
         super.init(vertx, nodeSelector);
       }
     });
-    startNodes(options);
     assertNotNull(nodeSelectorRef.get());
     vertices[0].eventBus().consumer(ADDRESS1, msg -> {
       assertTrue(nodeSelectorRef.get().wantsUpdatesFor(ADDRESS1));
@@ -506,16 +504,15 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
   }
 
   @Test
-  public void testSelectorDoesNotWantUpdates() throws Exception {
+  public void testSelectorDoesNotWantUpdates() {
     AtomicReference<NodeSelector> nodeSelectorRef = new AtomicReference<>();
-    VertxOptions options = getOptions().setClusterManager(new WrappedClusterManager(getClusterManager()) {
+    startNodes(1, () -> new WrappedClusterManager(getClusterManager()) {
       @Override
       public void init(Vertx vertx, NodeSelector nodeSelector) {
         nodeSelectorRef.set(nodeSelector);
         super.init(vertx, nodeSelector);
       }
     });
-    startNodes(options);
     assertNotNull(nodeSelectorRef.get());
     assertFalse(nodeSelectorRef.get().wantsUpdatesFor(ADDRESS1));
   }

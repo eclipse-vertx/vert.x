@@ -14,6 +14,7 @@ package io.vertx.core;
 import io.netty.channel.EventLoopGroup;
 import io.vertx.core.impl.VertxBuilder;
 import io.vertx.core.impl.transports.JDKTransport;
+import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.transport.Transport;
 import io.vertx.core.spi.cluster.NodeListener;
 import io.vertx.test.core.AsyncTestBase;
@@ -45,11 +46,10 @@ public class VertxStartFailureTest extends AsyncTestBase {
       // will trigger java.net.UnknownHostException
       String hostName = "zoom.zoom.zen.tld";
       FakeClusterManager clusterManager = new FakeClusterManager();
-      VertxOptions options = new VertxOptions()
-        .setClusterManager(clusterManager);
+      VertxOptions options = new VertxOptions();
       options.getAddressResolverOptions().addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + dnsServerAddress.getPort());
       options.getEventBusOptions().setHost(hostName);
-      Throwable failure = failStart(options);
+      Throwable failure = failStart(options, clusterManager);
       assertTrue("Was expecting failure to be an instance of UnknownHostException", failure instanceof UnknownHostException);
     } finally {
       dnsServer.stop();
@@ -65,8 +65,8 @@ public class VertxStartFailureTest extends AsyncTestBase {
         promise.fail(expected);
       }
     };
-    VertxOptions options = new VertxOptions().setClusterManager(clusterManager);
-    Throwable failure = failStart(options);
+    VertxOptions options = new VertxOptions();
+    Throwable failure = failStart(options, clusterManager);
     assertSame(expected,  failure);
   }
 
@@ -80,8 +80,8 @@ public class VertxStartFailureTest extends AsyncTestBase {
         throw expected;
       }
     };
-    VertxOptions options = new VertxOptions().setClusterManager(clusterManager).setHAEnabled(true);
-    Throwable failure = failStart(options);
+    VertxOptions options = new VertxOptions().setHAEnabled(true);
+    Throwable failure = failStart(options, clusterManager);
     assertSame(expected,  failure);
   }
 
@@ -95,12 +95,12 @@ public class VertxStartFailureTest extends AsyncTestBase {
         throw expected;
       }
     };
-    VertxOptions options = new VertxOptions().setClusterManager(clusterManager).setHAEnabled(true);
-    Throwable failure = failStart(options);
+    VertxOptions options = new VertxOptions().setHAEnabled(true);
+    Throwable failure = failStart(options, clusterManager);
     assertSame(expected,  failure);
   }
 
-  private Throwable failStart(VertxOptions options) throws Exception {
+  private Throwable failStart(VertxOptions options, ClusterManager clusterManager) throws Exception {
     List<EventLoopGroup> loops = new ArrayList<>();
     CountDownLatch latch = new CountDownLatch(1);
     Transport transport = new JDKTransport() {
@@ -112,7 +112,7 @@ public class VertxStartFailureTest extends AsyncTestBase {
       }
     };
     AtomicReference<AsyncResult<Vertx>> resultRef = new AtomicReference<>();
-    new VertxBuilder(options).init().findTransport(transport).clusteredVertx().onComplete(ar -> {
+    new VertxBuilder(options).clusterManager(clusterManager).init().findTransport(transport).clusteredVertx().onComplete(ar -> {
       resultRef.set(ar);
       latch.countDown();
     });

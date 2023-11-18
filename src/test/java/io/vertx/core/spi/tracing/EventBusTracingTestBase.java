@@ -32,8 +32,14 @@ public abstract class EventBusTracingTestBase extends VertxTestBase {
   FakeTracer tracer;
 
   @Override
+  public void setUp() throws Exception {
+    tracer = new FakeTracer();
+    super.setUp();
+  }
+
+  @Override
   protected VertxTracer getTracer() {
-    return tracer = new FakeTracer();
+    return tracer;
   }
 
   @Test

@@ -20,7 +20,6 @@ import io.vertx.core.file.impl.FileResolverImpl;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.spi.transport.Transport;
 import io.vertx.core.spi.ExecutorServiceFactory;
 import io.vertx.core.spi.VertxMetricsFactory;
@@ -32,7 +31,6 @@ import io.vertx.core.spi.cluster.NodeSelector;
 import io.vertx.core.spi.cluster.impl.DefaultNodeSelector;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
-import io.vertx.core.tracing.TracingOptions;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -52,9 +50,11 @@ public class VertxBuilder {
   private Transport transport;
   private ClusterManager clusterManager;
   private NodeSelector clusterNodeSelector;
+  private VertxTracerFactory tracerFactory;
   private VertxTracer tracer;
   private VertxThreadFactory threadFactory;
   private ExecutorServiceFactory executorServiceFactory;
+  private VertxMetricsFactory metricsFactory;
   private VertxMetrics metrics;
   private FileResolver fileResolver;
 
@@ -119,6 +119,11 @@ public class VertxBuilder {
     return this;
   }
 
+  public VertxBuilder metricsFactory(VertxMetricsFactory factory) {
+    this.metricsFactory = factory;
+    return this;
+  }
+
   /**
    * @return the node selector to use
    */
@@ -133,6 +138,11 @@ public class VertxBuilder {
    */
   public VertxBuilder clusterNodeSelector(NodeSelector selector) {
     this.clusterNodeSelector = selector;
+    return this;
+  }
+
+  public VertxBuilder tracerFactory(VertxTracerFactory factory) {
+    this.tracerFactory = factory;
     return this;
   }
 
@@ -267,10 +277,10 @@ public class VertxBuilder {
    */
   public VertxBuilder init() {
     initTransport();
+    initMetrics();
+    initTracing();
     Collection<VertxServiceProvider> providers = new ArrayList<>();
-    initMetrics(options, providers);
-    initTracing(options, providers);
-    initClusterManager(options, providers);
+    initClusterManager(providers);
     providers.addAll(ServiceHelper.loadFactories(VertxServiceProvider.class));
     initProviders(providers);
     initThreadFactory();
@@ -281,46 +291,40 @@ public class VertxBuilder {
 
   private void initProviders(Collection<VertxServiceProvider> providers) {
     for (VertxServiceProvider provider : providers) {
+      if (provider instanceof VertxMetricsFactory && (options.getMetricsOptions() == null || !options.getMetricsOptions().isEnabled())) {
+        continue;
+      } else if (provider instanceof VertxTracerFactory && (options.getTracingOptions() == null)) {
+        continue;
+      }
       provider.init(this);
     }
   }
 
-  private static void initMetrics(VertxOptions options, Collection<VertxServiceProvider> providers) {
-    MetricsOptions metricsOptions = options.getMetricsOptions();
-    if (metricsOptions != null) {
-      VertxMetricsFactory factory = metricsOptions.getFactory();
-      if (factory != null) {
-        providers.add(factory);
-      }
+  private void initMetrics() {
+    VertxMetricsFactory provider = metricsFactory;
+    if (provider != null) {
+      provider.init(this);
     }
   }
 
-  private static void initTracing(VertxOptions options, Collection<VertxServiceProvider> providers) {
-    TracingOptions tracingOptions = options.getTracingOptions();
-    if (tracingOptions != null) {
-      VertxTracerFactory factory = tracingOptions.getFactory();
-      if (factory != null) {
-        providers.add(factory);
-      }
+  private void initTracing() {
+    VertxTracerFactory provider = tracerFactory;
+    if (provider != null) {
+      provider.init(this);
     }
   }
 
-  private static void initClusterManager(VertxOptions options, Collection<VertxServiceProvider> providers) {
-    ClusterManager clusterManager = options.getClusterManager();
-    if (clusterManager == null) {
-      String clusterManagerClassName = System.getProperty("vertx.cluster.managerClass");
-      if (clusterManagerClassName != null) {
-        // We allow specify a sys prop for the cluster manager factory which overrides ServiceLoader
-        try {
-          Class<?> clazz = Class.forName(clusterManagerClassName);
-          clusterManager = (ClusterManager) clazz.getDeclaredConstructor().newInstance();
-        } catch (Exception e) {
-          throw new IllegalStateException("Failed to instantiate " + clusterManagerClassName, e);
-        }
+  private static void initClusterManager(Collection<VertxServiceProvider> providers) {
+    String clusterManagerClassName = System.getProperty("vertx.cluster.managerClass");
+    if (clusterManagerClassName != null) {
+      // We allow specify a sys prop for the cluster manager factory which overrides ServiceLoader
+      try {
+        Class<?> clazz = Class.forName(clusterManagerClassName);
+        ClusterManager clusterManager = (ClusterManager) clazz.getDeclaredConstructor().newInstance();
+        providers.add(clusterManager);
+      } catch (Exception e) {
+        throw new IllegalStateException("Failed to instantiate " + clusterManagerClassName, e);
       }
-    }
-    if (clusterManager != null) {
-      providers.add(clusterManager);
     }
   }
 

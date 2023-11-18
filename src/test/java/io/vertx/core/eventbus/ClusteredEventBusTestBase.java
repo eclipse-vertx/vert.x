@@ -47,9 +47,9 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
   }
 
   @Override
-  protected void clusteredVertx(VertxOptions options, Handler<AsyncResult<Vertx>> ar) {
+  protected void clusteredVertx(VertxOptions options, ClusterManager clusterManager, Handler<AsyncResult<Vertx>> ar) {
     Promise<Vertx> promise = Promise.promise();
-    super.clusteredVertx(options, promise);
+    super.clusteredVertx(options, clusterManager, promise);
     promise.future().onSuccess(vertx -> {
       ImmutableObjectCodec immutableObjectCodec = new ImmutableObjectCodec();
       vertx.eventBus().registerCodec(immutableObjectCodec);
@@ -131,7 +131,7 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
   @Test
   public void testClusteredUnregistration() throws Exception {
     CountDownLatch updateLatch = new CountDownLatch(3);
-    Supplier<VertxOptions> options = () -> getOptions().setClusterManager(new WrappedClusterManager(getClusterManager()) {
+    startNodes(2, () -> new WrappedClusterManager(getClusterManager()) {
       @Override
       public void init(Vertx vertx, NodeSelector nodeSelector) {
         super.init(vertx, new WrappedNodeSelector(nodeSelector) {
@@ -145,7 +145,6 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
         });
       }
     });
-    startNodes(options.get(), options.get());
     MessageConsumer<Object> consumer = vertices[0].eventBus().consumer("foo", msg -> msg.reply(msg.body()));
     consumer.completion().onComplete(onSuccess(reg -> {
       vertices[0].eventBus().request("foo", "echo").onComplete(onSuccess(reply1 -> {

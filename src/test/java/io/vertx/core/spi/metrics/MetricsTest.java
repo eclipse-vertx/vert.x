@@ -29,6 +29,7 @@ import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakemetrics.*;
@@ -58,6 +59,7 @@ public class MetricsTest extends VertxTestBase {
   private HttpServer server;
   private HttpClient client;
   private WebSocketClient wsClient;
+  private VertxMetricsFactory metricsFactory;
 
   protected void tearDown() throws Exception {
     if (client != null) {
@@ -86,10 +88,19 @@ public class MetricsTest extends VertxTestBase {
   }
 
   @Override
-  protected VertxOptions getOptions() {
-    VertxOptions options = super.getOptions();
-    options.setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(new FakeMetricsFactory()));
-    return options;
+  public void setUp() throws Exception {
+    metricsFactory = new FakeMetricsFactory();
+    super.setUp();
+  }
+
+  @Override
+  protected VertxMetricsFactory getMetrics() {
+    return metricsFactory;
+  }
+
+  @Override
+  protected Vertx vertx() {
+    return super.vertx();
   }
 
   @Test
@@ -249,7 +260,7 @@ public class MetricsTest extends VertxTestBase {
   }
 
   @Test
-  public void testDiscardOnOverflow1() {
+  public void testDiscardOnOverflow1() throws Exception {
     startNodes(2);
     Vertx from = vertices[0], to = vertices[1];
     FakeEventBusMetrics toMetrics = FakeMetricsBase.getMetrics(to.eventBus());
@@ -1071,7 +1082,11 @@ public class MetricsTest extends VertxTestBase {
   @Test
   public void testThreadPoolMetricsWithNamedExecuteBlocking() throws InterruptedException {
     vertx.close(); // Close the instance automatically created
-    vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(new FakeMetricsFactory())));
+    vertx = Vertx
+      .builder()
+      .with(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)))
+      .withMetrics(new FakeMetricsFactory())
+      .build();
 
     WorkerExecutor workerExec = vertx.createSharedWorkerExecutor("my-pool", 10);
 
@@ -1196,21 +1211,23 @@ public class MetricsTest extends VertxTestBase {
   @Test
   public void testServerLifecycle() {
     AtomicInteger lifecycle = new AtomicInteger();
-    Vertx vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(new MetricsOptions()
-      .setEnabled(true)
-      .setFactory(options -> new VertxMetrics() {
-      @Override
-      public HttpServerMetrics<?, ?, ?> createHttpServerMetrics(HttpServerOptions options, SocketAddress localAddress) {
-        lifecycle.compareAndSet(0, 1);
-        return new HttpServerMetrics<Object, Object, Object>() {
-          @Override
-          public void close() {
-            lifecycle.compareAndSet(1, 2);
-            HttpServerMetrics.super.close();
-          }
-        };
-      }
-    })));
+    vertx = Vertx
+      .builder()
+      .with(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)))
+      .withMetrics(options -> new VertxMetrics() {
+        @Override
+        public HttpServerMetrics<?, ?, ?> createHttpServerMetrics(HttpServerOptions options, SocketAddress localAddress) {
+          lifecycle.compareAndSet(0, 1);
+          return new HttpServerMetrics<Object, Object, Object>() {
+            @Override
+            public void close() {
+              lifecycle.compareAndSet(1, 2);
+              HttpServerMetrics.super.close();
+            }
+          };
+        }
+      })
+      .build();
     vertx.createHttpServer().requestHandler(req -> {}).listen(8080, "localhost");
     vertx.close().onComplete(onSuccess(v -> {
       assertEquals(2, lifecycle.get());

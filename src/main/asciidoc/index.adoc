@@ -790,17 +790,21 @@ Worker executors can be configured when created:
 
 NOTE: the configuration is set when the worker pool is created
 
-== Metrics SPI
+== Vert.x SPI
 
-By default Vert.x does not record any metrics. Instead it provides an SPI for others to implement which can be added
-to the classpath. The metrics SPI is an advanced feature which allows implementers to capture events from Vert.x in
-order to gather metrics. For more information on this, please consult the
-{@link io.vertx.core.spi.metrics.VertxMetrics API Documentation}.
+A Vert.x instance has a few extension points knows as _SPI_ (Service Provider Interface).
 
-You can also specify a metrics factory programmatically if embedding Vert.x using
-{@link io.vertx.core.metrics.MetricsOptions#setFactory(io.vertx.core.spi.VertxMetricsFactory)}.
+Such SPI are often loaded from the classpath using Java's `ServiceLoader` mechanism.
 
-== Cluster Managers
+=== Metrics and tracing SPI
+
+By default, Vert.x does not record any metrics nor does any tracing. Instead, it provides an SPI for others to implement which can be added
+to the classpath. The metrics SPI is a feature which allows implementers to capture events from Vert.x in order to
+collect and report metrics, likewise the tracing SPI does the same for traces.
+
+For more information on this, please consult https://vertx.io/docs/#monitoring
+
+=== Cluster Manager SPI
 
 In Vert.x a cluster manager is used for various functions including:
 
@@ -816,17 +820,30 @@ The default cluster manager used in the Vert.x distributions is one that uses ht
 can be easily replaced by a different implementation as Vert.x cluster managers are pluggable.
 
 A cluster manager must implement the interface {@link io.vertx.core.spi.cluster.ClusterManager}. Vert.x locates
-cluster managers at run-time by using the Java
-https://docs.oracle.com/javase/8/docs/api/java/util/ServiceLoader.html[Service Loader] functionality to locate
-instances of {@link io.vertx.core.spi.cluster.ClusterManager} on the classpath.
+cluster managers at run-time by using the Java https://docs.oracle.com/javase/8/docs/api/java/util/ServiceLoader.html[Service Loader] functionality to locate instances of {@link io.vertx.core.spi.cluster.ClusterManager} on the classpath.
 
 If you are using Vert.x at the command line and you want to use clustering you should make sure the `lib` directory
 of the Vert.x installation contains your cluster manager jar.
 
 If you are using Vert.x from a Maven or Gradle project just add the cluster manager jar as a dependency of your project.
 
-You can also specify cluster managers programmatically if embedding Vert.x using
-{@link io.vertx.core.VertxOptions#setClusterManager(io.vertx.core.spi.cluster.ClusterManager)}.
+For more information on this, please consult https://vertx.io/docs/#clustering
+
+=== Programmatic SPI selection and configuration
+
+The {@link io.vertx.core.VertxBuilder} gives you more control over the SPI selection and configuration.
+
+[source,$lang]
+----
+{@link examples.CoreExamples#vertxBuilder}
+----
+
+Clustered instances can also be created.
+
+[source,$lang]
+----
+{@link examples.CoreExamples#clusteredVertxBuilder}
+----
 
 == Logging
 

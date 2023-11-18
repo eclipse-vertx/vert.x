@@ -25,7 +25,6 @@ import io.vertx.core.spi.VertxTracerFactory;
 public class TracingOptions {
 
   private JsonObject json; // Keep a copy of the original json, so we don't lose info when building options subclasses
-  private VertxTracerFactory factory;
 
   /**
    * Default constructor
@@ -39,7 +38,10 @@ public class TracingOptions {
    * @param other The other {@link TracingOptions} to copy when creating this
    */
   public TracingOptions(TracingOptions other) {
-    factory = other.factory;
+    json = other.json;
+    if (json != null) {
+      json = json.copy();
+    }
   }
 
   /**
@@ -51,34 +53,6 @@ public class TracingOptions {
     this();
     TracingOptionsConverter.fromJson(json, this);
     this.json = json.copy();
-  }
-
-  /**
-   * Get the tracer factory to be used when tracing are enabled.
-   * <p>
-   * If the tracer factory has been programmatically set here, then that will be used when tracing are enabled
-   * for creating the {@link io.vertx.core.spi.tracing.VertxTracer} instance.
-   * <p>
-   * Otherwise Vert.x attempts to locate a tracer factory implementation on the classpath.
-   *
-   * @return the tracer factory
-   */
-  public VertxTracerFactory getFactory() {
-    return factory;
-  }
-
-  /**
-   * Programmatically set the tracer factory to be used when tracing are enabled.
-   * <p>
-   * Normally Vert.x will look on the classpath for a tracer factory implementation, but if you want to set one
-   * programmatically you can use this method.
-   *
-   * @param factory the tracer factory
-   * @return a reference to this, so the API can be used fluently
-   */
-  public TracingOptions setFactory(VertxTracerFactory factory) {
-    this.factory = factory;
-    return this;
   }
 
   public TracingOptions copy() {

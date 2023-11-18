@@ -33,7 +33,7 @@ public class ClusterHostTest extends VertxTestBase {
         return "127.0.0.3";
       }
     };
-    clusteredVertx(new VertxOptions().setClusterManager(clusterManager), onSuccess(clusteredVertx -> {
+    clusteredVertx(new VertxOptions(), clusterManager, onSuccess(clusteredVertx -> {
       assertEquals("127.0.0.3", clusterManager.getNodeInfo().host());
     }));
   }
@@ -51,7 +51,7 @@ public class ClusterHostTest extends VertxTestBase {
         return "127.0.0.3";
       }
     };
-    clusteredVertx(new VertxOptions().setClusterManager(clusterManager), onSuccess(clusteredVertx -> {
+    clusteredVertx(new VertxOptions(), clusterManager, onSuccess(clusteredVertx -> {
       assertEquals("127.0.0.3", clusterManager.getNodeInfo().host());
     }));
   }
@@ -69,9 +69,9 @@ public class ClusterHostTest extends VertxTestBase {
         return "127.0.0.3";
       }
     };
-    VertxOptions options = new VertxOptions().setClusterManager(clusterManager);
+    VertxOptions options = new VertxOptions();
     options.getEventBusOptions().setHost("127.0.0.4");
-    clusteredVertx(options, onSuccess(clusteredVertx -> {
+    clusteredVertx(options, clusterManager, onSuccess(clusteredVertx -> {
       assertEquals("127.0.0.4", clusterManager.getNodeInfo().host());
     }));
   }
