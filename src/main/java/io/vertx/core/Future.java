@@ -627,20 +627,26 @@ public interface Future<T> extends AsyncResult<T> {
    * @throws IllegalStateException when called from an event-loop thread or a non Vert.x thread
    */
   default T await() {
+    if (isComplete()) {
+      if (succeeded()) {
+        return result();
+      } else {
+        throw Utils.throwAsUnchecked(cause());
+      }
+    }
+
     io.vertx.core.impl.WorkerExecutor executor = io.vertx.core.impl.WorkerExecutor.unwrapWorkerExecutor();
     io.vertx.core.impl.WorkerExecutor.TaskController cont = executor.current();
     onComplete(ar -> cont.resume());
     try {
       cont.suspendAndAwaitResume();
     } catch (InterruptedException e) {
-      Utils.throwAsUnchecked(e.getCause());
-      return null;
+      throw Utils.throwAsUnchecked(e.getCause() != null ? e.getCause() : e);
     }
     if (succeeded()) {
       return result();
     } else {
-      Utils.throwAsUnchecked(cause());
-      return null;
+      throw Utils.throwAsUnchecked(cause());
     }
   }
 

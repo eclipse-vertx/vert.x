@@ -46,7 +46,7 @@ public class Utils {
   }
 
   @SuppressWarnings("unchecked")
-  public static <E extends Throwable> void throwAsUnchecked(Throwable t) throws E {
+  public static <E extends Throwable> RuntimeException throwAsUnchecked(Throwable t) throws E {
     throw (E) t;
   }
 }
