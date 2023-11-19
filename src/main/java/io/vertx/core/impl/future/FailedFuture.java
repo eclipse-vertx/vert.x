@@ -15,7 +15,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.NoStackTraceThrowable;
+import io.vertx.core.impl.NoStackTraceException;
 
 import java.util.function.Function;
 
@@ -42,7 +42,7 @@ public final class FailedFuture<T> extends FutureBase<T> {
    */
   public FailedFuture(ContextInternal context, Throwable t) {
     super(context);
-    this.cause = t != null ? t : new NoStackTraceThrowable(null);
+    this.cause = t != null ? t : new NoStackTraceException();
   }
 
   /**
@@ -58,7 +58,7 @@ public final class FailedFuture<T> extends FutureBase<T> {
    * @param failureMessage the failure message
    */
   public FailedFuture(ContextInternal context, String failureMessage) {
-    this(context, new NoStackTraceThrowable(failureMessage));
+    this(context, new NoStackTraceException(failureMessage));
   }
 
   @Override

@@ -15,7 +15,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.NoStackTraceThrowable;
+import io.vertx.core.impl.NoStackTraceException;
 
 import java.util.ArrayList;
 import java.util.Objects;
@@ -36,7 +36,6 @@ class FutureImpl<T> extends FutureBase<T> {
    * Create a future that hasn't completed yet
    */
   FutureImpl() {
-    super();
   }
 
   /**
@@ -250,7 +249,7 @@ class FutureImpl<T> extends FutureBase<T> {
 
   public boolean tryFail(Throwable cause) {
     if (cause == null) {
-      cause = new NoStackTraceThrowable(null);
+      cause = new NoStackTraceException();
     }
     Listener<T> l;
     synchronized (this) {
