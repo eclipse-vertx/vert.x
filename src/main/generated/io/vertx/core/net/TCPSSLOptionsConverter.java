@@ -89,8 +89,6 @@ public class TCPSSLOptionsConverter {
             obj.setUseAlpn((Boolean)member.getValue());
           }
           break;
-        case "openSslEngineOptions":
-          break;
         case "enabledSecureTransportProtocols":
           if (member.getValue() instanceof JsonArray) {
             java.util.LinkedHashSet<java.lang.String> list =  new java.util.LinkedHashSet<>();
@@ -166,9 +164,6 @@ public class TCPSSLOptionsConverter {
       json.put("crlValues", array);
     }
     json.put("useAlpn", obj.isUseAlpn());
-    if (obj.getOpenSslEngineOptions() != null) {
-      json.put("openSslEngineOptions", obj.getOpenSslEngineOptions().toJson());
-    }
     if (obj.getEnabledSecureTransportProtocols() != null) {
       JsonArray array = new JsonArray();
       obj.getEnabledSecureTransportProtocols().forEach(item -> array.add(item));

@@ -180,6 +180,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     }
     if (json.containsKey("jdkSslEngineOptions")) {
       setSslEngineOptions(new JdkSSLEngineOptions(json.getJsonObject("jdkSslEngineOptions")));
+    } else if (json.containsKey("openSslEngineOptions")) {
+      setSslEngineOptions(new OpenSSLEngineOptions(json.getJsonObject("openSslEngineOptions")));
     }
   }
 
@@ -215,6 +217,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     if (engineOptions != null) {
       if (engineOptions instanceof JdkSSLEngineOptions) {
         json.put("jdkSslEngineOptions", ((JdkSSLEngineOptions) engineOptions).toJson());
+      } else if (engineOptions instanceof OpenSSLEngineOptions) {
+        json.put("openSslEngineOptions", ((OpenSSLEngineOptions) engineOptions).toJson());
       }
     }
     return json;
@@ -591,10 +595,6 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   public TCPSSLOptions setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
     this.sslEngineOptions = sslEngineOptions;
     return this;
-  }
-
-  public OpenSSLEngineOptions getOpenSslEngineOptions() {
-    return sslEngineOptions instanceof OpenSSLEngineOptions ? (OpenSSLEngineOptions) sslEngineOptions : null;
   }
 
   /**
