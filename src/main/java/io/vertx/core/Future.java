@@ -612,6 +612,19 @@ public interface Future<T> extends AsyncResult<T> {
     return promise.future();
   }
 
+
+  default T getNow (T valueIfAbsent) {
+    if (isComplete()) {
+      if (succeeded()) {
+        return result();
+      } else {
+        throw Utils.throwAsUnchecked(cause());
+      }
+    } else {
+      return valueIfAbsent;
+    }
+  }
+
   /**
    * Park the current thread until the {@code future} is completed, when the future
    * is completed the thread is un-parked and
@@ -628,11 +641,7 @@ public interface Future<T> extends AsyncResult<T> {
    */
   default T await() {
     if (isComplete()) {
-      if (succeeded()) {
-        return result();
-      } else {
-        throw Utils.throwAsUnchecked(cause());
-      }
+      return getNow(null);
     }
 
     io.vertx.core.impl.WorkerExecutor executor = io.vertx.core.impl.WorkerExecutor.unwrapWorkerExecutor();
@@ -643,11 +652,7 @@ public interface Future<T> extends AsyncResult<T> {
     } catch (InterruptedException e) {
       throw Utils.throwAsUnchecked(e.getCause() != null ? e.getCause() : e);
     }
-    if (succeeded()) {
-      return result();
-    } else {
-      throw Utils.throwAsUnchecked(cause());
-    }
+    return getNow(null);
   }
 
   /**
