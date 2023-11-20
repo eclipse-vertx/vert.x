@@ -11,8 +11,9 @@
 
 package io.vertx.core.http;
 
-import io.vertx.core.net.SelfSignedCertificate;
 import io.vertx.core.parsetools.RecordParser;
+import io.vertx.test.tls.Cert;
+import io.vertx.test.tls.Trust;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -24,32 +25,18 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 public abstract class ClientResponseParserTest extends HttpTestBase {
 
-  private SelfSignedCertificate selfSignedCertificate;
-
-  @Override
-  public void setUp() throws Exception {
-    selfSignedCertificate = SelfSignedCertificate.create();
-    super.setUp();
-  }
-
-  @Override
-  protected void tearDown() throws Exception {
-    super.tearDown();
-    selfSignedCertificate.delete();
-  }
-
   @Override
   protected HttpServerOptions createBaseServerOptions() {
     return super.createBaseServerOptions()
       .setSsl(true)
-      .setKeyCertOptions(selfSignedCertificate.keyCertOptions());
+      .setKeyCertOptions(Cert.SERVER_PEM.get());
   }
 
   @Override
   protected HttpClientOptions createBaseClientOptions() {
     return super.createBaseClientOptions()
       .setSsl(true)
-      .setTrustOptions(selfSignedCertificate.trustOptions());
+      .setTrustOptions(Trust.SERVER_PEM.get());
   }
 
   @Test
