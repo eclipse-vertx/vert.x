@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2023 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -278,10 +278,12 @@ public class RecordParserImpl implements RecordParser {
    * @param buffer  a chunk of data
    */
   public void handle(Buffer buffer) {
-    if (buff.length() == 0) {
-      buff = buffer;
-    } else {
-      buff.appendBuffer(buffer);
+    if (buffer.length() != 0) {
+      if (buff == EMPTY_BUFFER) {
+        buff = buffer.getBuffer(0, buffer.length());
+      } else {
+        buff.appendBuffer(buffer);
+      }
     }
     handleParsing();
     if (buff != null && maxRecordSize > 0 && buff.length() > maxRecordSize) {

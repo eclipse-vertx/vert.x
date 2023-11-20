@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2023 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -473,5 +473,20 @@ public class RecordParserTest {
     });
     recordParser.handle(Buffer.buffer("foo\n"));
     latch.await();
+  }
+
+  @Test
+  public void shouldCopyInitialBuffer() {
+    RecordParser parser = RecordParser.newFixed(150, buff -> {
+    });
+    List<Buffer> inputBuffers = new ArrayList<>();
+    for (int i = 0; i < 20; i++) {
+      Buffer buffer = TestUtils.randomBuffer(12);
+      parser.handle(buffer);
+      inputBuffers.add(buffer);
+    }
+    for (int i = 0; i < 20; i++) {
+      assertEquals(12, inputBuffers.get(i).length());
+    }
   }
 }
