@@ -119,7 +119,7 @@ public class MessageImpl<U, V> implements Message<V> {
   }
 
   protected MessageImpl createReply(Object message, DeliveryOptions options) {
-    MessageImpl reply = bus.createMessage(true, replyAddress, options.getHeaders(), message, options.getCodecName());
+    MessageImpl reply = bus.createMessage(true, isLocal(), replyAddress, options.getHeaders(), message, options.getCodecName());
     reply.trace = trace;
     return reply;
   }

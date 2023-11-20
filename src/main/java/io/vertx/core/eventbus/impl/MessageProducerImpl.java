@@ -12,11 +12,9 @@
 package io.vertx.core.eventbus.impl;
 
 import io.vertx.core.Future;
-import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.*;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.VertxInternal;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -27,6 +25,7 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
   private final EventBusImpl bus;
   private final boolean send;
   private final String address;
+  private final boolean localOnly;
   private DeliveryOptions options;
 
   public MessageProducerImpl(Vertx vertx, String address, boolean send, DeliveryOptions options) {
@@ -35,6 +34,7 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
     this.address = address;
     this.send = send;
     this.options = options;
+    this.localOnly = vertx.isClustered() ? options.isLocalOnly() : true;
   }
 
   @Override
@@ -45,7 +45,7 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
 
   @Override
   public Future<Void> write(T body) {
-    MessageImpl msg = bus.createMessage(send, address, options.getHeaders(), body, options.getCodecName());
+    MessageImpl msg = bus.createMessage(send, localOnly, address, options.getHeaders(), body, options.getCodecName());
     return bus.sendOrPubInternal(msg, options, null);
   }
 
