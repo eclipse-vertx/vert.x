@@ -612,16 +612,17 @@ public interface Future<T> extends AsyncResult<T> {
     return promise.future();
   }
 
-
+  /**
+   @see CompletableFuture#getNow
+   @see #isComplete
+   */
   default T getNow (T valueIfAbsent) {
-    if (isComplete()) {
-      if (succeeded()) {
-        return result();
-      } else {
-        throw Utils.throwAsUnchecked(cause());
-      }
+    if (succeeded()) {
+      return result();
+    } else if (failed()) {
+      throw Utils.throwAsUnchecked(cause());
     } else {
-      return valueIfAbsent;
+      return valueIfAbsent; // !isComplete
     }
   }
 
