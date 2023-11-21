@@ -4148,14 +4148,18 @@ public abstract class HttpTest extends HttpTestBase {
     });
     startServer(server2);
     Context ctx = vertx.getOrCreateContext();
-    client.redirectHandler(resp -> {
-      assertEquals(ctx, Vertx.currentContext());
-      Promise<RequestOptions> fut = Promise.promise();
-      vertx.setTimer(25, id -> {
-        fut.complete(new RequestOptions().setAbsoluteURI(scheme + "://localhost:" + port + "/custom"));
-      });
-      return fut.future();
-    });
+    client.close();
+    client = vertx.httpClientBuilder()
+      .with(createBaseClientOptions())
+      .withRedirectHandler(resp -> {
+        assertEquals(ctx, Vertx.currentContext());
+        Promise<RequestOptions> fut = Promise.promise();
+        vertx.setTimer(25, id -> {
+          fut.complete(new RequestOptions().setAbsoluteURI(scheme + "://localhost:" + port + "/custom"));
+        });
+        return fut.future();
+      })
+      .build();
     ctx.runOnContext(v -> {
       client.request(new RequestOptions()
         .setHost(DEFAULT_HTTP_HOST)

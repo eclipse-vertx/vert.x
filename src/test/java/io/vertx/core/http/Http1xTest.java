@@ -1138,6 +1138,7 @@ public class Http1xTest extends HttpTest {
   @Test
   @Repeat(times = 10)
   public void testCloseServerConnectionWithPendingMessages() throws Exception {
+    AtomicBoolean completed = new AtomicBoolean();
     int n = 5;
     server.requestHandler(req -> {
       vertx.setTimer(100, id -> {
@@ -1146,15 +1147,17 @@ public class Http1xTest extends HttpTest {
     });
     startServer(testAddress);
     client.close();
-    client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(n).setPipelining(true));
-    AtomicBoolean completed = new AtomicBoolean();
-    client.connectionHandler(conn -> {
-      conn.closeHandler(v -> {
-        if (completed.compareAndSet(false, true)) {
-          testComplete();
-        }
-      });
-    });
+    client = vertx
+      .httpClientBuilder()
+      .with(createBaseClientOptions().setMaxPoolSize(n).setPipelining(true))
+      .withConnectHandler(conn -> {
+        conn.closeHandler(v -> {
+          if (completed.compareAndSet(false, true)) {
+            testComplete();
+          }
+        });
+      })
+      .build();
     for (int i = 0; i < n * 2; i++) {
       client.request(requestOptions)
         .compose(HttpClientRequest::send)
