@@ -64,6 +64,14 @@ public class HttpClientBuilderImpl implements HttpClientBuilder {
     } else {
       client = vertx.createHttpPoolClient(co, po, closeFuture);
     }
+    Handler<HttpConnection> connectHandler = this.connectHandler;
+    if (connectHandler != null) {
+      client.connectionHandler(connectHandler);
+    }
+    Function<HttpClientResponse, Future<RequestOptions>> redirectHandler = this.redirectHandler;
+    if (redirectHandler != null) {
+      client.redirectHandler(redirectHandler);
+    }
     resolveCloseFuture().add(closeFuture);
     return client;
   }
