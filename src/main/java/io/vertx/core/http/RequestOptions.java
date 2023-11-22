@@ -16,9 +16,7 @@ import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.MultiMap;
 import io.vertx.core.VertxException;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.Address;
-import io.vertx.core.net.ProxyOptions;
-import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.*;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -97,6 +95,7 @@ public class RequestOptions {
   private String host;
   private Integer port;
   private Boolean ssl;
+  private ClientSSLOptions sslOptions;;
   private String uri;
   private MultiMap headers;
   private boolean followRedirects;
@@ -115,6 +114,7 @@ public class RequestOptions {
     host = DEFAULT_HOST;
     port = DEFAULT_PORT;
     ssl = DEFAULT_SSL;
+    sslOptions = null;
     uri = DEFAULT_URI;
     followRedirects = DEFAULT_FOLLOW_REDIRECTS;
     timeout = DEFAULT_TIMEOUT;
@@ -135,6 +135,7 @@ public class RequestOptions {
     setHost(other.host);
     setPort(other.port);
     setSsl(other.ssl);
+    sslOptions = other.sslOptions != null ? new ClientSSLOptions(other.sslOptions) : null;
     setURI(other.uri);
     setFollowRedirects(other.followRedirects);
     setIdleTimeout(other.idleTimeout);
@@ -305,6 +306,25 @@ public class RequestOptions {
    */
   public RequestOptions setSsl(Boolean ssl) {
     this.ssl = ssl;
+    return this;
+  }
+
+  /**
+   * @return the SSL options
+   */
+  public ClientSSLOptions getSslOptions() {
+    return sslOptions;
+  }
+
+  /**
+   * Set the SSL options to use.
+   * <p>
+   * When none is provided, the client SSL options will be used instead.
+   * @param sslOptions the SSL options to use
+   * @return a reference to this, so the API can be used fluently
+   */
+  public RequestOptions setSslOptions(ClientSSLOptions sslOptions) {
+    this.sslOptions = sslOptions;
     return this;
   }
 

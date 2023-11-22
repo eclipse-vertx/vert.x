@@ -39,6 +39,7 @@ import io.vertx.core.impl.VertxThread;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.KeyStoreHelper;
 import org.junit.Assume;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -1801,6 +1802,24 @@ public abstract class HttpTLSTest extends HttpTestBase {
       Buffer body = clients[i].request(requestOptions).compose(req -> req.send().compose(HttpClientResponse::body)).toCompletionStage().toCompletableFuture().get();
       assertEquals("Hello World " + i, body.toString());
     }
+  }
+
+  @Test
+  public void testOverrideClientSSLOptions() throws Exception {
+    server.close();
+    server = vertx.createHttpServer(new HttpServerOptions().setSsl(true).setKeyCertOptions(Cert.SERVER_JKS.get()));
+    server.requestHandler(request -> {
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setVerifyHost(false).setSsl(true).setTrustOptions(Trust.CLIENT_JKS.get()));
+    client.request(requestOptions).onComplete(onFailure(err -> {
+      client.request(new RequestOptions(requestOptions).setSslOptions(new ClientSSLOptions().setTrustOptions(Trust.SERVER_JKS.get())))
+        .onComplete(onSuccess(request -> {
+          testComplete();
+        }));
+    }));
+    await();
   }
 
   @Test

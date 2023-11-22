@@ -16,6 +16,7 @@ import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.MultiMap;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.Address;
+import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.SocketAddress;
 
@@ -188,6 +189,11 @@ public class WebSocketConnectOptions extends RequestOptions {
   @Override
   public WebSocketConnectOptions setSsl(Boolean ssl) {
     return (WebSocketConnectOptions) super.setSsl(ssl);
+  }
+
+  @Override
+  public WebSocketConnectOptions setSslOptions(ClientSSLOptions sslOptions) {
+    return (WebSocketConnectOptions) super.setSslOptions(sslOptions);
   }
 
   @Override

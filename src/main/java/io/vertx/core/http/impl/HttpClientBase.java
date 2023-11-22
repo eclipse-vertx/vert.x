@@ -42,7 +42,7 @@ public class HttpClientBase implements MetricsProvider, Closeable {
   protected final List<HttpVersion> alpnVersions;
   protected final HttpClientMetrics metrics;
   protected final CloseSequence closeSequence;
-  volatile ClientSSLOptions sslOptions;
+  private volatile ClientSSLOptions defaultSslOptions;
   private long closeTimeout = 0L;
   private TimeUnit closeTimeoutUnit = TimeUnit.SECONDS;
   private Predicate<SocketAddress> proxyFilter;
@@ -73,7 +73,7 @@ public class HttpClientBase implements MetricsProvider, Closeable {
     this.vertx = vertx;
     this.metrics = vertx.metricsSPI() != null ? vertx.metricsSPI().createHttpClientMetrics(options) : null;
     this.options = new HttpClientOptions(options);
-    this.sslOptions = sslOptions;
+    this.defaultSslOptions = sslOptions;
     this.closeSequence = new CloseSequence(this::doClose, this::doShutdown);
     if (!options.isKeepAlive() && options.isPipelining()) {
       throw new IllegalStateException("Cannot have pipelining with no keep alive");
@@ -135,6 +135,16 @@ public class HttpClientBase implements MetricsProvider, Closeable {
     return proxyOptions;
   }
 
+  protected ClientSSLOptions sslOptions(RequestOptions requestOptions) {
+    ClientSSLOptions sslOptions = requestOptions.getSslOptions();
+    if (sslOptions != null) {
+      sslOptions = new ClientSSLOptions(sslOptions);
+    } else {
+      sslOptions = defaultSslOptions;
+    }
+    return sslOptions;
+  }
+
   HttpClientMetrics metrics() {
     return metrics;
   }
@@ -151,7 +161,7 @@ public class HttpClientBase implements MetricsProvider, Closeable {
    */
   public Future<HttpClientConnection> connect(SocketAddress server, HostAndPort peer) {
     ContextInternal context = vertx.getOrCreateContext();
-    HttpChannelConnector connector = new HttpChannelConnector(this, netClient, null, null, options.getProtocolVersion(), options.isSsl(), options.isUseAlpn(), peer, server);
+    HttpChannelConnector connector = new HttpChannelConnector(this, netClient, defaultSslOptions, null, null, options.getProtocolVersion(), options.isSsl(), options.isUseAlpn(), peer, server);
     return connector.httpConnect(context);
   }
 
@@ -181,7 +191,7 @@ public class HttpClientBase implements MetricsProvider, Closeable {
   }
 
   public Future<Boolean> updateSSLOptions(ClientSSLOptions options, boolean force) {
-    sslOptions = options
+    defaultSslOptions = options
       .copy()
       .setHostnameVerificationAlgorithm(this.options.isVerifyHost() ? "HTTPS" : "")
       .setApplicationLayerProtocols(alpnVersions.stream().map(HttpVersion::alpnName).collect(Collectors.toList()));;

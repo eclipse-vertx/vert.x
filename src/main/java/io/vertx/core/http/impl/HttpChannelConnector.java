@@ -49,6 +49,7 @@ public class HttpChannelConnector {
   private final HttpClientBase client;
   private final NetClientInternal netClient;
   private final HttpClientOptions options;
+  private final ClientSSLOptions sslOptions;
   private final ProxyOptions proxyOptions;
   private final ClientMetrics metrics;
   private final boolean ssl;
@@ -59,6 +60,7 @@ public class HttpChannelConnector {
 
   public HttpChannelConnector(HttpClientBase client,
                               NetClientInternal netClient,
+                              ClientSSLOptions sslOptions,
                               ProxyOptions proxyOptions,
                               ClientMetrics metrics,
                               HttpVersion version,
@@ -71,6 +73,7 @@ public class HttpChannelConnector {
     this.metrics = metrics;
     this.options = client.options();
     this.proxyOptions = proxyOptions;
+    this.sslOptions = sslOptions;
     this.ssl = ssl;
     this.useAlpn = useAlpn;
     this.version = version;
@@ -94,8 +97,8 @@ public class HttpChannelConnector {
     }
     connectOptions.setSsl(ssl);
     if (ssl) {
-      if (client.sslOptions != null) {
-        connectOptions.setSslOptions(client.sslOptions.copy().setUseAlpn(useAlpn));
+      if (sslOptions != null) {
+        connectOptions.setSslOptions(sslOptions.copy().setUseAlpn(useAlpn));
       } else {
         // should not be possible
       }
