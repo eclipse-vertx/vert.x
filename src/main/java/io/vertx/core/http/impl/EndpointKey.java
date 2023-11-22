@@ -10,6 +10,7 @@
  */
 package io.vertx.core.http.impl;
 
+import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.SocketAddress;
@@ -22,12 +23,14 @@ final class EndpointKey {
   final SocketAddress server;
   final HostAndPort authority;
   final ProxyOptions proxyOptions;
+  final ClientSSLOptions sslOptions;
 
-  EndpointKey(boolean ssl, ProxyOptions proxyOptions, SocketAddress server, HostAndPort authority) {
+  EndpointKey(boolean ssl, ClientSSLOptions sslOptions, ProxyOptions proxyOptions, SocketAddress server, HostAndPort authority) {
     if (server == null) {
       throw new NullPointerException("No null server address");
     }
     this.ssl = ssl;
+    this.sslOptions = sslOptions;
     this.proxyOptions = proxyOptions;
     this.authority = authority;
     this.server = server;
@@ -40,7 +43,7 @@ final class EndpointKey {
     };
     if (o instanceof EndpointKey) {
       EndpointKey that = (EndpointKey) o;
-      return ssl == that.ssl && server.equals(that.server) && Objects.equals(authority, that.authority) && equals(proxyOptions, that.proxyOptions);
+      return ssl == that.ssl && server.equals(that.server) && Objects.equals(authority, that.authority) && Objects.equals(sslOptions, that.sslOptions) && equals(proxyOptions, that.proxyOptions);
     }
     return false;
   }
@@ -51,6 +54,9 @@ final class EndpointKey {
     result = 31 * result + server.hashCode();
     if (authority != null) {
       result = 31 * result + authority.hashCode();
+    }
+    if (sslOptions != null) {
+      result = 31 * result + sslOptions.hashCode();
     }
     if (proxyOptions != null) {
       result = 31 * result + hashCode(proxyOptions);

@@ -24,9 +24,7 @@ import io.vertx.core.http.impl.Http1xClientConnection;
 import io.vertx.core.http.impl.Http1xServerConnection;
 import io.vertx.core.http.impl.WebSocketInternal;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
-import io.vertx.core.net.NetServer;
-import io.vertx.core.net.NetSocket;
-import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.*;
 import io.vertx.core.net.impl.NetSocketInternal;
 import io.vertx.test.core.CheckingSender;
 import io.vertx.test.core.TestUtils;
@@ -470,6 +468,23 @@ public class WebSocketTest extends VertxTestBase {
       }
     };
     wsProvider.apply(client).onComplete(handler);
+    await();
+  }
+
+  @Test
+  public void testOverrideClientSSLOptions()  {
+    server = vertx.createHttpServer(new HttpServerOptions().setSsl(true).setKeyCertOptions(Cert.SERVER_JKS.get()));
+    server.webSocketHandler(ws -> {
+    }).listen(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST);
+    client = vertx.createWebSocketClient(new WebSocketClientOptions().setVerifyHost(false).setSsl(true).setTrustOptions(Trust.CLIENT_JKS.get()));
+    WebSocketConnectOptions connectOptions = new WebSocketConnectOptions().setHost(DEFAULT_HTTPS_HOST).setPort(DEFAULT_HTTPS_PORT);
+    client.connect(connectOptions)
+      .onComplete(onFailure(err -> {
+        client.connect(new WebSocketConnectOptions(connectOptions).setSslOptions(new ClientSSLOptions().setTrustOptions(Trust.SERVER_JKS.get())))
+          .onComplete(onSuccess(so -> {
+            testComplete();
+          }));
+    }));
     await();
   }
 

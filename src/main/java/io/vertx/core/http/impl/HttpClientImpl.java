@@ -182,10 +182,10 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       ProxyOptions proxyOptions = key.proxyOptions;
       if (proxyOptions != null && !key.ssl && proxyOptions.getType() == ProxyType.HTTP) {
         SocketAddress server = SocketAddress.inetSocketAddress(proxyOptions.getPort(), proxyOptions.getHost());
-        key = new EndpointKey(key.ssl, proxyOptions, server, key.authority);
+        key = new EndpointKey(key.ssl, key.sslOptions, proxyOptions, server, key.authority);
         proxyOptions = null;
       }
-      HttpChannelConnector connector = new HttpChannelConnector(HttpClientImpl.this, netClient, proxyOptions, metrics, options.getProtocolVersion(), key.ssl, options.isUseAlpn(), key.authority, key.server);
+      HttpChannelConnector connector = new HttpChannelConnector(HttpClientImpl.this, netClient, key.sslOptions, proxyOptions, metrics, options.getProtocolVersion(), key.ssl, options.isUseAlpn(), key.authority, key.server);
       return new SharedClientHttpStreamEndpoint(
         HttpClientImpl.this,
         metrics,
@@ -305,7 +305,8 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     } else {
       authority = null;
     }
-    return doRequest(method, authority, server, useSSL, requestURI, headers, request.getTraceOperation(), connectTimeout, idleTimeout, followRedirects, request.getProxyOptions());
+    ClientSSLOptions sslOptions = sslOptions(request);
+    return doRequest(method, authority, server, useSSL, requestURI, headers, request.getTraceOperation(), connectTimeout, idleTimeout, followRedirects, sslOptions, request.getProxyOptions());
   }
 
   private Future<HttpClientRequest> doRequest(
@@ -319,6 +320,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     long connectTimeout,
     long idleTimeout,
     Boolean followRedirects,
+    ClientSSLOptions sslOptions,
     ProxyOptions proxyConfig) {
     ContextInternal ctx = vertx.getOrCreateContext();
     ContextInternal connCtx = ctx.isEventLoopContext() ? ctx : vertx.createEventLoopContext(ctx.nettyEventLoop(), ctx.workerPool(), ctx.classLoader());
@@ -329,7 +331,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       Future<EndpointLookup> fut = endpointResolverManager.lookupEndpoint(ctx, server);
       future = fut.compose(lookup -> {
         SocketAddress address = lookup.address();
-        EndpointKey key = new EndpointKey(useSSL, proxyConfig, address, authority != null ? authority : HostAndPort.create(address.host(), address.port()));
+        EndpointKey key = new EndpointKey(useSSL, sslOptions, proxyConfig, address, authority != null ? authority : HostAndPort.create(address.host(), address.port()));
         return httpCM.withEndpointAsync(key, httpEndpointProvider(), (endpoint, created) -> {
           Future<Lease<HttpClientConnection>> fut2 = endpoint.requestConnection(connCtx, connectTimeout);
           if (fut2 == null) {
@@ -358,7 +360,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       }
     } else if (server instanceof SocketAddress) {
       proxyOptions = computeProxyOptions(proxyConfig, (SocketAddress) server);
-      EndpointKey key = new EndpointKey(useSSL, proxyOptions, (SocketAddress) server, authority);
+      EndpointKey key = new EndpointKey(useSSL, sslOptions, proxyOptions, (SocketAddress) server, authority);
       future = httpCM.withEndpointAsync(key, httpEndpointProvider(), (endpoint, created) -> {
         Future<Lease<HttpClientConnection>> fut = endpoint.requestConnection(connCtx, connectTimeout);
         if (fut == null) {
