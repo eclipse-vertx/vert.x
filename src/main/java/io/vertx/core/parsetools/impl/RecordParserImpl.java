@@ -280,6 +280,11 @@ public class RecordParserImpl implements RecordParser {
   public void handle(Buffer buffer) {
     if (buffer.length() != 0) {
       if (buff == EMPTY_BUFFER) {
+        // Copy the initial buffer instead of growing it.
+        // We cannot assume that we can modify the input,
+        // or that the buffer has enough capacity.
+        // For example, an HTTP client response sent over an encrypted connection
+        // emits un-pooled buffers with limited capacity.
         buff = buffer.getBuffer(0, buffer.length());
       } else {
         buff.appendBuffer(buffer);
