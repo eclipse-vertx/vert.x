@@ -14,6 +14,7 @@ package io.vertx.core;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.NoStackTraceTimeoutException;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.impl.future.CompositeFutureImpl;
 import io.vertx.core.impl.future.FailedFuture;
@@ -22,6 +23,7 @@ import io.vertx.core.impl.future.SucceededFuture;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -650,10 +652,31 @@ public interface Future<T> extends AsyncResult<T> {
     onComplete(ar -> cont.resume());
     try {
       cont.suspendAndAwaitResume();
+      return getNow(null);
     } catch (InterruptedException e) {
       throw Utils.throwAsUnchecked(e.getCause() != null ? e.getCause() : e);// should it be simply throwAsUnchecked(e) ?
     }
-    return getNow(null);
+  }
+
+  default T await(long delay, TimeUnit unit) {
+    if (isComplete()) {
+      return getNow(null);
+    }
+
+    io.vertx.core.impl.WorkerExecutor executor = io.vertx.core.impl.WorkerExecutor.unwrapWorkerExecutor();
+    io.vertx.core.impl.WorkerExecutor.TaskController cont = executor.current();
+    onComplete(ar -> cont.resume());
+    try {
+      CountDownLatch latch = cont.suspend();
+      boolean success = latch.await(delay, unit);
+      if (success){
+        return getNow(null);
+      } else {
+        throw Utils.throwAsUnchecked(new NoStackTraceTimeoutException("await("+delay+","+unit+")"));
+      }
+    } catch (InterruptedException e) {
+      throw Utils.throwAsUnchecked(e);
+    }
   }
 
   /**
