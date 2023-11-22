@@ -651,7 +651,7 @@ public interface Future<T> extends AsyncResult<T> {
     try {
       cont.suspendAndAwaitResume();
     } catch (InterruptedException e) {
-      throw Utils.throwAsUnchecked(e.getCause() != null ? e.getCause() : e);
+      throw Utils.throwAsUnchecked(e.getCause() != null ? e.getCause() : e);// should it be simply throwAsUnchecked(e) ?
     }
     return getNow(null);
   }
