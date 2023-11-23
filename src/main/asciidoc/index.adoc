@@ -279,7 +279,7 @@ If you want to deploy a verticle as a <<virtual_threads, virtual thread verticle
 
 [source,$lang]
 ----
-{@link examples.CoreExamples#example7_1}
+{@link examples.CoreExamples#example7_2}
 ----
 
 NOTE: this feature requires Java 21
