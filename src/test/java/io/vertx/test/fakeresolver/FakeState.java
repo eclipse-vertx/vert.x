@@ -1,16 +1,14 @@
 package io.vertx.test.fakeresolver;
 
-import io.vertx.core.spi.resolver.address.Endpoint;
-
 import java.util.List;
 
-public class FakeState {
+public class FakeState<B> {
 
   final String name;
-  final List<Endpoint<FakeEndpoint>> endpoints;
+  final List<B> endpoints;
   volatile boolean isValid;
 
-  FakeState(String name, List<Endpoint<FakeEndpoint>> endpoints) {
+  FakeState(String name, List<B> endpoints) {
     this.name = name;
     this.endpoints = endpoints;
     this.isValid = true;

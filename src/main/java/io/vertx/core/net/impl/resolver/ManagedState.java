@@ -12,6 +12,8 @@ package io.vertx.core.net.impl.resolver;
 
 import io.vertx.core.spi.loadbalancing.EndpointSelector;
 
+import java.util.Objects;
+
 /**
  */
 final class ManagedState<S> {
@@ -21,6 +23,6 @@ final class ManagedState<S> {
 
   ManagedState(EndpointSelector selector, S state) {
     this.selector = selector;
-    this.state = state;
+    this.state = Objects.requireNonNull(state);
   }
 }

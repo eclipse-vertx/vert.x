@@ -5,7 +5,6 @@ import io.vertx.core.Vertx;
 import io.vertx.core.net.Address;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.resolver.address.AddressResolver;
-import io.vertx.core.spi.resolver.address.Endpoint;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,12 +15,12 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class FakeAddressResolver implements io.vertx.core.net.AddressResolver, AddressResolver<FakeAddress, FakeEndpoint, FakeState> {
+public class FakeAddressResolver<B> implements io.vertx.core.net.AddressResolver, AddressResolver<FakeAddress, FakeEndpoint, FakeState<B>, B> {
 
-  static class LazyFakeState {
+  class LazyFakeState {
     final String name;
     volatile List<SocketAddress> endpoints;
-    AtomicReference<FakeState> state = new AtomicReference<>();
+    AtomicReference<FakeState<B>> state = new AtomicReference<>();
     LazyFakeState(String name) {
       this.name = name;
     }
@@ -45,13 +44,13 @@ public class FakeAddressResolver implements io.vertx.core.net.AddressResolver, A
   public List<FakeEndpoint> endpoints(String name) {
     LazyFakeState state = map.get(name);
     if (state != null) {
-      return state.state.get().endpoints.stream().map(Endpoint::get).collect(Collectors.toList());
+      return state.state.get().endpoints.stream().map(e -> (FakeEndpoint)((io.vertx.core.spi.loadbalancing.Endpoint)e).endpoint()).collect(Collectors.toList());
     }
     return null;
   }
 
   @Override
-  public AddressResolver<?, ?, ?> resolver(Vertx vertx) {
+  public AddressResolver<?, ?, ?, ?> resolver(Vertx vertx) {
     return this;
   }
 
@@ -61,15 +60,15 @@ public class FakeAddressResolver implements io.vertx.core.net.AddressResolver, A
   }
 
   @Override
-  public Future<FakeState> resolve(Function<FakeEndpoint, Endpoint<FakeEndpoint>> factory, FakeAddress address) {
+  public Future<FakeState<B>> resolve(Function<FakeEndpoint, B> factory, FakeAddress address) {
     LazyFakeState state = map.get(address.name());
     if (state != null) {
       if (state.state.get() == null) {
-        List<Endpoint<FakeEndpoint>> lst = new ArrayList<>();
+        List<B> lst = new ArrayList<>();
         for (SocketAddress socketAddress : state.endpoints) {
           lst.add(factory.apply(new FakeEndpoint(socketAddress)));
         }
-        state.state.set(new FakeState(state.name, lst));
+        state.state.set(new FakeState<>(state.name, lst));
       }
       return Future.succeededFuture(state.state.get());
     } else {
@@ -78,12 +77,12 @@ public class FakeAddressResolver implements io.vertx.core.net.AddressResolver, A
   }
 
   @Override
-  public List<Endpoint<FakeEndpoint>> endpoints(FakeState state) {
+  public List<B> endpoints(FakeState<B> state) {
     return state.endpoints;
   }
 
   @Override
-  public boolean isValid(FakeState state) {
+  public boolean isValid(FakeState<B> state) {
     return state.isValid;
   }
 
@@ -93,7 +92,7 @@ public class FakeAddressResolver implements io.vertx.core.net.AddressResolver, A
   }
 
   @Override
-  public void dispose(FakeState state) {
+  public void dispose(FakeState<B> state) {
     map.remove(state.name);
   }
 

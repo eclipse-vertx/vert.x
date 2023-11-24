@@ -13,13 +13,28 @@ package io.vertx.core.spi.loadbalancing;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 
-public class DefaultEndpointMetrics implements EndpointMetrics<RequestMetric> {
+public class DefaultEndpointMetrics<E> implements Endpoint<E>, EndpointMetrics<RequestMetric> {
 
+  private final E endpoint;
   private final LongAdder numberOfInflightRequests = new LongAdder();
   private final LongAdder numberOfRequests = new LongAdder();
   private final LongAdder numberOfFailures = new LongAdder();
   private final AtomicLong minResponseTime = new AtomicLong(Long.MAX_VALUE);
   private final AtomicLong maxResponseTime = new AtomicLong(0);
+
+  public DefaultEndpointMetrics(E endpoint) {
+    this.endpoint = endpoint;
+  }
+
+  @Override
+  public E endpoint() {
+    return endpoint;
+  }
+
+  @Override
+  public EndpointMetrics<?> metrics() {
+    return this;
+  }
 
   @Override
   public RequestMetric initiateRequest() {

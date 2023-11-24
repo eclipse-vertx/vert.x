@@ -22,7 +22,6 @@ import io.vertx.core.net.impl.endpoint.EndpointProvider;
 import io.vertx.core.spi.loadbalancing.EndpointSelector;
 import io.vertx.core.spi.resolver.address.AddressResolver;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -36,18 +35,18 @@ import java.util.function.BiFunction;
 public class EndpointResolverManager<S, A extends Address, E> {
 
   private final LoadBalancer loadBalancer;
-  private final AddressResolver<A, E, S> addressResolver;
+  private final AddressResolver<A, E, S, io.vertx.core.spi.loadbalancing.Endpoint<E>> addressResolver;
   private final EndpointManager<A, EndpointImpl> connectionManager;
   private final long expirationMillis;
 
-  public EndpointResolverManager(AddressResolver<A, E, S> addressResolver, LoadBalancer loadBalancer, long expirationMillis) {
+  public EndpointResolverManager(AddressResolver<A, E, S, ?> addressResolver, LoadBalancer loadBalancer, long expirationMillis) {
 
     if (loadBalancer == null) {
       loadBalancer = LoadBalancer.ROUND_ROBIN;
     }
 
     this.loadBalancer = loadBalancer;
-    this.addressResolver = addressResolver;
+    this.addressResolver = (AddressResolver<A, E, S, io.vertx.core.spi.loadbalancing.Endpoint<E>>) addressResolver;
     this.connectionManager = new EndpointManager<>();
     this.expirationMillis = expirationMillis;
   }
@@ -68,7 +67,7 @@ public class EndpointResolverManager<S, A extends Address, E> {
 
   private Future<ManagedState<S>> resolve(A address) {
     EndpointSelector selector = loadBalancer.selector();
-    return addressResolver.resolve(e -> new ManagedEndpoint<>(e, selector.endpointMetrics()), address)
+    return addressResolver.resolve(selector::endpointOf, address)
       .map(s -> new ManagedState<>(selector, s));
   }
 
@@ -78,17 +77,12 @@ public class EndpointResolverManager<S, A extends Address, E> {
    * @param state the state
    * @return the resolved endpoint
    */
-  private ManagedEndpoint<E> selectEndpoint(ManagedState<S> state) {
+  private io.vertx.core.spi.loadbalancing.Endpoint<E> selectEndpoint(ManagedState<S> state) {
 
-    List<io.vertx.core.spi.resolver.address.Endpoint<E>> lst = addressResolver.endpoints(state.state);
-    List<EndpointMetrics<?>> other = new ArrayList<>();
-    // TRY AVOID THAT
-    for (int i = 0;i < lst.size();i++) {
-      other.add(((ManagedEndpoint)lst.get(i)).endpoint);
-    }
-    int idx = state.selector.selectEndpoint(other);
+    List<io.vertx.core.spi.loadbalancing.Endpoint<E>> lst = addressResolver.endpoints(state.state);
+    int idx = state.selector.selectEndpoint(lst);
     if (idx >= 0 && idx < lst.size()) {
-      return (ManagedEndpoint<E>) lst.get(idx);
+      return lst.get(idx);
     }
     throw new UnsupportedOperationException("TODO");
   }
@@ -119,37 +113,37 @@ public class EndpointResolverManager<S, A extends Address, E> {
           return ctx.failedFuture("Too many attempts");
         }
       }
-      ManagedEndpoint<E> endpoint = selectEndpoint(state);
+      io.vertx.core.spi.loadbalancing.Endpoint<E> endpoint = selectEndpoint(state);
       return ctx.succeededFuture(new EndpointLookup() {
         @Override
         public SocketAddress address() {
-          return addressResolver.addressOfEndpoint(endpoint.value);
+          return addressResolver.addressOfEndpoint(endpoint.endpoint());
         }
         @Override
         public EndpointRequest initiateRequest() {
           ei.lastAccessed.set(System.currentTimeMillis());
-          EndpointMetrics abc = endpoint.endpoint;
-          Object metric = abc.initiateRequest();
+          EndpointMetrics metrics = endpoint.metrics();
+          Object metric = metrics.initiateRequest();
           return new EndpointRequest() {
             @Override
             public void reportRequestBegin() {
-              abc.reportRequestBegin(metric);
+              metrics.reportRequestBegin(metric);
             }
             @Override
             public void reportRequestEnd() {
-              abc.reportRequestEnd(metric);
+              metrics.reportRequestEnd(metric);
             }
             @Override
             public void reportResponseBegin() {
-              abc.reportResponseBegin(metric);
+              metrics.reportResponseBegin(metric);
             }
             @Override
             public void reportResponseEnd() {
-              abc.reportResponseEnd(metric);
+              metrics.reportResponseEnd(metric);
             }
             @Override
             public void reportFailure(Throwable failure) {
-              abc.reportFailure(metric, failure);
+              metrics.reportFailure(metric, failure);
             }
           };
         }

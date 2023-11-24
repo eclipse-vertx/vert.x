@@ -11,6 +11,7 @@
 package io.vertx.core.loadbalancing;
 
 import io.vertx.core.spi.loadbalancing.DefaultEndpointMetrics;
+import io.vertx.core.spi.loadbalancing.Endpoint;
 import io.vertx.core.spi.loadbalancing.EndpointMetrics;
 import io.vertx.core.spi.loadbalancing.EndpointSelector;
 
@@ -43,11 +44,11 @@ public interface LoadBalancer {
    */
   LoadBalancer LEAST_REQUESTS = () -> new EndpointSelector() {
     @Override
-    public int selectEndpoint(List<EndpointMetrics<?>> endpoints) {
+    public int selectEndpoint(List<? extends Endpoint<?>> endpoints) {
       int numberOfRequests = Integer.MAX_VALUE;
       int selected = -1;
       int idx = 0;
-      for (EndpointMetrics<?> endpoint : endpoints) {
+      for (Endpoint<?> endpoint : endpoints) {
         int val = ((DefaultEndpointMetrics)endpoint).numberOfInflightRequests();
         if (val < numberOfRequests) {
           numberOfRequests = val;
@@ -58,8 +59,8 @@ public interface LoadBalancer {
       return selected;
     }
     @Override
-    public EndpointMetrics<?> endpointMetrics() {
-      return new DefaultEndpointMetrics();
+    public <E> Endpoint<E> endpointOf(E endpoint) {
+      return new DefaultEndpointMetrics<>(endpoint);
     }
   };
 
