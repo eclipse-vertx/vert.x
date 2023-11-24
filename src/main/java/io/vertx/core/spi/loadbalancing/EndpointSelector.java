@@ -25,15 +25,26 @@ public interface EndpointSelector {
    * @param endpoints the endpoint
    * @return the selected index or {@code -1} if selection coul not be achieved
    */
-  int selectEndpoint(List<EndpointMetrics<?>> endpoints);
+  int selectEndpoint(List<? extends Endpoint<?>> endpoints);
 
   /**
-   * Create a blank endpoint used to track the usage of an endpoint.
-   *
-   * @return a new endpoint
+   * Create a load balancer endpoint view for the given generic {@code endpoint}
+   * @param endpoint
+   * @return
+   * @param <E>
    */
-  default EndpointMetrics<?> endpointMetrics() {
-    return new EndpointMetrics<>() {
+  default <E> Endpoint<E> endpointOf(E endpoint) {
+    EndpointMetrics<?> metrics = new EndpointMetrics<>() {
+    };
+    return new Endpoint<>() {
+      @Override
+      public E endpoint() {
+        return endpoint;
+      }
+      @Override
+      public EndpointMetrics<?> metrics() {
+        return metrics;
+      }
     };
   }
 }

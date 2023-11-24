@@ -1,5 +1,6 @@
 package io.vertx.test.fakeloadbalancer;
 
+import io.vertx.core.spi.loadbalancing.Endpoint;
 import io.vertx.core.spi.loadbalancing.EndpointSelector;
 import io.vertx.core.loadbalancing.LoadBalancer;
 import io.vertx.core.spi.loadbalancing.EndpointMetrics;
@@ -9,11 +10,11 @@ import java.util.List;
 
 public class FakeLoadBalancer implements LoadBalancer, EndpointSelector {
 
-  List<FakeEndpointMetrics> endpoints;
+  List<? extends Endpoint<?>> endpoints;
 
   EndpointSelector actual = LoadBalancer.ROUND_ROBIN.selector();
 
-  public List<FakeEndpointMetrics> endpoints() {
+  public List<? extends Endpoint<?>> endpoints() {
     return endpoints;
   }
 
@@ -23,22 +24,38 @@ public class FakeLoadBalancer implements LoadBalancer, EndpointSelector {
   }
 
   @Override
-  public FakeEndpointMetrics endpointMetrics() {
-    return new FakeEndpointMetrics();
+  public <E> Endpoint<E> endpointOf(E endpoint) {
+    return new FakeEndpointMetrics<>(endpoint);
   }
 
   @Override
-  public int selectEndpoint(List<EndpointMetrics<?>> endpoints) {
-    this.endpoints = (List) endpoints;
+  public int selectEndpoint(List<? extends Endpoint<?>> endpoints) {
+    this.endpoints = endpoints;
     return actual.selectEndpoint(endpoints);
   }
 
-  public static class FakeEndpointMetrics implements EndpointMetrics<FakeMetric> {
+  public static class FakeEndpointMetrics<E> implements EndpointMetrics<FakeMetric>, Endpoint<E> {
 
     List<FakeMetric> metrics = new ArrayList<>();
 
-    public List<FakeMetric> metrics() {
+    public List<FakeMetric> metrics2() {
       return metrics;
+    }
+
+    private final E endpoint;
+
+    public FakeEndpointMetrics(E endpoint) {
+      this.endpoint = endpoint;
+    }
+
+    @Override
+    public EndpointMetrics<?> metrics() {
+      return this;
+    }
+
+    @Override
+    public E endpoint() {
+      return endpoint;
     }
 
     @Override

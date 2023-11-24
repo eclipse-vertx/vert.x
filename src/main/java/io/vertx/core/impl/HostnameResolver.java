@@ -22,7 +22,6 @@ import io.vertx.core.net.Address;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.resolver.dns.AddressResolverProvider;
 import io.vertx.core.spi.resolver.address.AddressResolver;
-import io.vertx.core.spi.resolver.address.Endpoint;
 
 import java.io.File;
 import java.net.InetAddress;
@@ -87,7 +86,7 @@ public class HostnameResolver implements io.vertx.core.net.AddressResolver {
   }
 
   @Override
-  public AddressResolver<?, ?, ?> resolver(Vertx vertx) {
+  public AddressResolver<?, ?, ?, ?> resolver(Vertx vertx) {
     return new Impl();
   }
 
@@ -143,7 +142,7 @@ public class HostnameResolver implements io.vertx.core.net.AddressResolver {
     return matcher.find();
   }
 
-  class Impl implements AddressResolver<SocketAddress, SocketAddress, List<Endpoint<SocketAddress>>> {
+  class Impl<B> implements AddressResolver<SocketAddress, SocketAddress, List<B>, B> {
     @Override
     public SocketAddress tryCast(Address address) {
       return address instanceof SocketAddress ? (SocketAddress) address : null;
@@ -155,11 +154,11 @@ public class HostnameResolver implements io.vertx.core.net.AddressResolver {
     }
 
     @Override
-    public Future<List<Endpoint<SocketAddress>>> resolve(Function<SocketAddress, Endpoint<SocketAddress>> factory, SocketAddress address) {
-      Promise<List<Endpoint<SocketAddress>>> promise = Promise.promise();
+    public Future<List<B>> resolve(Function<SocketAddress, B> factory, SocketAddress address) {
+      Promise<List<B>> promise = Promise.promise();
       resolveHostnameAll(address.host(), ar -> {
         if (ar.succeeded()) {
-          List<Endpoint<SocketAddress>> endpoints = new ArrayList<>();
+          List<B> endpoints = new ArrayList<>();
           for (InetSocketAddress addr : ar.result()) {
             endpoints.add(factory.apply(SocketAddress.inetSocketAddress(address.port(), addr.getAddress().getHostAddress())));
           }
@@ -172,18 +171,18 @@ public class HostnameResolver implements io.vertx.core.net.AddressResolver {
     }
 
     @Override
-    public List<Endpoint<SocketAddress>> endpoints(List<Endpoint<SocketAddress>> state) {
+    public List<B> endpoints(List<B> state) {
       return state;
     }
 
     @Override
-    public boolean isValid(List<Endpoint<SocketAddress>> state) {
+    public boolean isValid(List<B> state) {
       // NEED EXPIRATION
       return true;
     }
 
     @Override
-    public void dispose(List<Endpoint<SocketAddress>> state) {
+    public void dispose(List<B> state) {
     }
 
     @Override

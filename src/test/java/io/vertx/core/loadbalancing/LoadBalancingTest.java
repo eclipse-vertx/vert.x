@@ -10,7 +10,7 @@
  */
 package io.vertx.core.loadbalancing;
 
-import io.vertx.core.spi.loadbalancing.EndpointMetrics;
+import io.vertx.core.spi.loadbalancing.Endpoint;
 import io.vertx.core.spi.loadbalancing.EndpointSelector;
 import org.junit.Test;
 
@@ -25,10 +25,10 @@ public class LoadBalancingTest {
   @Test
   public void testRoundRobin() throws Exception {
     EndpointSelector selector = LoadBalancer.ROUND_ROBIN.selector();
-    EndpointMetrics<?> e1 = selector.endpointMetrics();
-    EndpointMetrics<?> e2 = selector.endpointMetrics();
-    EndpointMetrics<?> e3 = selector.endpointMetrics();
-    List<EndpointMetrics<?>> metrics = Arrays.asList(e1, e2, e3);
+    Endpoint<?> e1 = selector.endpointOf(null);
+    Endpoint<?> e2 = selector.endpointOf(null);
+    Endpoint<?> e3 = selector.endpointOf(null);
+    List<Endpoint<?>> metrics = Arrays.asList(e1, e2, e3);
     assertEquals(0, selector.selectEndpoint(metrics));
     assertEquals(1, selector.selectEndpoint(metrics));
     assertEquals(2, selector.selectEndpoint(metrics));
@@ -40,14 +40,14 @@ public class LoadBalancingTest {
   @Test
   public void testLeastRequests() throws Exception {
     EndpointSelector selector = LoadBalancer.LEAST_REQUESTS.selector();
-    List<EndpointMetrics<?>> metrics = new ArrayList<>();
+    List<Endpoint<?>> metrics = new ArrayList<>();
     int num = 6;
     for (int i = 0;i < num;i++) {
-      metrics.add(selector.endpointMetrics());
+      metrics.add(selector.endpointOf(null));
     }
     for (int i = 0;i < metrics.size();i++) {
       if (i != 2) {
-        metrics.get(i).initiateRequest();
+        metrics.get(i).metrics().initiateRequest();
       }
     }
     assertEquals(2, selector.selectEndpoint(metrics));

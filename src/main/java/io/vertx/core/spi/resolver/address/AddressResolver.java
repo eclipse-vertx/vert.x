@@ -26,8 +26,9 @@ import java.util.function.Function;
  * @param <S> the type of the state managed by the resolver
  * @param <A> the type of {@link Address} resolved
  * @param <E> the type of the endpoint
+ * @param <B> the type of the wrapped endpoint
  */
-public interface AddressResolver<A extends Address, E, S> {
+public interface AddressResolver<A extends Address, E, S, B> {
 
   /**
    * Try to cast the {@code address} to an address instance that can be resolved by this resolver instance.
@@ -52,7 +53,7 @@ public interface AddressResolver<A extends Address, E, S> {
    * @param address the address to resolve
    * @return a future notified with the result
    */
-  Future<S> resolve(Function<E, Endpoint<E>> factory, A address);
+  Future<S> resolve(Function<E, B> factory, A address);
 
   /**
    * Return the current list of endpoint visible by the resolver.
@@ -60,7 +61,7 @@ public interface AddressResolver<A extends Address, E, S> {
    * @param state the resolver state
    * @return the list of endpoints
    */
-  List<Endpoint<E>> endpoints(S state);
+  List<B> endpoints(S state);
 
   /**
    * Check the state validity.
