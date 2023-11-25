@@ -24,6 +24,7 @@ import io.vertx.core.net.*;
 
 import java.security.cert.CertificateException;
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by tim on 19/01/15.
@@ -126,6 +127,19 @@ public class NetExamples {
           System.out.println("close failed");
         }
       });
+  }
+
+  public void shutdownHandler(NetClient client, SocketAddress server) {
+    client
+      .connect(server)
+      .onSuccess(so -> {
+      so.shutdownHandler(timeout -> {
+        // Notified when the client is closing
+      });
+    });
+
+    // A few moments later
+    client.close(30, TimeUnit.SECONDS);
   }
 
   public void example9_1(NetSocket socket) {

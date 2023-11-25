@@ -40,6 +40,11 @@ public class RequestOptionsConverter {
             obj.setSsl((Boolean)member.getValue());
           }
           break;
+        case "sslOptions":
+          if (member.getValue() instanceof JsonObject) {
+            obj.setSslOptions(new io.vertx.core.net.ClientSSLOptions((io.vertx.core.json.JsonObject)member.getValue()));
+          }
+          break;
         case "uri":
           if (member.getValue() instanceof String) {
             obj.setURI((String)member.getValue());
@@ -95,6 +100,9 @@ public class RequestOptionsConverter {
     }
     if (obj.isSsl() != null) {
       json.put("ssl", obj.isSsl());
+    }
+    if (obj.getSslOptions() != null) {
+      json.put("sslOptions", obj.getSslOptions().toJson());
     }
     if (obj.getURI() != null) {
       json.put("uri", obj.getURI());

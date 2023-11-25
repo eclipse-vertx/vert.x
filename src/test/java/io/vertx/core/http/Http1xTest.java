@@ -5302,7 +5302,7 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testShutdown() throws Exception {
+  public void testShutdownClose() throws Exception {
     int num = 4;
     waitFor(num);
     AtomicReference<HttpServerRequest> ref = new AtomicReference<>();
@@ -5330,7 +5330,7 @@ public class Http1xTest extends HttpTest {
         assertWaitUntil(() -> ref.get() != null);
       }
     }
-    Future<Void> shutdown = client.shutdown(10, TimeUnit.SECONDS);
+    Future<Void> shutdown = client.close(10, TimeUnit.SECONDS);
     ref.get().response().end("hello");
     awaitFuture(shutdown);
     await();

@@ -82,16 +82,7 @@ public interface WebSocketClient extends Measured {
    * @return a future notified when the client is closed
    */
   default Future<Void> close() {
-    return shutdown(0, TimeUnit.SECONDS);
-  }
-
-  /**
-   * Initiate the close sequence with a 30 seconds timeout.
-   *
-   * see {@link #shutdown(long, TimeUnit)}
-   */
-  default Future<Void> shutdown() {
-    return shutdown(30, TimeUnit.SECONDS);
+    return close(0, TimeUnit.SECONDS);
   }
 
   /**
@@ -122,17 +113,8 @@ public interface WebSocketClient extends Measured {
   /**
    * Initiate the client close sequence.
    *
-   * <p> Connections are taken out of service and closed when all inflight requests are processed, client connection are
-   * immediately removed from the pool. When all connections are closed the client is closed. When the timeout
-   * expires, all unclosed connections are immediately closed.
-   *
-   * <ul>
-   *   <li>HTTP/2 connections will send a go away frame immediately to signal the other side the connection will close</li>
-   *   <li>HTTP/1.x client connection will be closed after the current response is received</li>
-   * </ul>
-   *
    * @return a future notified when the client is closed
    */
-  Future<Void> shutdown(long timeout, TimeUnit timeUnit);
+  Future<Void> close(long timeout, TimeUnit timeUnit);
 
 }

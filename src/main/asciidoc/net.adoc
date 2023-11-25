@@ -183,6 +183,16 @@ This handler will then be called when the close has fully completed.
 {@link examples.NetExamples#example9}
 ----
 
+=== Client socket shutdown
+
+When a client is closed with a grace period, each socket opened by the client will be notified with a shutdown event, to
+let the opportunity to perform a protocol level close before the actual socket close.
+
+[source,$lang]
+----
+{@link examples.NetExamples#shutdownHandler}
+----
+
 === Automatic clean-up in verticles
 
 If you're creating TCP servers and clients from inside verticles, those servers and clients will be automatically closed
