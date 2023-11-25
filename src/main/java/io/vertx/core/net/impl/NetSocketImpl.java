@@ -19,6 +19,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.util.CharsetUtil;
 import io.netty.util.ReferenceCounted;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
@@ -61,6 +62,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   private Handler<Buffer> handler;
   private Handler<Object> messageHandler;
   private Handler<Object> eventHandler;
+  private Handler<Long> shutdownHandler;
 
   public NetSocketImpl(ContextInternal context,
                        ChannelHandlerContext channel,
@@ -362,6 +364,19 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
     } else {
       super.handleEvent(evt);
     }
+    if (evt instanceof ShutdownEvent) {
+      Handler<Long> shutdownHandler = this.shutdownHandler;
+      if (shutdownHandler != null) {
+        ShutdownEvent shutdown = (ShutdownEvent) evt;
+        context.emit(shutdown.timeUnit().toMillis(shutdown.timeout()), shutdownHandler);
+      }
+    }
+  }
+
+  @Override
+  public NetSocket shutdownHandler(@Nullable Handler<Long> handler) {
+    shutdownHandler = handler;
+    return this;
   }
 
   private class DataMessageHandler implements Handler<Object> {

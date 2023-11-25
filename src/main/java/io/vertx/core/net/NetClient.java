@@ -17,6 +17,8 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
 import io.vertx.core.metrics.Measured;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * A TCP client.
  * <p>
@@ -93,7 +95,17 @@ public interface NetClient extends Measured {
    * complete until some time after the method has returned.
    * @return a future notified when the client is closed
    */
-  Future<Void> close();
+  default Future<Void> close() {
+    return close(0L, TimeUnit.SECONDS);
+  }
+
+  /**
+   * Initiate the client close sequence.
+   *
+   * <p> Connections are taken out of service and notified the close sequence has started through {@link NetSocket#shutdownHandler(Handler)}.
+   * When all connections are closed the client is closed. When the timeout expires, all unclosed connections are immediately closed.
+   */
+  Future<Void> close(long timeout, TimeUnit unit);
 
   /**
    * <p>Update the client with new SSL {@code options}, the update happens if the options object is valid and different

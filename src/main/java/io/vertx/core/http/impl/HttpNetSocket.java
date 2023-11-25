@@ -22,6 +22,7 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SSLOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
+import io.vertx.core.net.impl.NetSocketInternal;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
@@ -235,6 +236,12 @@ class HttpNetSocket implements NetSocket {
     synchronized (conn) {
       closeHandler = handler;
     }
+    return this;
+  }
+
+  @Override
+  public NetSocket shutdownHandler(@Nullable Handler<Long> handler) {
+    // Not sure, we can do something here
     return this;
   }
 

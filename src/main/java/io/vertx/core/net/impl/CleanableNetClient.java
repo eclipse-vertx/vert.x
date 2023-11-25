@@ -17,6 +17,7 @@ import io.vertx.core.net.*;
 import io.vertx.core.spi.metrics.Metrics;
 
 import java.lang.ref.Cleaner;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -80,14 +81,6 @@ public class CleanableNetClient implements NetClientInternal {
   }
 
   @Override
-  public Future<Void> close() {
-    action.timeout = 0L;
-    action.timeUnit = TimeUnit.SECONDS;
-    cleanable.clean();
-    return (client).closeFuture();
-  }
-
-  @Override
   public Future<Boolean> updateSSLOptions(ClientSSLOptions options, boolean force) {
     return client.updateSSLOptions(options, force);
   }
@@ -114,7 +107,13 @@ public class CleanableNetClient implements NetClientInternal {
 
   @Override
   public Future<Void> close(long timeout, TimeUnit timeUnit) {
-    return client.close(timeout, timeUnit);
+    if (timeout < 0L) {
+      throw new IllegalArgumentException("Invalid timeout: " + timeout);
+    }
+    action.timeout = timeout;
+    action.timeUnit = Objects.requireNonNull(TimeUnit.SECONDS);
+    cleanable.clean();
+    return (client).closeFuture();
   }
 
   @Override

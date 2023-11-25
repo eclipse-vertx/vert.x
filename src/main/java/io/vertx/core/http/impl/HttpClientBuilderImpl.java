@@ -104,7 +104,7 @@ public class HttpClientBuilderImpl implements HttpClientBuilder {
     } else {
       HttpClientImpl impl = new HttpClientImpl(vertx, _addressResolver, _loadBalancer, co, po);
       closeable = impl;
-      client = new CleanableHttpClient(impl, vertx.cleaner(), impl::shutdown);
+      client = new CleanableHttpClient(impl, vertx.cleaner(), impl::close);
     }
     cf.add(closeable);
     if (redirectHandler != null) {

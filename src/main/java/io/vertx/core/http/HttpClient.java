@@ -12,11 +12,8 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.VertxGen;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.net.ClientSSLOptions;
-import io.vertx.core.net.SSLOptions;
 
 import java.util.concurrent.TimeUnit;
 
@@ -96,21 +93,12 @@ public interface HttpClient extends io.vertx.core.metrics.Measured {
   }
 
   /**
-   * Close the client immediately ({@code close(0, TimeUnit.SECONDS}).
+   * Close the client immediately ({@code shutdown(0, TimeUnit.SECONDS}).
    *
    * @return a future notified when the client is closed
    */
   default Future<Void> close() {
-    return shutdown(0, TimeUnit.SECONDS);
-  }
-
-  /**
-   * Initiate the close sequence with a 30 seconds timeout.
-   *
-   * see {@link #shutdown(long, TimeUnit)}
-   */
-  default Future<Void> shutdown() {
-    return shutdown(30, TimeUnit.SECONDS);
+    return close(0, TimeUnit.SECONDS);
   }
 
   /**
@@ -127,7 +115,7 @@ public interface HttpClient extends io.vertx.core.metrics.Measured {
    *
    * @return a future notified when the client is closed
    */
-  Future<Void> shutdown(long timeout, TimeUnit timeUnit);
+  Future<Void> close(long timeout, TimeUnit timeUnit);
 
   /**
    * <p>Update the client with new SSL {@code options}, the update happens if the options object is valid and different

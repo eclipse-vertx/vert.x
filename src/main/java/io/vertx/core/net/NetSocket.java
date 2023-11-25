@@ -190,6 +190,17 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
   NetSocket closeHandler(@Nullable Handler<Void> handler);
 
   /**
+   * Set a handler that will be called when the NetSocket is shutdown: the client or server will close the connection
+   * within a certain amount of time. This gives the opportunity to the handler to close the socket gracefully before
+   * the socket is closed.
+   *
+   * @param handler  the handler notified with the remaining shutdown time in milliseconds
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  NetSocket shutdownHandler(@Nullable Handler<Long> handler);
+
+  /**
    * Upgrade channel to use SSL/TLS. Be aware that for this to work SSL must be configured.
    *
    * @return a future completed when the connection has been upgraded to SSL
