@@ -1023,4 +1023,35 @@ public class ContextTest extends VertxTestBase {
     }, new DeploymentOptions().setThreadingModel(threadMode)).onComplete(onSuccess(v -> testComplete()));
     await();
   }
+
+  @Test
+  public void testInterruptThreadOnAwait() {
+    Assume.assumeTrue(VertxInternal.isVirtualThreadAvailable());
+    vertx.deployVerticle(() -> new AbstractVerticle() {
+      @Override
+      public void start() {
+        Thread current = Thread.currentThread();
+        Promise<String> promise = Promise.promise();
+        new Thread(() -> {
+          while (current.getState() != Thread.State.WAITING) {
+            try {
+              Thread.sleep(10);
+            } catch (InterruptedException e) {
+              throw new RuntimeException(e);
+            }
+          }
+          current.interrupt();
+        }).start();
+        try {
+          Future.await(promise.future());
+          fail();
+        } catch (Exception expected) {
+          assertFalse(current.isInterrupted());
+          assertEquals(expected.getClass(), InterruptedException.class);
+          testComplete();
+        }
+      }
+    }, new DeploymentOptions().setThreadingModel(ThreadingModel.VIRTUAL_THREAD));
+    await();
+  }
 }
