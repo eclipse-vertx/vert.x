@@ -15,6 +15,7 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.NoStackTraceThrowable;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.test.core.Repeat;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
@@ -1808,6 +1809,31 @@ public class FutureTest extends FutureTestBase {
       assertEquals("value", val);
       testComplete();
     }));
+    await();
+  }
+
+  @Test @Ignore
+  public void npe (){
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override public void start (){
+        var p = Promise.promise();
+        var thread = Thread.currentThread();
+
+        System.out.println(thread);
+        thread.interrupt();
+
+        try {
+          p.future().await();// bug: java.lang.NullPointerException: Cannot throw exception because "t" is null
+          fail("must fail with InterruptedException");
+        } catch (Throwable e){
+          if (e instanceof InterruptedException){
+            testComplete();
+          } else {
+            fail(e);
+          }
+        }
+      }
+    }, new DeploymentOptions().setThreadingModel(ThreadingModel.VIRTUAL_THREAD));
     await();
   }
 }

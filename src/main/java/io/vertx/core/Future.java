@@ -613,6 +613,20 @@ public interface Future<T> extends AsyncResult<T> {
   }
 
   /**
+   @see CompletableFuture#getNow
+   @see #isComplete
+   */
+  default T getNow (T valueIfAbsent) {
+    if (succeeded()) {
+      return result();
+    } else if (failed()) {
+      throw Utils.throwAsUnchecked(cause());
+    } else {
+      return valueIfAbsent; // !isComplete
+    }
+  }
+
+  /**
    * Park the current thread until the {@code future} is completed, when the future
    * is completed the thread is un-parked and
    *
@@ -627,21 +641,19 @@ public interface Future<T> extends AsyncResult<T> {
    * @throws IllegalStateException when called from an event-loop thread or a non Vert.x thread
    */
   default T await() {
+    if (isComplete()) {
+      return getNow(null);
+    }
+
     io.vertx.core.impl.WorkerExecutor executor = io.vertx.core.impl.WorkerExecutor.unwrapWorkerExecutor();
     io.vertx.core.impl.WorkerExecutor.TaskController cont = executor.current();
     onComplete(ar -> cont.resume());
     try {
       cont.suspendAndAwaitResume();
     } catch (InterruptedException e) {
-      Utils.throwAsUnchecked(e.getCause());
-      return null;
+      throw Utils.throwAsUnchecked(e.getCause() != null ? e.getCause() : e);// should it be simply throwAsUnchecked(e) ?
     }
-    if (succeeded()) {
-      return result();
-    } else {
-      Utils.throwAsUnchecked(cause());
-      return null;
-    }
+    return getNow(null);
   }
 
   /**
