@@ -633,7 +633,7 @@ public interface Future<T> extends AsyncResult<T> {
     try {
       cont.suspendAndAwaitResume();
     } catch (InterruptedException e) {
-      Utils.throwAsUnchecked(e.getCause());
+      Utils.throwAsUnchecked(e);
       return null;
     }
     if (succeeded()) {
