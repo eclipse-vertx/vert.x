@@ -19,13 +19,14 @@ import io.vertx.core.impl.Arguments;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.streams.ReadStream;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @author <a href="mailto:larsdtimm@gmail.com">Lars Timm</a>
  */
-public class RecordParserImpl implements RecordParser {
+public final class RecordParserImpl implements RecordParser {
 
   // Empty and unmodifiable
   private static final Buffer EMPTY_BUFFER = BufferInternal.buffer(Unpooled.EMPTY_BUFFER);
@@ -52,6 +53,7 @@ public class RecordParserImpl implements RecordParser {
     this.stream = stream;
   }
 
+  @Override
   public void setOutput(Handler<Buffer> output) {
     Objects.requireNonNull(output, "output");
     eventHandler = output;
@@ -65,12 +67,7 @@ public class RecordParserImpl implements RecordParser {
    * @return The byte[] form of the string
    */
   public static Buffer latin1StringToBytes(String str) {
-    byte[] bytes = new byte[str.length()];
-    for (int i = 0; i < str.length(); i++) {
-      char c = str.charAt(i);
-      bytes[i] = (byte) (c & 0xFF);
-    }
-    return Buffer.buffer(bytes);
+    return Buffer.buffer(str.getBytes(StandardCharsets.ISO_8859_1));
   }
 
   /**
@@ -127,6 +124,7 @@ public class RecordParserImpl implements RecordParser {
    *
    * @param delim  the new delimeter
    */
+  @Override
   public void delimitedMode(String delim) {
     delimitedMode(latin1StringToBytes(delim));
   }
@@ -139,6 +137,7 @@ public class RecordParserImpl implements RecordParser {
    *
    * @param delim  the new delimiter
    */
+  @Override
   public void delimitedMode(Buffer delim) {
     Objects.requireNonNull(delim, "delim");
     delimited = true;
@@ -153,6 +152,7 @@ public class RecordParserImpl implements RecordParser {
    *
    * @param size  the new record size
    */
+  @Override
   public void fixedSizeMode(int size) {
     Arguments.require(size > 0, "Size must be > 0");
     delimited = false;
@@ -168,6 +168,7 @@ public class RecordParserImpl implements RecordParser {
    * @param size the maximum record size
    * @return  a reference to this, so the API can be used fluently
    */
+  @Override
   public RecordParser maxRecordSize(int size) {
     Arguments.require(size > 0, "Size must be > 0");
     maxRecordSize = size;
@@ -277,6 +278,7 @@ public class RecordParserImpl implements RecordParser {
    *
    * @param buffer  a chunk of data
    */
+  @Override
   public void handle(Buffer buffer) {
     if (buffer.length() != 0) {
       if (buff == EMPTY_BUFFER) {

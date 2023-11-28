@@ -13,6 +13,7 @@ package io.vertx.core.parsetools;
 
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.parsetools.impl.RecordParserImpl;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.fakestream.FakeStream;
 import org.junit.Test;
@@ -488,5 +489,13 @@ public class RecordParserTest {
     for (int i = 0; i < 20; i++) {
       assertEquals(12, inputBuffers.get(i).length());
     }
+  }
+
+  @Test
+  public void toLatin1() {
+    String s = "Test Message! 123$";
+    assertEquals(s, RecordParserImpl.latin1StringToBytes(s).toString());
+    s = "";
+    assertEquals(s, RecordParserImpl.latin1StringToBytes(s).toString());
   }
 }
