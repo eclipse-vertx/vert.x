@@ -20,9 +20,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.ByteBufOutputStream;
-import io.netty.buffer.Unpooled;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.buffer.impl.BufferInternal;
+import io.vertx.core.buffer.impl.VertxByteBufAllocator;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.EncodeException;
 import io.vertx.core.json.JsonArray;
@@ -105,16 +105,19 @@ public class JacksonCodec implements JsonCodec {
 
   @Override
   public Buffer toBuffer(Object object, boolean pretty) throws EncodeException {
-    ByteBuf buf = Unpooled.buffer();
+    // these buffers are not pooled and not instrumented, which make them faster
+    // This can use 0 as initial capacity, because Jackson will flush the tmp encoded buffer in one go, on flush
+    // causing a single resize of the right final size
+    ByteBuf nettyBuffer = VertxByteBufAllocator.DEFAULT.heapBuffer(0, Integer.MAX_VALUE);
     // There is no need to use a try with resources here as jackson
     // is a well-behaved and always calls the closes all streams in the
     // "finally" block bellow.
-    ByteBufOutputStream out = new ByteBufOutputStream(buf);
+    ByteBufOutputStream out = new ByteBufOutputStream(nettyBuffer);
     JsonGenerator generator = createGenerator(out, pretty);
     try {
       encodeJson(object, generator);
       generator.flush();
-      return BufferInternal.buffer(buf);
+      return BufferInternal.buffer(nettyBuffer);
     } catch (IOException e) {
       throw new EncodeException(e.getMessage(), e);
     } finally {
