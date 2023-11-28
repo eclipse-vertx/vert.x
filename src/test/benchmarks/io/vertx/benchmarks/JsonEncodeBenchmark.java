@@ -41,7 +41,7 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 public class JsonEncodeBenchmark extends BenchmarkBase {
-
+  private JsonObject tiny;
   private JsonObject small;
   private JsonObject wide;
   private JsonObject deep;
@@ -51,6 +51,7 @@ public class JsonEncodeBenchmark extends BenchmarkBase {
   @Setup
   public void setup() {
     ClassLoader classLoader = getClass().getClassLoader();
+    tiny = new JsonObject(Map.of("message", "Hello, World!"));
     small = loadJson(classLoader.getResource("small_bench.json"));
     wide = loadJson(classLoader.getResource("wide_bench.json"));
     deep = loadJson(classLoader.getResource("deep_bench.json"));
@@ -104,6 +105,11 @@ public class JsonEncodeBenchmark extends BenchmarkBase {
   @CompilerControl(INLINE)
   private String stringDatabind(JsonObject jsonObject) {
     return databindCodec.toString(jsonObject);
+  }
+
+  @Benchmark
+  public Buffer tinyBufferJackson() {
+    return bufferJackson(tiny);
   }
 
   @Benchmark
