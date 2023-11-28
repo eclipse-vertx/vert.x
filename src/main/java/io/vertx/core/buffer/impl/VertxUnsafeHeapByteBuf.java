@@ -19,8 +19,18 @@ import io.netty.buffer.UnpooledUnsafeHeapByteBuf;
  */
 final class VertxUnsafeHeapByteBuf extends UnpooledUnsafeHeapByteBuf {
 
+  private static final byte[] EMPTY = new byte[0];
+
   public VertxUnsafeHeapByteBuf(ByteBufAllocator alloc, int initialCapacity, int maxCapacity) {
     super(alloc, initialCapacity, maxCapacity);
+  }
+
+  @Override
+  protected byte[] allocateArray(int initialCapacity) {
+    if (initialCapacity == 0) {
+      return EMPTY;
+    }
+    return super.allocateArray(initialCapacity);
   }
 
   @Override
