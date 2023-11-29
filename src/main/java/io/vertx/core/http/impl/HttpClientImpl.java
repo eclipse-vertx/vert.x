@@ -22,11 +22,12 @@ import io.vertx.core.net.*;
 import io.vertx.core.net.impl.endpoint.EndpointManager;
 import io.vertx.core.net.impl.endpoint.EndpointProvider;
 import io.vertx.core.net.impl.pool.*;
-import io.vertx.core.net.impl.resolver.EndpointRequest;
-import io.vertx.core.net.impl.resolver.EndpointResolverManager;
-import io.vertx.core.net.impl.resolver.EndpointLookup;
+import io.vertx.core.spi.resolver.endpoint.EndpointRequest;
+import io.vertx.core.net.impl.resolver.EndpointResolverImpl;
+import io.vertx.core.spi.resolver.endpoint.EndpointLookup;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
+import io.vertx.core.spi.resolver.endpoint.EndpointResolver;
 
 import java.lang.ref.WeakReference;
 import java.net.URI;
@@ -102,20 +103,19 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
 
   private final PoolOptions poolOptions;
   private final EndpointManager<EndpointKey, SharedClientHttpStreamEndpoint> httpCM;
-  private final EndpointResolverManager<?, ?, ?> endpointResolverManager;
+  private final EndpointResolver endpointResolver;
   private volatile Function<HttpClientResponse, Future<RequestOptions>> redirectHandler = DEFAULT_HANDLER;
   private long timerID;
   private volatile Handler<HttpConnection> connectionHandler;
   private final Function<ContextInternal, ContextInternal> contextProvider;
 
-  public HttpClientImpl(VertxInternal vertx, io.vertx.core.net.AddressResolver addressResolver, LoadBalancer loadBalancer, HttpClientOptions options, PoolOptions poolOptions) {
+  public HttpClientImpl(VertxInternal vertx,
+                        EndpointResolver<?> endpointResolver,
+                        HttpClientOptions options,
+                        PoolOptions poolOptions) {
     super(vertx, options);
-    if (addressResolver != null) {
-      this.endpointResolverManager = new EndpointResolverManager<>(addressResolver.resolver(vertx), loadBalancer, options.getKeepAliveTimeout() * 1000);
-    } else {
-      this.endpointResolverManager = null;
-    }
 
+    this.endpointResolver = endpointResolver;
     this.poolOptions = poolOptions;
     httpCM = new EndpointManager<>();
     if (poolOptions.getCleanerPeriod() > 0 && (options.getKeepAliveTimeout() > 0L || options.getHttp2KeepAliveTimeout() > 0L)) {
@@ -170,8 +170,8 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       }
     }
     httpCM.checkExpired();
-    if (endpointResolverManager != null) {
-      endpointResolverManager.checkExpired();
+    if (endpointResolver != null) {
+      endpointResolver.checkExpired();
     }
   }
 
@@ -327,8 +327,8 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     Promise<HttpClientRequest> promise = ctx.promise();
     Future<HttpClientStream> future;
     ProxyOptions proxyOptions;
-    if (endpointResolverManager != null && endpointResolverManager.accepts(server)) {
-      Future<EndpointLookup> fut = endpointResolverManager.lookupEndpoint(ctx, server);
+    if (endpointResolver != null && endpointResolver.accepts(server) != null) {
+      Future<EndpointLookup> fut = endpointResolver.lookupEndpoint(ctx, server);
       future = fut.compose(lookup -> {
         SocketAddress address = lookup.address();
         EndpointKey key = new EndpointKey(useSSL, sslOptions, proxyConfig, address, authority != null ? authority : HostAndPort.create(address.host(), address.port()));
