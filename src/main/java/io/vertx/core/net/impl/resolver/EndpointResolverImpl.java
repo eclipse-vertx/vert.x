@@ -21,6 +21,9 @@ import io.vertx.core.net.impl.endpoint.Endpoint;
 import io.vertx.core.net.impl.endpoint.EndpointProvider;
 import io.vertx.core.spi.loadbalancing.EndpointSelector;
 import io.vertx.core.spi.resolver.address.AddressResolver;
+import io.vertx.core.spi.resolver.endpoint.EndpointLookup;
+import io.vertx.core.spi.resolver.endpoint.EndpointRequest;
+import io.vertx.core.spi.resolver.endpoint.EndpointResolver;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -32,14 +35,14 @@ import java.util.function.BiFunction;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class EndpointResolverManager<S, A extends Address, E> {
+public class EndpointResolverImpl<S, A extends Address, E> implements EndpointResolver<A> {
 
   private final LoadBalancer loadBalancer;
   private final AddressResolver<A, E, S, io.vertx.core.spi.loadbalancing.Endpoint<E>> addressResolver;
   private final EndpointManager<A, EndpointImpl> connectionManager;
   private final long expirationMillis;
 
-  public EndpointResolverManager(AddressResolver<A, E, S, ?> addressResolver, LoadBalancer loadBalancer, long expirationMillis) {
+  public EndpointResolverImpl(AddressResolver<A, E, S, ?> addressResolver, LoadBalancer loadBalancer, long expirationMillis) {
 
     if (loadBalancer == null) {
       loadBalancer = LoadBalancer.ROUND_ROBIN;
@@ -54,8 +57,8 @@ public class EndpointResolverManager<S, A extends Address, E> {
   /**
    * @return whether the resolver accepts the {@code address}
    */
-  public boolean accepts(Address address) {
-    return addressResolver.tryCast(address) != null;
+  public A accepts(Address address) {
+    return addressResolver.tryCast(address);
   }
 
   /**
