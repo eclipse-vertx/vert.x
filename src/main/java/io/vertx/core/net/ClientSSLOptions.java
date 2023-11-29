@@ -11,6 +11,7 @@
 package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.json.JsonObject;
 
 import java.util.List;
@@ -20,7 +21,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * Client SSL options.
  */
-@DataObject(generateConverter = true, publicConverter = false)
+@DataObject
+@JsonGen(publicConverter = false)
 public class ClientSSLOptions extends SSLOptions {
 
   /**

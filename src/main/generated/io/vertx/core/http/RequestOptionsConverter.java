@@ -17,7 +17,7 @@ public class RequestOptionsConverter {
   private static final Base64.Decoder BASE64_DECODER = JsonUtil.BASE64_DECODER;
   private static final Base64.Encoder BASE64_ENCODER = JsonUtil.BASE64_ENCODER;
 
-  public static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, RequestOptions obj) {
+   static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, RequestOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
         case "proxyOptions":
@@ -84,11 +84,11 @@ public class RequestOptionsConverter {
     }
   }
 
-  public static void toJson(RequestOptions obj, JsonObject json) {
+   static void toJson(RequestOptions obj, JsonObject json) {
     toJson(obj, json.getMap());
   }
 
-  public static void toJson(RequestOptions obj, java.util.Map<String, Object> json) {
+   static void toJson(RequestOptions obj, java.util.Map<String, Object> json) {
     if (obj.getProxyOptions() != null) {
       json.put("proxyOptions", obj.getProxyOptions().toJson());
     }

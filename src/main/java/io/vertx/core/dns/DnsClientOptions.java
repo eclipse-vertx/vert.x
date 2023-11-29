@@ -12,6 +12,7 @@
 package io.vertx.core.dns;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.json.JsonObject;
 import io.netty.handler.logging.ByteBufFormat;
@@ -21,7 +22,8 @@ import io.netty.handler.logging.ByteBufFormat;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-@DataObject(generateConverter = true)
+@DataObject
+@JsonGen(publicConverter = false)
 public class DnsClientOptions {
 
   /**
@@ -43,7 +45,7 @@ public class DnsClientOptions {
    * The default log enabled = false
    */
   public static final boolean DEFAULT_LOG_ENABLED = false;
-  
+
   /**
    * The default ByteBufFormat is SIMPLE
    */
@@ -173,7 +175,7 @@ public class DnsClientOptions {
   public DnsClientOptions setActivityLogFormat(ByteBufFormat activityLogFormat) {
     this.activityLogFormat = activityLogFormat;
     return this;
-  }  
+  }
 
   /**
    * Return whether or not recursion is desired

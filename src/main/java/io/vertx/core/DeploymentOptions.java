@@ -12,6 +12,7 @@
 package io.vertx.core;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.json.JsonObject;
 
 import java.util.concurrent.TimeUnit;
@@ -23,7 +24,8 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject(generateConverter = true, publicConverter = false)
+@DataObject
+@JsonGen(publicConverter = false)
 public class DeploymentOptions {
 
   public static final ThreadingModel DEFAULT_MODE = ThreadingModel.EVENT_LOOP;

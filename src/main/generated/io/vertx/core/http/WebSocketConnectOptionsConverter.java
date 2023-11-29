@@ -17,7 +17,7 @@ public class WebSocketConnectOptionsConverter {
   private static final Base64.Decoder BASE64_DECODER = JsonUtil.BASE64_DECODER;
   private static final Base64.Encoder BASE64_ENCODER = JsonUtil.BASE64_ENCODER;
 
-  public static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, WebSocketConnectOptions obj) {
+   static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, WebSocketConnectOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
         case "version":
@@ -49,11 +49,11 @@ public class WebSocketConnectOptionsConverter {
     }
   }
 
-  public static void toJson(WebSocketConnectOptions obj, JsonObject json) {
+   static void toJson(WebSocketConnectOptions obj, JsonObject json) {
     toJson(obj, json.getMap());
   }
 
-  public static void toJson(WebSocketConnectOptions obj, java.util.Map<String, Object> json) {
+   static void toJson(WebSocketConnectOptions obj, java.util.Map<String, Object> json) {
     if (obj.getVersion() != null) {
       json.put("version", obj.getVersion().name());
     }
