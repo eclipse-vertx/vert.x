@@ -30,6 +30,11 @@ public class ConnectOptionsConverter {
             obj.setPort(((Number)member.getValue()).intValue());
           }
           break;
+        case "remoteAddress":
+          if (member.getValue() instanceof JsonObject) {
+            obj.setRemoteAddress(io.vertx.core.net.SocketAddress.fromJson((JsonObject)member.getValue()));
+          }
+          break;
         case "sniServerName":
           if (member.getValue() instanceof String) {
             obj.setSniServerName((String)member.getValue());
@@ -64,6 +69,9 @@ public class ConnectOptionsConverter {
     }
     if (obj.getPort() != null) {
       json.put("port", obj.getPort());
+    }
+    if (obj.getRemoteAddress() != null) {
+      json.put("remoteAddress", obj.getRemoteAddress().toJson());
     }
     if (obj.getSniServerName() != null) {
       json.put("sniServerName", obj.getSniServerName());

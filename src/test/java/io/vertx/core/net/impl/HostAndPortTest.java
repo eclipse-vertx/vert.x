@@ -1,5 +1,7 @@
 package io.vertx.core.net.impl;
 
+import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.HostAndPort;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -77,5 +79,22 @@ public class HostAndPortTest {
     assertNotNull(hostAndPort);
     assertEquals(expectedHost, hostAndPort.host());
     assertEquals(expectedPort, hostAndPort.port());
+  }
+
+  @Test
+  public void testFromJson() {
+    assertNull(HostAndPort.fromJson(new JsonObject()));
+    HostAndPort hostAndPort = HostAndPort.fromJson(new JsonObject().put("host", "the-host"));
+    assertEquals("the-host", hostAndPort.host());
+    assertEquals(-1, hostAndPort.port());
+    hostAndPort = HostAndPort.fromJson(new JsonObject().put("host", "the-host").put("port", 4));
+    assertEquals("the-host", hostAndPort.host());
+    assertEquals(4, hostAndPort.port());
+  }
+
+  @Test
+  public void testToJson() {
+    assertEquals(new JsonObject().put("host", "the-host").put("port", 4), HostAndPort.create("the-host", 4).toJson());
+    assertEquals(new JsonObject().put("host", "the-host"), HostAndPort.create("the-host", -1).toJson());
   }
 }

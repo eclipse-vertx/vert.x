@@ -12,9 +12,10 @@
 package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.CacheReturn;
+import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
-import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.impl.Arguments;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.impl.SocketAddressImpl;
 
 import java.net.InetSocketAddress;
@@ -27,8 +28,25 @@ import java.net.InetSocketAddress;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@VertxGen
+@DataObject
 public interface SocketAddress extends Address {
+
+  static SocketAddress fromJson(JsonObject json) {
+    Integer port = json.getInteger("port");
+    String host = json.getString("host");
+    if (host != null && port != null) {
+      if (port >= 0) {
+        return inetSocketAddress(port, host);
+      } else {
+        return sharedRandomPort(-port, host);
+      }
+    }
+    String path = json.getString("path");
+    if (path != null) {
+      return domainSocketAddress(path);
+    }
+    return null;
+  }
 
   /**
    * Create an inet socket address that binds to a shared random port identified by {@code id}.
@@ -142,4 +160,13 @@ public interface SocketAddress extends Address {
   @CacheReturn
   boolean isDomainSocket();
 
+  default JsonObject toJson() {
+    if (isInetSocket()) {
+      return new JsonObject().put("host", host()).put("port", port());
+    } else if (isDomainSocket()) {
+      return new JsonObject().put("path", path());
+    } else {
+      throw new IllegalStateException();
+    }
+  }
 }

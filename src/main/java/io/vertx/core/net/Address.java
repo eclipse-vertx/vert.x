@@ -10,13 +10,13 @@
  */
 package io.vertx.core.net;
 
-import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.codegen.annotations.DataObject;
 
 /**
  * A general purpose networking address.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-@VertxGen
+@DataObject
 public interface Address {
 }
