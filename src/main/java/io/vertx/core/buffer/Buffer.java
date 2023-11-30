@@ -12,6 +12,7 @@
 package io.vertx.core.buffer;
 
 
+import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
@@ -35,7 +36,7 @@ import java.nio.charset.Charset;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@VertxGen
+@DataObject
 public interface Buffer extends ClusterSerializable, Shareable {
 
   /**
@@ -123,6 +124,7 @@ public interface Buffer extends ClusterSerializable, Shareable {
    *
    * @return a JSON element which can be a {@link JsonArray}, {@link JsonObject}, {@link String}, ...etc if the buffer contains an array, object, string, ...etc
    */
+  @GenIgnore
   default Object toJson() {
     return Json.CODEC.fromBuffer(this, Object.class);
   }
