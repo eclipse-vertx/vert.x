@@ -1,6 +1,7 @@
 package io.vertx.core.net;
 
 import io.netty.util.NetUtil;
+import io.vertx.core.json.JsonObject;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
@@ -9,6 +10,8 @@ import java.net.InetSocketAddress;
 
 import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
 import static io.vertx.test.core.TestUtils.assertNullPointerException;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class SocketAddressTest extends VertxTestBase {
 
@@ -111,5 +114,28 @@ public class SocketAddressTest extends VertxTestBase {
     assertIllegalArgumentException(() -> SocketAddress.inetSocketAddress(0, ""));
     assertIllegalArgumentException(() -> SocketAddress.inetSocketAddress(-1, "someHost"));
     assertIllegalArgumentException(() -> SocketAddress.inetSocketAddress(65536, "someHost"));
+  }
+
+  @Test
+  public void testFromJson() {
+    assertNull(SocketAddress.fromJson(new JsonObject()));
+    assertNull(SocketAddress.fromJson(new JsonObject().put("host", "the-host")));
+    SocketAddress hostAndPort = SocketAddress.fromJson(new JsonObject().put("host", "the-host").put("port", 4));
+    assertTrue(hostAndPort.isInetSocket());
+    assertEquals("the-host", hostAndPort.host());
+    assertEquals(4, hostAndPort.port());
+    hostAndPort = SocketAddress.fromJson(new JsonObject().put("path", "/path"));
+    assertTrue(hostAndPort.isDomainSocket());
+    assertEquals("/path", hostAndPort.path());
+    hostAndPort = SocketAddress.fromJson(new JsonObject().put("host", "the-host").put("port", -4));
+    assertEquals("the-host", hostAndPort.host());
+    assertEquals(-4, hostAndPort.port());
+  }
+
+  @Test
+  public void testToJson() {
+    assertEquals(new JsonObject().put("host", "the-host").put("port", 4), SocketAddress.inetSocketAddress(4, "the-host").toJson());
+    assertEquals(new JsonObject().put("path", "/path"), SocketAddress.domainSocketAddress("/path").toJson());
+    assertEquals(new JsonObject().put("host", "the-host").put("port", -4), SocketAddress.sharedRandomPort(4, "the-host").toJson());
   }
 }
