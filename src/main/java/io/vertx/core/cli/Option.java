@@ -12,6 +12,7 @@
 package io.vertx.core.cli;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.annotations.JsonGen;
 import io.vertx.core.json.JsonObject;
 
 import java.util.Objects;
@@ -26,7 +27,8 @@ import java.util.TreeSet;
  *
  * @author Clement Escoffier <clement@apache.org>
  */
-@DataObject(generateConverter = true, publicConverter = false)
+@DataObject
+@JsonGen(publicConverter = false)
 public class Option {
 
   /**

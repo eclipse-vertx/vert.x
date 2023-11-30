@@ -13,6 +13,7 @@ package io.vertx.core.net;
 
 import io.netty.handler.logging.ByteBufFormat;
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.annotations.JsonGen;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.json.JsonObject;
@@ -28,7 +29,8 @@ import static io.vertx.core.net.TrafficShapingOptions.DEFAULT_OUTBOUND_GLOBAL_BA
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject(generateConverter = true, publicConverter = false)
+@DataObject
+@JsonGen(publicConverter = false)
 public class NetServerOptions extends TCPSSLOptions {
 
   // Server specific HTTP stuff

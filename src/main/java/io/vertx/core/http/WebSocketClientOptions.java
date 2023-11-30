@@ -12,6 +12,7 @@ package io.vertx.core.http;
 
 import io.netty.handler.logging.ByteBufFormat;
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.annotations.JsonGen;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
@@ -24,7 +25,8 @@ import java.util.concurrent.TimeUnit;
 import static io.vertx.core.http.HttpClientOptions.DEFAULT_NAME;
 import static io.vertx.core.http.HttpClientOptions.DEFAULT_SHARED;
 
-@DataObject(generateConverter = true, publicConverter = false)
+@DataObject
+@JsonGen(publicConverter = false)
 public class WebSocketClientOptions extends ClientOptionsBase {
 
   private String defaultHost;

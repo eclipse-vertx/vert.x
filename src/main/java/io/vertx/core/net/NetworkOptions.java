@@ -12,6 +12,7 @@
 package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.annotations.JsonGen;
 import io.vertx.codegen.annotations.Unstable;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
@@ -21,7 +22,8 @@ import io.netty.handler.logging.ByteBufFormat;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject(generateConverter = true, publicConverter = false)
+@DataObject
+@JsonGen(publicConverter = false)
 public abstract class NetworkOptions {
 
   /**

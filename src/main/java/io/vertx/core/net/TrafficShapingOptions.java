@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.netty.util.internal.ObjectUtil;
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.annotations.JsonGen;
 import io.vertx.codegen.annotations.Unstable;
 import io.vertx.core.json.JsonObject;
 
@@ -23,7 +24,8 @@ import io.vertx.core.json.JsonObject;
  * Options describing how {@link io.netty.handler.traffic.GlobalTrafficShapingHandler} will handle traffic shaping.
  */
 @Unstable
-@DataObject(generateConverter = true, publicConverter = false)
+@DataObject
+@JsonGen(publicConverter = false)
 public class TrafficShapingOptions {
   /**
    * Default inbound bandwidth limit in bytes/sec = 0 (0 implies unthrottled)

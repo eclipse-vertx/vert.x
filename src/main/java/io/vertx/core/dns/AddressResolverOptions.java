@@ -12,6 +12,7 @@
 package io.vertx.core.dns;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.annotations.JsonGen;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.AddressResolver;
 import io.vertx.core.json.JsonObject;
@@ -25,7 +26,8 @@ import java.util.List;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-@DataObject(generateConverter = true, publicConverter = false)
+@DataObject
+@JsonGen(publicConverter = false)
 public class AddressResolverOptions {
 
   /**

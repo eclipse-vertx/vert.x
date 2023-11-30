@@ -17,7 +17,7 @@ public class JksOptionsConverter {
   private static final Base64.Decoder BASE64_DECODER = JsonUtil.BASE64_DECODER;
   private static final Base64.Encoder BASE64_ENCODER = JsonUtil.BASE64_ENCODER;
 
-  public static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, JksOptions obj) {
+   static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, JksOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
         case "alias":
@@ -49,11 +49,11 @@ public class JksOptionsConverter {
     }
   }
 
-  public static void toJson(JksOptions obj, JsonObject json) {
+   static void toJson(JksOptions obj, JsonObject json) {
     toJson(obj, json.getMap());
   }
 
-  public static void toJson(JksOptions obj, java.util.Map<String, Object> json) {
+   static void toJson(JksOptions obj, java.util.Map<String, Object> json) {
     if (obj.getAlias() != null) {
       json.put("alias", obj.getAlias());
     }

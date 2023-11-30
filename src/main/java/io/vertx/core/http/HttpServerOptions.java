@@ -14,6 +14,7 @@ package io.vertx.core.http;
 import io.netty.handler.codec.compression.CompressionOptions;
 import io.netty.handler.logging.ByteBufFormat;
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.annotations.JsonGen;
 import io.vertx.codegen.annotations.Unstable;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
@@ -45,7 +46,8 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject(generateConverter = true, publicConverter = false)
+@DataObject
+@JsonGen(publicConverter = false)
 public class HttpServerOptions extends NetServerOptions {
 
   /**

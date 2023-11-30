@@ -13,6 +13,7 @@
 package io.vertx.core.file;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.annotations.JsonGen;
 import io.vertx.core.file.impl.FileResolverImpl;
 import io.vertx.core.json.JsonObject;
 
@@ -22,7 +23,8 @@ import java.io.File;
  * Vert.x file system base configuration, this class can be extended by provider implementations to configure
  * those specific implementations.
  */
-@DataObject(generateConverter = true, publicConverter = false)
+@DataObject
+@JsonGen(publicConverter = false)
 public class FileSystemOptions {
 
   /**

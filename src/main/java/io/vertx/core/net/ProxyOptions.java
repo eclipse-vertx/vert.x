@@ -14,6 +14,7 @@ package io.vertx.core.net;
 import java.util.Objects;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.annotations.JsonGen;
 import io.vertx.core.json.JsonObject;
 
 /**
@@ -21,7 +22,8 @@ import io.vertx.core.json.JsonObject;
  *
  * @author <a href="http://oss.lehmann.cx/">Alexander Lehmann</a>
  */
-@DataObject(generateConverter = true, publicConverter = false)
+@DataObject
+@JsonGen(publicConverter = false)
 public class ProxyOptions {
 
   /**
