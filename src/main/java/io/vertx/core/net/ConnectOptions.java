@@ -11,7 +11,6 @@
 package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
-import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.json.JsonObject;
 
 /**
@@ -20,7 +19,6 @@ import io.vertx.core.json.JsonObject;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @DataObject
-@JsonGen(publicConverter = false)
 public class ConnectOptions {
 
   /**
@@ -62,15 +60,6 @@ public class ConnectOptions {
      proxyOptions = other.getProxyOptions() != null ? new ProxyOptions(other.getProxyOptions()) : null;
      ssl = other.isSsl();
      sslOptions = other.getSslOptions() != null ? new ClientSSLOptions(other.getSslOptions()) : null;
-   }
-
-   /**
-    * Create options from JSON
-    *
-    * @param json  the JSON
-    */
-   public ConnectOptions(JsonObject json) {
-    ConnectOptionsConverter.fromJson(json, this);
    }
 
   /**
@@ -210,16 +199,5 @@ public class ConnectOptions {
   public ConnectOptions setSslOptions(ClientSSLOptions sslOptions) {
     this.sslOptions = sslOptions;
     return this;
-  }
-
-   /**
-    * Convert to JSON
-    *
-    * @return the JSON
-    */
-  public JsonObject toJson() {
-    JsonObject json = new JsonObject();
-    ConnectOptionsConverter.toJson(this, json);
-    return json;
   }
 }
