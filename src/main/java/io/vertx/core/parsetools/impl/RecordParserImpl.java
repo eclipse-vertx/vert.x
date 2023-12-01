@@ -26,7 +26,7 @@ import java.util.Objects;
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @author <a href="mailto:larsdtimm@gmail.com">Lars Timm</a>
  */
-public final class RecordParserImpl implements RecordParser {
+public class RecordParserImpl implements RecordParser {
 
   // Empty and unmodifiable
   private static final Buffer EMPTY_BUFFER = BufferInternal.buffer(Unpooled.EMPTY_BUFFER);
