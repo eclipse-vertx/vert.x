@@ -15,11 +15,22 @@ import io.vertx.core.shareddata.ClusterSerializable;
 import io.vertx.core.shareddata.Shareable;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static io.vertx.core.json.impl.JsonUtil.*;
+import static io.vertx.core.json.impl.JsonUtil.BASE64_DECODER;
+import static io.vertx.core.json.impl.JsonUtil.BASE64_ENCODER;
+import static io.vertx.core.json.impl.JsonUtil.DEFAULT_CLONER;
+import static io.vertx.core.json.impl.JsonUtil.asStream;
+import static io.vertx.core.json.impl.JsonUtil.deepCopy;
+import static io.vertx.core.json.impl.JsonUtil.wrapJsonValue;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
 /**
@@ -105,7 +116,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @return a JsonObject containing the specified mapping.
    */
   public static JsonObject of(String k1, Object v1) {
-    JsonObject obj = new JsonObject(new LinkedHashMap<>(1));
+    JsonObject obj = new JsonObject(new LinkedHashMap<>(3));
 
     obj.put(k1, v1);
 
@@ -122,7 +133,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @return a JsonObject containing the specified mappings.
    */
   public static JsonObject of(String k1, Object v1, String k2, Object v2) {
-    JsonObject obj = new JsonObject(new LinkedHashMap<>(2));
+    JsonObject obj = new JsonObject(new LinkedHashMap<>(4));
 
     obj.put(k1, v1);
     obj.put(k2, v2);
@@ -142,7 +153,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @return a JsonObject containing the specified mappings.
    */
   public static JsonObject of(String k1, Object v1, String k2, Object v2, String k3, Object v3) {
-    JsonObject obj = new JsonObject(new LinkedHashMap<>(3));
+    JsonObject obj = new JsonObject(new LinkedHashMap<>(5));
 
     obj.put(k1, v1);
     obj.put(k2, v2);
@@ -166,7 +177,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    */
   public static JsonObject of(String k1, Object v1, String k2, Object v2, String k3, Object v3,
                               String k4, Object v4) {
-    JsonObject obj = new JsonObject(new LinkedHashMap<>(4));
+    JsonObject obj = new JsonObject(new LinkedHashMap<>(7));
 
     obj.put(k1, v1);
     obj.put(k2, v2);
@@ -193,7 +204,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    */
   public static JsonObject of(String k1, Object v1, String k2, Object v2, String k3, Object v3,
                               String k4, Object v4, String k5, Object v5) {
-    JsonObject obj = new JsonObject(new LinkedHashMap<>(5));
+    JsonObject obj = new JsonObject(new LinkedHashMap<>(8));
 
     obj.put(k1, v1);
     obj.put(k2, v2);
@@ -223,7 +234,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    */
   public static JsonObject of(String k1, Object v1, String k2, Object v2, String k3, Object v3,
                               String k4, Object v4, String k5, Object v5, String k6, Object v6) {
-    JsonObject obj = new JsonObject(new LinkedHashMap<>(6));
+    JsonObject obj = new JsonObject(new LinkedHashMap<>(9));
 
     obj.put(k1, v1);
     obj.put(k2, v2);
@@ -257,7 +268,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   public static JsonObject of(String k1, Object v1, String k2, Object v2, String k3, Object v3,
                               String k4, Object v4, String k5, Object v5, String k6, Object v6,
                               String k7, Object v7) {
-    JsonObject obj = new JsonObject(new LinkedHashMap<>(7));
+    JsonObject obj = new JsonObject(new LinkedHashMap<>(10));
 
     obj.put(k1, v1);
     obj.put(k2, v2);
@@ -294,7 +305,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   public static JsonObject of(String k1, Object v1, String k2, Object v2, String k3, Object v3,
                               String k4, Object v4, String k5, Object v5, String k6, Object v6,
                               String k7, Object v7, String k8, Object v8) {
-    JsonObject obj = new JsonObject(new LinkedHashMap<>(8));
+    JsonObject obj = new JsonObject(new LinkedHashMap<>(12));
 
     obj.put(k1, v1);
     obj.put(k2, v2);
@@ -334,7 +345,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   public static JsonObject of(String k1, Object v1, String k2, Object v2, String k3, Object v3,
                               String k4, Object v4, String k5, Object v5, String k6, Object v6,
                               String k7, Object v7, String k8, Object v8, String k9, Object v9) {
-    JsonObject obj = new JsonObject(new LinkedHashMap<>(9));
+    JsonObject obj = new JsonObject(new LinkedHashMap<>(14));
 
     obj.put(k1, v1);
     obj.put(k2, v2);
@@ -378,7 +389,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
                               String k4, Object v4, String k5, Object v5, String k6, Object v6,
                               String k7, Object v7, String k8, Object v8, String k9, Object v9,
                               String k10, Object v10) {
-    JsonObject obj = new JsonObject(new LinkedHashMap<>(10));
+    JsonObject obj = new JsonObject(new LinkedHashMap<>(16));
 
     obj.put(k1, v1);
     obj.put(k2, v2);
@@ -1160,14 +1171,11 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
 
   @Override
   public boolean equals(Object o) {
-    // null check
-    if (o == null)
-      return false;
     // self check
     if (this == o)
       return true;
-    // type check and cast
-    if (getClass() != o.getClass())
+    // type check, cast and null check
+    if (!(o instanceof JsonObject))
       return false;
 
     JsonObject other = (JsonObject) o;
@@ -1275,7 +1283,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
       final Object wrapped = wrapJsonValue(val);
 
       if (val != wrapped) {
-        return new Entry(entry.getKey(), wrapped);
+        return Map.entry(entry.getKey(), wrapped);
       }
 
       return entry;
@@ -1284,31 +1292,6 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     @Override
     public void remove() {
       mapIter.remove();
-    }
-  }
-
-  private static final class Entry implements Map.Entry<String, Object> {
-    final String key;
-    final Object value;
-
-    public Entry(String key, Object value) {
-      this.key = key;
-      this.value = value;
-    }
-
-    @Override
-    public String getKey() {
-      return key;
-    }
-
-    @Override
-    public Object getValue() {
-      return value;
-    }
-
-    @Override
-    public Object setValue(Object value) {
-      throw new UnsupportedOperationException();
     }
   }
 }
