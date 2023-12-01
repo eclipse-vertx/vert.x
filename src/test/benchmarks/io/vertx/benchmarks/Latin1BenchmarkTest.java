@@ -1,7 +1,5 @@
-package io.vertx.core.parsetools;
+package io.vertx.benchmarks;
 
-import io.vertx.benchmarks.BenchmarkBase;
-import org.junit.Assert;
 import org.junit.Test;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -40,7 +38,7 @@ import static org.junit.Assert.*;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
-public class BenchmarkTest extends BenchmarkBase {
+public class Latin1BenchmarkTest extends BenchmarkBase {
 
   static final List<String> SAMPLES = new ArrayList<>(1000);
   static {
@@ -135,7 +133,7 @@ public class BenchmarkTest extends BenchmarkBase {
 
   public static void main (String[] args) throws RunnerException {
     Options opt = new OptionsBuilder()
-      .include(BenchmarkTest.class.getSimpleName())
+      .include(Latin1BenchmarkTest.class.getSimpleName())
       .build();
 
     new Runner(opt).run();
