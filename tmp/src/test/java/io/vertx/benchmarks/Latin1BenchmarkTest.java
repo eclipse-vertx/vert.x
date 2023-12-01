@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
 /**
  Task:
@@ -99,10 +100,16 @@ public class Latin1BenchmarkTest {
 
 
   @Test public void same (){
-    String s = SAMPLES.get(0);
-    assertArrayEquals(latinBytesV1a(s), latinBytesV1b(s));
-    assertArrayEquals(latinBytesV1a(s), latinBytesV2(s));
-    assertArrayEquals(latinBytesV1a(s), latinBytesV3(s));
+    AtomicInteger charsProcessed = new AtomicInteger();
+    SAMPLES.forEach(s->{
+      assertArrayEquals(latinBytesV1a(s), latinBytesV1b(s));
+      assertArrayEquals(latinBytesV1a(s), latinBytesV2(s));
+      assertArrayEquals(latinBytesV1a(s), latinBytesV3(s));
+      String x = new String(latinBytesV3(s), StandardCharsets.ISO_8859_1);
+      assertEquals(x, s);
+      charsProcessed.addAndGet(s.length());
+    });
+    assertEquals(499_573, charsProcessed.get());
   }
 
 
