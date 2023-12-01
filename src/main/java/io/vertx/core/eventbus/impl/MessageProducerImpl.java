@@ -29,6 +29,7 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
   private final EventBusImpl bus;
   private final boolean send;
   private final String address;
+  private final boolean localOnly;
   private DeliveryOptions options;
 
   public MessageProducerImpl(Vertx vertx, String address, boolean send, DeliveryOptions options) {
@@ -37,6 +38,7 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
     this.address = address;
     this.send = send;
     this.options = options;
+    this.localOnly = vertx.isClustered() ? options.isLocalOnly() : true;
   }
 
   @Override
@@ -62,7 +64,7 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
   }
 
   private void write(T data, Promise<Void> handler) {
-    MessageImpl msg = bus.createMessage(send, address, options.getHeaders(), data, options.getCodecName());
+    MessageImpl msg = bus.createMessage(send, localOnly, address, options.getHeaders(), data, options.getCodecName());
     bus.sendOrPubInternal(msg, options, null, handler);
   }
 
