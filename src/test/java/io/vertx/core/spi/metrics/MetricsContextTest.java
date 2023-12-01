@@ -141,7 +141,7 @@ public class MetricsContextTest extends VertxTestBase {
         response.setStatusCode(200).setChunked(true).end("bye");
         response.close();
       });
-      server.listen(8080, "localhost", onSuccess(s -> {
+      server.listen(HttpTestBase.DEFAULT_HTTP_PORT, "localhost", onSuccess(s -> {
         expectedThread.set(Thread.currentThread());
         expectedContext.set(Vertx.currentContext());
         latch.countDown();
@@ -163,7 +163,7 @@ public class MetricsContextTest extends VertxTestBase {
         });
       });
     });
-    client.request(HttpMethod.PUT, 8080, "localhost", "/")
+    client.request(HttpMethod.PUT, HttpTestBase.DEFAULT_HTTP_PORT, "localhost", "/")
       .compose(req -> req.send(Buffer.buffer("hello"))
         .onComplete(onSuccess(resp -> {
           complete();
@@ -233,14 +233,14 @@ public class MetricsContextTest extends VertxTestBase {
         response.end();
       });
     });
-    server.listen(8080, "localhost", onSuccess(s -> {
+    server.listen(HttpTestBase.DEFAULT_HTTP_PORT, "localhost", onSuccess(s -> {
       latch.countDown();
     }));
     awaitLatch(latch);
     HttpClient client = vertx.createHttpClient(new HttpClientOptions().setPipelining(true).setMaxPoolSize(1));
     vertx.runOnContext(v -> {
       for (int i = 0;i < 2;i++) {
-        client.request(HttpMethod.GET, 8080, "localhost", "/" + (i + 1), onSuccess(req -> {
+        client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, "localhost", "/" + (i + 1), onSuccess(req -> {
           req.send().compose(HttpClientResponse::body).onComplete(onSuccess(body -> {
             complete();
           }));
@@ -336,7 +336,7 @@ public class MetricsContextTest extends VertxTestBase {
           ws.write(Buffer.buffer("bye"));
         });
       });
-      server.listen(8080, "localhost", onSuccess(s -> {
+      server.listen(HttpTestBase.DEFAULT_HTTP_PORT, "localhost", onSuccess(s -> {
         expectedThread.set(Thread.currentThread());
         expectedContext.set(Vertx.currentContext());
         latch.countDown();
@@ -344,7 +344,7 @@ public class MetricsContextTest extends VertxTestBase {
     });
     awaitLatch(latch);
     HttpClient client = vertx.createHttpClient();
-    client.webSocket(8080, "localhost", "/", onSuccess(ws -> {
+    client.webSocket(HttpTestBase.DEFAULT_HTTP_PORT, "localhost", "/", onSuccess(ws -> {
       ws.handler(buf -> {
         ws.closeHandler(v -> {
           vertx.close(v4 -> {
@@ -437,7 +437,7 @@ public class MetricsContextTest extends VertxTestBase {
       });
     });
     CountDownLatch latch = new CountDownLatch(1);
-    server.listen(8080, "localhost", onSuccess(s -> {
+    server.listen(HttpTestBase.DEFAULT_HTTP_PORT, "localhost", onSuccess(s -> {
       latch.countDown();
     }));
     awaitLatch(latch);
@@ -447,7 +447,7 @@ public class MetricsContextTest extends VertxTestBase {
       expectedContext.set(Vertx.currentContext());
       HttpClient client = vertx.createHttpClient();
       assertSame(expectedThread.get(), Thread.currentThread());
-      client.request(HttpMethod.PUT, 8080, "localhost", "/the-uri")
+      client.request(HttpMethod.PUT, HttpTestBase.DEFAULT_HTTP_PORT, "localhost", "/the-uri")
         .compose(req -> req.send(Buffer.buffer("hello")).onComplete(onSuccess(resp -> {
           executeInVanillaThread(() -> {
             client.close();
@@ -535,14 +535,14 @@ public class MetricsContextTest extends VertxTestBase {
       });
     });
     CountDownLatch latch = new CountDownLatch(1);
-    server.listen(8080, "localhost", onSuccess(s -> {
+    server.listen(HttpTestBase.DEFAULT_HTTP_PORT, "localhost", onSuccess(s -> {
       latch.countDown();
     }));
     awaitLatch(latch);
     Context ctx = contextFactory.apply(vertx);
     ctx.runOnContext(v1 -> {
       HttpClient client = vertx.createHttpClient();
-      client.webSocket(8080, "localhost", "/", onSuccess(ws -> {
+      client.webSocket(HttpTestBase.DEFAULT_HTTP_PORT, "localhost", "/", onSuccess(ws -> {
         ws.handler(buf -> {
           ws.closeHandler(v2 -> {
             executeInVanillaThread(() -> {

@@ -14,6 +14,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFactory;
 import io.netty.channel.ServerChannel;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpTestBase;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
@@ -107,7 +108,7 @@ public class GlobalEventExecutorNotificationTest extends AsyncTestBase {
 
     vertx.createHttpServer()
       .requestHandler(req -> fail())
-      .listen(8080, "localhost", onFailure(err -> {
+      .listen(HttpTestBase.DEFAULT_HTTP_PORT, "localhost", onFailure(err -> {
       testComplete();
     }));
     await();

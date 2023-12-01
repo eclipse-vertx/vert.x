@@ -142,7 +142,7 @@ public class VertxTest extends AsyncTestBase {
       AtomicReference<NetSocket> socketRef = new AtomicReference<>();
       vertx.createNetServer()
         .connectHandler(socketRef::set)
-        .listen(8080, "localhost")
+        .listen(HttpTestBase.DEFAULT_HTTP_PORT, "localhost")
         .onComplete(onSuccess(server -> latch.countDown()));
       awaitLatch(latch);
       AtomicBoolean closed = new AtomicBoolean();
@@ -151,7 +151,7 @@ public class VertxTest extends AsyncTestBase {
       closeFuture.future().onComplete(ar -> closed.set(true));
       HttpClient client = vertx.createHttpPoolClient(new HttpClientOptions().setKeepAlive(false), new PoolOptions(), closeFuture);
       vertx.addCloseHook(closeFuture);
-      client.request(HttpMethod.GET, 8080, "localhost", "/")
+      client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, "localhost", "/")
         .compose(HttpClientRequest::send)
         .onComplete(onFailure(err -> {}));
       WeakReference<HttpClient> ref = new WeakReference<>(client);

@@ -664,50 +664,50 @@ public class MetricsTest extends VertxTestBase {
       });
     });
     CountDownLatch listenLatch = new CountDownLatch(1);
-    server.listen(8080, "localhost", onSuccess(s -> { listenLatch.countDown(); }));
+    server.listen(HttpTestBase.DEFAULT_HTTP_PORT, "localhost", onSuccess(s -> { listenLatch.countDown(); }));
     awaitLatch(listenLatch);
     client = vertx.createHttpClient(new HttpClientOptions().setKeepAliveTimeout(1));
     FakeHttpClientMetrics metrics = FakeHttpClientMetrics.getMetrics(client);
     CountDownLatch responsesLatch = new CountDownLatch(5);
     for (int i = 0;i < 5;i++) {
-      client.request(HttpMethod.GET, 8080, "localhost", "/somepath")
+      client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, "localhost", "/somepath")
         .compose(HttpClientRequest::send)
         .onComplete(resp -> {
         responsesLatch.countDown();
       });
     }
     assertWaitUntil(() -> requests.size() == 5);
-    assertEquals(Collections.singleton("localhost:8080"), metrics.endpoints());
-    assertEquals(0, (int)metrics.queueSize("localhost:8080"));
-    assertEquals(5, (int)metrics.connectionCount("localhost:8080"));
+    assertEquals(Collections.singleton("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT), metrics.endpoints());
+    assertEquals(0, (int)metrics.queueSize("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT));
+    assertEquals(5, (int)metrics.connectionCount("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT));
     for (int i = 0;i < 8;i++) {
-      client.request(HttpMethod.GET, 8080, "localhost", "/somepath")
+      client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, "localhost", "/somepath")
         .compose(HttpClientRequest::send)
         .onComplete(onSuccess(resp -> {
       }));
     }
-    assertEquals(Collections.singleton("localhost:8080"), metrics.endpoints());
-    assertEquals(8, (int)metrics.queueSize("localhost:8080"));
-    assertEquals(5, (int)metrics.connectionCount("localhost:8080"));
+    assertEquals(Collections.singleton("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT), metrics.endpoints());
+    assertEquals(8, (int)metrics.queueSize("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT));
+    assertEquals(5, (int)metrics.connectionCount("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT));
     ArrayList<Runnable> copy = new ArrayList<>(requests);
     requests.clear();
     copy.forEach(Runnable::run);
     awaitLatch(responsesLatch);
     assertWaitUntil(() -> requests.size() == 5);
-    assertEquals(Collections.singleton("localhost:8080"), metrics.endpoints());
-    assertEquals(3, (int)metrics.queueSize("localhost:8080"));
-    assertEquals(5, (int)metrics.connectionCount("localhost:8080"));
+    assertEquals(Collections.singleton("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT), metrics.endpoints());
+    assertEquals(3, (int)metrics.queueSize("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT));
+    assertEquals(5, (int)metrics.connectionCount("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT));
     copy = new ArrayList<>(requests);
     requests.clear();
     copy.forEach(Runnable::run);
     assertWaitUntil(() -> requests.size() == 3);
-    assertEquals(Collections.singleton("localhost:8080"), metrics.endpoints());
-    assertEquals(0, (int)metrics.queueSize("localhost:8080"));
-    assertWaitUntil(() -> metrics.connectionCount("localhost:8080") == 3);
+    assertEquals(Collections.singleton("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT), metrics.endpoints());
+    assertEquals(0, (int)metrics.queueSize("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT));
+    assertWaitUntil(() -> metrics.connectionCount("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT) == 3);
     copy = new ArrayList<>(requests);
     requests.clear();
     copy.forEach(Runnable::run);
-    assertWaitUntil(() -> metrics.connectionCount("localhost:8080") == null);
+    assertWaitUntil(() -> metrics.connectionCount("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT) == null);
   }
 
   @Test
@@ -722,18 +722,18 @@ public class MetricsTest extends VertxTestBase {
       });
     });
     CountDownLatch listenLatch = new CountDownLatch(1);
-    server.listen(8080, "localhost", onSuccess(s -> { listenLatch.countDown(); }));
+    server.listen(HttpTestBase.DEFAULT_HTTP_PORT, "localhost", onSuccess(s -> { listenLatch.countDown(); }));
     awaitLatch(listenLatch);
     client = vertx.createHttpClient();
     FakeHttpClientMetrics metrics = FakeHttpClientMetrics.getMetrics(client);
     for (int i = 0;i < 5;i++) {
-      client.request(HttpMethod.GET, 8080, "localhost", "/somepath")
+      client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, "localhost", "/somepath")
         .compose(HttpClientRequest::end)
         .onComplete(onSuccess(v -> {
       }));
     }
     assertWaitUntil(() -> requests.size() == 5);
-    EndpointMetric endpoint = metrics.endpoint("localhost:8080");
+    EndpointMetric endpoint = metrics.endpoint("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT);
     assertEquals(5, endpoint.connectionCount.get());
     ArrayList<Runnable> copy = new ArrayList<>(requests);
     requests.clear();
@@ -748,14 +748,14 @@ public class MetricsTest extends VertxTestBase {
     client = vertx.createHttpClient();
     AtomicReference<EndpointMetric> endpointMetrics = new AtomicReference<>();
     server = vertx.createHttpServer().requestHandler(req -> {
-      endpointMetrics.set(((FakeHttpClientMetrics)FakeHttpClientMetrics.getMetrics(client)).endpoint("localhost:8080"));
+      endpointMetrics.set(((FakeHttpClientMetrics)FakeHttpClientMetrics.getMetrics(client)).endpoint("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT));
       req.response().end();
-    }).listen(8080, "localhost", ar -> {
+    }).listen(HttpTestBase.DEFAULT_HTTP_PORT, "localhost", ar -> {
       assertTrue(ar.succeeded());
       started.countDown();
     });
     awaitLatch(started);
-    client.request(HttpMethod.GET, 8080, "localhost", "/somepath")
+    client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, "localhost", "/somepath")
       .compose(req -> req.send()
         .compose(HttpClientResponse::end)
         .compose(v ->  req.connection().close()))
@@ -790,13 +790,13 @@ public class MetricsTest extends VertxTestBase {
       servers.add(server);
     }
     try {
-      List<Future> collect = servers.stream().map(server -> server.listen(8080)).collect(Collectors.toList());
+      List<Future> collect = servers.stream().map(server -> server.listen(HttpTestBase.DEFAULT_HTTP_PORT)).collect(Collectors.toList());
       CompositeFuture
         .all(collect)
         .onSuccess(v -> {
           assertEquals("Was expecting a single metric", 1, servers.stream().map(FakeMetricsBase::getMetrics).distinct().count());
           for (int i = 0;i < 2;i++) {
-            client.request(HttpMethod.GET, 8080, "localhost", TestUtils.randomAlphaString(16))
+            client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, "localhost", TestUtils.randomAlphaString(16))
               .compose(HttpClientRequest::send)
               .onComplete(onSuccess(resp -> {
                 complete();
@@ -844,11 +844,11 @@ public class MetricsTest extends VertxTestBase {
           complete();
         });
       }));
-    }).listen(8080, onSuccess(s -> {
+    }).listen(HttpTestBase.DEFAULT_HTTP_PORT, onSuccess(s -> {
       client = vertx.createHttpClient();
       client.request(new RequestOptions()
         .setMethod(HttpMethod.CONNECT)
-        .setPort(8080)
+        .setPort(HttpTestBase.DEFAULT_HTTP_PORT)
         .setHost(host)
         .setURI(TestUtils.randomAlphaString(16))).onComplete(onSuccess(req -> {
         FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
@@ -1228,7 +1228,7 @@ public class MetricsTest extends VertxTestBase {
         };
       }
     })));
-    vertx.createHttpServer().requestHandler(req -> {}).listen(8080, "localhost");
+    vertx.createHttpServer().requestHandler(req -> {}).listen(HttpTestBase.DEFAULT_HTTP_PORT, "localhost");
     vertx.close().onComplete(onSuccess(v -> {
       assertEquals(2, lifecycle.get());
       testComplete();

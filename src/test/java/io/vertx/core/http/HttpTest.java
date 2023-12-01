@@ -3436,7 +3436,7 @@ public abstract class HttpTest extends HttpTestBase {
     server = vertx.createHttpServer(createBaseServerOptions().setHost("0.0.0.0"));
     server.requestHandler(req -> {
       String absURI = req.absoluteURI();
-      assertEquals(req.scheme() + "://localhost:8080/path", absURI);
+      assertEquals(req.scheme() + "://localhost:" + DEFAULT_HTTP_PORT+ "/path", absURI);
       req.response().end();
     });
     server.listen(testAddress, onSuccess(s -> {
@@ -3646,87 +3646,87 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testFollowRedirectGetOn301() throws Exception {
-    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 301, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 301, 200, 2, "http://localhost:" + DEFAULT_HTTP_PORT+ "/redirected", "http://localhost:" + DEFAULT_HTTP_PORT+ "/redirected");
   }
 
   @Test
   public void testFollowRedirectPostOn301() throws Exception {
-    testFollowRedirect(HttpMethod.POST, HttpMethod.GET, 301, 301, 1, "http://localhost:8080/redirected", "http://localhost:8080/somepath");
+    testFollowRedirect(HttpMethod.POST, HttpMethod.GET, 301, 301, 1, "http://localhost:" + DEFAULT_HTTP_PORT+ "/redirected", "http://localhost:" + DEFAULT_HTTP_PORT+ "/somepath");
   }
 
   @Test
   public void testFollowRedirectPutOn301() throws Exception {
-    testFollowRedirect(HttpMethod.PUT, HttpMethod.GET, 301, 301, 1, "http://localhost:8080/redirected", "http://localhost:8080/somepath");
+    testFollowRedirect(HttpMethod.PUT, HttpMethod.GET, 301, 301, 1, "http://localhost:" + DEFAULT_HTTP_PORT+ "/redirected", "http://localhost:" + DEFAULT_HTTP_PORT+ "/somepath");
   }
 
   @Test
   public void testFollowRedirectGetOn302() throws Exception {
-    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 302, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 302, 200, 2, "http://localhost:" + DEFAULT_HTTP_PORT+ "/redirected", "http://localhost:" + DEFAULT_HTTP_PORT+ "/redirected");
   }
 
   @Test
   public void testFollowRedirectPostOn302() throws Exception {
-    testFollowRedirect(HttpMethod.POST, HttpMethod.GET, 302, 302, 1, "http://localhost:8080/redirected", "http://localhost:8080/somepath");
+    testFollowRedirect(HttpMethod.POST, HttpMethod.GET, 302, 302, 1, "http://localhost:" + DEFAULT_HTTP_PORT+ "/redirected", "http://localhost:" + DEFAULT_HTTP_PORT+ "/somepath");
   }
 
   @Test
   public void testFollowRedirectPutOn302() throws Exception {
-    testFollowRedirect(HttpMethod.PUT, HttpMethod.GET, 302, 302, 1, "http://localhost:8080/redirected", "http://localhost:8080/somepath");
+    testFollowRedirect(HttpMethod.PUT, HttpMethod.GET, 302, 302, 1, "http://localhost:" + DEFAULT_HTTP_PORT+ "/redirected", "http://localhost:" + DEFAULT_HTTP_PORT+ "/somepath");
   }
 
   @Test
   public void testFollowRedirectGetOn303() throws Exception {
-    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 303, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 303, 200, 2, "http://localhost:" + DEFAULT_HTTP_PORT+ "/redirected", "http://localhost:" + DEFAULT_HTTP_PORT+ "/redirected");
   }
 
   @Test
   public void testFollowRedirectPostOn303() throws Exception {
-    testFollowRedirect(HttpMethod.POST, HttpMethod.GET, 303, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+    testFollowRedirect(HttpMethod.POST, HttpMethod.GET, 303, 200, 2, "http://localhost:" + DEFAULT_HTTP_PORT+ "/redirected", "http://localhost:" + DEFAULT_HTTP_PORT+ "/redirected");
   }
 
   @Test
   public void testFollowRedirectPutOn303() throws Exception {
-    testFollowRedirect(HttpMethod.PUT, HttpMethod.GET, 303, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+    testFollowRedirect(HttpMethod.PUT, HttpMethod.GET, 303, 200, 2, "http://localhost:" + DEFAULT_HTTP_PORT+ "/redirected", "http://localhost:" + DEFAULT_HTTP_PORT+ "/redirected");
   }
 
   @Test
   public void testFollowRedirectNotOn304() throws Exception {
-    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 304, 304, 1, "http://localhost:8080/redirected", "http://localhost:8080/somepath");
+    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 304, 304, 1, "http://localhost:" + DEFAULT_HTTP_PORT+ "/redirected", "http://localhost:" + DEFAULT_HTTP_PORT+ "/somepath");
   }
 
   @Test
   public void testFollowRedirectGetOn307() throws Exception {
-    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 307, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 307, 200, 2, "http://localhost:" + DEFAULT_HTTP_PORT+ "/redirected", "http://localhost:" + DEFAULT_HTTP_PORT+ "/redirected");
   }
 
   @Test
   public void testFollowRedirectPostOn307() throws Exception {
-    testFollowRedirect(HttpMethod.POST, HttpMethod.POST, 307, 307, 1, "http://localhost:8080/redirected", "http://localhost:8080/somepath");
+    testFollowRedirect(HttpMethod.POST, HttpMethod.POST, 307, 307, 1, "http://localhost:" + DEFAULT_HTTP_PORT+ "/redirected", "http://localhost:" + DEFAULT_HTTP_PORT+ "/somepath");
   }
 
   @Test
   public void testFollowRedirectPutOn307() throws Exception {
-    testFollowRedirect(HttpMethod.PUT, HttpMethod.PUT, 307, 307, 1, "http://localhost:8080/redirected", "http://localhost:8080/somepath");
+    testFollowRedirect(HttpMethod.PUT, HttpMethod.PUT, 307, 307, 1, "http://localhost:" + DEFAULT_HTTP_PORT+ "/redirected", "http://localhost:" + DEFAULT_HTTP_PORT+ "/somepath");
   }
 
   @Test
   public void testFollowRedirectWithRelativeLocation() throws Exception {
-    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 301, 200, 2, "/another", "http://localhost:8080/another");
+    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 301, 200, 2, "/another", "http://localhost:" + DEFAULT_HTTP_PORT+ "/another");
   }
 
   @Test
   public void testFollowRedirectGetOn308() throws Exception {
-    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 308, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 308, 200, 2, "http://localhost:" + DEFAULT_HTTP_PORT+ "/redirected", "http://localhost:" + DEFAULT_HTTP_PORT+ "/redirected");
   }
 
   @Test
   public void testFollowRedirectPostOn308() throws Exception {
-    testFollowRedirect(HttpMethod.POST, HttpMethod.POST, 308, 308, 1, "http://localhost:8080/redirected", "http://localhost:8080/somepath");
+    testFollowRedirect(HttpMethod.POST, HttpMethod.POST, 308, 308, 1, "http://localhost:" + DEFAULT_HTTP_PORT+ "/redirected", "http://localhost:" + DEFAULT_HTTP_PORT+ "/somepath");
   }
 
   @Test
   public void testFollowRedirectPutOn308() throws Exception {
-    testFollowRedirect(HttpMethod.PUT, HttpMethod.PUT, 308, 308, 1, "http://localhost:8080/redirected", "http://localhost:8080/somepath");
+    testFollowRedirect(HttpMethod.PUT, HttpMethod.PUT, 308, 308, 1, "http://localhost:" + DEFAULT_HTTP_PORT+ "/redirected", "http://localhost:" + DEFAULT_HTTP_PORT+ "/somepath");
   }
 
   private void testFollowRedirect(
@@ -3813,7 +3813,7 @@ public abstract class HttpTest extends HttpTestBase {
         req.bodyHandler(body -> {
           assertEquals(body, expected);
           String scheme = createBaseServerOptions().isSsl() ? "https" : "http";
-          req.response().setStatusCode(303).putHeader(HttpHeaders.LOCATION, scheme + "://localhost:8080/whatever").end();
+          req.response().setStatusCode(303).putHeader(HttpHeaders.LOCATION, scheme + "://localhost:" + DEFAULT_HTTP_PORT+ "/whatever").end();
         });
       } else {
         assertEquals(HttpMethod.GET, req.method());
@@ -3848,7 +3848,7 @@ public abstract class HttpTest extends HttpTestBase {
         resp
           .setStatusCode(303)
           .putHeader(HttpHeaders.CONTENT_LENGTH, "11")
-          .putHeader(HttpHeaders.LOCATION, scheme + "://localhost:8080/whatever")
+          .putHeader(HttpHeaders.LOCATION, scheme + "://localhost:" + DEFAULT_HTTP_PORT+ "/whatever")
           .write("hello ");
         vertx.setTimer(500, id -> {
           sent.set(true);
@@ -3892,7 +3892,7 @@ public abstract class HttpTest extends HttpTestBase {
         req.bodyHandler(body -> {
           assertEquals(body, expected);
           String scheme = createBaseServerOptions().isSsl() ? "https" : "http";
-          req.response().setStatusCode(303).putHeader(HttpHeaders.LOCATION, scheme + "://localhost:8080/whatever").end();
+          req.response().setStatusCode(303).putHeader(HttpHeaders.LOCATION, scheme + "://localhost:" + DEFAULT_HTTP_PORT+ "/whatever").end();
         });
       } else {
         assertEquals(HttpMethod.GET, req.method());
@@ -3945,7 +3945,7 @@ public abstract class HttpTest extends HttpTestBase {
           if (body.length() == 0) {
             HttpServerResponse resp = req.response();
             String scheme = createBaseServerOptions().isSsl() ? "https" : "http";
-            resp.setStatusCode(303).putHeader(HttpHeaders.LOCATION, scheme + "://localhost:8080/whatever");
+            resp.setStatusCode(303).putHeader(HttpHeaders.LOCATION, scheme + "://localhost:" + DEFAULT_HTTP_PORT+ "/whatever");
             if (expectFail) {
               resp.setChunked(true).write("whatever");
               vertx.runOnContext(v -> {
@@ -4047,7 +4047,7 @@ public abstract class HttpTest extends HttpTestBase {
         fail();
       } else {
         String scheme = createBaseServerOptions().isSsl() ? "https" : "http";
-        req.response().setStatusCode(301).putHeader(HttpHeaders.LOCATION, scheme + "://localhost:8080/otherpath").end();
+        req.response().setStatusCode(301).putHeader(HttpHeaders.LOCATION, scheme + "://localhost:" + DEFAULT_HTTP_PORT+ "/otherpath").end();
       }
     });
     startServer();
@@ -4072,7 +4072,7 @@ public abstract class HttpTest extends HttpTestBase {
       switch (redirections.getAndIncrement()) {
         case 0:
           String scheme = createBaseServerOptions().isSsl() ? "https" : "http";
-          req.response().setStatusCode(307).putHeader(HttpHeaders.LOCATION, scheme + "://localhost:8080/whatever").end();
+          req.response().setStatusCode(307).putHeader(HttpHeaders.LOCATION, scheme + "://localhost:" + DEFAULT_HTTP_PORT+ "/whatever").end();
           break;
       }
     });
@@ -4187,14 +4187,14 @@ public abstract class HttpTest extends HttpTestBase {
     testFoo("https://example.com:8000/somepath", "https://example.com:8000/somepath");
     testFoo("whatever://example.com", null);
     testFoo("http://", null);
-    testFoo("http://:8080/somepath", null);
+    testFoo("http://:" + DEFAULT_HTTP_PORT+ "/somepath", null);
   }
 
   private void testFoo(String location, String expectedAbsoluteURI) throws Exception {
     int status = 301;
     MultiMap headers = HttpHeaders.headers().add(HttpHeaders.LOCATION.toString(), location);
     HttpMethod method = HttpMethod.GET;
-    String baseURI = "https://localhost:8080";
+    String baseURI = "https://localhost:" + DEFAULT_HTTP_PORT;
     class MockReq implements HttpClientRequest {
       public HttpClientRequest exceptionHandler(Handler<Throwable> handler) { throw new UnsupportedOperationException(); }
       public Future<Void> write(Buffer data) { throw new UnsupportedOperationException(); }
@@ -6590,7 +6590,7 @@ public abstract class HttpTest extends HttpTestBase {
   public void testConnectTimeout() {
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions().setConnectTimeout(1));
-    client.request(new RequestOptions().setHost(TestUtils.NON_ROUTABLE_HOST).setPort(8080))
+    client.request(new RequestOptions().setHost(TestUtils.NON_ROUTABLE_HOST).setPort(HttpTestBase.DEFAULT_HTTP_PORT))
       .onComplete(onFailure(err -> {
         assertTrue(err instanceof ConnectTimeoutException);
         testComplete();

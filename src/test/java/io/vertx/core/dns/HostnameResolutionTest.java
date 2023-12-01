@@ -22,6 +22,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpTestBase;
 import io.vertx.core.impl.AddressResolver;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.impl.VertxImpl;
@@ -156,11 +157,11 @@ public class HostnameResolutionTest extends VertxTestBase {
     });
     try {
       CountDownLatch listenLatch = new CountDownLatch(1);
-      server.listen(8080, "vertx.io", onSuccess(s -> {
+      server.listen(HttpTestBase.DEFAULT_HTTP_PORT, "vertx.io", onSuccess(s -> {
         listenLatch.countDown();
       }));
       awaitLatch(listenLatch);
-      client.request(HttpMethod.GET, 8080, "vertx.io", "/somepath", onSuccess(req -> {
+      client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, "vertx.io", "/somepath", onSuccess(req -> {
         req.send(onSuccess(resp -> {
           Buffer buffer = Buffer.buffer();
           resp.handler(buffer::appendBuffer);

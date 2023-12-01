@@ -11,10 +11,7 @@
 package io.vertx.core;
 
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientResponse;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.*;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.test.core.VertxTestBase;
 import junit.framework.AssertionFailedError;
@@ -108,7 +105,7 @@ public class VirtualThreadDeploymentTest extends VertxTestBase {
             inflight.decrementAndGet();
             processing.set(false);
           });
-          Future.await(server.listen(8080, "localhost"));
+          Future.await(server.listen(HttpTestBase.DEFAULT_HTTP_PORT, "localhost"));
         }
       }, new DeploymentOptions().setThreadingModel(ThreadingModel.VIRTUAL_THREAD))
       .toCompletionStage()
@@ -118,7 +115,7 @@ public class VirtualThreadDeploymentTest extends VertxTestBase {
     int numReq = 10;
     waitFor(numReq);
     for (int i = 0;i < numReq;i++) {
-      Future<Buffer> resp = client.request(HttpMethod.GET, 8080, "localhost", "/")
+      Future<Buffer> resp = client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, "localhost", "/")
         .compose(req -> req.send()
           .compose(HttpClientResponse::body));
       resp.onComplete(onSuccess(v -> complete()));

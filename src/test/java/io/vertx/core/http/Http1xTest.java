@@ -1094,7 +1094,7 @@ public class Http1xTest extends HttpTest {
         setMaxPoolSize(1));
     AtomicInteger count = new AtomicInteger();
     String data = "GET /somepath HTTP/1.1\r\n" +
-        "host: localhost:8080\r\n" +
+        "host: localhost:" + DEFAULT_HTTP_PORT+ "\r\n" +
         "\r\n";
     NetServer server = vertx.createNetServer(new NetServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTPS_HOST));
     server.connectHandler(so -> {
@@ -1694,12 +1694,11 @@ public class Http1xTest extends HttpTest {
   public void testSharedServersRoundRobinWithOtherServerRunningOnDifferentPort() throws Exception {
     // Have a server running on a different port to make sure it doesn't interact
     CountDownLatch latch = new CountDownLatch(1);
-    HttpServer theServer = vertx.createHttpServer(new HttpServerOptions().setPort(8081));
+    HttpServer theServer = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT + 1));
     theServer.requestHandler(req -> {
       fail("Should not process request");
     }).listen(onSuccess(s -> latch.countDown()));
     awaitLatch(latch);
-
     testSharedServersRoundRobin();
   }
 
@@ -2605,7 +2604,7 @@ public class Http1xTest extends HttpTest {
 
     AtomicInteger count = new AtomicInteger(0);
     NetServer server  = vertx.createNetServer();
-    String match = "GET /somepath HTTP/1.1\r\nhost: localhost:8080\r\n\r\n";
+    String match = "GET /somepath HTTP/1.1\r\nhost: localhost:" + DEFAULT_HTTP_PORT+ "\r\n\r\n";
     server.connectHandler(so -> {
       StringBuilder content = new StringBuilder();
       so.handler(buff -> {
@@ -3061,7 +3060,7 @@ public class Http1xTest extends HttpTest {
         so.handler(buff -> {
           total.appendBuffer(buff);
           if (total.toString().equals("GET /somepath HTTP/1.1\r\n" +
-              "host: localhost:8080\r\n" +
+              "host: localhost:" + DEFAULT_HTTP_PORT +"\r\n" +
               "\r\n")) {
             so.write(
                 "HTTP/1.1 200 OK\r\n" +
@@ -3121,10 +3120,10 @@ public class Http1xTest extends HttpTest {
       so.handler(buff -> {
         total.appendBuffer(buff);
         if (total.toString().equals("GET /somepath HTTP/1.1\r\n" +
-            "host: localhost:8080\r\n" +
+            "host: localhost:" + DEFAULT_HTTP_PORT + "\r\n" +
             "\r\n" +
             "POST /somepath HTTP/1.1\r\n" +
-            "host: localhost:8080\r\n" +
+            "host: localhost:"+ DEFAULT_HTTP_PORT +"\r\n" +
             "\r\n")) {
           doReset.complete(null);
           so.write(
@@ -3197,7 +3196,7 @@ public class Http1xTest extends HttpTest {
             so.handler(buff -> {
               total.appendBuffer(buff);
               if (total.toString().equals("GET /somepath HTTP/1.1\r\n" +
-                  "host: localhost:8080\r\n" +
+                  "host: localhost:"+ DEFAULT_HTTP_PORT +"\r\n" +
                   "\r\n")) {
                 so.closeHandler(v -> {
                   closed.set(true);
@@ -3209,7 +3208,7 @@ public class Http1xTest extends HttpTest {
             so.handler(buff -> {
               total.appendBuffer(buff);
               if (total.toString().equals("GET /somepath HTTP/1.1\r\n" +
-                  "host: localhost:8080\r\n" +
+                  "host: localhost:"+ DEFAULT_HTTP_PORT +"\r\n" +
                   "\r\n")) {
                 so.write(
                     "HTTP/1.1 200 OK\r\n" +
@@ -3298,7 +3297,7 @@ public class Http1xTest extends HttpTest {
             so.handler(buff -> {
               total.appendBuffer(buff);
               if (total.toString().equals("GET /somepath HTTP/1.1\r\n" +
-                  "host: localhost:8080\r\n" +
+                  "host: localhost:"+ DEFAULT_HTTP_PORT +"\r\n" +
                   "\r\n")) {
                 so.write(Buffer.buffer(
                     "HTTP/1.1 200 OK\r\n" +
@@ -3316,7 +3315,7 @@ public class Http1xTest extends HttpTest {
             so.handler(buff -> {
               total.appendBuffer(buff);
               if (total.toString().equals("GET /somepath HTTP/1.1\r\n" +
-                  "host: localhost:8080\r\n" +
+                  "host: localhost:"+ DEFAULT_HTTP_PORT +"\r\n" +
                   "\r\n")) {
                 so.write(
                     "HTTP/1.1 200 OK\r\n" +
@@ -3414,7 +3413,7 @@ public class Http1xTest extends HttpTest {
             so.handler(buff -> {
               total.appendBuffer(buff);
               if (total.toString().equals("GET /1 HTTP/1.1\r\n" +
-                  "host: localhost:8080\r\n" +
+                  "host: localhost:"+ DEFAULT_HTTP_PORT +"\r\n" +
                   "\r\n")) {
                 requestReceived.complete(null);
                 sendResponse.whenComplete((v, err) -> {
@@ -3435,7 +3434,7 @@ public class Http1xTest extends HttpTest {
             so.handler(buff -> {
               total.appendBuffer(buff);
               if (total.toString().equals("GET /2 HTTP/1.1\r\n" +
-                  "host: localhost:8080\r\n" +
+                  "host: localhost:"+ DEFAULT_HTTP_PORT +"\r\n" +
                   "\r\n")) {
                 so.write(
                     "HTTP/1.1 200 OK\r\n" +
@@ -3733,7 +3732,7 @@ public class Http1xTest extends HttpTest {
         .setPipelining(false));
     testPerXXXPooling((i) -> client.request(new RequestOptions()
       .setServer(SocketAddress.inetSocketAddress(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST))
-      .setPort(8080)
+      .setPort(DEFAULT_HTTP_PORT)
       .setHost("host" + i)
       .setURI("/somepath")), HttpServerRequest::host);
   }
@@ -5278,7 +5277,7 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testEmptyHostPortionOfHostHeader() throws Exception {
-    testEmptyHostPortionOfHostHeader(":8080", 8080);
+    testEmptyHostPortionOfHostHeader(":"+ DEFAULT_HTTP_PORT, DEFAULT_HTTP_PORT);
   }
 
   private void testEmptyHostPortionOfHostHeader(String hostHeader, int expectedPort) throws Exception {

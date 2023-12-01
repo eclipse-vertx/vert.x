@@ -42,7 +42,7 @@ public abstract class HttpTracingTestBase extends HttpTestBase {
     ctx.runOnContext(v -> {
       Span rootSpan = tracer.newTrace();
       tracer.activate(rootSpan);
-      client.request(HttpMethod.GET, 8080, "localhost", "/1", onSuccess(req -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, "localhost", "/1", onSuccess(req -> {
         req.send(onSuccess(resp -> {
           assertEquals(rootSpan, tracer.activeSpan());
           assertEquals(200, resp.statusCode());
@@ -60,10 +60,10 @@ public abstract class HttpTracingTestBase extends HttpTestBase {
       switch (req.path()) {
         case "/1": {
           vertx.setTimer(10, id1 -> {
-            client.request(HttpMethod.GET, 8080, "localhost", "/2", onSuccess(req1 -> {
+            client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, "localhost", "/2", onSuccess(req1 -> {
               req1.send(onSuccess(resp1 -> {
                 vertx.setTimer(10, id2 -> {
-                  client.request(HttpMethod.GET, 8080, "localhost", "/2", onSuccess(req2 -> {
+                  client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, "localhost", "/2", onSuccess(req2 -> {
                     req2.send(onSuccess(resp -> {
                       req.response().end();
                     }));
@@ -88,7 +88,7 @@ public abstract class HttpTracingTestBase extends HttpTestBase {
     ctx.runOnContext(v -> {
       Span rootSpan = tracer.newTrace();
       tracer.activate(rootSpan);
-      client.request(HttpMethod.GET, 8080, "localhost", "/1", onSuccess(req -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, "localhost", "/1", onSuccess(req -> {
         req.send(onSuccess(resp -> {
           resp.endHandler(v2 -> {
             assertEquals(rootSpan, tracer.activeSpan());
@@ -109,7 +109,7 @@ public abstract class HttpTracingTestBase extends HttpTestBase {
       switch (serverReq.path()) {
         case "/1": {
           vertx.setTimer(10, id -> {
-            client.request(HttpMethod.GET, 8080, "localhost", "/2?q=true", onSuccess(clientReq -> {
+            client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, "localhost", "/2?q=true", onSuccess(clientReq -> {
               clientReq.send(onSuccess(resp -> {
                 serverReq.response().end();
               }));
@@ -132,7 +132,7 @@ public abstract class HttpTracingTestBase extends HttpTestBase {
     ctx.runOnContext(v -> {
       Span rootSpan = tracer.newTrace();
       tracer.activate(rootSpan);
-      client.request(HttpMethod.GET, 8080, "localhost", "/1", onSuccess(req -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, "localhost", "/1", onSuccess(req -> {
         req.send(onSuccess(resp -> {
           assertEquals(rootSpan, tracer.activeSpan());
           assertEquals(200, resp.statusCode());
@@ -151,7 +151,7 @@ public abstract class HttpTracingTestBase extends HttpTestBase {
 
     List<Span> lastServerSpans = finishedSpans.stream()
       .filter(mockSpan ->  mockSpan.getTags().get("span_kind").equals("server"))
-      .filter(mockSpan -> mockSpan.getTags().get("http.url").contains("localhost:8080/2"))
+      .filter(mockSpan -> mockSpan.getTags().get("http.url").contains("localhost:" + DEFAULT_HTTP_PORT+ "/2"))
       .collect(Collectors.toList());
     assertEquals(1, lastServerSpans.size());
 
@@ -162,17 +162,17 @@ public abstract class HttpTracingTestBase extends HttpTestBase {
       assertEquals("q=true", server2Span.getTags().get("http.query"));
       Span client2Span = spanMap.get(server2Span.parentId);
       assertEquals("GET", client2Span.operation);
-      assertEquals(scheme + "://localhost:8080/2?q=true", client2Span.getTags().get("http.url"));
+      assertEquals(scheme + "://localhost:" + DEFAULT_HTTP_PORT+ "/2?q=true", client2Span.getTags().get("http.url"));
       assertEquals("200", client2Span.getTags().get("http.status_code"));
       assertEquals("client", client2Span.getTags().get("span_kind"));
       Span server1Span = spanMap.get(client2Span.parentId);
       assertEquals("GET", server1Span.operation);
-      assertEquals(scheme + "://localhost:8080/1", server1Span.getTags().get("http.url"));
+      assertEquals(scheme + "://localhost:" + DEFAULT_HTTP_PORT+ "/1", server1Span.getTags().get("http.url"));
       assertEquals("200", client2Span.getTags().get("http.status_code"));
       assertEquals("server", server1Span.getTags().get("span_kind"));
       Span client1Span = spanMap.get(server1Span.parentId);
       assertEquals("GET", client1Span.operation);
-      assertEquals(scheme + "://localhost:8080/1", client1Span.getTags().get("http.url"));
+      assertEquals(scheme + "://localhost:" + DEFAULT_HTTP_PORT+ "/1", client1Span.getTags().get("http.url"));
       assertEquals("200", client2Span.getTags().get("http.status_code"));
       assertEquals("client", client1Span.getTags().get("span_kind"));
     }

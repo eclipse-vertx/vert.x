@@ -1,5 +1,6 @@
 package io.vertx.core.net.impl;
 
+import io.vertx.core.http.HttpTestBase;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -62,12 +63,12 @@ public class HostAndPortTest {
   public void testParseHostAndPort() {
     assertHostAndPort("10.0.0.1.nip.io", -1, "10.0.0.1.nip.io");
     assertHostAndPort("10.0.0.1.nip.io", 8443, "10.0.0.1.nip.io:8443");
-    assertHostAndPort("example.com", 8080, "example.com:8080");
+    assertHostAndPort("example.com", HttpTestBase.DEFAULT_HTTP_PORT, "example.com:" + HttpTestBase.DEFAULT_HTTP_PORT);
     assertHostAndPort("example.com", -1, "example.com");
     assertHostAndPort("0.1.2.3", -1, "0.1.2.3");
     assertHostAndPort("[0::]", -1, "[0::]");
     assertHostAndPort("", -1, "");
-    assertHostAndPort("", 8080, ":8080");
+    assertHostAndPort("", HttpTestBase.DEFAULT_HTTP_PORT, ":" + HttpTestBase.DEFAULT_HTTP_PORT);
     assertNull(HostAndPortImpl.parseHostAndPort("/", -1));
     assertNull(HostAndPortImpl.parseHostAndPort("10.0.0.1:x", -1));
   }

@@ -3702,7 +3702,7 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testEnableOriginHeaderV13() {
-    testOriginHeader(WebsocketVersion.V13, true, null, HttpHeaders.ORIGIN, "http://localhost:8080");
+    testOriginHeader(WebsocketVersion.V13, true, null, HttpHeaders.ORIGIN, "http://localhost:" + DEFAULT_HTTP_PORT);
   }
 
   @Test
@@ -3717,7 +3717,7 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testEnableOriginHeaderV08() {
-    testOriginHeader(WebsocketVersion.V08, true, null, HttpHeaderNames.SEC_WEBSOCKET_ORIGIN, "http://localhost:8080");
+    testOriginHeader(WebsocketVersion.V08, true, null, HttpHeaderNames.SEC_WEBSOCKET_ORIGIN, "http://localhost:" + DEFAULT_HTTP_PORT);
   }
 
   @Test
@@ -3732,7 +3732,7 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testEnableOriginHeaderV07() {
-    testOriginHeader(WebsocketVersion.V07, true, null, HttpHeaderNames.SEC_WEBSOCKET_ORIGIN, "http://localhost:8080");
+    testOriginHeader(WebsocketVersion.V07, true, null, HttpHeaderNames.SEC_WEBSOCKET_ORIGIN, "http://localhost:" + DEFAULT_HTTP_PORT);
   }
 
   @Test
