@@ -15,22 +15,11 @@ import io.vertx.core.shareddata.ClusterSerializable;
 import io.vertx.core.shareddata.Shareable;
 
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static io.vertx.core.json.impl.JsonUtil.BASE64_DECODER;
-import static io.vertx.core.json.impl.JsonUtil.BASE64_ENCODER;
-import static io.vertx.core.json.impl.JsonUtil.DEFAULT_CLONER;
-import static io.vertx.core.json.impl.JsonUtil.asStream;
-import static io.vertx.core.json.impl.JsonUtil.deepCopy;
-import static io.vertx.core.json.impl.JsonUtil.wrapJsonValue;
+import static io.vertx.core.json.impl.JsonUtil.*;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
 /**
