@@ -13,6 +13,7 @@ package io.vertx.core.http;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.MultiMap;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.Address;
@@ -32,7 +33,8 @@ import java.net.URL;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-@DataObject(generateConverter = true)
+@DataObject
+@JsonGen(publicConverter = false)
 public class WebSocketConnectOptions extends RequestOptions {
 
   /**

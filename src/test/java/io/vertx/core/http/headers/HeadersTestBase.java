@@ -69,7 +69,7 @@ public abstract class HeadersTestBase {
     HashMap<String, String> map = new HashMap<>();
     map.put("a", "b");
     map.put("c", "d");
-    assertEquals("a=b\nc=d\n", mmap.addAll(map).toString());
+    assertEquals("a=b\nc=d\n", sortByLine(mmap.addAll(map).toString()));
   }
 
   @Test

@@ -13,15 +13,24 @@ package io.vertx.core.buffer.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.UnpooledHeapByteBuf;
-import io.netty.buffer.UnpooledUnsafeHeapByteBuf;
 
 /**
  * An un-releasable, un-pooled, un-instrumented heap {@code ByteBuf}.
  */
 final class VertxHeapByteBuf extends UnpooledHeapByteBuf {
 
+  private static final byte[] EMPTY = new byte[0];
+
   public VertxHeapByteBuf(ByteBufAllocator alloc, int initialCapacity, int maxCapacity) {
     super(alloc, initialCapacity, maxCapacity);
+  }
+
+  @Override
+  protected byte[] allocateArray(int initialCapacity) {
+    if (initialCapacity == 0) {
+      return EMPTY;
+    }
+    return super.allocateArray(initialCapacity);
   }
 
   @Override

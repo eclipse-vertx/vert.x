@@ -13,6 +13,7 @@ package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Arguments;
@@ -94,7 +95,8 @@ import java.util.function.Function;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject(generateConverter = true, publicConverter = false)
+@DataObject
+@JsonGen(publicConverter = false)
 public class PemKeyCertOptions implements KeyCertOptions {
 
   private KeyStoreHelper helper;

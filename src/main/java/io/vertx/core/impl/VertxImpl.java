@@ -419,7 +419,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public HttpClientBuilder httpClientBuilder() {
-    return new HttpClientBuilderImpl(this);
+    return new HttpClientBuilderInternal(this);
   }
 
   public EventBus eventBus() {

@@ -20,9 +20,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.ByteBufOutputStream;
-import io.netty.buffer.Unpooled;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.buffer.impl.BufferInternal;
+import io.vertx.core.buffer.impl.VertxByteBufAllocator;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.EncodeException;
 import io.vertx.core.json.JsonArray;
@@ -105,16 +105,19 @@ public class JacksonCodec implements JsonCodec {
 
   @Override
   public Buffer toBuffer(Object object, boolean pretty) throws EncodeException {
-    ByteBuf buf = Unpooled.buffer();
+    // these buffers are not pooled and not instrumented, which make them faster
+    // This can use 0 as initial capacity, because Jackson will flush the tmp encoded buffer in one go, on flush
+    // causing a single resize of the right final size
+    ByteBuf nettyBuffer = VertxByteBufAllocator.DEFAULT.heapBuffer(0, Integer.MAX_VALUE);
     // There is no need to use a try with resources here as jackson
     // is a well-behaved and always calls the closes all streams in the
     // "finally" block bellow.
-    ByteBufOutputStream out = new ByteBufOutputStream(buf);
+    ByteBufOutputStream out = new ByteBufOutputStream(nettyBuffer);
     JsonGenerator generator = createGenerator(out, pretty);
     try {
       encodeJson(object, generator);
       generator.flush();
-      return BufferInternal.buffer(buf);
+      return BufferInternal.buffer(nettyBuffer);
     } catch (IOException e) {
       throw new EncodeException(e.getMessage(), e);
     } finally {
@@ -279,7 +282,41 @@ public class JacksonCodec implements JsonCodec {
         generator.writeStartObject();
         for (Map.Entry<String, ?> e : ((Map<String, ?>)json).entrySet()) {
           generator.writeFieldName(e.getKey());
-          encodeJson(e.getValue(), generator);
+          Object value = e.getValue();
+          encodeJson0(value, generator);
+        }
+        generator.writeEndObject();
+      } else if (json instanceof List) {
+        generator.writeStartArray();
+        for (Object item : (List<?>) json) {
+          encodeJson0(item, generator);
+        }
+        generator.writeEndArray();
+      } else if (!encodeSingleType(generator, json)) {
+        throw new EncodeException("Mapping " + json.getClass().getName() + "  is not available without Jackson Databind on the classpath");
+      }
+    } catch (IOException e) {
+      throw new EncodeException(e.getMessage(), e);
+    }
+  }
+
+  /**
+   * This is a way to overcome a limit of OpenJDK on MaxRecursiveInlineLevel:
+   * avoiding the "direct" recursive calls allow the JIT to have a better inlining budget for the recursive calls.
+   */
+  private static void encodeJson0(Object json, JsonGenerator generator) throws EncodeException {
+    try {
+      if (json instanceof JsonObject) {
+        json = ((JsonObject)json).getMap();
+      } else if (json instanceof JsonArray) {
+        json = ((JsonArray)json).getList();
+      }
+      if (json instanceof Map) {
+        generator.writeStartObject();
+        for (Map.Entry<String, ?> e : ((Map<String, ?>)json).entrySet()) {
+          generator.writeFieldName(e.getKey());
+          Object value = e.getValue();
+          encodeJson(value, generator);
         }
         generator.writeEndObject();
       } else if (json instanceof List) {
@@ -288,49 +325,60 @@ public class JacksonCodec implements JsonCodec {
           encodeJson(item, generator);
         }
         generator.writeEndArray();
-      } else if (json instanceof String) {
-        generator.writeString((String) json);
-      } else if (json instanceof Number) {
-        if (json instanceof Short) {
-          generator.writeNumber((Short) json);
-        } else if (json instanceof Integer) {
-          generator.writeNumber((Integer) json);
-        } else if (json instanceof Long) {
-          generator.writeNumber((Long) json);
-        } else if (json instanceof Float) {
-          generator.writeNumber((Float) json);
-        } else if (json instanceof Double) {
-          generator.writeNumber((Double) json);
-        } else if (json instanceof Byte) {
-          generator.writeNumber((Byte) json);
-        } else if (json instanceof BigInteger) {
-          generator.writeNumber((BigInteger) json);
-        } else if (json instanceof BigDecimal) {
-          generator.writeNumber((BigDecimal) json);
-        } else {
-          generator.writeNumber(((Number) json).doubleValue());
-        }
-      } else if (json instanceof Boolean) {
-        generator.writeBoolean((Boolean)json);
-      } else if (json instanceof Instant) {
-        // RFC-7493
-        generator.writeString((ISO_INSTANT.format((Instant)json)));
-      } else if (json instanceof byte[]) {
-        // RFC-7493
-        generator.writeString(BASE64_ENCODER.encodeToString((byte[]) json));
-      } else if (json instanceof Buffer) {
-        // RFC-7493
-        generator.writeString(BASE64_ENCODER.encodeToString(((Buffer) json).getBytes()));
-      } else if (json instanceof Enum) {
-        // vert.x extra (non standard but allowed conversion)
-        generator.writeString(((Enum<?>) json).name());
-      } else if (json == null) {
-        generator.writeNull();
-      } else {
+      } else if (!encodeSingleType(generator, json)) {
         throw new EncodeException("Mapping " + json.getClass().getName() + "  is not available without Jackson Databind on the classpath");
       }
     } catch (IOException e) {
       throw new EncodeException(e.getMessage(), e);
+    }
+  }
+
+  private static boolean encodeSingleType(JsonGenerator generator, Object json) throws IOException {
+    if (json == null) {
+      generator.writeNull();
+    } else if (json instanceof String) {
+      generator.writeString((String) json);
+    } else if (json instanceof Number) {
+      encodeNumber(generator, json);
+    } else if (json instanceof Boolean) {
+      generator.writeBoolean((Boolean)json);
+    } else if (json instanceof Instant) {
+      // RFC-7493
+      generator.writeString((ISO_INSTANT.format((Instant)json)));
+    } else if (json instanceof byte[]) {
+      // RFC-7493
+      generator.writeString(BASE64_ENCODER.encodeToString((byte[]) json));
+    } else if (json instanceof Buffer) {
+      // RFC-7493
+      generator.writeString(BASE64_ENCODER.encodeToString(((Buffer) json).getBytes()));
+    } else if (json instanceof Enum) {
+      // vert.x extra (non standard but allowed conversion)
+      generator.writeString(((Enum<?>) json).name());
+    } else {
+      return false;
+    }
+    return true;
+  }
+
+  private static void encodeNumber(JsonGenerator generator, Object json) throws IOException {
+    if (json instanceof Short) {
+      generator.writeNumber((Short) json);
+    } else if (json instanceof Integer) {
+      generator.writeNumber((Integer) json);
+    } else if (json instanceof Long) {
+      generator.writeNumber((Long) json);
+    } else if (json instanceof Float) {
+      generator.writeNumber((Float) json);
+    } else if (json instanceof Double) {
+      generator.writeNumber((Double) json);
+    } else if (json instanceof Byte) {
+      generator.writeNumber((Byte) json);
+    } else if (json instanceof BigInteger) {
+      generator.writeNumber((BigInteger) json);
+    } else if (json instanceof BigDecimal) {
+      generator.writeNumber((BigDecimal) json);
+    } else {
+      generator.writeNumber(((Number) json).doubleValue());
     }
   }
 

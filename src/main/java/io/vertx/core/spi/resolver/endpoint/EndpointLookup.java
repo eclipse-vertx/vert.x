@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.net.impl.resolver;
+package io.vertx.core.spi.resolver.endpoint;
 
 import io.vertx.core.net.SocketAddress;
 

@@ -1,13 +1,23 @@
 package io.vertx.core.net;
 
-import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.codegen.annotations.DataObject;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.impl.HostAndPortImpl;
 
 /**
  * A combination of host and port.
  */
-@VertxGen
+@DataObject
 public interface HostAndPort {
+
+  static HostAndPort fromJson(JsonObject json) {
+    int port = json.getInteger("port", -1);
+    String host = json.getString("host");
+    if (host != null) {
+      return HostAndPort.create(host, port);
+    }
+    return null;
+  }
 
   /**
    * Create an instance.
@@ -29,5 +39,14 @@ public interface HostAndPort {
    * @return the port value
    */
   int port();
+
+  default JsonObject toJson() {
+    JsonObject json = new JsonObject().put("host", host());
+    int port = port();
+    if (port > 0) {
+      json.put("port", port);
+    }
+    return json;
+  }
 
 }

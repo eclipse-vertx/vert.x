@@ -13,6 +13,7 @@ package io.vertx.core.net;
 
 import io.netty.handler.logging.ByteBufFormat;
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 
@@ -26,7 +27,8 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject(generateConverter = true, publicConverter = false)
+@DataObject
+@JsonGen(publicConverter = false)
 public class NetClientOptions extends ClientOptionsBase {
 
   /**

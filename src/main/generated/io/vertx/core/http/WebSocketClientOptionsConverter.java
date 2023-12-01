@@ -17,7 +17,7 @@ public class WebSocketClientOptionsConverter {
   private static final Base64.Decoder BASE64_DECODER = JsonUtil.BASE64_DECODER;
   private static final Base64.Encoder BASE64_ENCODER = JsonUtil.BASE64_ENCODER;
 
-   static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, WebSocketClientOptions obj) {
+  public static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, WebSocketClientOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
         case "defaultHost":
@@ -99,11 +99,11 @@ public class WebSocketClientOptionsConverter {
     }
   }
 
-   static void toJson(WebSocketClientOptions obj, JsonObject json) {
+  public static void toJson(WebSocketClientOptions obj, JsonObject json) {
     toJson(obj, json.getMap());
   }
 
-   static void toJson(WebSocketClientOptions obj, java.util.Map<String, Object> json) {
+  public static void toJson(WebSocketClientOptions obj, java.util.Map<String, Object> json) {
     if (obj.getDefaultHost() != null) {
       json.put("defaultHost", obj.getDefaultHost());
     }

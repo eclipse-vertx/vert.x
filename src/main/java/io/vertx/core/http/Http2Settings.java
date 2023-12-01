@@ -14,6 +14,7 @@ package io.vertx.core.http;
 import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
 
@@ -28,7 +29,8 @@ import java.util.Map;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-@DataObject(generateConverter = true, publicConverter = false)
+@DataObject
+@JsonGen(publicConverter = false)
 public class Http2Settings {
 
   /**

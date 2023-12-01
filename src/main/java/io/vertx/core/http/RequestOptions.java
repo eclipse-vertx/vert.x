@@ -13,6 +13,7 @@ package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.MultiMap;
 import io.vertx.core.VertxException;
 import io.vertx.core.json.JsonObject;
@@ -31,7 +32,8 @@ import static io.vertx.codegen.annotations.GenIgnore.PERMITTED_TYPE;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-@DataObject(generateConverter = true)
+@DataObject
+@JsonGen(publicConverter = false)
 public class RequestOptions {
 
   /**
@@ -161,14 +163,7 @@ public class RequestOptions {
     }
     JsonObject server = json.getJsonObject("server");
     if (server != null) {
-      Integer port = server.getInteger("port", 80);
-      String host = server.getString("host");
-      String path = server.getString("path");
-      if (host != null) {
-        this.server = SocketAddress.inetSocketAddress(port, host);
-      } else if (path != null) {
-        this.server = SocketAddress.domainSocketAddress(path);
-      }
+      this.server = SocketAddress.fromJson(server);
     }
     JsonObject headers = json.getJsonObject("headers");
     if (headers != null) {
@@ -646,14 +641,7 @@ public class RequestOptions {
     Address serverAddr = this.server;
     if (serverAddr instanceof SocketAddress) {
       SocketAddress socketAddr = (SocketAddress) serverAddr;
-      JsonObject server = new JsonObject();
-      if (socketAddr.isInetSocket()) {
-        server.put("host", socketAddr.host());
-        server.put("port", socketAddr.port());
-      } else {
-        server.put("path", socketAddr.path());
-      }
-      json.put("server", server);
+      json.put("server", socketAddr.toJson());
     }
     if (this.headers != null) {
       JsonObject headers = new JsonObject();

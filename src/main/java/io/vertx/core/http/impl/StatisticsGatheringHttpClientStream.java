@@ -21,7 +21,7 @@ import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.net.impl.resolver.EndpointRequest;
+import io.vertx.core.spi.resolver.endpoint.EndpointRequest;
 import io.vertx.core.streams.WriteStream;
 
 /**
