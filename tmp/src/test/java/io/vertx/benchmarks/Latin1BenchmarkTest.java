@@ -107,6 +107,16 @@ public class Latin1BenchmarkTest {
 
 
   @Benchmark
+  public int testBaseline (){
+    AtomicInteger antiRemoval = new AtomicInteger();
+    SAMPLES.forEach(s->{
+      byte[] bytes = new byte[s.length()];
+      antiRemoval.addAndGet(bytes.length);
+    });
+    return antiRemoval.get();
+  }
+
+  @Benchmark
   public int testLatinBytesV1a (){
     AtomicInteger antiRemoval = new AtomicInteger();
     SAMPLES.forEach(s->{
