@@ -277,13 +277,13 @@ public abstract class FileResolverTestBase extends VertxTestBase {
   @Test
   public void testSendFileFromClasspath() {
     waitFor(2);
-    vertx.createHttpServer(new HttpServerOptions().setPort(8080)).requestHandler(res -> {
+    vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).requestHandler(res -> {
       res.response()
         .sendFile("webroot/somefile.html")
         .onComplete(onSuccess(v -> complete()));
     }).listen().onComplete(onSuccess(res -> {
       vertx.createHttpClient(new HttpClientOptions())
-        .request(HttpMethod.GET, 8080, "localhost", "/")
+        .request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, "localhost", "/")
         .compose(req -> req
           .send()
           .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))

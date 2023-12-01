@@ -154,12 +154,12 @@ public class VertxTest extends AsyncTestBase {
             closed1.set(true);
           });
         })
-        .listen(8080, "localhost")
+        .listen(HttpTestBase.DEFAULT_HTTP_PORT, "localhost")
         .onComplete(onSuccess(server -> latch.countDown()));
       awaitLatch(latch);
       HttpClient client = vertx.createHttpClient();
       // client.connect(1234, "localhost");
-      client.request(HttpMethod.GET, 8080, "localhost", "/").onSuccess(req -> {
+      client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, "localhost", "/").onSuccess(req -> {
         req.send();
       });
       (((CleanableHttpClient)client).delegate).netClient().closeFuture().onComplete(ar -> {
@@ -210,11 +210,11 @@ public class VertxTest extends AsyncTestBase {
               "\r\n");
           });
         })
-        .listen(8080, "localhost")
+        .listen(HttpTestBase.DEFAULT_HTTP_PORT, "localhost")
         .onComplete(onSuccess(server -> latch.countDown()));
       awaitLatch(latch);
       HttpClient client = vertx.createHttpClient(new PoolOptions().setHttp1MaxSize(1));
-      Future<HttpClientRequest> fut = client.request(HttpMethod.GET, 8080, "localhost", "/");
+      Future<HttpClientRequest> fut = client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, "localhost", "/");
       assertWaitUntil(fut::succeeded);
       WeakReference<HttpClient> ref = new WeakReference<>(client);
       client = null;
@@ -245,10 +245,10 @@ public class VertxTest extends AsyncTestBase {
         req.connection().closeHandler(v -> {
           connected.set(false);
         });
-      }).listen(8080, "localhost"));
+      }).listen(HttpTestBase.DEFAULT_HTTP_PORT, "localhost"));
       VertxInternal vertx2 = (VertxInternal) Vertx.vertx();
       HttpClient client = vertx2.createHttpClient();
-      client.request(HttpMethod.GET, 8080, "localhost", "/").onComplete(onSuccess(req -> {
+      client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, "localhost", "/").onComplete(onSuccess(req -> {
         req.send();
       }));
       waitUntil(connected::get);

@@ -154,7 +154,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
     awaitLatch(latch);
     client.close();
     AsyncTestBase.assertWaitUntil(() -> metrics.endpoints().isEmpty());
-    assertEquals(null, metrics.connectionCount("localhost:8080"));
+    assertEquals(null, metrics.connectionCount("localhost:" + DEFAULT_HTTP_PORT));
     AsyncTestBase.assertWaitUntil(() -> !serverMetric.get().socket.connected.get());
     AsyncTestBase.assertWaitUntil(() -> contentLength == serverMetric.get().socket.bytesRead.get());
     AsyncTestBase.assertWaitUntil(() -> contentLength  == serverMetric.get().socket.bytesWritten.get());
@@ -211,14 +211,14 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
       });
     });
     CountDownLatch listenLatch = new CountDownLatch(1);
-    server.listen(8080, "localhost").onComplete(onSuccess(s -> { listenLatch.countDown(); }));
+    server.listen(HttpTestBase.DEFAULT_HTTP_PORT, "localhost").onComplete(onSuccess(s -> { listenLatch.countDown(); }));
     awaitLatch(listenLatch);
     FakeHttpClientMetrics clientMetrics = FakeMetricsBase.getMetrics(client);
     CountDownLatch responseBeginLatch = new CountDownLatch(1);
     CountDownLatch responseEndLatch = new CountDownLatch(1);
     Future<HttpClientRequest> request = client.request(new RequestOptions()
       .setMethod(HttpMethod.POST)
-      .setPort(8080)
+      .setPort(HttpTestBase.DEFAULT_HTTP_PORT)
       .setHost("localhost")
       .setURI("/somepath")).onComplete(onSuccess(req -> {
       req

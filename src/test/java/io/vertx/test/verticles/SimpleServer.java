@@ -15,6 +15,7 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.HttpTestBase;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -23,7 +24,7 @@ public class SimpleServer extends AbstractVerticle {
 
   @Override
   public void start(Promise<Void> startPromise) throws Exception {
-    HttpServer server = vertx.createHttpServer(new HttpServerOptions().setPort(8080));
+    HttpServer server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
     server.requestHandler(req -> req.response().end());
     server.listen().onComplete(res -> {
       if (res.succeeded()) {
