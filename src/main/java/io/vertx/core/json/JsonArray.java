@@ -67,6 +67,13 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   }
 
   /**
+   * Create an empty instance with initialCapacity
+   */
+  public JsonArray(int initialCapacity) {
+    list = new ArrayList<>(initialCapacity);
+  }
+
+  /**
    * Create an instance from a List. The List is not copied.
    *
    * @param list the underlying backing list
