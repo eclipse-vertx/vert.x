@@ -12,6 +12,7 @@
 package io.vertx.core.json;
 
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.json.impl.JsonUtil;
 import io.vertx.core.shareddata.Shareable;
 import io.vertx.test.core.TestUtils;
 import org.junit.Before;
@@ -1972,5 +1973,20 @@ public class JsonObjectTest {
   @Test
   public void testJsonObjectOfEmpty() {
     assertEquals(new JsonObject(), JsonObject.of());
+  }
+
+  @Test
+  public void testNull() {
+    assertNull(JsonUtil.wrapJsonValue(null));
+
+    JsonObject jo = JsonObject.of("k", null, "", null);
+
+    AtomicInteger cnt = new AtomicInteger();
+    jo.iterator().forEachRemaining(e -> {
+      assertNotNull(e.getKey());
+      assertNull(e.getValue());// null is ok
+      cnt.incrementAndGet();
+    });
+    assertEquals(2, cnt.get());
   }
 }

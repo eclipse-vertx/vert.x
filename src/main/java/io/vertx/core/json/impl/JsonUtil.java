@@ -19,6 +19,7 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -86,8 +87,9 @@ public final class JsonUtil {
     throw new IllegalStateException("Illegal type in Json: " + o.getClass());
   };
 
+  // todo replace with HashMap? → Less memory usage, but random keys order, but .stream().sorted()?
   @SuppressWarnings("rawtypes")
-  public static final IntFunction<Map> MAP_CREATOR = size -> new HashMap(size < 3
+  public static final IntFunction<Map> MAP_CREATOR = size -> new LinkedHashMap(size < 3
       ? 3
       : size * 4 / 3 + 1);// ~ size / DEFAULT_LOAD_FACTOR(0.75) + 1
 
