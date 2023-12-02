@@ -1989,4 +1989,16 @@ public class JsonObjectTest {
     });
     assertEquals(2, cnt.get());
   }
+
+  @Test
+  public void testNPE (){
+    assertEquals(JsonObject.of(), JsonObject.of());
+
+    try {
+      JsonObject.of().equals(null);
+      fail("where is NPE?");
+    } catch (NullPointerException ok){
+      //assertEquals("java.lang.NullPointerException: Cannot invoke \"Object.getClass()\" because \"otherJsonObject\" is null", ok.toString());
+    }
+  }
 }

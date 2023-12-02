@@ -56,15 +56,22 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   @SuppressWarnings("unchecked")
-  private static <T> Map<String,T> map(int size) {
-    return (Map<String,T>) MAP_CREATOR.apply(size);
+  private static <T> Map<String,T> map(int expectedSize) {
+    return (Map<String,T>) MAP_CREATOR.apply(expectedSize);
   }
 
   /**
    * Create a new, empty instance
    */
   public JsonObject() {
-    map = map(8);
+    map = map(0);// => 3
+  }
+
+  /**
+   * Create a new, empty instance with expected size (initial capacity will be calculated)
+   */
+  public JsonObject(int expectedSize) {
+    map = map(expectedSize);
   }
 
   /**
@@ -1176,19 +1183,15 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   @Override
-  public boolean equals(Object o) {
-    return equalsImpl(o);
-  }
-
-  private final boolean equalsImpl(Object o) {
+  public boolean equals(Object otherJsonObject) {
     // self check
-    if (this == o)
+    if (this == otherJsonObject)
       return true;
-    // type check, cast and null check
-    if (!(o instanceof JsonObject))
+    // type check, cast, null check and "Helpful NullPointerException"
+    if (getClass() != otherJsonObject.getClass())
       return false;
 
-    JsonObject other = (JsonObject) o;
+    JsonObject other = (JsonObject) otherJsonObject;
     // size check
     if (this.size() != other.size())
       return false;

@@ -88,6 +88,7 @@ public final class JsonUtil {
   };
 
   // todo replace with HashMap? → Less memory usage, but random keys order, but .stream().sorted()?
+  // immutable Map.of javadoc: The iteration order of mappings is unspecified and is subject to change
   @SuppressWarnings("rawtypes")
   public static final IntFunction<Map> MAP_CREATOR = size -> new LinkedHashMap(size < 3
       ? 3
