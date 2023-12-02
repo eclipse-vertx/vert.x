@@ -19,6 +19,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static io.vertx.core.json.impl.JsonUtil.*;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
@@ -100,12 +101,13 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    */
   public static JsonArray of(Object... values) {
     // implicit nullcheck of values
-    if (values.length == 0) {
+    int len = values.length;
+    if (len == 0) {
       return new JsonArray();
     }
 
-    JsonArray arr = new JsonArray(new ArrayList<>(values.length));
-    for(int i = 0; i< values.length; ++i) {
+    JsonArray arr = new JsonArray(new ArrayList<>(len));
+    for (int i = 0; i < len; ++i) {
       arr.add(values[i]);
     }
 
@@ -616,7 +618,13 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return a Stream
    */
   public Stream<Object> stream() {
-    return asStream(iterator());
+    // JsonUtil.asStream(iterator()) is too generic
+    return StreamSupport.stream(spliterator(), false);
+  }
+
+  @Override
+  public Spliterator<Object> spliterator() {
+    return Spliterators.spliterator(iterator(), list.size(), Spliterator.ORDERED);
   }
 
   @Override

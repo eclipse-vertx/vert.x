@@ -128,6 +128,11 @@ public final class JsonUtil {
     return val;
   }
 
+  /**
+   @deprecated too generic
+   @see Iterable#spliterator()
+   */
+  @Deprecated
   public static <T> Stream<T> asStream(Iterator<T> sourceIterator) {
     Iterable<T> iterable = () -> sourceIterator;
     return StreamSupport.stream(iterable.spliterator(), false);
