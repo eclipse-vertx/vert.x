@@ -1182,16 +1182,24 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     return encode();
   }
 
+  /**
+   How to Write an Equality Method in Java
+   https://www.artima.com/articles/how-to-write-an-equality-method-in-java
+   */
+  protected boolean canEqual(Object other) {
+    return getClass() == other.getClass();
+  }
+
   @Override
-  public boolean equals(Object otherJsonObject) {
+  public boolean equals(Object o) {
     // self check
-    if (this == otherJsonObject)
+    if (this == o)
       return true;
-    // type check, cast, null check and "Helpful NullPointerException"
-    if (getClass() != otherJsonObject.getClass())
+    // type check, cast, null check
+    if (!(o instanceof JsonObject && ((JsonObject)o).canEqual(this)))
       return false;
 
-    JsonObject other = (JsonObject) otherJsonObject;
+    JsonObject other = (JsonObject) o;
     // size check
     if (this.size() != other.size())
       return false;
