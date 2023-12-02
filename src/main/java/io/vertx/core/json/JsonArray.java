@@ -78,11 +78,15 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    *
    * @param list the underlying backing list
    */
-  public JsonArray(List list) {
-    if (list == null) {
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  public JsonArray(Collection list) {
+    if (list instanceof List) {
+      this.list = (List) list;
+    } else if (list == null) {
       throw new NullPointerException();
+    } else {
+      this.list = new ArrayList(list);
     }
-    this.list = list;
   }
 
   /**
