@@ -18,6 +18,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static io.vertx.core.json.impl.JsonUtil.*;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
@@ -1122,8 +1123,16 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @return a Stream
    */
   public Stream<Map.Entry<String, Object>> stream() {
-    return asStream(iterator());
+    // JsonUtil.asStream(iterator()) is too generic
+    return StreamSupport.stream(spliterator(), false);
   }
+
+
+  @Override
+  public Spliterator<Map.Entry<String,Object>> spliterator() {
+    return Spliterators.spliterator(iterator(), map.size(), Spliterator.DISTINCT | Spliterator.NONNULL);
+  }
+
 
   /**
    * Get an Iterator of the entries in the JSON object.
