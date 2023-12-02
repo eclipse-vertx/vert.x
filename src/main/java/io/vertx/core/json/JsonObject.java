@@ -1160,6 +1160,10 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
 
   @Override
   public boolean equals(Object o) {
+    return equalsImpl(o);
+  }
+
+  private final boolean equalsImpl(Object o) {
     // self check
     if (this == o)
       return true;
@@ -1272,6 +1276,8 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
       final Object wrapped = wrapJsonValue(val);
 
       if (val != wrapped) {
+        // Map.entry disallows null keys and values: we disallow null keys,
+        // (val != wrapped) skips null values (wrapJsonValue doesn't wrap null)
         return Map.entry(entry.getKey(), wrapped);
       }
 
