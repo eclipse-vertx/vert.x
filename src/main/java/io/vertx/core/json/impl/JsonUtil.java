@@ -17,10 +17,12 @@ import io.vertx.core.shareddata.Shareable;
 
 import java.time.Instant;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -63,10 +65,6 @@ public final class JsonUtil {
    * @return wrapped type or {@code val} if not applicable.
    */
   public static Object wrapJsonValue(Object val) {
-    if (val == null) {
-      return null;
-    }
-
     // perform wrapping
     if (val instanceof Map) {
       val = new JsonObject((Map) val);
@@ -81,13 +79,17 @@ public final class JsonUtil {
     } else if (val instanceof Enum) {
       val = ((Enum) val).name();
     }
-
-    return val;
+    return val; // includes null
   }
 
   public static final Function<Object, ?> DEFAULT_CLONER = o -> {
     throw new IllegalStateException("Illegal type in Json: " + o.getClass());
   };
+
+  @SuppressWarnings("rawtypes")
+  public static final IntFunction<Map> MAP_CREATOR = size -> new HashMap(size < 3
+      ? 3
+      : size * 4 / 3 + 1);// ~ size / DEFAULT_LOAD_FACTOR(0.75) + 1
 
   @SuppressWarnings("unchecked")
   public static Object deepCopy(Object val, Function<Object, ?> copier) {
