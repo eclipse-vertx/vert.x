@@ -164,6 +164,8 @@ public abstract class EventBusTracingTestBase extends VertxTestBase {
     assertSingleTrace(finishedSpans);
     finishedSpans.forEach(span -> {
       assertEquals("send", span.operation);
+      assertEquals("vertx-eventbus", span.getTags().get("messaging.system"));
+      assertEquals("publish", span.getTags().get("messaging.operation"));
     });
   }
 
