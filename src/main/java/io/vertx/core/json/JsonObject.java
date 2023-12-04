@@ -38,7 +38,7 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
  */
 public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterSerializable, Shareable {
 
-  private final Map<String, Object> map;
+  private Map<String, Object> map;
 
   /**
    * Create an instance from a string of JSON
@@ -1267,8 +1267,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     int length = buffer.getInt(pos);
     int start = pos + 4;
     Buffer buf = buffer.getBuffer(start, start + length);
-    map.clear();
-    map.putAll(Json.CODEC.fromBuffer(buf, Map.class));
+    map = Json.CODEC.fromBuffer(buf, Map.class);
     return pos + length + 4;
   }
 
