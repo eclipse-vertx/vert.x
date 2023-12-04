@@ -18,6 +18,7 @@ import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.Future;
 import io.vertx.core.*;
+import io.vertx.core.Timer;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.datagram.impl.DatagramSocketImpl;
@@ -435,6 +436,19 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   public long setTimer(long delay, Handler<Long> handler) {
     ContextInternal ctx = getOrCreateContext();
     return scheduleTimeout(ctx, false, delay, TimeUnit.MILLISECONDS, ctx.isDeployment(), handler);
+  }
+
+  @Override
+  public Timer timer(long delay, TimeUnit unit) {
+    Objects.requireNonNull(unit);
+    if (delay <= 0) {
+      throw new IllegalArgumentException("Invalid delay: " + delay);
+    }
+    ContextInternal ctx = getOrCreateContext();
+    io.netty.util.concurrent.ScheduledFuture<Void> fut = ctx.nettyEventLoop().schedule(() -> null, delay, unit);
+    TimerImpl promise = new TimerImpl(ctx, fut);
+    fut.addListener(promise);
+    return promise;
   }
 
   @Override
