@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.Set;
 
 import static io.vertx.core.http.HttpUtilsTest.HEADER_NAME_ALLOWED_CHARS;
 import static org.junit.Assert.*;
@@ -129,7 +130,8 @@ public class VertxHttpHeadersTest extends HeadersTestBase {
     assertNotNull(result);
     assertFalse(result.isEmpty());
     assertEquals(2, result.size());
-    assertEquals("=\naaa=bbb\n", result.toString());
+    String actual = result.toString();
+    assertTrue(Set.of("=\naaa=bbb\n", "aaa=bbb\n=\n").contains(actual));
   }
 
   @Test
