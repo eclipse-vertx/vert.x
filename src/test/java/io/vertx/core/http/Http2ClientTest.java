@@ -1709,70 +1709,60 @@ public class Http2ClientTest extends Http2TestBase {
 
   @Test
   public void testRejectClearTextUpgrade() throws Exception {
-    System.setProperty("vertx.disableH2c", "true");
-    try {
-      server.close();
-      server = vertx.createHttpServer(serverOptions.setUseAlpn(false).setSsl(false));
-      AtomicBoolean first = new AtomicBoolean(true);
-      server.requestHandler(req -> {
-        MultiMap headers = req.headers();
-        String upgrade = headers.get("upgrade");
-        if (first.getAndSet(false)) {
-          assertEquals("h2c", upgrade);
-        } else {
-          assertNull(upgrade);
-        }
-        assertEquals(DEFAULT_HTTPS_HOST, req.authority().host());
-        assertEquals(DEFAULT_HTTPS_PORT, req.authority().port());
-        req.response().end("wibble");
-        assertEquals(HttpVersion.HTTP_1_1, req.version());
-      });
-      startServer(testAddress);
-      client.close();
-      client = vertx.createHttpClient(clientOptions.setUseAlpn(false).setSsl(false), new PoolOptions().setHttp1MaxSize(1));
-      waitFor(5);
-      for (int i = 0;i < 5;i++) {
-        client.request(requestOptions).onComplete(onSuccess(req -> {
-          req.send().onComplete(onSuccess(resp -> {
-            Http2UpgradeClientConnection connection = (Http2UpgradeClientConnection) resp.request().connection();
-            Channel ch = connection.channel();
-            ChannelPipeline pipeline = ch.pipeline();
-            for (Map.Entry<String, ?> entry : pipeline) {
-              assertTrue("Was not expecting pipeline handler " + entry.getValue().getClass(), entry.getKey().equals("codec") || entry.getKey().equals("handler"));
-            }
-            assertEquals(200, resp.statusCode());
-            assertEquals(HttpVersion.HTTP_1_1, resp.version());
-            resp.bodyHandler(body -> {
-              complete();
-            });
-          }));
-        }));
+    server.close();
+    server = vertx.createHttpServer(serverOptions.setUseAlpn(false).setSsl(false).setHttp2ClearTextEnabled(false));
+    AtomicBoolean first = new AtomicBoolean(true);
+    server.requestHandler(req -> {
+      MultiMap headers = req.headers();
+      String upgrade = headers.get("upgrade");
+      if (first.getAndSet(false)) {
+        assertEquals("h2c", upgrade);
+      } else {
+        assertNull(upgrade);
       }
-      await();
-    } finally {
-      System.clearProperty("vertx.disableH2c");
+      assertEquals(DEFAULT_HTTPS_HOST, req.authority().host());
+      assertEquals(DEFAULT_HTTPS_PORT, req.authority().port());
+      req.response().end("wibble");
+      assertEquals(HttpVersion.HTTP_1_1, req.version());
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(clientOptions.setUseAlpn(false).setSsl(false), new PoolOptions().setHttp1MaxSize(1));
+    waitFor(5);
+    for (int i = 0;i < 5;i++) {
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        req.send().onComplete(onSuccess(resp -> {
+          Http2UpgradeClientConnection connection = (Http2UpgradeClientConnection) resp.request().connection();
+          Channel ch = connection.channel();
+          ChannelPipeline pipeline = ch.pipeline();
+          for (Map.Entry<String, ?> entry : pipeline) {
+            assertTrue("Was not expecting pipeline handler " + entry.getValue().getClass(), entry.getKey().equals("codec") || entry.getKey().equals("handler"));
+          }
+          assertEquals(200, resp.statusCode());
+          assertEquals(HttpVersion.HTTP_1_1, resp.version());
+          resp.bodyHandler(body -> {
+            complete();
+          });
+        }));
+      }));
     }
+    await();
   }
 
   @Test
   public void testRejectClearTextDirect() throws Exception {
-    System.setProperty("vertx.disableH2c", "true");
-    try {
-      server.close();
-      server = vertx.createHttpServer(serverOptions.setUseAlpn(false).setSsl(false));
-      server.requestHandler(req -> {
-        fail();
-      });
-      startServer(testAddress);
-      client.close();
-      client = vertx.createHttpClient(clientOptions.setUseAlpn(false).setSsl(false).setHttp2ClearTextUpgrade(false));
-      client.request(requestOptions).onComplete(onFailure(err -> {
-        testComplete();
-      }));
-      await();
-    } finally {
-      System.clearProperty("vertx.disableH2c");
-    }
+    server.close();
+    server = vertx.createHttpServer(serverOptions.setUseAlpn(false).setSsl(false).setHttp2ClearTextEnabled(false));
+    server.requestHandler(req -> {
+      fail();
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(clientOptions.setUseAlpn(false).setSsl(false).setHttp2ClearTextUpgrade(false));
+    client.request(requestOptions).onComplete(onFailure(err -> {
+      testComplete();
+    }));
+    await();
   }
 
   @Test

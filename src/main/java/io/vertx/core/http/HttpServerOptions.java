@@ -107,6 +107,11 @@ public class HttpServerOptions extends NetServerOptions {
   public static final List<HttpVersion> DEFAULT_ALPN_VERSIONS = Collections.unmodifiableList(Arrays.asList(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1));
 
   /**
+   * Default H2C is enabled = {@code true}
+   */
+  public static final boolean DEFAULT_HTTP2_CLEAR_TEXT_ENABLED = true;
+
+  /**
    * The default initial settings max concurrent stream for an HTTP/2 server = 100
    */
   public static final long DEFAULT_INITIAL_SETTINGS_MAX_CONCURRENT_STREAMS = 100;
@@ -199,6 +204,7 @@ public class HttpServerOptions extends NetServerOptions {
   private int maxFormAttributeSize;
   private Http2Settings initialSettings;
   private List<HttpVersion> alpnVersions;
+  private boolean http2ClearTextEnabled;
   private int http2ConnectionWindowSize;
   private boolean decompressionSupported;
   private boolean acceptUnmaskedFrames;
@@ -244,6 +250,7 @@ public class HttpServerOptions extends NetServerOptions {
     this.maxFormAttributeSize = other.getMaxFormAttributeSize();
     this.initialSettings = other.initialSettings != null ? new Http2Settings(other.initialSettings) : null;
     this.alpnVersions = other.alpnVersions != null ? new ArrayList<>(other.alpnVersions) : null;
+    this.http2ClearTextEnabled = other.http2ClearTextEnabled;
     this.http2ConnectionWindowSize = other.http2ConnectionWindowSize;
     this.decompressionSupported = other.isDecompressionSupported();
     this.acceptUnmaskedFrames = other.isAcceptUnmaskedFrames();
@@ -296,6 +303,7 @@ public class HttpServerOptions extends NetServerOptions {
     maxFormAttributeSize = DEFAULT_MAX_FORM_ATTRIBUTE_SIZE;
     initialSettings = new Http2Settings().setMaxConcurrentStreams(DEFAULT_INITIAL_SETTINGS_MAX_CONCURRENT_STREAMS);
     alpnVersions = new ArrayList<>(DEFAULT_ALPN_VERSIONS);
+    http2ClearTextEnabled = DEFAULT_HTTP2_CLEAR_TEXT_ENABLED;
     http2ConnectionWindowSize = DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE;
     decompressionSupported = DEFAULT_DECOMPRESSION_SUPPORTED;
     acceptUnmaskedFrames = DEFAULT_ACCEPT_UNMASKED_FRAMES;
@@ -814,6 +822,24 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public HttpServerOptions setAlpnVersions(List<HttpVersion> alpnVersions) {
     this.alpnVersions = alpnVersions;
+    return this;
+  }
+
+  /**
+   * @return whether the server accepts HTTP/2 over clear text connections
+   */
+  public boolean isHttp2ClearTextEnabled() {
+    return http2ClearTextEnabled;
+  }
+
+  /**
+   * Set whether HTTP/2 over clear text is enabled or disabled, default is enabled.
+   *
+   * @param http2ClearTextEnabled whether to accept HTTP/2 over clear text
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setHttp2ClearTextEnabled(boolean http2ClearTextEnabled) {
+    this.http2ClearTextEnabled = http2ClearTextEnabled;
     return this;
   }
 

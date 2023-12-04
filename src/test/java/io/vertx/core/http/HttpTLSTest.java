@@ -1210,6 +1210,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
       client = vertx.createHttpClient(options);
       HttpServerOptions serverOptions = createBaseServerOptions();
       serverOptions.setTrustOptions(serverTrust);
+      serverOptions.setAlpnVersions(Arrays.asList(version));
       serverOptions.setKeyCertOptions(serverCert);
       if (requiresClientAuth) {
         serverOptions.setClientAuth(ClientAuth.REQUIRED);

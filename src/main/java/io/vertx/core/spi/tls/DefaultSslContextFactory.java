@@ -143,10 +143,20 @@ public class DefaultSslContextFactory implements SslContextFactory {
       builder.ciphers(cipherSuites);
     }
     if (useAlpn && applicationProtocols != null && applicationProtocols.size() > 0) {
+      ApplicationProtocolConfig.SelectorFailureBehavior sfb;
+      ApplicationProtocolConfig.SelectedListenerFailureBehavior slfb;
+      if (sslProvider == SslProvider.JDK) {
+        sfb = ApplicationProtocolConfig.SelectorFailureBehavior.FATAL_ALERT;
+        slfb = ApplicationProtocolConfig.SelectedListenerFailureBehavior.FATAL_ALERT;
+      } else {
+        // Fatal alert not supportd by OpenSSL
+        sfb = ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE;
+        slfb = ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT;
+      }
       builder.applicationProtocolConfig(new ApplicationProtocolConfig(
         ApplicationProtocolConfig.Protocol.ALPN,
-        ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE,
-        ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT,
+        sfb,
+        slfb,
         applicationProtocols
       ));
     }

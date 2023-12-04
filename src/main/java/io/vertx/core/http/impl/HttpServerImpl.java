@@ -42,12 +42,10 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
   private static final Handler<Throwable> DEFAULT_EXCEPTION_HANDLER = t -> log.trace("Connection failure", t);
 
   private static final String DISABLE_WEBSOCKETS_PROP_NAME = "vertx.disableWebsockets";
-  private static final String DISABLE_H2C_PROP_NAME = "vertx.disableH2c";
 
   static final boolean DISABLE_WEBSOCKETS = Boolean.getBoolean(DISABLE_WEBSOCKETS_PROP_NAME);
 
   final HttpServerOptions options;
-  private final boolean disableH2c;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<ServerWebSocket> wsHandler;
   private Handler<HttpServerRequest> invalidRequestHandler;
@@ -58,7 +56,6 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
   public HttpServerImpl(VertxInternal vertx, HttpServerOptions options) {
     super(vertx, options);
     this.options = (HttpServerOptions) super.options;
-    this.disableH2c = Boolean.getBoolean(DISABLE_H2C_PROP_NAME) || options.isSsl();
   }
 
   @Override
@@ -161,7 +158,6 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
       vertx,
       options,
       serverOrigin,
-      disableH2c,
       hello,
       hello.exceptionHandler,
       trafficShapingHandler);
