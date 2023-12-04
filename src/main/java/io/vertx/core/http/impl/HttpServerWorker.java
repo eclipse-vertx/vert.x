@@ -68,7 +68,6 @@ public class HttpServerWorker implements BiConsumer<Channel, SslChannelProvider>
                           VertxInternal vertx,
                           HttpServerOptions options,
                           String serverOrigin,
-                          boolean disableH2C,
                           Handler<HttpServerConnection> connectionHandler,
                           Handler<Throwable> exceptionHandler,
                           GlobalTrafficShapingHandler trafficShapingHandler) {
@@ -91,7 +90,7 @@ public class HttpServerWorker implements BiConsumer<Channel, SslChannelProvider>
     this.options = options;
     this.serverOrigin = serverOrigin;
     this.logEnabled = options.getLogActivity();
-    this.disableH2C = disableH2C;
+    this.disableH2C = !options.isHttp2ClearTextEnabled();
     this.connectionHandler = connectionHandler;
     this.exceptionHandler = exceptionHandler;
     this.compressionOptions = compressionOptions;
@@ -138,9 +137,19 @@ public class HttpServerWorker implements BiConsumer<Channel, SslChannelProvider>
           if (options.isUseAlpn()) {
             SslHandler sslHandler = pipeline.get(SslHandler.class);
             String protocol = sslHandler.applicationProtocol();
-            if ("h2".equals(protocol)) {
-              configureHttp2(ch.pipeline());
+            if (protocol != null) {
+              switch (protocol) {
+                case "h2":
+                  configureHttp2(ch.pipeline());
+                  break;
+                case "http/1.1":
+                case "http/1.0":
+                  configureHttp1Pipeline(ch.pipeline());
+                  configureHttp1Handler(ch.pipeline(), sslChannelProvider);
+                  break;
+              }
             } else {
+              // No alpn presented or OpenSSL
               configureHttp1Pipeline(ch.pipeline());
               configureHttp1Handler(ch.pipeline(), sslChannelProvider);
             }

@@ -20,12 +20,12 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.net.JdkSSLEngineOptions;
 import io.vertx.core.http.impl.Http2ServerConnection;
 import io.vertx.core.net.OpenSSLEngineOptions;
-import io.vertx.core.net.PfxOptions;
+import io.vertx.core.net.SSLEngineOptions;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.test.core.AsyncTestBase;
-import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.tls.Cert;
 import org.junit.Ignore;
@@ -959,40 +959,35 @@ public class Http2Test extends HttpTest {
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2));
     server.close();
-    System.setProperty("vertx.disableH2c", "true");
-    server = vertx.createHttpServer();
-    try {
-      Promise<Void> p = Promise.promise();
-      AtomicBoolean first = new AtomicBoolean(true);
-      server.requestHandler(req -> {
-        if (first.compareAndSet(true, false)) {
-          HttpConnection conn = req.connection();
-          p.future().onComplete(ar -> {
-            conn.close();
-          });
-        }
-        req.response().end();
+    server = vertx.createHttpServer(new HttpServerOptions().setHttp2ClearTextEnabled(false));
+    Promise<Void> p = Promise.promise();
+    AtomicBoolean first = new AtomicBoolean(true);
+    server.requestHandler(req -> {
+      if (first.compareAndSet(true, false)) {
+        HttpConnection conn = req.connection();
+        p.future().onComplete(ar -> {
+          conn.close();
+        });
+      }
+      req.response().end();
+    });
+    startServer(testAddress);
+    client.request(requestOptions).compose(req1 -> {
+      req1.connection().closeHandler(v1 -> {
+        vertx.runOnContext(v2 -> {
+          client.request(requestOptions).compose(req2 -> req2.send().compose(HttpClientResponse::body)).onComplete(onSuccess(b2 -> {
+            testComplete();
+          }));
+        });
       });
-      startServer(testAddress);
-      client.request(requestOptions).compose(req1 -> {
-        req1.connection().closeHandler(v1 -> {
-          vertx.runOnContext(v2 -> {
-            client.request(requestOptions).compose(req2 -> req2.send().compose(HttpClientResponse::body)).onComplete(onSuccess(b2 -> {
-              testComplete();
-            }));
-          });
-        });
-        return req1.send().compose(resp -> {
-          assertEquals(HttpVersion.HTTP_1_1, resp.version());
-          return resp.body();
-        });
-      }).onComplete(onSuccess(b -> {
-        p.complete();
-      }));
-      await();
-    } finally {
-      System.clearProperty("vertx.disableH2c");
-    }
+      return req1.send().compose(resp -> {
+        assertEquals(HttpVersion.HTTP_1_1, resp.version());
+        return resp.body();
+      });
+    }).onComplete(onSuccess(b -> {
+      p.complete();
+    }));
+    await();
   }
 
   /**
@@ -1090,6 +1085,48 @@ public class Http2Test extends HttpTest {
         req.reset(10);
       }));
     }));
+    await();
+  }
+
+  @Test
+  public void testUnsupportedAlpnVersion() throws Exception {
+    testUnsupportedAlpnVersion(new JdkSSLEngineOptions(), false);
+  }
+
+  @Test
+  public void testUnsupportedAlpnVersionOpenSSL() throws Exception {
+    testUnsupportedAlpnVersion(new OpenSSLEngineOptions(), true);
+  }
+
+  private void testUnsupportedAlpnVersion(SSLEngineOptions engine, boolean accept) throws Exception {
+    server.close();
+    server = vertx.createHttpServer(createBaseServerOptions()
+      .setSslEngineOptions(engine)
+      .setAlpnVersions(Collections.singletonList(HttpVersion.HTTP_2))
+    );
+    server.requestHandler(request -> {
+      request.response().end();
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions().setProtocolVersion(HttpVersion.HTTP_1_1));
+    client.request(requestOptions).onComplete(ar -> {
+      if (ar.succeeded()) {
+        if (accept) {
+          ar.result().send().onComplete(onSuccess(resp -> {
+            testComplete();
+          }));
+        } else {
+          fail();
+        }
+      } else {
+        if (accept) {
+          fail();
+        } else {
+          testComplete();
+        }
+      }
+    });
     await();
   }
 }
