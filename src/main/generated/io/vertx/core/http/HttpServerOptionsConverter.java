@@ -20,6 +20,16 @@ public class HttpServerOptionsConverter {
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, HttpServerOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
+        case "protocolVersions":
+          if (member.getValue() instanceof JsonArray) {
+            java.util.LinkedHashSet<io.vertx.core.http.HttpVersion> list =  new java.util.LinkedHashSet<>();
+            ((Iterable<Object>)member.getValue()).forEach( item -> {
+              if (item instanceof String)
+                list.add(io.vertx.core.http.HttpVersion.valueOf((String)item));
+            });
+            obj.setProtocolVersions(list);
+          }
+          break;
         case "compressionSupported":
           if (member.getValue() instanceof Boolean) {
             obj.setCompressionSupported((Boolean)member.getValue());
@@ -174,6 +184,11 @@ public class HttpServerOptionsConverter {
   }
 
    static void toJson(HttpServerOptions obj, java.util.Map<String, Object> json) {
+    if (obj.getProtocolVersions() != null) {
+      JsonArray array = new JsonArray();
+      obj.getProtocolVersions().forEach(item -> array.add(item.name()));
+      json.put("protocolVersions", array);
+    }
     json.put("compressionSupported", obj.isCompressionSupported());
     json.put("compressionLevel", obj.getCompressionLevel());
     json.put("acceptUnmaskedFrames", obj.isAcceptUnmaskedFrames());

@@ -30,14 +30,12 @@ import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.SSLOptions;
 import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.core.net.impl.*;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -140,12 +138,14 @@ public class HttpServerWorker implements TCPServerBase.Worker {
             SslHandler sslHandler = pipeline.get(SslHandler.class);
             String protocol = sslHandler.applicationProtocol();
             if ("h2".equals(protocol)) {
-              handleHttp2(ch);
+              configureHttp2(ch.pipeline());
             } else {
-              handleHttp1(ch, sslChannelProvider, sslHelper);
+              configureHttp1Pipeline(ch.pipeline(), sslChannelProvider, sslHelper);
+              configureHttp1Handler(ch.pipeline(), sslChannelProvider, sslHelper);
             }
           } else {
-            handleHttp1(ch, sslChannelProvider, sslHelper);
+            configureHttp1Pipeline(ch.pipeline(), sslChannelProvider, sslHelper);
+            configureHttp1Handler(ch.pipeline(), sslChannelProvider, sslHelper);
           }
         } else {
           handleException(future.cause());
@@ -153,7 +153,8 @@ public class HttpServerWorker implements TCPServerBase.Worker {
       });
     } else {
       if (disableH2C) {
-        handleHttp1(ch, sslChannelProvider, sslHelper);
+        configureHttp1Pipeline(ch.pipeline(), sslChannelProvider, sslHelper);
+        configureHttp1Handler(ch.pipeline(), sslChannelProvider, sslHelper);
       } else {
         IdleStateHandler idle;
         int idleTimeout = options.getIdleTimeout();
@@ -175,9 +176,10 @@ public class HttpServerWorker implements TCPServerBase.Worker {
               pipeline.remove(idle);
             }
             if (h2c) {
-              handleHttp2(ctx.channel());
+              configureHttp2(ctx.pipeline());
             } else {
-              handleHttp1(ch, sslChannelProvider, sslHelper);
+              configureHttp1Pipeline(ctx.pipeline(), sslChannelProvider, sslHelper);
+              configureHttp1OrH2CUpgradeHandler(ctx.pipeline(), sslChannelProvider, sslHelper);
             }
           }
 
@@ -205,10 +207,6 @@ public class HttpServerWorker implements TCPServerBase.Worker {
     context.emit(cause, exceptionHandler);
   }
 
-  private void handleHttp1(Channel ch, SslChannelProvider sslChannelProvider, SSLHelper sslHelper) {
-    configureHttp1OrH2C(ch.pipeline(), sslChannelProvider, sslHelper);
-  }
-
   private void sendServiceUnavailable(Channel ch) {
     ch.writeAndFlush(
       Unpooled.copiedBuffer("HTTP/1.1 503 Service Unavailable\r\n" +
@@ -217,13 +215,17 @@ public class HttpServerWorker implements TCPServerBase.Worker {
       .addListener(ChannelFutureListener.CLOSE);
   }
 
-  private void handleHttp2(Channel ch) {
-    VertxHttp2ConnectionHandler<Http2ServerConnection> handler = buildHttp2ConnectionHandler(context, connectionHandler);
-    ch.pipeline().addLast("handler", handler);
-    configureHttp2(ch.pipeline());
+  private void configureHttp2(ChannelPipeline pipeline) {
+    configureHttp2Handler(pipeline);
+    configureHttp2Pipeline(pipeline);
   }
 
-  void configureHttp2(ChannelPipeline pipeline) {
+  private void configureHttp2Handler(ChannelPipeline pipeline) {
+    VertxHttp2ConnectionHandler<Http2ServerConnection> handler = buildHttp2ConnectionHandler(context, connectionHandler);
+    pipeline.addLast("handler", handler);
+  }
+
+  void configureHttp2Pipeline(ChannelPipeline pipeline) {
     if (!server.requestAccept()) {
       // That should send an HTTP/2 go away
       pipeline.channel().close();
@@ -265,7 +267,11 @@ public class HttpServerWorker implements TCPServerBase.Worker {
     return handler;
   }
 
-  private void configureHttp1OrH2C(ChannelPipeline pipeline, SslChannelProvider sslChannelProvider, SSLHelper sslHelper) {
+  private void configureHttp1OrH2CUpgradeHandler(ChannelPipeline pipeline, SslChannelProvider sslChannelProvider, SSLHelper sslHelper) {
+    pipeline.addLast("h2c", new Http1xUpgradeToH2CHandler(this, sslChannelProvider, sslHelper, options.isCompressionSupported(), options.isDecompressionSupported()));
+  }
+
+  private void configureHttp1Pipeline(ChannelPipeline pipeline, SslChannelProvider sslChannelProvider, SSLHelper sslHelper) {
     if (logEnabled) {
       pipeline.addLast("logging", new LoggingHandler(options.getActivityLogDataFormat()));
     }
@@ -287,14 +293,9 @@ public class HttpServerWorker implements TCPServerBase.Worker {
     if (idleTimeout > 0 || readIdleTimeout > 0 || writeIdleTimeout > 0) {
       pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, options.getIdleTimeoutUnit()));
     }
-    if (disableH2C) {
-      configureHttp1(pipeline, sslChannelProvider, sslHelper);
-    } else {
-      pipeline.addLast("h2c", new Http1xUpgradeToH2CHandler(this, sslChannelProvider, sslHelper, options.isCompressionSupported(), options.isDecompressionSupported()));
-    }
   }
 
-  void configureHttp1(ChannelPipeline pipeline, SslChannelProvider sslChannelProvider, SSLHelper sslHelper) {
+  void configureHttp1Handler(ChannelPipeline pipeline, SslChannelProvider sslChannelProvider, SSLHelper sslHelper) {
     if (!server.requestAccept()) {
       sendServiceUnavailable(pipeline.channel());
       return;

@@ -123,7 +123,7 @@ public class Http1xUpgradeToH2CHandler extends ChannelInboundHandlerAdapter {
           ctx.writeAndFlush(res);
         }
       } else {
-        initializer.configureHttp1(ctx.pipeline(), sslChannelProvider, sslHelper);
+        initializer.configureHttp1Handler(ctx.pipeline(), sslChannelProvider, sslHelper);
         ctx.fireChannelRead(msg);
         ctx.pipeline().remove(this);
       }
@@ -143,7 +143,7 @@ public class Http1xUpgradeToH2CHandler extends ChannelInboundHandlerAdapter {
                 pipeline.remove(handler.getKey());
               }
             }
-            initializer.configureHttp2(pipeline);
+            initializer.configureHttp2Pipeline(pipeline);
           }
         } else {
           // We might have left over buffer sent when removing the HTTP decoder that needs to be propagated to the HTTP handler
