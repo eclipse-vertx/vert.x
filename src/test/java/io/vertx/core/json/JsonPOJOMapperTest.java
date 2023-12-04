@@ -11,7 +11,9 @@
 
 package io.vertx.core.json;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.buffer.Buffer;
 import org.junit.Test;
 
@@ -39,7 +41,7 @@ public class JsonPOJOMapperTest {
   }
 
   @Test
-  public void testSerialization() {
+  public void testSerialization() throws JsonProcessingException{
     MyType myObj0 = new MyType() {{
       a = -1;
       b = "obj0";
@@ -57,9 +59,10 @@ public class JsonPOJOMapperTest {
 
     JsonObject jsonObject1 = JsonObject.mapFrom(myObj1);
     String jsonStr1 = jsonObject1.encode();
-    assertEquals("{\"a\":5,\"b\":\"obj1\",\"c\":{\"x\":\"1\",\"y\":2},\"d\":["
+    ObjectMapper mapper = new ObjectMapper();
+    assertEquals(mapper.readTree("{\"a\":5,\"b\":\"obj1\",\"c\":{\"x\":\"1\",\"y\":2},\"d\":["
         +"{\"a\":-1,\"b\":\"obj0\",\"c\":{\"z\":[7,8]},\"d\":[],\"e\":[9]}"
-        + "],\"e\":[3]}", jsonStr1);
+        + "],\"e\":[3]}"), mapper.readTree(jsonStr1));
 
     MyType myObj1Roundtrip = jsonObject1.mapTo(MyType.class);
     assertEquals(myObj1Roundtrip.a, 5);
