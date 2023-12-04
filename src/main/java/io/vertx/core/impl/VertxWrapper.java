@@ -13,15 +13,7 @@ package io.vertx.core.impl;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.resolver.AddressResolverGroup;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Closeable;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
-import io.vertx.core.TimeoutStream;
-import io.vertx.core.Verticle;
-import io.vertx.core.Vertx;
+import io.vertx.core.*;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.dns.DnsClient;
@@ -131,6 +123,11 @@ public abstract class VertxWrapper implements VertxInternal {
   @Override
   public SharedData sharedData() {
     return delegate.sharedData();
+  }
+
+  @Override
+  public Timer timer(long delay, TimeUnit unit) {
+    return delegate.timer(delay, unit);
   }
 
   @Override
