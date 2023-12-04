@@ -19,6 +19,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static io.vertx.core.json.impl.JsonUtil.*;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
@@ -38,7 +39,7 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
  */
 public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareable {
 
-  private List<Object> list;
+  private final List<Object> list;
 
   /**
    * Create an instance from a String of JSON, this string must be a valid array otherwise an exception will be thrown.
@@ -52,7 +53,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
     if (json == null) {
       throw new NullPointerException();
     }
-    fromJson(json);
+    list = Json.CODEC.fromString(json, List.class);
     if (list == null) {
       throw new DecodeException("Invalid JSON array: " + json);
     }
@@ -62,7 +63,14 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * Create an empty instance
    */
   public JsonArray() {
-    list = new ArrayList<>();
+    list = new ArrayList<>();// empty, see ArrayList.DEFAULTCAPACITY_EMPTY_ELEMENTDATA
+  }
+
+  /**
+   * Create an empty instance with initialCapacity
+   */
+  public JsonArray(int initialCapacity) {
+    list = new ArrayList<>(initialCapacity);
   }
 
   /**
@@ -78,6 +86,21 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   }
 
   /**
+   * Create an instance from a collections. If the collection is a list, it is not copied.
+   *
+   * @param collection collection to copy or use as the underlying backing list
+   */
+  public JsonArray(Collection collection) {
+    if (collection instanceof List) {
+      list = (List) collection;
+    } else if (collection == null) {
+      throw new NullPointerException();
+    } else {
+      list = new ArrayList(collection);
+    }
+  }
+
+  /**
    * Create an instance from a Buffer of JSON.
    *
    * @param buf the buffer of JSON.
@@ -86,7 +109,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
     if (buf == null) {
       throw new NullPointerException();
     }
-    fromBuffer(buf);
+    list = Json.CODEC.fromBuffer(buf, List.class);
     if (list == null) {
       throw new DecodeException("Invalid JSON array: " + buf);
     }
@@ -100,12 +123,13 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    */
   public static JsonArray of(Object... values) {
     // implicit nullcheck of values
-    if (values.length == 0) {
+    int len = values.length;
+    if (len == 0) {
       return new JsonArray();
     }
 
-    JsonArray arr = new JsonArray(new ArrayList<>(values.length));
-    for(int i = 0; i< values.length; ++i) {
+    JsonArray arr = new JsonArray(new ArrayList<>(len));
+    for (int i = 0; i < len; ++i) {
       arr.add(values[i]);
     }
 
@@ -616,7 +640,13 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return a Stream
    */
   public Stream<Object> stream() {
-    return asStream(iterator());
+    // JsonUtil.asStream(iterator()) is too generic
+    return StreamSupport.stream(spliterator(), false);
+  }
+
+  @Override
+  public Spliterator<Object> spliterator() {
+    return Spliterators.spliterator(iterator(), list.size(), Spliterator.ORDERED);
   }
 
   @Override
@@ -704,17 +734,11 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
     int length = buffer.getInt(pos);
     int start = pos + 4;
     Buffer buf = buffer.getBuffer(start, start + length);
-    fromBuffer(buf);
+    list.clear();
+    list.addAll(Json.CODEC.fromBuffer(buf, List.class));
     return pos + length + 4;
   }
 
-  private void fromJson(String json) {
-    list = Json.CODEC.fromString(json, List.class);
-  }
-
-  private void fromBuffer(Buffer buf) {
-    list = Json.CODEC.fromBuffer(buf, List.class);
-  }
 
   private static class Iter implements Iterator<Object> {
 
