@@ -372,6 +372,24 @@ public interface Vertx extends Measured {
   SharedData sharedData();
 
   /**
+   * Like {@link #timer(long, TimeUnit)} with a unit in millis.
+   */
+  default Timer timer(long delay) {
+    return timer(delay, TimeUnit.MILLISECONDS);
+  }
+
+  /**
+   * Create a timer task configured with the specified {@code delay}, when the timeout fires the timer future
+   * is succeeded, when the timeout is cancelled the timer future is failed with a {@link java.util.concurrent.CancellationException}
+   * instance.
+   *
+   * @param delay the delay
+   * @param unit the delay unit
+   * @return the timer object
+   */
+  Timer timer(long delay, TimeUnit unit);
+
+  /**
    * Set a one-shot timer to fire after {@code delay} milliseconds, at which point {@code handler} will be called with
    * the id of the timer.
    *

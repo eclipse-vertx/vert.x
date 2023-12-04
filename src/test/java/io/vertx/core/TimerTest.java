@@ -19,6 +19,7 @@ import io.vertx.test.core.Repeat;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -548,5 +549,46 @@ public class TimerTest extends VertxTestBase {
       }
     });
     await();
+  }
+
+  @Test
+  public void testTimerFire() {
+    long now = System.currentTimeMillis();
+    Timer timer = vertx.timer(1, TimeUnit.SECONDS);
+    timer.onComplete(onSuccess(v -> {
+      assertTrue(System.currentTimeMillis() - now >= 800);
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testTimerFireOnContext() {
+    new Thread(() -> {
+      Context ctx = vertx.getOrCreateContext();
+      Timer timer = vertx.timer(10, TimeUnit.MILLISECONDS);
+      timer.onComplete(onSuccess(v -> {
+        assertSame(ctx, Vertx.currentContext());
+        testComplete();
+      }));
+    }).start();
+    await();
+  }
+
+  @Test
+  public void testFailTimerTaskWhenCancellingTimer() {
+    Timer timer = vertx.timer(10_000);
+    assertTrue(timer.cancel());
+    waitUntil(timer::failed);
+    assertTrue(timer.cause() instanceof CancellationException);
+  }
+
+  @Test
+  public void testFailTimerTaskWhenClosingVertx() throws Exception {
+    Vertx vertx = Vertx.vertx();
+    Timer timer = vertx.timer(10_000);
+    vertx.close().toCompletionStage().toCompletableFuture().get(10, TimeUnit.SECONDS);
+    waitUntil(timer::failed);
+    assertTrue(timer.cause() instanceof CancellationException);
   }
 }

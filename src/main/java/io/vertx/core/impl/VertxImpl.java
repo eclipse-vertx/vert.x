@@ -18,6 +18,7 @@ import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.Future;
 import io.vertx.core.*;
+import io.vertx.core.Timer;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.datagram.impl.DatagramSocketImpl;
@@ -71,10 +72,7 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -448,6 +446,19 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public TimeoutStream timerStream(long delay) {
     return new TimeoutStreamImpl(delay, false);
+  }
+
+  @Override
+  public Timer timer(long delay, TimeUnit unit) {
+    Objects.requireNonNull(unit);
+    if (delay <= 0) {
+      throw new IllegalArgumentException("Invalid delay: " + delay);
+    }
+    ContextInternal ctx = getOrCreateContext();
+    io.netty.util.concurrent.ScheduledFuture<Void> fut = ctx.nettyEventLoop().schedule(() -> null, delay, unit);
+    TimerImpl promise = new TimerImpl(ctx, fut);
+    fut.addListener(promise);
+    return promise;
   }
 
   @Override
