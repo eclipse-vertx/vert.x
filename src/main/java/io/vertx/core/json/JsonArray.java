@@ -39,7 +39,7 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
  */
 public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareable {
 
-  private final List<Object> list;
+  private List<Object> list;
 
   /**
    * Create an instance from a String of JSON, this string must be a valid array otherwise an exception will be thrown.
@@ -734,8 +734,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
     int length = buffer.getInt(pos);
     int start = pos + 4;
     Buffer buf = buffer.getBuffer(start, start + length);
-    list.clear();
-    list.addAll(Json.CODEC.fromBuffer(buf, List.class));
+    list = Json.CODEC.fromBuffer(buf, List.class);
     return pos + length + 4;
   }
 
