@@ -25,7 +25,7 @@ import java.util.Objects;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class FutureImpl<T> extends FutureBase<T> {
+public class FutureImpl<T> extends FutureBase<T> {
 
   private static final Object NULL_VALUE = new Object();
 
@@ -35,14 +35,14 @@ class FutureImpl<T> extends FutureBase<T> {
   /**
    * Create a future that hasn't completed yet
    */
-  FutureImpl() {
+  protected FutureImpl() {
     super();
   }
 
   /**
    * Create a future that hasn't completed yet
    */
-  FutureImpl(ContextInternal context) {
+  protected FutureImpl(ContextInternal context) {
     super(context);
   }
 
