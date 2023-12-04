@@ -35,6 +35,7 @@ public class HttpTestBase extends VertxTestBase {
 
   public static final String DEFAULT_HTTP_HOST = "localhost";
   public static final int DEFAULT_HTTP_PORT = Integer.parseInt(System.getProperty("vertx.httpPort", "8080"));
+  public static final String DEFAULT_HTTP_HOST_AND_PORT = System.getProperty("vertx.httpHostPort", "localhost:8080");
   public static final String DEFAULT_HTTPS_HOST = "localhost";
   public static final int DEFAULT_HTTPS_PORT = 4043;
   public static final String DEFAULT_HTTPS_HOST_AND_PORT = "localhost:4043";
