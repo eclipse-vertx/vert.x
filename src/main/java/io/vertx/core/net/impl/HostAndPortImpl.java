@@ -127,6 +127,9 @@ public class HostAndPortImpl implements HostAndPort {
           return null;
         }
         port = port * 10 + digit;
+        if (port > 65535) {
+          return null;
+        }
       }
       return new HostAndPortImpl(host, port);
     }
