@@ -47,6 +47,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   private boolean writable;
   private long bytesRead;
   private long bytesWritten;
+  private int writeInProgress = 0;
   protected boolean isConnect;
 
   VertxHttp2Stream(C conn, ContextInternal context) {
@@ -204,11 +205,23 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   final void writeData(ByteBuf chunk, boolean end, Handler<AsyncResult<Void>> handler) {
     ContextInternal ctx = conn.getContext();
     EventLoop eventLoop = ctx.nettyEventLoop();
-    if (eventLoop.inEventLoop()) {
-      doWriteData(chunk, end, handler);
-    } else {
-      eventLoop.execute(() -> doWriteData(chunk, end, handler));
+    synchronized (this) {
+      if (!eventLoop.inEventLoop() || writeInProgress > 0) {
+        queueForWrite(eventLoop, chunk, end, handler);
+        return;
+      }
     }
+    doWriteData(chunk, end, handler);
+  }
+
+  private void queueForWrite(EventLoop eventLoop, ByteBuf chunk, boolean end, Handler<AsyncResult<Void>> handler) {
+    writeInProgress++;
+    eventLoop.execute(() -> {
+      synchronized (this) {
+        writeInProgress--;
+      }
+      doWriteData(chunk, end, handler);
+    });
   }
 
   void doWriteData(ByteBuf buf, boolean end, Handler<AsyncResult<Void>> handler) {

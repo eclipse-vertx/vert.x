@@ -398,6 +398,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     private Handler<MultiMap> endHandler;
     private Handler<Void> drainHandler;
     private Handler<Void> continueHandler;
+    private int writeInProgress = 0;
 
     private Handler<MultiMap> earlyHintsHandler;
     private Handler<Throwable> exceptionHandler;
@@ -571,11 +572,23 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
         l = listener;
       }
       EventLoop eventLoop = conn.context.nettyEventLoop();
-      if (eventLoop.inEventLoop()) {
-        conn.writeBuffer(this, buff, end, l);
-      } else {
-        eventLoop.execute(() -> writeBuffer(buff, end, l));
+      synchronized (this) {
+        if (!eventLoop.inEventLoop() || writeInProgress > 0) {
+          queueForWrite(eventLoop, buff, end, l);
+          return;
+        }
       }
+      conn.writeBuffer(this, buff, end, l);
+    }
+
+    private void queueForWrite(EventLoop eventLoop, ByteBuf buff, boolean end, FutureListener<Void> listener) {
+      writeInProgress++;
+      eventLoop.execute(() -> {
+        synchronized (this) {
+          writeInProgress--;
+        }
+        conn.writeBuffer(this, buff, end, listener);
+      });
     }
 
     @Override
