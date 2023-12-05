@@ -59,6 +59,24 @@ The settings define how the client can use the connection, the default initial s
 - {@link io.vertx.core.http.Http2Settings#getMaxConcurrentStreams}: `100` as recommended by the HTTP/2 RFC
 - the default HTTP/2 settings values for the others
 
+=== Configuring server supported HTTP versions
+
+Default supported HTTP versions depends on the server configuration.
+
+- when TLS is disabled
+  - HTTP/1.1, HTTP/1.0
+  - HTTP/2 when {@link io.vertx.core.http.HttpServerOptions#isHttp2ClearTextEnabled} is `true`
+- when TLS is enabled and ALPN disabled
+  - HTTP/1.1 and HTTP/1.0
+- when TLS is enabled and ALPN enabled
+  - the protocols defined by {@link io.vertx.core.http.HttpServerOptions#getAlpnVersions}: by default HTTP/1.1 and HTTP/2
+
+If you want to disable HTTP/2 on the server
+- when TLS is disabled, set {@link io.vertx.core.http.HttpServerOptions#setHttp2ClearTextEnabled} to `false`
+- when TLS is enabled
+  - set ({@link io.vertx.core.http.HttpServerOptions#isUseAlpn}) to `false`
+  - _or_ remove HTTP/2 from the {@link io.vertx.core.http.HttpServerOptions#getAlpnVersions} list
+
 === Logging network server activity
 
 For debugging purposes, network activity can be logged.

@@ -45,13 +45,11 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
 
   private static final String FLASH_POLICY_HANDLER_PROP_NAME = "vertx.flashPolicyHandler";
   private static final String DISABLE_WEBSOCKETS_PROP_NAME = "vertx.disableWebsockets";
-  private static final String DISABLE_H2C_PROP_NAME = "vertx.disableH2c";
 
   static final boolean USE_FLASH_POLICY_HANDLER = Boolean.getBoolean(FLASH_POLICY_HANDLER_PROP_NAME);
   static final boolean DISABLE_WEBSOCKETS = Boolean.getBoolean(DISABLE_WEBSOCKETS_PROP_NAME);
 
   final HttpServerOptions options;
-  private final boolean disableH2c;
   private final HttpStreamHandler<ServerWebSocket> wsStream = new HttpStreamHandler<>();
   private final HttpStreamHandler<HttpServerRequest> requestStream = new HttpStreamHandler<>();
   private Handler<HttpServerRequest> invalidRequestHandler;
@@ -62,7 +60,6 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
   public HttpServerImpl(VertxInternal vertx, HttpServerOptions options) {
     super(vertx, options);
     this.options = new HttpServerOptions(options);
-    this.disableH2c = Boolean.getBoolean(DISABLE_H2C_PROP_NAME) || options.isSsl();
   }
 
   @Override
@@ -156,7 +153,6 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
       vertx,
       options,
       serverOrigin,
-      disableH2c,
       hello,
       hello.exceptionHandler,
       trafficShapingHandler);
