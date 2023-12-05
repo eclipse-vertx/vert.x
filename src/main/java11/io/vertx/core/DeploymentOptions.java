@@ -121,9 +121,7 @@ public class DeploymentOptions {
    * Which threading model the verticle(s) should use?
    *
    * @return the verticle threading model
-   * @deprecated instead use {@link #getThreadingModel()}
    */
-  @Deprecated
   public ThreadingModel getThreadingModel() {
     return threadingModel;
   }
@@ -133,9 +131,7 @@ public class DeploymentOptions {
    *
    * @param threadingModel the threading model
    * @return a reference to this, so the API can be used fluently
-   * @deprecated instead use {@link #setThreadingModel(ThreadingModel)}
    */
-  @Deprecated
   public DeploymentOptions setThreadingModel(ThreadingModel threadingModel) {
     this.threadingModel = threadingModel;
     return this;
@@ -145,7 +141,9 @@ public class DeploymentOptions {
    * Should the verticle(s) be deployed as a worker verticle?
    *
    * @return {@code true} if will be deployed as worker, {@code false} otherwise
+   * @deprecated instead use {@link #getThreadingModel()}
    */
+  @Deprecated
   public boolean isWorker() {
     return threadingModel == ThreadingModel.WORKER;
   }
@@ -155,7 +153,9 @@ public class DeploymentOptions {
    *
    * @param worker {@code true} for worker, {@code false} force event-loop
    * @return a reference to this, so the API can be used fluently
+   * @deprecated instead use {@link #setThreadingModel(ThreadingModel)}
    */
+  @Deprecated
   public DeploymentOptions setWorker(boolean worker) {
     this.threadingModel = worker ? ThreadingModel.WORKER : ThreadingModel.EVENT_LOOP;
     return this;
