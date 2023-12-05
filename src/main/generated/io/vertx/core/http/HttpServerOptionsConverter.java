@@ -95,6 +95,11 @@ public class HttpServerOptionsConverter {
             obj.setAlpnVersions(list);
           }
           break;
+        case "http2ClearTextEnabled":
+          if (member.getValue() instanceof Boolean) {
+            obj.setHttp2ClearTextEnabled((Boolean)member.getValue());
+          }
+          break;
         case "http2ConnectionWindowSize":
           if (member.getValue() instanceof Number) {
             obj.setHttp2ConnectionWindowSize(((Number)member.getValue()).intValue());
@@ -197,6 +202,7 @@ public class HttpServerOptionsConverter {
       obj.getAlpnVersions().forEach(item -> array.add(item.name()));
       json.put("alpnVersions", array);
     }
+    json.put("http2ClearTextEnabled", obj.isHttp2ClearTextEnabled());
     json.put("http2ConnectionWindowSize", obj.getHttp2ConnectionWindowSize());
     json.put("decompressionSupported", obj.isDecompressionSupported());
     json.put("decoderInitialBufferSize", obj.getDecoderInitialBufferSize());
