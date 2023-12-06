@@ -161,6 +161,28 @@ public interface Context {
   <T> Future<@Nullable T> executeBlocking(Callable<T> blockingCodeHandler, boolean ordered);
 
   /**
+   * Like {@link #executeBlocking(Callable)} but using a callback.
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  default <T> void executeBlocking(Callable<T> blockingCodeHandler, Handler<AsyncResult<@Nullable T>> resultHandler) {
+    Future<T> future = executeBlocking(blockingCodeHandler, true);
+    if (resultHandler != null) {
+      future.onComplete(resultHandler);
+    }
+  }
+
+  /**
+   * Like {@link #executeBlocking(Callable, boolean)} but using a callback.
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  default <T> void executeBlocking(Callable<T> blockingCodeHandler, boolean ordered, Handler<AsyncResult<@Nullable T>> resultHandler) {
+    Future<T> future = executeBlocking(blockingCodeHandler, ordered);
+    if (resultHandler != null) {
+      future.onComplete(resultHandler);
+    }
+  }
+
+  /**
    * Invoke {@link #executeBlocking(Handler, boolean, Handler)} with order = true.
    * @param blockingCodeHandler  handler representing the blocking code to run
    * @param resultHandler  handler that will be called when the blocking code is complete
