@@ -501,9 +501,14 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   void handlerWritabilityChanged(boolean writable) {
-    if (!ended && writable && drainHandler != null) {
-      drainHandler.handle(null);
+    Handler<Void> handler;
+    synchronized (conn) {
+      handler = drainHandler;
+      if (ended || !writable || handler == null) {
+        return;
+      }
     }
+    handler.handle(null);
   }
 
   @Override
