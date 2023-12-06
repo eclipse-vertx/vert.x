@@ -355,9 +355,15 @@ TCP server (Net/Http) can be configured with traffic shaping options to enable b
 bandwidth can be limited through {@link io.vertx.core.net.TrafficShapingOptions}. For NetServer, traffic shaping options can be set
 through {@link io.vertx.core.net.NetServerOptions} and for HttpServer it can be set through {@link io.vertx.core.http.HttpServerOptions}.
 
+[source,$lang]
+----
 {@link examples.NetExamples#configureTrafficShapingForNetServer}
+----
 
+[source,$lang]
+----
 {@link examples.NetExamples#configureTrafficShapingForHttpServer}
+----
 
 [[ssl]]
 === Configuring servers and clients to work with SSL/TLS
