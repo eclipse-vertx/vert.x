@@ -143,8 +143,8 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
   }
 
   @Override
-  void handleWritabilityChanged(boolean writable) {
-    request.response().handlerWritabilityChanged(writable);
+  void handleWriteQueueDrained() {
+    request.response().handleWriteQueueDrained();
   }
 
   public HttpMethod method() {

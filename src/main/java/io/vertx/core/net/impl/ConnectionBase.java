@@ -31,7 +31,6 @@ import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.NetworkMetrics;
 import io.vertx.core.spi.metrics.TCPMetrics;
-import io.vertx.core.streams.impl.OutboundWriteQueue;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
@@ -42,10 +41,9 @@ import java.net.InetSocketAddress;
 import java.security.cert.Certificate;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
-import static io.vertx.core.streams.impl.OutboundWriteQueue.numberOfUnwritableSignals;
 
 /**
  * Abstract base class for TCP connections.
@@ -77,7 +75,6 @@ public abstract class ConnectionBase {
   protected final VertxInternal vertx;
   protected final ChannelHandlerContext chctx;
   protected final ContextInternal context;
-  private final OutboundWriteQueue<MessageWrite> writeQueue;
   private Handler<Throwable> exceptionHandler;
   private Handler<Void> closeHandler;
   private Object metric;
@@ -89,15 +86,14 @@ public abstract class ConnectionBase {
   private Future<Void> closeFuture;
   private long remainingBytesRead;
   private long remainingBytesWritten;
-  private final AtomicInteger writeQueueFull = new AtomicInteger();
+  private final OutboundMessageQueue<MessageWrite> messageQueue;
 
   // State accessed exclusively from the event loop thread
   private boolean read;
   private boolean needsFlush;
   private boolean closed;
-  private boolean writable;
-  private boolean overflow;
   private boolean draining;
+  private boolean channelWritable;
 
   protected ConnectionBase(ContextInternal context, ChannelHandlerContext chctx) {
     this.vertx = context.owner();
@@ -105,34 +101,15 @@ public abstract class ConnectionBase {
     this.context = context;
     this.voidPromise = new VoidChannelPromise(chctx.channel(), false);
     this.closePromise = chctx.newPromise();
-    this.writable = chctx.channel().isWritable();
+    this.channelWritable = chctx.channel().isWritable();
+    this.messageQueue = new InternalMessageQueue(chctx.channel().eventLoop());
 
-    writeQueue = new OutboundWriteQueue<>(msg -> {
-      if (writable) {
-        msg.write();
-        return true;
-      } else {
-        return false;
-      }
-    });
     PromiseInternal<Void> p = context.promise();
     closePromise.addListener(p);
     closeFuture = p.future();
 
     // Add close handler callback
     closeFuture.onComplete(this::checkCloseHandler);
-  }
-
-  private void startDraining() {
-    draining = true;
-  }
-
-  private void stopDraining() {
-    draining = false;
-    if (!read && needsFlush) {
-      needsFlush = false;
-      chctx.flush();
-    }
   }
 
   /**
@@ -243,12 +220,6 @@ public abstract class ConnectionBase {
     return promise;
   }
 
-  /**
-   * Called when the connection write queue is drained
-   */
-  protected void writeQueueDrained() {
-  }
-
   public final boolean writeToChannel(Object obj) {
     return writeToChannel(obj, voidPromise);
   }
@@ -276,37 +247,7 @@ public abstract class ConnectionBase {
   }
 
   public final boolean writeToChannel(MessageWrite msg) {
-    EventExecutor eventLoop = chctx.executor();
-    boolean inEventLoop = eventLoop.inEventLoop();
-    int flags;
-    if (inEventLoop) {
-      flags = writeQueue.add(msg);
-      overflow |= (flags & OutboundWriteQueue.DRAIN_REQUIRED_MASK) != 0;
-      if ((flags & OutboundWriteQueue.QUEUE_WRITABLE_MASK) != 0) {
-        handleWriteQueueDrained(numberOfUnwritableSignals(flags));
-      }
-    } else {
-      flags = writeQueue.submit(msg);
-      if ((flags & OutboundWriteQueue.DRAIN_REQUIRED_MASK) != 0) {
-        eventLoop.execute(this::drainWriteQueue);
-      }
-    }
-    if ((flags & OutboundWriteQueue.QUEUE_UNWRITABLE_MASK) != 0) {
-      int val = writeQueueFull.incrementAndGet();
-      return val <= 0;
-    } else {
-      return writeQueueFull.get() <= 0;
-    }
-  }
-
-  private void drainWriteQueue() {
-    startDraining();
-    int flags = writeQueue.drain();
-    overflow = (flags & OutboundWriteQueue.DRAIN_REQUIRED_MASK) != 0;
-    if ((flags & OutboundWriteQueue.QUEUE_WRITABLE_MASK) != 0) {
-      handleWriteQueueDrained(numberOfUnwritableSignals(flags));
-    }
-    stopDraining();
+    return messageQueue.write(msg);
   }
 
   /**
@@ -334,16 +275,11 @@ public abstract class ConnectionBase {
     writeToChannel(Unpooled.EMPTY_BUFFER, true, listener == null ? voidPromise : wrap(listener));
   }
 
-  // This is a volatile read inside the Netty channel implementation
-  public boolean isNotWritable() {
-    return !chctx.channel().isWritable();
-  }
-
   /**
    * @return the write queue writability status
    */
   public boolean writeQueueFull() {
-    return writeQueueFull.get() > 0;
+    return !messageQueue.isWritable();
   }
 
   /**
@@ -436,7 +372,7 @@ public abstract class ConnectionBase {
 
   protected void handleClosed() {
     closed = true;
-    List<MessageWrite> pending = writeQueue.clear();
+    List<MessageWrite> pending = messageQueue.clear();
     for (MessageWrite msg : pending) {
       msg.cancel(CLOSED_EXCEPTION);
     }
@@ -478,32 +414,20 @@ public abstract class ConnectionBase {
     chctx.close();
   }
 
-  private void handleWriteQueueDrained(int times) {
-    int val = writeQueueFull.addAndGet(-times);
-    if ((val + times) > 0 && val <= 0) {
-      writeQueueDrained();
+  /**
+   * Called when the connection write queue is drained
+   */
+  protected void handleWriteQueueDrained() {
+  }
+
+  protected void handleMessage(Object msg) {
+  }
+
+  void channelWritabilityChanged() {
+    channelWritable = chctx.channel().isWritable();
+    if (channelWritable) {
+      messageQueue.drain();
     }
-  }
-
-  void handleChannelWritabilityChanged() {
-    writable = chctx.channel().isWritable();
-    if (writable && overflow) {
-      startDraining();
-      int flags = writeQueue.drain();
-      overflow = (flags & OutboundWriteQueue.DRAIN_REQUIRED_MASK) != 0;
-      if ((flags & OutboundWriteQueue.QUEUE_WRITABLE_MASK) != 0) {
-        handleWriteQueueDrained(numberOfUnwritableSignals(flags));
-      }
-      stopDraining();
-    }
-    handleInterestedOpsChanged(writable);
-  }
-
-  protected void handleInterestedOpsChanged(boolean writable) {
-    handleInterestedOpsChanged();
-  }
-
-  protected void handleInterestedOpsChanged() {
   }
 
   protected boolean supportsFileRegion() {
@@ -794,6 +718,42 @@ public abstract class ConnectionBase {
     }
   }
 
-  protected void handleMessage(Object msg) {
+  /**
+   * Version of {@link OutboundMessageQueue} accessing internal connection base state.
+   */
+  private class InternalMessageQueue extends OutboundMessageQueue<MessageWrite> implements Predicate<MessageWrite> {
+
+    public InternalMessageQueue(EventLoop eventLoop) {
+      super(eventLoop);
+    }
+
+    @Override
+    public boolean test(MessageWrite msg) {
+      if (channelWritable) {
+        msg.write();
+        return true;
+      } else {
+        return false;
+      }
+    }
+
+    @Override
+    protected void startDraining() {
+      draining = true;
+    }
+
+    @Override
+    protected void stopDraining() {
+      draining = false;
+      if (!read && needsFlush) {
+        needsFlush = false;
+        chctx.flush();
+      }
+    }
+
+    @Override
+    protected void writeQueueDrained() {
+      ConnectionBase.this.handleWriteQueueDrained();
+    }
   }
 }

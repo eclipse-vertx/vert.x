@@ -6605,4 +6605,48 @@ public abstract class HttpTest extends HttpTestBase {
       server.stop();
     }
   }
+
+  @Test
+  public void testConcurrentWrites() throws Exception {
+    waitFor(1);
+    AtomicReference<String> received = new AtomicReference<>();
+    server.requestHandler(req -> req.body()
+                                    .onSuccess(buffer -> {
+                                      received.set(buffer.toString());
+                                      req.response().end();
+                                    }));
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions());
+    client.request(requestOptions)
+          .compose(req -> {
+            req.setChunked(true);
+            Future<Void> future = req.sendHead();
+            if (this instanceof Http1xTest) {
+              // Wait for the header to be sent.
+              while (!future.isComplete()) {
+                AtomicInteger count = new AtomicInteger(1000);
+                while (count.decrementAndGet() >= 0) {
+                }
+              }
+            }
+            AtomicBoolean latch = new AtomicBoolean(false);
+            new Thread(() -> {
+              req.write("msg1");
+              latch.set(true); // Release Event-loop thread
+            }).start();
+            while (!latch.get()) {
+              AtomicInteger count = new AtomicInteger(1000);
+              while (count.decrementAndGet() >= 0) {
+                // Active wait for the event to be published
+              }
+            }
+            req.write("msg2");
+            req.end();
+            return req.response();
+          })
+          .onComplete(onSuccess(resp -> complete()));
+    await();
+    assertEquals("msg1msg2", received.get());
+  }
 }

@@ -39,8 +39,6 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.MessageWrite;
 import io.vertx.core.net.impl.NetSocketImpl;
@@ -472,13 +470,13 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   }
 
   @Override
-  protected void writeQueueDrained() {
+  protected void handleWriteQueueDrained() {
     if (responseInProgress != null) {
       ContextInternal context = responseInProgress.context;
       Handler<Void> handler = responseInProgress.response()::handleWriteQueueDrained;
       context.execute(handler);
     } else {
-      super.writeQueueDrained();
+      super.handleWriteQueueDrained();
     }
   }
 

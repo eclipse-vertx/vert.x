@@ -319,7 +319,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     Promise<Void> promise = stream.context.promise();
     synchronized (conn) {
       checkHeadWritten();
-      stream.writeHeaders(new DefaultHttp2Headers().status(HttpResponseStatus.CONTINUE.codeAsText()), false, true, promise);
+      stream.writeHeaders(new DefaultHttp2Headers().status(HttpResponseStatus.CONTINUE.codeAsText()), true, false, true, promise);
     }
     return promise.future();
   }
@@ -335,7 +335,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     synchronized (conn) {
       checkHeadWritten();
     }
-;    stream.writeHeaders(http2Headers, false, true, promise);
+    stream.writeHeaders(http2Headers, true, false, true, promise);
     return promise.future();
   }
 
@@ -417,7 +417,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
         fut = stream.context.succeededFuture();
       }
       if (end && trailers != null) {
-        stream.writeHeaders(trailers, true, true, null);
+        stream.writeHeaders(trailers, false, true, true, null);
       }
       bodyEndHandler = this.bodyEndHandler;
       endHandler = this.endHandler;
@@ -451,7 +451,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       }
       prepareHeaders();
       headWritten = true;
-      stream.writeHeaders(headers, end, checkFlush, null);
+      stream.writeHeaders(headers, true, end, checkFlush, null);
       return true;
     } else {
       return false;
@@ -500,11 +500,11 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     }
   }
 
-  void handlerWritabilityChanged(boolean writable) {
+  void handleWriteQueueDrained() {
     Handler<Void> handler;
     synchronized (conn) {
       handler = drainHandler;
-      if (ended || !writable || handler == null) {
+      if (ended || handler == null) {
         return;
       }
     }

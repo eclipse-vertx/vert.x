@@ -1142,12 +1142,12 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   }
 
   @Override
-  protected void writeQueueDrained() {
+  protected void handleWriteQueueDrained() {
     Stream s = requests.peek();
     if (s != null) {
       s.context.execute(s::handleWriteQueueDrained);
     } else {
-      super.writeQueueDrained();
+      super.handleWriteQueueDrained();
     }
   }
 

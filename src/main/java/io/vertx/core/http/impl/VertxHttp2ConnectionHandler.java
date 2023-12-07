@@ -231,11 +231,12 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
 
   void writeData(Http2Stream stream, ByteBuf chunk, boolean end, FutureListener<Void> listener) {
     ChannelPromise promise = listener == null ? chctx.voidPromise() : chctx.newPromise().addListener(listener);
-    encoder().writeData(chctx, stream.id(), chunk, 0, end, promise);
-    Http2RemoteFlowController controller = encoder().flowController();
+    Http2ConnectionEncoder encoder = encoder();
+    encoder.writeData(chctx, stream.id(), chunk, 0, end, promise);
+    Http2RemoteFlowController controller = encoder.flowController();
     if (!controller.isWritable(stream) || end) {
       try {
-        encoder().flowController().writePendingBytes();
+        encoder.flowController().writePendingBytes();
       } catch (Http2Exception e) {
         onError(chctx, true, e);
       }
