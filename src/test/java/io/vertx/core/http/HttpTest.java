@@ -6609,7 +6609,6 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testConcurrentWrites() throws Exception {
     waitFor(1);
-    ExecutorService executor = Executors.newFixedThreadPool(1);
     AtomicReference<String> received = new AtomicReference<>();
     server.requestHandler(req -> req.body()
                                     .onSuccess(buffer -> {
@@ -6624,14 +6623,24 @@ public abstract class HttpTest extends HttpTestBase {
             req.setChunked(true);
             Future<Void> future = req.sendHead();
             if (this instanceof Http1xTest) {
-              while (!future.isComplete()) { } // Wait for the header to be sent.
+              // Wait for the header to be sent.
+              while (!future.isComplete()) {
+                AtomicInteger count = new AtomicInteger(1000);
+                while (count.decrementAndGet() >= 0) {
+                }
+              }
             }
             AtomicBoolean latch = new AtomicBoolean(false);
-            executor.submit(() -> {
+            new Thread(() -> {
               req.write("msg1");
               latch.set(true); // Release Event-loop thread
-            });
-            while (!latch.get()) { } // Active wait for the event to be published
+            }).start();
+            while (!latch.get()) {
+              AtomicInteger count = new AtomicInteger(1000);
+              while (count.decrementAndGet() >= 0) {
+                // Active wait for the event to be published
+              }
+            }
             req.write("msg2");
             req.end();
             return req.response();
