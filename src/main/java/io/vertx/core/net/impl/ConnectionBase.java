@@ -496,10 +496,6 @@ public abstract class ConnectionBase {
       }
       stopDraining();
     }
-    handleInterestedOpsChanged(writable);
-  }
-
-  protected void handleInterestedOpsChanged(boolean writable) {
     handleInterestedOpsChanged();
   }
 
