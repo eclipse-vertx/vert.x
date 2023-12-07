@@ -783,6 +783,28 @@ public interface Vertx extends Measured {
   }
 
   /**
+   * Like {@link #executeBlocking(Callable)} but using a callback.
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  default <T> void executeBlocking(Callable<T> blockingCodeHandler, Handler<AsyncResult<@Nullable T>> resultHandler) {
+    Future<T> future = executeBlocking(blockingCodeHandler, true);
+    if (resultHandler != null) {
+      future.onComplete(resultHandler);
+    }
+  }
+
+  /**
+   * Like {@link #executeBlocking(Callable, boolean)} but using a callback.
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  default <T> void executeBlocking(Callable<T> blockingCodeHandler, boolean ordered, Handler<AsyncResult<@Nullable T>> resultHandler) {
+    Future<T> future = executeBlocking(blockingCodeHandler, ordered);
+    if (resultHandler != null) {
+      future.onComplete(resultHandler);
+    }
+  }
+
+  /**
    * Same as {@link #executeBlocking(Handler, Handler)} but with an {@code handler} called when the operation completes
    *
    * @deprecated instead use {@link #executeBlocking(Callable)}
