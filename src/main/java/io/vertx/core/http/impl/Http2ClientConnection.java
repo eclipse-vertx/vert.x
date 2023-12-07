@@ -17,7 +17,6 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http2.*;
 import io.netty.handler.timeout.IdleStateEvent;
-import io.netty.handler.timeout.TimeoutException;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
@@ -509,7 +508,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    void handleWritabilityChanged(boolean writable) {
+    void handleWriteQueueDrained() {
     }
 
     @Override

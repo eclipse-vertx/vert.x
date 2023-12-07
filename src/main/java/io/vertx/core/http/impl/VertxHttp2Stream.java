@@ -27,6 +27,8 @@ import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.net.impl.OutboundMessageQueue;
+import io.vertx.core.net.impl.MessageWrite;
 import io.vertx.core.streams.impl.InboundBuffer;
 
 /**
@@ -36,15 +38,16 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
 
   private static final MultiMap EMPTY = new Http2HeadersAdaptor(EmptyHttp2Headers.INSTANCE);
 
+  private final OutboundMessageQueue<MessageWrite> messageQueue;
   protected final C conn;
   protected final VertxInternal vertx;
   protected final ContextInternal context;
   protected Http2Stream stream;
 
   // Client context
+  private boolean writable;
   private StreamPriority priority;
   private final InboundBuffer<Object> pending;
-  private boolean writable;
   private long bytesRead;
   private long bytesWritten;
   protected boolean isConnect;
@@ -55,8 +58,24 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     this.context = context;
     this.pending = new InboundBuffer<>(context, 5);
     this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
-    this.writable = true;
     this.isConnect = false;
+    this.writable = true;
+    this.messageQueue = new OutboundMessageQueue<>(conn.getContext().nettyEventLoop()) {
+      // TODO implement stop drain to optimize flushes ?
+      @Override
+      public boolean test(MessageWrite write) {
+        if (writable) {
+          write.write();
+          return true;
+        } else {
+          return false;
+        }
+      }
+      @Override
+      protected void writeQueueDrained() {
+        context.emit(VertxHttp2Stream.this, VertxHttp2Stream::handleWriteQueueDrained);
+      }
+    };
     pending.handler(item -> {
       if (item instanceof MultiMap) {
         handleEnd((MultiMap) item);
@@ -81,8 +100,8 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   void init(Http2Stream stream) {
     synchronized (this) {
       this.stream = stream;
-      this.writable = this.conn.handler.encoder().flowController().isWritable(stream);
     }
+    writable = this.conn.handler.encoder().flowController().isWritable(stream);
     stream.setProperty(conn.streamKey, this);
   }
 
@@ -121,14 +140,10 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   void onWritabilityChanged() {
-    context.emit(null, v -> {
-      boolean w;
-      synchronized (VertxHttp2Stream.this) {
-        writable = !writable;
-        w = writable;
-      }
-      handleWritabilityChanged(w);
-    });
+    writable = !writable;
+    if (writable) {
+      messageQueue.drain();
+    }
   }
 
   void onEnd() {
@@ -160,8 +175,8 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     pending.fetch(amount);
   }
 
-  public synchronized boolean isNotWritable() {
-    return !writable;
+  public boolean isNotWritable() {
+    return !messageQueue.isWritable();
   }
 
   public final Future<Void> writeFrame(int type, int flags, ByteBuf payload) {
@@ -188,12 +203,25 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     conn.handler.writeFrame(stream, (byte) type, (short) flags, payload, (FutureListener<Void>) promise);
   }
 
-  final void writeHeaders(Http2Headers headers, boolean end, boolean checkFlush, Promise<Void> promise) {
-    EventLoop eventLoop = conn.getContext().nettyEventLoop();
-    if (eventLoop.inEventLoop()) {
-      doWriteHeaders(headers, end, checkFlush, promise);
+  final void writeHeaders(Http2Headers headers, boolean first, boolean end, boolean checkFlush, Promise<Void> promise) {
+    if (first) {
+      EventLoop eventLoop = conn.getContext().nettyEventLoop();
+      if (eventLoop.inEventLoop()) {
+        doWriteHeaders(headers, end, checkFlush, promise);
+      } else {
+        eventLoop.execute(() -> doWriteHeaders(headers, end, checkFlush, promise));
+      }
     } else {
-      eventLoop.execute(() -> doWriteHeaders(headers, end, checkFlush, promise));
+      messageQueue.write(new MessageWrite() {
+        @Override
+        public void write() {
+          doWriteHeaders(headers, end, checkFlush, promise);
+        }
+        @Override
+        public void cancel(Throwable cause) {
+          promise.fail(cause);
+        }
+      });
     }
   }
 
@@ -212,13 +240,16 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   final void writeData(ByteBuf chunk, boolean end, Promise<Void> promise) {
-    ContextInternal ctx = conn.getContext();
-    EventLoop eventLoop = ctx.nettyEventLoop();
-    if (eventLoop.inEventLoop()) {
-      doWriteData(chunk, end, promise);
-    } else {
-      eventLoop.execute(() -> doWriteData(chunk, end, promise));
-    }
+    messageQueue.write(new MessageWrite() {
+      @Override
+      public void write() {
+        doWriteData(chunk, end, promise);
+      }
+      @Override
+      public void cancel(Throwable cause) {
+        promise.fail(cause);
+      }
+    });
   }
 
   void doWriteData(ByteBuf buf, boolean end, Promise<Void> promise) {
@@ -259,7 +290,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     }
   }
 
-  void handleWritabilityChanged(boolean writable) {
+  void handleWriteQueueDrained() {
   }
 
   void handleData(Buffer buf) {

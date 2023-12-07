@@ -775,6 +775,7 @@ public class Http2ServerTest extends Http2TestBase {
     fut.sync();
     await();
   }
+
   @Test
   public void testServerResponseWritability() throws Exception {
     testStreamWritability(req -> {
