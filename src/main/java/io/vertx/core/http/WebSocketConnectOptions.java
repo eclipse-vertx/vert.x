@@ -13,7 +13,7 @@ package io.vertx.core.http;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
-import io.vertx.codegen.annotations.JsonGen;
+import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.MultiMap;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.ProxyOptions;

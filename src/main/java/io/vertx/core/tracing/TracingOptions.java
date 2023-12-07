@@ -12,7 +12,7 @@
 package io.vertx.core.tracing;
 
 import io.vertx.codegen.annotations.DataObject;
-import io.vertx.codegen.annotations.JsonGen;
+import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.VertxTracerFactory;
 import io.vertx.core.spi.cluster.ClusterManager;

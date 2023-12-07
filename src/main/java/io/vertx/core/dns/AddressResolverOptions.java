@@ -12,7 +12,7 @@
 package io.vertx.core.dns;
 
 import io.vertx.codegen.annotations.DataObject;
-import io.vertx.codegen.annotations.JsonGen;
+import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.AddressResolver;
 import io.vertx.core.json.JsonObject;

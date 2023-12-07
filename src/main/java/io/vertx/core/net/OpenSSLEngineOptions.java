@@ -14,7 +14,7 @@ package io.vertx.core.net;
 import io.netty.handler.ssl.OpenSsl;
 import io.netty.handler.ssl.SslProvider;
 import io.vertx.codegen.annotations.DataObject;
-import io.vertx.codegen.annotations.JsonGen;
+import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.tls.DefaultSslContextFactory;
 import io.vertx.core.spi.tls.SslContextFactory;

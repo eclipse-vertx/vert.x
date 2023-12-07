@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.netty.util.internal.ObjectUtil;
 import io.vertx.codegen.annotations.DataObject;
-import io.vertx.codegen.annotations.JsonGen;
+import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.codegen.annotations.Unstable;
 import io.vertx.core.json.JsonObject;
 
