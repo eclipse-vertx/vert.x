@@ -100,7 +100,7 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
   }
 
   @Override
-  protected void writeQueueDrained() {
+  protected void handleWriteQueueDrained() {
     if (webSocket != null) {
       webSocket.context.execute(webSocket::handleWriteQueueDrained);
     }

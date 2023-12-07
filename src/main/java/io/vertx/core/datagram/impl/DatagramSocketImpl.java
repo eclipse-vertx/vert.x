@@ -351,10 +351,6 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
     }
 
     @Override
-    protected void handleInterestedOpsChanged() {
-    }
-
-    @Override
     protected void handleException(Throwable t) {
       super.handleException(t);
       Handler<Throwable> handler;

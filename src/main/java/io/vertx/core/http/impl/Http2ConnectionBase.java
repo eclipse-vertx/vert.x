@@ -96,11 +96,6 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  protected void handleInterestedOpsChanged() {
-    // Handled by HTTP/2
-  }
-
-  @Override
   protected void handleIdle(IdleStateEvent event) {
     super.handleIdle(event);
   }

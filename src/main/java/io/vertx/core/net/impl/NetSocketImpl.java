@@ -214,7 +214,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   }
 
   @Override
-  protected void writeQueueDrained() {
+  protected void handleWriteQueueDrained() {
     Handler<Void> handler = drainHandler;
     if (handler != null) {
       context.emit(null, handler);
