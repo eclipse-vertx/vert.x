@@ -36,9 +36,9 @@ class MessageTagExtractor implements TagExtractor<Message<?>> {
       case 0:
         return "message_bus.destination";
       case 1:
-        return "messaging.system";
+        return "message_bus.system";
       case 2:
-        return "messaging.operation";
+        return "message_bus.operation";
     }
     throw new IndexOutOfBoundsException("Invalid tag index " + index);
   }

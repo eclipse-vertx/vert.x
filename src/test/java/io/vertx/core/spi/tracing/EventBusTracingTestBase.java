@@ -14,7 +14,6 @@ import io.vertx.core.Context;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.tracing.TracingPolicy;
-import io.vertx.test.core.Repeat;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.faketracer.FakeTracer;
 import io.vertx.test.faketracer.Span;
@@ -164,8 +163,8 @@ public abstract class EventBusTracingTestBase extends VertxTestBase {
     assertSingleTrace(finishedSpans);
     finishedSpans.forEach(span -> {
       assertEquals("send", span.operation);
-      assertEquals("vertx-eventbus", span.getTags().get("messaging.system"));
-      assertEquals("publish", span.getTags().get("messaging.operation"));
+      assertEquals("vertx-eventbus", span.getTags().get("message_bus.system"));
+      assertEquals("publish", span.getTags().get("message_bus.operation"));
     });
   }
 
