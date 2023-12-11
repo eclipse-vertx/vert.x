@@ -92,6 +92,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTPS_HOST;
+import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTPS_PORT;
 import static io.vertx.test.core.TestUtils.*;
 import static org.hamcrest.CoreMatchers.*;
 
@@ -1388,8 +1390,8 @@ public class NetTest extends VertxTestBase {
     SelfSignedCertificate cert = SelfSignedCertificate.create("host2.com");
     TLSTest test = new TLSTest()
       .clientTrust(cert::trustOptions)
-      .connectAddress(SocketAddress.inetSocketAddress(4043, "host2.com."))
-      .bindAddress(SocketAddress.inetSocketAddress(4043, "host2.com"))
+      .connectAddress(SocketAddress.inetSocketAddress(DEFAULT_HTTPS_PORT, "host2.com."))
+      .bindAddress(SocketAddress.inetSocketAddress(DEFAULT_HTTPS_PORT, "host2.com"))
       .serverCert(cert::keyCertOptions);
     test.run(true);
     await();
@@ -1422,7 +1424,7 @@ public class NetTest extends VertxTestBase {
   public void testSniImplicitServerName() throws Exception {
     TLSTest test = new TLSTest()
         .clientTrust(Trust.SNI_JKS_HOST2)
-        .address(SocketAddress.inetSocketAddress(4043, "host2.com"))
+        .address(SocketAddress.inetSocketAddress(DEFAULT_HTTPS_PORT, "host2.com"))
         .serverCert(Cert.SNI_JKS).sni(true);
     test.run(true);
     await();
@@ -1434,7 +1436,7 @@ public class NetTest extends VertxTestBase {
   public void testSniImplicitServerNameDisabledForShortname1() throws Exception {
     TLSTest test = new TLSTest()
         .clientTrust(Trust.SNI_JKS_HOST1)
-        .address(SocketAddress.inetSocketAddress(4043, "host1"))
+        .address(SocketAddress.inetSocketAddress(DEFAULT_HTTPS_PORT, "host1"))
         .serverCert(Cert.SNI_JKS).sni(true);
     test.run(false);
     await();
@@ -1444,7 +1446,7 @@ public class NetTest extends VertxTestBase {
   public void testSniImplicitServerNameDisabledForShortname2() throws Exception {
     TLSTest test = new TLSTest()
         .clientTrust(Trust.SERVER_JKS)
-        .address(SocketAddress.inetSocketAddress(4043, "host1"))
+        .address(SocketAddress.inetSocketAddress(DEFAULT_HTTPS_PORT, "host1"))
         .serverCert(Cert.SNI_JKS).sni(true);
     test.run(true);
     await();
@@ -1455,7 +1457,7 @@ public class NetTest extends VertxTestBase {
   public void testSniForceShortname() throws Exception {
     TLSTest test = new TLSTest()
         .clientTrust(Trust.SNI_JKS_HOST1)
-        .address(SocketAddress.inetSocketAddress(4043, "host1"))
+        .address(SocketAddress.inetSocketAddress(DEFAULT_HTTPS_PORT, "host1"))
         .serverName("host1")
         .serverCert(Cert.SNI_JKS).sni(true);
     test.run(true);
@@ -1467,7 +1469,7 @@ public class NetTest extends VertxTestBase {
   public void testSniOverrideServerName() throws Exception {
     TLSTest test = new TLSTest()
         .clientTrust(Trust.SNI_JKS_HOST2)
-        .address(SocketAddress.inetSocketAddress(4043, "example.com"))
+        .address(SocketAddress.inetSocketAddress(DEFAULT_HTTPS_PORT, "example.com"))
         .serverName("host2.com")
         .serverCert(Cert.SNI_JKS).sni(true);
     test.run(true);
@@ -1564,8 +1566,8 @@ public class NetTest extends VertxTestBase {
   public void testSniWithTrailingDotHost() throws Exception {
     TLSTest test = new TLSTest()
       .clientTrust(Trust.SNI_JKS_HOST2)
-      .connectAddress(SocketAddress.inetSocketAddress(4043, "host2.com."))
-      .bindAddress(SocketAddress.inetSocketAddress(4043, "host2.com"))
+      .connectAddress(SocketAddress.inetSocketAddress(DEFAULT_HTTPS_PORT, "host2.com."))
+      .bindAddress(SocketAddress.inetSocketAddress(DEFAULT_HTTPS_PORT, "host2.com"))
       .serverCert(Cert.SNI_JKS).sni(true);
     test.run(true);
     await();
@@ -1656,7 +1658,7 @@ public class NetTest extends VertxTestBase {
     String[] enabledCipherSuites = new String[0];
     String[] enabledSecureTransportProtocols = new String[0];
     boolean sni;
-    SocketAddress bindAddress = SocketAddress.inetSocketAddress(4043, "localhost");
+    SocketAddress bindAddress = SocketAddress.inetSocketAddress(DEFAULT_HTTPS_PORT, "localhost");
     SocketAddress connectAddress = bindAddress;
     String serverName;
     Certificate clientPeerCert;
@@ -3105,7 +3107,7 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testTLSHostnameCertCheckCorrect() {
     server.close();
-    server = vertx.createNetServer(new NetServerOptions().setSsl(true).setPort(4043)
+    server = vertx.createNetServer(new NetServerOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT)
         .setKeyCertOptions(Cert.SERVER_JKS_ROOT_CA.get()));
     server.connectHandler(netSocket -> netSocket.close()).listen().onComplete(onSuccess(v -> {
 
@@ -3115,7 +3117,7 @@ public class NetTest extends VertxTestBase {
 
       NetClient client = vertx.createNetClient(options);
 
-      client.connect(4043, "localhost").onComplete(onSuccess(ns -> {
+      client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST).onComplete(onSuccess(ns -> {
         ns.upgradeToSsl().onComplete(onSuccess(v2 -> {
           testComplete();
         }));
@@ -3128,7 +3130,7 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testTLSHostnameCertCheckIncorrect() {
     server.close();
-    server = vertx.createNetServer(new NetServerOptions().setSsl(true).setPort(4043)
+    server = vertx.createNetServer(new NetServerOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT)
         .setKeyCertOptions(Cert.SERVER_JKS_ROOT_CA.get()));
     server.connectHandler(netSocket -> netSocket.close()).listen().onComplete(onSuccess(v -> {
 
@@ -3138,7 +3140,7 @@ public class NetTest extends VertxTestBase {
 
       NetClient client = vertx.createNetClient(options);
 
-      client.connect(4043, "127.0.0.1").onComplete(onSuccess(ns -> {
+      client.connect(DEFAULT_HTTPS_PORT, "127.0.0.1").onComplete(onSuccess(ns -> {
         ns.upgradeToSsl().onComplete(onFailure(err -> {
           testComplete();
         }));
@@ -3155,7 +3157,7 @@ public class NetTest extends VertxTestBase {
   public void testUpgradeToSSLIncorrectClientOptions1() {
     NetClient client = vertx.createNetClient();
     try {
-      testUpgradeToSSLIncorrectClientOptions(() -> client.connect(4043, "127.0.0.1"));
+      testUpgradeToSSLIncorrectClientOptions(() -> client.connect(DEFAULT_HTTPS_PORT, "127.0.0.1"));
     } finally {
       client.close();
     }
@@ -3168,7 +3170,7 @@ public class NetTest extends VertxTestBase {
   public void testUpgradeToSSLIncorrectClientOptions2() {
     NetClient client = vertx.createNetClient();
     try {
-      testUpgradeToSSLIncorrectClientOptions(() -> client.connect(new ConnectOptions().setPort(4043).setHost("127.0.0.1")));
+      testUpgradeToSSLIncorrectClientOptions(() -> client.connect(new ConnectOptions().setPort(DEFAULT_HTTPS_PORT).setHost("127.0.0.1")));
     } finally {
       client.close();
     }
@@ -3179,7 +3181,7 @@ public class NetTest extends VertxTestBase {
    */
   private void testUpgradeToSSLIncorrectClientOptions(Supplier<Future<NetSocket>> connect) {
     server.close();
-    server = vertx.createNetServer(new NetServerOptions().setSsl(true).setPort(4043)
+    server = vertx.createNetServer(new NetServerOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT)
       .setKeyCertOptions(Cert.SERVER_JKS_ROOT_CA.get()));
     server.connectHandler(ns -> {}).listen().onComplete(onSuccess(v -> {
       connect.get().onComplete(onSuccess(ns -> {
@@ -3196,21 +3198,21 @@ public class NetTest extends VertxTestBase {
   public void testOverrideClientSSLOptions() {
     waitFor(4);
     server.close();
-    server = vertx.createNetServer(new NetServerOptions().setSsl(true).setPort(4043)
+    server = vertx.createNetServer(new NetServerOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT)
       .setKeyCertOptions(Cert.SERVER_JKS.get()));
     server.connectHandler(ns -> {
       complete();
     }).listen().onComplete(onSuccess(v -> {
       NetClient client = vertx.createNetClient(new NetClientOptions().setTrustOptions(Trust.CLIENT_JKS.get()));
-      client.connect(4043, "localhost").onComplete(onSuccess(ns -> {
+      client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST).onComplete(onSuccess(ns -> {
         ns.upgradeToSsl().onComplete(onFailure(err -> {
           ClientSSLOptions sslOptions = new ClientSSLOptions().setTrustOptions(Trust.SERVER_JKS.get());
-          client.connect(4043, "localhost").onComplete(onSuccess(ns2 -> {
+          client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST).onComplete(onSuccess(ns2 -> {
             ns2.upgradeToSsl(sslOptions).onComplete(onSuccess(v2 -> {
               complete();
             }));
           }));
-          client.connect(new ConnectOptions().setPort(4043).setHost("localhost").setSslOptions(sslOptions)).onComplete(onSuccess(ns2 -> {
+          client.connect(new ConnectOptions().setPort(DEFAULT_HTTPS_PORT).setHost(DEFAULT_HTTPS_HOST).setSslOptions(sslOptions)).onComplete(onSuccess(ns2 -> {
             ns2.upgradeToSsl().onComplete(onSuccess(v2 -> {
               complete();
             }));

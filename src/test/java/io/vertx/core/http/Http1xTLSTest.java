@@ -62,28 +62,28 @@ public class Http1xTLSTest extends HttpTLSTest {
   @Test
   // Client trusts all server certs
   public void testClearClientRequestOptionsSetSSL() throws Exception {
-    RequestOptions options = new RequestOptions().setHost(DEFAULT_HTTP_HOST).setPort(4043).setURI(DEFAULT_TEST_URI).setSsl(true);
+    RequestOptions options = new RequestOptions().setHost(DEFAULT_HTTPS_HOST).setPort(DEFAULT_HTTPS_PORT).setURI(DEFAULT_TEST_URI).setSsl(true);
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).clientSSL(false).requestOptions(options).pass();
   }
 
   @Test
   // Client trusts all server certs
   public void testSSLClientRequestOptionsSetSSL() throws Exception {
-    RequestOptions options = new RequestOptions().setHost(DEFAULT_HTTP_HOST).setPort(4043).setURI(DEFAULT_TEST_URI).setSsl(true);
+    RequestOptions options = new RequestOptions().setHost(DEFAULT_HTTPS_HOST).setPort(DEFAULT_HTTPS_PORT).setURI(DEFAULT_TEST_URI).setSsl(true);
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).clientSSL(true).requestOptions(options).pass();
   }
 
   @Test
   // Client trusts all server certs
   public void testClearClientRequestOptionsSetClear() throws Exception {
-    RequestOptions options = new RequestOptions().setHost(DEFAULT_HTTP_HOST).setURI(DEFAULT_TEST_URI).setPort(4043).setSsl(false);
+    RequestOptions options = new RequestOptions().setHost(DEFAULT_HTTPS_HOST).setURI(DEFAULT_TEST_URI).setPort(DEFAULT_HTTPS_PORT).setSsl(false);
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).clientSSL(false).serverSSL(false).requestOptions(options).pass();
   }
 
   @Test
   // Client trusts all server certs
   public void testSSLClientRequestOptionsSetClear() throws Exception {
-    RequestOptions options = new RequestOptions().setHost(DEFAULT_HTTP_HOST).setURI(DEFAULT_TEST_URI).setPort(4043).setSsl(false);
+    RequestOptions options = new RequestOptions().setHost(DEFAULT_HTTPS_HOST).setURI(DEFAULT_TEST_URI).setPort(DEFAULT_HTTPS_PORT).setSsl(false);
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).clientSSL(true).serverSSL(false).requestOptions(options).pass();
   }
 
@@ -92,28 +92,28 @@ public class Http1xTLSTest extends HttpTLSTest {
   @Test
   // Client trusts all server certs
   public void testClearClientRequestAbsSetSSL() throws Exception {
-    String absoluteURI = "https://" + DEFAULT_HTTP_HOST + ":4043/" + DEFAULT_TEST_URI;
+    String absoluteURI = "https://" + DEFAULT_HTTPS_HOST_AND_PORT + "/" + DEFAULT_TEST_URI;
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).clientSSL(false).requestProvider(c -> c.request(new RequestOptions().setMethod(HttpMethod.POST).setAbsoluteURI(absoluteURI))).pass();
   }
 
   @Test
   // Client trusts all server certs
   public void testSSLClientRequestAbsSetSSL() throws Exception {
-    String absoluteURI = "https://" + DEFAULT_HTTP_HOST + ":4043/" + DEFAULT_TEST_URI;
+    String absoluteURI = "https://" + DEFAULT_HTTPS_HOST_AND_PORT + "/" + DEFAULT_TEST_URI;
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).clientSSL(true).requestProvider(c -> c.request(new RequestOptions().setMethod(HttpMethod.POST).setAbsoluteURI(absoluteURI))).pass();
   }
 
   @Test
   // Client trusts all server certs
   public void testClearClientRequestAbsSetClear() throws Exception {
-    String absoluteURI = "http://" + DEFAULT_HTTP_HOST + ":4043/" + DEFAULT_TEST_URI;
+    String absoluteURI = "http://" + DEFAULT_HTTPS_HOST_AND_PORT + "/" + DEFAULT_TEST_URI;
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).clientSSL(false).serverSSL(false).requestProvider(c -> c.request(new RequestOptions().setMethod(HttpMethod.POST).setAbsoluteURI(absoluteURI))).pass();
   }
 
   @Test
   // Client trusts all server certs
   public void testSSLClientRequestAbsSetClear() throws Exception {
-    String absoluteURI = "http://" + DEFAULT_HTTP_HOST + ":4043/" + DEFAULT_TEST_URI;
+    String absoluteURI = "http://" + DEFAULT_HTTPS_HOST_AND_PORT + "/" + DEFAULT_TEST_URI;
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).clientSSL(true).serverSSL(false).requestProvider(c -> c.request(new RequestOptions().setMethod(HttpMethod.POST).setAbsoluteURI(absoluteURI))).pass();
   }
 
@@ -125,7 +125,7 @@ public class Http1xTLSTest extends HttpTLSTest {
         .setHost(DEFAULT_HTTP_HOST)
         .setPort(DEFAULT_HTTP_PORT)
     ).requestHandler(req -> {
-      req.response().setStatusCode(303).putHeader("location", "https://" + DEFAULT_HTTP_HOST + ":4043/" + DEFAULT_TEST_URI).end();
+      req.response().setStatusCode(303).putHeader("location", "https://" + DEFAULT_HTTPS_HOST_AND_PORT + "/" + DEFAULT_TEST_URI).end();
     });
     startServer(redirectServer);
     try {
@@ -149,11 +149,11 @@ public class Http1xTLSTest extends HttpTLSTest {
         .setHost(DEFAULT_HTTP_HOST)
         .setPort(DEFAULT_HTTP_PORT)
     ).requestHandler(req -> {
-      req.response().setStatusCode(303).putHeader("location", "http://" + DEFAULT_HTTP_HOST + ":4043/" + DEFAULT_TEST_URI).end();
+      req.response().setStatusCode(303).putHeader("location", "http://" + DEFAULT_HTTPS_HOST_AND_PORT + "/" + DEFAULT_TEST_URI).end();
     });
     startServer(redirectServer);
     try {
-      RequestOptions options = new RequestOptions().setHost(DEFAULT_HTTP_HOST).setURI(DEFAULT_TEST_URI).setPort(4043).setSsl(false);
+      RequestOptions options = new RequestOptions().setHost(DEFAULT_HTTPS_HOST).setURI(DEFAULT_TEST_URI).setPort(DEFAULT_HTTPS_PORT).setSsl(false);
       testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.NONE, Trust.NONE)
           .clientSSL(true)
           .serverSSL(false)

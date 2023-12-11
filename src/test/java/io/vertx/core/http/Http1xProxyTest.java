@@ -547,7 +547,7 @@ public class Http1xProxyTest extends HttpTestBase {
             if (proxied) {
               assertNotNull("request did not go through proxy", proxy.getLastUri());
               if (clientOptions.getProxyOptions().getType() == ProxyType.HTTP) {
-                assertEquals("Host header doesn't contain target host", "localhost:4043", proxy.getLastRequestHeaders().get("Host"));
+                assertEquals("Host header doesn't contain target host", DEFAULT_HTTPS_HOST_AND_PORT, proxy.getLastRequestHeaders().get("Host"));
               }
             } else {
               assertNull("request did go through proxy", proxy.getLastUri());

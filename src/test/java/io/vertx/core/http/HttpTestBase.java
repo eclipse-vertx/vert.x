@@ -38,7 +38,7 @@ public class HttpTestBase extends VertxTestBase {
   public static final String DEFAULT_HTTP_HOST_AND_PORT = DEFAULT_HTTP_HOST + ":" +  DEFAULT_HTTP_PORT;
   public static final String DEFAULT_HTTPS_HOST = "localhost";
   public static final int DEFAULT_HTTPS_PORT = Integer.parseInt(System.getProperty("vertx.httpsPort", "4043"));;
-  public static final String DEFAULT_HTTPS_HOST_AND_PORT = DEFAULT_HTTPS_HOST + ":" +  DEFAULT_HTTPS_PORT;;
+  public static final String DEFAULT_HTTPS_HOST_AND_PORT = DEFAULT_HTTPS_HOST + ":" + DEFAULT_HTTPS_PORT;;
   public static final String DEFAULT_TEST_URI = "some-uri";
 
   protected HttpServer server;
