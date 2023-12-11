@@ -23,7 +23,7 @@ Runs the tests
 > mvn test
 ```
 
-Tests can be run with specified httpPort.
+Tests can be run with specified HTTP port.
 
 ```
 > mvn test -Dvertx.httpPort=8888

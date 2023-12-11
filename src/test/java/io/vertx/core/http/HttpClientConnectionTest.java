@@ -63,7 +63,7 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
         .createStream((ContextInternal) vertx.getOrCreateContext())
         .onComplete(onSuccess(stream -> {
           stream.writeHead(new HttpRequestHead(
-            HttpMethod.GET, "/", MultiMap.caseInsensitiveMultiMap(), "localhost:" + DEFAULT_HTTP_PORT, "", null), false, Unpooled.EMPTY_BUFFER, true, new StreamPriority(), false);
+            HttpMethod.GET, "/", MultiMap.caseInsensitiveMultiMap(), DEFAULT_HTTP_HOST_AND_PORT, "", null), false, Unpooled.EMPTY_BUFFER, true, new StreamPriority(), false);
           stream.headHandler(resp -> {
             assertEquals(200, resp.statusCode);
             complete();
@@ -95,7 +95,7 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
       });
       conn.createStream((ContextInternal) vertx.getOrCreateContext()).onComplete(onSuccess(stream -> {
         stream.writeHead(new HttpRequestHead(
-          HttpMethod.GET, "/", MultiMap.caseInsensitiveMultiMap(), "localhost:" + DEFAULT_HTTP_PORT, "", null), false, Unpooled.EMPTY_BUFFER, true, new StreamPriority(), false);
+          HttpMethod.GET, "/", MultiMap.caseInsensitiveMultiMap(), DEFAULT_HTTP_HOST_AND_PORT, "", null), false, Unpooled.EMPTY_BUFFER, true, new StreamPriority(), false);
         stream.headHandler(resp -> {
           fail();
         });

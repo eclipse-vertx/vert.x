@@ -748,7 +748,7 @@ public class WebSocketTest extends VertxTestBase {
       MultiMap headers = ws.headers();
       String webSocketLocation = headers.get("sec-websocket-location"); // HERE
       if (version == WebsocketVersion.V00) {
-        assertEquals("ws://" + DEFAULT_HTTP_HOST + ":" + DEFAULT_HTTP_PORT + uri, webSocketLocation);
+        assertEquals("ws://" + DEFAULT_HTTP_HOST_AND_PORT + uri, webSocketLocation);
       } else {
         assertNull(webSocketLocation);
       }
@@ -3597,7 +3597,7 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testEnableOriginHeaderV13() throws InterruptedException {
-    testOriginHeader(WebsocketVersion.V13, true, null, HttpHeaders.ORIGIN, "http://localhost:" + DEFAULT_HTTP_PORT);
+    testOriginHeader(WebsocketVersion.V13, true, null, HttpHeaders.ORIGIN, "http://" + DEFAULT_HTTP_HOST_AND_PORT);
   }
 
   @Test
@@ -3612,7 +3612,7 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testEnableOriginHeaderV08() throws InterruptedException {
-    testOriginHeader(WebsocketVersion.V08, true, null, HttpHeaderNames.SEC_WEBSOCKET_ORIGIN, "http://localhost:" + DEFAULT_HTTP_PORT);
+    testOriginHeader(WebsocketVersion.V08, true, null, HttpHeaderNames.SEC_WEBSOCKET_ORIGIN, "http://" + DEFAULT_HTTP_HOST_AND_PORT);
   }
 
   @Test
@@ -3627,7 +3627,7 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testEnableOriginHeaderV07() throws InterruptedException {
-    testOriginHeader(WebsocketVersion.V07, true, null, HttpHeaderNames.SEC_WEBSOCKET_ORIGIN, "http://localhost:" + DEFAULT_HTTP_PORT);
+    testOriginHeader(WebsocketVersion.V07, true, null, HttpHeaderNames.SEC_WEBSOCKET_ORIGIN, "http://" + DEFAULT_HTTP_HOST_AND_PORT);
   }
 
   @Test
