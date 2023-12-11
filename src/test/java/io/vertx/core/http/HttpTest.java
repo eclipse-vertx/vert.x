@@ -29,7 +29,6 @@ import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
-import io.vertx.core.streams.Pump;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.DetectFileDescriptorLeaks;
 import io.vertx.test.core.Repeat;
@@ -4936,11 +4935,9 @@ public abstract class HttpTest extends HttpTestBase {
           // Now create a NetSocket
           req.toNetSocket().onComplete(onSuccess(src -> {
             // Create pumps which echo stuff
-            Pump pump1 = Pump.pump(src, dst).start();
-            Pump pump2 = Pump.pump(dst, src).start();
+            src.pipeTo(dst);
+            dst.pipeTo(src);
             dst.closeHandler(v -> {
-              pump1.stop();
-              pump2.stop();
               src.close();
             });
           }));

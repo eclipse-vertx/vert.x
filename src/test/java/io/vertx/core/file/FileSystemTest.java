@@ -19,9 +19,7 @@ import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.file.impl.AsyncFileImpl;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.streams.Pump;
 import io.vertx.core.streams.ReadStream;
-import io.vertx.core.streams.WriteStream;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Assume;
@@ -1506,24 +1504,18 @@ public class FileSystemTest extends VertxTestBase {
     vertx.fileSystem().open(testDir + pathSep + fileName1, new OpenOptions()).onComplete(onSuccess(rs -> {
       //Open file for writing
       vertx.fileSystem().open(testDir + pathSep + fileName2, new OpenOptions()).onComplete(onSuccess(ws -> {
-        Pump p = Pump.pump(rs, ws);
-        p.start();
-        rs.endHandler(v -> {
-          rs.close().onComplete(onSuccess(car -> {
-            ws.close().onComplete(onSuccess(ar2 -> {
-              assertTrue(fileExists(fileName2));
-              byte[] readBytes;
-              try {
-                readBytes = Files.readAllBytes(Paths.get(testDir + pathSep + fileName2));
-              } catch (IOException e) {
-                fail(e.getMessage());
-                return;
-              }
-              assertEquals(Buffer.buffer(content), Buffer.buffer(readBytes));
-              testComplete();
-            }));
-          }));
-        });
+        rs.pipeTo(ws).onComplete(onSuccess(v -> {
+          assertTrue(fileExists(fileName2));
+          byte[] readBytes;
+          try {
+            readBytes = Files.readAllBytes(Paths.get(testDir + pathSep + fileName2));
+          } catch (IOException e) {
+            fail(e.getMessage());
+            return;
+          }
+          assertEquals(Buffer.buffer(content), Buffer.buffer(readBytes));
+          testComplete();
+        }));
       }));
     }));
     await();

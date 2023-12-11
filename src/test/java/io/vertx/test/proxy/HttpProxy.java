@@ -26,7 +26,6 @@ import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
-import io.vertx.core.streams.Pump;
 
 /**
  * Http Proxy for testing
@@ -125,8 +124,8 @@ public class HttpProxy extends TestProxyBase<HttpProxy> {
                   NetSocket clientSocket = ar1.result();
                   serverSocket.closeHandler(v -> clientSocket.close());
                   clientSocket.closeHandler(v -> serverSocket.close());
-                  Pump.pump(serverSocket, clientSocket).start();
-                  Pump.pump(clientSocket, serverSocket).start();
+                  serverSocket.pipeTo(clientSocket);
+                  clientSocket.pipeTo(serverSocket);
                 } else {
                   // Not handled
                 }
