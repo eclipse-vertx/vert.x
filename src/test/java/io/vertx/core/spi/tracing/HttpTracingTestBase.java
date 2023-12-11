@@ -162,7 +162,7 @@ public abstract class HttpTracingTestBase extends HttpTestBase {
       assertEquals("q=true", server2Span.getTags().get("http.query"));
       Span client2Span = spanMap.get(server2Span.parentId);
       assertEquals("GET", client2Span.operation);
-      assertEquals(scheme + "://" + DEFAULT_HTTP_HOST_AND_PORT + "/2", client2Span.getTags().get("http.url"));
+      assertEquals(scheme + "://" + DEFAULT_HTTP_HOST_AND_PORT + "/2?q=true", client2Span.getTags().get("http.url"));
       assertEquals("200", client2Span.getTags().get("http.status_code"));
       assertEquals("client", client2Span.getTags().get("span_kind"));
       Span server1Span = spanMap.get(client2Span.parentId);
