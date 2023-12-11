@@ -21,7 +21,6 @@ import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
-import io.vertx.core.streams.Pump;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -130,8 +129,8 @@ public class SocksProxy extends TestProxyBase<SocksProxy> {
               NetSocket clientSocket = result.result();
               socket.closeHandler(v -> clientSocket.close());
               clientSocket.closeHandler(v -> socket.close());
-              Pump.pump(socket, clientSocket).start();
-              Pump.pump(clientSocket, socket).start();
+              socket.pipeTo(clientSocket);
+              clientSocket.pipeTo(socket);
             } else {
               log.error("exception", result.cause());
               socket.handler(null);

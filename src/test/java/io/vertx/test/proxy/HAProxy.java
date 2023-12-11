@@ -5,7 +5,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.*;
-import io.vertx.core.streams.Pump;
 
 import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
@@ -51,8 +50,8 @@ public class HAProxy {
             log.debug("starting pump");
             socket.closeHandler(v -> clientSocket.close());
             clientSocket.closeHandler(v -> socket.close());
-            Pump.pump(socket, clientSocket).start();
-            Pump.pump(clientSocket, socket).start();
+            socket.pipeTo(clientSocket);
+            clientSocket.pipeTo(socket);
             socket.resume();
           }).onFailure(u -> {
             log.error("exception writing header", result.cause());
