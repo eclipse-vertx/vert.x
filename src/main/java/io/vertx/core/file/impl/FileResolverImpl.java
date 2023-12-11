@@ -21,7 +21,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -261,34 +263,54 @@ public class FileResolverImpl implements FileResolver {
     return cacheFile;
   }
 
+  /**
+   * Parse the list of entries of a URL assuming the URL is a jar URL.
+   *
+   * <ul>
+   *   <li>when the URL is a nested file within the archive, the list is the jar entry</li>
+   *   <li>when the URL is a nested file within a nested file within the archive, the list is jar entry followed by the jar entry of the nested archive</li>
+   *   <li>and so on.</li>
+   * </ul>
+   *
+   * @param url the URL
+   * @return the list of entries
+   */
+  private List<String> listOfEntries(URL url) {
+    String path = url.getPath();
+    List<String> list = new ArrayList<>();
+    int last = path.length();
+    for (int i = path.length() - 1; i > 4;) {
+      if (path.charAt(i) == '!' && (path.startsWith(".jar", i - 4) || path.startsWith(".zip", i - 4) || path.startsWith(".war", i - 4))) {
+        list.add(path.substring(2 + i, last));
+        last = i;
+        i -= 4;
+      } else {
+        i--;
+      }
+    }
+    return list;
+  }
+
+
   private File unpackFromJarURL(URL url, String fileName) {
     ZipFile zip = null;
     try {
-      String path = url.getPath();
-      int idx1 = -1, idx2 = -1;
-      for (int i = path.length() - 1; i > 4; ) {
-        if (path.charAt(i) == '!' && (path.startsWith(".jar", i - 4) || path.startsWith(".zip", i - 4) || path.startsWith(".war", i - 4))) {
-          if (idx1 == -1) {
-            idx1 = i;
-            i -= 4;
-            continue;
-          } else {
-            idx2 = i;
-            break;
-          }
-        }
-        i--;
+      List<String> listOfEntries = listOfEntries(url);
+      switch (listOfEntries.size()) {
+        case 1:
+          String path = url.getPath();
+          int to = path.length() - listOfEntries.get(0).length() - 2;
+          String sub = path.substring(5, to);
+          File file = new File(decodeURIComponent(sub, false));
+          zip = new ZipFile(file);
+          break;
+        case 2:
+          zip = new ZipFile(resolveFile(listOfEntries.get(1)));
+          break;
+        default:
+          throw new UnsupportedOperationException("Not yet implemented");
       }
-      if (idx2 == -1) {
-        File file = new File(decodeURIComponent(path.substring(5, idx1), false));
-        zip = new ZipFile(file);
-      } else {
-        String s = path.substring(idx2 + 2, idx1);
-        File file = resolveFile(s);
-        zip = new ZipFile(file);
-      }
-
-      String inJarPath = path.substring(idx1 + 2);
+      String inJarPath = listOfEntries.get(0);
       StringBuilder prefixBuilder = new StringBuilder();
       int first = 0;
       int second;
