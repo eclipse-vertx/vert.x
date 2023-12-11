@@ -20,6 +20,7 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.JarURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -312,11 +313,8 @@ public class FileResolverImpl implements FileResolver {
       List<String> listOfEntries = listOfEntries(url);
       switch (listOfEntries.size()) {
         case 1:
-          String path = url.getPath();
-          int to = path.length() - listOfEntries.get(0).length() - 2;
-          String sub = path.substring(5, to);
-          File file = new File(decodeURIComponent(sub, false));
-          zip = new ZipFile(file);
+          JarURLConnection conn = (JarURLConnection) url.openConnection();
+          zip = conn.getJarFile();
           break;
         case 2:
           zip = new ZipFile(resolveFile(listOfEntries.get(1)));
