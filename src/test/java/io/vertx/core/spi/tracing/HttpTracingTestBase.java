@@ -151,7 +151,7 @@ public abstract class HttpTracingTestBase extends HttpTestBase {
 
     List<Span> lastServerSpans = finishedSpans.stream()
       .filter(mockSpan ->  mockSpan.getTags().get("span_kind").equals("server"))
-      .filter(mockSpan -> mockSpan.getTags().get("http.url").contains("localhost:" + DEFAULT_HTTP_PORT+ "/2"))
+      .filter(mockSpan -> mockSpan.getTags().get("http.url").contains(DEFAULT_HTTP_HOST_AND_PORT + "/2"))
       .collect(Collectors.toList());
     assertEquals(1, lastServerSpans.size());
 
@@ -162,17 +162,17 @@ public abstract class HttpTracingTestBase extends HttpTestBase {
       assertEquals("q=true", server2Span.getTags().get("http.query"));
       Span client2Span = spanMap.get(server2Span.parentId);
       assertEquals("GET", client2Span.operation);
-      assertEquals(scheme + "://localhost:" + DEFAULT_HTTP_PORT+ "/2?q=true", client2Span.getTags().get("http.url"));
+      assertEquals(scheme + "://" + DEFAULT_HTTP_HOST_AND_PORT + "/2", client2Span.getTags().get("http.url"));
       assertEquals("200", client2Span.getTags().get("http.status_code"));
       assertEquals("client", client2Span.getTags().get("span_kind"));
       Span server1Span = spanMap.get(client2Span.parentId);
       assertEquals("GET", server1Span.operation);
-      assertEquals(scheme + "://localhost:" + DEFAULT_HTTP_PORT+ "/1", server1Span.getTags().get("http.url"));
+      assertEquals(scheme + "://" + DEFAULT_HTTP_HOST_AND_PORT + "/1", server1Span.getTags().get("http.url"));
       assertEquals("200", client2Span.getTags().get("http.status_code"));
       assertEquals("server", server1Span.getTags().get("span_kind"));
       Span client1Span = spanMap.get(server1Span.parentId);
       assertEquals("GET", client1Span.operation);
-      assertEquals(scheme + "://localhost:" + DEFAULT_HTTP_PORT+ "/1", client1Span.getTags().get("http.url"));
+      assertEquals(scheme + "://" + DEFAULT_HTTP_HOST_AND_PORT + "/1", client1Span.getTags().get("http.url"));
       assertEquals("200", client2Span.getTags().get("http.status_code"));
       assertEquals("client", client1Span.getTags().get("span_kind"));
     }

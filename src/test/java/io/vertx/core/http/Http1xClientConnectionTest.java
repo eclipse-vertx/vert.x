@@ -69,7 +69,7 @@ public class Http1xClientConnectionTest extends HttpClientConnectionTest {
             stream.reset(cause);
           });
         stream.writeHead(new HttpRequestHead(
-          HttpMethod.GET, "/", MultiMap.caseInsensitiveMultiMap(), "localhost:" + DEFAULT_HTTP_PORT, "", null), false, Unpooled.EMPTY_BUFFER, false, new StreamPriority(), false, null);
+          HttpMethod.GET, "/", MultiMap.caseInsensitiveMultiMap(), DEFAULT_HTTP_HOST_AND_PORT, "", null), false, Unpooled.EMPTY_BUFFER, false, new StreamPriority(), false, null);
       }));
     }));
     await();
@@ -93,7 +93,7 @@ public class Http1xClientConnectionTest extends HttpClientConnectionTest {
           complete();
         });
         stream.writeHead(new HttpRequestHead(
-          HttpMethod.GET, "/", MultiMap.caseInsensitiveMultiMap(), "localhost:" + DEFAULT_HTTP_PORT, "", null), false, Unpooled.EMPTY_BUFFER, true, new StreamPriority(), false, null);
+          HttpMethod.GET, "/", MultiMap.caseInsensitiveMultiMap(), DEFAULT_HTTP_HOST_AND_PORT, "", null), false, Unpooled.EMPTY_BUFFER, true, new StreamPriority(), false, null);
       }));
     }));
     await();

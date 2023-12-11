@@ -149,7 +149,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
     awaitLatch(latch);
     client.close();
     AsyncTestBase.assertWaitUntil(() -> metrics.endpoints().isEmpty());
-    assertEquals(null, metrics.connectionCount("localhost:" + DEFAULT_HTTP_PORT));
+    assertEquals(null, metrics.connectionCount(DEFAULT_HTTP_HOST_AND_PORT));
     AsyncTestBase.assertWaitUntil(() -> !serverMetric.get().socket.connected.get());
     AsyncTestBase.assertWaitUntil(() -> contentLength == serverMetric.get().socket.bytesRead.get());
     AsyncTestBase.assertWaitUntil(() -> contentLength  == serverMetric.get().socket.bytesWritten.get());
