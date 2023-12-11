@@ -70,7 +70,7 @@ public final class HttpUtils {
   static final TagExtractor<HttpServerRequest> SERVER_REQUEST_TAG_EXTRACTOR = new TagExtractor<HttpServerRequest>() {
     @Override
     public int len(HttpServerRequest req) {
-      return 2;
+      return req.query() == null ? 4 : 5;
     }
     @Override
     public String name(HttpServerRequest req, int index) {
@@ -79,6 +79,12 @@ public final class HttpUtils {
           return "http.url";
         case 1:
           return "http.method";
+        case 2:
+          return "http.scheme";
+        case 3:
+          return "http.path";
+        case 4:
+          return "http.query";
       }
       throw new IndexOutOfBoundsException("Invalid tag index " + index);
     }
@@ -89,6 +95,12 @@ public final class HttpUtils {
           return req.absoluteURI();
         case 1:
           return req.method().name();
+        case 2:
+          return req.scheme();
+        case 3:
+          return req.path();
+        case 4:
+          return req.query();
       }
       throw new IndexOutOfBoundsException("Invalid tag index " + index);
     }

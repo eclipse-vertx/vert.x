@@ -11,9 +11,10 @@
 package io.vertx.core.spi.tracing;
 
 import io.vertx.core.Context;
-import io.vertx.core.http.*;
-import io.vertx.test.faketracer.Span;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpTestBase;
 import io.vertx.test.faketracer.FakeTracer;
+import io.vertx.test.faketracer.Span;
 import org.junit.Test;
 
 import java.util.List;
@@ -108,7 +109,7 @@ public abstract class HttpTracingTestBase extends HttpTestBase {
       switch (serverReq.path()) {
         case "/1": {
           vertx.setTimer(10, id -> {
-            client.request(HttpMethod.GET, 8080, "localhost", "/2", onSuccess(clientReq -> {
+            client.request(HttpMethod.GET, 8080, "localhost", "/2?q=true", onSuccess(clientReq -> {
               clientReq.send(onSuccess(resp -> {
                 serverReq.response().end();
               }));
@@ -156,9 +157,12 @@ public abstract class HttpTracingTestBase extends HttpTestBase {
 
     String scheme = createBaseServerOptions().isSsl() ? "https" : "http";
     for (Span server2Span: lastServerSpans) {
+      assertEquals(scheme, server2Span.getTags().get("http.scheme"));
+      assertEquals("/2", server2Span.getTags().get("http.path"));
+      assertEquals("q=true", server2Span.getTags().get("http.query"));
       Span client2Span = spanMap.get(server2Span.parentId);
       assertEquals("GET", client2Span.operation);
-      assertEquals(scheme + "://localhost:8080/2", client2Span.getTags().get("http.url"));
+      assertEquals(scheme + "://localhost:8080/2?q=true", client2Span.getTags().get("http.url"));
       assertEquals("200", client2Span.getTags().get("http.status_code"));
       assertEquals("client", client2Span.getTags().get("span_kind"));
       Span server1Span = spanMap.get(client2Span.parentId);
