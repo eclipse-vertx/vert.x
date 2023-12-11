@@ -37,7 +37,9 @@ import io.vertx.core.streams.impl.PumpImpl;
  * Please see the documentation for more information.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
+ * @deprecated instead use {@link ReadStream#pipe()} or {@link ReadStream#pipeTo(WriteStream)}
  */
+@Deprecated
 @VertxGen
 public interface Pump {
 
