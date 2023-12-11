@@ -222,7 +222,7 @@ public class FileResolverImpl implements FileResolver {
       case "file":
         return unpackFromFileURL(url, fileName, cl);
       case "jar":
-        return unpackFromJarURL(url, fileName, cl);
+        return unpackFromJarURL(url, fileName);
       case "bundle": // Apache Felix, Knopflerfish
       case "bundleentry": // Equinox
       case "bundleresource": // Equinox
@@ -261,7 +261,7 @@ public class FileResolverImpl implements FileResolver {
     return cacheFile;
   }
 
-  private File unpackFromJarURL(URL url, String fileName, ClassLoader cl) {
+  private File unpackFromJarURL(URL url, String fileName) {
     ZipFile zip = null;
     try {
       String path = url.getPath();
