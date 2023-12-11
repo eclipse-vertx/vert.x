@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2023 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -14,7 +14,6 @@ import io.vertx.core.Context;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.tracing.TracingPolicy;
-import io.vertx.test.core.Repeat;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.faketracer.FakeTracer;
 import io.vertx.test.faketracer.Span;
@@ -170,6 +169,8 @@ public abstract class EventBusTracingTestBase extends VertxTestBase {
     assertSingleTrace(finishedSpans);
     finishedSpans.forEach(span -> {
       assertEquals("send", span.operation);
+      assertEquals("vertx-eventbus", span.getTags().get("message_bus.system"));
+      assertEquals("publish", span.getTags().get("message_bus.operation"));
     });
   }
 
