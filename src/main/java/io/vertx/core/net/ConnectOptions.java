@@ -11,7 +11,6 @@
 package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
-import io.vertx.core.json.JsonObject;
 
 /**
  * Options for configuring how to connect to a TCP server.
@@ -33,6 +32,7 @@ public class ConnectOptions {
   private ProxyOptions proxyOptions;
   private boolean ssl;
   private ClientSSLOptions sslOptions;
+  private int timeout;
 
    /**
     * The default constructor
@@ -45,6 +45,7 @@ public class ConnectOptions {
     proxyOptions = null;
     ssl = DEFAULT_SSL;
     sslOptions = null;
+    timeout = -1;
   }
 
    /**
@@ -60,6 +61,7 @@ public class ConnectOptions {
      proxyOptions = other.getProxyOptions() != null ? new ProxyOptions(other.getProxyOptions()) : null;
      ssl = other.isSsl();
      sslOptions = other.getSslOptions() != null ? new ClientSSLOptions(other.getSslOptions()) : null;
+     timeout = other.getTimeout();
    }
 
   /**
@@ -198,6 +200,28 @@ public class ConnectOptions {
    */
   public ConnectOptions setSslOptions(ClientSSLOptions sslOptions) {
     this.sslOptions = sslOptions;
+    return this;
+  }
+
+  /**
+   * @return the value of connect timeout in millis or {@code -1} when using the client defined connect timeout {@link NetClientOptions#getConnectTimeout()}
+   */
+  public int getTimeout() {
+    return timeout;
+  }
+
+  /**
+   * Override the client connect timeout in millis when {@code timeout >= 0} or use the client defined connect timeout {@link NetClientOptions#getConnectTimeout()}
+   * when {@code timeout == -1}.
+   *
+   * @param timeout connect timeout, in ms
+   * @return a reference to this, so the API can be used fluently
+   */
+  public ConnectOptions setTimeout(int timeout) {
+    if (timeout < -2) {
+      throw new IllegalArgumentException("connectTimeout must be >= 0 or -1 (use default client value)");
+    }
+    this.timeout = timeout;
     return this;
   }
 }

@@ -145,7 +145,7 @@ public interface Transport {
     }
   }
 
-  default void configure(ClientOptionsBase options, boolean domainSocket, Bootstrap bootstrap) {
+  default void configure(ClientOptionsBase options, int connectTimeout, boolean domainSocket, Bootstrap bootstrap) {
     if (!domainSocket) {
       bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
       bootstrap.option(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
@@ -167,7 +167,7 @@ public interface Transport {
     if (options.getTrafficClass() != -1) {
       bootstrap.option(ChannelOption.IP_TOS, options.getTrafficClass());
     }
-    bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, options.getConnectTimeout());
+    bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout);
   }
 
   default void configure(NetServerOptions options, boolean domainSocket, ServerBootstrap bootstrap) {
