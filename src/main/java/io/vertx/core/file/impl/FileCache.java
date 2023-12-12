@@ -197,7 +197,7 @@ class FileCache {
   void cacheFile(String fileName, InputStream is, boolean overwrite) throws IOException {
     File cacheFile = new File(getCacheDir(), fileName);
     fileNameCheck(cacheFile);
-    boolean created = cacheFile.getParentFile().mkdirs();
+    cacheFile.getParentFile().mkdirs();
     if (!overwrite) {
       try {
         Files.copy(is, cacheFile.toPath());
