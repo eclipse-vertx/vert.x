@@ -63,6 +63,7 @@ import io.vertx.core.impl.Utils;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 import io.vertx.test.core.DetectFileDescriptorLeaks;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.tls.Trust;
 import org.junit.Assume;
@@ -1409,6 +1410,7 @@ public class Http2ServerTest extends Http2TestBase {
     return f;
   }
 
+  @Repeat(times = 10000)
   @Test
   public void testSendFile() throws Exception {
     Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(1000 * 1000));
@@ -1436,11 +1438,10 @@ public class Http2ServerTest extends Http2TestBase {
     waitFor(2);
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
-      resp.bodyEndHandler(v -> {
+      resp.sendFile(path, offset, length).onComplete(onSuccess(v -> {
         assertEquals(resp.bytesWritten(), length);
         complete();
-      });
-      resp.sendFile(path, offset, length);
+      }));
     });
     startServer();
     TestClient client = new TestClient();
