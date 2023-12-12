@@ -296,7 +296,11 @@ class NetClientImpl implements NetClientInternal {
 
       SocketAddress peerAddress = peerAddress(remoteAddress, connectOptions);
 
-      vertx.transport().configure(options, remoteAddress.isDomainSocket(), bootstrap);
+      int connectTimeout = connectOptions.getTimeout();
+      if (connectTimeout < 0) {
+        connectTimeout = options.getConnectTimeout();
+      }
+      vertx.transport().configure(options, connectTimeout, remoteAddress.isDomainSocket(), bootstrap);
 
       ProxyOptions proxyOptions = connectOptions.getProxyOptions();
       if (proxyOptions == null) {

@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 public abstract class ClientOptionsBase extends TCPSSLOptions {
 
   /**
-   * The default value of connect timeout = 60000 ms
+   * The default value of connect timeout = 60000 (ms)
    */
   public static final int DEFAULT_CONNECT_TIMEOUT = 60000;
 

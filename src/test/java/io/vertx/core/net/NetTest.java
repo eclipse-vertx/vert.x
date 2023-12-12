@@ -31,7 +31,6 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.ssl.ApplicationProtocolConfig;
 import io.netty.handler.ssl.IdentityCipherSuiteFilter;
 import io.netty.handler.ssl.JdkSslContext;
-import io.netty.handler.ssl.SslContext;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.*;
@@ -89,7 +88,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static io.vertx.test.core.TestUtils.*;
@@ -4294,6 +4292,21 @@ public class NetTest extends VertxTestBase {
     client.close();
     client = vertx.createNetClient(new NetClientOptions().setConnectTimeout(1));
     client.connect(1234, TestUtils.NON_ROUTABLE_HOST)
+      .onComplete(onFailure(err -> {
+        assertTrue(err instanceof ConnectTimeoutException);
+        testComplete();
+      }));
+    await();
+  }
+
+  @Test
+  public void testConnectTimeoutOverride() {
+    client.close();
+    client = vertx.createNetClient();
+    client.connect(new ConnectOptions()
+        .setPort(1234)
+        .setHost(TestUtils.NON_ROUTABLE_HOST)
+        .setTimeout(1))
       .onComplete(onFailure(err -> {
         assertTrue(err instanceof ConnectTimeoutException);
         testComplete();

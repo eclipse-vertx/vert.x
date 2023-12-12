@@ -150,7 +150,7 @@ public class EpollTransport implements Transport {
   }
 
   @Override
-  public void configure(ClientOptionsBase options, boolean domainSocket, Bootstrap bootstrap) {
+  public void configure(ClientOptionsBase options, int connectTimeout, boolean domainSocket, Bootstrap bootstrap) {
     if (!domainSocket) {
       if (options.isTcpFastOpen()) {
         bootstrap.option(ChannelOption.TCP_FASTOPEN_CONNECT, options.isTcpFastOpen());
@@ -159,6 +159,6 @@ public class EpollTransport implements Transport {
       bootstrap.option(EpollChannelOption.TCP_QUICKACK, options.isTcpQuickAck());
       bootstrap.option(EpollChannelOption.TCP_CORK, options.isTcpCork());
     }
-    Transport.super.configure(options, domainSocket, bootstrap);
+    Transport.super.configure(options, connectTimeout, domainSocket, bootstrap);
   }
 }
