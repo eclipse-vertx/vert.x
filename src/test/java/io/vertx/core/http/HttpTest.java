@@ -6677,7 +6677,6 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testConcurrentWrites() throws Exception {
     waitFor(1);
-    ExecutorService executor = Executors.newFixedThreadPool(1);
     AtomicReference<String> received = new AtomicReference<>();
     server.requestHandler(req -> req.body()
                                     .onSuccess(buffer -> {
@@ -6688,23 +6687,20 @@ public abstract class HttpTest extends HttpTestBase {
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions());
     client.request(requestOptions)
-          .compose(req -> {
-            req.setChunked(true);
-            Future<Void> future = req.sendHead();
-            if (this instanceof Http1xTest) {
-              while (!future.isComplete()) { } // Wait for the header to be sent.
-            }
-            AtomicBoolean latch = new AtomicBoolean(false);
-            executor.submit(() -> {
-              req.write("msg1");
-              latch.set(true); // Release Event-loop thread
-            });
-            while (!latch.get()) { } // Active wait for the event to be published
-            req.write("msg2");
-            req.end();
-            return req.response();
-          })
-          .onComplete(onSuccess(resp -> complete()));
+      .compose(req -> req.setChunked(true).sendHead().compose(v -> {
+        AtomicBoolean latch = new AtomicBoolean(false);
+        new Thread(() -> {
+          req.write("msg1");
+          latch.set(true); // Release Event-loop thread
+        }).start();
+        // Active wait for the event to be published
+        while (!latch.get()) {
+        }
+        req.write("msg2");
+        req.end();
+        return req.response();
+      }))
+      .onComplete(onSuccess(resp -> complete()));
     await();
     assertEquals("msg1msg2", received.get());
   }
