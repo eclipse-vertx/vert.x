@@ -14,6 +14,7 @@ package io.vertx.core.file.impl;
 import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.VertxException;
 import io.vertx.core.file.FileSystemOptions;
+import io.vertx.core.impl.Utils;
 import io.vertx.core.spi.file.FileResolver;
 
 import java.io.File;
@@ -369,12 +370,18 @@ public class FileResolverImpl implements FileResolver {
     while (entries.hasMoreElements()) {
       ZipEntry entry = entries.nextElement();
       String name = entry.getName();
-      if (name.startsWith(entryFilter)) {
-        if (name.endsWith("/")) {
-          cache.cacheDir(name);
-        } else {
-          try (InputStream is = zip.getInputStream(entry)) {
-            cache.cacheFile(name, is, !enableCaching);
+      int len = name.length();
+      if (len == 0) {
+        return;
+      }
+      if (name.charAt(len - 1) != ' ' || !Utils.isWindows()) {
+        if (name.startsWith(entryFilter)) {
+          if (name.charAt(len - 1) == '/') {
+            cache.cacheDir(name);
+          } else {
+            try (InputStream is = zip.getInputStream(entry)) {
+              cache.cacheFile(name, is, !enableCaching);
+            }
           }
         }
       }
