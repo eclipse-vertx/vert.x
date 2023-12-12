@@ -14,14 +14,22 @@ package io.vertx.core.file.impl;
 import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.VertxException;
 import io.vertx.core.file.FileSystemOptions;
+import io.vertx.core.impl.Utils;
 import io.vertx.core.spi.file.FileResolver;
 
-import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.JarURLConnection;
 import java.net.URL;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -261,76 +269,107 @@ public class FileResolverImpl implements FileResolver {
     return cacheFile;
   }
 
-  private File unpackFromJarURL(URL url, String fileName, ClassLoader cl) {
-    ZipFile zip = null;
-    try {
-      String path = url.getPath();
-      int idx1 = -1, idx2 = -1;
-      for (int i = path.length() - 1; i > 4; ) {
-        if (path.charAt(i) == '!' && (path.startsWith(".jar", i - 4) || path.startsWith(".zip", i - 4) || path.startsWith(".war", i - 4))) {
-          if (idx1 == -1) {
-            idx1 = i;
-            i -= 4;
-            continue;
-          } else {
-            idx2 = i;
-            break;
-          }
-        }
+  /**
+   * Parse the list of entries of a URL assuming the URL is a jar URL.
+   *
+   * <ul>
+   *   <li>when the URL is a nested file within the archive, the list is the jar entry</li>
+   *   <li>when the URL is a nested file within a nested file within the archive, the list is jar entry followed by the jar entry of the nested archive</li>
+   *   <li>and so on.</li>
+   * </ul>
+   *
+   * @param url the URL
+   * @return the list of entries
+   */
+  private List<String> listOfEntries(URL url) {
+    String path = url.getPath();
+    List<String> list = new ArrayList<>();
+    int last = path.length();
+    for (int i = path.length() - 2; i >= 0;) {
+      if (path.charAt(i) == '!' && path.charAt(i + 1) == '/') {
+        list.add(path.substring(2 + i, last));
+        last = i;
+        i -= 2;
+      } else {
         i--;
       }
-      if (idx2 == -1) {
-        File file = new File(decodeURIComponent(path.substring(5, idx1), false));
-        zip = new ZipFile(file);
-      } else {
-        String s = path.substring(idx2 + 2, idx1);
-        File file = resolveFile(s);
-        zip = new ZipFile(file);
-      }
+    }
+    return list;
+  }
 
-      String inJarPath = path.substring(idx1 + 2);
-      StringBuilder prefixBuilder = new StringBuilder();
-      int first = 0;
-      int second;
-      int len = JAR_URL_SEP.length();
-      while ((second = inJarPath.indexOf(JAR_URL_SEP, first)) >= 0) {
-        prefixBuilder.append(inJarPath, first, second).append("/");
-        first = second + len;
-      }
-      String prefix = prefixBuilder.toString();
-      Enumeration<? extends ZipEntry> entries = zip.entries();
-      String prefixCheck = prefix.isEmpty() ? fileName : prefix + fileName;
-      while (entries.hasMoreElements()) {
-        ZipEntry entry = entries.nextElement();
-        String name = entry.getName();
-        if (name.startsWith(prefixCheck)) {
-          String p = prefix.isEmpty() ? name : name.substring(prefix.length());
-          if (name.endsWith("/")) {
-            // Directory
-            cache.cacheDir(p);
-          } else {
-            try (InputStream is = zip.getInputStream(entry)) {
-              cache.cacheFile(p, is, !enableCaching);
-            }
+  private File unpackFromJarURL(URL url, String fileName, ClassLoader cl) {
+    try {
+      List<String> listOfEntries = listOfEntries(url);
+      switch (listOfEntries.size()) {
+        case 1:
+          JarURLConnection conn = (JarURLConnection) url.openConnection();
+          try (ZipFile zip = conn.getJarFile()) {
+            extractFilesFromJarFile(zip, fileName);
           }
-
-        }
+          break;
+        case 2:
+          URL nestedURL = cl.getResource(listOfEntries.get(1));
+          if (nestedURL != null && nestedURL.getProtocol().equals("jar")) {
+            File root = unpackFromJarURL(nestedURL, listOfEntries.get(1), cl);
+            if (root.isDirectory()) {
+              // jar:file:/path/to/nesting.jar!/xxx-inf/classes
+              // we need to unpack xxx-inf/classes and then copy the content as is in the cache
+              Path path = root.toPath();
+              Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                  Path relative = path.relativize(dir);
+                  cache.cacheDir(relative.toString());
+                  return FileVisitResult.CONTINUE;
+                }
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                  Path relative = path.relativize(file);
+                  cache.cacheFile(relative.toString(), file.toFile(), false);
+                  return FileVisitResult.CONTINUE;
+                }
+              });
+            } else {
+              // jar:file:/path/to/nesting.jar!/path/to/nested.jar
+              try (ZipFile zip = new ZipFile(root)) {
+                extractFilesFromJarFile(zip, fileName);
+              }
+            }
+          } else {
+            throw new VertxException("Unexpected nested url : " + nestedURL);
+          }
+          break;
+        default:
+          throw new VertxException("Nesting more than two levels is not supported");
       }
     } catch (IOException e) {
       throw new VertxException(FileSystemImpl.getFileAccessErrorMessage("unpack", url.toString()), e);
-    } finally {
-      closeQuietly(zip);
     }
-
     return cache.getFile(fileName);
   }
 
-  private void closeQuietly(Closeable zip) {
-    if (zip != null) {
-      try {
-        zip.close();
-      } catch (IOException e) {
-        // Ignored.
+  /**
+   * Extract a subset of the entries to the cache.
+   */
+  private void extractFilesFromJarFile(ZipFile zip, String entryFilter) throws IOException {
+    Enumeration<? extends ZipEntry> entries = zip.entries();
+    while (entries.hasMoreElements()) {
+      ZipEntry entry = entries.nextElement();
+      String name = entry.getName();
+      int len = name.length();
+      if (len == 0) {
+        return;
+      }
+      if (name.charAt(len - 1) != ' ' || !Utils.isWindows()) {
+        if (name.startsWith(entryFilter)) {
+          if (name.charAt(len - 1) == '/') {
+            cache.cacheDir(name);
+          } else {
+            try (InputStream is = zip.getInputStream(entry)) {
+              cache.cacheFile(name, is, !enableCaching);
+            }
+          }
+        }
       }
     }
   }
