@@ -455,6 +455,46 @@ public abstract class HttpTLSTest extends HttpTestBase {
       .serverEnabledSecureTransportProtocol(new String[]{"TLSv1.3"}).pass();
   }
 
+  @Test
+  // Disable TLSv1.3
+  public void testDisableTLSv1_3() throws Exception {
+    Assume.assumeFalse(System.getProperty("java.version").startsWith("1.8"));
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE).clientTrustAll()
+      .clientEnabledSecureTransportProtocol(new String[]{"TLSv1.3"})
+      .serverEnabledSecureTransportProtocol(new String[]{"TLSv1.2"})
+      .fail();
+  }
+
+  @Test
+  // Disable TLSv1.3 with OpenSSL
+  public void testDisableTLSv1_3OpenSSL() throws Exception {
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE).clientTrustAll()
+      .clientEnabledSecureTransportProtocol(new String[]{"TLSv1.3"})
+      .serverEnabledSecureTransportProtocol(new String[]{"TLSv1.2"})
+      .serverOpenSSL()
+      .fail();
+  }
+
+  @Test
+  // Disable TLSv1.2
+  public void testDisableTLSv1_2() throws Exception {
+    Assume.assumeFalse(System.getProperty("java.version").startsWith("1.8"));
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE).clientTrustAll()
+      .clientEnabledSecureTransportProtocol(new String[]{"TLSv1.2"})
+      .serverEnabledSecureTransportProtocol(new String[]{"TLSv1.3"})
+      .fail();
+  }
+
+  @Test
+  // Disable TLSv1.2 with OpenSSL
+  public void testDisableTLSv1_2OpenSSL() throws Exception {
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE).clientTrustAll()
+      .clientEnabledSecureTransportProtocol(new String[]{"TLSv1.2"})
+      .serverEnabledSecureTransportProtocol(new String[]{"TLSv1.3"})
+      .serverOpenSSL()
+      .fail();
+  }
+
   // SNI tests
 
   @Test
