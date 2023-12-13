@@ -185,7 +185,6 @@ public class NetClientOptions extends ClientOptionsBase {
     return this;
   }
 
-  @Deprecated
   @Override
   public NetClientOptions setKeyCertOptions(KeyCertOptions options) {
     super.setKeyCertOptions(options);

@@ -499,7 +499,6 @@ public class WebSocketClientOptions extends ClientOptionsBase {
     return (WebSocketClientOptions)super.setSsl(ssl);
   }
 
-  @Deprecated
   @Override
   public WebSocketClientOptions setKeyCertOptions(KeyCertOptions options) {
     return (WebSocketClientOptions)super.setKeyCertOptions(options);

@@ -363,7 +363,6 @@ public class EventBusOptions extends TCPSSLOptions {
 
   @Override
   @GenIgnore
-  @Deprecated
   public EventBusOptions setKeyCertOptions(KeyCertOptions options) {
     super.setKeyCertOptions(options);
     return this;

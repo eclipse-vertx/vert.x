@@ -289,7 +289,6 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     return (ClientOptionsBase) super.setSsl(ssl);
   }
 
-  @Deprecated
   @Override
   public ClientOptionsBase setKeyCertOptions(KeyCertOptions options) {
     return (ClientOptionsBase) super.setKeyCertOptions(options);

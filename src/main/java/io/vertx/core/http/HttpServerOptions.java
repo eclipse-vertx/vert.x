@@ -405,7 +405,6 @@ public class HttpServerOptions extends NetServerOptions {
     return this;
   }
 
-  @Deprecated
   @Override
   public HttpServerOptions setKeyCertOptions(KeyCertOptions options) {
     super.setKeyCertOptions(options);

@@ -244,7 +244,6 @@ public class NetServerOptions extends TCPSSLOptions {
     return (NetServerOptions) super.setSslEngineOptions(sslEngineOptions);
   }
 
-  @Deprecated
   @Override
   public NetServerOptions setKeyCertOptions(KeyCertOptions options) {
     super.setKeyCertOptions(options);

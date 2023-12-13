@@ -484,7 +484,6 @@ public class HttpClientOptions extends ClientOptionsBase {
     return this;
   }
 
-  @Deprecated
   @Override
   public HttpClientOptions setKeyCertOptions(KeyCertOptions options) {
     super.setKeyCertOptions(options);
