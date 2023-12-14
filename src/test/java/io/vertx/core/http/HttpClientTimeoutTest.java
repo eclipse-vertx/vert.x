@@ -32,6 +32,68 @@ import java.util.concurrent.atomic.AtomicReference;
 public abstract class HttpClientTimeoutTest extends HttpTestBase {
 
   @Test
+  public void testConnectTimeoutOnHttpClientOptions() throws Exception {
+    int connectTimeout = 100;
+    HttpClientOptions clientOptions = new HttpClientOptions()
+      .setMaxPoolSize(1)
+      .setConnectTimeout(connectTimeout); // It seems ConnectTimeout set on http client is ignored by client.request call
+
+    client = vertx.createHttpClient(clientOptions);
+
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    startServer(testAddress);
+
+    List<HttpClientRequest> requests = new ArrayList<>();
+    requests.add(client.request(new RequestOptions(requestOptions)).toCompletionStage().toCompletableFuture().get());
+
+    long now = System.currentTimeMillis();
+    // client.request call will hang forever trying to acquire connection due to default connectTimeout = 0 in HttpClientImpl
+    client.request(
+        new RequestOptions(requestOptions)
+//                    .setConnectTimeout(100)  // No explicit ConnectTimeout on request so I would expect client ConnectTimeout will apply
+          .setURI("/slow")
+      )
+      .onComplete(onFailure(err -> {
+        assertTrue(System.currentTimeMillis() - now < connectTimeout + 5000);
+        assertEquals(err.getMessage(), "The timeout of 100 ms has been exceeded when getting a connection to localhost:8080");
+        testComplete();
+      }));
+
+    await();
+  }
+
+  @Test
+  public void testConnectTimeoutOnHttpClientOptions1() throws Exception {
+    int connectTimeout = 100;
+    HttpClientOptions clientOptions = new HttpClientOptions()
+      .setMaxPoolSize(1)
+      .setConnectTimeout(connectTimeout); // This connect timeout is ignored by client.request call
+
+    client = vertx.createHttpClient(clientOptions);
+
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    startServer(testAddress);
+
+    List<HttpClientRequest> requests = new ArrayList<>();
+    HttpClientRequest request = client.request(new RequestOptions(requestOptions)).toCompletionStage().toCompletableFuture().get();
+    requests.add(request);
+
+    long now = System.currentTimeMillis();
+    client.request(HttpMethod.GET, 8080, "localhost", "/slow")
+      .onComplete(onFailure(err -> {
+        assertTrue(System.currentTimeMillis() - now < connectTimeout + 5000);
+        assertEquals(err.getMessage(), "The timeout of 100 ms has been exceeded when getting a connection to localhost:8080");
+        testComplete();
+      }));
+
+    await();
+  }
+
+  @Test
   public void testConnectTimeoutDoesFire() throws Exception {
     int timeout = 3000;
     server.requestHandler(req -> {
