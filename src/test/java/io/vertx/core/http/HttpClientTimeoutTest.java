@@ -88,7 +88,7 @@ public abstract class HttpClientTimeoutTest extends HttpTestBase {
     }
 
     long now = System.currentTimeMillis();
-    client.request(HttpMethod.GET, 8080, "localhost", "/slow")
+    client.request(HttpMethod.GET, requestOptions.getPort(), requestOptions.getHost(), "/slow")
       .onComplete(onFailure(err -> {
         assertTrue(System.currentTimeMillis() - now < connectTimeout + 5000);
 //        assertEquals(err.getMessage(), "The timeout of 1000 ms has been exceeded when getting a connection to localhost:8080");
