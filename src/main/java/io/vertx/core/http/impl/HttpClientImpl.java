@@ -312,6 +312,9 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     }
     long connectTimeout = 0L;
     long idleTimeout = 0L;
+    if (options.getConnectTimeout() >= 0) {
+      connectTimeout = options.getConnectTimeout();
+    }
     if (request.getTimeout() >= 0L) {
       connectTimeout = request.getTimeout();
       idleTimeout = request.getTimeout();
