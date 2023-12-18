@@ -12,6 +12,7 @@
 package io.vertx.core.impl.launcher.commands;
 
 import io.vertx.core.Launcher;
+import io.vertx.core.http.HttpTestBase;
 import io.vertx.core.json.JsonObject;
 import org.junit.Before;
 import org.junit.Test;
@@ -286,7 +287,7 @@ public class StartStopListCommandsTest extends CommandTestBase {
     }
 
     private int getHttpCode() throws IOException {
-        return ((HttpURLConnection) new URL("http://localhost:8080")
+        return ((HttpURLConnection) new URL("http://" + HttpTestBase.DEFAULT_HTTP_HOST_AND_PORT)
             .openConnection()).getResponseCode();
     }
 
