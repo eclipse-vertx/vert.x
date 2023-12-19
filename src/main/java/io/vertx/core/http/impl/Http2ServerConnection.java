@@ -129,16 +129,16 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
   }
 
   private Http2ServerStream createStream(Http2Headers headers, boolean streamEnded) {
-    CharSequence schemeHeader = headers.getAndRemove(":scheme");
+    CharSequence schemeHeader = headers.getAndRemove(HttpHeaders.PSEUDO_SCHEME);
     HostAndPort authority = null;
-    String authorityHeaderAsString = null;
-    CharSequence authorityHeader = headers.getAndRemove(":authority");
+    String authorityHeaderAsString;
+    CharSequence authorityHeader = headers.getAndRemove(HttpHeaders.PSEUDO_AUTHORITY);
     if (authorityHeader != null) {
       authorityHeaderAsString = authorityHeader.toString();
       authority = HostAndPortImpl.parseHostAndPort(authorityHeaderAsString, -1);
     }
-    CharSequence pathHeader = headers.getAndRemove(":path");
-    CharSequence methodHeader = headers.getAndRemove(":method");
+    CharSequence pathHeader = headers.getAndRemove(HttpHeaders.PSEUDO_PATH);
+    CharSequence methodHeader = headers.getAndRemove(HttpHeaders.PSEUDO_METHOD);
     return new Http2ServerStream(
       this,
       streamContextSupplier.get(),
