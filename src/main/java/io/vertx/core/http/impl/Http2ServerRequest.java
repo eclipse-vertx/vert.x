@@ -65,7 +65,6 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   protected final Http2ServerResponse response;
   private final String serverOrigin;
   private final MultiMap headersMap;
-  private final String scheme;
 
   // Accessed on context thread
   private Charset paramsCharset = StandardCharsets.UTF_8;
@@ -83,17 +82,10 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
                      String serverOrigin,
                      Http2Headers headers,
                      String contentEncoding) {
-    String scheme = headers.get(":scheme") != null ? headers.get(":scheme").toString() : null;
-    headers.remove(":method");
-    headers.remove(":scheme");
-    headers.remove(":path");
-    headers.remove(":authority");
-
     this.context = stream.context;
     this.stream = stream;
     this.response = new Http2ServerResponse(stream.conn, stream, false, contentEncoding);
     this.serverOrigin = serverOrigin;
-    this.scheme = scheme;
     this.headersMap = new Http2HeadersAdaptor(headers);
   }
 
@@ -330,7 +322,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
 
   @Override
   public String scheme() {
-    return scheme;
+    return stream.scheme;
   }
 
   @Override
