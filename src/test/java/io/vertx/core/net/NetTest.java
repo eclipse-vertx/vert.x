@@ -113,8 +113,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTP_HOST;
-import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTP_PORT;
 import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTPS_HOST;
 import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTPS_PORT;
 import static io.vertx.test.core.TestUtils.*;
@@ -4128,10 +4126,10 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testUnresolvedSocketAddress() {
-    InetSocketAddress a = InetSocketAddress.createUnresolved(DEFAULT_HTTP_HOST, DEFAULT_HTTP_PORT);
+    InetSocketAddress a = InetSocketAddress.createUnresolved("localhost", 8080);
     SocketAddress converted = ((VertxInternal) vertx).transport().convert(a);
-    assertEquals(DEFAULT_HTTP_PORT, converted.port());
-    assertEquals(DEFAULT_HTTP_HOST, converted.host());
+    assertEquals(8080, converted.port());
+    assertEquals("localhost", converted.host());
   }
 
   @Test

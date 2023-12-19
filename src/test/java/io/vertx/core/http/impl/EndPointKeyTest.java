@@ -10,7 +10,6 @@
  */
 package io.vertx.core.http.impl;
 
-import io.vertx.core.http.HttpTestBase;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.SocketAddress;
 import org.junit.Test;
@@ -25,7 +24,7 @@ public class EndPointKeyTest {
 
   @Test
   public void testEndPointKey() {
-    final SocketAddress addr = SocketAddress.inetSocketAddress(HttpTestBase.DEFAULT_HTTP_PORT, "localhost");
+    final SocketAddress addr = SocketAddress.inetSocketAddress(8080, "localhost");
     EndpointKey key1 = new EndpointKey(false, new ProxyOptions(), addr, addr);
     EndpointKey key2 = new EndpointKey(false, new ProxyOptions(), addr, addr);
     assertEquals(key1, key2);
