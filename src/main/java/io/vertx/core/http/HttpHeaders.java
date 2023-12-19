@@ -13,6 +13,7 @@ package io.vertx.core.http;
 
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
+import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.util.AsciiString;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
@@ -426,6 +427,36 @@ public interface HttpHeaders {
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   CharSequence VARY = createOptimized("vary");
+
+  /**
+   * HTTP/2 {@code :path} pseudo header
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  CharSequence PSEUDO_PATH = Http2Headers.PseudoHeaderName.PATH.value();
+
+  /**
+   * HTTP/2 {@code :authority} pseudo header
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  CharSequence PSEUDO_AUTHORITY = Http2Headers.PseudoHeaderName.AUTHORITY.value();
+
+  /**
+   * HTTP/2 {@code :scheme} pseudo header
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  CharSequence PSEUDO_SCHEME = Http2Headers.PseudoHeaderName.SCHEME.value();
+
+  /**
+   * HTTP/2 {@code :status} pseudo header
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  CharSequence PSEUDO_STATUS = Http2Headers.PseudoHeaderName.STATUS.value();
+
+  /**
+   * HTTP/2 {@code :method} pseudo hedaer
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  CharSequence PSEUDO_METHOD = Http2Headers.PseudoHeaderName.METHOD.value();
 
   /**
    * Create an optimized {@link CharSequence} which can be used as header name or value.
