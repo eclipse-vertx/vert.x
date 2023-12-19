@@ -357,7 +357,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     private void removeStatusHeaders(Http2Headers headers) {
-      headers.remove(":status");
+      headers.remove(HttpHeaders.PSEUDO_STATUS);
     }
 
     @Override
