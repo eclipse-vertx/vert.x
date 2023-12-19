@@ -3957,9 +3957,9 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testUnresolvedSocketAddress() {
-    InetSocketAddress a = InetSocketAddress.createUnresolved("localhost", HttpTestBase.DEFAULT_HTTP_PORT);
+    InetSocketAddress a = InetSocketAddress.createUnresolved("localhost", 8080);
     SocketAddress converted = ((VertxInternal) vertx).transport().convert(a);
-    assertEquals(HttpTestBase.DEFAULT_HTTP_PORT, converted.port());
+    assertEquals(8080, converted.port());
     assertEquals("localhost", converted.host());
   }
 
