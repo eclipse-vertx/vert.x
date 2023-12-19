@@ -36,8 +36,10 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
 
   protected final Http2Headers headers;
+  protected final String scheme;
   protected final HttpMethod method;
   protected final String uri;
+  protected final boolean hasAuthority;
   protected final HostAndPort authority;
   private final TracingPolicy tracingPolicy;
   private Object metric;
@@ -58,24 +60,31 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
     this.headers = null;
     this.method = method;
     this.uri = uri;
+    this.scheme = null;
+    this.hasAuthority = false;
     this.authority = null;
     this.tracingPolicy = tracingPolicy;
     this.halfClosedRemote = halfClosedRemote;
   }
 
-  Http2ServerStream(Http2ServerConnection conn, ContextInternal context, Http2Headers headers, String serverOrigin, TracingPolicy tracingPolicy, boolean halfClosedRemote) {
+  Http2ServerStream(Http2ServerConnection conn,
+                    ContextInternal context,
+                    Http2Headers headers,
+                    String scheme,
+                    boolean hasAuthority,
+                    HostAndPort authority,
+                    HttpMethod method,
+                    String uri,
+                    TracingPolicy tracingPolicy,
+                    boolean halfClosedRemote) {
     super(conn, context);
 
-    String host = headers.get(":authority") != null ? headers.get(":authority").toString() : null;
-    if (host == null) {
-      int idx = serverOrigin.indexOf("://");
-      host = serverOrigin.substring(idx + 3);
-    }
-
+    this.scheme = scheme;
     this.headers = headers;
-    this.authority = HostAndPortImpl.parseHostAndPort(host, -1);
-    this.uri = headers.get(":path") != null ? headers.get(":path").toString() : null;
-    this.method = headers.get(":method") != null ? HttpMethod.valueOf(headers.get(":method").toString()) : null;
+    this.hasAuthority = hasAuthority;
+    this.authority = authority;
+    this.uri = uri;
+    this.method = method;
     this.tracingPolicy = tracingPolicy;
     this.halfClosedRemote = halfClosedRemote;
   }
