@@ -15,12 +15,8 @@ import io.netty.channel.EventLoop;
 import io.netty.handler.codec.compression.CompressionOptions;
 import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http2.DefaultHttp2Headers;
-import io.netty.handler.codec.http2.Http2CodecUtil;
-import io.netty.handler.codec.http2.Http2Error;
-import io.netty.handler.codec.http2.Http2Headers;
+import io.netty.handler.codec.http2.*;
 import io.netty.handler.codec.http2.Http2Settings;
-import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.AsyncResult;
@@ -30,10 +26,9 @@ import io.vertx.core.Promise;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.HostAndPort;
+import io.vertx.core.net.impl.HostAndPortImpl;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayDeque;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -86,41 +81,28 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     return metrics;
   }
 
-  private static boolean isMalformedRequest(Http2Headers headers) {
-    if (headers.method() == null) {
+  private static boolean isMalformedRequest(Http2ServerStream request) {
+    if (request.method == null) {
       return true;
     }
-    String method = headers.method().toString();
-    if (method.equals("CONNECT")) {
-      if (headers.scheme() != null || headers.path() != null || headers.authority() == null) {
+
+    if (request.method == HttpMethod.CONNECT) {
+      if (request.scheme != null || request.uri != null || request.authority == null) {
         return true;
       }
     } else {
-      if (headers.method() == null || headers.scheme() == null || headers.path() == null || headers.path().length() == 0) {
+      if (request.scheme == null || request.uri == null || request.uri.length() == 0) {
         return true;
       }
     }
-    if (headers.authority() != null) {
-      URI uri;
-      try {
-        uri = new URI(null, headers.authority().toString(), null, null, null);
-      } catch (URISyntaxException e) {
+    if (request.hasAuthority) {
+      if (request.authority == null) {
         return true;
       }
-      if (uri.getRawUserInfo() != null) {
-        return true;
-      }
-      CharSequence host = headers.get(HttpHeaders.HOST);
-      if (host != null) {
-        URI hostURI;
-        try {
-          hostURI = new URI(null, host.toString(), null, null, null);
-        } catch (URISyntaxException e) {
-          return true;
-        }
-        if (uri.getRawUserInfo() != null || !uri.getAuthority().equals(hostURI.getAuthority())) {
-          return true;
-        }
+      CharSequence hostHeader = request.headers.get(HttpHeaders.HOST);
+      if (hostHeader != null) {
+        HostAndPort host = HostAndPortImpl.parseHostAndPort(hostHeader.toString(), -1);
+        return host == null || (!request.authority.host().equals(host.host()) || request.authority.port() != host.port());
       }
     }
     return false;
@@ -147,15 +129,36 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     return null;
   }
 
-  private Http2ServerStream createStream(int streamId, Http2Headers headers, boolean streamEnded) {
-    Http2Stream stream = handler.connection().stream(streamId);
-    String contentEncoding = options.isCompressionSupported() ? determineContentEncoding(headers) : null;
-    Http2ServerStream vertxStream = new Http2ServerStream(this, streamContextSupplier.get(), headers, serverOrigin, options.getTracingPolicy(), streamEnded);
-    Http2ServerRequest request = new Http2ServerRequest(vertxStream, serverOrigin, headers, contentEncoding);
+  private Http2ServerStream createStream(Http2Headers headers, boolean streamEnded) {
+    CharSequence schemeHeader = headers.getAndRemove(":scheme");
+    HostAndPort authority = null;
+    String authorityHeaderAsString = null;
+    CharSequence authorityHeader = headers.getAndRemove(":authority");
+    if (authorityHeader != null) {
+      authorityHeaderAsString = authorityHeader.toString();
+      authority = HostAndPortImpl.parseHostAndPort(authorityHeaderAsString, -1);
+    }
+    CharSequence pathHeader = headers.getAndRemove(":path");
+    CharSequence methodHeader = headers.getAndRemove(":method");
+    return new Http2ServerStream(
+      this,
+      streamContextSupplier.get(),
+      headers,
+      schemeHeader != null ? schemeHeader.toString() : null,
+      authorityHeader != null,
+      authority,
+      methodHeader != null ? HttpMethod.valueOf(methodHeader.toString()) : null,
+      pathHeader != null ? pathHeader.toString() : null,
+      options.getTracingPolicy(), streamEnded);
+  }
+
+  private void initStream(int streamId, Http2ServerStream vertxStream) {
+    String contentEncoding = options.isCompressionSupported() ? determineContentEncoding(vertxStream.headers) : null;
+    Http2ServerRequest request = new Http2ServerRequest(vertxStream, serverOrigin, vertxStream.headers, contentEncoding);
     vertxStream.request = request;
     vertxStream.isConnect = request.method() == HttpMethod.CONNECT;
+    Http2Stream stream = handler.connection().stream(streamId);
     vertxStream.init(stream);
-    return vertxStream;
   }
 
   VertxHttp2Stream<?> stream(int id) {
@@ -168,18 +171,19 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
 
   @Override
   protected synchronized void onHeadersRead(int streamId, Http2Headers headers, StreamPriority streamPriority, boolean endOfStream) {
-    VertxHttp2Stream stream = stream(streamId);
+    Http2ServerStream stream = (Http2ServerStream) stream(streamId);
     if (stream == null) {
-      if (isMalformedRequest(headers)) {
+      if (streamId == 1 && handler.upgraded) {
+        stream = createStream(headers, true);
+        upgraded = stream;
+      } else {
+        stream = createStream(headers, endOfStream);
+      }
+      if (isMalformedRequest(stream)) {
         handler.writeReset(streamId, Http2Error.PROTOCOL_ERROR.code());
         return;
       }
-      if (streamId == 1 && handler.upgraded) {
-        stream = createStream(streamId, headers, true);
-        upgraded = stream;
-      } else {
-        stream = createStream(streamId, headers, endOfStream);
-      }
+      initStream(streamId, stream);
       stream.onHeaders(headers, streamPriority);
     } else {
       // Http server request trailer - not implemented yet (in api)
