@@ -1091,7 +1091,7 @@ public class Http2ServerTest extends Http2TestBase {
       assertEquals("GET", headers.method().toString());
       assertEquals("https", headers.scheme().toString());
       assertEquals("/wibble", headers.path().toString());
-      assertEquals(DEFAULT_HTTPS_HOST_AND_PORT, headers.authority().toString());
+      assertNull(headers.authority());
     });
   }
 
@@ -1294,8 +1294,18 @@ public class Http2ServerTest extends Http2TestBase {
   }
 
   @Test
-  public void testInvalidHost() throws Exception {
-    testMalformedRequestHeaders(new DefaultHttp2Headers().method("GET").scheme("http").authority(DEFAULT_HTTPS_HOST_AND_PORT).path("/").set("host", "something-else"));
+  public void testInvalidHost1() throws Exception {
+    testMalformedRequestHeaders(new DefaultHttp2Headers().method("GET").scheme("http").authority(DEFAULT_HTTPS_HOST_AND_PORT).path("/").set("host", "foo@" + DEFAULT_HTTPS_HOST_AND_PORT));
+  }
+
+  @Test
+  public void testInvalidHost2() throws Exception {
+    testMalformedRequestHeaders(new DefaultHttp2Headers().method("GET").scheme("http").authority(DEFAULT_HTTPS_HOST_AND_PORT).path("/").set("host", "another-host:" + DEFAULT_HTTPS_PORT));
+  }
+
+  @Test
+  public void testInvalidHost3() throws Exception {
+    testMalformedRequestHeaders(new DefaultHttp2Headers().method("GET").scheme("http").authority(DEFAULT_HTTPS_HOST_AND_PORT).path("/").set("host", DEFAULT_HTTP_HOST));
   }
 
   @Test
