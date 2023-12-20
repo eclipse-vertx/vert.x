@@ -23,6 +23,12 @@ Runs the tests
 > mvn test
 ```
 
+Tests can be run with specified HTTP port and/or HTTPS port.
+
+```
+> mvn test -Dvertx.httpPort=8888 -Dvertx.httpsPort=4044
+```
+
 Vert.x supports native transport on BSD and Linux, to run the tests with native transport
 
 ```

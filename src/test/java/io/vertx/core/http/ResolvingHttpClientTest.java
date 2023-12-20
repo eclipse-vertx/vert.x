@@ -48,7 +48,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
         }
       });
       servers.add(server);
-      awaitFuture(server.listen(8080 + i, "localhost"));
+      awaitFuture(server.listen(HttpTestBase.DEFAULT_HTTP_PORT + i, "localhost"));
     }
   }
 
@@ -59,7 +59,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     startServers(numServers);
     requestHandler = (idx, req) -> req.response().end("server-" + idx);
     FakeAddressResolver resolver = new FakeAddressResolver();
-    resolver.registerAddress("example.com", Arrays.asList(SocketAddress.inetSocketAddress(8080, "localhost"), SocketAddress.inetSocketAddress(8081, "localhost")));
+    resolver.registerAddress("example.com", Arrays.asList(SocketAddress.inetSocketAddress(HttpTestBase.DEFAULT_HTTP_PORT, "localhost"), SocketAddress.inetSocketAddress(HttpTestBase.DEFAULT_HTTP_PORT + 1, "localhost")));
     HttpClientInternal client = (HttpClientInternal) vertx.httpClientBuilder()
       .withAddressResolver(resolver)
       .build();
@@ -86,10 +86,10 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     startServers(numServers);
     FakeAddressResolver resolver = new FakeAddressResolver();
     resolver.registerAddress("example.com", Arrays.asList(
-      SocketAddress.inetSocketAddress(8080, "localhost"),
-      SocketAddress.inetSocketAddress(8081, "localhost"),
-      SocketAddress.inetSocketAddress(8082, "localhost"),
-      SocketAddress.inetSocketAddress(8083, "localhost")
+      SocketAddress.inetSocketAddress(HttpTestBase.DEFAULT_HTTP_PORT, "localhost"),
+      SocketAddress.inetSocketAddress(HttpTestBase.DEFAULT_HTTP_PORT + 1, "localhost"),
+      SocketAddress.inetSocketAddress(HttpTestBase.DEFAULT_HTTP_PORT + 2, "localhost"),
+      SocketAddress.inetSocketAddress(HttpTestBase.DEFAULT_HTTP_PORT + 3, "localhost")
     ));
     HttpClientInternal client = (HttpClientInternal) vertx.httpClientBuilder()
       .withAddressResolver(resolver)
@@ -119,7 +119,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     requestHandler = (idx, req) -> req.response().end("server-" + idx);
     startServers(1);
     FakeAddressResolver resolver = new FakeAddressResolver();
-    SocketAddress address = SocketAddress.inetSocketAddress(8080, "localhost");
+    SocketAddress address = SocketAddress.inetSocketAddress(HttpTestBase.DEFAULT_HTTP_PORT, "localhost");
     resolver.registerAddress("server1.com", List.of(address));
     resolver.registerAddress("server2.com", List.of(address));
     HttpClientInternal client = (HttpClientInternal) vertx.httpClientBuilder()
@@ -149,7 +149,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     proxy.start(vertx);
 
     FakeAddressResolver resolver = new FakeAddressResolver();
-    resolver.registerAddress("example.com", Arrays.asList(SocketAddress.inetSocketAddress(8080, "localhost")));
+    resolver.registerAddress("example.com", Arrays.asList(SocketAddress.inetSocketAddress(HttpTestBase.DEFAULT_HTTP_PORT, "localhost")));
     HttpClientInternal client = (HttpClientInternal) vertx.httpClientBuilder()
       .withAddressResolver(resolver)
       .build();
@@ -219,7 +219,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     requestHandler = (idx, req) -> req.response().end("server-" + idx);
     CountDownLatch closedLatch = new CountDownLatch(1);
     FakeAddressResolver resolver = new FakeAddressResolver();
-    resolver.registerAddress("example.com", Arrays.asList(SocketAddress.inetSocketAddress(8080, "localhost")));
+    resolver.registerAddress("example.com", Arrays.asList(SocketAddress.inetSocketAddress(HttpTestBase.DEFAULT_HTTP_PORT, "localhost")));
     HttpClientInternal client = (HttpClientInternal) vertx.httpClientBuilder()
       .with(new HttpClientOptions().setKeepAliveTimeout(1))
       .withConnectHandler(conn -> {
@@ -247,7 +247,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
       });
     };
     FakeAddressResolver resolver = new FakeAddressResolver();
-    resolver.registerAddress("example.com", Arrays.asList(SocketAddress.inetSocketAddress(8080, "localhost")));
+    resolver.registerAddress("example.com", Arrays.asList(SocketAddress.inetSocketAddress(HttpTestBase.DEFAULT_HTTP_PORT, "localhost")));
     FakeLoadBalancer lb = new FakeLoadBalancer();
     HttpClientInternal client = (HttpClientInternal) vertx.httpClientBuilder()
       .with(new HttpClientOptions().setKeepAliveTimeout(1))
@@ -275,7 +275,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     };
     FakeAddressResolver resolver = new FakeAddressResolver();
     FakeLoadBalancer lb = new FakeLoadBalancer();
-    resolver.registerAddress("example.com", Arrays.asList(SocketAddress.inetSocketAddress(8080, "localhost")));
+    resolver.registerAddress("example.com", Arrays.asList(SocketAddress.inetSocketAddress(HttpTestBase.DEFAULT_HTTP_PORT, "localhost")));
     HttpClientInternal client = (HttpClientInternal) vertx.httpClientBuilder()
       .with(new HttpClientOptions().setKeepAliveTimeout(1))
       .withAddressResolver(resolver)
@@ -367,7 +367,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     AtomicBoolean mode = new AtomicBoolean();
     requestHandler = (idx, req) -> handler.accept(mode.get(), req);
     FakeAddressResolver resolver = new FakeAddressResolver();
-    resolver.registerAddress("example.com", Arrays.asList(SocketAddress.inetSocketAddress(8080, "localhost")));
+    resolver.registerAddress("example.com", Arrays.asList(SocketAddress.inetSocketAddress(HttpTestBase.DEFAULT_HTTP_PORT, "localhost")));
     FakeLoadBalancer lb = new FakeLoadBalancer();
     HttpClientInternal client = (HttpClientInternal) vertx.httpClientBuilder()
       .with(new HttpClientOptions().setKeepAliveTimeout(1))
@@ -411,8 +411,8 @@ public class ResolvingHttpClientTest extends VertxTestBase {
       req.response().end("" + idx);
     };
     FakeAddressResolver resolver = new FakeAddressResolver();
-    SocketAddress addr1 = SocketAddress.inetSocketAddress(8080, "localhost");
-    SocketAddress addr2 = SocketAddress.inetSocketAddress(8081, "localhost");
+    SocketAddress addr1 = SocketAddress.inetSocketAddress(HttpTestBase.DEFAULT_HTTP_PORT, "localhost");
+    SocketAddress addr2 = SocketAddress.inetSocketAddress(HttpTestBase.DEFAULT_HTTP_PORT + 1, "localhost");
     resolver.registerAddress("example.com", Arrays.asList(addr1));
     HttpClientInternal client = (HttpClientInternal) vertx.httpClientBuilder()
       .withAddressResolver(resolver)
@@ -439,7 +439,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
       req.response().end("" + idx);
     };
     FakeAddressResolver resolver = new FakeAddressResolver();
-    SocketAddress addr1 = SocketAddress.inetSocketAddress(8080, "localhost");
+    SocketAddress addr1 = SocketAddress.inetSocketAddress(HttpTestBase.DEFAULT_HTTP_PORT, "localhost");
     resolver.registerAddress("example.com", Arrays.asList(addr1));
     HttpClientInternal client = (HttpClientInternal) vertx.httpClientBuilder()
       .with(new HttpClientOptions().setKeepAliveTimeout(1))
@@ -461,7 +461,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
       req.response().end("" + idx);
     };
     FakeAddressResolver resolver = new FakeAddressResolver();
-    SocketAddress addr1 = SocketAddress.inetSocketAddress(8080, "localhost");
+    SocketAddress addr1 = SocketAddress.inetSocketAddress(HttpTestBase.DEFAULT_HTTP_PORT, "localhost");
     resolver.registerAddress("example.com", Arrays.asList(addr1));
     HttpClientInternal client = (HttpClientInternal) vertx.httpClientBuilder()
       .with(new HttpClientOptions().setKeepAliveTimeout(2))
@@ -495,7 +495,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
       .setMethod(HttpMethod.GET)
       .setServer(new FakeAddress("example.com"))
       .setHost("example.com")
-      .setPort(8080)
+      .setPort(HttpTestBase.DEFAULT_HTTP_PORT)
       .setURI("/"), true, true);
   }
 
@@ -505,7 +505,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
       .setMethod(HttpMethod.GET)
       .setServer(new FakeAddress("example.com"))
       .setHost("example.com")
-      .setPort(8080)
+      .setPort(HttpTestBase.DEFAULT_HTTP_PORT)
       .setURI("/"), false, false);
   }
 
@@ -517,7 +517,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
       req.response().end("" + idx);
     };
     FakeAddressResolver resolver = new FakeAddressResolver();
-    SocketAddress addr1 = SocketAddress.inetSocketAddress(8080, "localhost");
+    SocketAddress addr1 = SocketAddress.inetSocketAddress(HttpTestBase.DEFAULT_HTTP_PORT, "localhost");
     resolver.registerAddress("example.com", Arrays.asList(addr1));
     HttpClient client = vertx.httpClientBuilder()
       .with(new HttpClientOptions()

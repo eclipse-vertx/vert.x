@@ -51,14 +51,14 @@ public class HttpConnectionEarlyResetTest extends VertxTestBase {
         resetLatch.countDown();
       });
     ctx.runOnContext(v -> {
-      httpServer.listen(8080).onComplete(onSuccess(server -> listenLatch.countDown()));
+      httpServer.listen(HttpTestBase.DEFAULT_HTTP_PORT).onComplete(onSuccess(server -> listenLatch.countDown()));
     });
     awaitLatch(listenLatch);
   }
 
   @Test
   public void testExceptionCaught() throws Exception {
-    vertx.createNetClient(new NetClientOptions().setSoLinger(0)).connect(8080, "localhost").onComplete(onSuccess(socket -> {
+    vertx.createNetClient(new NetClientOptions().setSoLinger(0)).connect(HttpTestBase.DEFAULT_HTTP_PORT, "localhost").onComplete(onSuccess(socket -> {
       vertx.setTimer(2000, id -> {
         socket.close();
       });

@@ -155,7 +155,7 @@ public class MetricsContextTest extends VertxTestBase {
         response.setStatusCode(200).setChunked(true).end("bye");
         req.connection().close();
       });
-      server.listen(8080, "localhost").onComplete(onSuccess(s -> {
+      server.listen(HttpTestBase.DEFAULT_HTTP_PORT, "localhost").onComplete(onSuccess(s -> {
         expectedThread.set(Thread.currentThread());
         expectedContext.set(Vertx.currentContext());
         latch.countDown();
@@ -178,7 +178,7 @@ public class MetricsContextTest extends VertxTestBase {
         });
       })
       .build();
-    client.request(HttpMethod.PUT, 8080, "localhost", "/")
+    client.request(HttpMethod.PUT, HttpTestBase.DEFAULT_HTTP_PORT, "localhost", "/")
       .compose(req -> req.send(Buffer.buffer("hello"))
         .onComplete(onSuccess(resp -> {
           complete();
@@ -251,14 +251,14 @@ public class MetricsContextTest extends VertxTestBase {
         response.end();
       });
     });
-    server.listen(8080, "localhost").onComplete(onSuccess(s -> {
+    server.listen(HttpTestBase.DEFAULT_HTTP_PORT, "localhost").onComplete(onSuccess(s -> {
       latch.countDown();
     }));
     awaitLatch(latch);
     HttpClient client = vertx.createHttpClient(new HttpClientOptions().setPipelining(true), new PoolOptions().setHttp1MaxSize(1));
     vertx.runOnContext(v -> {
       for (int i = 0;i < 2;i++) {
-        client.request(HttpMethod.GET, 8080, "localhost", "/" + (i + 1)).onComplete(onSuccess(req -> {
+        client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, "localhost", "/" + (i + 1)).onComplete(onSuccess(req -> {
           req.send().compose(HttpClientResponse::body).onComplete(onSuccess(body -> {
             complete();
           }));
@@ -357,7 +357,7 @@ public class MetricsContextTest extends VertxTestBase {
           ws.write(Buffer.buffer("bye"));
         });
       });
-      server.listen(8080, "localhost").onComplete(onSuccess(s -> {
+      server.listen(HttpTestBase.DEFAULT_HTTP_PORT, "localhost").onComplete(onSuccess(s -> {
         expectedThread.set(Thread.currentThread());
         expectedContext.set(Vertx.currentContext());
         latch.countDown();
@@ -365,7 +365,7 @@ public class MetricsContextTest extends VertxTestBase {
     });
     awaitLatch(latch);
     WebSocketClient client = vertx.createWebSocketClient();
-    client.connect(8080, "localhost", "/").onComplete(onSuccess(ws -> {
+    client.connect(HttpTestBase.DEFAULT_HTTP_PORT, "localhost", "/").onComplete(onSuccess(ws -> {
       ws.handler(buf -> {
         ws.closeHandler(v -> {
           vertx.close().onComplete(v4 -> {
@@ -460,14 +460,14 @@ public class MetricsContextTest extends VertxTestBase {
         req.connection().close();
       });
     });
-    awaitFuture(server.listen(8080, "localhost"));
+    awaitFuture(server.listen(HttpTestBase.DEFAULT_HTTP_PORT, "localhost"));
     Context ctx = contextFactory.apply(vertx);
     ctx.runOnContext(v1 -> {
       expectedThread.set(Thread.currentThread());
       expectedContext.set(Vertx.currentContext());
       HttpClient client = vertx.createHttpClient();
       assertSame(expectedThread.get(), Thread.currentThread());
-      client.request(HttpMethod.PUT, 8080, "localhost", "/the-uri")
+      client.request(HttpMethod.PUT, HttpTestBase.DEFAULT_HTTP_PORT, "localhost", "/the-uri")
         .compose(req -> req.send(Buffer.buffer("hello")).onComplete(onSuccess(resp -> {
           TestUtils.executeInVanillaVertxThread(() -> {
             client.close();
@@ -558,11 +558,11 @@ public class MetricsContextTest extends VertxTestBase {
         ws.write(Buffer.buffer("bye"));
       });
     });
-    awaitFuture(server.listen(8080, "localhost"));
+    awaitFuture(server.listen(HttpTestBase.DEFAULT_HTTP_PORT, "localhost"));
     Context ctx = contextFactory.apply(vertx);
     ctx.runOnContext(v1 -> {
       WebSocketClient client = vertx.createWebSocketClient();
-      client.connect(8080, "localhost", "/").onComplete(onSuccess(ws -> {
+      client.connect(HttpTestBase.DEFAULT_HTTP_PORT, "localhost", "/").onComplete(onSuccess(ws -> {
         ws.handler(buf -> {
           ws.closeHandler(v2 -> {
             TestUtils.executeInVanillaVertxThread(() -> {
