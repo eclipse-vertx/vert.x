@@ -301,12 +301,18 @@ public class FileResolverImpl implements FileResolver {
     try {
       List<String> listOfEntries = listOfEntries(url);
       switch (listOfEntries.size()) {
-        case 1:
+        case 1: {
           JarURLConnection conn = (JarURLConnection) url.openConnection();
-          try (ZipFile zip = conn.getJarFile()) {
+          ZipFile zip = conn.getJarFile();
+          try {
             extractFilesFromJarFile(zip, fileName);
+          } finally {
+            if (!conn.getUseCaches()) {
+              zip.close();
+            }
           }
           break;
+        }
         case 2:
           URL nestedURL = cl.getResource(listOfEntries.get(1));
           if (nestedURL != null && nestedURL.getProtocol().equals("jar")) {
