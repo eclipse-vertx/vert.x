@@ -13,6 +13,7 @@ package io.vertx.core.impl.launcher.commands;
 
 import io.vertx.core.Launcher;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpTestBase;
 import io.vertx.core.json.JsonObject;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.After;
@@ -226,12 +227,12 @@ public class RunCommandTest extends CommandTestBase {
   }
 
   public static int getHttpCode() throws IOException {
-    return ((HttpURLConnection) new URL("http://localhost:8080")
+    return ((HttpURLConnection) new URL("http://" + HttpTestBase.DEFAULT_HTTP_HOST_AND_PORT)
         .openConnection()).getResponseCode();
   }
 
   public static JsonObject getContent() throws IOException {
-    URL url = new URL("http://localhost:8080");
+    URL url = new URL("http://" + HttpTestBase.DEFAULT_HTTP_HOST_AND_PORT);
     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
     conn.connect();
     StringBuilder builder = new StringBuilder();

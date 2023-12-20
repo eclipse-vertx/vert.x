@@ -12,6 +12,7 @@
 package io.vertx.core.impl.launcher.commands;
 
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.http.HttpTestBase;
 import io.vertx.core.json.JsonObject;
 
 
@@ -39,6 +40,6 @@ public class HttpTestVerticle extends AbstractVerticle {
       }
 
       request.response().putHeader("content-type", "application/json").end(json.encodePrettily());
-    }).listen(8080);
+    }).listen(HttpTestBase.DEFAULT_HTTP_PORT);
   }
 }

@@ -71,11 +71,11 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
         assertEquals(2, seq.get());
       });
       req.response().end();
-    }).listen(8080, "localhost", onSuccess(v -> {
+    }).listen(DEFAULT_HTTP_PORT, "localhost", onSuccess(v -> {
       latch.countDown();
     }));
     awaitLatch(latch);
-    client.request(HttpMethod.GET, 8080, "localhost", "/", onSuccess(req -> {
+    client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, "localhost", "/", onSuccess(req -> {
       req.send(onSuccess(resp -> {
         testComplete();
       }));
@@ -116,12 +116,12 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
 //        assertEquals(2, seq.get());
         complete();
       });
-    }).listen(8080, "localhost", onSuccess(v -> {
+    }).listen(DEFAULT_HTTP_PORT, "localhost", onSuccess(v -> {
       latch.countDown();
     }));
     awaitLatch(latch);
     client.request(new RequestOptions()
-      .setPort(8080)
+      .setPort(DEFAULT_HTTP_PORT)
       .setHost("localhost")
       .setURI("/")).onComplete(onSuccess(req -> {
       req
@@ -138,12 +138,12 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
 
   @Test
   public void testHttpClientRequest() throws Exception {
-    testHttpClientRequest(new RequestOptions().setPort(8080).setHost("localhost").setURI("/"), "GET");
+    testHttpClientRequest(new RequestOptions().setPort(DEFAULT_HTTP_PORT).setHost("localhost").setURI("/"), "GET");
   }
 
   @Test
   public void testHttpClientRequestOverrideOperation() throws Exception {
-    testHttpClientRequest(new RequestOptions().setPort(8080).setHost("localhost").setURI("/").setTraceOperation("operation-override"), "operation-override");
+    testHttpClientRequest(new RequestOptions().setPort(DEFAULT_HTTP_PORT).setHost("localhost").setURI("/").setTraceOperation("operation-override"), "operation-override");
   }
 
   private void testHttpClientRequest(RequestOptions request, String expectedOperation) throws Exception {
@@ -176,7 +176,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     server.requestHandler(req -> {
       assertEquals(traceId, req.getHeader("X-B3-TraceId"));
       req.response().end();
-    }).listen(8080, "localhost", onSuccess(v -> {
+    }).listen(DEFAULT_HTTP_PORT, "localhost", onSuccess(v -> {
       latch.countDown();
     }));
     awaitLatch(latch);
@@ -229,7 +229,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     server.requestHandler(req -> {
       assertEquals(traceId, req.getHeader("X-B3-TraceId"));
       req.connection().close();
-    }).listen(8080, "localhost", onSuccess(v -> {
+    }).listen(DEFAULT_HTTP_PORT, "localhost", onSuccess(v -> {
       latch.countDown();
     }));
     awaitLatch(latch);
@@ -237,7 +237,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     ctx.runOnContext(v1 -> {
       ConcurrentMap<Object, Object> tracerMap = ((ContextInternal) ctx).localContextData();
       tracerMap.put(key, val);
-      client.request(HttpMethod.GET, 8080, "localhost", "/").onComplete(onSuccess(req -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, "localhost", "/").onComplete(onSuccess(req -> {
         req.send().onComplete(onFailure(err -> {
           // assertNull(tracerMap.get(key));
           complete();

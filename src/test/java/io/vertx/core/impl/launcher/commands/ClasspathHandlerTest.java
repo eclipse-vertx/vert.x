@@ -12,6 +12,7 @@
 package io.vertx.core.impl.launcher.commands;
 
 import io.vertx.core.DeploymentOptions;
+import io.vertx.core.http.HttpTestBase;
 import io.vertx.core.spi.launcher.ExecutionContext;
 import org.junit.After;
 import org.junit.Before;
@@ -105,7 +106,7 @@ public class ClasspathHandlerTest extends CommandTestBase {
   }
 
   private int getHttpCode() throws IOException {
-    return ((HttpURLConnection) new URL("http://localhost:8080")
+    return ((HttpURLConnection) new URL("http://" + HttpTestBase.DEFAULT_HTTP_HOST_AND_PORT)
         .openConnection()).getResponseCode();
   }
 

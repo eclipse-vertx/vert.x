@@ -107,7 +107,7 @@ public class Http1xProxyTest extends HttpTestBase {
       if (accept) {
         assertProxiedRequest(DEFAULT_HTTP_HOST);
       }
-      assertEquals(Collections.singleton(SocketAddress.inetSocketAddress(8080, "localhost")), filtered);
+      assertEquals(Collections.singleton(SocketAddress.inetSocketAddress(DEFAULT_HTTP_PORT, "localhost")), filtered);
       testComplete();
     }));
     await();
@@ -159,7 +159,7 @@ public class Http1xProxyTest extends HttpTestBase {
     client = vertx.createHttpClient(new HttpClientOptions()
       .setSsl(true).setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.port())));
     testHttpProxyRequest(() -> client
-      .request(new RequestOptions().setSsl(false).setHost("localhost").setPort(8080))
+      .request(new RequestOptions().setSsl(false).setHost("localhost").setPort(DEFAULT_HTTP_PORT))
       .compose(HttpClientRequest::send)).onComplete(onSuccess(v -> {
       assertProxiedRequest(DEFAULT_HTTP_HOST);
       testComplete();
@@ -169,7 +169,7 @@ public class Http1xProxyTest extends HttpTestBase {
 
   private void assertProxiedRequest(String host) {
     assertNotNull("request did not go through proxy", proxy.getLastUri());
-    assertEquals("Host header doesn't contain target host", host + ":8080", proxy.getLastRequestHeaders().get("Host"));
+    assertEquals("Host header doesn't contain target host", host + ":" + DEFAULT_HTTP_PORT, proxy.getLastRequestHeaders().get("Host"));
   }
 
   private Future<Void> testHttpProxyRequest(Supplier<Future<HttpClientResponse>> reqFact) throws Exception {
@@ -211,7 +211,7 @@ public class Http1xProxyTest extends HttpTestBase {
         req.send(onSuccess(resp -> {
           assertEquals(200, resp.statusCode());
           assertNotNull("request did not go through proxy", proxy.getLastUri());
-          assertEquals("Host header doesn't contain target host", "localhost:8080", proxy.getLastRequestHeaders().get("Host"));
+          assertEquals("Host header doesn't contain target host", DEFAULT_HTTP_HOST_AND_PORT, proxy.getLastRequestHeaders().get("Host"));
           testComplete();
         }));
       }));
@@ -224,9 +224,9 @@ public class Http1xProxyTest extends HttpTestBase {
     startProxy(null, ProxyType.HTTP);
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions()
-      .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.port())));
+      .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost(DEFAULT_HTTP_HOST).setPort(proxy.port())));
     final String url = "ftp://ftp.gnu.org/gnu/";
-    proxy.setForceUri("http://localhost:8080/");
+    proxy.setForceUri("http://" + DEFAULT_HTTP_HOST_AND_PORT+ "/");
     server.requestHandler(req -> {
       req.response().end();
     });
@@ -544,7 +544,7 @@ public class Http1xProxyTest extends HttpTestBase {
             if (proxied) {
               assertNotNull("request did not go through proxy", proxy.getLastUri());
               if (clientOptions.getProxyOptions().getType() == ProxyType.HTTP) {
-                assertEquals("Host header doesn't contain target host", "localhost:4043", proxy.getLastRequestHeaders().get("Host"));
+                assertEquals("Host header doesn't contain target host", DEFAULT_HTTPS_HOST_AND_PORT, proxy.getLastRequestHeaders().get("Host"));
               }
             } else {
               assertNull("request did go through proxy", proxy.getLastUri());

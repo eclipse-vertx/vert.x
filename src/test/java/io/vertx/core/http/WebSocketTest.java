@@ -263,7 +263,7 @@ public class WebSocketTest extends VertxTestBase {
   // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustServerCertWithSNI() throws Exception {
     testTLS(Cert.NONE, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, Trust.NONE, false, false, false, false, true, true, true, true, new String[0],
-      (client, handler) -> client.connect(4043, "host2.com", "/", handler));
+      (client, handler) -> client.connect(DEFAULT_HTTPS_PORT, "host2.com", "/", handler));
   }
 
   @Test
@@ -379,28 +379,28 @@ public class WebSocketTest extends VertxTestBase {
   @Test
   // Client trusts all server certs
   public void testClearClientRequestOptionsSetSSL() throws Exception {
-    WebSocketConnectOptions options = new WebSocketConnectOptions().setHost(HttpTestBase.DEFAULT_HTTP_HOST).setURI("/").setPort(4043).setSsl(true);
+    WebSocketConnectOptions options = new WebSocketConnectOptions().setHost(HttpTestBase.DEFAULT_HTTP_HOST).setURI("/").setPort(DEFAULT_HTTPS_PORT).setSsl(true);
     testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE, false, false, true, false, true, false, true, false, new String[0], (client, handler) -> client.connect(options, handler));
   }
 
   @Test
   // Client trusts all server certs
   public void testSSLClientRequestOptionsSetSSL() throws Exception {
-    WebSocketConnectOptions options = new WebSocketConnectOptions().setHost(HttpTestBase.DEFAULT_HTTP_HOST).setURI("/").setPort(4043).setSsl(true);
+    WebSocketConnectOptions options = new WebSocketConnectOptions().setHost(HttpTestBase.DEFAULT_HTTP_HOST).setURI("/").setPort(DEFAULT_HTTPS_PORT).setSsl(true);
     testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE, false, false, true, false, true, true, true, false, new String[0], (client, handler) -> client.connect(options, handler));
   }
 
   @Test
   // Client trusts all server certs
   public void testClearClientRequestOptionsSetClear() throws Exception {
-    WebSocketConnectOptions options = new WebSocketConnectOptions().setHost(HttpTestBase.DEFAULT_HTTP_HOST).setURI("/").setPort(4043).setSsl(false);
+    WebSocketConnectOptions options = new WebSocketConnectOptions().setHost(HttpTestBase.DEFAULT_HTTP_HOST).setURI("/").setPort(DEFAULT_HTTPS_PORT).setSsl(false);
     testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE, false, false, true, false, true, false, false, false, new String[0], (client, handler) -> client.connect(options, handler));
   }
 
   @Test
   // Client trusts all server certs
   public void testSSLClientRequestOptionsSetClear() throws Exception {
-    WebSocketConnectOptions options = new WebSocketConnectOptions().setHost(HttpTestBase.DEFAULT_HTTP_HOST).setURI("/").setPort(4043).setSsl(false);
+    WebSocketConnectOptions options = new WebSocketConnectOptions().setHost(DEFAULT_HTTPS_HOST).setURI("/").setPort(DEFAULT_HTTPS_PORT).setSsl(false);
     testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE, false, false, true, false, true, true, false, false, new String[0], (client, handler) -> client.connect(options, handler));
   }
 
@@ -412,7 +412,7 @@ public class WebSocketTest extends VertxTestBase {
     testTLS(clientCert, clientTrust,
         serverCert, serverTrust,
         requireClientAuth, serverUsesCrl, clientTrustAll, clientUsesCrl, shouldPass, true, true, false,
-        enabledCipherSuites, (client, fut) -> client.connect(4043, HttpTestBase.DEFAULT_HTTP_HOST, "/", fut));
+        enabledCipherSuites, (client, fut) -> client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTP_HOST, "/", fut));
   }
 
   private void testTLS(Cert<?> clientCert, Trust<?> clientTrust,
@@ -450,7 +450,7 @@ public class WebSocketTest extends VertxTestBase {
     for (String suite: enabledCipherSuites) {
       serverOptions.addEnabledCipherSuite(suite);
     }
-    server = vertx.createHttpServer(serverOptions.setPort(4043));
+    server = vertx.createHttpServer(serverOptions.setPort(DEFAULT_HTTPS_PORT));
     server.webSocketHandler(ws -> {
       ws.handler(ws::write);
     });
@@ -786,7 +786,7 @@ public class WebSocketTest extends VertxTestBase {
 
         String webSocketLocation = ws.headers().get("sec-websocket-location");
         if (version == WebsocketVersion.V00) {
-          assertEquals("ws://" + DEFAULT_HTTP_HOST + ":" + DEFAULT_HTTP_PORT + uri, webSocketLocation);
+          assertEquals("ws://" + DEFAULT_HTTP_HOST_AND_PORT + uri, webSocketLocation);
         } else {
           assertNull(webSocketLocation);
         }
@@ -3702,7 +3702,7 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testEnableOriginHeaderV13() {
-    testOriginHeader(WebsocketVersion.V13, true, null, HttpHeaders.ORIGIN, "http://localhost:8080");
+    testOriginHeader(WebsocketVersion.V13, true, null, HttpHeaders.ORIGIN, "http://" + DEFAULT_HTTP_HOST_AND_PORT);
   }
 
   @Test
@@ -3717,7 +3717,7 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testEnableOriginHeaderV08() {
-    testOriginHeader(WebsocketVersion.V08, true, null, HttpHeaderNames.SEC_WEBSOCKET_ORIGIN, "http://localhost:8080");
+    testOriginHeader(WebsocketVersion.V08, true, null, HttpHeaderNames.SEC_WEBSOCKET_ORIGIN, "http://" + DEFAULT_HTTP_HOST_AND_PORT);
   }
 
   @Test
@@ -3732,7 +3732,7 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testEnableOriginHeaderV07() {
-    testOriginHeader(WebsocketVersion.V07, true, null, HttpHeaderNames.SEC_WEBSOCKET_ORIGIN, "http://localhost:8080");
+    testOriginHeader(WebsocketVersion.V07, true, null, HttpHeaderNames.SEC_WEBSOCKET_ORIGIN, "http://" + DEFAULT_HTTP_HOST_AND_PORT);
   }
 
   @Test

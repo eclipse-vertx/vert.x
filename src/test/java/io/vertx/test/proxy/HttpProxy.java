@@ -110,7 +110,7 @@ public class HttpProxy extends TestProxyBase<HttpProxy> {
           }
           // deny ports not considered safe to connect
           // this will deny access to e.g. smtp port 25 to avoid spammers
-          if (port == 8080 || port < 1024 && port != 443) {
+          if (port == HttpTestBase.DEFAULT_HTTP_PORT || port < 1024 && port != 443) {
             request.response().setStatusCode(403).end("access to port denied");
             return;
           }

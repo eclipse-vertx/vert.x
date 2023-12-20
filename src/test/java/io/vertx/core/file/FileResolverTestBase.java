@@ -14,12 +14,9 @@ package io.vertx.core.file;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.*;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.file.impl.FileResolverImpl;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.test.core.VertxTestBase;
@@ -279,11 +276,11 @@ public abstract class FileResolverTestBase extends VertxTestBase {
 
   @Test
   public void testSendFileFromClasspath() {
-    vertx.createHttpServer(new HttpServerOptions().setPort(8080)).requestHandler(res -> {
+    vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).requestHandler(res -> {
       res.response().sendFile("webroot/somefile.html");
     }).listen(onSuccess(res -> {
       vertx.createHttpClient(new HttpClientOptions())
-        .request(HttpMethod.GET, 8080, "localhost", "/")
+        .request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/")
         .compose(HttpClientRequest::send)
         .onComplete(onSuccess(resp -> {
           resp.bodyHandler(buff -> {

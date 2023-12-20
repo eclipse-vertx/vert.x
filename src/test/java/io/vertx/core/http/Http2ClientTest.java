@@ -1811,7 +1811,7 @@ public class Http2ClientTest extends Http2TestBase {
   public void testDisableIdleTimeoutClearTextUpgrade() throws Exception {
     server.close();
     server = vertx.createHttpServer(new HttpServerOptions()
-      .setPort(8080)
+      .setPort(DEFAULT_HTTP_PORT)
       .setHost("localhost"));
     server.requestHandler(req -> {
       req.response().end();
@@ -1821,7 +1821,7 @@ public class Http2ClientTest extends Http2TestBase {
     client = vertx.createHttpClient(new HttpClientOptions()
       .setIdleTimeout(2)
       .setProtocolVersion(HttpVersion.HTTP_2)
-      .setDefaultPort(8080)
+      .setDefaultPort(DEFAULT_HTTP_PORT)
       .setDefaultHost("localhost"));
     client.request(HttpMethod.GET, "/somepath")
       .compose(req -> req.send().compose(HttpClientResponse::body))
