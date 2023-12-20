@@ -11,13 +11,12 @@
 
 package io.vertx.core.file;
 
+import io.vertx.core.buffer.Buffer;
 import io.vertx.test.core.TestUtils;
 import org.junit.Assert;
+import org.junit.Test;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.FileVisitResult;
@@ -25,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.List;
 import java.util.function.Function;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -75,6 +75,24 @@ public class ZipFileResolverTest extends FileResolverTestBase {
       }
     }
     return files;
+  }
+
+  @Test
+  public void testFileResolverShouldNotUseCachedURLConnection() throws Exception {
+    ClassLoader cl = Thread.currentThread().getContextClassLoader();
+    InputStream in = cl.getResourceAsStream("afile.html");
+    try {
+      Buffer buffer = vertx.fileSystem().readFileBlocking("afile.html");
+      byte[] tmp = new byte[256];
+      ByteArrayOutputStream baos = new ByteArrayOutputStream();
+      for (int amount = 0;amount != -1;amount = in.read(tmp)) {
+        baos.write(tmp, 0, amount);
+      }
+      baos.close();
+      assertEquals(baos.toString(), buffer.toString());
+    } finally {
+      in.close();
+    }
   }
 
   @Override
