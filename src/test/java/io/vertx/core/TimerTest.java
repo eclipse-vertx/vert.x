@@ -267,30 +267,48 @@ public class TimerTest extends VertxTestBase {
 
   @Test
   public void testPeriodicOnContext() {
+    testPeriodicOnContext(((VertxInternal)vertx).createEventLoopContext());
+  }
+
+  @Test
+  public void testPeriodicOnDuplicatedContext() {
+    testPeriodicOnContext(((VertxInternal)vertx).createEventLoopContext().duplicate());
+  }
+
+  private void testPeriodicOnContext(ContextInternal ctx2) {
     disableThreadChecks();
     waitFor(4);
     ContextInternal ctx1 = ((VertxInternal)vertx).createEventLoopContext();
-    ContextInternal ctx2 = ((VertxInternal)vertx).createEventLoopContext();
     assertNotSame(ctx1, ctx2);
     ctx2.runOnContext(v -> {
-      vertx.setPeriodic(10, new Handler<Long>() {
+      Thread th = Thread.currentThread();
+      vertx.setPeriodic(10, new Handler<>() {
         int count;
 
         @Override
         public void handle(Long l) {
-          assertSame(ctx2, vertx.getOrCreateContext());
+          assertSame(th, Thread.currentThread());
+          ContextInternal current = (ContextInternal) vertx.getOrCreateContext();
+          assertNotNull(current);
+          assertTrue(current.isDuplicate());
+          assertNotSame(ctx2, current);
+          assertSame(ctx2.unwrap(), current.unwrap());
           if (++count == 2) {
             vertx.cancelTimer(l);
           }
           complete();
         }
       });
-      ctx1.setPeriodic(10, new Handler<Long>() {
+      ctx1.setPeriodic(10, new Handler<>() {
         int count;
 
         @Override
         public void handle(Long l) {
-          assertSame(ctx1, vertx.getOrCreateContext());
+          ContextInternal current = (ContextInternal) vertx.getOrCreateContext();
+          assertNotNull(current);
+          assertTrue(current.isDuplicate());
+          assertNotSame(ctx1, current);
+          assertSame(ctx1, current.unwrap());
           if (++count == 2) {
             vertx.cancelTimer(l);
           }
