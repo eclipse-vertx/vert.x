@@ -430,7 +430,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public long setPeriodic(long initialDelay, long delay, Handler<Long> handler) {
     ContextInternal ctx = getOrCreateContext();
-    return scheduleTimeout(ctx, true, initialDelay, delay, TimeUnit.MILLISECONDS, ctx.isDeployment(), handler);
+    return scheduleTimeout(ctx.unwrap(), true, initialDelay, delay, TimeUnit.MILLISECONDS, ctx.isDeployment(), handler);
   }
 
   public long setTimer(long delay, Handler<Long> handler) {
@@ -977,7 +977,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
     @Override
     public void run() {
-      context.emit(this);
+      ContextInternal dispatcher = context;
+      if (periodic) {
+        dispatcher = dispatcher.duplicate();
+      }
+      dispatcher.emit(this);
     }
 
     public void handle(Void v) {
