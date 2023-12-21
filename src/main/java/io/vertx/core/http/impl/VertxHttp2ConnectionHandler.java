@@ -32,7 +32,7 @@ import java.util.function.Function;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2ConnectionHandler implements Http2FrameListener, Http2Connection.Listener {
+class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2ConnectionHandler implements Http2FrameListener {
 
   private final Function<VertxHttp2ConnectionHandler<C>, C> connectionFactory;
   private C connection;
@@ -60,7 +60,44 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
         connection.onStreamWritabilityChanged(s);
       }
     });
-    connection().addListener(this);
+
+    // Uses companion a class due to https://github.com/eclipse-vertx/vert.x/issues/5039
+    connection().addListener(new Http2Connection.Listener() {
+      @Override
+      public void onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
+        connection.onGoAwaySent(new GoAway().setErrorCode(errorCode).setLastStreamId(lastStreamId).setDebugData(Buffer.buffer(debugData)));
+      }
+
+      @Override
+      public void onGoAwayReceived(int lastStreamId, long errorCode, ByteBuf debugData) {
+        connection.onGoAwayReceived(new GoAway().setErrorCode(errorCode).setLastStreamId(lastStreamId).setDebugData(Buffer.buffer(debugData)));
+      }
+
+      @Override
+      public void onStreamAdded(Http2Stream stream) {
+
+      }
+
+      @Override
+      public void onStreamActive(Http2Stream stream) {
+
+      }
+
+      @Override
+      public void onStreamHalfClosed(Http2Stream stream) {
+
+      }
+
+      @Override
+      public void onStreamClosed(Http2Stream stream) {
+        connection.onStreamClosed(stream);
+      }
+
+      @Override
+      public void onStreamRemoved(Http2Stream stream) {
+
+      }
+    });
   }
 
   public Future<C> connectFuture() {
@@ -179,39 +216,6 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
         connection.handleIdle((IdleStateEvent) evt);
       }
     }
-  }
-
-  //
-
-  @Override
-  public void onStreamClosed(Http2Stream stream) {
-    connection.onStreamClosed(stream);
-  }
-
-  @Override
-  public void onStreamAdded(Http2Stream stream) {
-  }
-
-  @Override
-  public void onStreamActive(Http2Stream stream) {
-  }
-
-  @Override
-  public void onStreamHalfClosed(Http2Stream stream) {
-  }
-
-  @Override
-  public void onStreamRemoved(Http2Stream stream) {
-  }
-
-  @Override
-  public void onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
-    connection.onGoAwaySent(new GoAway().setErrorCode(errorCode).setLastStreamId(lastStreamId).setDebugData(Buffer.buffer(debugData)));
-  }
-
-  @Override
-  public void onGoAwayReceived(int lastStreamId, long errorCode, ByteBuf debugData) {
-    connection.onGoAwayReceived(new GoAway().setErrorCode(errorCode).setLastStreamId(lastStreamId).setDebugData(Buffer.buffer(debugData)));
   }
 
   //
@@ -402,7 +406,10 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   @Override
   public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
     read = true;
-    if (msg instanceof Http2StreamFrame) {
+    // fast-path first
+    if (msg instanceof ByteBuf) {
+      super.channelRead(ctx, msg);
+    } else if (msg instanceof Http2StreamFrame) {
       // Handle HTTP/2 clear text upgrade request
       if (msg instanceof Http2HeadersFrame) {
         Http2HeadersFrame frame = (Http2HeadersFrame) msg;
