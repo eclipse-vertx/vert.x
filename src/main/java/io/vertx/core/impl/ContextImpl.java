@@ -28,7 +28,7 @@ import java.util.concurrent.*;
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public final class ContextImpl implements ContextInternal {
+public final class ContextImpl extends ContextBase implements ContextInternal {
 
   static <T> void setResultHandler(ContextInternal ctx, Future<T> fut, Handler<AsyncResult<T>> resultHandler) {
     if (resultHandler != null) {
@@ -52,7 +52,6 @@ public final class ContextImpl implements ContextInternal {
   private final EventLoop eventLoop;
   private final EventExecutor executor;
   private ConcurrentMap<Object, Object> data;
-  private ConcurrentMap<Object, Object> localData;
   private volatile Handler<Throwable> exceptionHandler;
   final TaskQueue internalOrderedTasks;
   final WorkerPool internalWorkerPool;
@@ -60,6 +59,7 @@ public final class ContextImpl implements ContextInternal {
   final TaskQueue orderedTasks;
 
   public ContextImpl(VertxInternal vertx,
+                     int localsLength,
                      ThreadingModel threadingModel,
                      EventLoop eventLoop,
                      EventExecutor executor,
@@ -69,6 +69,7 @@ public final class ContextImpl implements ContextInternal {
                      Deployment deployment,
                      CloseFuture closeFuture,
                      ClassLoader tccl) {
+    super(localsLength);
     this.threadingModel = threadingModel;
     this.deployment = deployment;
     this.config = deployment != null ? deployment.config() : new JsonObject();
@@ -248,14 +249,6 @@ public final class ContextImpl implements ContextInternal {
       data = new ConcurrentHashMap<>();
     }
     return data;
-  }
-
-  @Override
-  public synchronized ConcurrentMap<Object, Object> localContextData() {
-    if (localData == null) {
-      localData = new ConcurrentHashMap<>();
-    }
-    return localData;
   }
 
   public void reportException(Throwable t) {
