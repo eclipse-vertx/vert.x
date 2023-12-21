@@ -13,16 +13,17 @@ package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
 import io.vertx.core.*;
+import io.vertx.core.Future;
 import io.vertx.core.impl.future.FailedFuture;
 import io.vertx.core.impl.future.PromiseImpl;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.future.SucceededFuture;
+import io.vertx.core.spi.context.storage.AccessMode;
+import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.core.spi.tracing.VertxTracer;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+import java.util.function.Supplier;
 
 import static io.vertx.core.impl.ContextImpl.setResultHandler;
 
@@ -34,6 +35,8 @@ import static io.vertx.core.impl.ContextImpl.setResultHandler;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public interface ContextInternal extends Context {
+
+  ContextLocal<ConcurrentMap<Object, Object>> LOCAL_MAP = new ContextLocalImpl<>(0);
 
   /**
    * @return the current context
@@ -346,19 +349,76 @@ public interface ContextInternal extends Context {
   /**
    * @return the {@link ConcurrentMap} used to store local context data
    */
-  ConcurrentMap<Object, Object> localContextData();
+  default ConcurrentMap<Object, Object> localContextData() {
+    return LOCAL_MAP.get(this, ConcurrentHashMap::new);
+  }
 
+  /**
+   * Get some local data from the context.
+   *
+   * @param key  the key of the data
+   * @param <T>  the type of the data
+   * @return the local data
+   */
+  default <T> T getLocal(ContextLocal<T> key) {
+    return getLocal(key, AccessMode.CONCURRENT);
+  }
+
+  /**
+   * Get some local data from the context.
+   *
+   * @param key  the key of the data
+   * @param <T>  the type of the data
+   * @return the local data
+   */
+  <T> T getLocal(ContextLocal<T> key, AccessMode accessMode);
+
+  /**
+   * Get some local data from the context, when it does not exist the {@code initialValueSupplier} is called to obtain
+   * the initial value.
+   *
+   * <p> The {@code initialValueSupplier} might be called multiple times when multiple threads call this method concurrently.
+   *
+   * @param key  the key of the data
+   * @param initialValueSupplier the supplier of the initial value optionally called
+   * @param <T>  the type of the data
+   * @return the local data
+   */
+  <T> T getLocal(ContextLocal<T> key, AccessMode accessMode, Supplier<? extends T> initialValueSupplier);
+
+  /**
+   * Put some local data in the context.
+   * <p>
+   * This can be used to share data between different handlers that share a context
+   *
+   * @param key  the key of the data
+   * @param value  the data
+   */
+  <T> void putLocal(ContextLocal<T> key, AccessMode accessMode, T value);
+
+  /**
+   * Remove some local data from the context.
+   *
+   * @param key  the key to remove
+   */
+  default <T> void removeLocal(ContextLocal<T> key, AccessMode accessMode) {
+    putLocal(key, accessMode, null);
+  }
+
+  @Deprecated
   @SuppressWarnings("unchecked")
   @Override
   default <T> T getLocal(Object key) {
     return (T) localContextData().get(key);
   }
 
+  @Deprecated
   @Override
   default void putLocal(Object key, Object value) {
     localContextData().put(key, value);
   }
 
+  @Deprecated
   @Override
   default boolean removeLocal(Object key) {
     return localContextData().remove(key) != null;
@@ -487,4 +547,5 @@ public interface ContextInternal extends Context {
   default boolean isDuplicate() {
     return false;
   }
+
 }
