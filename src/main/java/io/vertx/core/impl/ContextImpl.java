@@ -17,9 +17,12 @@ import io.vertx.core.Future;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.spi.context.ContextKey;
 import io.vertx.core.spi.metrics.PoolMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.concurrent.*;
 
 /**
@@ -28,7 +31,7 @@ import java.util.concurrent.*;
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public final class ContextImpl implements ContextInternal {
+public final class ContextImpl extends ContextBase implements ContextInternal {
 
   private static final Logger log = LoggerFactory.getLogger(ContextImpl.class);
 
@@ -52,6 +55,7 @@ public final class ContextImpl implements ContextInternal {
   final TaskQueue orderedTasks;
 
   protected ContextImpl(VertxInternal vertx,
+                        Object[] locals,
                         ThreadingModel threadingModel,
                         EventLoop eventLoop,
                         EventExecutor executor,
@@ -61,6 +65,7 @@ public final class ContextImpl implements ContextInternal {
                         Deployment deployment,
                         CloseFuture closeFuture,
                         ClassLoader tccl) {
+    super(locals);
     this.threadingModel = threadingModel;
     this.deployment = deployment;
     this.config = deployment != null ? deployment.config() : new JsonObject();
@@ -306,6 +311,6 @@ public final class ContextImpl implements ContextInternal {
 
   @Override
   public ContextInternal duplicate() {
-    return new DuplicatedContext(this);
+    return new DuplicatedContext(this, locals.length == 0 ? VertxImpl.EMPTY_CONTEXT_LOCALS : new Object[locals.length]);
   }
 }

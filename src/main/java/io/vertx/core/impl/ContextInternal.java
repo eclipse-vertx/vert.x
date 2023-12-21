@@ -17,6 +17,7 @@ import io.vertx.core.impl.future.FailedFuture;
 import io.vertx.core.impl.future.PromiseImpl;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.future.SucceededFuture;
+import io.vertx.core.spi.context.ContextKey;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.concurrent.Callable;
@@ -306,17 +307,20 @@ public interface ContextInternal extends Context {
    */
   ConcurrentMap<Object, Object> localContextData();
 
+  @Deprecated
   @SuppressWarnings("unchecked")
   @Override
   default <T> T getLocal(Object key) {
     return (T) localContextData().get(key);
   }
 
+  @Deprecated
   @Override
   default void putLocal(Object key, Object value) {
     localContextData().put(key, value);
   }
 
+  @Deprecated
   @Override
   default boolean removeLocal(Object key) {
     return localContextData().remove(key) != null;
@@ -445,4 +449,5 @@ public interface ContextInternal extends Context {
   default boolean isDuplicate() {
     return false;
   }
+
 }

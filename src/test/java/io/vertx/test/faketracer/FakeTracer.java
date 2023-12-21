@@ -13,6 +13,8 @@ package io.vertx.test.faketracer;
 
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
+import io.vertx.core.impl.ContextKeyHelper;
+import io.vertx.core.spi.context.ContextKey;
 import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
@@ -30,8 +32,7 @@ import java.util.function.BiConsumer;
  */
 public class FakeTracer implements VertxTracer<Span, Span> {
 
-  private static final String ACTIVE_SCOPE_KEY = "active.scope";
-
+  private final ContextKey<Object> scopeKey = ContextKey.registerKey(Object.class);
   private AtomicInteger idGenerator = new AtomicInteger(0);
   List<Span> finishedSpans = new CopyOnWriteArrayList<>();
   private AtomicInteger closeCount = new AtomicInteger();
@@ -53,7 +54,7 @@ public class FakeTracer implements VertxTracer<Span, Span> {
   }
 
   public Span activeSpan(Context data) {
-    Scope scope = data.getLocal(ACTIVE_SCOPE_KEY);
+    Scope scope = (Scope) data.getLocal(scopeKey);
     return scope != null ? scope.wrapped : null;
   }
 
@@ -62,9 +63,9 @@ public class FakeTracer implements VertxTracer<Span, Span> {
   }
 
   public Scope activate(Context context, Span span) {
-    Scope toRestore = context.getLocal(ACTIVE_SCOPE_KEY);
+    Scope toRestore = (Scope) context.getLocal(scopeKey);
     Scope active = new Scope(this, span, toRestore);
-    context.putLocal(ACTIVE_SCOPE_KEY, active);
+    context.putLocal(scopeKey, active);
     return active;
   }
 
@@ -174,6 +175,7 @@ public class FakeTracer implements VertxTracer<Span, Span> {
   @Override
   public void close() {
     closeCount.incrementAndGet();
+    ContextKeyHelper.reset();
   }
 
   public int closeCount() {

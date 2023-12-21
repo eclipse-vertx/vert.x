@@ -95,6 +95,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   private static final Logger log = LoggerFactory.getLogger(VertxImpl.class);
 
+  static final Object[] EMPTY_CONTEXT_LOCALS = new Object[0];
   private static final String CLUSTER_MAP_NAME = "__vertx.haInfo";
   private static final String NETTY_IO_RATIO_PROPERTY_NAME = "vertx.nettyIORatio";
   private static final int NETTY_IO_RATIO = Integer.getInteger(NETTY_IO_RATIO_PROPERTY_NAME, 50);
@@ -140,6 +141,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final FileResolver fileResolver;
   private final Map<ServerID, HttpServerImpl> sharedHttpServers = new HashMap<>();
   private final Map<ServerID, NetServerImpl> sharedNetServers = new HashMap<>();
+  private final int contextLocals;
   final WorkerPool workerPool;
   final WorkerPool internalWorkerPool;
   final WorkerPool virtualThreaWorkerPool;
@@ -193,6 +195,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     ExecutorService internalWorkerExec = executorServiceFactory.createExecutor(internalWorkerThreadFactory, internalBlockingPoolSize, internalBlockingPoolSize);
     PoolMetrics internalBlockingPoolMetrics = metrics != null ? metrics.createPoolMetrics("worker", "vert.x-internal-blocking", internalBlockingPoolSize) : null;
 
+    contextLocals = KeySeq.get();
     closeFuture = new CloseFuture(log);
     maxEventLoopExecTime = maxEventLoopExecuteTime;
     maxEventLoopExecTimeUnit = maxEventLoopExecuteTimeUnit;
@@ -540,8 +543,16 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
   }
 
+  private Object[] createContextLocals() {
+    if (contextLocals == 0) {
+      return EMPTY_CONTEXT_LOCALS;
+    } else {
+      return new Object[contextLocals];
+    }
+  }
+
   private ContextImpl createEventLoopContext(EventLoop eventLoop, CloseFuture closeFuture, WorkerPool workerPool, Deployment deployment, ClassLoader tccl) {
-    return new ContextImpl(this, ThreadingModel.EVENT_LOOP, eventLoop, new EventLoopExecutor(eventLoop), internalWorkerPool, workerPool != null ? workerPool : this.workerPool, new TaskQueue(), deployment, closeFuture, disableTCCL ? null : tccl);
+    return new ContextImpl(this, createContextLocals(), ThreadingModel.EVENT_LOOP, eventLoop, new EventLoopExecutor(eventLoop), internalWorkerPool, workerPool != null ? workerPool : this.workerPool, new TaskQueue(), deployment, closeFuture, disableTCCL ? null : tccl);
   }
 
   @Override
@@ -562,7 +573,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private ContextImpl createWorkerContext(EventLoop eventLoop, CloseFuture closeFuture, WorkerPool workerPool, Deployment deployment, ClassLoader tccl) {
     TaskQueue orderedTasks = new TaskQueue();
     WorkerPool wp = workerPool != null ? workerPool : this.workerPool;
-    return new ContextImpl(this, ThreadingModel.WORKER, eventLoop, new WorkerExecutor(wp, orderedTasks), internalWorkerPool, wp, orderedTasks, deployment, closeFuture, disableTCCL ? null : tccl);
+    return new ContextImpl(this, createContextLocals(), ThreadingModel.WORKER, eventLoop, new WorkerExecutor(wp, orderedTasks), internalWorkerPool, wp, orderedTasks, deployment, closeFuture, disableTCCL ? null : tccl);
   }
 
   @Override
@@ -585,7 +596,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       throw new IllegalStateException("This Java runtime does not support virtual threads");
     }
     TaskQueue orderedTasks = new TaskQueue();
-    return new ContextImpl(this, ThreadingModel.VIRTUAL_THREAD, eventLoop, new WorkerExecutor(virtualThreaWorkerPool, orderedTasks), internalWorkerPool, virtualThreaWorkerPool, orderedTasks, deployment, closeFuture, disableTCCL ? null : tccl);
+    return new ContextImpl(this, createContextLocals(), ThreadingModel.VIRTUAL_THREAD, eventLoop, new WorkerExecutor(virtualThreaWorkerPool, orderedTasks), internalWorkerPool, virtualThreaWorkerPool, orderedTasks, deployment, closeFuture, disableTCCL ? null : tccl);
   }
 
   @Override

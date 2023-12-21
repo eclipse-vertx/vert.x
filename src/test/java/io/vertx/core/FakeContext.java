@@ -10,6 +10,7 @@ import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.WorkerPool;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.spi.context.ContextKey;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.concurrent.Callable;
@@ -171,5 +172,14 @@ class FakeContext implements ContextInternal {
   @Override
   public CloseFuture closeFuture() {
     return null;
+  }
+
+  @Override
+  public <T> T getLocal(ContextKey<T> key) {
+    return null;
+  }
+
+  @Override
+  public <T> void putLocal(ContextKey<T> key, T value) {
   }
 }

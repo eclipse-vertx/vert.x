@@ -14,6 +14,7 @@ package io.vertx.core;
 import io.netty.channel.EventLoop;
 import io.vertx.core.impl.*;
 import io.vertx.core.impl.future.PromiseInternal;
+import io.vertx.core.spi.context.ContextKey;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Assume;
 import org.junit.Test;
@@ -37,6 +38,8 @@ import java.util.stream.Stream;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class ContextTest extends VertxTestBase {
+
+  private static final ContextKey<Object> CONTEXT_KEY = ContextKey.registerKey(Object.class);
 
   private ExecutorService workerExecutor;
 
@@ -444,9 +447,9 @@ public class ContextTest extends VertxTestBase {
     Object shared = new Object();
     Object local = new Object();
     ctx.put("key", shared);
-    ctx.putLocal("key", local);
+    ctx.putLocal(CONTEXT_KEY, local);
     assertSame(shared, duplicated.get("key"));
-    assertNull(duplicated.getLocal("key"));
+    assertNull(duplicated.getLocal(CONTEXT_KEY));
     assertTrue(duplicated.remove("key"));
     assertNull(ctx.get("key"));
 

@@ -16,6 +16,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.spi.context.ContextKey;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.concurrent.Callable;
@@ -34,12 +35,13 @@ import java.util.concurrent.Executor;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class DuplicatedContext implements ContextInternal {
+final class DuplicatedContext extends ContextBase implements ContextInternal {
 
   protected final ContextImpl delegate;
   private ConcurrentMap<Object, Object> localData;
 
-  DuplicatedContext(ContextImpl delegate) {
+  DuplicatedContext(ContextImpl delegate, Object[] locals) {
+    super(locals);
     this.delegate = delegate;
   }
 
@@ -176,7 +178,7 @@ class DuplicatedContext implements ContextInternal {
 
   @Override
   public ContextInternal duplicate() {
-    return new DuplicatedContext(delegate);
+    return new DuplicatedContext(delegate, locals.length == 0 ? VertxImpl.EMPTY_CONTEXT_LOCALS : new Object[locals.length]);
   }
 
   @Override

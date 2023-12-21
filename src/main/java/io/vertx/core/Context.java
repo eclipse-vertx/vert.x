@@ -17,6 +17,7 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.impl.VertxThread;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.spi.context.ContextKey;
 
 import java.util.Collections;
 import java.util.List;
@@ -243,6 +244,27 @@ public interface Context {
    * @return true if removed successfully, false otherwise
    */
   boolean removeLocal(Object key);
+
+  /**
+   * Get some local data from the context.
+   *
+   * @param key  the key of the data
+   * @param <T>  the type of the data
+   * @return the data
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  <T> T getLocal(ContextKey<T> key);
+
+  /**
+   * Put some local data in the context.
+   * <p>
+   * This can be used to share data between different handlers that share a context
+   *
+   * @param key  the key of the data
+   * @param value  the data
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  <T> void putLocal(ContextKey<T> key, T value);
 
   /**
    * @return The Vertx instance that created the context

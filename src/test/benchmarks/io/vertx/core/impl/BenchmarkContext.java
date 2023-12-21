@@ -34,6 +34,7 @@ public class BenchmarkContext {
     VertxImpl impl = (VertxImpl) vertx;
     return new ContextImpl(
       impl,
+      new Object[0],
       ThreadingModel.WORKER,
       impl.getEventLoopGroup().next(),
       EXECUTOR,
