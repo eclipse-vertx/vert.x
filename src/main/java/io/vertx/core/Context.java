@@ -22,6 +22,7 @@ import io.vertx.core.spi.context.ContextKey;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 
 /**
  * The execution context of a {@link io.vertx.core.Handler} execution.
@@ -256,6 +257,16 @@ public interface Context {
   <T> T getLocal(ContextKey<T> key);
 
   /**
+   * Get some local data from the context.
+   *
+   * @param key  the key of the data
+   * @param <T>  the type of the data
+   * @return the data
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  <T> T getLocal(ContextKey<T> key, Supplier<T> supplier);
+
+  /**
    * Put some local data in the context.
    * <p>
    * This can be used to share data between different handlers that share a context
@@ -265,6 +276,11 @@ public interface Context {
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   <T> void putLocal(ContextKey<T> key, T value);
+
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  default <T> void removeLocal(ContextKey<T> key) {
+    putLocal(key, null);
+  }
 
   /**
    * @return The Vertx instance that created the context

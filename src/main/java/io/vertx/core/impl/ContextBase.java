@@ -14,6 +14,7 @@ import io.vertx.core.spi.context.ContextKey;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
+import java.util.function.Supplier;
 
 /**
  * Base class for context.
@@ -37,6 +38,30 @@ class ContextBase {
       throw new IllegalArgumentException();
     }
     Object res = LOCALS_UPDATER.getVolatile(locals, index);
+    return (T) res;
+  }
+
+  public final <T> T getLocal(ContextKey<T> key, Supplier<T> supplier) {
+    ContextKeyImpl<T> internalKey = (ContextKeyImpl<T>) key;
+    int index = internalKey.index;
+    if (index >= locals.length) {
+      throw new IllegalArgumentException();
+    }
+    Object res;
+    while (true) {
+      res = LOCALS_UPDATER.getVolatile(locals, index);
+      if (res != null) {
+        break;
+      }
+      Object initial = supplier.get();
+      if (initial == null) {
+        throw new IllegalStateException();
+      }
+      if (LOCALS_UPDATER.compareAndSet(locals, index, null, initial)) {
+        res = initial;
+        break;
+      }
+    }
     return (T) res;
   }
 

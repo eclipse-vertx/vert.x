@@ -39,8 +39,7 @@ import java.util.stream.Stream;
  */
 public class ContextTest extends VertxTestBase {
 
-  private static final ContextKey<Object> CONTEXT_KEY = ContextKey.registerKey(Object.class);
-
+  private ContextKey<Object> contextKey;
   private ExecutorService workerExecutor;
 
   private ContextInternal createWorkerContext() {
@@ -49,12 +48,14 @@ public class ContextTest extends VertxTestBase {
 
   @Override
   public void setUp() throws Exception {
+    contextKey = ContextKey.registerKey(Object.class);
     workerExecutor = Executors.newFixedThreadPool(2, r -> new VertxThread(r, "vert.x-worker-thread", true, 10, TimeUnit.SECONDS));
     super.setUp();
   }
 
   @Override
   protected void tearDown() throws Exception {
+    ContextKeyHelper.reset();
     workerExecutor.shutdown();
     super.tearDown();
   }
@@ -447,9 +448,9 @@ public class ContextTest extends VertxTestBase {
     Object shared = new Object();
     Object local = new Object();
     ctx.put("key", shared);
-    ctx.putLocal(CONTEXT_KEY, local);
+    ctx.putLocal(contextKey, local);
     assertSame(shared, duplicated.get("key"));
-    assertNull(duplicated.getLocal(CONTEXT_KEY));
+    assertNull(duplicated.getLocal(contextKey));
     assertTrue(duplicated.remove("key"));
     assertNull(ctx.get("key"));
 
@@ -1057,4 +1058,37 @@ public class ContextTest extends VertxTestBase {
     }, new DeploymentOptions().setThreadingModel(ThreadingModel.VIRTUAL_THREAD));
     await();
   }
+
+  @Test
+  public void testConcurrentLocalAccess() throws Exception {
+    Context ctx = vertx.getOrCreateContext();
+    int numThreads = 10;
+    Thread[] threads = new Thread[numThreads];
+    int[] values = new int[numThreads];
+    CyclicBarrier barrier = new CyclicBarrier(numThreads);
+    for (int i = 0;i < numThreads;i++) {
+      values[i] = -1;
+      int val = i;
+      Supplier<Object> supplier = () -> val;
+      threads[i] = new Thread(() -> {
+        try {
+          barrier.await();
+        } catch (Exception e) {
+          return;
+        }
+        values[val] = (int)ctx.getLocal(contextKey, supplier);
+      });
+    }
+    for (int i = 0;i < numThreads;i++) {
+      threads[i].start();
+    }
+    for (int i = 0;i < numThreads;i++) {
+      threads[i].join();
+    }
+    assertTrue(values[0] >= 0);
+    for (int i = 0;i < numThreads;i++) {
+      assertEquals(values[i], values[0]);
+    }
+  }
+
 }

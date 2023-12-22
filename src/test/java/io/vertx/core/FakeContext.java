@@ -16,6 +16,7 @@ import io.vertx.core.spi.tracing.VertxTracer;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
+import java.util.function.Supplier;
 
 class FakeContext implements ContextInternal {
 
@@ -181,5 +182,10 @@ class FakeContext implements ContextInternal {
 
   @Override
   public <T> void putLocal(ContextKey<T> key, T value) {
+  }
+
+  @Override
+  public <T> T getLocal(ContextKey<T> key, Supplier<T> supplier) {
+    return null;
   }
 }
