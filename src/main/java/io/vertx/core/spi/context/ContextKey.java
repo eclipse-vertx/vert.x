@@ -20,10 +20,12 @@ import io.vertx.core.impl.ContextKeyImpl;
 public interface ContextKey<T> {
 
   /**
-   * Register a key.
+   * Registers a context key.
    *
-   * Keys should be registered prior creating a {@link io.vertx.core.Vertx} instance as a static field, once registered
-   * a key cannot be unregistered.
+   * <p>Keys should be registered before creating a {@link io.vertx.core.Vertx} instance, once registered a key cannot be unregistered.
+   *
+   * <p>It is recommended to initialize keys as static fields of a {@link io.vertx.core.spi.VertxServiceProvider}, since providers
+   * are discovered before the capture of known keys.
    *
    * @param type the type of context data
    * @return the context key

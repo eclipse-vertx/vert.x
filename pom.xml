@@ -685,6 +685,21 @@
               </additionalClasspathElements>
             </configuration>
           </execution>
+          <execution>
+            <id>custom-context-key</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/CustomContextKeyTest.java</include>
+              </includes>
+              <additionalClasspathElements>
+                <additionalClasspathElement>${project.basedir}/src/test/classpath/customcontextkey</additionalClasspathElement>
+              </additionalClasspathElements>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
 
