@@ -46,6 +46,6 @@ class ContextBase {
     if (index >= locals.length) {
       throw new IllegalArgumentException();
     }
-    LOCALS_UPDATER.setVolatile(locals, index, value);
+    LOCALS_UPDATER.setRelease(locals, index, value);
   }
 }
