@@ -277,6 +277,11 @@ public interface Context {
   @GenIgnore
   <T> void putLocal(ContextKey<T> key, T value);
 
+  /**
+   * Remove some local data from the context.
+   *
+   * @param key  the key to remove
+   */
   @GenIgnore
   default <T> void removeLocal(ContextKey<T> key) {
     putLocal(key, null);
