@@ -185,7 +185,7 @@ class FakeContext implements ContextInternal {
   }
 
   @Override
-  public <T> T getLocal(ContextKey<T> key, Supplier<T> supplier) {
+  public <T> T getLocal(ContextKey<T> key, Supplier<? extends T> supplier) {
     return null;
   }
 }

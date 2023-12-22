@@ -253,7 +253,7 @@ public interface Context {
    * @param <T>  the type of the data
    * @return the data
    */
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @GenIgnore
   <T> T getLocal(ContextKey<T> key);
 
   /**
@@ -263,8 +263,8 @@ public interface Context {
    * @param <T>  the type of the data
    * @return the data
    */
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  <T> T getLocal(ContextKey<T> key, Supplier<T> supplier);
+  @GenIgnore
+  <T> T getLocal(ContextKey<T> key, Supplier<? extends T> supplier);
 
   /**
    * Put some local data in the context.
@@ -274,10 +274,10 @@ public interface Context {
    * @param key  the key of the data
    * @param value  the data
    */
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @GenIgnore
   <T> void putLocal(ContextKey<T> key, T value);
 
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @GenIgnore
   default <T> void removeLocal(ContextKey<T> key) {
     putLocal(key, null);
   }

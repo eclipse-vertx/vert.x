@@ -41,7 +41,7 @@ class ContextBase {
     return (T) res;
   }
 
-  public final <T> T getLocal(ContextKey<T> key, Supplier<T> supplier) {
+  public final <T> T getLocal(ContextKey<T> key, Supplier<? extends T> supplier) {
     ContextKeyImpl<T> internalKey = (ContextKeyImpl<T>) key;
     int index = internalKey.index;
     if (index >= locals.length) {
