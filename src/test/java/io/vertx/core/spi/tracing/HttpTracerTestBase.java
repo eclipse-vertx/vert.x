@@ -70,7 +70,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
         assertTrue(response instanceof HttpServerResponse);
         assertNull(failure);
         assertSame(val, context.getLocal(key));
-        context.putLocal(key, null);
+        context.removeLocal(key);
       }
     });
     CountDownLatch latch = new CountDownLatch(1);
@@ -174,7 +174,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
       @Override
       public void receiveResponse(Context context, Object response, Object payload, Throwable failure, TagExtractor tagExtractor) {
         assertSame(val, context.getLocal(key));
-        context.putLocal(key, null);
+        context.removeLocal(key);
         assertNotNull(response);
         assertTrue(response instanceof HttpResponse);
         assertNull(failure);
@@ -225,7 +225,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
       @Override
       public void receiveResponse(Context context, Object response, Object payload, Throwable failure, TagExtractor tagExtractor) {
         assertSame(val, context.getLocal(key));
-        context.putLocal(key, null);
+        context.removeLocal(key);
         assertNull(response);
         assertNotNull(failure);
         assertTrue(seq.compareAndSet(1, 2));
