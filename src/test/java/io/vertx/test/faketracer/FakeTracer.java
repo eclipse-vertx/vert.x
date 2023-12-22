@@ -32,7 +32,7 @@ import java.util.function.BiConsumer;
  */
 public class FakeTracer implements VertxTracer<Span, Span> {
 
-  private final ContextKey<Object> scopeKey = ContextKey.registerKey(Object.class);
+  private final ContextKey<Scope> scopeKey = ContextKey.registerKey(Scope.class);
   private AtomicInteger idGenerator = new AtomicInteger(0);
   List<Span> finishedSpans = new CopyOnWriteArrayList<>();
   private AtomicInteger closeCount = new AtomicInteger();
@@ -54,7 +54,7 @@ public class FakeTracer implements VertxTracer<Span, Span> {
   }
 
   public Span activeSpan(Context data) {
-    Scope scope = (Scope) data.getLocal(scopeKey);
+    Scope scope = data.getLocal(scopeKey);
     return scope != null ? scope.wrapped : null;
   }
 
@@ -63,7 +63,7 @@ public class FakeTracer implements VertxTracer<Span, Span> {
   }
 
   public Scope activate(Context context, Span span) {
-    Scope toRestore = (Scope) context.getLocal(scopeKey);
+    Scope toRestore = context.getLocal(scopeKey);
     Scope active = new Scope(this, span, toRestore);
     context.putLocal(scopeKey, active);
     return active;
