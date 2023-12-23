@@ -15,6 +15,9 @@ package io.vertx.core.impl;
  */
 public class ContextKeyHelper {
 
+  /**
+   * Reset the context keys, only available for testing purpose.
+   */
   public static void reset() {
     KeySeq.reset();
   }
