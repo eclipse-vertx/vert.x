@@ -77,8 +77,16 @@ public class AddressResolverOptions {
 
   /**
    * The default value of search domains = null
+   *
+   * @deprecated instead use {@link #DEFAULT_SEARCH_DOMAINS}
    */
+  @Deprecated
   public static final List<String> DEFAULT_SEACH_DOMAINS = null;
+
+  /**
+   * The default value of search domains = null
+   */
+  public static final List<String> DEFAULT_SEARCH_DOMAINS = null;
 
   /**
    * The default ndots value = loads the value from the OS on Linux otherwise use the value 1
@@ -120,7 +128,7 @@ public class AddressResolverOptions {
     queryTimeout = DEFAULT_QUERY_TIMEOUT;
     maxQueries = DEFAULT_MAX_QUERIES;
     rdFlag = DEFAULT_RD_FLAG;
-    searchDomains = DEFAULT_SEACH_DOMAINS;
+    searchDomains = DEFAULT_SEARCH_DOMAINS;
     ndots = DEFAULT_NDOTS;
     rotateServers = DEFAULT_ROTATE_SERVERS;
     roundRobinInetAddress = DEFAULT_ROUND_ROBIN_INET_ADDRESS;
