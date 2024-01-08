@@ -704,18 +704,32 @@ public final class HttpUtils {
   }
 
   /**
+   * This is optimized for Http headers, which are usually in the form:<br>
+   * eg Content-Length, content-length
+   *
    * @return convert the {@code sequence} to a lower case instance
    */
   public static CharSequence toLowerCase(CharSequence sequence) {
-    StringBuilder buffer = null;
+    if (sequence instanceof AsciiString) {
+      return ((AsciiString) sequence).toLowerCase();
+    }
+    return toCharSequenceLowerCase(sequence);
+  }
+
+  private static CharSequence toCharSequenceLowerCase(CharSequence sequence) {
     int len = sequence.length();
+    StringBuilder buffer = null;
     for (int index = 0; index < len; index++) {
       char c = sequence.charAt(index);
       if (c >= 'A' && c <= 'Z') {
         if (buffer == null) {
+          if (sequence instanceof String) {
+            return toLowerCase(((String) sequence).toCharArray(), index, len);
+          }
+          // just copy the lowercase part
           buffer = new StringBuilder(sequence);
         }
-        buffer.setCharAt(index, (char)(c + ('a' - 'A')));
+        buffer.setCharAt(index, (char) (c + ('a' - 'A')));
       }
     }
     if (buffer != null) {
@@ -723,6 +737,17 @@ public final class HttpUtils {
     } else {
       return sequence;
     }
+  }
+
+  private static CharSequence toLowerCase(char[] chars, int firstUpperCase, int length) {
+    assert chars[firstUpperCase] >= 'A' && chars[firstUpperCase] <= 'Z';
+    for (int i = firstUpperCase; i < length; i++) {
+      char c = chars[i];
+      if (c >= 'A' && c <= 'Z') {
+        chars[i] = (char) (c + ('a' - 'A'));
+      }
+    }
+    return new String(chars, 0, length == chars.length? chars.length : length);
   }
 
   static HttpVersion toNettyHttpVersion(io.vertx.core.http.HttpVersion version) {
