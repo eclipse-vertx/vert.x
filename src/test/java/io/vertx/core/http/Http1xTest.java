@@ -1592,7 +1592,7 @@ public class Http1xTest extends HttpTest {
     int numServers = VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE / 2- 1;
     int numRequests = numServers * 100;
 
-    List<HttpServer> servers = new ArrayList<>();
+    List<HttpServer> servers = Collections.synchronizedList(new ArrayList<>());
     Set<HttpServer> connectedServers = Collections.newSetFromMap(new ConcurrentHashMap<>());
     Map<HttpServer, Integer> requestCount = new ConcurrentHashMap<>();
 
@@ -1673,6 +1673,7 @@ public class Http1xTest extends HttpTest {
     testSharedServersRoundRobin();
   }
 
+  @Repeat(times = 1000)
   @Test
   public void testSharedServersRoundRobinButFirstStartAndStopServer() throws Exception {
     // Start and stop a server on the same port/host before hand to make sure it doesn't interact
