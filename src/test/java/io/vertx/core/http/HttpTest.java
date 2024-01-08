@@ -6629,8 +6629,9 @@ public abstract class HttpTest extends HttpTestBase {
     );
     startServer(testAddress);
     client.request(requestOptions)
-      .compose(HttpClientRequest::send)
-      .compose(HttpClientResponse::end)
+      .compose(req -> req
+        .send()
+        .compose(HttpClientResponse::end))
       .onComplete(onSuccess(nothing -> complete()));
     await();
   }
