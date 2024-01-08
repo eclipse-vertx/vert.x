@@ -187,7 +187,7 @@ public class HostnameResolutionTest extends VertxTestBase {
     assertEquals(AddressResolverOptions.DEFAULT_MAX_QUERIES, options.getMaxQueries());
     assertEquals(AddressResolverOptions.DEFAULT_RD_FLAG, options.getRdFlag());
     assertEquals(AddressResolverOptions.DEFAULT_NDOTS, options.getNdots());
-    assertEquals(AddressResolverOptions.DEFAULT_SEACH_DOMAINS, options.getSearchDomains());
+    assertEquals(AddressResolverOptions.DEFAULT_SEARCH_DOMAINS, options.getSearchDomains());
 
     boolean optResourceEnabled = TestUtils.randomBoolean();
     List<String> servers = Arrays.asList("1.2.3.4", "5.6.7.8");
@@ -277,7 +277,7 @@ public class HostnameResolutionTest extends VertxTestBase {
     options.setMaxQueries(AddressResolverOptions.DEFAULT_MAX_QUERIES);
     options.setRdFlag(AddressResolverOptions.DEFAULT_RD_FLAG);
     options.setNdots(AddressResolverOptions.DEFAULT_NDOTS);
-    options.setSearchDomains(AddressResolverOptions.DEFAULT_SEACH_DOMAINS);
+    options.setSearchDomains(AddressResolverOptions.DEFAULT_SEARCH_DOMAINS);
 
     assertEquals(optResourceEnabled, copy.isOptResourceEnabled());
     assertEquals(servers, copy.getServers());
@@ -313,7 +313,7 @@ public class HostnameResolutionTest extends VertxTestBase {
     assertEquals(AddressResolverOptions.DEFAULT_QUERY_TIMEOUT, options.getQueryTimeout());
     assertEquals(AddressResolverOptions.DEFAULT_MAX_QUERIES, options.getMaxQueries());
     assertEquals(AddressResolverOptions.DEFAULT_RD_FLAG, options.getRdFlag());
-    assertEquals(AddressResolverOptions.DEFAULT_SEACH_DOMAINS, options.getSearchDomains());
+    assertEquals(AddressResolverOptions.DEFAULT_SEARCH_DOMAINS, options.getSearchDomains());
     assertEquals(AddressResolverOptions.DEFAULT_NDOTS, options.getNdots());
   }
 
