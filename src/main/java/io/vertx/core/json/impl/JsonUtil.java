@@ -11,6 +11,7 @@
 package io.vertx.core.json.impl;
 
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.SysProps;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.shareddata.Shareable;
@@ -40,7 +41,7 @@ public final class JsonUtil {
      * Users who might need to interop with Vert.x 3.x applications should set the system property
      * {@code vertx.json.base64} to {@code legacy}.
      */
-    if ("legacy".equalsIgnoreCase(System.getProperty("vertx.json.base64"))) {
+    if ("legacy".equalsIgnoreCase(SysProps.JSON_BASE_64.get())) {
       BASE64_ENCODER = Base64.getEncoder();
       BASE64_DECODER = Base64.getDecoder();
     } else {

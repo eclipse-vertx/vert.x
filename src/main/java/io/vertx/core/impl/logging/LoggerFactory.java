@@ -11,6 +11,7 @@
 
 package io.vertx.core.impl.logging;
 
+import io.vertx.core.impl.SysProps;
 import io.vertx.core.logging.JULLogDelegateFactory;
 import io.vertx.core.spi.logging.LogDelegate;
 import io.vertx.core.spi.logging.LogDelegateFactory;
@@ -21,8 +22,6 @@ import io.vertx.core.spi.logging.LogDelegateFactory;
  * @author Thomas Segismont
  */
 public class LoggerFactory {
-
-  public static final String LOGGER_DELEGATE_FACTORY_CLASS_NAME = "vertx.logger-delegate-factory-class-name";
 
   private static volatile LogDelegateFactory delegateFactory;
 
@@ -37,7 +36,7 @@ public class LoggerFactory {
     ClassLoader loader = Thread.currentThread().getContextClassLoader();
     String className;
     try {
-      className = System.getProperty(LOGGER_DELEGATE_FACTORY_CLASS_NAME);
+      className = SysProps.LOGGER_DELEGATE_FACTORY_CLASS_NAME.get();
     } catch (Exception ignore) {
       className = null;
     }

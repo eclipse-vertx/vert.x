@@ -11,6 +11,7 @@
 
 package io.vertx.core.impl.verticle;
 
+import io.vertx.core.impl.SysProps;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 
@@ -41,11 +42,10 @@ public class CompilingClassLoader extends ClassLoader {
   private static final Logger log = LoggerFactory.getLogger(CompilingClassLoader.class);
 
 
-  private static final String JAVA_COMPILER_OPTIONS_PROP_NAME = "vertx.javaCompilerOptions";
   private final static List<String> COMPILER_OPTIONS;
 
   static {
-    String props = System.getProperty(JAVA_COMPILER_OPTIONS_PROP_NAME);
+    String props = SysProps.JAVA_COMPILER_OPTIONS_PROP_NAME.get();
     if (props != null) {
       String[] array = props.split(",");
       List<String> compilerProps = new ArrayList<>(array.length);

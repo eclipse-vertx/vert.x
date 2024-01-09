@@ -315,7 +315,7 @@ public class VertxBuilder {
   }
 
   private static void initClusterManager(Collection<VertxServiceProvider> providers) {
-    String clusterManagerClassName = System.getProperty("vertx.cluster.managerClass");
+    String clusterManagerClassName = SysProps.CLUSTER_MANAGER_CLASS.get();
     if (clusterManagerClassName != null) {
       // We allow specify a sys prop for the cluster manager factory which overrides ServiceLoader
       try {
