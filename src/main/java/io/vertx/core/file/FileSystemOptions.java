@@ -15,6 +15,7 @@ package io.vertx.core.file;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.file.impl.FileResolverImpl;
+import io.vertx.core.impl.SysProps;
 import io.vertx.core.json.JsonObject;
 
 import java.io.File;
@@ -30,24 +31,19 @@ public class FileSystemOptions {
   /**
    * The default behavior for caching files for class path resolution = {@code false} if and only if the system property {@code "vertx.disableFileCaching"} exists and is set to the string {@code "false"}
    */
-  public static final boolean DEFAULT_FILE_CACHING_ENABLED = !Boolean.getBoolean(FileResolverImpl.DISABLE_FILE_CACHING_PROP_NAME);
+  public static final boolean DEFAULT_FILE_CACHING_ENABLED = !SysProps.DISABLE_FILE_CACHING.getBoolean();
 
   /**
    * The default behavior to cache or not class path resolution = {@code false} if and only if the system property {@code "vertx.disableFileCPResolving"} exists and is set to the string {@code "false"}
    */
-  public static final boolean DEFAULT_CLASS_PATH_RESOLVING_ENABLED = !Boolean.getBoolean(FileResolverImpl.DISABLE_CP_RESOLVING_PROP_NAME);
+  public static final boolean DEFAULT_CLASS_PATH_RESOLVING_ENABLED = !SysProps.DISABLE_FILE_CP_RESOLVING.getBoolean();
 
-
-  // get the system default temp dir location (can be overriden by using the standard java system property)
-  // if not present default to the process start CWD
-  private static final String TMPDIR = System.getProperty("java.io.tmpdir", ".");
-  private static final String DEFAULT_CACHE_DIR_BASE = "vertx-cache";
 
   /**
    * The default file caching dir. If the system property {@code "vertx.cacheDirBase"} is set, then this is the value
    * If not, then the system property {@code java.io.tmpdir} is taken or {code .} if not set. suffixed with {@code vertx-cache}.
    */
-  public static final String DEFAULT_FILE_CACHING_DIR = System.getProperty(FileResolverImpl.CACHE_DIR_BASE_PROP_NAME, TMPDIR + File.separator + DEFAULT_CACHE_DIR_BASE);
+  public static final String DEFAULT_FILE_CACHING_DIR = SysProps.FILE_CACHE_DIR.get();
 
   private boolean classPathResolvingEnabled = DEFAULT_CLASS_PATH_RESOLVING_ENABLED;
   private boolean fileCachingEnabled = DEFAULT_FILE_CACHING_ENABLED;

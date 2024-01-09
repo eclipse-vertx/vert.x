@@ -16,6 +16,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
 import io.vertx.core.dns.AddressResolverOptions;
+import io.vertx.core.impl.SysProps;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.dns.impl.DnsAddressResolverProvider;
 import io.vertx.core.dns.impl.DefaultAddressResolverProvider;
@@ -29,13 +30,11 @@ import java.net.InetSocketAddress;
  */
 public interface AddressResolverProvider {
 
-  String DISABLE_DNS_RESOLVER_PROP_NAME = "vertx.disableDnsResolver";
-
   static AddressResolverProvider factory(Vertx vertx, AddressResolverOptions options) {
     // For now not really plugable, we just want to not fail when we can't load the async provider
     // that use an unstable API and fallback on the default (blocking) provider
     try {
-      if (!Boolean.getBoolean(DISABLE_DNS_RESOLVER_PROP_NAME)) {
+      if (!SysProps.DISABLE_DNS_RESOLVER.getBoolean()) {
         return DnsAddressResolverProvider.create((VertxInternal) vertx, options);
       }
     } catch (Throwable e) {

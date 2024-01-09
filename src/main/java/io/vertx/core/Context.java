@@ -167,7 +167,7 @@ public interface Context {
    * Is the current context an event loop context?
    * <p>
    * NOTE! when running blocking code using {@link io.vertx.core.Vertx#executeBlocking(Callable)} from a
-   * standard (not worker) verticle, the context will still an event loop context and this {@link this#isEventLoopContext()}
+   * standard (not worker) verticle, the context will still an event loop context and this {@link #isEventLoopContext()}
    * will return true.
    *
    * @return {@code true} if the current context is an event-loop context, {@code false} otherwise

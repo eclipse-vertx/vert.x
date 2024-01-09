@@ -12,6 +12,7 @@
 package io.vertx.core.impl.logging;
 
 import io.vertx.core.Vertx;
+import io.vertx.core.impl.SysProps;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.config.plugins.Plugin;
 import org.apache.logging.log4j.core.pattern.ConverterKeys;
@@ -19,8 +20,6 @@ import org.apache.logging.log4j.core.pattern.LogEventPatternConverter;
 import org.apache.logging.log4j.core.pattern.PatternConverter;
 import org.junit.After;
 import org.junit.Test;
-
-import static io.vertx.core.impl.logging.LoggerFactory.LOGGER_DELEGATE_FACTORY_CLASS_NAME;
 
 /**
  * Must be separated from {@link LoggingBackendSelectionTest}.
@@ -32,12 +31,12 @@ public class NoExceptionInInitializerErrorTest {
 
   @After
   public void tearDown() {
-    System.clearProperty(LOGGER_DELEGATE_FACTORY_CLASS_NAME);
+    System.clearProperty(SysProps.LOGGER_DELEGATE_FACTORY_CLASS_NAME.name);
   }
 
   @Test
   public void doTest() throws Exception {
-    System.setProperty(LOGGER_DELEGATE_FACTORY_CLASS_NAME, "io.vertx.core.logging.Log4j2LogDelegateFactory");
+    System.setProperty(SysProps.LOGGER_DELEGATE_FACTORY_CLASS_NAME.name, "io.vertx.core.logging.Log4j2LogDelegateFactory");
     // Will fail if:
     //  - the logging impl uses Vertx static methods (e.g. currentContext in a converter)
     //  - io.vertx.core.logging.LoggerFactory logs something before being fully initialized

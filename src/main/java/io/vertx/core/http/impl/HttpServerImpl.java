@@ -11,15 +11,11 @@
 
 package io.vertx.core.http.impl;
 
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelPipeline;
-import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
-import io.netty.handler.ssl.SslHandler;
-import io.netty.handler.traffic.GlobalTrafficShapingHandler;
 import io.vertx.core.*;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.CloseSequence;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.SysProps;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -28,9 +24,7 @@ import io.vertx.core.net.impl.*;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -46,9 +40,7 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
 
   private static final Handler<Throwable> DEFAULT_EXCEPTION_HANDLER = t -> log.trace("Connection failure", t);
 
-  private static final String DISABLE_WEBSOCKETS_PROP_NAME = "vertx.disableWebsockets";
-
-  static final boolean DISABLE_WEBSOCKETS = Boolean.getBoolean(DISABLE_WEBSOCKETS_PROP_NAME);
+  static final boolean DISABLE_WEBSOCKETS = SysProps.DISABLE_WEBSOCKETS.getBoolean();
 
   private final VertxInternal vertx;
   final HttpServerOptions options;

@@ -16,6 +16,7 @@ import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.eventbus.EventBusOptions;
 import io.vertx.core.file.FileSystemOptions;
+import io.vertx.core.impl.SysProps;
 import io.vertx.core.impl.cpu.CpuCoreSensor;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.metrics.MetricsOptions;
@@ -32,8 +33,6 @@ import java.util.concurrent.TimeUnit;
 @DataObject
 @JsonGen(publicConverter = false)
 public class VertxOptions {
-
-  private static final String DISABLE_TCCL_PROP_NAME = "vertx.disableTCCL";
 
   /**
    * The default number of event loop threads to be used  = 2 * number of cores on the machine
@@ -112,7 +111,7 @@ public class VertxOptions {
    */
   public static final TimeUnit DEFAULT_WARNING_EXCEPTION_TIME_UNIT = TimeUnit.NANOSECONDS;
 
-  public static final boolean DEFAULT_DISABLE_TCCL = Boolean.getBoolean(DISABLE_TCCL_PROP_NAME);
+  public static final boolean DEFAULT_DISABLE_TCCL = SysProps.DISABLE_TCCL.getBoolean();
 
   /**
    * Set default value to false for aligning with the old behavior
