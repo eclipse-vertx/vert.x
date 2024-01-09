@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2024 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -14,11 +14,24 @@ package io.vertx.core.spi.json;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.EncodeException;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public interface JsonCodec {
+
+  /**
+   * Decode a given JSON string.
+   *
+   * @param json the JSON string.
+   * @return a JSON element which can be a {@link JsonArray}, {@link JsonObject}, {@link String}, ...etc. if the string contains an array, object, string, ...etc
+   * @throws DecodeException when there is a parsing or invalid mapping.
+   */
+  default Object fromString(String json) throws DecodeException {
+    return fromString(json, Object.class);
+  }
 
   /**
    * Decode the provide {@code json} string to an object extending {@code clazz}.
@@ -29,6 +42,13 @@ public interface JsonCodec {
    * @throws DecodeException anything preventing the decoding
    */
   <T> T fromString(String json, Class<T> clazz) throws DecodeException;
+
+  /**
+   * Like {@link #fromString(String)} but with a json {@link Buffer}
+   */
+  default Object fromBuffer(Buffer json) throws DecodeException {
+    return fromBuffer(json, Object.class);
+  }
 
   /**
    * Like {@link #fromString(String, Class)} but with a json {@link Buffer}

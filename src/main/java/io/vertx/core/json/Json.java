@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2024 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -11,9 +11,7 @@
 
 package io.vertx.core.json;
 
-import io.vertx.core.ServiceHelper;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.json.jackson.JacksonFactory;
 import io.vertx.core.spi.JsonFactory;
 import io.vertx.core.spi.json.JsonCodec;
 
@@ -32,7 +30,7 @@ public class Json {
    * using Jackson will be returned.
    * <br/>
    * When {@code jackson-databind} is available then a codec using it will be used otherwise
-   * the codec will only use {@code jackson-core} and provide best effort mapping.
+   * the codec will only use {@code jackson-core} and provide best-effort mapping.
    */
   public static io.vertx.core.spi.JsonFactory load() {
     return JsonFactory.load();
@@ -92,7 +90,7 @@ public class Json {
    * @throws DecodeException when there is a parsing or invalid mapping.
    */
   public static Object decodeValue(String str) throws DecodeException {
-    return decodeValue(str, Object.class);
+    return CODEC.fromString(str);
   }
 
   /**
@@ -104,7 +102,7 @@ public class Json {
    * @throws DecodeException when there is a parsing or invalid mapping.
    */
   public static Object decodeValue(Buffer buf) throws DecodeException {
-    return decodeValue(buf, Object.class);
+    return CODEC.fromBuffer(buf);
   }
 
   /**

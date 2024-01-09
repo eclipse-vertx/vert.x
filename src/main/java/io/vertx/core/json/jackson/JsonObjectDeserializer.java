@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2023 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2024 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -11,20 +11,21 @@
 package io.vertx.core.json.jackson;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import io.vertx.core.json.JsonObject;
 
 import java.io.IOException;
-import java.util.Map;
 
 class JsonObjectDeserializer extends JsonDeserializer<JsonObject> {
 
-  private static final TypeReference<Map<String, Object>> TYPE_REF = new TypeReference<>() {
-  };
+  @Override
+  public boolean isCachable() {
+    return true;
+  }
 
+  @Override
   public JsonObject deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-    return new JsonObject(p.<Map<String, Object>>readValueAs(TYPE_REF));
+    return new JsonObject(JacksonCodec.parseObject(p));
   }
 }

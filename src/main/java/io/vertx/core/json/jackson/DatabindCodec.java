@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2024 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -89,9 +89,9 @@ public class DatabindCodec extends JacksonCodec {
     return fromParser(createParser(buf), typeRef);
   }
 
-  public static JsonParser createParser(BufferInternal buf) {
+  public static JsonParser createParser(Buffer buf) {
     try {
-      return DatabindCodec.mapper.getFactory().createParser((InputStream) new ByteBufInputStream(buf.getByteBuf()));
+      return DatabindCodec.mapper.getFactory().createParser((InputStream) new ByteBufInputStream(((BufferInternal) buf).getByteBuf()));
     } catch (IOException e) {
       throw new DecodeException("Failed to decode:" + e.getMessage(), e);
     }
@@ -103,6 +103,16 @@ public class DatabindCodec extends JacksonCodec {
     } catch (IOException e) {
       throw new DecodeException("Failed to decode:" + e.getMessage(), e);
     }
+  }
+
+  @Override
+  public Object fromString(String str) throws DecodeException {
+    return JacksonCodec.fromParser(createParser(str), Object.class);
+  }
+
+  @Override
+  public Object fromBuffer(Buffer buf) throws DecodeException {
+    return JacksonCodec.fromParser(createParser(buf), Object.class);
   }
 
   public static <T> T fromParser(JsonParser parser, Class<T> type) throws DecodeException {

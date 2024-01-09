@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2024 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -25,12 +25,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.json.JsonCodec;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.StringWriter;
-import java.io.Writer;
+import java.io.*;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -42,8 +37,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.vertx.core.json.impl.JsonUtil.BASE64_ENCODER;
 import static io.vertx.core.json.impl.JsonUtil.BASE64_DECODER;
+import static io.vertx.core.json.impl.JsonUtil.BASE64_ENCODER;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
 /**
@@ -184,10 +179,12 @@ public class JacksonCodec implements JsonCodec {
     }
   }
 
+  @Override
   public Object fromString(String str) throws DecodeException {
     return fromParser(createParser(str), Object.class);
   }
 
+  @Override
   public Object fromBuffer(Buffer buf) throws DecodeException {
     return fromParser(createParser(buf), Object.class);
   }
@@ -232,7 +229,7 @@ public class JacksonCodec implements JsonCodec {
     }
   }
 
-  private static Map<String, Object> parseObject(JsonParser parser) throws IOException {
+  public static Map<String, Object> parseObject(JsonParser parser) throws IOException {
     String key1 = parser.nextFieldName();
     if (key1 == null) {
       return new LinkedHashMap<>(2);
@@ -267,7 +264,7 @@ public class JacksonCodec implements JsonCodec {
     return obj;
   }
 
-  private static List<Object> parseArray(JsonParser parser) throws IOException {
+  public static List<Object> parseArray(JsonParser parser) throws IOException {
     List<Object> array = new ArrayList<>();
     while (true) {
       parser.nextToken();

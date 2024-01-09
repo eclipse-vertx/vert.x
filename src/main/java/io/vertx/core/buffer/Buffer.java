@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2022 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2024 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -15,7 +15,6 @@ package io.vertx.core.buffer;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
-import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
@@ -112,12 +111,16 @@ public interface Buffer extends ClusterSerializable, Shareable {
   /**
    * Returns a Json object representation of the Buffer.
    */
-  JsonObject toJsonObject();
+  default JsonObject toJsonObject() {
+    return (JsonObject) toJson();
+  }
 
   /**
    * Returns a Json array representation of the Buffer.
    */
-  JsonArray toJsonArray();
+  default JsonArray toJsonArray() {
+    return (JsonArray) toJson();
+  }
 
   /**
    * Returns a Json representation of the Buffer.
@@ -126,7 +129,7 @@ public interface Buffer extends ClusterSerializable, Shareable {
    */
   @GenIgnore
   default Object toJson() {
-    return Json.CODEC.fromBuffer(this, Object.class);
+    return Json.CODEC.fromBuffer(this);
   }
 
   /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2024 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -106,11 +106,15 @@ public class JacksonDatabindTest extends VertxTestBase {
   @Test
   public void testJsonArrayDeserializer() throws JsonProcessingException {
 
-    String jsonArrayString = "[1, 2, 3]";
+    String jsonArrayString = "[[1, 2, 3], 2, {\"key1\": \"value1\", \"key2\": \"value2\", \"key3\": \"value3\"}]";
     JsonArray jsonArray = DatabindCodec.mapper().readValue(jsonArrayString, JsonArray.class);
 
     assertEquals(3, jsonArray.size());
-    assertEquals(new JsonArray().add(1).add(2).add(3), jsonArray);
+    JsonArray expected = new JsonArray()
+      .add(new JsonArray().add(1).add(2).add(3))
+      .add(2)
+      .add(new JsonObject().put("key1", "value1").put("key2", "value2").put("key3", "value3"));
+    assertEquals(expected, jsonArray);
 
   }
 
@@ -118,12 +122,12 @@ public class JacksonDatabindTest extends VertxTestBase {
   @Test
   public void testJsonObjectDeserializer() throws JsonProcessingException {
 
-    String jsonObjectString = "{\"key1\": \"value1\", \"key2\": \"value2\", \"key3\": \"value3\"}";
+    String jsonObjectString = "{\"key1\": \"value1\", \"key2\": [1, 2, 3], \"key3\": \"value3\"}";
 
     JsonObject jsonObject = DatabindCodec.mapper().readValue(jsonObjectString, JsonObject.class);
 
     assertEquals("value1", jsonObject.getString("key1"));
-    assertEquals("value2", jsonObject.getString("key2"));
+    assertEquals(new JsonArray().add(1).add(2).add(3), jsonObject.getJsonArray("key2"));
 
   }
 

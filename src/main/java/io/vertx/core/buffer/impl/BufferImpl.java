@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2024 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -17,8 +17,6 @@ import io.netty.buffer.Unpooled;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Arguments;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -78,17 +76,6 @@ public class BufferImpl implements BufferInternal {
 
   public String toString(Charset enc) {
     return buffer.toString(enc);
-  }
-
-
-  @Override
-  public JsonObject toJsonObject() {
-    return new JsonObject(this);
-  }
-
-  @Override
-  public JsonArray toJsonArray() {
-    return new JsonArray(this);
   }
 
   public byte getByte(int pos) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2022 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2024 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -53,9 +53,6 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
       throw new NullPointerException();
     }
     fromJson(json);
-    if (list == null) {
-      throw new DecodeException("Invalid JSON array: " + json);
-    }
   }
 
   /**
@@ -87,9 +84,6 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
       throw new NullPointerException();
     }
     fromBuffer(buf);
-    if (list == null) {
-      throw new DecodeException("Invalid JSON array: " + buf);
-    }
   }
 
   /**
@@ -709,11 +703,19 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   }
 
   private void fromJson(String json) {
-    list = Json.CODEC.fromString(json, List.class);
+    JsonArray decoded = (JsonArray) Json.CODEC.fromString(json);
+    if (decoded == null) {
+      throw new DecodeException("Invalid JSON array: " + json);
+    }
+    list = decoded.list;
   }
 
   private void fromBuffer(Buffer buf) {
-    list = Json.CODEC.fromBuffer(buf, List.class);
+    JsonArray decoded = (JsonArray) Json.CODEC.fromBuffer(buf);
+    if (decoded == null) {
+      throw new DecodeException("Invalid JSON array: " + buf);
+    }
+    list = decoded.list;
   }
 
   private static class Iter implements Iterator<Object> {
