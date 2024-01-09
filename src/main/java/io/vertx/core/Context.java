@@ -251,20 +251,24 @@ public interface Context {
    *
    * @param key  the key of the data
    * @param <T>  the type of the data
-   * @return the data
+   * @return the local data
    */
   @GenIgnore
   <T> T getLocal(ContextKey<T> key);
 
   /**
-   * Get some local data from the context.
+   * Get some local data from the context, when it does not exist the {@code initialValueSupplier} is called to obtain
+   * the initial value.
+   *
+   * <p> The {@code initialValueSupplier} might be called multiple times when multiple threads call this method concurrently.
    *
    * @param key  the key of the data
+   * @param initialValueSupplier the supplier of the initial value optionally called
    * @param <T>  the type of the data
-   * @return the data
+   * @return the local data
    */
   @GenIgnore
-  <T> T getLocal(ContextKey<T> key, Supplier<? extends T> supplier);
+  <T> T getLocal(ContextKey<T> key, Supplier<? extends T> initialValueSupplier);
 
   /**
    * Put some local data in the context.

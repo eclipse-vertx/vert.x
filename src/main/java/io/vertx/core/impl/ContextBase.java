@@ -41,11 +41,11 @@ class ContextBase {
     return (T) res;
   }
 
-  public final <T> T getLocal(ContextKey<T> key, Supplier<? extends T> supplier) {
+  public final <T> T getLocal(ContextKey<T> key, Supplier<? extends T> initialValueSupplier) {
     ContextKeyImpl<T> internalKey = (ContextKeyImpl<T>) key;
     int index = internalKey.index;
     if (index >= locals.length) {
-      throw new IllegalArgumentException();
+      throw new IllegalArgumentException("Invalid key index: " + index);
     }
     Object res;
     while (true) {
@@ -53,7 +53,7 @@ class ContextBase {
       if (res != null) {
         break;
       }
-      Object initial = supplier.get();
+      Object initial = initialValueSupplier.get();
       if (initial == null) {
         throw new IllegalStateException();
       }
