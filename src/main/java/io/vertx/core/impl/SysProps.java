@@ -5,11 +5,6 @@ import java.io.File;
 public enum SysProps {
 
   /**
-   * Defines a mode for base64 JSON conversions that is compatible with Vert.x 3
-   */
-  JSON_BASE_64("vertx.json.base64"),
-
-  /**
    * Cluster manager to use class FQN.
    *
    * It does not seem tested, it is not documented, but we can find evidence of it on the web (mailing list).
