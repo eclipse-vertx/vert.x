@@ -24,7 +24,10 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.*;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import static io.vertx.core.json.impl.JsonUtil.BASE64_ENCODER;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
@@ -38,12 +41,6 @@ public class JacksonDatabindTest extends VertxTestBase {
   @Test
   public void testGetMapper() {
     ObjectMapper mapper = DatabindCodec.mapper();
-    assertNotNull(mapper);
-  }
-
-  @Test
-  public void testGetPrettyMapper() {
-    ObjectMapper mapper = DatabindCodec.prettyMapper();
     assertNotNull(mapper);
   }
 
