@@ -16,7 +16,6 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.netty.buffer.ByteBufInputStream;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.DecodeException;
@@ -26,7 +25,6 @@ import io.vertx.core.json.JsonObject;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -63,7 +61,9 @@ public class DatabindCodec extends JacksonCodec {
 
   /**
    * @return the {@link ObjectMapper} used for data binding configured for indenting output.
+   * @deprecated as of 4.5.2, use {@link ObjectMapper#writerWithDefaultPrettyPrinter()} instead
    */
+  @Deprecated
   public static ObjectMapper prettyMapper() {
     return prettyMapper;
   }

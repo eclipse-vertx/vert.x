@@ -22,7 +22,9 @@ import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import static io.vertx.core.json.impl.JsonUtil.BASE64_ENCODER;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
@@ -38,6 +40,7 @@ public class JacksonDatabindTest extends VertxTestBase {
     assertNotNull(mapper);
   }
 
+  @SuppressWarnings("deprecation")
   @Test
   public void testGetPrettyMapper() {
     ObjectMapper mapper = DatabindCodec.prettyMapper();
