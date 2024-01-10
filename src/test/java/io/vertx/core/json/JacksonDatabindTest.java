@@ -222,4 +222,19 @@ public class JacksonDatabindTest extends VertxTestBase {
     @JsonProperty
     byte[] bytes;
   }
+
+  @Test
+  public void testPrettyPrinting() {
+    JsonObject jsonObject = new JsonObject()
+      .put("key1", "value1")
+      .put("key2", "value2")
+      .put("key3", "value3");
+
+    String compact = Json.encode(jsonObject);
+    String pretty = Json.encodePrettily(jsonObject);
+
+    assertFalse(compact.equals(pretty));
+
+    assertEquals(jsonObject, Json.decodeValue(pretty));
+  }
 }
