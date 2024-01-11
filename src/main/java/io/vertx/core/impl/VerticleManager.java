@@ -34,7 +34,6 @@ public class VerticleManager {
 
   private final VertxInternal vertx;
   private final DeploymentManager deploymentManager;
-  private final LoaderManager loaderManager = new LoaderManager();
   private final Map<String, List<VerticleFactory>> verticleFactories = new ConcurrentHashMap<>();
   private final List<VerticleFactory> defaultFactories = new ArrayList<>();
 
@@ -145,29 +144,11 @@ public class VerticleManager {
   public Future<Deployment> deployVerticle(String identifier,
                                        DeploymentOptions options) {
     ContextInternal callingContext = vertx.getOrCreateContext();
-    ClassLoaderHolder holder;
     ClassLoader loader = options.getClassLoader();
     if (loader == null) {
-      holder = loaderManager.getClassLoader(options);
-      loader = holder != null ? holder.loader : getCurrentClassLoader();
-    } else {
-      holder = null;
+      loader = getCurrentClassLoader();
     }
-    Future<Deployment> deployment = doDeployVerticle(identifier, options, callingContext, callingContext, loader);
-    if (holder != null) {
-      deployment.onComplete(ar -> {
-        if (ar.succeeded()) {
-          Deployment result = ar.result();
-          result.undeployHandler(v -> {
-            loaderManager.release(holder);
-          });
-        } else {
-          // ??? not tested
-          throw new UnsupportedOperationException();
-        }
-      });
-    }
-    return deployment;
+    return doDeployVerticle(identifier, options, callingContext, callingContext, loader);
   }
 
   private Future<Deployment> doDeployVerticle(String identifier,
