@@ -180,11 +180,13 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
 
   final void writeHeaders(Http2Headers headers, boolean end, boolean checkFlush, Handler<AsyncResult<Void>> handler) {
     EventLoop eventLoop = conn.getContext().nettyEventLoop();
-    if (eventLoop.inEventLoop()) {
-      doWriteHeaders(headers, end, checkFlush, handler);
-    } else {
-      eventLoop.execute(() -> doWriteHeaders(headers, end, checkFlush, handler));
+    synchronized (this) {
+      if (shouldQueue(eventLoop)) {
+        queueForWrite(eventLoop, () -> doWriteHeaders(headers, end, checkFlush, handler));
+        return;
+      }
     }
+    doWriteHeaders(headers, end, checkFlush, handler);
   }
 
   void doWriteHeaders(Http2Headers headers, boolean end, boolean checkFlush, Handler<AsyncResult<Void>> handler) {
@@ -206,21 +208,25 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     ContextInternal ctx = conn.getContext();
     EventLoop eventLoop = ctx.nettyEventLoop();
     synchronized (this) {
-      if (!eventLoop.inEventLoop() || writeInProgress > 0) {
-        queueForWrite(eventLoop, chunk, end, handler);
+      if (shouldQueue(eventLoop)) {
+        queueForWrite(eventLoop, () -> doWriteData(chunk, end, handler));
         return;
       }
     }
     doWriteData(chunk, end, handler);
   }
 
-  private void queueForWrite(EventLoop eventLoop, ByteBuf chunk, boolean end, Handler<AsyncResult<Void>> handler) {
+  protected boolean shouldQueue(EventLoop eventLoop) {
+    return !eventLoop.inEventLoop() || writeInProgress > 0;
+  }
+
+  protected void queueForWrite(EventLoop eventLoop, Runnable action) {
     writeInProgress++;
     eventLoop.execute(() -> {
       synchronized (this) {
         writeInProgress--;
       }
-      doWriteData(chunk, end, handler);
+      action.run();
     });
   }
 

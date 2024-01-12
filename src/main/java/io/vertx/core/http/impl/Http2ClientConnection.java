@@ -13,11 +13,11 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.EventLoop;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http2.*;
 import io.netty.handler.timeout.IdleStateEvent;
-import io.netty.handler.timeout.TimeoutException;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
@@ -547,9 +547,15 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     @Override
     public void writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect, Handler<AsyncResult<Void>> handler) {
       priority(priority);
-      conn.context.emit(null, v -> {
-        writeHeaders(request, buf, end, priority, connect, handler);
-      });
+      ContextInternal ctx = conn.getContext();
+      EventLoop eventLoop = ctx.nettyEventLoop();
+      synchronized (this) {
+        if (shouldQueue(eventLoop)) {
+          queueForWrite(eventLoop, () -> writeHeaders(request, buf, end, priority, connect, handler));
+          return;
+        }
+      }
+      writeHeaders(request, buf, end, priority, connect, handler);
     }
 
     private void writeHeaders(HttpRequestHead request, ByteBuf buf, boolean end, StreamPriority priority, boolean connect, Handler<AsyncResult<Void>> handler) {
@@ -580,7 +586,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         headers.set(HttpHeaderNames.ACCEPT_ENCODING, Http1xClientConnection.determineCompressionAcceptEncoding());
       }
       try {
-        createStream(request, headers, handler);
+        createStream(request, headers);
       } catch (Http2Exception ex) {
         if (handler != null) {
           handler.handle(context.failedFuture(ex));
@@ -596,7 +602,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       }
     }
 
-    private void createStream(HttpRequestHead head, Http2Headers headers, Handler<AsyncResult<Void>> handler) throws Http2Exception {
+    private void createStream(HttpRequestHead head, Http2Headers headers) throws Http2Exception {
       int id = this.conn.handler.encoder().connection().local().lastStreamCreated();
       if (id == 0) {
         id = 1;
