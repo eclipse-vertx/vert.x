@@ -242,14 +242,11 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     protected Handler<Throwable> exceptionHandler;
     protected Handler<HttpClientPush> pushHandler;
     protected Handler<Void> closeHandler;
-    protected long writeWindow;
-    protected final long windowSize;
 
     Stream(Http2ClientConnection conn, ContextInternal context, boolean push) {
       super(conn, context);
 
       this.push = push;
-      this.windowSize = conn.getWindowSize();
     }
 
     void onContinue() {
@@ -450,8 +447,8 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    public synchronized boolean isNotWritable() {
-      return writeWindow > windowSize;
+    public boolean isNotWritable() {
+      return !messageQueue.isWritable();
     }
 
     @Override
@@ -510,6 +507,10 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
     @Override
     void handleWriteQueueDrained() {
+      Handler<Void> handler = drainHandler;
+      if (handler != null) {
+        context.dispatch(null, handler);
+      }
     }
 
     @Override
@@ -634,29 +635,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     public Future<Void> writeBuffer(ByteBuf buf, boolean end) {
       Promise<Void> promise = context.promise();
       writeData(buf, end, promise);
-      Future<Void> fut = promise.future();
-      if (buf != null) {
-        int size = buf.readableBytes();
-        synchronized (this) {
-          writeWindow += size;
-        }
-        fut = fut.andThen(ar -> {
-          Handler<Void> drainHandler;
-          synchronized (this) {
-            boolean full = writeWindow > windowSize;
-            writeWindow -= size;
-            if (full && writeWindow <= windowSize) {
-              drainHandler = this.drainHandler;
-            } else {
-              drainHandler = null;
-            }
-          }
-          if (drainHandler != null) {
-            drainHandler.handle(null);
-          }
-        });
-      }
-      return fut;
+      return promise.future();
     }
 
     @Override
