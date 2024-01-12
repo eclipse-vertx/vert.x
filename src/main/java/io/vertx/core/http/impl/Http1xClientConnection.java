@@ -524,12 +524,17 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
 
     private void writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, Handler<AsyncResult<Void>> handler) {
       EventLoop eventLoop = conn.context.nettyEventLoop();
-      if (eventLoop.inEventLoop()) {
-        ((Stream)this).request = request;
-        conn.beginRequest(this, request, chunked, buf, end, connect, handler);
-      } else {
-        eventLoop.execute(() -> writeHead(request, chunked, buf, end, connect, handler));
+      synchronized (this) {
+        if (shouldQueue(eventLoop)) {
+          queueForWrite(eventLoop, () -> {
+            ((Stream)this).request = request;
+            conn.beginRequest(this, request, chunked, buf, end, connect, handler);
+          });
+          return;
+        }
       }
+      ((Stream)this).request = request;
+      conn.beginRequest(this, request, chunked, buf, end, connect, handler);
     }
 
     @Override
@@ -573,21 +578,27 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       }
       EventLoop eventLoop = conn.context.nettyEventLoop();
       synchronized (this) {
-        if (!eventLoop.inEventLoop() || writeInProgress > 0) {
-          queueForWrite(eventLoop, buff, end, l);
+        if (shouldQueue(eventLoop)) {
+          queueForWrite(eventLoop, () -> {
+            conn.writeBuffer(this, buff, end, l);
+          });
           return;
         }
       }
       conn.writeBuffer(this, buff, end, l);
     }
 
-    private void queueForWrite(EventLoop eventLoop, ByteBuf buff, boolean end, FutureListener<Void> listener) {
+    private boolean shouldQueue(EventLoop eventLoop) {
+      return !eventLoop.inEventLoop() || writeInProgress > 0;
+    }
+
+    private void queueForWrite(EventLoop eventLoop, Runnable action) {
       writeInProgress++;
       eventLoop.execute(() -> {
         synchronized (this) {
           writeInProgress--;
         }
-        conn.writeBuffer(this, buff, end, listener);
+        action.run();
       });
     }
 
