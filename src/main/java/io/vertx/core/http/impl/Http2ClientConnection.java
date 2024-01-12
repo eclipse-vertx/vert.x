@@ -25,6 +25,7 @@ import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.HostAndPort;
+import io.vertx.core.net.impl.MessageWrite;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.tracing.SpanKind;
@@ -548,9 +549,17 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect) {
       priority(priority);
       PromiseInternal<Void> promise = context.promise();
-      conn.context.emit(null, v -> {
-        writeHeaders(request, buf, end, priority, connect, promise);
+      messageQueue.write(new MessageWrite() {
+        @Override
+        public void write() {
+          writeHeaders(request, buf, end, priority, connect, promise);
+        }
+        @Override
+        public void cancel(Throwable cause) {
+          promise.fail(cause);
+        }
       });
+
       return promise.future();
     }
 

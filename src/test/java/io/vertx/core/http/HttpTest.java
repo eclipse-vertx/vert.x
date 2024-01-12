@@ -6604,19 +6604,10 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testConcurrentWrites() throws Exception {
-    waitFor(1);
-    AtomicReference<String> received = new AtomicReference<>();
-    server.requestHandler(req -> req.body()
-                                    .onSuccess(buffer -> {
-                                      received.set(buffer.toString());
-                                      req.response().end();
-                                    }));
-    startServer(testAddress);
-    client.close();
-    client = vertx.createHttpClient(createBaseClientOptions());
-    client.request(requestOptions)
-      .compose(req -> req.setChunked(true).sendHead().compose(v -> {
+  public void testConcurrentWrites1() throws Exception {
+    testConcurrentWrites(req -> req
+      .sendHead()
+      .compose(v -> {
         AtomicBoolean latch = new AtomicBoolean(false);
         new Thread(() -> {
           req.write("msg1");
@@ -6628,7 +6619,43 @@ public abstract class HttpTest extends HttpTestBase {
         req.write("msg2");
         req.end();
         return req.response();
-      }))
+      }));
+  }
+
+  @Test
+  public void testConcurrentWrites2() throws Exception {
+    testConcurrentWrites(req -> {
+      AtomicBoolean latch = new AtomicBoolean(false);
+      new Thread(() -> {
+        req.sendHead();
+        latch.set(true); // Release Event-loop thread
+      }).start();
+      // Active wait for the event to be published
+      while (!latch.get()) {
+      }
+      req.write("msg1");
+      req.write("msg2");
+      req.end();
+      return req.response();
+    });
+  }
+
+  private void testConcurrentWrites(Function<HttpClientRequest, Future<HttpClientResponse>> action) throws Exception {
+    waitFor(1);
+    AtomicReference<String> received = new AtomicReference<>();
+    server.requestHandler(req -> req.body()
+                                    .onSuccess(buffer -> {
+                                      received.set(buffer.toString());
+                                      req.response().end();
+                                    }));
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions());
+    client.request(requestOptions)
+      .compose(req -> {
+        req.setChunked(true);
+        return action.apply(req);
+      })
       .onComplete(onSuccess(resp -> complete()));
     await();
     assertEquals("msg1msg2", received.get());
