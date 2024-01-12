@@ -15,8 +15,9 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.http.HttpClientConnection;
 import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.RequestOptions;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -25,9 +26,9 @@ import io.vertx.core.net.HostAndPort;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface HttpClientConnection extends HttpConnection {
+public interface HttpClientConnectionInternal extends HttpClientConnection {
 
-  Logger log = LoggerFactory.getLogger(HttpClientConnection.class);
+  Logger log = LoggerFactory.getLogger(HttpClientConnectionInternal.class);
 
   Handler<Void> DEFAULT_EVICTION_HANDLER = v -> {
     log.warn("Connection evicted");
@@ -43,7 +44,7 @@ public interface HttpClientConnection extends HttpConnection {
    * @param handler the handler
    * @return a reference to this, so the API can be used fluently
    */
-  HttpClientConnection evictionHandler(Handler<Void> handler);
+  HttpClientConnectionInternal evictionHandler(Handler<Void> handler);
 
   /**
    * Set a {@code handler} called when the connection concurrency changes.
@@ -52,7 +53,7 @@ public interface HttpClientConnection extends HttpConnection {
    * @param handler the handler
    * @return a reference to this, so the API can be used fluently
    */
-  HttpClientConnection concurrencyChangeHandler(Handler<Long> handler);
+  HttpClientConnectionInternal concurrencyChangeHandler(Handler<Long> handler);
 
   /**
    * @return the connection concurrency
@@ -78,9 +79,29 @@ public interface HttpClientConnection extends HttpConnection {
    * Create an HTTP stream.
    *
    * @param context the stream context
-   * @return a future notified with the created stream
+   * @return a future notified with the created request
    */
-  Future<HttpClientRequest> createRequest(ContextInternal context);
+  default Future<HttpClientRequest> createRequest(ContextInternal context, RequestOptions options) {
+    return createStream(context).map(stream -> {
+      HttpClientRequestImpl request = new HttpClientRequestImpl(stream);
+      if (options != null) {
+        request.init(options);
+      }
+      return request;
+    });
+  }
+
+  @Override
+  default Future<HttpClientRequest> createRequest() {
+    ContextInternal ctx = getContext().owner().getOrCreateContext();
+    return createRequest(ctx, null);
+  }
+
+  @Override
+  default Future<HttpClientRequest> createRequest(RequestOptions options) {
+    ContextInternal ctx = getContext().owner().getOrCreateContext();
+    return createRequest(ctx, options);
+  }
 
   /**
    * Create an HTTP stream.

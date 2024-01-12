@@ -12,6 +12,7 @@ package io.vertx.core.http;
 
 import io.netty.buffer.Unpooled;
 import io.vertx.core.MultiMap;
+import io.vertx.core.http.impl.HttpClientConnectionInternal;
 import io.vertx.core.http.impl.HttpClientInternal;
 import io.vertx.core.http.impl.HttpRequestHead;
 import io.vertx.core.impl.ContextInternal;
@@ -23,13 +24,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 public abstract class HttpClientConnectionTest extends HttpTestBase {
 
   protected HttpClientInternal client;
-  protected HostAndPort peerAddress;
 
   @Override
   public void setUp() throws Exception {
     super.setUp();
     this.client = (HttpClientInternal) super.client;
-    this.peerAddress = HostAndPort.create(requestOptions.getHost(), requestOptions.getPort());
   }
 
   @Test
@@ -38,8 +37,8 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
       req.response().end("Hello World");
     });
     startServer(testAddress);
-    client.connect(testAddress, peerAddress)
-      .compose(conn -> conn.createRequest((ContextInternal) vertx.getOrCreateContext()))
+    client.connect(new HttpConnectOptions().setServer(testAddress).setHost(requestOptions.getHost()).setPort(requestOptions.getPort()))
+      .compose(HttpClientConnection::createRequest)
       .compose(request -> request
         .send()
         .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
@@ -58,8 +57,8 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
       req.response().end("Hello World");
     });
     startServer(testAddress);
-    client.connect(testAddress, peerAddress).onComplete(onSuccess(conn -> {
-      conn
+    client.connect(new HttpConnectOptions().setServer(testAddress).setHost(requestOptions.getHost()).setPort(requestOptions.getPort())).onComplete(onSuccess(conn -> {
+      ((HttpClientConnectionInternal)conn)
         .createStream((ContextInternal) vertx.getOrCreateContext())
         .onComplete(onSuccess(stream -> {
           stream.writeHead(new HttpRequestHead(
@@ -87,13 +86,14 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
       req.connection().close();
     });
     startServer(testAddress);
-    client.connect(testAddress, peerAddress).onComplete(onSuccess(conn -> {
+    client.connect(new HttpConnectOptions().setServer(testAddress).setHost(requestOptions.getHost()).setPort(requestOptions.getPort())).onComplete(onSuccess(conn -> {
+      HttpClientConnectionInternal ci = ((HttpClientConnectionInternal)conn);
       AtomicInteger evictions = new AtomicInteger();
-      conn.evictionHandler(v -> {
+      ci.evictionHandler(v -> {
         assertEquals(1, evictions.incrementAndGet());
         complete();
       });
-      conn.createStream((ContextInternal) vertx.getOrCreateContext()).onComplete(onSuccess(stream -> {
+      ci.createStream((ContextInternal) vertx.getOrCreateContext()).onComplete(onSuccess(stream -> {
         stream.writeHead(new HttpRequestHead(
           HttpMethod.GET, "/", MultiMap.caseInsensitiveMultiMap(), DEFAULT_HTTP_HOST_AND_PORT, "", null), false, Unpooled.EMPTY_BUFFER, true, new StreamPriority(), false);
         stream.headHandler(resp -> {

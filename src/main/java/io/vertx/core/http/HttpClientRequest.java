@@ -478,7 +478,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    * @return the {@link HttpConnection} associated with this request
    */
   @CacheReturn
-  HttpConnection connection();
+  HttpClientConnection connection();
 
   /**
    * Write an HTTP/2 frame to the request, allowing to extend the HTTP/2 protocol.<p>

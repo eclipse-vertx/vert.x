@@ -116,7 +116,7 @@ public class CleanableHttpClient implements HttpClientInternal {
   }
 
   @Override
-  public Future<HttpClientConnection> connect(SocketAddress server, HostAndPort peer) {
-    return delegate.connect(server, peer);
+  public Future<HttpClientConnection> connect(HttpConnectOptions options) {
+    return delegate.connect(options);
   }
 }

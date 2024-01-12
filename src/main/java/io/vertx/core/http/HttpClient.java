@@ -14,6 +14,8 @@ package io.vertx.core.http;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.net.ClientSSLOptions;
+import io.vertx.core.net.HostAndPort;
+import io.vertx.core.net.SocketAddress;
 
 import java.util.concurrent.TimeUnit;
 
@@ -145,4 +147,12 @@ public interface HttpClient extends io.vertx.core.metrics.Measured {
    * @return a future signaling the update success
    */
   Future<Boolean> updateSSLOptions(ClientSSLOptions options, boolean force);
+
+  /**
+   * Connect to a remote HTTP server.
+   *
+   * @param options the server connect options
+   */
+  Future<HttpClientConnection> connect(HttpConnectOptions options);
+
 }

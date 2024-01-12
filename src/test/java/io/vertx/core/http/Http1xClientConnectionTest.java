@@ -13,6 +13,7 @@ package io.vertx.core.http;
 import io.netty.buffer.Unpooled;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
+import io.vertx.core.http.impl.HttpClientConnectionInternal;
 import io.vertx.core.http.impl.HttpRequestHead;
 import io.vertx.core.impl.ContextInternal;
 import org.junit.Test;
@@ -27,12 +28,13 @@ public class Http1xClientConnectionTest extends HttpClientConnectionTest {
     server.requestHandler(req -> {
     });
     startServer(testAddress);
-    client.connect(testAddress).onComplete(onSuccess(conn -> {
+    client.connect(new HttpConnectOptions().setServer(testAddress)).onComplete(onSuccess(conn -> {
+      HttpClientConnectionInternal ci = (HttpClientConnectionInternal) conn;
       AtomicInteger evictions = new AtomicInteger();
-      conn.evictionHandler(v -> {
+      ci.evictionHandler(v -> {
         evictions.incrementAndGet();
       });
-      conn
+      ci
         .createStream((ContextInternal) vertx.getOrCreateContext())
         .onComplete(onSuccess(stream -> {
         Exception cause = new Exception();
@@ -54,12 +56,13 @@ public class Http1xClientConnectionTest extends HttpClientConnectionTest {
       continuation.complete();
     });
     startServer(testAddress);
-    client.connect(testAddress).onComplete(onSuccess(conn -> {
+    client.connect(new HttpConnectOptions().setServer(testAddress)).onComplete(onSuccess(conn -> {
+      HttpClientConnectionInternal ci = (HttpClientConnectionInternal) conn;
       AtomicInteger evictions = new AtomicInteger();
-      conn.evictionHandler(v -> {
+      ci.evictionHandler(v -> {
         evictions.incrementAndGet();
       });
-      conn
+      ci
         .createStream((ContextInternal) vertx.getOrCreateContext())
         .onComplete(onSuccess(stream -> {
         Exception cause = new Exception();
@@ -86,12 +89,13 @@ public class Http1xClientConnectionTest extends HttpClientConnectionTest {
       req.response().putHeader("Connection", "close").end();
     });
     startServer(testAddress);
-    client.connect(testAddress).onComplete(onSuccess(conn -> {
+    client.connect(new HttpConnectOptions().setServer(testAddress)).onComplete(onSuccess(conn -> {
+      HttpClientConnectionInternal ci = (HttpClientConnectionInternal) conn;
       AtomicInteger evictions = new AtomicInteger();
-      conn.evictionHandler(v -> {
+      ci.evictionHandler(v -> {
         assertEquals(1, evictions.incrementAndGet());
       });
-      conn.createStream((ContextInternal) vertx.getOrCreateContext()).onComplete(onSuccess(stream -> {
+      ci.createStream((ContextInternal) vertx.getOrCreateContext()).onComplete(onSuccess(stream -> {
         stream.closeHandler(v -> {
           assertEquals(1, evictions.get());
           complete();

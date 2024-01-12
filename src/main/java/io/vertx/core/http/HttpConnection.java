@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Represents an HTTP connection.
  * <p/>
- * HTTP/1.x connection provides an limited implementation, the following methods are implemented:
+ * HTTP/1.x connection provides a limited implementation, the following methods are implemented:
  * <ul>
  *   <li>{@link #close}</li>
  *   <li>{@link #closeHandler}</li>

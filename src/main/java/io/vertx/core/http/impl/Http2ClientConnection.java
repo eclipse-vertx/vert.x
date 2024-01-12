@@ -38,7 +38,7 @@ import java.util.function.BiConsumer;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class Http2ClientConnection extends Http2ConnectionBase implements HttpClientConnection {
+class Http2ClientConnection extends Http2ConnectionBase implements HttpClientConnectionInternal {
 
   private final HttpClientBase client;
   private final ClientMetrics metrics;
@@ -155,11 +155,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         return context.failedFuture(e);
       }
     }
-  }
-
-  @Override
-  public Future<HttpClientRequest> createRequest(ContextInternal context) {
-    return ((HttpClientImpl)client).createRequest(this, context);
   }
 
   private StreamImpl createStream2(ContextInternal context) {
@@ -661,7 +656,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    public HttpClientConnection connection() {
+    public HttpClientConnectionInternal connection() {
       return conn;
     }
   }

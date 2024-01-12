@@ -72,7 +72,7 @@ import static io.vertx.core.http.HttpHeaders.*;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> implements HttpClientConnection {
+public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> implements HttpClientConnectionInternal {
 
   private static final Logger log = LoggerFactory.getLogger(Http1xClientConnection.class);
 
@@ -139,7 +139,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   }
 
   @Override
-  public HttpClientConnection evictionHandler(Handler<Void> handler) {
+  public HttpClientConnectionInternal evictionHandler(Handler<Void> handler) {
     evictionHandler = handler;
     return this;
   }
@@ -155,7 +155,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   }
 
   @Override
-  public HttpClientConnection concurrencyChangeHandler(Handler<Long> handler) {
+  public HttpClientConnectionInternal concurrencyChangeHandler(Handler<Long> handler) {
     // Never changes
     return this;
   }
@@ -554,7 +554,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     }
 
     @Override
-    public HttpClientConnection connection() {
+    public HttpClientConnectionInternal connection() {
       return conn;
     }
 
@@ -1218,11 +1218,6 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     for (Stream stream : allStreams) {
       stream.handleException(e);
     }
-  }
-
-  @Override
-  public Future<HttpClientRequest> createRequest(ContextInternal context) {
-    return ((HttpClientImpl)client).createRequest(this, context);
   }
 
   @Override

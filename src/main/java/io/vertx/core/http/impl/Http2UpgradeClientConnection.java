@@ -46,14 +46,14 @@ import java.util.concurrent.TimeUnit;
  * A connection that attempts to perform a protocol upgrade to H2C. The connection might use HTTP/1 or H2C
  * depending on the initial server response.
  */
-public class Http2UpgradeClientConnection implements HttpClientConnection {
+public class Http2UpgradeClientConnection implements HttpClientConnectionInternal {
 
   private static final Object SEND_BUFFERED_MESSAGES = new Object();
 
   private static final Logger log = LoggerFactory.getLogger(Http2UpgradeClientConnection.class);
 
   private HttpClientBase client;
-  private HttpClientConnection current;
+  private HttpClientConnectionInternal current;
   private boolean upgradeProcessed;
 
   private Handler<Void> closeHandler;
@@ -70,7 +70,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     this.current = connection;
   }
 
-  public HttpClientConnection unwrap() {
+  public HttpClientConnectionInternal unwrap() {
     return current;
   }
 
@@ -145,7 +145,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public HttpClientConnection connection() {
+    public HttpClientConnectionInternal connection() {
       return connection;
     }
 
@@ -302,7 +302,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public HttpClientConnection connection() {
+    public HttpClientConnectionInternal connection() {
       return upgradedConnection;
     }
 
@@ -796,11 +796,6 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
   }
 
   @Override
-  public Future<HttpClientRequest> createRequest(ContextInternal context) {
-    return ((HttpClientImpl)client).createRequest(this, context);
-  }
-
-  @Override
   public ContextInternal getContext() {
     return current.getContext();
   }
@@ -864,7 +859,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
   }
 
   @Override
-  public HttpClientConnection evictionHandler(Handler<Void> handler) {
+  public HttpClientConnectionInternal evictionHandler(Handler<Void> handler) {
     if (current instanceof Http1xClientConnection) {
       evictionHandler = handler;
     }
@@ -873,7 +868,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
   }
 
   @Override
-  public HttpClientConnection concurrencyChangeHandler(Handler<Long> handler) {
+  public HttpClientConnectionInternal concurrencyChangeHandler(Handler<Long> handler) {
     if (current instanceof Http1xClientConnection) {
       concurrencyChangeHandler = handler;
     }

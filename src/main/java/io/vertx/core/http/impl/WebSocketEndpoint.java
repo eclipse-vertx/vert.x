@@ -22,11 +22,11 @@ import java.util.Deque;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class WebSocketEndpoint extends ClientHttpEndpointBase<HttpClientConnection> {
+class WebSocketEndpoint extends ClientHttpEndpointBase<HttpClientConnectionInternal> {
 
   private static class Waiter {
 
-    final Promise<HttpClientConnection> promise;
+    final Promise<HttpClientConnectionInternal> promise;
     final ContextInternal context;
 
     Waiter(ContextInternal context) {
@@ -59,14 +59,14 @@ class WebSocketEndpoint extends ClientHttpEndpointBase<HttpClientConnection> {
     tryConnect(h.context).onComplete(h.promise);
   }
 
-  private Future<HttpClientConnection> tryConnect(ContextInternal ctx) {
+  private Future<HttpClientConnectionInternal> tryConnect(ContextInternal ctx) {
     ContextInternal eventLoopContext;
     if (ctx.isEventLoopContext()) {
       eventLoopContext = ctx;
     } else {
       eventLoopContext = ctx.owner().createEventLoopContext(ctx.nettyEventLoop(), ctx.workerPool(), ctx.classLoader());
     }
-    Future<HttpClientConnection> fut = connector.httpConnect(eventLoopContext);
+    Future<HttpClientConnectionInternal> fut = connector.httpConnect(eventLoopContext);
     return fut.map(c -> {
       if (incRefCount()) {
         c.evictionHandler(v -> onEvict());
@@ -79,7 +79,7 @@ class WebSocketEndpoint extends ClientHttpEndpointBase<HttpClientConnection> {
   }
 
   @Override
-  protected Future<HttpClientConnection> requestConnection2(ContextInternal ctx, long timeout) {
+  protected Future<HttpClientConnectionInternal> requestConnection2(ContextInternal ctx, long timeout) {
     synchronized (this) {
       if (inflightConnections >= maxPoolSize) {
         Waiter waiter = new Waiter(ctx);

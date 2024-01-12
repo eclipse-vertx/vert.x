@@ -55,7 +55,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  public HttpConnection connection() {
+  public HttpClientConnection connection() {
     return stream.connection();
   }
 

@@ -14,7 +14,6 @@ package io.vertx.core.http.impl;
 import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.http.*;
-import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
@@ -34,20 +33,4 @@ public interface HttpClientInternal extends HttpClient, MetricsProvider, Closeab
 
   Future<Void> closeFuture();
 
-  /**
-   * Connect to a server.
-   *
-   * @param server the server address
-   */
-  default Future<HttpClientConnection> connect(SocketAddress server) {
-    return connect(server, null);
-  }
-
-  /**
-   * Connect to a server.
-   *
-   * @param server the server address
-   * @param peer the peer
-   */
-  Future<HttpClientConnection> connect(SocketAddress server, HostAndPort peer);
 }

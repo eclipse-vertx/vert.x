@@ -34,12 +34,7 @@ import static io.vertx.codegen.annotations.GenIgnore.PERMITTED_TYPE;
  */
 @DataObject
 @JsonGen(publicConverter = false)
-public class RequestOptions {
-
-  /**
-   * The default value for proxy options = {@code null}
-   */
-  public static final ProxyOptions DEFAULT_PROXY_OPTIONS = null;
+public class RequestOptions extends HttpConnectOptions {
 
   /**
    * The default value for server method = {@code null}
@@ -91,18 +86,11 @@ public class RequestOptions {
    */
   public static final long DEFAULT_IDLE_TIMEOUT = -1L;
 
-  private ProxyOptions proxyOptions;
-  private Address server;
   private HttpMethod method;
-  private String host;
-  private Integer port;
-  private Boolean ssl;
-  private ClientSSLOptions sslOptions;;
   private String uri;
   private MultiMap headers;
   private boolean followRedirects;
   private long timeout;
-  private long connectTimeout;
   private long idleTimeout;
   private String traceOperation;
 
@@ -110,19 +98,7 @@ public class RequestOptions {
    * Default constructor
    */
   public RequestOptions() {
-    proxyOptions = DEFAULT_PROXY_OPTIONS;
-    server = DEFAULT_SERVER;
-    method = DEFAULT_HTTP_METHOD;
-    host = DEFAULT_HOST;
-    port = DEFAULT_PORT;
-    ssl = DEFAULT_SSL;
-    sslOptions = null;
-    uri = DEFAULT_URI;
-    followRedirects = DEFAULT_FOLLOW_REDIRECTS;
-    timeout = DEFAULT_TIMEOUT;
-    connectTimeout = DEFAULT_CONNECT_TIMEOUT;
-    idleTimeout = DEFAULT_IDLE_TIMEOUT;
-    traceOperation = null;
+    super();
   }
 
   /**
@@ -131,17 +107,11 @@ public class RequestOptions {
    * @param other  the options to copy
    */
   public RequestOptions(RequestOptions other) {
-    setProxyOptions(other.proxyOptions);
-    setServer(other.server);
+    super(other);
     setMethod(other.method);
-    setHost(other.host);
-    setPort(other.port);
-    setSsl(other.ssl);
-    sslOptions = other.sslOptions != null ? new ClientSSLOptions(other.sslOptions) : null;
     setURI(other.uri);
     setFollowRedirects(other.followRedirects);
     setIdleTimeout(other.idleTimeout);
-    setConnectTimeout(other.connectTimeout);
     setTimeout(other.timeout);
     if (other.headers != null) {
       setHeaders(MultiMap.caseInsensitiveMultiMap().setAll(other.headers));
@@ -155,15 +125,11 @@ public class RequestOptions {
    * @param json the JSON
    */
   public RequestOptions(JsonObject json) {
-    this();
+    super(json);
     RequestOptionsConverter.fromJson(json, this);
     String method = json.getString("method");
     if (method != null) {
       setMethod(HttpMethod.valueOf(method));
-    }
-    JsonObject server = json.getJsonObject("server");
-    if (server != null) {
-      this.server = SocketAddress.fromJson(server);
     }
     JsonObject headers = json.getJsonObject("headers");
     if (headers != null) {
@@ -182,48 +148,24 @@ public class RequestOptions {
     }
   }
 
-  /**
-   * Get the proxy options override for connections
-   *
-   * @return proxy options override
-   */
-  public ProxyOptions getProxyOptions() {
-    return proxyOptions;
+  @Override
+  protected void init() {
+    super.init();
+    method = DEFAULT_HTTP_METHOD;
+    uri = DEFAULT_URI;
+    followRedirects = DEFAULT_FOLLOW_REDIRECTS;
+    timeout = DEFAULT_TIMEOUT;
+    idleTimeout = DEFAULT_IDLE_TIMEOUT;
+    traceOperation = null;
   }
 
-  /**
-   * Override the {@link HttpClientOptions#setProxyOptions(ProxyOptions)} proxy options
-   * for connections.
-   *
-   * @param proxyOptions proxy options override object
-   * @return a reference to this, so the API can be used fluently
-   */
   public RequestOptions setProxyOptions(ProxyOptions proxyOptions) {
-    this.proxyOptions = proxyOptions;
+    super.setProxyOptions(proxyOptions);
     return this;
   }
 
-  /**
-   * Get the server address to be used by the client request.
-   *
-   * @return the server address
-   */
-  public Address getServer() {
-    return server;
-  }
-
-  /**
-   * Set the server address to be used by the client request.
-   *
-   * <p> When the server address is {@code null}, the address will be resolved after the {@code host}
-   * property by the Vert.x resolver.
-   *
-   * <p> Use this when you want to connect to a specific server address without name resolution.
-   *
-   * @return a reference to this, so the API can be used fluently
-   */
   public RequestOptions setServer(Address server) {
-    this.server = server;
+    super.setServer(server);
     return this;
   }
 
@@ -248,78 +190,23 @@ public class RequestOptions {
     return this;
   }
 
-  /**
-   * Get the host name to be used by the client request.
-   *
-   * @return  the host name
-   */
-  public String getHost() {
-    return host;
-  }
-
-  /**
-   * Set the host name to be used by the client request.
-   *
-   * @return a reference to this, so the API can be used fluently
-   */
   public RequestOptions setHost(String host) {
-    this.host = host;
+    super.setHost(host);
     return this;
   }
 
-  /**
-   * Get the port to be used by the client request.
-   *
-   * @return  the port
-   */
-  public Integer getPort() {
-    return port;
-  }
-
-  /**
-   * Set the port to be used by the client request.
-   *
-   * @return a reference to this, so the API can be used fluently
-   */
   public RequestOptions setPort(Integer port) {
-    this.port = port;
+    super.setPort(port);
     return this;
   }
 
-  /**
-   * @return is SSL/TLS enabled?
-   */
-  public Boolean isSsl() {
-    return ssl;
-  }
-
-  /**
-   * Set whether SSL/TLS is enabled.
-   *
-   * @param ssl  true if enabled
-   * @return a reference to this, so the API can be used fluently
-   */
   public RequestOptions setSsl(Boolean ssl) {
-    this.ssl = ssl;
+    super.setSsl(ssl);
     return this;
   }
 
-  /**
-   * @return the SSL options
-   */
-  public ClientSSLOptions getSslOptions() {
-    return sslOptions;
-  }
-
-  /**
-   * Set the SSL options to use.
-   * <p>
-   * When none is provided, the client SSL options will be used instead.
-   * @param sslOptions the SSL options to use
-   * @return a reference to this, so the API can be used fluently
-   */
   public RequestOptions setSslOptions(ClientSSLOptions sslOptions) {
-    this.sslOptions = sslOptions;
+    super.setSslOptions(sslOptions);
     return this;
   }
 
@@ -384,27 +271,8 @@ public class RequestOptions {
     return this;
   }
 
-  /**
-   * @return the amount of time after which, if the request is not obtained from the client within the timeout period,
-   *         the {@code Future<HttpClientRequest>} obtained from the client is failed with a {@link java.util.concurrent.TimeoutException}
-   */
-  public long getConnectTimeout() {
-    return connectTimeout;
-  }
-
-  /**
-   * Sets the amount of time after which, if the request is not obtained from the client within the timeout period,
-   * the {@code Future<HttpClientRequest>} obtained from the client is failed with a {@link java.util.concurrent.TimeoutException}.
-   *
-   * Note this is not related to the TCP {@link HttpClientOptions#setConnectTimeout(int)} option, when a request is made against
-   * a pooled HTTP client, the timeout applies to the duration to obtain a connection from the pool to serve the request, the timeout
-   * might fire because the server does not respond in time or the pool is too busy to serve a request.
-   *
-   * @param timeout the amount of time in milliseconds.
-   * @return a reference to this, so the API can be used fluently
-   */
   public RequestOptions setConnectTimeout(long timeout) {
-    this.connectTimeout = timeout;
+    super.setConnectTimeout(timeout);
     return this;
   }
 
@@ -483,10 +351,10 @@ public class RequestOptions {
       default:
         throw new IllegalArgumentException();
     }
-    this.uri = relativeUri;
-    this.port = port;
-    this.ssl = ssl;
-    this.host = url.getHost();
+    setURI(relativeUri);
+    setPort(port);
+    setSsl(ssl);
+    setHost(url.getHost());
     return this;
   }
 
@@ -633,15 +501,10 @@ public class RequestOptions {
   }
 
   public JsonObject toJson() {
-    JsonObject json = new JsonObject();
+    JsonObject json = super.toJson();
     RequestOptionsConverter.toJson(this, json);
     if (method != null) {
       json.put("method", method.name());
-    }
-    Address serverAddr = this.server;
-    if (serverAddr instanceof SocketAddress) {
-      SocketAddress socketAddr = (SocketAddress) serverAddr;
-      json.put("server", socketAddr.toJson());
     }
     if (this.headers != null) {
       JsonObject headers = new JsonObject();
