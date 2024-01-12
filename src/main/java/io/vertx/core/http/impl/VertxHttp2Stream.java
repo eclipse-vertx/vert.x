@@ -38,7 +38,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
 
   private static final MultiMap EMPTY = new Http2HeadersAdaptor(EmptyHttp2Headers.INSTANCE);
 
-  private final OutboundMessageQueue<MessageWrite> messageQueue;
+  protected final OutboundMessageQueue<MessageWrite> messageQueue;
   protected final C conn;
   protected final VertxInternal vertx;
   protected final ContextInternal context;
