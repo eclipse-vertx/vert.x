@@ -17,6 +17,9 @@ import io.vertx.core.json.EncodeException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -26,11 +29,28 @@ public interface JsonCodec {
    * Decode a given JSON string.
    *
    * @param json the JSON string.
+   * @param wrap
    * @return a JSON element which can be a {@link JsonArray}, {@link JsonObject}, {@link String}, ...etc. if the string contains an array, object, string, ...etc
    * @throws DecodeException when there is a parsing or invalid mapping.
    */
-  default Object fromString(String json) throws DecodeException {
-    return fromString(json, Object.class);
+  default Object fromString(String json, boolean wrap) throws DecodeException {
+    Object value = fromString(json, Object.class);
+    return wrap ? wrap(value) : value;
+  }
+
+  /**
+   * Wrap Java {@link Map} in a {@link JsonObject},{@link List} in {@link JsonArray}.
+   * Otherwise, return the {@code value} unchanged.
+   */
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  default Object wrap(Object value) {
+    if (value instanceof Map) {
+      return new JsonObject((Map<String, Object>) value);
+    }
+    if (value instanceof List) {
+      return new JsonArray((List) value);
+    }
+    return value;
   }
 
   /**
@@ -44,10 +64,11 @@ public interface JsonCodec {
   <T> T fromString(String json, Class<T> clazz) throws DecodeException;
 
   /**
-   * Like {@link #fromString(String)} but with a json {@link Buffer}
+   * Like {@link #fromString(String, boolean)} but with a json {@link Buffer}
    */
-  default Object fromBuffer(Buffer json) throws DecodeException {
-    return fromBuffer(json, Object.class);
+  default Object fromBuffer(Buffer json, boolean wrap) throws DecodeException {
+    Object value = fromBuffer(json, Object.class);
+    return wrap ? wrap(value) : value;
   }
 
   /**

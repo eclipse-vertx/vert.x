@@ -49,6 +49,9 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
       throw new NullPointerException();
     }
     fromJson(json);
+    if (map == null) {
+      throw new DecodeException("Invalid JSON object: " + json);
+    }
   }
 
   /**
@@ -80,6 +83,9 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
       throw new NullPointerException();
     }
     fromBuffer(buf);
+    if (map == null) {
+      throw new DecodeException("Invalid JSON object: " + buf);
+    }
   }
 
   /**
@@ -1240,20 +1246,14 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     return pos + length + 4;
   }
 
+  @SuppressWarnings("unchecked")
   private void fromJson(String json) {
-    JsonObject decoded = (JsonObject) Json.CODEC.fromString(json);
-    if (decoded == null) {
-      throw new DecodeException("Invalid JSON object: " + json);
-    }
-    map = decoded.map;
+    map = (Map<String, Object>) Json.CODEC.fromString(json, false);
   }
 
+  @SuppressWarnings("unchecked")
   private void fromBuffer(Buffer buf) {
-    JsonObject decoded = (JsonObject) Json.CODEC.fromBuffer(buf);
-    if (decoded == null) {
-      throw new DecodeException("Invalid JSON object: " + buf);
-    }
-    map = decoded.map;
+    map = (Map<String, Object>) Json.CODEC.fromBuffer(buf, false);
   }
 
   private static class Iter implements Iterator<Map.Entry<String, Object>> {

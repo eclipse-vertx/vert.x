@@ -180,13 +180,15 @@ public class JacksonCodec implements JsonCodec {
   }
 
   @Override
-  public Object fromString(String str) throws DecodeException {
-    return fromParser(createParser(str), Object.class);
+  public Object fromString(String str, boolean wrap) throws DecodeException {
+    Object value = fromParser(createParser(str), Object.class);
+    return wrap ? wrap(value) : value;
   }
 
   @Override
-  public Object fromBuffer(Buffer buf) throws DecodeException {
-    return fromParser(createParser(buf), Object.class);
+  public Object fromBuffer(Buffer buf, boolean wrap) throws DecodeException {
+    Object value = fromParser(createParser(buf), Object.class);
+    return wrap ? wrap(value) : value;
   }
 
   public static <T> T fromParser(JsonParser parser, Class<T> type) throws DecodeException {
@@ -414,16 +416,10 @@ public class JacksonCodec implements JsonCodec {
       if (!clazz.isAssignableFrom(Map.class)) {
         throw new DecodeException("Failed to decode");
       }
-      if (clazz == Object.class) {
-        o = new JsonObject((Map) o);
-      }
       return clazz.cast(o);
     } else if (o instanceof List) {
       if (!clazz.isAssignableFrom(List.class)) {
         throw new DecodeException("Failed to decode");
-      }
-      if (clazz == Object.class) {
-        o = new JsonArray((List) o);
       }
       return clazz.cast(o);
     } else if (o instanceof String) {
@@ -461,9 +457,7 @@ public class JacksonCodec implements JsonCodec {
         o = number.byteValue();
       } else if (clazz == Short.class) {
         o = number.shortValue();
-      } else if (clazz == Object.class || clazz.isAssignableFrom(Number.class)) {
-        // Nothing
-      } else {
+      } else if (clazz != Object.class && !clazz.isAssignableFrom(Number.class)) {
         throw new DecodeException("Failed to decode");
       }
       return clazz.cast(o);

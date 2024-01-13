@@ -90,7 +90,7 @@ public class Json {
    * @throws DecodeException when there is a parsing or invalid mapping.
    */
   public static Object decodeValue(String str) throws DecodeException {
-    return CODEC.fromString(str);
+    return CODEC.fromString(str, true);
   }
 
   /**
@@ -102,7 +102,7 @@ public class Json {
    * @throws DecodeException when there is a parsing or invalid mapping.
    */
   public static Object decodeValue(Buffer buf) throws DecodeException {
-    return CODEC.fromBuffer(buf);
+    return CODEC.fromBuffer(buf, true);
   }
 
   /**

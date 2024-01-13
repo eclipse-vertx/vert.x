@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2024 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -28,24 +28,12 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Collection;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static io.vertx.core.json.impl.JsonUtil.BASE64_ENCODER;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 @RunWith(Parameterized.class)
 public class JsonCodecTest {
@@ -479,29 +467,29 @@ public class JsonCodecTest {
 
   private void testDecodeUnknowContent(boolean asBuffer) {
     String number = String.valueOf(1);
-    assertEquals(1, asBuffer ? mapper.fromBuffer(Buffer.buffer(number)) : mapper.fromString(number));
+    assertEquals(1, asBuffer ? mapper.fromBuffer(Buffer.buffer(number), true) : mapper.fromString(number, true));
 
     String bool = Boolean.TRUE.toString();
-    assertEquals(true, asBuffer ?mapper.fromBuffer(Buffer.buffer(bool)) : mapper.fromString(bool));
+    assertEquals(true, asBuffer ? mapper.fromBuffer(Buffer.buffer(bool), true) : mapper.fromString(bool, true));
 
     String text = "\"whatever\"";
-    assertEquals("whatever", asBuffer ? mapper.fromBuffer(Buffer.buffer(text)) : mapper.fromString(text));
+    assertEquals("whatever", asBuffer ? mapper.fromBuffer(Buffer.buffer(text), true) : mapper.fromString(text, true));
 
     String nullText = "null";
-    assertNull(asBuffer ? mapper.fromBuffer(Buffer.buffer(nullText)) : mapper.fromString(nullText));
+    assertNull(asBuffer ? mapper.fromBuffer(Buffer.buffer(nullText), true) : mapper.fromString(nullText, true));
 
     JsonObject obj = new JsonObject().put("foo", "bar");
-    assertEquals(obj, asBuffer ? mapper.fromBuffer(obj.toBuffer()) : mapper.fromString(obj.toString()));
+    assertEquals(obj, asBuffer ? mapper.fromBuffer(obj.toBuffer(), true) : mapper.fromString(obj.toString(), true));
 
     JsonArray arr = new JsonArray().add(1).add(false).add("whatever").add(obj);
-    assertEquals(arr, asBuffer ? mapper.fromBuffer(arr.toBuffer()) : mapper.fromString(arr.toString()));
+    assertEquals(arr, asBuffer ? mapper.fromBuffer(arr.toBuffer(), true) : mapper.fromString(arr.toString(), true));
 
     String invalidText = "\"invalid";
     try {
       if (asBuffer) {
-        mapper.fromBuffer(Buffer.buffer(invalidText));
+        mapper.fromBuffer(Buffer.buffer(invalidText), true);
       } else {
-        mapper.fromString(invalidText);
+        mapper.fromString(invalidText, true);
       }
       fail();
     } catch (DecodeException ignore) {

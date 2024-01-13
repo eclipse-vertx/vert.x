@@ -53,6 +53,9 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
       throw new NullPointerException();
     }
     fromJson(json);
+    if (list == null) {
+      throw new DecodeException("Invalid JSON array: " + json);
+    }
   }
 
   /**
@@ -84,6 +87,9 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
       throw new NullPointerException();
     }
     fromBuffer(buf);
+    if (list == null) {
+      throw new DecodeException("Invalid JSON array: " + buf);
+    }
   }
 
   /**
@@ -702,20 +708,14 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
     return pos + length + 4;
   }
 
+  @SuppressWarnings("unchecked")
   private void fromJson(String json) {
-    JsonArray decoded = (JsonArray) Json.CODEC.fromString(json);
-    if (decoded == null) {
-      throw new DecodeException("Invalid JSON array: " + json);
-    }
-    list = decoded.list;
+    list = (List<Object>) Json.CODEC.fromString(json, false);
   }
 
+  @SuppressWarnings("unchecked")
   private void fromBuffer(Buffer buf) {
-    JsonArray decoded = (JsonArray) Json.CODEC.fromBuffer(buf);
-    if (decoded == null) {
-      throw new DecodeException("Invalid JSON array: " + buf);
-    }
-    list = decoded.list;
+    list = (List<Object>) Json.CODEC.fromBuffer(buf, false);
   }
 
   private static class Iter implements Iterator<Object> {

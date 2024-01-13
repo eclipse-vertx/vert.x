@@ -20,13 +20,9 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.EncodeException;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -56,19 +52,11 @@ public class DatabindCodec extends JacksonCodec {
 
   @Override
   public <T> T fromValue(Object json, Class<T> clazz) {
-    T value = DatabindCodec.mapper.convertValue(json, clazz);
-    if (clazz == Object.class) {
-      value = (T) adapt(value);
-    }
-    return value;
+    return DatabindCodec.mapper.convertValue(json, clazz);
   }
 
   public <T> T fromValue(Object json, TypeReference<T> type) {
-    T value = DatabindCodec.mapper.convertValue(json, type);
-    if (type.getType() == Object.class) {
-      value = (T) adapt(value);
-    }
-    return value;
+    return DatabindCodec.mapper.convertValue(json, type);
   }
 
   @Override
@@ -106,13 +94,15 @@ public class DatabindCodec extends JacksonCodec {
   }
 
   @Override
-  public Object fromString(String str) throws DecodeException {
-    return JacksonCodec.fromParser(createParser(str), Object.class);
+  public Object fromString(String str, boolean wrap) throws DecodeException {
+    Object value = JacksonCodec.fromParser(createParser(str), Object.class);
+    return wrap ? wrap(value) : value;
   }
 
   @Override
-  public Object fromBuffer(Buffer buf) throws DecodeException {
-    return JacksonCodec.fromParser(createParser(buf), Object.class);
+  public Object fromBuffer(Buffer buf, boolean wrap) throws DecodeException {
+    Object value = JacksonCodec.fromParser(createParser(buf), Object.class);
+    return wrap ? wrap(value) : value;
   }
 
   public static <T> T fromParser(JsonParser parser, Class<T> type) throws DecodeException {
@@ -129,23 +119,22 @@ public class DatabindCodec extends JacksonCodec {
     if (remaining != null) {
       throw new DecodeException("Unexpected trailing token");
     }
-    if (type == Object.class) {
-      value = (T) adapt(value);
-    }
     return value;
   }
 
   private static <T> T fromParser(JsonParser parser, TypeReference<T> type) throws DecodeException {
     T value;
+    JsonToken remaining;
     try {
       value = DatabindCodec.mapper.readValue(parser, type);
+      remaining = parser.nextToken();
     } catch (Exception e) {
       throw new DecodeException("Failed to decode:" + e.getMessage(), e);
     } finally {
       close(parser);
     }
-    if (type.getType() == Object.class) {
-      value = (T) adapt(value);
+    if (remaining != null) {
+      throw new DecodeException("Unexpected trailing token");
     }
     return value;
   }
@@ -177,22 +166,6 @@ public class DatabindCodec extends JacksonCodec {
       return Buffer.buffer(result);
     } catch (Exception e) {
       throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
-    }
-  }
-
-  private static Object adapt(Object o) {
-    try {
-      if (o instanceof List) {
-        List list = (List) o;
-        return new JsonArray(list);
-      } else if (o instanceof Map) {
-        @SuppressWarnings("unchecked")
-        Map<String, Object> map = (Map<String, Object>) o;
-        return new JsonObject(map);
-      }
-      return o;
-    } catch (Exception e) {
-      throw new DecodeException("Failed to decode: " + e.getMessage());
     }
   }
 }

@@ -129,7 +129,7 @@ public interface Buffer extends ClusterSerializable, Shareable {
    */
   @GenIgnore
   default Object toJson() {
-    return Json.CODEC.fromBuffer(this);
+    return Json.CODEC.fromBuffer(this, true);
   }
 
   /**
