@@ -325,13 +325,13 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     ContextInternal ctx = vertx.getOrCreateContext();
     ContextInternal connCtx = ctx.isEventLoopContext() ? ctx : vertx.createEventLoopContext(ctx.nettyEventLoop(), ctx.workerPool(), ctx.classLoader());
     Promise<HttpClientRequest> promise = ctx.promise();
-    Future<HttpClientStream> future;
-    ProxyOptions proxyOptions;
+    Future<ConnectionObtainedResult> future;
     if (endpointResolver != null && endpointResolver.accepts(server) != null) {
       Future<EndpointLookup> fut = endpointResolver.lookupEndpoint(ctx, server);
       future = fut.compose(lookup -> {
         SocketAddress address = lookup.address();
-        EndpointKey key = new EndpointKey(useSSL, sslOptions, proxyConfig, address, authority != null ? authority : HostAndPort.create(address.host(), address.port()));
+        ProxyOptions proxyOptions = computeProxyOptions(proxyConfig, address);
+        EndpointKey key = new EndpointKey(useSSL, sslOptions, proxyOptions, address, authority != null ? authority : HostAndPort.create(address.host(), address.port()));
         return httpCM.withEndpointAsync(key, httpEndpointProvider(), (endpoint, created) -> {
           Future<Lease<HttpClientConnection>> fut2 = endpoint.requestConnection(connCtx, connectTimeout);
           if (fut2 == null) {
@@ -347,19 +347,14 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
               return conn.createStream(ctx).map(stream -> {
                 HttpClientStream wrapped = new StatisticsGatheringHttpClientStream(stream, endpointRequest);
                 wrapped.closeHandler(v -> lease.recycle());
-                return wrapped;
+                return new ConnectionObtainedResult(proxyOptions, wrapped);
               });
             });
           }
         });
       });
-      if (future != null) {
-        proxyOptions = proxyConfig;
-      } else {
-        proxyOptions = null;
-      }
     } else if (server instanceof SocketAddress) {
-      proxyOptions = computeProxyOptions(proxyConfig, (SocketAddress) server);
+      ProxyOptions proxyOptions = computeProxyOptions(proxyConfig, (SocketAddress) server);
       EndpointKey key = new EndpointKey(useSSL, sslOptions, proxyOptions, (SocketAddress) server, authority);
       future = httpCM.withEndpointAsync(key, httpEndpointProvider(), (endpoint, created) -> {
         Future<Lease<HttpClientConnection>> fut = endpoint.requestConnection(connCtx, connectTimeout);
@@ -368,13 +363,11 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         } else {
           return fut.compose(lease -> {
             HttpClientConnection conn = lease.get();
-            return conn.createStream(ctx).andThen(ar -> {
-              if (ar.succeeded()) {
-                HttpClientStream stream = ar.result();
-                stream.closeHandler(v -> {
-                  lease.recycle();
-                });
-              }
+            return conn.createStream(ctx).map(stream -> {
+              stream.closeHandler(v -> {
+                lease.recycle();
+              });
+              return new ConnectionObtainedResult(proxyOptions, stream);
             });
           });
         }
@@ -385,10 +378,19 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     if (future == null) {
       return connCtx.failedFuture("Cannot resolve address " + server);
     } else {
-      future.map(stream -> {
-        return createRequest(stream, method, headers, requestURI, proxyOptions, useSSL, idleTimeout, followRedirects, traceOperation);
+      future.map(res -> {
+        return createRequest(res.stream, method, headers, requestURI, res.proxyOptions, useSSL, idleTimeout, followRedirects, traceOperation);
       }).onComplete(promise);
       return promise.future();
+    }
+  }
+
+  private static class ConnectionObtainedResult {
+    private final ProxyOptions proxyOptions;
+    private final HttpClientStream stream;
+    public ConnectionObtainedResult(ProxyOptions proxyOptions, HttpClientStream stream) {
+      this.proxyOptions = proxyOptions;
+      this.stream = stream;
     }
   }
 

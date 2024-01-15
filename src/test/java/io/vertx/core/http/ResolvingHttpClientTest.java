@@ -1,7 +1,10 @@
 package io.vertx.core.http;
 
 import io.vertx.core.Future;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.impl.CleanableHttpClient;
+import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.http.impl.HttpClientInternal;
 import io.vertx.core.net.*;
 import io.vertx.test.core.VertxTestBase;
@@ -25,6 +28,17 @@ public class ResolvingHttpClientTest extends VertxTestBase {
 
   private BiConsumer<Integer, HttpServerRequest> requestHandler;
   private List<HttpServer> servers;
+
+  @Override
+  protected VertxOptions getOptions() {
+    VertxOptions options = super.getOptions();
+    options.getAddressResolverOptions().setHostsValue(Buffer.buffer("" +
+      "127.0.0.1 localhost\n" +
+      "127.0.0.1 s1.example.com\n" +
+      "127.0.0.1 s2.example.com\n"
+    ));
+    return options;
+  }
 
   private void startServers(int numServers) throws Exception {
     startServers(numServers, new HttpServerOptions());
@@ -170,6 +184,59 @@ public class ResolvingHttpClientTest extends VertxTestBase {
       responses.add(response);
     }
     assertNotNull(proxy.lastLocalAddress());
+  }
+
+  @Test
+  public void testAcceptProxyFilter() throws Exception {
+    testFilter(true);
+  }
+
+  @Test
+  public void testRejectProxyFilter() throws Exception {
+    testFilter(false);
+  }
+
+  private void testFilter(boolean accept) throws Exception {
+    HttpProxy proxy = new HttpProxy();
+    proxy.start(vertx);
+    try {
+      int numServers = 2;
+      waitFor(numServers * 2);
+      startServers(numServers);
+      requestHandler = (idx, req) -> {
+        boolean proxied = idx == 0 && accept;
+        SocketAddress remote = req.connection().remoteAddress();
+        assertEquals(proxied, proxy.localAddresses().contains(remote.host() + ":" + remote.port()));
+        req.response().end("server-" + idx);
+      };
+      FakeAddressResolver resolver = new FakeAddressResolver();
+      resolver.registerAddress("example.com", Arrays.asList(
+        SocketAddress.inetSocketAddress(HttpTestBase.DEFAULT_HTTP_PORT, "s1.example.com"),
+        SocketAddress.inetSocketAddress(HttpTestBase.DEFAULT_HTTP_PORT + 1, "s2.example.com")));
+      HttpClientInternal client = (HttpClientInternal) vertx.httpClientBuilder()
+        .with(new HttpClientOptions()
+          .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.port())))
+        .withAddressResolver(resolver)
+        .build();
+      ((HttpClientImpl)((CleanableHttpClient)client).delegate).proxyFilter(so -> {
+        return accept && so.host().equals("s1.example.com");
+      });
+      Set<String> responses = Collections.synchronizedSet(new HashSet<>());
+      for (int i = 0;i < numServers * 2;i++) {
+        client.request(new RequestOptions().setServer(new FakeAddress("example.com"))).compose(req -> req
+          .send()
+          .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+          .compose(HttpClientResponse::body)
+        ).onComplete(onSuccess(v -> {
+          responses.add(v.toString());
+          complete();
+        }));
+      }
+      await();
+      Assert.assertEquals(new HashSet<>(Arrays.asList("server-0", "server-1")), responses);
+    } finally {
+      proxy.stop();
+    }
   }
 
   @Test
@@ -539,5 +606,4 @@ public class ResolvingHttpClientTest extends VertxTestBase {
       assertTrue(expectFailure);
     }
   }
-
 }
