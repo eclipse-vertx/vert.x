@@ -22,19 +22,29 @@ import io.vertx.core.Future;
 public interface HttpClientConnection extends HttpConnection {
 
   /**
+   * @return the number of active request/response (streams)
+   */
+  long activeStreams();
+
+  /**
+   * @return the max number of active streams this connection can handle concurrently
+   */
+  long concurrency();
+
+  /**
    * Like {@link #createRequest(RequestOptions)} but without options.
    */
   Future<HttpClientRequest> createRequest();
 
   /**
-   * Create an HTTP request initialized with the specified request {@code options}
+   * Create an HTTP request (stream) initialized with the specified request {@code options}.
    *
-   * This enqueues a request in the client connection queue, the resulting future is notified when the connection can satisfy
-   * the request.
+   * No more than {@link #concurrency()} streams can be handled concurrently, when the number of {@link #activeStreams()} has
+   * reached {@link #concurrency()} the future is failed.
    *
    * Pooled HTTP connection will return an error, since requests should be made against the pool instead the connection itself.
    *
-   * @return a future notified with the created request
+   * @return a future notified with the created stream
    */
   Future<HttpClientRequest> createRequest(RequestOptions options);
 

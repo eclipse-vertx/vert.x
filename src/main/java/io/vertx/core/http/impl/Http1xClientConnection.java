@@ -1238,17 +1238,23 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   private void createStream(ContextInternal context, Promise<HttpClientStream> promise) {
     EventLoop eventLoop = context.nettyEventLoop();
     if (eventLoop.inEventLoop()) {
+      Throwable err;
       synchronized (this) {
         if (!closed) {
-          StreamImpl stream = new StreamImpl(context, this, promise, seq++);
-          requests.add(stream);
-          if (requests.size() == 1) {
-            stream.promise.complete(stream);
+          if (requests.size() < concurrency()) {
+            StreamImpl stream = new StreamImpl(context, this, promise, seq++);
+            requests.add(stream);
+            if (requests.size() == 1) {
+              stream.promise.complete(stream);
+            }
+            return;
           }
-          return;
+          err = new VertxException("Pipelining limit exceeded");
+        } else {
+          err = HttpUtils.CONNECTION_CLOSED_EXCEPTION;
         }
       }
-      promise.fail(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
+      promise.fail(err);
     } else {
       eventLoop.execute(() -> {
         createStream(context, promise);

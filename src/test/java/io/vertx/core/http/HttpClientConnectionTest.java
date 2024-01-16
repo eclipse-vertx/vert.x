@@ -11,15 +11,16 @@
 package io.vertx.core.http;
 
 import io.netty.buffer.Unpooled;
+import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.impl.HttpClientConnectionInternal;
 import io.vertx.core.http.impl.HttpClientInternal;
 import io.vertx.core.http.impl.HttpRequestHead;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.net.HostAndPort;
 import org.junit.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 
 public abstract class HttpClientConnectionTest extends HttpTestBase {
 
@@ -109,5 +110,39 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
       }));
     }));
     await();
+  }
+
+  @Test
+  public void testConcurrencyLimit() throws Exception {
+    server.requestHandler(req -> {
+    });
+    startServer(testAddress);
+    client.connect(new HttpConnectOptions().setServer(testAddress).setHost(requestOptions.getHost()).setPort(requestOptions.getPort())).onComplete(onSuccess(conn -> {
+      long concurrency = ((HttpClientConnectionInternal) conn).concurrency();
+      createRequestRecursively(conn, 0, (err, num) -> {
+        assertEquals(concurrency, (long)num);
+        testComplete();
+      });
+    }));
+    await();
+  }
+
+  private void createRequestRecursively(HttpClientConnection conn, long num, BiConsumer<Throwable, Long> callback) {
+    Future<HttpClientRequest> fut = conn.createRequest(new RequestOptions());
+    fut.onComplete(ar1 -> {
+      if (ar1.succeeded()) {
+        HttpClientRequest req = ar1.result();
+        req.setChunked(true);
+        req.write("Hello").onComplete(ar2 -> {
+          if (ar2.succeeded()) {
+            createRequestRecursively(conn, num + 1, callback);
+          } else {
+            callback.accept(ar2.cause(), num);
+          }
+        });
+      } else {
+        callback.accept(ar1.cause(), num);
+      }
+    });
   }
 }

@@ -14,7 +14,8 @@ public class Http2ClientConnectionTest extends HttpClientConnectionTest {
 
   @Override
   protected HttpServerOptions createBaseServerOptions() {
-    return Http2TestBase.createHttp2ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
+    return Http2TestBase.createHttp2ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST)
+      .setInitialSettings(new Http2Settings().setMaxConcurrentStreams(10));
   }
 
   @Override

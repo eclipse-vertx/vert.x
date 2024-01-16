@@ -56,16 +56,6 @@ public interface HttpClientConnectionInternal extends HttpClientConnection {
   HttpClientConnectionInternal concurrencyChangeHandler(Handler<Long> handler);
 
   /**
-   * @return the connection concurrency
-   */
-  long concurrency();
-
-  /**
-   * @return the number of active streams
-   */
-  long activeStreams();
-
-  /**
    * @return whether the connection is pooled
    */
   boolean pooled();

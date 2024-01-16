@@ -264,10 +264,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       throw new IllegalArgumentException("Only socket address are currently supported");
     }
     HostAndPort authority = HostAndPort.create(host, port);
-    ClientSSLOptions sslOptions = connect.getSslOptions();
-    if (sslOptions == null) {
-      sslOptions = options.getSslOptions();
-    }
+    ClientSSLOptions sslOptions = sslOptions(connect);
     ProxyOptions proxyOptions = computeProxyOptions(connect.getProxyOptions(), server);
     ClientMetrics clientMetrics = metrics != null ? metrics.createEndpointMetrics(server, 1) : null;
     Boolean ssl = connect.isSsl();

@@ -135,8 +135,8 @@ public class HttpClientBase implements MetricsProvider, Closeable {
     return proxyOptions;
   }
 
-  protected ClientSSLOptions sslOptions(RequestOptions requestOptions) {
-    ClientSSLOptions sslOptions = requestOptions.getSslOptions();
+  protected ClientSSLOptions sslOptions(HttpConnectOptions connectOptions) {
+    ClientSSLOptions sslOptions = connectOptions.getSslOptions();
     if (sslOptions != null) {
       sslOptions = new ClientSSLOptions(sslOptions);
     } else {
