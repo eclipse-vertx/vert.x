@@ -76,7 +76,7 @@ public interface HttpClientConnectionInternal extends HttpClientConnection {
    * @param context the stream context
    * @return a future notified with the created request
    */
-  default Future<HttpClientRequest> createRequest(ContextInternal context, RequestOptions options) {
+  default Future<HttpClientRequest> request(ContextInternal context, RequestOptions options) {
     if (pooled()) {
       return context.failedFuture("HTTP requests cannot be directly created from pool HTTP client request, use the pool instead");
     }
@@ -90,15 +90,15 @@ public interface HttpClientConnectionInternal extends HttpClientConnection {
   }
 
   @Override
-  default Future<HttpClientRequest> createRequest() {
+  default Future<HttpClientRequest> request() {
     ContextInternal ctx = getContext().owner().getOrCreateContext();
-    return createRequest(ctx, null);
+    return request(ctx, null);
   }
 
   @Override
-  default Future<HttpClientRequest> createRequest(RequestOptions options) {
+  default Future<HttpClientRequest> request(RequestOptions options) {
     ContextInternal ctx = getContext().owner().getOrCreateContext();
-    return createRequest(ctx, options);
+    return request(ctx, options);
   }
 
   /**

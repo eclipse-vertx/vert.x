@@ -32,9 +32,9 @@ public interface HttpClientConnection extends HttpConnection {
   long concurrency();
 
   /**
-   * Like {@link #createRequest(RequestOptions)} but without options.
+   * Like {@link #request(RequestOptions)} but without options.
    */
-  Future<HttpClientRequest> createRequest();
+  Future<HttpClientRequest> request();
 
   /**
    * Create an HTTP request (stream) initialized with the specified request {@code options}.
@@ -46,6 +46,6 @@ public interface HttpClientConnection extends HttpConnection {
    *
    * @return a future notified with the created stream
    */
-  Future<HttpClientRequest> createRequest(RequestOptions options);
+  Future<HttpClientRequest> request(RequestOptions options);
 
 }

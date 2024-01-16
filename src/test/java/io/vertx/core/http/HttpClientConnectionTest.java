@@ -39,7 +39,7 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
     });
     startServer(testAddress);
     client.connect(new HttpConnectOptions().setServer(testAddress).setHost(requestOptions.getHost()).setPort(requestOptions.getPort()))
-      .compose(HttpClientConnection::createRequest)
+      .compose(HttpClientConnection::request)
       .compose(request -> request
         .send()
         .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
@@ -128,7 +128,7 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
   }
 
   private void createRequestRecursively(HttpClientConnection conn, long num, BiConsumer<Throwable, Long> callback) {
-    Future<HttpClientRequest> fut = conn.createRequest(new RequestOptions());
+    Future<HttpClientRequest> fut = conn.request(new RequestOptions());
     fut.onComplete(ar1 -> {
       if (ar1.succeeded()) {
         HttpClientRequest req = ar1.result();

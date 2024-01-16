@@ -1331,7 +1331,7 @@ public class HTTPExamples {
 
   public static void connectAndGet(HttpClientConnection connection) {
     connection
-      .createRequest()
+      .request()
       .onSuccess(request -> {
         request.setMethod(HttpMethod.GET);
         request.setURI("/some-uri");
