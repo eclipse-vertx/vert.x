@@ -1320,4 +1320,22 @@ public class HTTPExamples {
       .withLoadBalancer(LoadBalancer.ROUND_ROBIN)
       .build();
   }
+
+  public static void connect(HttpClient client) {
+    HttpConnectOptions connectOptions = new HttpConnectOptions()
+      .setHost("example.com")
+      .setPort(80);
+
+    Future<HttpClientConnection> fut = client.connect(connectOptions);
+  }
+
+  public static void connectAndGet(HttpClientConnection connection) {
+    connection
+      .createRequest()
+      .onSuccess(request -> {
+        request.setMethod(HttpMethod.GET);
+        request.setURI("/some-uri");
+        Future<HttpClientResponse> response = request.send();
+      });
+  }
 }

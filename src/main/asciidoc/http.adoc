@@ -1562,6 +1562,25 @@ or close the client instance.
 Alternatively you can set idle timeout using {@link io.vertx.core.http.HttpClientOptions#setIdleTimeout(int)} - any
 connections not used within this timeout will be closed. Please note the idle timeout value is in seconds not milliseconds.
 
+==== Un-pooled client connections
+
+Most HTTP interactions are performed using {@code HttpClient} request/response API: the client obtains
+a connection from its pool of connections to perform a request.
+
+Alternatively, you can connect directly to a server (bypassing the connection pool) and get an HTTP client connection.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#connect}
+----
+
+The {@link io.vertx.core.http.HttpClientConnection} can create {@link io.vertx.core.http.HttpClientRequest}:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#connectAndGet}
+----
+
 === HTTP connections
 
 The {@link io.vertx.core.http.HttpConnection} offers the API for dealing with HTTP connection events, lifecycle

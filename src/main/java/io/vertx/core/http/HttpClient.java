@@ -149,9 +149,10 @@ public interface HttpClient extends io.vertx.core.metrics.Measured {
   Future<Boolean> updateSSLOptions(ClientSSLOptions options, boolean force);
 
   /**
-   * Connect to a remote HTTP server.
+   * Connect to a remote HTTP server with the specific {@code options.
    *
    * @param options the server connect options
+   * @return a future notified when the connection is available
    */
   Future<HttpClientConnection> connect(HttpConnectOptions options);
 

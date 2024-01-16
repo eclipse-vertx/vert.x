@@ -22,7 +22,7 @@ import io.vertx.core.Future;
 public interface HttpClientConnection extends HttpConnection {
 
   /**
-   * Like {@link #createRequest(RequestOptions)} but with null options.
+   * Like {@link #createRequest(RequestOptions)} but without options.
    */
   Future<HttpClientRequest> createRequest();
 
