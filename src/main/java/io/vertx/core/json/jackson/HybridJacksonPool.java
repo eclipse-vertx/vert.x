@@ -59,6 +59,14 @@ public class HybridJacksonPool implements RecyclerPool<BufferRecycler> {
   }
 
   @Override
+  public BufferRecycler acquireAndLinkPooled() {
+    // when using the ThreadLocal based pool it is not necessary to register the BufferRecycler on the pool
+    return isVirtual.test(Thread.currentThread()) ?
+      VirtualPoolHolder.virtualPool.acquireAndLinkPooled() :
+      nativePool.acquirePooled();
+  }
+  
+  @Override
   public void releasePooled(BufferRecycler bufferRecycler) {
     if (bufferRecycler instanceof VThreadBufferRecycler) {
       // if it is a PooledBufferRecycler it has been acquired by a virtual thread, so it has to be release to the same pool
