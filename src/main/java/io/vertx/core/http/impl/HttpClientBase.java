@@ -50,6 +50,7 @@ public class HttpClientBase implements MetricsProvider, Closeable {
   protected final CloseFuture closeFuture;
   private Predicate<SocketAddress> proxyFilter;
   private final Function<ContextInternal, ContextInternal> contextProvider;
+  final boolean useH2UniformStreamByteDistributor;
 
   public HttpClientBase(VertxInternal vertx, HttpClientOptions options, CloseFuture closeFuture) {
     this.vertx = vertx;
@@ -67,6 +68,7 @@ public class HttpClientBase implements MetricsProvider, Closeable {
           break;
       }
     }
+    this.useH2UniformStreamByteDistributor = HttpUtils.useH2UniformStreamByteDistributor();
     this.keepAlive = options.isKeepAlive();
     this.pipelining = options.isPipelining();
     if (!keepAlive && pipelining) {

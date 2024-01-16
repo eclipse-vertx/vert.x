@@ -259,6 +259,7 @@ public class HttpServerWorker implements BiConsumer<Channel, SslChannelProvider>
       .decoderEnforceMaxRstFramesPerWindow(maxRstFramesPerWindow, secondsPerWindow)
       .useDecompression(options.isDecompressionSupported())
       .initialSettings(options.getInitialSettings())
+      .useUniformStreamByteDistributor(server.useH2UniformStreamByteDistributor)
       .connectionFactory(connHandler -> {
         Http2ServerConnection conn = new Http2ServerConnection(ctx, streamContextSupplier, serverOrigin, connHandler, encodingDetector, options, metrics);
         if (metrics != null) {
