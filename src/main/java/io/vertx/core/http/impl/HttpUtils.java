@@ -62,6 +62,13 @@ import static io.vertx.core.http.Http2Settings.*;
  */
 public final class HttpUtils {
 
+  static final String H2_STREAM_BYTE_DISTRIBUTOR = "vertx.h2StreamByteDistributor";
+  static final String UNIFORM_DISTRIBUTOR = "uniform";
+
+  static boolean useH2UniformStreamByteDistributor() {
+    return UNIFORM_DISTRIBUTOR.equals(System.getProperty(H2_STREAM_BYTE_DISTRIBUTOR));
+  }
+
   static final HttpClosedException CONNECTION_CLOSED_EXCEPTION = new HttpClosedException("Connection was closed");
   static final HttpClosedException STREAM_CLOSED_EXCEPTION = new HttpClosedException("Stream was closed");
   static final int SC_SWITCHING_PROTOCOLS = 101;

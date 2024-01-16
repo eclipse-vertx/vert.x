@@ -703,6 +703,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     VertxHttp2ConnectionHandler<Http2ClientConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ClientConnection>()
       .server(false)
       .useDecompression(client.options().isDecompressionSupported())
+      .useUniformStreamByteDistributor(client.useH2UniformStreamByteDistributor)
       .gracefulShutdownTimeoutMillis(0) // So client close tests don't hang 30 seconds - make this configurable later but requires HTTP/1 impl
       .initialSettings(client.options().getInitialSettings())
       .connectionFactory(connHandler -> {
