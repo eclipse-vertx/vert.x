@@ -14,18 +14,8 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.compression.CompressionOptions;
-import io.netty.handler.codec.http2.AbstractHttp2ConnectionHandlerBuilder;
-import io.netty.handler.codec.http2.CompressorHttp2ConnectionEncoder;
-import io.netty.handler.codec.http2.Http2ConnectionDecoder;
-import io.netty.handler.codec.http2.Http2ConnectionEncoder;
-import io.netty.handler.codec.http2.Http2Exception;
-import io.netty.handler.codec.http2.Http2Flags;
-import io.netty.handler.codec.http2.Http2FrameListener;
-import io.netty.handler.codec.http2.Http2FrameLogger;
-import io.netty.handler.codec.http2.Http2Headers;
-import io.netty.handler.codec.http2.Http2Settings;
+import io.netty.handler.codec.http2.*;
 import io.netty.handler.logging.LogLevel;
-import io.vertx.core.http.HttpServerOptions;
 
 import java.util.function.Function;
 
@@ -40,13 +30,15 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
   private CompressionOptions[] compressionOptions;
   private Function<VertxHttp2ConnectionHandler<C>, C> connectionFactory;
   private boolean logEnabled;
+  private boolean server;
 
   protected VertxHttp2ConnectionHandlerBuilder<C> server(boolean isServer) {
-    return super.server(isServer);
+    this.server = isServer;
+    return this;
   }
 
   VertxHttp2ConnectionHandlerBuilder<C> initialSettings(io.vertx.core.http.Http2Settings settings) {
-    HttpUtils.fromVertxInitialSettings(isServer(), settings, initialSettings());
+    HttpUtils.fromVertxInitialSettings(server, settings, initialSettings());
     return this;
   }
 
@@ -85,6 +77,7 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
     if (logEnabled) {
       frameLogger(new Http2FrameLogger(LogLevel.DEBUG));
     }
+    configureStreamByteDistributor();
     // Make this damn builder happy
     frameListener(new Http2FrameListener() {
       @Override
@@ -143,9 +136,16 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
     return super.build();
   }
 
+  private void configureStreamByteDistributor() {
+    DefaultHttp2Connection conn = new DefaultHttp2Connection(server, maxReservedStreams());
+    StreamByteDistributor distributor = new UniformStreamByteDistributor(conn);
+    conn.remote().flowController(new DefaultHttp2RemoteFlowController(conn, distributor));
+    connection(conn);
+  }
+
   @Override
   protected VertxHttp2ConnectionHandler<C> build(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) throws Exception {
-    if (isServer()) {
+    if (server) {
       if (compressionOptions != null) {
         encoder = new CompressorHttp2ConnectionEncoder(encoder, compressionOptions);
       }
