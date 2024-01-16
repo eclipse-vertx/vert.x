@@ -90,6 +90,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   private final HttpVersion version;
   private final long lowWaterMark;
   private final long highWaterMark;
+  private final boolean pooled;
 
   private Deque<Stream> requests = new ArrayDeque<>();
   private Deque<Stream> responses = new ArrayDeque<>();
@@ -117,7 +118,8 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
                          SocketAddress server,
                          HostAndPort authority,
                          ContextInternal context,
-                         ClientMetrics metrics) {
+                         ClientMetrics metrics,
+                         boolean pooled) {
     super(context, chctx);
     this.client = client;
     this.options = client.options();
@@ -131,6 +133,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     this.lowWaterMark = chctx.channel().config().getWriteBufferLowWaterMark();
     this.keepAliveTimeout = options.getKeepAliveTimeout();
     this.expirationTimestamp = expirationTimestampOf(keepAliveTimeout);
+    this.pooled = pooled;
   }
 
   @Override
@@ -168,6 +171,11 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   @Override
   public synchronized long activeStreams() {
     return requests.isEmpty() && responses.isEmpty() ? 0 : 1;
+  }
+
+  @Override
+  public boolean pooled() {
+    return pooled;
   }
 
   /**

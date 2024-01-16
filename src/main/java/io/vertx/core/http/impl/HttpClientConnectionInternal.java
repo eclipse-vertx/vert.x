@@ -66,6 +66,11 @@ public interface HttpClientConnectionInternal extends HttpClientConnection {
   long activeStreams();
 
   /**
+   * @return whether the connection is pooled
+   */
+  boolean pooled();
+
+  /**
    * @return the connection channel
    */
   Channel channel();
@@ -82,6 +87,9 @@ public interface HttpClientConnectionInternal extends HttpClientConnection {
    * @return a future notified with the created request
    */
   default Future<HttpClientRequest> createRequest(ContextInternal context, RequestOptions options) {
+    if (pooled()) {
+      return context.failedFuture("HTTP requests cannot be directly created from pool HTTP client request, use the pool instead");
+    }
     return createStream(context).map(stream -> {
       HttpClientRequestImpl request = new HttpClientRequestImpl(stream);
       if (options != null) {

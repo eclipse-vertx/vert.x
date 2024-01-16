@@ -72,7 +72,7 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
     EndpointProvider<EndpointKey, WebSocketEndpoint> provider = (key_, dispose) -> {
       int maxPoolSize = options.getMaxConnections();
       ClientMetrics metrics = WebSocketClientImpl.this.metrics != null ? WebSocketClientImpl.this.metrics.createEndpointMetrics(key_.server, maxPoolSize) : null;
-      HttpChannelConnector connector = new HttpChannelConnector(WebSocketClientImpl.this, netClient, sslOptions, key_.proxyOptions, metrics, HttpVersion.HTTP_1_1, key_.ssl, false, key_.authority, key_.server);
+      HttpChannelConnector connector = new HttpChannelConnector(WebSocketClientImpl.this, netClient, sslOptions, key_.proxyOptions, metrics, HttpVersion.HTTP_1_1, key_.ssl, false, key_.authority, key_.server, false);
       return new WebSocketEndpoint(null, maxPoolSize, connector, dispose);
     };
     webSocketCM

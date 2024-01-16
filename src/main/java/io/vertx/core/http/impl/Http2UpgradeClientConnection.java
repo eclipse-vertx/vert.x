@@ -85,6 +85,11 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
   }
 
   @Override
+  public boolean pooled() {
+    return current.pooled();
+  }
+
+  @Override
   public long activeStreams() {
     return current.concurrency();
   }
@@ -359,7 +364,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
         public void upgradeTo(ChannelHandlerContext ctx, FullHttpResponse upgradeResponse) throws Exception {
 
           // Now we need to upgrade this to an HTTP2
-          VertxHttp2ConnectionHandler<Http2ClientConnection> handler = Http2ClientConnection.createHttp2ConnectionHandler(upgradedConnection.client, upgradingConnection.metrics, upgradingConnection.getContext(), true, upgradedConnection.current.metric(), upgradedConnection.current.authority());
+          VertxHttp2ConnectionHandler<Http2ClientConnection> handler = Http2ClientConnection.createHttp2ConnectionHandler(upgradedConnection.client, upgradingConnection.metrics, upgradingConnection.getContext(), true, upgradedConnection.current.metric(), upgradedConnection.current.authority(), upgradingConnection.pooled());
           upgradingConnection.channel().pipeline().addLast(handler);
           handler.connectFuture().addListener(future -> {
             if (!future.isSuccess()) {

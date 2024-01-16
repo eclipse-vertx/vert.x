@@ -57,6 +57,7 @@ public class HttpChannelConnector {
   private final HttpVersion version;
   private final HostAndPort authority;
   private final SocketAddress server;
+  private final boolean pooled;
 
   public HttpChannelConnector(HttpClientBase client,
                               NetClientInternal netClient,
@@ -67,7 +68,8 @@ public class HttpChannelConnector {
                               boolean ssl,
                               boolean useAlpn,
                               HostAndPort authority,
-                              SocketAddress server) {
+                              SocketAddress server,
+                              boolean pooled) {
     this.client = client;
     this.netClient = netClient;
     this.metrics = metrics;
@@ -79,6 +81,7 @@ public class HttpChannelConnector {
     this.version = version;
     this.authority = authority;
     this.server = server;
+    this.pooled = pooled;
   }
 
   public SocketAddress server() {
@@ -209,7 +212,7 @@ public class HttpChannelConnector {
     boolean upgrade = version == HttpVersion.HTTP_2 && options.isHttp2ClearTextUpgrade();
     VertxHandler<Http1xClientConnection> clientHandler = VertxHandler.create(chctx -> {
       HttpClientMetrics met = client.metrics();
-      Http1xClientConnection conn = new Http1xClientConnection(upgrade ? HttpVersion.HTTP_1_1 : version, client, chctx, ssl, server, authority, context, this.metrics);
+      Http1xClientConnection conn = new Http1xClientConnection(upgrade ? HttpVersion.HTTP_1_1 : version, client, chctx, ssl, server, authority, context, metrics, pooled);
       if (met != null) {
         conn.metric(socketMetric);
         met.endpointConnected(metrics);
@@ -256,7 +259,7 @@ public class HttpChannelConnector {
                               PromiseInternal<HttpClientConnectionInternal> promise) {
     VertxHttp2ConnectionHandler<Http2ClientConnection> clientHandler;
     try {
-      clientHandler = Http2ClientConnection.createHttp2ConnectionHandler(client, metrics, context, false, metric, authority);
+      clientHandler = Http2ClientConnection.createHttp2ConnectionHandler(client, metrics, context, false, metric, authority, pooled);
       ch.pipeline().addLast("handler", clientHandler);
       ch.flush();
     } catch (Exception e) {
