@@ -90,12 +90,6 @@ public interface HttpClientConnectionInternal extends HttpClientConnection {
   }
 
   @Override
-  default Future<HttpClientRequest> request() {
-    ContextInternal ctx = getContext().owner().getOrCreateContext();
-    return request(ctx, null);
-  }
-
-  @Override
   default Future<HttpClientRequest> request(RequestOptions options) {
     ContextInternal ctx = getContext().owner().getOrCreateContext();
     return request(ctx, options);

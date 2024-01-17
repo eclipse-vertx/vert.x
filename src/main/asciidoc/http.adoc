@@ -1564,7 +1564,7 @@ connections not used within this timeout will be closed. Please note the idle ti
 
 ==== Un-pooled client connections
 
-Most HTTP interactions are performed using {@code HttpClient} request/response API: the client obtains
+Most HTTP interactions are performed using {@code HttpClientAgent} request/response API: the client obtains
 a connection from its pool of connections to perform a request.
 
 Alternatively, you can connect directly to a server (bypassing the connection pool) and get an HTTP client connection.

@@ -15,12 +15,10 @@ import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.HostAndPort;
-import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.NetClientInternal;
 import io.vertx.core.spi.metrics.MetricsProvider;
 
-public interface HttpClientInternal extends HttpClient, MetricsProvider, Closeable {
+public interface HttpClientInternal extends HttpClientAgent, MetricsProvider, Closeable {
 
   /**
    * @return the vertx, for use in package related classes only.

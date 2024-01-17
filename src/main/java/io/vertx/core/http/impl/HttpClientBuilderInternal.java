@@ -96,11 +96,11 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
   }
 
   @Override
-  public HttpClient build() {
+  public HttpClientAgent build() {
     HttpClientOptions co = clientOptions != null ? clientOptions : new HttpClientOptions();
     PoolOptions po = poolOptions != null ? poolOptions : new PoolOptions();
     CloseFuture cf = resolveCloseFuture();
-    HttpClient client;
+    HttpClientAgent client;
     Closeable closeable;
     EndpointResolver<?> resolver = endpointResolver(co);
     if (co.isShared()) {

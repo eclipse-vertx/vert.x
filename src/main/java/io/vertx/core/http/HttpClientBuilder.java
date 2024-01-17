@@ -94,6 +94,6 @@ public interface HttpClientBuilder {
    * Build and return the client.
    * @return the client as configured by this builder
    */
-  HttpClient build();
+  HttpClientAgent build();
 
 }

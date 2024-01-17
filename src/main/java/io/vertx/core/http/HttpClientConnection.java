@@ -13,13 +13,15 @@ package io.vertx.core.http;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * Represents an HTTP client connection.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @VertxGen
-public interface HttpClientConnection extends HttpConnection {
+public interface HttpClientConnection extends HttpConnection, HttpClient {
 
   /**
    * @return the number of active request/response (streams)
@@ -31,21 +33,11 @@ public interface HttpClientConnection extends HttpConnection {
    */
   long concurrency();
 
-  /**
-   * Like {@link #request(RequestOptions)} but without options.
-   */
-  Future<HttpClientRequest> request();
+  @Override
+  default Future<Void> close(long timeout, TimeUnit timeUnit) {
+    return shutdown(timeUnit.toMillis(timeout));
+  }
 
-  /**
-   * Create an HTTP request (stream) initialized with the specified request {@code options}.
-   *
-   * No more than {@link #concurrency()} streams can be handled concurrently, when the number of {@link #activeStreams()} has
-   * reached {@link #concurrency()} the future is failed.
-   *
-   * Pooled HTTP connection will return an error, since requests should be made against the pool instead the connection itself.
-   *
-   * @return a future notified with the created stream
-   */
-  Future<HttpClientRequest> request(RequestOptions options);
-
+  @Override
+  Future<Void> close();
 }

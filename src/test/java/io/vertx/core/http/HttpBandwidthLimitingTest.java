@@ -66,11 +66,11 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
   }
 
   private Function<Vertx, HttpServer> serverFactory;
-  private Function<Vertx, HttpClient> clientFactory;
+  private Function<Vertx, HttpClientAgent> clientFactory;
   private Function<Vertx, HttpServer> nonTrafficShapedServerFactory;
 
   public HttpBandwidthLimitingTest(double protoVersion, Function<Vertx, HttpServer> serverFactory,
-                                   Function<Vertx, HttpClient> clientFactory,
+                                   Function<Vertx, HttpClientAgent> clientFactory,
                                    Function<Vertx, HttpServer> nonTrafficShapedServerFactory) {
     this.serverFactory = serverFactory;
     this.clientFactory = clientFactory;

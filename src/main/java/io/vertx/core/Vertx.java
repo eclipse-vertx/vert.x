@@ -248,7 +248,7 @@ public interface Vertx extends Measured {
    * @param poolOptions  the pool options to use
    * @return the client
    */
-  default HttpClient createHttpClient(HttpClientOptions clientOptions, PoolOptions poolOptions) {
+  default HttpClientAgent createHttpClient(HttpClientOptions clientOptions, PoolOptions poolOptions) {
     return httpClientBuilder().with(clientOptions).with(poolOptions).build();
   }
 
@@ -258,7 +258,7 @@ public interface Vertx extends Measured {
    * @param clientOptions  the options to use
    * @return the client
    */
-  default HttpClient createHttpClient(HttpClientOptions clientOptions) {
+  default HttpClientAgent createHttpClient(HttpClientOptions clientOptions) {
     return createHttpClient(clientOptions, new PoolOptions());
   }
 
@@ -268,7 +268,7 @@ public interface Vertx extends Measured {
    * @param poolOptions  the pool options to use
    * @return the client
    */
-  default HttpClient createHttpClient(PoolOptions poolOptions) {
+  default HttpClientAgent createHttpClient(PoolOptions poolOptions) {
     return createHttpClient(new HttpClientOptions(), poolOptions);
   }
 
@@ -277,9 +277,10 @@ public interface Vertx extends Measured {
    *
    * @return the client
    */
-  default HttpClient createHttpClient() {
+  default HttpClientAgent createHttpClient() {
     return createHttpClient(new HttpClientOptions(), new PoolOptions());
   }
+
   /**
    * Create a datagram socket using the specified options
    *

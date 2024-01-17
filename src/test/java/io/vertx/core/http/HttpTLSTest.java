@@ -39,7 +39,6 @@ import io.vertx.core.impl.VertxThread;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.KeyStoreHelper;
 import org.junit.Assume;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -1729,7 +1728,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
     startServer(testAddress);
     Function<HttpClient, Future<Buffer>> request = client -> client.request(requestOptions).compose(req -> req.send().compose(HttpClientResponse::body));
     HttpClient client1 = vertx.createHttpClient(createBaseClientOptions().setVerifyHost(false).setTrustOptions(bluh.apply(0)));
-    HttpClient client2 = vertx.createHttpClient(createBaseClientOptions().setVerifyHost(false).setTrustOptions(bluh.apply(0)));
+    HttpClientAgent client2 = vertx.createHttpClient(createBaseClientOptions().setVerifyHost(false).setTrustOptions(bluh.apply(0)));
     request.apply(client1).onComplete(onSuccess(body1 -> {
       assertEquals("Hello World", body1.toString());
       server.updateSSLOptions(createBaseServerOptions().setKeyCertOptions(blah.apply(1)).getSslOptions(), force).onComplete(onSuccess(updateOccurred -> {

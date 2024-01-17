@@ -409,16 +409,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public HttpClient createHttpClient(HttpClientOptions options) {
-    return createHttpClient(options, new PoolOptions());
-  }
-
-  @Override
-  public HttpClient createHttpClient(PoolOptions poolOptions) {
-    return createHttpClient(new HttpClientOptions(), poolOptions);
-  }
-
-  @Override
   public HttpClientBuilder httpClientBuilder() {
     return new HttpClientBuilderInternal(this);
   }
