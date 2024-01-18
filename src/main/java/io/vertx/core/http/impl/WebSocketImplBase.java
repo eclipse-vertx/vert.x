@@ -73,7 +73,6 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   private FrameAggregator frameAggregator;
   private Handler<Buffer> pongHandler;
   private Handler<Void> drainHandler;
-  private Handler<Throwable> exceptionHandler;
   private Handler<Void> closeHandler;
   private Handler<Void> endHandler;
   protected final Http1xConnectionBase conn;
@@ -412,13 +411,12 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
     Handler<Throwable> exceptionHandler;
     synchronized (conn) {
       closeHandler = this.closeHandler;
-      exceptionHandler = this.exceptionHandler;
+      exceptionHandler = conn::handleException;
       binaryConsumer = this.binaryHandlerRegistration;
       textConsumer = this.textHandlerRegistration;
       this.binaryHandlerRegistration = null;
       this.textHandlerRegistration = null;
       this.closeHandler = null;
-      this.exceptionHandler = null;
     }
     if (binaryConsumer != null) {
       binaryConsumer.unregister();
@@ -651,14 +649,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   }
 
   void handleException(Throwable t) {
-    Handler<Throwable> handler;
-    synchronized (conn) {
-      handler = this.exceptionHandler;
-      if (handler == null) {
-        return;
-      }
-    }
-    context.dispatch(t, handler);
+    conn.handleException(t);
   }
 
   void handleConnectionClosed() {
@@ -718,13 +709,8 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
 
   @Override
   public S exceptionHandler(Handler<Throwable> handler) {
-    synchronized (conn) {
-      if (handler != null) {
-        checkClosed();
-      }
-      this.exceptionHandler = handler;
-      return (S) this;
-    }
+    conn.exceptionHandler(handler);
+    return (S) this;
   }
 
   @Override

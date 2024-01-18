@@ -77,6 +77,7 @@ public class WebSocketTest extends VertxTestBase {
 
   private static final String TEST_REASON = "I'm moving away!";
   private static final short TEST_STATUS_CODE = (short)1001;
+  private static final short INVALID_STATUS_CODE = (short)1004;
 
   private WebSocketClient client;
   private HttpServer server;
@@ -3785,4 +3786,24 @@ public class WebSocketTest extends VertxTestBase {
       }));
     await();
   }
+
+  @Test
+  public void testServerWebSocketExceptionHandlerIsCalled() throws InterruptedException {
+    waitFor(2);
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)
+                                                           .setHost(DEFAULT_HTTP_HOST))
+                  .exceptionHandler(t -> fail())
+                  .connectionHandler(connection -> connection.exceptionHandler(t -> fail()))
+                  .webSocketHandler(ws -> {
+                    ws.endHandler(v -> fail());
+                    ws.closeHandler(v -> complete());
+                    ws.exceptionHandler(t -> complete());
+                  });
+    awaitFuture(server.listen());
+    vertx.createWebSocketClient()
+         .connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
+         .onSuccess(ws -> ws.close(INVALID_STATUS_CODE));
+    await();
+  }
+
 }
