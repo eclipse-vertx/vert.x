@@ -112,6 +112,11 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
   }
 
   @Override
+  public void handleException(Throwable t) {
+    super.handleException(t);
+  }
+
+  @Override
   public HttpConnection goAway(long errorCode, int lastStreamId, Buffer debugData) {
     throw new UnsupportedOperationException("HTTP/1.x connections don't support GOAWAY");
   }
