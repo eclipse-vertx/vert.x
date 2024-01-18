@@ -520,13 +520,11 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   }
 
   @Override
-  protected void handleException(Throwable t) {
+  public void handleException(Throwable t) {
     super.handleException(t);
     Http1xServerRequest responseInProgress;
     Http1xServerRequest requestInProgress;
-    ServerWebSocketImpl ws;
     synchronized (this) {
-      ws = this.webSocket;
       requestInProgress = this.requestInProgress;
       responseInProgress = this.responseInProgress;
       if (METRICS_ENABLED && metrics != null) {
@@ -538,9 +536,6 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     }
     if (responseInProgress != null && responseInProgress != requestInProgress) {
       responseInProgress.handleException(t);
-    }
-    if (ws != null) {
-      ws.context.execute(v -> ws.handleException(t));
     }
   }
 

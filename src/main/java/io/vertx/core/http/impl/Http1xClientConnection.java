@@ -1207,17 +1207,12 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   }
 
   @Override
-  protected void handleException(Throwable e) {
+  public void handleException(Throwable e) {
     super.handleException(e);
-    WebSocketImpl ws;
     LinkedHashSet<Stream> allStreams = new LinkedHashSet<>();
     synchronized (this) {
-      ws = webSocket;
       allStreams.addAll(requests);
       allStreams.addAll(responses);
-    }
-    if (ws != null) {
-      ws.handleException(e);
     }
     for (Stream stream : allStreams) {
       stream.handleException(e);
