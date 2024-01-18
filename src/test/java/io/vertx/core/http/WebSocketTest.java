@@ -88,6 +88,7 @@ public class WebSocketTest extends VertxTestBase {
 
   private static final String TEST_REASON = "I'm moving away!";
   private static final short TEST_STATUS_CODE = (short)1001;
+  private static final short INVALID_STATUS_CODE = (short)1004;
 
   private WebSocketClient client;
   private HttpServer server;
@@ -3160,7 +3161,9 @@ public class WebSocketTest extends VertxTestBase {
       .webSocketHandler(ws -> {
         long now = System.currentTimeMillis();
         ws.endHandler(v -> fail());
-        ws.exceptionHandler(ignore -> complete());
+        ws.exceptionHandler(ignore -> {
+          complete();
+        });
         ws.closeHandler(v -> {
           long elapsed = System.currentTimeMillis() - now;
           assertTrue(timeout <= elapsed && elapsed < 5000);
@@ -3889,4 +3892,52 @@ public class WebSocketTest extends VertxTestBase {
 
       }));
     await();
-  }}
+  }
+
+  @Test
+  public void testServerWebSocketExceptionHandlerIsCalled() {
+    waitFor(2);
+    server = vertx.createHttpServer(new HttpServerOptions())
+                  .exceptionHandler(t -> fail())
+                  .connectionHandler(connection -> connection.exceptionHandler(t -> fail()))
+                  .webSocketHandler(ws -> {
+                    ws.endHandler(v -> fail());
+                    ws.closeHandler(v -> complete());
+                    ws.exceptionHandler(t -> complete());
+                  })
+                  .listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(s ->
+                    vertx.createWebSocketClient()
+                         .connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
+                         .onSuccess(ws -> {
+                           ws.close(INVALID_STATUS_CODE);
+                         })));
+    await();
+  }
+
+  @Test
+  public void testClientWebSocketExceptionHandlerIsCalled() {
+    waitFor(3);
+    server = vertx.createHttpServer(new HttpServerOptions())
+                  .webSocketHandler(ws -> ws.close(INVALID_STATUS_CODE))
+                  .listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(s ->
+                    vertx.httpClientBuilder()
+                         .withConnectHandler(conn -> conn.exceptionHandler(t -> fail()))
+                         .build()
+                         .webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
+                         .onSuccess(ws -> {
+                           ws.exceptionHandler(t -> {
+                             // This exception handler is called 2 times:
+                             // - From VertxHandler#exceptionCaught > Http1xClientConnection#handleException
+                             //     with io.netty.handler.codec.http.websocketx.CorruptedWebSocketFrameException: Invalid close frame getStatus code: 1004
+                             // - From VertxHandler#channelInactive > Http1xClientConnection#handleClosed
+                             //      with io.vertx.core.http.HttpClosedException: Connection was closed
+                             // Both are technically true though.
+                             complete();
+                           });
+                           ws.endHandler(v -> fail());
+                           ws.closeHandler(v -> complete());
+                         })));
+    await();
+  }
+
+}
