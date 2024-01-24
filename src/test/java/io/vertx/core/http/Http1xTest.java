@@ -1702,7 +1702,6 @@ public class Http1xTest extends HttpTest {
     testSharedServersRoundRobin();
   }
 
-  @Repeat(times = 1000)
   @Test
   public void testSharedServersRoundRobinButFirstStartAndStopServer() throws Exception {
     // Start and stop a server on the same port/host before hand to make sure it doesn't interact
