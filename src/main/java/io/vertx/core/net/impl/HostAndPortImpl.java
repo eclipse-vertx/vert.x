@@ -4,7 +4,7 @@ import io.vertx.core.net.HostAndPort;
 
 public class HostAndPortImpl implements HostAndPort {
 
-  static int parseHost(String val, int from, int to) {
+  public static int parseHost(String val, int from, int to) {
     int pos;
     if ((pos = parseIPLiteral(val, from, to)) != -1) {
       return pos;
@@ -20,7 +20,7 @@ public class HostAndPortImpl implements HostAndPort {
     return v == -1 ? -1 : v + 1;
   }
 
-  static int parseIPv4Address(String s, int from, int to) {
+  public static int parseIPv4Address(String s, int from, int to) {
     for (int i = 0;i < 4;i++) {
       if (i > 0 && from < to && s.charAt(from++) != '.') {
         return -1;
@@ -109,11 +109,11 @@ public class HostAndPortImpl implements HostAndPort {
 
   /**
    * Parse an authority HTTP header, that is <i>host [':' port]</i>
-   * @param s the string to port
-   * @param schemePort the scheme port used when the optional port is specified
+   * @param s the string to parse
+   * @param schemePort the scheme port used when the optional port is not specified
    * @return the parsed value or {@code null} when the string cannot be parsed
    */
-  public static HostAndPortImpl parseHostAndPort(String s, int schemePort) {
+  public static HostAndPortImpl parseAuthority(String s, int schemePort) {
     int pos = parseHost(s, 0, s.length());
     if (pos == s.length()) {
       return new HostAndPortImpl(s, schemePort);

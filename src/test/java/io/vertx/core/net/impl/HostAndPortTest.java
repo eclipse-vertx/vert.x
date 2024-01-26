@@ -70,21 +70,21 @@ public class HostAndPortTest {
     assertHostAndPort("[0::]", -1, "[0::]");
     assertHostAndPort("", -1, "");
     assertHostAndPort("", 8080, ":8080");
-    assertNull(HostAndPortImpl.parseHostAndPort("/", -1));
-    assertNull(HostAndPortImpl.parseHostAndPort("10.0.0.1:x", -1));
+    assertNull(HostAndPortImpl.parseAuthority("/", -1));
+    assertNull(HostAndPortImpl.parseAuthority("10.0.0.1:x", -1));
   }
 
   @Test
   public void testParseInvalid() {
     assertHostAndPort("localhost", 65535, "localhost:65535");
-    assertNull(HostAndPortImpl.parseHostAndPort("localhost:65536", -1));
-    assertNull(HostAndPortImpl.parseHostAndPort("localhost:8080a", -1));
-    assertNull(HostAndPortImpl.parseHostAndPort("http://localhost:8080", -1));
-    assertNull(HostAndPortImpl.parseHostAndPort("^", -1));
+    assertNull(HostAndPortImpl.parseAuthority("localhost:65536", -1));
+    assertNull(HostAndPortImpl.parseAuthority("localhost:8080a", -1));
+    assertNull(HostAndPortImpl.parseAuthority("http://localhost:8080", -1));
+    assertNull(HostAndPortImpl.parseAuthority("^", -1));
   }
 
   private void assertHostAndPort(String expectedHost, int expectedPort, String actual) {
-    HostAndPortImpl hostAndPort = HostAndPortImpl.parseHostAndPort(actual, -1);
+    HostAndPortImpl hostAndPort = HostAndPortImpl.parseAuthority(actual, -1);
     assertNotNull(hostAndPort);
     assertEquals(expectedHost, hostAndPort.host());
     assertEquals(expectedPort, hostAndPort.port());
