@@ -33,7 +33,6 @@ import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
-import io.vertx.core.net.impl.HostAndPortImpl;
 import io.vertx.core.spi.observability.HttpResponse;
 import io.vertx.core.streams.ReadStream;
 
@@ -726,7 +725,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     }
     HostAndPort hostAndPort = null;
     if (authority != null) {
-      hostAndPort = HostAndPortImpl.parseHostAndPort(authority, -1);
+      hostAndPort = HostAndPort.parseAuthority(authority, -1);
     }
     if (hostAndPort == null) {
       hostAndPort = stream.authority;

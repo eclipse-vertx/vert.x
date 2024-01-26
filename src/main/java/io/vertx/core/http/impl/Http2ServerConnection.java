@@ -26,7 +26,6 @@ import io.vertx.core.Promise;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.HostAndPort;
-import io.vertx.core.net.impl.HostAndPortImpl;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import java.util.ArrayDeque;
@@ -101,7 +100,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
       }
       CharSequence hostHeader = request.headers.get(HttpHeaders.HOST);
       if (hostHeader != null) {
-        HostAndPort host = HostAndPortImpl.parseHostAndPort(hostHeader.toString(), -1);
+        HostAndPort host = HostAndPort.parseAuthority(hostHeader.toString(), -1);
         return host == null || (!request.authority.host().equals(host.host()) || request.authority.port() != host.port());
       }
     }
@@ -136,7 +135,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     CharSequence authorityHeader = headers.getAndRemove(HttpHeaders.PSEUDO_AUTHORITY);
     if (authorityHeader != null) {
       authorityHeaderAsString = authorityHeader.toString();
-      authority = HostAndPortImpl.parseHostAndPort(authorityHeaderAsString, -1);
+      authority = HostAndPort.parseAuthority(authorityHeaderAsString, -1);
     }
     CharSequence pathHeader = headers.getAndRemove(HttpHeaders.PSEUDO_PATH);
     CharSequence methodHeader = headers.getAndRemove(HttpHeaders.PSEUDO_METHOD);
