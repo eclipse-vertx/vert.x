@@ -13,6 +13,8 @@ package io.vertx.core.net.impl.pool;
 import io.netty.util.concurrent.FastThreadLocal;
 import io.netty.util.internal.PlatformDependent;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -29,11 +31,19 @@ public class CombinerExecutor<S> implements Executor<S> {
   private final AtomicInteger s = new AtomicInteger();
   private final S state;
 
-  protected static final class InProgressTail {
+  protected static final class InProgressTail<S> {
+
+    final CombinerExecutor<S> combiner;
     Task task;
+    Map<CombinerExecutor<S>, Task> others;
+
+    public InProgressTail(CombinerExecutor<S> combiner, Task task) {
+      this.combiner = combiner;
+      this.task = task;
+    }
   }
 
-  private final FastThreadLocal<InProgressTail> current = new FastThreadLocal<>();
+  private static final FastThreadLocal<InProgressTail<?>> current = new FastThreadLocal<>();
 
   public CombinerExecutor(S state) {
     this.state = state;
@@ -72,23 +82,42 @@ public class CombinerExecutor<S> implements Executor<S> {
       }
     } while (!q.isEmpty() && s.compareAndSet(0, 1));
     if (head != null) {
-      InProgressTail inProgress = current.get();
+      InProgressTail<S> inProgress = (InProgressTail<S>) current.get();
       if (inProgress == null) {
-        inProgress = new InProgressTail();
+        inProgress = new InProgressTail<>(this, tail);
         current.set(inProgress);
-        inProgress.task = tail;
         try {
           // from now one cannot trust tail anymore
           head.runNextTasks();
+          assert inProgress.others == null || inProgress.others.isEmpty();
         } finally {
           current.remove();
         }
       } else {
-        assert inProgress.task != null;
-        Task oldNextTail = inProgress.task.replaceNext(head);
-        assert oldNextTail == null;
-        inProgress.task = tail;
-
+        if (inProgress.combiner == this) {
+          Task oldNextTail = inProgress.task.replaceNext(head);
+          assert oldNextTail == null;
+          inProgress.task = tail;
+        } else {
+          Map<CombinerExecutor<S>, Task> map = inProgress.others;
+          if (map == null) {
+            map = inProgress.others = new HashMap<>(1);
+          }
+          Task task = map.get(this);
+          if (task == null) {
+            map.put(this, tail);
+            try {
+              // from now one cannot trust tail anymore
+              head.runNextTasks();
+            } finally {
+              map.remove(this);
+            }
+          } else {
+            Task oldNextTail = task.replaceNext(head);
+            assert oldNextTail == null;
+            map.put(this, tail);
+          }
+        }
       }
     }
   }
