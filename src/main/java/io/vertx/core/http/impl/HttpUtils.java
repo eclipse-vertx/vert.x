@@ -33,6 +33,7 @@ import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.HostAndPort;
+import io.vertx.core.net.impl.HostAndPortImpl;
 import io.vertx.core.spi.tracing.TagExtractor;
 
 import java.io.File;
@@ -1011,4 +1012,8 @@ public final class HttpUtils {
       || (version == HttpVersion.HTTP_1_0 && request.headers().contains(io.vertx.core.http.HttpHeaders.CONNECTION, io.vertx.core.http.HttpHeaders.KEEP_ALIVE, true));
   }
 
+  public static boolean isValidHostAuthority(String host) {
+    int len = host.length();
+    return HostAndPortImpl.parseHost(host, 0, len) == len;
+  }
 }

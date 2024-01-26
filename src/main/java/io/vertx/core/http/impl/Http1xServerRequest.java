@@ -33,7 +33,6 @@ import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.HostAndPort;
-import io.vertx.core.net.impl.HostAndPortImpl;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
@@ -259,7 +258,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
     if (authority == null) {
       String host = getHeader(HttpHeaderNames.HOST);
       if (host != null) {
-        authority = HostAndPortImpl.parseHostAndPort(host, -1);
+        authority = HostAndPort.parseAuthority(host, -1);
       }
     }
     return authority;
