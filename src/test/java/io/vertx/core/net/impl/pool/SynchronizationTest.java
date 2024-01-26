@@ -10,11 +10,15 @@
  */
 package io.vertx.core.net.impl.pool;
 
+import io.netty.util.concurrent.FastThreadLocal;
 import io.vertx.test.core.AsyncTestBase;
 import org.junit.Test;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -67,13 +71,55 @@ public class SynchronizationTest extends AsyncTestBase {
   }
 
   @Test
+  public void testActionReentrancy2() throws Exception {
+    List<Integer> log = new LinkedList<>();
+    Executor<Object> combiner1 = new CombinerExecutor<>(new Object());
+    Executor<Object> combiner2 = new CombinerExecutor<>(new Object());
+    int[] reentrancy = new int[2];
+    combiner1.submit(state1 -> taskOf(() -> {
+      assertEquals(0, reentrancy[0]++);
+      combiner1.submit(state2 -> taskOf(() -> {
+        assertEquals(0, reentrancy[0]++);
+        log.add(0);
+        reentrancy[0]--;
+      }));
+      combiner2.submit(state2 -> taskOf(() -> {
+        assertEquals(0, reentrancy[1]++);
+        log.add(1);
+        combiner1.submit(state3 -> taskOf(() -> {
+          assertEquals(0, reentrancy[0]++);
+          log.add(2);
+          reentrancy[0]--;
+        }));
+        combiner2.submit(state3 -> taskOf(() -> {
+          assertEquals(0, reentrancy[1]++);
+          log.add(3);
+          reentrancy[1]--;
+        }));
+        reentrancy[1]--;
+      }));
+      reentrancy[0]--;
+    }));
+    assertEquals(0, reentrancy[0]);
+    assertEquals(0, reentrancy[1]);
+    assertEquals(Arrays.asList(1, 3, 0, 2), log);
+  }
+
+  static Task taskOf(Runnable runnable) {
+    return new Task() {
+      @Override
+      public void run() {
+        runnable.run();
+      }
+    };
+  }
+
+  @Test
   public void testFoo() throws Exception {
-
-
     int numThreads = 8;
     int numIter = 1_000 * 100;
     Executor<Object> sync = new CombinerExecutor<>(new Object());
-    Executor.Action action = s -> {
+    Executor.Action<Object> action = s -> {
       burnCPU(10);
       return null;
     };
@@ -95,11 +141,6 @@ public class SynchronizationTest extends AsyncTestBase {
       t.join();
     }
   }
-
-
-
-
-
 
   public static class Utils {
     public static long res = 0; // value sink
@@ -169,5 +210,23 @@ public class SynchronizationTest extends AsyncTestBase {
       };
     });
     assertEquals(3, order.get());
+  }
+
+  @Test
+  public void testFastThreadLocalStability() {
+    CombinerExecutor<Void> executor = new CombinerExecutor<>(null);
+    int expected = io.netty.util.internal.InternalThreadLocalMap.lastVariableIndex();
+    AtomicInteger counter = new AtomicInteger();
+    for (int i = 0;i < 1000;i++) {
+      executor = new CombinerExecutor<>(null);
+      executor.submit(state -> new Task() {
+        @Override
+        public void run() {
+          counter.incrementAndGet();
+        }
+      });
+      assertEquals(i + 1, counter.get());
+    }
+    assertEquals(expected, io.netty.util.internal.InternalThreadLocalMap.lastVariableIndex());
   }
 }

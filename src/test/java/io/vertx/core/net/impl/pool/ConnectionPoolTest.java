@@ -960,14 +960,14 @@ public class ConnectionPoolTest extends VertxTestBase {
     List<Integer> res = Collections.synchronizedList(new LinkedList<>());
     AtomicInteger seq = new AtomicInteger();
     CountDownLatch latch = new CountDownLatch(numAcquires);
+    int[] count = new int[1];
     ConnectionPool<Connection> pool = ConnectionPool.pool(new PoolConnector<Connection>() {
-      int count = 0;
       int reentrancy = 0;
       @Override
       public void connect(ContextInternal context, Listener listener, Handler<AsyncResult<ConnectResult<Connection>>> handler) {
         assertEquals(0, reentrancy++);
         try {
-          int val = count++;
+          int val = count[0]++;
           if (val == 0) {
             // Queue extra requests
             for (int i = 0;i < numAcquires;i++) {
@@ -977,6 +977,7 @@ public class ConnectionPoolTest extends VertxTestBase {
                 latch.countDown();
               }));
             }
+            assertEquals(1, count[0]);
           }
           handler.handle(Future.failedFuture("failure"));
         } finally {
@@ -992,8 +993,79 @@ public class ConnectionPoolTest extends VertxTestBase {
     int num = seq.getAndIncrement();
     pool.acquire(ctx, 0, onFailure(err -> res.add(num)));
     awaitLatch(latch);
+    assertEquals(1 + numAcquires, count[0]);
     List<Integer> expected = IntStream.range(0, numAcquires + 1).boxed().collect(Collectors.toList());
     assertEquals(expected, res);
+  }
+
+  @Test
+  public void testConcurrentPostTasksTrampoline() throws Exception {
+    AtomicReference<ConnectionPool<Connection>> ref1 = new AtomicReference<>();
+    AtomicReference<ConnectionPool<Connection>> ref2 = new AtomicReference<>();
+    ContextInternal ctx = vertx.createEventLoopContext();
+    List<Integer> res = Collections.synchronizedList(new LinkedList<>());
+    CountDownLatch latch = new CountDownLatch(4);
+    ConnectionPool<Connection> pool1 = ConnectionPool.pool(new PoolConnector<Connection>() {
+      int count = 0;
+      int reentrancy = 0;
+      @Override
+      public void connect(ContextInternal context, Listener listener, Handler<AsyncResult<ConnectResult<Connection>>> handler) {
+        assertEquals(0, reentrancy++);
+        try {
+          int val = count++;
+          if (val == 0) {
+            ref1.get().acquire(ctx, 0, onFailure(err -> {
+              res.add(1);
+              latch.countDown();
+            }));
+            ref2.get().acquire(ctx, 0, onFailure(err -> {
+              res.add(2);
+              latch.countDown();
+            }));
+          }
+          handler.handle(Future.failedFuture("failure"));
+        } finally {
+          reentrancy--;
+        }
+      }
+      @Override
+      public boolean isValid(Connection connection) {
+        return true;
+      }
+    }, new int[]{1}, 2);
+    ConnectionPool<Connection> pool2 = ConnectionPool.pool(new PoolConnector<Connection>() {
+      int count = 0;
+      int reentrancy = 0;
+      @Override
+      public void connect(ContextInternal context, Listener listener, Handler<AsyncResult<ConnectResult<Connection>>> handler) {
+        assertEquals(0, reentrancy++);
+        try {
+          int val = count++;
+          if (val == 0) {
+            ref2.get().acquire(ctx, 0, onFailure(err -> {
+              res.add(3);
+              latch.countDown();
+            }));
+            ref1.get().acquire(ctx, 0, onFailure(err -> {
+              res.add(4);
+              latch.countDown();
+            }));
+          }
+          handler.handle(Future.failedFuture("failure"));
+        } finally {
+          reentrancy--;
+        }
+      }
+      @Override
+      public boolean isValid(Connection connection) {
+        return true;
+      }
+    }, new int[]{1}, 2);
+    ref1.set(pool1);
+    ref2.set(pool2);
+    pool1.acquire(ctx, 0, onFailure(err -> res.add(0)));
+    awaitLatch(latch);
+//    assertEquals(Arrays.asList(0, 2, 1, 3, 4), res);
   }
 
   static class Connection {
