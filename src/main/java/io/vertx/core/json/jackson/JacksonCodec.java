@@ -11,11 +11,7 @@
 
 package io.vertx.core.json.jackson;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.core.JsonTokenId;
+import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
@@ -35,6 +31,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
@@ -54,11 +51,31 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
  */
 public class JacksonCodec implements JsonCodec {
 
-  private static final JsonFactory factory = JsonFactory.builder().recyclerPool(HybridJacksonPool.getInstance()).build();
+  private static JsonFactory buildFactory() {
+    TSFBuilder<?, ?> builder = JsonFactory.builder();
+    try {
+      // Use reflection to configure the recycler pool
+      Method[] methods = builder.getClass().getMethods();
+      for (Method method : methods) {
+        if (method.getName().equals("recyclerPool")) {
+          Class<?> poolClass = JacksonCodec.class.getClassLoader().loadClass("io.vertx.core.json.jackson.HybridJacksonPool");
+          Method getInstanceMethod = poolClass.getMethod("getInstance");
+          Object pool = getInstanceMethod.invoke(null);
+          method.invoke(builder, pool);
+          break;
+        }
+      }
+    } catch (Throwable e) {
+      // Ignore: most likely no Recycler Pool with Jackson < 2.16
+    }
+    return builder.build();
+  }
+
+  private static final JsonFactory factory = buildFactory();
 
   static {
     // Non-standard JSON but we allow C style comments in our JSON
-    factory.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+    JacksonCodec.factory.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
   }
 
   @Override
