@@ -54,7 +54,7 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
  */
 public class JacksonCodec implements JsonCodec {
 
-  private static final JsonFactory factory = new JsonFactory();
+  private static final JsonFactory factory = JsonFactory.builder().recyclerPool(HybridJacksonPool.getInstance()).build();
 
   static {
     // Non-standard JSON but we allow C style comments in our JSON
