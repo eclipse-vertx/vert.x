@@ -137,7 +137,7 @@ public interface ContextInternal extends Context {
   /**
    * @return the deployment associated with this context or {@code null}
    */
-  Deployment getDeployment();
+  DeploymentContext getDeployment();
 
   @Override
   VertxInternal owner();
@@ -384,12 +384,12 @@ public interface ContextInternal extends Context {
   }
 
   default String deploymentID() {
-    Deployment deployment = getDeployment();
+    DeploymentContext deployment = getDeployment();
     return deployment != null ? deployment.deploymentID() : null;
   }
 
   default int getInstanceCount() {
-    Deployment deployment = getDeployment();
+    DeploymentContext deployment = getDeployment();
 
     // the no verticle case
     if (deployment == null) {

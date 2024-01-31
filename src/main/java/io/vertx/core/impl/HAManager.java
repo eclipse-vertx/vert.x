@@ -11,7 +11,6 @@
 
 package io.vertx.core.impl;
 
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -25,7 +24,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
@@ -157,7 +155,7 @@ public class HAManager {
 
   // Remove the information on the deployment from the cluster - this is called when an HA module is undeployed
   public void removeFromHA(String depID) {
-    Deployment dep = deploymentManager.getDeployment(depID);
+    DeploymentContext dep = deploymentManager.getDeployment(depID);
     if (dep == null || !dep.deploymentOptions().isHa()) {
       return;
     }
@@ -283,7 +281,7 @@ public class HAManager {
         }
       });
     };
-    verticleFactoryManager.deployVerticle(verticleName, deploymentOptions).map(Deployment::deploymentID).onComplete(wrappedHandler);
+    verticleFactoryManager.deployVerticle(verticleName, deploymentOptions).map(DeploymentContext::deploymentID).onComplete(wrappedHandler);
   }
 
   // A node has joined the cluster
@@ -428,7 +426,7 @@ public class HAManager {
   // Undeploy any HA deploymentIDs now there is no quorum
   private void undeployHADeployments() {
     for (String deploymentID: deploymentManager.deployments()) {
-      Deployment dep = deploymentManager.getDeployment(deploymentID);
+      DeploymentContext dep = deploymentManager.getDeployment(deploymentID);
       if (dep != null) {
         if (dep.deploymentOptions().isHa()) {
           ((VertxImpl)vertx).executeIsolated(v -> {

@@ -90,7 +90,7 @@ class DuplicatedContext implements ContextInternal {
   }
 
   @Override
-  public final Deployment getDeployment() {
+  public final DeploymentContext getDeployment() {
     return delegate.getDeployment();
   }
 

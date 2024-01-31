@@ -49,7 +49,6 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -165,6 +164,11 @@ public abstract class VertxWrapper implements VertxInternal {
   @Override
   public Future<Void> close() {
     return delegate.close();
+  }
+
+  @Override
+  public Future<String> deploy(Callable<Deployment> deployment, DeploymentOptions options) {
+    return delegate.deploy(deployment, options);
   }
 
   @Override
@@ -323,7 +327,7 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public ContextInternal createEventLoopContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
+  public ContextInternal createEventLoopContext(DeploymentContext deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
     return delegate.createEventLoopContext(deployment, closeFuture, workerPool, tccl);
   }
 
@@ -338,7 +342,7 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public ContextInternal createVirtualThreadContext(Deployment deployment, CloseFuture closeFuture, ClassLoader tccl) {
+  public ContextInternal createVirtualThreadContext(DeploymentContext deployment, CloseFuture closeFuture, ClassLoader tccl) {
     return delegate.createVirtualThreadContext(deployment, closeFuture, tccl);
   }
 
@@ -358,7 +362,7 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public ContextInternal createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
+  public ContextInternal createWorkerContext(DeploymentContext deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
     return delegate.createWorkerContext(deployment, closeFuture, workerPool, tccl);
   }
 
@@ -403,7 +407,7 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public Deployment getDeployment(String deploymentID) {
+  public DeploymentContext getDeployment(String deploymentID) {
     return delegate.getDeployment(deploymentID);
   }
 

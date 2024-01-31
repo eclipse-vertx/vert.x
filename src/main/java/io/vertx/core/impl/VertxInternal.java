@@ -107,7 +107,7 @@ public interface VertxInternal extends Vertx {
   /**
    * @return event loop context
    */
-  ContextInternal createEventLoopContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl);
+  ContextInternal createEventLoopContext(DeploymentContext deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl);
 
   /**
    * @return event loop context
@@ -122,7 +122,7 @@ public interface VertxInternal extends Vertx {
   /**
    * @return worker context
    */
-  ContextInternal createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl);
+  ContextInternal createWorkerContext(DeploymentContext deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl);
 
   /**
    * @return worker context
@@ -137,7 +137,7 @@ public interface VertxInternal extends Vertx {
   /**
    * @return virtual thread context
    */
-  ContextInternal createVirtualThreadContext(Deployment deployment, CloseFuture closeFuture, ClassLoader tccl);
+  ContextInternal createVirtualThreadContext(DeploymentContext deployment, CloseFuture closeFuture, ClassLoader tccl);
 
   /**
    * @return virtual thread context
@@ -167,7 +167,7 @@ public interface VertxInternal extends Vertx {
 
   void simulateKill();
 
-  Deployment getDeployment(String deploymentID);
+  DeploymentContext getDeployment(String deploymentID);
 
   void failoverCompleteHandler(FailoverCompleteHandler failoverCompleteHandler);
 

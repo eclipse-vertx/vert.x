@@ -38,7 +38,7 @@ public final class ContextImpl implements ContextInternal {
   private final ThreadingModel threadingModel;
   private final VertxInternal owner;
   private final JsonObject config;
-  private final Deployment deployment;
+  private final DeploymentContext deployment;
   private final CloseFuture closeFuture;
   private final ClassLoader tccl;
   private final EventLoop eventLoop;
@@ -58,7 +58,7 @@ public final class ContextImpl implements ContextInternal {
                         WorkerPool internalWorkerPool,
                         WorkerPool workerPool,
                         TaskQueue orderedTasks,
-                        Deployment deployment,
+                        DeploymentContext deployment,
                         CloseFuture closeFuture,
                         ClassLoader tccl) {
     this.threadingModel = threadingModel;
@@ -75,7 +75,7 @@ public final class ContextImpl implements ContextInternal {
     this.internalOrderedTasks = new TaskQueue();
   }
 
-  public Deployment getDeployment() {
+  public DeploymentContext getDeployment() {
     return deployment;
   }
 

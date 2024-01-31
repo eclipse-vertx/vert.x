@@ -39,7 +39,7 @@ public class DeploymentManager {
   private static final Logger log = LoggerFactory.getLogger(DeploymentManager.class);
 
   private final VertxImpl vertx;
-  private final Map<String, Deployment> deployments = new ConcurrentHashMap<>();
+  private final Map<String, DeploymentContext> deployments = new ConcurrentHashMap<>();
 
   public DeploymentManager(VertxImpl vertx) {
     this.vertx = vertx;
@@ -49,7 +49,7 @@ public class DeploymentManager {
     return UUID.randomUUID().toString();
   }
 
-  public Future<String> deployVerticle(Callable<Verticle> verticleSupplier, DeploymentOptions options) {
+  public Future<String> deployVerticle(Callable<Deployment> verticleSupplier, DeploymentOptions options) {
     if (options.getInstances() < 1) {
       throw new IllegalArgumentException("Can't specify < 1 instances to deploy");
     }
@@ -63,11 +63,11 @@ public class DeploymentManager {
       }
     }
     return doDeploy(options, v -> "java:" + v.getClass().getName(), currentContext, currentContext, cl, verticleSupplier)
-      .map(Deployment::deploymentID);
+      .map(DeploymentContext::deploymentID);
   }
 
   public Future<Void> undeployVerticle(String deploymentID) {
-    Deployment deployment = deployments.get(deploymentID);
+    DeploymentContext deployment = deployments.get(deploymentID);
     ContextInternal currentContext = vertx.getOrCreateContext();
     if (deployment == null) {
       return currentContext.failedFuture(new IllegalStateException("Unknown deployment"));
@@ -80,7 +80,7 @@ public class DeploymentManager {
     return Collections.unmodifiableSet(deployments.keySet());
   }
 
-  public Deployment getDeployment(String deploymentID) {
+  public DeploymentContext getDeployment(String deploymentID) {
     return deployments.get(deploymentID);
   }
 
@@ -89,7 +89,7 @@ public class DeploymentManager {
 
     // We only deploy the top level verticles as the children will be undeployed when the parent is
     Set<String> deploymentIDs = new HashSet<>();
-    for (Map.Entry<String, Deployment> entry: deployments.entrySet()) {
+    for (Map.Entry<String, DeploymentContext> entry: deployments.entrySet()) {
       if (!entry.getValue().isChild()) {
         deploymentIDs.add(entry.getKey());
       }
@@ -115,15 +115,15 @@ public class DeploymentManager {
     }
   }
 
-  Future<Deployment> doDeploy(DeploymentOptions options,
-                                  Function<Verticle, String> identifierProvider,
-                                  ContextInternal parentContext,
-                                  ContextInternal callingContext,
-                                  ClassLoader tccl, Callable<Verticle> verticleSupplier) {
+  Future<DeploymentContext> doDeploy(DeploymentOptions options,
+                                     Function<Deployment, String> identifierProvider,
+                                     ContextInternal parentContext,
+                                     ContextInternal callingContext,
+                                     ClassLoader tccl, Callable<Deployment> verticleSupplier) {
     int nbInstances = options.getInstances();
-    Set<Verticle> verticles = Collections.newSetFromMap(new IdentityHashMap<>());
+    Set<Deployment> verticles = Collections.newSetFromMap(new IdentityHashMap<>());
     for (int i = 0; i < nbInstances; i++) {
-      Verticle verticle;
+      Deployment verticle;
       try {
         verticle = verticleSupplier.call();
       } catch (Exception e) {
@@ -137,17 +137,17 @@ public class DeploymentManager {
     if (verticles.size() != nbInstances) {
       return Future.failedFuture("Same verticle supplied more than once");
     }
-    Verticle[] verticlesArray = verticles.toArray(new Verticle[0]);
+    Deployment[] verticlesArray = verticles.toArray(new Deployment[0]);
     return doDeploy(identifierProvider.apply(verticlesArray[0]), options, parentContext, callingContext, tccl, verticlesArray);
   }
 
-  private Future<Deployment> doDeploy(String identifier,
-                        DeploymentOptions options,
-                        ContextInternal parentContext,
-                        ContextInternal callingContext,
-                        ClassLoader tccl, Verticle... verticles) {
-    Promise<Deployment> promise = callingContext.promise();
-    Deployment parent = parentContext.getDeployment();
+  private Future<DeploymentContext> doDeploy(String identifier,
+                                             DeploymentOptions options,
+                                             ContextInternal parentContext,
+                                             ContextInternal callingContext,
+                                             ClassLoader tccl, Deployment... verticles) {
+    Promise<DeploymentContext> promise = callingContext.promise();
+    DeploymentContext parent = parentContext.getDeployment();
     String deploymentID = generateDeploymentID();
 
     AtomicInteger deployCount = new AtomicInteger();
@@ -166,8 +166,8 @@ public class DeploymentManager {
         return callingContext.failedFuture("This Java runtime does not support virtual threads");
       }
     }
-    DeploymentImpl deployment = new DeploymentImpl(parent, workerPool, deploymentID, identifier, options);
-    for (Verticle verticle: verticles) {
+    DeploymentContextImpl deployment = new DeploymentContextImpl(parent, workerPool, deploymentID, identifier, options);
+    for (Deployment verticle: verticles) {
       CloseFuture closeFuture = new CloseFuture(log);
       ContextImpl context;
       switch (mode) {
@@ -181,14 +181,11 @@ public class DeploymentManager {
           context = vertx.createVirtualThreadContext(deployment, closeFuture, tccl);
           break;
       }
-      VerticleHolder holder = new VerticleHolder(verticle, context, closeFuture);
+      DeploymentHolder holder = new DeploymentHolder(verticle, context, closeFuture);
       deployment.addVerticle(holder);
       context.runOnContext(v -> {
         try {
-          verticle.init(vertx, context);
-          Promise<Void> startPromise = context.promise();
-          Future<Void> startFuture = startPromise.future();
-          verticle.start(startPromise);
+          Future<?> startFuture = verticle.start(context);
           startFuture.onComplete(ar -> {
             if (ar.succeeded()) {
               if (parent != null) {
@@ -218,13 +215,13 @@ public class DeploymentManager {
     return promise.future();
   }
 
-  static class VerticleHolder {
+  static class DeploymentHolder {
 
-    final Verticle verticle;
+    final Deployment verticle;
     final ContextImpl context;
     final CloseFuture closeFuture;
 
-    VerticleHolder(Verticle verticle, ContextImpl context, CloseFuture closeFuture) {
+    DeploymentHolder(Deployment verticle, ContextImpl context, CloseFuture closeFuture) {
       this.verticle = verticle;
       this.context = context;
       this.closeFuture = closeFuture;
@@ -235,23 +232,23 @@ public class DeploymentManager {
     }
   }
 
-  private class DeploymentImpl implements Deployment {
+  private class DeploymentContextImpl implements DeploymentContext {
 
     private static final int ST_DEPLOYED = 0, ST_UNDEPLOYING = 1, ST_UNDEPLOYED = 2;
 
-    private final Deployment parent;
+    private final DeploymentContext parent;
     private final String deploymentID;
     private final JsonObject conf;
     private final String verticleIdentifier;
-    private final List<VerticleHolder> verticles = new CopyOnWriteArrayList<>();
-    private final Set<Deployment> children = ConcurrentHashMap.newKeySet();
+    private final List<DeploymentHolder> verticles = new CopyOnWriteArrayList<>();
+    private final Set<DeploymentContext> children = ConcurrentHashMap.newKeySet();
     private final WorkerPool workerPool;
     private final DeploymentOptions options;
     private Handler<Void> undeployHandler;
     private int status = ST_DEPLOYED;
     private volatile boolean child;
 
-    private DeploymentImpl(Deployment parent, WorkerPool workerPool, String deploymentID, String verticleIdentifier, DeploymentOptions options) {
+    private DeploymentContextImpl(DeploymentContext parent, WorkerPool workerPool, String deploymentID, String verticleIdentifier, DeploymentOptions options) {
       this.parent = parent;
       this.deploymentID = deploymentID;
       this.conf = options.getConfig() != null ? options.getConfig().copy() : new JsonObject();
@@ -260,11 +257,11 @@ public class DeploymentManager {
       this.workerPool = workerPool;
     }
 
-    public void addVerticle(VerticleHolder holder) {
+    public void addVerticle(DeploymentHolder holder) {
       verticles.add(holder);
     }
 
-    private synchronized void rollback(ContextInternal callingContext, Promise<Deployment> completionPromise, ContextImpl context, VerticleHolder closeFuture, Throwable cause) {
+    private synchronized void rollback(ContextInternal callingContext, Promise<DeploymentContext> completionPromise, ContextImpl context, DeploymentHolder closeFuture, Throwable cause) {
       if (status == ST_DEPLOYED) {
         status = ST_UNDEPLOYING;
         doUndeployChildren(callingContext).onComplete(childrenResult -> {
@@ -272,7 +269,7 @@ public class DeploymentManager {
             workerPool.close();
           }
           Handler<Void> handler;
-          synchronized (DeploymentImpl.this) {
+          synchronized (DeploymentContextImpl.this) {
             status = ST_UNDEPLOYED;
             handler = undeployHandler;
             undeployHandler = null;
@@ -287,7 +284,7 @@ public class DeploymentManager {
           if (childrenResult.failed()) {
             completionPromise.fail(cause);
           } else {
-            closeFuture.close().transform(ar -> Future.<Deployment>failedFuture(cause)).onComplete(completionPromise);
+            closeFuture.close().transform(ar -> Future.<DeploymentContext>failedFuture(cause)).onComplete(completionPromise);
           }
         });
       }
@@ -296,7 +293,7 @@ public class DeploymentManager {
     private synchronized Future<Void> doUndeployChildren(ContextInternal undeployingContext) {
       if (!children.isEmpty()) {
         List<Future<?>> childFuts = new ArrayList<>();
-        for (Deployment childDeployment: new HashSet<>(children)) {
+        for (DeploymentContext childDeployment: new HashSet<>(children)) {
           Promise<Void> p = Promise.promise();
           childFuts.add(p.future());
           childDeployment.doUndeploy(undeployingContext).onComplete(ar -> {
@@ -323,27 +320,33 @@ public class DeploymentManager {
         if (parent != null) {
           parent.removeChild(this);
         }
-        for (VerticleHolder verticleHolder: verticles) {
+        for (DeploymentHolder verticleHolder: verticles) {
           ContextImpl context = verticleHolder.context;
           Promise<Void> p = Promise.promise();
           undeployFutures.add(p.future());
           context.runOnContext(v -> {
-            Promise<Void> stopPromise = undeployingContext.promise();
-            Future<Void> stopFuture = stopPromise.future();
+            Future<?> stopFuture;
+            try {
+              stopFuture = verticleHolder.verticle.stop(context);
+            } catch (Throwable t) {
+              deployments.remove(deploymentID);
+              verticleHolder
+                .close()
+                .onFailure(err -> log.error("Failed to run close hook", err))
+                .onComplete(ar -> {
+                  p.fail(t);
+                });
+              return;
+            }
             stopFuture
               .eventually(() -> {
                 deployments.remove(deploymentID);
                 return verticleHolder
                   .close()
                   .onFailure(err -> log.error("Failed to run close hook", err));
-              }).onComplete(p);
-            try {
-              verticleHolder.verticle.stop(stopPromise);
-            } catch (Throwable t) {
-              if (!stopPromise.tryFail(t)) {
-                undeployingContext.reportException(t);
-              }
-            }
+              }).onComplete(ar -> {
+                p.handle(ar.mapEmpty());
+              });
           });
         }
         Promise<Void> resolvingPromise = undeployingContext.promise();
@@ -377,7 +380,7 @@ public class DeploymentManager {
     }
 
     @Override
-    public synchronized boolean addChild(Deployment deployment) {
+    public synchronized boolean addChild(DeploymentContext deployment) {
       if (status == ST_DEPLOYED) {
         children.add(deployment);
         return true;
@@ -387,23 +390,23 @@ public class DeploymentManager {
     }
 
     @Override
-    public void removeChild(Deployment deployment) {
+    public void removeChild(DeploymentContext deployment) {
       children.remove(deployment);
     }
 
     @Override
     public Set<Context> getContexts() {
       Set<Context> contexts = new HashSet<>();
-      for (VerticleHolder holder: verticles) {
+      for (DeploymentHolder holder: verticles) {
         contexts.add(holder.context);
       }
       return contexts;
     }
 
     @Override
-    public Set<Verticle> getVerticles() {
-      Set<Verticle> verts = new HashSet<>();
-      for (VerticleHolder holder: verticles) {
+    public Set<Deployment> getVerticles() {
+      Set<Deployment> verts = new HashSet<>();
+      for (DeploymentHolder holder: verticles) {
         verts.add(holder.verticle);
       }
       return verts;

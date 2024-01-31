@@ -540,12 +540,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
   }
 
-  private ContextImpl createEventLoopContext(EventLoop eventLoop, CloseFuture closeFuture, WorkerPool workerPool, Deployment deployment, ClassLoader tccl) {
+  private ContextImpl createEventLoopContext(EventLoop eventLoop, CloseFuture closeFuture, WorkerPool workerPool, DeploymentContext deployment, ClassLoader tccl) {
     return new ContextImpl(this, ThreadingModel.EVENT_LOOP, eventLoop, new EventLoopExecutor(eventLoop), internalWorkerPool, workerPool != null ? workerPool : this.workerPool, new TaskQueue(), deployment, closeFuture, disableTCCL ? null : tccl);
   }
 
   @Override
-  public ContextImpl createEventLoopContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
+  public ContextImpl createEventLoopContext(DeploymentContext deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
     return createEventLoopContext(eventLoopGroup.next(), closeFuture, workerPool, deployment, tccl);
   }
 
@@ -559,7 +559,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return createEventLoopContext(null, closeFuture, null, Thread.currentThread().getContextClassLoader());
   }
 
-  private ContextImpl createWorkerContext(EventLoop eventLoop, CloseFuture closeFuture, WorkerPool workerPool, Deployment deployment, ClassLoader tccl) {
+  private ContextImpl createWorkerContext(EventLoop eventLoop, CloseFuture closeFuture, WorkerPool workerPool, DeploymentContext deployment, ClassLoader tccl) {
     TaskQueue orderedTasks = new TaskQueue();
     WorkerPool wp = workerPool != null ? workerPool : this.workerPool;
     return new ContextImpl(this, ThreadingModel.WORKER, eventLoop, new WorkerExecutor(wp, orderedTasks), internalWorkerPool, wp, orderedTasks, deployment, closeFuture, disableTCCL ? null : tccl);
@@ -571,7 +571,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public ContextImpl createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
+  public ContextImpl createWorkerContext(DeploymentContext deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
     return createWorkerContext(eventLoopGroup.next(), closeFuture, workerPool, deployment, tccl);
   }
 
@@ -580,7 +580,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return createWorkerContext(null, closeFuture, null, Thread.currentThread().getContextClassLoader());
   }
 
-  private ContextImpl createVirtualThreadContext(EventLoop eventLoop, CloseFuture closeFuture, Deployment deployment, ClassLoader tccl) {
+  private ContextImpl createVirtualThreadContext(EventLoop eventLoop, CloseFuture closeFuture, DeploymentContext deployment, ClassLoader tccl) {
     if (!VertxInternal.isVirtualThreadAvailable()) {
       throw new IllegalStateException("This Java runtime does not support virtual threads");
     }
@@ -589,7 +589,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public ContextImpl createVirtualThreadContext(Deployment deployment, CloseFuture closeFuture, ClassLoader tccl) {
+  public ContextImpl createVirtualThreadContext(DeploymentContext deployment, CloseFuture closeFuture, ClassLoader tccl) {
     return createVirtualThreadContext(eventLoopGroup.next(), closeFuture, deployment, tccl);
   }
 
@@ -743,7 +743,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       haManager().deployVerticle(name, options, promise);
       return promise.future();
     } else {
-      return verticleManager.deployVerticle(name, options).map(Deployment::deploymentID);
+      return verticleManager.deployVerticle(name, options).map(DeploymentContext::deploymentID);
     }
   }
 
@@ -765,7 +765,43 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return deployVerticle((Callable<Verticle>) verticleSupplier::get, options);
   }
 
+  public static class VerticleDeploymentProvider implements Callable<Deployment> {
+
+    final Callable<Verticle> provider;
+    final Map<Verticle, Deployment> deploymentMap = new IdentityHashMap<>();
+
+    public VerticleDeploymentProvider(Callable<Verticle> provider) {
+      this.provider = provider;
+    }
+
+    @Override
+    public Deployment call() throws Exception {
+      Verticle verticle = provider.call();
+        return deploymentMap.computeIfAbsent(verticle, v -> new Deployment() {
+            @Override
+            public Future<?> start(Context context) throws Exception {
+                ContextInternal ci = (ContextInternal) context;
+                Promise<Void> promise = ci.promise();
+                v.init(context.owner(), context);
+                v.start(promise);
+                return promise.future();
+            }
+            @Override
+            public Future<?> stop(Context context) throws Exception {
+                ContextInternal ci = (ContextInternal) context;
+                Promise<Void> promise = ci.promise();
+                v.stop(promise);
+                return promise.future();
+            }
+        });
+    }
+  }
+
   private Future<String> deployVerticle(Callable<Verticle> verticleSupplier, DeploymentOptions options) {
+    return deploy(new VerticleDeploymentProvider(verticleSupplier), options);
+  }
+
+  public Future<String> deploy(Callable<Deployment> verticleSupplier, DeploymentOptions options) {
     boolean closed;
     synchronized (this) {
       closed = this.closed;
@@ -831,7 +867,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public Deployment getDeployment(String deploymentID) {
+  public DeploymentContext getDeployment(String deploymentID) {
     return deploymentManager.getDeployment(deploymentID);
   }
 

@@ -427,6 +427,56 @@ public interface Vertx extends Measured {
   Future<Void> close();
 
   /**
+   * Deploy a deployment unit that you have created yourself.
+   * <p>
+   * Vert.x will assign the unit a context and start the deployment.
+   * <p>
+   * The actual deploy happens asynchronously and may not complete until after the call has returned.
+   * <p>
+   * If the deployment is successful the result will contain a string representing the unique deployment ID of the
+   * unit.
+   * <p>
+   * This deployment ID can subsequently be used to undeploy the unit.
+   *
+   * @param unit  the unit to deploy.
+   * @return a future completed with the result
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  default Future<String> deploy(Deployment unit) {
+    return deploy(unit, new DeploymentOptions());
+  }
+
+  /**
+   * Like {@link #deploy(Deployment)} but {@link io.vertx.core.DeploymentOptions} are provided to configure the
+   * deployment.
+   *
+   * @param unit  the deployment unit to deploy
+   * @param options  the deployment options.
+   * @return a future completed with the result
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  default Future<String> deploy(Deployment unit, DeploymentOptions options) {
+    if (options.getInstances() != 1) {
+      throw new IllegalArgumentException("Can't specify > 1 unit for already created deployment");
+    }
+    return deploy(() -> unit, options);
+  }
+
+  /**
+   * Like {@link #deploy(Deployment, DeploymentOptions)} but {@link Deployment} unit is created by invoking the
+   * {@code supplier}.
+   * <p>
+   * The supplier will be invoked as many times as {@link DeploymentOptions#getInstances()}.
+   * It must not return the same instance twice.
+   * <p>
+   * Note that the supplier will be invoked on the caller thread.
+   *
+   * @return a future completed with the result
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  Future<String> deploy(Callable<Deployment> supplier, DeploymentOptions options);
+
+  /**
    * Deploy a verticle instance that you have created yourself.
    * <p>
    * Vert.x will assign the verticle a context and start the verticle.
