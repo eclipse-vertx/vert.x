@@ -11,7 +11,13 @@
 
 package io.vertx.core.impl;
 
-import io.vertx.core.*;
+import io.vertx.core.Deployment;
+import io.vertx.core.Promise;
+import io.vertx.core.Future;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.ThreadingModel;
+import io.vertx.core.Handler;
+import io.vertx.core.Context;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -115,7 +121,7 @@ public class DeploymentManager {
     }
   }
 
-  Future<DeploymentContext> doDeploy(DeploymentOptions options,
+  public Future<DeploymentContext> doDeploy(DeploymentOptions options,
                                      Function<Deployment, String> identifierProvider,
                                      ContextInternal parentContext,
                                      ContextInternal callingContext,

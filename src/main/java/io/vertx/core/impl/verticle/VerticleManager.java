@@ -8,13 +8,17 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.impl;
+package io.vertx.core.impl.verticle;
 
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.ServiceHelper;
 import io.vertx.core.Verticle;
+import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.DeploymentContext;
+import io.vertx.core.impl.DeploymentManager;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.spi.VerticleFactory;
 
 import java.util.ArrayList;
@@ -200,7 +204,7 @@ public class VerticleManager {
       return Future.failedFuture(e);
     }
     return p.future()
-      .compose(callable -> deploymentManager.doDeploy(options, v -> identifier, parentContext, callingContext, cl, new VertxImpl.VerticleDeploymentProvider(callable)));
+      .compose(callable -> deploymentManager.doDeploy(options, v -> identifier, parentContext, callingContext, cl, new VerticleDeploymentProvider(callable)));
   }
 
   static ClassLoader getCurrentClassLoader() {

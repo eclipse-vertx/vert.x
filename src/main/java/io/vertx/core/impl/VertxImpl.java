@@ -34,6 +34,8 @@ import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.*;
 import io.vertx.core.impl.btc.BlockedThreadChecker;
+import io.vertx.core.impl.verticle.VerticleDeploymentProvider;
+import io.vertx.core.impl.verticle.VerticleManager;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.*;
 import io.vertx.core.impl.transports.JDKTransport;
@@ -763,38 +765,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public Future<String> deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options) {
     return deployVerticle((Callable<Verticle>) verticleSupplier::get, options);
-  }
-
-  public static class VerticleDeploymentProvider implements Callable<Deployment> {
-
-    final Callable<Verticle> provider;
-    final Map<Verticle, Deployment> deploymentMap = new IdentityHashMap<>();
-
-    public VerticleDeploymentProvider(Callable<Verticle> provider) {
-      this.provider = provider;
-    }
-
-    @Override
-    public Deployment call() throws Exception {
-      Verticle verticle = provider.call();
-        return deploymentMap.computeIfAbsent(verticle, v -> new Deployment() {
-            @Override
-            public Future<?> start(Context context) throws Exception {
-                ContextInternal ci = (ContextInternal) context;
-                Promise<Void> promise = ci.promise();
-                v.init(context.owner(), context);
-                v.start(promise);
-                return promise.future();
-            }
-            @Override
-            public Future<?> stop(Context context) throws Exception {
-                ContextInternal ci = (ContextInternal) context;
-                Promise<Void> promise = ci.promise();
-                v.stop(promise);
-                return promise.future();
-            }
-        });
-    }
   }
 
   private Future<String> deployVerticle(Callable<Verticle> verticleSupplier, DeploymentOptions options) {
