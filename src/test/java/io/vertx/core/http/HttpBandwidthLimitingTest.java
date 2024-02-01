@@ -54,22 +54,27 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
 
     Function<Vertx, HttpServer> http1ServerFactory = (v) -> Providers.http1Server(v, INBOUND_LIMIT, OUTBOUND_LIMIT);
     Function<Vertx, HttpServer> http2ServerFactory = (v) -> Providers.http2Server(v, INBOUND_LIMIT, OUTBOUND_LIMIT);
+    Function<Vertx, HttpServer> http1NonTrafficShapedServerFactory = (v) -> Providers.http1Server(v, 0, 0);
+    Function<Vertx, HttpServer> http2NonTrafficShapedServerFactory = (v) -> Providers.http1Server(v, 0, 0);
     Function<Vertx, HttpClient> http1ClientFactory = (v) -> v.createHttpClient();
     Function<Vertx, HttpClient> http2ClientFactory = (v) -> v.createHttpClient(createHttp2ClientOptions());
 
     return Arrays.asList(new Object[][] {
-      { 1.1, http1ServerFactory, http1ClientFactory },
-      { 2.0, http2ServerFactory, http2ClientFactory }
+      { 1.1, http1ServerFactory, http1ClientFactory, http1NonTrafficShapedServerFactory },
+      { 2.0, http2ServerFactory, http2ClientFactory, http2NonTrafficShapedServerFactory }
     });
   }
 
   private Function<Vertx, HttpServer> serverFactory;
   private Function<Vertx, HttpClient> clientFactory;
+  private Function<Vertx, HttpServer> nonTrafficShapedServerFactory;
 
   public HttpBandwidthLimitingTest(double protoVersion, Function<Vertx, HttpServer> serverFactory,
-                                   Function<Vertx, HttpClient> clientFactory) {
+                                   Function<Vertx, HttpClient> clientFactory,
+                                   Function<Vertx, HttpServer> nonTrafficShapedServerFactory) {
     this.serverFactory = serverFactory;
     this.clientFactory = clientFactory;
+    this.nonTrafficShapedServerFactory = nonTrafficShapedServerFactory;
   }
 
   @Before
@@ -198,6 +203,63 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
     Assert.assertTrue(elapsedMillis > expectedTimeMillis(totalReceivedLength.get(), OUTBOUND_LIMIT)); // because there are simultaneous 2 requests
   }
 
+  @Test
+  public void testDynamicOutboundRateUpdate() throws Exception {
+    Buffer expectedBuffer = TestUtils.randomBuffer(TEST_CONTENT_SIZE);
+
+    HttpServer testServer = serverFactory.apply(vertx);
+    testServer.requestHandler(HANDLERS.bufferRead(expectedBuffer));
+    startServer(testServer);
+
+    // update outbound rate to twice the limit
+    TrafficShapingOptions trafficOptions = new TrafficShapingOptions()
+                                             .setInboundGlobalBandwidth(INBOUND_LIMIT) // unchanged
+                                             .setOutboundGlobalBandwidth(2 * OUTBOUND_LIMIT);
+    testServer.updateTrafficShapingOptions(trafficOptions);
+
+    long startTime = System.nanoTime();
+    HttpClient testClient = clientFactory.apply(vertx);
+    read(expectedBuffer, testServer, testClient);
+    await();
+    long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
+
+    Assert.assertTrue(elapsedMillis < expectedUpperBoundTimeMillis(TEST_CONTENT_SIZE, OUTBOUND_LIMIT));
+  }
+
+  @Test
+  public void testDynamicInboundRateUpdate() throws Exception {
+    Buffer expectedBuffer = TestUtils.randomBuffer((TEST_CONTENT_SIZE));
+
+    HttpServer testServer = serverFactory.apply(vertx);
+    testServer.requestHandler(HANDLERS.bufferWrite(expectedBuffer));
+    startServer(testServer);
+
+    // update inbound rate to twice the limit
+    TrafficShapingOptions trafficOptions = new TrafficShapingOptions()
+                                             .setOutboundGlobalBandwidth(OUTBOUND_LIMIT) // unchanged
+                                             .setInboundGlobalBandwidth(2 * INBOUND_LIMIT);
+    testServer.updateTrafficShapingOptions(trafficOptions);
+
+    long startTime = System.nanoTime();
+    HttpClient testClient = clientFactory.apply(vertx);
+    write(expectedBuffer, testServer, testClient);
+    await();
+    long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
+
+    Assert.assertTrue(elapsedMillis < expectedUpperBoundTimeMillis(TEST_CONTENT_SIZE, INBOUND_LIMIT));
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testRateUpdateWhenServerStartedWithoutTrafficShaping() {
+    HttpServer testServer = nonTrafficShapedServerFactory.apply(vertx);
+
+    // update inbound rate to twice the limit
+    TrafficShapingOptions trafficOptions = new TrafficShapingOptions()
+                                             .setOutboundGlobalBandwidth(OUTBOUND_LIMIT)
+                                             .setInboundGlobalBandwidth(2 * INBOUND_LIMIT);
+    testServer.updateTrafficShapingOptions(trafficOptions);
+  }
+
   /**
    * The throttling takes a while to kick in so the expected time cannot be strict especially
    * for small data sizes in these tests.
@@ -208,6 +270,10 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
    */
   private long expectedTimeMillis(long size, int rate) {
     return (long) (TimeUnit.MILLISECONDS.convert(( size / rate), TimeUnit.SECONDS) * 0.5); // multiplied by 0.5 to be more tolerant of time pauses during CI runs
+  }
+
+  private long expectedUpperBoundTimeMillis(long size, int rate) {
+    return TimeUnit.MILLISECONDS.convert(( size / rate), TimeUnit.SECONDS); // Since existing rate will be upperbound, runs should complete by this time
   }
 
   private void read(Buffer expected, HttpServer server, HttpClient client) {
@@ -279,19 +345,25 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
     private static HttpServer http1Server(Vertx vertx, int inboundLimit, int outboundLimit) {
       HttpServerOptions options = new HttpServerOptions()
                                     .setHost(DEFAULT_HTTP_HOST)
-                                    .setPort(DEFAULT_HTTP_PORT)
-                                    .setTrafficShapingOptions(new TrafficShapingOptions()
-                                                                .setInboundGlobalBandwidth(inboundLimit)
-                                                                .setOutboundGlobalBandwidth(outboundLimit));
+                                    .setPort(DEFAULT_HTTP_PORT);
+
+      if (inboundLimit != 0 || outboundLimit != 0) {
+        options.setTrafficShapingOptions(new TrafficShapingOptions()
+                                           .setInboundGlobalBandwidth(inboundLimit)
+                                           .setOutboundGlobalBandwidth(outboundLimit));
+      }
 
       return vertx.createHttpServer(options);
     }
 
     private static HttpServer http2Server(Vertx vertx, int inboundLimit, int outboundLimit) {
-      HttpServerOptions options = createHttp2ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST)
-                                    .setTrafficShapingOptions(new TrafficShapingOptions()
-                                                                .setInboundGlobalBandwidth(inboundLimit)
-                                                                .setOutboundGlobalBandwidth(outboundLimit));
+      HttpServerOptions options = createHttp2ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
+
+      if (inboundLimit != 0 || outboundLimit != 0) {
+        options.setTrafficShapingOptions(new TrafficShapingOptions()
+                                           .setInboundGlobalBandwidth(inboundLimit)
+                                           .setOutboundGlobalBandwidth(outboundLimit));
+      }
 
       return vertx.createHttpServer(options);
     }

@@ -105,11 +105,11 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
       return null;
     }
     GlobalTrafficShapingHandler trafficShapingHandler;
-    if (options.getMaxDelayToWait() != 0 && options.getCheckIntervalForStats() != 0) {
+    if (options.getMaxDelayToWait() != 0 && options.getCheckIntervalForStatsTimeUnit() != null) {
       long maxDelayToWaitInMillis = options.getMaxDelayToWaitTimeUnit().toMillis(options.getMaxDelayToWait());
       long checkIntervalForStatsInMillis = options.getCheckIntervalForStatsTimeUnit().toMillis(options.getCheckIntervalForStats());
       trafficShapingHandler = new GlobalTrafficShapingHandler(eventLoopGroup, options.getOutboundGlobalBandwidth(), options.getInboundGlobalBandwidth(), checkIntervalForStatsInMillis, maxDelayToWaitInMillis);
-    } else if (options.getCheckIntervalForStats() != 0) {
+    } else if (options.getCheckIntervalForStatsTimeUnit() != null) {
       long checkIntervalForStatsInMillis = options.getCheckIntervalForStatsTimeUnit().toMillis(options.getCheckIntervalForStats());
       trafficShapingHandler = new GlobalTrafficShapingHandler(eventLoopGroup, options.getOutboundGlobalBandwidth(), options.getInboundGlobalBandwidth(), checkIntervalForStatsInMillis);
     } else {
@@ -159,6 +159,26 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
         }
       });
       return fut.map(res -> res != current);
+    }
+  }
+
+  public void updateTrafficShapingOptions(TrafficShapingOptions options) {
+    if (options == null) {
+      throw new IllegalArgumentException("Invalid null value passed for traffic shaping options update");
+    }
+    if (trafficShapingHandler == null) {
+      throw new IllegalArgumentException("Unable to update traffic shaping options because the server was not configured " +
+                                         "to use traffic shaping during startup");
+    }
+    TCPServerBase server = actualServer;
+    if (server != null && server != this) {
+      server.updateTrafficShapingOptions(options);
+    } else {
+      if (options.getCheckIntervalForStatsTimeUnit() != null) {
+        trafficShapingHandler.configure(options.getOutboundGlobalBandwidth(), options.getInboundGlobalBandwidth(), options.getCheckIntervalForStats());
+      } else {
+        trafficShapingHandler.configure(options.getOutboundGlobalBandwidth(), options.getInboundGlobalBandwidth());
+      }
     }
   }
 
