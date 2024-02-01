@@ -21,6 +21,7 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.metrics.Measured;
 import io.vertx.core.net.SSLOptions;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.TrafficShapingOptions;
 import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.streams.ReadStream;
 
@@ -181,6 +182,14 @@ public interface HttpServer extends Measured {
       fut.onComplete(handler);
     }
   }
+
+  /**
+   * Update traffic shaping options {@code options}, the update happens if valid values are passed for traffic
+   * shaping options. This update happens synchronously and at best effort for rate update to take effect immediately.
+   *
+   * @param options the new traffic shaping options
+   */
+  void updateTrafficShapingOptions(TrafficShapingOptions options);
 
   /**
    * Tell the server to start listening. The server will listen on the port and host specified in the

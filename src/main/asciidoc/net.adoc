@@ -365,6 +365,18 @@ through {@link io.vertx.core.net.NetServerOptions} and for HttpServer it can be 
 {@link examples.NetExamples#configureTrafficShapingForHttpServer}
 ----
 
+These traffic shaping options can also be dynamically updated after server start.
+
+[source,$lang]
+----
+{@link examples.NetExamples#dynamicallyUpdateTrafficShapingForNetServer}
+----
+
+[source,$lang]
+----
+{@link examples.NetExamples#dynamicallyUpdateTrafficShapingForHttpServer}
+----
+
 [[ssl]]
 === Configuring servers and clients to work with SSL/TLS
 

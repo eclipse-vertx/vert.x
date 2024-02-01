@@ -139,14 +139,14 @@ public class TrafficShapingOptions {
   }
 
   /**
-   * Set the delay between two computations of performances for channels or 0 if no stats are to be computed
+   * Set the delay between two computations of performances for channels
    *
    * @param checkIntervalForStats delay between two computations of performances
    * @return a reference to this, so the API can be used fluently
    */
   public TrafficShapingOptions setCheckIntervalForStats(long checkIntervalForStats) {
     this.checkIntervalForStats = checkIntervalForStats;
-    ObjectUtil.checkPositive(this.checkIntervalForStats, "checkIntervalForStats");
+    ObjectUtil.checkPositiveOrZero(this.checkIntervalForStats, "checkIntervalForStats");
     return this;
   }
 

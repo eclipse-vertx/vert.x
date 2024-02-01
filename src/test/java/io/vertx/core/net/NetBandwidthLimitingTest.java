@@ -249,6 +249,96 @@ public class NetBandwidthLimitingTest extends VertxTestBase {
     assertTimeTakenFallsInRange(expectedTimeInMillis, elapsedMillis);
   }
 
+  @Test
+  public void testDynamicInboundRateUpdate() {
+    long startTime = System.nanoTime();
+
+    Buffer expected = TestUtils.randomBuffer(64 * 1024 * 4);
+    Buffer received = Buffer.buffer();
+    NetServer server = netServer(vertx);
+
+    server.connectHandler(sock -> {
+      sock.handler(buff -> {
+        received.appendBuffer(buff);
+        if (received.length() == expected.length()) {
+          assertEquals(expected, received);
+          long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
+          assertTrue(elapsedMillis < expectedUpperBoundTimeMillis(received.length(), INBOUND_LIMIT));
+          testComplete();
+        }
+      });
+      // Send some data to the client to trigger the buffer write
+      sock.write("foo");
+    });
+    Future<NetServer> result = server.listen(testAddress);
+
+    // update rate
+    TrafficShapingOptions trafficOptions = new TrafficShapingOptions()
+                                             .setOutboundGlobalBandwidth(OUTBOUND_LIMIT) // unchanged
+                                             .setInboundGlobalBandwidth(2 * INBOUND_LIMIT);
+    server.updateTrafficShapingOptions(trafficOptions);
+
+    result.onComplete(onSuccess(resp -> {
+      Future<NetSocket> clientConnect = client.connect(testAddress);
+      clientConnect.onComplete(onSuccess(sock -> {
+        sock.handler(buf -> {
+          sock.write(expected);
+        });
+      }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testDynamicOutboundRateUpdate() {
+    long startTime = System.nanoTime();
+
+    Buffer expected = TestUtils.randomBuffer(64 * 1024 * 4);
+    Buffer received = Buffer.buffer();
+    NetServer server = netServer(vertx);
+    server.connectHandler(sock -> {
+      sock.handler(buf -> {
+        sock.write(expected);
+      });
+    });
+    Future<NetServer> result = server.listen(testAddress);
+
+    // update rate
+    TrafficShapingOptions trafficOptions = new TrafficShapingOptions()
+                                             .setInboundGlobalBandwidth(INBOUND_LIMIT) // unchanged
+                                             .setOutboundGlobalBandwidth(2 * OUTBOUND_LIMIT);
+    server.updateTrafficShapingOptions(trafficOptions);
+
+    result.onComplete(onSuccess(resp -> {
+      Future<NetSocket> clientConnect = client.connect(testAddress);
+      clientConnect.onComplete(onSuccess(sock -> {
+        sock.handler(buff -> {
+          received.appendBuffer(buff);
+          if (received.length() == expected.length()) {
+            assertEquals(expected, received);
+            long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
+            assertTrue(elapsedMillis < expectedUpperBoundTimeMillis(received.length(), OUTBOUND_LIMIT));
+            testComplete();
+          }
+        });
+        sock.write("foo");
+      }));
+    }));
+    await();
+  }
+
+  @Test(expected = IllegalStateException.class)
+  public void testRateUpdateWhenServerStartedWithoutTrafficShaping() {
+    NetServerOptions options = new NetServerOptions().setHost(DEFAULT_HOST).setPort(DEFAULT_PORT);
+    NetServer testServer = vertx.createNetServer(options);
+
+    // update inbound rate to twice the limit
+    TrafficShapingOptions trafficOptions = new TrafficShapingOptions()
+                                             .setOutboundGlobalBandwidth(OUTBOUND_LIMIT)
+                                             .setInboundGlobalBandwidth(2 * INBOUND_LIMIT);
+    testServer.updateTrafficShapingOptions(trafficOptions);
+  }
+
   /**
    * Calculate time taken for transfer given bandwidth limit set.
    *
@@ -257,6 +347,13 @@ public class NetBandwidthLimitingTest extends VertxTestBase {
    * @return expected time to be taken by server to send/receive data
    */
   private long expectedTimeMillis(int size, int rate) {
+    return TimeUnit.MILLISECONDS.convert((size / rate), TimeUnit.SECONDS);
+  }
+
+  /**
+   * Upperbound time taken is calculated with old rate limit before update. Hence time taken should be less than this value.
+   */
+  private long expectedUpperBoundTimeMillis(int size, int rate) {
     return TimeUnit.MILLISECONDS.convert((size / rate), TimeUnit.SECONDS);
   }
 
