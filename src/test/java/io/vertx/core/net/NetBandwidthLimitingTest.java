@@ -327,7 +327,7 @@ public class NetBandwidthLimitingTest extends VertxTestBase {
     await();
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test(expected = IllegalStateException.class)
   public void testRateUpdateWhenServerStartedWithoutTrafficShaping() {
     NetServerOptions options = new NetServerOptions().setHost(DEFAULT_HOST).setPort(DEFAULT_PORT);
     NetServer testServer = vertx.createNetServer(options);

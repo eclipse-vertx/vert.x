@@ -735,6 +735,27 @@ public class NetExamples {
     NetServer server = vertx.createNetServer(options);
   }
 
+  public void dynamicallyUpdateTrafficShapingForNetServer(Vertx vertx) {
+    NetServerOptions options = new NetServerOptions()
+                                 .setHost("localhost")
+                                 .setPort(1234)
+                                 .setTrafficShapingOptions(new TrafficShapingOptions()
+                                                             .setInboundGlobalBandwidth(64 * 1024)
+                                                             .setOutboundGlobalBandwidth(128 * 1024));
+    NetServer server = vertx.createNetServer(options);
+    TrafficShapingOptions update = new TrafficShapingOptions()
+                                     .setInboundGlobalBandwidth(2 * 64 * 1024) // twice
+                                     .setOutboundGlobalBandwidth(128 * 1024); // unchanged
+    server
+      .listen(1234, "localhost")
+      .onComplete(res -> {
+        if (res.succeeded()) {
+          // wait until traffic shaping handler is created for updates
+          server.updateTrafficShapingOptions(update);
+        }
+      });
+  }
+
   public void configureTrafficShapingForHttpServer(Vertx vertx) {
     HttpServerOptions options = new HttpServerOptions()
       .setHost("localhost")
@@ -744,5 +765,27 @@ public class NetExamples {
         .setOutboundGlobalBandwidth(128 * 1024));
 
     HttpServer server = vertx.createHttpServer(options);
+  }
+
+
+  public void dynamicallyUpdateTrafficShapingForHttpServer(Vertx vertx) {
+    HttpServerOptions options = new HttpServerOptions()
+                                  .setHost("localhost")
+                                  .setPort(1234)
+                                  .setTrafficShapingOptions(new TrafficShapingOptions()
+                                                              .setInboundGlobalBandwidth(64 * 1024)
+                                                              .setOutboundGlobalBandwidth(128 * 1024));
+    HttpServer server = vertx.createHttpServer(options);
+    TrafficShapingOptions update = new TrafficShapingOptions()
+                                     .setInboundGlobalBandwidth(2 * 64 * 1024) // twice
+                                     .setOutboundGlobalBandwidth(128 * 1024); // unchanged
+    server
+      .listen(1234, "localhost")
+      .onComplete(res -> {
+        if (res.succeeded()) {
+          // wait until traffic shaping handler is created for updates
+          server.updateTrafficShapingOptions(update);
+        }
+      });
   }
 }

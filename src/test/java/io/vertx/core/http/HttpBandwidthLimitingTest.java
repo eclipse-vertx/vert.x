@@ -249,7 +249,7 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
     Assert.assertTrue(elapsedMillis < expectedUpperBoundTimeMillis(TEST_CONTENT_SIZE, INBOUND_LIMIT));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test(expected = IllegalStateException.class)
   public void testRateUpdateWhenServerStartedWithoutTrafficShaping() {
     HttpServer testServer = nonTrafficShapedServerFactory.apply(vertx);
 

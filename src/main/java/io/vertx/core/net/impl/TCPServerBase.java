@@ -105,15 +105,13 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
       return null;
     }
     GlobalTrafficShapingHandler trafficShapingHandler;
-    if (options.getMaxDelayToWait() != 0 && options.getCheckIntervalForStatsTimeUnit() != null) {
+    if (options.getMaxDelayToWait() != 0) {
       long maxDelayToWaitInMillis = options.getMaxDelayToWaitTimeUnit().toMillis(options.getMaxDelayToWait());
       long checkIntervalForStatsInMillis = options.getCheckIntervalForStatsTimeUnit().toMillis(options.getCheckIntervalForStats());
       trafficShapingHandler = new GlobalTrafficShapingHandler(eventLoopGroup, options.getOutboundGlobalBandwidth(), options.getInboundGlobalBandwidth(), checkIntervalForStatsInMillis, maxDelayToWaitInMillis);
-    } else if (options.getCheckIntervalForStatsTimeUnit() != null) {
+    } else {
       long checkIntervalForStatsInMillis = options.getCheckIntervalForStatsTimeUnit().toMillis(options.getCheckIntervalForStats());
       trafficShapingHandler = new GlobalTrafficShapingHandler(eventLoopGroup, options.getOutboundGlobalBandwidth(), options.getInboundGlobalBandwidth(), checkIntervalForStatsInMillis);
-    } else {
-      trafficShapingHandler = new GlobalTrafficShapingHandler(eventLoopGroup, options.getOutboundGlobalBandwidth(), options.getInboundGlobalBandwidth());
     }
     if (options.getPeakOutboundGlobalBandwidth() != 0) {
       trafficShapingHandler.setMaxGlobalWriteSize(options.getPeakOutboundGlobalBandwidth());
@@ -167,17 +165,22 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
       throw new IllegalArgumentException("Invalid null value passed for traffic shaping options update");
     }
     if (trafficShapingHandler == null) {
-      throw new IllegalArgumentException("Unable to update traffic shaping options because the server was not configured " +
-                                         "to use traffic shaping during startup");
+      throw new IllegalStateException("Unable to update traffic shaping options because the server was not configured " +
+                                      "to use traffic shaping during startup");
     }
     TCPServerBase server = actualServer;
     if (server != null && server != this) {
       server.updateTrafficShapingOptions(options);
     } else {
-      if (options.getCheckIntervalForStatsTimeUnit() != null) {
-        trafficShapingHandler.configure(options.getOutboundGlobalBandwidth(), options.getInboundGlobalBandwidth(), options.getCheckIntervalForStats());
-      } else {
-        trafficShapingHandler.configure(options.getOutboundGlobalBandwidth(), options.getInboundGlobalBandwidth());
+      long checkIntervalForStatsInMillis = options.getCheckIntervalForStatsTimeUnit().toMillis(options.getCheckIntervalForStats());
+      trafficShapingHandler.configure(options.getOutboundGlobalBandwidth(), options.getInboundGlobalBandwidth(), checkIntervalForStatsInMillis);
+
+      if (options.getPeakOutboundGlobalBandwidth() != 0) {
+        trafficShapingHandler.setMaxGlobalWriteSize(options.getPeakOutboundGlobalBandwidth());
+      }
+      if (options.getMaxDelayToWait() != 0) {
+        long maxDelayToWaitInMillis = options.getMaxDelayToWaitTimeUnit().toMillis(options.getMaxDelayToWait());
+        trafficShapingHandler.setMaxWriteDelay(maxDelayToWaitInMillis);
       }
     }
   }
