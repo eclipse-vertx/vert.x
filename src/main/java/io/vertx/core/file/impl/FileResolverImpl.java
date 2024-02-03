@@ -30,6 +30,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -303,6 +304,17 @@ public class FileResolverImpl implements FileResolver {
       switch (listOfEntries.size()) {
         case 1: {
           JarURLConnection conn = (JarURLConnection) url.openConnection();
+          if (conn.getContentLength() == -1) {
+            // the entry is a directory, so, it does not really exist.
+            // which means we cannot get the JarFile from the connection.
+
+            // In general, we should not be here, as the URL should be a directory, and we should not have a JarURLConnection.
+            // However, classloader implementation may provide an URL. In this case, we should not try to get the JarFile
+            // as it does not exist (or is not valid), and it will throw an exception.
+
+            // We still retrieve it from the cache if it exists (got unzipped before or concurrently)
+            return cache.getFile(fileName);
+          }
           ZipFile zip = conn.getJarFile();
           try {
             extractFilesFromJarFile(zip, fileName);

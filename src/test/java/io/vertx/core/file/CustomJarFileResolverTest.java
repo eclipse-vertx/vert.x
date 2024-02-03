@@ -67,6 +67,16 @@ public class CustomJarFileResolverTest extends FileResolverTestBase {
                 public JarFile getJarFile() throws IOException {
                   return new JarFile(files);
                 }
+
+                @Override
+                public int getContentLength() {
+                  try {
+                    return (int) getJarFile().getJarEntry(name).getSize();
+                  } catch (IOException e) {
+                    return -1;
+                  }
+                }
+
                 @Override
                 public void connect() throws IOException {
                 }
