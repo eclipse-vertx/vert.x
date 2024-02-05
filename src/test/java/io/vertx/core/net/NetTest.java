@@ -58,10 +58,7 @@ import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
-import io.vertx.core.net.impl.NetServerImpl;
-import io.vertx.core.net.impl.NetSocketInternal;
-import io.vertx.core.net.impl.VertxHandler;
+import io.vertx.core.net.impl.*;
 import io.vertx.core.spi.tls.SslContextFactory;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.CheckingSender;
@@ -1538,14 +1535,17 @@ public class NetTest extends VertxTestBase {
       receivedServerNames.add(so.indicatedServerName());
     });
     startServer();
-    List<String> serverNames = Arrays.asList("host1", "host2.com");
+    List<String> serverNames = Arrays.asList("host1", "host2.com", "fake");
+    List<String> cns = new ArrayList<>();
     client = vertx.createNetClient(new NetClientOptions().setSsl(true).setTrustAll(true));
     for (String serverName : serverNames) {
       NetSocket so = client.connect(testAddress, serverName).toCompletionStage().toCompletableFuture().get();
       String host = cnOf(so.peerCertificates().get(0));
-      assertEquals(serverName, host);
+      cns.add(host);
     }
-    assertWaitUntil(() -> receivedServerNames.size() == 2);
+    assertEquals(Arrays.asList("host1", "host2.com", "localhost"), cns);
+    assertEquals(2, ((TCPServerBase)server).sniEntrySize());
+    assertWaitUntil(() -> receivedServerNames.size() == 3);
     assertEquals(receivedServerNames, serverNames);
   }
 
