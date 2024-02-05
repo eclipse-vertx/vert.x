@@ -748,12 +748,8 @@ public class NetExamples {
                                      .setOutboundGlobalBandwidth(128 * 1024); // unchanged
     server
       .listen(1234, "localhost")
-      .onComplete(res -> {
-        if (res.succeeded()) {
-          // wait until traffic shaping handler is created for updates
-          server.updateTrafficShapingOptions(update);
-        }
-      });
+      // wait until traffic shaping handler is created for updates
+      .onSuccess(v -> server.updateTrafficShapingOptions(update));
   }
 
   public void configureTrafficShapingForHttpServer(Vertx vertx) {
@@ -781,11 +777,7 @@ public class NetExamples {
                                      .setOutboundGlobalBandwidth(128 * 1024); // unchanged
     server
       .listen(1234, "localhost")
-      .onComplete(res -> {
-        if (res.succeeded()) {
-          // wait until traffic shaping handler is created for updates
-          server.updateTrafficShapingOptions(update);
-        }
-      });
+      // wait until traffic shaping handler is created for updates
+      .onSuccess(v -> server.updateTrafficShapingOptions(update));
   }
 }
