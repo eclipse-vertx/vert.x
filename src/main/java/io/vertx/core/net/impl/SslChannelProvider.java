@@ -65,6 +65,10 @@ public class SslChannelProvider {
     this.sslContextProvider = sslContextProvider;
   }
 
+  public int sniEntrySize() {
+    return sslContextMaps[0].size() + sslContextMaps[1].size();
+  }
+
   public SslContextProvider sslContextProvider() {
     return sslContextProvider;
   }
@@ -83,17 +87,18 @@ public class SslChannelProvider {
 
   public SslContext sslContext(String serverName, boolean useAlpn, boolean server, boolean trustAll) throws Exception {
     int idx = idx(useAlpn);
-    if (serverName == null) {
-      if (sslContexts[idx] == null) {
-        SslContext context = sslContextProvider.createContext(server, null, null, null, useAlpn, trustAll);
-        sslContexts[idx] = context;
-      }
-      return sslContexts[idx];
-    } else {
+    if (serverName != null) {
       KeyManagerFactory kmf = sslContextProvider.resolveKeyManagerFactory(serverName);
       TrustManager[] trustManagers = trustAll ? null : sslContextProvider.resolveTrustManagers(serverName);
-      return sslContextMaps[idx].computeIfAbsent(serverName, s -> sslContextProvider.createContext(server, kmf, trustManagers, s, useAlpn, trustAll));
+      if (kmf != null || trustManagers != null || !server) {
+        return sslContextMaps[idx].computeIfAbsent(serverName, s -> sslContextProvider.createContext(server, kmf, trustManagers, s, useAlpn, trustAll));
+      }
     }
+    if (sslContexts[idx] == null) {
+      SslContext context = sslContextProvider.createContext(server, null, null, serverName, useAlpn, trustAll);
+      sslContexts[idx] = context;
+    }
+    return sslContexts[idx];
   }
 
   public SslContext sslServerContext(boolean useAlpn) {
