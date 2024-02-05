@@ -66,16 +66,29 @@ public class SslContextProvider {
     this.crls = crls;
   }
 
-  public VertxSslContext createClientContext(
-    boolean useAlpn,
-    boolean trustAll) {
-    TrustManager[] trustManagers = null;
-    if (trustAll) {
-      trustManagers = new TrustManager[] { createTrustAllTrustManager() };
-    } else if (trustManagerFactory != null) {
-      trustManagers = trustManagerFactory.getTrustManagers();
+  public VertxSslContext createContext(boolean server,
+                                       KeyManagerFactory keyManagerFactory,
+                                       TrustManager[] trustManagers,
+                                       String serverName,
+                                       boolean useAlpn,
+                                       boolean trustAll) {
+    if (keyManagerFactory == null) {
+      keyManagerFactory = defaultKeyManagerFactory();
     }
-    return createClientContext(keyManagerFactory, trustManagers, null, useAlpn);
+    if (trustAll) {
+      trustManagers = SslContextProvider.createTrustAllManager();
+    } else if (trustManagers == null) {
+      trustManagers = defaultTrustManagers();
+    }
+    if (server) {
+      return createServerContext(keyManagerFactory, trustManagers, serverName, useAlpn);
+    } else {
+      return createClientContext(keyManagerFactory, trustManagers, serverName, useAlpn);
+    }
+  }
+
+  public VertxSslContext createContext(boolean server, boolean useAlpn) {
+    return createContext(server, defaultKeyManagerFactory(), defaultTrustManagers(), null, useAlpn, false);
   }
 
   public VertxSslContext createClientContext(
@@ -106,10 +119,6 @@ public class SslContextProvider {
     } catch (Exception e) {
       throw new VertxException(e);
     }
-  }
-
-  public VertxSslContext createServerContext(boolean useAlpn) {
-    return createServerContext(keyManagerFactory, trustManagerFactory != null ? trustManagerFactory.getTrustManagers() : null, null, useAlpn);
   }
 
   public VertxSslContext createServerContext(KeyManagerFactory keyManagerFactory,
@@ -150,6 +159,18 @@ public class SslContextProvider {
       return keyManagerFactoryMapper.apply(serverName);
     }
     return null;
+  }
+
+  public TrustManager[] defaultTrustManagers() {
+    return trustManagerFactory != null ? trustManagerFactory.getTrustManagers() : null;
+  }
+
+  public TrustManagerFactory defaultTrustManagerFactory() {
+    return trustManagerFactory;
+  }
+
+  public KeyManagerFactory defaultKeyManagerFactory() {
+    return keyManagerFactory;
   }
 
   /**
@@ -242,22 +263,24 @@ public class SslContextProvider {
     return trustMgrs;
   }
 
+  private static final TrustManager TRUST_ALL_MANAGER = new X509TrustManager() {
+    @Override
+    public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+    }
+
+    @Override
+    public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+    }
+
+    @Override
+    public X509Certificate[] getAcceptedIssuers() {
+      return new X509Certificate[0];
+    }
+  };
+
   // Create a TrustManager which trusts everything
-  static TrustManager createTrustAllTrustManager() {
-    return new X509TrustManager() {
-      @Override
-      public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-      }
-
-      @Override
-      public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-      }
-
-      @Override
-      public X509Certificate[] getAcceptedIssuers() {
-        return new X509Certificate[0];
-      }
-    };
+  private static TrustManager[] createTrustAllManager() {
+    return new TrustManager[] { TRUST_ALL_MANAGER };
   }
 
   public void configureEngine(SSLEngine engine, Set<String> enabledProtocols, String serverName, boolean client) {
