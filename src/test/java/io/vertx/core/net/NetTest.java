@@ -95,12 +95,7 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -1528,6 +1523,28 @@ public class NetTest extends VertxTestBase {
     test.run(true);
     await();
     assertEquals("host2.com", cnOf(test.clientPeerCert()));
+  }
+
+  @Test
+  public void testClientSniMultipleServerName() throws Exception {
+    List<String> receivedServerNames = Collections.synchronizedList(new ArrayList<>());
+    server = vertx.createNetServer(new NetServerOptions()
+      .setSni(true)
+      .setSsl(true)
+      .setKeyCertOptions(Cert.SNI_JKS.get())
+    ).connectHandler(so -> {
+      receivedServerNames.add(so.indicatedServerName());
+    });
+    startServer();
+    List<String> serverNames = Arrays.asList("host1", "host2.com");
+    client = vertx.createNetClient(new NetClientOptions().setSsl(true).setTrustAll(true));
+    for (String serverName : serverNames) {
+      NetSocket so = client.connect(testAddress, serverName).toCompletionStage().toCompletableFuture().get();
+      String host = cnOf(so.peerCertificates().get(0));
+      assertEquals(serverName, host);
+    }
+    assertWaitUntil(() -> receivedServerNames.size() == 2);
+    assertEquals(receivedServerNames, serverNames);
   }
 
   @Test
