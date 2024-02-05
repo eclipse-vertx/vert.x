@@ -125,6 +125,10 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
     return trafficShapingHandler;
   }
 
+  public int sniEntrySize() {
+    return sslHelper.sniEntrySize();
+  }
+
   public Future<Boolean> updateSSLOptions(SSLOptions options, boolean force) {
     TCPServerBase server = actualServer;
     if (server != null && server != this) {

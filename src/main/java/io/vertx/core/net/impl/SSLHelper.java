@@ -126,6 +126,14 @@ public class SSLHelper {
     this.applicationProtocols = applicationProtocols;
   }
 
+  public synchronized int sniEntrySize() {
+    CachedProvider res = cachedProvider.result();
+    if (res != null) {
+      return res.sslChannelProvider.sniEntrySize();
+    }
+    return 0;
+  }
+
   private static class CachedProvider {
     final SSLOptions options;
     final long id;
