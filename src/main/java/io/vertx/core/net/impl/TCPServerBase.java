@@ -285,4 +285,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
 
   public abstract Future<Void> close();
 
+  public int sniEntrySize() {
+    return sslHelper.sniEntrySize();
+  }
 }

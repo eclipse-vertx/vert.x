@@ -39,10 +39,7 @@ import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
-import io.vertx.core.net.impl.NetServerImpl;
-import io.vertx.core.net.impl.NetSocketInternal;
-import io.vertx.core.net.impl.VertxHandler;
+import io.vertx.core.net.impl.*;
 import io.vertx.core.spi.tls.SslContextFactory;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.CheckingSender;
@@ -77,7 +74,12 @@ import java.nio.file.StandardOpenOption;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -1499,6 +1501,31 @@ public class NetTest extends VertxTestBase {
     test.run(true);
     await();
     assertEquals("host2.com", cnOf(test.clientPeerCert()));
+  }
+
+  @Test
+  public void testClientSniMultipleServerName() throws Exception {
+    List<String> receivedServerNames = Collections.synchronizedList(new ArrayList<>());
+    server = vertx.createNetServer(new NetServerOptions()
+      .setSni(true)
+      .setSsl(true)
+      .setKeyCertOptions(Cert.SNI_JKS.get())
+    ).connectHandler(so -> {
+      receivedServerNames.add(so.indicatedServerName());
+    });
+    startServer();
+    List<String> serverNames = Arrays.asList("host1", "host2.com", "fake");
+    client = vertx.createNetClient(new NetClientOptions().setSsl(true).setTrustAll(true));
+    List<String> cns = new ArrayList<>();
+    for (String serverName : serverNames) {
+      NetSocket so = client.connect(testAddress, serverName).toCompletionStage().toCompletableFuture().get();
+      String host = cnOf(so.peerCertificates().get(0));
+      cns.add(host);
+    }
+    assertEquals(Arrays.asList("host1", "host2.com", "localhost"), cns);
+    assertEquals(2, ((TCPServerBase)server).sniEntrySize());
+    assertWaitUntil(() -> receivedServerNames.size() == 3);
+    assertEquals(receivedServerNames, serverNames);
   }
 
   @Test

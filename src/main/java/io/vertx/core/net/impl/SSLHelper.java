@@ -20,7 +20,6 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.SslProvider;
 import io.netty.util.AsyncMapping;
-import io.netty.util.Mapping;
 import io.netty.util.concurrent.ImmediateExecutor;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -164,6 +163,10 @@ public class SSLHelper {
     this.useWorkerPool = sslEngineOptions == null ? SSLEngineOptions.DEFAULT_USE_WORKER_POOL : sslEngineOptions.getUseWorkerThread();
   }
 
+  public synchronized int sniEntrySize() {
+    return sslContextMaps[0].size() + sslContextMaps[1].size();
+  }
+
   public boolean isSSL() {
     return ssl;
   }
@@ -206,8 +209,12 @@ public class SSLHelper {
         ctx.<Void>executeBlockingInternal(p -> {
           KeyManagerFactory kmf;
           try {
-            getTrustMgrFactory(ctx.owner(), null, false);
-            kmf = getKeyMgrFactory(ctx.owner());
+            TrustManager[] mgrs = getTrustManagers(ctx.owner(), null);
+            if (mgrs == null) {
+              mgrs = getDefaultTrustManager(ctx.owner());
+            }
+            getTrustMgrFactory(ctx.owner(), mgrs);
+            kmf = getDefaultKeyMgrFactory(ctx.owner());
           } catch (Exception e) {
             p.fail(e);
             return;
@@ -241,7 +248,13 @@ public class SSLHelper {
   public AsyncMapping<? super String, ? extends SslContext> serverNameMapper(ContextInternal ctx) {
     return (serverName, promise) -> {
       ctx.<SslContext>executeBlockingInternal(p -> {
-        SslContext sslContext = createContext(ctx.owner(), serverName, useAlpn, client, trustAll);
+        SslContext sslContext;
+        try {
+          sslContext = createContext(ctx.owner(), serverName, useAlpn, client, trustAll);
+        } catch (Exception e) {
+          p.fail(e);
+          return;
+        }
         if (sslContext != null) {
           sslContext = new DelegatingSslContext(sslContext) {
             @Override
@@ -263,29 +276,64 @@ public class SSLHelper {
   }
 
   public SSLEngine createEngine(VertxInternal vertx) {
-    SSLEngine engine = createContext(vertx).newEngine(ByteBufAllocator.DEFAULT);
+    SSLEngine engine = null;
+    try {
+      engine = createContext(vertx).newEngine(ByteBufAllocator.DEFAULT);
+    } catch (Exception e) {
+      if (e instanceof RuntimeException) {
+        throw ((RuntimeException)e);
+      } else {
+        throw new VertxException(e);
+      }
+    }
     configureEngine(engine, null);
     return engine;
   }
 
   public SslContext createContext(VertxInternal vertx) {
-    return createContext(vertx, null, useAlpn, client, trustAll);
-  }
-
-  public SslContext createContext(VertxInternal vertx, String serverName, boolean useAlpn, boolean client, boolean trustAll) {
-    int idx = useAlpn ? 0 : 1;
-    if (serverName == null) {
-      if (sslContexts[idx] == null) {
-        sslContexts[idx] = createContext2(vertx, serverName, useAlpn, client, trustAll);
+    try {
+      return createContext(vertx, null, useAlpn, client, trustAll);
+    } catch (Exception e) {
+      if (e instanceof RuntimeException) {
+        throw (RuntimeException)e;
+      } else {
+        throw new VertxException(e);
       }
-      return sslContexts[idx];
-    } else {
-      return sslContextMaps[idx].computeIfAbsent(serverName, s -> createContext2(vertx, serverName, useAlpn, client, trustAll));
     }
   }
 
-  public SslContext sslContext(VertxInternal vertx, String serverName, boolean useAlpn) {
-    SslContext context = createContext(vertx, null, useAlpn, client, trustAll);
+  private SslContext createContext(VertxInternal vertx, String serverName, boolean useAlpn, boolean client, boolean trustAll) throws Exception {
+    TrustManager[] mgrs = getTrustManagers(vertx, serverName);
+    KeyManagerFactory kmf = getKeyMgrFactory(vertx, serverName);
+    int idx = useAlpn ? 0 : 1;
+    if (serverName != null && (client || mgrs != null || kmf != null)) {
+      if (mgrs == null) {
+        if (trustAll) {
+          mgrs = getTrustAllTrustManager();
+        } else {
+          mgrs = getDefaultTrustManager(vertx);
+        }
+      }
+      KeyManagerFactory kmf2 = kmf == null ? getDefaultKeyMgrFactory(vertx) : kmf;
+      TrustManagerFactory tmf = mgrs != null ? getTrustMgrFactory(vertx, mgrs) : null;
+      return sslContextMaps[idx].computeIfAbsent(serverName, s -> createContext2(kmf2, tmf, serverName, useAlpn, client));
+    }
+    return createDefaultContext(vertx, trustAll);
+  }
+
+  private SslContext createDefaultContext(VertxInternal vertx, boolean trustAll) throws Exception {
+    KeyManagerFactory kmf = getDefaultKeyMgrFactory(vertx);
+    TrustManager[] mgrs = trustAll ? getTrustAllTrustManager() : getDefaultTrustManager(vertx);
+    TrustManagerFactory tmf = mgrs != null ? getTrustMgrFactory(vertx, mgrs) : null;
+    int idx = useAlpn ? 0 : 1;
+    if (sslContexts[idx] == null) {
+      sslContexts[idx] = createContext2(kmf, tmf, null, useAlpn, client);
+    }
+    return sslContexts[idx];
+  }
+
+  public SslContext sslContext(VertxInternal vertx, String serverName, boolean useAlpn) throws Exception {
+    SslContext context = createContext(vertx, serverName, useAlpn, client, trustAll);
     return new DelegatingSslContext(context) {
       @Override
       protected void initEngine(SSLEngine engine) {
@@ -294,10 +342,57 @@ public class SSLHelper {
     };
   }
 
-  private SslContext createContext2(VertxInternal vertx, String serverName, boolean useAlpn, boolean client, boolean trustAll) {
+  private TrustManager[] getTrustManagers(VertxInternal vertx, String serverName) {
     try {
-      TrustManagerFactory tmf = getTrustMgrFactory(vertx, serverName, trustAll);
-      KeyManagerFactory kmf = getKeyMgrFactory(vertx, serverName);
+      TrustManager[] mgrs = null;
+      if (trustOptions != null) {
+        if (serverName != null) {
+          Function<String, TrustManager[]> mapper = trustOptions.trustManagerMapper(vertx);
+          if (mapper != null) {
+            mgrs = mapper.apply(serverName);
+          }
+          if (mgrs == null) {
+            TrustManagerFactory fact = trustOptions.getTrustManagerFactory(vertx);
+            if (fact != null) {
+              mgrs = fact.getTrustManagers();
+            }
+          }
+        }
+      }
+      return mgrs;
+    } catch (Exception e) {
+      if (e instanceof RuntimeException) {
+        throw (RuntimeException)e;
+      } else {
+        throw new VertxException(e);
+      }
+    }
+  }
+
+  private TrustManager[] getTrustAllTrustManager() {
+    return new TrustManager[]{createTrustAllTrustManager()};
+  }
+
+  private TrustManager[] getDefaultTrustManager(VertxInternal vertx) {
+    try {
+      if (trustOptions != null) {
+        TrustManagerFactory fact = trustOptions.getTrustManagerFactory(vertx);
+        if (fact != null) {
+          return fact.getTrustManagers();
+        }
+      }
+      return null;
+    } catch (Exception e) {
+      if (e instanceof RuntimeException) {
+        throw (RuntimeException)e;
+      } else {
+        throw new VertxException(e);
+      }
+    }
+  }
+
+  private SslContext createContext2(KeyManagerFactory kmf, TrustManagerFactory tmf, String serverName, boolean useAlpn, boolean client) {
+    try {
       SslContextFactory factory = sslProvider.result().get()
         .useAlpn(useAlpn)
         .forClient(client)
@@ -326,11 +421,28 @@ public class SSLHelper {
   }
 
   public SslHandler createSslHandler(VertxInternal vertx, SocketAddress remoteAddress, String serverName) {
-    return createSslHandler(vertx, remoteAddress, serverName, useAlpn);
+    try {
+      return createSslHandler(vertx, remoteAddress, serverName, useAlpn);
+    } catch (Exception e) {
+      if (e instanceof RuntimeException) {
+        throw (RuntimeException)e;
+      } else {
+        throw new VertxException(e);
+      }
+    }
   }
 
   public SslHandler createSslHandler(VertxInternal vertx, SocketAddress remoteAddress, String serverName, boolean useAlpn) {
-    SslContext sslContext = sslContext(vertx, serverName, useAlpn);
+    SslContext sslContext = null;
+    try {
+      sslContext = sslContext(vertx, serverName, useAlpn);
+    } catch (Exception e) {
+      if (e instanceof RuntimeException) {
+        throw (RuntimeException)e;
+      } else {
+        throw new VertxException(e);
+      }
+    }
     SslHandler sslHandler;
     Executor delegatedTaskExec = useWorkerPool ? vertx.getInternalWorkerPool().executor() : ImmediateExecutor.INSTANCE;
     if (remoteAddress == null || remoteAddress.isDomainSocket()) {
@@ -357,54 +469,28 @@ public class SSLHelper {
 
   private KeyManagerFactory getKeyMgrFactory(VertxInternal vertx, String serverName) throws Exception {
     KeyManagerFactory kmf = null;
-    if (serverName != null) {
-      X509KeyManager mgr = keyCertOptions.keyManagerMapper(vertx).apply(serverName);
-      if (mgr != null) {
-        String keyStoreType = KeyStore.getDefaultType();
-        KeyStore ks = KeyStore.getInstance(keyStoreType);
-        ks.load(null, null);
-        ks.setKeyEntry("key", mgr.getPrivateKey(null), new char[0], mgr.getCertificateChain(null));
-        String keyAlgorithm = KeyManagerFactory.getDefaultAlgorithm();
-        kmf = KeyManagerFactory.getInstance(keyAlgorithm);
-        kmf.init(ks, new char[0]);
+    if (keyCertOptions != null) {
+      if (serverName != null) {
+        X509KeyManager mgr = keyCertOptions.keyManagerMapper(vertx).apply(serverName);
+        if (mgr != null) {
+          String keyStoreType = KeyStore.getDefaultType();
+          KeyStore ks = KeyStore.getInstance(keyStoreType);
+          ks.load(null, null);
+          ks.setKeyEntry("key", mgr.getPrivateKey(null), new char[0], mgr.getCertificateChain(null));
+          String keyAlgorithm = KeyManagerFactory.getDefaultAlgorithm();
+          kmf = KeyManagerFactory.getInstance(keyAlgorithm);
+          kmf.init(ks, new char[0]);
+        }
       }
-    }
-    if (kmf == null) {
-      kmf = getKeyMgrFactory(vertx);
     }
     return kmf;
   }
 
-  private KeyManagerFactory getKeyMgrFactory(VertxInternal vertx) throws Exception {
+  private KeyManagerFactory getDefaultKeyMgrFactory(VertxInternal vertx) throws Exception {
     return keyCertOptions == null ? null : keyCertOptions.getKeyManagerFactory(vertx);
   }
 
-  private TrustManagerFactory getTrustMgrFactory(VertxInternal vertx, String serverName, boolean trustAll) throws Exception {
-    TrustManager[] mgrs = null;
-    if (trustAll) {
-      mgrs = new TrustManager[]{createTrustAllTrustManager()};
-    } else if (trustOptions != null) {
-      if (serverName != null) {
-        Function<String, TrustManager[]> mapper = trustOptions.trustManagerMapper(vertx);
-        if (mapper != null) {
-          mgrs = mapper.apply(serverName);
-        }
-        if (mgrs == null) {
-          TrustManagerFactory fact = trustOptions.getTrustManagerFactory(vertx);
-          if (fact != null) {
-            mgrs = fact.getTrustManagers();
-          }
-        }
-      } else {
-        TrustManagerFactory fact = trustOptions.getTrustManagerFactory(vertx);
-        if (fact != null) {
-          mgrs = fact.getTrustManagers();
-        }
-      }
-    }
-    if (mgrs == null) {
-      return null;
-    }
+  private TrustManagerFactory getTrustMgrFactory(VertxInternal vertx, TrustManager[] mgrs) throws Exception {
     if (crlPaths != null && crlValues != null && (crlPaths.size() > 0 || crlValues.size() > 0)) {
       Stream<Buffer> tmp = crlPaths.
         stream().
@@ -429,7 +515,7 @@ public class SSLHelper {
     trustMgrs = trustMgrs.clone();
     for (int i = 0;i < trustMgrs.length;i++) {
       TrustManager trustMgr = trustMgrs[i];
-      if (trustMgr instanceof X509TrustManager) {
+      if (trustMgr instanceof  X509TrustManager) {
         X509TrustManager x509TrustManager = (X509TrustManager) trustMgr;
         trustMgrs[i] = new X509TrustManager() {
           @Override
