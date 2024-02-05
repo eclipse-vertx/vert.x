@@ -105,7 +105,7 @@ public class SSLEngineTest extends HttpTestBase {
       }
     }
     SslContextProvider provider = ((HttpServerImpl)server).sslContextProvider();
-    SslContext ctx = provider.createClientContext(null, false, false);
+    SslContext ctx = provider.createClientContext(false, false);
     switch (expectedSslContext != null ? expectedSslContext : "jdk") {
       case "jdk":
         assertTrue(ctx.sessionContext().getClass().getName().equals("sun.security.ssl.SSLSessionContextImpl"));
