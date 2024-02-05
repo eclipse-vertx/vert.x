@@ -46,7 +46,7 @@ public class SSLHelperTest extends VertxTestBase {
     helper
       .buildContextProvider(new SSLOptions().setKeyCertOptions(Cert.CLIENT_JKS.get()).setTrustOptions(Trust.SERVER_JKS.get()), (ContextInternal) vertx.getOrCreateContext())
       .onComplete(onSuccess(provider -> {
-        SslContext ctx = provider.createClientContext(null, false, false);
+        SslContext ctx = provider.createClientContext(false, false);
         assertEquals(new HashSet<>(Arrays.asList(expected)), new HashSet<>(ctx.cipherSuites()));
         testComplete();
     }));
@@ -60,7 +60,7 @@ public class SSLHelperTest extends VertxTestBase {
         new HttpClientOptions().setOpenSslEngineOptions(new OpenSSLEngineOptions()).setPemKeyCertOptions(Cert.CLIENT_PEM.get()).setTrustOptions(Trust.SERVER_PEM.get()),
       null);
     helper.buildContextProvider(new SSLOptions().setKeyCertOptions(Cert.CLIENT_PEM.get()).setTrustOptions(Trust.SERVER_PEM.get()), (ContextInternal) vertx.getOrCreateContext()).onComplete(onSuccess(provider -> {
-      SslContext ctx = provider.createClientContext(null, false, false);
+      SslContext ctx = provider.createClientContext(false, false);
       assertEquals(expected, new HashSet<>(ctx.cipherSuites()));
       testComplete();
     }));
@@ -185,6 +185,6 @@ public class SSLHelperTest extends VertxTestBase {
   }
 
   public SSLEngine createEngine(SslContextProvider provider) {
-    return provider.createClientContext(null, false, false).newEngine(ByteBufAllocator.DEFAULT);
+    return provider.createClientContext(false, false).newEngine(ByteBufAllocator.DEFAULT);
   }
 }
