@@ -100,6 +100,17 @@ public class SSLHelper {
     this.useWorkerPool = sslEngineOptions.getUseWorkerThread();
   }
 
+  public synchronized int sniEntrySize() {
+    int size = 0;
+    for (Future<SslChannelProvider> fut : sslChannelProviderMap.values()) {
+      SslChannelProvider result = fut.result();
+      if (result != null) {
+        size += result.sniEntrySize();
+      }
+    }
+    return size;
+  }
+
   public SSLHelper(SSLEngineOptions sslEngineOptions) {
     this(sslEngineOptions, 256);
   }
