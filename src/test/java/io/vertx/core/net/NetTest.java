@@ -1481,14 +1481,17 @@ public class NetTest extends VertxTestBase {
       receivedServerNames.add(so.indicatedServerName());
     });
     startServer();
-    List<String> serverNames = Arrays.asList("host1", "host2.com");
+    List<String> serverNames = Arrays.asList("host1", "host2.com", "fake");
+    List<String> cns = new ArrayList<>();
     client = vertx.createNetClient(new NetClientOptions().setSsl(true).setTrustAll(true));
     for (String serverName : serverNames) {
       NetSocket so = awaitFuture(client.connect(testAddress, serverName));
       String host = cnOf(so.peerCertificates().get(0));
-      assertEquals(serverName, host);
+      cns.add(host);
     }
-    assertWaitUntil(() -> receivedServerNames.size() == 2);
+    assertEquals(Arrays.asList("host1", "host2.com", "localhost"), cns);
+    assertEquals(2, ((TCPServerBase)server).sniEntrySize());
+    assertWaitUntil(() -> receivedServerNames.size() == 3);
     assertEquals(receivedServerNames, serverNames);
   }
 

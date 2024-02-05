@@ -154,13 +154,6 @@ public class SslContextProvider {
     }
   }
 
-  public KeyManagerFactory loadKeyManagerFactory(String serverName) throws Exception {
-    if (keyManagerFactoryMapper != null) {
-      return keyManagerFactoryMapper.apply(serverName);
-    }
-    return null;
-  }
-
   public TrustManager[] defaultTrustManagers() {
     return trustManagerFactory != null ? trustManagerFactory.getTrustManagers() : null;
   }
@@ -174,8 +167,7 @@ public class SslContextProvider {
   }
 
   /**
-   * Resolve the {@link KeyManagerFactory} for the {@code serverName}, when a factory cannot be resolved, the default
-   * factory is returned.
+   * Resolve the {@link KeyManagerFactory} for the {@code serverName}, when a factory cannot be resolved, {@code null} is returned.
    * <br/>
    * This can block and should be executed on the appropriate thread.
    *
@@ -184,23 +176,14 @@ public class SslContextProvider {
    * @throws Exception anything that would prevent loading the factory
    */
   public KeyManagerFactory resolveKeyManagerFactory(String serverName) throws Exception {
-    KeyManagerFactory kmf = loadKeyManagerFactory(serverName);
-    if (kmf == null) {
-      kmf = keyManagerFactory;
-    }
-    return kmf;
-  }
-
-  public TrustManager[] loadTrustManagers(String serverName) throws Exception {
-    if (trustManagerMapper != null) {
-      return trustManagerMapper.apply(serverName);
+    if (keyManagerFactoryMapper != null) {
+      return keyManagerFactoryMapper.apply(serverName);
     }
     return null;
   }
 
   /**
-   * Resolve the {@link TrustManager}[] for the {@code serverName}, when managers cannot be resolved, the default
-   * managers are returned.
+   * Resolve the {@link TrustManager}[] for the {@code serverName}, when managers cannot be resolved, {@code null} is returned.
    * <br/>
    * This can block and should be executed on the appropriate thread.
    *
@@ -209,11 +192,10 @@ public class SslContextProvider {
    * @throws Exception anything that would prevent loading the managers
    */
   public TrustManager[] resolveTrustManagers(String serverName) throws Exception {
-    TrustManager[] trustManagers = loadTrustManagers(serverName);
-    if (trustManagers == null && trustManagerFactory != null) {
-      trustManagers = trustManagerFactory.getTrustManagers();
+    if (trustManagerMapper != null) {
+      return trustManagerMapper.apply(serverName);
     }
-    return trustManagers;
+    return null;
   }
 
   private VertxTrustManagerFactory buildVertxTrustManagerFactory(TrustManager[] mgrs) {
