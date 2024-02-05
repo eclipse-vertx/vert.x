@@ -17,6 +17,7 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.AsyncMapping;
 import io.netty.util.concurrent.ImmediateExecutor;
+import io.vertx.core.VertxException;
 import io.vertx.core.net.SocketAddress;
 
 import javax.net.ssl.KeyManagerFactory;
@@ -25,6 +26,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+
+import static io.vertx.core.net.impl.SslContextProvider.createTrustAllTrustManager;
 
 /**
  * Provider for {@link SslHandler} and {@link SniHandler}.
@@ -58,11 +61,31 @@ public class SslChannelProvider {
 
   public SslContext sslClientContext(String serverName, boolean useAlpn, boolean trustAll) {
     int idx = idx(useAlpn);
-    if (sslContexts[idx] == null) {
-      SslContext context = sslContextProvider.createClientContext(serverName, useAlpn, trustAll);
-      sslContexts[idx] = context;
+    if (serverName == null) {
+      if (sslContexts[idx] == null) {
+        SslContext context = sslContextProvider.createClientContext(useAlpn, trustAll);
+        sslContexts[idx] = context;
+      }
+      return sslContexts[idx];
+    } else {
+      KeyManagerFactory kmf;
+      try {
+        kmf = sslContextProvider.resolveKeyManagerFactory(serverName);
+      } catch (Exception e) {
+        throw new VertxException(e);
+      }
+      TrustManager[] trustManagers;
+      if (trustAll) {
+        trustManagers = new TrustManager[] { createTrustAllTrustManager() };
+      } else {
+        try {
+          trustManagers = sslContextProvider.resolveTrustManagers(serverName);
+        } catch (Exception e) {
+          throw new VertxException(e);
+        }
+      }
+      return sslContextMaps[idx].computeIfAbsent(serverName, s -> sslContextProvider.createClientContext(kmf, trustManagers, s, useAlpn));
     }
-    return sslContexts[idx];
   }
 
   public SslContext sslServerContext(boolean useAlpn) {
