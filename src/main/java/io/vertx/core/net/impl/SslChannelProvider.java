@@ -27,8 +27,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
-import static io.vertx.core.net.impl.SslContextProvider.createTrustAllTrustManager;
-
 /**
  * Provider for {@link SslHandler} and {@link SniHandler}.
  * <br/>
@@ -60,40 +58,34 @@ public class SslChannelProvider {
   }
 
   public SslContext sslClientContext(String serverName, boolean useAlpn, boolean trustAll) {
+    try {
+      return sslContext(serverName, useAlpn, false, trustAll);
+    } catch (Exception e) {
+      throw new VertxException(e);
+    }
+  }
+
+  public SslContext sslContext(String serverName, boolean useAlpn, boolean server, boolean trustAll) throws Exception {
     int idx = idx(useAlpn);
     if (serverName == null) {
       if (sslContexts[idx] == null) {
-        SslContext context = sslContextProvider.createClientContext(useAlpn, trustAll);
+        SslContext context = sslContextProvider.createContext(server, null, null, null, useAlpn, trustAll);
         sslContexts[idx] = context;
       }
       return sslContexts[idx];
     } else {
-      KeyManagerFactory kmf;
-      try {
-        kmf = sslContextProvider.resolveKeyManagerFactory(serverName);
-      } catch (Exception e) {
-        throw new VertxException(e);
-      }
-      TrustManager[] trustManagers;
-      if (trustAll) {
-        trustManagers = new TrustManager[] { createTrustAllTrustManager() };
-      } else {
-        try {
-          trustManagers = sslContextProvider.resolveTrustManagers(serverName);
-        } catch (Exception e) {
-          throw new VertxException(e);
-        }
-      }
-      return sslContextMaps[idx].computeIfAbsent(serverName, s -> sslContextProvider.createClientContext(kmf, trustManagers, s, useAlpn));
+      KeyManagerFactory kmf = sslContextProvider.resolveKeyManagerFactory(serverName);
+      TrustManager[] trustManagers = trustAll ? null : sslContextProvider.resolveTrustManagers(serverName);
+      return sslContextMaps[idx].computeIfAbsent(serverName, s -> sslContextProvider.createContext(server, kmf, trustManagers, s, useAlpn, trustAll));
     }
   }
 
   public SslContext sslServerContext(boolean useAlpn) {
-    int idx = idx(useAlpn);
-    if (sslContexts[idx] == null) {
-      sslContexts[idx] = sslContextProvider.createServerContext(useAlpn);
+    try {
+      return sslContext(null, useAlpn, true, false);
+    } catch (Exception e) {
+      throw new VertxException(e);
     }
-    return sslContexts[idx];
   }
 
   /**
@@ -104,27 +96,14 @@ public class SslChannelProvider {
   public AsyncMapping<? super String, ? extends SslContext> serverNameMapping(boolean useAlpn) {
     return (AsyncMapping<String, SslContext>) (serverName, promise) -> {
       workerPool.execute(() -> {
-        if (serverName == null) {
-          promise.setSuccess(sslServerContext(useAlpn));
-        } else {
-          KeyManagerFactory kmf;
-          try {
-            kmf = sslContextProvider.resolveKeyManagerFactory(serverName);
-          } catch (Exception e) {
-            promise.setFailure(e);
-            return;
-          }
-          TrustManager[] trustManagers;
-          try {
-            trustManagers = sslContextProvider.resolveTrustManagers(serverName);
-          } catch (Exception e) {
-            promise.setFailure(e);
-            return;
-          }
-          int idx = idx(useAlpn);
-          SslContext sslContext = sslContextMaps[idx].computeIfAbsent(serverName, s -> sslContextProvider.createServerContext(kmf, trustManagers, s, useAlpn));
-          promise.setSuccess(sslContext);
+        SslContext sslContext;
+        try {
+          sslContext = sslContext(serverName, useAlpn, true, false);
+        } catch (Exception e) {
+          promise.setFailure(e);
+          return;
         }
+        promise.setSuccess(sslContext);
       });
       return promise;
     };
