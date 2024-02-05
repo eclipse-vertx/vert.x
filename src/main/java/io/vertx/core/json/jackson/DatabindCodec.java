@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -34,22 +35,20 @@ import java.util.Map;
 public class DatabindCodec extends JacksonCodec {
 
   private static final ObjectMapper mapper = new ObjectMapper();
-  private static final ObjectMapper prettyMapper = new ObjectMapper();
+  private static final AtomicReference<ObjectMapper> prettyMapper = new AtomicReference<>();
 
   static {
-    initialize();
+    initialize(mapper, false);
   }
 
-  private static void initialize() {
+  private static void initialize(ObjectMapper om, boolean prettyPrint) {
     // Non-standard JSON but we allow C style comments in our JSON
-    mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
-
-    prettyMapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
-    prettyMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
-
+    om.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+    if (prettyPrint) {
+      om.configure(SerializationFeature.INDENT_OUTPUT, true);
+    }
     VertxModule module = new VertxModule();
-    mapper.registerModule(module);
-    prettyMapper.registerModule(module);
+    om.registerModule(module);
   }
 
   /**
@@ -65,7 +64,13 @@ public class DatabindCodec extends JacksonCodec {
    */
   @Deprecated
   public static ObjectMapper prettyMapper() {
-    return prettyMapper;
+    ObjectMapper pm = prettyMapper.get();
+    if (pm != null) {
+      return pm;
+    }
+    pm = new ObjectMapper();
+    initialize(pm, true);
+    return prettyMapper.compareAndSet(null, pm) ? pm : prettyMapper.get();
   }
 
   @Override
@@ -157,8 +162,13 @@ public class DatabindCodec extends JacksonCodec {
   @Override
   public String toString(Object object, boolean pretty) throws EncodeException {
     try {
-      ObjectMapper mapper = pretty ? DatabindCodec.prettyMapper : DatabindCodec.mapper;
-      return mapper.writeValueAsString(object);
+      String result;
+      if (pretty) {
+        result = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(object);
+      } else {
+        result = mapper.writeValueAsString(object);
+      }
+      return result;
     } catch (Exception e) {
       throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
     }
@@ -167,8 +177,13 @@ public class DatabindCodec extends JacksonCodec {
   @Override
   public Buffer toBuffer(Object object, boolean pretty) throws EncodeException {
     try {
-      ObjectMapper mapper = pretty ? DatabindCodec.prettyMapper : DatabindCodec.mapper;
-      return Buffer.buffer(mapper.writeValueAsBytes(object));
+      byte[] result;
+      if (pretty) {
+        result = mapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(object);
+      } else {
+        result = mapper.writeValueAsBytes(object);
+      }
+      return Buffer.buffer(result);
     } catch (Exception e) {
       throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
     }
