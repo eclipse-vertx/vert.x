@@ -45,10 +45,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.LongConsumer;
+import java.util.function.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -5307,6 +5304,63 @@ public class Http1xTest extends HttpTest {
     NetClient nc = vertx.createNetClient();
     nc.connect(testAddress).onComplete(onSuccess(so -> {
       so.write("GET / HTTP/1.1\r\n\r\n");
+    }));
+    await();
+  }
+
+  @Test
+  public void testCanUpgradeToWebSocket() throws Exception {
+    UnaryOperator<RequestOptions> config = ro -> ro.setMethod(HttpMethod.GET)
+      .putHeader(HttpHeaders.CONNECTION, HttpHeaders.UPGRADE)
+      .putHeader(HttpHeaders.UPGRADE, HttpHeaders.WEBSOCKET);
+    doTestCanUpgradeToWebSocket(config, true);
+  }
+
+  @Test
+  public void testCanUpgradeToWebSocketFirefox() throws Exception {
+    UnaryOperator<RequestOptions> config = ro -> ro.setMethod(HttpMethod.GET)
+      .putHeader(HttpHeaders.CONNECTION, HttpHeaders.KEEP_ALIVE + ", " + HttpHeaders.UPGRADE)
+      .putHeader(HttpHeaders.UPGRADE, HttpHeaders.WEBSOCKET);
+    doTestCanUpgradeToWebSocket(config, true);
+  }
+
+  @Test
+  public void testCannotUpgradePostRequestToWebSocket() throws Exception {
+    UnaryOperator<RequestOptions> config = ro -> ro.setMethod(HttpMethod.POST)
+      .putHeader(HttpHeaders.CONNECTION, HttpHeaders.UPGRADE)
+      .putHeader(HttpHeaders.UPGRADE, HttpHeaders.WEBSOCKET);
+    doTestCanUpgradeToWebSocket(config, false);
+  }
+
+  @Test
+  public void testCannotUpgradeToWebSocketIfConnectionHeaderIsMissing() throws Exception {
+    UnaryOperator<RequestOptions> config = ro -> ro.setMethod(HttpMethod.GET)
+      .putHeader(HttpHeaders.UPGRADE, HttpHeaders.WEBSOCKET);
+    doTestCanUpgradeToWebSocket(config, false);
+  }
+
+  @Test
+  public void testCannotUpgradeToWebSocketIfUpgradeDoesNotContainWebsocket() throws Exception {
+    UnaryOperator<RequestOptions> config = ro -> ro.setMethod(HttpMethod.GET)
+      .putHeader(HttpHeaders.CONNECTION, HttpHeaders.UPGRADE)
+      .putHeader(HttpHeaders.UPGRADE, "foo");
+    doTestCanUpgradeToWebSocket(config, false);
+  }
+
+  private void doTestCanUpgradeToWebSocket(UnaryOperator<RequestOptions> config, boolean shouldSucceed) throws Exception {
+    server.requestHandler(req -> {
+      HttpServerResponse serverResponse = req.response();
+      int statusCode = HttpUtils.canUpgradeToWebSocket(req) ? 200 : 500;
+      serverResponse.setStatusCode(statusCode);
+      serverResponse.end();
+    });
+    startServer(testAddress);
+    client.request(config.apply(new RequestOptions(requestOptions))).onComplete(onSuccess(req -> {
+      req.response().onComplete(onSuccess(resp -> {
+        assertEquals(shouldSucceed ? 200 : 500, resp.statusCode());
+        testComplete();
+      }));
+      req.send();
     }));
     await();
   }

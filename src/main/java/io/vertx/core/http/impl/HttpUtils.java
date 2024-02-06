@@ -1016,4 +1016,24 @@ public final class HttpUtils {
     int len = host.length();
     return HostAndPortImpl.parseHost(host, 0, len) == len;
   }
+
+  public static boolean canUpgradeToWebSocket(HttpServerRequest req) {
+    if (req.version() != io.vertx.core.http.HttpVersion.HTTP_1_1) {
+      return false;
+    }
+    if (req.method() != io.vertx.core.http.HttpMethod.GET) {
+      return false;
+    }
+    MultiMap headers = req.headers();
+    for (String connection : headers.getAll(io.vertx.core.http.HttpHeaders.CONNECTION)) {
+      if (connection.toLowerCase().contains(io.vertx.core.http.HttpHeaders.UPGRADE)) {
+        for (String upgrade : headers.getAll(io.vertx.core.http.HttpHeaders.UPGRADE)) {
+          if (upgrade.toLowerCase().contains(io.vertx.core.http.HttpHeaders.WEBSOCKET)) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
 }
