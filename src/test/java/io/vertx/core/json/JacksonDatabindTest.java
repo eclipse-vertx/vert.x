@@ -15,6 +15,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationConfig;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import io.vertx.core.ThreadingModel;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.jackson.DatabindCodec;
 import io.vertx.core.json.jackson.JacksonCodec;
@@ -236,5 +239,21 @@ public class JacksonDatabindTest extends VertxTestBase {
     assertFalse(compact.equals(pretty));
 
     assertEquals(jsonObject, Json.decodeValue(pretty));
+  }
+
+  @Test
+  public void testObjectMapperConfigAppliesToPrettyPrinting() {
+    ObjectMapper om = DatabindCodec.mapper();
+    SerializationConfig sc = om.getSerializationConfig();
+    assertNotNull(sc);
+    try {
+      om.setConfig(sc.with(SerializationFeature.WRITE_ENUMS_USING_INDEX));
+      ThreadingModel vt = ThreadingModel.VIRTUAL_THREAD;
+      String expected = String.valueOf(vt.ordinal());
+      assertEquals(expected, Json.encodePrettily(vt));
+      assertEquals(expected, Json.encode(vt));
+    } finally {
+      om.setConfig(sc);
+    }
   }
 }
