@@ -32,9 +32,9 @@ import io.vertx.core.spi.cluster.impl.DefaultNodeSelector;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * Vertx builder for creating vertx instances with SPI overrides.
@@ -279,9 +279,7 @@ public class VertxBuilder {
     initTransport();
     initMetrics();
     initTracing();
-    Collection<VertxServiceProvider> providers = new ArrayList<>();
-    initClusterManager(providers);
-    providers.addAll(ServiceHelper.loadFactories(VertxServiceProvider.class));
+    List<VertxServiceProvider> providers = ServiceHelper.loadFactories(VertxServiceProvider.class);
     initProviders(providers);
     initThreadFactory();
     initExecutorServiceFactory();
@@ -311,20 +309,6 @@ public class VertxBuilder {
     VertxTracerFactory provider = tracerFactory;
     if (provider != null) {
       provider.init(this);
-    }
-  }
-
-  private static void initClusterManager(Collection<VertxServiceProvider> providers) {
-    String clusterManagerClassName = SysProps.CLUSTER_MANAGER_CLASS.get();
-    if (clusterManagerClassName != null) {
-      // We allow specify a sys prop for the cluster manager factory which overrides ServiceLoader
-      try {
-        Class<?> clazz = Class.forName(clusterManagerClassName);
-        ClusterManager clusterManager = (ClusterManager) clazz.getDeclaredConstructor().newInstance();
-        providers.add(clusterManager);
-      } catch (Exception e) {
-        throw new IllegalStateException("Failed to instantiate " + clusterManagerClassName, e);
-      }
     }
   }
 
