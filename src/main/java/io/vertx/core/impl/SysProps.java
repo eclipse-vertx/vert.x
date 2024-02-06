@@ -71,14 +71,6 @@ public enum SysProps {
    */
   LOGGER_DELEGATE_FACTORY_CLASS_NAME("vertx.logger-delegate-factory-class-name"),
 
-  /**
-   * Pass options to the Java compiler when a .java verticle is compiled by Vert.x when deploying a source code verticle. The
-   * value should be a comma separated list of options.
-   *
-   * Not documented nor tested.
-   */
-  JAVA_COMPILER_OPTIONS_PROP_NAME("vertx.javaCompilerOptions")
-
   ;
 
   public final String name;
