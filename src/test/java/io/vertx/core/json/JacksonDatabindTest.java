@@ -120,7 +120,9 @@ public class JacksonDatabindTest extends VertxTestBase {
     try {
       om.setConfig(sc.with(SerializationFeature.WRITE_ENUMS_USING_INDEX));
       ThreadingModel vt = ThreadingModel.VIRTUAL_THREAD;
-      assertEquals(Json.encode(vt), Json.encodePrettily(vt));
+      String expected = String.valueOf(vt.ordinal());
+      assertEquals(expected, Json.encodePrettily(vt));
+      assertEquals(expected, Json.encode(vt));
     } finally {
       om.setConfig(sc);
     }
