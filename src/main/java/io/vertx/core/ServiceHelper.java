@@ -38,11 +38,11 @@ public class ServiceHelper {
   }
 
 
-  public static <T> Collection<T> loadFactories(Class<T> clazz) {
+  public static <T> List<T> loadFactories(Class<T> clazz) {
     return loadFactories(clazz, null);
   }
 
-  public static <T> Collection<T> loadFactories(Class<T> clazz, ClassLoader classLoader) {
+  public static <T> List<T> loadFactories(Class<T> clazz, ClassLoader classLoader) {
     List<T> list = new ArrayList<>();
     ServiceLoader<T> factories;
     if (classLoader != null) {

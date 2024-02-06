@@ -5,13 +5,6 @@ import java.io.File;
 public enum SysProps {
 
   /**
-   * Cluster manager to use class FQN.
-   *
-   * It does not seem tested, it is not documented, but we can find evidence of it on the web (mailing list).
-   */
-  CLUSTER_MANAGER_CLASS("vertx.cluster.managerClass"),
-
-  /**
    * Duplicate of {@link io.vertx.core.http.HttpHeaders#DISABLE_HTTP_HEADERS_VALIDATION}
    */
   DISABLE_HTTP_HEADERS_VALIDATION("vertx.disableHttpHeadersValidation"),
