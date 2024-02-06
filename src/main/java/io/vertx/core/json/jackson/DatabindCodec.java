@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -35,10 +34,11 @@ import java.util.concurrent.atomic.AtomicReference;
 public class DatabindCodec extends JacksonCodec {
 
   private static final ObjectMapper mapper = new ObjectMapper();
-  private static final AtomicReference<ObjectMapper> prettyMapper = new AtomicReference<>();
+  private static final ObjectMapper prettyMapper = new ObjectMapper();
 
   static {
     initialize(mapper, false);
+    initialize(prettyMapper, true);
   }
 
   private static void initialize(ObjectMapper om, boolean prettyPrint) {
@@ -64,13 +64,7 @@ public class DatabindCodec extends JacksonCodec {
    */
   @Deprecated
   public static ObjectMapper prettyMapper() {
-    ObjectMapper pm = prettyMapper.get();
-    if (pm != null) {
-      return pm;
-    }
-    pm = new ObjectMapper();
-    initialize(pm, true);
-    return prettyMapper.compareAndSet(null, pm) ? pm : prettyMapper.get();
+    return prettyMapper;
   }
 
   @Override
