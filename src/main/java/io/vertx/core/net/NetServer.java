@@ -146,4 +146,12 @@ public interface NetServer extends Measured {
    * @return a future signaling the update success
    */
   Future<Boolean> updateSSLOptions(ServerSSLOptions options, boolean force);
+
+  /**
+   * Update traffic shaping options {@code options}, the update happens if valid values are passed for traffic
+   * shaping options. This update happens synchronously and at best effort for rate update to take effect immediately.
+   *
+   * @param options the new traffic shaping options
+   */
+  void updateTrafficShapingOptions(TrafficShapingOptions options);
 }

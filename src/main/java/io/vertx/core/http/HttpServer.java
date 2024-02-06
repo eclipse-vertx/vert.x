@@ -12,15 +12,14 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.GenIgnore;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.metrics.Measured;
-import io.vertx.core.net.SSLOptions;
 import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.TrafficShapingOptions;
 import io.vertx.core.net.impl.SocketAddressImpl;
 
 /**
@@ -129,6 +128,14 @@ public interface HttpServer extends Measured {
    * @return a future signaling the update success
    */
   Future<Boolean> updateSSLOptions(ServerSSLOptions options, boolean force);
+
+  /**
+   * Update traffic shaping options {@code options}, the update happens if valid values are passed for traffic
+   * shaping options. This update happens synchronously and at best effort for rate update to take effect immediately.
+   *
+   * @param options the new traffic shaping options
+   */
+  void updateTrafficShapingOptions(TrafficShapingOptions options);
 
   /**
    * Tell the server to start listening. The server will listen on the port and host specified in the
