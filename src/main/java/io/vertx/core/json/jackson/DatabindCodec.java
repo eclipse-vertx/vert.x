@@ -37,19 +37,18 @@ public class DatabindCodec extends JacksonCodec {
   private static final ObjectMapper prettyMapper = new ObjectMapper();
 
   static {
-    initialize();
+    initialize(mapper, false);
+    initialize(prettyMapper, true);
   }
 
-  private static void initialize() {
+  private static void initialize(ObjectMapper om, boolean prettyPrint) {
     // Non-standard JSON but we allow C style comments in our JSON
-    mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
-
-    prettyMapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
-    prettyMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
-
+    om.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+    if (prettyPrint) {
+      om.configure(SerializationFeature.INDENT_OUTPUT, true);
+    }
     VertxModule module = new VertxModule();
-    mapper.registerModule(module);
-    prettyMapper.registerModule(module);
+    om.registerModule(module);
   }
 
   /**
@@ -157,8 +156,13 @@ public class DatabindCodec extends JacksonCodec {
   @Override
   public String toString(Object object, boolean pretty) throws EncodeException {
     try {
-      ObjectMapper mapper = pretty ? DatabindCodec.prettyMapper : DatabindCodec.mapper;
-      return mapper.writeValueAsString(object);
+      String result;
+      if (pretty) {
+        result = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(object);
+      } else {
+        result = mapper.writeValueAsString(object);
+      }
+      return result;
     } catch (Exception e) {
       throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
     }
@@ -167,8 +171,13 @@ public class DatabindCodec extends JacksonCodec {
   @Override
   public Buffer toBuffer(Object object, boolean pretty) throws EncodeException {
     try {
-      ObjectMapper mapper = pretty ? DatabindCodec.prettyMapper : DatabindCodec.mapper;
-      return Buffer.buffer(mapper.writeValueAsBytes(object));
+      byte[] result;
+      if (pretty) {
+        result = mapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(object);
+      } else {
+        result = mapper.writeValueAsBytes(object);
+      }
+      return Buffer.buffer(result);
     } catch (Exception e) {
       throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
     }
