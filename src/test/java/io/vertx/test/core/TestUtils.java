@@ -31,9 +31,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import java.util.zip.GZIPOutputStream;
-
-import javax.security.cert.X509Certificate;
-
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.util.NetUtil;
@@ -470,12 +467,6 @@ public class TestUtils {
       return names.isEmpty() ? null : names.get(0);
     }
     return null;
-  }
-
-  public static String cnOf(X509Certificate cert) throws Exception {
-    String dn = cert.getSubjectDN().getName();
-    List<String> names = KeyStoreHelper.getX509CertificateCommonNames(dn);
-    return names.isEmpty() ? null : names.get(0);
   }
 
   /**
