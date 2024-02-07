@@ -63,6 +63,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.Cleaner;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -740,7 +741,13 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public Future<String> deployVerticle(Class<? extends Verticle> verticleClass, DeploymentOptions options) {
-    return deployVerticle((Callable<Verticle>) verticleClass::newInstance, options);
+
+    try {
+      final var verticle = verticleClass.getDeclaredConstructor().newInstance();
+      return deployVerticle(verticle, options);
+    } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
