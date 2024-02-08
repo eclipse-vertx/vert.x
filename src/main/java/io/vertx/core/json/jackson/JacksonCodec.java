@@ -58,10 +58,7 @@ public class JacksonCodec implements JsonCodec {
       Method[] methods = builder.getClass().getMethods();
       for (Method method : methods) {
         if (method.getName().equals("recyclerPool")) {
-          Class<?> poolClass = JacksonCodec.class.getClassLoader().loadClass("io.vertx.core.json.jackson.HybridJacksonPool");
-          Method getInstanceMethod = poolClass.getMethod("getInstance");
-          Object pool = getInstanceMethod.invoke(null);
-          method.invoke(builder, pool);
+          method.invoke(builder, JacksonPoolHolder.pool);
           break;
         }
       }
@@ -71,7 +68,12 @@ public class JacksonCodec implements JsonCodec {
     return builder.build();
   }
 
-  private static final JsonFactory factory = buildFactory();
+  private static final class JacksonPoolHolder {
+    // Use Initialization-on-demand holder idiom to lazy load the HybridJacksonPool only when we know that we are on Jackson 2.16+
+    private static final Object pool = HybridJacksonPool.getInstance();
+  }
+
+  static final JsonFactory factory = buildFactory();
 
   static {
     // Non-standard JSON but we allow C style comments in our JSON
