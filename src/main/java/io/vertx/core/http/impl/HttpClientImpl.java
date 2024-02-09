@@ -286,7 +286,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       authority,
       server,
       false);
-    return (Future) connector.httpConnect(vertx.getOrCreateContext());
+    return (Future) connector.httpConnect(vertx.getOrCreateContext()).map(conn -> new UnpooledHttpClientConnection(conn).init());
   }
 
   @Override
@@ -442,7 +442,8 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         options.setIdleTimeout(idleTimeout);
         options.setFollowRedirects(followRedirects);
         options.setTraceOperation(traceOperation);
-        return createRequest(res.stream, options);
+        HttpClientStream stream = res.stream;
+        return createRequest(stream.connection(), stream, options);
       }).onComplete(promise);
       return promise.future();
     }
@@ -457,8 +458,8 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     }
   }
 
-  HttpClientRequest createRequest(HttpClientStream stream, RequestOptions options) {
-    HttpClientRequestImpl request = new HttpClientRequestImpl(stream);
+  HttpClientRequest createRequest(HttpConnection connection, HttpClientStream stream, RequestOptions options) {
+    HttpClientRequestImpl request = new HttpClientRequestImpl(connection, stream);
     request.init(options);
     Function<HttpClientResponse, Future<RequestOptions>> rHandler = redirectHandler;
     if (rHandler != null) {

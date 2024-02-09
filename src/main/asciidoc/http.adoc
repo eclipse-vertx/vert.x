@@ -1581,6 +1581,8 @@ The {@link io.vertx.core.http.HttpClientConnection} can create {@link io.vertx.c
 {@link examples.HTTPExamples#connectAndGet}
 ----
 
+A client connection can handle a certain amount of concurrent requests. When the max number of connection is reached, any subsequent request is queued until a slot is available.
+
 === HTTP connections
 
 The {@link io.vertx.core.http.HttpConnection} offers the API for dealing with HTTP connection events, lifecycle

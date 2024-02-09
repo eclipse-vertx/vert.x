@@ -10,17 +10,14 @@
  */
 package io.vertx.core.http;
 
-import io.netty.buffer.Unpooled;
-import io.vertx.core.Future;
-import io.vertx.core.MultiMap;
-import io.vertx.core.http.impl.HttpClientConnectionInternal;
 import io.vertx.core.http.impl.HttpClientInternal;
-import io.vertx.core.http.impl.HttpRequestHead;
-import io.vertx.core.impl.ContextInternal;
 import org.junit.Test;
 
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiConsumer;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public abstract class HttpClientConnectionTest extends HttpTestBase {
 
@@ -53,30 +50,18 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
 
   @Test
   public void testStreamGet() throws Exception {
-    waitFor(3);
     server.requestHandler(req -> {
       req.response().end("Hello World");
     });
     startServer(testAddress);
-    client.connect(new HttpConnectOptions().setServer(testAddress).setHost(requestOptions.getHost()).setPort(requestOptions.getPort())).onComplete(onSuccess(conn -> {
-      ((HttpClientConnectionInternal)conn)
-        .createStream((ContextInternal) vertx.getOrCreateContext())
-        .onComplete(onSuccess(stream -> {
-          stream.writeHead(new HttpRequestHead(
-            HttpMethod.GET, "/", MultiMap.caseInsensitiveMultiMap(), DEFAULT_HTTP_HOST_AND_PORT, "", null), false, Unpooled.EMPTY_BUFFER, true, new StreamPriority(), false);
-          stream.headHandler(resp -> {
-            assertEquals(200, resp.statusCode);
-            complete();
-          });
-          stream.endHandler(headers -> {
-            assertEquals(0, headers.size());
-            complete();
-          });
-          stream.closeHandler(v -> {
-            complete();
-          });
-        }));
-    }));
+    HttpConnectOptions connect = new HttpConnectOptions().setServer(testAddress).setHost(requestOptions.getHost()).setPort(requestOptions.getPort());
+    client.connect(connect).compose(conn -> conn.request().compose(req -> req
+        .send()
+        .compose(HttpClientResponse::body)))
+      .andThen(onSuccess(body -> {
+        assertEquals("Hello World", body.toString());
+        testComplete();
+      }));
     await();
   }
 
@@ -87,62 +72,48 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
       req.connection().close();
     });
     startServer(testAddress);
-    client.connect(new HttpConnectOptions().setServer(testAddress).setHost(requestOptions.getHost()).setPort(requestOptions.getPort())).onComplete(onSuccess(conn -> {
-      HttpClientConnectionInternal ci = ((HttpClientConnectionInternal)conn);
-      AtomicInteger evictions = new AtomicInteger();
-      ci.evictionHandler(v -> {
-        assertEquals(1, evictions.incrementAndGet());
+    HttpConnectOptions connect = new HttpConnectOptions().setServer(testAddress).setHost(requestOptions.getHost()).setPort(requestOptions.getPort());
+    client.connect(connect).onComplete(onSuccess(conn -> {
+      conn.closeHandler(v -> {
         complete();
       });
-      ci.createStream((ContextInternal) vertx.getOrCreateContext()).onComplete(onSuccess(stream -> {
-        stream.writeHead(new HttpRequestHead(
-          HttpMethod.GET, "/", MultiMap.caseInsensitiveMultiMap(), DEFAULT_HTTP_HOST_AND_PORT, "", null), false, Unpooled.EMPTY_BUFFER, true, new StreamPriority(), false);
-        stream.headHandler(resp -> {
-          fail();
-        });
-        stream.endHandler(headers -> {
-          fail();
-        });
-        stream.closeHandler(v -> {
-          assertEquals(1, evictions.get());
-          complete();
-        });
-      }));
+      conn.request()
+        .compose(req -> req
+          .send()
+          .compose(HttpClientResponse::body))
+        .onComplete(onFailure(err -> complete()));
     }));
     await();
   }
 
   @Test
-  public void testConcurrencyLimit() throws Exception {
+  public void testRequestQueuing() throws Exception {
+    int num = 1;
     server.requestHandler(req -> {
+      req.response().end("Echo:" + req.getHeader("id"));
     });
     startServer(testAddress);
+    List<String> collected = Collections.synchronizedList(new ArrayList<>());
     client.connect(new HttpConnectOptions().setServer(testAddress).setHost(requestOptions.getHost()).setPort(requestOptions.getPort())).onComplete(onSuccess(conn -> {
-      long concurrency = ((HttpClientConnectionInternal) conn).concurrency();
-      createRequestRecursively(conn, 0, (err, num) -> {
-        assertEquals(concurrency, (long)num);
-        testComplete();
-      });
+      final int concurrency = (int) conn.maxActiveStreams();
+      for (int i = 0;i < concurrency + num;i++) {
+        int val = i;
+        conn.request().compose(req -> req
+            .putHeader("id", "" + val)
+            .send()
+            .compose(HttpClientResponse::body))
+          .onComplete(onSuccess(body -> {
+            collected.add(body.toString());
+            if (val == concurrency + num - 1) {
+              List<String> expected = IntStream.range(0, concurrency + num)
+                .mapToObj(idx -> "Echo:" + idx)
+                .collect(Collectors.toList());
+              assertEquals(expected, collected);
+              testComplete();
+            }
+          }));
+      }
     }));
     await();
-  }
-
-  private void createRequestRecursively(HttpClientConnection conn, long num, BiConsumer<Throwable, Long> callback) {
-    Future<HttpClientRequest> fut = conn.request(new RequestOptions());
-    fut.onComplete(ar1 -> {
-      if (ar1.succeeded()) {
-        HttpClientRequest req = ar1.result();
-        req.setChunked(true);
-        req.write("Hello").onComplete(ar2 -> {
-          if (ar2.succeeded()) {
-            createRequestRecursively(conn, num + 1, callback);
-          } else {
-            callback.accept(ar2.cause(), num);
-          }
-        });
-      } else {
-        callback.accept(ar1.cause(), num);
-      }
-    });
   }
 }

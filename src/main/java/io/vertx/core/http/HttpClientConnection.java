@@ -17,6 +17,11 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Represents an HTTP client connection.
+ * <p>
+ * You can use this connection to create requests to the connected server.
+ * <p>
+ * Depending on the nature of the connection, requests might just be sent to the server or might be queued until
+ * a connection request is available.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -29,9 +34,9 @@ public interface HttpClientConnection extends HttpConnection, HttpClient {
   long activeStreams();
 
   /**
-   * @return the max number of active streams this connection can handle concurrently
+   * @return the max number of concurrent active streams this connection can handle
    */
-  long concurrency();
+  long maxActiveStreams();
 
   @Override
   default Future<Void> close(long timeout, TimeUnit timeUnit) {

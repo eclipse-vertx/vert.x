@@ -30,11 +30,12 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   private final MultiMap headers;
 
   public HttpClientRequestPushPromise(
+    HttpConnection connection,
     HttpClientStream stream,
     HttpMethod method,
     String uri,
     MultiMap headers) {
-    super(stream, stream.connection().getContext().promise(), method, uri);
+    super(connection, stream, stream.connection().getContext().promise(), method, uri);
     this.stream = stream;
     this.headers = headers;
   }
@@ -52,11 +53,6 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   @Override
   public HttpClientRequest exceptionHandler(Handler<Throwable> handler) {
     return this;
-  }
-
-  @Override
-  public HttpClientConnection connection() {
-    return stream.connection();
   }
 
   @Override

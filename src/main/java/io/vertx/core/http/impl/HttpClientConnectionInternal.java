@@ -15,9 +15,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.http.HttpClientConnection;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.RequestOptions;
+import io.vertx.core.http.HttpConnection;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -26,7 +24,7 @@ import io.vertx.core.net.HostAndPort;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface HttpClientConnectionInternal extends HttpClientConnection {
+public interface HttpClientConnectionInternal extends HttpConnection {
 
   Logger log = LoggerFactory.getLogger(HttpClientConnectionInternal.class);
 
@@ -35,6 +33,16 @@ public interface HttpClientConnectionInternal extends HttpClientConnection {
   };
 
   Handler<Long> DEFAULT_CONCURRENCY_CHANGE_HANDLER = concurrency -> {};
+
+  /**
+   * @return the number of active request/response (streams)
+   */
+  long activeStreams();
+
+  /**
+   * @return the max number of active streams this connection can handle concurrently
+   */
+  long concurrency();
 
   HostAndPort authority();
 
@@ -69,31 +77,6 @@ public interface HttpClientConnectionInternal extends HttpClientConnection {
    * @return the {@link ChannelHandlerContext} of the handler managing the connection
    */
   ChannelHandlerContext channelHandlerContext();
-
-  /**
-   * Create an HTTP stream.
-   *
-   * @param context the stream context
-   * @return a future notified with the created request
-   */
-  default Future<HttpClientRequest> request(ContextInternal context, RequestOptions options) {
-    if (pooled()) {
-      return context.failedFuture("HTTP requests cannot be directly created from pool HTTP client request, use the pool instead");
-    }
-    return createStream(context).map(stream -> {
-      HttpClientRequestImpl request = new HttpClientRequestImpl(stream);
-      if (options != null) {
-        request.init(options);
-      }
-      return request;
-    });
-  }
-
-  @Override
-  default Future<HttpClientRequest> request(RequestOptions options) {
-    ContextInternal ctx = getContext().owner().getOrCreateContext();
-    return request(ctx, options);
-  }
 
   /**
    * Create an HTTP stream.
