@@ -151,7 +151,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   protected void handleEvent(Object evt) {
     if (evt instanceof ShutdownEvent) {
       ShutdownEvent shutdown = (ShutdownEvent) evt;
-      shutdown(shutdown.timeUnit().toMillis(shutdown.timeout()));
+      shutdown(shutdown.timeout(), shutdown.timeUnit());
     } else {
       super.handleEvent(evt);
     }

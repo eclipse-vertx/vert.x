@@ -1769,7 +1769,7 @@ public class Http2ServerTest extends Http2TestBase {
           assertEquals(1, status.getAndIncrement());
           complete();
         });
-        conn.shutdown(300);
+        conn.shutdown(300, TimeUnit.MILLISECONDS);
       }
     };
     testServerSendGoAway(requestHandler, 0);
@@ -1972,9 +1972,9 @@ public class Http2ServerTest extends Http2TestBase {
     Handler<HttpServerRequest> requestHandler = req -> {
       HttpConnection conn = req.connection();
       shutdown.set(System.currentTimeMillis());
-      conn.shutdown(10000);
+      conn.shutdown(10, TimeUnit.SECONDS);
       vertx.setTimer(300, v -> {
-        conn.shutdown(300);
+        conn.shutdown(300, TimeUnit.MILLISECONDS);
       });
     };
     server.requestHandler(requestHandler);

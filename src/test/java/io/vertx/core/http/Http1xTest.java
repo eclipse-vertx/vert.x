@@ -5055,7 +5055,7 @@ public class Http1xTest extends HttpTest {
       if (clientConnection != null) {
         long now = System.currentTimeMillis();
         clientConnection
-          .shutdown(500L)
+          .shutdown(500, TimeUnit.MILLISECONDS)
           .onComplete(onSuccess(v -> {
             assertTrue(System.currentTimeMillis() - now >= 500L);
             complete();
@@ -5090,7 +5090,7 @@ public class Http1xTest extends HttpTest {
     waitFor(2);
     server.requestHandler(req -> {
       long now = System.currentTimeMillis();
-      clientConnectionRef.get().shutdown(0L)
+      clientConnectionRef.get().close()
         .onComplete(onSuccess(v -> {
           assertTrue(System.currentTimeMillis() - now <= 2000L);
           complete();
@@ -5119,7 +5119,7 @@ public class Http1xTest extends HttpTest {
         assertTrue(ended.get());
         complete();
       });
-      Future<Void> shutdown = conn.shutdown(10_000);
+      Future<Void> shutdown = conn.shutdown(10, TimeUnit.SECONDS);
       shutdown.onComplete(onSuccess(v -> {
         assertTrue(ended.get());
         complete();
@@ -5153,7 +5153,7 @@ public class Http1xTest extends HttpTest {
               assertEquals(2, status.get());
               complete();
             });
-            Future<Void> shutdown = conn.shutdown(10_000);
+            Future<Void> shutdown = conn.shutdown(10, TimeUnit.SECONDS);
             shutdown.onComplete(onSuccess(v -> {
               assertEquals(2, status.get());
               complete();
@@ -5190,7 +5190,7 @@ public class Http1xTest extends HttpTest {
     server.requestHandler(req -> {
       HttpConnection conn = req.connection();
       long now = System.currentTimeMillis();
-      conn.shutdown(1000);
+      conn.shutdown(1, TimeUnit.SECONDS);
       conn.closeHandler(v -> {
         assertTrue(System.currentTimeMillis() - now >= 1000);
         complete();

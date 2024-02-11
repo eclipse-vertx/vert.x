@@ -887,11 +887,6 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
   }
 
   @Override
-  public Future<Void> shutdown(long timeoutMs) {
-    return current.shutdown(timeoutMs);
-  }
-
-  @Override
   public Future<Void> shutdown(long delay, TimeUnit unit) {
     return current.shutdown(delay, unit);
   }

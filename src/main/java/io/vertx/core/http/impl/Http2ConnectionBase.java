@@ -389,7 +389,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     ChannelPromise pr = chctx.newPromise();
     ChannelPromise channelPromise = pr.addListener(promise);
     handlerContext.writeAndFlush(Unpooled.EMPTY_BUFFER, pr);
-    channelPromise.addListener((ChannelFutureListener) future -> shutdown(0L));
+    channelPromise.addListener((ChannelFutureListener) future -> shutdown(0L, TimeUnit.SECONDS));
     return promise.future();
   }
 

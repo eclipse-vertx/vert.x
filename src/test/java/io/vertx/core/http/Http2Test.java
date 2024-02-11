@@ -232,7 +232,7 @@ public class Http2Test extends HttpTest {
     AtomicInteger count = new AtomicInteger();
     server.requestHandler(req -> {
       if (count.getAndIncrement() == 0) {
-        req.connection().shutdown(0L);
+        req.connection().close();
       } else {
         req.response().end();
       }

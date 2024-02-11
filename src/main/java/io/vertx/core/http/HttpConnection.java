@@ -128,14 +128,6 @@ public interface HttpConnection {
   }
 
   /**
-   * Like {@link #shutdown()} but with a specific {@code timeout} in milliseconds.
-   */
-  @Deprecated
-  default Future<Void> shutdown(long timeoutMs) {
-    return shutdown(timeoutMs, TimeUnit.MILLISECONDS);
-  }
-
-  /**
    * Initiate a graceful connection shutdown, the connection is taken out of service and closed when all current requests
    * are processed, otherwise after {@code delay} the connection will be closed. Client connection are immediately removed
    * from the pool.

@@ -181,7 +181,7 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
         connection.handleIdle((IdleStateEvent) evt);
       } else if (evt instanceof ShutdownEvent) {
         ShutdownEvent shutdownEvt = (ShutdownEvent) evt;
-        connection.shutdown(shutdownEvt.timeUnit().toMillis(shutdownEvt.timeout()));
+        connection.shutdown(shutdownEvt.timeout(), shutdownEvt.timeUnit());
       }
     }
   }
