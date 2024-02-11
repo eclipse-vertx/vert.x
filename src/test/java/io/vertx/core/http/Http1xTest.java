@@ -5110,6 +5110,100 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testServerConnectionGracefulShutdown() throws Exception {
+    waitFor(3);
+    server.requestHandler(req -> {
+      HttpConnection conn = req.connection();
+      AtomicBoolean ended = new AtomicBoolean();
+      conn.closeHandler(v -> {
+        assertTrue(ended.get());
+        complete();
+      });
+      Future<Void> shutdown = conn.shutdown(10_000);
+      shutdown.onComplete(onSuccess(v -> {
+        assertTrue(ended.get());
+        complete();
+      }));
+      vertx.setTimer(500, id -> {
+        ended.set(true);
+        req.response().end();
+      });
+    });
+    startServer(testAddress);
+    client.request(requestOptions).compose(req -> req
+        .send()
+        .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+        .compose(HttpClientResponse::body)
+      )
+      .onComplete(onSuccess(body -> complete()));
+    await();
+  }
+
+  @Test
+  public void testServerConnectionGracefulShutdownWithPipelinedReqeuest() throws Exception {
+    waitFor(4);
+    AtomicInteger count = new AtomicInteger();
+    AtomicInteger status = new AtomicInteger();
+    server.requestHandler(req -> {
+      switch (count.getAndIncrement()) {
+        case 0:
+          vertx.setTimer(1, id1 -> {
+            HttpConnection conn = req.connection();
+            conn.closeHandler(v -> {
+              assertEquals(2, status.get());
+              complete();
+            });
+            Future<Void> shutdown = conn.shutdown(10_000);
+            shutdown.onComplete(onSuccess(v -> {
+              assertEquals(2, status.get());
+              complete();
+            }));
+            vertx.setTimer(500, id2 -> {
+              assertEquals(0, status.getAndIncrement());
+              req.response().end();
+            });
+          });
+          break;
+        case 1:
+          assertEquals(1, status.getAndIncrement());
+          req.response().end();
+          break;
+      }
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions().setPipelining(true), new PoolOptions().setHttp1MaxSize(1));
+    for (int i = 0;i < 2;i++) {
+      client.request(requestOptions).compose(req -> req
+          .send()
+          .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+          .compose(HttpClientResponse::body)
+        )
+        .onComplete(onSuccess(body -> complete()));
+    }
+    await();
+  }
+
+  @Test
+  public void testServerConnectionShutdownTimedOut() throws Exception {
+    waitFor(2);
+    server.requestHandler(req -> {
+      HttpConnection conn = req.connection();
+      long now = System.currentTimeMillis();
+      conn.shutdown(1000);
+      conn.closeHandler(v -> {
+        assertTrue(System.currentTimeMillis() - now >= 1000);
+        complete();
+      });
+    });
+    startServer(testAddress);
+    client.request(requestOptions)
+      .compose(HttpClientRequest::send)
+      .onComplete(onFailure(body -> complete()));
+    await();
+  }
+
+  @Test
   public void testClientNetSocketPooling() throws Exception {
     int maxPoolSize = 5; // Default
     int num = 6;

@@ -85,6 +85,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   private Http1xServerRequest requestInProgress;
   private Http1xServerRequest responseInProgress;
   private boolean wantClose;
+  private long shutdownTimerID;
   private boolean channelPaused;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<HttpServerRequest> invalidRequestHandler;
@@ -110,6 +111,31 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     this.handle100ContinueAutomatically = options.isHandle100ContinueAutomatically();
     this.tracingPolicy = options.getTracingPolicy();
     this.wantClose = false;
+    this.shutdownTimerID = -1L;
+  }
+
+  @Override
+  public Future<Void> shutdown(long timeoutMs) {
+    Promise<Void> promise = vertx.promise();
+    context.execute(() -> shutdown(promise, timeoutMs));
+    return promise.future();
+  }
+
+  private void shutdown(Promise<Void> promise, long timeoutMs) {
+    if (shutdownTimerID == -1L) {
+      if (responseInProgress != null) {
+        wantClose = true;
+        shutdownTimerID = context.setTimer(timeoutMs, id -> {
+          close();
+        });
+      } else {
+        close();
+      }
+      Future<Void> f = closeFuture();
+      f.onComplete(promise);
+    } else {
+      promise.fail("Already shutdown");
+    }
   }
 
   TracingPolicy tracingPolicy() {
@@ -242,18 +268,21 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       responseInProgress = null;
       DecoderResult result = request.decoderResult();
       if (result.isSuccess()) {
-        if (!wantClose) {
-          Http1xServerRequest next = request.next();
-          if (next != null) {
-            // Handle pipelined request
-            handleNext(next);
-          }
+        if (requestInProgress == request || webSocket != null) {
+          // Deferred
         } else {
-          if (requestInProgress == request || webSocket != null) {
-            // Deferred
-          } else {
+          if (wantClose && shutdownTimerID == -1L) {
+            // No keep-alive
             flushAndClose();
-          }
+          } else {
+            Http1xServerRequest next = request.next();
+            if (next != null) {
+              // Handle pipelined request
+              handleNext(next);
+            } else if (wantClose && shutdownTimerID != -1L && vertx.cancelTimer(shutdownTimerID)) {
+              shutdownTimerID = -1L;
+              flushAndClose();
+            }          }
         }
       } else {
         ChannelPromise channelFuture = channelFuture();
@@ -268,7 +297,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   private void handleNext(Http1xServerRequest next) {
     boolean keepAlive = HttpUtils.isKeepAlive(next.nettyRequest());
     responseInProgress = next;
-    wantClose = !keepAlive;
+    wantClose |= !keepAlive;
     next.handleBegin(keepAlive);
     next.context.emit(next, next_ -> {
       next_.resume();
