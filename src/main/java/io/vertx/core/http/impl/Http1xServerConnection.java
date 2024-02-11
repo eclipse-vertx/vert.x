@@ -43,7 +43,6 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.MessageWrite;
 import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.SSLHelper;
-import io.vertx.core.net.impl.SslChannelProvider;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
@@ -81,7 +80,6 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
 
   private final String serverOrigin;
   private final Supplier<ContextInternal> streamContextSupplier;
-  private final SslChannelProvider sslChannelProvider;
   private final TracingPolicy tracingPolicy;
   private boolean requestFailed;
 
@@ -98,7 +96,6 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   final SSLHelper sslHelper;
 
   public Http1xServerConnection(Supplier<ContextInternal> streamContextSupplier,
-                                SslChannelProvider sslChannelProvider,
                                 SSLHelper sslHelper,
                                 HttpServerOptions options,
                                 ChannelHandlerContext chctx,
@@ -110,7 +107,6 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     this.streamContextSupplier = streamContextSupplier;
     this.options = options;
     this.sslHelper = sslHelper;
-    this.sslChannelProvider = sslChannelProvider;
     this.metrics = metrics;
     this.handle100ContinueAutomatically = options.isHandle100ContinueAutomatically();
     this.tracingPolicy = options.getTracingPolicy();

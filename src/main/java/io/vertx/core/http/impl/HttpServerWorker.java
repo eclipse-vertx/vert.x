@@ -310,18 +310,14 @@ public class HttpServerWorker implements TCPServerBase.Worker {
       return;
     }
     HttpServerMetrics metrics = (HttpServerMetrics) server.getMetrics();
-    VertxHandler<Http1xServerConnection> handler = VertxHandler.create(chctx -> {
-      Http1xServerConnection conn = new Http1xServerConnection(
-        streamContextSupplier,
-        sslChannelProvider,
-        sslHelper,
-        options,
-        chctx,
-        context,
-        serverOrigin,
-        metrics);
-      return conn;
-    });
+    VertxHandler<Http1xServerConnection> handler = VertxHandler.create(chctx -> new Http1xServerConnection(
+      streamContextSupplier,
+      sslHelper,
+      options,
+      chctx,
+      context,
+      serverOrigin,
+      metrics));
     pipeline.addLast("handler", handler);
     Http1xServerConnection conn = handler.getConnection();
     if (metrics != null) {
