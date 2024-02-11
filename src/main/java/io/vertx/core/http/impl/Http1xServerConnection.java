@@ -48,6 +48,7 @@ import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingPolicy;
 
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
@@ -115,17 +116,17 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   }
 
   @Override
-  public Future<Void> shutdown(long timeoutMs) {
+  public Future<Void> shutdown(long timeout, TimeUnit unit) {
     Promise<Void> promise = vertx.promise();
-    context.execute(() -> shutdown(promise, timeoutMs));
+    context.execute(() -> shutdown(promise, timeout, unit));
     return promise.future();
   }
 
-  private void shutdown(Promise<Void> promise, long timeoutMs) {
+  private void shutdown(Promise<Void> promise, long timeout, TimeUnit unit) {
     if (shutdownTimerID == -1L) {
       if (responseInProgress != null) {
         wantClose = true;
-        shutdownTimerID = context.setTimer(timeoutMs, id -> {
+        shutdownTimerID = context.setTimer(unit.toMillis(timeout), id -> {
           close();
         });
       } else {
@@ -223,15 +224,21 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   }
 
   private void onEnd() {
-    boolean close;
+    boolean tryClose;
     Http1xServerRequest request;
     synchronized (this) {
       request = requestInProgress;
       requestInProgress = null;
-      close = wantClose && responseInProgress == null;
+      tryClose = wantClose && responseInProgress == null;
     }
     request.context.execute(request, Http1xServerRequest::handleEnd);
-    if (close) {
+    if (tryClose) {
+      if (shutdownTimerID != -1L) {
+        if (!vertx.cancelTimer(shutdownTimerID)) {
+          return;
+        }
+        shutdownTimerID = -1L;
+      }
       flushAndClose();
     }
   }

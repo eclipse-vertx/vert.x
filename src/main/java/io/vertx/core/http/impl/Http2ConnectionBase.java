@@ -46,6 +46,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -357,18 +358,22 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public Future<Void> shutdown(long timeoutMs) {
+  public Future<Void> shutdown(long timeout, TimeUnit unit) {
     PromiseInternal<Void> promise = vertx.promise();
-    shutdown(timeoutMs, promise);
+    shutdown(timeout, unit, promise);
     return promise.future();
   }
 
-  private void shutdown(long timeout, PromiseInternal<Void> promise) {
+  private void shutdown(long timeout, TimeUnit unit, PromiseInternal<Void> promise) {
+    if (unit == null) {
+      promise.fail("Null time unit");
+      return;
+    }
     if (timeout < 0) {
       promise.fail("Invalid timeout value " + timeout);
       return;
     }
-    handler.gracefulShutdownTimeoutMillis(timeout);
+    handler.gracefulShutdownTimeoutMillis(unit.toMillis(timeout));
     ChannelFuture fut = channel().close();
     fut.addListener(promise);
   }

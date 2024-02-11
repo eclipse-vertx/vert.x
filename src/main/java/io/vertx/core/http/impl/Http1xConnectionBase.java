@@ -137,11 +137,6 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
   }
 
   @Override
-  public Future<Void> shutdown(long timeoutMs) {
-    throw new UnsupportedOperationException("HTTP/1.x connections cannot be shutdown");
-  }
-
-  @Override
   public Http2Settings settings() {
     throw new UnsupportedOperationException("HTTP/1.x connections don't support SETTINGS");
   }
