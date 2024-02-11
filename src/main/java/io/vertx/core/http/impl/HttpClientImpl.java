@@ -182,7 +182,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       ProxyOptions proxyOptions = key.proxyOptions;
       if (proxyOptions != null && !key.ssl && proxyOptions.getType() == ProxyType.HTTP) {
         SocketAddress server = SocketAddress.inetSocketAddress(proxyOptions.getPort(), proxyOptions.getHost());
-        key = new EndpointKey(key.ssl, key.sslOptions, proxyOptions, server, key.authority);
+        key = new EndpointKey(false, key.sslOptions, proxyOptions, server, key.authority);
         proxyOptions = null;
       }
       HttpChannelConnector connector = new HttpChannelConnector(HttpClientImpl.this, netClient, key.sslOptions, proxyOptions, metrics, options.getProtocolVersion(), key.ssl, options.isUseAlpn(), key.authority, key.server);
@@ -431,7 +431,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       if (!ABS_URI_START_PATTERN.matcher(u).find()) {
         int defaultPort = 80;
         String addPort = (authority.port() != -1 && authority.port() != defaultPort) ? (":" + authority.port()) : "";
-        u = (useSSL == Boolean.TRUE ? "https://" : "http://") + authority.host() + addPort + requestURI;
+        u = "http://" + authority.host() + addPort + requestURI;
       }
     }
     HttpClientRequest request = createRequest(stream);
