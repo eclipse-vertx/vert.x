@@ -81,6 +81,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   Http1xServerRequest next;
   Object metric;
   Object trace;
+  boolean reportMetricsFailed;
 
   private Http1xServerResponse response;
 
