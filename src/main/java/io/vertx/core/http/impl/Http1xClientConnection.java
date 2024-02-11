@@ -57,6 +57,7 @@ import io.vertx.core.streams.impl.InboundBuffer;
 
 import java.net.URI;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
 import static io.netty.handler.codec.http.websocketx.WebSocketVersion.*;
@@ -1263,9 +1264,9 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   }
 
   @Override
-  public Future<Void> shutdown(long timeoutMs) {
+  public Future<Void> shutdown(long timeout, TimeUnit unit) {
     PromiseInternal<Void> promise = vertx.promise();
-    shutdown(timeoutMs, promise);
+    shutdown(timeout, unit, promise);
     return promise.future();
   }
 
@@ -1274,7 +1275,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     close();
   }
 
-  private void shutdown(long timeoutMs, PromiseInternal<Void> promise) {
+  private void shutdown(long timeout, TimeUnit unit, PromiseInternal<Void> promise) {
     synchronized (this) {
       if (shutdown) {
         promise.fail("Already shutdown");
@@ -1285,8 +1286,8 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     }
     synchronized (this) {
       if (!closed) {
-        if (timeoutMs > 0L) {
-          shutdownTimerID = context.setTimer(timeoutMs, id -> shutdownNow());
+        if (timeout > 0L) {
+          shutdownTimerID = context.setTimer(unit.toMillis(timeout), id -> shutdownNow());
         } else {
           close = true;
         }

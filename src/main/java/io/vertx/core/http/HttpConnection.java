@@ -23,6 +23,7 @@ import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 import java.security.cert.Certificate;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Represents an HTTP connection.
@@ -132,13 +133,21 @@ public interface HttpConnection {
    * @return a future completed when shutdown has completed
    */
   default Future<Void> shutdown() {
-    return shutdown(30000L);
+    return shutdown(30, TimeUnit.SECONDS);
   }
 
   /**
    * Like {@link #shutdown()} but with a specific {@code timeout} in milliseconds.
    */
-  Future<Void> shutdown(long timeoutMs);
+  @Deprecated
+  default Future<Void> shutdown(long timeoutMs) {
+    return shutdown(timeoutMs, TimeUnit.MILLISECONDS);
+  }
+
+  /**
+   * Like {@link #shutdown()} but with a specific {@code timeout} in milliseconds.
+   */
+  Future<Void> shutdown(long timeout, TimeUnit unit);
 
   /**
    * Set a close handler. The handler will get notified when the connection is closed.

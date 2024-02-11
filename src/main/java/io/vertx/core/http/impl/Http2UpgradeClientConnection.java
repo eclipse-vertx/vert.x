@@ -40,6 +40,7 @@ import java.security.cert.Certificate;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A connection that attempts to perform a protocol upgrade to H2C. The connection might use HTTP/1 or H2C
@@ -888,6 +889,11 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
   @Override
   public Future<Void> shutdown(long timeoutMs) {
     return current.shutdown(timeoutMs);
+  }
+
+  @Override
+  public Future<Void> shutdown(long timeout, TimeUnit unit) {
+    return current.shutdown(timeout, unit);
   }
 
   @Override
