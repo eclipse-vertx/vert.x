@@ -85,7 +85,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
 
   private Http1xServerRequest requestInProgress;
   private Http1xServerRequest responseInProgress;
-  private boolean keepAlive;
+  private boolean wantClose;
   private boolean channelPaused;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<HttpServerRequest> invalidRequestHandler;
@@ -110,7 +110,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     this.metrics = metrics;
     this.handle100ContinueAutomatically = options.isHandle100ContinueAutomatically();
     this.tracingPolicy = options.getTracingPolicy();
-    this.keepAlive = true;
+    this.wantClose = false;
   }
 
   TracingPolicy tracingPolicy() {
@@ -136,7 +136,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
 
   public void handleMessage(Object msg) {
     assert msg != null;
-    if (requestInProgress == null && !keepAlive && webSocket == null) {
+    if (requestInProgress == null && wantClose && webSocket == null) {
       // Discard message
       return;
     }
@@ -144,20 +144,21 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     if (msg == LastHttpContent.EMPTY_LAST_CONTENT) {
       onEnd();
     } else if (msg instanceof DefaultHttpRequest) {
-        // fast path type check vs concrete class
-        DefaultHttpRequest request = (DefaultHttpRequest) msg;
-        ContextInternal requestCtx = streamContextSupplier.get();
-        Http1xServerRequest req = new Http1xServerRequest(this, request, requestCtx);
-        requestInProgress = req;
-        if (responseInProgress != null) {
-          enqueueRequest(req);
-          return;
-        }
-        responseInProgress = requestInProgress;
-        keepAlive = HttpUtils.isKeepAlive(request);
-        req.handleBegin(keepAlive);
-        Handler<HttpServerRequest> handler = request.decoderResult().isSuccess() ? requestHandler : invalidRequestHandler;
-        req.context.emit(req, handler);
+      // fast path type check vs concrete class
+      DefaultHttpRequest request = (DefaultHttpRequest) msg;
+      ContextInternal requestCtx = streamContextSupplier.get();
+      Http1xServerRequest req = new Http1xServerRequest(this, request, requestCtx);
+      requestInProgress = req;
+      if (responseInProgress != null) {
+        enqueueRequest(req);
+        return;
+      }
+      boolean keepAlive = HttpUtils.isKeepAlive(request);
+      responseInProgress = requestInProgress;
+      wantClose = !keepAlive;
+      req.handleBegin(keepAlive);
+      Handler<HttpServerRequest> handler = request.decoderResult().isSuccess() ? requestHandler : invalidRequestHandler;
+      req.context.emit(req, handler);
     } else {
       handleOther(msg);
     }
@@ -202,7 +203,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     synchronized (this) {
       request = requestInProgress;
       requestInProgress = null;
-      close = !keepAlive && responseInProgress == null;
+      close = wantClose && responseInProgress == null;
     }
     request.context.execute(request, Http1xServerRequest::handleEnd);
     if (close) {
@@ -242,7 +243,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       responseInProgress = null;
       DecoderResult result = request.decoderResult();
       if (result.isSuccess()) {
-        if (keepAlive) {
+        if (!wantClose) {
           Http1xServerRequest next = request.next();
           if (next != null) {
             // Handle pipelined request
@@ -266,8 +267,9 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   }
 
   private void handleNext(Http1xServerRequest next) {
+    boolean keepAlive = HttpUtils.isKeepAlive(next.nettyRequest());
     responseInProgress = next;
-    keepAlive = HttpUtils.isKeepAlive(next.nettyRequest());
+    wantClose = !keepAlive;
     next.handleBegin(keepAlive);
     next.context.emit(next, next_ -> {
       next_.resume();
