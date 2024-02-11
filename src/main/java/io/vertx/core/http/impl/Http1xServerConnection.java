@@ -81,7 +81,6 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   private final String serverOrigin;
   private final Supplier<ContextInternal> streamContextSupplier;
   private final TracingPolicy tracingPolicy;
-  private boolean requestFailed;
 
   private Http1xServerRequest requestInProgress;
   private Http1xServerRequest responseInProgress;
@@ -298,9 +297,8 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     Http1xServerRequest request = responseInProgress;
     if (metrics != null) {
       flushBytesWritten();
-      if (requestFailed) {
+      if (request.reportMetricsFailed) {
         metrics.requestReset(request.metric());
-        requestFailed = false;
       } else {
         metrics.responseEnd(request.metric(), request.response(), request.response().bytesWritten());
       }
@@ -525,14 +523,13 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     synchronized (this) {
       requestInProgress = this.requestInProgress;
       responseInProgress = this.responseInProgress;
-      if (METRICS_ENABLED && metrics != null) {
-        requestFailed = true;
-      }
     }
     if (requestInProgress != null) {
+      requestInProgress.reportMetricsFailed = true;
       requestInProgress.handleException(t);
     }
     if (responseInProgress != null && responseInProgress != requestInProgress) {
+      responseInProgress.reportMetricsFailed = true;
       responseInProgress.handleException(t);
     }
   }
