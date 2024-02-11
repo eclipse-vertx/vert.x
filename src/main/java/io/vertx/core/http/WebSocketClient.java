@@ -77,7 +77,7 @@ public interface WebSocketClient extends Measured {
   Future<WebSocket> connect(WebSocketConnectOptions options);
 
   /**
-   * Shutdown with a delay of 30 secons ({@code shutdown(30, TimeUnit.SECONDS)}).
+   * Shutdown with a 30 seconds timeout ({@code shutdown(30, TimeUnit.SECONDS)}).
    *
    * @return a future completed when shutdown has completed
    */
@@ -120,10 +120,12 @@ public interface WebSocketClient extends Measured {
   Future<Boolean> updateSSLOptions(ClientSSLOptions options, boolean force);
 
   /**
-   * Initiate the client close sequence.
+   * Initiate the client shutdown sequence.
    *
    * @return a future notified when the client is closed
+   * @param timeout the amount of time after which all resources are forcibly closed
+   * @param unit the of the timeout
    */
-  Future<Void> shutdown(long timeout, TimeUnit timeUnit);
+  Future<Void> shutdown(long timeout, TimeUnit unit);
 
 }

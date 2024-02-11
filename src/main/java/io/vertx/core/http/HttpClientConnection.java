@@ -42,7 +42,7 @@ public interface HttpClientConnection extends HttpConnection, HttpClient {
   Future<Void> shutdown();
 
   @Override
-  Future<Void> shutdown(long delay, TimeUnit timeUnit);
+  Future<Void> shutdown(long timeout, TimeUnit unit);
 
   @Override
   Future<Void> close();

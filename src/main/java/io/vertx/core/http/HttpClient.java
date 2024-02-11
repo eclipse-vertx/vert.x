@@ -78,7 +78,7 @@ public interface HttpClient {
   }
 
   /**
-   * Shutdown with a delay of 30 seconds ({@code shutdown(30, TimeUnit.SECONDS)}).
+   * Shutdown with a 30 seconds timeout ({@code shutdown(30, TimeUnit.SECONDS)}).
    *
    * @return a future completed when shutdown has completed
    */
@@ -96,10 +96,10 @@ public interface HttpClient {
   }
 
   /**
-   * Initiate the client close sequence.
+   * Initiate the client shutdown sequence.
    *
    * <p> Connections are taken out of service and closed when all inflight requests are processed, client connection are
-   * immediately removed from the pool. When all connections are closed the client is closed. When the timeout
+   * immediately removed from the pool. When all connections are closed the client is closed. When the {@code timeout}
    * expires, all unclosed connections are immediately closed.
    *
    * <ul>
@@ -107,8 +107,10 @@ public interface HttpClient {
    *   <li>HTTP/1.x client connection will be closed after the current response is received</li>
    * </ul>
    *
+   * @param timeout the amount of time after which all resources are forcibly closed
+   * @param unit the of the timeout
    * @return a future notified when the client is closed
    */
-  Future<Void> shutdown(long timeout, TimeUnit timeUnit);
+  Future<Void> shutdown(long timeout, TimeUnit unit);
 
 }

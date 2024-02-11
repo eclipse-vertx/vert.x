@@ -4376,55 +4376,11 @@ public class NetTest extends VertxTestBase {
         latch.countDown();
     }));
     awaitLatch(latch);
-    Future<Void> fut = client.close(2, TimeUnit.SECONDS);
+    Future<Void> fut = client.shutdown(2, TimeUnit.SECONDS);
     fut.onComplete(onSuccess(v -> {
       assertTrue(System.currentTimeMillis() - now > 2);
       complete();
     }));
     await();
   }
-
-  @Test
-  public void testInternalShutdown() throws Exception {
-    server.connectHandler(so -> {
-    });
-    startServer();
-    int num = 2;
-    AtomicBoolean[] closed = new AtomicBoolean[num];
-    for (int i = 0;i < num;i++) {
-      closed[i] = new AtomicBoolean();
-      int idx = i;
-      client.connect(testAddress).onComplete(onSuccess(so -> {
-        NetSocketInternal soi = (NetSocketInternal) so;
-        soi.shutdownHandler(timeout -> {
-          if (idx == 0) {
-            soi.close();
-          }
-        });
-        soi.closeHandler(v -> {
-          closed[idx].set(true);
-        });
-        if (idx == num - 1) {
-          ((NetClientInternal)client).shutdown(2, TimeUnit.SECONDS).onComplete(ar -> {
-            client.connect(testAddress).onComplete(onFailure(expected -> {
-              for (int j = 0;j < num;j++) {
-                assertEquals(j == 0, closed[j].get());
-              }
-              // Hard close override
-              client.close().onComplete(onSuccess(v -> {
-                for (int j = 0;j < num;j++) {
-                  assertTrue(closed[j].get());
-                }
-                testComplete();
-              }));
-            }));
-          });
-        }
-      }));
-    }
-
-
-    await();
-  }
-
 }

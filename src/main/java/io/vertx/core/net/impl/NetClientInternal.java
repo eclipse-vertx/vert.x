@@ -34,15 +34,4 @@ public interface NetClientInternal extends NetClient, MetricsProvider, Closeable
 
   Future<Void> closeFuture();
 
-  /**
-   * Shutdown the client, a {@link ShutdownEvent} is broadcast to all channels. The operation completes
-   * when all channels are closed or the timeout expires. This method does not close the remaining connections
-   * forcibly.
-   *
-   * @param timeout the shutdown timeout
-   * @param timeUnit the shutdown timeout unit
-   * @return a future completed when all channels are closed or the timeout expires.
-   */
-  Future<Void> shutdown(long timeout, TimeUnit timeUnit);
-
 }

@@ -358,9 +358,9 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public Future<Void> shutdown(long delay, TimeUnit unit) {
+  public Future<Void> shutdown(long timeout, TimeUnit unit) {
     PromiseInternal<Void> promise = vertx.promise();
-    shutdown(delay, unit, promise);
+    shutdown(timeout, unit, promise);
     return promise.future();
   }
 

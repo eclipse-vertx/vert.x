@@ -119,7 +119,7 @@ public interface HttpConnection {
   HttpConnection shutdownHandler(@Nullable  Handler<Void> handler);
 
   /**
-   * Shutdown with a delay of 30 seconds ({@code shutdown(30, TimeUnit.SECONDS)}).
+   * Shutdown a 30 seconds timeout ({@code shutdown(30, TimeUnit.SECONDS)}).
    *
    * @return a future completed when shutdown has completed
    */
@@ -128,19 +128,20 @@ public interface HttpConnection {
   }
 
   /**
-   * Initiate a graceful connection shutdown, the connection is taken out of service and closed when all current requests
-   * are processed, otherwise after {@code delay} the connection will be closed. Client connection are immediately removed
+   * Initiate a graceful connection shutdown, the connection is taken out of service and closed when all the inflight requests
+   * are processed, otherwise after a {@code timeout} the connection will be closed. Client connection are immediately removed
    * from the pool.
    *
    * <ul>
-   *   <li>HTTP/2 connections will send a go away frame immediately to signal the other side the connection will close</li>
-   *   <li>HTTP/1.x client connection supports this feature</li>
-   *   <li>HTTP/1.x server connections do not support this feature</li>
+   *   <li>HTTP/2 connections will send a go away frame immediately to signal the other side the connection will close.</li>
+   *   <li>HTTP/1.x connection will be closed.</li>
    * </ul>
    *
+   * @param timeout the amount of time after which all resources are forcibly closed
+   * @param unit the of the timeout
    * @return a future completed when shutdown has completed
    */
-  Future<Void> shutdown(long delay, TimeUnit unit);
+  Future<Void> shutdown(long timeout, TimeUnit unit);
 
   /**
    * Set a close handler. The handler will get notified when the connection is closed.

@@ -209,12 +209,6 @@ class NetClientImpl implements NetClientInternal {
   @Override
   public Future<Void> shutdown(long timeout, TimeUnit timeUnit) {
     closeEvent = new ShutdownEvent(timeout, timeUnit);
-    return closeSequence.progressTo(1);
-  }
-
-  @Override
-  public Future<Void> close(long timeout, TimeUnit timeUnit) {
-    closeEvent = new ShutdownEvent(timeout, timeUnit);
     return closeSequence.close();
   }
 

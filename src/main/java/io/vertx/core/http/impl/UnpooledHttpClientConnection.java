@@ -79,8 +79,8 @@ public class UnpooledHttpClientConnection implements HttpClientConnection {
   }
 
   @Override
-  public Future<Void> shutdown(long delay, TimeUnit timeUnit) {
-    return actual.shutdown(delay, timeUnit);
+  public Future<Void> shutdown(long timeout, TimeUnit unit) {
+    return actual.shutdown(timeout, unit);
   }
 
   @Override
