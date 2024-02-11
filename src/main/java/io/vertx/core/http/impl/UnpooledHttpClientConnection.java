@@ -74,8 +74,8 @@ public class UnpooledHttpClientConnection implements HttpClientConnection {
   }
 
   @Override
-  public Future<Void> close(long timeout, TimeUnit timeUnit) {
-    return actual.shutdown(timeUnit.toMillis(timeout));
+  public Future<Void> shutdown(long delay, TimeUnit timeUnit) {
+    return actual.shutdown(timeUnit.toMillis(delay));
   }
 
   @Override
@@ -122,11 +122,6 @@ public class UnpooledHttpClientConnection implements HttpClientConnection {
   @Fluent
   public HttpConnection shutdownHandler(@Nullable Handler<Void> handler) {
     return actual.shutdownHandler(handler);
-  }
-
-  @Override
-  public Future<Void> shutdown() {
-    return actual.shutdown();
   }
 
   @Override

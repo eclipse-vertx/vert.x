@@ -13,10 +13,6 @@ package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
-import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.net.ClientSSLOptions;
-import io.vertx.core.net.HostAndPort;
-import io.vertx.core.net.SocketAddress;
 
 import java.util.concurrent.TimeUnit;
 
@@ -82,12 +78,21 @@ public interface HttpClient {
   }
 
   /**
-   * Close the client immediately ({@code close(0, TimeUnit.SECONDS}).
+   * Shutdown with a delay of 30 seconds ({@code shutdown(30, TimeUnit.SECONDS)}).
+   *
+   * @return a future completed when shutdown has completed
+   */
+  default Future<Void> shutdown() {
+    return shutdown(30, TimeUnit.SECONDS);
+  }
+
+  /**
+   * Close immediately ({@code shutdown(0, TimeUnit.SECONDS}).
    *
    * @return a future notified when the client is closed
    */
   default Future<Void> close() {
-    return close(0, TimeUnit.SECONDS);
+    return shutdown(0, TimeUnit.SECONDS);
   }
 
   /**
@@ -104,6 +109,6 @@ public interface HttpClient {
    *
    * @return a future notified when the client is closed
    */
-  Future<Void> close(long timeout, TimeUnit timeUnit);
+  Future<Void> shutdown(long timeout, TimeUnit timeUnit);
 
 }

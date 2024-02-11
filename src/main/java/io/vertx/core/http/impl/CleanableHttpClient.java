@@ -67,7 +67,7 @@ public class CleanableHttpClient implements HttpClientInternal {
   }
 
   @Override
-  public Future<Void> close(long timeout, TimeUnit timeUnit) {
+  public Future<Void> shutdown(long timeout, TimeUnit timeUnit) {
     if (timeout < 0L) {
       throw new IllegalArgumentException();
     }

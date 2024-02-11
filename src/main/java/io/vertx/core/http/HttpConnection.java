@@ -119,15 +119,7 @@ public interface HttpConnection {
   HttpConnection shutdownHandler(@Nullable  Handler<Void> handler);
 
   /**
-   * Initiate a graceful connection shutdown, the connection is taken out of service and closed when all current requests
-   * are processed, otherwise after 30 seconds the connection will be closed. Client connection are immediately removed
-   * from the pool.
-   *
-   * <ul>
-   *   <li>HTTP/2 connections will send a go away frame immediately to signal the other side the connection will close</li>
-   *   <li>HTTP/1.x client connection supports this feature</li>
-   *   <li>HTTP/1.x server connections do not support this feature</li>
-   * </ul>
+   * Shutdown with a delay of 30 seconds ({@code shutdown(30, TimeUnit.SECONDS)}).
    *
    * @return a future completed when shutdown has completed
    */
@@ -144,9 +136,19 @@ public interface HttpConnection {
   }
 
   /**
-   * Like {@link #shutdown()} but with a specific {@code timeout} in milliseconds.
+   * Initiate a graceful connection shutdown, the connection is taken out of service and closed when all current requests
+   * are processed, otherwise after {@code delay} the connection will be closed. Client connection are immediately removed
+   * from the pool.
+   *
+   * <ul>
+   *   <li>HTTP/2 connections will send a go away frame immediately to signal the other side the connection will close</li>
+   *   <li>HTTP/1.x client connection supports this feature</li>
+   *   <li>HTTP/1.x server connections do not support this feature</li>
+   * </ul>
+   *
+   * @return a future completed when shutdown has completed
    */
-  Future<Void> shutdown(long timeout, TimeUnit unit);
+  Future<Void> shutdown(long delay, TimeUnit unit);
 
   /**
    * Set a close handler. The handler will get notified when the connection is closed.
@@ -158,11 +160,9 @@ public interface HttpConnection {
   HttpConnection closeHandler(Handler<Void> handler);
 
   /**
-   * Close the connection and all the currently active streams.
-   * <p/>
-   * An HTTP/2 connection will send a {@literal GOAWAY} frame before.
+   * Close immediately ({@code shutdown(0, TimeUnit.SECONDS}).
    *
-   * @return a future completed when the connection is closed
+   * @return a future notified when the client is closed
    */
   Future<Void> close();
 

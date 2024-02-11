@@ -157,7 +157,7 @@ public class HttpClientBase implements MetricsProvider, Closeable {
     netClient.close().onComplete(p);
   }
 
-  public Future<Void> close(long timeout, TimeUnit timeUnit) {
+  public Future<Void> shutdown(long timeout, TimeUnit timeUnit) {
     this.closeTimeout = timeout;
     this.closeTimeoutUnit = timeUnit;
     return closeSequence.close();

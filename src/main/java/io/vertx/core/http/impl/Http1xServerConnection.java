@@ -116,9 +116,9 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   }
 
   @Override
-  public Future<Void> shutdown(long timeout, TimeUnit unit) {
+  public Future<Void> shutdown(long delay, TimeUnit unit) {
     Promise<Void> promise = vertx.promise();
-    context.execute(() -> shutdown(promise, timeout, unit));
+    context.execute(() -> shutdown(promise, delay, unit));
     return promise.future();
   }
 
