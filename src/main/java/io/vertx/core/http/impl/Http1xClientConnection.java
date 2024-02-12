@@ -56,6 +56,7 @@ import io.vertx.core.streams.impl.InboundBuffer;
 
 import java.net.URI;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
 import static io.netty.handler.codec.http.websocketx.WebSocketVersion.*;
@@ -1284,21 +1285,16 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     return expirationTimestamp == 0 || System.currentTimeMillis() <= expirationTimestamp;
   }
 
-  @Override
-  public void shutdown(long timeout, Handler<AsyncResult<Void>> handler) {
-    shutdown(timeout, vertx.promise(handler));
-  }
-
-  @Override
-  public Future<Void> shutdown(long timeoutMs) {
-    PromiseInternal<Void> promise = vertx.promise();
-    shutdown(timeoutMs, promise);
-    return promise.future();
-  }
-
   private synchronized void shutdownNow() {
     shutdownTimerID = -1L;
     close();
+  }
+
+  @Override
+  public Future<Void> shutdown(long timeout, TimeUnit unit) {
+    PromiseInternal<Void> promise = vertx.promise();
+    shutdown(unit.toMillis(timeout), promise);
+    return promise.future();
   }
 
   private void shutdown(long timeoutMs, PromiseInternal<Void> promise) {

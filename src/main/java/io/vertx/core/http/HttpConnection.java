@@ -23,6 +23,7 @@ import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 import java.security.cert.Certificate;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Represents an HTTP connection.
@@ -119,38 +120,64 @@ public interface HttpConnection {
   HttpConnection shutdownHandler(@Nullable  Handler<Void> handler);
 
   /**
-   * Initiate a graceful connection shutdown, the connection is taken out of service and closed when all current requests
-   * are processed, otherwise after 30 seconds the connection will be closed. Client connection are immediately removed
-   * from the pool.
-   *
-   * <ul>
-   *   <li>HTTP/2 connections will send a go away frame immediately to signal the other side the connection will close</li>
-   *   <li>HTTP/1.x client connection supports this feature</li>
-   *   <li>HTTP/1.x server connections do not support this feature</li>
-   * </ul>
-   *
-   * @param handler the handler called when shutdown has completed
+   * Shutdown a 30 seconds timeout ({@code shutdown(30, TimeUnit.SECONDS)}).
    */
   default void shutdown(Handler<AsyncResult<Void>> handler) {
-    shutdown(30000, handler);
+    shutdown(30, TimeUnit.SECONDS, handler);
   }
 
   /**
    * Like {@link #shutdown(Handler)} but returns a {@code Future} of the asynchronous result
    */
   default Future<Void> shutdown() {
-    return shutdown(30000L);
+    return shutdown(30, TimeUnit.SECONDS);
   }
 
   /**
-   * Like {@link #shutdown(Handler)} but with a specific {@code timeout} in milliseconds.
+   * Like {@link #shutdown(long, TimeUnit, Handler)}, in milliseconds.
+   *
+   * @deprecated instead use {@link #shutdown(long, TimeUnit, Handler)}
    */
-  void shutdown(long timeout, Handler<AsyncResult<Void>> handler);
+  @Deprecated
+  default void shutdown(long timeout, Handler<AsyncResult<Void>> handler) {
+    shutdown(timeout, TimeUnit.MILLISECONDS, handler);
+  }
 
   /**
    * Like {@link #shutdown(long, Handler)} but returns a {@code Future} of the asynchronous result
+   *
+   * @deprecated instead use {@link #shutdown(long, TimeUnit)}
    */
-  Future<Void> shutdown(long timeoutMs);
+  @Deprecated
+  default Future<Void> shutdown(long timeoutMs) {
+    return shutdown(timeoutMs, TimeUnit.MILLISECONDS);
+  }
+
+  /**
+   * Initiate a graceful connection shutdown, the connection is taken out of service and closed when all the inflight requests
+   * are processed, otherwise after a {@code timeout} the connection will be closed. Client connection are immediately removed
+   * from the pool.
+   *
+   * <ul>
+   *   <li>HTTP/2 connections will send a go away frame immediately to signal the other side the connection will close.</li>
+   *   <li>HTTP/1.x connection will be closed.</li>
+   * </ul>
+   *
+   * @param timeout the amount of time after which all resources are forcibly closed
+   * @param unit the of the timeout
+   * @param handler the handler notified with the result
+   */
+  default void shutdown(long timeout, TimeUnit unit, Handler<AsyncResult<Void>> handler) {
+    Future<Void> fut = shutdown(timeout, unit);
+    if (handler != null) {
+      fut.onComplete(handler);
+    }
+  }
+
+  /**
+   * Like {@link #shutdown(long, TimeUnit, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<Void> shutdown(long timeout, TimeUnit unit);
 
   /**
    * Set a close handler. The handler will get notified when the connection is closed.

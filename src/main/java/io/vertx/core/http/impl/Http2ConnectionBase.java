@@ -47,6 +47,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -363,14 +364,9 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public void shutdown(long timeout, Handler<AsyncResult<Void>> handler) {
-    shutdown(timeout, vertx.promise(handler));
-  }
-
-  @Override
-  public Future<Void> shutdown(long timeoutMs) {
+  public Future<Void> shutdown(long timeout, TimeUnit unit) {
     PromiseInternal<Void> promise = vertx.promise();
-    shutdown(timeoutMs, promise);
+    shutdown(unit.toMillis(timeout), promise);
     return promise.future();
   }
 

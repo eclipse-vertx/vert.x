@@ -41,6 +41,8 @@ import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.impl.ConnectionBase;
 
+import java.util.concurrent.TimeUnit;
+
 import static io.vertx.core.net.impl.VertxHandler.safeBuffer;
 
 /**
@@ -132,12 +134,7 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
   }
 
   @Override
-  public void shutdown(long timeout, Handler<AsyncResult<Void>> handler) {
-    throw new UnsupportedOperationException("HTTP/1.x connections cannot be shutdown");
-  }
-
-  @Override
-  public Future<Void> shutdown(long timeoutMs) {
+  public Future<Void> shutdown(long timeout, TimeUnit unit) {
     throw new UnsupportedOperationException("HTTP/1.x connections cannot be shutdown");
   }
 
