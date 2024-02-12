@@ -322,27 +322,27 @@ public class HTTPExamples {
   }
 
   public void example28(Vertx vertx) {
-    HttpClient client = vertx.createHttpClient();
+    HttpClientAgent client = vertx.createHttpClient();
   }
 
   public void example29(Vertx vertx) {
     HttpClientOptions options = new HttpClientOptions().setKeepAlive(false);
-    HttpClient client = vertx.createHttpClient(options);
+    HttpClientAgent client = vertx.createHttpClient(options);
   }
 
   public void examplePoolConfiguration(Vertx vertx) {
     PoolOptions options = new PoolOptions().setHttp1MaxSize(10);
-    HttpClient client = vertx.createHttpClient(options);
+    HttpClientAgent client = vertx.createHttpClient(options);
   }
 
   public void exampleClientLogging(Vertx vertx) {
     HttpClientOptions options = new HttpClientOptions().setLogActivity(true);
-    HttpClient client = vertx.createHttpClient(options);
+    HttpClientAgent client = vertx.createHttpClient(options);
   }
 
   public void exampleClientBuilder01(Vertx vertx, HttpClientOptions options) {
     // Pretty much like vertx.createHttpClient(options)
-    HttpClient build = vertx
+    HttpClientAgent build = vertx
       .httpClientBuilder()
       .with(options)
       .build();
@@ -364,7 +364,7 @@ public class HTTPExamples {
     HttpClientOptions options = new HttpClientOptions().setDefaultHost("wibble.com");
 
     // Can also set default port if you want...
-    HttpClient client = vertx.createHttpClient(options);
+    HttpClientAgent client = vertx.createHttpClient(options);
     client
       .request(HttpMethod.GET, "/some-uri")
       .onComplete(ar1 -> {
@@ -384,7 +384,7 @@ public class HTTPExamples {
 
   public void example32(Vertx vertx) {
 
-    HttpClient client = vertx.createHttpClient();
+    HttpClientAgent client = vertx.createHttpClient();
 
     // Write some headers using the headers multi-map
     MultiMap headers = HttpHeaders.set("content-type", "application/json").set("other-header", "foo");
@@ -490,7 +490,7 @@ public class HTTPExamples {
       });
   }
   public void example34(Vertx vertx, String body) {
-    HttpClient client = vertx.createHttpClient();
+    HttpClientAgent client = vertx.createHttpClient();
 
     client.request(HttpMethod.POST, "some-uri")
       .onSuccess(request -> {
@@ -815,7 +815,7 @@ public class HTTPExamples {
 
   public void exampleFollowRedirect02(Vertx vertx) {
 
-    HttpClient client = vertx.createHttpClient(
+    HttpClientAgent client = vertx.createHttpClient(
         new HttpClientOptions()
             .setMaxRedirects(32));
 
@@ -844,7 +844,7 @@ public class HTTPExamples {
   }
 
   public void exampleFollowRedirect03(Vertx vertx) {
-    HttpClient client = vertx.httpClientBuilder()
+    HttpClientAgent client = vertx.httpClientBuilder()
       .withRedirectHandler(response -> {
 
         // Only follow 301 code
@@ -1127,7 +1127,7 @@ public class HTTPExamples {
         .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP)
             .setHost("localhost").setPort(3128)
             .setUsername("username").setPassword("secret"));
-    HttpClient client = vertx.createHttpClient(options);
+    HttpClientAgent client = vertx.createHttpClient(options);
 
   }
 
@@ -1137,7 +1137,7 @@ public class HTTPExamples {
         .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5)
             .setHost("localhost").setPort(1080)
             .setUsername("username").setPassword("secret"));
-    HttpClient client = vertx.createHttpClient(options);
+    HttpClientAgent client = vertx.createHttpClient(options);
 
   }
 
@@ -1149,7 +1149,7 @@ public class HTTPExamples {
         .setUsername("username").setPassword("secret"))
       .addNonProxyHost("*.foo.com")
       .addNonProxyHost("localhost");
-    HttpClient client = vertx.createHttpClient(options);
+    HttpClientAgent client = vertx.createHttpClient(options);
 
   }
 
@@ -1170,7 +1170,7 @@ public class HTTPExamples {
 
     HttpClientOptions options = new HttpClientOptions()
         .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP));
-    HttpClient client = vertx.createHttpClient(options);
+    HttpClientAgent client = vertx.createHttpClient(options);
     client
       .request(HttpMethod.GET, "ftp://ftp.gnu.org/gnu/")
       .onComplete(ar -> {
@@ -1281,7 +1281,7 @@ public class HTTPExamples {
   }
 
   public static void httpClientSharing1(Vertx vertx) {
-    HttpClient client = vertx.createHttpClient(new HttpClientOptions().setShared(true));
+    HttpClientAgent client = vertx.createHttpClient(new HttpClientOptions().setShared(true));
     vertx.deployVerticle(() -> new AbstractVerticle() {
       @Override
       public void start() throws Exception {
@@ -1292,7 +1292,7 @@ public class HTTPExamples {
 
   public static void httpClientSharing2(Vertx vertx) {
     vertx.deployVerticle(() -> new AbstractVerticle() {
-      HttpClient client;
+      HttpClientAgent client;
       @Override
       public void start() {
         // Get or create a shared client
@@ -1305,7 +1305,7 @@ public class HTTPExamples {
 
   public static void httpClientSharing3(Vertx vertx) {
     vertx.deployVerticle(() -> new AbstractVerticle() {
-      HttpClient client;
+      HttpClientAgent client;
       @Override
       public void start() {
         // The client creates and use two event-loops for 4 instances
@@ -1315,9 +1315,27 @@ public class HTTPExamples {
   }
 
   public static void httpClientSideLoadBalancing(Vertx vertx) {
-    HttpClient client = vertx
+    HttpClientAgent client = vertx
       .httpClientBuilder()
       .withLoadBalancer(LoadBalancer.ROUND_ROBIN)
       .build();
+  }
+
+  public static void connect(HttpClientAgent client) {
+    HttpConnectOptions connectOptions = new HttpConnectOptions()
+      .setHost("example.com")
+      .setPort(80);
+
+    Future<HttpClientConnection> fut = client.connect(connectOptions);
+  }
+
+  public static void connectAndGet(HttpClientConnection connection) {
+    connection
+      .request()
+      .onSuccess(request -> {
+        request.setMethod(HttpMethod.GET);
+        request.setURI("/some-uri");
+        Future<HttpClientResponse> response = request.send();
+      });
   }
 }

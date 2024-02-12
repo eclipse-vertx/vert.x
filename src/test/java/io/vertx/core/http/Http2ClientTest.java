@@ -28,7 +28,7 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.http.impl.Http2UpgradeClientConnection;
-import io.vertx.core.http.impl.HttpClientConnection;
+import io.vertx.core.http.impl.HttpClientConnectionInternal;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
@@ -1694,7 +1694,7 @@ public class Http2ClientTest extends Http2TestBase {
           assertEquals(HttpVersion.HTTP_2, resp1.version());
           client.request(requestOptions).onComplete(onSuccess(req2 -> {
             req2.send().onComplete(onSuccess(resp2 -> {
-              assertSame(((HttpClientConnection)conn).channel(), ((HttpClientConnection)resp2.request().connection()).channel());
+              assertSame(((HttpClientConnectionInternal)conn).channel(), ((HttpClientConnectionInternal)resp2.request().connection()).channel());
               testComplete();
             }));
           }));

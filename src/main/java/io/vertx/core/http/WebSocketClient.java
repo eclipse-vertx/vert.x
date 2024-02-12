@@ -77,12 +77,21 @@ public interface WebSocketClient extends Measured {
   Future<WebSocket> connect(WebSocketConnectOptions options);
 
   /**
-   * Close the client immediately ({@code close(0, TimeUnit.SECONDS}).
+   * Shutdown with a 30 seconds timeout ({@code shutdown(30, TimeUnit.SECONDS)}).
+   *
+   * @return a future completed when shutdown has completed
+   */
+  default Future<Void> shutdown() {
+    return shutdown(30, TimeUnit.SECONDS);
+  }
+
+  /**
+   * Close immediately ({@code shutdown(0, TimeUnit.SECONDS}).
    *
    * @return a future notified when the client is closed
    */
   default Future<Void> close() {
-    return close(0, TimeUnit.SECONDS);
+    return shutdown(0, TimeUnit.SECONDS);
   }
 
   /**
@@ -111,10 +120,12 @@ public interface WebSocketClient extends Measured {
   Future<Boolean> updateSSLOptions(ClientSSLOptions options, boolean force);
 
   /**
-   * Initiate the client close sequence.
+   * Initiate the client shutdown sequence.
    *
    * @return a future notified when the client is closed
+   * @param timeout the amount of time after which all resources are forcibly closed
+   * @param unit the of the timeout
    */
-  Future<Void> close(long timeout, TimeUnit timeUnit);
+  Future<Void> shutdown(long timeout, TimeUnit unit);
 
 }

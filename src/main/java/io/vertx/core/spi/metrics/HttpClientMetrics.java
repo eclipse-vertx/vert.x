@@ -41,7 +41,7 @@ public interface HttpClientMetrics<R, W, S, T> extends TCPMetrics<S> {
    * Provides metrics for a particular endpoint
    *
    * @param remoteAddress the endpoint remote address
-   * @param maxPoolSize the server max pool size
+   * @param maxPoolSize the client max pool size
    * @return the endpoint metric
    */
   default ClientMetrics<R, T, HttpRequest, HttpResponse> createEndpointMetrics(SocketAddress remoteAddress, int maxPoolSize) {

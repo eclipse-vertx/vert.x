@@ -135,8 +135,8 @@ public class HttpClientBase implements MetricsProvider, Closeable {
     return proxyOptions;
   }
 
-  protected ClientSSLOptions sslOptions(RequestOptions requestOptions) {
-    ClientSSLOptions sslOptions = requestOptions.getSslOptions();
+  protected ClientSSLOptions sslOptions(HttpConnectOptions connectOptions) {
+    ClientSSLOptions sslOptions = connectOptions.getSslOptions();
     if (sslOptions != null) {
       sslOptions = new ClientSSLOptions(sslOptions);
     } else {
@@ -149,23 +149,6 @@ public class HttpClientBase implements MetricsProvider, Closeable {
     return metrics;
   }
 
-  /**
-   * Connect to a server.
-   */
-  public Future<HttpClientConnection> connect(SocketAddress server) {
-    return connect(server, null);
-  }
-
-  /**
-   * Connect to a server.
-   */
-  public Future<HttpClientConnection> connect(SocketAddress server, HostAndPort peer) {
-    ContextInternal context = vertx.getOrCreateContext();
-    HttpChannelConnector connector = new HttpChannelConnector(this, netClient, defaultSslOptions, null, null, options.getProtocolVersion(), options.isSsl(), options.isUseAlpn(), peer, server);
-    return connector.httpConnect(context);
-  }
-
-
   protected void doShutdown(Promise<Void> p) {
     netClient.shutdown(closeTimeout, closeTimeoutUnit).onComplete(p);
   }
@@ -174,9 +157,9 @@ public class HttpClientBase implements MetricsProvider, Closeable {
     netClient.close().onComplete(p);
   }
 
-  public Future<Void> close(long timeout, TimeUnit timeUnit) {
+  public Future<Void> shutdown(long timeout, TimeUnit unit) {
     this.closeTimeout = timeout;
-    this.closeTimeoutUnit = timeUnit;
+    this.closeTimeoutUnit = unit;
     return closeSequence.close();
   }
 

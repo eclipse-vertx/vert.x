@@ -15,7 +15,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.logging.Logger;
@@ -25,15 +24,25 @@ import io.vertx.core.net.HostAndPort;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface HttpClientConnection extends HttpConnection {
+public interface HttpClientConnectionInternal extends HttpConnection {
 
-  Logger log = LoggerFactory.getLogger(HttpClientConnection.class);
+  Logger log = LoggerFactory.getLogger(HttpClientConnectionInternal.class);
 
   Handler<Void> DEFAULT_EVICTION_HANDLER = v -> {
     log.warn("Connection evicted");
   };
 
   Handler<Long> DEFAULT_CONCURRENCY_CHANGE_HANDLER = concurrency -> {};
+
+  /**
+   * @return the number of active request/response (streams)
+   */
+  long activeStreams();
+
+  /**
+   * @return the max number of active streams this connection can handle concurrently
+   */
+  long concurrency();
 
   HostAndPort authority();
 
@@ -43,7 +52,7 @@ public interface HttpClientConnection extends HttpConnection {
    * @param handler the handler
    * @return a reference to this, so the API can be used fluently
    */
-  HttpClientConnection evictionHandler(Handler<Void> handler);
+  HttpClientConnectionInternal evictionHandler(Handler<Void> handler);
 
   /**
    * Set a {@code handler} called when the connection concurrency changes.
@@ -52,17 +61,12 @@ public interface HttpClientConnection extends HttpConnection {
    * @param handler the handler
    * @return a reference to this, so the API can be used fluently
    */
-  HttpClientConnection concurrencyChangeHandler(Handler<Long> handler);
+  HttpClientConnectionInternal concurrencyChangeHandler(Handler<Long> handler);
 
   /**
-   * @return the connection concurrency
+   * @return whether the connection is pooled
    */
-  long concurrency();
-
-  /**
-   * @return the number of active streams
-   */
-  long activeStreams();
+  boolean pooled();
 
   /**
    * @return the connection channel
@@ -73,14 +77,6 @@ public interface HttpClientConnection extends HttpConnection {
    * @return the {@link ChannelHandlerContext} of the handler managing the connection
    */
   ChannelHandlerContext channelHandlerContext();
-
-  /**
-   * Create an HTTP stream.
-   *
-   * @param context the stream context
-   * @return a future notified with the created stream
-   */
-  Future<HttpClientRequest> createRequest(ContextInternal context);
 
   /**
    * Create an HTTP stream.

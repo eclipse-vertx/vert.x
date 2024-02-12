@@ -72,7 +72,7 @@ import static io.vertx.core.http.HttpHeaders.*;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> implements HttpClientConnection {
+public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> implements HttpClientConnectionInternal {
 
   private static final Logger log = LoggerFactory.getLogger(Http1xClientConnection.class);
 
@@ -90,6 +90,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   private final HttpVersion version;
   private final long lowWaterMark;
   private final long highWaterMark;
+  private final boolean pooled;
 
   private Deque<Stream> requests = new ArrayDeque<>();
   private Deque<Stream> responses = new ArrayDeque<>();
@@ -117,7 +118,8 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
                          SocketAddress server,
                          HostAndPort authority,
                          ContextInternal context,
-                         ClientMetrics metrics) {
+                         ClientMetrics metrics,
+                         boolean pooled) {
     super(context, chctx);
     this.client = client;
     this.options = client.options();
@@ -131,6 +133,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     this.lowWaterMark = chctx.channel().config().getWriteBufferLowWaterMark();
     this.keepAliveTimeout = options.getKeepAliveTimeout();
     this.expirationTimestamp = expirationTimestampOf(keepAliveTimeout);
+    this.pooled = pooled;
   }
 
   @Override
@@ -139,7 +142,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   }
 
   @Override
-  public HttpClientConnection evictionHandler(Handler<Void> handler) {
+  public HttpClientConnectionInternal evictionHandler(Handler<Void> handler) {
     evictionHandler = handler;
     return this;
   }
@@ -148,14 +151,14 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   protected void handleEvent(Object evt) {
     if (evt instanceof ShutdownEvent) {
       ShutdownEvent shutdown = (ShutdownEvent) evt;
-      shutdown(shutdown.timeUnit().toMillis(shutdown.timeout()));
+      shutdown(shutdown.timeout(), shutdown.timeUnit());
     } else {
       super.handleEvent(evt);
     }
   }
 
   @Override
-  public HttpClientConnection concurrencyChangeHandler(Handler<Long> handler) {
+  public HttpClientConnectionInternal concurrencyChangeHandler(Handler<Long> handler) {
     // Never changes
     return this;
   }
@@ -168,6 +171,11 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   @Override
   public synchronized long activeStreams() {
     return requests.isEmpty() && responses.isEmpty() ? 0 : 1;
+  }
+
+  @Override
+  public boolean pooled() {
+    return pooled;
   }
 
   /**
@@ -554,7 +562,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     }
 
     @Override
-    public HttpClientConnection connection() {
+    public HttpClientConnectionInternal connection() {
       return conn;
     }
 
@@ -1221,11 +1229,6 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   }
 
   @Override
-  public Future<HttpClientRequest> createRequest(ContextInternal context) {
-    return ((HttpClientImpl)client).createRequest(this, context);
-  }
-
-  @Override
   public Future<HttpClientStream> createStream(ContextInternal context) {
     PromiseInternal<HttpClientStream> promise = context.promise();
     createStream(context, promise);
@@ -1235,17 +1238,28 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   private void createStream(ContextInternal context, Promise<HttpClientStream> promise) {
     EventLoop eventLoop = context.nettyEventLoop();
     if (eventLoop.inEventLoop()) {
+      Object result;
       synchronized (this) {
         if (!closed) {
-          StreamImpl stream = new StreamImpl(context, this, promise, seq++);
-          requests.add(stream);
-          if (requests.size() == 1) {
-            stream.promise.complete(stream);
+          if (requests.size() < concurrency()) {
+            StreamImpl stream = new StreamImpl(context, this, promise, seq++);
+            requests.add(stream);
+            if (requests.size() > 1) {
+              return;
+            }
+            result = stream;
+          } else {
+            result = new VertxException("Pipelining limit exceeded");
           }
-          return;
+        } else {
+          result = HttpUtils.CONNECTION_CLOSED_EXCEPTION;
         }
       }
-      promise.fail(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
+      if (result instanceof HttpClientStream) {
+        promise.complete((HttpClientStream) result);
+      } else {
+        promise.fail((Throwable) result);
+      }
     } else {
       eventLoop.execute(() -> {
         createStream(context, promise);

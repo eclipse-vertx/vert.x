@@ -12,7 +12,6 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.*;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
@@ -28,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Represents an HTTP connection.
  * <p/>
- * HTTP/1.x connection provides an limited implementation, the following methods are implemented:
+ * HTTP/1.x connection provides a limited implementation, the following methods are implemented:
  * <ul>
  *   <li>{@link #close}</li>
  *   <li>{@link #closeHandler}</li>
@@ -120,15 +119,7 @@ public interface HttpConnection {
   HttpConnection shutdownHandler(@Nullable  Handler<Void> handler);
 
   /**
-   * Initiate a graceful connection shutdown, the connection is taken out of service and closed when all current requests
-   * are processed, otherwise after 30 seconds the connection will be closed. Client connection are immediately removed
-   * from the pool.
-   *
-   * <ul>
-   *   <li>HTTP/2 connections will send a go away frame immediately to signal the other side the connection will close</li>
-   *   <li>HTTP/1.x client connection supports this feature</li>
-   *   <li>HTTP/1.x server connections do not support this feature</li>
-   * </ul>
+   * Shutdown a 30 seconds timeout ({@code shutdown(30, TimeUnit.SECONDS)}).
    *
    * @return a future completed when shutdown has completed
    */
@@ -137,15 +128,18 @@ public interface HttpConnection {
   }
 
   /**
-   * Like {@link #shutdown()} but with a specific {@code timeout} in milliseconds.
-   */
-  @Deprecated
-  default Future<Void> shutdown(long timeoutMs) {
-    return shutdown(timeoutMs, TimeUnit.MILLISECONDS);
-  }
-
-  /**
-   * Like {@link #shutdown()} but with a specific {@code timeout} in milliseconds.
+   * Initiate a graceful connection shutdown, the connection is taken out of service and closed when all the inflight requests
+   * are processed, otherwise after a {@code timeout} the connection will be closed. Client connection are immediately removed
+   * from the pool.
+   *
+   * <ul>
+   *   <li>HTTP/2 connections will send a go away frame immediately to signal the other side the connection will close.</li>
+   *   <li>HTTP/1.x connection will be closed.</li>
+   * </ul>
+   *
+   * @param timeout the amount of time after which all resources are forcibly closed
+   * @param unit the of the timeout
+   * @return a future completed when shutdown has completed
    */
   Future<Void> shutdown(long timeout, TimeUnit unit);
 
@@ -159,11 +153,9 @@ public interface HttpConnection {
   HttpConnection closeHandler(Handler<Void> handler);
 
   /**
-   * Close the connection and all the currently active streams.
-   * <p/>
-   * An HTTP/2 connection will send a {@literal GOAWAY} frame before.
+   * Close immediately ({@code shutdown(0, TimeUnit.SECONDS}).
    *
-   * @return a future completed when the connection is closed
+   * @return a future notified when the client is closed
    */
   Future<Void> close();
 

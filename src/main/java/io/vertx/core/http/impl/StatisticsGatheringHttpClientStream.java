@@ -60,7 +60,7 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  public HttpClientConnection connection() {
+  public HttpClientConnectionInternal connection() {
     return delegate.connection();
   }
 

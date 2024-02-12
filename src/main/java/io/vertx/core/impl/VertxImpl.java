@@ -402,20 +402,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     } else {
       WebSocketClientImpl impl = new WebSocketClientImpl(this, o, options);
       closeable = impl;
-      client = new CleanableWebSocketClient(impl, cleaner, impl::close);
+      client = new CleanableWebSocketClient(impl, cleaner, impl::shutdown);
     }
     cf.add(closeable);
     return client;
-  }
-
-  @Override
-  public HttpClient createHttpClient(HttpClientOptions options) {
-    return createHttpClient(options, new PoolOptions());
-  }
-
-  @Override
-  public HttpClient createHttpClient(PoolOptions poolOptions) {
-    return createHttpClient(new HttpClientOptions(), poolOptions);
   }
 
   @Override

@@ -11,7 +11,6 @@
 
 package io.vertx.core.net;
 
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
@@ -89,23 +88,34 @@ public interface NetClient extends Measured {
   Future<NetSocket> connect(ConnectOptions connectOptions);
 
   /**
-   * Close the client.
-   * <p>
-   * Any sockets which have not been closed manually will be closed here. The close is asynchronous and may not
-   * complete until some time after the method has returned.
+   * Close immediately ({@code shutdown(0, TimeUnit.SECONDS}).
+   *
    * @return a future notified when the client is closed
    */
   default Future<Void> close() {
-    return close(0L, TimeUnit.SECONDS);
+    return shutdown(0L, TimeUnit.SECONDS);
   }
 
   /**
-   * Initiate the client close sequence.
+   * Shutdown with a 30 seconds timeout ({@code shutdown(30, TimeUnit.SECONDS)}).
    *
-   * <p> Connections are taken out of service and notified the close sequence has started through {@link NetSocket#shutdownHandler(Handler)}.
-   * When all connections are closed the client is closed. When the timeout expires, all unclosed connections are immediately closed.
+   * @return a future completed when shutdown has completed
    */
-  Future<Void> close(long timeout, TimeUnit unit);
+  default Future<Void> shutdown() {
+    return shutdown(30, TimeUnit.SECONDS);
+  }
+
+  /**
+   * Initiate the client shutdown sequence.
+   * <p>
+   * Connections are taken out of service and notified the close sequence has started through {@link NetSocket#shutdownHandler(Handler)}.
+   * When all connections are closed the client is closed. When the {@code timeout} expires, all unclosed connections are immediately closed.
+   *
+   * @return a future notified when the client is closed
+   * @param timeout the amount of time after which all resources are forcibly closed
+   * @param unit the of the timeout
+   */
+  Future<Void> shutdown(long timeout, TimeUnit unit);
 
   /**
    * <p>Update the client with new SSL {@code options}, the update happens if the options object is valid and different

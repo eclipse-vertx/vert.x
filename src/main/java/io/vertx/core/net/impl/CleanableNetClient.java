@@ -37,7 +37,7 @@ public class CleanableNetClient implements NetClientInternal {
     }
     @Override
     public void run() {
-      client.close(timeout, timeUnit);
+      client.shutdown(timeout, timeUnit);
     }
   }
 
@@ -101,19 +101,14 @@ public class CleanableNetClient implements NetClientInternal {
   }
 
   @Override
-  public Future<Void> shutdown(long timeout, TimeUnit timeUnit) {
-    return client.shutdown(timeout, timeUnit);
-  }
-
-  @Override
-  public Future<Void> close(long timeout, TimeUnit timeUnit) {
+  public Future<Void> shutdown(long timeout, TimeUnit unit) {
     if (timeout < 0L) {
       throw new IllegalArgumentException("Invalid timeout: " + timeout);
     }
     action.timeout = timeout;
-    action.timeUnit = Objects.requireNonNull(TimeUnit.SECONDS);
+    action.timeUnit = Objects.requireNonNull(unit);
     cleanable.clean();
-    return (client).closeFuture();
+    return client.closeFuture();
   }
 
   @Override

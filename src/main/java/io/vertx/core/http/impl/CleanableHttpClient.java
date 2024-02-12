@@ -67,15 +67,15 @@ public class CleanableHttpClient implements HttpClientInternal {
   }
 
   @Override
-  public Future<Void> close(long timeout, TimeUnit timeUnit) {
+  public Future<Void> shutdown(long timeout, TimeUnit unit) {
     if (timeout < 0L) {
       throw new IllegalArgumentException();
     }
-    if (timeUnit == null) {
+    if (unit == null) {
       throw new IllegalArgumentException();
     }
     action.timeout = timeout;
-    action.timeUnit = timeUnit;
+    action.timeUnit = unit;
     cleanable.clean();
     return action.closeFuture;
   }
@@ -116,7 +116,7 @@ public class CleanableHttpClient implements HttpClientInternal {
   }
 
   @Override
-  public Future<HttpClientConnection> connect(SocketAddress server, HostAndPort peer) {
-    return delegate.connect(server, peer);
+  public Future<HttpClientConnection> connect(HttpConnectOptions options) {
+    return delegate.connect(options);
   }
 }

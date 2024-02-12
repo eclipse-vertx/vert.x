@@ -139,7 +139,7 @@ public class NetExamples {
     });
 
     // A few moments later
-    client.close(30, TimeUnit.SECONDS);
+    client.shutdown(30, TimeUnit.SECONDS);
   }
 
   public void example9_1(NetSocket socket) {

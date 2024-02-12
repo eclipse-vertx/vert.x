@@ -96,11 +96,11 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
   }
 
   @Override
-  public HttpClient build() {
+  public HttpClientAgent build() {
     HttpClientOptions co = clientOptions != null ? clientOptions : new HttpClientOptions();
     PoolOptions po = poolOptions != null ? poolOptions : new PoolOptions();
     CloseFuture cf = resolveCloseFuture();
-    HttpClient client;
+    HttpClientAgent client;
     Closeable closeable;
     EndpointResolver<?> resolver = endpointResolver(co);
     if (co.isShared()) {
@@ -116,7 +116,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
     } else {
       HttpClientImpl impl = new HttpClientImpl(vertx, resolver, co, po);
       closeable = impl;
-      client = new CleanableHttpClient(impl, vertx.cleaner(), impl::close);
+      client = new CleanableHttpClient(impl, vertx.cleaner(), impl::shutdown);
     }
     cf.add(closeable);
     if (redirectHandler != null) {

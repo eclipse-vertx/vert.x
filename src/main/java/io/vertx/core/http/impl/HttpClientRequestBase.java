@@ -42,8 +42,10 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   private long currentTimeoutMs;
   private long lastDataReceived;
   private Throwable reset;
+  private HttpConnection connection;
 
-  HttpClientRequestBase(HttpClientStream stream, PromiseInternal<HttpClientResponse> responsePromise, HttpMethod method, String uri) {
+  HttpClientRequestBase(HttpConnection connection, HttpClientStream stream, PromiseInternal<HttpClientResponse> responsePromise, HttpMethod method, String uri) {
+    this.connection = connection;
     this.stream = stream;
     this.responsePromise = responsePromise;
     this.context = responsePromise.context();
@@ -100,6 +102,11 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
 
   public synchronized String getURI() {
     return uri;
+  }
+
+  @Override
+  public HttpConnection connection() {
+    return connection;
   }
 
   @Override
@@ -160,7 +167,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   void handlePush(HttpClientPush push) {
-    HttpClientRequestPushPromise pushReq = new HttpClientRequestPushPromise(push.stream, push.method, push.uri, push.headers);
+    HttpClientRequestPushPromise pushReq = new HttpClientRequestPushPromise(connection, push.stream, push.method, push.uri, push.headers);
     if (pushHandler != null) {
       pushHandler.handle(pushReq);
     } else {

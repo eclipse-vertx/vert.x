@@ -18,11 +18,16 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.buffer.impl.BufferInternal;
-import io.vertx.core.http.HttpFrame;
-import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.net.HostAndPort;
+import io.vertx.core.net.ProxyOptions;
+import io.vertx.core.net.ProxyType;
 import io.vertx.core.streams.WriteStream;
+
+import java.util.Base64;
+
+import static io.vertx.core.http.impl.HttpClientImpl.ABS_URI_START_PATTERN;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -44,7 +49,7 @@ public interface HttpClientStream extends WriteStream<Buffer> {
    */
   HttpVersion version();
 
-  HttpClientConnection connection();
+  HttpClientConnectionInternal connection();
   ContextInternal getContext();
 
   Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect);

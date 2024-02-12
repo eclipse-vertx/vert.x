@@ -33,19 +33,19 @@ import java.util.function.BiFunction;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpClientConnection>> implements PoolConnector<HttpClientConnection> {
+class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpClientConnectionInternal>> implements PoolConnector<HttpClientConnectionInternal> {
 
   /**
    * LIFO pool selector.
    */
-  private static final BiFunction<PoolWaiter<HttpClientConnection>, List<PoolConnection<HttpClientConnection>>, PoolConnection<HttpClientConnection>> LIFO_SELECTOR = (waiter, connections) -> {
+  private static final BiFunction<PoolWaiter<HttpClientConnectionInternal>, List<PoolConnection<HttpClientConnectionInternal>>, PoolConnection<HttpClientConnectionInternal>> LIFO_SELECTOR = (waiter, connections) -> {
     int size = connections.size();
-    PoolConnection<HttpClientConnection> selected = null;
+    PoolConnection<HttpClientConnectionInternal> selected = null;
     long last = 0L;
     for (int i = 0; i < size; i++) {
-      PoolConnection<HttpClientConnection> pooled = connections.get(i);
+      PoolConnection<HttpClientConnectionInternal> pooled = connections.get(i);
       if (pooled.available() > 0) {
-        HttpClientConnection conn = pooled.get();
+        HttpClientConnectionInternal conn = pooled.get();
         if (selected == null) {
           selected = pooled;
         } else {
@@ -60,7 +60,7 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
 
   private final HttpClientImpl client;
   private final HttpChannelConnector connector;
-  private final ConnectionPool<HttpClientConnection> pool;
+  private final ConnectionPool<HttpClientConnectionInternal> pool;
 
   public SharedClientHttpStreamEndpoint(HttpClientImpl client,
                                         ClientMetrics metrics,
@@ -71,7 +71,7 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
                                         Runnable dispose) {
     super(metrics, dispose);
 
-    ConnectionPool<HttpClientConnection> pool = ConnectionPool.pool(this, new int[]{http1MaxSize, http2MaxSize}, queueMaxSize)
+    ConnectionPool<HttpClientConnectionInternal> pool = ConnectionPool.pool(this, new int[]{http1MaxSize, http2MaxSize}, queueMaxSize)
       .connectionSelector(LIFO_SELECTOR).contextProvider(client.contextProvider());
 
     this.client = client;
@@ -80,7 +80,7 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
   }
 
   @Override
-  public Future<ConnectResult<HttpClientConnection>> connect(ContextInternal context, Listener listener) {
+  public Future<ConnectResult<HttpClientConnectionInternal>> connect(ContextInternal context, Listener listener) {
     return connector
       .httpConnect(context)
       .map(connection -> {
@@ -106,28 +106,28 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
   }
 
   @Override
-  public boolean isValid(HttpClientConnection connection) {
+  public boolean isValid(HttpClientConnectionInternal connection) {
     return connection.isValid();
   }
 
   protected void checkExpired() {
     pool.evict(conn -> !conn.isValid(), ar -> {
       if (ar.succeeded()) {
-        List<HttpClientConnection> lst = ar.result();
+        List<HttpClientConnectionInternal> lst = ar.result();
         lst.forEach(HttpConnection::close);
       }
     });
   }
 
-  private class Request implements PoolWaiter.Listener<HttpClientConnection>, Handler<AsyncResult<Lease<HttpClientConnection>>> {
+  private class Request implements PoolWaiter.Listener<HttpClientConnectionInternal>, Handler<AsyncResult<Lease<HttpClientConnectionInternal>>> {
 
     private final ContextInternal context;
     private final HttpVersion protocol;
     private final long timeout;
-    private final Promise<Lease<HttpClientConnection>> promise;
+    private final Promise<Lease<HttpClientConnectionInternal>> promise;
     private long timerID;
 
-    Request(ContextInternal context, HttpVersion protocol, long timeout, Promise<Lease<HttpClientConnection>> promise) {
+    Request(ContextInternal context, HttpVersion protocol, long timeout, Promise<Lease<HttpClientConnectionInternal>> promise) {
       this.context = context;
       this.protocol = protocol;
       this.timeout = timeout;
@@ -136,12 +136,12 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
     }
 
     @Override
-    public void onEnqueue(PoolWaiter<HttpClientConnection> waiter) {
+    public void onEnqueue(PoolWaiter<HttpClientConnectionInternal> waiter) {
       onConnect(waiter);
     }
 
     @Override
-    public void onConnect(PoolWaiter<HttpClientConnection> waiter) {
+    public void onConnect(PoolWaiter<HttpClientConnectionInternal> waiter) {
       if (timeout > 0L && timerID == -1L) {
         timerID = context.setTimer(timeout, id -> {
           pool.cancel(waiter, ar -> {
@@ -154,7 +154,7 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
     }
 
     @Override
-    public void handle(AsyncResult<Lease<HttpClientConnection>> ar) {
+    public void handle(AsyncResult<Lease<HttpClientConnectionInternal>> ar) {
       if (timerID >= 0) {
         context.owner().cancelTimer(timerID);
       }
@@ -167,8 +167,8 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
   }
 
   @Override
-  protected Future<Lease<HttpClientConnection>> requestConnection2(ContextInternal ctx, long timeout) {
-    PromiseInternal<Lease<HttpClientConnection>> promise = ctx.promise();
+  protected Future<Lease<HttpClientConnectionInternal>> requestConnection2(ContextInternal ctx, long timeout) {
+    PromiseInternal<Lease<HttpClientConnectionInternal>> promise = ctx.promise();
     Request request = new Request(ctx, client.options().getProtocolVersion(), timeout, promise);
     request.acquire();
     return promise.future();

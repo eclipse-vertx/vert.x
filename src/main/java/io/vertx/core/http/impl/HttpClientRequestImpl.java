@@ -22,11 +22,16 @@ import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.net.HostAndPort;
+import io.vertx.core.net.ProxyOptions;
+import io.vertx.core.net.ProxyType;
 
+import java.util.Base64;
 import java.util.Objects;
 import java.util.function.Function;
 
 import static io.vertx.core.http.HttpHeaders.CONTENT_LENGTH;
+import static io.vertx.core.http.impl.HttpClientImpl.ABS_URI_START_PATTERN;
 
 /**
  * This class is optimised for performance when used on the same event loop that is passed to the handler with.
@@ -62,9 +67,8 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private boolean isConnect;
   private String traceOperation;
 
-  HttpClientRequestImpl(HttpClientStream stream, PromiseInternal<HttpClientResponse> responsePromise, HttpMethod method,
-                        String requestURI) {
-    super(stream, responsePromise, method, requestURI);
+  HttpClientRequestImpl(HttpConnection connection, HttpClientStream stream) {
+    super(connection, stream, stream.getContext().promise(), HttpMethod.GET, "/");
     this.chunked = false;
     this.endPromise = context.promise();
     this.endFuture = endPromise.future();
@@ -76,6 +80,41 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     stream.earlyHintsHandler(this::handleEarlyHints);
     stream.drainHandler(this::handleDrained);
     stream.exceptionHandler(this::handleException);
+  }
+
+  public void init(RequestOptions options) {
+    MultiMap headers = options.getHeaders();
+    if (headers != null) {
+      headers().setAll(headers);
+    }
+    HttpClientConnectionInternal conn = stream.connection();
+    boolean useSSL = conn.isSsl();
+    String requestURI = options.getURI();
+    HttpMethod method = options.getMethod();
+    String traceOperation = options.getTraceOperation();
+    Boolean followRedirects = options.getFollowRedirects();
+    long idleTimeout = options.getIdleTimeout();
+    ProxyOptions proxyOptions = options.getProxyOptions();
+    if (proxyOptions != null && !useSSL && proxyOptions.getType() == ProxyType.HTTP) {
+      HostAndPort authority = conn.authority();
+      if (!ABS_URI_START_PATTERN.matcher(requestURI).find()) {
+        int defaultPort = 80;
+        String addPort = (authority.port() != -1 && authority.port() != defaultPort) ? (":" + authority.port()) : "";
+        requestURI = "http://" + authority.host() + addPort + requestURI;
+      }
+      if (proxyOptions.getUsername() != null && proxyOptions.getPassword() != null) {
+        headers().add("Proxy-Authorization", "Basic " + Base64.getEncoder()
+          .encodeToString((proxyOptions.getUsername() + ":" + proxyOptions.getPassword()).getBytes()));
+      }
+    }
+    setURI(requestURI);
+    setMethod(method);
+    traceOperation(traceOperation);
+    setFollowRedirects(followRedirects == Boolean.TRUE);
+    if (idleTimeout > 0L) {
+      // Maybe later ?
+      idleTimeout(idleTimeout);
+    }
   }
 
   @Override
@@ -276,11 +315,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   private void tryComplete() {
     endPromise.tryComplete();
-  }
-
-  @Override
-  public synchronized HttpConnection connection() {
-    return stream.connection();
   }
 
   @Override
