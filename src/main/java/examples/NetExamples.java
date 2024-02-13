@@ -597,10 +597,10 @@ public class NetExamples {
       setSslEngineOptions(new OpenSSLEngineOptions());
   }
 
-  public void example46(Vertx vertx, JksOptions keyStoreOptions) {
+  public void example46(Vertx vertx, String verificationAlgorithm) {
     NetClientOptions options = new NetClientOptions().
       setSsl(true).
-      setHostnameVerificationAlgorithm("HTTPS");
+      setHostnameVerificationAlgorithm(verificationAlgorithm);
     NetClient client = vertx.createNetClient(options);
   }
 

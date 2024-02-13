@@ -26,9 +26,9 @@ import java.util.concurrent.TimeUnit;
 public class ClientSSLOptions extends SSLOptions {
 
   /**
-   * Default value to determine hostname verification algorithm hostname verification (for SSL/TLS) = ""
+   * Default value to determine hostname verification algorithm hostname verification (for SSL/TLS) = null
    */
-  public static final String DEFAULT_HOSTNAME_VERIFICATION_ALGORITHM = "";
+  public static final String DEFAULT_HOSTNAME_VERIFICATION_ALGORITHM = null;
 
   /**
    * The default value of whether all servers (SSL/TLS) should be trusted = false

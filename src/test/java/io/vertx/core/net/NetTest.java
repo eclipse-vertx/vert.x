@@ -82,7 +82,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTPS_HOST;
@@ -209,7 +211,7 @@ public class NetTest extends VertxTestBase {
     assertTrue(options.isTrustAll());
 
     String randomAlphaString = TestUtils.randomAlphaString(10);
-    assertTrue(options.getHostnameVerificationAlgorithm().isEmpty());
+    assertNull(options.getHostnameVerificationAlgorithm());
     assertEquals(options, options.setHostnameVerificationAlgorithm(randomAlphaString));
     assertEquals(randomAlphaString, options.getHostnameVerificationAlgorithm());
 
@@ -1483,7 +1485,7 @@ public class NetTest extends VertxTestBase {
     startServer();
     List<String> serverNames = Arrays.asList("host1", "host2.com", "fake");
     List<String> cns = new ArrayList<>();
-    client = vertx.createNetClient(new NetClientOptions().setSsl(true).setTrustAll(true));
+    client = vertx.createNetClient(new NetClientOptions().setSsl(true).setHostnameVerificationAlgorithm("").setTrustAll(true));
     for (String serverName : serverNames) {
       NetSocket so = awaitFuture(client.connect(testAddress, serverName));
       String host = cnOf(so.peerCertificates().get(0));
@@ -1854,6 +1856,7 @@ public class NetTest extends VertxTestBase {
         if (clientTrustAll) {
           clientOptions.setTrustAll(true);
         }
+        clientOptions.setHostnameVerificationAlgorithm("");
         clientOptions.setTrustOptions(clientTrust.get());
         clientOptions.setKeyCertOptions(clientCert.get());
         for (String suite: enabledCipherSuites) {
@@ -2861,6 +2864,51 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
+  public void testClientMissingHostnameVerificationAlgorithm1() {
+    testClientMissingHostnameVerificationAlgorithm(client -> client.connect(1234, "localhost"));
+  }
+
+  @Test
+  public void testClientMissingHostnameVerificationAlgorithm2() {
+    testClientMissingHostnameVerificationAlgorithm(client -> client.connect(new ConnectOptions()
+      .setHost("localhost")
+      .setPort(1234)
+      .setSsl(true)));
+  }
+
+  @Test
+  public void testClientMissingHostnameVerificationAlgorithm3() {
+    testClientMissingHostnameVerificationAlgorithm(client -> client.connect(new ConnectOptions()
+      .setHost("localhost")
+      .setPort(1234)).compose(so -> so.upgradeToSsl(new ClientSSLOptions())));
+  }
+
+  private void testClientMissingHostnameVerificationAlgorithm(Function<NetClient, Future<?>> consumer) {
+    server.close();
+    NetServerOptions options = new NetServerOptions()
+      .setPort(1234)
+      .setHost("localhost")
+      .setSsl(true)
+      .setKeyCertOptions(new JksOptions().setPath("tls/server-keystore.jks").setPassword("wibble"));
+    NetServer server = vertx.createNetServer(options);
+
+    NetClientOptions clientOptions = new NetClientOptions()
+      .setSsl(true)
+      .setTrustAll(true);
+    NetClient client = vertx.createNetClient(clientOptions);
+    server.connectHandler(sock -> {
+
+    });
+    server.listen().onComplete(onSuccess(v -> {
+      consumer.apply(client).onComplete(onFailure(err -> {
+        assertTrue(err.getMessage().contains("Missing hostname verification algorithm"));
+        testComplete();
+      }));
+    }));
+    await();
+  }
+
+  @Test
   public void testNoLogging() throws Exception {
     TestLoggerFactory factory = testLogging();
     assertFalse(factory.hasName("io.netty.handler.logging.LoggingHandler"));
@@ -3221,10 +3269,11 @@ public class NetTest extends VertxTestBase {
     server.connectHandler(ns -> {
       complete();
     }).listen().onComplete(onSuccess(v -> {
-      NetClient client = vertx.createNetClient(new NetClientOptions().setTrustOptions(Trust.CLIENT_JKS.get()));
+      NetClient client = vertx.createNetClient(new NetClientOptions()
+        .setTrustOptions(Trust.CLIENT_JKS.get()));
       client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST).onComplete(onSuccess(ns -> {
         ns.upgradeToSsl().onComplete(onFailure(err -> {
-          ClientSSLOptions sslOptions = new ClientSSLOptions().setTrustOptions(Trust.SERVER_JKS.get());
+          ClientSSLOptions sslOptions = new ClientSSLOptions().setHostnameVerificationAlgorithm("").setTrustOptions(Trust.SERVER_JKS.get());
           client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST).onComplete(onSuccess(ns2 -> {
             ns2.upgradeToSsl(sslOptions).onComplete(onSuccess(v2 -> {
               complete();
@@ -3441,7 +3490,11 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testNetClientInternalTLS() throws Exception {
     client.close();
-    client = vertx.createNetClient(new NetClientOptions().setSsl(true).setTrustOptions(Trust.SERVER_JKS.get()));
+    client = vertx.createNetClient(new NetClientOptions()
+      .setSsl(true)
+      .setHostnameVerificationAlgorithm("")
+      .setTrustOptions(Trust.SERVER_JKS.get())
+    );
     testNetClientInternal_(new HttpServerOptions()
       .setHost("localhost")
       .setPort(1234)
@@ -3472,7 +3525,7 @@ public class NetTest extends VertxTestBase {
       null
     );
 
-    client = vertx.createNetClient(new NetClientOptions().setSsl(true)
+    client = vertx.createNetClient(new NetClientOptions().setSsl(true).setHostnameVerificationAlgorithm("")
       .setSslEngineOptions(new JdkSSLEngineOptions() {
         @Override
         public SslContextFactory sslContextFactory() {
@@ -3872,7 +3925,8 @@ public class NetTest extends VertxTestBase {
 
     NetClientOptions clientOptions = new NetClientOptions()
       .setSsl(true)
-      .setTrustAll(true);
+      .setTrustAll(true)
+      .setHostnameVerificationAlgorithm("");
     client = vertx.createNetClient(clientOptions);
 
     server.connectHandler(s -> {
@@ -3897,6 +3951,7 @@ public class NetTest extends VertxTestBase {
     NetClientOptions clientOptions = new NetClientOptions()
       .setSsl(false)
       .setTrustAll(true)
+      .setHostnameVerificationAlgorithm("")
       .setSslHandshakeTimeout(200)
       .setSslHandshakeTimeoutUnit(TimeUnit.MILLISECONDS);
     client = vertx.createNetClient(clientOptions);
