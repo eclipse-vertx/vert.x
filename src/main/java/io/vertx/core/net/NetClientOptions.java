@@ -43,9 +43,9 @@ public class NetClientOptions extends ClientOptionsBase {
   public static final long DEFAULT_RECONNECT_INTERVAL = 1000;
 
   /**
-   * Default value to determine hostname verification algorithm hostname verification (for SSL/TLS) = ""
+   * Default value to determine hostname verification algorithm hostname verification (for SSL/TLS) = null
    */
-  public static final String DEFAULT_HOSTNAME_VERIFICATION_ALGORITHM = "";
+  public static final String DEFAULT_HOSTNAME_VERIFICATION_ALGORITHM = null;
 
   /**
    * Whether a write-handler should be registered by default = false.
