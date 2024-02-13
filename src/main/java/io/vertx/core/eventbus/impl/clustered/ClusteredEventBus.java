@@ -83,7 +83,7 @@ public class ClusteredEventBus extends EventBusImpl {
     this.nodeSelector = nodeSelector;
     closeFuture = new CloseFuture(log);
     ebContext = vertx.createEventLoopContext(null, closeFuture, null, Thread.currentThread().getContextClassLoader());
-    this.client = createNetClient(vertx, new NetClientOptions(this.options.toJson()), closeFuture);
+    this.client = createNetClient(vertx, new NetClientOptions(this.options.toJson()).setHostnameVerificationAlgorithm(""), closeFuture);
   }
 
   private NetClient createNetClient(VertxInternal vertx, NetClientOptions clientOptions, CloseFuture closeFuture) {

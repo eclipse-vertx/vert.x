@@ -60,6 +60,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   private final SocketAddress remoteAddress;
   private final TCPMetrics metrics;
   private final InboundBuffer<Object> pending;
+  private final String hostnameVerificationAlgorithm;
   private final String negotiatedApplicationLayerProtocol;
   private Handler<Void> endHandler;
   private Handler<Void> drainHandler;
@@ -69,7 +70,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   private Handler<Object> eventHandler;
 
   public NetSocketImpl(ContextInternal context, ChannelHandlerContext channel, SslChannelProvider sslChannelProvider, TCPMetrics metrics, boolean registerWriteHandler) {
-    this(context, channel, null, sslChannelProvider, metrics, null, registerWriteHandler);
+    this(context, channel, null, sslChannelProvider, metrics, null, null, registerWriteHandler);
   }
 
   public NetSocketImpl(ContextInternal context,
@@ -77,6 +78,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
                        SocketAddress remoteAddress,
                        SslChannelProvider sslChannelProvider,
                        TCPMetrics metrics,
+                       String hostnameVerificationAlgorithm,
                        String negotiatedApplicationLayerProtocol,
                        boolean registerWriteHandler) {
     super(context, channel);
@@ -85,6 +87,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
     this.remoteAddress = remoteAddress;
     this.metrics = metrics;
     this.messageHandler = new DataMessageHandler();
+    this.hostnameVerificationAlgorithm = hostnameVerificationAlgorithm;
     this.negotiatedApplicationLayerProtocol = negotiatedApplicationLayerProtocol;
     pending = new InboundBuffer<>(context);
     pending.drainHandler(v -> doResume());
@@ -316,6 +319,13 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   public Future<Void> upgradeToSsl(String serverName) {
     PromiseInternal<Void> promise = context.promise();
     if (chctx.pipeline().get("ssl") == null) {
+      if (remoteAddress != null && hostnameVerificationAlgorithm == null) {
+        promise.fail("Missing hostname verification algorithm: you must set TCP client options host name" +
+          " verification algorithm");
+        return promise.future();
+      }
+
+
       ChannelPromise flush = chctx.newPromise();
       flush(flush);
       flush.addListener(fut -> {

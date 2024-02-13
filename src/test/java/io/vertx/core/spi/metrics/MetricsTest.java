@@ -1200,6 +1200,7 @@ public class MetricsTest extends VertxTestBase {
       .setUseAlpn(true)
       .setSsl(true)
       .setTrustStoreOptions(Trust.SERVER_JKS.get())
+      .setHostnameVerificationAlgorithm("HTTPS")
       .setApplicationLayerProtocols(Collections.singletonList("h2")));
     CountDownLatch latch = new CountDownLatch(1);
     client.connect(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, onSuccess(so -> {

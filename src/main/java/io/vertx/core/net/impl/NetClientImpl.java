@@ -257,6 +257,11 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
     if (closeFuture.isClosed()) {
       connectHandler.fail(new IllegalStateException("Client is closed"));
     } else {
+      if (ssl && options.getHostnameVerificationAlgorithm() == null) {
+        connectHandler.fail("Missing hostname verification algorithm: you must set TCP client options host name" +
+          " verification algorithm");
+        return;
+      }
       Future<SslContextUpdate> fut;
       synchronized (NetClientImpl.this) {
         fut = sslChannelProvider;
@@ -328,7 +333,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
   private void connected(ContextInternal context, Channel ch, Promise<NetSocket> connectHandler, SocketAddress remoteAddress, SslChannelProvider sslChannelProvider, String applicationLayerProtocol, boolean registerWriteHandlers) {
     channelGroup.add(ch);
     initChannel(ch.pipeline());
-    VertxHandler<NetSocketImpl> handler = VertxHandler.create(ctx -> new NetSocketImpl(context, ctx, remoteAddress, sslChannelProvider, metrics, applicationLayerProtocol, registerWriteHandlers));
+    VertxHandler<NetSocketImpl> handler = VertxHandler.create(ctx -> new NetSocketImpl(context, ctx, remoteAddress, sslChannelProvider, metrics, options.getHostnameVerificationAlgorithm(), applicationLayerProtocol, registerWriteHandlers));
     handler.removeHandler(NetSocketImpl::unregisterEventBusHandler);
     handler.addHandler(sock -> {
       if (metrics != null) {
