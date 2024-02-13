@@ -75,7 +75,9 @@ public class ClusteredEventBus extends EventBusImpl {
   public ClusteredEventBus(VertxInternal vertx, VertxOptions options, ClusterManager clusterManager, NodeSelector nodeSelector) {
     super(vertx);
 
-    NetClient client = createNetClient(vertx, new NetClientOptions(options.getEventBusOptions().toJson()));
+    NetClient client = createNetClient(vertx, new NetClientOptions(options.getEventBusOptions().toJson())
+      .setHostnameVerificationAlgorithm("")
+    );
 
     this.options = options.getEventBusOptions();
     this.clusterManager = clusterManager;

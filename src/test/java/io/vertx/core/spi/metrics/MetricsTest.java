@@ -1197,6 +1197,7 @@ public class MetricsTest extends VertxTestBase {
       .setSslEngineOptions(new JdkSSLEngineOptions())
       .setUseAlpn(true)
       .setSsl(true)
+      .setHostnameVerificationAlgorithm("HTTPS")
       .setTrustOptions(Trust.SERVER_JKS.get())
       .setApplicationLayerProtocols(Collections.singletonList("h2")));
     CountDownLatch latch = new CountDownLatch(1);

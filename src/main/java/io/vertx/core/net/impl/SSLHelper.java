@@ -195,8 +195,15 @@ public class SSLHelper {
   }
 
   private Future<Config> buildConfig(SSLOptions sslOptions, boolean force, ContextInternal ctx) {
+    if (sslOptions instanceof ClientSSLOptions) {
+      ClientSSLOptions clientSSLOptions = (ClientSSLOptions) sslOptions;
+      if (clientSSLOptions.getHostnameVerificationAlgorithm() == null) {
+        return ctx.failedFuture("Missing hostname verification algorithm: you must set TCP client options host name" +
+          " verification algorithm");
+      }
+    }
     if (sslOptions.getTrustOptions() == null && sslOptions.getKeyCertOptions() == null) {
-      return Future.succeededFuture(NULL_CONFIG);
+      return ctx.succeededFuture(NULL_CONFIG);
     }
     Promise<Config> promise;
     ConfigKey k = new ConfigKey(sslOptions);
