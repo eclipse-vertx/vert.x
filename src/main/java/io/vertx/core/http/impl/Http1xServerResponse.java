@@ -22,6 +22,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.concurrent.FutureListener;
+import io.netty.util.internal.ObjectUtil;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -426,6 +427,8 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public Future<Void> sendFile(String filename, long offset, long length) {
+    ObjectUtil.checkPositiveOrZero(offset, "offset");
+    ObjectUtil.checkPositiveOrZero(length, "length");
     synchronized (conn) {
       checkValid();
       if (headWritten) {
@@ -441,6 +444,13 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
       }
       long actualLength = Math.min(length, file.length() - offset);
       long actualOffset = Math.min(offset, file.length());
+
+      // fail early before status code/headers are written to the response
+      if (actualLength < 0) {
+        Exception exception = new IllegalArgumentException("offset : " + offset + " is larger than the requested file length : " + file.length());
+        return ctx.failedFuture(exception);
+      }
+
       if (!headers.contains(HttpHeaders.CONTENT_TYPE)) {
         String contentType = MimeMapping.getMimeTypeForFilename(filename);
         if (contentType != null) {

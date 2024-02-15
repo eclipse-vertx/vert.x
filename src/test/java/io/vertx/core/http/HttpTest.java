@@ -2130,6 +2130,119 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testSendZeroRangeFileFromClasspath() throws Exception {
+    server.requestHandler(res -> {
+      // hosts_config.txt is 23 bytes
+      res.response().sendFile("hosts_config.txt", 23, 0);
+    });
+    startServer(testAddress);
+    client.request(requestOptions)
+      .compose(req -> req
+        .send()
+        .andThen(onSuccess(resp -> assertEquals(String.valueOf(0), resp.headers().get("Content-Length"))))
+        .compose(HttpClientResponse::body))
+      .onComplete(onSuccess(body -> {
+        assertEquals("", body.toString());
+        assertEquals(0, body.toString().length());
+        testComplete();
+      }));
+    await();
+  }
+
+  @Test
+  public void testSendOffsetIsHigherThanFileLengthForFileFromClasspath() throws Exception {
+    server.requestHandler(res -> {
+      try {
+        // hosts_config.txt is 23 bytes
+        res.response().sendFile("hosts_config.txt", 33, 10)
+          .onFailure(throwable -> {
+            try {
+              res.response().setStatusCode(500).end();
+            } catch (IllegalStateException illegalStateException) {
+              // should not reach here, the response should not be sent if the offset is negative
+              fail(illegalStateException);
+            }
+          });
+      } catch (Exception ex) {
+        // a route.route().failureHandler() would handle failures during
+        // handling of the request. Here we simulate that scenario, and during
+        // handling of failure we would like to set a status code for example.
+        try {
+          res.response().setStatusCode(505).end();
+          fail("Should not reach here, failures should be handled by res.response().onFailure() above");
+        } catch (IllegalStateException exceptionWhenTheResponseIsAlreadySent) {
+          // should not reach here, the response should not be sent if the offset is negative
+          fail(exceptionWhenTheResponseIsAlreadySent);
+        }
+      }
+    });
+    startServer(testAddress);
+    client.request(requestOptions)
+      .compose(HttpClientRequest::send)
+      .onComplete(onSuccess(response -> {
+        assertEquals(500, response.statusCode());
+        testComplete();
+      }));
+
+    await();
+  }
+
+  @Test
+  public void testSendFileFromClasspathWithNegativeLength() throws Exception {
+    server.requestHandler(res -> {
+      try {
+        // hosts_config.txt is 23 bytes
+        res.response().sendFile("hosts_config.txt", 0, -100)
+          .onFailure(throwable -> {
+            // should not reach here, the response should not be sent if the offset is negative
+            fail("Should not reach here");
+          });
+      } catch (Exception ex) {
+        assertEquals(IllegalArgumentException.class, ex.getClass());
+        assertEquals("length : -100 (expected: >= 0)", ex.getMessage());
+        // handle failure in sendFile
+        res.response().setStatusCode(500).end();
+      }
+    });
+    startServer(testAddress);
+    client.request(requestOptions)
+      .compose(HttpClientRequest::send)
+      .onComplete(onSuccess(response -> {
+        assertEquals(500, response.statusCode());
+        testComplete();
+      }));
+
+    await();
+  }
+
+  @Test
+  public void testSendFileFromClasspathWithNegativeOffset() throws Exception {
+    server.requestHandler(res -> {
+      try {
+        // hosts_config.txt is 23 bytes
+        res.response().sendFile("hosts_config.txt", -100, 23)
+          .onFailure(throwable -> {
+            // should not reach here, the response should not be sent if the offset is negative
+            fail("Should not reach here");
+          });
+      } catch (Exception ex) {
+        assertEquals(IllegalArgumentException.class, ex.getClass());
+        assertEquals("offset : -100 (expected: >= 0)", ex.getMessage());
+        res.response().setStatusCode(500).end();
+      }
+    });
+    startServer(testAddress);
+    client.request(requestOptions)
+      .compose(HttpClientRequest::send)
+      .onComplete(onSuccess(response -> {
+        assertEquals(500, response.statusCode());
+        testComplete();
+      }));
+
+    await();
+  }
+
+  @Test
   public void test100ContinueHandledAutomatically() throws Exception {
     Buffer toSend = TestUtils.randomBuffer(1000);
 
