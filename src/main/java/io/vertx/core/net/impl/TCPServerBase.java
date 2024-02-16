@@ -26,6 +26,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
+import io.vertx.core.http.ClientAuth;
 import io.vertx.core.impl.HostnameResolver;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
@@ -139,11 +140,15 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
         if (updateInProgress == null) {
           ServerSSLOptions sslOptions = options.copy();
           configure(sslOptions);
+          ClientAuth clientAuth = sslOptions.getClientAuth();
+          if (clientAuth == null) {
+            clientAuth = ClientAuth.NONE;
+          }
           updateInProgress = sslHelper.resolveSslChannelProvider(
             sslOptions,
             null,
             sslOptions.isSni(),
-            sslOptions.getClientAuth(),
+            clientAuth,
             sslOptions.getApplicationLayerProtocols(),
             force,
             ctx);

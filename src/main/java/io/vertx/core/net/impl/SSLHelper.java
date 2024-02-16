@@ -26,7 +26,6 @@ import java.io.ByteArrayInputStream;
 import java.security.cert.CRL;
 import java.security.cert.CertificateFactory;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -37,7 +36,6 @@ import java.util.stream.Collectors;
  */
 public class SSLHelper {
 
-  private static final AtomicLong seq = new AtomicLong();
   private static final Config NULL_CONFIG = new Config(null, null, null, null, null);
   static final EnumMap<ClientAuth, io.netty.handler.ssl.ClientAuth> CLIENT_AUTH_MAPPING = new EnumMap<>(ClientAuth.class);
 
@@ -119,7 +117,7 @@ public class SSLHelper {
     return resolveSslChannelProvider(options, endpointIdentificationAlgorithm, useSNI, clientAuth, applicationProtocols, false, ctx);
   }
 
-  public Future<SslChannelProvider> resolveSslChannelProvider(SSLOptions options, String endpointIdentificationAlgorithm, boolean useSNI, ClientAuth clientAuth, List<String> applicationProtocols, boolean force, ContextInternal ctx) {
+  public Future<SslChannelProvider> resolveSslChannelProvider(SSLOptions options, String hostnameVerificationAlgorithm, boolean useSNI, ClientAuth clientAuth, List<String> applicationProtocols, boolean force, ContextInternal ctx) {
     Promise<SslChannelProvider> promise;
     ConfigKey k = new ConfigKey(options);
     synchronized (this) {
@@ -134,7 +132,7 @@ public class SSLHelper {
       promise = Promise.promise();
       sslChannelProviderMap.put(k, promise.future());
     }
-    buildChannelProvider(options, endpointIdentificationAlgorithm, useSNI, clientAuth, applicationProtocols, force, ctx)
+    buildChannelProvider(options, hostnameVerificationAlgorithm, useSNI, clientAuth, applicationProtocols, force, ctx)
       .onComplete(promise);
     return promise.future();
   }
@@ -146,18 +144,22 @@ public class SSLHelper {
    * @return a future resolved when the helper is initialized
    */
   Future<SslContextProvider> buildContextProvider(SSLOptions sslOptions,
-                                                  String endpointIdentificationAlgorithm,
+                                                  String hostnameVerificationAlgorithm,
                                                   ClientAuth clientAuth,
                                                   List<String> applicationProtocols,
                                                   boolean force,
                                                   ContextInternal ctx) {
-    return buildConfig(sslOptions, force, ctx).map(config -> buildSslContextProvider(sslOptions, endpointIdentificationAlgorithm, supplier, clientAuth, applicationProtocols, config));
+    return buildConfig(sslOptions, force, ctx).map(config -> buildSslContextProvider(sslOptions, hostnameVerificationAlgorithm, supplier, clientAuth, applicationProtocols, config));
   }
 
-  private SslContextProvider buildSslContextProvider(SSLOptions sslOptions, String endpointIdentificationAlgorithm, Supplier<SslContextFactory> supplier, ClientAuth clientAuth, List<String> applicationProtocols, Config config) {
+  private SslContextProvider buildSslContextProvider(SSLOptions sslOptions, String hostnameVerificationAlgorithm, Supplier<SslContextFactory> supplier, ClientAuth clientAuth, List<String> applicationProtocols, Config config) {
+    if (clientAuth == null && hostnameVerificationAlgorithm == null) {
+      throw new VertxException("Missing hostname verification algorithm: you must set TCP client options host name" +
+        " verification algorithm");
+    }
     return new SslContextProvider(
       clientAuth,
-      endpointIdentificationAlgorithm,
+      hostnameVerificationAlgorithm,
       applicationProtocols,
       sslOptions.getEnabledCipherSuites(),
       sslOptions.getEnabledSecureTransportProtocols(),
@@ -195,13 +197,6 @@ public class SSLHelper {
   }
 
   private Future<Config> buildConfig(SSLOptions sslOptions, boolean force, ContextInternal ctx) {
-    if (sslOptions instanceof ClientSSLOptions) {
-      ClientSSLOptions clientSSLOptions = (ClientSSLOptions) sslOptions;
-      if (clientSSLOptions.getHostnameVerificationAlgorithm() == null) {
-        return ctx.failedFuture("Missing hostname verification algorithm: you must set TCP client options host name" +
-          " verification algorithm");
-      }
-    }
     if (sslOptions.getTrustOptions() == null && sslOptions.getKeyCertOptions() == null) {
       return ctx.succeededFuture(NULL_CONFIG);
     }
