@@ -2130,7 +2130,7 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testSendZeroRangeFileFromClasspath() throws Exception {
+  public void testSendZeroRangeFile() throws Exception {
     File f = setupFile("twenty_three_bytes.txt", TestUtils.randomAlphaString(23));
     server.requestHandler(res -> res.response().sendFile(f.getAbsolutePath(), 23, 0));
     startServer(testAddress);
@@ -2148,7 +2148,7 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testSendOffsetIsHigherThanFileLengthForFileFromClasspath() throws Exception {
+  public void testSendOffsetIsHigherThanFileLengthForFile() throws Exception {
     File f = setupFile("twenty_three_bytes.txt", TestUtils.randomAlphaString(23));
     server.requestHandler(res -> {
       try {
@@ -2186,7 +2186,7 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testSendFileFromClasspathWithNegativeLength() throws Exception {
+  public void testSendFileWithNegativeLength() throws Exception {
     File f = setupFile("twenty_three_bytes.txt", TestUtils.randomAlphaString(23));
     server.requestHandler(res -> {
       try {
@@ -2214,7 +2214,7 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testSendFileFromClasspathWithNegativeOffset() throws Exception {
+  public void testSendFileWithNegativeOffset() throws Exception {
     File f = setupFile("twenty_three_bytes.txt", TestUtils.randomAlphaString(23));
     server.requestHandler(res -> {
       try {
