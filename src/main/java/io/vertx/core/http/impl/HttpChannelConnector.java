@@ -103,7 +103,7 @@ public class HttpChannelConnector {
       if (sslOptions != null) {
         connectOptions.setSslOptions(sslOptions.copy().setUseAlpn(useAlpn));
       } else {
-        // should not be possible
+        connectOptions.setSslOptions(new ClientSSLOptions().setHostnameVerificationAlgorithm("HTTPS"));
       }
     }
     connectOptions.setProxyOptions(proxyOptions);
