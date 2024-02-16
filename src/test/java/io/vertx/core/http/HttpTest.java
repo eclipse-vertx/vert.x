@@ -2168,11 +2168,9 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testSendZeroRangeFileFromClasspath() {
-    server.requestHandler(res -> {
-      // hosts_config.txt is 23 bytes
-      res.response().sendFile("hosts_config.txt", 23, 0);
-    }).listen(testAddress, onSuccess(res -> {
+  public void testSendZeroRangeFile() throws Exception {
+    File f = setupFile("twenty_three_bytes.txt", TestUtils.randomAlphaString(23));
+    server.requestHandler(res -> res.response().sendFile(f.getAbsolutePath(), 23, 0)).listen(testAddress, onSuccess(res -> {
       client.request(requestOptions)
         .compose(HttpClientRequest::send)
         .compose(resp -> {
@@ -2189,11 +2187,11 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testSendOffsetIsHigherThanFileLengthForFileFromClasspath() {
+  public void testSendOffsetIsHigherThanFileLengthForFile() throws Exception {
+    File f = setupFile("twenty_three_bytes.txt", TestUtils.randomAlphaString(23));
     server.requestHandler(res -> {
       try {
-        // hosts_config.txt is 23 bytes
-        res.response().sendFile("hosts_config.txt", 33, 10)
+        res.response().sendFile(f.getAbsolutePath(), 33, 10)
           .onFailure(throwable -> {
             try {
               res.response().setStatusCode(500).end();
@@ -2222,6 +2220,61 @@ public abstract class HttpTest extends HttpTestBase {
           testComplete();
         }));
     }));
+    await();
+  }
+
+  @Test
+  public void testSendFileFromClasspathWithNegativeLength() throws Exception {
+    File f = setupFile("twenty_three_bytes.txt", TestUtils.randomAlphaString(23));
+    server.requestHandler(res -> {
+      try {
+        res.response().sendFile(f.getAbsolutePath(), 0, -100)
+          .onFailure(throwable -> {
+            // should not reach here, the response should not be sent if the offset is negative
+            fail("Should not reach here");
+          });
+      } catch (Exception ex) {
+        assertEquals(IllegalArgumentException.class, ex.getClass());
+        assertEquals("length : -100 (expected: >= 0)", ex.getMessage());
+        // handle failure in sendFile
+        res.response().setStatusCode(500).end();
+      }
+    });
+    startServer(testAddress);
+    client.request(requestOptions)
+      .compose(HttpClientRequest::send)
+      .onComplete(onSuccess(response -> {
+        assertEquals(500, response.statusCode());
+        testComplete();
+      }));
+
+    await();
+  }
+
+  @Test
+  public void testSendFileFromClasspathWithNegativeOffset() throws Exception {
+    File f = setupFile("twenty_three_bytes.txt", TestUtils.randomAlphaString(23));
+    server.requestHandler(res -> {
+      try {
+        res.response().sendFile(f.getAbsolutePath(), -100, 23)
+          .onFailure(throwable -> {
+            // should not reach here, the response should not be sent if the offset is negative
+            fail("Should not reach here");
+          });
+      } catch (Exception ex) {
+        assertEquals(IllegalArgumentException.class, ex.getClass());
+        assertEquals("offset : -100 (expected: >= 0)", ex.getMessage());
+        res.response().setStatusCode(500).end();
+      }
+    });
+    startServer(testAddress);
+    client.request(requestOptions)
+      .compose(HttpClientRequest::send)
+      .onComplete(onSuccess(response -> {
+        assertEquals(500, response.statusCode());
+        testComplete();
+      }));
+
     await();
   }
 
@@ -5000,7 +5053,7 @@ public abstract class HttpTest extends HttpTestBase {
     client.close();
     client = vertx.createHttpClient(options.setPoolCleanerPeriod(1));
     AtomicInteger respCount = new AtomicInteger();
-    for (int i = 0;i < numReqs;i++) {
+    for (int i = 0; i < numReqs; i++) {
       int current = 1 + i;
       client.request(requestOptions)
         .compose(HttpClientRequest::send)

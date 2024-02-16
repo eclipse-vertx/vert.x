@@ -19,6 +19,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpStatusClass;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Headers;
+import io.netty.util.internal.ObjectUtil;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
@@ -602,6 +603,8 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public HttpServerResponse sendFile(String filename, long offset, long length, Handler<AsyncResult<Void>> resultHandler) {
+    ObjectUtil.checkPositiveOrZero(offset, "offset");
+    ObjectUtil.checkPositiveOrZero(length, "length");
     synchronized (conn) {
       checkValid();
     }
