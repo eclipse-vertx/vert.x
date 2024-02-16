@@ -3502,19 +3502,15 @@ public class WebSocketTest extends VertxTestBase {
   public void testCloseClientImmediately() throws InterruptedException {
     WebSocketClient client = vertx.createWebSocketClient();
     server = vertx.createHttpServer()
-      .webSocketHandler(ws -> {
+      .requestHandler(req -> {
+        // Don't perform the handshake
       });
     awaitFuture(server.listen(DEFAULT_HTTP_PORT));
-    AtomicBoolean resolved = new AtomicBoolean();
     client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri").onComplete(ar -> {
-      if (resolved.compareAndSet(false, true)) {
-        if (ar.succeeded()) {
-          fail();
-        } else {
-          testComplete();
-        }
+      if (ar.succeeded()) {
+        fail();
       } else {
-        // Bug - should be fixed but ok for now
+        testComplete();
       }
     });
     client.close();
