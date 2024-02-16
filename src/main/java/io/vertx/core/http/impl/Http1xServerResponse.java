@@ -22,6 +22,7 @@ import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.util.internal.ObjectUtil;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -541,6 +542,8 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   private void doSendFile(String filename, long offset, long length, Handler<AsyncResult<Void>> resultHandler) {
+    ObjectUtil.checkPositiveOrZero(offset, "offset");
+    ObjectUtil.checkPositiveOrZero(length, "length");
     synchronized (conn) {
       checkValid();
       if (headWritten) {
