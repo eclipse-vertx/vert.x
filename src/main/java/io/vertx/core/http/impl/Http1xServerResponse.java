@@ -559,6 +559,19 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
       }
 
       long contentLength = Math.min(length, file.length() - offset);
+
+      // fail early before status code/headers are written to the response
+      if (contentLength < 0) {
+        if (resultHandler != null) {
+          ContextInternal ctx = vertx.getOrCreateContext();
+          Exception exception = new IllegalArgumentException("offset : " + offset + " is larger than the requested file length : " + file.length());
+          ctx.runOnContext((v) -> resultHandler.handle(Future.failedFuture(exception)));
+        } else {
+          log.error("Invalid offset: " + offset);
+        }
+        return;
+      }
+
       bytesWritten = contentLength;
       if (!headers.contains(HttpHeaders.CONTENT_TYPE)) {
         String contentType = MimeMapping.getMimeTypeForFilename(filename);
