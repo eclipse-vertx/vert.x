@@ -2131,10 +2131,8 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testSendZeroRangeFileFromClasspath() throws Exception {
-    server.requestHandler(res -> {
-      // hosts_config.txt is 23 bytes
-      res.response().sendFile("hosts_config.txt", 23, 0);
-    });
+    File f = setupFile("twenty_three_bytes.txt", TestUtils.randomAlphaString(23));
+    server.requestHandler(res -> res.response().sendFile(f.getAbsolutePath(), 23, 0));
     startServer(testAddress);
     client.request(requestOptions)
       .compose(req -> req
@@ -2151,10 +2149,10 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testSendOffsetIsHigherThanFileLengthForFileFromClasspath() throws Exception {
+    File f = setupFile("twenty_three_bytes.txt", TestUtils.randomAlphaString(23));
     server.requestHandler(res -> {
       try {
-        // hosts_config.txt is 23 bytes
-        res.response().sendFile("hosts_config.txt", 33, 10)
+        res.response().sendFile(f.getAbsolutePath(), 33, 10)
           .onFailure(throwable -> {
             try {
               res.response().setStatusCode(500).end();
@@ -2189,10 +2187,10 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testSendFileFromClasspathWithNegativeLength() throws Exception {
+    File f = setupFile("twenty_three_bytes.txt", TestUtils.randomAlphaString(23));
     server.requestHandler(res -> {
       try {
-        // hosts_config.txt is 23 bytes
-        res.response().sendFile("hosts_config.txt", 0, -100)
+        res.response().sendFile(f.getAbsolutePath(), 0, -100)
           .onFailure(throwable -> {
             // should not reach here, the response should not be sent if the offset is negative
             fail("Should not reach here");
@@ -2217,10 +2215,10 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testSendFileFromClasspathWithNegativeOffset() throws Exception {
+    File f = setupFile("twenty_three_bytes.txt", TestUtils.randomAlphaString(23));
     server.requestHandler(res -> {
       try {
-        // hosts_config.txt is 23 bytes
-        res.response().sendFile("hosts_config.txt", -100, 23)
+        res.response().sendFile(f.getAbsolutePath(), -100, 23)
           .onFailure(throwable -> {
             // should not reach here, the response should not be sent if the offset is negative
             fail("Should not reach here");
