@@ -251,7 +251,7 @@ class NetClientImpl implements NetClientInternal {
           sslOptions,
           sslOptions.getHostnameVerificationAlgorithm(),
           false,
-          ClientAuth.NONE,
+          null,
           sslOptions.getApplicationLayerProtocols(),
           context);
         fut.onComplete(ar -> {

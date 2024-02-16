@@ -26,6 +26,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
+import io.vertx.core.http.ClientAuth;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.*;
@@ -299,11 +300,15 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
               context);
           } else {
             ServerSSLOptions serverSSLOptions = (ServerSSLOptions) sslOptions;
+            ClientAuth clientAuth = serverSSLOptions.getClientAuth();
+            if (clientAuth == null) {
+              clientAuth = ClientAuth.NONE;
+            }
             return sslHelper.resolveSslChannelProvider(
               sslOptions,
-              "",
+              null,
               serverSSLOptions.isSni(),
-              serverSSLOptions.getClientAuth(),
+              clientAuth,
               null, context);
           }
         })
