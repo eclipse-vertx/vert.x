@@ -470,6 +470,22 @@
             </configuration>
           </execution>
           <execution>
+            <id>connect-to-tls-trusted-server</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/ConnectToTLSTrustedServerTest.java</include>
+              </includes>
+              <systemProperties>
+                <javax.net.ssl.trustStore>${project.basedir}/src/test/resources/tls/client-truststore-root-ca.jks</javax.net.ssl.trustStore>
+                <javax.net.ssl.trustStorePassword>wibble</javax.net.ssl.trustStorePassword>
+              </systemProperties>
+            </configuration>
+          </execution>
+          <execution>
             <id>slf4j</id>
             <goals>
               <goal>integration-test</goal>

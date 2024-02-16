@@ -241,7 +241,11 @@ class NetClientImpl implements NetClientInternal {
     } else {
       if (connectOptions.isSsl()) {
         // We might be using an SslContext created from a plugged engine
-        ClientSSLOptions sslOptions = connectOptions.getSslOptions() != null ? connectOptions.getSslOptions() : new ClientSSLOptions();
+        ClientSSLOptions sslOptions = connectOptions.getSslOptions() != null ? connectOptions.getSslOptions().copy() : this.sslOptions;
+        if (sslOptions == null) {
+          connectHandler.fail("ClientSSLOptions must be provided when connecting to a TLS server");
+          return;
+        }
         Future<SslChannelProvider> fut;
         fut = sslHelper.resolveSslChannelProvider(
           sslOptions,

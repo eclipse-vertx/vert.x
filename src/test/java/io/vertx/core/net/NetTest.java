@@ -2909,6 +2909,39 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
+  public void testMissingClientSSLOptions() throws Exception {
+    server = vertx.createNetServer(new NetServerOptions()
+        .setSsl(true)
+        .setKeyCertOptions(Cert.SERVER_JKS.get()))
+      .connectHandler(conn -> {
+        fail();
+      });
+    startServer(testAddress);
+    client.connect(new ConnectOptions().setPort(8443).setHost("localhost").setSsl(true)).onComplete(onFailure(err -> {
+      assertTrue(err.getMessage().contains("ClientSSLOptions"));
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testReuseDefaultClientSSLOptions() throws Exception {
+    waitFor(2);
+    server = vertx.createNetServer(new NetServerOptions()
+        .setSsl(true)
+        .setKeyCertOptions(Cert.SERVER_JKS.get()))
+      .connectHandler(conn -> {
+        complete();
+      });
+    startServer(testAddress);
+    client = vertx.createNetClient(new NetClientOptions().setTrustAll(true).setHostnameVerificationAlgorithm(""));
+    client.connect(new ConnectOptions().setRemoteAddress(testAddress).setSsl(true)).onComplete(onSuccess(so -> {
+      complete();
+    }));
+    await();
+  }
+
+  @Test
   public void testNoLogging() throws Exception {
     TestLoggerFactory factory = testLogging();
     assertFalse(factory.hasName("io.netty.handler.logging.LoggingHandler"));
