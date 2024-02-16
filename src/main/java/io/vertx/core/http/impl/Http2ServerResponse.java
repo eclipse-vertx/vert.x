@@ -619,7 +619,16 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     HttpUtils.resolveFile(stream.vertx, filename, offset, length, ar -> {
       if (ar.succeeded()) {
         AsyncFile file = ar.result();
-        long contentLength = Math.min(length, file.getReadLength());
+        long fileLength = file.getReadLength();
+        long contentLength = Math.min(length, fileLength);
+
+        // fail early before status code/headers are written to the response
+        if (contentLength < 0) {
+          Exception exception = new IllegalArgumentException("offset : " + offset + " is larger than the requested file length : " + fileLength);
+          h.handle(Future.failedFuture(exception));
+          return;
+        }
+
         if (headers.get(HttpHeaderNames.CONTENT_LENGTH) == null) {
           putHeader(HttpHeaderNames.CONTENT_LENGTH, String.valueOf(contentLength));
         }
