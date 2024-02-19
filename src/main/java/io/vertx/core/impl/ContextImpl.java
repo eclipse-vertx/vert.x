@@ -21,6 +21,7 @@ import io.vertx.core.spi.metrics.PoolMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 /**
  * A base class for {@link Context} implementations.
@@ -29,6 +30,11 @@ import java.util.concurrent.*;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public final class ContextImpl implements ContextInternal {
+
+  private static final AtomicReferenceFieldUpdater<ContextImpl, ConcurrentMap> DATA_UPDATER =
+    AtomicReferenceFieldUpdater.newUpdater(ContextImpl.class, ConcurrentMap.class, "data");
+  private static final AtomicReferenceFieldUpdater<ContextImpl, ConcurrentMap> LOCAl_DATA_UPDATER =
+    AtomicReferenceFieldUpdater.newUpdater(ContextImpl.class, ConcurrentMap.class, "localData");
 
   static <T> void setResultHandler(ContextInternal ctx, Future<T> fut, Handler<AsyncResult<T>> resultHandler) {
     if (resultHandler != null) {
@@ -51,8 +57,8 @@ public final class ContextImpl implements ContextInternal {
   private final ClassLoader tccl;
   private final EventLoop eventLoop;
   private final EventExecutor executor;
-  private ConcurrentMap<Object, Object> data;
-  private ConcurrentMap<Object, Object> localData;
+  private volatile ConcurrentMap<Object, Object> data;
+  private volatile ConcurrentMap<Object, Object> localData;
   private volatile Handler<Throwable> exceptionHandler;
   final TaskQueue internalOrderedTasks;
   final WorkerPool internalWorkerPool;
@@ -243,19 +249,73 @@ public final class ContextImpl implements ContextInternal {
   }
 
   @Override
-  public synchronized ConcurrentMap<Object, Object> contextData() {
+  public <T> T get(Object key) {
+    ConcurrentMap<Object, Object> data = this.data;
     if (data == null) {
-      data = new ConcurrentHashMap<>();
+      return null;
     }
-    return data;
+    return (T) data.get(key);
   }
 
   @Override
-  public synchronized ConcurrentMap<Object, Object> localContextData() {
-    if (localData == null) {
-      localData = new ConcurrentHashMap<>();
+  public boolean remove(Object key) {
+    ConcurrentMap<Object, Object> data = this.data;
+    if (data == null) {
+      return false;
     }
-    return localData;
+    return data.remove(key) != null;
+  }
+
+  @Override
+  public ConcurrentMap<Object, Object> contextData() {
+    ConcurrentMap<Object, Object> data = this.data;
+    if (data != null) {
+      return data;
+    }
+    return getOrCreateCtxData();
+  }
+
+  private ConcurrentMap<Object, Object> getOrCreateCtxData() {
+    ConcurrentMap<Object, Object> data = new ConcurrentHashMap<>();
+    if (DATA_UPDATER.compareAndSet(this, null, data)) {
+      return data;
+    }
+    return this.data;
+  }
+
+  @Override
+  public ConcurrentMap<Object, Object> localContextData() {
+    ConcurrentMap<Object, Object> localData = this.localData;
+    if (localData != null) {
+      return localData;
+    }
+    return getOrCreateLocalCtxData();
+  }
+
+  private ConcurrentMap<Object, Object> getOrCreateLocalCtxData() {
+    ConcurrentMap<Object, Object> localData = new ConcurrentHashMap<>();
+    if (LOCAl_DATA_UPDATER.compareAndSet(this, null, localData)) {
+      return localData;
+    }
+    return this.localData;
+  }
+
+  @Override
+  public <T> T getLocal(Object key) {
+    ConcurrentMap<Object, Object> localData = this.localData;
+    if (localData == null) {
+      return null;
+    }
+    return (T) localData.get(key);
+  }
+
+  @Override
+  public boolean removeLocal(Object key) {
+    ConcurrentMap<Object, Object> localData = this.localData;
+    if (localData == null) {
+      return false;
+    }
+    return localData.remove(key) != null;
   }
 
   public void reportException(Throwable t) {

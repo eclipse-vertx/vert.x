@@ -19,6 +19,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 /**
  * A context that forwards most operations to a delegate. This context
@@ -33,8 +34,11 @@ import java.util.concurrent.Executor;
  */
 class DuplicatedContext implements ContextInternal {
 
+  private static final AtomicReferenceFieldUpdater<DuplicatedContext, ConcurrentMap> LOCAL_DATA_UPDATER =
+    AtomicReferenceFieldUpdater.newUpdater(DuplicatedContext.class, ConcurrentMap.class, "localData");
+
   protected final ContextImpl delegate;
-  private ConcurrentMap<Object, Object> localData;
+  private volatile ConcurrentMap<Object, Object> localData;
 
   DuplicatedContext(ContextImpl delegate) {
     this.delegate = delegate;
@@ -112,18 +116,58 @@ class DuplicatedContext implements ContextInternal {
   }
 
   @Override
+  public <T> T get(Object key) {
+    return delegate.get(key);
+  }
+
+  @Override
+  public void put(Object key, Object value) {
+    delegate.put(key, value);
+  }
+
+  @Override
+  public boolean remove(Object key) {
+    return delegate.remove(key);
+  }
+
+  @Override
   public final ConcurrentMap<Object, Object> contextData() {
     return delegate.contextData();
   }
 
   @Override
-  public final ConcurrentMap<Object, Object> localContextData() {
-    synchronized (this) {
-      if (localData == null) {
-        localData = new ConcurrentHashMap<>();
-      }
+  public ConcurrentMap<Object, Object> localContextData() {
+    ConcurrentMap<Object, Object> localData = this.localData;
+    if (localData != null) {
       return localData;
     }
+    return getOrCreateLocalCtxData();
+  }
+
+  private ConcurrentMap<Object, Object> getOrCreateLocalCtxData() {
+    final ConcurrentMap<Object, Object> localData = new ConcurrentHashMap<>();
+    if (LOCAL_DATA_UPDATER.compareAndSet(this, null, localData)) {
+      return localData;
+    }
+    return this.localData;
+  }
+
+  @Override
+  public <T> T getLocal(Object key) {
+    ConcurrentMap<Object, Object> localData = this.localData;
+    if (localData == null) {
+      return null;
+    }
+    return (T) localData.get(key);
+  }
+
+  @Override
+  public boolean removeLocal(Object key) {
+    ConcurrentMap<Object, Object> localData = this.localData;
+    if (localData == null) {
+      return false;
+    }
+    return localData.remove(key) != null;
   }
 
   @Override
