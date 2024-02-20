@@ -541,8 +541,12 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public Future<Void> sendFile(String filename, long offset, long length) {
-    ObjectUtil.checkPositiveOrZero(offset, "offset");
-    ObjectUtil.checkPositiveOrZero(length, "length");
+    if (offset < 0) {
+      return stream.context.failedFuture("offset : " + offset + " (expected: >= 0)");
+    }
+    if (length < 0) {
+      return stream.context.failedFuture("length : " + length + " (expected: >= 0)");
+    }
     synchronized (conn) {
       checkValid();
     }
@@ -552,10 +556,6 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
         long fileLength = file.getReadLength();
         long contentLength = Math.min(length, fileLength);
         // fail early before status code/headers are written to the response
-        if (contentLength < 0) {
-          Exception exception = new IllegalStateException("offset : " + offset + " is larger than the requested file length : " + fileLength);
-          return Future.failedFuture(exception);
-        }
         if (headers.get(HttpHeaderNames.CONTENT_LENGTH) == null) {
           putHeader(HttpHeaderNames.CONTENT_LENGTH, String.valueOf(contentLength));
         }
@@ -566,8 +566,8 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
           }
         }
         checkSendHeaders(false);
-        return file
-          .pipeTo(this)
+        Future<Void> fut = file.pipeTo(this);
+        return fut
           .eventually(file::close);
     });
   }
