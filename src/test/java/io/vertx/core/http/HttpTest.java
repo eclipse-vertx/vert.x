@@ -2130,6 +2130,69 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testSendZeroRangeFile() throws Exception {
+    File f = setupFile("twenty_three_bytes.txt", TestUtils.randomAlphaString(23));
+    server.requestHandler(res -> res.response().sendFile(f.getAbsolutePath(), 23, 0));
+    startServer(testAddress);
+    client.request(requestOptions)
+      .compose(req -> req
+        .send()
+        .andThen(onSuccess(resp -> assertEquals(String.valueOf(0), resp.headers().get("Content-Length"))))
+        .compose(HttpClientResponse::body))
+      .onComplete(onSuccess(body -> {
+        assertEquals("", body.toString());
+        assertEquals(0, body.toString().length());
+        testComplete();
+      }));
+    await();
+  }
+
+  @Test
+  public void testSendFileOffsetIsHigherThanFileLength() throws Exception {
+    testSendFileWithFailure(
+      (resp, f) -> resp.sendFile(f.getAbsolutePath(), 33, 10),
+      err -> assertEquals("offset : 33 is larger than the requested file length : 23", err.getMessage()));
+  }
+
+  @Test
+  public void testSendFileWithNegativeLength() throws Exception {
+    testSendFileWithFailure((resp, f) -> resp.sendFile(f.getAbsolutePath(), 0, -100), err -> {
+      assertEquals("length : -100 (expected: >= 0)", err.getMessage());
+    });
+  }
+
+  @Test
+  public void testSendFileWithNegativeOffset() throws Exception {
+    testSendFileWithFailure((resp, f) -> resp.sendFile(f.getAbsolutePath(), -100, 23), err -> {
+      assertEquals("offset : -100 (expected: >= 0)", err.getMessage());
+    });
+  }
+
+  private void testSendFileWithFailure(BiFunction<HttpServerResponse, File, Future<Void>> sendFile, Consumer<Throwable> checker) throws Exception {
+    waitFor(2);
+    File f = setupFile("twenty_three_bytes.txt", TestUtils.randomAlphaString(23));
+    server.requestHandler(res -> {
+        // Expected
+        sendFile
+        .apply(res.response(), f)
+        .andThen(onFailure(checker::accept))
+        .recover(v -> res.response().setStatusCode(500).end())
+        .onComplete(onSuccess(v -> {
+          complete();
+        }));
+    });
+    startServer(testAddress);
+    client.request(requestOptions)
+      .compose(HttpClientRequest::send)
+      .onComplete(onSuccess(response -> {
+        assertEquals(500, response.statusCode());
+        complete();
+      }));
+
+    await();
+  }
+
+  @Test
   public void test100ContinueHandledAutomatically() throws Exception {
     Buffer toSend = TestUtils.randomBuffer(1000);
 

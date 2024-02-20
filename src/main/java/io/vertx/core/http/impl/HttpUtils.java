@@ -956,13 +956,18 @@ public final class HttpUtils {
     try (RandomAccessFile raf = new RandomAccessFile(file_, "r")) {
       FileSystem fs = vertx.fileSystem();
       return fs.open(filename, new OpenOptions().setCreate(false).setWrite(false))
-        .andThen(ar -> {
+        .transform(ar -> {
           if (ar.succeeded()) {
             AsyncFile file = ar.result();
             long contentLength = Math.min(length, file_.length() - offset);
+            if (contentLength < 0) {
+              file.close();
+              return context.failedFuture("offset : " + offset + " is larger than the requested file length : " + file_.length());
+            }
             file.setReadPos(offset);
             file.setReadLength(contentLength);
           }
+          return (Future) ar;
         });
     } catch (IOException e) {
       return context.failedFuture(e);

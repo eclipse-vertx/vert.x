@@ -19,6 +19,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpStatusClass;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Headers;
+import io.netty.util.internal.ObjectUtil;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -540,13 +541,21 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public Future<Void> sendFile(String filename, long offset, long length) {
+    if (offset < 0) {
+      return stream.context.failedFuture("offset : " + offset + " (expected: >= 0)");
+    }
+    if (length < 0) {
+      return stream.context.failedFuture("length : " + length + " (expected: >= 0)");
+    }
     synchronized (conn) {
       checkValid();
     }
     return HttpUtils
       .resolveFile(stream.context, filename, offset, length)
       .compose(file -> {
-        long contentLength = Math.min(length, file.getReadLength());
+        long fileLength = file.getReadLength();
+        long contentLength = Math.min(length, fileLength);
+        // fail early before status code/headers are written to the response
         if (headers.get(HttpHeaderNames.CONTENT_LENGTH) == null) {
           putHeader(HttpHeaderNames.CONTENT_LENGTH, String.valueOf(contentLength));
         }
@@ -557,9 +566,9 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
           }
         }
         checkSendHeaders(false);
-        return file
-          .pipeTo(this)
-          .eventually(() -> file.close());
+        Future<Void> fut = file.pipeTo(this);
+        return fut
+          .eventually(file::close);
     });
   }
 

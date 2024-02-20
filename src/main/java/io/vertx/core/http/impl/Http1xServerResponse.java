@@ -22,6 +22,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.concurrent.FutureListener;
+import io.netty.util.internal.ObjectUtil;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -46,6 +47,7 @@ import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.observability.HttpResponse;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Set;
 
@@ -426,13 +428,19 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public Future<Void> sendFile(String filename, long offset, long length) {
+    ContextInternal ctx = vertx.getOrCreateContext();
+    if (offset < 0) {
+      return context.failedFuture("offset : " + offset + " (expected: >= 0)");
+    }
+    if (length < 0) {
+      return context.failedFuture("length : " + length + " (expected: >= 0)");
+    }
     synchronized (conn) {
       checkValid();
       if (headWritten) {
         throw new IllegalStateException("Head already written");
       }
       File file = vertx.resolveFile(filename);
-      ContextInternal ctx = vertx.getOrCreateContext();
       RandomAccessFile raf;
       try {
         raf = new RandomAccessFile(file, "r");
@@ -441,6 +449,16 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
       }
       long actualLength = Math.min(length, file.length() - offset);
       long actualOffset = Math.min(offset, file.length());
+
+      // fail early before status code/headers are written to the response
+      if (actualLength < 0) {
+        try {
+          raf.close();
+        } catch (IOException ignore) {
+        }
+        return ctx.failedFuture("offset : " + offset + " is larger than the requested file length : " + file.length());
+      }
+
       if (!headers.contains(HttpHeaders.CONTENT_TYPE)) {
         String contentType = MimeMapping.getMimeTypeForFilename(filename);
         if (contentType != null) {
