@@ -2187,92 +2187,45 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testSendOffsetIsHigherThanFileLengthForFile() throws Exception {
-    File f = setupFile("twenty_three_bytes.txt", TestUtils.randomAlphaString(23));
-    server.requestHandler(res -> {
-      try {
-        res.response().sendFile(f.getAbsolutePath(), 33, 10)
-          .onFailure(throwable -> {
-            try {
-              res.response().setStatusCode(500).end();
-            } catch (IllegalStateException illegalStateException) {
-              // should not reach here, the response should not be sent if the offset is negative
-              fail(illegalStateException);
-            }
-          });
-      } catch (Exception ex) {
-        // a route.route().failureHandler() would handle failures during
-        // handling of the request. Here we simulate that scenario, and during
-        // handling of failure we would like to set a status code for example.
-        try {
-          res.response().setStatusCode(505).end();
-          fail("Should not reach here, failures should be handled by res.response().onFailure() above");
-        } catch (IllegalStateException exceptionWhenTheResponseIsAlreadySent) {
-          // should not reach here, the response should not be sent if the offset is negative
-          fail(exceptionWhenTheResponseIsAlreadySent);
-        }
-      }
-    }).listen(testAddress, onSuccess(res -> {
-      client.request(requestOptions)
-        .compose(HttpClientRequest::send)
-        .onComplete(onSuccess(response -> {
-          assertEquals(500, response.statusCode());
-          testComplete();
-        }));
-    }));
-    await();
+  public void testSendFileOffsetIsHigherThanFileLength() throws Exception {
+    testSendFileWithFailure(
+      (resp, f) -> resp.sendFile(f.getAbsolutePath(), 33, 10),
+      err -> assertEquals("offset : 33 is larger than the requested file length : 23", err.getMessage()));
   }
 
   @Test
   public void testSendFileWithNegativeLength() throws Exception {
-    File f = setupFile("twenty_three_bytes.txt", TestUtils.randomAlphaString(23));
-    server.requestHandler(res -> {
-      try {
-        res.response().sendFile(f.getAbsolutePath(), 0, -100)
-          .onFailure(throwable -> {
-            // should not reach here, the response should not be sent if the offset is negative
-            fail("Should not reach here");
-          });
-      } catch (Exception ex) {
-        assertEquals(IllegalArgumentException.class, ex.getClass());
-        assertEquals("length : -100 (expected: >= 0)", ex.getMessage());
-        // handle failure in sendFile
-        res.response().setStatusCode(500).end();
-      }
+    testSendFileWithFailure((resp, f) -> resp.sendFile(f.getAbsolutePath(), 0, -100), err -> {
+      assertEquals("length : -100 (expected: >= 0)", err.getMessage());
     });
-    startServer(testAddress);
-    client.request(requestOptions)
-      .compose(HttpClientRequest::send)
-      .onComplete(onSuccess(response -> {
-        assertEquals(500, response.statusCode());
-        testComplete();
-      }));
-
-    await();
   }
 
   @Test
   public void testSendFileWithNegativeOffset() throws Exception {
+    testSendFileWithFailure((resp, f) -> resp.sendFile(f.getAbsolutePath(), -100, 23), err -> {
+      assertEquals("offset : -100 (expected: >= 0)", err.getMessage());
+    });
+  }
+
+  private void testSendFileWithFailure(BiFunction<HttpServerResponse, File, Future<Void>> sendFile, Consumer<Throwable> checker) throws Exception {
+    waitFor(2);
     File f = setupFile("twenty_three_bytes.txt", TestUtils.randomAlphaString(23));
     server.requestHandler(res -> {
-      try {
-        res.response().sendFile(f.getAbsolutePath(), -100, 23)
-          .onFailure(throwable -> {
-            // should not reach here, the response should not be sent if the offset is negative
-            fail("Should not reach here");
-          });
-      } catch (Exception ex) {
-        assertEquals(IllegalArgumentException.class, ex.getClass());
-        assertEquals("offset : -100 (expected: >= 0)", ex.getMessage());
-        res.response().setStatusCode(500).end();
-      }
+        // Expected
+        sendFile
+        .apply(res.response(), f)
+        .andThen(onFailure(checker::accept))
+        .recover(v -> res.response().setStatusCode(500).end())
+        .onComplete(onSuccess(v -> {
+          complete();
+        }));
     });
     startServer(testAddress);
     client.request(requestOptions)
       .compose(HttpClientRequest::send)
       .onComplete(onSuccess(response -> {
         assertEquals(500, response.statusCode());
-        testComplete();
+        complete();
       }));
 
     await();

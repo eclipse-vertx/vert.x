@@ -603,8 +603,14 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public HttpServerResponse sendFile(String filename, long offset, long length, Handler<AsyncResult<Void>> resultHandler) {
-    ObjectUtil.checkPositiveOrZero(offset, "offset");
-    ObjectUtil.checkPositiveOrZero(length, "length");
+    if (offset < 0) {
+      resultHandler.handle(Future.failedFuture("offset : " + offset + " (expected: >= 0)"));
+      return this;
+    }
+    if (length < 0) {
+      resultHandler.handle(Future.failedFuture("length : " + length + " (expected: >= 0)"));
+      return this;
+    }
     synchronized (conn) {
       checkValid();
     }
@@ -624,14 +630,6 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
         AsyncFile file = ar.result();
         long fileLength = file.getReadLength();
         long contentLength = Math.min(length, fileLength);
-
-        // fail early before status code/headers are written to the response
-        if (contentLength < 0) {
-          Exception exception = new IllegalArgumentException("offset : " + offset + " is larger than the requested file length : " + fileLength);
-          h.handle(Future.failedFuture(exception));
-          return;
-        }
-
         if (headers.get(HttpHeaderNames.CONTENT_LENGTH) == null) {
           putHeader(HttpHeaderNames.CONTENT_LENGTH, String.valueOf(contentLength));
         }

@@ -988,15 +988,20 @@ public final class HttpUtils {
     //i.e is not a directory
     try(RandomAccessFile raf = new RandomAccessFile(file_, "r")) {
       FileSystem fs = vertx.fileSystem();
-      fs.open(filename, new OpenOptions().setCreate(false).setWrite(false), ar -> {
-        if (ar.succeeded()) {
-          AsyncFile file = ar.result();
-          long contentLength = Math.min(length, file_.length() - offset);
-          file.setReadPos(offset);
-          file.setReadLength(contentLength);
-        }
-        resultHandler.handle(ar);
-      });
+      fs.open(filename, new OpenOptions().setCreate(false).setWrite(false))
+        .transform(ar -> {
+          if (ar.succeeded()) {
+            AsyncFile file = ar.result();
+            long contentLength = Math.min(length, file_.length() - offset);
+            if (contentLength < 0) {
+              file.close();
+              return Future.failedFuture("offset : " + offset + " is larger than the requested file length : " + file_.length());
+            }
+            file.setReadPos(offset);
+            file.setReadLength(contentLength);
+          }
+          return (Future) ar;
+        }).onComplete(resultHandler);
     } catch (IOException e) {
       resultHandler.handle(Future.failedFuture(e));
     }
