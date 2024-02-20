@@ -542,8 +542,15 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   private void doSendFile(String filename, long offset, long length, Handler<AsyncResult<Void>> resultHandler) {
-    ObjectUtil.checkPositiveOrZero(offset, "offset");
-    ObjectUtil.checkPositiveOrZero(length, "length");
+    ContextInternal ctx = vertx.getOrCreateContext();
+    if (offset < 0) {
+      ctx.runOnContext((v) -> resultHandler.handle(Future.failedFuture("offset : " + offset + " (expected: >= 0)")));
+      return;
+    }
+    if (length < 0) {
+      ctx.runOnContext((v) -> resultHandler.handle(Future.failedFuture("length : " + length + " (expected: >= 0)")));
+      return;
+    }
     synchronized (conn) {
       checkValid();
       if (headWritten) {
@@ -553,7 +560,6 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
 
       if (!file.exists()) {
         if (resultHandler != null) {
-          ContextInternal ctx = vertx.getOrCreateContext();
           ctx.runOnContext((v) -> resultHandler.handle(Future.failedFuture(new FileNotFoundException())));
         } else {
           log.error("File not found: " + filename);
@@ -566,7 +572,6 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
       // fail early before status code/headers are written to the response
       if (contentLength < 0) {
         if (resultHandler != null) {
-          ContextInternal ctx = vertx.getOrCreateContext();
           Exception exception = new IllegalArgumentException("offset : " + offset + " is larger than the requested file length : " + file.length());
           ctx.runOnContext((v) -> resultHandler.handle(Future.failedFuture(exception)));
         } else {
@@ -598,7 +603,6 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
         } catch (IOException ignore) {
         }
         if (resultHandler != null) {
-          ContextInternal ctx = vertx.getOrCreateContext();
           ctx.runOnContext((v) -> resultHandler.handle(Future.failedFuture(e)));
         } else {
           log.error("Failed to send file", e);
@@ -607,7 +611,6 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
       }
       written = true;
 
-      ContextInternal ctx = vertx.getOrCreateContext();
       channelFuture.addListener(future -> {
         // write an empty last content to let the http encoder know the response is complete
         if (future.isSuccess()) {
