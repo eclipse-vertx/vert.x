@@ -1036,43 +1036,42 @@ public class Http1xTest extends HttpTest {
 
     AtomicInteger reqCount = new AtomicInteger(0);
     server.requestHandler(req -> {
-      assertSame(Vertx.currentContext(), ((HttpServerRequestInternal)req).context());
+      assertSame(Vertx.currentContext(), ((HttpServerRequestInternal) req).context());
       int theCount = reqCount.get();
       assertEquals(theCount, Integer.parseInt(req.headers().get("count")));
       reqCount.incrementAndGet();
       req.response().setChunked(true);
-      req.bodyHandler(buff -> {
-        assertEquals("This is content " + theCount, buff.toString());
-        // We write the response back after a random time to increase the chances of responses written in the
-        // wrong order if we didn't implement pipelining correctly
-        vertx.setTimer(1 + (long) (10 * Math.random()), id -> {
-          req.response().headers().set("count", String.valueOf(theCount));
-          req.response().write(buff);
-          req.response().end();
-        });
-      });
+      req.body()
+        .onComplete(onSuccess(buff -> {
+          assertEquals("This is content " + theCount, buff.toString());
+          // We write the response back after a random time to increase the chances of responses written in the
+          // wrong order if we didn't implement pipelining correctly
+          vertx.setTimer(1 + (long) (10 * Math.random()), id -> {
+            req.response().headers().set("count", String.valueOf(theCount));
+            req.response().write(buff);
+            req.response().end();
+          });
+        }));
     });
 
-
     CountDownLatch latch = new CountDownLatch(requests);
+    RequestOptions options = new RequestOptions(requestOptions).setMethod(PUT);
 
     server.listen(testAddress, onSuccess(s -> {
-      vertx.setTimer(500, id -> {
-        for (int count = 0; count < requests; count++) {
-          int theCount = count;
-          client.request(new RequestOptions(requestOptions)
-            .setMethod(PUT)).onComplete(onSuccess(req -> {
-              req.putHeader("count", String.valueOf(theCount));
-              req.send(Buffer.buffer("This is content " + theCount), onSuccess(resp -> {
-                assertEquals(theCount, Integer.parseInt(resp.headers().get("count")));
-                resp.bodyHandler(buff -> {
-                  assertEquals("This is content " + theCount, buff.toString());
-                  latch.countDown();
-                });
-              }));
+      for (int count = 0; count < requests; count++) {
+        int theCount = count;
+        client.request(options)
+          .onComplete(onSuccess(req -> {
+          req.putHeader("count", String.valueOf(theCount));
+          req.send(Buffer.buffer("This is content " + theCount), onSuccess(resp -> {
+            assertEquals(theCount, Integer.parseInt(resp.headers().get("count")));
+            resp.body().onComplete(onSuccess(buff -> {
+              assertEquals("This is content " + theCount, buff.toString());
+              latch.countDown();
+            }));
           }));
-        }
-      });
+        }));
+      }
     }));
 
     awaitLatch(latch);
