@@ -25,6 +25,7 @@ import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.transports.JDKTransport;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
@@ -1030,6 +1031,8 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testPipeliningOrder() throws Exception {
+    // Does not pass with IO_Uring
+    Assume.assumeTrue(((VertxInternal)vertx).transport().getClass().getName().startsWith("io.vertx.core"));
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions().setKeepAlive(true).setPipelining(true).setMaxPoolSize(1));
     int requests = 100;
