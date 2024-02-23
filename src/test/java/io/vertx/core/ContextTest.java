@@ -14,7 +14,7 @@ package io.vertx.core;
 import io.netty.channel.EventLoop;
 import io.vertx.core.impl.*;
 import io.vertx.core.impl.future.PromiseInternal;
-import io.vertx.core.spi.context.ContextKey;
+import io.vertx.core.spi.context.locals.ContextKey;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Assume;
 import org.junit.Test;

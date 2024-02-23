@@ -10,7 +10,7 @@
  */
 package io.vertx.core.impl;
 
-import io.vertx.core.spi.context.ContextKey;
+import io.vertx.core.spi.context.locals.ContextKey;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>

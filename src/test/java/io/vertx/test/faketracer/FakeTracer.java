@@ -14,7 +14,7 @@ package io.vertx.test.faketracer;
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
 import io.vertx.core.impl.ContextKeyHelper;
-import io.vertx.core.spi.context.ContextKey;
+import io.vertx.core.spi.context.locals.ContextKey;
 import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;

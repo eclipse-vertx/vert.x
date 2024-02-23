@@ -10,10 +10,9 @@
  */
 package io.vertx.core.impl;
 
-import io.vertx.core.spi.context.ContextKey;
+import io.vertx.core.spi.context.locals.AccessMode;
+import io.vertx.core.spi.context.locals.ContextKey;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
 import java.util.function.Supplier;
 
 /**
@@ -23,54 +22,38 @@ import java.util.function.Supplier;
  */
 class ContextBase {
 
-  private static final VarHandle LOCALS_UPDATER = MethodHandles.arrayElementVarHandle(Object[].class);
-
   final Object[] locals;
 
   ContextBase(Object[] locals) {
     this.locals = locals;
   }
 
-  public final <T> T getLocal(ContextKey<T> key) {
+  public final <T> T getLocal(ContextKey<T> key, AccessMode accessMode) {
     ContextKeyImpl<T> internalKey = (ContextKeyImpl<T>) key;
     int index = internalKey.index;
     if (index >= locals.length) {
       throw new IllegalArgumentException();
     }
-    Object res = LOCALS_UPDATER.getVolatile(locals, index);
+    Object res = accessMode.get(locals, index);
     return (T) res;
   }
 
-  public final <T> T getLocal(ContextKey<T> key, Supplier<? extends T> initialValueSupplier) {
+  public final <T> T getLocal(ContextKey<T> key, AccessMode accessMode, Supplier<? extends T> initialValueSupplier) {
     ContextKeyImpl<T> internalKey = (ContextKeyImpl<T>) key;
     int index = internalKey.index;
     if (index >= locals.length) {
       throw new IllegalArgumentException("Invalid key index: " + index);
     }
-    Object res;
-    while (true) {
-      res = LOCALS_UPDATER.getVolatile(locals, index);
-      if (res != null) {
-        break;
-      }
-      Object initial = initialValueSupplier.get();
-      if (initial == null) {
-        throw new IllegalStateException();
-      }
-      if (LOCALS_UPDATER.compareAndSet(locals, index, null, initial)) {
-        res = initial;
-        break;
-      }
-    }
+    Object res = accessMode.getOrCreate(locals, index, (Supplier<Object>) initialValueSupplier);
     return (T) res;
   }
 
-  public final <T> void putLocal(ContextKey<T> key, T value) {
+  public final <T> void putLocal(ContextKey<T> key, AccessMode accessMode, T value) {
     ContextKeyImpl<T> internalKey = (ContextKeyImpl<T>) key;
     int index = internalKey.index;
     if (index >= locals.length) {
       throw new IllegalArgumentException();
     }
-    LOCALS_UPDATER.setRelease(locals, index, value);
+    accessMode.put(locals, index, value);
   }
 }

@@ -16,7 +16,7 @@ import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.impl.ContextKeyHelper;
-import io.vertx.core.spi.context.ContextKey;
+import io.vertx.core.spi.context.locals.ContextKey;
 import io.vertx.core.tracing.TracingPolicy;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;

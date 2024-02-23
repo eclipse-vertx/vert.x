@@ -10,7 +10,8 @@ import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.WorkerPool;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.spi.context.ContextKey;
+import io.vertx.core.spi.context.locals.AccessMode;
+import io.vertx.core.spi.context.locals.ContextKey;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.concurrent.Callable;
@@ -117,22 +118,18 @@ class FakeContext implements ContextInternal {
 
   @Override
   public <T> void emit(T argument, Handler<T> task) {
-
   }
 
   @Override
   public void execute(Runnable task) {
-
   }
 
   @Override
   public <T> void execute(T argument, Handler<T> task) {
-
   }
 
   @Override
   public void reportException(Throwable t) {
-
   }
 
   @Override
@@ -176,16 +173,17 @@ class FakeContext implements ContextInternal {
   }
 
   @Override
-  public <T> T getLocal(ContextKey<T> key) {
+  public <T> T getLocal(ContextKey<T> key, AccessMode accessMode) {
     return null;
   }
 
   @Override
-  public <T> void putLocal(ContextKey<T> key, T value) {
+  public <T> T getLocal(ContextKey<T> key, AccessMode accessMode, Supplier<? extends T> initialValueSupplier) {
+    return null;
   }
 
   @Override
-  public <T> T getLocal(ContextKey<T> key, Supplier<? extends T> initialValueSupplier) {
-    return null;
+  public <T> void putLocal(ContextKey<T> key, AccessMode accessMode, T value) {
+
   }
 }

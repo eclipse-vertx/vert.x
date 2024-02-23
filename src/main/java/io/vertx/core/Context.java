@@ -17,7 +17,8 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.impl.VertxThread;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.spi.context.ContextKey;
+import io.vertx.core.spi.context.locals.AccessMode;
+import io.vertx.core.spi.context.locals.ContextKey;
 
 import java.util.Collections;
 import java.util.List;
@@ -254,7 +255,9 @@ public interface Context {
    * @return the local data
    */
   @GenIgnore
-  <T> T getLocal(ContextKey<T> key);
+  default <T> T getLocal(ContextKey<T> key) {
+    return getLocal(key, AccessMode.CONCURRENT);
+  }
 
   /**
    * Get some local data from the context, when it does not exist the {@code initialValueSupplier} is called to obtain
@@ -268,7 +271,9 @@ public interface Context {
    * @return the local data
    */
   @GenIgnore
-  <T> T getLocal(ContextKey<T> key, Supplier<? extends T> initialValueSupplier);
+  default <T> T getLocal(ContextKey<T> key, Supplier<? extends T> initialValueSupplier) {
+    return getLocal(key, AccessMode.CONCURRENT, initialValueSupplier);
+  }
 
   /**
    * Put some local data in the context.
@@ -279,7 +284,9 @@ public interface Context {
    * @param value  the data
    */
   @GenIgnore
-  <T> void putLocal(ContextKey<T> key, T value);
+  default <T> void putLocal(ContextKey<T> key, T value) {
+    putLocal(key, AccessMode.CONCURRENT, value);
+  }
 
   /**
    * Remove some local data from the context.
@@ -288,7 +295,52 @@ public interface Context {
    */
   @GenIgnore
   default <T> void removeLocal(ContextKey<T> key) {
-    putLocal(key, null);
+    putLocal(key, AccessMode.CONCURRENT, null);
+  }
+
+  /**
+   * Get some local data from the context.
+   *
+   * @param key  the key of the data
+   * @param <T>  the type of the data
+   * @return the local data
+   */
+  @GenIgnore
+  <T> T getLocal(ContextKey<T> key, AccessMode accessMode);
+
+  /**
+   * Get some local data from the context, when it does not exist the {@code initialValueSupplier} is called to obtain
+   * the initial value.
+   *
+   * <p> The {@code initialValueSupplier} might be called multiple times when multiple threads call this method concurrently.
+   *
+   * @param key  the key of the data
+   * @param initialValueSupplier the supplier of the initial value optionally called
+   * @param <T>  the type of the data
+   * @return the local data
+   */
+  @GenIgnore
+  <T> T getLocal(ContextKey<T> key, AccessMode accessMode, Supplier<? extends T> initialValueSupplier);
+
+  /**
+   * Put some local data in the context.
+   * <p>
+   * This can be used to share data between different handlers that share a context
+   *
+   * @param key  the key of the data
+   * @param value  the data
+   */
+  @GenIgnore
+  <T> void putLocal(ContextKey<T> key, AccessMode accessMode, T value);
+
+  /**
+   * Remove some local data from the context.
+   *
+   * @param key  the key to remove
+   */
+  @GenIgnore
+  default <T> void removeLocal(ContextKey<T> key, AccessMode accessMode) {
+    putLocal(key, accessMode, null);
   }
 
   /**

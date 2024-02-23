@@ -2,7 +2,7 @@ package io.vertx.it;
 
 import io.vertx.core.impl.VertxBuilder;
 import io.vertx.core.spi.VertxServiceProvider;
-import io.vertx.core.spi.context.ContextKey;
+import io.vertx.core.spi.context.locals.ContextKey;
 
 public class CustomContextKey implements VertxServiceProvider  {
 
