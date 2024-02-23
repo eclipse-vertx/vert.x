@@ -32,4 +32,11 @@ public interface FutureInternal<T> extends Future<T> {
    */
   void addListener(Listener<T> listener);
 
+  /**
+   * Remove a listener to the future result.
+   *
+   * @param listener the listener
+   */
+  void removeListener(Listener<T> listener);
+
 }

@@ -99,6 +99,10 @@ public final class FailedFuture<T> extends FutureBase<T> {
   }
 
   @Override
+  public void removeListener(Listener<T> listener) {
+  }
+
+  @Override
   public T result() {
     return null;
   }

@@ -89,6 +89,10 @@ public final class SucceededFuture<T> extends FutureBase<T> {
   }
 
   @Override
+  public void removeListener(Listener<T> listener) {
+  }
+
+  @Override
   public T result() {
     return result;
   }

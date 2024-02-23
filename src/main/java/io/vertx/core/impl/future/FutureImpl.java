@@ -232,6 +232,19 @@ public class FutureImpl<T> extends FutureBase<T> {
     }
   }
 
+  @Override
+  public void removeListener(Listener<T> l) {
+    synchronized (this) {
+      Object listener = this.listener;
+      if (listener == l) {
+        this.listener = null;
+      } else if (listener instanceof ListenerArray<?>) {
+        ListenerArray<?> listeners = (ListenerArray<?>) listener;
+        listeners.remove(l);
+      }
+    }
+  }
+
   public boolean tryComplete(T result) {
     Listener<T> l;
     synchronized (this) {

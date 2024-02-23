@@ -16,111 +16,151 @@ import io.vertx.core.Future;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Handler;
 
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class CompositeFutureImpl extends FutureImpl<CompositeFuture> implements CompositeFuture {
+public class CompositeFutureImpl extends FutureImpl<CompositeFuture> implements CompositeFuture, Listener<Object> {
+
+  private static final int OP_ALL = 0;
+  private static final int OP_ANY = 1;
+  private static final int OP_JOIN = 2;
 
   public static CompositeFuture all(Future<?>... results) {
-    CompositeFutureImpl composite = new CompositeFutureImpl(results);
-    int len = results.length;
-    for (Future<?> result : results) {
-      result.onComplete(ar -> {
-        if (ar.succeeded()) {
-          synchronized (composite) {
-            if (composite.count == len || ++composite.count != len) {
-              return;
-            }
-          }
-          composite.trySucceed();
-        } else {
-          synchronized (composite) {
-            if (composite.count == len) {
-              return;
-            }
-            composite.count = len;
-          }
-          composite.tryFail(ar.cause());
-        }
-      });
-    }
-    if (len == 0) {
-      composite.trySucceed();
-    }
-    return composite;
+    return create(OP_ALL, results);
   }
 
   public static CompositeFuture any(Future<?>... results) {
-    CompositeFutureImpl composite = new CompositeFutureImpl(results);
-    int len = results.length;
-    for (Future<?> result : results) {
-      result.onComplete(ar -> {
-        if (ar.succeeded()) {
-          synchronized (composite) {
-            if (composite.count == len) {
-              return;
-            }
-            composite.count = len;
-          }
-          composite.trySucceed();
-        } else {
-          synchronized (composite) {
-            if (composite.count == len || ++composite.count != len) {
-              return;
-            }
-          }
-          composite.tryFail(ar.cause());
-        }
-      });
-    }
-    if (results.length == 0) {
-      composite.trySucceed();
-    }
-    return composite;
+    return create(OP_ANY, results);
   }
-
-  private static final Function<CompositeFuture, Object> ALL = cf -> {
-    int size = cf.size();
-    for (int i = 0;i < size;i++) {
-      if (!cf.succeeded(i)) {
-        return cf.cause(i);
-      }
-    }
-    return cf;
-  };
 
   public static CompositeFuture join(Future<?>... results) {
-    return join(ALL, results);
+    return create(OP_JOIN, results);
   }
 
-  private  static CompositeFuture join(Function<CompositeFuture, Object> pred, Future<?>... results) {
-    CompositeFutureImpl composite = new CompositeFutureImpl(results);
+  private static CompositeFuture create(int op, Future<?>... results) {
+    CompositeFutureImpl composite;
     int len = results.length;
-    for (Future<?> result : results) {
-      result.onComplete(ar -> {
-        synchronized (composite) {
-          if (++composite.count < len) {
-            return;
-          }
-        }
-        composite.complete(pred.apply(composite));
-      });
-    }
-    if (len == 0) {
-      composite.trySucceed();
+    if (len > 0) {
+      composite = new CompositeFutureImpl(op, true, results);
+      composite.init();
+    } else {
+      composite = new CompositeFutureImpl(op, false, results);
+      composite.complete(composite);
     }
     return composite;
   }
 
-  private final Future[] results;
-  private int count;
+  private final Future<?>[] results;
+  private final int op;
+  private boolean initializing;
+  private Object completed;
+  private int completions;
 
-  private CompositeFutureImpl(Future<?>... results) {
+  private CompositeFutureImpl(int op, boolean initializing, Future<?>... results) {
+    this.op = op;
+    this.initializing = initializing;
     this.results = results;
   }
+
+  private void init() {
+    for (Future<?> result : results) {
+      FutureInternal internal = (FutureInternal<?>) result;
+      internal.addListener(this);
+    }
+    Object o;
+    synchronized (this) {
+      initializing = false;
+      o = completed;
+      if (o == null) {
+        return;
+      }
+    }
+    complete(o);
+  }
+
+  @Override
+  public void onSuccess(Object value) {
+    int len = results.length;
+    Object completion;
+    synchronized (this) {
+      int val = ++completions;
+      if (completed != null) {
+        return;
+      }
+      switch (op) {
+        case OP_ALL:
+          if (val < len) {
+            return;
+          }
+          completion = this;
+          break;
+        case OP_ANY:
+          completion = this;
+          break;
+        case OP_JOIN:
+          if (val < len) {
+            return;
+          }
+          completion = anyFailureOrThis();
+          break;
+        default:
+          throw new AssertionError();
+      }
+      completed = completion;
+      if (initializing) {
+        return;
+      }
+    }
+    complete(completion);
+  }
+
+  @Override
+  public void onFailure(Throwable failure) {
+    int len = results.length;
+    Object completion;
+    synchronized (this) {
+      int val = ++completions;
+      if (completed != null) {
+        return;
+      }
+      switch (op) {
+        case OP_ALL:
+          completion = failure;
+          break;
+        case OP_ANY:
+          if (val < len) {
+            return;
+          }
+          completion = failure;
+          break;
+        case OP_JOIN:
+          if (val < len) {
+            return;
+          }
+          completion = anyFailureOrThis();
+          break;
+        default:
+          throw new AssertionError();
+      }
+      completed = completion;
+      if (initializing) {
+        return;
+      }
+    }
+    complete(completion);
+  }
+
+  private Object anyFailureOrThis() {
+    int size = size();
+    for (int i = 0;i < size;i++) {
+      Future<?> res = results[i];
+      if (!res.succeeded()) {
+        return res.cause();
+      }
+    }
+    return this;
+  };
+
 
   @Override
   public Throwable cause(int index) {
@@ -159,15 +199,11 @@ public class CompositeFutureImpl extends FutureImpl<CompositeFuture> implements 
     return results.length;
   }
 
-  private void trySucceed() {
-    tryComplete(this);
-  }
-
-  private void fail(Throwable t) {
-    complete(t);
-  }
-
   private void complete(Object result) {
+    for (Future<?> r : results) {
+      FutureInternal internal = (FutureInternal<?>) r;
+      internal.removeListener(this);
+    }
     if (result == this) {
       tryComplete(this);
     } else if (result instanceof Throwable) {
