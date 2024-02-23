@@ -932,7 +932,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
 
   static class LazyFuture<T> extends io.vertx.core.impl.future.FutureBase<T> implements Promise<T> {
 
-    private List<Handler<AsyncResult<T>>> handlers = new ArrayList<>();
+    private List<Listener<T>> handlers = new ArrayList<>();
     private Future<T> fut = null;
 
     @Override
@@ -953,13 +953,17 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
     @Override
     public void handle(AsyncResult<T> event) {
       Future<T> f = (Future<T>) event;
-      List<Handler<AsyncResult<T>>> h;
+      List<Listener<T>> h;
       synchronized (this) {
         fut = f;
         h = handlers;
       }
-      for (Handler<AsyncResult<T>> t : h) {
-        f.onComplete(t);
+      for (Listener<T> t : h) {
+        if (event.succeeded()) {
+          t.onSuccess(event.result());
+        } else {
+          t.onFailure(event.cause());
+        }
       }
     }
 
@@ -969,15 +973,16 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
     }
     @Override
     public Future<T> onComplete(Handler<AsyncResult<T>> handler) {
-      Future<T> f;
-      synchronized (this) {
-        f = fut;
-        if (f == null) {
-          handlers.add(handler);
-          return this;
+      addListener(new Listener<T>() {
+        @Override
+        public void onSuccess(T value) {
+          handler.handle(LazyFuture.this);
         }
-      }
-      f.onComplete(handler);
+        @Override
+        public void onFailure(Throwable failure) {
+          handler.handle(LazyFuture.this);
+        }
+      });
       return this;
     }
     @Override
@@ -998,13 +1003,25 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
     }
     @Override
     public void addListener(Listener<T> listener) {
-      onComplete(ar -> {
-        if (ar.succeeded()) {
-          listener.onSuccess(ar.result());
-        } else {
-          listener.onFailure(ar.cause());
+      Future<T> f;
+      synchronized (this) {
+        f = fut;
+        if (f == null) {
+          handlers.add(listener);
+          return;
         }
-      });
+      }
+      if (f.succeeded()) {
+        listener.onSuccess(f.result());
+      } else {
+        listener.onFailure(f.cause());
+      }
+    }
+    @Override
+    public void removeListener(Listener<T> listener) {
+      synchronized (this) {
+        handlers.remove(listener);
+      }
     }
   }
 }

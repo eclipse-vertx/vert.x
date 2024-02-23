@@ -13,15 +13,14 @@ package io.vertx.core;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import io.vertx.core.impl.future.FutureImpl;
+import io.vertx.core.impl.future.Listener;
 import io.vertx.test.core.Repeat;
 
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -532,5 +531,47 @@ public class CompositeFutureTest extends FutureTestBase {
   public void testToString() {
     assertEquals("Future{result=(Future{result=null},Future{result=null})}", Future.all(Future.succeededFuture(), Future.succeededFuture()).toString());
     assertEquals("Future{result=(Future{result=true},Future{result=false})}", Future.all(Future.succeededFuture(true), Future.succeededFuture(false)).toString());
+  }
+
+  private static final class MonitoringFuture extends FutureImpl<Void> {
+    Set<Listener<Void>> listeners = new HashSet<>();
+    @Override
+    public void addListener(Listener<Void> listener) {
+      listeners.add(listener);
+      super.addListener(listener);
+    }
+    @Override
+    public void removeListener(Listener<Void> listener) {
+      listeners.remove(listener);
+      super.removeListener(listener);
+    }
+  }
+
+  @Test
+  public void testAllRemovesListeners1() {
+    MonitoringFuture f = new MonitoringFuture();
+    Future.all(Future.failedFuture(""), f);
+    assertEquals(Collections.emptySet(), f.listeners);
+  }
+
+  @Test
+  public void testAllRemovesListeners2() {
+    MonitoringFuture f = new MonitoringFuture();
+    Future.all(f, Future.failedFuture(""));
+    assertEquals(Collections.emptySet(), f.listeners);
+  }
+
+  @Test
+  public void testAnyRemovesListeners1() {
+    MonitoringFuture f = new MonitoringFuture();
+    Future.any(Future.succeededFuture(), f);
+    assertEquals(Collections.emptySet(), f.listeners);
+  }
+
+  @Test
+  public void testAnyRemovesListeners2() {
+    MonitoringFuture f = new MonitoringFuture();
+    Future.any(f, Future.succeededFuture());
+    assertEquals(Collections.emptySet(), f.listeners);
   }
 }
