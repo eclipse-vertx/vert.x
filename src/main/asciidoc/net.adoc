@@ -538,13 +538,13 @@ be sure who you are connecting to. Use this with caution. Default value is false
 If {@link io.vertx.core.net.ClientOptionsBase#setTrustAll trustAll} is not set then a client trust store must be
 configured and should contain the certificates of the servers that the client trusts.
 
-By default, host verification is *not* configured on the client. This verifies the CN portion of the server certificate against the server hostname to avoid [Man-in-the-middle attacks](https://en.wikipedia.org/wiki/Man-in-the-middle_attack).
+By default, host verification is *not* configured on the client. This verifies the CN portion of the server certificate against the server hostname to avoid https://en.wikipedia.org/wiki/Man-in-the-middle_attack[Man-in-the-middle attacks].
 
 You must configure it explicitly on your client
 
 - `""` (empty string) disables host verification
-- `"HTTPS"` enables HTTP over TLS [verification](https://datatracker.ietf.org/doc/html/rfc2818#section-3.1)
-- `LDAPS` enables LDAP v3 extension for TLS [verification](https://datatracker.ietf.org/doc/html/rfc2830#section-3.6)
+- `"HTTPS"` enables HTTP over TLS https://datatracker.ietf.org/doc/html/rfc2818#section-3.1[verification]
+- `LDAPS` enables LDAP v3 extension for TLS https://datatracker.ietf.org/doc/html/rfc2830#section-3.6[verification]
 
 [source,$lang]
 ----
