@@ -4,7 +4,7 @@ import io.netty.channel.EventLoop;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.Deployment;
+import io.vertx.core.impl.DeploymentContext;
 import io.vertx.core.impl.TaskQueue;
 import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.impl.VertxInternal;
@@ -104,7 +104,7 @@ class FakeContext implements ContextInternal {
   }
 
   @Override
-  public Deployment getDeployment() {
+  public DeploymentContext getDeployment() {
     return null;
   }
 

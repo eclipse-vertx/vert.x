@@ -11,7 +11,7 @@
 
 package io.vertx.core;
 
-import io.vertx.core.impl.Deployment;
+import io.vertx.core.impl.DeploymentContext;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.cluster.ClusterManager;
@@ -45,7 +45,7 @@ public class ComplexHATest extends VertxTestBase {
   private final Random random = new Random();
 
   protected final int maxVerticlesPerNode = 20;
-  protected Set<Deployment>[] deploymentSnapshots;
+  protected Set<DeploymentContext>[] deploymentSnapshots;
   protected volatile int totDeployed;
   protected volatile int killedNode;
   protected List<Integer> aliveNodes;
@@ -160,8 +160,8 @@ public class ComplexHATest extends VertxTestBase {
     }
   }
 
-  protected Set<Deployment> takeDeploymentSnapshot(int pos) {
-    Set<Deployment> snapshot = ConcurrentHashMap.newKeySet();
+  protected Set<DeploymentContext> takeDeploymentSnapshot(int pos) {
+    Set<DeploymentContext> snapshot = ConcurrentHashMap.newKeySet();
     VertxInternal v = (VertxInternal)vertices[pos];
     for (String depID: v.deploymentIDs()) {
       snapshot.add(v.getDeployment(depID));
@@ -220,11 +220,11 @@ public class ComplexHATest extends VertxTestBase {
   }
 
   protected int checkHasDeployments(int pos, int prevPos) {
-    Set<Deployment> prevSet = deploymentSnapshots[prevPos];
-    Set<Deployment> currSet = takeDeploymentSnapshot(pos);
-    for (Deployment prev: prevSet) {
+    Set<DeploymentContext> prevSet = deploymentSnapshots[prevPos];
+    Set<DeploymentContext> currSet = takeDeploymentSnapshot(pos);
+    for (DeploymentContext prev: prevSet) {
       boolean contains = false;
-      for (Deployment curr: currSet) {
+      for (DeploymentContext curr: currSet) {
         if (curr.verticleIdentifier().equals(prev.verticleIdentifier()) && curr.deploymentOptions().toJson().equals(prev.deploymentOptions().toJson())) {
           contains = true;
           break;

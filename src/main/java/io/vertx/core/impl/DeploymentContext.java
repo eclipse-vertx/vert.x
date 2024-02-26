@@ -11,12 +11,7 @@
 
 package io.vertx.core.impl;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Verticle;
+import io.vertx.core.*;
 import io.vertx.core.json.JsonObject;
 
 import java.util.Set;
@@ -24,11 +19,11 @@ import java.util.Set;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface Deployment {
+public interface DeploymentContext {
 
-  boolean addChild(Deployment deployment);
+  boolean addChild(DeploymentContext deployment);
 
-  void removeChild(Deployment deployment);
+  void removeChild(DeploymentContext deployment);
 
   Future<Void> doUndeploy(ContextInternal undeployingContext);
 
@@ -42,7 +37,7 @@ public interface Deployment {
 
   Set<Context> getContexts();
 
-  Set<Verticle> getVerticles();
+  Set<Deployment> getVerticles();
 
   void undeployHandler(Handler<Void> handler);
 

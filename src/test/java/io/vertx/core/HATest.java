@@ -11,7 +11,7 @@
 
 package io.vertx.core;
 
-import io.vertx.core.impl.Deployment;
+import io.vertx.core.impl.DeploymentContext;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.cluster.ClusterManager;
@@ -388,7 +388,7 @@ public class HATest extends VertxTestBase {
   protected void checkDeploymentExists(int pos, String verticleName, DeploymentOptions options) {
     VertxInternal vi = (VertxInternal)vertices[pos];
     for (String deploymentID: vi.deploymentIDs()) {
-      Deployment dep = vi.getDeployment(deploymentID);
+      DeploymentContext dep = vi.getDeployment(deploymentID);
       if (verticleName.equals(dep.verticleIdentifier()) && options.toJson().equals(dep.deploymentOptions().toJson())) {
         return;
       }
