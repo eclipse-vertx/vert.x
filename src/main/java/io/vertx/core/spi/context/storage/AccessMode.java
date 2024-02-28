@@ -15,12 +15,12 @@ import java.lang.invoke.VarHandle;
 import java.util.function.Supplier;
 
 /**
- * Defines the access mode of a context locals
+ * Defines the access mode of a context local storage.
  */
 public interface AccessMode {
 
   /**
-   * This access mode provides concurrent access to context locals with thread safety and atomicity.
+   * This access mode provides concurrent access to context local storage with thread safety and atomicity.
    */
   AccessMode CONCURRENT = new AccessMode() {
 

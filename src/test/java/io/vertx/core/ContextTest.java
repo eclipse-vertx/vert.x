@@ -56,7 +56,7 @@ public class ContextTest extends VertxTestBase {
 
   @Override
   protected void tearDown() throws Exception {
-    ContextKeyHelper.reset();
+    ContextLocalHelper.reset();
     workerExecutor.shutdown();
     super.tearDown();
   }
@@ -449,7 +449,7 @@ public class ContextTest extends VertxTestBase {
     Object shared = new Object();
     Object local = new Object();
     ctx.put("key", shared);
-    ctx.putLocal(contextLocal, local);
+    contextLocal.put(ctx, local);
     assertSame(shared, duplicated.get("key"));
     assertNull(duplicated.getLocal(contextLocal));
     assertTrue(duplicated.remove("key"));

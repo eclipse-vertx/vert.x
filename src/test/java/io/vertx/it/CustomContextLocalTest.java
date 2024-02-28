@@ -11,7 +11,7 @@ public class CustomContextLocalTest extends VertxTestBase {
     assertTrue(CustomContextLocal.initialized);
     Context context = vertx.getOrCreateContext();
     Object o = new Object();
-    context.putLocal(CustomContextLocal.CUSTOM_LOCAL, o);
-    assertSame(o, context.getLocal(CustomContextLocal.CUSTOM_LOCAL));
+    CustomContextLocal.CUSTOM_LOCAL.put(context, o);
+    assertSame(o, CustomContextLocal.CUSTOM_LOCAL.get(context));
   }
 }

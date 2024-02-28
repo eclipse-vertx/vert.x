@@ -13,7 +13,7 @@ package io.vertx.test.faketracer;
 
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
-import io.vertx.core.impl.ContextKeyHelper;
+import io.vertx.core.impl.ContextLocalHelper;
 import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.TagExtractor;
@@ -54,7 +54,7 @@ public class FakeTracer implements VertxTracer<Span, Span> {
   }
 
   public Span activeSpan(Context data) {
-    Scope scope = data.getLocal(scopeKey);
+    Scope scope = scopeKey.get(data);
     return scope != null ? scope.wrapped : null;
   }
 
@@ -63,9 +63,9 @@ public class FakeTracer implements VertxTracer<Span, Span> {
   }
 
   public Scope activate(Context context, Span span) {
-    Scope toRestore = context.getLocal(scopeKey);
+    Scope toRestore = scopeKey.get(context);
     Scope active = new Scope(this, span, toRestore);
-    context.putLocal(scopeKey, active);
+    scopeKey.put(context, active);
     return active;
   }
 
@@ -175,7 +175,7 @@ public class FakeTracer implements VertxTracer<Span, Span> {
   @Override
   public void close() {
     closeCount.incrementAndGet();
-    ContextKeyHelper.reset();
+    ContextLocalHelper.reset();
   }
 
   public int closeCount() {

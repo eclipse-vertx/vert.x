@@ -17,7 +17,7 @@ import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpTestBase;
 import io.vertx.core.http.RequestOptions;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.ContextKeyHelper;
+import io.vertx.core.impl.ContextLocalHelper;
 import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.core.spi.observability.HttpRequest;
 import io.vertx.core.spi.observability.HttpResponse;
@@ -42,7 +42,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
 
   @Override
   protected void tearDown() throws Exception {
-    ContextKeyHelper.reset();
+    ContextLocalHelper.reset();
     super.tearDown();
   }
 

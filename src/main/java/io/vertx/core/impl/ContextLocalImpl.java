@@ -24,6 +24,6 @@ public class ContextLocalImpl<T> implements ContextLocal<T> {
   }
 
   public ContextLocalImpl() {
-    this.index = KeySeq.next();
+    this.index = LocalSeq.next();
   }
 }

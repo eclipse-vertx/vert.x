@@ -10,28 +10,16 @@
  */
 package io.vertx.core.impl;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class KeySeq {
-
-  // 0 : reserved slot for local context map
-  private static final AtomicInteger seq = new AtomicInteger(1);
+public class ContextLocalHelper {
 
   /**
-   * Hook for testing purposes
+   * Reset the context locals, only available for testing purpose.
    */
-  static void reset() {
-    seq.set((1));
+  public static void reset() {
+    LocalSeq.reset();
   }
 
-  static int get() {
-    return seq.get();
-  }
-
-  static int next() {
-    return seq.getAndIncrement();
-  }
 }
