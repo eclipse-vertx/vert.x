@@ -12,17 +12,21 @@
 package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.*;
 import io.vertx.core.impl.future.FailedFuture;
 import io.vertx.core.impl.future.PromiseImpl;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.future.SucceededFuture;
+import io.vertx.core.spi.context.locals.AccessMode;
+import io.vertx.core.spi.context.locals.ContextKey;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 /**
  * This interface provides an api for vert.x core internal use only
@@ -305,6 +309,102 @@ public interface ContextInternal extends Context {
    * @return the {@link ConcurrentMap} used to store local context data
    */
   ConcurrentMap<Object, Object> localContextData();
+
+  /**
+   * Get some local data from the context.
+   *
+   * @param key  the key of the data
+   * @param <T>  the type of the data
+   * @return the local data
+   */
+  @GenIgnore
+  default <T> T getLocal(ContextKey<T> key) {
+    return getLocal(key, AccessMode.CONCURRENT);
+  }
+
+  /**
+   * Get some local data from the context, when it does not exist the {@code initialValueSupplier} is called to obtain
+   * the initial value.
+   *
+   * <p> The {@code initialValueSupplier} might be called multiple times when multiple threads call this method concurrently.
+   *
+   * @param key  the key of the data
+   * @param initialValueSupplier the supplier of the initial value optionally called
+   * @param <T>  the type of the data
+   * @return the local data
+   */
+  @GenIgnore
+  default <T> T getLocal(ContextKey<T> key, Supplier<? extends T> initialValueSupplier) {
+    return getLocal(key, AccessMode.CONCURRENT, initialValueSupplier);
+  }
+
+  /**
+   * Put some local data in the context.
+   * <p>
+   * This can be used to share data between different handlers that share a context
+   *
+   * @param key  the key of the data
+   * @param value  the data
+   */
+  @GenIgnore
+  default <T> void putLocal(ContextKey<T> key, T value) {
+    putLocal(key, AccessMode.CONCURRENT, value);
+  }
+
+  /**
+   * Remove some local data from the context.
+   *
+   * @param key  the key to remove
+   */
+  @GenIgnore
+  default <T> void removeLocal(ContextKey<T> key) {
+    putLocal(key, AccessMode.CONCURRENT, null);
+  }
+
+  /**
+   * Get some local data from the context.
+   *
+   * @param key  the key of the data
+   * @param <T>  the type of the data
+   * @return the local data
+   */
+  @GenIgnore
+  <T> T getLocal(ContextKey<T> key, AccessMode accessMode);
+
+  /**
+   * Get some local data from the context, when it does not exist the {@code initialValueSupplier} is called to obtain
+   * the initial value.
+   *
+   * <p> The {@code initialValueSupplier} might be called multiple times when multiple threads call this method concurrently.
+   *
+   * @param key  the key of the data
+   * @param initialValueSupplier the supplier of the initial value optionally called
+   * @param <T>  the type of the data
+   * @return the local data
+   */
+  @GenIgnore
+  <T> T getLocal(ContextKey<T> key, AccessMode accessMode, Supplier<? extends T> initialValueSupplier);
+
+  /**
+   * Put some local data in the context.
+   * <p>
+   * This can be used to share data between different handlers that share a context
+   *
+   * @param key  the key of the data
+   * @param value  the data
+   */
+  @GenIgnore
+  <T> void putLocal(ContextKey<T> key, AccessMode accessMode, T value);
+
+  /**
+   * Remove some local data from the context.
+   *
+   * @param key  the key to remove
+   */
+  @GenIgnore
+  default <T> void removeLocal(ContextKey<T> key, AccessMode accessMode) {
+    putLocal(key, accessMode, null);
+  }
 
   @Deprecated
   @SuppressWarnings("unchecked")

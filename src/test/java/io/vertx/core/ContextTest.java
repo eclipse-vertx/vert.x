@@ -1061,7 +1061,7 @@ public class ContextTest extends VertxTestBase {
 
   @Test
   public void testConcurrentLocalAccess() throws Exception {
-    Context ctx = vertx.getOrCreateContext();
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
     int numThreads = 10;
     Thread[] threads = new Thread[numThreads];
     int[] values = new int[numThreads];
