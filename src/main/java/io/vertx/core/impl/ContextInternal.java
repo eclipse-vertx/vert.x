@@ -14,6 +14,7 @@ package io.vertx.core.impl;
 import io.netty.channel.EventLoop;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.*;
+import io.vertx.core.Future;
 import io.vertx.core.impl.future.FailedFuture;
 import io.vertx.core.impl.future.PromiseImpl;
 import io.vertx.core.impl.future.PromiseInternal;
@@ -22,10 +23,7 @@ import io.vertx.core.spi.context.locals.AccessMode;
 import io.vertx.core.spi.context.locals.ContextKey;
 import io.vertx.core.spi.tracing.VertxTracer;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.function.Supplier;
 
 /**
@@ -36,6 +34,8 @@ import java.util.function.Supplier;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public interface ContextInternal extends Context {
+
+  ContextKey<ConcurrentMap<Object, Object>> LOCAL_MAP = new ContextKeyImpl<>(0);
 
   /**
    * @return the current context
@@ -308,7 +308,9 @@ public interface ContextInternal extends Context {
   /**
    * @return the {@link ConcurrentMap} used to store local context data
    */
-  ConcurrentMap<Object, Object> localContextData();
+  default ConcurrentMap<Object, Object> localContextData() {
+    return getLocal(LOCAL_MAP, ConcurrentHashMap::new);
+  }
 
   /**
    * Get some local data from the context.

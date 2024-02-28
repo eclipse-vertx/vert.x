@@ -17,8 +17,13 @@ import io.vertx.core.spi.context.locals.ContextKey;
  */
 public class ContextKeyImpl<T> implements ContextKey<T> {
 
-  final int index = KeySeq.next();
+  final int index;
+
+  public ContextKeyImpl(int index) {
+    this.index = index;
+  }
 
   public ContextKeyImpl() {
+    this.index = KeySeq.next();
   }
 }

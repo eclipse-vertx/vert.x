@@ -44,7 +44,6 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
   private final EventLoop eventLoop;
   private final EventExecutor executor;
   private ConcurrentMap<Object, Object> data;
-  private ConcurrentMap<Object, Object> localData;
   private volatile Handler<Throwable> exceptionHandler;
   final TaskQueue internalOrderedTasks;
   final WorkerPool internalWorkerPool;
@@ -211,14 +210,6 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
       data = new ConcurrentHashMap<>();
     }
     return data;
-  }
-
-  @Override
-  public synchronized ConcurrentMap<Object, Object> localContextData() {
-    if (localData == null) {
-      localData = new ConcurrentHashMap<>();
-    }
-    return localData;
   }
 
   public void reportException(Throwable t) {

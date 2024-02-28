@@ -138,11 +138,6 @@ class FakeContext implements ContextInternal {
   }
 
   @Override
-  public ConcurrentMap<Object, Object> localContextData() {
-    return null;
-  }
-
-  @Override
   public ClassLoader classLoader() {
     return tccl;
   }

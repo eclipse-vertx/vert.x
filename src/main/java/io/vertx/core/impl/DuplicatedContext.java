@@ -36,8 +36,7 @@ import java.util.concurrent.Executor;
  */
 final class DuplicatedContext extends ContextBase implements ContextInternal {
 
-  protected final ContextImpl delegate;
-  private ConcurrentMap<Object, Object> localData;
+  final ContextImpl delegate;
 
   DuplicatedContext(ContextImpl delegate, Object[] locals) {
     super(locals);
@@ -118,16 +117,6 @@ final class DuplicatedContext extends ContextBase implements ContextInternal {
   @Override
   public final ConcurrentMap<Object, Object> contextData() {
     return delegate.contextData();
-  }
-
-  @Override
-  public final ConcurrentMap<Object, Object> localContextData() {
-    synchronized (this) {
-      if (localData == null) {
-        localData = new ConcurrentHashMap<>();
-      }
-      return localData;
-    }
   }
 
   @Override

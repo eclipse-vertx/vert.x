@@ -17,13 +17,14 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 class KeySeq {
 
-  private static final AtomicInteger seq = new AtomicInteger();
+  // 0 : reserved slot for local context map
+  private static final AtomicInteger seq = new AtomicInteger(1);
 
   /**
    * Hook for testing purposes
    */
   static void reset() {
-    seq.set((0));
+    seq.set((1));
   }
 
   static int get() {
