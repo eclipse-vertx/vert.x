@@ -10,7 +10,6 @@
  */
 package io.vertx.core.spi.context.storage;
 
-import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.Context;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.ContextLocalImpl;
@@ -44,7 +43,6 @@ public interface ContextLocal<T> {
    *
    * @return the local data
    */
-  @GenIgnore
   default T get(Context context) {
     return get(context, AccessMode.CONCURRENT);
   }
@@ -58,7 +56,6 @@ public interface ContextLocal<T> {
    * @param initialValueSupplier the supplier of the initial value optionally called
    * @return the local data
    */
-  @GenIgnore
   default T get(Context context, Supplier<? extends T> initialValueSupplier) {
     return get(context, AccessMode.CONCURRENT, initialValueSupplier);
   }
@@ -70,7 +67,6 @@ public interface ContextLocal<T> {
    *
    * @param value  the data
    */
-  @GenIgnore
   default void put(Context context, T value) {
     put(context, AccessMode.CONCURRENT, value);
   }
@@ -79,7 +75,6 @@ public interface ContextLocal<T> {
    * Remove some local data from the context.
    *
    */
-  @GenIgnore
   default void remove(Context context) {
     put(context, AccessMode.CONCURRENT, null);
   }
@@ -89,7 +84,6 @@ public interface ContextLocal<T> {
    *
    * @return the local data
    */
-  @GenIgnore
   default T get(Context context, AccessMode accessMode) {
     return ((ContextInternal)context).getLocal(this, accessMode);
   }
@@ -103,7 +97,6 @@ public interface ContextLocal<T> {
    * @param initialValueSupplier the supplier of the initial value optionally called
    * @return the local data
    */
-  @GenIgnore
   default T get(Context context, AccessMode accessMode, Supplier<? extends T> initialValueSupplier) {
     return ((ContextInternal)context).getLocal(this, accessMode, initialValueSupplier);
   }
@@ -115,7 +108,6 @@ public interface ContextLocal<T> {
    *
    * @param value  the data
    */
-  @GenIgnore
   default void put(Context context, AccessMode accessMode, T value) {
     ((ContextInternal)context).putLocal(this, accessMode, value);
   }
@@ -124,7 +116,6 @@ public interface ContextLocal<T> {
    * Remove some local data from the context.
    *
    */
-  @GenIgnore
   default void remove(Context context, AccessMode accessMode) {
     put(context, accessMode, null);
   }

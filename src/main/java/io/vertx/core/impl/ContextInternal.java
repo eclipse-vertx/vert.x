@@ -12,7 +12,6 @@
 package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
-import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.*;
 import io.vertx.core.Future;
 import io.vertx.core.impl.future.FailedFuture;
@@ -319,7 +318,6 @@ public interface ContextInternal extends Context {
    * @param <T>  the type of the data
    * @return the local data
    */
-  @GenIgnore
   default <T> T getLocal(ContextLocal<T> key) {
     return getLocal(key, AccessMode.CONCURRENT);
   }
@@ -331,7 +329,6 @@ public interface ContextInternal extends Context {
    * @param <T>  the type of the data
    * @return the local data
    */
-  @GenIgnore
   <T> T getLocal(ContextLocal<T> key, AccessMode accessMode);
 
   /**
@@ -345,7 +342,6 @@ public interface ContextInternal extends Context {
    * @param <T>  the type of the data
    * @return the local data
    */
-  @GenIgnore
   <T> T getLocal(ContextLocal<T> key, AccessMode accessMode, Supplier<? extends T> initialValueSupplier);
 
   /**
@@ -356,7 +352,6 @@ public interface ContextInternal extends Context {
    * @param key  the key of the data
    * @param value  the data
    */
-  @GenIgnore
   <T> void putLocal(ContextLocal<T> key, AccessMode accessMode, T value);
 
   /**
@@ -364,7 +359,6 @@ public interface ContextInternal extends Context {
    *
    * @param key  the key to remove
    */
-  @GenIgnore
   default <T> void removeLocal(ContextLocal<T> key, AccessMode accessMode) {
     putLocal(key, accessMode, null);
   }
