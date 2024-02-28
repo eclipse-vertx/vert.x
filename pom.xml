@@ -686,17 +686,17 @@
             </configuration>
           </execution>
           <execution>
-            <id>custom-context-key</id>
+            <id>custom-context-local</id>
             <goals>
               <goal>integration-test</goal>
               <goal>verify</goal>
             </goals>
             <configuration>
               <includes>
-                <include>io/vertx/it/CustomContextKeyTest.java</include>
+                <include>io/vertx/it/CustomContextLocalTest.java</include>
               </includes>
               <additionalClasspathElements>
-                <additionalClasspathElement>${project.basedir}/src/test/classpath/customcontextkey</additionalClasspathElement>
+                <additionalClasspathElement>${project.basedir}/src/test/classpath/customcontextlocal</additionalClasspathElement>
               </additionalClasspathElements>
             </configuration>
           </execution>

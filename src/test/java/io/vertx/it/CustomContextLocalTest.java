@@ -8,10 +8,10 @@ public class CustomContextLocalTest extends VertxTestBase {
 
   @Test
   public void testResolver() {
-    assertTrue(CustomContextKey.initialized);
+    assertTrue(CustomContextLocal.initialized);
     Context context = vertx.getOrCreateContext();
     Object o = new Object();
-    context.putLocal(CustomContextKey.CUSTOM_KEY, o);
-    assertSame(o, context.getLocal(CustomContextKey.CUSTOM_KEY));
+    context.putLocal(CustomContextLocal.CUSTOM_LOCAL, o);
+    assertSame(o, context.getLocal(CustomContextLocal.CUSTOM_LOCAL));
   }
 }
