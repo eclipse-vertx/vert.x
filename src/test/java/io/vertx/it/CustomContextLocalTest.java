@@ -4,7 +4,7 @@ import io.vertx.core.Context;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
-public class CustomContextKeyTest extends VertxTestBase {
+public class CustomContextLocalTest extends VertxTestBase {
 
   @Test
   public void testResolver() {

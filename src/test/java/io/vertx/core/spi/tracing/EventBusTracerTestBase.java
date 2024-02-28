@@ -16,7 +16,7 @@ import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.impl.ContextKeyHelper;
-import io.vertx.core.spi.context.locals.ContextKey;
+import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.core.tracing.TracingPolicy;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
@@ -28,16 +28,16 @@ import java.util.function.BiConsumer;
 
 public abstract class EventBusTracerTestBase extends VertxTestBase {
 
-  ContextKey<Object> receiveKey;
-  ContextKey<Object> sendKey;
+  ContextLocal<Object> receiveKey;
+  ContextLocal<Object> sendKey;
   VertxTracer tracer;
   Vertx vertx1;
   Vertx vertx2;
 
   @Override
   public void setUp() throws Exception {
-    receiveKey = ContextKey.registerKey(Object.class);
-    sendKey = ContextKey.registerKey(Object.class);
+    receiveKey = ContextLocal.registerLocal(Object.class);
+    sendKey = ContextLocal.registerLocal(Object.class);
     super.setUp();
   }
 

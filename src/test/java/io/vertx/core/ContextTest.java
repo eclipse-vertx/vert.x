@@ -14,7 +14,8 @@ package io.vertx.core;
 import io.netty.channel.EventLoop;
 import io.vertx.core.impl.*;
 import io.vertx.core.impl.future.PromiseInternal;
-import io.vertx.core.spi.context.locals.ContextKey;
+import io.vertx.core.spi.context.storage.AccessMode;
+import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Assume;
 import org.junit.Test;
@@ -39,7 +40,7 @@ import java.util.stream.Stream;
  */
 public class ContextTest extends VertxTestBase {
 
-  private ContextKey<Object> contextKey;
+  private ContextLocal<Object> contextLocal;
   private ExecutorService workerExecutor;
 
   private ContextInternal createWorkerContext() {
@@ -48,7 +49,7 @@ public class ContextTest extends VertxTestBase {
 
   @Override
   public void setUp() throws Exception {
-    contextKey = ContextKey.registerKey(Object.class);
+    contextLocal = ContextLocal.registerLocal(Object.class);
     workerExecutor = Executors.newFixedThreadPool(2, r -> new VertxThread(r, "vert.x-worker-thread", true, 10, TimeUnit.SECONDS));
     super.setUp();
   }
@@ -448,9 +449,9 @@ public class ContextTest extends VertxTestBase {
     Object shared = new Object();
     Object local = new Object();
     ctx.put("key", shared);
-    ctx.putLocal(contextKey, local);
+    ctx.putLocal(contextLocal, local);
     assertSame(shared, duplicated.get("key"));
-    assertNull(duplicated.getLocal(contextKey));
+    assertNull(duplicated.getLocal(contextLocal));
     assertTrue(duplicated.remove("key"));
     assertNull(ctx.get("key"));
 
@@ -1076,7 +1077,7 @@ public class ContextTest extends VertxTestBase {
         } catch (Exception e) {
           return;
         }
-        values[val] = (int)ctx.getLocal(contextKey, supplier);
+        values[val] = (int)ctx.getLocal(contextLocal, AccessMode.CONCURRENT, supplier);
       });
     }
     for (int i = 0;i < numThreads;i++) {

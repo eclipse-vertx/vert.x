@@ -10,20 +10,20 @@
  */
 package io.vertx.core.impl;
 
-import io.vertx.core.spi.context.locals.ContextKey;
+import io.vertx.core.spi.context.storage.ContextLocal;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class ContextKeyImpl<T> implements ContextKey<T> {
+public class ContextLocalImpl<T> implements ContextLocal<T> {
 
   final int index;
 
-  public ContextKeyImpl(int index) {
+  public ContextLocalImpl(int index) {
     this.index = index;
   }
 
-  public ContextKeyImpl() {
+  public ContextLocalImpl() {
     this.index = KeySeq.next();
   }
 }

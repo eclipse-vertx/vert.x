@@ -18,7 +18,7 @@ import io.vertx.core.http.HttpTestBase;
 import io.vertx.core.http.RequestOptions;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.ContextKeyHelper;
-import io.vertx.core.spi.context.locals.ContextKey;
+import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.core.spi.observability.HttpRequest;
 import io.vertx.core.spi.observability.HttpResponse;
 import io.vertx.core.tracing.TracingPolicy;
@@ -32,11 +32,11 @@ import java.util.function.BiConsumer;
 public abstract class HttpTracerTestBase extends HttpTestBase {
 
   private VertxTracer tracer;
-  private ContextKey<Object> key;
+  private ContextLocal<Object> key;
 
   @Override
   public void setUp() throws Exception {
-    key = ContextKey.registerKey(Object.class);
+    key = ContextLocal.registerLocal(Object.class);
     super.setUp();
   }
 
@@ -58,8 +58,8 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     setTracer(new VertxTracer() {
       @Override
       public Object receiveRequest(Context context, SpanKind kind, TracingPolicy policy, Object request, String operation, Iterable headers, TagExtractor tagExtractor) {
-        assertNull(context.getLocal(key));
-        context.putLocal(key, val);
+        assertNull(key.get(context));
+        key.put(context, val);
         assertTrue(seq.compareAndSet(0, 1));
         return request;
       }
@@ -69,17 +69,17 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
         assertNotNull(response);
         assertTrue(response instanceof HttpServerResponse);
         assertNull(failure);
-        assertSame(val, context.getLocal(key));
-        context.removeLocal(key);
+        assertSame(val, key.get(context));
+        key.remove(context);
       }
     });
     CountDownLatch latch = new CountDownLatch(1);
     server.requestHandler(req -> {
       assertEquals(1, seq.get());
       ContextInternal ctx = (ContextInternal) Vertx.currentContext();
-      assertSame(val, ctx.getLocal(key));
+      assertSame(val, key.get(ctx));
       req.response().closeHandler(v -> {
-        assertNull(ctx.getLocal(key));
+        assertNull(key.get(ctx));
         assertEquals(2, seq.get());
       });
       req.response().end();
@@ -103,8 +103,8 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     setTracer(new VertxTracer() {
       @Override
       public Object receiveRequest(Context context, SpanKind kind, TracingPolicy policy, Object request, String operation, Iterable headers, TagExtractor tagExtractor) {
-        assertNull(context.getLocal(key));
-        context.putLocal(key, val);
+        assertNull(key.get(context));
+        key.put(context, val);
         assertTrue(seq.compareAndSet(0, 1));
         return request;
       }
@@ -120,7 +120,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     server.requestHandler(req -> {
       assertEquals(1, seq.get());
       ContextInternal ctx = (ContextInternal) Vertx.currentContext();
-      assertSame(val, ctx.getLocal(key));
+      assertSame(val, key.get(ctx));
       req.exceptionHandler(v -> {
 //        assertNull(ctx.localContextData().get(key));
 //        assertEquals(2, seq.get());
@@ -163,7 +163,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     setTracer(new VertxTracer() {
       @Override
       public Object sendRequest(Context context, SpanKind kind, TracingPolicy policy, Object request, String operation, BiConsumer headers, TagExtractor tagExtractor) {
-        assertSame(val, context.getLocal(key));
+        assertSame(val, key.get(context));
         assertTrue(seq.compareAndSet(0, 1));
         headers.accept("X-B3-TraceId", traceId);
         assertNotNull(request);
@@ -173,8 +173,8 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
       }
       @Override
       public void receiveResponse(Context context, Object response, Object payload, Throwable failure, TagExtractor tagExtractor) {
-        assertSame(val, context.getLocal(key));
-        context.removeLocal(key);
+        assertSame(val, key.get(context));
+        key.remove(context);
         assertNotNull(response);
         assertTrue(response instanceof HttpResponse);
         assertNull(failure);
@@ -191,14 +191,14 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     awaitLatch(latch);
     Context ctx = vertx.getOrCreateContext();
     ctx.runOnContext(v1 -> {
-      ctx.putLocal(key, val);
+      key.put(ctx, val);
       client.request(request).onComplete(onSuccess(req -> {
         req.send().onComplete(onSuccess(resp -> {
           resp.endHandler(v2 -> {
             // Updates are done on the HTTP client context, so we need to run task on this context
             // to avoid data race
             ctx.runOnContext(v -> {
-              assertNull(ctx.getLocal(key));
+              assertNull(key.get(ctx));
               testComplete();
             });
           });
@@ -217,15 +217,15 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     setTracer(new VertxTracer() {
       @Override
       public Object sendRequest(Context context, SpanKind kind, TracingPolicy policy, Object request, String operation, BiConsumer headers, TagExtractor tagExtractor) {
-        assertSame(val, context.getLocal(key));
+        assertSame(val, key.get(context));
         assertTrue(seq.compareAndSet(0, 1));
         headers.accept("X-B3-TraceId", traceId);
         return request;
       }
       @Override
       public void receiveResponse(Context context, Object response, Object payload, Throwable failure, TagExtractor tagExtractor) {
-        assertSame(val, context.getLocal(key));
-        context.removeLocal(key);
+        assertSame(val, key.get(context));
+        key.remove(context);
         assertNull(response);
         assertNotNull(failure);
         assertTrue(seq.compareAndSet(1, 2));
@@ -242,7 +242,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     awaitLatch(latch);
     Context ctx = vertx.getOrCreateContext();
     ctx.runOnContext(v1 -> {
-      ctx.putLocal(key, val);
+      key.put(ctx, val);
       client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, "localhost", "/").onComplete(onSuccess(req -> {
         req.send().onComplete(onFailure(err -> {
           // assertNull(tracerMap.get(key));

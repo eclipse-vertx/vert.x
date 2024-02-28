@@ -14,7 +14,7 @@ package io.vertx.test.faketracer;
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
 import io.vertx.core.impl.ContextKeyHelper;
-import io.vertx.core.spi.context.locals.ContextKey;
+import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
@@ -32,7 +32,7 @@ import java.util.function.BiConsumer;
  */
 public class FakeTracer implements VertxTracer<Span, Span> {
 
-  private final ContextKey<Scope> scopeKey = ContextKey.registerKey(Scope.class);
+  private final ContextLocal<Scope> scopeKey = ContextLocal.registerLocal(Scope.class);
   private AtomicInteger idGenerator = new AtomicInteger(0);
   List<Span> finishedSpans = new CopyOnWriteArrayList<>();
   private AtomicInteger closeCount = new AtomicInteger();

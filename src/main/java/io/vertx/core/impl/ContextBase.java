@@ -10,8 +10,8 @@
  */
 package io.vertx.core.impl;
 
-import io.vertx.core.spi.context.locals.AccessMode;
-import io.vertx.core.spi.context.locals.ContextKey;
+import io.vertx.core.spi.context.storage.AccessMode;
+import io.vertx.core.spi.context.storage.ContextLocal;
 
 import java.util.function.Supplier;
 
@@ -28,8 +28,8 @@ class ContextBase {
     this.locals = locals;
   }
 
-  public final <T> T getLocal(ContextKey<T> key, AccessMode accessMode) {
-    ContextKeyImpl<T> internalKey = (ContextKeyImpl<T>) key;
+  public final <T> T getLocal(ContextLocal<T> key, AccessMode accessMode) {
+    ContextLocalImpl<T> internalKey = (ContextLocalImpl<T>) key;
     int index = internalKey.index;
     if (index >= locals.length) {
       throw new IllegalArgumentException();
@@ -38,8 +38,8 @@ class ContextBase {
     return (T) res;
   }
 
-  public final <T> T getLocal(ContextKey<T> key, AccessMode accessMode, Supplier<? extends T> initialValueSupplier) {
-    ContextKeyImpl<T> internalKey = (ContextKeyImpl<T>) key;
+  public final <T> T getLocal(ContextLocal<T> key, AccessMode accessMode, Supplier<? extends T> initialValueSupplier) {
+    ContextLocalImpl<T> internalKey = (ContextLocalImpl<T>) key;
     int index = internalKey.index;
     if (index >= locals.length) {
       throw new IllegalArgumentException("Invalid key index: " + index);
@@ -48,8 +48,8 @@ class ContextBase {
     return (T) res;
   }
 
-  public final <T> void putLocal(ContextKey<T> key, AccessMode accessMode, T value) {
-    ContextKeyImpl<T> internalKey = (ContextKeyImpl<T>) key;
+  public final <T> void putLocal(ContextLocal<T> key, AccessMode accessMode, T value) {
+    ContextLocalImpl<T> internalKey = (ContextLocalImpl<T>) key;
     int index = internalKey.index;
     if (index >= locals.length) {
       throw new IllegalArgumentException();

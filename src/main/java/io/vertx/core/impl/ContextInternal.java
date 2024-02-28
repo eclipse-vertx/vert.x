@@ -19,8 +19,8 @@ import io.vertx.core.impl.future.FailedFuture;
 import io.vertx.core.impl.future.PromiseImpl;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.future.SucceededFuture;
-import io.vertx.core.spi.context.locals.AccessMode;
-import io.vertx.core.spi.context.locals.ContextKey;
+import io.vertx.core.spi.context.storage.AccessMode;
+import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.concurrent.*;
@@ -35,7 +35,7 @@ import java.util.function.Supplier;
  */
 public interface ContextInternal extends Context {
 
-  ContextKey<ConcurrentMap<Object, Object>> LOCAL_MAP = new ContextKeyImpl<>(0);
+  ContextLocal<ConcurrentMap<Object, Object>> LOCAL_MAP = new ContextLocalImpl<>(0);
 
   /**
    * @return the current context
@@ -309,7 +309,7 @@ public interface ContextInternal extends Context {
    * @return the {@link ConcurrentMap} used to store local context data
    */
   default ConcurrentMap<Object, Object> localContextData() {
-    return getLocal(LOCAL_MAP, ConcurrentHashMap::new);
+    return LOCAL_MAP.get(this, ConcurrentHashMap::new);
   }
 
   /**
@@ -320,50 +320,11 @@ public interface ContextInternal extends Context {
    * @return the local data
    */
   @GenIgnore
-  default <T> T getLocal(ContextKey<T> key) {
+  default <T> T getLocal(ContextLocal<T> key) {
     return getLocal(key, AccessMode.CONCURRENT);
   }
 
   /**
-   * Get some local data from the context, when it does not exist the {@code initialValueSupplier} is called to obtain
-   * the initial value.
-   *
-   * <p> The {@code initialValueSupplier} might be called multiple times when multiple threads call this method concurrently.
-   *
-   * @param key  the key of the data
-   * @param initialValueSupplier the supplier of the initial value optionally called
-   * @param <T>  the type of the data
-   * @return the local data
-   */
-  @GenIgnore
-  default <T> T getLocal(ContextKey<T> key, Supplier<? extends T> initialValueSupplier) {
-    return getLocal(key, AccessMode.CONCURRENT, initialValueSupplier);
-  }
-
-  /**
-   * Put some local data in the context.
-   * <p>
-   * This can be used to share data between different handlers that share a context
-   *
-   * @param key  the key of the data
-   * @param value  the data
-   */
-  @GenIgnore
-  default <T> void putLocal(ContextKey<T> key, T value) {
-    putLocal(key, AccessMode.CONCURRENT, value);
-  }
-
-  /**
-   * Remove some local data from the context.
-   *
-   * @param key  the key to remove
-   */
-  @GenIgnore
-  default <T> void removeLocal(ContextKey<T> key) {
-    putLocal(key, AccessMode.CONCURRENT, null);
-  }
-
-  /**
    * Get some local data from the context.
    *
    * @param key  the key of the data
@@ -371,7 +332,7 @@ public interface ContextInternal extends Context {
    * @return the local data
    */
   @GenIgnore
-  <T> T getLocal(ContextKey<T> key, AccessMode accessMode);
+  <T> T getLocal(ContextLocal<T> key, AccessMode accessMode);
 
   /**
    * Get some local data from the context, when it does not exist the {@code initialValueSupplier} is called to obtain
@@ -385,7 +346,7 @@ public interface ContextInternal extends Context {
    * @return the local data
    */
   @GenIgnore
-  <T> T getLocal(ContextKey<T> key, AccessMode accessMode, Supplier<? extends T> initialValueSupplier);
+  <T> T getLocal(ContextLocal<T> key, AccessMode accessMode, Supplier<? extends T> initialValueSupplier);
 
   /**
    * Put some local data in the context.
@@ -396,7 +357,7 @@ public interface ContextInternal extends Context {
    * @param value  the data
    */
   @GenIgnore
-  <T> void putLocal(ContextKey<T> key, AccessMode accessMode, T value);
+  <T> void putLocal(ContextLocal<T> key, AccessMode accessMode, T value);
 
   /**
    * Remove some local data from the context.
@@ -404,7 +365,7 @@ public interface ContextInternal extends Context {
    * @param key  the key to remove
    */
   @GenIgnore
-  default <T> void removeLocal(ContextKey<T> key, AccessMode accessMode) {
+  default <T> void removeLocal(ContextLocal<T> key, AccessMode accessMode) {
     putLocal(key, accessMode, null);
   }
 
