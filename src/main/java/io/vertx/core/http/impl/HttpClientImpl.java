@@ -467,7 +467,10 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       request.redirectHandler(resp -> {
         Future<RequestOptions> fut_ = rHandler.apply(resp);
         if (fut_ != null) {
-          return fut_.compose(this::request);
+          return fut_.compose(o -> {
+            o.setProxyOptions(options.getProxyOptions());
+            return this.request(o);
+          });
         } else {
           return null;
         }

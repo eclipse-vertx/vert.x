@@ -166,7 +166,7 @@ public class HttpProxy extends TestProxyBase<HttpProxy> {
             }
             resp.body().onComplete(ar2 -> {
               if (ar2.succeeded()) {
-                request.response().end(ar2.result());
+                request.response().setStatusCode(resp.statusCode()).end(ar2.result());
               } else {
                 request.response().setStatusCode(500).end(ar2.cause().toString() + " on client request");
               }
