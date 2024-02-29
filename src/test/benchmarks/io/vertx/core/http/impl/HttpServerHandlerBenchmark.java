@@ -37,6 +37,7 @@ import io.vertx.benchmarks.BenchmarkBase;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
@@ -204,7 +205,7 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
 
   @Setup
   public void setup() {
-    vertx = (VertxInternal) Vertx.vertx();
+    vertx = (VertxInternal) Vertx.vertx(new VertxOptions().setDisableTCCL(true));
     HttpServerOptions options = new HttpServerOptions();
     vertxChannel = new EmbeddedChannel(
         new VertxHttpRequestDecoder(options),
@@ -329,7 +330,6 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
   @Fork(value = 1, jvmArgsAppend = {
       "-Dvertx.threadChecks=false",
       "-Dvertx.disableContextTimings=true",
-      "-Dvertx.disableTCCL=true",
       "-Dvertx.disableHttpHeadersValidation=true",
       "-Dvertx.disableMetrics=true"
   })
@@ -343,7 +343,6 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
   @Fork(value = 1, jvmArgsAppend = {
     "-Dvertx.threadChecks=false",
     "-Dvertx.disableContextTimings=true",
-    "-Dvertx.disableTCCL=true",
     "-Dvertx.disableHttpHeadersValidation=true",
     "-Dvertx.disableMetrics=false"
   })

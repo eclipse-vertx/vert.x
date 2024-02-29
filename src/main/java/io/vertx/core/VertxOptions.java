@@ -111,7 +111,10 @@ public class VertxOptions {
    */
   public static final TimeUnit DEFAULT_WARNING_EXCEPTION_TIME_UNIT = TimeUnit.NANOSECONDS;
 
-  public static final boolean DEFAULT_DISABLE_TCCL = SysProps.DISABLE_TCCL.getBoolean();
+  /**
+   * The default value of thread context classloader disabling = {@code false}
+   */
+  public static final boolean DEFAULT_DISABLE_TCCL = false;
 
   /**
    * Set default value to false for aligning with the old behavior

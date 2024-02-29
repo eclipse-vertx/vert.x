@@ -32,11 +32,6 @@ public enum SysProps {
   DISABLE_DNS_RESOLVER("vertx.disableDnsResolver"),
 
   /**
-   * Default value of {@link io.vertx.core.VertxOptions#DEFAULT_DISABLE_TCCL}
-   */
-  DISABLE_TCCL("vertx.disableTCCL"),
-
-  /**
    * Default value of {@link io.vertx.core.file.FileSystemOptions#DEFAULT_FILE_CACHING_ENABLED}
    */
   DISABLE_FILE_CACHING("vertx.disableFileCaching"),
