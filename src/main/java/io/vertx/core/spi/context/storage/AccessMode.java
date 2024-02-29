@@ -37,10 +37,10 @@ public interface AccessMode {
     }
 
     @Override
-    public Object getOrCreate(Object[] locals, int index, Supplier<Object> initialValueSupplier) {
+    public Object getOrCreate(Object[] locals, int idx, Supplier<Object> initialValueSupplier) {
       Object res;
       while (true) {
-        res = LOCALS_UPDATER.getVolatile(locals, index);
+        res = LOCALS_UPDATER.getVolatile(locals, idx);
         if (res != null) {
           break;
         }
@@ -48,7 +48,7 @@ public interface AccessMode {
         if (initial == null) {
           throw new IllegalStateException();
         }
-        if (LOCALS_UPDATER.compareAndSet(locals, index, null, initial)) {
+        if (LOCALS_UPDATER.compareAndSet(locals, idx, null, initial)) {
           res = initial;
           break;
         }
@@ -73,6 +73,14 @@ public interface AccessMode {
    */
   void put(Object[] locals, int idx, Object value);
 
-  Object getOrCreate(Object[] locals, int index, Supplier<Object> initialValueSupplier);
+  /**
+   * Get or create the object at index {@code index} in the {@code locals} array. When the object
+   * does not exist, {@code initialValueSupplier} must be called to obtain this value.
+   *
+   * @param locals the array
+   * @param idx the index
+   * @param initialValueSupplier the supplier of the initial value
+   */
+  Object getOrCreate(Object[] locals, int idx, Supplier<Object> initialValueSupplier);
 
 }
