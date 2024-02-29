@@ -17,7 +17,13 @@ import io.vertx.core.impl.ContextLocalImpl;
 import java.util.function.Supplier;
 
 /**
- * A context local storage to address local context data.
+ * A local storage for arbitrary data attached to a duplicated {@link Context}.
+ *
+ * <p>Local storage should be registered before creating a {@link io.vertx.core.Vertx} instance, once registered a
+ * local storage cannot be unregistered.
+ *
+ * <p>It is recommended to initialize local storage as static fields of a {@link io.vertx.core.spi.VertxServiceProvider},
+ * since providers are discovered before the capture of known local storages.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -25,12 +31,6 @@ public interface ContextLocal<T> {
 
   /**
    * Registers a context local storage.
-   *
-   * <p>Local storage should be registered before creating a {@link io.vertx.core.Vertx} instance, once registered a
-   * local storage cannot be unregistered.
-   *
-   * <p>It is recommended to initialize local storage as static fields of a {@link io.vertx.core.spi.VertxServiceProvider},
-   * since providers are discovered before the capture of known local storage.
    *
    * @return the context local storage
    */
