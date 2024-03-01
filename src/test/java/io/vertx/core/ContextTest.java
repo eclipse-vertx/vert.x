@@ -14,6 +14,8 @@ package io.vertx.core;
 import io.netty.channel.EventLoop;
 import io.vertx.core.impl.*;
 import io.vertx.core.impl.future.PromiseInternal;
+import io.vertx.core.spi.context.storage.AccessMode;
+import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Assume;
 import org.junit.Test;
@@ -38,6 +40,7 @@ import java.util.stream.Stream;
  */
 public class ContextTest extends VertxTestBase {
 
+  private ContextLocal<Object> contextLocal;
   private ExecutorService workerExecutor;
 
   private ContextInternal createWorkerContext() {
@@ -46,12 +49,14 @@ public class ContextTest extends VertxTestBase {
 
   @Override
   public void setUp() throws Exception {
+    contextLocal = ContextLocal.registerLocal(Object.class);
     workerExecutor = Executors.newFixedThreadPool(2, r -> new VertxThread(r, "vert.x-worker-thread", true, 10, TimeUnit.SECONDS));
     super.setUp();
   }
 
   @Override
   protected void tearDown() throws Exception {
+    ContextLocalHelper.reset();
     workerExecutor.shutdown();
     super.tearDown();
   }
@@ -444,9 +449,9 @@ public class ContextTest extends VertxTestBase {
     Object shared = new Object();
     Object local = new Object();
     ctx.put("key", shared);
-    ctx.putLocal("key", local);
+    contextLocal.put(ctx, local);
     assertSame(shared, duplicated.get("key"));
-    assertNull(duplicated.getLocal("key"));
+    assertNull(duplicated.getLocal(contextLocal));
     assertTrue(duplicated.remove("key"));
     assertNull(ctx.get("key"));
 
@@ -1054,4 +1059,37 @@ public class ContextTest extends VertxTestBase {
     }, new DeploymentOptions().setThreadingModel(ThreadingModel.VIRTUAL_THREAD));
     await();
   }
+
+  @Test
+  public void testConcurrentLocalAccess() throws Exception {
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+    int numThreads = 10;
+    Thread[] threads = new Thread[numThreads];
+    int[] values = new int[numThreads];
+    CyclicBarrier barrier = new CyclicBarrier(numThreads);
+    for (int i = 0;i < numThreads;i++) {
+      values[i] = -1;
+      int val = i;
+      Supplier<Object> supplier = () -> val;
+      threads[i] = new Thread(() -> {
+        try {
+          barrier.await();
+        } catch (Exception e) {
+          return;
+        }
+        values[val] = (int)ctx.getLocal(contextLocal, AccessMode.CONCURRENT, supplier);
+      });
+    }
+    for (int i = 0;i < numThreads;i++) {
+      threads[i].start();
+    }
+    for (int i = 0;i < numThreads;i++) {
+      threads[i].join();
+    }
+    assertTrue(values[0] >= 0);
+    for (int i = 0;i < numThreads;i++) {
+      assertEquals(values[i], values[0]);
+    }
+  }
+
 }

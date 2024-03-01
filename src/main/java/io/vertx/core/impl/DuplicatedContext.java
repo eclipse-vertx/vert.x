@@ -34,12 +34,12 @@ import java.util.concurrent.Executor;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class DuplicatedContext implements ContextInternal {
+final class DuplicatedContext extends ContextBase implements ContextInternal {
 
-  protected final ContextImpl delegate;
-  private ConcurrentMap<Object, Object> localData;
+  final ContextImpl delegate;
 
-  DuplicatedContext(ContextImpl delegate) {
+  DuplicatedContext(ContextImpl delegate, Object[] locals) {
+    super(locals);
     this.delegate = delegate;
   }
 
@@ -120,16 +120,6 @@ class DuplicatedContext implements ContextInternal {
   }
 
   @Override
-  public final ConcurrentMap<Object, Object> localContextData() {
-    synchronized (this) {
-      if (localData == null) {
-        localData = new ConcurrentHashMap<>();
-      }
-      return localData;
-    }
-  }
-
-  @Override
   public <T> Future<T> executeBlockingInternal(Callable<T> action) {
     return ContextImpl.executeBlocking(this, action, delegate.internalWorkerPool, delegate.internalOrderedTasks);
   }
@@ -176,7 +166,7 @@ class DuplicatedContext implements ContextInternal {
 
   @Override
   public ContextInternal duplicate() {
-    return new DuplicatedContext(delegate);
+    return new DuplicatedContext(delegate, locals.length == 0 ? VertxImpl.EMPTY_CONTEXT_LOCALS : new Object[locals.length]);
   }
 
   @Override

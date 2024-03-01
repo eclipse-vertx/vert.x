@@ -28,7 +28,7 @@ import java.util.concurrent.*;
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public final class ContextImpl implements ContextInternal {
+public final class ContextImpl extends ContextBase implements ContextInternal {
 
   private static final Logger log = LoggerFactory.getLogger(ContextImpl.class);
 
@@ -44,7 +44,6 @@ public final class ContextImpl implements ContextInternal {
   private final EventLoop eventLoop;
   private final EventExecutor executor;
   private ConcurrentMap<Object, Object> data;
-  private ConcurrentMap<Object, Object> localData;
   private volatile Handler<Throwable> exceptionHandler;
   final TaskQueue internalOrderedTasks;
   final WorkerPool internalWorkerPool;
@@ -52,6 +51,7 @@ public final class ContextImpl implements ContextInternal {
   final TaskQueue orderedTasks;
 
   protected ContextImpl(VertxInternal vertx,
+                        Object[] locals,
                         ThreadingModel threadingModel,
                         EventLoop eventLoop,
                         EventExecutor executor,
@@ -61,6 +61,7 @@ public final class ContextImpl implements ContextInternal {
                         Deployment deployment,
                         CloseFuture closeFuture,
                         ClassLoader tccl) {
+    super(locals);
     this.threadingModel = threadingModel;
     this.deployment = deployment;
     this.config = deployment != null ? deployment.config() : new JsonObject();
@@ -211,14 +212,6 @@ public final class ContextImpl implements ContextInternal {
     return data;
   }
 
-  @Override
-  public synchronized ConcurrentMap<Object, Object> localContextData() {
-    if (localData == null) {
-      localData = new ConcurrentHashMap<>();
-    }
-    return localData;
-  }
-
   public void reportException(Throwable t) {
     Handler<Throwable> handler = exceptionHandler;
     if (handler == null) {
@@ -306,6 +299,6 @@ public final class ContextImpl implements ContextInternal {
 
   @Override
   public ContextInternal duplicate() {
-    return new DuplicatedContext(this);
+    return new DuplicatedContext(this, locals.length == 0 ? VertxImpl.EMPTY_CONTEXT_LOCALS : new Object[locals.length]);
   }
 }
