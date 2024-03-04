@@ -123,18 +123,18 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
     }
   }
 
-  private InboundBuffer<Object> pendingQueue() {
-    if (pending == null) {
-      pending = new InboundBuffer<>(context, 8);
-      pending.drainHandler(v -> conn.doResume());
-      pending.handler(buffer -> {
-        if (buffer == InboundBuffer.END_SENTINEL) {
-          onEnd();
-        } else {
-          onData((Buffer) buffer);
-        }
-      });
-    }
+  private InboundBuffer createAndSetInboundBuffer() {
+    assert pending == null;
+    InboundBuffer<Object> pending = new InboundBuffer<>(context, 8);
+    this.pending = pending;
+    pending.drainHandler(v -> conn.doResume());
+    pending.handler(buffer -> {
+      if (buffer == InboundBuffer.END_SENTINEL) {
+        onEnd();
+      } else {
+        onData((Buffer) buffer);
+      }
+    });
     return pending;
   }
 
@@ -346,7 +346,11 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   @Override
   public HttpServerRequest pause() {
     synchronized (conn) {
-      pendingQueue().pause();
+      if (pending != null) {
+        pending.pause();
+      } else {
+        createAndSetInboundBuffer().pause();
+      }
       return this;
     }
   }
@@ -354,7 +358,11 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   @Override
   public HttpServerRequest fetch(long amount) {
     synchronized (conn) {
-      pendingQueue().fetch(amount);
+      if (pending != null) {
+        pending.fetch(amount);
+      } else {
+        createAndSetInboundBuffer().fetch(amount);
+      }
       return this;
     }
   }
