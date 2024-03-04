@@ -1252,15 +1252,15 @@ The client interface is very simple and follows this pattern:
 3. handle the beginning of the {@link io.vertx.core.http.HttpClientResponse}
 4. process the response events
 
-You can use Vert.x future composition methods to make your code simpler, however the API is event driven
-and you need to understand it otherwise you might experience possible data races (i.e loosing events
+You can use Vert.x future composition methods to make your code simpler, however the API is event driven,
+and you need to understand it otherwise you might experience possible data races (i.e. loosing events
 leading to corrupted data).
 
 NOTE: https://vertx.io/docs/vertx-web-client/java/[Vert.x Web Client] is a higher level API alternative (in fact it is built
 on top of this client) you might consider if this client is too low level for your use cases
 
 The client API intentionally does not return a `Future<HttpClientResponse>` because setting a completion
-handler on the future can be racy when this is set outside of the event-loop.
+handler on the future can be racy when this is set outside the event-loop.
 
 [source,$lang]
 ----
@@ -1284,11 +1284,18 @@ vertx.deployVerticle(() -> new AbstractVerticle() {
 ----
 
 When you are interacting with the client possibly outside a verticle then you can safely perform
-composition as long as you do not delay the response events, e.g processing  directly the response on the event-loop.
+composition as long as you do not delay the response events, e.g. processing  directly the response on the event-loop.
 
 [source,$lang]
 ----
 {@link examples.HTTPExamples#exampleClientComposition03}
+----
+
+You can also guard the response body with <<response-expectations,HTTP responses expectations>>.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#exampleClientComposition03_}
 ----
 
 If you need to delay the response processing then you need to `pause` the response or use a `pipe`, this
@@ -1298,6 +1305,65 @@ might be necessary when another asynchronous operation is involved.
 ----
 {@link examples.HTTPExamples#exampleClientComposition04}
 ----
+
+[[response-expectations]]
+==== Response expectations
+
+As seen above, you must perform sanity checks manually after the response is received.
+
+You can trade flexibility for clarity and conciseness using _response expectations_.
+
+{@link io.vertx.core.http.HttpResponseExpectation Response expectations} can guard the control flow when the response does
+not match a criteria.
+
+The HTTP Client comes with a set of out of the box predicates ready to use:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#usingPredefinedExpectations}
+----
+
+You can also create custom predicates when existing predicates don't fit your needs:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#usingPredicates}
+----
+
+==== Predefined expectations
+
+As a convenience, the HTTP Client ships a few predicates for common uses cases .
+
+For status codes, e.g. {@link io.vertx.core.http.HttpResponseExpectation#SC_SUCCESS} to verify that the
+response has a `2xx` code, you can also create a custom one:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#usingSpecificStatus(io.vertx.core.http.HttpClient,io.vertx.core.http.RequestOptions)}
+----
+
+For content types, e.g. {@link io.vertx.core.http.HttpResponseExpectation#JSON} to verify that the
+response body contains JSON data, you can also create a custom one:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#usingSpecificContentType}
+----
+
+Please refer to the {@link io.vertx.core.http.HttpResponseExpectation} documentation for a full list of predefined expectations.
+
+==== Creating custom failures
+
+By default, expectations (including the predefined ones) conveys a simple error message. You can customize the exception class by changing the error converter:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#expectationCustomError()}
+----
+
+WARNING: creating exception in Java can have a performance cost when it captures a stack trace, so you might want
+to create exceptions that do not capture the stack trace. By default exceptions are reported using an exception that
+does not capture the stack trace.
 
 ==== Reading cookies from the response
 
