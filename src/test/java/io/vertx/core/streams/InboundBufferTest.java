@@ -124,18 +124,18 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testFlowingRefill() {
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 5L);
       AtomicInteger events = new AtomicInteger();
-      buffer.handler(s -> {
-        checkContext();
-        events.getAndIncrement();
-      });
-      buffer.drainHandler(v2 -> {
-        checkContext();
-        assertEquals(8, events.get());
-        testComplete();
-      });
-      buffer.pause();
+      buffer = InboundBuffer.createPaused(context, 5L,
+        v2 -> {
+          checkContext();
+          assertEquals(8, events.get());
+          testComplete();
+        },
+        s -> {
+          checkContext();
+          events.getAndIncrement();
+        });
+      assertTrue(buffer.isPaused());
       for (int i = 0;i < 8;i++) {
         assertEquals("Expected " + i + " to be bilto", i < 4, emit());
       }
@@ -147,20 +147,20 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testPauseWhenFull() {
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 5L);
       AtomicInteger events = new AtomicInteger();
       AtomicInteger reads = new AtomicInteger();
-      buffer.drainHandler(v2 -> {
-        checkContext();
-        assertEquals(0, reads.getAndIncrement());
-      });
-      buffer.handler(s -> {
-        checkContext();
-        assertEquals(0, reads.get());
-        assertEquals(0, events.getAndIncrement());
-        testComplete();
-      });
-      buffer.pause();
+      buffer = InboundBuffer.createPaused(context, 5L,
+        v2 -> {
+          checkContext();
+          assertEquals(0, reads.getAndIncrement());
+        },
+        s -> {
+          checkContext();
+          assertEquals(0, reads.get());
+          assertEquals(0, events.getAndIncrement());
+          testComplete();
+        });
+      assertTrue(buffer.isPaused());
       for (int i = 0; i < 5;i++) {
         assertEquals(i < 4, emit());
       }
@@ -172,20 +172,20 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testPausedResume() {
     context.runOnContext(v -> {
-      buffer = new InboundBuffer<>(context, 5L);
       AtomicInteger events = new AtomicInteger();
-      buffer.handler(s -> {
-        checkContext();
-        events.getAndIncrement();
-      });
       AtomicInteger reads = new AtomicInteger();
-      buffer.drainHandler(v2 -> {
-        checkContext();
-        assertEquals(0, reads.getAndIncrement());
-        assertEquals(5, events.get());
-        testComplete();
-      });
-      buffer.pause();
+      buffer = InboundBuffer.createPaused(context, 5L,
+        v2 -> {
+          checkContext();
+          assertEquals(0, reads.getAndIncrement());
+          assertEquals(5, events.get());
+          testComplete();
+        },
+        s -> {
+          checkContext();
+          events.getAndIncrement();
+        });
+      assertTrue(buffer.isPaused());
       fill();
       buffer.resume();
     });
@@ -196,21 +196,21 @@ public class InboundBufferTest extends VertxTestBase {
   public void testPausedDrain() {
     waitFor(2);
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 5L);
       AtomicInteger drained = new AtomicInteger();
       AtomicInteger emitted = new AtomicInteger();
-      buffer.drainHandler(v2 -> {
-        checkContext();
-        assertEquals(0, drained.getAndIncrement());
-        assertEquals(5, emitted.get());
-        complete();
-      });
-      buffer.handler(s -> {
-        checkContext();
-        assertEquals(0, drained.get());
-        emitted.getAndIncrement();
-      });
-      buffer.pause();
+      buffer = InboundBuffer.createPaused(context, 5L,
+        v2 -> {
+          checkContext();
+          assertEquals(0, drained.getAndIncrement());
+          assertEquals(5, emitted.get());
+          complete();
+        },
+        s -> {
+          checkContext();
+          assertEquals(0, drained.get());
+          emitted.getAndIncrement();
+        });
+      assertTrue(buffer.isPaused());
       fill();
       assertEquals(0, drained.get());
       assertEquals(0, emitted.get());
@@ -223,18 +223,18 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testPausedRequestLimited() {
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 3L);
       AtomicInteger events = new AtomicInteger();
-      buffer.handler(s -> {
-        checkContext();
-        events.getAndIncrement();
-      });
       AtomicInteger reads = new AtomicInteger();
-      buffer.drainHandler(v2 -> {
-        checkContext();
-        assertEquals(0, reads.getAndIncrement());
-      });
-      buffer.pause();
+      buffer = InboundBuffer.createPaused(context, 3L,
+        v2 -> {
+          checkContext();
+          assertEquals(0, reads.getAndIncrement());
+        },
+        s -> {
+          checkContext();
+          events.getAndIncrement();
+        });
+      assertTrue(buffer.isPaused());
       buffer.fetch(1);
       assertEquals(0, reads.get());
       assertEquals(0, events.get());
@@ -376,37 +376,37 @@ public class InboundBufferTest extends VertxTestBase {
 
   private void testEmitInElementHandler(Consumer<Integer> emit) {
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 5L);
       AtomicInteger events = new AtomicInteger();
       AtomicInteger drained = new AtomicInteger();
       AtomicBoolean draining = new AtomicBoolean();
-      buffer.drainHandler(v -> {
-        // Check reentrancy
-        assertFalse(draining.get());
-        draining.set(true);
-        assertEquals(0, drained.getAndIncrement());
-        assertFalse(emit());
-        draining.set(false);
-      });
-      buffer.handler(s -> {
-        checkContext();
-        switch (s) {
-          case 5:
-            // Emitted in drain handler
-            emit.accept(9);
-            break;
-          case 9:
-            vertx.runOnContext(v -> {
-              assertEquals(1, drained.get());
-              assertEquals(10, events.get());
-              assertEquals(5, buffer.size());
-              testComplete();
-            });
-            break;
-        }
-        events.incrementAndGet();
-      });
-      buffer.pause();
+      buffer = InboundBuffer.createPaused(context, 5L,
+        v -> {
+          // Check reentrancy
+          assertFalse(draining.get());
+          draining.set(true);
+          assertEquals(0, drained.getAndIncrement());
+          assertFalse(emit());
+          draining.set(false);
+        },
+        s -> {
+          checkContext();
+          switch (s) {
+            case 5:
+              // Emitted in drain handler
+              emit.accept(9);
+              break;
+            case 9:
+              vertx.runOnContext(v -> {
+                assertEquals(1, drained.get());
+                assertEquals(10, events.get());
+                assertEquals(5, buffer.size());
+                testComplete();
+              });
+              break;
+          }
+          events.incrementAndGet();
+        });
+      assertTrue(buffer.isPaused());
       fill();
       buffer.fetch(10);
     });
@@ -416,30 +416,29 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testEmitInDrainHandler1() {
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 4L);
       AtomicInteger drained = new AtomicInteger();
       AtomicInteger expectedDrained = new AtomicInteger();
-      buffer.drainHandler(v2 -> {
-        switch (drained.getAndIncrement()) {
-          case 0:
-            // Check that emitting again will not drain again
-            expectedDrained.set(1);
+      buffer = InboundBuffer.createPaused(context, 4L,
+        v2 -> {
+          switch (drained.getAndIncrement()) {
+            case 0:
+              // Check that emitting again will not drain again
+              expectedDrained.set(1);
+              fill();
+              context.runOnContext(v -> {
+                assertEquals(1, drained.get());
+                testComplete();
+              });
+              break;
+          }
+        }, val -> {
+          if (val == 0) {
+            // This will set writable to false
             fill();
-            context.runOnContext(v -> {
-              assertEquals(1, drained.get());
-              testComplete();
-            });
-            break;
-        }
-      });
-      buffer.handler(val -> {
-        if (val == 0) {
-          // This will set writable to false
-          fill();
-        }
-        assertEquals(expectedDrained.get(), drained.get());
-      });
-      buffer.pause();
+          }
+          assertEquals(expectedDrained.get(), drained.get());
+        });
+      assertTrue(buffer.isPaused());
       buffer.fetch(1);
       emit();
       buffer.fetch(4L);
@@ -452,35 +451,35 @@ public class InboundBufferTest extends VertxTestBase {
   public void testEmitInDrainHandler2() {
     waitFor(2);
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 5L);
       AtomicInteger drained = new AtomicInteger();
       AtomicBoolean draining = new AtomicBoolean();
       AtomicInteger emitted = new AtomicInteger();
-      buffer.drainHandler(v2 -> {
-        assertFalse(draining.get());
-        draining.set(true);
-        switch (drained.getAndIncrement()) {
-          case 0:
-            // This will trigger a new asynchronous drain
-            fill();
-            buffer.fetch(5);
-            break;
-          case 1:
-            assertEquals(10, emitted.get());
-            complete();
-            break;
-        }
-        draining.set(false);
-      });
-      buffer.handler(val -> {
-        emitted.incrementAndGet();
-        if (val == 0) {
-          assertEquals(0, drained.get());
-        } else if (val == 6) {
-          assertEquals(1, drained.get());
-        }
-      });
-      buffer.pause();
+      buffer = InboundBuffer.createPaused(context, 5L,
+        v2 -> {
+          assertFalse(draining.get());
+          draining.set(true);
+          switch (drained.getAndIncrement()) {
+            case 0:
+              // This will trigger a new asynchronous drain
+              fill();
+              buffer.fetch(5);
+              break;
+            case 1:
+              assertEquals(10, emitted.get());
+              complete();
+              break;
+          }
+          draining.set(false);
+        },
+        val -> {
+          emitted.incrementAndGet();
+          if (val == 0) {
+            assertEquals(0, drained.get());
+          } else if (val == 6) {
+            assertEquals(1, drained.get());
+          }
+        });
+      assertTrue(buffer.isPaused());
       fill();
       buffer.fetch(5);
       complete();
@@ -628,30 +627,30 @@ public class InboundBufferTest extends VertxTestBase {
   public void testPollDuringEmission() {
     waitFor(2);
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 4L);
       List<Integer> polled = new ArrayList<>();
       List<Integer> emitted = new ArrayList<>();
       AtomicInteger drained = new AtomicInteger();
-      buffer.drainHandler(v -> {
-        assertEquals(Arrays.asList(0, 1, 2, 3), emitted);
-        assertEquals(Arrays.asList(4, 5), polled);
-        complete();
-      });
-      buffer.handler(elt -> {
-        emitted.add(elt);
-        if (elt == 3) {
-          Integer p;
-          while ((p = buffer.read()) != null) {
-            polled.add(p);
-          }
+      buffer = InboundBuffer.createPaused(context, 4L,
+        v -> {
+          assertEquals(Arrays.asList(0, 1, 2, 3), emitted);
           assertEquals(Arrays.asList(4, 5), polled);
-          assertEquals(0, drained.get());
           complete();
-        } else {
-          assertTrue(elt < 3);
-        }
-      });
-      buffer.pause();
+        },
+        elt -> {
+          emitted.add(elt);
+          if (elt == 3) {
+            Integer p;
+            while ((p = buffer.read()) != null) {
+              polled.add(p);
+            }
+            assertEquals(Arrays.asList(4, 5), polled);
+            assertEquals(0, drained.get());
+            complete();
+          } else {
+            assertTrue(elt < 3);
+          }
+        });
+      assertTrue(buffer.isPaused());
       assertFalse(emit(6));
       buffer.resume();
     });

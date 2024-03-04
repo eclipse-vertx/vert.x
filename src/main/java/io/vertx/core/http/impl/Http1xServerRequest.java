@@ -123,21 +123,6 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
     }
   }
 
-  private InboundBuffer<Object> pendingQueue() {
-    if (pending == null) {
-      pending = new InboundBuffer<>(context, 8);
-      pending.drainHandler(v -> conn.doResume());
-      pending.handler(buffer -> {
-        if (buffer == InboundBuffer.END_SENTINEL) {
-          onEnd();
-        } else {
-          onData((Buffer) buffer);
-        }
-      });
-    }
-    return pending;
-  }
-
   void handleContent(Buffer buffer) {
     InboundBuffer<Object> queue;
     synchronized (conn) {
@@ -346,15 +331,37 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   @Override
   public HttpServerRequest pause() {
     synchronized (conn) {
-      pendingQueue().pause();
+      if (pending != null) {
+        pending.pause();
+      } else {
+        pending = InboundBuffer.createPaused(context, 8, pendingDrainHandler(), pendingHandler());
+      }
       return this;
     }
+  }
+
+  private Handler<Object> pendingHandler() {
+    return buffer -> {
+      if (buffer == InboundBuffer.END_SENTINEL) {
+        onEnd();
+      } else {
+        onData((Buffer) buffer);
+      }
+    };
+  }
+
+  private Handler<Void> pendingDrainHandler() {
+    return v -> conn.doResume();
   }
 
   @Override
   public HttpServerRequest fetch(long amount) {
     synchronized (conn) {
-      pendingQueue().fetch(amount);
+      if (pending != null) {
+        pending.fetch(amount);
+      } else {
+        pending = InboundBuffer.createAndFetch(context, 8, amount, pendingDrainHandler(), pendingHandler());
+      }
       return this;
     }
   }
@@ -572,17 +579,17 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
       ended = true;
       queue = pending;
       if (queue == null) {
-        handler = onRequestComplete();
+        handler = endRequest();
       }
     }
     if (queue != null) {
       queue.write(InboundBuffer.END_SENTINEL);
-    } else {
-      handleEnd(handler);
+    } else if (handler != null) {
+      handler.handleEnd();
     }
   }
 
-  private HttpEventHandler onRequestComplete() {
+  private HttpEventHandler endRequest() {
     assert Thread.holdsLock(conn);
     if (METRICS_ENABLED) {
       reportRequestComplete();
@@ -593,19 +600,14 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
     return eventHandler;
   }
 
-  private void handleEnd(HttpEventHandler handler) {
-    // If there have been uploads then we let the last one call the end handler once any fileuploads are complete
-    if (handler != null) {
-      handler.handleEnd();
-    }
-  }
-
   private void onEnd() {
     HttpEventHandler handler;
     synchronized (conn) {
-      handler = onRequestComplete();
+      handler = endRequest();
     }
-    handleEnd(handler);
+    if (handler != null) {
+      handler.handleEnd();
+    }
   }
 
   private void reportRequestComplete() {
