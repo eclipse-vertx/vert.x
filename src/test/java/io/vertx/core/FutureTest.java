@@ -628,6 +628,84 @@ public class FutureTest extends FutureTestBase {
   }
 
   @Test
+  public void testExpectingSuccessWithValidSuccess() {
+    AtomicBoolean called = new AtomicBoolean();
+    Promise<String> p = Promise.promise();
+    Future<String> f = p.future();
+    Future<String> r = f.expecting(t -> {
+      called.set(true);
+      return true;
+    });
+    Checker<String> checker = new Checker<>(r);
+    checker.assertNotCompleted();
+    p.complete("yeah");
+    assertTrue(r.succeeded());
+    checker.assertSucceeded("yeah");
+    assertTrue(called.get());
+  }
+
+  @Test
+  public void testExpectingFailureWithInvalidSuccess() {
+    AtomicBoolean called = new AtomicBoolean();
+    Promise<String> p = Promise.promise();
+    Future<String> f = p.future();
+    Throwable err = new Throwable();
+    Future<String> r = f.expecting(new Expectation<String>() {
+      @Override
+      public boolean test(String value) {
+        called.set(true);
+        return false;
+      }
+      @Override
+      public Throwable describe(String value) {
+        return err;
+      }
+    });
+    Checker<String> checker = new Checker<>(r);
+    checker.assertNotCompleted();
+    p.complete("yeah");
+    assertFalse(r.succeeded());
+    checker.assertFailed(err);
+    assertTrue(called.get());
+  }
+
+  @Test
+  public void testExpectingFailureWithFailure() {
+    AtomicBoolean called = new AtomicBoolean();
+    Promise<String> p = Promise.promise();
+    Future<String> f = p.future();
+    Future<String> r = f.expecting(t -> {
+      called.set(true);
+      return true;
+    });
+    Checker<String> checker = new Checker<>(r);
+    checker.assertNotCompleted();
+    Throwable err = new Throwable();
+    p.fail(err);
+    assertTrue(r.failed());
+    checker.assertFailed(err);
+    assertFalse(called.get());
+  }
+
+  @Test
+  public void testExpectingThrowingError() {
+    AtomicBoolean called = new AtomicBoolean();
+    Promise<String> p = Promise.promise();
+    Future<String> f = p.future();
+    RuntimeException err = new RuntimeException();
+    Future<String> r = f.expecting(t -> {
+      called.set(true);
+      throw err;
+    });
+    Checker<String> checker = new Checker<>(r);
+    checker.assertNotCompleted();
+    p.complete("yeah");
+    assertTrue(r.failed());
+    checker.assertFailed(err);
+    assertTrue(called.get());
+  }
+
+  @Test
   public void testOtherwiseSuccessWithSuccess() {
     AtomicBoolean called = new AtomicBoolean();
     Promise<String> p = Promise.promise();
@@ -827,6 +905,8 @@ public class FutureTest extends FutureTestBase {
         this.cause = cause;
         return true;
       }
+
+      public Future<T> expecting(Expectation<? super T> expectation) { throw new UnsupportedOperationException(); }
       public boolean tryFail(String failureMessage) { throw new UnsupportedOperationException(); }
       public T result() { throw new UnsupportedOperationException(); }
       public Throwable cause() { throw new UnsupportedOperationException(); }
