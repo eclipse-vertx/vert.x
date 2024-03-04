@@ -13,14 +13,7 @@ package examples;
 
 import io.netty.handler.codec.compression.GzipOptions;
 import io.netty.handler.codec.compression.StandardCompressionOptions;
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.FileSystem;
@@ -767,6 +760,24 @@ public class HTTPExamples {
     });
   }
 
+  public void exampleClientComposition03_(HttpClient client) throws Exception {
+
+    Future<JsonObject> future = client
+      .request(HttpMethod.GET, "some-uri")
+      .compose(request -> request
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK.and(HttpResponseExpectation.JSON))
+        .compose(response -> response
+          .body()
+          .map(buffer -> buffer.toJsonObject())));
+    // Listen to the composed final json result
+    future.onSuccess(json -> {
+      System.out.println("Received json result " + json);
+    }).onFailure(err -> {
+      System.out.println("Something went wrong " + err.getMessage());
+    });
+  }
+
   public void exampleClientComposition04(HttpClient client, FileSystem fileSystem) throws Exception {
 
     Future<Void> future = client
@@ -789,6 +800,80 @@ public class HTTPExamples {
             return Future.failedFuture("Incorrect HTTP response");
           }
         }));
+  }
+
+  public void usingPredefinedExpectations(HttpClient client, RequestOptions options) {
+    Future<Buffer> fut = client
+      .request(options)
+      .compose(request -> request
+        .send()
+        .expecting(HttpResponseExpectation.SC_SUCCESS)
+        .compose(response -> response.body()));
+  }
+
+  public void usingPredicates(HttpClient client) {
+
+    // Check CORS header allowing to do POST
+    HttpResponseExpectation methodsPredicate =
+      resp -> {
+        String methods = resp.getHeader("Access-Control-Allow-Methods");
+        return methods != null && methods.contains("POST");
+      };
+
+    // Send pre-flight CORS request
+    client
+      .request(new RequestOptions()
+        .setMethod(HttpMethod.OPTIONS)
+        .setPort(8080)
+        .setHost("myserver.mycompany.com")
+        .setURI("/some-uri")
+        .putHeader("Origin", "Server-b.com")
+        .putHeader("Access-Control-Request-Method", "POST"))
+      .compose(request -> request
+        .send()
+        .expecting(methodsPredicate))
+      .onSuccess(res -> {
+        // Process the POST request now
+      })
+      .onFailure(err ->
+        System.out.println("Something went wrong " + err.getMessage()));
+  }
+
+  public void usingSpecificStatus(HttpClient client, RequestOptions options) {
+    client
+      .request(options)
+      .compose(request -> request
+        .send()
+        .expecting(HttpResponseExpectation.status(200, 202)))
+      .onSuccess(res -> {
+        // ....
+      });
+  }
+
+  public void usingSpecificContentType(HttpClient client, RequestOptions options) {
+    client
+      .request(options)
+      .compose(request -> request
+        .send()
+        .expecting(HttpResponseExpectation.contentType("some/content-type")))
+      .onSuccess(res -> {
+        // ....
+      });
+  }
+
+  public void expectationCustomError() {
+    Expectation<HttpResponseHead> expectation = HttpResponseExpectation.SC_SUCCESS
+      .wrappingFailure((resp, err) -> new MyCustomException(resp.statusCode(), err.getMessage()));
+  }
+
+  private static class MyCustomException extends Exception {
+
+    private final int code;
+
+    public MyCustomException(int code, String message) {
+      super(message);
+      this.code = code;
+    }
   }
 
   public void exampleFollowRedirect01(HttpClient client) {

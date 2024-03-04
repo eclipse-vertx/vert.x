@@ -11,11 +11,11 @@
 
 package io.vertx.core.impl.future;
 
-import io.netty.channel.EventLoop;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import io.netty.util.concurrent.OrderedEventExecutor;
 import io.netty.util.concurrent.ScheduledFuture;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Expectation;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.impl.ContextInternal;
@@ -135,6 +135,13 @@ abstract class FutureBase<T> implements FutureInternal<T> {
     FixedOtherwise<T> operation = new FixedOtherwise<>(context, value);
     addListener(operation);
     return operation;
+  }
+
+  @Override
+  public Future<T> expecting(Expectation<? super T> expectation) {
+    Expect<T> expect = new Expect<>(context, expectation);
+    addListener(expect);
+    return expect;
   }
 
   @Override

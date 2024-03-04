@@ -556,6 +556,26 @@ public interface Future<T> extends AsyncResult<T> {
   }
 
   /**
+   * Guard the control flow of this future with an expectation.
+   * <p/>
+   * When the future is completed with a success, the {@code expectation} is called with the result, when the expectation
+   * returns {@code false} the returned future is failed, otherwise the future is completed with the same result.
+   * <p/>
+   * Expectations are usually lambda expressions:
+   * <pre>
+   * return future.expecting(response -> response.statusCode() == 200);
+   * </pre>
+   * {@link Expectation} instances can also be used:
+   * <pre>
+   * future = future.expecting(HttpResponseExpectation.SC_OK);
+   * </pre>
+   *
+   * @param expectation the expectation
+   * @return a future succeeded with the result or failed when the expectation returns false
+   */
+  Future<T> expecting(Expectation<? super T> expectation);
+
+  /**
    * Returns a future succeeded or failed with the outcome of this future when it happens before the timeout fires. When
    * the timeout fires before, the future is failed with a {@link java.util.concurrent.TimeoutException}, guaranteeing
    * the returned future to complete within the specified {@code delay}.

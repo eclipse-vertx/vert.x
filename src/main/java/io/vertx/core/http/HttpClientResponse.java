@@ -35,7 +35,7 @@ import java.util.List;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface HttpClientResponse extends ReadStream<Buffer> {
+public interface HttpClientResponse extends ReadStream<Buffer>, HttpResponseHead {
 
   @Override
   HttpClientResponse fetch(long amount);
@@ -62,44 +62,6 @@ public interface HttpClientResponse extends ReadStream<Buffer> {
   NetSocket netSocket();
 
   /**
-   * @return the version of the response
-   */
-  HttpVersion version();
-
-  /**
-   * @return the status code of the response
-   */
-  int statusCode();
-
-  /**
-   * @return the status message of the response
-   */
-  String statusMessage();
-
-  /**
-   * @return the headers
-   */
-  @CacheReturn
-  MultiMap headers();
-
-  /**
-   * Return the first header value with the specified name
-   *
-   * @param headerName  the header name
-   * @return the header value
-   */
-  @Nullable String getHeader(String headerName);
-
-  /**
-   * Return the first header value with the specified name
-   *
-   * @param headerName  the header name
-   * @return the header value
-   */
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  String getHeader(CharSequence headerName);
-
-  /**
    * Return the first trailer value with the specified name
    *
    * @param trailerName  the trailer name
@@ -112,12 +74,6 @@ public interface HttpClientResponse extends ReadStream<Buffer> {
    */
   @CacheReturn
   MultiMap trailers();
-
-  /**
-   * @return the Set-Cookie headers (including trailers)
-   */
-  @CacheReturn
-  List<String> cookies();
 
   /**
    * Convenience method for receiving the entire request body in one piece.
