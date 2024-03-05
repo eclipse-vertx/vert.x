@@ -24,7 +24,6 @@ import io.vertx.core.http.impl.*;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.impl.transports.JDKTransport;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
@@ -5510,16 +5509,31 @@ public class Http1xTest extends HttpTest {
 
   private void doTestCanUpgradeToWebSocket(UnaryOperator<RequestOptions> config, boolean shouldSucceed) throws Exception {
     server.requestHandler(req -> {
-      HttpServerResponse serverResponse = req.response();
-      int statusCode = HttpUtils.canUpgradeToWebSocket(req) ? 200 : 500;
-      serverResponse.setStatusCode(statusCode);
-      serverResponse.end();
+      HttpServerResponse resp = req.response();
+      if (HttpUtils.canUpgradeToWebSocket(req)) {
+        resp.headers()
+          .set(HttpHeaders.CONNECTION, HttpHeaders.UPGRADE)
+          .set(HttpHeaders.UPGRADE, HttpHeaders.WEBSOCKET);
+        req.toNetSocket().onComplete(onSuccess(sock -> {
+          sock.write(Buffer.buffer("foo"));
+        }));
+      } else {
+        resp.setStatusCode(500).end();
+      }
     });
     startServer(testAddress);
     client.request(config.apply(new RequestOptions(requestOptions))).onComplete(onSuccess(req -> {
       req.response().onComplete(onSuccess(resp -> {
-        assertEquals(shouldSucceed ? 200 : 500, resp.statusCode());
-        testComplete();
+        if (shouldSucceed) {
+          assertEquals(101, resp.statusCode());
+          resp.netSocket().handler(buffer -> {
+            assertEquals("foo", buffer.toString());
+            testComplete();
+          });
+        } else {
+          assertEquals(500, resp.statusCode());
+          testComplete();
+        }
       }));
       req.send();
     }));
