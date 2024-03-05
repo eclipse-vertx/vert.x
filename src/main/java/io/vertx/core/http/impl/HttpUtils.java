@@ -975,7 +975,19 @@ public final class HttpUtils {
   }
 
   static boolean isConnectOrUpgrade(io.vertx.core.http.HttpMethod method, MultiMap headers) {
-    return method == io.vertx.core.http.HttpMethod.CONNECT || (method == io.vertx.core.http.HttpMethod.GET && headers.contains(io.vertx.core.http.HttpHeaders.CONNECTION, io.vertx.core.http.HttpHeaders.UPGRADE, true));
+    if (method == io.vertx.core.http.HttpMethod.CONNECT) {
+      return true;
+    }
+    if (method == io.vertx.core.http.HttpMethod.GET) {
+      for (String connection : headers.getAll(io.vertx.core.http.HttpHeaders.CONNECTION)) {
+        // Firefox doesn't send a normal 'Connection: Upgrade' header for WebSockets.
+        // Instead, it sends: 'Connection: keep-alive, Upgrade'.
+        if (AsciiString.containsIgnoreCase(connection, io.vertx.core.http.HttpHeaders.UPGRADE)) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   static boolean isKeepAlive(HttpRequest request) {
@@ -998,9 +1010,9 @@ public final class HttpUtils {
     }
     MultiMap headers = req.headers();
     for (String connection : headers.getAll(io.vertx.core.http.HttpHeaders.CONNECTION)) {
-      if (connection.toLowerCase().contains(io.vertx.core.http.HttpHeaders.UPGRADE)) {
+      if (AsciiString.containsIgnoreCase(connection, io.vertx.core.http.HttpHeaders.UPGRADE)) {
         for (String upgrade : headers.getAll(io.vertx.core.http.HttpHeaders.UPGRADE)) {
-          if (upgrade.toLowerCase().contains(io.vertx.core.http.HttpHeaders.WEBSOCKET)) {
+          if (AsciiString.containsIgnoreCase(upgrade, io.vertx.core.http.HttpHeaders.WEBSOCKET)) {
             return true;
           }
         }
