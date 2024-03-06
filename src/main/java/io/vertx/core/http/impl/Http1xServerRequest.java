@@ -567,32 +567,45 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
 
   void handleEnd() {
     InboundBuffer<Object> queue;
+    HttpEventHandler handler = null;
     synchronized (conn) {
       ended = true;
       queue = pending;
+      if (queue == null) {
+        handler = onRequestComplete();
+      }
     }
     if (queue != null) {
       queue.write(InboundBuffer.END_SENTINEL);
     } else {
-      onEnd();
+      handleEnd(handler);
     }
   }
 
-  private void onEnd() {
+  private HttpEventHandler onRequestComplete() {
+    assert Thread.holdsLock(conn);
     if (METRICS_ENABLED) {
       reportRequestComplete();
     }
-    HttpEventHandler handler;
-    synchronized (conn) {
-      if (decoder != null) {
-        endDecode();
-      }
-      handler = eventHandler;
+    if (decoder != null) {
+      endDecode();
     }
+    return eventHandler;
+  }
+
+  private void handleEnd(HttpEventHandler handler) {
     // If there have been uploads then we let the last one call the end handler once any fileuploads are complete
     if (handler != null) {
       handler.handleEnd();
     }
+  }
+
+  private void onEnd() {
+    HttpEventHandler handler;
+    synchronized (conn) {
+      handler = onRequestComplete();
+    }
+    handleEnd(handler);
   }
 
   private void reportRequestComplete() {
