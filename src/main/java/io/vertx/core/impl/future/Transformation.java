@@ -23,12 +23,10 @@ import java.util.function.Function;
  */
 class Transformation<T, U> extends Operation<U> implements Listener<T> {
 
-  private final Future<T> future;
   private final Function<AsyncResult<T>, Future<U>> mapper;
 
-  Transformation(ContextInternal context, Future<T> future, Function<AsyncResult<T>, Future<U>> mapper) {
+  Transformation(ContextInternal context, Function<AsyncResult<T>, Future<U>> mapper) {
     super(context);
-    this.future = future;
     this.mapper = mapper;
   }
 
@@ -36,7 +34,7 @@ class Transformation<T, U> extends Operation<U> implements Listener<T> {
   public void onSuccess(T value) {
     FutureInternal<U> future;
     try {
-      future = (FutureInternal<U>) mapper.apply(this.future);
+      future = (FutureInternal<U>) mapper.apply(Future.succeededFuture(value));
     } catch (Throwable e) {
       tryFail(e);
       return;
@@ -48,7 +46,7 @@ class Transformation<T, U> extends Operation<U> implements Listener<T> {
   public void onFailure(Throwable failure) {
     FutureInternal<U> future;
     try {
-      future = (FutureInternal<U>) mapper.apply(this.future);
+      future = (FutureInternal<U>) mapper.apply(Future.failedFuture(failure));
     } catch (Throwable e) {
       tryFail(e);
       return;

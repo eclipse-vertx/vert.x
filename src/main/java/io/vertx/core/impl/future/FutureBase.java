@@ -94,7 +94,7 @@ abstract class FutureBase<T> implements FutureInternal<T> {
   @Override
   public <U> Future<U> transform(Function<AsyncResult<T>, Future<U>> mapper) {
     Objects.requireNonNull(mapper, "No null mapper accepted");
-    Transformation<T, U> operation = new Transformation<>(context, this, mapper);
+    Transformation<T, U> operation = new Transformation<>(context, mapper);
     addListener(operation);
     return operation;
   }

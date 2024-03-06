@@ -311,7 +311,10 @@ public class FutureTest extends FutureTestBase {
     Promise<String> p3 = Promise.promise();
     Future<String> f3 = p3.future();
     Future<Integer> f4 = f3.transform(ar -> {
-      assertSame(f3, ar);
+      assertSame(f3.succeeded(), ar.succeeded());
+      assertSame(f3.failed(), ar.failed());
+      assertSame(f3.result(), ar.result());
+      assertSame(f3.cause(), ar.cause());
       cnt.incrementAndGet();
       return c;
     });
@@ -341,7 +344,10 @@ public class FutureTest extends FutureTestBase {
     Promise<String> p3 = Promise.promise();
     Future<String> f3 = p3.future();
     Future<Integer> f4 = f3.transform(ar -> {
-      assertSame(f3, ar);
+      assertSame(f3.succeeded(), ar.succeeded());
+      assertSame(f3.failed(), ar.failed());
+      assertSame(f3.result(), ar.result());
+      assertSame(f3.cause(), ar.cause());
       cnt.incrementAndGet();
       return c;
     });
