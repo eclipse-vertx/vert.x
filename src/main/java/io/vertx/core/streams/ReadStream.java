@@ -19,6 +19,9 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.streams.impl.PipeImpl;
+import io.vertx.core.streams.impl.ReadStreamMapping;
+
+import java.util.function.Function;
 
 /**
  * Represents a stream of items that can be read from.
@@ -121,5 +124,17 @@ public interface ReadStream<T> extends StreamBase {
    */
   default Future<Void> pipeTo(WriteStream<T> dst) {
     return new PipeImpl<>(this).to(dst);
+  }
+
+  /**
+   * Apply a {@code mapper} function on this read stream.
+   *
+   * When the read stream has data coming, The {@code mapper} is call to transform other data to adapter handler.
+   *
+   * @param mapper the function mapping the read stream
+   * @return the mapped read stream
+   */
+  default <R> ReadStream<R> map(Function<T, R> mapper) {
+    return new ReadStreamMapping<>(this, mapper);
   }
 }

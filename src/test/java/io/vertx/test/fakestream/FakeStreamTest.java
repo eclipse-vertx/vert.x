@@ -13,6 +13,8 @@ package io.vertx.test.fakestream;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.streams.ReadStream;
+import io.vertx.core.streams.WriteStream;
 import io.vertx.test.core.AsyncTestBase;
 import org.junit.Test;
 
@@ -23,6 +25,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -211,4 +214,12 @@ public class FakeStreamTest extends AsyncTestBase {
     assertTrue(ack.failed());
     assertEquals(failure, ack.cause());
   }
+
+  @Test
+  public void testReadStreamMap() {
+    ReadStream<String> readStream = stream.map(num -> num + "");
+    readStream.handler(str -> assertEquals("1", str));
+    stream.emit(1);
+  }
+
 }
