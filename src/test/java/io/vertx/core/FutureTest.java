@@ -226,6 +226,41 @@ public class FutureTest extends FutureTestBase {
     assertTrue(r1.get());
     assertTrue(r2.get());
   }
+  
+  @Test
+  public void testComposeSupplier() {
+    Promise<Integer> p = Promise.promise();
+    Future<Integer> f = p.future();
+    Promise<String> p2 = Promise.promise();
+    Future<String> c = p2.future();
+    Future<String> composed = f.compose(() -> {
+      return c;
+    });
+    Checker<String> checker = new Checker<>(composed);
+    checker.assertNotCompleted();
+    p.complete(3);
+    checker.assertNotCompleted();
+    p2.complete("DONE");
+    checker.assertSucceeded("DONE");
+  }
+  
+  @Test
+  public void testComposeSupplierFailed() {
+    Throwable cause = new Throwable();
+    Promise<Integer> p = Promise.promise();
+    Future<Integer> f = p.future();
+    Promise<String> p2 = Promise.promise();
+    Future<String> c = p2.future();
+    Future<String> composed = f.compose(() -> {
+      return c;
+    });
+    Checker<String> checker = new Checker<>(composed);
+    checker.assertNotCompleted();
+    p.complete(3);
+    checker.assertNotCompleted();
+    p2.fail(cause);
+    checker.assertFailed(cause);
+  }
 
   @Test
   public void testComposeSuccessToSuccess() {
