@@ -40,7 +40,7 @@ class ServerChannelLoadBalancer extends ChannelInitializer<Channel> {
 
   ServerChannelLoadBalancer(EventExecutor executor) {
     this.workers = new VertxEventLoopGroup();
-    this.channelGroup = new DefaultChannelGroup(executor);
+    this.channelGroup = new DefaultChannelGroup(executor, true);
   }
 
   public VertxEventLoopGroup workers() {
