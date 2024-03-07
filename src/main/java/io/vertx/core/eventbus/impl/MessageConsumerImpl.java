@@ -43,7 +43,6 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
   private Queue<Message<T>> pending = new ArrayDeque<>(8);
   private long demand = Long.MAX_VALUE;
   private Promise<Void> result;
-  private boolean registered;
 
   MessageConsumerImpl(ContextInternal context, EventBusImpl eventBus, String address, boolean localOnly) {
     super(context, eventBus, address, false);
@@ -85,6 +84,10 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
     return maxBufferedMessages;
   }
 
+  public synchronized int getPendingQueueSize() {
+    return pending.size();
+  }
+
   @Override
   public synchronized Future<Void> completion() {
     return result.future();
@@ -92,7 +95,6 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
 
   @Override
   public synchronized Future<Void> unregister() {
-    handler = null;
     if (endHandler != null) {
       endHandler.handle(null);
     }
@@ -108,20 +110,21 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
       }
     }
     discardHandler = null;
-    Future<Void> fut = super.unregister();
-    if (registered) {
-      registered = false;
-      Promise<Void> res = result; // Alias reference because result can become null when the onComplete callback executes
+    boolean wasRegisteredOrRegistering = isRegistered();
+
+    Future<Void> fut = super.unregister();// ~ handler = null
+    if (wasRegisteredOrRegistering) {
+      Promise<Void> res = result; // Alias reference because result can be changed after onComplete callback executes
       fut.onComplete(ar -> res.tryFail("Consumer unregistered before registration completed"));
-      result = context.promise();
+      result = context.promise();// old result is-Complete or will be-Complete shortly
     }
     return fut;
   }
 
+  @Override
   protected boolean doReceive(Message<T> message) {
-    Handler<Message<T>> theHandler;
     synchronized (this) {
-      if (handler == null) {
+      if (handler == null || !isRegistered()) {
         return false;
       }
       if (demand == 0L) {
@@ -145,25 +148,21 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
         if (demand != Long.MAX_VALUE) {
           demand--;
         }
-        theHandler = handler;
       }
     }
-    deliver(theHandler, message);
+    deliver(message);
     return true;
   }
 
   @Override
-  protected void dispatch(Message<T> msg, ContextInternal context, Handler<Message<T>> handler) {
-    if (handler == null) {
-      throw new NullPointerException();
-    }
+  protected void dispatch(Message<T> msg, ContextInternal context) {
     context.dispatch(msg, handler);
   }
 
-  private void deliver(Handler<Message<T>> theHandler, Message<T> message) {
+  private void deliver(Message<T> message) {
     // Handle the message outside the sync block
     // https://bugs.eclipse.org/bugs/show_bug.cgi?id=473714
-    dispatch(theHandler, message, context.duplicate());
+    dispatchIDC(message, context.duplicate());
     checkNextTick();
   }
 
@@ -172,7 +171,6 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
     if (!pending.isEmpty() && demand > 0L) {
       context.nettyEventLoop().execute(() -> {
         Message<T> message;
-        Handler<Message<T>> theHandler;
         synchronized (MessageConsumerImpl.this) {
           if (demand == 0L || (message = pending.poll()) == null) {
             return;
@@ -180,9 +178,8 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
           if (demand != Long.MAX_VALUE) {
             demand--;
           }
-          theHandler = handler;
         }
-        deliver(theHandler, message);
+        deliver(message);
       });
     }
   }
@@ -198,12 +195,11 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
   public synchronized MessageConsumer<T> handler(Handler<Message<T>> h) {
     if (h != null) {
       synchronized (this) {
-        handler = h;
-        if (!registered) {
-          registered = true;
+        handler = h; // set or update
+        if (!isRegistered()) {
           Promise<Void> p = result;
           Promise<Void> registration = context.promise();
-          register(true, localOnly, registration);
+          register(true, localOnly, registration);// registered = true
           registration.future().onComplete(ar -> {
             if (ar.succeeded()) {
               p.tryComplete();
@@ -237,9 +233,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
 
   @Override
   public synchronized MessageConsumer<T> fetch(long amount) {
-    if (amount < 0) {
-      throw new IllegalArgumentException();
-    }
+    Arguments.require(amount >= 0, "fetch(amount) must be positive, but: "+amount);
     demand += amount;
     if (demand < 0L) {
       demand = Long.MAX_VALUE;
