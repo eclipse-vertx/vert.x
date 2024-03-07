@@ -13,6 +13,7 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -161,4 +162,11 @@ public class Http1xUpgradeToH2CHandler extends ChannelInboundHandlerAdapter {
       ctx.fireUserEventTriggered(evt);
     }
   }
+
+  @Override
+  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    Channel channel = ctx.channel();
+    channel.close();
+  }
+
 }
