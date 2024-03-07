@@ -15,7 +15,6 @@ package io.vertx.core.buffer;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
-import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
@@ -110,23 +109,30 @@ public interface Buffer extends ClusterSerializable, Shareable {
   String toString(Charset enc);
 
   /**
-   * Returns a Json object representation of the Buffer.
+   * Returns a {@link JsonObject} representation of this buffer's content.
    */
   JsonObject toJsonObject();
 
   /**
-   * Returns a Json array representation of the Buffer.
+   * Returns a {@link JsonArray} representation of this buffer's content.
    */
   JsonArray toJsonArray();
 
   /**
-   * Returns a Json representation of the Buffer.
+   * Returns a Json value representation of this buffer's content.
    *
-   * @return a JSON element which can be a {@link JsonArray}, {@link JsonObject}, {@link String}, ...etc if the buffer contains an array, object, string, ...etc
+   * @return a Json value which can be a {@link JsonArray}, {@link JsonObject}, {@link String}, ... if the buffer contains an array, object, string, ...etc
    */
-  @GenIgnore
-  default Object toJson() {
+  default Object toJsonValue() {
     return Json.CODEC.fromBuffer(this, Object.class);
+  }
+
+  /**
+   * @deprecated instead use {@link #toJsonValue()}
+   */
+  @Deprecated
+  default Object toJson() {
+    return toJsonValue();
   }
 
   /**
