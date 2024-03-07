@@ -777,6 +777,46 @@ public class JsonArrayTest {
   }
 
   @Test
+  public void testStringStream() {
+    jsonArray.add("foo");
+    jsonArray.add("bar");
+    jsonArray.add("eek");
+    assertEquals(9, jsonArray.<String>stream().mapToInt(String::length).sum());
+  }
+
+  @Test
+  public void testJsonObjectStream() {
+    jsonArray.add(new JsonObject().put("price", 123));
+    jsonArray.add(new JsonObject().put("price", 456));
+    jsonArray.add(new JsonObject().put("price", 789));
+    assertEquals(1368, jsonArray.<JsonObject>stream().mapToInt(i -> i.getInteger("price")).sum());
+  }
+
+  @Test
+  public void testJsonArrayStream() {
+    jsonArray.add(new JsonArray(Arrays.asList(25, 23, 42, 12)));
+    jsonArray.add(new JsonArray(Arrays.asList(17, 19, 12, 31)));
+    jsonArray.add(new JsonArray(Arrays.asList(32, 89, 52, 42)));
+    IntSummaryStatistics stats = jsonArray.<JsonArray>stream()
+      .flatMap(JsonArray::<Integer>stream).mapToInt(i -> i).summaryStatistics();
+    assertEquals(12, stats.getMin());
+    assertEquals(89, stats.getMax());
+    assertEquals(12, stats.getCount());
+  }
+
+  @Test
+  public void testGenericStreamClassCastException() {
+    jsonArray.add(1);
+    jsonArray.add(new JsonObject());
+    try {
+      jsonArray.<Integer>stream().mapToInt(i -> i).sum();
+      fail();
+    } catch(ClassCastException ex) {
+      // OK
+    }
+  }
+
+  @Test
   public void testCopy() {
     jsonArray.add("foo");
     jsonArray.add(123);
