@@ -36,7 +36,7 @@ public class JsonObjectMessageCodec implements MessageCodec<JsonObject, JsonObje
 
   @Override
   public JsonObject transform(JsonObject jsonObject) {
-    return jsonObject.copy();
+    return new JsonObject(jsonObject.toBuffer());
   }
 
   @Override
