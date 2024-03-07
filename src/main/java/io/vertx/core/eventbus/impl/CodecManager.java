@@ -168,7 +168,7 @@ public class CodecManager {
   }
 
   private void checkSystemCodec(MessageCodec codec) {
-    if (codec.systemCodecID() != -1) {
+    if (codec.systemCodecID() != MessageCodec.USER_CODEC_ID) {
       throw new IllegalArgumentException("Can't register a system codec");
     }
   }

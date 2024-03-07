@@ -36,6 +36,11 @@ import io.vertx.core.buffer.Buffer;
 public interface MessageCodec<S, R> {
 
   /**
+   * The system codec id to use with a custom user implementation.
+   */
+  byte USER_CODEC_ID = -1;
+
+  /**
    * Called by Vert.x when marshalling a message to the wire.
    *
    * @param buffer  the message should be written into this buffer
@@ -74,5 +79,7 @@ public interface MessageCodec<S, R> {
    *
    * @return -1 for a user codec.
    */
-  byte systemCodecID();
+  default byte systemCodecID() {
+    return USER_CODEC_ID;
+  }
 }
