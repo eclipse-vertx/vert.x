@@ -54,6 +54,10 @@
     <vertx.testDomainSockets>false</vertx.testDomainSockets>
     <jar.manifest>${project.basedir}/src/main/resources/META-INF/MANIFEST.MF</jar.manifest>
     <maven.compiler.release>11</maven.compiler.release>
+    <project.build.outputTimestamp>1000000</project.build.outputTimestamp>
+    <maven.jar.plugin.version>3.3.0</maven.jar.plugin.version>
+    <maven.source.plugin.version>3.3.0</maven.source.plugin.version>
+    <maven.assembly.plugin.version>3.6.0</maven.assembly.plugin.version>
   </properties>
 
   <dependencyManagement>
