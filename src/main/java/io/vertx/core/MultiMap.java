@@ -24,6 +24,8 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 /**
  * This class represents a MultiMap of String keys to a List of String values.
@@ -57,6 +59,59 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
    * @return The first header value or {@code null} if there is no such entry
    */
   @Nullable String get(String name);
+
+  /**
+   * Returns the value of with the specified name, or
+   * {@code defaultValue} if this multimap contains no mapping for the key.
+   * If there are more than one values for the specified name, the first value is returned.
+   *
+   * @param name         The name of the header to search
+   * @param defaultValue The default mapping of the key
+   * @return The first header value or {@code defaultValue} if there is no such entry
+   */
+  default String get(String name, String defaultValue) {
+    @Nullable String value = get(name);
+    if (value == null) {
+      value = defaultValue;
+    }
+    return value;
+  }
+
+  /**
+   * Returns the value of with the specified name, or apply
+   * {@code defaultValueFunction} if this multimap contains no mapping for the key.
+   * If there are more than one values for the specified name, the first value is returned.
+   *
+   * @param name                 The name of the header to search
+   * @param defaultValueFunction The function to get the default mapping of the key
+   * @return The first header value or {@code defaultValue} if there is no such entry
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  default String get(String name, UnaryOperator<String> defaultValueFunction) {
+    @Nullable String value = get(name);
+    if (value == null) {
+      value = defaultValueFunction.apply(name);
+    }
+    return value;
+  }
+
+  /**
+   * Returns the value of with the specified name, or call
+   * {@code defaultValueSupplier#get} if this multimap contains no mapping for the key.
+   * If there are more than one values for the specified name, the first value is returned.
+   *
+   * @param name                 The name of the header to search
+   * @param defaultValueSupplier The supplier to get the default mapping of the key
+   * @return The first header value or {@code defaultValue} if there is no such entry
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  default String get(String name, Supplier<String> defaultValueSupplier) {
+    @Nullable String value = get(name);
+    if (value == null) {
+      value = defaultValueSupplier.get();
+    }
+    return value;
+  }
 
   /**
    * Returns the values with the specified name
