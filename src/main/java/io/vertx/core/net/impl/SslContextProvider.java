@@ -70,14 +70,11 @@ public class SslContextProvider {
                                        KeyManagerFactory keyManagerFactory,
                                        TrustManager[] trustManagers,
                                        String serverName,
-                                       boolean useAlpn,
-                                       boolean trustAll) {
+                                       boolean useAlpn) {
     if (keyManagerFactory == null) {
       keyManagerFactory = defaultKeyManagerFactory();
     }
-    if (trustAll) {
-      trustManagers = SslContextProvider.createTrustAllManager();
-    } else if (trustManagers == null) {
+    if (trustManagers == null) {
       trustManagers = defaultTrustManagers();
     }
     if (server) {
@@ -88,7 +85,7 @@ public class SslContextProvider {
   }
 
   public VertxSslContext createContext(boolean server, boolean useAlpn) {
-    return createContext(server, defaultKeyManagerFactory(), defaultTrustManagers(), null, useAlpn, false);
+    return createContext(server, defaultKeyManagerFactory(), defaultTrustManagers(), null, useAlpn);
   }
 
   public VertxSslContext createClientContext(
@@ -243,26 +240,6 @@ public class SslContextProvider {
       }
     }
     return trustMgrs;
-  }
-
-  private static final TrustManager TRUST_ALL_MANAGER = new X509TrustManager() {
-    @Override
-    public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-    }
-
-    @Override
-    public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-    }
-
-    @Override
-    public X509Certificate[] getAcceptedIssuers() {
-      return new X509Certificate[0];
-    }
-  };
-
-  // Create a TrustManager which trusts everything
-  private static TrustManager[] createTrustAllManager() {
-    return new TrustManager[] { TRUST_ALL_MANAGER };
   }
 
   public void configureEngine(SSLEngine engine, Set<String> enabledProtocols, String serverName, boolean client) {

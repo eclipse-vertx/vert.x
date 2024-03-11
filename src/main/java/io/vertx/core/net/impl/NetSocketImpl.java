@@ -321,7 +321,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
             ChannelHandler sslHandler;
             if (sslOptions instanceof ClientSSLOptions) {
               ClientSSLOptions clientSSLOptions = (ClientSSLOptions) sslOptions;
-              sslHandler = sslChannelProvider.createClientSslHandler(remoteAddress, serverName, sslOptions.isUseAlpn(), clientSSLOptions.isTrustAll(), clientSSLOptions.getSslHandshakeTimeout(), clientSSLOptions.getSslHandshakeTimeoutUnit());
+              sslHandler = sslChannelProvider.createClientSslHandler(remoteAddress, serverName, sslOptions.isUseAlpn(), clientSSLOptions.getSslHandshakeTimeout(), clientSSLOptions.getSslHandshakeTimeoutUnit());
             } else {
               sslHandler = sslChannelProvider.createServerHandler(sslOptions.isUseAlpn(), sslOptions.getSslHandshakeTimeout(), sslOptions.getSslHandshakeTimeoutUnit());
             }

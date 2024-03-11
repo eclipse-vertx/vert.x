@@ -53,7 +53,7 @@ public class ClientSSLOptions extends SSLOptions {
     super(other);
 
     hostnameVerificationAlgorithm = other.getHostnameVerificationAlgorithm();
-    trustAll = other.isTrustAll();
+    trustAll = other.trustAll;
   }
 
   /**
