@@ -61,25 +61,25 @@ public class SslChannelProvider {
     return sslContextProvider;
   }
 
-  public SslContext sslClientContext(String serverName, boolean useAlpn, boolean trustAll) {
+  public SslContext sslClientContext(String serverName, boolean useAlpn) {
     try {
-      return sslContext(serverName, useAlpn, false, trustAll);
+      return sslContext(serverName, useAlpn, false);
     } catch (Exception e) {
       throw new VertxException(e);
     }
   }
 
-  public SslContext sslContext(String serverName, boolean useAlpn, boolean server, boolean trustAll) throws Exception {
+  public SslContext sslContext(String serverName, boolean useAlpn, boolean server) throws Exception {
     int idx = idx(useAlpn);
     if (serverName != null) {
       KeyManagerFactory kmf = sslContextProvider.resolveKeyManagerFactory(serverName);
-      TrustManager[] trustManagers = trustAll ? null : sslContextProvider.resolveTrustManagers(serverName);
+      TrustManager[] trustManagers = sslContextProvider.resolveTrustManagers(serverName);
       if (kmf != null || trustManagers != null || !server) {
-        return sslContextMaps[idx].computeIfAbsent(serverName, s -> sslContextProvider.createContext(server, kmf, trustManagers, s, useAlpn, trustAll));
+        return sslContextMaps[idx].computeIfAbsent(serverName, s -> sslContextProvider.createContext(server, kmf, trustManagers, s, useAlpn));
       }
     }
     if (sslContexts[idx] == null) {
-      SslContext context = sslContextProvider.createContext(server, null, null, serverName, useAlpn, trustAll);
+      SslContext context = sslContextProvider.createContext(server, null, null, serverName, useAlpn);
       sslContexts[idx] = context;
     }
     return sslContexts[idx];
@@ -87,7 +87,7 @@ public class SslChannelProvider {
 
   public SslContext sslServerContext(boolean useAlpn) {
     try {
-      return sslContext(null, useAlpn, true, false);
+      return sslContext(null, useAlpn, true);
     } catch (Exception e) {
       throw new VertxException(e);
     }
@@ -103,7 +103,7 @@ public class SslChannelProvider {
       workerPool.execute(() -> {
         SslContext sslContext;
         try {
-          sslContext = sslContext(serverName, useAlpn, true, false);
+          sslContext = sslContext(serverName, useAlpn, true);
         } catch (Exception e) {
           promise.setFailure(e);
           return;
@@ -114,8 +114,8 @@ public class SslChannelProvider {
     };
   }
 
-  public SslHandler createClientSslHandler(SocketAddress peerAddress, String serverName, boolean useAlpn, boolean trustAll, long sslHandshakeTimeout, TimeUnit sslHandshakeTimeoutUnit) {
-    SslContext sslContext = sslClientContext(serverName, useAlpn, trustAll);
+  public SslHandler createClientSslHandler(SocketAddress peerAddress, String serverName, boolean useAlpn, long sslHandshakeTimeout, TimeUnit sslHandshakeTimeoutUnit) {
+    SslContext sslContext = sslClientContext(serverName, useAlpn);
     SslHandler sslHandler;
     Executor delegatedTaskExec = useWorkerPool ? workerPool : ImmediateExecutor.INSTANCE;
     if (peerAddress != null && peerAddress.isInetSocket()) {

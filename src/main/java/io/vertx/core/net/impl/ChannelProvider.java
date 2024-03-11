@@ -30,7 +30,6 @@ import io.vertx.core.net.SocketAddress;
 import javax.net.ssl.SSLHandshakeException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.concurrent.TimeUnit;
 
 /**
  * The logic for connecting to an host, this implementations performs a connection
@@ -108,7 +107,7 @@ public final class ChannelProvider {
 
   private void initSSL(Handler<Channel> handler, SocketAddress peerAddress, String serverName, boolean ssl, ClientSSLOptions sslOptions, Channel ch, Promise<Channel> channelHandler) {
     if (ssl) {
-      SslHandler sslHandler = sslContextProvider.createClientSslHandler(peerAddress, serverName, sslOptions.isUseAlpn(), sslOptions.isTrustAll(), sslOptions.getSslHandshakeTimeout(), sslOptions.getSslHandshakeTimeoutUnit());
+      SslHandler sslHandler = sslContextProvider.createClientSslHandler(peerAddress, serverName, sslOptions.isUseAlpn(), sslOptions.getSslHandshakeTimeout(), sslOptions.getSslHandshakeTimeoutUnit());
       ChannelPipeline pipeline = ch.pipeline();
       pipeline.addLast("ssl", sslHandler);
       pipeline.addLast(new ChannelInboundHandlerAdapter() {

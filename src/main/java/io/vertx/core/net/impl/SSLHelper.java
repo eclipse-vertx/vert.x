@@ -196,8 +196,18 @@ public class SSLHelper {
       useWorker));
   }
 
+  private static TrustOptions trustOptionsOf(SSLOptions sslOptions) {
+    if (sslOptions instanceof ClientSSLOptions) {
+      ClientSSLOptions clientSSLOptions = (ClientSSLOptions) sslOptions;
+      if (clientSSLOptions.isTrustAll()) {
+        return TrustAllOptions.INSTANCE;
+      }
+    }
+    return sslOptions.getTrustOptions();
+  }
+
   private Future<Config> buildConfig(SSLOptions sslOptions, boolean force, ContextInternal ctx) {
-    if (sslOptions.getTrustOptions() == null && sslOptions.getKeyCertOptions() == null) {
+    if (trustOptionsOf(sslOptions) == null && sslOptions.getKeyCertOptions() == null) {
       return ctx.succeededFuture(NULL_CONFIG);
     }
     Promise<Config> promise;
@@ -224,9 +234,10 @@ public class SSLHelper {
         keyManagerFactory = sslOptions.getKeyCertOptions().getKeyManagerFactory(ctx.owner());
         keyManagerFactoryMapper = sslOptions.getKeyCertOptions().keyManagerFactoryMapper(ctx.owner());
       }
-      if (sslOptions.getTrustOptions() != null) {
-        trustManagerFactory = sslOptions.getTrustOptions().getTrustManagerFactory(ctx.owner());
-        trustManagerMapper = sslOptions.getTrustOptions().trustManagerMapper(ctx.owner());
+      TrustOptions trustOptions = trustOptionsOf(sslOptions);
+      if (trustOptions != null) {
+        trustManagerFactory = trustOptions.getTrustManagerFactory(ctx.owner());
+        trustManagerMapper = trustOptions.trustManagerMapper(ctx.owner());
       }
       List<Buffer> tmp = new ArrayList<>();
       if (sslOptions.getCrlPaths() != null) {
@@ -270,7 +281,7 @@ public class SSLHelper {
     private final TrustOptions trustOptions;
     private final List<Buffer> crlValues;
     public ConfigKey(SSLOptions options) {
-      this(options.getKeyCertOptions(), options.getTrustOptions(), options.getCrlValues());
+      this(options.getKeyCertOptions(), trustOptionsOf(options), options.getCrlValues());
     }
     public ConfigKey(KeyCertOptions keyCertOptions, TrustOptions trustOptions, List<Buffer> crlValues) {
       this.keyCertOptions = keyCertOptions;
