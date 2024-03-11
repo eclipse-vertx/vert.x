@@ -14,7 +14,6 @@ package io.vertx.test.proxy;
 import java.net.UnknownHostException;
 import java.util.Base64;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -24,7 +23,6 @@ import io.vertx.core.http.*;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetClient;
-import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
 
 /**
@@ -53,6 +51,7 @@ public class HttpProxy extends TestProxyBase<HttpProxy> {
 
   private HttpServer server;
   private Map<HttpConnection, HttpClient> clientMap = new ConcurrentHashMap<>();
+  private NetClient client;
 
   private int error = 0;
 
@@ -74,6 +73,7 @@ public class HttpProxy extends TestProxyBase<HttpProxy> {
   public HttpProxy start(Vertx vertx) throws Exception {
     HttpServerOptions options = new HttpServerOptions();
     options.setHost("localhost").setPort(port);
+    client = vertx.createNetClient();
     server = vertx.createHttpServer(options);
     server.requestHandler(request -> {
       HttpMethod method = request.method();
@@ -113,9 +113,7 @@ public class HttpProxy extends TestProxyBase<HttpProxy> {
             request.response().setStatusCode(403).end("access to port denied");
             return;
           }
-          NetClientOptions netOptions = new NetClientOptions();
-          NetClient netClient = vertx.createNetClient(netOptions);
-          netClient.connect(port, host).onComplete(ar1 -> {
+          client.connect(port, host).onComplete(ar1 -> {
             if (ar1.succeeded()) {
               localAddresses.add(ar1.result().localAddress().toString());
               request.toNetSocket().onComplete(ar2 -> {
@@ -189,15 +187,11 @@ public class HttpProxy extends TestProxyBase<HttpProxy> {
         request.response().setStatusCode(405).end("method not supported");
       }
     });
-    CompletableFuture<Void> fut = new CompletableFuture<>();
-    server.listen().onComplete(ar -> {
-      if (ar.succeeded()) {
-        fut.complete(null);
-      } else {
-        fut.completeExceptionally(ar.cause());
-      }
-    });
-    fut.get(10, TimeUnit.SECONDS);
+    server
+      .listen()
+      .toCompletionStage()
+      .toCompletableFuture()
+      .get(10, TimeUnit.SECONDS);
     return this;
   }
 
@@ -211,6 +205,9 @@ public class HttpProxy extends TestProxyBase<HttpProxy> {
     if (server != null) {
       server.close();
       server = null;
+    }
+    if (client != null) {
+      client.close();
     }
   }
 

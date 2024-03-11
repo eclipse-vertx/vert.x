@@ -539,11 +539,12 @@ public class Http1xProxyTest extends HttpTestBase {
         ws.close();
       });
     });
+    startServer(SocketAddress.inetSocketAddress(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST));
     WebSocketClient client = vertx.createWebSocketClient(clientOptions);
-    server.listen(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST).onSuccess(s -> {
-      client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/").onSuccess(ws -> {
+    vertx.runOnContext(v -> {
+      client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/").onComplete(onSuccess(ws -> {
         ws.handler(buff -> {
-          ws.close().onComplete(onSuccess(v -> {
+          ws.close().onComplete(onSuccess(v2 -> {
             if (proxied) {
               assertNotNull("request did not go through proxy", proxy.getLastUri());
               if (clientOptions.getProxyOptions().getType() == ProxyType.HTTP) {
@@ -556,7 +557,7 @@ public class Http1xProxyTest extends HttpTestBase {
           }));
         });
         ws.write(Buffer.buffer("Hello world"));
-      });
+      }));
     });
     await();
   }
