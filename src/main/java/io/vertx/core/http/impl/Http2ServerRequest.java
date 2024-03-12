@@ -365,7 +365,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   public MultiMap params() {
     synchronized (stream.conn) {
       if (params == null) {
-        params = HttpUtils.params(uri(), paramsCharset);
+        params = HttpUtils.params(uri(), paramsCharset, stream.conn.options.getUriQuerySemicolonIsNormalChar());
       }
       return params;
     }

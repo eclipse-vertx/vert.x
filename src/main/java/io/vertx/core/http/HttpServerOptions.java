@@ -191,6 +191,11 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public static final TimeUnit DEFAULT_HTTP2_RST_FLOOD_WINDOW_DURATION_TIME_UNIT = TimeUnit.SECONDS;
 
+  /**
+   * Whether semicolon is treated as normal character in the URI query part, default = false
+   */
+  public static final boolean DEFAULT_URI_QUERY_SEMICOLON_IS_NORMAL_CHAR = false;
+
   private boolean compressionSupported;
   private int compressionLevel;
   private List<CompressionOptions> compressors;
@@ -220,6 +225,7 @@ public class HttpServerOptions extends NetServerOptions {
   private int http2RstFloodMaxRstFramePerWindow;
   private int http2RstFloodWindowDuration;
   private TimeUnit http2RstFloodWindowDurationTimeUnit;
+  private boolean uriQuerySemicolonIsNormalChar;
 
   /**
    * Default constructor
@@ -266,6 +272,7 @@ public class HttpServerOptions extends NetServerOptions {
     this.http2RstFloodMaxRstFramePerWindow = other.http2RstFloodMaxRstFramePerWindow;
     this.http2RstFloodWindowDuration = other.http2RstFloodWindowDuration;
     this.http2RstFloodWindowDurationTimeUnit = other.http2RstFloodWindowDurationTimeUnit;
+    this.uriQuerySemicolonIsNormalChar = other.uriQuerySemicolonIsNormalChar;
   }
 
   /**
@@ -319,6 +326,7 @@ public class HttpServerOptions extends NetServerOptions {
     http2RstFloodMaxRstFramePerWindow = DEFAULT_HTTP2_RST_FLOOD_MAX_RST_FRAME_PER_WINDOW;
     http2RstFloodWindowDuration = DEFAULT_HTTP2_RST_FLOOD_WINDOW_DURATION;
     http2RstFloodWindowDurationTimeUnit = DEFAULT_HTTP2_RST_FLOOD_WINDOW_DURATION_TIME_UNIT;
+    uriQuerySemicolonIsNormalChar = DEFAULT_URI_QUERY_SEMICOLON_IS_NORMAL_CHAR;
   }
 
   /**
@@ -1176,4 +1184,22 @@ public class HttpServerOptions extends NetServerOptions {
     this.http2RstFloodWindowDurationTimeUnit = http2RstFloodWindowDurationTimeUnit;
     return this;
   }
+
+  /**
+   * Set whether semicolon is treated as normal character in the URI query part
+   *
+   * @param semicolonIsNormalChar the switch (normal character or not)
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setUriQuerySemicolonIsNormalChar(boolean semicolonIsNormalChar) {
+    this.uriQuerySemicolonIsNormalChar = semicolonIsNormalChar;
+    return this;
+  }
+
+  /**
+   * Get whether semicolon is treated as normal character in the URI query part
+   *
+   * @return a boolean value of this option (normal character or not)
+   */
+  public boolean getUriQuerySemicolonIsNormalChar() { return uriQuerySemicolonIsNormalChar; }
 }
