@@ -473,15 +473,22 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   @Test
-  public void testOverrideClientSSLOptions()  {
+  public void testOverrideClientSSLOptions() throws Exception {
     server = vertx.createHttpServer(new HttpServerOptions().setSsl(true).setKeyCertOptions(Cert.SERVER_JKS.get()));
-    server.webSocketHandler(ws -> {
-    }).listen(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST);
-    client = vertx.createWebSocketClient(new WebSocketClientOptions().setVerifyHost(false).setSsl(true).setTrustOptions(Trust.CLIENT_JKS.get()));
-    WebSocketConnectOptions connectOptions = new WebSocketConnectOptions().setHost(DEFAULT_HTTPS_HOST).setPort(DEFAULT_HTTPS_PORT);
+    awaitFuture(server.webSocketHandler(ws -> {
+    }).listen(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST));
+    client = vertx.createWebSocketClient(new WebSocketClientOptions()
+      .setVerifyHost(false)
+      .setSsl(true)
+      .setTrustOptions(Trust.CLIENT_JKS.get())
+    );
+    WebSocketConnectOptions connectOptions = new WebSocketConnectOptions()
+      .setHost(DEFAULT_HTTPS_HOST)
+      .setPort(DEFAULT_HTTPS_PORT);
     client.connect(connectOptions)
       .onComplete(onFailure(err -> {
-        client.connect(new WebSocketConnectOptions(connectOptions).setSslOptions(new ClientSSLOptions().setTrustOptions(Trust.SERVER_JKS.get())))
+        client.connect(new WebSocketConnectOptions(connectOptions)
+            .setSslOptions(new ClientSSLOptions().setTrustOptions(Trust.SERVER_JKS.get())))
           .onComplete(onSuccess(so -> {
             testComplete();
           }));
