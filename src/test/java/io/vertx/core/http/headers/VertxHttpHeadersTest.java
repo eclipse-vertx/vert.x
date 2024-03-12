@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static io.vertx.core.http.HttpUtilsTest.HEADER_NAME_ALLOWED_CHARS;
+import static io.vertx.core.http.impl.HttpUtilsTest.HEADER_NAME_ALLOWED_CHARS;
 import static org.junit.Assert.*;
 
 /**

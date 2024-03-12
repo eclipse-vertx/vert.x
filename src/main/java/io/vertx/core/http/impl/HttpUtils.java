@@ -547,8 +547,8 @@ public final class HttpUtils {
     return absoluteURI;
   }
 
-  static MultiMap params(String uri, Charset charset) {
-    QueryStringDecoder queryStringDecoder = new QueryStringDecoder(uri, charset);
+  static MultiMap params(String uri, Charset charset, boolean semicolonIsNormalChar) {
+    QueryStringDecoder queryStringDecoder = new QueryStringDecoder(uri, charset, true, 1024, semicolonIsNormalChar);
     Map<String, List<String>> prms = queryStringDecoder.parameters();
     MultiMap params = MultiMap.caseInsensitiveMultiMap();
     if (!prms.isEmpty()) {

@@ -149,8 +149,8 @@ public class HttpServerRequestWrapper extends HttpServerRequestInternal {
   }
 
   @Override
-  public MultiMap params() {
-    return delegate.params();
+  public MultiMap params(boolean semicolonIsNormalChar) {
+    return delegate.params(semicolonIsNormalChar);
   }
 
   @Override

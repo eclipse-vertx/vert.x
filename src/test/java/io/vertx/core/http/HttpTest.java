@@ -727,6 +727,36 @@ public abstract class HttpTest extends HttpTestBase {
     testURIAndPath("", "/", "/");
   }
 
+  @Test
+  public void testParams() throws Exception {
+    server.requestHandler(req -> {
+      MultiMap params1 = req.params(true);
+      MultiMap params2 = req.params(true);
+      assertSame(params1, params2); // got the cached value
+      MultiMap params3 = req.params(false);
+      assertNotSame(params1, params3); // cache refreshed
+      MultiMap params4 = req.params(false);
+      assertSame(params3, params4); // got the cached value
+
+      assertEquals(params1.get("a"), "1;b=2");
+      assertEquals(params3.get("a"), "1");
+
+      req.response().end();
+    });
+    startServer(testAddress);
+    client.request(new RequestOptions(requestOptions).setURI("/?a=1;b=2&c=3"))
+      .compose(req -> req
+        .send()
+        .compose(resp -> {
+          assertEquals(200, resp.statusCode());
+          return resp.end();
+        }))
+      .onComplete(onSuccess(v -> {
+        testComplete();
+      }));
+    await();
+  }
+
   private void testURIAndPath(String uri, String expectedUri, String expectedPath) {
     server.requestHandler(req -> {
       assertEquals(expectedUri, req.uri());
