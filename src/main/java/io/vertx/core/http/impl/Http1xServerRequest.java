@@ -11,6 +11,7 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.*;
@@ -35,11 +36,11 @@ import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
-import io.vertx.core.streams.impl.InboundBuffer;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
@@ -77,7 +78,6 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   private String query;
 
   // Accessed on event loop
-  Http1xServerRequest next;
   Object metric;
   Object trace;
   boolean reportMetricsFailed;
@@ -95,14 +95,17 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   private MultiMap attributes;
   private boolean expectMultipart;
   private HttpPostRequestDecoder decoder;
+  private boolean ending;
   private boolean ended;
   private long bytesRead;
-  private InboundBuffer<Object> pending;
+  private HttpContent pending;
+  private long demand;
 
   Http1xServerRequest(Http1xServerConnection conn, HttpRequest request, ContextInternal context) {
     this.conn = conn;
     this.context = context;
     this.request = request;
+    this.demand = Long.MAX_VALUE;
   }
 
   private HttpEventHandler eventHandler(boolean create) {
@@ -118,35 +121,12 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
     }
   }
 
-  private InboundBuffer<Object> pendingQueue() {
-    if (pending == null) {
-      pending = new InboundBuffer<>(context, 8);
-      pending.drainHandler(v -> conn.doResume());
-      pending.handler(buffer -> {
-        if (buffer == InboundBuffer.END_SENTINEL) {
-          onEnd();
-        } else {
-          onData((Buffer) buffer);
-        }
-      });
-    }
-    return pending;
-  }
-
-  void handleContent(Buffer buffer) {
-    InboundBuffer<Object> queue;
+  void handleContent(HttpContent content) {
     synchronized (conn) {
-      queue = pending;
+      assert pending == null;
+      pending = content;
     }
-    if (queue != null) {
-      // We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
-      if (!queue.write(buffer)) {
-        // We only pause when we are actively called by the connection
-        conn.doPause();
-      }
-    } else {
-      onData(buffer);
-    }
+    checkPending();
   }
 
   void handleBegin(boolean keepAlive) {
@@ -157,26 +137,6 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
     if (conn.handle100ContinueAutomatically) {
       check100();
     }
-  }
-
-  /**
-   * Enqueue a pipelined request.
-   *
-   * @param request the enqueued request
-   */
-  void enqueue(Http1xServerRequest request) {
-    Http1xServerRequest current = this;
-    while (current.next != null) {
-      current = current.next;
-    }
-    current.next = request;
-  }
-
-  /**
-   * @return the next request following this one
-   */
-  Http1xServerRequest next() {
-    return next;
   }
 
   private void check100() {
@@ -336,16 +296,63 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   @Override
   public HttpServerRequest pause() {
     synchronized (conn) {
-      pendingQueue().pause();
+      demand = 0L;
       return this;
     }
   }
 
   @Override
   public HttpServerRequest fetch(long amount) {
-    synchronized (conn) {
-      pendingQueue().fetch(amount);
+    if (amount < 0L) {
+      throw new IllegalArgumentException();
+    }
+    if (amount == 0L) {
       return this;
+    }
+    synchronized (conn) {
+      demand += amount;
+      if (demand < 0L) {
+        demand = Long.MAX_VALUE;
+      }
+//      if (pending == null) {
+//        return this;
+//      }
+    }
+    // SHOULD EXECUTE INSTEAD ??? MAYBE BUT THEN DEAL WITH REENTRANT
+    context.runOnContext(v -> {
+      checkPending();
+    });
+    return this;
+  }
+
+  private void checkPending() {
+    while (true) {
+      HttpContent content;
+      synchronized (conn) {
+        if (demand == 0L) {
+          return;
+        }
+        content = pending;
+        if (content != null) {
+          boolean last = content instanceof LastHttpContent;
+          ending |= last;
+          pending = null;
+        } else if (ending && !ended) {
+          ended = true;
+        } else {
+          return;
+        }
+      }
+      if (content == null) {
+        onEnd();
+      } else {
+        ByteBuf buf = content.content();
+        if (buf.readableBytes() > 0) {
+          Buffer data = BufferInternal.buffer(VertxHandler.safeBuffer(buf));
+          onData(data);
+        }
+        conn.ack(content);
+      }
     }
   }
 
@@ -509,7 +516,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   @Override
   public boolean isEnded() {
     synchronized (conn) {
-      return ended && (pending == null || (!pending.isPaused() && pending.isEmpty()));
+      return ended;
     }
   }
 
@@ -535,6 +542,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
     return eventHandler(true).end();
   }
 
+  // TODO : should pass content and ACK
   private void onData(Buffer data) {
     HttpEventHandler handler;
     synchronized (conn) {
@@ -557,16 +565,9 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
     }
   }
 
-  void handleEnd() {
-    InboundBuffer<Object> queue;
-    synchronized (conn) {
-      ended = true;
-      queue = pending;
-    }
-    if (queue != null) {
-      queue.write(InboundBuffer.END_SENTINEL);
-    } else {
-      onEnd();
+  private void consume1() {
+    if (demand != Long.MAX_VALUE) {
+      demand--;
     }
   }
 
