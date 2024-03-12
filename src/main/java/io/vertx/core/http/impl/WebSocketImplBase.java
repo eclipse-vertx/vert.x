@@ -645,7 +645,9 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
     synchronized (conn) {
       handler = drainHandler;
     }
-    context.dispatch(handler);
+    if (handler != null) {
+      context.dispatch(handler);
+    }
   }
 
   void handleException(Throwable t) {
