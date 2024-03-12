@@ -23,7 +23,7 @@ import java.util.function.Function;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class TrustAllOptions implements TrustOptions {
+class TrustAllOptions implements TrustOptions {
 
   public static TrustAllOptions INSTANCE = new TrustAllOptions();
 
