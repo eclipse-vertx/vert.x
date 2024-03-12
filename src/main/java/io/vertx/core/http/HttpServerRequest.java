@@ -211,7 +211,13 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * @return the query parameters in the request
    */
   @CacheReturn
-  MultiMap params();
+  default MultiMap params() { return params(false); }
+
+  /**
+   * @param semicolonIsNormalChar whether semicolon is treated as a normal character or a query parameter separator
+   * @return the query parameters in the request
+   */
+  MultiMap params(boolean semicolonIsNormalChar);
 
   /**
    * Return the first param value with the specified name
