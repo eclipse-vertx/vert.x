@@ -60,6 +60,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.*;
 import java.util.stream.IntStream;
 
+import static io.vertx.core.http.HttpMethod.OPTIONS;
 import static io.vertx.core.http.HttpMethod.PUT;
 import static io.vertx.test.core.TestUtils.*;
 
@@ -2713,6 +2714,41 @@ public abstract class HttpTest extends HttpTestBase {
 
     startServer(testAddress);
     client.request(new RequestOptions(requestOptions).setURI("/foo/bar?a={1}"))
+      .compose(req -> req.send().compose(HttpClientResponse::end))
+      .onComplete(onSuccess(v -> {
+        testComplete();
+      }));
+
+    await();
+  }
+
+  @Test
+  public void testGetAbsoluteURIWithOptionsServerLevel() throws Exception {
+    server.requestHandler(req -> {
+      assertEquals(OPTIONS, req.method());
+      assertNull(req.absoluteURI());
+      req.response().end();
+    });
+
+    startServer(testAddress);
+    client.request(new RequestOptions(requestOptions).setURI("*").setMethod(OPTIONS))
+      .compose(req -> req.send().compose(HttpClientResponse::end))
+      .onComplete(onSuccess(v -> {
+        testComplete();
+      }));
+
+    await();
+  }
+
+  @Test
+  public void testGetAbsoluteURIWithAbsoluteRequestUri() throws Exception {
+    server.requestHandler(req -> {
+      assertEquals("http://www.w3.org/pub/WWW/TheProject.html", req.absoluteURI());
+      req.response().end();
+    });
+
+    startServer(testAddress);
+    client.request(new RequestOptions(requestOptions).setURI("http://www.w3.org/pub/WWW/TheProject.html"))
       .compose(req -> req.send().compose(HttpClientResponse::end))
       .onComplete(onSuccess(v -> {
         testComplete();
