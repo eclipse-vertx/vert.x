@@ -309,11 +309,12 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
 
   private void endRequest(Stream s) {
     Stream next;
-    boolean checkLifecycle;
+    boolean responseEnded;
     synchronized (this) {
+      s.requestEnded = true;
       requests.pop();
       next = requests.peek();
-      checkLifecycle = s.responseEnded;
+      responseEnded = s.responseEnded;
       if (metrics != null) {
         metrics.requestEnd(s.metric, s.bytesWritten);
       }
@@ -322,7 +323,8 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     if (next != null) {
       next.promise.complete((HttpClientStream) next);
     }
-    if (checkLifecycle) {
+    if (responseEnded) {
+      s.context.execute(null, s::handleClosed);
       checkLifecycle();
     }
   }
@@ -407,6 +409,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     private Object metric;
     private HttpRequestHead request;
     private HttpResponseHead response;
+    private boolean requestEnded;
     private boolean responseEnded;
     private long bytesRead;
     private long bytesWritten;
@@ -434,7 +437,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     abstract void handleEnd(LastHttpContent trailer);
     abstract void handleWriteQueueDrained(Void v);
     abstract void handleException(Throwable cause);
-    abstract void handleClosed();
+    abstract void handleClosed(Throwable err);
 
   }
 
@@ -632,9 +635,10 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
 
     private void _reset(Throwable cause) {
       boolean removed = conn.reset(this);
-      context.execute(cause, this::handleException);
       if (removed) {
-        context.execute(this::handleClosed);
+        context.execute(cause, this::handleClosed);
+      } else {
+        context.execute(cause, this::handleException);
       }
     }
 
@@ -694,7 +698,6 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
 
     void handleEnd(LastHttpContent trailer) {
       queue.write(new HeadersAdaptor(trailer.trailingHeaders()));
-      tryClose();
     }
 
     void handleException(Throwable cause) {
@@ -704,15 +707,10 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     }
 
     @Override
-    void handleClosed() {
-      handleException(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
-      tryClose();
-    }
-
-    /**
-     * Attempt to close the stream.
-     */
-    private void tryClose() {
+    void handleClosed(Throwable err) {
+      if (err != null) {
+        handleException(err);
+      }
       if (!closed) {
         closed = true;
         if (closeHandler != null) {
@@ -937,6 +935,9 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     }
     lastResponseReceivedTimestamp = System.currentTimeMillis();
     stream.context.execute(trailer, stream::handleEnd);
+    if (stream.requestEnded) {
+      stream.context.execute(null, stream::handleClosed);
+    }
   }
 
   public HttpClientMetrics metrics() {
@@ -1192,7 +1193,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       ws.handleConnectionClosed();
     }
     for (Stream stream : allocatedStreams) {
-      stream.context.execute(null, v -> stream.handleClosed());
+      stream.context.execute(HttpUtils.CONNECTION_CLOSED_EXCEPTION, stream::handleClosed);
     }
     for (Stream stream : sentStreams) {
       if (metrics != null) {
@@ -1202,7 +1203,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       if (tracer != null && trace != null) {
         tracer.receiveResponse(stream.context, null, trace, HttpUtils.CONNECTION_CLOSED_EXCEPTION, TagExtractor.empty());
       }
-      stream.context.execute(null, v -> stream.handleClosed());
+      stream.context.execute(HttpUtils.CONNECTION_CLOSED_EXCEPTION, stream::handleClosed);
     }
   }
 
