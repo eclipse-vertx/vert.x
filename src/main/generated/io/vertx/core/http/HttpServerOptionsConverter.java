@@ -170,11 +170,6 @@ public class HttpServerOptionsConverter {
             obj.setHttp2RstFloodWindowDurationTimeUnit(java.util.concurrent.TimeUnit.valueOf((String)member.getValue()));
           }
           break;
-        case "uriQuerySemicolonIsNormalChar":
-          if (member.getValue() instanceof Boolean) {
-            obj.setUriQuerySemicolonIsNormalChar((Boolean)member.getValue());
-          }
-          break;
       }
     }
   }
@@ -226,6 +221,5 @@ public class HttpServerOptionsConverter {
     if (obj.getHttp2RstFloodWindowDurationTimeUnit() != null) {
       json.put("http2RstFloodWindowDurationTimeUnit", obj.getHttp2RstFloodWindowDurationTimeUnit().name());
     }
-    json.put("uriQuerySemicolonIsNormalChar", obj.getUriQuerySemicolonIsNormalChar());
   }
 }

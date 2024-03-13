@@ -362,10 +362,10 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
     return paramsCharset.name();
   }
   @Override
-  public MultiMap params() {
+  public MultiMap params(boolean semicolonIsNormalChar) {
     synchronized (stream.conn) {
       if (params == null) {
-        params = HttpUtils.params(uri(), paramsCharset, stream.conn.options.getUriQuerySemicolonIsNormalChar());
+        params = HttpUtils.params(uri(), paramsCharset, semicolonIsNormalChar);
       }
       return params;
     }
