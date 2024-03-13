@@ -2688,6 +2688,40 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testGetAbsoluteURIWithParam() throws Exception {
+    server.requestHandler(req -> {
+      assertEquals(req.scheme() + "://localhost:" + DEFAULT_HTTP_PORT + "/foo/bar?a=1", req.absoluteURI());
+      req.response().end();
+    });
+
+    startServer(testAddress);
+    client.request(new RequestOptions(requestOptions).setURI("/foo/bar?a=1"))
+      .compose(req -> req.send().compose(HttpClientResponse::end))
+      .onComplete(onSuccess(v -> {
+        testComplete();
+      }));
+
+    await();
+  }
+
+  @Test
+  public void testGetAbsoluteURIWithUnsafeParam() throws Exception {
+    server.requestHandler(req -> {
+      assertEquals(req.scheme() + "://localhost:" + DEFAULT_HTTP_PORT + "/foo/bar?a={1}", req.absoluteURI());
+      req.response().end();
+    });
+
+    startServer(testAddress);
+    client.request(new RequestOptions(requestOptions).setURI("/foo/bar?a={1}"))
+      .compose(req -> req.send().compose(HttpClientResponse::end))
+      .onComplete(onSuccess(v -> {
+        testComplete();
+      }));
+
+    await();
+  }
+
+  @Test
   public void testListenInvalidPort() throws Exception {
     server.close();
     ServerSocket occupied = null;
