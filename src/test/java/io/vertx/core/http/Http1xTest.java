@@ -5380,4 +5380,62 @@ public class Http1xTest extends HttpTest {
     }));
     await();
   }
+
+  @Test
+  public void testDoNotRecycleWhenRequestIsNotEnded() throws Exception {
+    waitFor(2);
+    server.requestHandler(request -> {
+      HttpServerResponse resp = request.response();
+      resp.end().onComplete(onSuccess(v -> {
+        request.connection().close();
+      }));
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(new PoolOptions().setHttp1MaxSize(1));
+    for (int i = 0;i < 2;i++) {
+      int val = i;
+      Future<HttpClientRequest> fut = client.request(requestOptions);
+      fut.onComplete(ar -> {
+        switch (val) {
+          case 0:
+            assertTrue(ar.succeeded());
+            HttpClientRequest req = ar.result();
+            req.sendHead();
+            req.response().onComplete(onSuccess(resp -> {
+              complete();
+            }));
+            break;
+          case 1:
+            assertTrue(ar.succeeded());
+            complete();
+            break;
+        }
+      });
+    }
+    await();
+  }
+
+  @Test
+  public void testRecycleConnectionOnRequestEnd() throws Exception {
+    int numRequests = 10;
+    waitFor(numRequests);
+    server.requestHandler(request -> {
+      request.response().end();
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(new PoolOptions().setHttp1MaxSize(1));
+    for (int i = 0;i < numRequests;i++) {
+      Future<HttpClientRequest> fut = client.request(requestOptions);
+      fut.onComplete(onSuccess(request -> {
+        request.setChunked(true).sendHead();
+        request.response().compose(HttpClientResponse::body).onComplete(onSuccess(v -> {
+          vertx.setTimer(10, id -> request.end());
+          complete();
+        }));
+      }));
+    }
+    await();
+  }
 }
