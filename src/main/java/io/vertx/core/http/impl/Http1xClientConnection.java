@@ -719,6 +719,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     void handleClosed(Throwable err) {
       if (err != null) {
         handleException(err);
+        promise.tryFail(err);
       }
       if (!closed) {
         closed = true;
