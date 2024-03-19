@@ -12,11 +12,12 @@ package io.vertx.core.loadbalancing;
 
 import io.vertx.core.spi.loadbalancing.DefaultEndpointMetrics;
 import io.vertx.core.spi.loadbalancing.Endpoint;
-import io.vertx.core.spi.loadbalancing.EndpointMetrics;
 import io.vertx.core.spi.loadbalancing.EndpointSelector;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * A load balancer.
@@ -34,6 +35,9 @@ public interface LoadBalancer {
   LoadBalancer ROUND_ROBIN = () -> {
     AtomicInteger idx = new AtomicInteger();
     return (EndpointSelector) endpoints -> {
+      if (endpoints.isEmpty()) {
+        return -1;
+      }
       int next = idx.getAndIncrement();
       return next % endpoints.size();
     };
@@ -58,6 +62,46 @@ public interface LoadBalancer {
       }
       return selected;
     }
+    @Override
+    public <E> Endpoint<E> endpointOf(E endpoint) {
+      return new DefaultEndpointMetrics<>(endpoint);
+    }
+  };
+
+  /**
+   * Random load balancer.
+   */
+  LoadBalancer RANDOM = () -> {
+    return (EndpointSelector) endpoints -> {
+      if (endpoints.isEmpty()) {
+        return -1;
+      }
+      return ThreadLocalRandom.current().nextInt(endpoints.size());
+    };
+  };
+
+  /**
+   * Power of two choices load balancer.
+   */
+  LoadBalancer POWER_OF_TWO_CHOICES = () -> new EndpointSelector() {
+    @Override
+    public int selectEndpoint(List<? extends Endpoint<?>> endpoints) {
+      if (endpoints.isEmpty()) {
+        return -1;
+      } else if (endpoints.size() == 1) {
+        return 0;
+      }
+      int i1 = ThreadLocalRandom.current().nextInt(endpoints.size());
+      int i2 = ThreadLocalRandom.current().nextInt(endpoints.size());
+      while (i2 == i1) {
+        i2 = ThreadLocalRandom.current().nextInt(endpoints.size());
+      }
+      if (((DefaultEndpointMetrics<?>) endpoints.get(i1)).numberOfInflightRequests() < ((DefaultEndpointMetrics<?>) endpoints.get(i2)).numberOfInflightRequests()) {
+        return i1;
+      }
+      return i2;
+    }
+
     @Override
     public <E> Endpoint<E> endpointOf(E endpoint) {
       return new DefaultEndpointMetrics<>(endpoint);

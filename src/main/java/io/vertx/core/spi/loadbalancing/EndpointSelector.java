@@ -23,7 +23,7 @@ public interface EndpointSelector {
    * Select an endpoint among the provided list.
    *
    * @param endpoints the endpoint
-   * @return the selected index or {@code -1} if selection coul not be achieved
+   * @return the selected index or {@code -1} if selection could not be achieved
    */
   int selectEndpoint(List<? extends Endpoint<?>> endpoints);
 
