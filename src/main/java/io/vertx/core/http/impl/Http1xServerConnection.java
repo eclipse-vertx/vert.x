@@ -59,9 +59,6 @@ import static io.vertx.core.spi.metrics.Metrics.*;
  *
  * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
  * </p>
- * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
- * we benefit from biased locking which makes the overhead of synchronized near zero.
- * </p>
  * The connection maintains two fields for tracking requests:
  * <ul>
  *   <li>{@link #requestInProgress} is the request currently receiving messages, the field is set when
@@ -212,10 +209,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       return;
     }
     Buffer buffer = BufferInternal.buffer(VertxHandler.safeBuffer(content.content()));
-    Http1xServerRequest request;
-    synchronized (this) {
-      request = requestInProgress;
-    }
+    Http1xServerRequest request = requestInProgress;
     request.context.execute(buffer, request::handleContent);
     //TODO chunk trailers
     if (content instanceof LastHttpContent) {
@@ -225,12 +219,9 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
 
   private void onEnd() {
     boolean tryClose;
-    Http1xServerRequest request;
-    synchronized (this) {
-      request = requestInProgress;
-      requestInProgress = null;
-      tryClose = wantClose && responseInProgress == null;
-    }
+    Http1xServerRequest request = requestInProgress;
+    requestInProgress = null;
+    tryClose = wantClose && responseInProgress == null;
     request.context.execute(request, Http1xServerRequest::handleEnd);
     if (tryClose) {
       if (shutdownTimerID != -1L) {
@@ -289,7 +280,8 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
             } else if (wantClose && shutdownTimerID != -1L && vertx.cancelTimer(shutdownTimerID)) {
               shutdownTimerID = -1L;
               flushAndClose();
-            }          }
+            }
+          }
         }
       } else {
         ChannelPromise channelFuture = channelFuture();
@@ -527,14 +519,9 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   }
 
   protected void handleClosed() {
-    Http1xServerRequest responseInProgress;
-    Http1xServerRequest requestInProgress;
-    ServerWebSocketImpl ws;
-    synchronized (this) {
-      ws = this.webSocket;
-      requestInProgress = this.requestInProgress;
-      responseInProgress = this.responseInProgress;
-    }
+    Http1xServerRequest responseInProgress = this.responseInProgress;
+    Http1xServerRequest requestInProgress = this.requestInProgress;
+    ServerWebSocketImpl ws = this.webSocket;
     if (requestInProgress != null) {
       requestInProgress.context.execute(v -> {
         requestInProgress.handleException(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
@@ -554,12 +541,8 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   @Override
   public void handleException(Throwable t) {
     super.handleException(t);
-    Http1xServerRequest responseInProgress;
-    Http1xServerRequest requestInProgress;
-    synchronized (this) {
-      requestInProgress = this.requestInProgress;
-      responseInProgress = this.responseInProgress;
-    }
+    Http1xServerRequest responseInProgress = this.responseInProgress;
+    Http1xServerRequest requestInProgress = this.requestInProgress;
     if (requestInProgress != null) {
       requestInProgress.reportMetricsFailed = true;
       requestInProgress.handleException(t);
