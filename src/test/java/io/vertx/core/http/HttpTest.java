@@ -24,7 +24,6 @@ import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.http.impl.HttpServerRequestInternal;
 import io.vertx.core.http.impl.ServerCookie;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
-import io.vertx.core.impl.Utils;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
@@ -56,6 +55,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.*;
 import java.util.stream.IntStream;
 
+import static io.vertx.core.http.HttpMethod.OPTIONS;
 import static io.vertx.core.http.HttpMethod.PUT;
 import static io.vertx.test.core.TestUtils.*;
 import static java.util.Collections.singletonList;
@@ -2759,6 +2759,75 @@ public abstract class HttpTest extends HttpTestBase {
           testComplete();
         }));
     }));
+
+    await();
+  }
+
+  @Test
+  public void testGetAbsoluteURIWithParam() throws Exception {
+    server.requestHandler(req -> {
+      assertEquals(req.scheme() + "://localhost:" + DEFAULT_HTTP_PORT + "/foo/bar?a=1", req.absoluteURI());
+      req.response().end();
+    });
+
+    startServer(testAddress);
+    client.request(new RequestOptions(requestOptions).setURI("/foo/bar?a=1"))
+      .compose(req -> req.send().compose(HttpClientResponse::end))
+      .onComplete(onSuccess(v -> {
+        testComplete();
+      }));
+
+    await();
+  }
+
+  @Test
+  public void testGetAbsoluteURIWithUnsafeParam() throws Exception {
+    server.requestHandler(req -> {
+      assertEquals(req.scheme() + "://localhost:" + DEFAULT_HTTP_PORT + "/foo/bar?a={1}", req.absoluteURI());
+      req.response().end();
+    });
+
+    startServer(testAddress);
+    client.request(new RequestOptions(requestOptions).setURI("/foo/bar?a={1}"))
+      .compose(req -> req.send().compose(HttpClientResponse::end))
+      .onComplete(onSuccess(v -> {
+        testComplete();
+      }));
+
+    await();
+  }
+
+  @Test
+  public void testGetAbsoluteURIWithOptionsServerLevel() throws Exception {
+    server.requestHandler(req -> {
+      assertEquals(OPTIONS, req.method());
+      assertNull(req.absoluteURI());
+      req.response().end();
+    });
+
+    startServer(testAddress);
+    client.request(new RequestOptions(requestOptions).setURI("*").setMethod(OPTIONS))
+      .compose(req -> req.send().compose(HttpClientResponse::end))
+      .onComplete(onSuccess(v -> {
+        testComplete();
+      }));
+
+    await();
+  }
+
+  @Test
+  public void testGetAbsoluteURIWithAbsoluteRequestUri() throws Exception {
+    server.requestHandler(req -> {
+      assertEquals("http://www.w3.org/pub/WWW/TheProject.html", req.absoluteURI());
+      req.response().end();
+    });
+
+    startServer(testAddress);
+    client.request(new RequestOptions(requestOptions).setURI("http://www.w3.org/pub/WWW/TheProject.html"))
+      .compose(req -> req.send().compose(HttpClientResponse::end))
+      .onComplete(onSuccess(v -> {
+        testComplete();
+      }));
 
     await();
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2023 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -522,26 +522,27 @@ public final class HttpUtils {
     }
   }
 
-  static String absoluteURI(String serverOrigin, HttpServerRequest req) throws URISyntaxException {
+  static String absoluteURI(String serverOrigin, HttpServerRequest req) {
+    String uri = req.uri();
+    if ("*".equals(uri)) {
+      return null;
+    }
+    if (uri.startsWith("https://") || uri.startsWith("http://")) {
+      return uri;
+    }
     String absoluteURI;
-    URI uri = new URI(req.uri());
-    String scheme = uri.getScheme();
-    if (scheme != null && (scheme.equals("http") || scheme.equals("https"))) {
-      absoluteURI = uri.toString();
-    } else {
-      boolean ssl = req.isSSL();
-      HostAndPort authority = req.authority();
-      if (authority != null) {
-        StringBuilder sb = new StringBuilder(req.scheme()).append("://").append(authority.host());
-        if (authority.port() > 0 && ((ssl && authority.port() != 443) || (!ssl && authority.port() != 80))) {
-          sb.append(':').append(authority.port());
-        }
-        sb.append(uri);
-        absoluteURI = sb.toString();
-      } else {
-        // Fall back to the server origin
-        absoluteURI = serverOrigin + uri;
+    boolean ssl = req.isSSL();
+    HostAndPort authority = req.authority();
+    if (authority != null) {
+      StringBuilder sb = new StringBuilder(req.scheme()).append("://").append(authority.host());
+      if (authority.port() > 0 && ((ssl && authority.port() != 443) || (!ssl && authority.port() != 80))) {
+        sb.append(':').append(authority.port());
       }
+      sb.append(uri);
+      absoluteURI = sb.toString();
+    } else {
+      // Fall back to the server origin
+      absoluteURI = serverOrigin + uri;
     }
     return absoluteURI;
   }
