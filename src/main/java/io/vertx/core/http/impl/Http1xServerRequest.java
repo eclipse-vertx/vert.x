@@ -12,8 +12,8 @@
 package io.vertx.core.http.impl;
 
 import io.netty.handler.codec.DecoderResult;
-import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
@@ -23,9 +23,9 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.*;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -43,7 +43,6 @@ import io.vertx.core.streams.impl.InboundBuffer;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
-import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
@@ -386,11 +385,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   @Override
   public String absoluteURI() {
     if (absoluteURI == null) {
-      try {
-        absoluteURI = HttpUtils.absoluteURI(conn.getServerOrigin(), this);
-      } catch (URISyntaxException e) {
-        log.error("Failed to create abs uri", e);
-      }
+      absoluteURI = HttpUtils.absoluteURI(conn.getServerOrigin(), this);
     }
     return absoluteURI;
   }
