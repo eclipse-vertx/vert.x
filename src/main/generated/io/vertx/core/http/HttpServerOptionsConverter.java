@@ -95,6 +95,16 @@ public class HttpServerOptionsConverter {
             obj.setMaxFormAttributeSize(((Number)member.getValue()).intValue());
           }
           break;
+        case "maxFormBufferedBytes":
+          if (member.getValue() instanceof Number) {
+            obj.setMaxFormBufferedBytes(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "maxFormFields":
+          if (member.getValue() instanceof Number) {
+            obj.setMaxFormFields(((Number)member.getValue()).intValue());
+          }
+          break;
         case "maxHeaderSize":
           if (member.getValue() instanceof Number) {
             obj.setMaxHeaderSize(((Number)member.getValue()).intValue());
@@ -196,6 +206,8 @@ public class HttpServerOptionsConverter {
     }
     json.put("maxChunkSize", obj.getMaxChunkSize());
     json.put("maxFormAttributeSize", obj.getMaxFormAttributeSize());
+    json.put("maxFormBufferedBytes", obj.getMaxFormBufferedBytes());
+    json.put("maxFormFields", obj.getMaxFormFields());
     json.put("maxHeaderSize", obj.getMaxHeaderSize());
     json.put("maxInitialLineLength", obj.getMaxInitialLineLength());
     json.put("maxWebSocketFrameSize", obj.getMaxWebSocketFrameSize());
