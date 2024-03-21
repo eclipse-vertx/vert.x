@@ -135,7 +135,11 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
     if (postRequestDecoder != null) {
       try {
         postRequestDecoder.offer(new DefaultHttpContent(((BufferInternal)data).getByteBuf()));
-      } catch (Exception e) {
+      } catch (HttpPostRequestDecoder.ErrorDataDecoderException |
+               HttpPostRequestDecoder.TooLongFormFieldException |
+               HttpPostRequestDecoder.TooManyFormFieldsException e) {
+        postRequestDecoder.destroy();
+        postRequestDecoder = null;
         handleException(e);
       }
     }
@@ -172,6 +176,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
           handleException(e);
         } finally {
           postRequestDecoder.destroy();
+          postRequestDecoder = null;
         }
       }
       handler = eventHandler;
@@ -410,8 +415,11 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
             stream.uri);
           req.headers().add(HttpHeaderNames.CONTENT_TYPE, contentType);
           NettyFileUploadDataFactory factory = new NettyFileUploadDataFactory(context, this, () -> uploadHandler);
-          factory.setMaxLimit(stream.conn.options.getMaxFormAttributeSize());
-          postRequestDecoder = new HttpPostRequestDecoder(factory, req);
+          HttpServerOptions options = stream.conn.options;
+          factory.setMaxLimit(options.getMaxFormAttributeSize());
+          int maxFields = options.getMaxFormFields();
+          int maxBufferedBytes = options.getMaxFormBufferedBytes();
+          postRequestDecoder = new HttpPostRequestDecoder(factory, req, HttpConstants.DEFAULT_CHARSET, maxFields, maxBufferedBytes);
         }
       } else {
         postRequestDecoder = null;

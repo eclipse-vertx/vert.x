@@ -525,4 +525,135 @@ public abstract class HttpServerFileUploadTest extends HttpTestBase {
     }));
     await();
   }
+
+  @Test
+  public void testMaxFormFieldsDefaultPass() throws Exception {
+    testMaxFormFields(256, true);
+  }
+
+  @Test
+  public void testMaxFormFieldDefaultFail() throws Exception {
+    testMaxFormFields(257 + 1, false);
+  }
+
+  @Test
+  public void testMaxFormFieldsOverridePass() throws Exception {
+    testMaxFormFieldOverride(true);
+  }
+
+  @Test
+  public void testMaxFormFieldOverrideFail() throws Exception {
+    testMaxFormFieldOverride(false);
+  }
+
+  private void testMaxFormFieldOverride(boolean pass) throws Exception {
+    int newMax = 512;
+    server.close();
+    server = vertx.createHttpServer(createBaseServerOptions().setMaxFormFields(newMax));
+    testMaxFormFields(pass ? newMax : (newMax + 2), pass);
+  }
+
+  private void testMaxFormFields(int num, boolean pass) throws Exception {
+
+    server.requestHandler(req -> {
+      req.setExpectMultipart(true);
+      req.end()
+        .onComplete(ar -> {
+          req.response().setStatusCode(ar.succeeded() ? 200 : 400).end();
+        });
+    });
+    startServer(testAddress);
+
+    client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST)).onComplete(onSuccess(req -> {
+      req.setChunked(true);
+      req.putHeader("content-type", "application/x-www-form-urlencoded");
+      StringBuilder sb = new StringBuilder();
+      for (int i = 0;i < num;i++) {
+        if (i > 0) {
+          sb.append('&');
+        }
+        sb.append("a").append(i).append("=").append("b");
+      }
+      req.write(sb.toString());
+      vertx.setTimer(10, id -> {
+        req.end();
+      });
+      req
+        .response()
+        .compose(resp -> {
+          if (pass) {
+            assertEquals(200, resp.statusCode());
+          } else {
+            assertEquals(400, resp.statusCode());
+          }
+          return resp.end();
+        }).onComplete(onSuccess(v -> testComplete()));
+    }));
+    await();
+  }
+
+  @Test
+  public void testFormMaxBufferedBytesDefaultPass() throws Exception {
+    testFormMaxBufferedBytes(1024, true);
+  }
+
+  @Test
+  public void testFormMaxBufferedBytesDefaultFail() throws Exception {
+    testFormMaxBufferedBytes(1025, false);
+  }
+
+  @Test
+  public void testFormMaxBufferedBytesOverridePass() throws Exception {
+    testFormMaxBufferedBytesOverride(true);
+  }
+
+  @Test
+  public void testFormMaxBufferedBytesOverrideFail() throws Exception {
+    testFormMaxBufferedBytesOverride(false);
+  }
+
+  private void testFormMaxBufferedBytesOverride(boolean pass) throws Exception {
+    int newMax = 2048;
+    server.close();
+    server = vertx.createHttpServer(createBaseServerOptions().setMaxFormBufferedBytes(newMax));
+    testFormMaxBufferedBytes(pass ? newMax : (newMax + 1), pass);
+  }
+
+  public void testFormMaxBufferedBytes(int len, boolean pass) throws Exception {
+
+    server.requestHandler(req -> {
+      req.setExpectMultipart(true);
+      req.end()
+        .onComplete(ar -> {
+          req.response().setStatusCode(ar.succeeded() ? 200 : 400).end();
+        });
+    });
+
+    startServer(testAddress);
+
+    client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST)).onComplete(onSuccess(req -> {
+      req.setChunked(true);
+      req.putHeader("content-type", "application/x-www-form-urlencoded");
+      StringBuilder sb = new StringBuilder();
+      for (int i = 0;i < len;i++) {
+        sb.append("a");
+      }
+      req.write(sb.toString());
+      vertx.setTimer(10, id -> {
+        req.end("=b");
+      });
+      req
+        .response()
+        .compose(resp -> {
+          if (pass) {
+            assertEquals(200, resp.statusCode());
+          } else {
+            assertEquals(400, resp.statusCode());
+          }
+          return resp.end();
+        }).onComplete(onSuccess(v -> testComplete()));
+    }));
+
+    await();
+  }
 }

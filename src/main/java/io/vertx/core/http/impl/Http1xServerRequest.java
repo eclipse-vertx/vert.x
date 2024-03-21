@@ -492,8 +492,11 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
             throw new IllegalStateException("Request method must be one of POST, PUT, PATCH or DELETE to decode a multipart request");
           }
           NettyFileUploadDataFactory factory = new NettyFileUploadDataFactory(context, this, () -> uploadHandler);
-          factory.setMaxLimit(conn.options.getMaxFormAttributeSize());
-          decoder = new HttpPostRequestDecoder(factory, request);
+          HttpServerOptions options = conn.options;
+          factory.setMaxLimit(options.getMaxFormAttributeSize());
+          int maxFields = options.getMaxFormFields();
+          int maxBufferedBytes = options.getMaxFormBufferedBytes();
+          decoder = new HttpPostRequestDecoder(factory, request, HttpConstants.DEFAULT_CHARSET, maxFields, maxBufferedBytes);
         }
       } else {
         decoder = null;
@@ -545,7 +548,11 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
       if (decoder != null) {
         try {
           decoder.offer(new DefaultHttpContent(((BufferInternal)data).getByteBuf()));
-        } catch (HttpPostRequestDecoder.ErrorDataDecoderException e) {
+        } catch (HttpPostRequestDecoder.ErrorDataDecoderException |
+                 HttpPostRequestDecoder.TooLongFormFieldException |
+                 HttpPostRequestDecoder.TooManyFormFieldsException e) {
+          decoder.destroy();
+          decoder = null;
           handleException(e);
         }
       }
@@ -622,12 +629,15 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
           }
         }
       }
-    } catch (HttpPostRequestDecoder.ErrorDataDecoderException e) {
+    } catch (HttpPostRequestDecoder.ErrorDataDecoderException |
+             HttpPostRequestDecoder.TooLongFormFieldException |
+             HttpPostRequestDecoder.TooManyFormFieldsException e) {
       handleException(e);
-    } catch (HttpPostRequestDecoder.EndOfDataDecoderException e) {
+    }  catch (HttpPostRequestDecoder.EndOfDataDecoderException e) {
       // ignore this as it is expected
     } finally {
       decoder.destroy();
+      decoder = null;
     }
   }
 

@@ -80,6 +80,16 @@ public class HttpServerOptionsConverter {
             obj.setMaxFormAttributeSize(((Number)member.getValue()).intValue());
           }
           break;
+        case "maxFormFields":
+          if (member.getValue() instanceof Number) {
+            obj.setMaxFormFields(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "maxFormBufferedBytes":
+          if (member.getValue() instanceof Number) {
+            obj.setMaxFormBufferedBytes(((Number)member.getValue()).intValue());
+          }
+          break;
         case "initialSettings":
           if (member.getValue() instanceof JsonObject) {
             obj.setInitialSettings(new io.vertx.core.http.Http2Settings((io.vertx.core.json.JsonObject)member.getValue()));
@@ -194,6 +204,8 @@ public class HttpServerOptionsConverter {
     json.put("maxInitialLineLength", obj.getMaxInitialLineLength());
     json.put("maxHeaderSize", obj.getMaxHeaderSize());
     json.put("maxFormAttributeSize", obj.getMaxFormAttributeSize());
+    json.put("maxFormFields", obj.getMaxFormFields());
+    json.put("maxFormBufferedBytes", obj.getMaxFormBufferedBytes());
     if (obj.getInitialSettings() != null) {
       json.put("initialSettings", obj.getInitialSettings().toJson());
     }

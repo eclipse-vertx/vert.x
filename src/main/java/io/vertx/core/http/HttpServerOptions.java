@@ -92,9 +92,19 @@ public class HttpServerOptions extends NetServerOptions {
   public static final int DEFAULT_MAX_HEADER_SIZE = 8192;
 
   /**
-   * Default max length of all headers = 8192
+   * Default max size of a form attribute = 8192
    */
   public static final int DEFAULT_MAX_FORM_ATTRIBUTE_SIZE = 8192;
+
+  /**
+   * Default max number of form fields = 256
+   */
+  public static final int DEFAULT_MAX_FORM_FIELDS = 256;
+
+  /**
+   * Default max number buffered bytes when decoding a form = 1024
+   */
+  public static final int DEFAULT_MAX_FORM_BUFFERED_SIZE = 1024;
 
   /**
    * Default value of whether 100-Continue should be handled automatically = {@code false}
@@ -202,6 +212,8 @@ public class HttpServerOptions extends NetServerOptions {
   private int maxInitialLineLength;
   private int maxHeaderSize;
   private int maxFormAttributeSize;
+  private int maxFormFields;
+  private int maxFormBufferedBytes;
   private Http2Settings initialSettings;
   private List<HttpVersion> alpnVersions;
   private boolean http2ClearTextEnabled;
@@ -248,6 +260,8 @@ public class HttpServerOptions extends NetServerOptions {
     this.maxInitialLineLength = other.getMaxInitialLineLength();
     this.maxHeaderSize = other.getMaxHeaderSize();
     this.maxFormAttributeSize = other.getMaxFormAttributeSize();
+    this.maxFormFields = other.getMaxFormFields();
+    this.maxFormBufferedBytes = other.getMaxFormBufferedBytes();
     this.initialSettings = other.initialSettings != null ? new Http2Settings(other.initialSettings) : null;
     this.alpnVersions = other.alpnVersions != null ? new ArrayList<>(other.alpnVersions) : null;
     this.http2ClearTextEnabled = other.http2ClearTextEnabled;
@@ -301,6 +315,8 @@ public class HttpServerOptions extends NetServerOptions {
     maxInitialLineLength = DEFAULT_MAX_INITIAL_LINE_LENGTH;
     maxHeaderSize = DEFAULT_MAX_HEADER_SIZE;
     maxFormAttributeSize = DEFAULT_MAX_FORM_ATTRIBUTE_SIZE;
+    maxFormFields = DEFAULT_MAX_FORM_FIELDS;
+    maxFormBufferedBytes = DEFAULT_MAX_FORM_BUFFERED_SIZE;
     initialSettings = new Http2Settings().setMaxConcurrentStreams(DEFAULT_INITIAL_SETTINGS_MAX_CONCURRENT_STREAMS);
     alpnVersions = new ArrayList<>(DEFAULT_ALPN_VERSIONS);
     http2ClearTextEnabled = DEFAULT_HTTP2_CLEAR_TEXT_ENABLED;
@@ -786,6 +802,42 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public HttpServerOptions setMaxFormAttributeSize(int maxSize) {
     this.maxFormAttributeSize = maxSize;
+    return this;
+  }
+
+  /**
+   * @return Returns the maximum number of form fields
+   */
+  public int getMaxFormFields() {
+    return maxFormFields;
+  }
+
+  /**
+   * Set the maximum number of fields of a form. Set to {@code -1} to allow unlimited number of attributes
+   *
+   * @param maxFormFields the new maximum
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setMaxFormFields(int maxFormFields) {
+    this.maxFormFields = maxFormFields;
+    return this;
+  }
+
+  /**
+   * @return Returns the maximum number of bytes a server can buffer when decoding a form
+   */
+  public int getMaxFormBufferedBytes() {
+    return maxFormBufferedBytes;
+  }
+
+  /**
+   * Set the maximum number of bytes a server can buffer when decoding a form. Set to {@code -1} to allow unlimited length
+   *
+   * @param maxFormBufferedBytes the new maximum
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setMaxFormBufferedBytes(int maxFormBufferedBytes) {
+    this.maxFormBufferedBytes = maxFormBufferedBytes;
     return this;
   }
 
