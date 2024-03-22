@@ -14,6 +14,7 @@ package io.vertx.core.spi.transport;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
+import io.netty.channel.epoll.EpollChannelOption;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
 import io.vertx.core.datagram.DatagramSocketOptions;
@@ -82,11 +83,10 @@ public interface Transport {
   IoHandlerFactory ioHandlerFactory();
 
   /**
-   * @param type one of {@link #ACCEPTOR_EVENT_LOOP_GROUP} or {@link #IO_EVENT_LOOP_GROUP}.
-   * @param nThreads the number of threads that will be used by this instance.
+   * @param type          one of {@link #ACCEPTOR_EVENT_LOOP_GROUP} or {@link #IO_EVENT_LOOP_GROUP}.
+   * @param nThreads      the number of threads that will be used by this instance.
    * @param threadFactory the ThreadFactory to use.
-   * @param ioRatio the IO ratio
-   *
+   * @param ioRatio       the IO ratio
    * @return a new event loop group
    */
   default EventLoopGroup eventLoopGroup(int type, int nThreads, ThreadFactory threadFactory, int ioRatio) {
@@ -104,14 +104,14 @@ public interface Transport {
   DatagramChannel datagramChannel(InternetProtocolFamily family);
 
   /**
-   * @return the type for channel
    * @param domainSocket whether to create a unix domain channel or a socket channel
+   * @return the type for channel
    */
   ChannelFactory<? extends Channel> channelFactory(boolean domainSocket);
 
   /**
-   * @return the type for server channel
    * @param domainSocket whether to create a server unix domain channel or a regular server socket channel
+   * @return the type for server channel
    */
   ChannelFactory<? extends ServerChannel> serverChannelFactory(boolean domainSocket);
 
@@ -172,6 +172,15 @@ public interface Transport {
     if (!domainSocket) {
       bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
       bootstrap.childOption(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
+      if (options.isTcpKeepAlive() && options.getTcpKeepAliveIdleSeconds() != -1) {
+        bootstrap.childOption(EpollChannelOption.TCP_KEEPIDLE, options.getTcpKeepAliveIdleSeconds());
+      }
+      if (options.isTcpKeepAlive() && options.getTcpKeepAliveCount() != -1) {
+        bootstrap.childOption(EpollChannelOption.TCP_KEEPCNT, options.getTcpKeepAliveIdleSeconds());
+      }
+      if (options.isTcpKeepAlive() && options.getTcpKeepAliveIntervalSeconds() != -1) {
+        bootstrap.childOption(EpollChannelOption.TCP_KEEPINTVL, options.getTcpKeepAliveIdleSeconds());
+      }
       bootstrap.childOption(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
     }
     if (options.getSendBufferSize() != -1) {
