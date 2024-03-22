@@ -117,12 +117,6 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
     }
   }
 
-  void setRequest(HttpRequest request) {
-    synchronized (conn) {
-      this.request = request;
-    }
-  }
-
   private InboundBuffer<Object> pendingQueue() {
     if (pending == null) {
       pending = new InboundBuffer<>(context, 8);
