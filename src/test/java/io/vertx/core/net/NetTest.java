@@ -393,6 +393,27 @@ public class NetTest extends VertxTestBase {
     assertEquals(randomProxyTimeout, options.getProxyProtocolTimeout());
     assertIllegalArgumentException(() -> options.setProxyProtocolTimeout(-123));
 
+    assertEquals(NetServerOptions.DEFAULT_TCP_KEEPALIVE_IDLE_SECONDS, options.getTcpKeepAliveIdleSeconds());
+    rand = TestUtils.randomPositiveInt();
+    assertEquals(options, options.setTcpKeepAliveIdleSeconds(rand));
+    assertEquals(rand, options.getTcpKeepAliveIdleSeconds());
+    assertIllegalArgumentException(() -> options.setTcpKeepAliveIdleSeconds(0));
+    assertIllegalArgumentException(() -> options.setTcpKeepAliveIdleSeconds(-123));
+
+    assertEquals(NetServerOptions.DEFAULT_TCP_KEEPALIVE_COUNT, options.getTcpKeepAliveCount());
+    rand = TestUtils.randomPositiveInt();
+    assertEquals(options, options.setTcpKeepAliveCount(rand));
+    assertEquals(rand, options.getTcpKeepAliveCount());
+    assertIllegalArgumentException(() -> options.setTcpKeepAliveCount(0));
+    assertIllegalArgumentException(() -> options.setTcpKeepAliveCount(-123));
+
+    assertEquals(NetServerOptions.DEFAULT_TCP_KEEAPLIVE_INTERVAL_SECONDS, options.getTcpKeepAliveIntervalSeconds());
+    rand = TestUtils.randomPositiveInt();
+    assertEquals(options, options.setTcpKeepAliveIntervalSeconds(rand));
+    assertEquals(rand, options.getTcpKeepAliveIntervalSeconds());
+    assertIllegalArgumentException(() -> options.setTcpKeepAliveIntervalSeconds(0));
+    assertIllegalArgumentException(() -> options.setTcpKeepAliveIntervalSeconds(-123));
+
     testComplete();
   }
 
@@ -638,6 +659,9 @@ public class NetTest extends VertxTestBase {
     long sslHandshakeTimeout = TestUtils.randomPositiveLong();
     boolean useProxyProtocol = TestUtils.randomBoolean();
     long proxyProtocolTimeout = TestUtils.randomPositiveLong();
+    int tcpKeepAliveIdleSeconds = TestUtils.randomPositiveInt();
+    int tcpKeepAliveCount = TestUtils.randomPositiveInt();
+    int tcpKeepAliveIntervalSeconds = TestUtils.randomPositiveInt();
 
     options.setSendBufferSize(sendBufferSize);
     options.setReceiveBufferSize(receiverBufferSize);
@@ -662,6 +686,9 @@ public class NetTest extends VertxTestBase {
     options.setSslHandshakeTimeout(sslHandshakeTimeout);
     options.setUseProxyProtocol(useProxyProtocol);
     options.setProxyProtocolTimeout(proxyProtocolTimeout);
+    options.setTcpKeepAliveIdleSeconds(tcpKeepAliveIdleSeconds);
+    options.setTcpKeepAliveCount(tcpKeepAliveCount);
+    options.setTcpKeepAliveIntervalSeconds(tcpKeepAliveIntervalSeconds);
 
     NetServerOptions copy = new NetServerOptions(options);
     assertEquals(options.toJson(), copy.toJson());
@@ -731,6 +758,9 @@ public class NetTest extends VertxTestBase {
     long sslHandshakeTimeout = TestUtils.randomPositiveLong();
     boolean useProxyProtocol = TestUtils.randomBoolean();
     long proxyProtocolTimeout = TestUtils.randomPositiveLong();
+    int tcpKeepAliveIdleSeconds = TestUtils.randomPositiveInt();
+    int tcpKeepAliveCount = TestUtils.randomPositiveInt();
+    int tcpKeepAliveIntervalSeconds = TestUtils.randomPositiveInt();
 
     JsonObject json = new JsonObject();
     json.put("sendBufferSize", sendBufferSize)
@@ -756,7 +786,10 @@ public class NetTest extends VertxTestBase {
       .put("sni", sni)
       .put("sslHandshakeTimeout", sslHandshakeTimeout)
       .put("useProxyProtocol", useProxyProtocol)
-      .put("proxyProtocolTimeout", proxyProtocolTimeout);
+      .put("proxyProtocolTimeout", proxyProtocolTimeout)
+      .put("tcpKeepAliveIdleSeconds", tcpKeepAliveIdleSeconds)
+      .put("tcpKeepAliveCount", tcpKeepAliveCount)
+      .put("tcpKeepAliveIntervalSeconds", tcpKeepAliveIntervalSeconds);
 
     NetServerOptions options = new NetServerOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -797,6 +830,9 @@ public class NetTest extends VertxTestBase {
     assertEquals(sni, options.isSni());
     assertEquals(useProxyProtocol, options.isUseProxyProtocol());
     assertEquals(proxyProtocolTimeout, options.getProxyProtocolTimeout());
+    assertEquals(tcpKeepAliveIdleSeconds, options.getTcpKeepAliveIdleSeconds());
+    assertEquals(tcpKeepAliveCount, options.getTcpKeepAliveCount());
+    assertEquals(tcpKeepAliveIntervalSeconds, options.getTcpKeepAliveIntervalSeconds());
 
     // Test other keystore/truststore types
     json.remove("keyStoreOptions");
