@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class LoadBalancingTest {
 
@@ -52,4 +53,41 @@ public class LoadBalancingTest {
     }
     assertEquals(2, selector.selectEndpoint(metrics));
   }
+
+  @Test
+  public void testRandom() throws Exception {
+    EndpointSelector selector = LoadBalancer.RANDOM.selector();
+    List<Endpoint<?>> metrics = new ArrayList<>();
+    int num = 6;
+    for (int i = 0;i < num;i++) {
+      metrics.add(selector.endpointOf(null));
+    }
+    for (int i = 0; i < 1000; i++) {
+      int selectedIndex = selector.selectEndpoint(metrics);
+      assertTrue(selectedIndex >= 0 && selectedIndex < metrics.size());
+    }
+  }
+
+  @Test
+  public void testPowerOfTwoChoices() throws Exception {
+    EndpointSelector selector = LoadBalancer.POWER_OF_TWO_CHOICES.selector();
+    for (int i = 0; i < 1000; i++) {
+      Endpoint<?> e1 = selector.endpointOf(null);
+      Endpoint<?> e2 = selector.endpointOf(null);
+      List<Endpoint<?>> metrics = Arrays.asList(e1, e2);
+      e2.metrics().initiateRequest();
+      assertEquals(0, selector.selectEndpoint(metrics));
+    }
+
+    List<Endpoint<?>> metrics = new ArrayList<>();
+    int num = 6;
+    for (int i = 0;i < num;i++) {
+      metrics.add(selector.endpointOf(null));
+    }
+    for (int i = 0; i < 1000; i++) {
+      int selectedIndex = selector.selectEndpoint(metrics);
+      assertTrue(selectedIndex >= 0 && selectedIndex < metrics.size());
+    }
+  }
 }
+
