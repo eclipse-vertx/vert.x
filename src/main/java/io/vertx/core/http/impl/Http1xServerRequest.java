@@ -92,6 +92,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   private HttpEventHandler eventHandler;
   private Handler<HttpServerFileUpload> uploadHandler;
   private MultiMap attributes;
+  private boolean expectMultipart;
   private HttpPostRequestDecoder decoder;
   private boolean ended;
   private long bytesRead;
@@ -483,6 +484,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   public HttpServerRequest setExpectMultipart(boolean expect) {
     synchronized (conn) {
       checkEnded();
+      expectMultipart = expect;
       if (expect) {
         if (decoder == null) {
           String contentType = request.headers().get(HttpHeaderNames.CONTENT_TYPE);
@@ -510,10 +512,8 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   }
 
   @Override
-  public boolean isExpectMultipart() {
-    synchronized (conn) {
-      return decoder != null;
-    }
+  public synchronized boolean isExpectMultipart() {
+    return expectMultipart;
   }
 
   @Override
