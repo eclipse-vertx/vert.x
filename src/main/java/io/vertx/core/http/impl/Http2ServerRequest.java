@@ -64,6 +64,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   private HttpEventHandler eventHandler;
   private boolean ended;
   private Handler<HttpServerFileUpload> uploadHandler;
+  private boolean expectMultipart;
   private HttpPostRequestDecoder postRequestDecoder;
   private Handler<HttpFrame> customFrameHandler;
   private Handler<StreamPriority> streamPriorityHandler;
@@ -397,6 +398,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   public HttpServerRequest setExpectMultipart(boolean expect) {
     synchronized (stream.conn) {
       checkEnded();
+      expectMultipart = expect;
       if (expect) {
         if (postRequestDecoder == null) {
           String contentType = headersMap.get(HttpHeaderNames.CONTENT_TYPE);
@@ -431,7 +433,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   @Override
   public boolean isExpectMultipart() {
     synchronized (stream.conn) {
-      return postRequestDecoder != null;
+      return expectMultipart;
     }
   }
 

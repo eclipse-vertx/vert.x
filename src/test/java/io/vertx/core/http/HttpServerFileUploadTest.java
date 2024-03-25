@@ -304,6 +304,7 @@ public abstract class HttpServerFileUploadTest extends HttpTestBase {
         req.endHandler(v -> {
           MultiMap attrs = req.formAttributes();
           attributeCount.set(attrs.size());
+          assertTrue(req.isExpectMultipart());
           req.response().end();
         });
       }
