@@ -12,6 +12,7 @@
 package io.vertx.core.json;
 
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.json.impl.JsonUtil;
 import io.vertx.core.shareddata.Shareable;
 import io.vertx.test.core.TestUtils;
 import org.junit.Before;
@@ -1972,5 +1973,49 @@ public class JsonObjectTest {
   @Test
   public void testJsonObjectOfEmpty() {
     assertEquals(new JsonObject(), JsonObject.of());
+  }
+
+  @Test
+  public void testNull() {
+    assertEquals(JsonObject.of(), JsonObject.of());
+    assertFalse(JsonObject.of().equals(null));
+    assertFalse(JsonObject.of().equals(new JsonObject(){}));
+    assertNull(JsonUtil.wrapJsonValue(null));
+
+    JsonObject jo = JsonObject.of("k", null, "", null);
+
+    AtomicInteger cnt = new AtomicInteger();
+    jo.iterator().forEachRemaining(e -> {
+      assertNotNull(e.getKey());
+      assertNull(e.getValue());// null is ok
+      cnt.incrementAndGet();
+    });
+    assertEquals(2, cnt.get());
+
+    assertEquals("=null, k=null",
+      jo.stream().sorted(Map.Entry.comparingByKey())
+        .map(e -> e.getKey()+"="+e.getValue()).collect(Collectors.joining(", ")));
+  }
+
+  @Test
+  public void testBuffer() {
+    JsonObject jo = new JsonObject("{\"k\": 1}");
+    assertEquals("{\"k\":1}", jo.toString());
+    assertEquals("{\"k\":1}", jo.toBuffer().toString());
+    assertEquals("{\"k\":1}", jo.toBuffer().toJson().toString());
+
+    Buffer buf = Buffer.buffer();
+    buf.appendLong(Long.MIN_VALUE);
+    jo.writeToBuffer(buf);
+    JsonObject jo0 = JsonObject.of("aaa", 111, "BBB", 222);
+    jo0.writeToBuffer(buf);
+
+    assertEquals(Long.MIN_VALUE, buf.getLong(0));
+    JsonObject jo1 = JsonObject.of("x", 0);
+    int index = jo1.readFromBuffer(8, buf);
+    assertEquals(jo, jo1);
+    JsonObject jo2 = JsonObject.of("x", 0);
+    jo2.readFromBuffer(index, buf);
+    assertEquals(jo0, jo2);
   }
 }
