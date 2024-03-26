@@ -33,7 +33,7 @@ class TrustManagerFactoryWrapper extends TrustManagerFactory {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TrustManagerFactoryWrapper.class);
   private static final String KEY_MANAGER_FACTORY_ALGORITHM = "no-algorithm";
-  private static final Provider PROVIDER = new Provider("", 1.0, "") {
+  private static final Provider PROVIDER = new Provider("", "1.0", "") {
   };
 
   TrustManagerFactoryWrapper(TrustManager trustManager) {
