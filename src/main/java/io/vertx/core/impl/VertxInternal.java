@@ -239,7 +239,5 @@ public interface VertxInternal extends Vertx {
   /**
    * @return whether virtual threads are available
    */
-  static boolean isVirtualThreadAvailable() {
-    return VertxImpl.VIRTUAL_THREAD_FACTORY != null;
-  }
+  boolean isVirtualThreadAvailable();
 }

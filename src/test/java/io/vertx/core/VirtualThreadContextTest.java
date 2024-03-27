@@ -36,7 +36,7 @@ public class VirtualThreadContextTest extends VertxTestBase {
 
   @Test
   public void testContext() {
-    Assume.assumeTrue(VertxInternal.isVirtualThreadAvailable());
+    Assume.assumeTrue(isVirtualThreadAvailable());
     vertx.createVirtualThreadContext().runOnContext(v -> {
       Thread thread = Thread.currentThread();
       assertTrue(VirtualThreadDeploymentTest.isVirtual(thread));
@@ -54,7 +54,7 @@ public class VirtualThreadContextTest extends VertxTestBase {
 
   @Test
   public void testAwaitFutureSuccess() {
-    Assume.assumeTrue(VertxInternal.isVirtualThreadAvailable());
+    Assume.assumeTrue(isVirtualThreadAvailable());
     Object result = new Object();
     vertx.createVirtualThreadContext().runOnContext(v -> {
       ContextInternal context = vertx.getOrCreateContext();
@@ -74,7 +74,7 @@ public class VirtualThreadContextTest extends VertxTestBase {
 
   @Test
   public void testAwaitFutureFailure() {
-    Assume.assumeTrue(VertxInternal.isVirtualThreadAvailable());
+    Assume.assumeTrue(isVirtualThreadAvailable());
     Exception failure = new Exception();
     vertx.createVirtualThreadContext().runOnContext(v -> {
       ContextInternal context = vertx.getOrCreateContext();
@@ -100,7 +100,7 @@ public class VirtualThreadContextTest extends VertxTestBase {
 
   @Test
   public void testAwaitCompoundFuture() {
-    Assume.assumeTrue(VertxInternal.isVirtualThreadAvailable());
+    Assume.assumeTrue(isVirtualThreadAvailable());
     Object result = new Object();
     vertx.createVirtualThreadContext().runOnContext(v -> {
       ContextInternal context = vertx.getOrCreateContext();
@@ -120,7 +120,7 @@ public class VirtualThreadContextTest extends VertxTestBase {
 
   @Test
   public void testDuplicateUseSameThread() {
-    Assume.assumeTrue(VertxInternal.isVirtualThreadAvailable());
+    Assume.assumeTrue(isVirtualThreadAvailable());
     int num = 1000;
     waitFor(num);
     vertx.createVirtualThreadContext().runOnContext(v -> {
@@ -139,7 +139,7 @@ public class VirtualThreadContextTest extends VertxTestBase {
 
   @Test
   public void testDuplicateConcurrentAwait() {
-    Assume.assumeTrue(VertxInternal.isVirtualThreadAvailable());
+    Assume.assumeTrue(isVirtualThreadAvailable());
     int num = 1000;
     waitFor(num);
     vertx.createVirtualThreadContext().runOnContext(v -> {
@@ -173,7 +173,7 @@ public class VirtualThreadContextTest extends VertxTestBase {
 
   @Test
   public void testTimer() {
-    Assume.assumeTrue(VertxInternal.isVirtualThreadAvailable());
+    Assume.assumeTrue(isVirtualThreadAvailable());
     vertx.createVirtualThreadContext().runOnContext(v -> {
       ContextInternal context = vertx.getOrCreateContext();
       PromiseInternal<String> promise = context.promise();
@@ -189,7 +189,7 @@ public class VirtualThreadContextTest extends VertxTestBase {
 
   @Test
   public void testInThread() {
-    Assume.assumeTrue(VertxInternal.isVirtualThreadAvailable());
+    Assume.assumeTrue(isVirtualThreadAvailable());
     vertx.createVirtualThreadContext().runOnContext(v1 -> {
       ContextInternal context = vertx.getOrCreateContext();
       assertTrue(context.inThread());
@@ -218,7 +218,7 @@ public class VirtualThreadContextTest extends VertxTestBase {
 
   @Test
   public void testSerializeBlocking() throws Exception {
-    Assume.assumeTrue(VertxInternal.isVirtualThreadAvailable());
+    Assume.assumeTrue(isVirtualThreadAvailable());
     AtomicInteger inflight = new AtomicInteger();
     vertx.createVirtualThreadContext().runOnContext(v1 -> {
       Context ctx = vertx.getOrCreateContext();
@@ -232,7 +232,7 @@ public class VirtualThreadContextTest extends VertxTestBase {
 
   @Test
   public void testVirtualThreadsNotAvailable() {
-    Assume.assumeFalse(VertxInternal.isVirtualThreadAvailable());
+    Assume.assumeFalse(isVirtualThreadAvailable());
     try {
       vertx.createVirtualThreadContext();
       fail();

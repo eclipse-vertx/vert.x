@@ -1007,7 +1007,7 @@ public class ContextTest extends VertxTestBase {
 
   @Test
   public void testAwaitFromVirtualThreadThread() {
-    Assume.assumeTrue(VertxInternal.isVirtualThreadAvailable());
+    Assume.assumeTrue(isVirtualThreadAvailable());
     testAwaitFromContextThread(ThreadingModel.VIRTUAL_THREAD, false);
   }
 
@@ -1031,7 +1031,7 @@ public class ContextTest extends VertxTestBase {
 
   @Test
   public void testInterruptThreadOnAwait() {
-    Assume.assumeTrue(VertxInternal.isVirtualThreadAvailable());
+    Assume.assumeTrue(isVirtualThreadAvailable());
     vertx.deployVerticle(() -> new AbstractVerticle() {
       @Override
       public void start() {

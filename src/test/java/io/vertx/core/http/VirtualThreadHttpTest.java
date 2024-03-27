@@ -35,7 +35,7 @@ public class VirtualThreadHttpTest extends VertxTestBase {
 
   @Test
   public void testHttpClient1() throws Exception {
-    Assume.assumeTrue(VertxInternal.isVirtualThreadAvailable());
+    Assume.assumeTrue(isVirtualThreadAvailable());
     HttpServer server = vertx.createHttpServer();
     server.requestHandler(req -> {
       req.response().end("Hello World");
@@ -57,7 +57,7 @@ public class VirtualThreadHttpTest extends VertxTestBase {
 
   @Test
   public void testHttpClient2() throws Exception {
-    Assume.assumeTrue(VertxInternal.isVirtualThreadAvailable());
+    Assume.assumeTrue(isVirtualThreadAvailable());
     waitFor(100);
     HttpServer server = vertx.createHttpServer();
     server.requestHandler(req -> {
@@ -90,7 +90,7 @@ public class VirtualThreadHttpTest extends VertxTestBase {
 
   @Test
   public void testHttpClientTimeout() throws Exception {
-    Assume.assumeTrue(VertxInternal.isVirtualThreadAvailable());
+    Assume.assumeTrue(isVirtualThreadAvailable());
     HttpServer server = vertx.createHttpServer();
     server.requestHandler(req -> {
     });

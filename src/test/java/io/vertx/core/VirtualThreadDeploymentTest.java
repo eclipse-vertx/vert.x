@@ -52,7 +52,7 @@ public class VirtualThreadDeploymentTest extends VertxTestBase {
 
   @Test
   public void testDeploy() {
-    Assume.assumeTrue(VertxInternal.isVirtualThreadAvailable());
+    Assume.assumeTrue(isVirtualThreadAvailable());
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
       public void start() {
@@ -67,7 +67,7 @@ public class VirtualThreadDeploymentTest extends VertxTestBase {
 
   @Test
   public void testExecuteBlocking() {
-    Assume.assumeTrue(VertxInternal.isVirtualThreadAvailable());
+    Assume.assumeTrue(isVirtualThreadAvailable());
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
       public void start() {
@@ -85,7 +85,7 @@ public class VirtualThreadDeploymentTest extends VertxTestBase {
 
   @Test
   public void testDeployHTTPServer() throws Exception {
-    Assume.assumeTrue(VertxInternal.isVirtualThreadAvailable());
+    Assume.assumeTrue(isVirtualThreadAvailable());
     AtomicInteger inflight = new AtomicInteger();
     AtomicBoolean processing = new AtomicBoolean();
     AtomicInteger max = new AtomicInteger();
@@ -126,7 +126,7 @@ public class VirtualThreadDeploymentTest extends VertxTestBase {
 
   @Test
   public void testVirtualThreadsNotAvailable() {
-    Assume.assumeFalse(VertxInternal.isVirtualThreadAvailable());
+    Assume.assumeFalse(isVirtualThreadAvailable());
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
       public void start() {
