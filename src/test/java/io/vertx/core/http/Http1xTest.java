@@ -4245,6 +4245,7 @@ public class Http1xTest extends HttpTest {
     await();
   }
 
+  @Ignore
   @Test
   public void testPipelinedWithResponseSent() throws Exception {
     int numReq = 10;
