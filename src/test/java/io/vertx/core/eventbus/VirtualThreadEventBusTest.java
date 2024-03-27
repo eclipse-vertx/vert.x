@@ -29,7 +29,7 @@ public class VirtualThreadEventBusTest extends VertxTestBase {
 
   @Test
   public void testEventBus() {
-    Assume.assumeTrue(VertxInternal.isVirtualThreadAvailable());
+    Assume.assumeTrue(isVirtualThreadAvailable());
     EventBus eb = vertx.eventBus();
     eb.consumer("test-addr", msg -> {
       msg.reply(msg.body());

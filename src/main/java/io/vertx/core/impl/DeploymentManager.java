@@ -181,7 +181,7 @@ public class DeploymentManager {
         workerPool = vertx.createSharedWorkerPool(options.getWorkerPoolName(), options.getWorkerPoolSize(), options.getMaxWorkerExecuteTime(), options.getMaxWorkerExecuteTimeUnit());
       }
     } else {
-      if (!VertxInternal.isVirtualThreadAvailable()) {
+      if (!vertx.isVirtualThreadAvailable()) {
         return callingContext.failedFuture("This Java runtime does not support virtual threads");
       }
     }
