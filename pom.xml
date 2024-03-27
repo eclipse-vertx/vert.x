@@ -290,11 +290,21 @@
             <execution>
               <id>default-jar</id>
               <configuration>
-                <archive>
-                  <manifestEntries>
-                    <Multi-Release>true</Multi-Release>
-                  </manifestEntries>
-                </archive>
+                <excludes>
+                  <exclude>/docoverride/**</exclude>
+                  <exclude>/examples/**</exclude>
+                  <exclude>META-INF/native-image/**</exclude>
+                </excludes>
+              </configuration>
+            </execution>
+            <execution>
+              <id>native-image-jar</id>
+              <configuration>
+                <excludes>
+                  <exclude>/docoverride/**</exclude>
+                  <exclude>/examples/**</exclude>
+                </excludes>
+                <classifier>native-image</classifier>
               </configuration>
             </execution>
           </executions>
@@ -738,6 +748,19 @@
                 <additionalClasspathElement>${project.basedir}/src/test/classpath/customcontextlocal</additionalClasspathElement>
               </additionalClasspathElements>
             </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>native-image-jar</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
           </execution>
         </executions>
       </plugin>
