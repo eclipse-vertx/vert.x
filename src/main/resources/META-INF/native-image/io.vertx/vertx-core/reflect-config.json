@@ -1,0 +1,38 @@
+[
+  {
+    "name": "java.lang.Thread$Builder",
+    "condition": {
+      "typeReachable": "io.vertx.core.impl.VertxImpl"
+    },
+    "methods": [
+      {
+        "name": "factory",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "name": "java.lang.Thread$Builder$OfVirtual",
+    "condition": {
+      "typeReachable": "io.vertx.core.impl.VertxImpl"
+    },
+    "methods": [
+      {
+        "name": "name",
+        "parameterTypes": ["java.lang.String", "long"]
+      }
+    ]
+  },
+  {
+    "name": "java.lang.Thread",
+    "condition": {
+      "typeReachable": "io.vertx.core.impl.VertxImpl"
+    },
+    "methods": [
+      {
+        "name": "ofVirtual",
+        "parameterTypes": []
+      }
+    ]
+  }
+]

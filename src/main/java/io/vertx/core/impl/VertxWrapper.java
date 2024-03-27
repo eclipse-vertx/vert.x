@@ -531,6 +531,11 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
+  public boolean isVirtualThreadAvailable() {
+    return delegate.isVirtualThreadAvailable();
+  }
+
+  @Override
   public boolean isMetricsEnabled() {
     return delegate.isMetricsEnabled();
   }

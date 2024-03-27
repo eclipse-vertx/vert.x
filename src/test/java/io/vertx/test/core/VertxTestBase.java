@@ -12,6 +12,7 @@
 package io.vertx.test.core;
 
 import io.vertx.core.*;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.*;
@@ -111,6 +112,10 @@ public class VertxTestBase extends AsyncTestBase {
       });
     }
     Assert.assertTrue(latch.await(180, TimeUnit.SECONDS));
+  }
+
+  protected final boolean isVirtualThreadAvailable() {
+    return ((VertxInternal)vertx).isVirtualThreadAvailable();
   }
 
   /**
