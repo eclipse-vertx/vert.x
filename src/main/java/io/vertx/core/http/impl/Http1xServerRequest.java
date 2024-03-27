@@ -121,12 +121,34 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
     }
   }
 
-  void handleContent(HttpContent content) {
+  boolean handleContent(HttpContent content) {
+    boolean last = content instanceof LastHttpContent;
     synchronized (conn) {
       assert pending == null;
-      pending = content;
+      if (demand == 0L) {
+        pending = content;
+        return false;
+      } else if (demand != Long.MAX_VALUE) {
+        demand--;
+      }
+      ending |= last;
     }
-    checkPending();
+    ByteBuf buf = content.content();
+    if (buf.readableBytes() > 0) {
+      Buffer data = BufferInternal.buffer(VertxHandler.safeBuffer(buf));
+      onData(data);
+    }
+    conn.ack(content);
+    if (last) {
+      synchronized (conn) {
+        if (demand == 0L) {
+          return false;
+        }
+        ended = true;
+      }
+      onEnd();
+    }
+    return true;
   }
 
   void handleBegin(boolean keepAlive) {
