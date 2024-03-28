@@ -530,6 +530,16 @@ public class Http2ServerTest extends Http2TestBase {
       assertEquals(Collections.singletonList("foo_value"), params.getAll("foo"));
       assertEquals("bar_value_1", params.get("bar"));
       assertEquals(Arrays.asList("bar_value_1", "bar_value_2"), params.getAll("bar"));
+
+      // test params()
+      MultiMap params1 = req.params(true);
+      MultiMap params2 = req.params(true);
+      assertTrue(params1 == params2); // got the cached value
+      MultiMap params3 = req.params(false);
+      assertTrue(params1 != params3); // cache refreshed
+      MultiMap params4 = req.params(false);
+      assertTrue(params3 == params4); // got the cached value
+
       testComplete();
     });
     startServer();

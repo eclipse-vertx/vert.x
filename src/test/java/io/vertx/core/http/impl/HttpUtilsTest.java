@@ -8,12 +8,14 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http;
+package io.vertx.core.http.impl;
 
+import io.vertx.core.MultiMap;
 import io.vertx.core.http.impl.HttpUtils;
 import org.junit.Test;
 
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -228,5 +230,15 @@ public class HttpUtilsTest {
   private void check(String base, String ref, String expected) throws Exception {
     URI uri = HttpUtils.resolveURIReference(base, ref);
     assertEquals(expected, uri.getPath());
+  }
+
+  @Test
+  public void testParams() {
+    String uri = "https://foo.com/?a=1;b=2&c=3";
+    MultiMap result = HttpUtils.params(uri, Charset.defaultCharset(), false);
+    assertEquals("1", result.get("a"));
+
+    result = HttpUtils.params(uri, Charset.defaultCharset(), true);
+    assertEquals("1;b=2", result.get("a"));
   }
 }
