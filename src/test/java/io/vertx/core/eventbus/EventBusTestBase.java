@@ -27,6 +27,8 @@ import java.math.BigInteger;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import static io.vertx.core.eventbus.impl.CodecManager.STRING_MESSAGE_CODEC;
@@ -664,6 +666,70 @@ public abstract class EventBusTestBase extends VertxTestBase {
       awaitFuture(reg.completion());
     }
     vertices[0].eventBus().publish(ADDRESS1, val);
+    await();
+  }
+
+  @Test
+  public void testStream() throws Exception {
+    Vertx[] vertices = vertices(2);
+    CountDownLatch latch = new CountDownLatch(1);
+    vertices[1].eventBus().bindStream(ADDRESS1, stream -> {
+      stream.handler(msg -> {
+        assertEquals("ping", msg.body());
+        stream.write(msg.body());
+      });
+      stream.endHandler(v -> {
+        stream.end();
+      });
+    }).onComplete(onSuccess(v -> {
+      latch.countDown();
+    }));
+    awaitLatch(latch);
+    vertices[0].eventBus().connectStream(ADDRESS1).onComplete(onSuccess(stream -> {
+      stream.write("ping");
+      stream.handler(msg -> {
+        assertEquals("ping", msg.body());
+        stream.end();
+      });
+      stream.endHandler(v -> {
+        testComplete();
+      });
+    }));
+    await();
+  }
+
+  @Test
+  public void testNoSynAck() throws Exception {
+    waitFor(2);
+    Vertx[] vertices = vertices(2);
+    CountDownLatch latch = new CountDownLatch(1);
+    vertices[1].eventBus().consumer(ADDRESS1, msg -> {
+      complete();
+    }).completion().onComplete(onSuccess(v -> latch.countDown()));
+    awaitLatch(latch);
+    vertices[0].eventBus().connectStream(ADDRESS1).onComplete(onFailure(err -> {
+      assertEquals(TimeoutException.class, err.getClass());
+      complete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testIncorrectAck() throws Exception {
+    waitFor(2);
+    Vertx[] vertices = vertices(2);
+    CountDownLatch latch = new CountDownLatch(1);
+    AtomicReference<String> senderAddr = new AtomicReference<>();
+    vertices[1].eventBus().consumer(ADDRESS1, msg -> {
+      senderAddr.set(msg.replyAddress());
+      msg.reply("incorrect");
+      complete();
+    }).completion().onComplete(onSuccess(v -> latch.countDown()));
+    awaitLatch(latch);
+    vertices[0].eventBus().connectStream(ADDRESS1).onComplete(onFailure(err -> {
+      assertEquals(IllegalStateException.class, err.getClass());
+      complete();
+    }));
     await();
   }
 

@@ -63,7 +63,7 @@ public class CodecManager {
     this.systemCodecs = codecs(NULL_MESSAGE_CODEC, PING_MESSAGE_CODEC, STRING_MESSAGE_CODEC, BUFFER_MESSAGE_CODEC, JSON_OBJECT_MESSAGE_CODEC, JSON_ARRAY_MESSAGE_CODEC,
       BYTE_ARRAY_MESSAGE_CODEC, INT_MESSAGE_CODEC, LONG_MESSAGE_CODEC, FLOAT_MESSAGE_CODEC, DOUBLE_MESSAGE_CODEC,
       BOOLEAN_MESSAGE_CODEC, SHORT_MESSAGE_CODEC, CHAR_MESSAGE_CODEC, BYTE_MESSAGE_CODEC, REPLY_EXCEPTION_MESSAGE_CODEC,
-      clusterSerializableCodec, serializableCodec);
+      clusterSerializableCodec, serializableCodec, SynFrame.CODEC, FinFrame.CODEC);
   }
 
   public MessageCodec lookupCodec(Object body, String codecName, boolean local) {
@@ -98,6 +98,10 @@ public class CodecManager {
       codec = CHAR_MESSAGE_CODEC;
     } else if (body instanceof Byte) {
       codec = BYTE_MESSAGE_CODEC;
+    } else if (body instanceof SynFrame) {
+      codec = SynFrame.CODEC;
+    } else if (body instanceof FinFrame) {
+      codec = FinFrame.CODEC;
     } else if (body instanceof ReplyException) {
       codec = defaultCodecMap.get(body.getClass());
       if (codec == null) {

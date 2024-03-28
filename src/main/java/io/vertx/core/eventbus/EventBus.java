@@ -15,7 +15,6 @@ import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.eventbus.impl.DefaultSerializableChecker;
@@ -198,6 +197,10 @@ public interface EventBus extends Measured {
    * @return The publisher
    */
   <T> MessageProducer<T> publisher(String address, DeliveryOptions options);
+
+  Future<Void> bindStream(String address, Handler<MessageStream> handler);
+
+  Future<MessageStream> connectStream(String address);
 
   /**
    * Register a message codec.
