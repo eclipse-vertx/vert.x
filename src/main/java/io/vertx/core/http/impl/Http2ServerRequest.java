@@ -70,7 +70,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   // Accessed on context thread
   private Charset paramsCharset = StandardCharsets.UTF_8;
   private MultiMap params;
-  private Boolean semicolonIsNormalCharInParams;
+  private boolean semicolonIsNormalCharInParams;
   private String absoluteURI;
   private MultiMap attributes;
   private HttpEventHandler eventHandler;
@@ -365,7 +365,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   @Override
   public MultiMap params(boolean semicolonIsNormalChar) {
     synchronized (stream.conn) {
-      if (params == null || !Boolean.valueOf(semicolonIsNormalChar).equals(semicolonIsNormalCharInParams)) {
+      if (params == null || semicolonIsNormalChar != semicolonIsNormalCharInParams) {
         params = HttpUtils.params(uri(), paramsCharset, semicolonIsNormalChar);
         semicolonIsNormalCharInParams = semicolonIsNormalChar;
       }

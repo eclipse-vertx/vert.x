@@ -88,7 +88,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   // Cache this for performance
   private Charset paramsCharset = StandardCharsets.UTF_8;
   private MultiMap params;
-  private Boolean semicolonIsNormalCharInParams;
+  private boolean semicolonIsNormalCharInParams;
   private MultiMap headers;
   private String absoluteURI;
 
@@ -309,7 +309,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
 
   @Override
   public MultiMap params(boolean semicolonIsNormalChar) {
-    if (params == null || !Boolean.valueOf(semicolonIsNormalChar).equals(semicolonIsNormalCharInParams)) {
+    if (params == null || semicolonIsNormalChar != semicolonIsNormalCharInParams) {
       params = HttpUtils.params(uri(), paramsCharset, semicolonIsNormalChar);
       semicolonIsNormalCharInParams = semicolonIsNormalChar;
     }
