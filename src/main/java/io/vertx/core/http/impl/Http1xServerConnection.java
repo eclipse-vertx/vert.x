@@ -199,10 +199,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       return;
     }
     Buffer buffer = Buffer.buffer(VertxHandler.safeBuffer(content.content()));
-    Http1xServerRequest request;
-    synchronized (this) {
-      request = requestInProgress;
-    }
+    Http1xServerRequest request = requestInProgress;
     request.context.execute(buffer, request::handleContent);
     //TODO chunk trailers
     if (content instanceof LastHttpContent) {
@@ -212,12 +209,9 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
 
   private void onEnd() {
     boolean close;
-    Http1xServerRequest request;
-    synchronized (this) {
-      request = requestInProgress;
-      requestInProgress = null;
-      close = !keepAlive && responseInProgress == null;
-    }
+    Http1xServerRequest request = requestInProgress;
+    requestInProgress = null;
+    close = !keepAlive && responseInProgress == null;
     request.context.execute(request, Http1xServerRequest::handleEnd);
     if (close) {
       flushAndClose();
@@ -468,16 +462,14 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     writable = !isNotWritable();
     ContextInternal context;
     Handler<Boolean> handler;
-    synchronized (this) {
-      if (responseInProgress != null) {
-        context = responseInProgress.context;
-        handler = responseInProgress.response()::handleWritabilityChanged;
-      } else if (webSocket != null) {
-        context = webSocket.context;
-        handler = webSocket::handleWritabilityChanged;
-      } else {
-        return;
-      }
+    if (responseInProgress != null) {
+      context = responseInProgress.context;
+      handler = responseInProgress.response()::handleWritabilityChanged;
+    } else if (webSocket != null) {
+      context = webSocket.context;
+      handler = webSocket::handleWritabilityChanged;
+    } else {
+      return;
     }
     context.execute(writable, handler);
   }
@@ -496,14 +488,9 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   }
 
   protected void handleClosed() {
-    Http1xServerRequest responseInProgress;
-    Http1xServerRequest requestInProgress;
-    ServerWebSocketImpl ws;
-    synchronized (this) {
-      ws = this.webSocket;
-      requestInProgress = this.requestInProgress;
-      responseInProgress = this.responseInProgress;
-    }
+    Http1xServerRequest responseInProgress = this.responseInProgress;
+    Http1xServerRequest requestInProgress = this.requestInProgress;
+    ServerWebSocketImpl webSocket = this.webSocket;
     if (requestInProgress != null) {
       requestInProgress.context.execute(v -> {
         requestInProgress.handleException(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
@@ -514,8 +501,8 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
         responseInProgress.handleException(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
       });
     }
-    if (ws != null) {
-      ws.context.execute(v -> ws.handleConnectionClosed());
+    if (webSocket != null) {
+      webSocket.context.execute(v -> webSocket.handleConnectionClosed());
     }
     super.handleClosed();
   }
@@ -523,14 +510,8 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   @Override
   public void handleException(Throwable t) {
     super.handleException(t);
-    Http1xServerRequest responseInProgress;
-    Http1xServerRequest requestInProgress;
-    synchronized (this) {
-      requestInProgress = this.requestInProgress;
-      responseInProgress = this.responseInProgress;
-      if (METRICS_ENABLED && metrics != null) {
-        requestFailed = true;
-      }
+    if (METRICS_ENABLED && metrics != null) {
+      requestFailed = true;
     }
     if (requestInProgress != null) {
       requestInProgress.handleException(t);
