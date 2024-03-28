@@ -139,7 +139,8 @@ public class InboundBuffer<E> {
     if (demand == Long.MAX_VALUE) {
       return true;
     } else {
-      long actual = size() - demand;
+      int size = pending == null ? 0 : pending.size();
+      long actual = size - demand;
       boolean writable = actual < highWaterMark;
       overflow |= !writable;
       return writable;
