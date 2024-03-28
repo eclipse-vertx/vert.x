@@ -31,23 +31,8 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
  */
 public final class JsonUtil {
 
-  public static final Base64.Encoder BASE64_ENCODER;
-  public static final Base64.Decoder BASE64_DECODER;
-
-  static {
-    /*
-     * Vert.x 3.x Json supports RFC-7493, however the JSON encoder/decoder format was incorrect.
-     * Users who might need to interop with Vert.x 3.x applications should set the system property
-     * {@code vertx.json.base64} to {@code legacy}.
-     */
-    if ("legacy".equalsIgnoreCase(System.getProperty("vertx.json.base64"))) {
-      BASE64_ENCODER = Base64.getEncoder();
-      BASE64_DECODER = Base64.getDecoder();
-    } else {
-      BASE64_ENCODER = Base64.getUrlEncoder().withoutPadding();
-      BASE64_DECODER = Base64.getUrlDecoder();
-    }
-  }
+  public static final Base64.Encoder BASE64_ENCODER = Base64.getUrlEncoder().withoutPadding();
+  public static final Base64.Decoder BASE64_DECODER = Base64.getUrlDecoder();
 
   /**
    * Wraps well known java types to adhere to the Json expected types.

@@ -15,6 +15,7 @@ import io.netty.handler.traffic.GlobalTrafficShapingHandler;
 import io.vertx.core.*;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.SysProps;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
@@ -41,9 +42,7 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
 
   private static final Handler<Throwable> DEFAULT_EXCEPTION_HANDLER = t -> log.trace("Connection failure", t);
 
-  private static final String DISABLE_WEBSOCKETS_PROP_NAME = "vertx.disableWebsockets";
-
-  static final boolean DISABLE_WEBSOCKETS = Boolean.getBoolean(DISABLE_WEBSOCKETS_PROP_NAME);
+  static final boolean DISABLE_WEBSOCKETS = SysProps.DISABLE_WEBSOCKETS.getBoolean();
 
   final HttpServerOptions options;
   private Handler<HttpServerRequest> requestHandler;

@@ -11,6 +11,8 @@
 
 package io.vertx.core.spi.metrics;
 
+import io.vertx.core.impl.SysProps;
+
 /**
  * The metrics interface is implemented by metrics providers that wants to provide monitoring of
  * Vert.x core.
@@ -19,9 +21,7 @@ package io.vertx.core.spi.metrics;
  */
 public interface Metrics {
 
-  String DISABLE_METRICS_PROPERTY_NAME = "vertx.disableMetrics";
-
-  boolean METRICS_ENABLED = !Boolean.getBoolean(DISABLE_METRICS_PROPERTY_NAME);
+  boolean METRICS_ENABLED = !SysProps.DISABLE_METRICS.getBoolean();
 
   /**
    * Used to close out the metrics, for example when an http server/client has been closed.<p/>

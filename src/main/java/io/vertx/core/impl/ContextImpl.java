@@ -32,8 +32,7 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
 
   private static final Logger log = LoggerFactory.getLogger(ContextImpl.class);
 
-  private static final String DISABLE_TIMINGS_PROP_NAME = "vertx.disableContextTimings";
-  static final boolean DISABLE_TIMINGS = Boolean.getBoolean(DISABLE_TIMINGS_PROP_NAME);
+  static final boolean DISABLE_TIMINGS = SysProps.DISABLE_CONTEXT_TIMINGS.getBoolean();
 
   private final ThreadingModel threadingModel;
   private final VertxInternal owner;

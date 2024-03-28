@@ -11,6 +11,7 @@
 
 package io.vertx.core.impl.verticle;
 
+import io.vertx.core.impl.SysProps;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 
@@ -39,25 +40,6 @@ import static io.vertx.core.net.impl.URIDecoder.decodeURIComponent;
 public class CompilingClassLoader extends ClassLoader {
 
   private static final Logger log = LoggerFactory.getLogger(CompilingClassLoader.class);
-
-
-  private static final String JAVA_COMPILER_OPTIONS_PROP_NAME = "vertx.javaCompilerOptions";
-  private final static List<String> COMPILER_OPTIONS;
-
-  static {
-    String props = System.getProperty(JAVA_COMPILER_OPTIONS_PROP_NAME);
-    if (props != null) {
-      String[] array = props.split(",");
-      List<String> compilerProps = new ArrayList<>(array.length);
-
-      for (String prop :array) {
-        compilerProps.add(prop.trim());
-      }
-      COMPILER_OPTIONS = Collections.unmodifiableList(compilerProps);
-    } else {
-      COMPILER_OPTIONS = null;
-    }
-  }
 
   private final JavaSourceContext javaSourceContext;
   private final MemoryFileManager fileManager;
@@ -90,7 +72,7 @@ public class CompilingClassLoader extends ClassLoader {
       // other .java resources from other modules
 
       JavaFileObject javaFile = standardFileManager.getJavaFileForInput(StandardLocation.SOURCE_PATH, resolveMainClassName(), Kind.SOURCE);
-      JavaCompiler.CompilationTask task = javaCompiler.getTask(null, fileManager, diagnostics, COMPILER_OPTIONS, null, Collections.singleton(javaFile));
+      JavaCompiler.CompilationTask task = javaCompiler.getTask(null, fileManager, diagnostics, null, null, Collections.singleton(javaFile));
       boolean valid = task.call();
       if (valid) {
         for (Diagnostic<?> d : diagnostics.getDiagnostics()) {

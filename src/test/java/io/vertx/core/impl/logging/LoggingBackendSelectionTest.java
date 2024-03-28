@@ -11,6 +11,7 @@
 
 package io.vertx.core.impl.logging;
 
+import io.vertx.core.impl.SysProps;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,7 +25,6 @@ import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
 
-import static io.vertx.core.impl.logging.LoggerFactory.LOGGER_DELEGATE_FACTORY_CLASS_NAME;
 import static org.junit.Assert.assertEquals;
 
 
@@ -46,12 +46,12 @@ public class LoggingBackendSelectionTest {
   @After
   public void tearDown() {
     Thread.currentThread().setContextClassLoader(originalTccl);
-    System.clearProperty(LOGGER_DELEGATE_FACTORY_CLASS_NAME);
+    System.clearProperty(SysProps.LOGGER_DELEGATE_FACTORY_CLASS_NAME.name);
   }
 
   @Test
   public void syspropPriority() throws Exception {
-    System.setProperty(LOGGER_DELEGATE_FACTORY_CLASS_NAME, "io.vertx.core.logging.Log4j2LogDelegateFactory");
+    System.setProperty(SysProps.LOGGER_DELEGATE_FACTORY_CLASS_NAME.name, "io.vertx.core.logging.Log4j2LogDelegateFactory");
     assertEquals("Log4j2", loggingBackend());
   }
 

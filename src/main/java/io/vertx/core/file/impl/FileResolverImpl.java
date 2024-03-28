@@ -53,9 +53,6 @@ import static io.vertx.core.net.impl.URIDecoder.decodeURIComponent;
  */
 public class FileResolverImpl implements FileResolver {
 
-  public static final String DISABLE_FILE_CACHING_PROP_NAME = "vertx.disableFileCaching";
-  public static final String DISABLE_CP_RESOLVING_PROP_NAME = "vertx.disableFileCPResolving";
-  public static final String CACHE_DIR_BASE_PROP_NAME = "vertx.cacheDirBase";
   private static final boolean NON_UNIX_FILE_SEP = File.separatorChar != '/';
   private static final String JAR_URL_SEP = "!/";
 
