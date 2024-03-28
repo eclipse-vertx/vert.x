@@ -145,7 +145,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
         conn.doPause();
       }
     } else {
-      context.execute(buffer, this::onData);
+      onData(buffer);
     }
   }
 
