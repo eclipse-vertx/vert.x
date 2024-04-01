@@ -198,6 +198,12 @@
       <version>1.16.0</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>com.github.luben</groupId>
+      <artifactId>zstd-jni</artifactId>
+      <version>1.5.6-1</version>
+      <scope>test</scope>
+    </dependency>
 
     <!-- JMH -->
     <dependency>
