@@ -414,6 +414,18 @@ public interface HttpHeaders {
   CharSequence DEFLATE_GZIP_BR = createOptimized("deflate, gzip, br");
 
   /**
+   * deflate,gzip,zstd,br header value
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  CharSequence DEFLATE_GZIP_ZSTD_BR = createOptimized("deflate, gzip, zstd, br");
+
+  /**
+   * deflate,gzip,zstd header value
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  CharSequence DEFLATE_GZIP_ZSTD = createOptimized("deflate, gzip, zstd");
+
+  /**
    * text/html header value
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)

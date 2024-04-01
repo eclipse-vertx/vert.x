@@ -17,6 +17,7 @@ import io.netty.channel.*;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.compression.Brotli;
 import io.netty.handler.codec.compression.ZlibCodecFactory;
+import io.netty.handler.codec.compression.Zstd;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
@@ -212,7 +213,13 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
   }
 
   static CharSequence determineCompressionAcceptEncoding() {
-    if (isBrotliAvailable()) {
+    if (isBrotliAvailable() && isZstdAvailable()) {
+      return DEFLATE_GZIP_ZSTD_BR;
+    }
+    else if (!isBrotliAvailable() && isZstdAvailable()) {
+      return DEFLATE_GZIP_ZSTD;
+    }
+    else if (isBrotliAvailable() && !isZstdAvailable()) {
       return DEFLATE_GZIP_BR;
     } else {
       return DEFLATE_GZIP;
@@ -224,6 +231,10 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     return Brotli.isAvailable();
   }
 
+  // Encapsulated in a method, so GraalVM can substitute it
+  private static boolean isZstdAvailable() {
+    return Zstd.isAvailable();
+  }
   private void beginRequest(Stream stream, HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, PromiseInternal<Void> promise) {
     request.id = stream.id;
     request.remoteAddress = remoteAddress();
