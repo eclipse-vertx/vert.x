@@ -11,6 +11,7 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.*;
@@ -127,14 +128,14 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
         if (buffer == InboundBuffer.END_SENTINEL) {
           onEnd();
         } else {
-          onData((Buffer) buffer);
+          onData((ByteBuf) buffer);
         }
       });
     }
     return pending;
   }
 
-  void handleContent(Buffer buffer) {
+  void handleContent(ByteBuf buffer) {
     InboundBuffer<Object> queue;
     synchronized (conn) {
       queue = pending;
@@ -536,13 +537,14 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
     return eventHandler(true).end();
   }
 
-  private void onData(Buffer data) {
+  private void onData(ByteBuf data) {
+    Buffer buffer = BufferInternal.buffer(data);
     HttpEventHandler handler;
     synchronized (conn) {
-      bytesRead += data.length();
+      bytesRead += buffer.length();
       if (decoder != null) {
         try {
-          decoder.offer(new DefaultHttpContent(((BufferInternal)data).getByteBuf()));
+          decoder.offer(new DefaultHttpContent(data));
         } catch (HttpPostRequestDecoder.ErrorDataDecoderException |
                  HttpPostRequestDecoder.TooLongFormFieldException |
                  HttpPostRequestDecoder.TooManyFormFieldsException e) {
@@ -554,7 +556,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
       handler = eventHandler;
     }
     if (handler != null) {
-      eventHandler.handleChunk(data);
+      eventHandler.handleChunk(buffer);
     }
   }
 

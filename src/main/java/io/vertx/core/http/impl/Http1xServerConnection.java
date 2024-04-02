@@ -11,6 +11,7 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -208,9 +209,9 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       handleError(content);
       return;
     }
-    Buffer buffer = BufferInternal.buffer(VertxHandler.safeBuffer(content.content()));
+    ByteBuf byteBuf = VertxHandler.safeBuffer(content.content());
     Http1xServerRequest request = requestInProgress;
-    request.context.execute(buffer, request::handleContent);
+    request.context.execute(byteBuf, request::handleContent);
     //TODO chunk trailers
     if (content instanceof LastHttpContent) {
       onEnd();
