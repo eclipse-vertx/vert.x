@@ -95,6 +95,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   private MultiMap attributes;
   private boolean expectMultipart;
   private HttpPostRequestDecoder decoder;
+  private boolean ending;
   private boolean ended;
   private long bytesRead;
   private InboundBuffer<Object> pending;
@@ -510,7 +511,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   @Override
   public boolean isEnded() {
     synchronized (conn) {
-      return ended && (pending == null || (!pending.isPaused() && pending.isEmpty()));
+      return ended;
     }
   }
 
@@ -561,7 +562,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   void handleEnd() {
     InboundBuffer<Object> queue;
     synchronized (conn) {
-      ended = true;
+      ending = true;
       queue = pending;
     }
     if (queue != null) {
@@ -580,6 +581,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
       if (decoder != null) {
         endDecode();
       }
+      ended = true;
       handler = eventHandler;
     }
     // If there have been uploads then we let the last one call the end handler once any fileuploads are complete
