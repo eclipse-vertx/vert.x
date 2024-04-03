@@ -209,9 +209,9 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       handleError(content);
       return;
     }
-    ByteBuf byteBuf = VertxHandler.safeBuffer(content.content());
+    ByteBuf buffer = VertxHandler.safeBuffer(content.content());
     Http1xServerRequest request = requestInProgress;
-    request.context.execute(byteBuf, request::handleContent);
+    request.context.execute(buffer, request::handleContent);
     //TODO chunk trailers
     if (content instanceof LastHttpContent) {
       onEnd();

@@ -12,6 +12,8 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.CompositeByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.*;
@@ -99,12 +101,16 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   private boolean ending;
   private boolean ended;
   private long bytesRead;
-  private InboundBuffer<Object> pending;
+  private ByteBuf content;
+  private long demand;
+  private boolean emitting;
 
   Http1xServerRequest(Http1xServerConnection conn, HttpRequest request, ContextInternal context) {
     this.conn = conn;
     this.context = context;
     this.request = request;
+    this.demand = Long.MAX_VALUE;
+    this.emitting = false;
   }
 
   private HttpEventHandler eventHandler(boolean create) {
@@ -120,35 +126,35 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
     }
   }
 
-  private InboundBuffer<Object> pendingQueue() {
-    if (pending == null) {
-      pending = new InboundBuffer<>(context, 8);
-      pending.drainHandler(v -> conn.doResume());
-      pending.handler(buffer -> {
-        if (buffer == InboundBuffer.END_SENTINEL) {
-          onEnd();
-        } else {
-          onData((ByteBuf) buffer);
-        }
-      });
-    }
-    return pending;
-  }
-
   void handleContent(ByteBuf buffer) {
-    InboundBuffer<Object> queue;
     synchronized (conn) {
-      queue = pending;
-    }
-    if (queue != null) {
-      // We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
-      if (!queue.write(buffer)) {
-        // We only pause when we are actively called by the connection
-        conn.doPause();
+      if (demand == 0L || emitting) {
+        if (content == null) {
+          content = buffer;
+        } else {
+          CompositeByteBuf composite;
+          if (content instanceof CompositeByteBuf) {
+            composite = (CompositeByteBuf) content;
+          } else {
+            composite = Unpooled.compositeBuffer(256);
+            composite.addComponent(content);
+            composite.writerIndex(content.writerIndex());
+            content = composite;
+          }
+          composite.addComponent(buffer);
+          composite.writerIndex(composite.writerIndex() + buffer.writerIndex());
+          if (composite.numComponents() == 4) {
+            conn.doPause();
+          }
+        }
+        return;
       }
-    } else {
-      onData(buffer);
+      assert content == null;
+      if (demand != Long.MAX_VALUE) {
+        demand--;
+      }
     }
+    onData(buffer);
   }
 
   void handleBegin(boolean keepAlive) {
@@ -338,17 +344,91 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   @Override
   public HttpServerRequest pause() {
     synchronized (conn) {
-      pendingQueue().pause();
+      demand = 0L;
       return this;
     }
   }
 
   @Override
   public HttpServerRequest fetch(long amount) {
-    synchronized (conn) {
-      pendingQueue().fetch(amount);
+    if (amount < 0L) {
+      throw new IllegalStateException();
+    }
+    if (amount == 0L) {
       return this;
     }
+    synchronized (conn) {
+      demand += amount;
+      if (demand < 0L) {
+        demand = Long.MAX_VALUE;
+      }
+      if (content == null) {
+        if (ending) {
+          if (ended) {
+            return this;
+          }
+        } else {
+          return this;
+        }
+      }
+      emitting = true;
+    }
+//    if (context.inThread()) {
+//      check();
+//    } else {
+    // NECESSARY FOR HACK...
+    context.runOnContext(v -> check());
+//    }
+    return this;
+  }
+
+  private void check() {
+    ByteBuf buffer;
+    synchronized (conn) {
+      if (demand == 0L) {
+        emitting = false;
+        return;
+      }
+      buffer = content;
+      if (buffer != null) {
+        content = null;
+        if (demand != Long.MAX_VALUE) {
+          demand--;
+        }
+      }
+    }
+    if (buffer != null) {
+      boolean toResume;
+      if (buffer instanceof CompositeByteBuf) {
+        toResume = ((CompositeByteBuf)buffer).numComponents() >= 4;
+      } else {
+        toResume = false;
+      }
+      onData(buffer);
+      if (toResume) {
+        conn.doResume();
+      }
+    }
+    synchronized (conn) {
+      try {
+        if (demand == 0L) {
+          return;
+        }
+        if (ending) {
+          if (ended) {
+            return;
+          }
+          if (demand != Long.MAX_VALUE) {
+            demand--;
+          }
+        } else {
+          return;
+        }
+      } finally {
+        emitting = false;
+      }
+    }
+    onEnd();
   }
 
   @Override
@@ -561,16 +641,13 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   }
 
   void handleEnd() {
-    InboundBuffer<Object> queue;
     synchronized (conn) {
       ending = true;
-      queue = pending;
+      if (demand == 0L || emitting) {
+        return;
+      }
     }
-    if (queue != null) {
-      queue.write(InboundBuffer.END_SENTINEL);
-    } else {
-      onEnd();
-    }
+    onEnd();
   }
 
   private void onEnd() {
