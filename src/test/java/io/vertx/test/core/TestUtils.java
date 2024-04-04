@@ -37,6 +37,7 @@ import javax.security.cert.X509Certificate;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.util.NetUtil;
+import io.netty.util.internal.ThreadLocalRandom;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
@@ -118,13 +119,17 @@ public class TestUtils {
    */
   public static byte[] randomByteArray(int length, boolean avoid, byte avoidByte) {
     byte[] line = new byte[length];
-    for (int i = 0; i < length; i++) {
-      byte rand;
-      do {
-        rand = randomByte();
-      } while (avoid && rand == avoidByte);
+    if (avoid) {
+      for (int i = 0; i < length; i++) {
+        byte rand;
+        do {
+          rand = randomByte();
+        } while (rand == avoidByte);
 
-      line[i] = rand;
+        line[i] = rand;
+      }
+    } else {
+      ThreadLocalRandom.current().nextBytes(line);
     }
     return line;
   }
