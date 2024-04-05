@@ -39,6 +39,7 @@ import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.streams.impl.InboundBuffer;
+import io.vertx.core.streams.impl.InboundReadQueue;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
@@ -98,12 +99,31 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   private boolean ending;
   private boolean ended;
   private long bytesRead;
-  private InboundBuffer<Object> pending;
+  long demand = Long.MAX_VALUE;
+  final InboundReadQueue<Object> pending;
 
   Http1xServerRequest(Http1xServerConnection conn, HttpRequest request, ContextInternal context) {
     this.conn = conn;
     this.context = context;
     this.request = request;
+
+
+    pending = new InboundReadQueue<>(elt -> {
+      synchronized (conn) {
+        if (demand == 0L) {
+          return false;
+        }
+        if (demand != Long.MAX_VALUE) {
+          demand--;
+        }
+      }
+      if (elt == InboundBuffer.END_SENTINEL) {
+        onEnd();
+      } else {
+        onData((Buffer) elt);
+      }
+      return true;
+    });
   }
 
   private HttpEventHandler eventHandler(boolean create) {
@@ -119,34 +139,21 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
     }
   }
 
-  private InboundBuffer<Object> pendingQueue() {
-    if (pending == null) {
-      pending = new InboundBuffer<>(context, 8);
-      pending.drainHandler(v -> conn.doResume());
-      pending.handler(buffer -> {
-        if (buffer == InboundBuffer.END_SENTINEL) {
-          onEnd();
-        } else {
-          onData((Buffer) buffer);
-        }
+  void handleContent(Buffer buffer) {
+    int res = pending.add(buffer);
+    if ((res & InboundReadQueue.QUEUE_UNWRITABLE_MASK) != 0) {
+      conn.doPause();
+    }
+    if ((res & InboundReadQueue.DRAIN_REQUIRED_MASK) != 0) {
+      context.execute(() -> {
+        drain();
       });
     }
-    return pending;
   }
 
-  void handleContent(Buffer buffer) {
-    InboundBuffer<Object> queue;
-    synchronized (conn) {
-      queue = pending;
-    }
-    if (queue != null) {
-      // We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
-      if (!queue.write(buffer)) {
-        // We only pause when we are actively called by the connection
-        conn.doPause();
-      }
-    } else {
-      onData(buffer);
+  void drain() {
+    if ((pending.drain() & InboundReadQueue.QUEUE_WRITABLE_MASK) != 0) {
+      conn.doResume();
     }
   }
 
@@ -338,22 +345,39 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   @Override
   public HttpServerRequest pause() {
     synchronized (conn) {
-      pendingQueue().pause();
+      demand = 0L;
       return this;
     }
   }
 
   @Override
   public HttpServerRequest fetch(long amount) {
-    synchronized (conn) {
-      pendingQueue().fetch(amount);
-      return this;
+    if (amount < 0L) {
+      throw new UnsupportedOperationException();
     }
+    if (amount > 0L) {
+      synchronized (conn) {
+        demand += amount;
+        if (demand < 0L) {
+          demand = Long.MAX_VALUE;
+        }
+      }
+      context.execute(() -> {
+        drain();
+      });
+    }
+    return this;
   }
 
   @Override
   public HttpServerRequest resume() {
     return fetch(Long.MAX_VALUE);
+  }
+
+  void bilto() {
+    synchronized (conn) {
+      demand = -1L;
+    }
   }
 
   @Override
@@ -560,15 +584,11 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   }
 
   void handleEnd() {
-    InboundBuffer<Object> queue;
-    synchronized (conn) {
-      ending = true;
-      queue = pending;
-    }
-    if (queue != null) {
-      queue.write(InboundBuffer.END_SENTINEL);
-    } else {
-      onEnd();
+    int res = pending.add(InboundBuffer.END_SENTINEL);
+    if ((res & InboundReadQueue.DRAIN_REQUIRED_MASK) != 0) {
+      context.execute(() -> {
+        drain();
+      });
     }
   }
 

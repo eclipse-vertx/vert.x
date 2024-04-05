@@ -189,7 +189,7 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
     }
     Buffer buffer = BufferInternal.buffer(VertxHandler.safeBuffer(content.content()));
     Http1xServerRequest request = requestInProgress;
-    request.context.execute(buffer, request::handleContent);
+    request.handleContent(buffer);
     //TODO chunk trailers
     if (content instanceof LastHttpContent) {
       onEnd();
@@ -201,7 +201,7 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
     Http1xServerRequest request = requestInProgress;
     requestInProgress = null;
     tryClose = (wantClose || shutdownInitiated) && responseInProgress == null;
-    request.context.execute(request, Http1xServerRequest::handleEnd);
+    request.handleEnd();
     if (tryClose) {
       closeInternal();
     }
@@ -260,9 +260,17 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
     wantClose |= !keepAlive;
     next.handleBegin(keepAlive);
     next.context.emit(next, next_ -> {
-      next_.resume();
       Handler<HttpServerRequest> handler = next_.nettyRequest().decoderResult().isSuccess() ? requestHandler : invalidRequestHandler;
+      synchronized (Http1xServerConnection.this) {
+        next_.demand = Long.MAX_VALUE;
+      }
       handler.handle(next_);
+      synchronized (Http1xServerConnection.this) {
+        if (next.demand == 0L) {
+          return;
+        }
+      }
+      next_.drain();
     });
   }
 

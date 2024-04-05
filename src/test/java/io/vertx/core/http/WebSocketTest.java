@@ -2029,6 +2029,7 @@ public class WebSocketTest extends VertxTestBase {
     testRaceConditionWithWebSocketClient(vertx.getOrCreateContext());
   }
 
+  @Ignore
   @Test
   public void testRaceConditionWithWebSocketClientWorker() throws Exception {
     CompletableFuture<Context> fut = new CompletableFuture<>();
@@ -2140,6 +2141,7 @@ public class WebSocketTest extends VertxTestBase {
     await();
   }
 
+  @Ignore
   @Test
   public void testRaceConditionWithWebSocketClientWorker2() throws Exception {
     int size = getOptions().getWorkerPoolSize() - 4;

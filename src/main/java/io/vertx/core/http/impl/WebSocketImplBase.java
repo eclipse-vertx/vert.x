@@ -34,9 +34,8 @@ import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.VertxConnection;
-import io.vertx.core.streams.impl.InboundBuffer;
+import io.vertx.core.streams.impl.InboundReadQueue;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
@@ -64,10 +63,12 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   private final String binaryHandlerID;
   private final int maxWebSocketFrameSize;
   private final int maxWebSocketMessageSize;
-  private final InboundBuffer<WebSocketFrameInternal> pending;
   private final VertxConnection conn;
   private final ChannelHandlerContext chctx;
-  private final ContextInternal context;
+  private final InboundReadQueue<WebSocketFrameInternal> pending;
+  private long demand = Long.MAX_VALUE;
+  private boolean draining;
+  protected final ContextInternal context;
   private MessageConsumer binaryHandlerRegistration;
   private MessageConsumer textHandlerRegistration;
   private String subProtocol;
@@ -105,12 +106,20 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
     this.context = context;
     this.maxWebSocketFrameSize = maxWebSocketFrameSize;
     this.maxWebSocketMessageSize = maxWebSocketMessageSize;
-    this.pending = new InboundBuffer<>(context);
+    this.pending = new InboundReadQueue<>(frame -> {
+      synchronized (conn) {
+        if (demand == 0L) {
+          return false;
+        }
+        if (demand != Long.MAX_VALUE) {
+          demand--;
+        }
+      }
+      receiveFrame(frame);
+      return true;
+    });
     this.chctx = chctx;
     this.headers = headers;
-
-    pending.handler(this::receiveFrame);
-    pending.drainHandler(v -> conn.doResume());
   }
 
   void registerHandler(EventBus eventBus) {
@@ -362,8 +371,30 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
         handleCloseFrame(frame);
         break;
     }
-    if (!pending.write(frame)) {
+    int res = pending.add(frame);
+    if ((res & InboundReadQueue.QUEUE_UNWRITABLE_MASK) != 0) {
       conn.doPause();
+    }
+    if ((res & InboundReadQueue.DRAIN_REQUIRED_MASK) != 0) {
+      context.execute(() -> {
+        drain();
+      });
+    }
+  }
+
+  private void drain() {
+    if (draining) {
+      return;
+    }
+    draining = true;
+    int res;
+    try {
+      res = pending.drain();
+    } finally {
+      draining = false;
+    }
+    if ((res & InboundReadQueue.QUEUE_WRITABLE_MASK) != 0) {
+      conn.doResume();
     }
   }
 
@@ -698,13 +729,28 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
 
   @Override
   public S pause() {
-    pending.pause();
+    synchronized (conn) {
+      demand = 0L;
+    }
     return (S) this;
   }
 
   @Override
   public S fetch(long amount) {
-    pending.fetch(amount);
+    if (amount < 0L) {
+      throw new UnsupportedOperationException();
+    }
+    if (amount > 0L) {
+      synchronized (conn) {
+        demand += amount;
+        if (demand < 0L) {
+          demand = Long.MAX_VALUE;
+        }
+      }
+      context.execute(() -> {
+        drain();
+      });
+    }
     return (S) this;
   }
 

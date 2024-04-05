@@ -427,7 +427,7 @@ public class ServerWebSocketHandshaker implements ServerWebSocket {
     boolean reject = false;
     try {
       if (futureHandshake != null) {
-        throw new IllegalStateException();
+        return null;
       }
       synchronized (this) {
         switch (status) {
