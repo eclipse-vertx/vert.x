@@ -55,7 +55,7 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
   private final SSLOptions sslOptions;
   private final SocketAddress remoteAddress;
   private final TCPMetrics metrics;
-  private final InboundBuffer<Object> pending;
+  private final InboundMessageQueue<Object> pending;
   private final String negotiatedApplicationLayerProtocol;
   private Handler<Void> endHandler;
   private volatile Handler<Void> drainHandler;
@@ -90,22 +90,30 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
     this.metrics = metrics;
     this.messageHandler = new DataMessageHandler();
     this.negotiatedApplicationLayerProtocol = negotiatedApplicationLayerProtocol;
-    pending = new InboundBuffer<>(context);
-    pending.drainHandler(v -> doResume());
-    pending.exceptionHandler(context::reportException);
-    pending.handler(msg -> {
-      if (msg == InboundBuffer.END_SENTINEL) {
-        Handler<Void> handler = endHandler();
-        if (handler != null) {
-          handler.handle(null);
-        }
-      } else {
-        Handler<Buffer> handler = handler();
-        if (handler != null) {
-          handler.handle((Buffer) msg);
+    this.pending = new InboundMessageQueue<>(context) {
+      @Override
+      protected void handleResume() {
+        NetSocketImpl.this.doResume();
+      }
+      @Override
+      protected void handlePause() {
+        NetSocketImpl.this.doPause();
+      }
+      @Override
+      protected void handle(Object msg) {
+        if (msg == InboundBuffer.END_SENTINEL) {
+          Handler<Void> handler = endHandler();
+          if (handler != null) {
+            context.dispatch(handler);
+          }
+        } else {
+          Handler<Buffer> handler = handler();
+          if (handler != null) {
+            context.dispatch((Buffer) msg, handler);
+          }
         }
       }
-    });
+    };
   }
 
   void registerEventBusHandler() {
@@ -332,9 +340,7 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
           } else {
             f = context.failedFuture(ar.cause());
           }
-          if (!pending.isPaused()) {
-            doResume();
-          }
+          doResume();
           return f;
         });
     } else {
@@ -392,9 +398,7 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
         msg = VertxHandler.safeBuffer((ByteBuf) msg);
         ByteBuf byteBuf = (ByteBuf) msg;
         Buffer buffer = BufferInternal.buffer(byteBuf);
-        if (!pending.write(buffer)) {
-          doPause();
-        }
+        pending.write(buffer);
       } else {
         handleInvalid(msg);
       }
