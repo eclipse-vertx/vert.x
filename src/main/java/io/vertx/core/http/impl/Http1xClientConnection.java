@@ -48,7 +48,6 @@ import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.streams.WriteStream;
-import io.vertx.core.streams.impl.InboundBuffer;
 
 import java.net.URI;
 import java.util.*;
@@ -81,8 +80,6 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
   private final HostAndPort authority;
   public final ClientMetrics metrics;
   private final HttpVersion version;
-  private final long lowWaterMark;
-  private final long highWaterMark;
   private final boolean pooled;
 
   private final Deque<Stream> requests = new ArrayDeque<>();
@@ -97,7 +94,6 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
   private int keepAliveTimeout;
   private long expirationTimestamp;
   private int seq = 1;
-  private long readWindow;
   private Deque<WebSocketFrame> pendingFrames;
 
   private long lastResponseReceivedTimestamp;
@@ -119,9 +115,6 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     this.authority = authority;
     this.metrics = metrics;
     this.version = version;
-    this.readWindow = 0L;
-    this.highWaterMark = chctx.channel().config().getWriteBufferHighWaterMark();
-    this.lowWaterMark = chctx.channel().config().getWriteBufferLowWaterMark();
     this.keepAliveTimeout = options.getKeepAliveTimeout();
     this.expirationTimestamp = expirationTimestampOf(keepAliveTimeout);
     this.pooled = pooled;
@@ -327,29 +320,6 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     return false;
   }
 
-  private void receiveBytes(int len) {
-    boolean le = readWindow <= highWaterMark;
-    readWindow += len;
-    boolean gt = readWindow > highWaterMark;
-    if (le && gt) {
-      doPause();
-    }
-  }
-
-  private void ackBytes(int len) {
-    EventLoop eventLoop = context.nettyEventLoop();
-    if (eventLoop.inEventLoop()) {
-      boolean gt = readWindow > lowWaterMark;
-      readWindow -= len;
-      boolean le = readWindow <= lowWaterMark;
-      if (gt && le) {
-        doResume();
-      }
-    } else {
-      eventLoop.execute(() -> ackBytes(len));
-    }
-  }
-
   private void writeHead(Stream stream, HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, PromiseInternal<Void> handler) {
     writeToChannel(new MessageWrite() {
       @Override
@@ -427,7 +397,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
   private static class StreamImpl extends Stream implements HttpClientStream {
 
     private final Http1xClientConnection conn;
-    private final InboundBuffer<Object> queue;
+    private final InboundMessageQueue<Object> queue;
     private boolean reset;
     private boolean closed;
     private Handler<HttpResponseHead> headHandler;
@@ -444,26 +414,33 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
       super(context, promise, id);
 
       this.conn = conn;
-      this.queue = new InboundBuffer<>(context, 5)
-        .handler(item -> {
+      this.queue = new InboundMessageQueue<>(context) {
+        @Override
+        protected void handleResume() {
+          conn.doResume();
+        }
+        @Override
+        protected void handlePause() {
+          conn.doPause();
+        }
+        @Override
+        protected void handle(Object item) {
           if (!reset) {
             if (item instanceof MultiMap) {
               Handler<MultiMap> handler = endHandler;
               if (handler != null) {
-                handler.handle((MultiMap) item);
+                context.dispatch((MultiMap) item, handler);
               }
             } else {
               Buffer buffer = (Buffer) item;
-              int len = buffer.length();
-              conn.ackBytes(len);
               Handler<Buffer> handler = chunkHandler;
               if (handler != null) {
-                handler.handle(buffer);
+                context.dispatch(buffer, handler);
               }
             }
           }
-        })
-        .exceptionHandler(context::reportException);
+        }
+      };
     }
 
     @Override
@@ -642,14 +619,16 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
 
     void handleContinue() {
-      if (continueHandler != null) {
-        continueHandler.handle(null);
+      Handler<Void> handler = continueHandler;
+      if (handler != null) {
+        context.emit(null, handler);
       }
     }
 
     void handleEarlyHints(MultiMap headers) {
-      if (earlyHintsHandler != null) {
-        earlyHintsHandler.handle(headers);
+      Handler<MultiMap> handler = earlyHintsHandler;
+      if (handler != null) {
+        context.emit(headers, handler);
       }
     }
 
@@ -680,8 +659,9 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
 
     void handleException(Throwable cause) {
-      if (exceptionHandler != null) {
-        exceptionHandler.handle(cause);
+      Handler<Throwable> handler = exceptionHandler;
+      if (handler != null) {
+        context.emit(cause, handler);
       }
     }
 
@@ -693,8 +673,9 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
       }
       if (!closed) {
         closed = true;
-        if (closeHandler != null) {
-          closeHandler.handle(null);
+        Handler<Void> handler = closeHandler;
+        if (handler != null) {
+          context.emit(null, handler);
         }
       }
     }
@@ -812,9 +793,9 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
   private void handleResponseBegin(Stream stream, HttpResponseHead response) {
     // How can we handle future undefined 1xx informational response codes?
     if (response.statusCode == HttpResponseStatus.CONTINUE.code()) {
-      stream.context.execute(null, v -> stream.handleContinue());
+      stream.handleContinue();
     } else if (response.statusCode == HttpResponseStatus.EARLY_HINTS.code()) {
-      stream.context.execute(null, v -> stream.handleEarlyHints(response.headers));
+      stream.handleEarlyHints(response.headers);
     } else {
       HttpRequestHead request;
       synchronized (this) {
@@ -866,9 +847,8 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
   private void handleResponseChunk(Stream stream, ByteBuf chunk) {
     Buffer buff = BufferInternal.buffer(VertxHandler.safeBuffer(chunk));
     int len = buff.length();
-    receiveBytes(len);
     stream.bytesRead += len;
-    stream.context.execute(buff, stream::handleChunk);
+    stream.handleChunk(buff);
   }
 
   private void handleResponseEnd(Stream stream, LastHttpContent trailer) {
@@ -920,9 +900,9 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
       checkLifecycle();
     }
     lastResponseReceivedTimestamp = System.currentTimeMillis();
-    stream.context.execute(trailer, stream::handleEnd);
+    stream.handleEnd(trailer);
     if (stream.requestEnded) {
-      stream.context.execute(null, stream::handleClosed);
+      stream.handleClosed(null);
     }
   }
 
