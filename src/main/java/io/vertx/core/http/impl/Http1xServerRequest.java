@@ -34,12 +34,12 @@ import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.impl.InboundMessageQueue;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.streams.impl.InboundBuffer;
-import io.vertx.core.streams.impl.InboundReadQueue;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
@@ -64,6 +64,10 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 public class Http1xServerRequest extends HttpServerRequestInternal implements io.vertx.core.spi.observability.HttpRequest {
 
   private static final Logger log = LoggerFactory.getLogger(Http1xServerRequest.class);
+
+  private static final int ST_PENDING = 0;
+  private static final int ST_IN_PROGRESS = 1;
+  private static final int ST_ENDED = 2;
 
   private final Http1xServerConnection conn;
   final ContextInternal context;
@@ -96,34 +100,35 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   private MultiMap attributes;
   private boolean expectMultipart;
   private HttpPostRequestDecoder decoder;
-  private boolean ending;
   private boolean ended;
   private long bytesRead;
-  long demand = Long.MAX_VALUE;
-  final InboundReadQueue<Object> pending;
+  private final InboundMessageQueue<Object> queue;
+  private long demand = Long.MAX_VALUE;
+  private boolean parked;
 
-  Http1xServerRequest(Http1xServerConnection conn, HttpRequest request, ContextInternal context) {
+  Http1xServerRequest(Http1xServerConnection conn, HttpRequest request, ContextInternal context, boolean parked) {
     this.conn = conn;
     this.context = context;
     this.request = request;
-
-
-    pending = new InboundReadQueue<>(elt -> {
-      synchronized (conn) {
-        if (demand == 0L) {
-          return false;
-        }
-        if (demand != Long.MAX_VALUE) {
-          demand--;
+    this.parked = parked;
+    this.queue = new InboundMessageQueue<>(context) {
+      @Override
+      protected void handle(Object elt) {
+        if (elt == InboundBuffer.END_SENTINEL) {
+          onEnd();
+        } else {
+          onData((Buffer) elt);
         }
       }
-      if (elt == InboundBuffer.END_SENTINEL) {
-        onEnd();
-      } else {
-        onData((Buffer) elt);
+      @Override
+      protected void handleResume() {
+        conn.doResume();
       }
-      return true;
-    });
+      @Override
+      protected void handlePause() {
+        conn.doPause();
+      }
+    };
   }
 
   private HttpEventHandler eventHandler(boolean create) {
@@ -139,24 +144,6 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
     }
   }
 
-  void handleContent(Buffer buffer) {
-    int res = pending.add(buffer);
-    if ((res & InboundReadQueue.QUEUE_UNWRITABLE_MASK) != 0) {
-      conn.doPause();
-    }
-    if ((res & InboundReadQueue.DRAIN_REQUIRED_MASK) != 0) {
-      context.execute(() -> {
-        drain();
-      });
-    }
-  }
-
-  void drain() {
-    if ((pending.drain() & InboundReadQueue.QUEUE_WRITABLE_MASK) != 0) {
-      conn.doResume();
-    }
-  }
-
   void handleBegin(boolean keepAlive) {
     if (METRICS_ENABLED) {
       reportRequestBegin();
@@ -165,6 +152,35 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
     if (conn.handle100ContinueAutomatically) {
       check100();
     }
+  }
+
+  void handleContent(Buffer buffer) {
+    boolean drain = queue.add(buffer);
+    if (parked) {
+      return;
+    }
+    if (drain) {
+      queue.drain();
+    }
+  }
+
+  void handleEnd() {
+    boolean drain = queue.add(InboundBuffer.END_SENTINEL);
+    if (parked) {
+      return;
+    }
+    if (drain) {
+      queue.drain();
+    }
+  }
+
+  void unpark() {
+    long demand;
+    synchronized (conn) {
+      parked = false;
+      demand = this.demand;
+    }
+    queue.demand(demand);
   }
 
   /**
@@ -345,9 +361,16 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   @Override
   public HttpServerRequest pause() {
     synchronized (conn) {
-      demand = 0L;
-      return this;
+      if (ended) {
+        return this;
+      }
+      if (parked) {
+        demand = 0L;
+        return this;
+      }
     }
+    queue.pause();
+    return this;
   }
 
   @Override
@@ -357,14 +380,18 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
     }
     if (amount > 0L) {
       synchronized (conn) {
-        demand += amount;
-        if (demand < 0L) {
-          demand = Long.MAX_VALUE;
+        if (ended) {
+          return this;
+        }
+        if (parked) {
+          demand += amount;
+          if (demand < 0L) {
+            demand = Long.MAX_VALUE;
+          }
+          return this;
         }
       }
-      context.execute(() -> {
-        drain();
-      });
+      queue.fetch(amount);
     }
     return this;
   }
@@ -372,12 +399,6 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   @Override
   public HttpServerRequest resume() {
     return fetch(Long.MAX_VALUE);
-  }
-
-  void bilto() {
-    synchronized (conn) {
-      demand = -1L;
-    }
   }
 
   @Override
@@ -580,15 +601,6 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
     }
     if (handler != null) {
       eventHandler.handleChunk(data);
-    }
-  }
-
-  void handleEnd() {
-    int res = pending.add(InboundBuffer.END_SENTINEL);
-    if ((res & InboundReadQueue.DRAIN_REQUIRED_MASK) != 0) {
-      context.execute(() -> {
-        drain();
-      });
     }
   }
 

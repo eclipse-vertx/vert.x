@@ -151,9 +151,10 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
       // fast path type check vs concrete class
       DefaultHttpRequest request = (DefaultHttpRequest) msg;
       ContextInternal requestCtx = streamContextSupplier.get();
-      Http1xServerRequest req = new Http1xServerRequest(this, request, requestCtx);
+      boolean parked = responseInProgress != null;
+      Http1xServerRequest req = new Http1xServerRequest(this, request, requestCtx, parked);
       requestInProgress = req;
-      if (responseInProgress != null) {
+      if (parked) {
         enqueueRequest(req);
         return;
       }
@@ -171,7 +172,6 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
   private void enqueueRequest(Http1xServerRequest req) {
     // Deferred until the current response completion
     responseInProgress.enqueue(req);
-    req.pause();
   }
 
   private void handleOther(Object msg) {
@@ -261,16 +261,8 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
     next.handleBegin(keepAlive);
     next.context.emit(next, next_ -> {
       Handler<HttpServerRequest> handler = next_.nettyRequest().decoderResult().isSuccess() ? requestHandler : invalidRequestHandler;
-      synchronized (Http1xServerConnection.this) {
-        next_.demand = Long.MAX_VALUE;
-      }
       handler.handle(next_);
-      synchronized (Http1xServerConnection.this) {
-        if (next.demand == 0L) {
-          return;
-        }
-      }
-      next_.drain();
+      next_.unpark();
     });
   }
 

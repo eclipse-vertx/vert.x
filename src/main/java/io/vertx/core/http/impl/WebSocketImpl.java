@@ -14,6 +14,7 @@ package io.vertx.core.http.impl;
 import io.vertx.core.Handler;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.net.impl.VertxConnection;
 
 /**
  * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
@@ -29,12 +30,12 @@ public class WebSocketImpl extends WebSocketImplBase<WebSocketImpl> implements W
   private Handler<Void> evictionHandler;
 
   public WebSocketImpl(ContextInternal context,
-                       WebSocketConnection conn,
+                       VertxConnection conn,
                        boolean supportsContinuation,
                        int maxWebSocketFrameSize,
                        int maxWebSocketMessageSize,
                        boolean registerWebSocketWriteHandlers) {
-    super(context, conn, conn.channelHandlerContext(), null, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize, registerWebSocketWriteHandlers);
+    super(context, conn, null, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize, registerWebSocketWriteHandlers);
   }
 
   public void evictionHandler(Handler<Void> evictionHandler) {

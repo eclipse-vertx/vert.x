@@ -42,7 +42,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
                       int maxWebSocketFrameSize,
                       int maxWebSocketMessageSize,
                       boolean registerWebSocketWriteHandlers) {
-    super(context, conn, conn.channelHandlerContext(), request.headers(), supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize, registerWebSocketWriteHandlers);
+    super(context, conn, request.headers(), supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize, registerWebSocketWriteHandlers);
     this.scheme = request.scheme();
     this.authority = request.authority();
     this.uri = request.uri();

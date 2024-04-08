@@ -34,8 +34,8 @@ import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.impl.InboundMessageQueue;
 import io.vertx.core.net.impl.VertxConnection;
-import io.vertx.core.streams.impl.InboundReadQueue;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
@@ -64,11 +64,9 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   private final int maxWebSocketFrameSize;
   private final int maxWebSocketMessageSize;
   private final VertxConnection conn;
-  private final ChannelHandlerContext chctx;
-  private final InboundReadQueue<WebSocketFrameInternal> pending;
-  private long demand = Long.MAX_VALUE;
-  private boolean draining;
+  private ChannelHandlerContext chctx;
   protected final ContextInternal context;
+  private final InboundMessageQueue<WebSocketFrameInternal> pending;
   private MessageConsumer binaryHandlerRegistration;
   private MessageConsumer textHandlerRegistration;
   private String subProtocol;
@@ -89,7 +87,6 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
 
   WebSocketImplBase(ContextInternal context,
                     VertxConnection conn,
-                    ChannelHandlerContext chctx,
                     MultiMap headers,
                     boolean supportsContinuation,
                     int maxWebSocketFrameSize,
@@ -106,19 +103,21 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
     this.context = context;
     this.maxWebSocketFrameSize = maxWebSocketFrameSize;
     this.maxWebSocketMessageSize = maxWebSocketMessageSize;
-    this.pending = new InboundReadQueue<>(frame -> {
-      synchronized (conn) {
-        if (demand == 0L) {
-          return false;
-        }
-        if (demand != Long.MAX_VALUE) {
-          demand--;
-        }
+    this.pending = new InboundMessageQueue<>(context) {
+      @Override
+      protected void handleResume() {
+        conn.doResume();
       }
-      receiveFrame(frame);
-      return true;
-    });
-    this.chctx = chctx;
+      @Override
+      protected void handlePause() {
+        conn.doPause();
+      }
+      @Override
+      protected void handle(WebSocketFrameInternal msg) {
+        receiveFrame(msg);
+      }
+    };
+    this.chctx = conn.channelHandlerContext();
     this.headers = headers;
   }
 
@@ -371,31 +370,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
         handleCloseFrame(frame);
         break;
     }
-    int res = pending.add(frame);
-    if ((res & InboundReadQueue.QUEUE_UNWRITABLE_MASK) != 0) {
-      conn.doPause();
-    }
-    if ((res & InboundReadQueue.DRAIN_REQUIRED_MASK) != 0) {
-      context.execute(() -> {
-        drain();
-      });
-    }
-  }
-
-  private void drain() {
-    if (draining) {
-      return;
-    }
-    draining = true;
-    int res;
-    try {
-      res = pending.drain();
-    } finally {
-      draining = false;
-    }
-    if ((res & InboundReadQueue.QUEUE_WRITABLE_MASK) != 0) {
-      conn.doResume();
-    }
+    pending.write(frame);
   }
 
   private void handleCloseFrame(WebSocketFrameInternal closeFrame) {
@@ -729,28 +704,13 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
 
   @Override
   public S pause() {
-    synchronized (conn) {
-      demand = 0L;
-    }
+    pending.pause();
     return (S) this;
   }
 
   @Override
   public S fetch(long amount) {
-    if (amount < 0L) {
-      throw new UnsupportedOperationException();
-    }
-    if (amount > 0L) {
-      synchronized (conn) {
-        demand += amount;
-        if (demand < 0L) {
-          demand = Long.MAX_VALUE;
-        }
-      }
-      context.execute(() -> {
-        drain();
-      });
-    }
+    pending.fetch(amount);
     return (S) this;
   }
 
@@ -767,5 +727,4 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   public Future<Void> end() {
     return close();
   }
-
 }
