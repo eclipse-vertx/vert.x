@@ -10,6 +10,7 @@
  */
 package io.vertx.core.net.impl;
 
+import io.vertx.core.ThreadingModel;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.streams.impl.InboundReadQueue;
 
@@ -24,7 +25,13 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
   private boolean draining;
 
   public InboundMessageQueue(ContextInternal context) {
-    this.readQueue = new InboundReadQueue<>(this);
+    InboundReadQueue.Factory readQueueFactory;
+    if (context.threadingModel() == ThreadingModel.EVENT_LOOP) {
+      readQueueFactory = InboundReadQueue.SINGLE_THREADED;
+    } else {
+      readQueueFactory = InboundReadQueue.SPSC;
+    }
+    this.readQueue = readQueueFactory.create(this);
     this.context = context;
   }
 

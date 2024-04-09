@@ -11,9 +11,11 @@ import static io.vertx.core.streams.impl.InboundReadQueue.drainResult;
 
 public class InboundReadQueueTest extends AsyncTestBase {
 
+  final InboundReadQueue.Factory factory = InboundReadQueue.SPSC;
+
   @Test
   public void testAdd() {
-    InboundReadQueue<Integer> queue = new InboundReadQueue<>(elt -> false);
+    InboundReadQueue<Integer> queue = factory.create(elt -> false);
     assertEquals(InboundReadQueue.DRAIN_REQUIRED_MASK, queue.add(0));
     for (int i = 1;i < 15;i++) {
       assertEquals(0L, queue.add(i));
@@ -23,14 +25,14 @@ public class InboundReadQueueTest extends AsyncTestBase {
 
   @Test
   public void testDrainSingle() {
-    InboundReadQueue<Integer> queue = new InboundReadQueue<>(elt -> true);
+    InboundReadQueue<Integer> queue = factory.create(elt -> true);
     assertEquals(InboundReadQueue.DRAIN_REQUIRED_MASK, queue.add(0));
     assertEquals(InboundReadQueue.drainResult(0, false), queue.drain(17));
   }
 
   @Test
   public void testFoo() {
-    InboundReadQueue<Integer> queue = new InboundReadQueue<>(elt -> false);
+    InboundReadQueue<Integer> queue = factory.create(elt -> false);
     assertEquals(InboundReadQueue.DRAIN_REQUIRED_MASK, queue.add(0));
     assertEquals(drainResult(0, false), queue.drain());
   }
@@ -38,7 +40,7 @@ public class InboundReadQueueTest extends AsyncTestBase {
   @Test
   public void testDrainFully() {
     LinkedList<Integer> consumed = new LinkedList<>();
-    InboundReadQueue<Integer> queue = new InboundReadQueue<>(elt -> {
+    InboundReadQueue<Integer> queue = factory.create(elt -> {
       consumed.add(elt);
       return true;
     });
@@ -58,7 +60,7 @@ public class InboundReadQueueTest extends AsyncTestBase {
   @Test
   public void testConsumeDrain() {
     AtomicInteger demand = new AtomicInteger(0);
-    InboundReadQueue<Integer> queue = new InboundReadQueue<>(elt -> {
+    InboundReadQueue<Integer> queue = factory.create(elt -> {
       if (demand.get() > 0) {
         demand.decrementAndGet();
         return true;
@@ -82,7 +84,7 @@ public class InboundReadQueueTest extends AsyncTestBase {
   @Test
   public void testPartialDrain() {
     AtomicInteger demand = new AtomicInteger(0);
-    InboundReadQueue<Integer> queue = new InboundReadQueue<>(elt -> true);
+    InboundReadQueue<Integer> queue = factory.create(elt -> true);
     int idx = 0;
     while ((queue.add(idx++) & InboundReadQueue.QUEUE_UNWRITABLE_MASK) == 0) {
       //
@@ -96,7 +98,7 @@ public class InboundReadQueueTest extends AsyncTestBase {
   @Test
   public void testUnwritableCount() {
     AtomicInteger demand = new AtomicInteger();
-    InboundReadQueue<Integer> queue = new InboundReadQueue<>(elt-> {
+    InboundReadQueue<Integer> queue = factory.create(elt-> {
       if (demand.get() > 0) {
         demand.decrementAndGet();
         return true;
