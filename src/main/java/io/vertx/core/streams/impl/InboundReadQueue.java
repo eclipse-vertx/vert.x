@@ -1,3 +1,13 @@
+/*
+ * Copyright (c) 2011-2024 Contributors to the Eclipse Foundation
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
+ */
 package io.vertx.core.streams.impl;
 
 import io.netty.util.internal.PlatformDependent;
@@ -8,6 +18,13 @@ import java.util.Queue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 
+/**
+ * A concurrent single producer back-pressured queue fronting a single consumer back-pressured system.
+ *
+ * todo : write the rest of the doc
+ *
+ * @param <E>
+ */
 public class InboundReadQueue<E> {
 
   /**
@@ -17,11 +34,11 @@ public class InboundReadQueue<E> {
    * @return then number of unwritable signals
    */
   public static int numberOfPendingElements(int value) {
-    return (value & ~0X1) >> 1;
+    return (value & ~0X3) >> 2;
   }
 
   public static int drainResult(int num, boolean writable) {
-    return (writable ? QUEUE_WRITABLE_MASK : 0) | (num << 1);
+    return (writable ? QUEUE_WRITABLE_MASK : 0) | (num > 0 ? DRAIN_REQUIRED_MASK : 0) | (num << 2);
   }
 
   /**
@@ -50,7 +67,7 @@ public class InboundReadQueue<E> {
    * When the masked bit is set, the queue became writable, this triggers only when the queue transitions
    * from the <i>unwritable</i>> state to the <i>writable</i> state.
    */
-  public static final int QUEUE_WRITABLE_MASK = 0x01;
+  public static final int QUEUE_WRITABLE_MASK = 0x02;
 
   // NOW
   // el -> handle content -> dispatch and maybe pause
@@ -95,7 +112,20 @@ public class InboundReadQueue<E> {
     return lowWaterMark;
   }
 
-  // Producer thread
+  /**
+   * Let the producer thread add the {@code element} to the queue.
+   *
+   * A set of flags is returned
+   * <ul>
+   *   <li>When {@link #QUEUE_UNWRITABLE_MASK} is set, the queue is writable and new elements can be added to the queue,
+   *   otherwise no elements <i>should</i> be added to the queue nor submitted but it is a soft condition</li>
+   *   <li>When {@link #DRAIN_REQUIRED_MASK} is set, the producer has acquired the ownership of the queue and should
+   *   {@link #drain()} the queue.</li>
+   * </ul>
+   *
+   * @param element the element to add
+   * @return a bitset of [{@link #DRAIN_REQUIRED_MASK}, {@link #QUEUE_UNWRITABLE_MASK}] flags
+   */
   public int add(E element) {
     if (element == null) {
       throw new NullPointerException();
@@ -113,19 +143,23 @@ public class InboundReadQueue<E> {
     }
   }
 
-  // Consumer thread
-
-  /**
-   * Drain the queue
-   *
-   */
   public int drain() {
     return drain(Long.MAX_VALUE);
   }
 
   /**
-   * Drain the queue
+   * Let the consumer thread drain the queue until it becomes not writable or empty, this does not require
+   * the ownership, but it is recommenced to possess the ownership of the queue.
    *
+   * A set of flags is returned
+   * <ul>
+   *   <li>When {@link #QUEUE_WRITABLE_MASK} is set, the queue is writable again and new elements can be added to the queue
+   *   by the producer thread, this requires an external cooperation between the producer and consumer thread.</li>
+   *   <li>When {@link #DRAIN_REQUIRED_MASK} is set, the producer still has the ownership of the queue and should
+   *   {@link #drain()} the queue again.</li>
+   * </ul>
+   *
+   * @return a bitset of [{@link #QUEUE_WRITABLE_MASK}, {@link #DRAIN_REQUIRED_MASK}] flags
    */
   public int drain(long maxIter) {
     if (maxIter < 0L) {
