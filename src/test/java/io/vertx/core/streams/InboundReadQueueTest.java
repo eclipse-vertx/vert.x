@@ -22,6 +22,13 @@ public class InboundReadQueueTest extends AsyncTestBase {
   }
 
   @Test
+  public void testDrainSingle() {
+    InboundReadQueue<Integer> queue = new InboundReadQueue<>(elt -> true);
+    assertEquals(InboundReadQueue.DRAIN_REQUIRED_MASK, queue.add(0));
+    assertEquals(InboundReadQueue.drainResult(0, false), queue.drain(17));
+  }
+
+  @Test
   public void testFoo() {
     InboundReadQueue<Integer> queue = new InboundReadQueue<>(elt -> false);
     assertEquals(InboundReadQueue.DRAIN_REQUIRED_MASK, queue.add(0));

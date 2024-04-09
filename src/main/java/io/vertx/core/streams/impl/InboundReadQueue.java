@@ -175,7 +175,7 @@ public class InboundReadQueue<E> {
       }
       overflow = null;
       if (consume(1) == 0L) {
-        return QUEUE_WRITABLE_MASK;
+        return 0;
       }
       if (maxIter != Long.MAX_VALUE) {
         maxIter--;
