@@ -18,6 +18,9 @@ import io.vertx.core.streams.impl.InboundReadQueue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 
+/**
+ * Inbound message queue for event-loop and read stream like structures.
+ */
 public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
 
   private final ContextInternal context;
@@ -53,7 +56,7 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
   }
 
   /**
-   * Handle resume, executed on the context thread.
+   * Handle resume, executed on the event-loop thread.
    */
   protected void handleResume() {
   }
@@ -65,13 +68,19 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
   }
 
   /**
-   * Handle a message.
+   * Handle a message, executed on the context thread
    *
    * @param msg the message
    */
   protected void handleMessage(M msg) {
   }
 
+  /**
+   * Add a message to the queue
+   *
+   * @param msg the message
+   * @return {@code true} when a {@link #drain()} should be called.
+   */
   public boolean add(M msg) {
     assert eventLoop.inEventLoop();
     int res = readQueue.add(msg);
@@ -81,6 +90,11 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
     return (res & InboundReadQueue.DRAIN_REQUIRED_MASK) != 0;
   }
 
+  /**
+   * {@link #add(Object)} + {@link #drain()}.
+   *
+   * @param msg the message
+   */
   public void write(M msg) {
     if (add(msg)) {
       drain();
@@ -103,6 +117,9 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
     }
   }
 
+  /**
+   * Schedule a drain operation on the context thread.
+   */
   public void drain() {
     if (context.inThread()) {
       run();
@@ -111,20 +128,33 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
     }
   }
 
+  /**
+   * Stop demand.
+   */
   public void pause() {
     demand.set(0L);
   }
 
+  /**
+   * Set an absolute demand.
+   *
+   * @param value the new demand
+   */
   public void demand(long value) {
     if (value < 0L) {
       throw new IllegalArgumentException();
     }
     demand.set(value);
     if (value > 0L) {
-      context.executor().execute(this); // TODO TEST THIS
+      context.executor().execute(this);
     }
   }
 
+  /**
+   * Add {@code amount} to the current demand.
+   *
+   * @param amount the number of message to consume
+   */
   public void fetch(long amount) {
     if (amount < 0L) {
       throw new IllegalArgumentException();
@@ -142,6 +172,6 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
         break;
       }
     }
-    context.executor().execute(this); // TODO TEST THIS
+    context.executor().execute(this);
   }
 }

@@ -22,8 +22,53 @@ import java.util.function.Predicate;
 /**
  * A concurrent single producer back-pressured queue fronting a single consumer back-pressured system.
  *
- * todo : write the rest of the doc
+ * This queue lets a single producer emit elements ({@link #add}) to the consumer with back-pressure
+ * to signal the producer when it should stop emitting. The consumer should consume elements with {@link #drain()}.
  *
+ * <h3>Handling elements</h3>
+ *
+ * The consumer side uses a {@link Predicate} to handle elements and decide whether it can accept them. When a
+ * consumer returns {@code false} it refuses the element and the queue will propose this element later when the
+ * consumer signals it can accept elements again.
+ *
+ * <h3>Adding elements</h3>
+ *
+ * Only the producer thread can add elements. When the consumer threads adds an element to the queue it tries
+ * to get the ownership of the queue. The {@link #add} method returns a signal indicating that the queue should be
+ * drained to make progress: {@link #DRAIN_REQUIRED_MASK} signals the queue contains element that shall be drained.
+ *
+ * <h3>Draining elements</h3>
+ *
+ * The {@link #drain} method tries to remove elements from the queue until the consumer refuses them or the queue becomes empty.
+ * When a method returns a {@link #DRAIN_REQUIRED_MASK} signal, the {@link #drain()} should be called by the consumer thread
+ *
+ * <ul>
+ *   <li>The consumer method {@link #drain}) emits this signal when the {@link #consumer} refuses an element,
+ *   therefore {@link #drain()} should be called again when the consumer can accept element</li>
+ *   <li>The producer method ({@link #add}) emits this signal when it acquired the ownership of the queue to {@link #drain} the
+ *   queue.</li>
+ * </ul>
+ *
+ * <h3>Back-pressure</h3>
+ *
+ * <p>Producers emission flow cannot reliably be controlled by the consumer back-pressure probe since producers
+ * emissions are transferred to the consumer thread: the consumer back-pressure controller does not take in account the
+ * inflight elements between producers and consumer. This queue is designed to provide reliable signals to control
+ * producers emission based on the consumer back-pressure probe and the number of inflight elements between
+ * producers and the consumer.</p>
+ *
+ * The queue maintains an internal queue of elements initially empty and can be filled when
+ * <ul>
+ *   <li>the producer thread {@link #add)} to the queue above the {@link #highWaterMark}</li>
+ *   <li>the {@link #consumer} refuses an element during a {@link #drain()}</li>
+ * </ul>
+ *
+ * <p>When the internal queue grows above the {@link #highWaterMark}, the queue is considered as {@code unwritable}.
+ * The {@link #add} method return {@link #QUEUE_UNWRITABLE_MASK} to signal the producer it should stop emitting.</p>
+ *
+ * <p>After a drain if the internal queue has shrunk under {@link #lowWaterMark}, the queue is considered as {@code writable}.
+ * The {@link #drain} method return {@link #QUEUE_WRITABLE_MASK} to signal the producer should start emitting. Note
+ * that the consumer thread handles this signal and should forward it to the producer.</p>
  */
 public abstract class InboundReadQueue<E> {
 
@@ -54,85 +99,6 @@ public abstract class InboundReadQueue<E> {
       return new SingleThread<>(consumer);
     }
   };
-
-  /**
-   * Factory for {@link InboundReadQueue}.
-   */
-  public interface Factory {
-    <E> InboundReadQueue<E> create(Predicate<E> consumer, int lowWaterMark, int highWaterMark);
-    <E> InboundReadQueue<E> create(Predicate<E> consumer);
-  }
-
-  private static class SingleThread<E> extends InboundReadQueue<E> {
-
-    private long wip;
-
-    public SingleThread(Predicate<E> consumer) {
-      this(consumer, DEFAULT_LOW_WATER_MARK, DEFAULT_HIGH_WATER_MARK);
-    }
-
-    public SingleThread(Predicate<E> consumer, int lowWaterMark, int highWaterMark) {
-      super(new ArrayDeque<>(1), consumer, lowWaterMark, highWaterMark);
-    }
-
-    @Override
-    protected boolean wipCompareAndSet(long expect, long update) {
-      if (wip == expect) {
-        wip = update;
-        return true;
-      }
-      return false;
-    }
-
-    @Override
-    protected long wipIncrementAndGet() {
-      return ++wip;
-    }
-
-    @Override
-    protected long wipGet() {
-      return wip;
-    }
-
-    @Override
-    protected long wipAddAndGet(long delta) {
-      return wip += delta;
-    }
-  }
-
-  private static class SpSc<E> extends InboundReadQueue<E> {
-
-    private static final AtomicLongFieldUpdater<SpSc<?>> WIP_UPDATER = (AtomicLongFieldUpdater<SpSc<?>>) (AtomicLongFieldUpdater)AtomicLongFieldUpdater.newUpdater(SpSc.class, "wip");
-
-    private volatile long wip;
-
-    public SpSc(Predicate<E> consumer) {
-      this(consumer, DEFAULT_LOW_WATER_MARK, DEFAULT_HIGH_WATER_MARK);
-    }
-    public SpSc(Predicate<E> consumer, int lowWaterMark, int highWaterMark) {
-      super(PlatformDependent.newSpscQueue(), consumer, lowWaterMark, highWaterMark);
-    }
-
-    @Override
-    protected boolean wipCompareAndSet(long expect, long update) {
-      return WIP_UPDATER.compareAndSet(this, expect, update);
-    }
-
-    @Override
-    protected long wipIncrementAndGet() {
-      return WIP_UPDATER.incrementAndGet(this);
-    }
-
-    @Override
-    protected long wipGet() {
-      return WIP_UPDATER.get(this);
-    }
-
-    @Override
-    protected long wipAddAndGet(long delta) {
-      return WIP_UPDATER.addAndGet(this, delta);
-    }
-  }
 
   /**
    * Returns the number of times {@link #QUEUE_UNWRITABLE_MASK} signals encoded in {@code value}
@@ -259,8 +225,8 @@ public abstract class InboundReadQueue<E> {
   }
 
   /**
-   * Let the consumer thread drain the queue until it becomes not writable or empty, this does not require
-   * the ownership, but it is recommenced to possess the ownership of the queue.
+   * Let the consumer thread drain the queue until it becomes empty or the consumer decided to stop, this does not require
+   * the ownership, but it is recommenced to own the ownership of the queue.
    *
    * A set of flags is returned
    * <ul>
@@ -321,5 +287,84 @@ public abstract class InboundReadQueue<E> {
       writeQueueFull++;
     }
     return pending;
+  }
+
+  /**
+   * Factory for {@link InboundReadQueue}.
+   */
+  public interface Factory {
+    <E> InboundReadQueue<E> create(Predicate<E> consumer, int lowWaterMark, int highWaterMark);
+    <E> InboundReadQueue<E> create(Predicate<E> consumer);
+  }
+
+  private static class SingleThread<E> extends InboundReadQueue<E> {
+
+    private long wip;
+
+    public SingleThread(Predicate<E> consumer) {
+      this(consumer, DEFAULT_LOW_WATER_MARK, DEFAULT_HIGH_WATER_MARK);
+    }
+
+    public SingleThread(Predicate<E> consumer, int lowWaterMark, int highWaterMark) {
+      super(new ArrayDeque<>(1), consumer, lowWaterMark, highWaterMark);
+    }
+
+    @Override
+    protected boolean wipCompareAndSet(long expect, long update) {
+      if (wip == expect) {
+        wip = update;
+        return true;
+      }
+      return false;
+    }
+
+    @Override
+    protected long wipIncrementAndGet() {
+      return ++wip;
+    }
+
+    @Override
+    protected long wipGet() {
+      return wip;
+    }
+
+    @Override
+    protected long wipAddAndGet(long delta) {
+      return wip += delta;
+    }
+  }
+
+  private static class SpSc<E> extends InboundReadQueue<E> {
+
+    private static final AtomicLongFieldUpdater<SpSc<?>> WIP_UPDATER = (AtomicLongFieldUpdater<SpSc<?>>) (AtomicLongFieldUpdater)AtomicLongFieldUpdater.newUpdater(SpSc.class, "wip");
+
+    private volatile long wip;
+
+    public SpSc(Predicate<E> consumer) {
+      this(consumer, DEFAULT_LOW_WATER_MARK, DEFAULT_HIGH_WATER_MARK);
+    }
+    public SpSc(Predicate<E> consumer, int lowWaterMark, int highWaterMark) {
+      super(PlatformDependent.newSpscQueue(), consumer, lowWaterMark, highWaterMark);
+    }
+
+    @Override
+    protected boolean wipCompareAndSet(long expect, long update) {
+      return WIP_UPDATER.compareAndSet(this, expect, update);
+    }
+
+    @Override
+    protected long wipIncrementAndGet() {
+      return WIP_UPDATER.incrementAndGet(this);
+    }
+
+    @Override
+    protected long wipGet() {
+      return WIP_UPDATER.get(this);
+    }
+
+    @Override
+    protected long wipAddAndGet(long delta) {
+      return WIP_UPDATER.addAndGet(this, delta);
+    }
   }
 }
