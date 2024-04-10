@@ -113,7 +113,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
         conn.doPause();
       }
       @Override
-      protected void handle(WebSocketFrameInternal msg) {
+      protected void handleMessage(WebSocketFrameInternal msg) {
         receiveFrame(msg);
       }
     };

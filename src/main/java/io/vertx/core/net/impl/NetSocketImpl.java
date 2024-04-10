@@ -100,7 +100,7 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
         NetSocketImpl.this.doPause();
       }
       @Override
-      protected void handle(Object msg) {
+      protected void handleMessage(Object msg) {
         if (msg == InboundBuffer.END_SENTINEL) {
           Handler<Void> handler = endHandler();
           if (handler != null) {

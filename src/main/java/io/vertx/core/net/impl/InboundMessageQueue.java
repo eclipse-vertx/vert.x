@@ -48,7 +48,7 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
         break;
       }
     }
-    handle(msg);
+    handleMessage(msg);
     return true;
   }
 
@@ -69,7 +69,7 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
    *
    * @param msg the message
    */
-  protected void handle(M msg) {
+  protected void handleMessage(M msg) {
   }
 
   public boolean add(M msg) {
