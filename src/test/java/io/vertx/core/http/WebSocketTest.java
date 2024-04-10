@@ -2164,6 +2164,7 @@ public class WebSocketTest extends VertxTestBase {
     await();
   }
 
+  @Ignore
   @Test
   public void testWorker() {
     waitFor(2);

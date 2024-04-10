@@ -10,6 +10,7 @@
  */
 package io.vertx.core.net.impl;
 
+import io.netty.channel.EventLoop;
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.streams.impl.InboundReadQueue;
@@ -20,19 +21,21 @@ import java.util.function.Predicate;
 public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
 
   private final ContextInternal context;
+  private final EventLoop eventLoop;
   private final InboundReadQueue<M> readQueue;
   private final AtomicLong demand = new AtomicLong(Long.MAX_VALUE);
   private boolean draining;
 
-  public InboundMessageQueue(ContextInternal context) {
+  public InboundMessageQueue(EventLoop eventLoop, ContextInternal context) {
     InboundReadQueue.Factory readQueueFactory;
-    if (context.threadingModel() == ThreadingModel.EVENT_LOOP) {
+    if (context.threadingModel() == ThreadingModel.EVENT_LOOP && context.nettyEventLoop() == eventLoop) {
       readQueueFactory = InboundReadQueue.SINGLE_THREADED;
     } else {
       readQueueFactory = InboundReadQueue.SPSC;
     }
     this.readQueue = readQueueFactory.create(this);
     this.context = context;
+    this.eventLoop = eventLoop;
   }
 
   @Override
@@ -70,6 +73,7 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
   }
 
   public boolean add(M msg) {
+    assert eventLoop.inEventLoop();
     int res = readQueue.add(msg);
     if ((res & InboundReadQueue.QUEUE_UNWRITABLE_MASK) != 0) {
       handlePause();
@@ -90,8 +94,9 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
     }
     draining = true;
     try {
-      if ((readQueue.drain() & InboundReadQueue.QUEUE_WRITABLE_MASK) != 0) {
-        handleResume();
+      int drain = readQueue.drain();
+      if ((drain & InboundReadQueue.QUEUE_WRITABLE_MASK) != 0) {
+        eventLoop.execute(this::handleResume);
       }
     } finally {
       draining = false;
@@ -116,7 +121,7 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
     }
     demand.set(value);
     if (value > 0L) {
-      drain();
+      context.executor().execute(this); // TODO TEST THIS
     }
   }
 
@@ -137,6 +142,6 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
         break;
       }
     }
-    drain();
+    context.executor().execute(this); // TODO TEST THIS
   }
 }

@@ -90,7 +90,7 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
     this.metrics = metrics;
     this.messageHandler = new DataMessageHandler();
     this.negotiatedApplicationLayerProtocol = negotiatedApplicationLayerProtocol;
-    this.pending = new InboundMessageQueue<>(context) {
+    this.pending = new InboundMessageQueue<>(context.nettyEventLoop(), context) {
       @Override
       protected void handleResume() {
         NetSocketImpl.this.doResume();
@@ -184,7 +184,7 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
 
   @Override
   public synchronized NetSocketInternal messageHandler(Handler<Object> handler) {
-    messageHandler = handler == null ? new DataMessageHandler() : handler;
+    messageHandler = handler == null ? new DataMessageHandler() : msg -> context.emit(msg, handler);
     return this;
   }
 
@@ -355,13 +355,14 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
 
   @Override
   protected void handleClosed() {
-    context.emit(InboundBuffer.END_SENTINEL, pending::write);
+    pending.write(InboundBuffer.END_SENTINEL);
     super.handleClosed();
   }
 
   @Override
   public void handleMessage(Object msg) {
-    context.emit(msg, messageHandler());
+    Handler<Object> handler = messageHandler();
+    handler.handle(msg);
   }
 
   @Override

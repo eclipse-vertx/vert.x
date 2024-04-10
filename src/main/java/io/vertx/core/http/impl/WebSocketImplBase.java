@@ -103,7 +103,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
     this.context = context;
     this.maxWebSocketFrameSize = maxWebSocketFrameSize;
     this.maxWebSocketMessageSize = maxWebSocketMessageSize;
-    this.pending = new InboundMessageQueue<>(context) {
+    this.pending = new InboundMessageQueue<>(context.nettyEventLoop(), context) {
       @Override
       protected void handleResume() {
         conn.doResume();
