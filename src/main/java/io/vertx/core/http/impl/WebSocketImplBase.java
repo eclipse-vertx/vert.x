@@ -740,12 +740,6 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   }
 
   @Override
-  public S resume() {
-    pending.resume();
-    return (S) this;
-  }
-
-  @Override
   public S fetch(long amount) {
     pending.fetch(amount);
     return (S) this;

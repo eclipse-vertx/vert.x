@@ -75,21 +75,6 @@ public class ClientWebSocketImpl implements ClientWebSocket {
       });
   }
 
-//  @Override
-//  public Future<WebSocket> connect(String host, String requestURI) {
-//    return connect(client.options.getDefaultPort(), host, requestURI);
-//  }
-//
-//  @Override
-//  public Future<WebSocket> connect(String requestURI) {
-//    return connect(client.options.getDefaultPort(), client.options.getDefaultHost(), requestURI);
-//  }
-//
-//  @Override
-//  public Future<WebSocket> connect(String url, MultiMap headers, WebsocketVersion version, List<String> subProtocols) {
-//    return connect(HttpClientImpl.webSocketConnectOptionsAbs(url, headers, version, subProtocols));
-//  }
-
   @Override
   public ClientWebSocket exceptionHandler(Handler<Throwable> handler) {
     exceptionHandler = handler;
@@ -111,19 +96,13 @@ public class ClientWebSocketImpl implements ClientWebSocket {
   }
 
   @Override
-  public WebSocket pause() {
+  public ClientWebSocket pause() {
     delegate().pause();
     return this;
   }
 
   @Override
-  public WebSocket resume() {
-    delegate().resume();
-    return this;
-  }
-
-  @Override
-  public WebSocket fetch(long amount) {
+  public ClientWebSocket fetch(long amount) {
     delegate().fetch(amount);
     return this;
   }
@@ -139,7 +118,7 @@ public class ClientWebSocketImpl implements ClientWebSocket {
   }
 
   @Override
-  public WebSocket setWriteQueueMaxSize(int maxSize) {
+  public ClientWebSocket setWriteQueueMaxSize(int maxSize) {
     delegate().setWriteQueueMaxSize(maxSize);
     return this;
   }

@@ -43,7 +43,9 @@ public interface ServerWebSocket extends WebSocket {
   ServerWebSocket pause();
 
   @Override
-  ServerWebSocket resume();
+  default ServerWebSocket resume() {
+    return (ServerWebSocket) WebSocket.super.resume();
+  }
 
   @Override
   ServerWebSocket fetch(long amount);

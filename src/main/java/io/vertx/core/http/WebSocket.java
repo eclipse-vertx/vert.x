@@ -39,7 +39,9 @@ public interface WebSocket extends WebSocketBase {
   WebSocket pause();
 
   @Override
-  WebSocket resume();
+  default WebSocket resume() {
+    return fetch(Long.MAX_VALUE);
+  }
 
   @Override
   WebSocket fetch(long amount);

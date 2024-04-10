@@ -69,6 +69,20 @@ public interface ClientWebSocket extends WebSocket {
   }
 
   @Override
+  ClientWebSocket pause();
+
+  @Override
+  default ClientWebSocket resume() {
+    return (ClientWebSocket) WebSocket.super.resume();
+  }
+
+  @Override
+  ClientWebSocket fetch(long amount);
+
+  @Override
+  ClientWebSocket setWriteQueueMaxSize(int maxSize);
+
+  @Override
   ClientWebSocket handler(Handler<Buffer> handler);
 
   @Override
