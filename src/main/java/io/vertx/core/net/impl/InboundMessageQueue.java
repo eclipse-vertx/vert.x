@@ -41,6 +41,18 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
     this.eventLoop = eventLoop;
   }
 
+  public InboundMessageQueue(EventLoop eventLoop, ContextInternal context, int lowWaterMark, int highWaterMark) {
+    InboundReadQueue.Factory readQueueFactory;
+    if (context.threadingModel() == ThreadingModel.EVENT_LOOP && context.nettyEventLoop() == eventLoop) {
+      readQueueFactory = InboundReadQueue.SINGLE_THREADED;
+    } else {
+      readQueueFactory = InboundReadQueue.SPSC;
+    }
+    this.readQueue = readQueueFactory.create(this, lowWaterMark, highWaterMark);
+    this.context = context;
+    this.eventLoop = eventLoop;
+  }
+
   @Override
   public boolean test(M msg) {
     while (true) {
@@ -81,7 +93,7 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
    * @param msg the message
    * @return {@code true} when a {@link #drain()} should be called.
    */
-  public boolean add(M msg) {
+  public final boolean add(M msg) {
     assert eventLoop.inEventLoop();
     int res = readQueue.add(msg);
     if ((res & InboundReadQueue.QUEUE_UNWRITABLE_MASK) != 0) {
@@ -93,10 +105,26 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
   /**
    * {@link #add(Object)} + {@link #drain()}.
    *
+   * @param messages the messages
+   */
+  public final void write(Iterable<M> messages) {
+    boolean f = false;
+    for (M msg : messages) {
+      f |= add(msg);
+    }
+    if (f) {
+      drain();
+    }
+  }
+
+  /**
+   * {@link #add(Object)} + {@link #drain()}.
+   *
    * @param msg the message
    */
-  public void write(M msg) {
-    if (add(msg)) {
+  public final void write(M msg) {
+    boolean f = add(msg);
+    if (f) {
       drain();
     }
   }

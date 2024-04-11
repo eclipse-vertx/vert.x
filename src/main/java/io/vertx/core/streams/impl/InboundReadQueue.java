@@ -273,7 +273,7 @@ public abstract class InboundReadQueue<E> {
       }
       pending = consume(consumed);
     } while (pending != 0 && overflow == null && maxIter > 0L);
-    boolean writabilityChanged = pending < lowWaterMark && writeQueueFull > 0;
+    boolean writabilityChanged = pending < lowWaterMark && writeQueueFull > 0; // SEEMS INCORRECT
     if (writabilityChanged) {
       writeQueueFull = 0;
     }
