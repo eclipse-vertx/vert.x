@@ -248,11 +248,11 @@ public abstract class InboundReadQueue<E> {
     E elt = overflow;
     if (elt != null) {
       if (!consumer.test(elt)) {
-        return 0;
+        return drainResult((int)wipGet(), false); // TEST THIS
       }
       overflow = null;
       if (consume(1) == 0L) {
-        return 0;
+        return drainResult(0, false); // WRITABLE => false
       }
       if (maxIter != Long.MAX_VALUE) {
         maxIter--;

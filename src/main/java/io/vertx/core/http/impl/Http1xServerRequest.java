@@ -105,6 +105,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   private final InboundMessageQueue<Object> queue;
   private long demand = Long.MAX_VALUE;
   private boolean parked;
+  private boolean parkedDrain;
 
   Http1xServerRequest(Http1xServerConnection conn, HttpRequest request, ContextInternal context, boolean parked) {
     this.conn = conn;
@@ -157,6 +158,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   void handleContent(Buffer buffer) {
     boolean drain = queue.add(buffer);
     if (parked) {
+      parkedDrain |= drain;
       return;
     }
     if (drain) {
@@ -167,6 +169,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   void handleEnd() {
     boolean drain = queue.add(InboundBuffer.END_SENTINEL);
     if (parked) {
+      parkedDrain |= drain;
       return;
     }
     if (drain) {
@@ -181,6 +184,9 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
       demand = this.demand;
     }
     queue.demand(demand);
+    if (parkedDrain) {
+      queue.drain();
+    }
   }
 
   /**

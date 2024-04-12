@@ -26,8 +26,13 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
   private final ContextInternal context;
   private final EventLoop eventLoop;
   private final InboundReadQueue<M> readQueue;
-  private final AtomicLong demand = new AtomicLong(Long.MAX_VALUE);
+
+  // Accessed by context thread
+  private boolean needsDrain;
   private boolean draining;
+
+  // Any thread
+  private final AtomicLong demand = new AtomicLong(Long.MAX_VALUE);
 
   public InboundMessageQueue(EventLoop eventLoop, ContextInternal context) {
     InboundReadQueue.Factory readQueueFactory;
@@ -108,11 +113,11 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
    * @param messages the messages
    */
   public final void write(Iterable<M> messages) {
-    boolean f = false;
+    boolean drain = false;
     for (M msg : messages) {
-      f |= add(msg);
+      drain |= add(msg);
     }
-    if (f) {
+    if (drain) {
       drain();
     }
   }
@@ -123,25 +128,8 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
    * @param msg the message
    */
   public final void write(M msg) {
-    boolean f = add(msg);
-    if (f) {
+    if (add(msg)) {
       drain();
-    }
-  }
-
-  @Override
-  public void run() {
-    if (draining) {
-      return;
-    }
-    draining = true;
-    try {
-      int drain = readQueue.drain();
-      if ((drain & InboundReadQueue.QUEUE_WRITABLE_MASK) != 0) {
-        eventLoop.execute(this::handleResume);
-      }
-    } finally {
-      draining = false;
     }
   }
 
@@ -149,10 +137,35 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
    * Schedule a drain operation on the context thread.
    */
   public void drain() {
+    assert eventLoop.inEventLoop();
     if (context.inThread()) {
-      run();
+      drainInternal();
     } else {
-      context.execute(this);
+      context.execute(this::drainInternal);
+    }
+  }
+
+  /**
+   * Task executed from context thread.
+   */
+  @Override
+  public void run() {
+    assert context.inThread();
+    if (!draining && needsDrain) {
+      drainInternal();
+    }
+  }
+
+  private void drainInternal() {
+    draining = true;
+    try {
+      int res = readQueue.drain();
+      needsDrain = (res & InboundReadQueue.DRAIN_REQUIRED_MASK) != 0;
+      if ((res & InboundReadQueue.QUEUE_WRITABLE_MASK) != 0) {
+        eventLoop.execute(this::handleResume);
+      }
+    } finally {
+      draining = false;
     }
   }
 
@@ -173,9 +186,6 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
       throw new IllegalArgumentException();
     }
     demand.set(value);
-    if (value > 0L) {
-      context.executor().execute(this);
-    }
   }
 
   /**
@@ -200,6 +210,8 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
         break;
       }
     }
-    context.executor().execute(this);
+    context
+      .executor()
+      .execute(this);
   }
 }

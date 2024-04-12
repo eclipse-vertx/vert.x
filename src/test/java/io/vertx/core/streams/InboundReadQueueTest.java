@@ -34,7 +34,7 @@ public class InboundReadQueueTest extends AsyncTestBase {
   public void testFoo() {
     InboundReadQueue<Integer> queue = factory.create(elt -> false);
     assertEquals(InboundReadQueue.DRAIN_REQUIRED_MASK, queue.add(0));
-    assertEquals(drainResult(0, false), queue.drain());
+    assertEquals(drainResult(1, false), queue.drain());
   }
 
   @Test
@@ -55,6 +55,13 @@ public class InboundReadQueueTest extends AsyncTestBase {
       assertEquals(i, (int)consumed.poll());
     }
     assertTrue(consumed.isEmpty());
+  }
+
+  @Test
+  public void testDrainRefuseSingleElement() {
+    InboundReadQueue<Integer> queue = factory.create(elt -> false);
+    assertEquals(InboundReadQueue.DRAIN_REQUIRED_MASK, queue.add(0));
+    assertEquals(drainResult(1, false), queue.drain());
   }
 
   @Test
