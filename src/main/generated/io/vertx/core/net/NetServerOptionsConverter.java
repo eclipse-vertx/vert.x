@@ -60,21 +60,6 @@ public class NetServerOptionsConverter {
             obj.setSni((Boolean)member.getValue());
           }
           break;
-        case "tcpKeepAliveCount":
-          if (member.getValue() instanceof Number) {
-            obj.setTcpKeepAliveCount(((Number)member.getValue()).intValue());
-          }
-          break;
-        case "tcpKeepAliveIdleSeconds":
-          if (member.getValue() instanceof Number) {
-            obj.setTcpKeepAliveIdleSeconds(((Number)member.getValue()).intValue());
-          }
-          break;
-        case "tcpKeepAliveIntervalSeconds":
-          if (member.getValue() instanceof Number) {
-            obj.setTcpKeepAliveIntervalSeconds(((Number)member.getValue()).intValue());
-          }
-          break;
         case "trafficShapingOptions":
           if (member.getValue() instanceof JsonObject) {
             obj.setTrafficShapingOptions(new io.vertx.core.net.TrafficShapingOptions((io.vertx.core.json.JsonObject)member.getValue()));
@@ -108,9 +93,6 @@ public class NetServerOptionsConverter {
     }
     json.put("registerWriteHandler", obj.isRegisterWriteHandler());
     json.put("sni", obj.isSni());
-    json.put("tcpKeepAliveCount", obj.getTcpKeepAliveCount());
-    json.put("tcpKeepAliveIdleSeconds", obj.getTcpKeepAliveIdleSeconds());
-    json.put("tcpKeepAliveIntervalSeconds", obj.getTcpKeepAliveIntervalSeconds());
     if (obj.getTrafficShapingOptions() != null) {
       json.put("trafficShapingOptions", obj.getTrafficShapingOptions().toJson());
     }

@@ -174,15 +174,6 @@ public interface Transport {
     bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
     if (!domainSocket) {
       bootstrap.childOption(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
-      if (options.isTcpKeepAlive() && options.getTcpKeepAliveIdleSeconds() != -1) {
-        bootstrap.childOption(EpollChannelOption.TCP_KEEPIDLE, options.getTcpKeepAliveIdleSeconds());
-      }
-      if (options.isTcpKeepAlive() && options.getTcpKeepAliveCount() != -1) {
-        bootstrap.childOption(EpollChannelOption.TCP_KEEPCNT, options.getTcpKeepAliveIdleSeconds());
-      }
-      if (options.isTcpKeepAlive() && options.getTcpKeepAliveIntervalSeconds() != -1) {
-        bootstrap.childOption(EpollChannelOption.TCP_KEEPINTVL, options.getTcpKeepAliveIdleSeconds());
-      }
       bootstrap.childOption(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
     }
     if (options.getSendBufferSize() != -1) {

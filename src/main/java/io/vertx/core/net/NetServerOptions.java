@@ -81,21 +81,6 @@ public class NetServerOptions extends TCPSSLOptions {
    */
   public static final boolean DEFAULT_REGISTER_WRITE_HANDLER = false;
 
-  /**
-   * Default value for tcp keepalive idle time -1 defaults to OS settings
-   */
-  public static final int DEFAULT_TCP_KEEPALIVE_IDLE_SECONDS = -1;
-
-  /**
-   * Default value for tcp keepalive count -1 defaults to OS settings
-   */
-  public static final int DEFAULT_TCP_KEEPALIVE_COUNT = -1;
-
-  /**
-   * Default value for tcp keepalive interval -1 defaults to OS settings
-   */
-  public static final int DEFAULT_TCP_KEEAPLIVE_INTERVAL_SECONDS = -1;
-
   private int port;
   private String host;
   private int acceptBacklog;
@@ -106,9 +91,6 @@ public class NetServerOptions extends TCPSSLOptions {
   private TimeUnit proxyProtocolTimeoutUnit;
   private boolean registerWriteHandler;
   private TrafficShapingOptions trafficShapingOptions;
-  private int tcpKeepAliveIdleSeconds;
-  private int tcpKeepAliveCount;
-  private int tcpKeepAliveIntervalSeconds;
 
   /**
    * Default constructor
@@ -137,9 +119,6 @@ public class NetServerOptions extends TCPSSLOptions {
       DEFAULT_PROXY_PROTOCOL_TIMEOUT_TIME_UNIT;
     this.registerWriteHandler = other.registerWriteHandler;
     this.trafficShapingOptions = other.getTrafficShapingOptions();
-    this.tcpKeepAliveIdleSeconds = other.getTcpKeepAliveIdleSeconds();
-    this.tcpKeepAliveCount = other.getTcpKeepAliveCount();
-    this.tcpKeepAliveIntervalSeconds = other.getTcpKeepAliveIntervalSeconds();
   }
 
   /**
@@ -554,61 +533,6 @@ public class NetServerOptions extends TCPSSLOptions {
     return this;
   }
 
-  /**
-   * @return the time in seconds the connection needs to remain idle before TCP starts sending keepalive probes
-   */
-  public int getTcpKeepAliveIdleSeconds() {
-    return tcpKeepAliveIdleSeconds;
-  }
-
-  /**
-   * The time in seconds the connection needs to remain idle before TCP starts sending keepalive probes,
-   * if the socket option keepalive has been set.
-   *
-   * @param tcpKeepAliveIdleSeconds
-   * @return a reference to this, so the API can be used fluently
-   */
-  public NetServerOptions setTcpKeepAliveIdleSeconds(int tcpKeepAliveIdleSeconds) {
-    Arguments.require(tcpKeepAliveIdleSeconds > 0 || tcpKeepAliveIdleSeconds == DEFAULT_TCP_KEEPALIVE_IDLE_SECONDS, "tcpKeepAliveIdleSeconds must be > 0");
-    this.tcpKeepAliveIdleSeconds = tcpKeepAliveIdleSeconds;
-    return this;
-  }
-
-  /**
-   * @return the maximum number of keepalive probes TCP should send before dropping the connection.
-   */
-  public int getTcpKeepAliveCount() {
-    return tcpKeepAliveCount;
-  }
-
-  /**
-   * The maximum number of keepalive probes TCP should send before dropping the connection.
-   * @param tcpKeepAliveCount
-   * @return a reference to this, so the API can be used fluently
-   */
-  public NetServerOptions setTcpKeepAliveCount(int tcpKeepAliveCount) {
-    Arguments.require(tcpKeepAliveCount > 0 || tcpKeepAliveCount == DEFAULT_TCP_KEEPALIVE_COUNT, "tcpKeepAliveCount must be > 0");
-    this.tcpKeepAliveCount = tcpKeepAliveCount;
-    return this;
-  }
-
-  /**
-   * @return the time in seconds between individual keepalive probes.
-   */
-  public int getTcpKeepAliveIntervalSeconds() {
-    return tcpKeepAliveIntervalSeconds;
-  }
-
-  /**
-   * The time in seconds between individual keepalive probes.
-   * @param tcpKeepAliveIntervalSeconds
-   * @return
-   */
-  public NetServerOptions setTcpKeepAliveIntervalSeconds(int tcpKeepAliveIntervalSeconds) {
-    Arguments.require(tcpKeepAliveIntervalSeconds > 0 || tcpKeepAliveIntervalSeconds == DEFAULT_TCP_KEEAPLIVE_INTERVAL_SECONDS, "tcpKeepAliveIntervalSeconds must be > 0");
-    this.tcpKeepAliveIntervalSeconds = tcpKeepAliveIntervalSeconds;
-    return this;
-  }
 
   private void init() {
     this.port = DEFAULT_PORT;
@@ -620,9 +544,6 @@ public class NetServerOptions extends TCPSSLOptions {
     this.proxyProtocolTimeout = DEFAULT_PROXY_PROTOCOL_TIMEOUT;
     this.proxyProtocolTimeoutUnit = DEFAULT_PROXY_PROTOCOL_TIMEOUT_TIME_UNIT;
     this.registerWriteHandler = DEFAULT_REGISTER_WRITE_HANDLER;
-    this.tcpKeepAliveIdleSeconds = DEFAULT_TCP_KEEPALIVE_IDLE_SECONDS;
-    this.tcpKeepAliveCount = DEFAULT_TCP_KEEPALIVE_COUNT;
-    this.tcpKeepAliveIntervalSeconds = DEFAULT_TCP_KEEAPLIVE_INTERVAL_SECONDS;
   }
 
   /**
