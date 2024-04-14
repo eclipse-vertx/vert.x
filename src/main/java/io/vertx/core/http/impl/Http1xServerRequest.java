@@ -81,7 +81,6 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   private String query;
 
   // Accessed on event loop
-  Http1xServerRequest next;
   Object metric;
   Object trace;
   boolean reportMetricsFailed;
@@ -103,9 +102,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   private boolean ended;
   private long bytesRead;
   private final InboundMessageQueue<Object> queue;
-  private long demand = Long.MAX_VALUE;
-  private boolean parked;
-  private boolean parkedDrain;
+  boolean parked;
 
   Http1xServerRequest(Http1xServerConnection conn, HttpRequest request, ContextInternal context, boolean parked) {
     this.conn = conn;
@@ -158,8 +155,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   void handleContent(Buffer buffer) {
     boolean drain = queue.add(buffer);
     if (parked) {
-      parkedDrain |= drain;
-      return;
+      throw new IllegalStateException();
     }
     if (drain) {
       queue.drain();
@@ -169,44 +165,11 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   void handleEnd() {
     boolean drain = queue.add(InboundBuffer.END_SENTINEL);
     if (parked) {
-      parkedDrain |= drain;
-      return;
+      throw new IllegalStateException();
     }
     if (drain) {
       queue.drain();
     }
-  }
-
-  void unpark() {
-    long demand;
-    synchronized (conn) {
-      parked = false;
-      demand = this.demand;
-    }
-    queue.demand(demand);
-    if (parkedDrain) {
-      queue.drain();
-    }
-  }
-
-  /**
-   * Enqueue a pipelined request.
-   *
-   * @param request the enqueued request
-   */
-  void enqueue(Http1xServerRequest request) {
-    Http1xServerRequest current = this;
-    while (current.next != null) {
-      current = current.next;
-    }
-    current.next = request;
-  }
-
-  /**
-   * @return the next request following this one
-   */
-  Http1xServerRequest next() {
-    return next;
   }
 
   private void check100() {
@@ -370,10 +333,6 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
       if (ended) {
         return this;
       }
-      if (parked) {
-        demand = 0L;
-        return this;
-      }
     }
     queue.pause();
     return this;
@@ -387,13 +346,6 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
     if (amount > 0L) {
       synchronized (conn) {
         if (ended) {
-          return this;
-        }
-        if (parked) {
-          demand += amount;
-          if (demand < 0L) {
-            demand = Long.MAX_VALUE;
-          }
           return this;
         }
       }

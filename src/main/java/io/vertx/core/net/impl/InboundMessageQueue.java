@@ -177,18 +177,6 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
   }
 
   /**
-   * Set an absolute demand.
-   *
-   * @param value the new demand
-   */
-  public void demand(long value) {
-    if (value < 0L) {
-      throw new IllegalArgumentException();
-    }
-    demand.set(value);
-  }
-
-  /**
    * Add {@code amount} to the current demand.
    *
    * @param amount the number of message to consume
