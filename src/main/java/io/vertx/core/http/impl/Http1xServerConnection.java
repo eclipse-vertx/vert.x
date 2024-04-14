@@ -81,7 +81,6 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
   private Http1xServerRequest requestInProgress;
   private Http1xServerRequest responseInProgress;
   private boolean wantClose;
-  private boolean channelPaused;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<HttpServerRequest> invalidRequestHandler;
 
@@ -264,22 +263,6 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
       handler.handle(next_);
       next_.unpark();
     });
-  }
-
-  @Override
-  public void doPause() {
-    if (!channelPaused) {
-      channelPaused = true;
-      super.doPause();
-    }
-  }
-
-  @Override
-  public void doResume() {
-    if (channelPaused) {
-      channelPaused = false;
-      super.doResume();
-    }
   }
 
   private void reportResponseComplete() {
