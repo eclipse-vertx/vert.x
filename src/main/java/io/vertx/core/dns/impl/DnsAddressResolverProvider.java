@@ -16,6 +16,7 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.resolver.*;
 import io.netty.resolver.dns.*;
 import io.netty.util.NetUtil;
+import io.netty.util.concurrent.FastThreadLocal;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
@@ -108,6 +109,7 @@ public class DnsAddressResolverProvider implements AddressResolverProvider, Host
     builder.channelFactory(() -> vertx.transport().datagramChannel());
     builder.socketChannelFactory(() -> (SocketChannel) vertx.transport().channelFactory(false).newChannel());
     builder.nameServerProvider(nameServerAddressProvider);
+    builder.queryServerAddressStream(new ThreadLocalNameServerAddressStream(nameServerAddressProvider, ""));
     builder.optResourceEnabled(options.isOptResourceEnabled());
     builder.resolveCache(resolveCache);
     builder.authoritativeDnsServerCache(authoritativeDnsServerCache);
@@ -256,6 +258,39 @@ public class DnsAddressResolverProvider implements AddressResolverProvider, Host
     ResolverRegistration(io.netty.resolver.AddressResolver<InetSocketAddress> resolver, EventLoop executor) {
       this.resolver = resolver;
       this.executor = executor;
+    }
+  }
+
+  // Avoid FastThreadLocal query server address stream default implementation
+  private static class ThreadLocalNameServerAddressStream implements DnsServerAddressStream {
+
+    private final String hostname;
+    private final DnsServerAddressStreamProvider dnsServerAddressStreamProvider;
+    private final ThreadLocal<DnsServerAddressStream> threadLocal = new ThreadLocal<>() {
+      @Override
+      protected DnsServerAddressStream initialValue() {
+        return dnsServerAddressStreamProvider.nameServerAddressStream(hostname);
+      }
+    };
+
+    ThreadLocalNameServerAddressStream(DnsServerAddressStreamProvider dnsServerAddressStreamProvider, String hostname) {
+      this.dnsServerAddressStreamProvider = dnsServerAddressStreamProvider;
+      this.hostname = hostname;
+    }
+
+    @Override
+    public InetSocketAddress next() {
+      return threadLocal.get().next();
+    }
+
+    @Override
+    public DnsServerAddressStream duplicate() {
+      return new ThreadLocalNameServerAddressStream(dnsServerAddressStreamProvider, hostname);
+    }
+
+    @Override
+    public int size() {
+      return threadLocal.get().size();
     }
   }
 }
