@@ -15,13 +15,15 @@ import io.vertx.core.ThreadingModel;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.streams.impl.InboundReadQueue;
 
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.function.Predicate;
 
 /**
  * Inbound message queue for event-loop and read stream like structures.
  */
 public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
+
+  private static final AtomicLongFieldUpdater<InboundMessageQueue<?>> DEMAND_UPDATER = (AtomicLongFieldUpdater<InboundMessageQueue<?>>) (AtomicLongFieldUpdater)AtomicLongFieldUpdater.newUpdater(InboundMessageQueue.class, "demand");
 
   private final ContextInternal context;
   private final EventLoop eventLoop;
@@ -32,7 +34,7 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
   private boolean draining;
 
   // Any thread
-  private final AtomicLong demand = new AtomicLong(Long.MAX_VALUE);
+  private volatile long demand = Long.MAX_VALUE;
 
   public InboundMessageQueue(EventLoop eventLoop, ContextInternal context) {
     InboundReadQueue.Factory readQueueFactory;
@@ -61,10 +63,10 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
   @Override
   public final boolean test(M msg) {
     while (true) {
-      long d = demand.get();
+      long d = DEMAND_UPDATER.get(this);
       if (d == 0L) {
         return false;
-      } else if (d == Long.MAX_VALUE || demand.compareAndSet(d, d - 1)) {
+      } else if (d == Long.MAX_VALUE || DEMAND_UPDATER.compareAndSet(this, d, d - 1)) {
         break;
       }
     }
@@ -170,10 +172,10 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
   }
 
   /**
-   * Stop demand.
+   * Clear the demand.
    */
   public final void pause() {
-    demand.set(0L);
+    DEMAND_UPDATER.set(this, 0L);
   }
 
   /**
@@ -183,23 +185,22 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
    */
   public final void fetch(long amount) {
     if (amount < 0L) {
-      throw new IllegalArgumentException();
+      throw new IllegalArgumentException("Invalid amount: " + amount);
     }
-    if (amount == 0L) {
-      return;
-    }
-    while (true) {
-      long prev = demand.get();
-      long next = prev + amount;
-      if (next < 0L) {
-        next = Long.MAX_VALUE;
+    if (amount > 0L) {
+      while (true) {
+        long prev = DEMAND_UPDATER.get(this);
+        long next = prev + amount;
+        if (next < 0L) {
+          next = Long.MAX_VALUE;
+        }
+        if (prev == next || DEMAND_UPDATER.compareAndSet(this, prev, next)) {
+          break;
+        }
       }
-      if (prev == next || demand.compareAndSet(prev, next)) {
-        break;
-      }
+      context
+        .executor()
+        .execute(this);
     }
-    context
-      .executor()
-      .execute(this);
   }
 }
