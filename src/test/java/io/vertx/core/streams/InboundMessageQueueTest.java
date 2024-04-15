@@ -10,7 +10,6 @@
  */
 package io.vertx.core.streams;
 
-import io.netty.channel.EventLoop;
 import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextInternal;
@@ -29,23 +28,23 @@ public class InboundMessageQueueTest extends VertxTestBase {
 
   private volatile Runnable contextChecker;
   private Context context;
-  private Bilto buffer;
+  private TestQueue queue;
   private AtomicInteger sequence;
 
-  class Bilto extends InboundMessageQueue<Integer> {
+  class TestQueue extends InboundMessageQueue<Integer> {
 
     final IntConsumer consumer;
     private Handler<Void> drainHandler;
     private boolean writable;
     private int size;
 
-    public Bilto(IntConsumer consumer) {
+    public TestQueue(IntConsumer consumer) {
       super(((ContextInternal) context).nettyEventLoop(), (ContextInternal) context);
       this.consumer = consumer;
       this.writable = true;
     }
 
-    public Bilto(IntConsumer consumer, int lwm, int hwm) {
+    public TestQueue(IntConsumer consumer, int lwm, int hwm) {
       super(((ContextInternal) context).nettyEventLoop(), (ContextInternal) context, lwm, hwm);
       this.consumer = consumer;
       this.writable = true;
@@ -111,7 +110,7 @@ public class InboundMessageQueueTest extends VertxTestBase {
       return writable;
     }
 
-    Bilto drainHandler(Handler<Void> handler) {
+    TestQueue drainHandler(Handler<Void> handler) {
       this.drainHandler = handler;
       return this;
     }
@@ -143,38 +142,38 @@ public class InboundMessageQueueTest extends VertxTestBase {
   public void testFlowing() {
     context.runOnContext(v -> {
       AtomicInteger events = new AtomicInteger();
-      buffer = buffer(elt -> {
+      queue = buffer(elt -> {
         checkContext();
         assertEquals(0, elt);
         assertEquals(0, events.getAndIncrement());
         testComplete();
       });
-      assertTrue(buffer.emit());
+      assertTrue(queue.emit());
     });
     await();
   }
 
-  private Bilto buffer(IntConsumer consumer) {
-    return new Bilto(consumer);
+  private TestQueue buffer(IntConsumer consumer) {
+    return new TestQueue(consumer);
   }
 
-  private Bilto buffer(IntConsumer consumer, int lwm, int hwm) {
-    return new Bilto(consumer, lwm, hwm);
+  private TestQueue buffer(IntConsumer consumer, int lwm, int hwm) {
+    return new TestQueue(consumer, lwm, hwm);
   }
 
   @Test
   public void testTake() {
     context.runOnContext(v -> {
       AtomicInteger events = new AtomicInteger();
-      buffer = buffer(elt -> {
+      queue = buffer(elt -> {
         checkContext();
         assertEquals(0, elt);
         assertEquals(0, events.getAndIncrement());
         testComplete();
       });
-      buffer.pause();
-      buffer.fetch(1);
-      assertTrue(buffer.emit());
+      queue.pause();
+      queue.fetch(1);
+      assertTrue(queue.emit());
     });
     await();
   }
@@ -183,13 +182,13 @@ public class InboundMessageQueueTest extends VertxTestBase {
   public void testFlowingAdd() {
     context.runOnContext(v -> {
       AtomicInteger events = new AtomicInteger();
-      buffer = buffer(elt -> {
+      queue = buffer(elt -> {
         checkContext();
         events.getAndIncrement();
       });
-      assertTrue(buffer.emit());
+      assertTrue(queue.emit());
       assertEquals(1, events.get());
-      assertTrue(buffer.emit());
+      assertTrue(queue.emit());
       assertEquals(2, events.get());
       testComplete();
     });
@@ -200,7 +199,7 @@ public class InboundMessageQueueTest extends VertxTestBase {
   public void testFlowingRefill() {
     context.runOnContext(v1 -> {
       AtomicInteger events = new AtomicInteger();
-      buffer = buffer(elt -> {
+      queue = buffer(elt -> {
         checkContext();
         events.getAndIncrement();
       }, 5, 5).drainHandler(v -> {
@@ -208,11 +207,11 @@ public class InboundMessageQueueTest extends VertxTestBase {
         assertEquals(8, events.get());
         testComplete();
       });
-      buffer.pause();
+      queue.pause();
       for (int i = 0; i < 8; i++) {
-        assertEquals("Expected " + i + " to be bilto", i < 4, buffer.emit());
+        assertEquals("Expected " + i + " to be bilto", i < 4, queue.emit());
       }
-      buffer.resume();
+      queue.resume();
     });
     await();
   }
@@ -222,7 +221,7 @@ public class InboundMessageQueueTest extends VertxTestBase {
     context.runOnContext(v1 -> {
       AtomicInteger events = new AtomicInteger();
       AtomicInteger reads = new AtomicInteger();
-      buffer = buffer(elt -> {
+      queue = buffer(elt -> {
         checkContext();
         assertEquals(0, reads.get());
         assertEquals(0, events.getAndIncrement());
@@ -231,11 +230,11 @@ public class InboundMessageQueueTest extends VertxTestBase {
         checkContext();
         assertEquals(0, reads.getAndIncrement());
       });
-      buffer.pause();
+      queue.pause();
       for (int i = 0; i < 5; i++) {
-        assertEquals(i < 4, buffer.emit());
+        assertEquals(i < 4, queue.emit());
       }
-      buffer.fetch(1);
+      queue.fetch(1);
     });
     await();
   }
@@ -245,7 +244,7 @@ public class InboundMessageQueueTest extends VertxTestBase {
     context.runOnContext(v1 -> {
       AtomicInteger reads = new AtomicInteger();
       AtomicInteger events = new AtomicInteger();
-      buffer = buffer(elt -> {
+      queue = buffer(elt -> {
         checkContext();
         events.getAndIncrement();
       }, 5, 5).drainHandler(v2 -> {
@@ -254,9 +253,9 @@ public class InboundMessageQueueTest extends VertxTestBase {
         assertEquals(5, events.get());
         testComplete();
       });
-      buffer.pause();
-      buffer.fill();
-      buffer.resume();
+      queue.pause();
+      queue.fill();
+      queue.resume();
     });
     await();
   }
@@ -267,22 +266,22 @@ public class InboundMessageQueueTest extends VertxTestBase {
     context.runOnContext(v1 -> {
       AtomicInteger drained = new AtomicInteger();
       AtomicInteger emitted = new AtomicInteger();
-      buffer = buffer(elt -> {
+      queue = buffer(elt -> {
         checkContext();
         assertEquals(0, drained.get());
         emitted.getAndIncrement();
       }, 5, 5);
-      buffer.drainHandler(v2 -> {
+      queue.drainHandler(v2 -> {
         checkContext();
         assertEquals(0, drained.getAndIncrement());
         assertEquals(5, emitted.get());
         complete();
       });
-      buffer.pause();
-      buffer.fill();
+      queue.pause();
+      queue.fill();
       assertEquals(0, drained.get());
       assertEquals(0, emitted.get());
-      buffer.resume();
+      queue.resume();
       complete();
     });
     await();
@@ -293,7 +292,7 @@ public class InboundMessageQueueTest extends VertxTestBase {
     context.runOnContext(v1 -> {
       AtomicInteger events = new AtomicInteger();
       AtomicInteger reads = new AtomicInteger();
-      buffer = buffer(elt -> {
+      queue = buffer(elt -> {
         checkContext();
         events.getAndIncrement();
       }, 3, 3)
@@ -301,20 +300,20 @@ public class InboundMessageQueueTest extends VertxTestBase {
           checkContext();
           assertEquals(0, reads.getAndIncrement());
         });
-      buffer.pause();
-      buffer.fetch(1);
+      queue.pause();
+      queue.fetch(1);
       assertEquals(0, reads.get());
       assertEquals(0, events.get());
-      assertTrue(buffer.emit());
+      assertTrue(queue.emit());
       assertEquals(0, reads.get());
       waitUntilEquals(1, events::get);
-      assertTrue(buffer.emit());
+      assertTrue(queue.emit());
       assertEquals(0, reads.get());
       assertEquals(1, events.get());
-      assertTrue(buffer.emit());
+      assertTrue(queue.emit());
       assertEquals(0, reads.get());
       assertEquals(1, events.get());
-      assertFalse(buffer.emit());
+      assertFalse(queue.emit());
       assertEquals(0, reads.get());
       assertEquals(1, events.get());
       testComplete();
@@ -325,14 +324,14 @@ public class InboundMessageQueueTest extends VertxTestBase {
   @Test
   public void testPushReturnsTrueUntilHighWatermark() {
     context.runOnContext(v1 -> {
-      buffer = buffer(elt -> {
+      queue = buffer(elt -> {
 
       }, 2, 2);
-      buffer.pause();
-      buffer.fetch(1);
-      assertTrue(buffer.emit());
-      assertTrue(buffer.emit());
-      assertFalse(buffer.emit());
+      queue.pause();
+      queue.fetch(1);
+      assertTrue(queue.emit());
+      assertTrue(queue.emit());
+      assertFalse(queue.emit());
       testComplete();
     });
     await();
@@ -341,10 +340,10 @@ public class InboundMessageQueueTest extends VertxTestBase {
   @Test
   public void testHighWaterMark() {
     context.runOnContext(v -> {
-      buffer = buffer(elt -> {
+      queue = buffer(elt -> {
       }, 5, 5);
-      buffer.pause();
-      buffer.fill();
+      queue.pause();
+      queue.fill();
       assertEquals(5, sequence.get());
       testComplete();
     });
@@ -386,17 +385,17 @@ public class InboundMessageQueueTest extends VertxTestBase {
       int next = sequence.get();
       AtomicInteger received = new AtomicInteger(next);
       AtomicInteger writable = new AtomicInteger();
-      buffer = buffer(elt -> {
+      queue = buffer(elt -> {
         if (received.decrementAndGet() == 0) {
-          buffer.write(next);
+          queue.write(next);
         }
       }, 4, 4)
         .drainHandler(v2 -> {
           writable.incrementAndGet();
         });
-      buffer.pause();
-      buffer.fill();
-      buffer.fetch(sequence.get());
+      queue.pause();
+      queue.fill();
+      queue.fetch(sequence.get());
       assertEquals(0, writable.get());
       testComplete();
     });
@@ -408,19 +407,19 @@ public class InboundMessageQueueTest extends VertxTestBase {
     context.runOnContext(v1 -> {
       AtomicInteger events = new AtomicInteger();
       AtomicBoolean receiving = new AtomicBoolean();
-      buffer = buffer(elt -> {
+      queue = buffer(elt -> {
         checkContext();
         assertFalse(receiving.getAndSet(true));
         events.incrementAndGet();
         if (elt == 0) {
-          buffer.fill();
+          queue.fill();
         }
         receiving.set(false);
       }, 5, 5);
-      buffer.pause();
-      buffer.fetch(1);
-      assertFalse(buffer.emit());
-      assertEquals(5 - 1, buffer.size());
+      queue.pause();
+      queue.fetch(1);
+      assertFalse(queue.emit());
+      assertEquals(5 - 1, queue.size());
       assertEquals(1, events.get());
       testComplete();
     });
@@ -430,7 +429,7 @@ public class InboundMessageQueueTest extends VertxTestBase {
   @Test
   public void testEmitInElementHandler1() {
     testEmitInElementHandler(n -> {
-      assertFalse(buffer.emit(n));
+      assertFalse(queue.emit(n));
     });
   }
 
@@ -451,7 +450,7 @@ public class InboundMessageQueueTest extends VertxTestBase {
       AtomicInteger events = new AtomicInteger();
       AtomicInteger drained = new AtomicInteger();
       AtomicBoolean draining = new AtomicBoolean();
-      buffer = buffer(elt -> {
+      queue = buffer(elt -> {
         checkContext();
         switch (elt) {
           case 5:
@@ -462,24 +461,24 @@ public class InboundMessageQueueTest extends VertxTestBase {
             vertx.runOnContext(v2 -> {
               assertEquals(1, drained.get());
               assertEquals(10, events.get());
-              assertEquals(5, buffer.size());
+              assertEquals(5, queue.size());
               testComplete();
             });
             break;
         }
         events.incrementAndGet();
       }, 5, 5);
-      buffer.drainHandler(v3 -> {
+      queue.drainHandler(v3 -> {
         // Check reentrancy
         assertFalse(draining.get());
         draining.set(true);
         assertEquals(0, drained.getAndIncrement());
-        assertFalse(buffer.emit());
+        assertFalse(queue.emit());
         draining.set(false);
       });
-      buffer.pause();
-      buffer.fill();
-      buffer.fetch(10);
+      queue.pause();
+      queue.fill();
+      queue.fetch(10);
     });
     await();
   }
@@ -489,10 +488,10 @@ public class InboundMessageQueueTest extends VertxTestBase {
     context.runOnContext(v1 -> {
       AtomicInteger drained = new AtomicInteger();
       AtomicInteger expectedDrained = new AtomicInteger();
-      buffer = buffer(elt -> {
+      queue = buffer(elt -> {
         if (elt == 0) {
           // This will set writable to false
-          buffer.fill();
+          queue.fill();
         }
         assertEquals(expectedDrained.get(), drained.get());
       }, 4, 4)
@@ -501,16 +500,16 @@ public class InboundMessageQueueTest extends VertxTestBase {
             case 0:
               // Check that emitting again will not drain again
               expectedDrained.set(1);
-              buffer.fill();
+              queue.fill();
               assertEquals(1, drained.get());
               testComplete();
               break;
           }
         });
-      buffer.pause();
-      buffer.fetch(1);
-      buffer.emit();
-      buffer.fetch(4L);
+      queue.pause();
+      queue.fetch(1);
+      queue.emit();
+      queue.fetch(4L);
     });
     await();
   }
@@ -522,7 +521,7 @@ public class InboundMessageQueueTest extends VertxTestBase {
       AtomicInteger drained = new AtomicInteger();
       AtomicBoolean draining = new AtomicBoolean();
       AtomicInteger emitted = new AtomicInteger();
-      buffer = buffer(elt -> {
+      queue = buffer(elt -> {
         emitted.incrementAndGet();
         if (elt == 0) {
           assertEquals(0, drained.get());
@@ -536,8 +535,8 @@ public class InboundMessageQueueTest extends VertxTestBase {
           switch (drained.getAndIncrement()) {
             case 0:
               // This will trigger a new asynchronous drain
-              buffer.fill();
-              buffer.fetch(5);
+              queue.fill();
+              queue.fetch(5);
               break;
             case 1:
               assertEquals(10, emitted.get());
@@ -546,9 +545,9 @@ public class InboundMessageQueueTest extends VertxTestBase {
           }
           draining.set(false);
         });
-      buffer.pause();
-      buffer.fill();
-      buffer.fetch(5);
+      queue.pause();
+      queue.fill();
+      queue.fetch(5);
       complete();
     });
     await();
@@ -559,16 +558,16 @@ public class InboundMessageQueueTest extends VertxTestBase {
     context.runOnContext(v1 -> {
       AtomicInteger events = new AtomicInteger();
       AtomicBoolean receiving = new AtomicBoolean();
-      buffer = buffer(elt -> {
+      queue = buffer(elt -> {
         checkContext();
         assertFalse(receiving.getAndSet(true));
         events.incrementAndGet();
         if (elt == 0) {
-          buffer.emit(5);
+          queue.emit(5);
         }
         receiving.set(false);
       }, 5, 5);
-      assertFalse(buffer.emit());
+      assertFalse(queue.emit());
       assertEquals(6, sequence.get());
       assertEquals(6, events.get());
       testComplete();
@@ -580,16 +579,16 @@ public class InboundMessageQueueTest extends VertxTestBase {
   public void testPauseInElementHandler() {
     context.runOnContext(v1 -> {
       AtomicInteger events = new AtomicInteger();
-      buffer = buffer(elt -> {
+      queue = buffer(elt -> {
         events.incrementAndGet();
         if (elt == 0) {
-          buffer.pause();
-          buffer.fill();
+          queue.pause();
+          queue.fill();
         }
       }, 5, 5);
-      assertFalse(buffer.emit());
+      assertFalse(queue.emit());
       assertEquals(1, events.get());
-      assertEquals(5 - 1, buffer.size());
+      assertEquals(5 - 1, queue.size());
       testComplete();
     });
     await();
@@ -599,14 +598,14 @@ public class InboundMessageQueueTest extends VertxTestBase {
   public void testAddAllEmitInHandler() {
     context.runOnContext(v1 -> {
       List<Integer> emitted = new ArrayList<>();
-      buffer = buffer(elt -> {
+      queue = buffer(elt -> {
         switch (elt) {
           case 0:
-            buffer.emit();
+            queue.emit();
         }
         emitted.add(elt);
       }, 4, 4);
-      assertFalse(buffer.emit(3));
+      assertFalse(queue.emit(3));
       assertEquals(Arrays.asList(0, 1, 2, 3), emitted);
       testComplete();
     });
@@ -620,20 +619,20 @@ public class InboundMessageQueueTest extends VertxTestBase {
       AtomicInteger emitted = new AtomicInteger();
       AtomicInteger emptied = new AtomicInteger();
       AtomicInteger drained = new AtomicInteger();
-      buffer = buffer(elt -> {
+      queue = buffer(elt -> {
         emitted.incrementAndGet();
         assertEquals(0, drained.get());
         assertEquals(0, emptied.get());
-        buffer.fetch(1);
+        queue.fetch(1);
       }, 4, 4)
         .drainHandler(v2 -> {
           assertEquals(5, emitted.get());
           drained.incrementAndGet();
           complete();
         });
-      buffer.pause();
-      assertFalse(buffer.emit(5));
-      buffer.fetch(1);
+      queue.pause();
+      assertFalse(queue.emit(5));
+      queue.fetch(1);
       complete();
     });
     await();
@@ -644,11 +643,11 @@ public class InboundMessageQueueTest extends VertxTestBase {
     context.runOnContext(v1 -> {
       AtomicInteger emitted = new AtomicInteger();
       AtomicInteger drained = new AtomicInteger();
-      buffer = buffer(elt -> {
+      queue = buffer(elt -> {
         emitted.incrementAndGet();
       }, 4, 4)
         .drainHandler(v2 -> drained.incrementAndGet());
-      assertFalse(buffer.emit(4));
+      assertFalse(queue.emit(4));
       context.runOnContext(v -> {
         waitUntilEquals(1, drained::get);
         waitUntilEquals(4, emitted::get);
@@ -662,15 +661,15 @@ public class InboundMessageQueueTest extends VertxTestBase {
   public void testAddAllWhenDelivering() {
     context.runOnContext(v1 -> {
       List<Integer> emitted = new ArrayList<>();
-      buffer = buffer(elt -> {
+      queue = buffer(elt -> {
         emitted.add(elt);
         if (elt == 2) {
-          buffer.write(Arrays.asList(4, 5));
+          queue.write(Arrays.asList(4, 5));
           // Check that we haven't re-entered the handler
           assertEquals(Arrays.asList(0, 1, 2), emitted);
         }
       }, 4, 4);
-      buffer.emit(4);
+      queue.emit(4);
       assertEquals(Arrays.asList(0, 1, 2, 3, 4, 5), emitted);
       testComplete();
     });
@@ -681,13 +680,13 @@ public class InboundMessageQueueTest extends VertxTestBase {
   public void testCheckThatPauseAfterResumeWontDoAnyEmission() {
     context.runOnContext(v1 -> {
       AtomicInteger emitted = new AtomicInteger();
-      buffer = buffer(elt -> emitted.incrementAndGet(), 4, 4);
-      buffer.pause();
-      buffer.fill();
+      queue = buffer(elt -> emitted.incrementAndGet(), 4, 4);
+      queue.pause();
+      queue.fill();
       // Resume will execute an asynchronous drain operation
-      buffer.resume();
+      queue.resume();
       // Pause just after to ensure that no elements will be delivered to he handler
-      buffer.pause();
+      queue.pause();
       // Give enough time to have elements delivered
       vertx.setTimer(20, id -> {
         // Check we haven't received anything

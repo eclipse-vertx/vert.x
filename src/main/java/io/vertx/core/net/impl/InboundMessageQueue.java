@@ -59,7 +59,7 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
   }
 
   @Override
-  public boolean test(M msg) {
+  public final boolean test(M msg) {
     while (true) {
       long d = demand.get();
       if (d == 0L) {
@@ -136,7 +136,7 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
   /**
    * Schedule a drain operation on the context thread.
    */
-  public void drain() {
+  public final void drain() {
     assert eventLoop.inEventLoop();
     if (context.inThread()) {
       drainInternal();
@@ -172,7 +172,7 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
   /**
    * Stop demand.
    */
-  public void pause() {
+  public final void pause() {
     demand.set(0L);
   }
 
@@ -181,7 +181,7 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
    *
    * @param amount the number of message to consume
    */
-  public void fetch(long amount) {
+  public final void fetch(long amount) {
     if (amount < 0L) {
       throw new IllegalArgumentException();
     }
