@@ -237,17 +237,21 @@ public class VertxConnection extends ConnectionBase {
       reportBytesRead(msg);
     }
     if (paused) {
-      if (pending == null) {
-        pending = new ArrayDeque<>();
-      }
-      pending.add(msg);
-      if (pending.size() >= 8) {
-        autoRead = false;
-        chctx.channel().config().setAutoRead(false);
-      }
+      addPending(msg);
       return;
     }
     handleMessage(msg);
+  }
+
+  private void addPending(Object msg) {
+    if (pending == null) {
+      pending = new ArrayDeque<>();
+    }
+    pending.add(msg);
+    if (pending.size() >= 8) {
+      autoRead = false;
+      chctx.channel().config().setAutoRead(false);
+    }
   }
 
   /**
