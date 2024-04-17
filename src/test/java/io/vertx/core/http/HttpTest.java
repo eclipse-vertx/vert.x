@@ -41,6 +41,7 @@ import org.apache.directory.server.dns.messages.RecordClass;
 import org.apache.directory.server.dns.messages.RecordType;
 import org.apache.directory.server.dns.store.DnsAttribute;
 import org.junit.Assume;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -68,6 +69,52 @@ import static org.hamcrest.CoreMatchers.instanceOf;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public abstract class HttpTest extends HttpTestBase {
+
+  @Ignore("Cannot pass for now")
+  @Test
+  public void testCloseMulti() throws Exception {
+    int num = 4;
+    HttpServer[] servers = new HttpServer[num];
+    for (int i = 0;i < num;i++) {
+      int val = i;
+      servers[i] = vertx.createHttpServer(createBaseServerOptions()).requestHandler(req -> {
+        req.response().end("Server " + val);
+      });
+      startServer(testAddress, servers[i]);
+    }
+    List< HttpClientConnection> connections = Collections.synchronizedList(new ArrayList<>());
+    for (int i = 0;i < num;i++) {
+      int val = i;
+      client.connect(new HttpConnectOptions().setServer(testAddress))
+        .onComplete(onSuccess(conn -> {
+          conn.closeHandler(v -> {
+            System.out.println("Connection " + val + " is closed");
+          });
+          connections.add(conn);
+        }));
+    }
+    waitUntil(() -> connections.size() == 4);
+    for (int i = 0;i < num;i++) {
+      Buffer body = awaitFuture(connections.get(i)
+        .request(requestOptions)
+        .compose(req -> req.send()
+          .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+          .compose(HttpClientResponse::body)
+        ));
+    }
+    awaitFuture(servers[3].close());
+    System.out.println("server closed");
+    for (int i = 0;i < num;i++) {
+      Buffer body = awaitFuture(connections.get(i)
+        .request(requestOptions)
+        .compose(req -> req.send()
+          .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+          .compose(HttpClientResponse::body)
+        ));
+      System.out.println(body);
+    }
+    await();
+  }
 
   @Rule
   public TemporaryFolder testFolder = TemporaryFolder.builder().assureDeletion().build();
