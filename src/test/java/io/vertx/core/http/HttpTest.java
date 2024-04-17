@@ -70,10 +70,10 @@ import static org.hamcrest.CoreMatchers.instanceOf;
  */
 public abstract class HttpTest extends HttpTestBase {
 
-  @Ignore("Cannot pass for now")
   @Test
   public void testCloseMulti() throws Exception {
     int num = 4;
+    waitFor(num);
     HttpServer[] servers = new HttpServer[num];
     for (int i = 0;i < num;i++) {
       int val = i;
@@ -84,34 +84,30 @@ public abstract class HttpTest extends HttpTestBase {
     }
     List< HttpClientConnection> connections = Collections.synchronizedList(new ArrayList<>());
     for (int i = 0;i < num;i++) {
-      int val = i;
       client.connect(new HttpConnectOptions().setServer(testAddress))
-        .onComplete(onSuccess(conn -> {
-          conn.closeHandler(v -> {
-            System.out.println("Connection " + val + " is closed");
-          });
-          connections.add(conn);
-        }));
+        .onComplete(onSuccess(connections::add));
     }
     waitUntil(() -> connections.size() == 4);
     for (int i = 0;i < num;i++) {
       Buffer body = awaitFuture(connections.get(i)
         .request(requestOptions)
         .compose(req -> req.send()
-          .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
           .compose(HttpClientResponse::body)
         ));
+      assertEquals("Server " + i, body.toString());
     }
     awaitFuture(servers[3].close());
-    System.out.println("server closed");
     for (int i = 0;i < num;i++) {
-      Buffer body = awaitFuture(connections.get(i)
+      Future<Buffer> fut = connections.get(i)
         .request(requestOptions)
         .compose(req -> req.send()
-          .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
           .compose(HttpClientResponse::body)
-        ));
-      System.out.println(body);
+        );
+      if (i < num - 1) {
+        fut.onComplete(onSuccess(body -> complete()));
+      } else {
+        fut.onComplete(onFailure(err -> complete()));
+      }
     }
     await();
   }

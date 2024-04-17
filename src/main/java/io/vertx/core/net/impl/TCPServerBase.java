@@ -18,6 +18,8 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.group.ChannelGroup;
+import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.handler.traffic.GlobalTrafficShapingHandler;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.Closeable;
@@ -60,6 +62,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
   // Per server
   private EventLoop eventLoop;
   private Worker childHandler;
+  private ChannelGroup channelGroup;
   private Handler<Channel> worker;
   private volatile boolean listening;
   private ContextInternal listenContext;
@@ -234,6 +237,8 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
           bindAddress = localAddress;
         }
       }
+      DefaultChannelGroup group = new DefaultChannelGroup(listenContext.nettyEventLoop(), true);
+      channelGroup = group;
       PromiseInternal<Channel> promise = listenContext.promise();
       if (main == null) {
 
@@ -251,6 +256,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
         trafficShapingHandler = createTrafficShapingHandler();
         childHandler =  childHandler(listenContext, localAddress, trafficShapingHandler);
         worker = ch -> {
+          channelGroup.add(ch);
           Future<SslChannelProvider> scp = sslChannelProvider;
           childHandler.accept(ch, scp != null ? scp.result() : null, sslHelper, options.getSslOptions());
         };
@@ -300,6 +306,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
         metrics = main.metrics;
         childHandler =  childHandler(listenContext, localAddress, main.trafficShapingHandler);
         worker = ch -> {
+          group.add(ch);
           Future<SslChannelProvider> scp = actualServer.sslChannelProvider;
           childHandler.accept(ch, scp != null ? scp.result() : null, sslHelper, options.getSslOptions());
         };
@@ -397,20 +404,28 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
     listening = false;
     listenContext.removeCloseHook(this);
     Map<ServerID, TCPServerBase> servers = vertx.sharedTCPServers((Class<TCPServerBase>) getClass());
+    boolean hasHandlers;
     synchronized (servers) {
       ServerChannelLoadBalancer balancer = actualServer.channelBalancer;
       balancer.removeWorker(eventLoop, worker);
-      if (balancer.hasHandlers()) {
-        // The actual server still has handlers so we don't actually close it
-        completion.complete();
-      } else {
-        actualServer.actualClose(completion);
-      }
+      hasHandlers = balancer.hasHandlers();
     }
+    channelGroup.close().addListener(new GenericFutureListener<io.netty.util.concurrent.Future<? super Void>>() {
+      @Override
+      public void operationComplete(io.netty.util.concurrent.Future<? super Void> future) throws Exception {
+        // THIS CAN BE RACY
+        if (hasHandlers) {
+          // The actual server still has handlers so we don't actually close it
+          completion.complete();
+        } else {
+          actualServer.actualClose(completion);
+        }
+      }
+    });
   }
 
   private void actualClose(Promise<Void> done) {
-    channelBalancer.close();
+//    channelBalancer.close();
     bindFuture.onComplete(ar -> {
       if (ar.succeeded()) {
         Channel channel = ar.result();

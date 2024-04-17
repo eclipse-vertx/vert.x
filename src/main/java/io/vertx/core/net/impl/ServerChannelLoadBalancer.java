@@ -32,7 +32,6 @@ class ServerChannelLoadBalancer extends ChannelInitializer<Channel> {
 
   private final VertxEventLoopGroup workers;
   private final ConcurrentMap<EventLoop, WorkerList> workerMap = new ConcurrentHashMap<>();
-  private final ChannelGroup channelGroup;
 
   // We maintain a separate hasHandlers variable so we can implement hasHandlers() efficiently
   // As it is called for every HTTP message received
@@ -40,7 +39,6 @@ class ServerChannelLoadBalancer extends ChannelInitializer<Channel> {
 
   ServerChannelLoadBalancer(EventExecutor executor) {
     this.workers = new VertxEventLoopGroup();
-    this.channelGroup = new DefaultChannelGroup(executor, true);
   }
 
   public VertxEventLoopGroup workers() {
@@ -57,7 +55,6 @@ class ServerChannelLoadBalancer extends ChannelInitializer<Channel> {
     if (handler == null) {
       ch.close();
     } else {
-      channelGroup.add(ch);
       handler.handle(ch);
     }
   }
@@ -126,12 +123,5 @@ class ServerChannelLoadBalancer extends ChannelInitializer<Channel> {
         pos = 0;
       }
     }
-  }
-
-  /**
-   * Close the load-balancer and all registered channels.
-   */
-  public void close() {
-    channelGroup.close();
   }
 }
