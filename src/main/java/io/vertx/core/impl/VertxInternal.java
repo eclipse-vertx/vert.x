@@ -20,9 +20,11 @@ import io.vertx.core.dns.impl.DnsAddressResolverProvider;
 import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.impl.btc.BlockedThreadChecker;
 import io.vertx.core.impl.future.PromiseInternal;
+import io.vertx.core.net.NetServer;
+import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.impl.NetServerImpl;
+import io.vertx.core.net.impl.NetServerInternal;
 import io.vertx.core.net.impl.ServerID;
-import io.vertx.core.net.impl.TCPServerBase;
 import io.vertx.core.spi.transport.Transport;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.file.FileResolver;
@@ -71,6 +73,12 @@ public interface VertxInternal extends Vertx {
 
   TimeUnit maxEventLoopExecTimeUnit();
 
+  NetServerInternal createNetServer(NetServerOptions options);
+
+  default NetServerInternal createNetServer() {
+    return createNetServer(new NetServerOptions());
+  }
+
   @Override
   ContextInternal getOrCreateContext();
 
@@ -86,7 +94,7 @@ public interface VertxInternal extends Vertx {
 
   Map<ServerID, NetServerImpl> sharedNetServers();
 
-  <S extends TCPServerBase> Map<ServerID, S> sharedTCPServers(Class<S> type);
+  <S extends NetServerImpl> Map<ServerID, S> sharedTCPServers(Class<S> type);
 
   VertxMetrics metricsSPI();
 

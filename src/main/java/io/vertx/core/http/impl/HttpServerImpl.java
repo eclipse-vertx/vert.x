@@ -11,22 +11,25 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelPipeline;
+import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
+import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.traffic.GlobalTrafficShapingHandler;
 import io.vertx.core.*;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
-import io.vertx.core.net.SSLOptions;
-import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.*;
 import io.vertx.core.net.impl.*;
+import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
-import io.vertx.core.spi.metrics.TCPMetrics;
-import io.vertx.core.spi.metrics.VertxMetrics;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -35,7 +38,7 @@ import java.util.stream.Collectors;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeable, MetricsProvider {
+public class HttpServerImpl implements HttpServer, MetricsProvider {
 
   static final Logger log = LoggerFactory.getLogger(HttpServerImpl.class);
 
@@ -45,37 +48,59 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
 
   static final boolean DISABLE_WEBSOCKETS = Boolean.getBoolean(DISABLE_WEBSOCKETS_PROP_NAME);
 
+  private final VertxInternal vertx;
   final HttpServerOptions options;
   private Handler<HttpServerRequest> requestHandler;
-  private Handler<ServerWebSocket> wsHandler;
+  private Handler<ServerWebSocket> webSocketHandler;
   private Handler<HttpServerRequest> invalidRequestHandler;
   private Handler<HttpConnection> connectionHandler;
-
   private Handler<Throwable> exceptionHandler;
+  private NetServerInternal tcpServer;
 
   public HttpServerImpl(VertxInternal vertx, HttpServerOptions options) {
-    super(vertx, options);
-    this.options = (HttpServerOptions) super.options;
+    this.vertx = vertx;
+    this.options = options;
   }
 
   @Override
-  protected void configure(SSLOptions options) {
-    List<String> applicationProtocols = this.options
-      .getAlpnVersions()
-      .stream()
-      .map(HttpVersion::alpnName)
-      .collect(Collectors.toList());
-    options.setApplicationLayerProtocols(applicationProtocols);
-  }
-
-  @Override
-  protected TCPMetrics<?> createMetrics(SocketAddress localAddress) {
-    VertxMetrics vertxMetrics = vertx.metricsSPI();
-    if (vertxMetrics != null) {
-      return vertxMetrics.createHttpServerMetrics(options, localAddress);
-    } else {
-      return null;
+  public Future<Boolean> updateSSLOptions(ServerSSLOptions options, boolean force) {
+    NetServer s;
+    synchronized (this) {
+      s = tcpServer;
     }
+    if (s == null) {
+      throw new IllegalStateException("Not listening");
+    }
+    options = options.copy();
+    configureApplicationLayerProtocols(options);
+    return s.updateSSLOptions(options, force);
+  }
+
+  @Override
+  public void updateTrafficShapingOptions(TrafficShapingOptions options) {
+    NetServer s;
+    synchronized (this) {
+      s = tcpServer;
+    }
+    if (s == null) {
+      throw new IllegalStateException("Not listening");
+    }
+    s.updateTrafficShapingOptions(options);
+  }
+
+  @Override
+  public synchronized int actualPort() {
+    NetServer s = tcpServer;
+    return s != null ? s.actualPort() : 0;
+  }
+
+  @Override
+  public Metrics getMetrics() {
+    NetServerImpl s;
+    synchronized (this) {
+      s = (NetServerImpl) tcpServer;
+    }
+    return s == null ? null : s.getMetrics();
   }
 
   @Override
@@ -92,7 +117,7 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
     if (isListening()) {
       throw new IllegalStateException("Please set handler before server is listening");
     }
-    wsHandler = handler;
+    webSocketHandler = handler;
     return this;
   }
 
@@ -130,7 +155,7 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
 
   @Override
   public synchronized Handler<ServerWebSocket> webSocketHandler() {
-    return wsHandler;
+    return webSocketHandler;
   }
 
   @Override
@@ -139,48 +164,114 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
   }
 
   @Override
-  protected Worker childHandler(ContextInternal context, SocketAddress address, GlobalTrafficShapingHandler trafficShapingHandler) {
-    ContextInternal connContext;
-    if (context.isEventLoopContext()) {
-      connContext = context;
-    } else {
-      connContext = vertx.createEventLoopContext(context.nettyEventLoop(), context.workerPool(), context.classLoader());
-    }
-    String host = address.isInetSocket() ? address.host() : "localhost";
-    int port = address.port();
-    String serverOrigin = (options.isSsl() ? "https" : "http") + "://" + host + ":" + port;
-    HttpServerConnectionHandler hello = new HttpServerConnectionHandler(this, requestHandler, invalidRequestHandler, wsHandler, connectionHandler, exceptionHandler == null ? DEFAULT_EXCEPTION_HANDLER : exceptionHandler);
-    Supplier<ContextInternal> streamContextSupplier = context::duplicate;
-    return new HttpServerWorker(
-      connContext,
-      streamContextSupplier,
-      this,
-      vertx,
-      options,
-      serverOrigin,
-      hello,
-      hello.exceptionHandler,
-      trafficShapingHandler);
-  }
-
-  @Override
   public synchronized Future<HttpServer> listen(SocketAddress address) {
-    if (requestHandler == null && wsHandler == null) {
+    if (requestHandler == null && webSocketHandler == null) {
       throw new IllegalStateException("Set request or WebSocket handler first");
     }
-    return bind(address).map(this);
+    if (tcpServer != null) {
+      throw new IllegalStateException();
+    }
+    HttpServerOptions options = this.options;
+    HttpServerOptions tcpOptions = new HttpServerOptions(options);
+    if (tcpOptions.getSslOptions() != null) {
+      configureApplicationLayerProtocols(tcpOptions.getSslOptions());
+    }
+    ContextInternal context = vertx.getOrCreateContext();
+    ContextInternal listenContext;
+    if (context.isEventLoopContext()) {
+      listenContext = context;
+    } else {
+      listenContext = vertx.createEventLoopContext(context.nettyEventLoop(), context.workerPool(), context.classLoader());
+    }
+    NetServerInternal server = vertx.createNetServer(tcpOptions);
+    Handler<Throwable> h = exceptionHandler;
+    Handler<Throwable> exceptionHandler = h != null ? h : DEFAULT_EXCEPTION_HANDLER;
+    server.exceptionHandler(exceptionHandler);
+    server.connectHandler(so -> {
+      NetSocketImpl soi = (NetSocketImpl) so;
+      Supplier<ContextInternal> streamContextSupplier = context::duplicate;
+      String host = address.isInetSocket() ? address.host() : "localhost";
+      int port = address.port();
+      String serverOrigin = (tcpOptions.isSsl() ? "https" : "http") + "://" + host + ":" + port;
+      HttpServerConnectionHandler handler = new HttpServerConnectionHandler(
+        this,
+        requestHandler,
+        invalidRequestHandler,
+        webSocketHandler,
+        connectionHandler,
+        exceptionHandler);
+      HttpServerConnectionInitializer initializer = new HttpServerConnectionInitializer(
+        listenContext,
+        streamContextSupplier,
+        this,
+        vertx,
+        options,
+        serverOrigin,
+        handler,
+        exceptionHandler,
+        soi.metric());
+      ChannelPipeline pipeline = soi.channelHandlerContext().pipeline();
+      List<ChannelHandler> removedHandlers = new ArrayList<>();
+      for (Map.Entry<String, ChannelHandler> stringChannelHandlerEntry : pipeline) {
+        ChannelHandler channelHandler = stringChannelHandlerEntry.getValue();
+        if (HAProxyMessageCompletionHandler.canUseProxyProtocol(options.isUseProxyProtocol()) && channelHandler instanceof HAProxyMessageDecoder) {
+          continue;
+        }
+        if (options.getTrafficShapingOptions() != null && channelHandler instanceof GlobalTrafficShapingHandler) {
+          continue;
+        }
+        if (options.isSsl() && channelHandler instanceof SslHandler) {
+          continue;
+        }
+        removedHandlers.add(channelHandler);
+      }
+      removedHandlers.forEach(pipeline::remove);
+      initializer.configurePipeline(soi.channel(), null, null);
+    });
+    tcpServer = server;
+    Promise<HttpServer> result = context.promise();
+    tcpServer.listen(listenContext, address).onComplete(ar -> {
+      if (ar.succeeded()) {
+        result.complete(this);
+      } else {
+        result.fail(ar.cause());
+      }
+    });
+    return result.future();
   }
 
   @Override
   public Future<Void> close() {
-    ContextInternal context = vertx.getOrCreateContext();
-    PromiseInternal<Void> promise = context.promise();
-    close(promise);
-    return promise.future();
+    NetServer s;
+    synchronized (this) {
+      s = tcpServer;
+      if (s == null) {
+        return vertx.getOrCreateContext().succeededFuture();
+      }
+      tcpServer = null;
+    }
+    return s.close();
   }
 
-  public boolean isClosed() {
-    return !isListening();
+  /**
+   * Configure the {@code options} to match the server configured HTTP versions.
+   */
+  private void configureApplicationLayerProtocols(ServerSSLOptions options) {
+    List<String> applicationProtocols = this.options
+      .getAlpnVersions()
+      .stream()
+      .map(HttpVersion::alpnName)
+      .collect(Collectors.toList());
+    options.setApplicationLayerProtocols(applicationProtocols);
+  }
+
+  private boolean isListening() {
+    return tcpServer != null;
+  }
+
+  public synchronized boolean isClosed() {
+    NetServerImpl s = (NetServerImpl) tcpServer;
+    return s == null || s.isClosed();
   }
 
   boolean requestAccept() {

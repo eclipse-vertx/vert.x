@@ -90,7 +90,6 @@ public class CloseFutureTest extends AsyncTestBase {
       this.cleanable = cleaner.register(this, () -> {
         // SHOULD BLOCK ?
         boolean blocking = closing.get() == null;
-        System.out.println("CLOSE blocking = " + blocking);
         if (blocking) {
           Promise<Void> promise = Promise.promise();
           resource.close(promise);

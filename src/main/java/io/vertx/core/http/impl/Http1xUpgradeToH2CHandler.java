@@ -33,14 +33,14 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 public class Http1xUpgradeToH2CHandler extends ChannelInboundHandlerAdapter {
 
-  private final HttpServerWorker initializer;
+  private final HttpServerConnectionInitializer initializer;
   private final SslChannelProvider sslChannelProvider;
   private final SSLHelper sslHelper;
   private VertxHttp2ConnectionHandler<Http2ServerConnection> handler;
   private final boolean isCompressionSupported;
   private final boolean isDecompressionSupported;
 
-  Http1xUpgradeToH2CHandler(HttpServerWorker initializer, SslChannelProvider sslChannelProvider, SSLHelper sslHelper, boolean isCompressionSupported, boolean isDecompressionSupported) {
+  Http1xUpgradeToH2CHandler(HttpServerConnectionInitializer initializer, SslChannelProvider sslChannelProvider, SSLHelper sslHelper, boolean isCompressionSupported, boolean isDecompressionSupported) {
     this.initializer = initializer;
     this.sslChannelProvider = sslChannelProvider;
     this.sslHelper = sslHelper;
@@ -79,41 +79,37 @@ public class Http1xUpgradeToH2CHandler extends ChannelInboundHandlerAdapter {
           if (settingsHeader != null) {
             Http2Settings settings = HttpUtils.decodeSettings(settingsHeader);
             if (settings != null) {
-              if (initializer.context.isEventLoopContext()) {
-                ChannelPipeline pipeline = ctx.pipeline();
-                if (pipeline.get("chunkedWriter") != null) {
-                  pipeline.remove("chunkedWriter");
-                }
-                DefaultFullHttpResponse res = new DefaultFullHttpResponse(HTTP_1_1, SWITCHING_PROTOCOLS, Unpooled.EMPTY_BUFFER, false);
-                res.headers().add(HttpHeaderNames.CONNECTION, HttpHeaderValues.UPGRADE);
-                res.headers().add(HttpHeaderNames.UPGRADE, Http2CodecUtil.HTTP_UPGRADE_PROTOCOL_NAME);
-                ctx.write(res);
-                pipeline.remove("httpEncoder");
-                if (isCompressionSupported) {
-                  pipeline.remove("deflater");
-                }
-                if (isDecompressionSupported) {
-                  pipeline.remove("inflater");
-                }
-                handler = initializer.buildHttp2ConnectionHandler(initializer.context, initializer.connectionHandler);
-                pipeline.addLast("handler", handler);
-                handler.serverUpgrade(ctx, settings);
-                DefaultHttp2Headers headers = new DefaultHttp2Headers();
-                headers.method(request.method().name());
-                headers.path(request.uri());
-                headers.authority(request.headers().get("host"));
-                headers.scheme("http");
-                request.headers().remove("http2-settings");
-                request.headers().remove("host");
-                request.headers().forEach(header -> {
-                  if (!HttpHeaderValidationUtil.isConnectionHeader(header.getKey(), true)) {
-                    headers.set(header.getKey().toLowerCase(), header.getValue());
-                  }
-                });
-                ctx.fireChannelRead(new DefaultHttp2HeadersFrame(headers, false));
-              } else {
-                HttpServerImpl.log.warn("Cannot perform HTTP/2 upgrade in a worker verticle");
+              ChannelPipeline pipeline = ctx.pipeline();
+              if (pipeline.get("chunkedWriter") != null) {
+                pipeline.remove("chunkedWriter");
               }
+              DefaultFullHttpResponse res = new DefaultFullHttpResponse(HTTP_1_1, SWITCHING_PROTOCOLS, Unpooled.EMPTY_BUFFER, false);
+              res.headers().add(HttpHeaderNames.CONNECTION, HttpHeaderValues.UPGRADE);
+              res.headers().add(HttpHeaderNames.UPGRADE, Http2CodecUtil.HTTP_UPGRADE_PROTOCOL_NAME);
+              ctx.write(res);
+              pipeline.remove("httpEncoder");
+              if (isCompressionSupported) {
+                pipeline.remove("deflater");
+              }
+              if (isDecompressionSupported) {
+                pipeline.remove("inflater");
+              }
+              handler = initializer.buildHttp2ConnectionHandler();
+              pipeline.addLast("handler", handler);
+              handler.serverUpgrade(ctx, settings);
+              DefaultHttp2Headers headers = new DefaultHttp2Headers();
+              headers.method(request.method().name());
+              headers.path(request.uri());
+              headers.authority(request.headers().get("host"));
+              headers.scheme("http");
+              request.headers().remove("http2-settings");
+              request.headers().remove("host");
+              request.headers().forEach(header -> {
+                if (!HttpHeaderValidationUtil.isConnectionHeader(header.getKey(), true)) {
+                  headers.set(header.getKey().toLowerCase(), header.getValue());
+                }
+              });
+              ctx.fireChannelRead(new DefaultHttp2HeadersFrame(headers, false));
             }
           }
         }

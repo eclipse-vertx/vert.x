@@ -14,7 +14,6 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.handler.codec.compression.CompressionOptions;
 import io.netty.handler.codec.compression.StandardCompressionOptions;
-import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
 import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.logging.LoggingHandler;
@@ -24,13 +23,10 @@ import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.handler.traffic.GlobalTrafficShapingHandler;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.core.net.impl.*;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
@@ -40,14 +36,13 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * A channel initializer that will takes care of configuring a blank channel for HTTP
- * to Vert.x {@link io.vertx.core.http.HttpServerRequest}.
+ * A channel initializer that takes care of configuring a blank channel for HTTP to Vert.x {@link io.vertx.core.http.HttpServerRequest}.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class HttpServerWorker implements TCPServerBase.Worker {
+class HttpServerConnectionInitializer {
 
-  final ContextInternal context;
+  private final ContextInternal context;
   private final Supplier<ContextInternal> streamContextSupplier;
   private final VertxInternal vertx;
   private final HttpServerImpl server;
@@ -55,21 +50,21 @@ public class HttpServerWorker implements TCPServerBase.Worker {
   private final String serverOrigin;
   private final boolean logEnabled;
   private final boolean disableH2C;
-  final Handler<HttpServerConnection> connectionHandler;
+  private final Handler<HttpServerConnection> connectionHandler;
   private final Handler<Throwable> exceptionHandler;
+  private final Object metric;
   private final CompressionOptions[] compressionOptions;
   private final Function<String, String> encodingDetector;
-  private final GlobalTrafficShapingHandler trafficShapingHandler;
 
-  public HttpServerWorker(ContextInternal context,
-                          Supplier<ContextInternal> streamContextSupplier,
-                          HttpServerImpl server,
-                          VertxInternal vertx,
-                          HttpServerOptions options,
-                          String serverOrigin,
-                          Handler<HttpServerConnection> connectionHandler,
-                          Handler<Throwable> exceptionHandler,
-                          GlobalTrafficShapingHandler trafficShapingHandler) {
+  HttpServerConnectionInitializer(ContextInternal context,
+                                  Supplier<ContextInternal> streamContextSupplier,
+                                  HttpServerImpl server,
+                                  VertxInternal vertx,
+                                  HttpServerOptions options,
+                                  String serverOrigin,
+                                  Handler<HttpServerConnection> connectionHandler,
+                                  Handler<Throwable> exceptionHandler,
+                                  Object metric) {
 
     CompressionOptions[] compressionOptions = null;
     if (options.isCompressionSupported()) {
@@ -92,74 +87,37 @@ public class HttpServerWorker implements TCPServerBase.Worker {
     this.disableH2C = !options.isHttp2ClearTextEnabled();
     this.connectionHandler = connectionHandler;
     this.exceptionHandler = exceptionHandler;
+    this.metric = metric;
     this.compressionOptions = compressionOptions;
     this.encodingDetector = compressionOptions != null ? new EncodingDetector(compressionOptions)::determineEncoding : null;
-    this.trafficShapingHandler = trafficShapingHandler;
   }
 
-  @Override
-  public void accept(Channel ch, SslChannelProvider sslChannelProvider, SSLHelper sslHelper, ServerSSLOptions sslOptions) {
-    if (HAProxyMessageCompletionHandler.canUseProxyProtocol(options.isUseProxyProtocol())) {
-      IdleStateHandler idle;
-      io.netty.util.concurrent.Promise<Channel> p = ch.eventLoop().newPromise();
-      ch.pipeline().addLast(new HAProxyMessageDecoder());
-      if (options.getProxyProtocolTimeout() > 0) {
-        ch.pipeline().addLast("idle", idle = new IdleStateHandler(0, 0, options.getProxyProtocolTimeout(), options.getProxyProtocolTimeoutUnit()));
-      } else {
-        idle = null;
-      }
-      ch.pipeline().addLast(new HAProxyMessageCompletionHandler(p));
-      p.addListener((GenericFutureListener<Future<Channel>>) future -> {
-        if (future.isSuccess()) {
-          if (idle != null) {
-            ch.pipeline().remove(idle);
-          }
-          configurePipeline(future.getNow(), sslChannelProvider, sslHelper);
-        } else {
-          //No need to close the channel.HAProxyMessageDecoder already did
-          handleException(future.cause());
-        }
-      });
-    } else {
-      configurePipeline(ch, sslChannelProvider, sslHelper);
-    }
-  }
-
-  private void configurePipeline(Channel ch, SslChannelProvider sslChannelProvider, SSLHelper sslHelper) {
+  void configurePipeline(Channel ch, SslChannelProvider sslChannelProvider, SSLHelper sslHelper) {
     ChannelPipeline pipeline = ch.pipeline();
     if (options.isSsl()) {
-      pipeline.addLast("ssl", sslChannelProvider.createServerHandler(options.isUseAlpn(), options.getSslHandshakeTimeout(), options.getSslHandshakeTimeoutUnit()));
-      ChannelPromise p = ch.newPromise();
-      pipeline.addLast("handshaker", new SslHandshakeCompletionHandler(p));
-      p.addListener(future -> {
-        if (future.isSuccess()) {
-          if (options.isUseAlpn()) {
-            SslHandler sslHandler = pipeline.get(SslHandler.class);
-            String protocol = sslHandler.applicationProtocol();
-            if (protocol != null) {
-              switch (protocol) {
-                case "h2":
-                  configureHttp2(ch.pipeline());
-                  break;
-                case "http/1.1":
-                case "http/1.0":
-                  configureHttp1Pipeline(ch.pipeline(), sslChannelProvider, sslHelper);
-                  configureHttp1Handler(ch.pipeline(), sslChannelProvider, sslHelper);
-                  break;
-              }
-            } else {
-              // No alpn presented or OpenSSL
+      SslHandler sslHandler = pipeline.get(SslHandler.class);
+      if (options.isUseAlpn()) {
+        String protocol = sslHandler.applicationProtocol();
+        if (protocol != null) {
+          switch (protocol) {
+            case "h2":
+              configureHttp2(ch.pipeline());
+              break;
+            case "http/1.1":
+            case "http/1.0":
               configureHttp1Pipeline(ch.pipeline(), sslChannelProvider, sslHelper);
               configureHttp1Handler(ch.pipeline(), sslChannelProvider, sslHelper);
-            }
-          } else {
-            configureHttp1Pipeline(ch.pipeline(), sslChannelProvider, sslHelper);
-            configureHttp1Handler(ch.pipeline(), sslChannelProvider, sslHelper);
+              break;
           }
         } else {
-          handleException(future.cause());
+          // No alpn presented or OpenSSL
+          configureHttp1Pipeline(ch.pipeline(), sslChannelProvider, sslHelper);
+          configureHttp1Handler(ch.pipeline(), sslChannelProvider, sslHelper);
         }
-      });
+      } else {
+        configureHttp1Pipeline(ch.pipeline(), sslChannelProvider, sslHelper);
+        configureHttp1Handler(ch.pipeline(), sslChannelProvider, sslHelper);
+      }
     } else {
       if (disableH2C) {
         configureHttp1Pipeline(ch.pipeline(), sslChannelProvider, sslHelper);
@@ -207,9 +165,6 @@ public class HttpServerWorker implements TCPServerBase.Worker {
         });
       }
     }
-    if (trafficShapingHandler != null) {
-      pipeline.addFirst("globalTrafficShaping", trafficShapingHandler);
-    }
   }
 
   private void handleException(Throwable cause) {
@@ -248,7 +203,11 @@ public class HttpServerWorker implements TCPServerBase.Worker {
     }
   }
 
-  VertxHttp2ConnectionHandler<Http2ServerConnection> buildHttp2ConnectionHandler(ContextInternal ctx, Handler<HttpServerConnection> handler_) {
+  VertxHttp2ConnectionHandler<Http2ServerConnection> buildHttp2ConnectionHandler() {
+    return buildHttp2ConnectionHandler(context, connectionHandler);
+  }
+
+  private VertxHttp2ConnectionHandler<Http2ServerConnection> buildHttp2ConnectionHandler(ContextInternal ctx, Handler<HttpServerConnection> handler_) {
     HttpServerMetrics metrics = (HttpServerMetrics) server.getMetrics();
     int maxRstFramesPerWindow = options.getHttp2RstFloodMaxRstFramePerWindow();
     int secondsPerWindow = (int)options.getHttp2RstFloodWindowDurationTimeUnit().toSeconds(options.getHttp2RstFloodWindowDuration());
@@ -260,9 +219,7 @@ public class HttpServerWorker implements TCPServerBase.Worker {
       .initialSettings(options.getInitialSettings())
       .connectionFactory(connHandler -> {
         Http2ServerConnection conn = new Http2ServerConnection(ctx, streamContextSupplier, serverOrigin, connHandler, encodingDetector, options, metrics);
-        if (metrics != null) {
-          conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
-        }
+        conn.metric(metric);
         return conn;
       })
       .logEnabled(logEnabled)
@@ -292,6 +249,7 @@ public class HttpServerWorker implements TCPServerBase.Worker {
     if (options.isCompressionSupported()) {
       pipeline.addLast("deflater", new HttpChunkContentCompressor(compressionOptions));
     }
+    GlobalTrafficShapingHandler trafficShapingHandler = pipeline.get(GlobalTrafficShapingHandler.class);
     if (options.isSsl() || options.isCompressionSupported() || !vertx.transport().supportFileRegion() || trafficShapingHandler != null) {
       // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
       pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
@@ -310,19 +268,20 @@ public class HttpServerWorker implements TCPServerBase.Worker {
       return;
     }
     HttpServerMetrics metrics = (HttpServerMetrics) server.getMetrics();
-    VertxHandler<Http1xServerConnection> handler = VertxHandler.create(chctx -> new Http1xServerConnection(
-      streamContextSupplier,
-      sslHelper,
-      options,
-      chctx,
-      context,
-      serverOrigin,
-      metrics));
+    VertxHandler<Http1xServerConnection> handler = VertxHandler.create(chctx -> {
+      Http1xServerConnection conn = new Http1xServerConnection(
+        streamContextSupplier,
+        sslHelper,
+        options,
+        chctx,
+        context,
+        serverOrigin,
+        metrics);
+      conn.metric(metric);
+      return conn;
+    });
     pipeline.addLast("handler", handler);
     Http1xServerConnection conn = handler.getConnection();
-    if (metrics != null) {
-      conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
-    }
     connectionHandler.handle(conn);
   }
 

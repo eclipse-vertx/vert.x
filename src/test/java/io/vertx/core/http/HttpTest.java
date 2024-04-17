@@ -3418,7 +3418,9 @@ public abstract class HttpTest extends HttpTestBase {
       public void start(Promise<Void> startPromise) {
         HttpServer server = vertx.createHttpServer(createBaseServerOptions());
         server.requestHandler(req -> {
-          req.end().onComplete(onSuccess(v -> req.response().end()));
+          req.end().onComplete(onSuccess(v -> {
+            req.response().end();
+          }));
           req.pause();
           vertx.setTimer(250, id -> {
             req.resume();

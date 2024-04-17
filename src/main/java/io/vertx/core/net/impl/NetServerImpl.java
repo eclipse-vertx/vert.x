@@ -8,12 +8,13 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-
 package io.vertx.core.net.impl;
 
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.ChannelPromise;
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.channel.*;
+import io.netty.channel.group.ChannelGroup;
+import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
@@ -24,53 +25,64 @@ import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
+import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
+import io.vertx.core.http.ClientAuth;
+import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.impl.HostnameResolver;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.*;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 /**
- *
- * This class is thread-safe
+ * Base class for TCP servers
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
+ * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class NetServerImpl extends TCPServerBase implements Closeable, MetricsProvider, NetServer {
+public class NetServerImpl implements Closeable, MetricsProvider, NetServerInternal {
 
-  private long demand = Long.MAX_VALUE;
+  private static final Logger log = LoggerFactory.getLogger(NetServerImpl.class);
+
+  private final VertxInternal vertx;
+  private final NetServerOptions options;
   private Handler<NetSocket> handler;
-  private Handler<Void> endHandler;
   private Handler<Throwable> exceptionHandler;
 
+  // Per server
+  private EventLoop eventLoop;
+  private NetSocketInitializer initializer;
+  private ChannelGroup channelGroup;
+  private Handler<Channel> worker;
+  private volatile boolean listening;
+  private ContextInternal listenContext;
+  private NetServerImpl actualServer;
+
+  // Main
+  private SSLHelper sslHelper;
+  private volatile Future<SslChannelProvider> sslChannelProvider;
+  private Future<SslChannelProvider> updateInProgress;
+  private GlobalTrafficShapingHandler trafficShapingHandler;
+  private ServerChannelLoadBalancer channelBalancer;
+  private Future<Channel> bindFuture;
+  private Set<NetServerImpl> servers;
+  private TCPMetrics<?> metrics;
+  private volatile int actualPort;
+
   public NetServerImpl(VertxInternal vertx, NetServerOptions options) {
-    super(vertx, options);
-  }
-
-  private synchronized void pauseAccepting() {
-    demand = 0L;
-  }
-
-  private synchronized void resumeAccepting() {
-    demand = Long.MAX_VALUE;
-  }
-
-  private synchronized void fetchAccepting(long amount) {
-    if (amount > 0L) {
-      demand += amount;
-      if (demand < 0L) {
-        demand = Long.MAX_VALUE;
-      }
-    }
-  }
-
-  protected synchronized boolean accept() {
-    boolean accept = demand > 0L;
-    if (accept && demand != Long.MAX_VALUE) {
-      demand--;
-    }
-    return accept;
+    this.vertx = vertx;
+    this.options = options;
   }
 
   @Override
@@ -79,7 +91,7 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
   }
 
   @Override
-  public synchronized NetServer connectHandler(Handler<NetSocket> handler) {
+  public synchronized NetServerInternal connectHandler(Handler<NetSocket> handler) {
     if (isListening()) {
       throw new IllegalStateException("Cannot set connectHandler when server is listening");
     }
@@ -88,7 +100,7 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
   }
 
   @Override
-  public synchronized NetServer exceptionHandler(Handler<Throwable> handler) {
+  public synchronized NetServerInternal exceptionHandler(Handler<Throwable> handler) {
     if (isListening()) {
       throw new IllegalStateException("Cannot set exceptionHandler when server is listening");
     }
@@ -96,14 +108,9 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
     return this;
   }
 
-  @Override
-  protected TCPMetrics<?> createMetrics(SocketAddress localAddress) {
-    VertxMetrics vertxMetrics = vertx.metricsSPI();
-    if (vertxMetrics != null) {
-      return vertxMetrics.createNetServerMetrics(options, localAddress);
-    } else {
-      return null;
-    }
+  public int actualPort() {
+    NetServerImpl server = actualServer;
+    return server != null ? server.actualPort : actualPort;
   }
 
   public Future<Void> close() {
@@ -114,19 +121,19 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
   }
 
   @Override
-  protected Worker childHandler(ContextInternal context, SocketAddress socketAddress, GlobalTrafficShapingHandler trafficShapingHandler) {
-    return new NetServerWorker(context, handler, exceptionHandler, trafficShapingHandler);
+  public Future<NetServer> listen(SocketAddress localAddress) {
+    return listen(vertx.getOrCreateContext(), localAddress);
   }
 
   @Override
-  public synchronized Future<NetServer> listen(SocketAddress localAddress) {
+  public Future<NetServer> listen(ContextInternal context, SocketAddress localAddress) {
     if (localAddress == null) {
       throw new NullPointerException("No null bind local address");
     }
     if (handler == null) {
       throw new IllegalStateException("Set connect handler first");
     }
-    return bind(localAddress).map(this);
+    return bind(context, localAddress).map(this);
   }
 
   @Override
@@ -136,35 +143,33 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
 
   @Override
   public synchronized void close(Promise<Void> completion) {
-    super.close(completion);
-    Handler<Void> handler = endHandler;
-    if (endHandler != null) {
-      endHandler = null;
-      completion.future().onComplete(ar -> handler.handle(null));
-    }
+    doClose(completion);
   }
 
   public boolean isClosed() {
     return !isListening();
   }
 
-  private class NetServerWorker implements Worker {
+  private class NetSocketInitializer {
 
     private final ContextInternal context;
     private final Handler<NetSocket> connectionHandler;
     private final Handler<Throwable> exceptionHandler;
     private final GlobalTrafficShapingHandler trafficShapingHandler;
 
-    NetServerWorker(ContextInternal context, Handler<NetSocket> connectionHandler, Handler<Throwable> exceptionHandler, GlobalTrafficShapingHandler trafficShapingHandler) {
+    NetSocketInitializer(ContextInternal context, Handler<NetSocket> connectionHandler, Handler<Throwable> exceptionHandler, GlobalTrafficShapingHandler trafficShapingHandler) {
       this.context = context;
       this.connectionHandler = connectionHandler;
       this.exceptionHandler = exceptionHandler;
       this.trafficShapingHandler = trafficShapingHandler;
     }
 
-    @Override
+    protected synchronized boolean accept() {
+      return true;
+    }
+
     public void accept(Channel ch, SslChannelProvider sslChannelProvider, SSLHelper sslHelper, ServerSSLOptions sslOptions) {
-      if (!NetServerImpl.this.accept()) {
+      if (!this.accept()) {
         ch.close();
         return;
       }
@@ -221,7 +226,7 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
     }
 
     private void connected(Channel ch, SSLHelper sslHelper, SSLOptions sslOptions) {
-      NetServerImpl.this.initChannel(ch.pipeline(), options.isSsl());
+      initChannel(ch.pipeline(), options.isSsl());
       TCPMetrics<?> metrics = getMetrics();
       VertxHandler<NetSocketImpl> handler = VertxHandler.create(ctx -> new NetSocketImpl(context, ctx, sslHelper, sslOptions, metrics, options.isRegisterWriteHandler()));
       handler.removeHandler(NetSocketImpl::unregisterEventBusHandler);
@@ -250,5 +255,401 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
     if (idleTimeout > 0 || readIdleTimeout > 0 || writeIdleTimeout > 0) {
       pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, options.getIdleTimeoutUnit()));
     }
+  }
+
+  protected GlobalTrafficShapingHandler createTrafficShapingHandler() {
+    return createTrafficShapingHandler(vertx.getEventLoopGroup(), options.getTrafficShapingOptions());
+  }
+
+  private GlobalTrafficShapingHandler createTrafficShapingHandler(EventLoopGroup eventLoopGroup, TrafficShapingOptions options) {
+    if (options == null) {
+      return null;
+    }
+    GlobalTrafficShapingHandler trafficShapingHandler;
+    if (options.getMaxDelayToWait() != 0) {
+      long maxDelayToWaitInMillis = options.getMaxDelayToWaitTimeUnit().toMillis(options.getMaxDelayToWait());
+      long checkIntervalForStatsInMillis = options.getCheckIntervalForStatsTimeUnit().toMillis(options.getCheckIntervalForStats());
+      trafficShapingHandler = new GlobalTrafficShapingHandler(eventLoopGroup, options.getOutboundGlobalBandwidth(), options.getInboundGlobalBandwidth(), checkIntervalForStatsInMillis, maxDelayToWaitInMillis);
+    } else {
+      long checkIntervalForStatsInMillis = options.getCheckIntervalForStatsTimeUnit().toMillis(options.getCheckIntervalForStats());
+      trafficShapingHandler = new GlobalTrafficShapingHandler(eventLoopGroup, options.getOutboundGlobalBandwidth(), options.getInboundGlobalBandwidth(), checkIntervalForStatsInMillis);
+    }
+    if (options.getPeakOutboundGlobalBandwidth() != 0) {
+      trafficShapingHandler.setMaxGlobalWriteSize(options.getPeakOutboundGlobalBandwidth());
+    }
+    return trafficShapingHandler;
+  }
+
+  protected void configure(SSLOptions options) {
+  }
+
+  public int sniEntrySize() {
+    return sslHelper.sniEntrySize();
+  }
+
+  public Future<Boolean> updateSSLOptions(ServerSSLOptions options, boolean force) {
+    NetServerImpl server = actualServer;
+    if (server != null && server != this) {
+      return server.updateSSLOptions(options, force);
+    } else {
+      ContextInternal ctx = vertx.getOrCreateContext();
+      Future<SslChannelProvider> fut;
+      SslChannelProvider current;
+      synchronized (this) {
+        current = sslChannelProvider.result();
+        if (updateInProgress == null) {
+          ServerSSLOptions sslOptions = options.copy();
+          configure(sslOptions);
+          ClientAuth clientAuth = sslOptions.getClientAuth();
+          if (clientAuth == null) {
+            clientAuth = ClientAuth.NONE;
+          }
+          updateInProgress = sslHelper.resolveSslChannelProvider(
+            sslOptions,
+            null,
+            sslOptions.isSni(),
+            clientAuth,
+            sslOptions.getApplicationLayerProtocols(),
+            force,
+            ctx);
+          fut = updateInProgress;
+        } else {
+          return updateInProgress.mapEmpty().transform(ar -> updateSSLOptions(options, force));
+        }
+      }
+      fut.onComplete(ar -> {
+        synchronized (this) {
+          updateInProgress = null;
+          if (ar.succeeded()) {
+            sslChannelProvider = fut;
+          }
+        }
+      });
+      return fut.map(res -> res != current);
+    }
+  }
+
+  public void updateTrafficShapingOptions(TrafficShapingOptions options) {
+    if (options == null) {
+      throw new IllegalArgumentException("Invalid null value passed for traffic shaping options update");
+    }
+    if (trafficShapingHandler == null) {
+      throw new IllegalStateException("Unable to update traffic shaping options because the server was not configured " +
+                                      "to use traffic shaping during startup");
+    }
+    NetServerImpl server = actualServer;
+    if (server != null && server != this) {
+      server.updateTrafficShapingOptions(options);
+    } else {
+      long checkIntervalForStatsInMillis = options.getCheckIntervalForStatsTimeUnit().toMillis(options.getCheckIntervalForStats());
+      trafficShapingHandler.configure(options.getOutboundGlobalBandwidth(), options.getInboundGlobalBandwidth(), checkIntervalForStatsInMillis);
+
+      if (options.getPeakOutboundGlobalBandwidth() != 0) {
+        trafficShapingHandler.setMaxGlobalWriteSize(options.getPeakOutboundGlobalBandwidth());
+      }
+      if (options.getMaxDelayToWait() != 0) {
+        long maxDelayToWaitInMillis = options.getMaxDelayToWaitTimeUnit().toMillis(options.getMaxDelayToWait());
+        trafficShapingHandler.setMaxWriteDelay(maxDelayToWaitInMillis);
+      }
+    }
+  }
+
+  private synchronized Future<Channel> bind(ContextInternal context, SocketAddress localAddress) {
+    if (listening) {
+      throw new IllegalStateException("Listen already called");
+    }
+
+    this.listenContext = context;
+    this.listening = true;
+    this.eventLoop = context.nettyEventLoop();
+
+    SocketAddress bindAddress;
+    Map<ServerID, NetServerImpl> sharedNetServers = vertx.sharedTCPServers((Class<NetServerImpl>) getClass());
+    synchronized (sharedNetServers) {
+      actualPort = localAddress.port();
+      String hostOrPath = localAddress.isInetSocket() ? localAddress.host() : localAddress.path();
+      NetServerImpl main;
+      boolean shared;
+      ServerID id;
+      if (actualPort > 0 || localAddress.isDomainSocket()) {
+        id = new ServerID(actualPort, hostOrPath);
+        main = sharedNetServers.get(id);
+        shared = true;
+        bindAddress = localAddress;
+      } else {
+        if (actualPort < 0) {
+          id = new ServerID(actualPort, hostOrPath + "/" + -actualPort);
+          main = sharedNetServers.get(id);
+          shared = true;
+          bindAddress = SocketAddress.inetSocketAddress(0, localAddress.host());
+        } else {
+          id = new ServerID(actualPort, hostOrPath);
+          main = null;
+          shared = false;
+          bindAddress = localAddress;
+        }
+      }
+      DefaultChannelGroup group = new DefaultChannelGroup(listenContext.nettyEventLoop(), true);
+      channelGroup = group;
+      PromiseInternal<Channel> promise = listenContext.promise();
+      if (main == null) {
+
+        SSLHelper helper;
+        try {
+          helper = new SSLHelper(SSLHelper.resolveEngineOptions(options.getSslEngineOptions(), options.isUseAlpn()));
+        } catch (Exception e) {
+          return context.failedFuture(e);
+        }
+
+        // The first server binds the socket
+        actualServer = this;
+        bindFuture = promise;
+        sslHelper = helper;
+        trafficShapingHandler = createTrafficShapingHandler();
+        initializer = new NetSocketInitializer(context, handler, exceptionHandler, trafficShapingHandler);
+        worker = ch -> {
+          channelGroup.add(ch);
+          Future<SslChannelProvider> scp = sslChannelProvider;
+          initializer.accept(ch, scp != null ? scp.result() : null, sslHelper, options.getSslOptions());
+        };
+        servers = new HashSet<>();
+        servers.add(this);
+        channelBalancer = new ServerChannelLoadBalancer(vertx.getAcceptorEventLoopGroup().next());
+
+        //
+        if (options.isSsl() && options.getKeyCertOptions() == null && options.getTrustOptions() == null) {
+          return context.failedFuture("Key/certificate is mandatory for SSL");
+        }
+
+        // Register the server in the shared server list
+        if (shared) {
+          sharedNetServers.put(id, this);
+        }
+        listenContext.addCloseHook(this);
+
+        // Initialize SSL before binding
+        if (options.isSsl()) {
+          ServerSSLOptions sslOptions = options.getSslOptions();
+          configure(sslOptions);
+          sslChannelProvider = sslHelper.resolveSslChannelProvider(sslOptions, null, sslOptions.isSni(), sslOptions.getClientAuth(), sslOptions.getApplicationLayerProtocols(), listenContext).onComplete(ar -> {
+            if (ar.succeeded()) {
+              bind(hostOrPath, context, bindAddress, localAddress, shared, promise, sharedNetServers, id);
+            } else {
+              promise.fail(ar.cause());
+            }
+          });
+        } else {
+          bind(hostOrPath, context, bindAddress, localAddress, shared, promise, sharedNetServers, id);
+        }
+
+        bindFuture.onFailure(err -> {
+          if (shared) {
+            synchronized (sharedNetServers) {
+              sharedNetServers.remove(id);
+            }
+          }
+          listening = false;
+        });
+
+        return bindFuture;
+      } else {
+        // Server already exists with that host/port - we will use that
+        actualServer = main;
+        metrics = main.metrics;
+        trafficShapingHandler = main.trafficShapingHandler;
+        initializer = new NetSocketInitializer(context, handler, exceptionHandler, trafficShapingHandler);
+        worker = ch -> {
+          group.add(ch);
+          Future<SslChannelProvider> scp = actualServer.sslChannelProvider;
+          initializer.accept(ch, scp != null ? scp.result() : null, sslHelper, options.getSslOptions());
+        };
+        actualServer.servers.add(this);
+        actualServer.channelBalancer.addWorker(eventLoop, worker);
+        listenContext.addCloseHook(this);
+        main.bindFuture.onComplete(promise);
+        return promise.future();
+      }
+    }
+  }
+
+  private void bind(
+    String hostOrPath,
+    ContextInternal context,
+    SocketAddress bindAddress,
+    SocketAddress localAddress,
+    boolean shared,
+    Promise<Channel> promise,
+    Map<ServerID, NetServerImpl> sharedNetServers,
+    ServerID id) {
+    // Socket bind
+    channelBalancer.addWorker(eventLoop, worker);
+    ServerBootstrap bootstrap = new ServerBootstrap();
+    bootstrap.group(vertx.getAcceptorEventLoopGroup(), channelBalancer.workers());
+    if (options.isSsl()) {
+      bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
+    } else {
+      bootstrap.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+    }
+
+    bootstrap.childHandler(channelBalancer);
+    applyConnectionOptions(localAddress.isDomainSocket(), bootstrap);
+
+    // Actual bind
+    io.netty.util.concurrent.Future<Channel> bindFuture = resolveAndBind(context, bindAddress, bootstrap);
+    bindFuture.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) res -> {
+      if (res.isSuccess()) {
+        Channel ch = res.getNow();
+        log.trace("Net server listening on " + hostOrPath + ":" + ch.localAddress());
+        if (shared) {
+          ch.closeFuture().addListener((ChannelFutureListener) channelFuture -> {
+            synchronized (sharedNetServers) {
+              sharedNetServers.remove(id);
+            }
+          });
+        }
+        // Update port to actual port when it is not a domain socket as wildcard port 0 might have been used
+        if (bindAddress.isInetSocket()) {
+          actualPort = ((InetSocketAddress)ch.localAddress()).getPort();
+        }
+        metrics = createMetrics(localAddress);
+        promise.complete(ch);
+      } else {
+        promise.fail(res.cause());
+      }
+    });
+  }
+
+  public boolean isListening() {
+    return listening;
+  }
+
+  private TCPMetrics<?> createMetrics(SocketAddress localAddress) {
+    VertxMetrics metrics = vertx.metricsSPI();
+    if (metrics != null) {
+      if (options instanceof HttpServerOptions) {
+        return metrics.createHttpServerMetrics((HttpServerOptions) options, localAddress);
+      } else {
+        return metrics.createNetServerMetrics(options, localAddress);
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Apply the connection option to the server.
+   *
+   * @param domainSocket whether it's a domain socket server
+   * @param bootstrap the Netty server bootstrap
+   */
+  private void applyConnectionOptions(boolean domainSocket, ServerBootstrap bootstrap) {
+    vertx.transport().configure(options, domainSocket, bootstrap);
+  }
+
+
+  @Override
+  public boolean isMetricsEnabled() {
+    return metrics != null;
+  }
+
+  @Override
+  public synchronized TCPMetrics<?> getMetrics() {
+    return actualServer != null ? actualServer.metrics : null;
+  }
+
+  private synchronized void doClose(Promise<Void> completion) {
+    if (!listening) {
+      completion.complete();
+      return;
+    }
+    listening = false;
+    listenContext.removeCloseHook(this);
+    Map<ServerID, NetServerImpl> servers = vertx.sharedTCPServers((Class<NetServerImpl>) getClass());
+    boolean hasHandlers;
+    synchronized (servers) {
+      ServerChannelLoadBalancer balancer = actualServer.channelBalancer;
+      balancer.removeWorker(eventLoop, worker);
+      hasHandlers = balancer.hasHandlers();
+    }
+    channelGroup.close();
+    // THIS CAN BE RACY
+    if (hasHandlers) {
+      // The actual server still has handlers so we don't actually close it
+      completion.complete();
+    } else {
+      actualServer.actualClose(completion);
+    }
+    // TODO ADD THIS LATER AS IT  CAN SELF DEADLOCK TESTS AND WE DONT NEED IT RIGHT NOW
+//    .addListener(new GenericFutureListener<io.netty.util.concurrent.Future<? super Void>>() {
+//      @Override
+//      public void operationComplete(io.netty.util.concurrent.Future<? super Void> future) throws Exception {
+//      }
+//    });
+  }
+
+  private void actualClose(Promise<Void> done) {
+    bindFuture.onComplete(ar -> {
+      if (ar.succeeded()) {
+        Channel channel = ar.result();
+        ChannelFuture a = channel.close();
+        if (metrics != null) {
+          a.addListener(cg -> metrics.close());
+        }
+        a.addListener((PromiseInternal<Void>)done);
+      } else {
+        done.complete();
+      }
+    });
+  }
+
+  public static io.netty.util.concurrent.Future<Channel> resolveAndBind(ContextInternal context,
+                                                                        SocketAddress socketAddress,
+                                                                        ServerBootstrap bootstrap) {
+    VertxInternal vertx = context.owner();
+    io.netty.util.concurrent.Promise<Channel> promise = vertx.getAcceptorEventLoopGroup().next().newPromise();
+    try {
+      bootstrap.channelFactory(vertx.transport().serverChannelFactory(socketAddress.isDomainSocket()));
+    } catch (Exception e) {
+      promise.setFailure(e);
+      return promise;
+    }
+    if (socketAddress.isDomainSocket()) {
+      java.net.SocketAddress converted = vertx.transport().convert(socketAddress);
+      ChannelFuture future = bootstrap.bind(converted);
+      future.addListener(f -> {
+        if (f.isSuccess()) {
+          promise.setSuccess(future.channel());
+        } else {
+          promise.setFailure(f.cause());
+        }
+      });
+    } else {
+      SocketAddressImpl impl = (SocketAddressImpl) socketAddress;
+      if (impl.ipAddress() != null) {
+        bind(bootstrap, impl.ipAddress(), socketAddress.port(), promise);
+      } else {
+        HostnameResolver resolver = vertx.hostnameResolver();
+        io.netty.util.concurrent.Future<InetSocketAddress> fut = resolver.resolveHostname(context.nettyEventLoop(), socketAddress.host());
+        fut.addListener((GenericFutureListener<io.netty.util.concurrent.Future<InetSocketAddress>>) future -> {
+          if (future.isSuccess()) {
+            bind(bootstrap, future.getNow().getAddress(), socketAddress.port(), promise);
+          } else {
+            promise.setFailure(future.cause());
+          }
+        });
+      }
+    }
+    return promise;
+  }
+
+  private static void bind(ServerBootstrap bootstrap, InetAddress address, int port, io.netty.util.concurrent.Promise<Channel> promise) {
+    InetSocketAddress t = new InetSocketAddress(address, port);
+    ChannelFuture future = bootstrap.bind(t);
+    future.addListener(f -> {
+      if (f.isSuccess()) {
+        promise.setSuccess(future.channel());
+      } else {
+        promise.setFailure(f.cause());
+      }
+    });
   }
 }

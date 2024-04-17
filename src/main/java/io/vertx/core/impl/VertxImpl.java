@@ -333,8 +333,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return so;
   }
 
-  public NetServer createNetServer(NetServerOptions options) {
-    return new NetServerImpl(this, options);
+  public NetServerImpl createNetServer(NetServerOptions options) {
+    return new NetServerImpl(this, options.copy());
   }
 
   public NetClient createNetClient(NetClientOptions options) {
@@ -502,11 +502,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public <S extends TCPServerBase> Map<ServerID, S> sharedTCPServers(Class<S> type) {
+  public <S extends NetServerImpl> Map<ServerID, S> sharedTCPServers(Class<S> type) {
     if (NetServerImpl.class.isAssignableFrom(type)) {
       return (Map<ServerID, S>) sharedNetServers;
     } else if (HttpServerImpl.class.isAssignableFrom(type)) {
-      return (Map<ServerID, S>) sharedHttpServers;
+//      return (Map<ServerID, S>) sharedHttpServers;
+      throw new UnsupportedOperationException();
     } else {
       throw new IllegalStateException();
     }
