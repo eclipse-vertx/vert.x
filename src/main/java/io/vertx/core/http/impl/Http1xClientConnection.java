@@ -148,16 +148,6 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   }
 
   @Override
-  protected void handleEvent(Object evt) {
-    if (evt instanceof ShutdownEvent) {
-      ShutdownEvent shutdown = (ShutdownEvent) evt;
-      shutdown(shutdown.timeout(), shutdown.timeUnit());
-    } else {
-      super.handleEvent(evt);
-    }
-  }
-
-  @Override
   public HttpClientConnectionInternal concurrencyChangeHandler(Handler<Long> handler) {
     // Never changes
     return this;
@@ -1292,13 +1282,18 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   }
 
   private void shutdown(long timeout, TimeUnit unit, PromiseInternal<Void> promise) {
+    Handler<Void> handler;
     synchronized (this) {
       if (shutdown) {
         promise.fail("Already shutdown");
         return;
       }
       shutdown = true;
+      handler = shutdownHandler;
       closeFuture().onComplete(promise);
+    }
+    if (handler != null) {
+      context.emit(handler);
     }
     synchronized (this) {
       if (!closed) {

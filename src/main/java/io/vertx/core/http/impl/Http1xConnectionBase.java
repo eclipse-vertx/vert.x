@@ -38,6 +38,7 @@ import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.impl.ConnectionBase;
+import io.vertx.core.net.impl.ShutdownEvent;
 
 import static io.vertx.core.net.impl.VertxHandler.safeBuffer;
 
@@ -47,6 +48,7 @@ import static io.vertx.core.net.impl.VertxHandler.safeBuffer;
 abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends ConnectionBase implements io.vertx.core.http.HttpConnection {
 
   protected S webSocket;
+  protected Handler<Void> shutdownHandler;
 
   Http1xConnectionBase(ContextInternal context, ChannelHandlerContext chctx) {
     super(context, chctx);
@@ -132,8 +134,9 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
   }
 
   @Override
-  public HttpConnection shutdownHandler(@Nullable Handler<Void> handler) {
-    throw new UnsupportedOperationException("HTTP/1.x connections cannot be shutdown");
+  public synchronized HttpConnection shutdownHandler(@Nullable Handler<Void> handler) {
+    shutdownHandler = handler;
+    return this;
   }
 
   @Override
@@ -164,6 +167,16 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
   @Override
   public Future<Buffer> ping(Buffer data) {
     throw new UnsupportedOperationException("HTTP/1.x connections don't support PING");
+  }
+
+  @Override
+  protected void handleEvent(Object evt) {
+    if (evt instanceof ShutdownEvent) {
+      ShutdownEvent shutdown = (ShutdownEvent) evt;
+      shutdown(shutdown.timeout(), shutdown.timeUnit());
+    } else {
+      super.handleEvent(evt);
+    }
   }
 
   @Override

@@ -4459,7 +4459,7 @@ public class NetTest extends VertxTestBase {
         });
         so.closeHandler(v -> {
           assertEquals(1, eventCount.get());
-          assertTrue(System.currentTimeMillis() - now > 2);
+          assertTrue(System.currentTimeMillis() - now > 2000);
           complete();
         });
         latch.countDown();
@@ -4467,7 +4467,7 @@ public class NetTest extends VertxTestBase {
     awaitLatch(latch);
     Future<Void> fut = client.shutdown(2, TimeUnit.SECONDS);
     fut.onComplete(onSuccess(v -> {
-      assertTrue(System.currentTimeMillis() - now > 2);
+      assertTrue(System.currentTimeMillis() - now > 2000);
       complete();
     }));
     await();
@@ -4504,7 +4504,7 @@ public class NetTest extends VertxTestBase {
     awaitLatch(latch);
     Future<Void> fut = server.shutdown(2, TimeUnit.SECONDS);
     fut.onComplete(onSuccess(v -> {
-      assertTrue(System.currentTimeMillis() - now > 2);
+      assertTrue(System.currentTimeMillis() - now > 2000);
       complete();
     }));
     await();

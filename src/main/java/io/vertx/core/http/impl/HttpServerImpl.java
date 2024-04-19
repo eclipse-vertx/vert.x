@@ -18,6 +18,7 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.traffic.GlobalTrafficShapingHandler;
 import io.vertx.core.*;
 import io.vertx.core.http.*;
+import io.vertx.core.impl.CloseSequence;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
@@ -30,6 +31,7 @@ import io.vertx.core.spi.metrics.MetricsProvider;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -56,10 +58,14 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
   private Handler<HttpConnection> connectionHandler;
   private Handler<Throwable> exceptionHandler;
   private NetServerInternal tcpServer;
+  private long closeTimeout = 0L;
+  private TimeUnit closeTimeoutUnit = TimeUnit.SECONDS;
+  private final CloseSequence closeSequence;
 
   public HttpServerImpl(VertxInternal vertx, HttpServerOptions options) {
     this.vertx = vertx;
     this.options = options;
+    this.closeSequence = new CloseSequence(this::doClose, this::doShutdown);
   }
 
   @Override
@@ -222,6 +228,20 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
       }
     });
     return result.future();
+  }
+
+  protected void doShutdown(Promise<Void> p) {
+    tcpServer.shutdown(closeTimeout, closeTimeoutUnit).onComplete(p);
+  }
+
+  protected void doClose(Promise<Void> p) {
+    tcpServer.close().onComplete(p);
+  }
+
+  public Future<Void> shutdown(long timeout, TimeUnit unit) {
+    this.closeTimeout = timeout;
+    this.closeTimeoutUnit = unit;
+    return closeSequence.close();
   }
 
   @Override

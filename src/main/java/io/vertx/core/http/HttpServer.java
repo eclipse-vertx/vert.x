@@ -17,10 +17,13 @@ import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.metrics.Measured;
+import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.TrafficShapingOptions;
 import io.vertx.core.net.impl.SocketAddressImpl;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * An HTTP and WebSockets server.
@@ -192,6 +195,32 @@ public interface HttpServer extends Measured {
    * @return a future completed with the result
    */
   Future<Void> close();
+
+  /**
+   * Shutdown with a 30 seconds timeout ({@code shutdown(30, TimeUnit.SECONDS)}).
+   *
+   * @return a future completed when shutdown has completed
+   */
+  default Future<Void> shutdown() {
+    return shutdown(30, TimeUnit.SECONDS);
+  }
+
+  /**
+   * Initiate the server shutdown sequence.
+   *
+   * <p> Connections are taken out of service and closed when all inflight requests are processed. When all connections are closed
+   * the server is closed. When the {@code timeout} expires, all unclosed connections are immediately closed.
+   *
+   * <ul>
+   *   <li>HTTP/2 connections will send a go away frame immediately to signal the other side the connection will close</li>
+   *   <li>HTTP/1.x server connection will be closed after the current response is sent</li>
+   * </ul>
+   *
+   * @param timeout the amount of time after which all resources are forcibly closed
+   * @param unit the of the timeout
+   * @return a future notified when the client is closed
+   */
+  Future<Void> shutdown(long timeout, TimeUnit unit);
 
   /**
    * The actual port the server is listening on. This is useful if you bound the server specifying 0 as port number
