@@ -14,6 +14,7 @@ import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
+import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
 import io.netty.handler.logging.LoggingHandler;
@@ -28,6 +29,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.impl.CloseSequence;
 import io.vertx.core.impl.HostnameResolver;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
@@ -44,6 +46,7 @@ import java.net.InetSocketAddress;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Base class for TCP servers
@@ -57,6 +60,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
 
   private final VertxInternal vertx;
   private final NetServerOptions options;
+  private final CloseSequence closeSequence;
   private Handler<NetSocket> handler;
   private Handler<Throwable> exceptionHandler;
 
@@ -68,6 +72,8 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
   private volatile boolean listening;
   private ContextInternal listenContext;
   private NetServerImpl actualServer;
+  private ShutdownEvent closeEvent;
+  private ChannelGroupFuture graceFuture;
 
   // Main
   private SSLHelper sslHelper;
@@ -81,8 +87,17 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
   private volatile int actualPort;
 
   public NetServerImpl(VertxInternal vertx, NetServerOptions options) {
+
+    //
+    // 3 steps close sequence
+    // 2: a {@link CloseEvent} event is broadcast to each channel, channels should react accordingly
+    // 1: grace period completed when all channels are inactive or the shutdown timeout is fired
+    // 0: sockets are closed
+    CloseSequence closeSequence = new CloseSequence(this::doClose, this::doGrace, this::doShutdown);
+
     this.vertx = vertx;
     this.options = options;
+    this.closeSequence = closeSequence;
   }
 
   @Override
@@ -111,6 +126,12 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
   public int actualPort() {
     NetServerImpl server = actualServer;
     return server != null ? server.actualPort : actualPort;
+  }
+
+  @Override
+  public Future<Void> shutdown(long timeout, TimeUnit unit) {
+    closeEvent = new ShutdownEvent(timeout, unit);
+    return closeSequence.close();
   }
 
   public Future<Void> close() {
@@ -408,6 +429,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
         trafficShapingHandler = createTrafficShapingHandler();
         initializer = new NetSocketInitializer(context, handler, exceptionHandler, trafficShapingHandler);
         worker = ch -> {
+          // Should close if the channel group is closed actually or check that
           channelGroup.add(ch);
           Future<SslChannelProvider> scp = sslChannelProvider;
           initializer.accept(ch, scp != null ? scp.result() : null, sslHelper, options.getSslOptions());
@@ -556,11 +578,33 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     return actualServer != null ? actualServer.metrics : null;
   }
 
-  private synchronized void doClose(Promise<Void> completion) {
-    if (!listening) {
-      completion.complete();
-      return;
+  private void doShutdown(Promise<Void> p) {
+    if (closeEvent == null) {
+      closeEvent = new ShutdownEvent(0, TimeUnit.SECONDS);
     }
+    graceFuture = channelGroup.newCloseFuture();
+    for (Channel ch : channelGroup) {
+      ch.pipeline().fireUserEventTriggered(closeEvent);
+    }
+    p.complete();
+  }
+
+  private void doGrace(Promise<Void> completion) {
+    if (closeEvent.timeout() > 0L) {
+      long timerID = vertx.setTimer(closeEvent.timeUnit().toMillis(closeEvent.timeout()), v -> {
+        completion.complete();
+      });
+      graceFuture.addListener(future -> {
+        if (vertx.cancelTimer(timerID)) {
+          completion.complete();
+        }
+      });
+    } else {
+      completion.complete();
+    }
+  }
+
+  private void doClose(Promise<Void> completion) {
     listening = false;
     listenContext.removeCloseHook(this);
     Map<ServerID, NetServerImpl> servers = vertx.sharedTCPServers((Class<NetServerImpl>) getClass());

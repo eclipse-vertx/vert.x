@@ -4472,4 +4472,41 @@ public class NetTest extends VertxTestBase {
     }));
     await();
   }
+
+  @Test
+  public void testServerShutdown() throws Exception {
+    waitFor(2);
+    long now = System.currentTimeMillis();
+    server.connectHandler(so -> {
+      AtomicInteger eventCount = new AtomicInteger();
+      NetSocketInternal soi = (NetSocketInternal) so;
+      soi.eventHandler(event -> {
+        if (event instanceof ShutdownEvent) {
+          ShutdownEvent shutdownEvent = (ShutdownEvent) event;
+          assertEquals(shutdownEvent.timeUnit().toSeconds(shutdownEvent.timeout()), shutdownEvent.timeout());
+          assertEquals(0, eventCount.getAndIncrement());
+        }
+      });
+      so.closeHandler(v -> {
+        assertEquals(1, eventCount.getAndIncrement());
+        assertTrue(System.currentTimeMillis() - now > 2);
+        complete();
+      });
+      soi.write("ping");
+    });
+    startServer();
+    CountDownLatch latch = new CountDownLatch(1);
+    client.connect(testAddress).onComplete(onSuccess(so -> {
+      so.handler(buff -> {
+        latch.countDown();
+      });
+    }));
+    awaitLatch(latch);
+    Future<Void> fut = server.shutdown(2, TimeUnit.SECONDS);
+    fut.onComplete(onSuccess(v -> {
+      assertTrue(System.currentTimeMillis() - now > 2);
+      complete();
+    }));
+    await();
+  }
 }

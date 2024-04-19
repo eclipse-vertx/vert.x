@@ -20,6 +20,8 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.metrics.Measured;
 import io.vertx.core.net.impl.SocketAddressImpl;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * Represents a TCP server
  *
@@ -109,6 +111,27 @@ public interface NetServer extends Measured {
    * @return a future completed with the listen operation result
    */
   Future<Void> close();
+
+  /**
+   * Shutdown with a 30 seconds timeout ({@code shutdown(30, TimeUnit.SECONDS)}).
+   *
+   * @return a future completed when shutdown has completed
+   */
+  default Future<Void> shutdown() {
+    return shutdown(30, TimeUnit.SECONDS);
+  }
+
+  /**
+   * Initiate the server shutdown sequence.
+   * <p>
+   * Connections are taken out of service and notified the close sequence has started through {@link NetSocket#shutdownHandler(Handler)}.
+   * When all connections are closed the client is closed. When the {@code timeout} expires, all unclosed connections are immediately closed.
+   *
+   * @return a future notified when the client is closed
+   * @param timeout the amount of time after which all resources are forcibly closed
+   * @param unit the of the timeout
+   */
+  Future<Void> shutdown(long timeout, TimeUnit unit);
 
   /**
    * The actual port the server is listening on. This is useful if you bound the server specifying 0 as port number
