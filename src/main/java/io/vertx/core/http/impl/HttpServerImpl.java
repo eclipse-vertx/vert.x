@@ -210,22 +210,6 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
         handler,
         exceptionHandler,
         soi.metric());
-      ChannelPipeline pipeline = soi.channelHandlerContext().pipeline();
-      List<ChannelHandler> removedHandlers = new ArrayList<>();
-      for (Map.Entry<String, ChannelHandler> stringChannelHandlerEntry : pipeline) {
-        ChannelHandler channelHandler = stringChannelHandlerEntry.getValue();
-        if (HAProxyMessageCompletionHandler.canUseProxyProtocol(options.isUseProxyProtocol()) && channelHandler instanceof HAProxyMessageDecoder) {
-          continue;
-        }
-        if (options.getTrafficShapingOptions() != null && channelHandler instanceof GlobalTrafficShapingHandler) {
-          continue;
-        }
-        if (options.isSsl() && channelHandler instanceof SslHandler) {
-          continue;
-        }
-        removedHandlers.add(channelHandler);
-      }
-      removedHandlers.forEach(pipeline::remove);
       initializer.configurePipeline(soi.channel(), null, null);
     });
     tcpServer = server;

@@ -21,6 +21,7 @@ import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http2.*;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.net.impl.SslChannelProvider;
 import io.vertx.core.net.impl.VertxHandler;
@@ -95,7 +96,7 @@ public class Http1xUpgradeToH2CHandler extends ChannelInboundHandlerAdapter {
                 pipeline.remove("inflater");
               }
               handler = initializer.buildHttp2ConnectionHandler();
-              pipeline.addLast("handler", handler);
+              pipeline.replace(VertxHandler.class, "handler", handler);
               handler.serverUpgrade(ctx, settings);
               DefaultHttp2Headers headers = new DefaultHttp2Headers();
               headers.method(request.method().name());
@@ -132,13 +133,8 @@ public class Http1xUpgradeToH2CHandler extends ChannelInboundHandlerAdapter {
           ctx.fireChannelRead(new DefaultHttp2DataFrame(buf, end, 0));
           if (end) {
             ChannelPipeline pipeline = ctx.pipeline();
-            for (Map.Entry<String, ChannelHandler> handler : pipeline) {
-              if (handler.getValue() instanceof Http2ConnectionHandler) {
-                // Continue
-              } else {
-                pipeline.remove(handler.getKey());
-              }
-            }
+            pipeline.remove("h2c");
+            pipeline.remove("httpDecoder");
             initializer.configureHttp2Pipeline(pipeline);
           }
         } else {

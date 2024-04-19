@@ -16,13 +16,10 @@ import io.netty.handler.codec.compression.CompressionOptions;
 import io.netty.handler.codec.compression.StandardCompressionOptions;
 import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.handler.codec.http.HttpContentDecompressor;
-import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslHandler;
-import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
-import io.netty.handler.traffic.GlobalTrafficShapingHandler;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.impl.ContextInternal;
@@ -123,25 +120,10 @@ class HttpServerConnectionInitializer {
         configureHttp1Pipeline(ch.pipeline(), sslChannelProvider, sslHelper);
         configureHttp1Handler(ch.pipeline(), sslChannelProvider, sslHelper);
       } else {
-        IdleStateHandler idle;
-        int idleTimeout = options.getIdleTimeout();
-        int readIdleTimeout = options.getReadIdleTimeout();
-        int writeIdleTimeout = options.getWriteIdleTimeout();
-        if (idleTimeout > 0 || readIdleTimeout > 0 || writeIdleTimeout > 0) {
-          pipeline.addLast("idle", idle = new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, options.getIdleTimeoutUnit()));
-        } else {
-          idle = null;
-        }
-        // Handler that detects whether the HTTP/2 connection preface or just process the request
-        // with the HTTP 1.x pipeline to support H2C with prior knowledge, i.e a client that connects
-        // and uses HTTP/2 in clear text directly without an HTTP upgrade.
-        pipeline.addLast(new Http1xOrH2CHandler() {
+        IdleStateHandler idle = pipeline.get(IdleStateHandler.class);
+        Http1xOrH2CHandler handler = new Http1xOrH2CHandler() {
           @Override
           protected void configure(ChannelHandlerContext ctx, boolean h2c) {
-            if (idle != null) {
-              // It will be re-added but this way we don't need to pay attention to order
-              pipeline.remove(idle);
-            }
             if (h2c) {
               configureHttp2(ctx.pipeline());
             } else {
@@ -149,20 +131,20 @@ class HttpServerConnectionInitializer {
               configureHttp1OrH2CUpgradeHandler(ctx.pipeline(), sslChannelProvider, sslHelper);
             }
           }
-
-          @Override
-          public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
-            if (evt instanceof IdleStateEvent && ((IdleStateEvent) evt).state() == IdleState.ALL_IDLE) {
-              ctx.close();
-            }
-          }
-
           @Override
           public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
             super.exceptionCaught(ctx, cause);
             handleException(cause);
           }
-        });
+        };
+        // Handler that detects whether the HTTP/2 connection preface or just process the request
+        // with the HTTP 1.x pipeline to support H2C with prior knowledge, i.e a client that connects
+        // and uses HTTP/2 in clear text directly without an HTTP upgrade.
+        if (idle != null) {
+          pipeline.addBefore("idle", null, handler);
+        } else {
+          pipeline.addBefore("handler", null, handler);
+        }
       }
     }
   }
@@ -186,7 +168,7 @@ class HttpServerConnectionInitializer {
 
   private void configureHttp2Handler(ChannelPipeline pipeline) {
     VertxHttp2ConnectionHandler<Http2ServerConnection> handler = buildHttp2ConnectionHandler(context, connectionHandler);
-    pipeline.addLast("handler", handler);
+    pipeline.replace(VertxHandler.class, "handler", handler);
   }
 
   void configureHttp2Pipeline(ChannelPipeline pipeline) {
@@ -194,12 +176,6 @@ class HttpServerConnectionInitializer {
       // That should send an HTTP/2 go away
       pipeline.channel().close();
       return;
-    }
-    int idleTimeout = options.getIdleTimeout();
-    int readIdleTimeout = options.getReadIdleTimeout();
-    int writeIdleTimeout = options.getWriteIdleTimeout();
-    if (idleTimeout > 0 || readIdleTimeout > 0 || writeIdleTimeout > 0) {
-      pipeline.addBefore("handler", "idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, options.getIdleTimeoutUnit()));
     }
   }
 
@@ -234,31 +210,20 @@ class HttpServerConnectionInitializer {
   }
 
   private void configureHttp1OrH2CUpgradeHandler(ChannelPipeline pipeline, SslChannelProvider sslChannelProvider, SSLHelper sslHelper) {
-    pipeline.addLast("h2c", new Http1xUpgradeToH2CHandler(this, sslChannelProvider, sslHelper, options.isCompressionSupported(), options.isDecompressionSupported()));
+    // DO WE NEED TO ADD SOMEWHERE BEFORE IDLE ?
+    pipeline.addAfter("httpEncoder", "h2c", new Http1xUpgradeToH2CHandler(this, sslChannelProvider, sslHelper, options.isCompressionSupported(), options.isDecompressionSupported()));
   }
 
   private void configureHttp1Pipeline(ChannelPipeline pipeline, SslChannelProvider sslChannelProvider, SSLHelper sslHelper) {
-    if (logEnabled) {
-      pipeline.addLast("logging", new LoggingHandler(options.getActivityLogDataFormat()));
-    }
-    pipeline.addLast("httpDecoder", new VertxHttpRequestDecoder(options));
-    pipeline.addLast("httpEncoder", new VertxHttpResponseEncoder());
+    IdleStateHandler idle = pipeline.get(IdleStateHandler.class);
+    String name = idle == null ? "handler" : "idle";
+    pipeline.addBefore(name, "httpDecoder", new VertxHttpRequestDecoder(options));
+    pipeline.addBefore(name, "httpEncoder", new VertxHttpResponseEncoder());
     if (options.isDecompressionSupported()) {
-      pipeline.addLast("inflater", new HttpContentDecompressor(false));
+      pipeline.addBefore(name, "inflater", new HttpContentDecompressor(false));
     }
     if (options.isCompressionSupported()) {
-      pipeline.addLast("deflater", new HttpChunkContentCompressor(compressionOptions));
-    }
-    GlobalTrafficShapingHandler trafficShapingHandler = pipeline.get(GlobalTrafficShapingHandler.class);
-    if (options.isSsl() || options.isCompressionSupported() || !vertx.transport().supportFileRegion() || trafficShapingHandler != null) {
-      // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
-      pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
-    }
-    int idleTimeout = options.getIdleTimeout();
-    int readIdleTimeout = options.getReadIdleTimeout();
-    int writeIdleTimeout = options.getWriteIdleTimeout();
-    if (idleTimeout > 0 || readIdleTimeout > 0 || writeIdleTimeout > 0) {
-      pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, options.getIdleTimeoutUnit()));
+      pipeline.addBefore(name, "deflater", new HttpChunkContentCompressor(compressionOptions));
     }
   }
 
@@ -280,7 +245,7 @@ class HttpServerConnectionInitializer {
       conn.metric(metric);
       return conn;
     });
-    pipeline.addLast("handler", handler);
+    pipeline.replace(VertxHandler.class, "handler", handler);
     Http1xServerConnection conn = handler.getConnection();
     connectionHandler.handle(conn);
   }
