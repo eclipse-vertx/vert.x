@@ -385,7 +385,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     this.eventLoop = context.nettyEventLoop();
 
     SocketAddress bindAddress;
-    Map<ServerID, NetServerImpl> sharedNetServers = vertx.sharedTCPServers((Class<NetServerImpl>) getClass());
+    Map<ServerID, NetServerInternal> sharedNetServers = vertx.sharedTcpServers();
     synchronized (sharedNetServers) {
       actualPort = localAddress.port();
       String hostOrPath = localAddress.isInetSocket() ? localAddress.host() : localAddress.path();
@@ -394,13 +394,13 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
       ServerID id;
       if (actualPort > 0 || localAddress.isDomainSocket()) {
         id = new ServerID(actualPort, hostOrPath);
-        main = sharedNetServers.get(id);
+        main = (NetServerImpl) sharedNetServers.get(id);
         shared = true;
         bindAddress = localAddress;
       } else {
         if (actualPort < 0) {
           id = new ServerID(actualPort, hostOrPath + "/" + -actualPort);
-          main = sharedNetServers.get(id);
+          main = (NetServerImpl) sharedNetServers.get(id);
           shared = true;
           bindAddress = SocketAddress.inetSocketAddress(0, localAddress.host());
         } else {
@@ -501,7 +501,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     SocketAddress localAddress,
     boolean shared,
     Promise<Channel> promise,
-    Map<ServerID, NetServerImpl> sharedNetServers,
+    Map<ServerID, NetServerInternal> sharedNetServers,
     ServerID id) {
     // Socket bind
     channelBalancer.addWorker(eventLoop, worker);
@@ -607,7 +607,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
   private void doClose(Promise<Void> completion) {
     listening = false;
     listenContext.removeCloseHook(this);
-    Map<ServerID, NetServerImpl> servers = vertx.sharedTCPServers((Class<NetServerImpl>) getClass());
+    Map<ServerID, NetServerInternal> servers = vertx.sharedTcpServers();
     boolean hasHandlers;
     synchronized (servers) {
       ServerChannelLoadBalancer balancer = actualServer.channelBalancer;

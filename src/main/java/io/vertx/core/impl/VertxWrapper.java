@@ -27,7 +27,6 @@ import io.vertx.core.impl.btc.BlockedThreadChecker;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.NetServerInternal;
@@ -286,18 +285,8 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public Map<ServerID, HttpServerImpl> sharedHttpServers() {
-    return delegate.sharedHttpServers();
-  }
-
-  @Override
-  public Map<ServerID, NetServerImpl> sharedNetServers() {
-    return delegate.sharedNetServers();
-  }
-
-  @Override
-  public <S extends NetServerImpl> Map<ServerID, S> sharedTCPServers(Class<S> type) {
-    return delegate.sharedTCPServers(type);
+  public Map<ServerID, NetServerInternal> sharedTcpServers() {
+    return delegate.sharedTcpServers();
   }
 
   @Override
