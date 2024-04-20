@@ -13,10 +13,7 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.EventLoop;
+import io.netty.channel.*;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.compression.Brotli;
 import io.netty.handler.codec.compression.ZlibCodecFactory;
@@ -42,8 +39,6 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.*;
@@ -74,8 +69,6 @@ import static io.vertx.core.http.HttpHeaders.*;
  */
 public class Http1xClientConnection extends Http1xConnection implements HttpClientConnectionInternal {
 
-  private static final Logger log = LoggerFactory.getLogger(Http1xClientConnection.class);
-
   private static final Handler<Object> INVALID_MSG_HANDLER = msg -> {
     ReferenceCountUtil.release(msg);
     throw new IllegalStateException("Invalid object " + msg);
@@ -92,16 +85,14 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
   private final long highWaterMark;
   private final boolean pooled;
 
-  private Deque<Stream> requests = new ArrayDeque<>();
-  private Deque<Stream> responses = new ArrayDeque<>();
+  private final Deque<Stream> requests = new ArrayDeque<>();
+  private final Deque<Stream> responses = new ArrayDeque<>();
   private boolean closed;
   private boolean evicted;
 
   private Handler<Void> evictionHandler = DEFAULT_EVICTION_HANDLER;
   private Handler<Object> invalidMessageHandler = INVALID_MSG_HANDLER;
-  private boolean close;
-  private boolean shutdown;
-  private long shutdownTimerID = -1L;
+  private boolean wantClose;
   private boolean isConnect;
   private int keepAliveTimeout;
   private long expirationTimestamp;
@@ -275,7 +266,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
       if (end) {
         write(msg, false, channelFuture()
           .addListener(listener)
-          .addListener(v -> close())
+          .addListener(v -> closeInternal())
         );
       } else {
         write(msg, false, voidPromise);
@@ -326,16 +317,14 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
    * @return whether the stream should be considered as closed
    */
   private boolean reset(Stream stream) {
-    boolean inflight;
     synchronized (this) {
-      inflight = responses.contains(stream) || stream.responseEnded;
-      if (!inflight) {
+      if (!responses.contains(stream)) {
         requests.remove(stream);
+        return true;
       }
-      close = inflight;
     }
-    checkLifecycle();
-    return !inflight;
+    close();
+    return false;
   }
 
   private void receiveBytes(int len) {
@@ -711,23 +700,32 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
   }
 
-  private void checkLifecycle() {
-    if (close || (shutdown && requests.isEmpty() && responses.isEmpty())) {
-      close();
+  @Override
+  protected void handleShutdown(Object reason, long timeout, TimeUnit unit, ChannelPromise promise) {
+    super.handleShutdown(reason, timeout, unit, promise);
+    checkLifecycle();
+  }
+
+  private boolean checkLifecycle() {
+    if (wantClose || (shutdownInitiated && requests.isEmpty() && responses.isEmpty())) {
+      closeInternal();
+      return true;
     } else if (!isConnect) {
       expirationTimestamp = expirationTimestampOf(keepAliveTimeout);
     }
+    return false;
   }
 
   @Override
-  public Future<Void> close() {
+  protected void handleClose(Object reason, ChannelPromise promise) {
+    // Maybe move to handleShutdown
     if (!evicted) {
       evicted = true;
       if (evictionHandler != null) {
         evictionHandler.handle(null);
       }
     }
-    return super.close();
+    super.handleClose(reason, promise);
   }
 
   private Throwable validateMessage(Object msg) {
@@ -898,7 +896,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
           // currently Vertx forces the Connection header if keepalive is enabled for 1.0
           close = true;
         }
-        this.close = close;
+        this.wantClose = close;
         String keepAliveHeader = response.headers.get(HttpHeaderNames.KEEP_ALIVE);
         if (keepAliveHeader != null) {
           int timeout = HttpUtils.parseKeepAliveHeaderTimeout(keepAliveHeader);
@@ -968,7 +966,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
 
       long timer;
       if (handshakeTimeout > 0L) {
-        timer = vertx.setTimer(handshakeTimeout, id -> close());
+        timer = vertx.setTimer(handshakeTimeout, id -> closeInternal());
       } else {
         timer = -1;
       }
@@ -1004,12 +1002,11 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
         if (future.isSuccess()) {
 
           VertxHandler<WebSocketConnection> handler = VertxHandler.create(ctx -> {
-            WebSocketConnection conn = new WebSocketConnection(context, ctx, client.metrics());
+            WebSocketConnection conn = new WebSocketConnection(context, ctx, false, TimeUnit.SECONDS.toMillis(options.getClosingTimeout()), client.metrics());
             WebSocketImpl webSocket = new WebSocketImpl(
               context,
               conn,
               version != V00,
-              options.getClosingTimeout(),
               options.getMaxFrameSize(),
               options.getMaxMessageSize(),
               registerWriteHandlers);
@@ -1041,7 +1038,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
           }
           promise.complete(ws);
         } else {
-          close();
+          closeInternal();
           promise.fail(future.cause());
         }
       });
@@ -1163,11 +1160,6 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
 
   protected void handleClosed() {
     super.handleClosed();
-    long timerID = shutdownTimerID;
-    if (timerID != -1) {
-      shutdownTimerID = -1L;
-      vertx.cancelTimer(timerID);
-    }
     closed = true;
     if (metrics != null) {
       HttpClientMetrics met = client.metrics();
@@ -1271,44 +1263,6 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
   @Override
   public boolean isValid() {
     return expirationTimestamp == 0 || System.currentTimeMillis() <= expirationTimestamp;
-  }
-
-  @Override
-  public Future<Void> shutdown(long timeout, TimeUnit unit) {
-    PromiseInternal<Void> promise = vertx.promise();
-    shutdown(timeout, unit, promise);
-    return promise.future();
-  }
-
-  private synchronized void shutdownNow() {
-    shutdownTimerID = -1L;
-    close();
-  }
-
-  private void shutdown(long timeout, TimeUnit unit, PromiseInternal<Void> promise) {
-    Handler<Void> handler;
-    synchronized (this) {
-      if (shutdown) {
-        promise.fail("Already shutdown");
-        return;
-      }
-      shutdown = true;
-      handler = shutdownHandler;
-      closeFuture().onComplete(promise);
-    }
-    if (handler != null) {
-      context.emit(handler);
-    }
-    synchronized (this) {
-      if (!closed) {
-        if (timeout > 0L) {
-          shutdownTimerID = context.setTimer(unit.toMillis(timeout), id -> shutdownNow());
-        } else {
-          close = true;
-        }
-      }
-    }
-    checkLifecycle();
   }
 
   /**

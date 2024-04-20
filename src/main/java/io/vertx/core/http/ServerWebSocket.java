@@ -156,7 +156,9 @@ public interface ServerWebSocket extends WebSocket {
    * is in progress.
    */
   @Override
-  Future<Void> close();
+  default Future<Void> close() {
+    return WebSocket.super.close();
+  }
 
   /**
    * @return SSLSession associated with the underlying socket. Returns null if connection is

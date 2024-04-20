@@ -12,22 +12,25 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.websocketx.*;
-import io.vertx.core.Future;
-import io.vertx.core.http.ServerWebSocket;
-import io.vertx.core.http.WebSocket;
+import io.netty.util.concurrent.EventExecutor;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
+import io.netty.util.concurrent.ScheduledFuture;
 import io.vertx.core.http.WebSocketFrameType;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.net.impl.ConnectionBase;
+import io.vertx.core.impl.future.PromiseInternal;
+import io.vertx.core.net.impl.VertxConnection;
 import io.vertx.core.net.impl.ShutdownEvent;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.metrics.NetworkMetrics;
 import io.vertx.core.spi.metrics.TCPMetrics;
 
-import java.util.function.Function;
+import java.util.concurrent.TimeUnit;
 
 import static io.vertx.core.net.impl.VertxHandler.safeBuffer;
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
@@ -37,14 +40,23 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-final class WebSocketConnection extends ConnectionBase {
+final class WebSocketConnection extends VertxConnection {
 
+  private final long closingTimeoutMS;
+  private ScheduledFuture<?> closingTimeout;
+  private final boolean server;
+  private final TCPMetrics metrics;
   private WebSocketImplBase<?> webSocket;
-  final TCPMetrics metrics;
+  private boolean closeSent;
+  private ChannelPromise closePromise;
+  private Object closeReason;
+  private boolean closeReceived;
 
-  WebSocketConnection(ContextInternal context, ChannelHandlerContext chctx, TCPMetrics metrics) {
+  WebSocketConnection(ContextInternal context, ChannelHandlerContext chctx, boolean server, long closingTimeoutMS, TCPMetrics metrics) {
     super(context, chctx);
+    this.closingTimeoutMS = closingTimeoutMS;
     this.metrics = metrics;
+    this.server = server;
   }
 
   WebSocketImplBase<?> webSocket() {
@@ -70,9 +82,48 @@ final class WebSocketConnection extends ConnectionBase {
   }
 
   @Override
-  public Future<Void> close() {
-    webSocket.close();
-    return closeFuture();
+  protected void handleShutdown(Object reason, long timeout, TimeUnit unit, ChannelPromise promise) {
+    //
+  }
+
+  @Override
+  protected void handleClose(Object reason, ChannelPromise promise) {
+    assert !closeSent;
+    closeSent = true;
+    closePromise = promise;
+    closeReason = reason;
+    CloseWebSocketFrame closeFrame;
+    if (reason instanceof CloseWebSocketFrame) {
+      closeFrame = (CloseWebSocketFrame) reason;
+    } else {
+      closeFrame = closeFrame((short)1000, null);
+    }
+    if (closeReceived) {
+      ChannelPromise channelPromise = chctx.newPromise();
+      writeToChannel(closeFrame, channelPromise);
+      if (server) {
+        channelPromise.addListener(future -> finishClose());
+      }
+    } else {
+      ChannelPromise channelPromise = chctx.newPromise();
+      writeToChannel(closeFrame, channelPromise);
+      if (closingTimeoutMS > 0L) {
+        channelPromise.addListener(future -> {
+          EventExecutor exec = chctx.executor();
+          closingTimeout = exec.schedule(() -> {
+            closingTimeout = null;
+            finishClose();
+          }, closingTimeoutMS, TimeUnit.MILLISECONDS);
+        });
+      } else if (closingTimeoutMS == 0L) {
+        channelPromise.addListener(future -> finishClose());
+      }
+    }
+  }
+
+  private CloseWebSocketFrame closeFrame(short statusCode, String reason) {
+    ByteBuf byteBuf = HttpUtils.generateWSCloseFrameByteBuf(statusCode, reason);
+    return new CloseWebSocketFrame(true, 0, byteBuf);
   }
 
   @Override
@@ -93,6 +144,13 @@ final class WebSocketConnection extends ConnectionBase {
 
   @Override
   protected void handleClosed() {
+    ScheduledFuture<?> timeout = closingTimeout;
+    if (timeout != null) {
+      timeout.cancel(false);
+    }
+    if (closePromise != null && !closePromise.isDone()) {
+      closePromise.setSuccess();
+    }
     Object metric = null;
     WebSocketImplBase<?> ws = webSocket;
     if (ws != null) {
@@ -115,15 +173,6 @@ final class WebSocketConnection extends ConnectionBase {
     super.handleClosed();
   }
 
-  protected void handleEvent(Object evt) {
-    if (evt instanceof ShutdownEvent) {
-      ShutdownEvent shutdown = (ShutdownEvent) evt;
-      webSocket.close();
-    } else {
-      super.handleEvent(evt);
-    }
-  }
-
   @Override
   protected void handleMessage(Object msg) {
     if (msg instanceof WebSocketFrame) {
@@ -138,8 +187,27 @@ final class WebSocketConnection extends ConnectionBase {
     synchronized (this) {
       w = webSocket;
     }
+    if (frame.isClose()) {
+      closeReceived = true;
+      if (!closeSent) {
+        close(closeFrame(frame.closeStatusCode(), frame.closeReason())); // Reason
+      } else {
+        if (server) {
+          finishClose();
+        }
+      }
+    }
     if (w != null) {
       w.context().execute(frame, w::handleFrame);
+    }
+  }
+
+  private void finishClose() {
+    // Do we really need to test timeout ????
+    ScheduledFuture<?> timeout = closingTimeout;
+    if (timeout == null || timeout.cancel(false)) {
+      closingTimeout = null;
+      super.handleClose(closeReason, closePromise);
     }
   }
 

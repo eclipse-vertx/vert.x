@@ -38,6 +38,7 @@ import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
+import io.vertx.core.net.impl.VertxConnection;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.transport.Transport;
 import io.vertx.core.spi.metrics.*;
@@ -339,7 +340,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
     return new Connection(context, chctx);
   }
 
-  class Connection extends ConnectionBase {
+  class Connection extends VertxConnection {
 
     public Connection(ContextInternal context, ChannelHandlerContext channel) {
       super(context, channel);

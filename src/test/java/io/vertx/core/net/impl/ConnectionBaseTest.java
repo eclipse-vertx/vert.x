@@ -11,20 +11,20 @@
 package io.vertx.core.net.impl;
 
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelDuplexHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.ChannelPromise;
+import io.netty.channel.*;
+import io.netty.channel.embedded.EmbeddedChannel;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -33,6 +33,9 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 
 public class ConnectionBaseTest extends VertxTestBase {
 
@@ -171,7 +174,7 @@ public class ConnectionBaseTest extends VertxTestBase {
             order.add(s);
             if ("msg1".equals(s)) {
               // Flush a message why there are two messages queued on the connection
-              ((ConnectionBase)conn).flush();
+              ((VertxConnection)conn).flush();
             }
           } else {
             super.write(ctx, msg, promise);
@@ -210,7 +213,7 @@ public class ConnectionBaseTest extends VertxTestBase {
     CompletableFuture<Void> drain = new CompletableFuture<>();
     connectHandler = so -> {
       ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
-      ConnectionBase conn = (ConnectionBase) so;
+      VertxConnection conn = (VertxConnection) so;
       int num = 0;
       while (conn.writeToChannel(chunk.getByteBuf())) {
         num++;
@@ -233,7 +236,7 @@ public class ConnectionBaseTest extends VertxTestBase {
   private void fill(NetSocketInternal so, BufferInternal buffer, Handler<Void> cont) {
     Runnable saturate = () -> {
       while (true) {
-        if (!((ConnectionBase)so).writeToChannel(buffer.getByteBuf())) {
+        if (!((VertxConnection)so).writeToChannel(buffer.getByteBuf())) {
           break;
         }
       }
@@ -300,7 +303,7 @@ public class ConnectionBaseTest extends VertxTestBase {
         }
       });
 
-      ConnectionBase conn = (ConnectionBase) so;
+      VertxConnection conn = (VertxConnection) so;
       CountDownLatch latch = new CountDownLatch(1);
       executeAsyncTask(() -> {
         conn.writeToChannel("msg1");
@@ -392,5 +395,122 @@ public class ConnectionBaseTest extends VertxTestBase {
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
     }
+  }
+
+  @Test
+  public void testClose() {
+    AtomicBoolean shutdown = new AtomicBoolean();
+    AtomicBoolean closed = new AtomicBoolean();
+    EmbeddedChannel channel = channel((ctx, chctx) -> new VertxConnection(ctx, chctx) {
+      @Override
+      protected void handleEvent(Object event) {
+        if ("test".equals(event)) {
+          close();
+        }
+      }
+      @Override
+      protected void handleShutdown(Object reason, long timeout, TimeUnit unit, ChannelPromise promise) {
+        shutdown.set(true);
+      }
+      @Override
+      protected void handleClose(Object reason, ChannelPromise promise) {
+        closed.set(true);
+        promise.setSuccess();
+      }
+    });
+    channel.pipeline().fireUserEventTriggered("test");
+    assertFalse(shutdown.get());
+    assertTrue(closed.get());
+  }
+
+  @Test
+  public void testShutdownZeroDoesClose() {
+    AtomicBoolean shutdown = new AtomicBoolean();
+    AtomicBoolean closed = new AtomicBoolean();
+    EmbeddedChannel channel = channel((ctx, chctx) -> new VertxConnection(ctx, chctx) {
+      @Override
+      protected void handleEvent(Object event) {
+        if ("test".equals(event)) {
+          shutdown(0L, TimeUnit.SECONDS);
+        }
+      }
+      @Override
+      protected void handleShutdown(Object reason, long timeout, TimeUnit unit, ChannelPromise promise) {
+        shutdown.set(true);
+      }
+      @Override
+      protected void handleClose(Object reason, ChannelPromise promise) {
+        closed.set(true);
+      }
+    });
+    channel.pipeline().fireUserEventTriggered("test");
+    assertFalse(shutdown.get());
+    assertTrue(closed.get());
+  }
+
+  @Ignore
+  @Test
+  public void testShutdownReentrantClose() {
+    AtomicBoolean shutdown = new AtomicBoolean();
+    AtomicBoolean closed = new AtomicBoolean();
+    EmbeddedChannel channel = channel((ctx, chctx) -> new VertxConnection(ctx, chctx) {
+      @Override
+      protected void handleEvent(Object event) {
+        if ("test".equals(event)) {
+          shutdown(10L, TimeUnit.SECONDS);
+        }
+      }
+      @Override
+      protected void handleShutdown(Object reason, long timeout, TimeUnit unit, ChannelPromise promise) {
+        shutdown.set(true);
+        close(reason);
+        assertTrue(closed.get());
+      }
+      @Override
+      protected void handleClose(Object reason, ChannelPromise promise) {
+        closed.set(true);
+      }
+    });
+    channel.pipeline().fireUserEventTriggered("test");
+    assertTrue(shutdown.get());
+    assertTrue(closed.get());
+  }
+
+  @Test
+  public void testShutdownTimeout() {
+    AtomicInteger shutdown = new AtomicInteger();
+    AtomicInteger closed = new AtomicInteger();
+    EmbeddedChannel channel = channel((ctx, chctx) -> new VertxConnection(ctx, chctx) {
+      @Override
+      protected void handleEvent(Object event) {
+        if ("test".equals(event)) {
+          shutdown(100L, TimeUnit.MILLISECONDS);
+        }
+      }
+      @Override
+      protected void handleShutdown(Object reason, long timeout, TimeUnit unit, ChannelPromise promise) {
+        shutdown.getAndIncrement();
+        assertEquals(0L, closed.get());
+        // Force run tasks at this stage since the task will be cancelled after by embedded channel close
+        EmbeddedChannel a = (EmbeddedChannel) chctx.channel();
+        a.advanceTimeBy(100, TimeUnit.MILLISECONDS);
+        a.runPendingTasks();
+        assertEquals(1L, closed.get());
+      }
+      @Override
+      protected void handleClose(Object reason, ChannelPromise promise) {
+        closed.getAndIncrement();
+      }
+    });
+    channel.pipeline().fireUserEventTriggered("test");
+    assertEquals(1L, shutdown.get());
+    assertEquals(1L, closed.get());
+  }
+
+  private <C extends VertxConnection> EmbeddedChannel channel(BiFunction<ContextInternal, ChannelHandlerContext, C> connectionFactory) {
+    return new EmbeddedChannel(VertxHandler.create(chctx -> {
+      ContextInternal ctx = ((VertxInternal)vertx).createEventLoopContext(chctx.channel().eventLoop(), null, null);
+      return connectionFactory.apply(ctx, chctx);
+    }));
   }
 }

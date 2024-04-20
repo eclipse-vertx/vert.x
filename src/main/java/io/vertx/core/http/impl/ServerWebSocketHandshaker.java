@@ -57,6 +57,7 @@ public class ServerWebSocketHandshaker implements ServerWebSocket {
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
   private Handler<Void> closeHandler;
+  private Handler<Void> shutdownHandler;
   private Handler<Void> drainHandler;
   private Handler<WebSocketFrame> frameHandler;
   private Handler<String> textMessageHandler;
@@ -239,6 +240,16 @@ public class ServerWebSocketHandshaker implements ServerWebSocket {
   }
 
   @Override
+  public WebSocket shutdownHandler(Handler<Void> handler) {
+    shutdownHandler = handler;
+    WebSocket ws = webSocket;
+    if (ws != null) {
+      ws.shutdownHandler(handler);
+    }
+    return this;
+  }
+
+  @Override
   public ServerWebSocket frameHandler(Handler<WebSocketFrame> handler) {
     frameHandler = handler;
     WebSocket ws = webSocket;
@@ -354,19 +365,9 @@ public class ServerWebSocketHandshaker implements ServerWebSocket {
   }
 
   @Override
-  public Future<Void> close() {
+  public Future<Void> shutdown(long timeout, TimeUnit unit, short statusCode, @Nullable String reason) {
     WebSocket delegate = webSocketOrDie();
-    return delegate.close();
-  }
-
-  @Override
-  public Future<Void> close(short statusCode) {
-    return webSocketOrDie().close(statusCode);
-  }
-
-  @Override
-  public Future<Void> close(short statusCode, @Nullable String reason) {
-    return webSocketOrDie().close(statusCode, reason);
+    return delegate.shutdown(timeout, unit, statusCode, reason);
   }
 
   @Override
@@ -444,6 +445,7 @@ public class ServerWebSocketHandshaker implements ServerWebSocket {
             ws.textMessageHandler(textMessageHandler);
             ws.endHandler(endHandler);
             ws.closeHandler(closeHandler);
+            ws.shutdownHandler(shutdownHandler);
             ws.exceptionHandler(exceptionHandler);
             ws.drainHandler(drainHandler);
             ws.frameHandler(frameHandler);
@@ -492,12 +494,12 @@ public class ServerWebSocketHandshaker implements ServerWebSocket {
       pipeline.remove(compressor);
     }
     VertxHandler<WebSocketConnection> handler = VertxHandler.create(ctx -> {
-      WebSocketConnection webSocketConn = new WebSocketConnection(request.context, ctx, httpConn.metrics);
+      long closingTimeoutMS = options.getWebSocketClosingTimeout() >= 0 ? options.getWebSocketClosingTimeout() * 1000L : 0L;
+      WebSocketConnection webSocketConn = new WebSocketConnection(request.context, ctx, true, closingTimeoutMS,httpConn.metrics);
       ServerWebSocketImpl webSocket = new ServerWebSocketImpl(
         (ContextInternal) request.context(),
         webSocketConn,
         handshaker.version() != WebSocketVersion.V00,
-        options.getWebSocketClosingTimeout(),
         request,
         options.getMaxWebSocketFrameSize(),
         options.getMaxWebSocketMessageSize(),

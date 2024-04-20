@@ -27,9 +27,9 @@ import java.util.function.Function;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public final class VertxHandler<C extends ConnectionBase> extends ChannelDuplexHandler {
+public final class VertxHandler<C extends VertxConnection> extends ChannelDuplexHandler {
 
-  public static <C extends ConnectionBase> VertxHandler<C> create(Function<ChannelHandlerContext, C> connectionFactory) {
+  public static <C extends VertxConnection> VertxHandler<C> create(Function<ChannelHandlerContext, C> connectionFactory) {
     return new VertxHandler<>(connectionFactory);
   }
 
@@ -155,7 +155,7 @@ public final class VertxHandler<C extends ConnectionBase> extends ChannelDuplexH
 
   @Override
   public void close(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
-    conn.close(promise);
+    conn.handleClose(promise);
   }
 
   @Override

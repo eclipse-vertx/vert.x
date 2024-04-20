@@ -108,9 +108,9 @@ public interface HttpConnection {
   HttpConnection goAwayHandler(@Nullable Handler<GoAway> handler);
 
   /**
-   * Set an handler called when a {@literal GOAWAY} frame has been sent or received and all connections are closed.
-   * <p/>
-   * This is not implemented for HTTP/1.x.
+   * Set a {@code handler} notified when the HTTP connection is shutdown: the client or server will close the connection
+   * within a certain amount of time. This gives the opportunity to the {@code handler} to close the current requests in progress
+   * gracefully before the HTTP connection is forcefully closed.
    *
    * @param handler the handler
    * @return a reference to this, so the API can be used fluently
@@ -119,7 +119,7 @@ public interface HttpConnection {
   HttpConnection shutdownHandler(@Nullable  Handler<Void> handler);
 
   /**
-   * Shutdown a 30 seconds timeout ({@code shutdown(30, TimeUnit.SECONDS)}).
+   * Shutdown with a 30 seconds timeout ({@code shutdown(30, TimeUnit.SECONDS)}).
    *
    * @return a future completed when shutdown has completed
    */

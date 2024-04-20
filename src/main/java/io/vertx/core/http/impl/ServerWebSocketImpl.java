@@ -16,6 +16,7 @@ import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.impl.ConnectionBase;
+import io.vertx.core.net.impl.VertxConnection;
 
 /**
  * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
@@ -28,7 +29,6 @@ import io.vertx.core.net.impl.ConnectionBase;
  */
 public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> implements ServerWebSocket {
 
-  private final long closingTimeoutMS;
   private final String scheme;
   private final HostAndPort authority;
   private final String uri;
@@ -36,15 +36,13 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
   private final String query;
 
   ServerWebSocketImpl(ContextInternal context,
-                      ConnectionBase conn,
+                      VertxConnection conn,
                       boolean supportsContinuation,
-                      long closingTimeout,
                       Http1xServerRequest request,
                       int maxWebSocketFrameSize,
                       int maxWebSocketMessageSize,
                       boolean registerWebSocketWriteHandlers) {
     super(context, conn, conn.channelHandlerContext(), request.headers(), supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize, registerWebSocketWriteHandlers);
-    this.closingTimeoutMS = closingTimeout >= 0 ? closingTimeout * 1000L : -1L;
     this.scheme = request.scheme();
     this.authority = request.authority();
     this.uri = request.uri();
@@ -90,24 +88,6 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
   @Override
   public void reject(int sc) {
     throw new IllegalStateException("WebSocket already sent");
-  }
-
-  @Override
-  public Future<Void> close(short statusCode, String reason) {
-    Future<Void> fut = super.close(statusCode, reason);
-    fut.onComplete(v -> {
-      if (closingTimeoutMS == 0L) {
-        closeConnection();
-      } else if (closingTimeoutMS > 0L) {
-        initiateConnectionCloseTimeout(closingTimeoutMS);
-      }
-    });
-    return fut;
-  }
-
-  @Override
-  protected void handleCloseConnection() {
-    closeConnection();
   }
 
 }

@@ -19,6 +19,7 @@ public class HAProxy {
   private final SocketAddress remoteAddress;
   private final Buffer header;
   private NetServer server;
+  private NetClient client;
 
   //Used to test unknown protocol
   private SocketAddress connectionRemoteAddress;
@@ -37,10 +38,10 @@ public class HAProxy {
     NetServerOptions options = new NetServerOptions();
     options.setHost(HOST).setPort(PORT);
     server = vertx.createNetServer(options);
+    client = vertx.createNetClient();
     server.connectHandler(socket -> {
       socket.pause();
-      NetClient netClient = vertx.createNetClient(new NetClientOptions());
-      netClient.connect(remoteAddress).onComplete(result -> {
+      client.connect(remoteAddress).onComplete(result -> {
         if (result.succeeded()) {
           log.debug("connected, writing header");
           NetSocket clientSocket = result.result();

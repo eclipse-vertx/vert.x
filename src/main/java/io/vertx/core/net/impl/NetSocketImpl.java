@@ -48,7 +48,7 @@ import java.util.UUID;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
+public class NetSocketImpl extends VertxConnection implements NetSocketInternal {
 
   private final String writeHandlerID;
   private final SSLHelper sslHelper;
@@ -63,7 +63,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   private Handler<Buffer> handler;
   private Handler<Object> messageHandler;
   private Handler<Object> eventHandler;
-  private Handler<Long> shutdownHandler;
+  private Handler<Void> shutdownHandler;
 
   public NetSocketImpl(ContextInternal context,
                        ChannelHandlerContext channel,
@@ -359,27 +359,27 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   }
 
   @Override
-  protected void handleEvent(Object evt) {
+  protected void handleEvent(Object event) {
     Handler<Object> handler;
     synchronized (this) {
       handler = eventHandler;
     }
     if (handler != null) {
-      context.emit(evt, handler);
+      context.emit(event, handler);
     } else {
-      super.handleEvent(evt);
+      super.handleEvent(event);
     }
-    if (evt instanceof ShutdownEvent) {
-      Handler<Long> shutdownHandler = this.shutdownHandler;
+    if (event instanceof ShutdownEvent) {
+      Handler<Void> shutdownHandler = this.shutdownHandler;
       if (shutdownHandler != null) {
-        ShutdownEvent shutdown = (ShutdownEvent) evt;
-        context.emit(shutdown.timeUnit().toMillis(shutdown.timeout()), shutdownHandler);
+        ShutdownEvent shutdown = (ShutdownEvent) event;
+        context.emit(/*shutdown.timeUnit().toMillis(shutdown.timeout()), */shutdownHandler);
       }
     }
   }
 
   @Override
-  public NetSocket shutdownHandler(@Nullable Handler<Long> handler) {
+  public NetSocketImpl shutdownHandler(@Nullable Handler<Void> handler) {
     shutdownHandler = handler;
     return this;
   }
