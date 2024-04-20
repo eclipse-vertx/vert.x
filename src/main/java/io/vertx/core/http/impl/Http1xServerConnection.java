@@ -30,7 +30,6 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.http.HttpServerOptions;
@@ -82,7 +81,6 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
   private Http1xServerRequest requestInProgress;
   private Http1xServerRequest responseInProgress;
   private boolean wantClose;
-  private long shutdownTimerID;
   private boolean channelPaused;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<HttpServerRequest> invalidRequestHandler;
@@ -108,37 +106,14 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
     this.handle100ContinueAutomatically = options.isHandle100ContinueAutomatically();
     this.tracingPolicy = options.getTracingPolicy();
     this.wantClose = false;
-    this.shutdownTimerID = -1L;
   }
 
   @Override
-  public Future<Void> shutdown(long timeout, TimeUnit unit) {
-    Promise<Void> promise = vertx.promise();
-    context.execute(() -> shutdown(promise, timeout, unit));
-    return promise.future();
-  }
-
-  private void shutdown(Promise<Void> promise, long timeout, TimeUnit unit) {
-    Handler<Void> handler;
-    synchronized (this) {
-      handler = shutdownHandler;
-    }
-    if (handler != null) {
-      context.dispatch(handler);
-    }
-    if (shutdownTimerID == -1L) {
-      if (responseInProgress != null) {
-        wantClose = true;
-        shutdownTimerID = context.setTimer(unit.toMillis(timeout), id -> {
-          close();
-        });
-      } else {
-        close();
-      }
-      Future<Void> f = closeFuture();
-      f.onComplete(promise);
+  protected void handleShutdown(Object reason, long timeout, TimeUnit unit, ChannelPromise promise) {
+    super.handleShutdown(reason, timeout, unit, promise);
+    if (responseInProgress != null) {
     } else {
-      promise.fail("Already shutdown");
+      closeInternal();
     }
   }
 
@@ -165,8 +140,8 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
 
   public void handleMessage(Object msg) {
     assert msg != null;
-    if (requestInProgress == null && wantClose) {
-      // Discard message
+    if (requestInProgress == null && (shutdownInitiated || wantClose)) {
+      ReferenceCountUtil.release(msg);
       return;
     }
     // fast-path first
@@ -225,23 +200,11 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
     boolean tryClose;
     Http1xServerRequest request = requestInProgress;
     requestInProgress = null;
-    tryClose = wantClose && responseInProgress == null;
+    tryClose = (wantClose || shutdownInitiated) && responseInProgress == null;
     request.context.execute(request, Http1xServerRequest::handleEnd);
     if (tryClose) {
-      if (shutdownTimerID != -1L) {
-        if (!vertx.cancelTimer(shutdownTimerID)) {
-          return;
-        }
-        shutdownTimerID = -1L;
-      }
-      flushAndClose();
+      closeInternal();
     }
-  }
-
-  private void flushAndClose() {
-    ChannelPromise channelFuture = channelFuture();
-    writeToChannel(Unpooled.EMPTY_BUFFER, channelFuture);
-    channelFuture.addListener(fut -> close());
   }
 
   void write(HttpObject msg, PromiseInternal<Void> promise) {
@@ -273,18 +236,12 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
         if (requestInProgress == request) {
           // Deferred
         } else {
-          if (wantClose && shutdownTimerID == -1L) {
-            // No keep-alive
-            flushAndClose();
-          } else {
-            Http1xServerRequest next = request.next();
-            if (next != null) {
-              // Handle pipelined request
-              handleNext(next);
-            } else if (wantClose && shutdownTimerID != -1L && vertx.cancelTimer(shutdownTimerID)) {
-              shutdownTimerID = -1L;
-              flushAndClose();
-            }
+          Http1xServerRequest next = request.next();
+          if (next != null) {
+            // Handle pipelined request
+            handleNext(next);
+          } else if (wantClose || shutdownInitiated) {
+            closeInternal();
           }
         }
       } else {
@@ -342,12 +299,8 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
     }
   }
 
-  String getServerOrigin() {
+  String serverOrigin() {
     return serverOrigin;
-  }
-
-  Vertx vertx() {
-    return vertx;
   }
 
   void createWebSocket(Http1xServerRequest request, PromiseInternal<ServerWebSocket> promise) {

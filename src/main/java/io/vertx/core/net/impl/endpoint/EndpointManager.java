@@ -115,23 +115,24 @@ public class EndpointManager<K, E extends Endpoint> {
    * Shutdown the connection manager: any new request will be rejected.
    */
   public void shutdown() {
-    status.compareAndSet(0, 1);
+    if (status.compareAndSet(0, 1)) {
+      for (Endpoint endpoint : endpointMap.values()) {
+        endpoint.shutdown();
+      }
+      status.set(2);
+    }
   }
 
   /**
    * Close the connection manager, all endpoints are closed forcibly.
    */
   public void close() {
-    while (true) {
-      int val = status.get();
-      if (val > 1) {
-        break;
-      } else if (status.compareAndSet(val, 2)) {
-        for (Endpoint endpoint : endpointMap.values()) {
-          endpoint.close();
-        }
-        break;
+    shutdown();
+    if (status.compareAndSet(2, 3)) {
+      for (Endpoint endpoint : endpointMap.values()) {
+        endpoint.close();
       }
+      status.set(4);
     }
   }
 }

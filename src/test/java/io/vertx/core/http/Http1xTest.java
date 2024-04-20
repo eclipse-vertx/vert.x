@@ -5142,7 +5142,7 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testServerConnectionGracefulShutdownWithPipelinedReqeuest() throws Exception {
+  public void testServerConnectionGracefulShutdownWithPipelinedRequest() throws Exception {
     waitFor(4);
     AtomicInteger count = new AtomicInteger();
     AtomicInteger status = new AtomicInteger();
@@ -5415,7 +5415,7 @@ public class Http1xTest extends HttpTest {
             assertTrue(ar.succeeded());
           } else {
             assertTrue(ar.failed());
-            assertEquals("Client is closed", ar.cause().getMessage());
+            assertTrue(ar.cause().getMessage().contains("closed"));
           }
           complete();
         });
@@ -5423,7 +5423,7 @@ public class Http1xTest extends HttpTest {
         assertWaitUntil(() -> ref.get() != null);
       }
     }
-    Future<Void> shutdown = client.shutdown(10, TimeUnit.SECONDS);
+    Future<Void> shutdown = client.shutdown(2, TimeUnit.SECONDS);
     ref.get().response().end("hello");
     awaitFuture(shutdown);
     await();

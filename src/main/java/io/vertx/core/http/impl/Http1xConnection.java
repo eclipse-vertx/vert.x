@@ -14,6 +14,7 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPromise;
 import io.netty.channel.FileRegion;
 import io.netty.handler.codec.http.FullHttpMessage;
 import io.netty.handler.codec.http.HttpContent;
@@ -27,18 +28,49 @@ import io.vertx.core.http.GoAway;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.net.impl.ConnectionBase;
-import io.vertx.core.net.impl.ShutdownEvent;
+import io.vertx.core.net.impl.VertxConnection;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class Http1xConnection extends ConnectionBase implements io.vertx.core.http.HttpConnection {
+abstract class Http1xConnection extends VertxConnection implements io.vertx.core.http.HttpConnection {
 
-  protected Handler<Void> shutdownHandler;
+  protected boolean closeInitiated;
+  protected boolean shutdownInitiated;
+  protected Object closeReason;
+  protected long shutdownTimeout;
+  protected TimeUnit shutdownUnit;
+  protected ChannelPromise closePromise;
 
   Http1xConnection(ContextInternal context, ChannelHandlerContext chctx) {
     super(context, chctx);
+  }
+
+  @Override
+  protected void handleShutdown(Object reason, long timeout, TimeUnit unit, ChannelPromise promise) {
+    shutdownInitiated = true;
+    closeReason = reason;
+    shutdownTimeout = timeout;
+    shutdownUnit = unit;
+    closePromise = promise;
+  }
+
+  @Override
+  protected void handleClose(Object reason, ChannelPromise promise) {
+    closeInitiated = true;
+    super.handleClose(reason, promise);
+  }
+
+  protected void closeInternal() {
+    if (closeInitiated) {
+      // Nothing to do
+    } else if (shutdownInitiated) {
+      super.handleShutdown(closeReason, shutdownTimeout, shutdownUnit, closePromise);
+    } else {
+      chctx.channel().close();
+    }
   }
 
   @Override
@@ -47,13 +79,13 @@ abstract class Http1xConnection extends ConnectionBase implements io.vertx.core.
   }
 
   @Override
-  public Http1xConnection exceptionHandler(Handler<Throwable> handler) {
-    return (Http1xConnection) super.exceptionHandler(handler);
+  public Http1xConnection shutdownHandler(Handler<Void> handler) {
+    return (Http1xConnection) super.shutdownHandler(handler);
   }
 
   @Override
-  public void handleException(Throwable t) {
-    super.handleException(t);
+  public Http1xConnection exceptionHandler(Handler<Throwable> handler) {
+    return (Http1xConnection) super.exceptionHandler(handler);
   }
 
   @Override
@@ -64,12 +96,6 @@ abstract class Http1xConnection extends ConnectionBase implements io.vertx.core.
   @Override
   public HttpConnection goAwayHandler(@Nullable Handler<GoAway> handler) {
     throw new UnsupportedOperationException("HTTP/1.x connections don't support GOAWAY");
-  }
-
-  @Override
-  public synchronized HttpConnection shutdownHandler(@Nullable Handler<Void> handler) {
-    shutdownHandler = handler;
-    return this;
   }
 
   @Override
@@ -100,16 +126,6 @@ abstract class Http1xConnection extends ConnectionBase implements io.vertx.core.
   @Override
   public Future<Buffer> ping(Buffer data) {
     throw new UnsupportedOperationException("HTTP/1.x connections don't support PING");
-  }
-
-  @Override
-  protected void handleEvent(Object evt) {
-    if (evt instanceof ShutdownEvent) {
-      ShutdownEvent shutdown = (ShutdownEvent) evt;
-      shutdown(shutdown.timeout(), shutdown.timeUnit());
-    } else {
-      super.handleEvent(evt);
-    }
   }
 
   @Override

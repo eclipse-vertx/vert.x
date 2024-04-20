@@ -96,9 +96,9 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     super.handleClosed();
   }
 
-  @Override
   protected void handleIdle(IdleStateEvent event) {
-    super.handleIdle(event);
+    log.debug("The connection will be closed due to timeout");
+    chctx.close();
   }
 
   synchronized void onConnectionError(Throwable cause) {
@@ -150,33 +150,40 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
       }
       stream.onClose();
     }
-    checkShutdown();
   }
 
   boolean onGoAwaySent(GoAway goAway) {
+    Handler<Void> shutdownHandler;
     synchronized (this) {
       if (this.goAwayStatus != null) {
         return false;
       }
       this.goAwayStatus = goAway;
+      shutdownHandler = this.shutdownHandler;
     }
-    checkShutdown();
+    if (shutdownHandler != null) {
+      context.dispatch(shutdownHandler);
+    }
     return true;
   }
 
   boolean onGoAwayReceived(GoAway goAway) {
-    Handler<GoAway> handler;
+    Handler<GoAway> goAwayHandler;
+    Handler<Void> shutdownHandler;
     synchronized (this) {
       if (this.goAwayStatus != null) {
         return false;
       }
       this.goAwayStatus = goAway;
-      handler = goAwayHandler;
+      goAwayHandler = this.goAwayHandler;
+      shutdownHandler = this.shutdownHandler;
     }
-    if (handler != null) {
-      context.dispatch(new GoAway(goAway), handler);
+    if (goAwayHandler != null) {
+      context.dispatch(new GoAway(goAway), goAwayHandler);
     }
-    checkShutdown();
+    if (shutdownHandler != null) {
+      context.dispatch(shutdownHandler);
+    }
     return true;
   }
 
@@ -384,13 +391,15 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public Future<Void> close() {
-    PromiseInternal<Void> promise = context.promise();
+  protected void handleClose(Object reason, ChannelPromise promise) {
+    throw new UnsupportedOperationException();
+  }
+
+  protected void handleClose(Object reason, PromiseInternal<Void> promise) {
     ChannelPromise pr = chctx.newPromise();
-    ChannelPromise channelPromise = pr.addListener(promise);
+    ChannelPromise channelPromise = pr.addListener(promise); // TRY IMPROVE ?????
     handlerContext.writeAndFlush(Unpooled.EMPTY_BUFFER, pr);
     channelPromise.addListener((ChannelFutureListener) future -> shutdown(0L, TimeUnit.SECONDS));
-    return promise.future();
   }
 
   @Override
@@ -475,27 +484,4 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     this.handler.consume(stream, numBytes);
   }
 
-  // Private
-
-  private void checkShutdown() {
-    Handler<Void> shutdownHandler;
-    synchronized (this) {
-      if (shutdown) {
-        return;
-      }
-      Http2Connection conn = handler.connection();
-      if ((!conn.goAwayReceived() && !conn.goAwaySent()) || conn.numActiveStreams() > 0) {
-        return;
-      }
-      shutdown  = true;
-      shutdownHandler = this.shutdownHandler;
-    }
-    doShutdown(shutdownHandler);
-  }
-
-  protected void doShutdown(Handler<Void> shutdownHandler) {
-    if (shutdownHandler != null) {
-      context.dispatch(shutdownHandler);
-    }
-  }
 }

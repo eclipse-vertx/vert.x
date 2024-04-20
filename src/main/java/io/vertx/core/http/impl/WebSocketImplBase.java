@@ -13,14 +13,13 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.ContinuationWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
-import io.netty.util.concurrent.FutureListener;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -36,6 +35,7 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
+import io.vertx.core.net.impl.VertxConnection;
 import io.vertx.core.streams.impl.InboundBuffer;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -44,6 +44,7 @@ import javax.security.cert.X509Certificate;
 import java.security.cert.Certificate;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import static io.vertx.core.net.impl.VertxHandler.*;
 
@@ -64,7 +65,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   private final int maxWebSocketFrameSize;
   private final int maxWebSocketMessageSize;
   private final InboundBuffer<WebSocketFrameInternal> pending;
-  private final ConnectionBase conn;
+  private final VertxConnection conn;
   private final ChannelHandlerContext chctx;
   private final ContextInternal context;
   private MessageConsumer binaryHandlerRegistration;
@@ -79,14 +80,14 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   private Handler<Void> closeHandler;
   private Handler<Void> endHandler;
   private Handler<Throwable> exceptionHandler;
+  private boolean closing;
   private boolean closed;
   private Short closeStatusCode;
   private String closeReason;
-  private long closeTimeoutID = -1L;
   private MultiMap headers;
 
   WebSocketImplBase(ContextInternal context,
-                    ConnectionBase conn,
+                    VertxConnection conn,
                     ChannelHandlerContext chctx,
                     MultiMap headers,
                     boolean supportsContinuation,
@@ -146,50 +147,11 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   }
 
   @Override
-  public Future<Void> close() {
-    return close((short) 1000, (String) null);
-  }
-
-  @Override
-  public Future<Void> close(short statusCode) {
-    return close(statusCode, (String) null);
-  }
-
-  @Override
-  public Future<Void> close(short statusCode, String reason) {
-    boolean sendCloseFrame;
-    synchronized (this) {
-      if (sendCloseFrame = closeStatusCode == null) {
-        closeStatusCode = statusCode;
-        closeReason = reason;
-      }
-    }
-    if (sendCloseFrame) {
-      // Close the WebSocket by sending a close frame with specified payload
-      ByteBuf byteBuf = HttpUtils.generateWSCloseFrameByteBuf(statusCode, reason);
-      CloseWebSocketFrame frame = new CloseWebSocketFrame(true, 0, byteBuf);
-      PromiseInternal<Void> promise = context.promise();
-      writeToChannel(frame, promise);
-      return promise;
-    } else {
-      return context.succeededFuture();
-    }
-  }
-
-  protected ChannelPromise channelFuture() {
-    return conn.channelFuture();
-  }
-
-  protected void writeToChannel(Object msg, FutureListener<Void> listener) {
-    conn.writeToChannel(msg, listener);
-  }
-
-  protected void writeToChannel(Object msg, ChannelPromise listener) {
-    conn.writeToChannel(msg, listener);
-  }
-
-  protected void writeToChannel(Object msg) {
-    conn.writeToChannel(msg);
+  public Future<Void> shutdown(long timeout, TimeUnit unit, short statusCode, @Nullable String reason) {
+    // Close the WebSocket by sending a close frame with specified payload
+    ByteBuf byteBuf = HttpUtils.generateWSCloseFrameByteBuf(statusCode, reason);
+    CloseWebSocketFrame frame = new CloseWebSocketFrame(true, 0, byteBuf);
+    return conn.shutdown(frame, timeout, unit);
   }
 
   @Override
@@ -339,7 +301,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
         return context.failedFuture("WebSocket is closed");
       }
       PromiseInternal<Void> promise = context.promise();
-      writeToChannel(encodeFrame((WebSocketFrameImpl) frame), promise);
+      conn.writeToChannel(encodeFrame((WebSocketFrameImpl) frame), promise);
       return promise.future();
     }
   }
@@ -388,7 +350,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
     switch (frame.type()) {
       case PING:
         // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
-        writeToChannel(new PongWebSocketFrame(frame.getBinaryData().copy()));
+        conn.writeToChannel(new PongWebSocketFrame(frame.getBinaryData().copy()));
         break;
       case PONG:
         Handler<Buffer> pongHandler = pongHandler();
@@ -406,29 +368,20 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   }
 
   private void handleCloseFrame(WebSocketFrameInternal closeFrame) {
-    boolean echo;
     synchronized (this) {
-      echo = closeStatusCode == null;
-      closed = true;
       closeStatusCode = closeFrame.closeStatusCode();
       closeReason = closeFrame.closeReason();
     }
-    handleClose(true);
-    if (echo) {
-      ChannelPromise fut = channelFuture();
-      writeToChannel(new CloseWebSocketFrame(closeStatusCode, closeReason), fut);
-      fut.addListener(v -> handleCloseConnection());
-    } else {
-      handleCloseConnection();
-    }
   }
 
-  private void handleClose(boolean graceful) {
+  private void handleClose() {
     MessageConsumer<?> binaryConsumer;
     MessageConsumer<?> textConsumer;
     Handler<Void> closeHandler;
     Handler<Throwable> exceptionHandler;
+    boolean graceful;
     synchronized (this) {
+      graceful = this.closeStatusCode != null;
       closeHandler = this.closeHandler;
       exceptionHandler = this.exceptionHandler;
       binaryConsumer = this.binaryHandlerRegistration;
@@ -436,6 +389,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
       this.binaryHandlerRegistration = null;
       this.textHandlerRegistration = null;
       this.closeHandler = null;
+      this.closed = true;
     }
     if (binaryConsumer != null) {
       binaryConsumer.unregister();
@@ -487,31 +441,10 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   }
 
   /**
-   * Called when a close frame is received and the WebSocket.
-   */
-  protected abstract void handleCloseConnection();
-
-  /**
    * Close the connection.
    */
   void closeConnection() {
     chctx.close();
-  }
-
-  /**
-   * Initiate a timeout that will close the TCP connection.
-   *
-   * @param timeoutMillis the timeout in milliseconds
-   */
-  void initiateConnectionCloseTimeout(long timeoutMillis) {
-    synchronized (this) {
-      closeTimeoutID = context.setTimer(timeoutMillis, id -> {
-        synchronized (this) {
-          closeTimeoutID = -1L;
-        }
-        closeConnection();
-      });
-    }
   }
 
   private class FrameAggregator implements Handler<WebSocketFrameInternal> {
@@ -680,16 +613,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   }
 
   void handleConnectionClosed() {
-    synchronized (this) {
-      if (closeTimeoutID != -1L) {
-        context.owner().cancelTimer(closeTimeoutID);
-      }
-      if (closed) {
-        return;
-      }
-      closed = true;
-    }
-    handleClose(false);
+    handleClose();
   }
 
   synchronized void setMetric(Object metric) {
@@ -752,6 +676,15 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
       this.closeHandler = handler;
       return (S) this;
     }
+  }
+
+  @Override
+  public S shutdownHandler(Handler<Void> handler) {
+    synchronized (this) {
+      checkClosed();
+    }
+    conn.shutdownHandler(handler);
+    return (S) this;
   }
 
   @Override

@@ -29,6 +29,7 @@ import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 import java.security.cert.Certificate;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Base WebSocket implementation.
@@ -206,6 +207,17 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   WebSocketBase closeHandler(@Nullable Handler<Void> handler);
 
   /**
+   * Set a {@code handler} notified when the WebSocket is shutdown: the client or server will close the connection
+   * within a certain amount of time. This gives the opportunity to the {@code handler} to close the WebSocket gracefully before
+   * the WebSocket is forcefully closed.
+   *
+   * @param handler  the handler notified with the remaining shutdown
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  WebSocketBase shutdownHandler(@Nullable Handler<Void> handler);
+
+  /**
    * Set a frame handler on the connection. This handler will be called when frames are read on the connection.
    *
    * @param handler  the handler
@@ -267,7 +279,9 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    *
    * @return a future completed with the result
    */
-  Future<Void> close();
+  default Future<Void> close() {
+    return close((short) 1000, null);
+  }
 
   /**
    * Close the WebSocket sending a close frame with specified status code. You can give a look at various close payloads
@@ -278,7 +292,9 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @param statusCode the status code
    * @return a future completed with the result
    */
-  Future<Void> close(short statusCode);
+  default Future<Void> close(short statusCode) {
+    return close(statusCode, null);
+  }
 
   /**
    * Close sending a close frame with specified status code and reason. You can give a look at various close payloads
@@ -290,7 +306,59 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @param reason reason of closure
    * @return a future completed with the result
    */
-  Future<Void> close(short statusCode, @Nullable String reason);
+  default Future<Void> close(short statusCode, @Nullable String reason) {
+    return shutdown(0L, TimeUnit.SECONDS, statusCode, reason);
+  }
+
+  /**
+   * Like {@link #shutdown(long, TimeUnit, short, String)} with a 30 seconds timeout, the status code {@code 1000} a {@code null} reason.
+   */
+  default Future<Void> shutdown() {
+    return shutdown(30, TimeUnit.SECONDS);
+  }
+
+  /**
+   * Like {@link #shutdown(long, TimeUnit, short, String)} with a 30 seconds timeout and a {@code null} reason.
+   */
+  default Future<Void> shutdown(short statusCode) {
+    return shutdown(30, TimeUnit.SECONDS, statusCode);
+  }
+
+  /**
+   * Like {@link #shutdown(long, TimeUnit, short, String)} with a 30 seconds timeout.
+   */
+  default Future<Void> shutdown(short statusCode, @Nullable String reason) {
+    return shutdown(30, TimeUnit.SECONDS, statusCode, reason);
+  }
+
+  /**
+   * Calls {@link #shutdown(long, TimeUnit, short, String)} with the status code {@code 1000} and a {@code null} reason.
+   */
+  default Future<Void> shutdown(long timeout, TimeUnit unit) {
+    return shutdown(timeout, unit, (short)1000);
+  }
+
+  /**
+   * Calls {@link #shutdown(long, TimeUnit, short, String)} with a {@code null} reason.
+   */
+  default Future<Void> shutdown(long timeout, TimeUnit unit, short statusCode) {
+    return shutdown(timeout, unit, statusCode, null);
+  }
+
+  /**
+   * Initiate a graceful WebSocket shutdown, the shutdown handler is notified and shall close the WebSocket, otherwise
+   * after a {@code timeout} the WebSocket will be closed.
+   * <p/>
+   * The WebSocket is closed with specified status code and reason. You can give a look at various close payloads
+   * here: RFC6455 <a href="https://tools.ietf.org/html/rfc6455#section-7.4.1">section 7.4.1</a>
+   *
+   * @param timeout the amount of time after which all resources are forcibly closed
+   * @param unit the of the timeout
+   * @param statusCode the status code
+   * @param reason reason of closure
+   * @return a future completed when shutdown has completed
+   */
+  Future<Void> shutdown(long timeout, TimeUnit unit, short statusCode, @Nullable String reason);
 
   /**
    * @return the remote address for this connection, possibly {@code null} (e.g a server bound on a domain socket).
@@ -312,7 +380,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   boolean isSsl();
 
   /**
-   * @return {@code true} if the WebSocket is closed
+   * @return {@code true} if the WebSocket cannot be used to send message anymore
    */
   boolean isClosed();
 

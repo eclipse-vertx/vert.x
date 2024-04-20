@@ -175,8 +175,7 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
   }
 
   @Override
-  protected void close() {
-    super.close();
+  protected void handleClose() {
     pool.close();
   }
 }

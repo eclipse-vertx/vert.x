@@ -190,6 +190,7 @@ class HttpServerConnectionInitializer {
     VertxHttp2ConnectionHandler<Http2ServerConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ServerConnection>()
       .server(true)
       .useCompression(compressionOptions)
+      .gracefulShutdownTimeoutMillis(0)
       .decoderEnforceMaxRstFramesPerWindow(maxRstFramesPerWindow, secondsPerWindow)
       .useDecompression(options.isDecompressionSupported())
       .initialSettings(options.getInitialSettings())

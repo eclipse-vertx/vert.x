@@ -12,14 +12,10 @@
 package io.vertx.core.net.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.handler.ssl.SslHandler;
-import io.netty.handler.stream.ChunkedNioFile;
-import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.traffic.AbstractTrafficShapingHandler;
 import io.netty.util.AttributeKey;
-import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.*;
@@ -35,23 +31,15 @@ import io.vertx.core.spi.metrics.TCPMetrics;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
-import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
 import java.security.cert.Certificate;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Predicate;
-
-import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
+import java.util.concurrent.TimeUnit;
 
 /**
- * Abstract base class for TCP connections.
- *
- * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
- *
- * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
- * we benefit from biased locking which makes the overhead of synchronized near zero.
+ * Abstract base class for connections managed by a vertx instance. This base implementation does not handle
+ * inbound/outbound message flow with a Netty channel.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -70,9 +58,7 @@ public abstract class ConnectionBase {
   public static final AttributeKey<SocketAddress> REMOTE_ADDRESS_OVERRIDE = AttributeKey.valueOf("RemoteAddressOverride");
   public static final AttributeKey<SocketAddress> LOCAL_ADDRESS_OVERRIDE = AttributeKey.valueOf("LocalAddressOverride");
   private static final Logger log = LoggerFactory.getLogger(ConnectionBase.class);
-  private static final int MAX_REGION_SIZE = 1024 * 1024;
 
-  public final VoidChannelPromise voidPromise;
   protected final VertxInternal vertx;
   protected final ChannelHandlerContext chctx;
   protected final ContextInternal context;
@@ -83,34 +69,26 @@ public abstract class ConnectionBase {
   private SocketAddress realRemoteAddress;
   private SocketAddress localAddress;
   private SocketAddress realLocalAddress;
-  private ChannelPromise closePromise;
   private Future<Void> closeFuture;
   private long remainingBytesRead;
   private long remainingBytesWritten;
-  private final OutboundMessageQueue<MessageWrite> messageQueue;
 
   // State accessed exclusively from the event loop thread
-  private boolean read;
-  private boolean needsFlush;
-  private boolean closed;
-  private boolean draining;
-  private boolean channelWritable;
+  private ChannelPromise closeInitiated;
+  private boolean closeFinished;
 
   protected ConnectionBase(ContextInternal context, ChannelHandlerContext chctx) {
+
+    PromiseInternal<Void> f = context.promise();
+    chctx
+      .channel()
+      .closeFuture()
+      .addListener(f);
+
     this.vertx = context.owner();
     this.chctx = chctx;
     this.context = context;
-    this.voidPromise = new VoidChannelPromise(chctx.channel(), false);
-    this.closePromise = chctx.newPromise();
-    this.channelWritable = chctx.channel().isWritable();
-    this.messageQueue = new InternalMessageQueue(chctx.channel().eventLoop());
-
-    PromiseInternal<Void> p = context.promise();
-    closePromise.addListener(p);
-    closeFuture = p.future();
-
-    // Add close handler callback
-    closeFuture.onComplete(this::checkCloseHandler);
+    this.closeFuture = f;
   }
 
   /**
@@ -130,198 +108,119 @@ public abstract class ConnectionBase {
     chctx.pipeline().fireExceptionCaught(error);
   }
 
-  void close(ChannelPromise promise) {
-    closePromise.addListener(l -> {
-      if (l.isSuccess()) {
-        promise.setSuccess();
-      } else {
-        promise.setFailure(l.cause());
-      }
-    });
-    close();
-  }
-
-  /**
-   * This method is exclusively called by {@code VertxHandler} to signal read completion on the event-loop thread.
-   */
-  final void endReadAndFlush() {
-    if (read) {
-      read = false;
-      if (needsFlush) {
-        needsFlush = false;
-        chctx.flush();
-      }
-    }
-  }
-
-  /**
-   * This method is exclusively called by {@code VertxHandler} to read a message on the event-loop thread.
-   */
-  final void read(Object msg) {
-    read = true;
-    if (METRICS_ENABLED) {
-      reportBytesRead(msg);
-    }
-    handleMessage(msg);
-  }
-
-  /**
-   * Like {@link #write(Object, boolean, ChannelPromise)}.
-   */
-  public void write(Object msg, boolean forceFlush, FutureListener<Void> promise) {
-    write(msg, forceFlush, wrap(promise));
-  }
-
-  /**
-   * This method must be exclusively called on the event-loop thread.
-   *
-   * <p>This method directly writes to the channel pipeline and bypasses the outbound queue.</p>
-   *
-   * @param msg the message to write
-   * @param forceFlush flush when {@code true} or there is no read in progress
-   * @param promise the promise receiving the completion event
-   */
-  public void write(Object msg, boolean forceFlush, ChannelPromise promise) {
-    assert chctx.executor().inEventLoop();
-    if (METRICS_ENABLED) {
-      reportsBytesWritten(msg);
-    }
-    boolean flush = (!read && !draining) || forceFlush;
-    needsFlush = !flush;
-    if (flush) {
-      chctx.writeAndFlush(msg, promise);
-    } else {
-      chctx.write(msg, promise);
-    }
-  }
-
-  /**
-   * This method is exclusively called on the event-loop thread
-   *
-   * @param promise the promise receiving the completion event
-   */
-  private void writeClose(PromiseInternal<Void> promise) {
-    if (closed) {
-      promise.complete();
-      return;
-    }
-    closed = true;
-    // Make sure everything is flushed out on close
-    ChannelPromise channelPromise = chctx
-      .newPromise()
-      .addListener((ChannelFutureListener) f -> {
-        chctx.close().addListener(promise);
-      });
-    writeToChannel(Unpooled.EMPTY_BUFFER, true, channelPromise);
-  }
-
   protected final ChannelPromise wrap(FutureListener<Void> handler) {
     ChannelPromise promise = chctx.newPromise();
     promise.addListener(handler);
     return promise;
   }
 
-  public final boolean writeToChannel(Object obj) {
-    return writeToChannel(obj, voidPromise);
-  }
-
-  public final boolean writeToChannel(Object msg, FutureListener<Void> listener) {
-    return writeToChannel(msg, listener == null ? voidPromise : wrap(listener));
-  }
-
-  public final boolean writeToChannel(Object msg, ChannelPromise promise) {
-    return writeToChannel(msg, false, promise);
-  }
-
-  public final boolean writeToChannel(Object msg, boolean forceFlush, ChannelPromise promise) {
-    return writeToChannel(new MessageWrite() {
-      @Override
-      public void write() {
-        ConnectionBase.this.write(msg, forceFlush, promise);
-      }
-
-      @Override
-      public void cancel(Throwable cause) {
-        promise.setFailure(cause);
-      }
-    });
-  }
-
-  public final boolean writeToChannel(MessageWrite msg) {
-    return messageQueue.write(msg);
-  }
-
   /**
-   * Asynchronous flush.
+   * Close the connection
    */
-  public final void flush() {
-    flush(voidPromise);
+  public final Future<Void> close() {
+    return close((Object) null);
   }
 
-  /**
-   * Asynchronous flush.
-   *
-   * @param promise the promise resolved when flush occurred
-   */
-  public final void flush(ChannelPromise promise) {
-    writeToChannel(Unpooled.EMPTY_BUFFER, true, promise);
-  }
-
-  /**
-   * Asynchronous flush.
-   *
-   * @param listener the listener notified when flush occurred
-   */
-  public final void flush(FutureListener<Void> listener) {
-    writeToChannel(Unpooled.EMPTY_BUFFER, true, listener == null ? voidPromise : wrap(listener));
-  }
-
-  /**
-   * @return the write queue writability status
-   */
-  public boolean writeQueueFull() {
-    return !messageQueue.isWritable();
+  static class CloseChannelPromise extends DefaultChannelPromise {
+    final Object reason;
+    final long timeout;
+    final TimeUnit unit;
+    public CloseChannelPromise(Channel channel, Object reason, long timeout, TimeUnit unit) {
+      super(channel);
+      this.reason = reason;
+      this.timeout = timeout;
+      this.unit = unit;
+    }
   }
 
   /**
    * Close the connection
    */
-  public Future<Void> close() {
-    PromiseInternal<Void> promise = context.promise();
+  public final Future<Void> close(Object reason) {
+    return close(reason, 0L, TimeUnit.SECONDS);
+  }
+
+  /**
+   * Close the connection
+   */
+  public final Future<Void> close(Object reason, long timeout, TimeUnit unit) {
     EventExecutor exec = chctx.executor();
+    CloseChannelPromise promise = new CloseChannelPromise(chctx.channel(), reason, timeout, unit);
     if (exec.inEventLoop()) {
-      writeClose(promise);
+      close(promise);
     } else {
-      exec.execute(() -> writeClose(promise));
+      exec.execute(() -> close(promise));
     }
-    return promise.future();
+    PromiseInternal<Void> p = context.promise();
+    promise.addListener(p);
+    return p.future();
+  }
+
+  private void close(CloseChannelPromise promise) {
+    chctx
+      .channel()
+      .close(promise);
+  }
+
+  final void handleClose(ChannelPromise promise) {
+    if (closeInitiated != null) {
+      long timeout;
+      Object closeReason;
+      if (promise instanceof CloseChannelPromise) {
+        timeout = ((CloseChannelPromise)promise).timeout;
+        closeReason = ((CloseChannelPromise)promise).reason;
+      } else {
+        timeout = 0L;
+        closeReason = null;
+      }
+      if (timeout == 0L && !closeFinished) {
+        closeFinished = true;
+        closeInitiated = promise;
+        handleClose(closeReason, promise);
+      } else {
+        chctx
+          .channel()
+          .closeFuture()
+          .addListener(future -> {
+            if (future.isSuccess()) {
+              promise.setSuccess();
+            } else {
+              promise.setFailure(future.cause());
+            }
+          });
+      }
+    } else {
+      closeInitiated = promise;
+      if (promise instanceof CloseChannelPromise) {
+        CloseChannelPromise closeChannelPromise = (CloseChannelPromise) promise;
+        handleClose(closeChannelPromise.reason, closeChannelPromise.timeout, closeChannelPromise.unit, promise);
+      } else {
+        handleClose(null, 0L, TimeUnit.SECONDS, promise);
+      }
+    }
+  }
+
+  void handleClose(Object reason, long timeout, TimeUnit unit, ChannelPromise promise) {
+    if (closeFinished) {
+      // Need to add too "promise" to closeInitiated promise to ensure proper report of the flow
+      return;
+    }
+    closeFinished = true;
+    handleClose(reason, promise);
+  }
+
+  protected void handleClose(Object reason, ChannelPromise promise) {
+    chctx.close(promise);
   }
 
   public synchronized ConnectionBase closeHandler(Handler<Void> handler) {
-    closeHandler = handler;
+    this.closeHandler = handler;
     return this;
   }
 
   public synchronized ConnectionBase exceptionHandler(Handler<Throwable> handler) {
     this.exceptionHandler = handler;
     return this;
-  }
-
-  protected synchronized Handler<Throwable> exceptionHandler() {
-    return exceptionHandler;
-  }
-
-  public void doPause() {
-    chctx.channel().config().setAutoRead(false);
-  }
-
-  public void doResume() {
-    chctx.channel().config().setAutoRead(true);
-  }
-
-  public void doSetWriteQueueMaxSize(int size) {
-    ChannelConfig config = chctx.channel().config();
-    config.setWriteBufferWaterMark(new WriteBufferWaterMark(size / 2, size));
   }
 
   /**
@@ -347,20 +246,22 @@ public abstract class ConnectionBase {
     return metric;
   }
 
-  public abstract NetworkMetrics metrics();
+  public NetworkMetrics metrics() {
+    return null;
+  }
 
   protected void handleException(Throwable t) {
     NetworkMetrics metrics = metrics();
     if (metrics != null) {
       metrics.exceptionOccurred(metric, remoteAddress(), t);
     }
-    context.emit(t, err -> {
+    context.execute(t, err -> {
       Handler<Throwable> handler;
       synchronized (ConnectionBase.this) {
         handler = exceptionHandler;
       }
       if (handler != null) {
-        handler.handle(err);
+        context.dispatch(err, handler);
       } else {
         if (log.isDebugEnabled()) {
           log.error(t.getMessage(), t);
@@ -372,11 +273,6 @@ public abstract class ConnectionBase {
   }
 
   protected void handleClosed() {
-    closed = true;
-    List<MessageWrite> pending = messageQueue.clear();
-    for (MessageWrite msg : pending) {
-      msg.cancel(CLOSED_EXCEPTION);
-    }
     NetworkMetrics metrics = metrics();
     if (metrics != null) {
       flushBytesRead();
@@ -385,54 +281,15 @@ public abstract class ConnectionBase {
         ((TCPMetrics) metrics).disconnected(metric(), remoteAddress());
       }
     }
-    closePromise.setSuccess();
-  }
-
-  private void checkCloseHandler(AsyncResult<Void> ar) {
-    Handler<Void> handler;
-    synchronized (ConnectionBase.this) {
-      handler = closeHandler;
-    }
-    if (handler != null) {
-      handler.handle(null);
-    }
-  }
-
-  protected void handleEvent(Object evt) {
-    // Will release the event if needed
-    ReferenceCountUtil.release(evt);
-  }
-
-  /**
-   * Called by the Netty handler when the connection becomes idle. The default implementation closes the
-   * connection.
-   * <p/>
-   * Subclasses can override it to prevent the idle event to happen (e.g when the connection is pooled) or
-   * perform extra work when the idle event happens.
-   */
-  protected void handleIdle(IdleStateEvent event) {
-    log.debug("The connection will be closed due to timeout");
-    chctx.close();
-  }
-
-  /**
-   * Called when the connection write queue is drained
-   */
-  protected void handleWriteQueueDrained() {
-  }
-
-  protected void handleMessage(Object msg) {
-  }
-
-  void channelWritabilityChanged() {
-    channelWritable = chctx.channel().isWritable();
-    if (channelWritable) {
-      messageQueue.drain();
-    }
-  }
-
-  protected boolean supportsFileRegion() {
-    return vertx.transport().supportFileRegion() && !isSsl() &&!isTrafficShaped();
+    context.execute(() -> {
+      Handler<Void> handler;
+      synchronized (ConnectionBase.this) {
+        handler = closeHandler;
+      }
+      if (handler != null) {
+        context.dispatch(handler);
+      }
+    });
   }
 
   public final void reportBytesRead(Object msg) {
@@ -530,57 +387,6 @@ public abstract class ConnectionBase {
         metrics.bytesWritten(metric(), remoteAddress(), val);
       }
     }
-  }
-
-  /**
-   * Send a file as a file region for zero copy transfer to the socket.
-   *
-   * The implementation splits the file into multiple regions to avoid stalling the pipeline
-   * and producing idle timeouts for very large files.
-   *
-   * @param file the file to send
-   * @param offset the file offset
-   * @param length the file length
-   * @param writeFuture the write future to be completed when the transfer is done or failed
-   */
-  private void sendFileRegion(RandomAccessFile file, long offset, long length, ChannelPromise writeFuture) {
-    if (length < MAX_REGION_SIZE) {
-      writeToChannel(new DefaultFileRegion(file.getChannel(), offset, length), writeFuture);
-    } else {
-      ChannelPromise promise = chctx.newPromise();
-      FileRegion region = new DefaultFileRegion(file.getChannel(), offset, MAX_REGION_SIZE);
-      // Retain explicitly this file region so the underlying channel is not closed by the NIO channel when it
-      // as been sent as we need it again
-      region.retain();
-      writeToChannel(region, promise);
-      promise.addListener(future -> {
-        if (future.isSuccess()) {
-          sendFileRegion(file, offset + MAX_REGION_SIZE, length - MAX_REGION_SIZE, writeFuture);
-        } else {
-          log.error(future.cause().getMessage(), future.cause());
-          writeFuture.setFailure(future.cause());
-        }
-      });
-    }
-  }
-
-
-  public ChannelFuture sendFile(RandomAccessFile raf, long offset, long length) {
-    // Write the content.
-    ChannelPromise writeFuture = chctx.newPromise();
-    if (!supportsFileRegion()) {
-      // Cannot use zero-copy
-      try {
-        writeToChannel(new ChunkedNioFile(raf.getChannel(), offset, length, 8192), writeFuture);
-      } catch (IOException e) {
-        return chctx.newFailedFuture(e);
-      }
-    } else {
-      // No encryption - use zero-copy.
-      sendFileRegion(raf, offset, length, writeFuture);
-    }
-    writeFuture.addListener(fut -> raf.close());
-    return writeFuture;
   }
 
   public boolean isSsl() {
@@ -719,42 +525,4 @@ public abstract class ConnectionBase {
     }
   }
 
-  /**
-   * Version of {@link OutboundMessageQueue} accessing internal connection base state.
-   */
-  private class InternalMessageQueue extends OutboundMessageQueue<MessageWrite> implements Predicate<MessageWrite> {
-
-    public InternalMessageQueue(EventLoop eventLoop) {
-      super(eventLoop);
-    }
-
-    @Override
-    public boolean test(MessageWrite msg) {
-      if (channelWritable) {
-        msg.write();
-        return true;
-      } else {
-        return false;
-      }
-    }
-
-    @Override
-    protected void startDraining() {
-      draining = true;
-    }
-
-    @Override
-    protected void stopDraining() {
-      draining = false;
-      if (!read && needsFlush) {
-        needsFlush = false;
-        chctx.flush();
-      }
-    }
-
-    @Override
-    protected void writeQueueDrained() {
-      ConnectionBase.this.handleWriteQueueDrained();
-    }
-  }
 }

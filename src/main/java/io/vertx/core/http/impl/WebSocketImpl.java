@@ -11,14 +11,9 @@
 
 package io.vertx.core.http.impl;
 
-import io.netty.channel.ChannelHandlerContext;
 import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.spi.metrics.HttpClientMetrics;
-
-import static io.vertx.core.spi.metrics.Metrics.*;
 
 /**
  * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
@@ -31,18 +26,15 @@ import static io.vertx.core.spi.metrics.Metrics.*;
  */
 public class WebSocketImpl extends WebSocketImplBase<WebSocketImpl> implements WebSocket {
 
-  private final long closingTimeoutMS;
   private Handler<Void> evictionHandler;
 
   public WebSocketImpl(ContextInternal context,
                        WebSocketConnection conn,
                        boolean supportsContinuation,
-                       long closingTimeout,
                        int maxWebSocketFrameSize,
                        int maxWebSocketMessageSize,
                        boolean registerWebSocketWriteHandlers) {
     super(context, conn, conn.channelHandlerContext(), null, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize, registerWebSocketWriteHandlers);
-    this.closingTimeoutMS = closingTimeout >= 0 ? closingTimeout * 1000L : -1L;
   }
 
   public void evictionHandler(Handler<Void> evictionHandler) {
@@ -56,14 +48,5 @@ public class WebSocketImpl extends WebSocketImplBase<WebSocketImpl> implements W
       h.handle(null);
     }
     super.handleConnectionClosed();
-  }
-
-  @Override
-  protected void handleCloseConnection() {
-    if (closingTimeoutMS == 0L) {
-      closeConnection();
-    } else if (closingTimeoutMS > 0L) {
-      initiateConnectionCloseTimeout(closingTimeoutMS);
-    }
   }
 }

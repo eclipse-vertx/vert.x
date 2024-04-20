@@ -160,8 +160,7 @@ public class EndpointManagerTest extends VertxTestBase {
           }
 
           @Override
-          protected void close() {
-            super.close();
+          protected void handleClose() {
             decRefCount();
           }
         };

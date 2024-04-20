@@ -240,7 +240,7 @@ class HttpNetSocket implements NetSocket {
   }
 
   @Override
-  public NetSocket shutdownHandler(@Nullable Handler<Long> handler) {
+  public NetSocket shutdownHandler(@Nullable Handler<Void> handler) {
     // Not sure, we can do something here
     return this;
   }

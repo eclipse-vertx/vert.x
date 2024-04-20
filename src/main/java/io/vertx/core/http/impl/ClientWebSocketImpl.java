@@ -23,6 +23,7 @@ import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 import java.security.cert.Certificate;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -37,6 +38,7 @@ public class ClientWebSocketImpl implements ClientWebSocket {
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
   private Handler<Void> closeHandler;
+  private Handler<Void> shutdownHandler;
   private Handler<Void> drainHandler;
   private Handler<WebSocketFrame> frameHandler;
   private Handler<String> textMessageHandler;
@@ -66,6 +68,7 @@ public class ClientWebSocketImpl implements ClientWebSocket {
           w.textMessageHandler(textMessageHandler);
           w.endHandler(endHandler);
           w.closeHandler(closeHandler);
+          w.shutdownHandler(shutdownHandler);
           w.exceptionHandler(exceptionHandler);
           w.drainHandler(drainHandler);
           w.frameHandler(frameHandler);
@@ -139,6 +142,16 @@ public class ClientWebSocketImpl implements ClientWebSocket {
     WebSocket w = ws;
     if (w != null) {
       w.closeHandler(handler);
+    }
+    return this;
+  }
+
+  @Override
+  public ClientWebSocket shutdownHandler(Handler<Void> handler) {
+    shutdownHandler = handler;
+    WebSocket w = ws;
+    if (w != null) {
+      w.shutdownHandler(handler);
     }
     return this;
   }
@@ -254,17 +267,7 @@ public class ClientWebSocketImpl implements ClientWebSocket {
   }
 
   @Override
-  public Future<Void> close() {
-    return delegate().close();
-  }
-
-  @Override
-  public Future<Void> close(short statusCode) {
-    return delegate().close(statusCode);
-  }
-
-  @Override
-  public Future<Void> close(short statusCode, @Nullable String reason) {
+  public Future<Void> shutdown(long timeout, TimeUnit unit, short statusCode, @Nullable String reason) {
     return delegate().close(statusCode, reason);
   }
 

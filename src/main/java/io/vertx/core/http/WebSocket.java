@@ -59,6 +59,9 @@ public interface WebSocket extends WebSocketBase {
   WebSocket closeHandler(Handler<Void> handler);
 
   @Override
+  WebSocket shutdownHandler(Handler<Void> handler);
+
+  @Override
   WebSocket frameHandler(Handler<WebSocketFrame> handler);
 
   @Override

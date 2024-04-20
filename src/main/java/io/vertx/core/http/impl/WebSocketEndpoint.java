@@ -141,14 +141,11 @@ class WebSocketEndpoint extends Endpoint {
   }
 
   @Override
-  public void close() {
-    super.close();
+  public void handleShutdown() {
     synchronized (this) {
-      waiters.forEach(waiter -> {
-        waiter.context.runOnContext(v -> {
-          waiter.promise.fail("Closed");
-        });
-      });
+      for (Waiter waiter : waiters) {
+        waiter.promise.fail("Closed");
+      }
       waiters.clear();
     }
   }

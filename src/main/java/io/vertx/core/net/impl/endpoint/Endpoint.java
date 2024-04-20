@@ -18,6 +18,7 @@ package io.vertx.core.net.impl.endpoint;
 public abstract class Endpoint {
 
   private final Runnable dispose;
+  private boolean shutdown;
   private boolean closed;
   private boolean disposed;
   private long pendingRequestCount;
@@ -96,12 +97,33 @@ public abstract class Endpoint {
    * Close the endpoint, this will close all connections, this method is called by the {@link EndpointManager} when
    * it is closed.
    */
-  protected void close() {
+  final void close() {
+    shutdown();
     synchronized (this) {
       if (closed) {
-        throw new IllegalStateException();
+        return;
       }
-      closed = true;
     }
+    handleClose();
+  }
+
+  protected void handleClose() {
+  }
+
+  /**
+   * Close the endpoint, this will close all connections, this method is called by the {@link EndpointManager} when
+   * it is closed.
+   */
+  final void shutdown() {
+    synchronized (this) {
+      if (shutdown) {
+        return;
+      }
+      shutdown = true;
+    }
+    handleShutdown();
+  }
+
+  protected void handleShutdown() {
   }
 }

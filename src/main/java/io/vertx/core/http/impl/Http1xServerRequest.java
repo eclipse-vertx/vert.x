@@ -28,7 +28,6 @@ import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -154,7 +153,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
     if (METRICS_ENABLED) {
       reportRequestBegin();
     }
-    response = new Http1xServerResponse((VertxInternal) conn.vertx(), context, conn, request, metric, keepAlive);
+    response = new Http1xServerResponse(context.owner(), context, conn, request, metric, keepAlive);
     if (conn.handle100ContinueAutomatically) {
       check100();
     }
@@ -378,7 +377,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   @Override
   public String absoluteURI() {
     if (absoluteURI == null) {
-      absoluteURI = HttpUtils.absoluteURI(conn.getServerOrigin(), this);
+      absoluteURI = HttpUtils.absoluteURI(conn.serverOrigin(), this);
     }
     return absoluteURI;
   }
