@@ -605,6 +605,10 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
   }
 
   private void doClose(Promise<Void> completion) {
+    if (!listening) {
+      completion.complete();
+      return;
+    }
     listening = false;
     listenContext.removeCloseHook(this);
     Map<ServerID, NetServerInternal> servers = vertx.sharedTcpServers();
