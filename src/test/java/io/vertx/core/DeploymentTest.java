@@ -44,6 +44,7 @@ public class DeploymentTest extends VertxTestBase {
   public void setUp() throws Exception {
     super.setUp();
     TestVerticle.instanceCount.set(0);
+    ReferenceSavingMyVerticle.myVerticles.clear();
   }
 
   @Test
