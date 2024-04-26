@@ -120,6 +120,13 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   }
 
   private void shutdown(Promise<Void> promise, long timeout, TimeUnit unit) {
+    Handler<Void> handler;
+    synchronized (this) {
+      handler = shutdownHandler;
+    }
+    if (handler != null) {
+      context.dispatch(handler);
+    }
     if (shutdownTimerID == -1L) {
       if (responseInProgress != null) {
         wantClose = true;

@@ -30,7 +30,7 @@ import java.util.ArrayList;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class HttpServerConnectionHandler implements Handler<HttpServerConnection> {
+class HttpServerConnectionHandler implements Handler<HttpServerConnection> {
 
   final HttpServerImpl server;
   final Handler<HttpServerRequest> requestHandler;
@@ -39,7 +39,7 @@ public class HttpServerConnectionHandler implements Handler<HttpServerConnection
   final Handler<HttpConnection> connectionHandler;
   final Handler<Throwable> exceptionHandler;
 
-  public HttpServerConnectionHandler(
+  HttpServerConnectionHandler(
     HttpServerImpl server,
     Handler<HttpServerRequest> requestHandler,
     Handler<HttpServerRequest> invalidRequestHandler,

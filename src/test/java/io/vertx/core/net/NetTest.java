@@ -57,6 +57,7 @@ import io.vertx.test.proxy.TestProxyBase;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 import org.junit.Assume;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -82,7 +83,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -934,6 +934,7 @@ public class NetTest extends VertxTestBase {
     await();
   }
 
+  @Ignore("Now they share the same TCP server port")
   @Test
   public void testListenInvalidPort() {
     final int port = 9090;
@@ -1492,7 +1493,7 @@ public class NetTest extends VertxTestBase {
       cns.add(host);
     }
     assertEquals(Arrays.asList("host1", "host2.com", "localhost"), cns);
-    assertEquals(2, ((TCPServerBase)server).sniEntrySize());
+    assertEquals(2, ((NetServerImpl)server).sniEntrySize());
     assertWaitUntil(() -> receivedServerNames.size() == 3);
     assertEquals(receivedServerNames, serverNames);
   }
@@ -4458,7 +4459,7 @@ public class NetTest extends VertxTestBase {
         });
         so.closeHandler(v -> {
           assertEquals(1, eventCount.get());
-          assertTrue(System.currentTimeMillis() - now > 2);
+          assertTrue(System.currentTimeMillis() - now > 2000);
           complete();
         });
         latch.countDown();
@@ -4466,7 +4467,44 @@ public class NetTest extends VertxTestBase {
     awaitLatch(latch);
     Future<Void> fut = client.shutdown(2, TimeUnit.SECONDS);
     fut.onComplete(onSuccess(v -> {
-      assertTrue(System.currentTimeMillis() - now > 2);
+      assertTrue(System.currentTimeMillis() - now > 2000);
+      complete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testServerShutdown() throws Exception {
+    waitFor(2);
+    long now = System.currentTimeMillis();
+    server.connectHandler(so -> {
+      AtomicInteger eventCount = new AtomicInteger();
+      NetSocketInternal soi = (NetSocketInternal) so;
+      soi.eventHandler(event -> {
+        if (event instanceof ShutdownEvent) {
+          ShutdownEvent shutdownEvent = (ShutdownEvent) event;
+          assertEquals(shutdownEvent.timeUnit().toSeconds(shutdownEvent.timeout()), shutdownEvent.timeout());
+          assertEquals(0, eventCount.getAndIncrement());
+        }
+      });
+      so.closeHandler(v -> {
+        assertEquals(1, eventCount.getAndIncrement());
+        assertTrue(System.currentTimeMillis() - now > 2);
+        complete();
+      });
+      soi.write("ping");
+    });
+    startServer();
+    CountDownLatch latch = new CountDownLatch(1);
+    client.connect(testAddress).onComplete(onSuccess(so -> {
+      so.handler(buff -> {
+        latch.countDown();
+      });
+    }));
+    awaitLatch(latch);
+    Future<Void> fut = server.shutdown(2, TimeUnit.SECONDS);
+    fut.onComplete(onSuccess(v -> {
+      assertTrue(System.currentTimeMillis() - now > 2000);
       complete();
     }));
     await();

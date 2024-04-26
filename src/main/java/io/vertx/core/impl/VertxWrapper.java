@@ -27,11 +27,10 @@ import io.vertx.core.impl.btc.BlockedThreadChecker;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.impl.NetServerImpl;
+import io.vertx.core.net.impl.NetServerInternal;
 import io.vertx.core.net.impl.ServerID;
-import io.vertx.core.net.impl.TCPServerBase;
 import io.vertx.core.spi.transport.Transport;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.spi.VerticleFactory;
@@ -46,10 +45,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -73,7 +70,7 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public NetServer createNetServer(NetServerOptions options) {
+  public NetServerInternal createNetServer(NetServerOptions options) {
     return delegate.createNetServer(options);
   }
 
@@ -288,18 +285,8 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public Map<ServerID, HttpServerImpl> sharedHttpServers() {
-    return delegate.sharedHttpServers();
-  }
-
-  @Override
-  public Map<ServerID, NetServerImpl> sharedNetServers() {
-    return delegate.sharedNetServers();
-  }
-
-  @Override
-  public <S extends TCPServerBase> Map<ServerID, S> sharedTCPServers(Class<S> type) {
-    return delegate.sharedTCPServers(type);
+  public Map<ServerID, NetServerInternal> sharedTcpServers() {
+    return delegate.sharedTcpServers();
   }
 
   @Override

@@ -41,6 +41,7 @@ import org.apache.directory.server.dns.messages.RecordClass;
 import org.apache.directory.server.dns.messages.RecordType;
 import org.apache.directory.server.dns.store.DnsAttribute;
 import org.junit.Assume;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -68,6 +69,48 @@ import static org.hamcrest.CoreMatchers.instanceOf;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public abstract class HttpTest extends HttpTestBase {
+
+  @Test
+  public void testCloseMulti() throws Exception {
+    int num = 4;
+    waitFor(num);
+    HttpServer[] servers = new HttpServer[num];
+    for (int i = 0;i < num;i++) {
+      int val = i;
+      servers[i] = vertx.createHttpServer(createBaseServerOptions()).requestHandler(req -> {
+        req.response().end("Server " + val);
+      });
+      startServer(testAddress, servers[i]);
+    }
+    List< HttpClientConnection> connections = Collections.synchronizedList(new ArrayList<>());
+    for (int i = 0;i < num;i++) {
+      client.connect(new HttpConnectOptions().setServer(testAddress))
+        .onComplete(onSuccess(connections::add));
+    }
+    waitUntil(() -> connections.size() == 4);
+    for (int i = 0;i < num;i++) {
+      Buffer body = awaitFuture(connections.get(i)
+        .request(requestOptions)
+        .compose(req -> req.send()
+          .compose(HttpClientResponse::body)
+        ));
+      assertEquals("Server " + i, body.toString());
+    }
+    awaitFuture(servers[3].close());
+    for (int i = 0;i < num;i++) {
+      Future<Buffer> fut = connections.get(i)
+        .request(requestOptions)
+        .compose(req -> req.send()
+          .compose(HttpClientResponse::body)
+        );
+      if (i < num - 1) {
+        fut.onComplete(onSuccess(body -> complete()));
+      } else {
+        fut.onComplete(onFailure(err -> complete()));
+      }
+    }
+    await();
+  }
 
   @Rule
   public TemporaryFolder testFolder = TemporaryFolder.builder().assureDeletion().build();
@@ -3375,7 +3418,9 @@ public abstract class HttpTest extends HttpTestBase {
       public void start(Promise<Void> startPromise) {
         HttpServer server = vertx.createHttpServer(createBaseServerOptions());
         server.requestHandler(req -> {
-          req.end().onComplete(onSuccess(v -> req.response().end()));
+          req.end().onComplete(onSuccess(v -> {
+            req.response().end();
+          }));
           req.pause();
           vertx.setTimer(250, id -> {
             req.resume();

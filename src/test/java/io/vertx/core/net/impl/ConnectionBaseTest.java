@@ -258,7 +258,6 @@ public class ConnectionBaseTest extends VertxTestBase {
     CompletableFuture<Void> latch = new CompletableFuture<>();
     connectHandler = conn -> {
       fill(conn, buffer, v1 -> {
-        System.out.println("write msg " + conn.writeQueueFull());
         Future<Void> fut = conn.write(buffer);
         fut.onComplete(onFailure(v2 -> {
           testComplete();

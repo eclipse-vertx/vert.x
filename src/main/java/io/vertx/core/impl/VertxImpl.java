@@ -135,8 +135,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final DeploymentManager deploymentManager;
   private final VerticleManager verticleManager;
   private final FileResolver fileResolver;
-  private final Map<ServerID, HttpServerImpl> sharedHttpServers = new HashMap<>();
-  private final Map<ServerID, NetServerImpl> sharedNetServers = new HashMap<>();
+  private final Map<ServerID, NetServerInternal> sharedNetServers = new HashMap<>();
   private final int contextLocals;
   final WorkerPool workerPool;
   final WorkerPool internalWorkerPool;
@@ -333,8 +332,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return so;
   }
 
-  public NetServer createNetServer(NetServerOptions options) {
-    return new NetServerImpl(this, options);
+  public NetServerImpl createNetServer(NetServerOptions options) {
+    return new NetServerImpl(this, options.copy());
   }
 
   public NetClient createNetClient(NetClientOptions options) {
@@ -493,23 +492,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return ctx;
   }
 
-  public Map<ServerID, HttpServerImpl> sharedHttpServers() {
-    return sharedHttpServers;
-  }
-
-  public Map<ServerID, NetServerImpl> sharedNetServers() {
+  public Map<ServerID, NetServerInternal> sharedTcpServers() {
     return sharedNetServers;
-  }
-
-  @Override
-  public <S extends TCPServerBase> Map<ServerID, S> sharedTCPServers(Class<S> type) {
-    if (NetServerImpl.class.isAssignableFrom(type)) {
-      return (Map<ServerID, S>) sharedNetServers;
-    } else if (HttpServerImpl.class.isAssignableFrom(type)) {
-      return (Map<ServerID, S>) sharedHttpServers;
-    } else {
-      throw new IllegalStateException();
-    }
   }
 
   @Override

@@ -5395,7 +5395,7 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testShutdownClose() throws Exception {
+  public void testClientShutdownClose() throws Exception {
     int num = 4;
     waitFor(num);
     AtomicReference<HttpServerRequest> ref = new AtomicReference<>();
@@ -5426,6 +5426,43 @@ public class Http1xTest extends HttpTest {
     Future<Void> shutdown = client.shutdown(10, TimeUnit.SECONDS);
     ref.get().response().end("hello");
     awaitFuture(shutdown);
+    await();
+  }
+
+  @Test
+  public void testServerShutdownClose() throws Exception {
+    int num = 4;
+    waitFor(num);
+    AtomicInteger inflight = new AtomicInteger();
+    List<Long> closures = Collections.synchronizedList(new ArrayList<>());
+    long now = System.currentTimeMillis();
+    server.requestHandler(req -> {
+      inflight.incrementAndGet();
+      HttpConnection conn = req.connection();
+      conn.shutdownHandler(v -> {
+        // SHOULD SEND RESP TO TEST
+      });
+      conn.closeHandler(v -> {
+        closures.add(System.currentTimeMillis());
+      });
+    });
+    startServer(testAddress);
+    for (int i = 0;i < num;i++) {
+      client.request(requestOptions)
+        .compose(request -> request.send()
+          .compose(HttpClientResponse::end))
+        .onComplete(onFailure(err -> {
+          complete();
+        }));
+    }
+    assertWaitUntil(() -> inflight.get() == 4);
+    Future<Void> shutdown = server.shutdown(2, TimeUnit.SECONDS);
+    awaitFuture(shutdown);
+    assertTrue(System.currentTimeMillis() - now > 2000);
+    assertWaitUntil(() -> closures.size() == 4);
+    for (Long ts : closures) {
+      assertTrue(ts - now > 2000);
+    }
     await();
   }
 
