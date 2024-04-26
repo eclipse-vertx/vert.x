@@ -60,16 +60,11 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
   private NetServerInternal tcpServer;
   private long closeTimeout = 0L;
   private TimeUnit closeTimeoutUnit = TimeUnit.SECONDS;
-  private final CloseSequence closeSequence;
+  private CloseSequence closeSequence;
 
   public HttpServerImpl(VertxInternal vertx, HttpServerOptions options) {
     this.vertx = vertx;
     this.options = options;
-    this.closeSequence = new CloseSequence(this::doClose, this::doShutdown);
-  }
-
-  public synchronized NetServerInternal tcpServer() {
-    return tcpServer;
   }
 
   @Override
@@ -223,6 +218,7 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
       initializer.configurePipeline(soi.channel(), null, null);
     });
     tcpServer = server;
+    closeSequence = new CloseSequence(p -> doClose(server, p), p -> doShutdown(server, p ));
     Promise<HttpServer> result = context.promise();
     tcpServer.listen(listenContext, address).onComplete(ar -> {
       if (ar.succeeded()) {
@@ -234,31 +230,27 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
     return result.future();
   }
 
-  protected void doShutdown(Promise<Void> p) {
-    tcpServer.shutdown(closeTimeout, closeTimeoutUnit).onComplete(p);
+  private void doShutdown(NetServer netServer, Promise<Void> p) {
+    netServer.shutdown(closeTimeout, closeTimeoutUnit).onComplete(p);
   }
 
-  protected void doClose(Promise<Void> p) {
-    tcpServer.close().onComplete(p);
+  private void doClose(NetServer netServer, Promise<Void> p) {
+    netServer.close().onComplete(p);
   }
 
   public Future<Void> shutdown(long timeout, TimeUnit unit) {
-    this.closeTimeout = timeout;
-    this.closeTimeoutUnit = unit;
-    return closeSequence.close();
-  }
-
-  @Override
-  public Future<Void> close() {
-    NetServer s;
+    CloseSequence seq;
     synchronized (this) {
-      s = tcpServer;
-      if (s == null) {
-        return vertx.getOrCreateContext().succeededFuture();
-      }
-      tcpServer = null;
+      seq = closeSequence;
+      closeTimeout = timeout;
+      closeTimeoutUnit = unit;
+      closeSequence = null;
     }
-    return s.close();
+    if (seq == null) {
+      return vertx.getOrCreateContext().succeededFuture();
+    } else {
+      return seq.close();
+    }
   }
 
   /**

@@ -194,7 +194,9 @@ public interface HttpServer extends Measured {
    *
    * @return a future completed with the result
    */
-  Future<Void> close();
+  default Future<Void> close() {
+    return shutdown(0, TimeUnit.SECONDS);
+  }
 
   /**
    * Shutdown with a 30 seconds timeout ({@code shutdown(30, TimeUnit.SECONDS)}).
