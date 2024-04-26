@@ -11,7 +11,11 @@
 package io.vertx.core.http.impl;
 
 import io.vertx.core.*;
+import io.vertx.core.http.WebSocket;
+import io.vertx.core.http.WebSocketClientOptions;
+import io.vertx.core.http.WebSocketConnectOptions;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.net.impl.endpoint.Endpoint;
 import io.vertx.core.spi.metrics.ClientMetrics;
 
 import java.util.ArrayDeque;
@@ -22,29 +26,52 @@ import java.util.Deque;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class WebSocketEndpoint extends ClientHttpEndpointBase<HttpClientConnectionInternal> {
+class WebSocketEndpoint extends Endpoint {
 
   private static class Waiter {
 
-    final Promise<HttpClientConnectionInternal> promise;
+    final Promise<WebSocket> promise;
     final ContextInternal context;
+    final WebSocketConnectOptions connectOptions;
 
-    Waiter(ContextInternal context) {
+    Waiter(ContextInternal context, WebSocketConnectOptions connectOptions) {
       this.promise = context.promise();
       this.context = context;
+      this.connectOptions = connectOptions;
     }
   }
 
+  private final WebSocketClientOptions options;
   private final int maxPoolSize;
   private final HttpChannelConnector connector;
   private final Deque<Waiter> waiters;
   private int inflightConnections;
 
-  WebSocketEndpoint(ClientMetrics metrics, int maxPoolSize, HttpChannelConnector connector, Runnable dispose) {
-    super(metrics, dispose);
+  private final ClientMetrics metrics; // Shall be removed later combining the PoolMetrics with HttpClientMetrics
+
+  WebSocketEndpoint(ClientMetrics metrics, WebSocketClientOptions options, int maxPoolSize, HttpChannelConnector connector, Runnable dispose) {
+    super(dispose);
+    this.options = options;
     this.maxPoolSize = maxPoolSize;
     this.connector = connector;
     this.waiters = new ArrayDeque<>();
+    this.metrics = metrics;
+  }
+
+  public Future<WebSocket> requestConnection(ContextInternal ctx, WebSocketConnectOptions connectOptions, long timeout) {
+    Future<WebSocket> fut = requestConnection2(ctx, connectOptions, timeout);
+    if (metrics != null) {
+      Object metric;
+      if (metrics != null) {
+        metric = metrics.enqueueRequest();
+      } else {
+        metric = null;
+      }
+      fut = fut.andThen(ar -> {
+        metrics.dequeueRequest(metric);
+      });
+    }
+    return fut;
   }
 
   private void onEvict() {
@@ -56,10 +83,10 @@ class WebSocketEndpoint extends ClientHttpEndpointBase<HttpClientConnectionInter
       }
       h = waiters.poll();
     }
-    tryConnect(h.context).onComplete(h.promise);
+    tryConnect(h.context, h.connectOptions).onComplete(h.promise);
   }
 
-  private Future<HttpClientConnectionInternal> tryConnect(ContextInternal ctx) {
+  private Future<WebSocket> tryConnect(ContextInternal ctx, WebSocketConnectOptions connectOptions) {
     ContextInternal eventLoopContext;
     if (ctx.isEventLoopContext()) {
       eventLoopContext = ctx;
@@ -67,28 +94,50 @@ class WebSocketEndpoint extends ClientHttpEndpointBase<HttpClientConnectionInter
       eventLoopContext = ctx.owner().createEventLoopContext(ctx.nettyEventLoop(), ctx.workerPool(), ctx.classLoader());
     }
     Future<HttpClientConnectionInternal> fut = connector.httpConnect(eventLoopContext);
-    return fut.map(c -> {
-      if (incRefCount()) {
-        c.evictionHandler(v -> onEvict());
-        return c;
-      } else {
+    return fut.compose(c -> {
+      if (!incRefCount()) {
         c.close();
-        throw new VertxException("Connection closed", true);
+        return Future.failedFuture(new VertxException("Connection closed", true));
       }
+      long timeout = Math.max(connectOptions.getTimeout(), 0L);
+      if (connectOptions.getIdleTimeout() >= 0L) {
+        timeout = connectOptions.getIdleTimeout();
+      }
+      Http1xClientConnection ci = (Http1xClientConnection) c;
+      Promise<WebSocket> promise = ctx.promise();
+      ci.toWebSocket(
+        ctx,
+        connectOptions.getURI(),
+        connectOptions.getHeaders(),
+        connectOptions.getAllowOriginHeader(),
+        options,
+        connectOptions.getVersion(),
+        connectOptions.getSubProtocols(),
+        timeout,
+        connectOptions.isRegisterWriteHandlers(),
+        options.getMaxFrameSize(),
+        promise);
+      return promise.future().andThen(ar -> {
+        if (ar.succeeded()) {
+          WebSocketImpl wsi = (WebSocketImpl) ar.result();
+          wsi.evictionHandler(v -> onEvict());
+        } else {
+          onEvict();
+        }
+      });
     });
   }
 
-  @Override
-  protected Future<HttpClientConnectionInternal> requestConnection2(ContextInternal ctx, long timeout) {
+  protected Future<WebSocket> requestConnection2(ContextInternal ctx, WebSocketConnectOptions connectOptions, long timeout) {
     synchronized (this) {
       if (inflightConnections >= maxPoolSize) {
-        Waiter waiter = new Waiter(ctx);
+        Waiter waiter = new Waiter(ctx, connectOptions);
         waiters.add(waiter);
         return waiter.promise.future();
       }
       inflightConnections++;
     }
-    return tryConnect(ctx);
+    return tryConnect(ctx, connectOptions);
   }
 
   @Override
@@ -101,6 +150,13 @@ class WebSocketEndpoint extends ClientHttpEndpointBase<HttpClientConnectionInter
         });
       });
       waiters.clear();
+    }
+  }
+
+  @Override
+  protected void dispose() {
+    if (metrics != null) {
+      metrics.close();
     }
   }
 }

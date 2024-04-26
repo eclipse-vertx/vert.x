@@ -312,7 +312,7 @@ public class MetricsContextTest extends VertxTestBase {
           }
           @Override
           public Void connected(Void socketMetric, Void requestMetric, ServerWebSocket serverWebSocket) {
-            assertEquals(2, httpLifecycle.get());
+            assertEquals(4, httpLifecycle.get());
             webSocketConnected.set(true);
             return null;
           }

@@ -85,9 +85,6 @@ public class FakeHttpServerMetrics extends FakeTCPMetrics implements HttpServerM
 
   @Override
   public WebSocketMetric connected(SocketMetric socketMetric, HttpServerMetric requestMetric, ServerWebSocket serverWebSocket) {
-    if (!requests.remove(requestMetric)) {
-      throw new IllegalStateException();
-    }
     WebSocketMetric metric = new WebSocketMetric(serverWebSocket);
     if (webSockets.put(serverWebSocket, metric) != null) {
       throw new AssertionError();

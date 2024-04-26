@@ -45,9 +45,9 @@ public class Http1xServerRequestHandler implements Handler<HttpServerRequest> {
         // handle((Http1xServerRequest) req, wsHandler);
         ((Http1xServerRequest)req).webSocket().onComplete(ar -> {
           if (ar.succeeded()) {
-            ServerWebSocketImpl ws = (ServerWebSocketImpl) ar.result();
+            ServerWebSocketHandshaker ws = (ServerWebSocketHandshaker) ar.result();
             wsHandler.handle(ws);
-            ws.tryHandshake(101);
+            ws.tryAccept();
           } else {
             // ????
           }

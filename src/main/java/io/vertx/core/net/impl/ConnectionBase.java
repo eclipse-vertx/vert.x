@@ -54,6 +54,7 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
  * we benefit from biased locking which makes the overhead of synchronized near zero.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
+ * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public abstract class ConnectionBase {
 

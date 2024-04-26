@@ -114,7 +114,10 @@ public interface ServerWebSocket extends WebSocket {
    *
    * @throws IllegalStateException when the WebSocket handshake is already set
    */
-  void reject();
+  default void reject() {
+    // SC_BAD_GATEWAY
+    reject(502);
+  }
 
   /**
    * Like {@link #reject()} but with a {@code status}.

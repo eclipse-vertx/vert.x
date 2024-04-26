@@ -11,6 +11,8 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.channel.ChannelHandlerContext;
+import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.impl.ContextInternal;
@@ -29,19 +31,31 @@ import static io.vertx.core.spi.metrics.Metrics.*;
  */
 public class WebSocketImpl extends WebSocketImplBase<WebSocketImpl> implements WebSocket {
 
-  private final Http1xClientConnection conn;
   private final long closingTimeoutMS;
+  private Handler<Void> evictionHandler;
 
   public WebSocketImpl(ContextInternal context,
-                       Http1xClientConnection conn,
+                       WebSocketConnection conn,
                        boolean supportsContinuation,
                        long closingTimeout,
                        int maxWebSocketFrameSize,
                        int maxWebSocketMessageSize,
                        boolean registerWebSocketWriteHandlers) {
-    super(context, conn, null, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize, registerWebSocketWriteHandlers);
-    this.conn = conn;
+    super(context, conn, conn.channelHandlerContext(), null, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize, registerWebSocketWriteHandlers);
     this.closingTimeoutMS = closingTimeout >= 0 ? closingTimeout * 1000L : -1L;
+  }
+
+  public void evictionHandler(Handler<Void> evictionHandler) {
+    this.evictionHandler = evictionHandler;
+  }
+
+  @Override
+  void handleConnectionClosed() {
+    Handler<Void> h = evictionHandler;
+    if (h != null) {
+      h.handle(null);
+    }
+    super.handleConnectionClosed();
   }
 
   @Override
@@ -51,15 +65,5 @@ public class WebSocketImpl extends WebSocketImplBase<WebSocketImpl> implements W
     } else if (closingTimeoutMS > 0L) {
       initiateConnectionCloseTimeout(closingTimeoutMS);
     }
-  }
-
-  @Override
-  protected void handleClose(boolean graceful) {
-    HttpClientMetrics metrics = conn.metrics();
-    if (METRICS_ENABLED && metrics != null) {
-      metrics.disconnected(getMetric());
-      setMetric(null);
-    }
-    super.handleClose(graceful);
   }
 }

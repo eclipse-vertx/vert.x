@@ -20,6 +20,7 @@ import io.netty.handler.codec.http.websocketx.ContinuationWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -34,6 +35,7 @@ import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.streams.impl.InboundBuffer;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -62,8 +64,9 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   private final int maxWebSocketFrameSize;
   private final int maxWebSocketMessageSize;
   private final InboundBuffer<WebSocketFrameInternal> pending;
-  private ChannelHandlerContext chctx;
-  protected final ContextInternal context;
+  private final ConnectionBase conn;
+  private final ChannelHandlerContext chctx;
+  private final ContextInternal context;
   private MessageConsumer binaryHandlerRegistration;
   private MessageConsumer textHandlerRegistration;
   private String subProtocol;
@@ -75,7 +78,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   private Handler<Void> drainHandler;
   private Handler<Void> closeHandler;
   private Handler<Void> endHandler;
-  protected final Http1xConnectionBase conn;
+  private Handler<Throwable> exceptionHandler;
   private boolean closed;
   private Short closeStatusCode;
   private String closeReason;
@@ -83,7 +86,8 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   private MultiMap headers;
 
   WebSocketImplBase(ContextInternal context,
-                    Http1xConnectionBase conn,
+                    ConnectionBase conn,
+                    ChannelHandlerContext chctx,
                     MultiMap headers,
                     boolean supportsContinuation,
                     int maxWebSocketFrameSize,
@@ -101,7 +105,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
     this.maxWebSocketFrameSize = maxWebSocketFrameSize;
     this.maxWebSocketMessageSize = maxWebSocketMessageSize;
     this.pending = new InboundBuffer<>(context);
-    this.chctx = conn.channelHandlerContext();
+    this.chctx = chctx;
     this.headers = headers;
 
     pending.handler(this::receiveFrame);
@@ -117,14 +121,13 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
     }
   }
 
-  @Override
-  public ChannelHandlerContext channelHandlerContext() {
-    return chctx;
+  final ContextInternal context() {
+    return context;
   }
 
   @Override
-  public HttpConnection connection() {
-    return conn;
+  public ChannelHandlerContext channelHandlerContext() {
+    return chctx;
   }
 
   public String binaryHandlerID() {
@@ -136,7 +139,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   }
 
   public boolean writeQueueFull() {
-    synchronized (conn) {
+    synchronized (this) {
       checkClosed();
       return conn.writeQueueFull();
     }
@@ -155,7 +158,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   @Override
   public Future<Void> close(short statusCode, String reason) {
     boolean sendCloseFrame;
-    synchronized (conn) {
+    synchronized (this) {
       if (sendCloseFrame = closeStatusCode == null) {
         closeStatusCode = statusCode;
         closeReason = reason;
@@ -166,11 +169,27 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
       ByteBuf byteBuf = HttpUtils.generateWSCloseFrameByteBuf(statusCode, reason);
       CloseWebSocketFrame frame = new CloseWebSocketFrame(true, 0, byteBuf);
       PromiseInternal<Void> promise = context.promise();
-      conn.writeToChannel(frame, promise);
+      writeToChannel(frame, promise);
       return promise;
     } else {
       return context.succeededFuture();
     }
+  }
+
+  protected ChannelPromise channelFuture() {
+    return conn.channelFuture();
+  }
+
+  protected void writeToChannel(Object msg, FutureListener<Void> listener) {
+    conn.writeToChannel(msg, listener);
+  }
+
+  protected void writeToChannel(Object msg, ChannelPromise listener) {
+    conn.writeToChannel(msg, listener);
+  }
+
+  protected void writeToChannel(Object msg) {
+    conn.writeToChannel(msg);
   }
 
   @Override
@@ -221,34 +240,34 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   }
 
   void subProtocol(String subProtocol) {
-    synchronized (conn) {
+    synchronized (this) {
       this.subProtocol = subProtocol;
     }
   }
 
   @Override
   public Short closeStatusCode() {
-    synchronized (conn) {
+    synchronized (this) {
       return closeStatusCode;
     }
   }
 
   @Override
   public String closeReason() {
-    synchronized (conn) {
+    synchronized (this) {
       return closeReason;
     }
   }
 
   @Override
   public MultiMap headers() {
-    synchronized(conn) {
+    synchronized (this) {
       return headers;
     }
   }
 
   void headers(MultiMap headers) {
-    synchronized (conn) {
+    synchronized (this) {
       this.headers = headers;
     }
   }
@@ -315,12 +334,12 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
 
   @Override
   public Future<Void> writeFrame(WebSocketFrame frame) {
-    synchronized (conn) {
+    synchronized (this) {
       if (isClosed()) {
         return context.failedFuture("WebSocket is closed");
       }
       PromiseInternal<Void> promise = context.promise();
-      conn.writeToChannel(encodeFrame((WebSocketFrameImpl) frame), promise);
+      writeToChannel(encodeFrame((WebSocketFrameImpl) frame), promise);
       return promise.future();
     }
   }
@@ -360,7 +379,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   }
 
   public boolean isClosed() {
-    synchronized (conn) {
+    synchronized (this) {
       return closed || closeStatusCode != null;
     }
   }
@@ -369,7 +388,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
     switch (frame.type()) {
       case PING:
         // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
-        conn.writeToChannel(new PongWebSocketFrame(frame.getBinaryData().copy()));
+        writeToChannel(new PongWebSocketFrame(frame.getBinaryData().copy()));
         break;
       case PONG:
         Handler<Buffer> pongHandler = pongHandler();
@@ -388,7 +407,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
 
   private void handleCloseFrame(WebSocketFrameInternal closeFrame) {
     boolean echo;
-    synchronized (conn) {
+    synchronized (this) {
       echo = closeStatusCode == null;
       closed = true;
       closeStatusCode = closeFrame.closeStatusCode();
@@ -396,22 +415,22 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
     }
     handleClose(true);
     if (echo) {
-      ChannelPromise fut = conn.channelFuture();
-      conn.writeToChannel(new CloseWebSocketFrame(closeStatusCode, closeReason), fut);
+      ChannelPromise fut = channelFuture();
+      writeToChannel(new CloseWebSocketFrame(closeStatusCode, closeReason), fut);
       fut.addListener(v -> handleCloseConnection());
     } else {
       handleCloseConnection();
     }
   }
 
-  protected void handleClose(boolean graceful) {
+  private void handleClose(boolean graceful) {
     MessageConsumer<?> binaryConsumer;
     MessageConsumer<?> textConsumer;
     Handler<Void> closeHandler;
     Handler<Throwable> exceptionHandler;
-    synchronized (conn) {
+    synchronized (this) {
       closeHandler = this.closeHandler;
-      exceptionHandler = conn::handleException;
+      exceptionHandler = this.exceptionHandler;
       binaryConsumer = this.binaryHandlerRegistration;
       textConsumer = this.textHandlerRegistration;
       this.binaryHandlerRegistration = null;
@@ -435,7 +454,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   private void receiveFrame(WebSocketFrameInternal frame) {
     Handler<WebSocketFrameInternal> frameAggregator;
     Handler<WebSocketFrameInternal> frameHandler;
-    synchronized (conn) {
+    synchronized (this) {
       frameHandler = this.frameHandler;
       frameAggregator = this.frameAggregator;
     }
@@ -476,7 +495,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
    * Close the connection.
    */
   void closeConnection() {
-    conn.channelHandlerContext().close();
+    chctx.close();
   }
 
   /**
@@ -485,9 +504,9 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
    * @param timeoutMillis the timeout in milliseconds
    */
   void initiateConnectionCloseTimeout(long timeoutMillis) {
-    synchronized (conn) {
+    synchronized (this) {
       closeTimeoutID = context.setTimer(timeoutMillis, id -> {
-        synchronized (conn) {
+        synchronized (this) {
           closeTimeoutID = -1L;
         }
         closeConnection();
@@ -572,7 +591,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
 
   @Override
   public S frameHandler(Handler<WebSocketFrame> handler) {
-    synchronized (conn) {
+    synchronized (this) {
       checkClosed();
       this.frameHandler = (Handler)handler;
       return (S) this;
@@ -581,7 +600,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
 
   @Override
   public WebSocket textMessageHandler(Handler<String> handler) {
-    synchronized (conn) {
+    synchronized (this) {
       checkClosed();
       if (handler != null) {
         if (frameAggregator == null) {
@@ -604,7 +623,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
 
   @Override
   public S binaryMessageHandler(Handler<Buffer> handler) {
-    synchronized (conn) {
+    synchronized (this) {
       checkClosed();
       if (handler != null) {
         if (frameAggregator == null) {
@@ -627,7 +646,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
 
   @Override
   public WebSocket pongHandler(Handler<Buffer> handler) {
-    synchronized (conn) {
+    synchronized (this) {
       checkClosed();
       this.pongHandler = handler;
       return (S) this;
@@ -635,14 +654,14 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   }
 
   private Handler<Buffer> pongHandler() {
-    synchronized (conn) {
+    synchronized (this) {
       return pongHandler;
     }
   }
 
   void handleWriteQueueDrained(Void v) {
     Handler<Void> handler;
-    synchronized (conn) {
+    synchronized (this) {
       handler = drainHandler;
     }
     if (handler != null) {
@@ -651,11 +670,17 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   }
 
   void handleException(Throwable t) {
-    conn.handleException(t);
+    Handler<Throwable> handler;
+    synchronized (this) {
+      handler = exceptionHandler;
+    }
+    if (handler != null) {
+      context.dispatch(t, handler);
+    }
   }
 
   void handleConnectionClosed() {
-    synchronized (conn) {
+    synchronized (this) {
       if (closeTimeoutID != -1L) {
         context.owner().cancelTimer(closeTimeoutID);
       }
@@ -677,7 +702,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
 
   @Override
   public S handler(Handler<Buffer> handler) {
-    synchronized (conn) {
+    synchronized (this) {
       if (handler != null) {
         checkClosed();
       }
@@ -687,14 +712,14 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   }
 
   private Handler<Buffer> handler() {
-    synchronized (conn) {
+    synchronized (this) {
       return handler;
     }
   }
 
   @Override
   public S endHandler(Handler<Void> handler) {
-    synchronized (conn) {
+    synchronized (this) {
       if (handler != null) {
         checkClosed();
       }
@@ -704,20 +729,25 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   }
 
   private Handler<Void> endHandler() {
-    synchronized (conn) {
+    synchronized (this) {
       return endHandler;
     }
   }
 
   @Override
   public S exceptionHandler(Handler<Throwable> handler) {
-    conn.exceptionHandler(handler);
-    return (S) this;
+    synchronized (this) {
+      if (handler != null) {
+        checkClosed();
+      }
+      this.exceptionHandler = handler;
+      return (S) this;
+    }
   }
 
   @Override
   public S closeHandler(Handler<Void> handler) {
-    synchronized (conn) {
+    synchronized (this) {
       checkClosed();
       this.closeHandler = handler;
       return (S) this;
@@ -726,7 +756,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
 
   @Override
   public S drainHandler(Handler<Void> handler) {
-    synchronized (conn) {
+    synchronized (this) {
       checkClosed();
       this.drainHandler = handler;
       return (S) this;
@@ -747,7 +777,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
 
   @Override
   public S setWriteQueueMaxSize(int maxSize) {
-    synchronized (conn) {
+    synchronized (this) {
       checkClosed();
       conn.doSetWriteQueueMaxSize(maxSize);
       return (S) this;
