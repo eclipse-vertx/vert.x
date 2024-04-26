@@ -27,6 +27,8 @@ public interface NetServerInternal extends NetServer {
   @Override
   NetServerInternal exceptionHandler(Handler<Throwable> handler);
 
+  SslContextProvider sslContextProvider();
+
   Future<NetServer> listen(ContextInternal context, SocketAddress localAddress);
 
 }

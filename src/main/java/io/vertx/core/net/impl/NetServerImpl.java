@@ -100,6 +100,10 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     this.closeSequence = closeSequence;
   }
 
+  public SslContextProvider sslContextProvider() {
+    return sslChannelProvider.result().sslContextProvider();
+  }
+
   @Override
   public synchronized Handler<NetSocket> connectHandler() {
     return handler;

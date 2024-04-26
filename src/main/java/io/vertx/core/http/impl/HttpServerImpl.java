@@ -68,6 +68,10 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
     this.closeSequence = new CloseSequence(this::doClose, this::doShutdown);
   }
 
+  public synchronized NetServerInternal tcpServer() {
+    return tcpServer;
+  }
+
   @Override
   public Future<Boolean> updateSSLOptions(ServerSSLOptions options, boolean force) {
     NetServer s;
