@@ -565,14 +565,17 @@ public class MetricsTest extends VertxTestBase {
   @Test
   public void testServerWebSocket() throws InterruptedException {
     server = vertx.createHttpServer();
+    AtomicReference<ServerWebSocket> wsRef = new AtomicReference<>();
+    CountDownLatch latch = new CountDownLatch(1);
     server.webSocketHandler(ws -> {
+      wsRef.set(ws);
+      ws.accept();
       FakeHttpServerMetrics metrics = FakeMetricsBase.getMetrics(server);
       WebSocketMetric metric = metrics.getWebSocketMetric(ws);
       assertNotNull(metric);
       ws.handler(ws::write);
       ws.closeHandler(closed -> {
-        assertNull(metrics.getWebSocketMetric(ws));
-        testComplete();
+        latch.countDown();
       });
     });
     awaitFuture(server.listen(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST));
@@ -581,12 +584,15 @@ public class MetricsTest extends VertxTestBase {
       ws.write(Buffer.buffer("wibble"));
       ws.handler(buff -> ws.close());
     }));
-    await();
+    awaitLatch(latch);
+    FakeHttpServerMetrics metrics = FakeMetricsBase.getMetrics(server);
+    assertWaitUntil(() -> metrics.getWebSocketMetric(wsRef.get()) == null);
   }
 
   @Test
   public void testServerWebSocketUpgrade() throws InterruptedException {
     server = vertx.createHttpServer();
+    AtomicReference<ServerWebSocket> ref = new AtomicReference<>();
     server.requestHandler(req -> {
       FakeHttpServerMetrics metrics = FakeMetricsBase.getMetrics(server);
       assertNotNull(metrics.getRequestMetric(req));
@@ -596,9 +602,7 @@ public class MetricsTest extends VertxTestBase {
         assertNotNull(metric);
         ws.handler(ws::write);
         ws.closeHandler(closed -> {
-          WebSocketMetric a = metrics.getWebSocketMetric(ws);
-          assertNull(a);
-          testComplete();
+          ref.set(ws);
         });
       }));
     });
@@ -611,7 +615,9 @@ public class MetricsTest extends VertxTestBase {
           ws.close();
         });
       }));
-    await();
+    assertWaitUntil(() -> ref.get() != null);
+    FakeHttpServerMetrics metrics = FakeMetricsBase.getMetrics(server);
+    assertWaitUntil(() -> metrics.getWebSocketMetric(ref.get()) == null);
   }
 
   @Test
@@ -623,19 +629,19 @@ public class MetricsTest extends VertxTestBase {
     });
     awaitFuture(server.listen(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST));
     wsClient = vertx.createWebSocketClient();
-    vertx.runOnContext(v -> {
-      wsClient.connect(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
-        FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(wsClient);
-        WebSocketMetric metric = metrics.getMetric(ws);
-        assertNotNull(metric);
-        ws.closeHandler(closed -> {
-          assertNull(metrics.getMetric(ws));
-          testComplete();
-        });
-        ws.handler(ws::write);
-      }));
-    });
-    await();
+    FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(wsClient);
+    CountDownLatch closeLatch = new CountDownLatch(1);
+    Future<WebSocket> fut = wsClient.connect(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/");
+    fut.onComplete(onSuccess(ws -> {
+      WebSocketMetric metric = metrics.getMetric(ws);
+      assertNotNull(metric);
+      ws.closeHandler(closed -> {
+        closeLatch.countDown();
+      });
+      ws.handler(ws::write);
+    }));
+    WebSocket ws = awaitFuture(fut);
+    assertWaitUntil(() -> metrics.getMetric(ws) == null);
   }
 
   @Test

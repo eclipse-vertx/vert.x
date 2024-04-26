@@ -73,29 +73,14 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
       int maxPoolSize = options.getMaxConnections();
       ClientMetrics metrics = WebSocketClientImpl.this.metrics != null ? WebSocketClientImpl.this.metrics.createEndpointMetrics(key_.server, maxPoolSize) : null;
       HttpChannelConnector connector = new HttpChannelConnector(WebSocketClientImpl.this, netClient, sslOptions, key_.proxyOptions, metrics, HttpVersion.HTTP_1_1, key_.ssl, false, key_.authority, key_.server, false);
-      return new WebSocketEndpoint(null, maxPoolSize, connector, dispose);
+      return new WebSocketEndpoint(null, options, maxPoolSize, connector, dispose);
     };
     webSocketCM
-      .withEndpointAsync(key, provider, (endpoint, created) -> endpoint.requestConnection(ctx, 0L))
+      .withEndpointAsync(key, provider, (endpoint, created) -> endpoint.requestConnection(ctx, connectOptions, 0L))
       .onComplete(c -> {
         if (c.succeeded()) {
-          long timeout = Math.max(connectOptions.getTimeout(), 0L);
-          if (connectOptions.getIdleTimeout() >= 0L) {
-            timeout = connectOptions.getIdleTimeout();
-          }
-          Http1xClientConnection conn = (Http1xClientConnection) c.result();
-          conn.toWebSocket(
-            ctx,
-            connectOptions.getURI(),
-            connectOptions.getHeaders(),
-            connectOptions.getAllowOriginHeader(),
-            options,
-            connectOptions.getVersion(),
-            connectOptions.getSubProtocols(),
-            timeout,
-            connectOptions.isRegisterWriteHandlers(),
-            WebSocketClientImpl.this.options.getMaxFrameSize(),
-            promise);
+          WebSocket conn = c.result();
+          promise.complete(conn);
         } else {
           promise.fail(c.cause());
         }

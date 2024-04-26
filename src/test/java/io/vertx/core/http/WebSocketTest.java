@@ -1394,6 +1394,12 @@ public class WebSocketTest extends VertxTestBase {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).webSocketHandler(ws -> {
       Promise<Integer> promise = Promise.promise();
       Future<Integer> result = ws.setHandshake(promise.future());
+      try {
+        ws.close();
+        fail();
+      } catch (IllegalStateException expected) {
+      }
+      promise.complete(101);
       ws.close();
 //      assertTrue(result.isComplete());
 //      assertEquals(101, (int)result.result());

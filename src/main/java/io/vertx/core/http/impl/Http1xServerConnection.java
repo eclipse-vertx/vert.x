@@ -20,7 +20,6 @@ import io.netty.channel.EventLoop;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.websocketx.WebSocketDecoderConfig;
-import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
@@ -74,7 +73,7 @@ import static io.vertx.core.spi.metrics.Metrics.*;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocketImpl> implements HttpServerConnection {
+public class Http1xServerConnection extends Http1xConnection implements HttpServerConnection {
 
   private final String serverOrigin;
   private final Supplier<ContextInternal> streamContextSupplier;
@@ -166,7 +165,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
 
   public void handleMessage(Object msg) {
     assert msg != null;
-    if (requestInProgress == null && wantClose && webSocket == null) {
+    if (requestInProgress == null && wantClose) {
       // Discard message
       return;
     }
@@ -204,8 +203,6 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     // concrete type check first
     if (msg instanceof DefaultHttpContent || msg instanceof HttpContent) {
       onContent(msg);
-    } else if (msg instanceof WebSocketFrame) {
-      handleWsFrame((WebSocketFrame) msg);
     }
   }
 
@@ -273,7 +270,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       responseInProgress = null;
       DecoderResult result = request.decoderResult();
       if (result.isSuccess()) {
-        if (requestInProgress == request || webSocket != null) {
+        if (requestInProgress == request) {
           // Deferred
         } else {
           if (wantClose && shutdownTimerID == -1L) {
@@ -357,8 +354,6 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     context.execute(() -> {
       if (request != responseInProgress) {
         promise.fail("Invalid request");
-      } else if (webSocket != null) {
-        promise.complete(webSocket);
       } else if (!(request.nettyRequest() instanceof FullHttpRequest)) {
         promise.fail(new IllegalStateException());
       } else {
@@ -369,25 +364,12 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
           promise.fail(e);
           return;
         }
-        webSocket = new ServerWebSocketImpl(
-          promise.context(),
-          this,
-          handshaker.version() != WebSocketVersion.V00,
-          options.getWebSocketClosingTimeout(),
-          request,
-          handshaker,
-          options.getMaxWebSocketFrameSize(),
-          options.getMaxWebSocketMessageSize(),
-          options.isRegisterWebSocketWriteHandlers());
-        if (METRICS_ENABLED && metrics != null) {
-          webSocket.setMetric(metrics.connected(metric(), request.metric(), webSocket));
-        }
-        promise.complete(webSocket);
+        promise.complete(new ServerWebSocketHandshaker(request, handshaker, options));
       }
     });
   }
 
-  private WebSocketServerHandshaker createHandshaker(Http1xServerRequest request) throws WebSocketHandshakeException {
+  public WebSocketServerHandshaker createHandshaker(Http1xServerRequest request) throws WebSocketHandshakeException {
     // As a fun part, Firefox 6.0.2 supports Websockets protocol '7'. But,
     // it doesn't send a normal 'Connection: Upgrade' header. Instead it
     // sends: 'Connection: keep-alive, Upgrade'. Brilliant.
@@ -528,7 +510,6 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   protected void handleClosed() {
     Http1xServerRequest responseInProgress = this.responseInProgress;
     Http1xServerRequest requestInProgress = this.requestInProgress;
-    ServerWebSocketImpl ws = this.webSocket;
     if (requestInProgress != null) {
       requestInProgress.context.execute(v -> {
         requestInProgress.handleException(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
@@ -538,9 +519,6 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       responseInProgress.context.execute(v -> {
         responseInProgress.handleException(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
       });
-    }
-    if (ws != null) {
-      ws.context.execute(v -> ws.handleConnectionClosed());
     }
     super.handleClosed();
   }

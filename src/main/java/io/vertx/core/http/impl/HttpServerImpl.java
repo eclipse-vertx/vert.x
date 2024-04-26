@@ -246,10 +246,13 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
       closeTimeoutUnit = unit;
       closeSequence = null;
     }
+    ContextInternal ctx = vertx.getOrCreateContext();
     if (seq == null) {
-      return vertx.getOrCreateContext().succeededFuture();
+      return ctx.succeededFuture();
     } else {
-      return seq.close();
+      Promise<Void> p = ctx.promise();
+      seq.close().onComplete(p);
+      return p.future();
     }
   }
 

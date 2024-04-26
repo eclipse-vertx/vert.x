@@ -19,6 +19,4 @@ public interface WebSocketInternal extends WebSocket {
 
   ChannelHandlerContext channelHandlerContext();
 
-  HttpConnection connection();
-
 }

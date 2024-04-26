@@ -72,7 +72,7 @@ import static io.vertx.core.http.HttpHeaders.*;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> implements HttpClientConnectionInternal {
+public class Http1xClientConnection extends Http1xConnection implements HttpClientConnectionInternal {
 
   private static final Logger log = LoggerFactory.getLogger(Http1xClientConnection.class);
 
@@ -757,14 +757,11 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       handleChunk((ByteBuf) msg);
     } else if (msg instanceof WebSocketFrame) {
       WebSocketFrame frame = (WebSocketFrame) msg;
-      if (webSocket == null) {
-        if (pendingFrames == null) {
-          pendingFrames = new ArrayDeque<>();
-        }
-        pendingFrames.add(frame);
-      } else {
-        handleWsFrame(frame);
+      if (pendingFrames == null) {
+        pendingFrames = new ArrayDeque<>();
       }
+      // Todo: use the new feature to park frames within the handler later
+      pendingFrames.add(frame);
     } else {
       invalidMessageHandler.handle(msg);
     }
@@ -1005,18 +1002,30 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
           vertx.cancelTimer(timer);
         }
         if (future.isSuccess()) {
-          WebSocketImpl ws = new WebSocketImpl(
-            context,
-            Http1xClientConnection.this,
-            version != V00,
-            options.getClosingTimeout(),
-            options.getMaxFrameSize(),
-            options.getMaxMessageSize(),
-            registerWriteHandlers);
+
+          VertxHandler<WebSocketConnection> handler = VertxHandler.create(ctx -> {
+            WebSocketConnection conn = new WebSocketConnection(context, ctx, client.metrics());
+            WebSocketImpl webSocket = new WebSocketImpl(
+              context,
+              conn,
+              version != V00,
+              options.getClosingTimeout(),
+              options.getMaxFrameSize(),
+              options.getMaxMessageSize(),
+              registerWriteHandlers);
+            conn.webSocket(webSocket);
+            conn.metric(Http1xClientConnection.this.metric());
+            return conn;
+          });
+
+          ChannelPipeline pipeline = chctx.pipeline();
+          pipeline.replace(VertxHandler.class, "handler", handler);
+
+          WebSocketImpl ws = (WebSocketImpl) handler.getConnection().webSocket();
           ws.headers(new HeadersAdaptor(future.getNow()));
           ws.subProtocol(handshaker.actualSubprotocol());
           ws.registerHandler(vertx.eventBus());
-          webSocket = ws;
+
           HttpClientMetrics metrics = client.metrics();
           if (metrics != null) {
             ws.setMetric(metrics.connected(ws));
@@ -1027,7 +1036,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
             pendingFrames = null;
             WebSocketFrame frame;
             while ((frame = toResubmit.poll()) != null) {
-              handleWsFrame(frame);
+              handler.getConnection().handleWsFrame(frame);
             }
           }
           promise.complete(ws);
@@ -1170,18 +1179,13 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
         evictionHandler.handle(null);
       }
     }
-    WebSocketImpl ws;
     VertxTracer tracer = context.tracer();
     List<Stream> allocatedStreams;
     List<Stream> sentStreams;
     synchronized (this) {
-      ws = webSocket;
       sentStreams = new ArrayList<>(responses);
       allocatedStreams = new ArrayList<>(requests);
       allocatedStreams.removeAll(responses);
-    }
-    if (ws != null) {
-      ws.handleConnectionClosed();
     }
     for (Stream stream : allocatedStreams) {
       stream.context.execute(HttpUtils.CONNECTION_CLOSED_EXCEPTION, stream::handleClosed);
@@ -1200,7 +1204,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
 
   protected void handleIdle(IdleStateEvent event) {
     synchronized (this) {
-      if (webSocket == null && responses.isEmpty() && requests.isEmpty()) {
+      if (responses.isEmpty() && requests.isEmpty()) {
         return;
       }
     }
