@@ -584,7 +584,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
 
   /**
    * Get the binary value with the specified key.
-   *
+   * <p>
    * JSON itself has no notion of a binary, this extension complies to the RFC-7493, so this method assumes there is a
    * String value with the key and it contains a Base64 encoded binary, which it decodes if found and returns.
    *
@@ -616,7 +616,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
 
   /**
    * Get the {@code Buffer} value with the specified key.
-   *
+   * <p>
    * JSON itself has no notion of a binary, this extension complies to the RFC-7493, so this method assumes there is a
    * String value with the key and it contains a Base64 encoded binary, which it decodes if found and returns.
    *
@@ -650,7 +650,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
 
   /**
    * Get the instant value with the specified key.
-   *
+   * <p>
    * JSON itself has no notion of a temporal types, this extension allows ISO 8601 string formatted dates with timezone
    * always set to zero UTC offset, as denoted by the suffix "Z" to be parsed as a instant value.
    * {@code YYYY-MM-DDTHH:mm:ss.sssZ} is the default format used by web browser scripting. This extension complies to
@@ -927,8 +927,8 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   /**
    * Put a null value into the JSON object with the specified key.
    *
-   * @param key  the key
-   * @return  a reference to this, so the API can be used fluently
+   * @param key the key
+   * @return a reference to this, so the API can be used fluently
    */
   public JsonObject putNull(String key) {
     Objects.requireNonNull(key);
@@ -962,7 +962,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
 
   /**
    * Merge in another JSON object.
-   *
+   * <p>
    * This is the equivalent of putting all the entries of the other JSON object into this object. This is not a deep
    * merge, entries containing (sub) JSON objects will be replaced entirely.
    *
@@ -1089,7 +1089,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
 
   /**
    * Get the underlying {@code Map} as is.
-   *
+   * <p>
    * This map may contain values that are not the types returned by the {@code JsonObject} and
    * with an unpredictable representation of the value, e.g you might get a JSON object
    * as a {@link JsonObject} or as a {@link Map}.
@@ -1103,7 +1103,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   /**
    * Get a Stream over the entries in the JSON object. The values in the stream will follow
    * the same rules as defined in {@link #getValue(String)}, respecting the JSON requirements.
-   *
+   * <p>
    * To stream the raw values, use the storage object stream instead:
    * <pre>{@code
    *   jsonObject
@@ -1187,32 +1187,57 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
         continue;
       }
       // special case for numbers
-      if (thisValue instanceof Number && otherValue instanceof Number && thisValue.getClass() != otherValue.getClass()) {
-        Number n1 = (Number) thisValue;
-        Number n2 = (Number) otherValue;
-        // floating point values
-        if (thisValue instanceof Float || thisValue instanceof Double || otherValue instanceof Float || otherValue instanceof Double) {
-          // compare as floating point double
-          if (n1.doubleValue() == n2.doubleValue()) {
-            // same value check the next entry
+
+      if (thisValue instanceof Number && otherValue instanceof Number) {
+        if (thisValue.getClass() == otherValue.getClass()) {
+          if (thisValue.equals(otherValue)) {
             continue;
           }
-        }
-        if (thisValue instanceof Integer || thisValue instanceof Long || otherValue instanceof Integer || otherValue instanceof Long) {
-          // compare as integer long
-          if (n1.longValue() == n2.longValue()) {
-            // same value check the next entry
-            continue;
+        } else {
+          // meaning that the numbers are different types
+          Number n1 = (Number) thisValue;
+          Number n2 = (Number) otherValue;
+          if ((thisValue instanceof Float || thisValue instanceof Double) &&
+            (otherValue instanceof Float || otherValue instanceof Double)) {
+            // compare as floating point double
+            if (n1.doubleValue() == n2.doubleValue()) {
+              // same value, check the next entry
+              continue;
+            }
+          }
+
+          if ((thisValue instanceof Integer || thisValue instanceof Long) &&
+            (otherValue instanceof Integer || otherValue instanceof Long)) {
+            // compare as integer long
+            if (n1.longValue() == n2.longValue()) {
+              // same value, check the next entry
+              continue;
+            }
+          }
+
+
+          // if its either integer or long and the other is float or double or vice versa,
+          // compare as floating point double
+          if ((thisValue instanceof Integer || thisValue instanceof Long) &&
+            (otherValue instanceof Float || otherValue instanceof Double) ||
+            (thisValue instanceof Float || thisValue instanceof Double) &&
+              (otherValue instanceof Integer || otherValue instanceof Long)) {
+            // compare as floating point double
+            if (n1.doubleValue() == n2.doubleValue()) {
+              // same value, check the next entry
+              continue;
+            }
           }
         }
       }
+
       // special case for char sequences
       if (thisValue instanceof CharSequence && otherValue instanceof CharSequence && thisValue.getClass() != otherValue.getClass()) {
         CharSequence s1 = (CharSequence) thisValue;
         CharSequence s2 = (CharSequence) otherValue;
 
         if (Objects.equals(s1.toString(), s2.toString())) {
-          // same value check the next entry
+          // same value, check the next entry
           continue;
         }
       }
