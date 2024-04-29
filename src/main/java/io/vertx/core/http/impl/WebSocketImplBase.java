@@ -363,7 +363,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
       case PONG:
         Handler<Buffer> pongHandler = pongHandler();
         if (pongHandler != null) {
-          context.dispatch(frame.binaryData(), pongHandler);
+          context.emit(frame.binaryData(), pongHandler);
         }
         break;
       case CLOSE:
@@ -404,10 +404,10 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
       textConsumer.unregister();
     }
     if (exceptionHandler != null && !graceful) {
-      context.dispatch(HttpUtils.CONNECTION_CLOSED_EXCEPTION, exceptionHandler);
+      context.emit(HttpUtils.CONNECTION_CLOSED_EXCEPTION, exceptionHandler);
     }
     if (closeHandler != null) {
-      context.dispatch(null, closeHandler);
+      context.emit(null, closeHandler);
     }
   }
 

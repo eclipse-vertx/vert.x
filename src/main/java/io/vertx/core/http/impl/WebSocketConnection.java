@@ -198,7 +198,7 @@ final class WebSocketConnection extends VertxConnection {
       }
     }
     if (w != null) {
-      w.context().execute(frame, w::handleFrame);
+      w.handleFrame(frame);
     }
   }
 
