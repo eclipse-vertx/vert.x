@@ -17,11 +17,17 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.util.CharsetUtil;
 import io.netty.util.internal.StringUtil;
+import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.buffer.impl.BufferInternal;
 import org.junit.Test;
 
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Queue;
+import java.util.function.Function;
 
 import static io.vertx.core.http.HttpHeaders.ACCEPT_ENCODING;
 import static io.vertx.core.http.HttpMethod.PUT;
@@ -111,6 +117,19 @@ public abstract class HttpCompressionTestBase extends HttpTestBase {
 
   @Test
   public void testServerStandardCompression() throws Exception {
+    testServerStandardCompression(resp -> resp.end(Buffer.buffer(COMPRESS_TEST_STRING).toString(StandardCharsets.UTF_8)));
+  }
+
+  @Test
+  public void testServerStandardCompressionSendFile() throws Exception {
+    File f = File.createTempFile("vertx", ".txt");
+    Files.write(f.toPath(), COMPRESS_TEST_STRING.getBytes(StandardCharsets.UTF_8));
+    f.deleteOnExit();
+    testServerStandardCompression(resp -> resp.sendFile(f.getAbsolutePath()));
+  }
+
+  private void testServerStandardCompression(Function<HttpServerResponse, Future<?>> sender) throws Exception {
+    waitFor(2);
     server.close();
     HttpServerOptions options = createBaseServerOptions();
     configureServerCompression(options);
@@ -118,17 +137,17 @@ public abstract class HttpCompressionTestBase extends HttpTestBase {
     server.requestHandler(req -> {
       // assertEquals(2, req.headers().size());
       assertNotNull(req.headers().get(HttpHeaders.ACCEPT_ENCODING));
-      req.response().end(Buffer.buffer(COMPRESS_TEST_STRING).toString(CharsetUtil.UTF_8));
+      sender.apply(req.response()).onComplete(onSuccess(v -> complete()));
     });
     startServer();
     client.request(new RequestOptions()
-      .addHeader(HttpHeaders.ACCEPT_ENCODING, encoding()))
+        .addHeader(HttpHeaders.ACCEPT_ENCODING, encoding()))
       .onComplete(onSuccess(req -> {
         req.send()
           .flatMap(HttpClientResponse::body)
           .onComplete(onSuccess(body -> {
             assertEquals(StringUtil.toHexString(compressedTestString.getBytes()), StringUtil.toHexString(body.getBytes()));
-            testComplete();
+            complete();
           }));
       }));
     await();

@@ -517,4 +517,12 @@ public class NetServerOptions extends TCPSSLOptions {
     this.registerWriteHandler = registerWriteHandler;
     return this;
   }
+
+  /**
+   * @return whether the server should use file region
+   */
+  @GenIgnore
+  public boolean isFileRegionEnabled() {
+    return true;
+  }
 }

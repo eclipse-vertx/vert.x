@@ -14,6 +14,7 @@ package io.vertx.core.http;
 import io.netty.handler.codec.compression.CompressionOptions;
 import io.netty.handler.logging.ByteBufFormat;
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Unstable;
 import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.Handler;
@@ -1227,5 +1228,13 @@ public class HttpServerOptions extends NetServerOptions {
     }
     this.http2RstFloodWindowDurationTimeUnit = http2RstFloodWindowDurationTimeUnit;
     return this;
+  }
+
+  /**
+   * @return
+   */
+  @GenIgnore
+  public boolean isFileRegionEnabled() {
+    return !compressionSupported;
   }
 }

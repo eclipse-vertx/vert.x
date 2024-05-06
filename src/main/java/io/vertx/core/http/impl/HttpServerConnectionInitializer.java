@@ -17,8 +17,7 @@ import io.netty.handler.codec.compression.StandardCompressionOptions;
 import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.ssl.SslHandler;
-import io.netty.handler.timeout.IdleState;
-import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerOptions;
@@ -120,7 +119,6 @@ class HttpServerConnectionInitializer {
         configureHttp1Pipeline(ch.pipeline(), sslChannelProvider, sslHelper);
         configureHttp1Handler(ch.pipeline(), sslChannelProvider, sslHelper);
       } else {
-        IdleStateHandler idle = pipeline.get(IdleStateHandler.class);
         Http1xOrH2CHandler handler = new Http1xOrH2CHandler() {
           @Override
           protected void configure(ChannelHandlerContext ctx, boolean h2c) {
@@ -140,11 +138,8 @@ class HttpServerConnectionInitializer {
         // Handler that detects whether the HTTP/2 connection preface or just process the request
         // with the HTTP 1.x pipeline to support H2C with prior knowledge, i.e a client that connects
         // and uses HTTP/2 in clear text directly without an HTTP upgrade.
-        if (idle != null) {
-          pipeline.addBefore("idle", null, handler);
-        } else {
-          pipeline.addBefore("handler", null, handler);
-        }
+        String name = computeChannelName(pipeline);
+        pipeline.addBefore(name, null, handler);
       }
     }
   }
@@ -215,9 +210,24 @@ class HttpServerConnectionInitializer {
     pipeline.addAfter("httpEncoder", "h2c", new Http1xUpgradeToH2CHandler(this, sslChannelProvider, sslHelper, options.isCompressionSupported(), options.isDecompressionSupported()));
   }
 
+  /**
+   * Compute the name of the logical end of pipeline when adding handlers to a preconfigured NetSocket pipeline.
+   * See {@link io.vertx.core.net.impl.NetServerImpl}
+   * @param pipeline the channel pipeline
+   * @return the name of the handler to use
+   */
+  private static String computeChannelName(ChannelPipeline pipeline) {
+    if (pipeline.get(ChunkedWriteHandler.class) != null) {
+      return "chunkedWriter";
+    } else if (pipeline.get(IdleStateHandler.class) != null) {
+      return "idle";
+    } else {
+      return "handler";
+    }
+  }
+
   private void configureHttp1Pipeline(ChannelPipeline pipeline, SslChannelProvider sslChannelProvider, SSLHelper sslHelper) {
-    IdleStateHandler idle = pipeline.get(IdleStateHandler.class);
-    String name = idle == null ? "handler" : "idle";
+    String name = computeChannelName(pipeline);
     pipeline.addBefore(name, "httpDecoder", new VertxHttpRequestDecoder(options));
     pipeline.addBefore(name, "httpEncoder", new VertxHttpResponseEncoder());
     if (options.isDecompressionSupported()) {
