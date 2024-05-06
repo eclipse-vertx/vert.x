@@ -80,7 +80,6 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
 
   private Http1xServerRequest requestInProgress;
   private Http1xServerRequest responseInProgress;
-  private Http1xServerRequest pipelinedRequest;
   private boolean wantClose;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<HttpServerRequest> invalidRequestHandler;
@@ -154,8 +153,6 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
       Http1xServerRequest req = new Http1xServerRequest(this, request, requestCtx);
       requestInProgress = req;
       if (responseInProgress != null) {
-        assert pipelinedRequest == null;
-        pipelinedRequest = req;
         doPause();
         return;
       }
@@ -232,9 +229,8 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
         if (requestInProgress == request) {
           // Deferred
         } else {
-          Http1xServerRequest next = pipelinedRequest;
+          Http1xServerRequest next = requestInProgress;
           if (next != null) {
-            pipelinedRequest = null;
             // Handle pipelined request
             handleNext(next);
           } else if (wantClose || shutdownInitiated) {
@@ -443,16 +439,8 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
 
   protected void handleClosed() {
     Http1xServerRequest responseInProgress = this.responseInProgress;
-    Http1xServerRequest requestInProgress = this.requestInProgress;
-    if (requestInProgress != null) {
-      requestInProgress.context.execute(v -> {
-        requestInProgress.handleException(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
-      });
-    }
-    if (responseInProgress != null && responseInProgress != requestInProgress) {
-      responseInProgress.context.execute(v -> {
-        responseInProgress.handleException(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
-      });
+    if (responseInProgress != null) {
+      responseInProgress.handleException(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
     }
     super.handleClosed();
   }
