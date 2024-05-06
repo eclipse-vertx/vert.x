@@ -5697,4 +5697,93 @@ public class Http1xTest extends HttpTest {
 
     await();
   }
+
+  @Test
+  public void testServerRollingUpdate() throws Exception {
+
+    class WebServer extends AbstractVerticle {
+      HttpServer server;
+      final String msg;
+      WebServer(String msg) {
+        this.msg = msg;
+      }
+      @Override
+      public void start(Promise<Void> startPromise) {
+        server = vertx.createHttpServer().requestHandler(req -> {
+          req
+            .connection()
+            .shutdownHandler(v -> {
+              vertx.setTimer(500, id -> {
+                req.response().end();
+              });
+            });
+          req.response().setChunked(true).write(msg);
+        });
+        server
+          .listen(8080, "localhost")
+          .<Void>mapEmpty()
+          .onComplete(startPromise);
+      }
+      @Override
+      public void stop(Promise<Void> stopPromise) {
+        server
+          .shutdown()
+          .<Void>mapEmpty()
+          .onComplete(stopPromise);
+      }
+    }
+
+    List<WebServer> servers = new ArrayList<>();
+    for (int i = 0;i < 3;i++) {
+      WebServer server = new WebServer("server-" + i);
+      awaitFuture(vertx.deployVerticle(server));
+      servers.add(server);
+    }
+
+    Set<String> responses = Collections.synchronizedSet(new HashSet<>());
+    for (int i = 0;i < 3;i++) {
+      client.request(new RequestOptions()
+        .setPort(8080)
+        .setHost("localhost")).onComplete(onSuccess(req -> {
+        req.send().onComplete(onSuccess(resp -> {
+          resp.handler(buff -> {
+            responses.add(buff.toString());
+          });
+        }));
+      }));
+    }
+
+    assertWaitUntil(() -> responses.size() == 3);
+    Set<String> expected = new HashSet<>();
+    expected.add("server-0");
+    expected.add("server-1");
+    expected.add("server-2");
+    assertEquals(expected, responses);
+
+    long now = System.currentTimeMillis();
+    awaitFuture(vertx.undeploy(servers.remove(0).deploymentID()));
+    assertTrue(System.currentTimeMillis() - now >= 500);
+
+    WebServer server = new WebServer("server-" + 3);
+    awaitFuture(vertx.deployVerticle(server));
+    servers.add(server);
+
+    responses.clear();
+    for (int i = 0;i < 3;i++) {
+      client.request(new RequestOptions()
+        .setPort(8080)
+        .setHost("localhost")).onComplete(onSuccess(req -> {
+        req.send().onComplete(onSuccess(resp -> {
+          resp.handler(buff -> {
+            responses.add(buff.toString());
+          });
+        }));
+      }));
+    }
+
+    assertWaitUntil(() -> responses.size() == 3);
+    expected.remove("server-0");
+    expected.add("server-3");
+    assertEquals(expected, responses);
+  }
 }
