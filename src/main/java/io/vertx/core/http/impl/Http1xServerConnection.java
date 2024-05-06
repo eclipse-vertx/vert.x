@@ -81,7 +81,6 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
   private Http1xServerRequest requestInProgress;
   private Http1xServerRequest responseInProgress;
   private boolean wantClose;
-  private boolean channelPaused;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<HttpServerRequest> invalidRequestHandler;
 
@@ -154,7 +153,7 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
       Http1xServerRequest req = new Http1xServerRequest(this, request, requestCtx);
       requestInProgress = req;
       if (responseInProgress != null) {
-        enqueueRequest(req);
+        doPause();
         return;
       }
       boolean keepAlive = HttpUtils.isKeepAlive(request);
@@ -166,12 +165,6 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
     } else {
       handleOther(msg);
     }
-  }
-
-  private void enqueueRequest(Http1xServerRequest req) {
-    // Deferred until the current response completion
-    responseInProgress.enqueue(req);
-    req.pause();
   }
 
   private void handleOther(Object msg) {
@@ -189,7 +182,7 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
     }
     Buffer buffer = BufferInternal.buffer(VertxHandler.safeBuffer(content.content()));
     Http1xServerRequest request = requestInProgress;
-    request.context.execute(buffer, request::handleContent);
+    request.handleContent(buffer);
     //TODO chunk trailers
     if (content instanceof LastHttpContent) {
       onEnd();
@@ -201,7 +194,7 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
     Http1xServerRequest request = requestInProgress;
     requestInProgress = null;
     tryClose = (wantClose || shutdownInitiated) && responseInProgress == null;
-    request.context.execute(request, Http1xServerRequest::handleEnd);
+    request.handleEnd();
     if (tryClose) {
       closeInternal();
     }
@@ -236,7 +229,7 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
         if (requestInProgress == request) {
           // Deferred
         } else {
-          Http1xServerRequest next = request.next();
+          Http1xServerRequest next = requestInProgress;
           if (next != null) {
             // Handle pipelined request
             handleNext(next);
@@ -260,26 +253,10 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
     wantClose |= !keepAlive;
     next.handleBegin(keepAlive);
     next.context.emit(next, next_ -> {
-      next_.resume();
       Handler<HttpServerRequest> handler = next_.nettyRequest().decoderResult().isSuccess() ? requestHandler : invalidRequestHandler;
       handler.handle(next_);
     });
-  }
-
-  @Override
-  public void doPause() {
-    if (!channelPaused) {
-      channelPaused = true;
-      super.doPause();
-    }
-  }
-
-  @Override
-  public void doResume() {
-    if (channelPaused) {
-      channelPaused = false;
-      super.doResume();
-    }
+    doResume();
   }
 
   private void reportResponseComplete() {
@@ -462,16 +439,8 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
 
   protected void handleClosed() {
     Http1xServerRequest responseInProgress = this.responseInProgress;
-    Http1xServerRequest requestInProgress = this.requestInProgress;
-    if (requestInProgress != null) {
-      requestInProgress.context.execute(v -> {
-        requestInProgress.handleException(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
-      });
-    }
-    if (responseInProgress != null && responseInProgress != requestInProgress) {
-      responseInProgress.context.execute(v -> {
-        responseInProgress.handleException(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
-      });
+    if (responseInProgress != null) {
+      responseInProgress.handleException(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
     }
     super.handleClosed();
   }

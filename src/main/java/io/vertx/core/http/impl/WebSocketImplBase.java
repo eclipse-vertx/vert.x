@@ -34,9 +34,8 @@ import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.impl.ConnectionBase;
+import io.vertx.core.net.impl.InboundMessageQueue;
 import io.vertx.core.net.impl.VertxConnection;
-import io.vertx.core.streams.impl.InboundBuffer;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
@@ -64,10 +63,10 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   private final String binaryHandlerID;
   private final int maxWebSocketFrameSize;
   private final int maxWebSocketMessageSize;
-  private final InboundBuffer<WebSocketFrameInternal> pending;
   private final VertxConnection conn;
-  private final ChannelHandlerContext chctx;
-  private final ContextInternal context;
+  private ChannelHandlerContext chctx;
+  protected final ContextInternal context;
+  private final InboundMessageQueue<WebSocketFrameInternal> pending;
   private MessageConsumer binaryHandlerRegistration;
   private MessageConsumer textHandlerRegistration;
   private String subProtocol;
@@ -88,7 +87,6 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
 
   WebSocketImplBase(ContextInternal context,
                     VertxConnection conn,
-                    ChannelHandlerContext chctx,
                     MultiMap headers,
                     boolean supportsContinuation,
                     int maxWebSocketFrameSize,
@@ -105,12 +103,22 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
     this.context = context;
     this.maxWebSocketFrameSize = maxWebSocketFrameSize;
     this.maxWebSocketMessageSize = maxWebSocketMessageSize;
-    this.pending = new InboundBuffer<>(context);
-    this.chctx = chctx;
+    this.pending = new InboundMessageQueue<>(context.nettyEventLoop(), context) {
+      @Override
+      protected void handleResume() {
+        conn.doResume();
+      }
+      @Override
+      protected void handlePause() {
+        conn.doPause();
+      }
+      @Override
+      protected void handleMessage(WebSocketFrameInternal msg) {
+        receiveFrame(msg);
+      }
+    };
+    this.chctx = conn.channelHandlerContext();
     this.headers = headers;
-
-    pending.handler(this::receiveFrame);
-    pending.drainHandler(v -> conn.doResume());
   }
 
   void registerHandler(EventBus eventBus) {
@@ -355,16 +363,14 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
       case PONG:
         Handler<Buffer> pongHandler = pongHandler();
         if (pongHandler != null) {
-          context.dispatch(frame.binaryData(), pongHandler);
+          context.emit(frame.binaryData(), pongHandler);
         }
         break;
       case CLOSE:
         handleCloseFrame(frame);
         break;
     }
-    if (!pending.write(frame)) {
-      conn.doPause();
-    }
+    pending.write(frame);
   }
 
   private void handleCloseFrame(WebSocketFrameInternal closeFrame) {
@@ -398,10 +404,10 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
       textConsumer.unregister();
     }
     if (exceptionHandler != null && !graceful) {
-      context.dispatch(HttpUtils.CONNECTION_CLOSED_EXCEPTION, exceptionHandler);
+      context.emit(HttpUtils.CONNECTION_CLOSED_EXCEPTION, exceptionHandler);
     }
     if (closeHandler != null) {
-      context.dispatch(null, closeHandler);
+      context.emit(null, closeHandler);
     }
   }
 
@@ -721,5 +727,4 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   public Future<Void> end() {
     return close();
   }
-
 }

@@ -5669,4 +5669,32 @@ public class Http1xTest extends HttpTest {
     }
     await();
   }
+
+  @Ignore
+  @Test
+  public void testWorkerSlowDrain() throws Exception {
+    server.requestHandler(req -> {
+      req.handler(chunk -> {
+        try {
+          Thread.sleep(8);
+        } catch (InterruptedException e) {
+          throw new RuntimeException(e);
+        }
+      });
+    });
+    startServer(testAddress, ((VertxInternal)vertx).createWorkerContext());
+    client.request(requestOptions)
+      .onComplete(onSuccess(req -> {
+      req.setChunked(true);
+      vertx.setPeriodic(10, id -> {
+        if (req.writeQueueFull()) {
+          vertx.cancelTimer(id);
+        } else {
+          req.write("chunk");
+        }
+      });
+    }));
+
+    await();
+  }
 }

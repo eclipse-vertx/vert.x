@@ -74,7 +74,7 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
 
   static class Alloc implements ByteBufAllocator {
 
-    private final ByteBuf buf = Unpooled.buffer();
+    private final ByteBuf buf = Unpooled.buffer(512);
     private final int capacity = buf.capacity();
 
     @Override
@@ -88,7 +88,7 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
       if (initialCapacity <= capacity) {
         return buffer();
       } else {
-        throw new IllegalArgumentException();
+        throw new IllegalArgumentException("Invalid capacity " + initialCapacity + " > " + capacity);
       }
     }
 

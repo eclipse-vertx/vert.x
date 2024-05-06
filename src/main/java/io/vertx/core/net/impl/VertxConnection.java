@@ -29,6 +29,8 @@ import io.vertx.core.impl.logging.LoggerFactory;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -63,6 +65,9 @@ public class VertxConnection extends ConnectionBase {
   private boolean needsFlush;
   private boolean draining;
   private boolean channelWritable;
+  private boolean paused;
+  private Deque<Object> pending;
+  private boolean autoRead;
   private ScheduledFuture<?> shutdownTimeout;
 
   public VertxConnection(ContextInternal context, ChannelHandlerContext chctx) {
@@ -231,7 +236,22 @@ public class VertxConnection extends ConnectionBase {
     if (METRICS_ENABLED) {
       reportBytesRead(msg);
     }
+    if (paused) {
+      addPending(msg);
+      return;
+    }
     handleMessage(msg);
+  }
+
+  private void addPending(Object msg) {
+    if (pending == null) {
+      pending = new ArrayDeque<>();
+    }
+    pending.add(msg);
+    if (pending.size() >= 8) {
+      autoRead = false;
+      chctx.channel().config().setAutoRead(false);
+    }
   }
 
   /**
@@ -430,12 +450,33 @@ public class VertxConnection extends ConnectionBase {
     }
   }
 
-  public void doPause() {
-    chctx.channel().config().setAutoRead(false);
+  public final void doPause() {
+    assert chctx.executor().inEventLoop();
+    paused = true;
   }
 
-  public void doResume() {
-    chctx.channel().config().setAutoRead(true);
+  public final void doResume() {
+    assert chctx.executor().inEventLoop();
+    if (!paused) {
+      return;
+    }
+    paused = false;
+    if (pending != null) {
+      assert !read;
+      read = true;
+      try {
+        Object msg;
+        while (!paused && (msg = pending.poll()) != null) {
+          handleMessage(msg);
+        }
+      } finally {
+        endReadAndFlush();
+        if (pending.isEmpty() && !autoRead) {
+          autoRead = true;
+          chctx.channel().config().setAutoRead(true);
+        }
+      }
+    }
   }
 
   public void doSetWriteQueueMaxSize(int size) {

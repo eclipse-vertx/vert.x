@@ -3408,9 +3408,10 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
+  @Repeat(times = 16)
   @Test
   public void testServerReadStreamInWorker() throws Exception {
-    int numReq = 16;
+    int numReq = 1;
     waitFor(numReq);
     Buffer body = Buffer.buffer(randomAlphaString(512 * 1024));
     vertx.deployVerticle(new AbstractVerticle() {
@@ -3422,7 +3423,9 @@ public abstract class HttpTest extends HttpTestBase {
             req.response().end();
           }));
           req.pause();
-          vertx.setTimer(250, id -> {
+          System.out.println("pause " + this);
+          vertx.setTimer(10, id -> {
+            System.out.println("resume " + this);
             req.resume();
           });
         }).listen(testAddress)

@@ -29,11 +29,10 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.impl.InboundMessageQueue;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.TagExtractor;
@@ -62,8 +61,6 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
  */
 public class Http1xServerRequest extends HttpServerRequestInternal implements io.vertx.core.spi.observability.HttpRequest {
 
-  private static final Logger log = LoggerFactory.getLogger(Http1xServerRequest.class);
-
   private final Http1xServerConnection conn;
   final ContextInternal context;
 
@@ -76,7 +73,6 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   private String query;
 
   // Accessed on event loop
-  Http1xServerRequest next;
   Object metric;
   Object trace;
   boolean reportMetricsFailed;
@@ -97,12 +93,30 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   private HttpPostRequestDecoder decoder;
   private boolean ended;
   private long bytesRead;
-  private InboundBuffer<Object> pending;
+  private final InboundMessageQueue<Object> queue;
 
   Http1xServerRequest(Http1xServerConnection conn, HttpRequest request, ContextInternal context) {
     this.conn = conn;
     this.context = context;
     this.request = request;
+    this.queue = new InboundMessageQueue<>(context.nettyEventLoop(), context) {
+      @Override
+      protected void handleMessage(Object elt) {
+        if (elt == InboundBuffer.END_SENTINEL) {
+          onEnd();
+        } else {
+          onData((Buffer) elt);
+        }
+      }
+      @Override
+      protected void handleResume() {
+        conn.doResume();
+      }
+      @Override
+      protected void handlePause() {
+        conn.doPause();
+      }
+    };
   }
 
   private HttpEventHandler eventHandler(boolean create) {
@@ -118,37 +132,6 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
     }
   }
 
-  private InboundBuffer<Object> pendingQueue() {
-    if (pending == null) {
-      pending = new InboundBuffer<>(context, 8);
-      pending.drainHandler(v -> conn.doResume());
-      pending.handler(buffer -> {
-        if (buffer == InboundBuffer.END_SENTINEL) {
-          onEnd();
-        } else {
-          onData((Buffer) buffer);
-        }
-      });
-    }
-    return pending;
-  }
-
-  void handleContent(Buffer buffer) {
-    InboundBuffer<Object> queue;
-    synchronized (conn) {
-      queue = pending;
-    }
-    if (queue != null) {
-      // We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
-      if (!queue.write(buffer)) {
-        // We only pause when we are actively called by the connection
-        conn.doPause();
-      }
-    } else {
-      onData(buffer);
-    }
-  }
-
   void handleBegin(boolean keepAlive) {
     if (METRICS_ENABLED) {
       reportRequestBegin();
@@ -159,24 +142,18 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
     }
   }
 
-  /**
-   * Enqueue a pipelined request.
-   *
-   * @param request the enqueued request
-   */
-  void enqueue(Http1xServerRequest request) {
-    Http1xServerRequest current = this;
-    while (current.next != null) {
-      current = current.next;
+  void handleContent(Buffer buffer) {
+    boolean drain = queue.add(buffer);
+    if (drain) {
+      queue.drain();
     }
-    current.next = request;
   }
 
-  /**
-   * @return the next request following this one
-   */
-  Http1xServerRequest next() {
-    return next;
+  void handleEnd() {
+    boolean drain = queue.add(InboundBuffer.END_SENTINEL);
+    if (drain) {
+      queue.drain();
+    }
   }
 
   private void check100() {
@@ -336,18 +313,14 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
 
   @Override
   public HttpServerRequest pause() {
-    synchronized (conn) {
-      pendingQueue().pause();
-      return this;
-    }
+    queue.pause();
+    return this;
   }
 
   @Override
   public HttpServerRequest fetch(long amount) {
-    synchronized (conn) {
-      pendingQueue().fetch(amount);
-      return this;
-    }
+    queue.fetch(amount);
+    return this;
   }
 
   @Override
@@ -510,7 +483,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   @Override
   public boolean isEnded() {
     synchronized (conn) {
-      return ended && (pending == null || (!pending.isPaused() && pending.isEmpty()));
+      return ended;
     }
   }
 
@@ -558,19 +531,6 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
     }
   }
 
-  void handleEnd() {
-    InboundBuffer<Object> queue;
-    synchronized (conn) {
-      ended = true;
-      queue = pending;
-    }
-    if (queue != null) {
-      queue.write(InboundBuffer.END_SENTINEL);
-    } else {
-      onEnd();
-    }
-  }
-
   private void onEnd() {
     if (METRICS_ENABLED) {
       reportRequestComplete();
@@ -580,6 +540,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
       if (decoder != null) {
         endDecode();
       }
+      ended = true;
       handler = eventHandler;
     }
     // If there have been uploads then we let the last one call the end handler once any fileuploads are complete
