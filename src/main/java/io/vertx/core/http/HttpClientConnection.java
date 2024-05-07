@@ -39,11 +39,15 @@ public interface HttpClientConnection extends HttpConnection, HttpClient {
   long maxActiveStreams();
 
   @Override
-  Future<Void> shutdown();
+  default Future<Void> shutdown() {
+    return HttpConnection.super.shutdown();
+  }
 
   @Override
   Future<Void> shutdown(long timeout, TimeUnit unit);
 
   @Override
-  Future<Void> close();
+  default Future<Void> close() {
+    return HttpConnection.super.close();
+  }
 }

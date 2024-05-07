@@ -157,7 +157,9 @@ public interface HttpConnection {
    *
    * @return a future notified when the client is closed
    */
-  Future<Void> close();
+  default Future<Void> close() {
+    return shutdown(0, TimeUnit.SECONDS);
+  }
 
   /**
    * @return the latest server settings acknowledged by the remote endpoint - this is not implemented for HTTP/1.x

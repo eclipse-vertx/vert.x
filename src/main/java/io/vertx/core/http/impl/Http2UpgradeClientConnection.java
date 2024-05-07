@@ -105,11 +105,6 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
   }
 
   @Override
-  public Future<Void> close() {
-    return current.close();
-  }
-
-  @Override
   public Object metric() {
     return current.metric();
   }
