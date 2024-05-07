@@ -24,7 +24,6 @@ import io.vertx.core.net.SocketAddress;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
-import javax.security.cert.X509Certificate;
 import java.security.cert.Certificate;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -194,13 +193,6 @@ public class UnpooledHttpClientConnection implements HttpClientConnection {
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   public SSLSession sslSession() {
     return actual.sslSession();
-  }
-
-  @Override
-  @GenIgnore
-  @Deprecated
-  public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
-    return actual.peerCertificateChain();
   }
 
   @Override
