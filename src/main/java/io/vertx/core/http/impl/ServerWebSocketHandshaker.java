@@ -28,7 +28,6 @@ import io.vertx.core.net.impl.VertxHandler;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
-import javax.security.cert.X509Certificate;
 import java.security.cert.Certificate;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -393,11 +392,6 @@ public class ServerWebSocketHandshaker implements ServerWebSocket {
   @Override
   public SSLSession sslSession() {
     return webSocketOrDie().sslSession();
-  }
-
-  @Override
-  public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
-    return webSocketOrDie().peerCertificateChain();
   }
 
   @Override

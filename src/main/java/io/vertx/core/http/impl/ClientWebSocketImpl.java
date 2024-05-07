@@ -15,12 +15,10 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.SocketAddress;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
-import javax.security.cert.X509Certificate;
 import java.security.cert.Certificate;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -294,11 +292,6 @@ public class ClientWebSocketImpl implements ClientWebSocket {
   @Override
   public SSLSession sslSession() {
     return delegate().sslSession();
-  }
-
-  @Override
-  public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
-    return delegate().peerCertificateChain();
   }
 
   @Override
