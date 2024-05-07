@@ -37,6 +37,7 @@ import java.io.File;
 import java.io.RandomAccessFile;
 import java.nio.charset.Charset;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 /**
  *
@@ -63,7 +64,6 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
   private Handler<Buffer> handler;
   private Handler<Object> messageHandler;
   private Handler<Object> eventHandler;
-  private Handler<Void> shutdownHandler;
 
   public NetSocketImpl(ContextInternal context,
                        ChannelHandlerContext channel,
@@ -354,6 +354,10 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
   }
 
   @Override
+  protected void handleShutdown(Object reason, long timeout, TimeUnit unit, ChannelPromise promise) {
+  }
+
+  @Override
   protected void handleClosed() {
     pending.write(InboundBuffer.END_SENTINEL);
     super.handleClosed();
@@ -376,18 +380,11 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
     } else {
       super.handleEvent(event);
     }
-    if (event instanceof ShutdownEvent) {
-      Handler<Void> shutdownHandler = this.shutdownHandler;
-      if (shutdownHandler != null) {
-        ShutdownEvent shutdown = (ShutdownEvent) event;
-        context.emit(/*shutdown.timeUnit().toMillis(shutdown.timeout()), */shutdownHandler);
-      }
-    }
   }
 
   @Override
   public NetSocketImpl shutdownHandler(@Nullable Handler<Void> handler) {
-    shutdownHandler = handler;
+    super.shutdownHandler(handler);
     return this;
   }
 

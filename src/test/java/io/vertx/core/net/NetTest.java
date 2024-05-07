@@ -85,6 +85,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.LongPredicate;
 import java.util.function.Supplier;
 
 import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTPS_HOST;
@@ -4438,6 +4439,15 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testClientShutdown() throws Exception {
+    testClientShutdown(false, now -> System.currentTimeMillis() - now >= 2000);
+  }
+
+  @Test
+  public void testClientShutdownOverride() throws Exception {
+    testClientShutdown(true, now -> System.currentTimeMillis() - now <= 2000);
+  }
+
+  private void testClientShutdown(boolean override, LongPredicate checker) throws Exception {
     waitFor(2);
     server.connectHandler(so -> {
 
@@ -4449,17 +4459,16 @@ public class NetTest extends VertxTestBase {
     client.connect(testAddress)
       .onComplete(onSuccess(so -> {
         AtomicInteger eventCount = new AtomicInteger();
-        ((NetSocketInternal)so).eventHandler(event -> {
-          if  (event instanceof ShutdownEvent) {
-            ShutdownEvent closeEvent = (ShutdownEvent) event;
-            assertEquals(2, closeEvent.timeout());
-            assertEquals(TimeUnit.SECONDS, closeEvent.timeUnit());
-            eventCount.incrementAndGet();
+        so.shutdownHandler(v -> {
+          eventCount.incrementAndGet();
+          if (override) {
+            so.close();
           }
         });
+        eventCount.incrementAndGet();
         so.closeHandler(v -> {
-          assertEquals(1, eventCount.get());
-          assertTrue(System.currentTimeMillis() - now > 2000);
+          assertEquals(2, eventCount.get());
+          assertTrue(checker.test(now));
           complete();
         });
         latch.countDown();
@@ -4467,7 +4476,7 @@ public class NetTest extends VertxTestBase {
     awaitLatch(latch);
     Future<Void> fut = client.shutdown(2, TimeUnit.SECONDS);
     fut.onComplete(onSuccess(v -> {
-      assertTrue(System.currentTimeMillis() - now > 2000);
+      assertTrue(checker.test(now));
       complete();
     }));
     await();
@@ -4475,24 +4484,31 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testServerShutdown() throws Exception {
+    testServerShutdown(false, now -> System.currentTimeMillis() - now >= 2000);
+  }
+
+  @Test
+  public void testServerShutdownOverride() throws Exception {
+    testServerShutdown(true, now -> System.currentTimeMillis() - now <= 2000);
+  }
+
+  public void testServerShutdown(boolean override, LongPredicate checker) throws Exception {
     waitFor(2);
     long now = System.currentTimeMillis();
     server.connectHandler(so -> {
       AtomicInteger eventCount = new AtomicInteger();
-      NetSocketInternal soi = (NetSocketInternal) so;
-      soi.eventHandler(event -> {
-        if (event instanceof ShutdownEvent) {
-          ShutdownEvent shutdownEvent = (ShutdownEvent) event;
-          assertEquals(shutdownEvent.timeUnit().toSeconds(shutdownEvent.timeout()), shutdownEvent.timeout());
-          assertEquals(0, eventCount.getAndIncrement());
+      so.shutdownHandler(v -> {
+        eventCount.incrementAndGet();
+        if (override) {
+          so.close();
         }
       });
       so.closeHandler(v -> {
         assertEquals(1, eventCount.getAndIncrement());
-        assertTrue(System.currentTimeMillis() - now > 2);
+        assertTrue(checker.test(now));
         complete();
       });
-      soi.write("ping");
+      so.write("ping");
     });
     startServer();
     CountDownLatch latch = new CountDownLatch(1);
@@ -4504,7 +4520,7 @@ public class NetTest extends VertxTestBase {
     awaitLatch(latch);
     Future<Void> fut = server.shutdown(2, TimeUnit.SECONDS);
     fut.onComplete(onSuccess(v -> {
-      assertTrue(System.currentTimeMillis() - now > 2000);
+      assertTrue(checker.test(now));
       complete();
     }));
     await();
