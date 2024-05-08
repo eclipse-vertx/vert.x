@@ -5,10 +5,10 @@ import java.util.List;
 public class FakeState<B> {
 
   final String name;
-  final List<B> endpoints;
+  final B endpoints;
   volatile boolean isValid;
 
-  FakeState(String name, List<B> endpoints) {
+  FakeState(String name, B endpoints) {
     this.name = name;
     this.endpoints = endpoints;
     this.isValid = true;

@@ -8,21 +8,16 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.net.impl.resolver;
+package io.vertx.core.loadbalancing;
 
-import io.vertx.core.spi.loadbalancing.EndpointSelector;
+import io.vertx.core.spi.loadbalancing.DefaultEndpointMetrics;
+import io.vertx.core.spi.loadbalancing.Endpoint;
 
-import java.util.Objects;
+@FunctionalInterface
+interface LoadBalancer2 extends LoadBalancer {
 
-/**
- */
-final class ManagedState<S> {
-
-  final S state;
-  final EndpointSelector selector;
-
-  ManagedState(EndpointSelector selector, S state) {
-    this.selector = selector;
-    this.state = Objects.requireNonNull(state);
+  @Override
+  default <E> Endpoint<E> endpointOf(E endpoint, String id) {
+    return new DefaultEndpointMetrics<>(endpoint, id);
   }
 }

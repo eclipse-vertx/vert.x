@@ -16,14 +16,21 @@ import java.util.concurrent.atomic.LongAdder;
 public class DefaultEndpointMetrics<E> implements Endpoint<E>, EndpointMetrics<RequestMetric> {
 
   private final E endpoint;
+  private final String id;
   private final LongAdder numberOfInflightRequests = new LongAdder();
   private final LongAdder numberOfRequests = new LongAdder();
   private final LongAdder numberOfFailures = new LongAdder();
   private final AtomicLong minResponseTime = new AtomicLong(Long.MAX_VALUE);
   private final AtomicLong maxResponseTime = new AtomicLong(0);
 
-  public DefaultEndpointMetrics(E endpoint) {
+  public DefaultEndpointMetrics(E endpoint, String id) {
     this.endpoint = endpoint;
+    this.id = id;
+  }
+
+  @Override
+  public String key() {
+    return id;
   }
 
   @Override

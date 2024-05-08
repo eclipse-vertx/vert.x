@@ -50,6 +50,11 @@ public class RequestOptionsConverter {
             obj.setTraceOperation((String)member.getValue());
           }
           break;
+        case "routingKey":
+          if (member.getValue() instanceof String) {
+            obj.setRoutingKey((String)member.getValue());
+          }
+          break;
       }
     }
   }
@@ -69,6 +74,9 @@ public class RequestOptionsConverter {
     json.put("idleTimeout", obj.getIdleTimeout());
     if (obj.getTraceOperation() != null) {
       json.put("traceOperation", obj.getTraceOperation());
+    }
+    if (obj.getRoutingKey() != null) {
+      json.put("routingKey", obj.getRoutingKey());
     }
   }
 }

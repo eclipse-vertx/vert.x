@@ -18,6 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 /**
  * The endpoint manager associates an arbitrary {@code <K>} key with endpoints, it also tracks all endpoints, so they
@@ -64,6 +65,37 @@ public class EndpointManager<K, E extends Endpoint> {
     while (true) {
       ref[0] = null;
       E endpoint = endpointMap.computeIfAbsent(key, k -> {
+        E ep = provider.create(key, () -> endpointMap.remove(key, ref[0]));
+        ref[0] = ep;
+        return ep;
+      });
+      if (endpoint.before()) {
+        T value = function.apply(endpoint, endpoint == ref[0]);
+        endpoint.after();
+        return value;
+      }
+    }
+  }
+
+  /**
+   * Resolve the couple {@code key} as an endpoint, the {@code function} is then applied on this endpoint and the value returned.
+   *
+   * @param key the endpoint key
+   * @param function the function to apply on the endpoint
+   * @return the value returned by the function when applied on the resolved endpoint.
+   */
+  public <T> T withEndpoint2(K key, EndpointProvider<K, E> provider, Predicate<E> checker, BiFunction<E, Boolean, T> function) {
+    checkStatus();
+    Endpoint[] ref = new Endpoint[1];
+    while (true) {
+      ref[0] = null;
+      E endpoint = endpointMap.compute(key, (k, prev) -> {
+        if (prev != null && checker.test(prev)) {
+          return prev;
+        }
+        if (prev != null) {
+          // Do we need to do anything else ????
+        }
         E ep = provider.create(key, () -> endpointMap.remove(key, ref[0]));
         ref[0] = ep;
         return ep;

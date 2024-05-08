@@ -6,7 +6,9 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.CleanableHttpClient;
 import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.http.impl.HttpClientInternal;
+import io.vertx.core.loadbalancing.LoadBalancer;
 import io.vertx.core.net.*;
+import io.vertx.core.spi.resolver.address.EndpointListBuilder;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakeloadbalancer.FakeLoadBalancer;
 import io.vertx.test.fakeresolver.*;
@@ -18,11 +20,14 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class ResolvingHttpClientTest extends VertxTestBase {
 
@@ -244,7 +249,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     Exception cause = new Exception("Not found");
     FakeAddressResolver lookup = new FakeAddressResolver() {
       @Override
-      public Future<FakeState> resolve(Function factory, FakeAddress address) {
+      public Future<FakeState> resolve(FakeAddress address, EndpointListBuilder builder) {
         return Future.failedFuture(cause);
       }
     };
@@ -605,5 +610,73 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     } catch (Exception e) {
       assertTrue(expectFailure);
     }
+  }
+
+  @Test
+  public void testConsistentHashing() throws Exception {
+    int numServers = 4;
+    int numClients = 10;
+    int numRequests = 4;
+    waitFor(numClients * numRequests);
+    startServers(numServers);
+    requestHandler = (idx, req) -> req.response().end("server-" + idx);
+    FakeAddressResolver resolver = new FakeAddressResolver();
+    List<SocketAddress> servers = IntStream
+      .range(0, numServers)
+      .mapToObj(idx -> SocketAddress.inetSocketAddress(HttpTestBase.DEFAULT_HTTP_PORT + idx, "localhost"))
+      .collect(Collectors.toList());
+    resolver.registerAddress("example.com", servers);
+    HttpClientInternal client = (HttpClientInternal) vertx.httpClientBuilder()
+      .withLoadBalancer(LoadBalancer.CONSISTENT_HASHING)
+      .withAddressResolver(resolver)
+      .build();
+    Map<Integer, List<String>> responses = new ConcurrentHashMap<>();
+    for (int i = 0;i < numClients * numRequests;i++) {
+      int idx = i % numClients;
+      String hashingKey = "client-" + idx;
+      client.request(new RequestOptions().setServer(new FakeAddress("example.com")).setRoutingKey(hashingKey)).compose(req -> req
+        .send()
+        .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+        .compose(HttpClientResponse::body)
+      ).onComplete(onSuccess(v -> {
+        responses.compute(idx, (id, list) -> {
+          if (list == null) {
+            list = Collections.synchronizedList(new ArrayList<>());
+          }
+          return list;
+        }).add(v.toString());
+        complete();
+      }));
+    }
+    await();
+    responses.values().forEach(list -> {
+      String resp = list.get(0);
+      for (int i = 1;i < list.size();i++) {
+        Assert.assertEquals(resp, list.get(i));
+      }
+    });
+  }
+
+  @Test
+  public void testLyingLoadBalancer() throws Exception {
+    int numServers = 2;
+    startServers(numServers);
+    requestHandler = (idx, req) -> req.response().end("server-" + idx);
+    FakeAddressResolver resolver = new FakeAddressResolver();
+    resolver.registerAddress("example.com", Arrays.asList(SocketAddress.inetSocketAddress(HttpTestBase.DEFAULT_HTTP_PORT, "localhost"), SocketAddress.inetSocketAddress(HttpTestBase.DEFAULT_HTTP_PORT + 1, "localhost")));
+    HttpClientInternal client = (HttpClientInternal) vertx.httpClientBuilder()
+      .withLoadBalancer(endpoints -> () -> endpoints.size() + 1)
+      .withAddressResolver(resolver)
+      .build();
+    Set<String> responses = Collections.synchronizedSet(new HashSet<>());
+    client.request(new RequestOptions().setServer(new FakeAddress("example.com"))).compose(req -> req
+      .send()
+      .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+      .compose(HttpClientResponse::body)
+    ).onComplete(onFailure(err -> {
+      assertEquals("No results", err.getMessage());
+      testComplete();
+    }));
+    await();
   }
 }
