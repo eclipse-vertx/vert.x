@@ -10,8 +10,6 @@
  */
 package io.vertx.core.spi.loadbalancing;
 
-import java.util.List;
-
 /**
  * Holds the state for performing load balancing.
  *
@@ -22,29 +20,17 @@ public interface EndpointSelector {
   /**
    * Select an endpoint among the provided list.
    *
-   * @param endpoints the endpoint
    * @return the selected index or {@code -1} if selection could not be achieved
    */
-  int selectEndpoint(List<? extends Endpoint<?>> endpoints);
+  int selectEndpoint();
 
   /**
-   * Create a load balancer endpoint view for the given generic {@code endpoint}
-   * @param endpoint
-   * @return
-   * @param <E>
+   * Select an endpoint among the provided list using a routing {@code key}.
+   *
+   * @param key a key used for routing in sticky strategies
+   * @return the selected index or {@code -1} if selection could not be achieved
    */
-  default <E> Endpoint<E> endpointOf(E endpoint) {
-    EndpointMetrics<?> metrics = new EndpointMetrics<>() {
-    };
-    return new Endpoint<>() {
-      @Override
-      public E endpoint() {
-        return endpoint;
-      }
-      @Override
-      public EndpointMetrics<?> metrics() {
-        return metrics;
-      }
-    };
+  default int selectEndpoint(String key) {
+    return selectEndpoint();
   }
 }

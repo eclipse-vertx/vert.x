@@ -33,15 +33,15 @@ public class LoadBalancingCornerCasesTest {
 
   @Test
   public void testCornerCases() {
-    EndpointSelector selector = loadBalancer.selector();
     List<Endpoint<?>>  metrics = new ArrayList<>();
+    EndpointSelector selector = loadBalancer.selector(metrics);
     // Randomness is involved in some policies.
     for (int i = 0; i < 1000; i++) {
-      assertEquals(-1, selector.selectEndpoint(metrics));
+      assertEquals(-1, selector.selectEndpoint());
     }
-    metrics.add(selector.endpointOf(null));
+    metrics.add(loadBalancer.endpointOf(null, null));
     for (int i = 0; i < 1000; i++) {
-      assertEquals(0, selector.selectEndpoint(metrics));
+      assertEquals(0, selector.selectEndpoint());
     }
   }
 }

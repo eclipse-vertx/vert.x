@@ -93,6 +93,7 @@ public class RequestOptions extends HttpConnectOptions {
   private long timeout;
   private long idleTimeout;
   private String traceOperation;
+  private String routingKey;
 
   /**
    * Default constructor
@@ -497,6 +498,28 @@ public class RequestOptions extends HttpConnectOptions {
    */
   public RequestOptions setTraceOperation(String op) {
     this.traceOperation = op;
+    return this;
+  }
+
+  /**
+   * Return the routing key, the routing key can be used by a Vert.x client side sticky load balancer to
+   * pin the request to a remote HTTP server.
+   *
+   * @return the routing key
+   */
+  public String getRoutingKey() {
+    return routingKey;
+  }
+
+  /**
+   * Set the routing key, the routing key can be used by a Vert.x client side sticky load balancer
+   * to pin the request to a remote HTTP server.
+   *
+   * @param key the routing key
+   * @return  a reference to this, so the API can be used fluently
+   */
+  public RequestOptions setRoutingKey(String key) {
+    this.routingKey = key;
     return this;
   }
 

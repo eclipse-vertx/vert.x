@@ -38,6 +38,15 @@ public interface EndpointResolver<A extends Address> {
   Future<EndpointLookup> lookupEndpoint(ContextInternal ctx, A address);
 
   /**
+   * Lookup an endpoint for the specified {@code address}
+   * @param ctx the vertx context
+   * @param address the address to lookup
+   * @param routingKey the key used to select an endpoint for sticky strategies
+   * @return the endpoint lookup result
+   */
+  Future<EndpointLookup> lookupEndpoint(ContextInternal ctx, A address, String routingKey);
+
+  /**
    * Check expired endpoints, this method is called by the client periodically to give the opportunity to trigger eviction
    * or refreshes.
    */

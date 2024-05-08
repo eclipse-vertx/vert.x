@@ -8,30 +8,23 @@ import io.vertx.core.spi.loadbalancing.EndpointMetrics;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FakeLoadBalancer implements LoadBalancer, EndpointSelector {
+public class FakeLoadBalancer implements LoadBalancer {
 
   List<? extends Endpoint<?>> endpoints;
-
-  EndpointSelector actual = LoadBalancer.ROUND_ROBIN.selector();
 
   public List<? extends Endpoint<?>> endpoints() {
     return endpoints;
   }
 
   @Override
-  public EndpointSelector selector() {
-    return this;
-  }
-
-  @Override
-  public <E> Endpoint<E> endpointOf(E endpoint) {
-    return new FakeEndpointMetrics<>(endpoint);
-  }
-
-  @Override
-  public int selectEndpoint(List<? extends Endpoint<?>> endpoints) {
+  public EndpointSelector selector(List<? extends Endpoint<?>> endpoints) {
     this.endpoints = endpoints;
-    return actual.selectEndpoint(endpoints);
+    return LoadBalancer.ROUND_ROBIN.selector(endpoints);
+  }
+
+  @Override
+  public <E> Endpoint<E> endpointOf(E endpoint, String id) {
+    return new FakeEndpointMetrics<>(endpoint, id);
   }
 
   public static class FakeEndpointMetrics<E> implements EndpointMetrics<FakeMetric>, Endpoint<E> {
@@ -43,14 +36,21 @@ public class FakeLoadBalancer implements LoadBalancer, EndpointSelector {
     }
 
     private final E endpoint;
+    private final String id;
 
-    public FakeEndpointMetrics(E endpoint) {
+    public FakeEndpointMetrics(E endpoint, String id) {
       this.endpoint = endpoint;
+      this.id = id;
     }
 
     @Override
     public EndpointMetrics<?> metrics() {
       return this;
+    }
+
+    @Override
+    public String key() {
+      return id;
     }
 
     @Override

@@ -6847,7 +6847,7 @@ public abstract class HttpTest extends HttpTestBase {
       HttpClient client = vertx
         .httpClientBuilder()
         .with(createBaseClientOptions())
-        .withLoadBalancer(enabled ? () -> endpoints -> {
+        .withLoadBalancer(enabled ? endpoints -> () -> {
           val.set(endpoints.size());
           return 0;
         } : null)

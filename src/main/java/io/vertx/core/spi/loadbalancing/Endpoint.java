@@ -20,6 +20,11 @@ package io.vertx.core.spi.loadbalancing;
 public interface Endpoint<E> {
 
   /**
+   * @return the key of the endpoint to be hashed by hashing load balancer
+   */
+  String key();
+
+  /**
    * @return the endpoint measured by these metrics.
    */
   E endpoint();

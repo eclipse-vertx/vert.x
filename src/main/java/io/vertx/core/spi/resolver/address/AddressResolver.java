@@ -14,9 +14,6 @@ import io.vertx.core.Future;
 import io.vertx.core.net.Address;
 import io.vertx.core.net.SocketAddress;
 
-import java.util.List;
-import java.util.function.Function;
-
 /**
  * Address resolver Service Provider Interface (SPI).
  *
@@ -26,9 +23,9 @@ import java.util.function.Function;
  * @param <S> the type of the state managed by the resolver
  * @param <A> the type of {@link Address} resolved
  * @param <E> the type of the endpoint
- * @param <B> the type of the wrapped endpoint
+ * @param <L> the type of the list of endpoints
  */
-public interface AddressResolver<A extends Address, E, S, B> {
+public interface AddressResolver<A extends Address, E, S, L> {
 
   /**
    * Try to cast the {@code address} to an address instance that can be resolved by this resolver instance.
@@ -49,11 +46,11 @@ public interface AddressResolver<A extends Address, E, S, B> {
   /**
    * Resolve an address to the resolver state for this name.
    *
-   * @param factory the endpoint factory
    * @param address the address to resolve
+   * @param builder the endpoint list builder
    * @return a future notified with the result
    */
-  Future<S> resolve(Function<E, B> factory, A address);
+  Future<S> resolve(A address, EndpointListBuilder<L, E> builder);
 
   /**
    * Return the current list of endpoint visible by the resolver.
@@ -61,7 +58,7 @@ public interface AddressResolver<A extends Address, E, S, B> {
    * @param state the resolver state
    * @return the list of endpoints
    */
-  List<B> endpoints(S state);
+  L endpoints(S state);
 
   /**
    * Check the state validity.

@@ -361,10 +361,11 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       authority = null;
     }
     ClientSSLOptions sslOptions = sslOptions(request);
-    return doRequest(method, authority, server, useSSL, requestURI, headers, request.getTraceOperation(), connectTimeout, idleTimeout, followRedirects, sslOptions, request.getProxyOptions());
+    return doRequest(request.getRoutingKey(), method, authority, server, useSSL, requestURI, headers, request.getTraceOperation(), connectTimeout, idleTimeout, followRedirects, sslOptions, request.getProxyOptions());
   }
 
   private Future<HttpClientRequest> doRequest(
+    String routingKey,
     HttpMethod method,
     HostAndPort authority,
     Address server,
@@ -382,7 +383,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     Promise<HttpClientRequest> promise = ctx.promise();
     Future<ConnectionObtainedResult> future;
     if (endpointResolver != null && endpointResolver.accepts(server) != null) {
-      Future<EndpointLookup> fut = endpointResolver.lookupEndpoint(ctx, server);
+      Future<EndpointLookup> fut = endpointResolver.lookupEndpoint(ctx, server, routingKey);
       future = fut.compose(lookup -> {
         SocketAddress address = lookup.address();
         ProxyOptions proxyOptions = computeProxyOptions(proxyConfig, address);
