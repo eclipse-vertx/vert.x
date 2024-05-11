@@ -24,8 +24,11 @@ import io.vertx.core.loadbalancing.LoadBalancer;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
+import io.vertx.core.spi.loadbalancing.Endpoint;
 import io.vertx.core.streams.Pipe;
 import io.vertx.core.streams.ReadStream;
+
+import java.util.List;
 
 /**
  * Created by tim on 09/01/15.
@@ -1404,6 +1407,57 @@ public class HTTPExamples {
       .httpClientBuilder()
       .withLoadBalancer(LoadBalancer.ROUND_ROBIN)
       .build();
+  }
+
+  public static void httpClientSideConsistentHashing(Vertx vertx, int servicePort) {
+    HttpClientAgent client = vertx
+      .httpClientBuilder()
+      .withLoadBalancer(LoadBalancer.CONSISTENT_HASHING)
+      .build();
+
+    HttpServer server = vertx.createHttpServer()
+      .requestHandler(inboundReq -> {
+
+        // Get a routing key, in this example we will hash the incoming request host/ip
+        // it could be anything else, e.g. user id, request id, ...
+        String routingKey = inboundReq.remoteAddress().hostAddress();
+
+        client.request(new RequestOptions()
+            .setHost("example.com")
+            .setURI("/test")
+            .setRoutingKey(routingKey))
+          .compose(outboundReq -> outboundReq.send()
+            .expecting(HttpResponseExpectation.SC_OK)
+            .compose(HttpClientResponse::body));
+      });
+
+    server.listen(servicePort);
+  }
+
+  public static void consistentHashingConfiguration() {
+    // Use 10 virtual nodes per server and Power of two choices policy in the absence of a routing key
+    LoadBalancer loadBalancer = LoadBalancer.consistentHashing(10, LoadBalancer.POWER_OF_TWO_CHOICES);
+  }
+
+  public static void customLoadBalancingPolicy(Vertx vertx) {
+    LoadBalancer loadBalancer = endpoints -> {
+      // Returns an endpoint selector for the given endpoints
+      // a selector is a stateful view of the provided immutable list of endpoints
+      return () -> indexOfEndpoint(endpoints);
+    };
+
+    HttpClientAgent client = vertx
+      .httpClientBuilder()
+      .withLoadBalancer(loadBalancer)
+      .build();
+  }
+
+  private static int indexOfEndpoint(List<? extends Endpoint<?>> endpoints) {
+    return 0;
+  }
+
+  private static String getRoutingKey() {
+    return null;
   }
 
   public static void connect(HttpClientAgent client) {
