@@ -1428,7 +1428,12 @@ public class HTTPExamples {
             .setRoutingKey(routingKey))
           .compose(outboundReq -> outboundReq.send()
             .expecting(HttpResponseExpectation.SC_OK)
-            .compose(HttpClientResponse::body));
+            .compose(HttpClientResponse::body))
+          .onComplete(ar -> {
+            if (ar.succeeded()) {
+              Buffer response = ar.result();
+            }
+          });
       });
 
     server.listen(servicePort);
