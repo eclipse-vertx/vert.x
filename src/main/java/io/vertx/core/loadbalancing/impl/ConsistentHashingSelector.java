@@ -8,10 +8,10 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.loadbalancing;
+package io.vertx.core.loadbalancing.impl;
 
-import io.vertx.core.spi.loadbalancing.Endpoint;
-import io.vertx.core.spi.loadbalancing.EndpointSelector;
+import io.vertx.core.net.endpoint.EndpointNode;
+import io.vertx.core.net.endpoint.EndpointSelector;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -25,21 +25,21 @@ import java.util.TreeMap;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class ConsistentHashingSelector implements EndpointSelector {
+public class ConsistentHashingSelector implements EndpointSelector {
 
-  private final List<? extends Endpoint<?>> endpoints;
-  private final SortedMap<Long, Endpoint<?>> nodes;
+  private final List<? extends EndpointNode> endpoints;
+  private final SortedMap<Long, EndpointNode> nodes;
   private final EndpointSelector fallbackSelector;
 
-  ConsistentHashingSelector(List<? extends Endpoint<?>> endpoints, int numberOfVirtualNodes, EndpointSelector fallbackSelector) {
+  public ConsistentHashingSelector(List<? extends EndpointNode> endpoints, int numberOfVirtualNodes, EndpointSelector fallbackSelector) {
     MessageDigest instance;
     try {
       instance = MessageDigest.getInstance("MD5");
     } catch (NoSuchAlgorithmException e) {
       throw new UnsupportedOperationException(e);
     }
-    SortedMap<Long, Endpoint<?>> ring = new TreeMap<>();
-    for (Endpoint<?> node : endpoints) {
+    SortedMap<Long, EndpointNode> ring = new TreeMap<>();
+    for (EndpointNode node : endpoints) {
       for (int idx = 0;idx < numberOfVirtualNodes;idx++) {
         String nodeId = node.key() + "-" + idx;
         long hash = hash(instance, nodeId.getBytes(StandardCharsets.UTF_8));
@@ -70,12 +70,12 @@ class ConsistentHashingSelector implements EndpointSelector {
   }
 
   @Override
-  public int selectEndpoint() {
-    return fallbackSelector.selectEndpoint();
+  public int select() {
+    return fallbackSelector.select();
   }
 
   @Override
-  public int selectEndpoint(String key) {
+  public int select(String key) {
     if (key == null) {
       throw new NullPointerException("No null routing key accepted");
     }
@@ -86,14 +86,14 @@ class ConsistentHashingSelector implements EndpointSelector {
       throw new UnsupportedOperationException(e);
     }
     long hash = hash(md, key.getBytes(StandardCharsets.UTF_8));
-    SortedMap<Long, Endpoint<?>> map = nodes.tailMap(hash);
+    SortedMap<Long, EndpointNode> map = nodes.tailMap(hash);
     Long val;
     if (map.isEmpty()) {
       val = nodes.firstKey();
     } else {
       val = map.firstKey();
     }
-    Endpoint<?> endpoint = nodes.get(val);
+    EndpointNode endpoint = nodes.get(val);
     return endpoints.indexOf(endpoint); // TODO IMPROVE THAT
   }
 }

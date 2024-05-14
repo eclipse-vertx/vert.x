@@ -8,28 +8,28 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.spi.resolver.address;
+package io.vertx.core.spi.endpoint;
 
 /**
- * A builder of list of endpoints.
+ * A builder for an endpoint.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface EndpointListBuilder<L, E> {
+public interface EndpointBuilder<L, N> {
 
   /**
-   * Add an endpoint with its associated {@code key}
-   * @param endpoint the endpoint
+   * Add a node with its associated {@code key}
+   * @param node the node
    * @param key the key
    * @return the next builder to be used, it might return a new instance
    */
-  EndpointListBuilder<L, E> addEndpoint(E endpoint, String key);
+  EndpointBuilder<L, N> addNode(N node, String key);
 
   /**
-   * Like {@link #addEndpoint(Object, String)} with a default key.
+   * Like {@link #addNode(Object, String)} with a default key.
    */
-  default EndpointListBuilder<L, E> addEndpoint(E endpoint) {
-    return addEndpoint(endpoint, "" + System.identityHashCode(endpoint));
+  default EndpointBuilder<L, N> addNode(N node) {
+    return addNode(node, "" + System.identityHashCode(node));
   }
 
   /**

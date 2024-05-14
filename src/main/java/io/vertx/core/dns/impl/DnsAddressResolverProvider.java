@@ -16,14 +16,13 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.resolver.*;
 import io.netty.resolver.dns.*;
 import io.netty.util.NetUtil;
-import io.netty.util.concurrent.FastThreadLocal;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.impl.HostnameResolver;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.spi.resolver.dns.AddressResolverProvider;
+import io.vertx.core.spi.dns.AddressResolverProvider;
 
 import java.io.File;
 import java.io.IOException;

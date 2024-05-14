@@ -82,4 +82,10 @@ final class SrvRecordImpl implements SrvRecord, Comparable<SrvRecord>{
   public int compareTo(SrvRecord o) {
     return Integer.valueOf(priority()).compareTo(o.priority());
   }
+
+  @Override
+  public String toString() {
+    return "SrvRecord[name=" + name + ",service=" + service + ",port=" + port + ",target=" + target
+    + ",weight=" + weight + ",priority=" + priority + ",ttl=" + ttl + "]";
+  }
 }

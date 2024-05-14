@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.spi.resolver.dns;
+package io.vertx.core.spi.dns;
 
 import io.netty.resolver.AddressResolverGroup;
 import io.vertx.core.Future;

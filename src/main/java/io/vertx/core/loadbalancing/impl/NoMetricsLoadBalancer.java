@@ -8,16 +8,16 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.loadbalancing;
+package io.vertx.core.loadbalancing.impl;
 
-import io.vertx.core.spi.loadbalancing.DefaultEndpointMetrics;
-import io.vertx.core.spi.loadbalancing.Endpoint;
+import io.vertx.core.loadbalancing.LoadBalancer;
+import io.vertx.core.net.endpoint.InteractionMetrics;
 
 @FunctionalInterface
-interface LoadBalancer2 extends LoadBalancer {
+public interface NoMetricsLoadBalancer extends LoadBalancer {
 
   @Override
-  default <E> Endpoint<E> endpointOf(E endpoint, String id) {
-    return new DefaultEndpointMetrics<>(endpoint, id);
+  default InteractionMetrics<?> newMetrics() {
+    return InteractionMetrics.INSTANCE;
   }
 }

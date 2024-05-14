@@ -8,39 +8,36 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.spi.resolver.endpoint;
+package io.vertx.core.net.endpoint;
+
+import io.vertx.core.net.SocketAddress;
 
 /**
- * Request interaction with an endpoint, mostly callbacks to gather statistics
+ * A physical node of an endpoint.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface EndpointRequest {
+public interface EndpointNode {
 
   /**
-   * Report a failure.
-   * @param failure the failure to report
+   * @return the node key for hashing strategies
    */
-  void reportFailure(Throwable failure);
+  String key();
 
   /**
-   * The request has begun.
+   * @return the node socket address
    */
-  void reportRequestBegin();
+  SocketAddress address();
 
   /**
-   * The request has ended.
+   * Initiate a request/response interaction with the endpoint represented by this node, the returned interaction gathers statistics.
+   *
+   * @return the request
    */
-  void reportRequestEnd();
+  Interaction initiateInteraction();
 
-  /**
-   * The response has begun.
-   */
-  void reportResponseBegin();
+  InteractionMetrics<?> metrics();
 
-  /**
-   * The request has ended.
-   */
-  void reportResponseEnd();
+  Object unwrap();
 
 }

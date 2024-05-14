@@ -8,27 +8,39 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.spi.resolver.endpoint;
-
-import io.vertx.core.net.SocketAddress;
+package io.vertx.core.net.endpoint;
 
 /**
- * A lookup of an endpoint.
+ * Request interaction with an endpoint, mostly callbacks to gather statistics.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface EndpointLookup {
+public interface Interaction {
 
   /**
-   * @return the endpoint socket address
+   * Report a failure.
+   * @param failure the failure to report
    */
-  SocketAddress address();
+  void reportFailure(Throwable failure);
 
   /**
-   * Initiate a request with the endpoint, the returned endpoint request updates the endpoint statistics
-   *
-   * @return the request
+   * The request has begun.
    */
-  EndpointRequest initiateRequest();
+  void reportRequestBegin();
+
+  /**
+   * The request has ended.
+   */
+  void reportRequestEnd();
+
+  /**
+   * The response has begun.
+   */
+  void reportResponseBegin();
+
+  /**
+   * The request has ended.
+   */
+  void reportResponseEnd();
 
 }

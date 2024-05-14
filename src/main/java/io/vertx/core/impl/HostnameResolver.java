@@ -19,10 +19,11 @@ import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.Address;
+import io.vertx.core.net.AddressResolver;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.spi.resolver.address.EndpointListBuilder;
-import io.vertx.core.spi.resolver.dns.AddressResolverProvider;
-import io.vertx.core.spi.resolver.address.AddressResolver;
+import io.vertx.core.spi.endpoint.EndpointBuilder;
+import io.vertx.core.spi.dns.AddressResolverProvider;
+import io.vertx.core.spi.endpoint.EndpointResolver;
 
 import java.io.File;
 import java.net.InetAddress;
@@ -39,7 +40,7 @@ import static io.vertx.core.impl.Utils.isLinux;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class HostnameResolver implements io.vertx.core.net.AddressResolver {
+public class HostnameResolver implements AddressResolver {
 
   private static final Logger log = LoggerFactory.getLogger(HostnameResolver.class);
 
@@ -85,7 +86,7 @@ public class HostnameResolver implements io.vertx.core.net.AddressResolver {
   }
 
   @Override
-  public AddressResolver<?, ?, ?, ?> resolver(Vertx vertx) {
+  public EndpointResolver<?, ?, ?, ?> endpointResolver(Vertx vertx) {
     return new Impl();
   }
 
@@ -141,25 +142,25 @@ public class HostnameResolver implements io.vertx.core.net.AddressResolver {
     return matcher.find();
   }
 
-  class Impl<L> implements AddressResolver<SocketAddress, SocketAddress, L, L> {
+  class Impl<L> implements EndpointResolver<SocketAddress, SocketAddress, L, L> {
     @Override
     public SocketAddress tryCast(Address address) {
       return address instanceof SocketAddress ? (SocketAddress) address : null;
     }
 
     @Override
-    public SocketAddress addressOfEndpoint(SocketAddress endpoint) {
-      return endpoint;
+    public SocketAddress addressOf(SocketAddress server) {
+      return server;
     }
 
     @Override
-    public Future<L> resolve(SocketAddress address, EndpointListBuilder<L, SocketAddress> builder) {
+    public Future<L> resolve(SocketAddress address, EndpointBuilder<L, SocketAddress> builder) {
       Promise<L> promise = Promise.promise();
       resolveHostnameAll(address.host(), ar -> {
-        EndpointListBuilder<L, SocketAddress> builder2 = builder;
+        EndpointBuilder<L, SocketAddress> builder2 = builder;
         if (ar.succeeded()) {
           for (InetSocketAddress addr : ar.result()) {
-            builder2 = builder2.addEndpoint(SocketAddress.inetSocketAddress(address.port(), addr.getAddress().getHostAddress()));
+            builder2 = builder2.addNode(SocketAddress.inetSocketAddress(address.port(), addr.getAddress().getHostAddress()));
           }
           promise.complete(builder2.build());
         } else {
@@ -170,18 +171,18 @@ public class HostnameResolver implements io.vertx.core.net.AddressResolver {
     }
 
     @Override
-    public L endpoints(L state) {
-      return state;
+    public L endpoint(L data) {
+      return data;
     }
 
     @Override
-    public boolean isValid(L state) {
+    public boolean isValid(L data) {
       // NEED EXPIRATION
       return true;
     }
 
     @Override
-    public void dispose(L state) {
+    public void dispose(L data) {
     }
 
     @Override

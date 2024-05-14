@@ -10,8 +10,11 @@
  */
 package io.vertx.core.loadbalancing;
 
-import io.vertx.core.spi.loadbalancing.Endpoint;
-import io.vertx.core.spi.loadbalancing.EndpointSelector;
+import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.endpoint.EndpointNode;
+import io.vertx.core.net.endpoint.Interaction;
+import io.vertx.core.net.endpoint.InteractionMetrics;
+import io.vertx.core.net.endpoint.EndpointSelector;
 import io.vertx.test.core.TestUtils;
 import org.junit.Test;
 
@@ -19,32 +22,59 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static io.vertx.core.loadbalancing.LoadBalancer.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class LoadBalancingTest {
 
+  EndpointNode endpointOf(LoadBalancer loadBalancer) {
+    InteractionMetrics<?> metrics = loadBalancer.newMetrics();
+    return new EndpointNode() {
+      @Override
+      public SocketAddress address() {
+        return null;
+      }
+      @Override
+      public String key() {
+        return "";
+      }
+      @Override
+      public Object unwrap() {
+        return null;
+      }
+      @Override
+      public InteractionMetrics<?> metrics() {
+        return metrics;
+      }
+      @Override
+      public Interaction initiateInteraction() {
+        return null;
+      }
+    };
+  }
+
   @Test
   public void testRoundRobin() throws Exception {
-    Endpoint<?> e1 = LoadBalancer.ROUND_ROBIN.endpointOf(null, "");
-    Endpoint<?> e2 = LoadBalancer.ROUND_ROBIN.endpointOf(null, "");
-    Endpoint<?> e3 = LoadBalancer.ROUND_ROBIN.endpointOf(null, "");
-    List<Endpoint<?>> metrics = Arrays.asList(e1, e2, e3);
-    EndpointSelector selector = LoadBalancer.ROUND_ROBIN.selector(metrics);
-    assertEquals(0, selector.selectEndpoint());
-    assertEquals(1, selector.selectEndpoint());
-    assertEquals(2, selector.selectEndpoint());
-    assertEquals(0, selector.selectEndpoint());
-    assertEquals(1, selector.selectEndpoint());
-    assertEquals(2, selector.selectEndpoint());
+    EndpointNode e1 = endpointOf(ROUND_ROBIN);
+    EndpointNode e2 = endpointOf(ROUND_ROBIN);
+    EndpointNode e3 = endpointOf(ROUND_ROBIN);
+    List<EndpointNode> metrics = Arrays.asList(e1, e2, e3);
+    EndpointSelector selector = ROUND_ROBIN.selector(metrics);
+    assertEquals(0, selector.select());
+    assertEquals(1, selector.select());
+    assertEquals(2, selector.select());
+    assertEquals(0, selector.select());
+    assertEquals(1, selector.select());
+    assertEquals(2, selector.select());
   }
 
   @Test
   public void testLeastRequests() throws Exception {
-    List<Endpoint<?>> metrics = new ArrayList<>();
+    List<EndpointNode> metrics = new ArrayList<>();
     int num = 6;
     for (int i = 0;i < num;i++) {
-      metrics.add(LoadBalancer.LEAST_REQUESTS.endpointOf(null, ""));
+      metrics.add(endpointOf(LEAST_REQUESTS));
     }
     for (int i = 0;i < metrics.size();i++) {
       if (i != 2) {
@@ -52,19 +82,19 @@ public class LoadBalancingTest {
       }
     }
     EndpointSelector selector = LoadBalancer.LEAST_REQUESTS.selector(metrics);
-    assertEquals(2, selector.selectEndpoint());
+    assertEquals(2, selector.select());
   }
 
   @Test
   public void testRandom() throws Exception {
-    List<Endpoint<?>> metrics = new ArrayList<>();
+    List<EndpointNode> metrics = new ArrayList<>();
     int num = 6;
     for (int i = 0;i < num;i++) {
-      metrics.add(LoadBalancer.RANDOM.endpointOf(null, ""));
+      metrics.add(endpointOf(RANDOM));
     }
     EndpointSelector selector = LoadBalancer.RANDOM.selector(metrics);
     for (int i = 0; i < 1000; i++) {
-      int selectedIndex = selector.selectEndpoint();
+      int selectedIndex = selector.select();
       assertTrue(selectedIndex >= 0 && selectedIndex < metrics.size());
     }
   }
@@ -72,31 +102,31 @@ public class LoadBalancingTest {
   @Test
   public void testPowerOfTwoChoices() throws Exception {
     for (int i = 0; i < 1000; i++) {
-      Endpoint<?> e1 = LoadBalancer.POWER_OF_TWO_CHOICES.endpointOf(null, "");
-      Endpoint<?> e2 = LoadBalancer.POWER_OF_TWO_CHOICES.endpointOf(null, "");
-      List<Endpoint<?>> metrics = Arrays.asList(e1, e2);
+      EndpointNode e1 = endpointOf(POWER_OF_TWO_CHOICES);
+      EndpointNode e2 = endpointOf(POWER_OF_TWO_CHOICES);
+      List<EndpointNode> metrics = Arrays.asList(e1, e2);
       e2.metrics().initiateRequest();
       EndpointSelector selector = LoadBalancer.POWER_OF_TWO_CHOICES.selector(metrics);
-      assertEquals(0, selector.selectEndpoint());
+      assertEquals(0, selector.select());
     }
 
-    List<Endpoint<?>> metrics = new ArrayList<>();
+    List<EndpointNode> metrics = new ArrayList<>();
     int num = 6;
     for (int i = 0;i < num;i++) {
-      metrics.add(LoadBalancer.POWER_OF_TWO_CHOICES.endpointOf(null, ""));
+      metrics.add(endpointOf(POWER_OF_TWO_CHOICES));
     }
     EndpointSelector selector = LoadBalancer.POWER_OF_TWO_CHOICES.selector(metrics);
     for (int i = 0; i < 1000; i++) {
-      int selectedIndex = selector.selectEndpoint();
+      int selectedIndex = selector.select();
       assertTrue(selectedIndex >= 0 && selectedIndex < metrics.size());
     }
   }
 
   @Test
   public void testConsistentHashing() {
-    Endpoint<?> e1 = LoadBalancer.CONSISTENT_HASHING.endpointOf(null, "e1");
-    Endpoint<?> e2 = LoadBalancer.CONSISTENT_HASHING.endpointOf(null, "e2");
-    Endpoint<?> e3 = LoadBalancer.CONSISTENT_HASHING.endpointOf(null, "e3");
+    EndpointNode e1 = endpointOf(CONSISTENT_HASHING);
+    EndpointNode e2 = endpointOf(CONSISTENT_HASHING);
+    EndpointNode e3 = endpointOf(CONSISTENT_HASHING);
     EndpointSelector selector = LoadBalancer.CONSISTENT_HASHING.selector(Arrays.asList(e1, e2, e3));
     int num = 100;
     List<String> ids = new ArrayList<>(num);
@@ -105,16 +135,16 @@ public class LoadBalancingTest {
     }
     for (int i = 0;i < num;i++) {
       String id = ids.get(i);
-      int idx = selector.selectEndpoint(id);
+      int idx = selector.select(id);
       assertTrue(idx >= 0 && idx < 4);
       for (int j = 0;j < 16;j++) {
-        assertEquals(idx, selector.selectEndpoint(id));
+        assertEquals(idx, selector.select(id));
       }
     }
     // Fallback on random selector
     int bitset = 0;
     while (bitset != 7) {
-      int res = selector.selectEndpoint();
+      int res = selector.select();
       assertTrue(res >= 0 && res < 4);
       bitset |= 1 << res;
     }

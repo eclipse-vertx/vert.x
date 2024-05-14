@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class EndpointManagerTest extends VertxTestBase {
+public class EndpointResolverTest extends VertxTestBase {
 
   private static final Object TEST_KEY = new Object();
 
