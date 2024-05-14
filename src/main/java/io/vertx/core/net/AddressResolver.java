@@ -11,19 +11,19 @@
 package io.vertx.core.net;
 
 import io.vertx.core.Vertx;
+import io.vertx.core.spi.endpoint.EndpointResolver;
 
 /**
- * A generic address resolver market interface. Implementation must also implement the SPI interface {@link io.vertx.core.spi.resolver.address.AddressResolver}
- * and can be cast to this type.
+ * A provider for address resolver.
  */
 public interface AddressResolver {
 
   /**
-   * Return a resolver capable of resolving addresses for a client.
+   * Return a resolver capable of resolving addresses to endpoints.
    *
    * @param vertx the vertx instance
    * @return the resolver
    */
-  io.vertx.core.spi.resolver.address.AddressResolver<?, ?, ?, ?> resolver(Vertx vertx);
+  EndpointResolver<?, ?, ?, ?> endpointResolver(Vertx vertx);
 
 }

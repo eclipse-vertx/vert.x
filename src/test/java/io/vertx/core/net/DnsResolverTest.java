@@ -3,7 +3,7 @@ package io.vertx.core.net;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.spi.resolver.address.AddressResolver;
+import io.vertx.core.spi.endpoint.EndpointResolver;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakedns.FakeDNSServer;
 import org.apache.directory.server.dns.messages.RecordClass;
@@ -21,7 +21,7 @@ import java.util.Set;
 public class DnsResolverTest extends VertxTestBase {
 
   private FakeDNSServer dnsServer;
-  private AddressResolver<SocketAddress, SocketAddress, List<SocketAddress>, ?> resolver;
+  private EndpointResolver<SocketAddress, SocketAddress, List<SocketAddress>, ?> resolver;
 
   @Override
   protected VertxOptions getOptions() {
@@ -68,7 +68,7 @@ public class DnsResolverTest extends VertxTestBase {
       }
       return set;
     });
-    resolver = (AddressResolver) ((VertxInternal)vertx).hostnameResolver().resolver(vertx);
+    resolver = (EndpointResolver) ((VertxInternal)vertx).hostnameResolver().endpointResolver(vertx);
   }
 
   public void tearDown() throws Exception {

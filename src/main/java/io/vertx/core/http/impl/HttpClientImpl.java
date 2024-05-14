@@ -15,17 +15,17 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
+import io.vertx.core.net.endpoint.impl.EndpointResolverImpl;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.*;
 import io.vertx.core.net.*;
-import io.vertx.core.net.impl.endpoint.EndpointManager;
 import io.vertx.core.net.impl.endpoint.EndpointProvider;
 import io.vertx.core.net.impl.pool.*;
-import io.vertx.core.spi.resolver.endpoint.EndpointRequest;
-import io.vertx.core.spi.resolver.endpoint.EndpointLookup;
+import io.vertx.core.net.endpoint.Interaction;
+import io.vertx.core.net.endpoint.EndpointNode;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
-import io.vertx.core.spi.resolver.endpoint.EndpointResolver;
+import io.vertx.core.net.endpoint.EndpointResolver;
 
 import java.lang.ref.WeakReference;
 import java.net.URI;
@@ -100,8 +100,8 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   };
 
   private final PoolOptions poolOptions;
-  private final EndpointManager<EndpointKey, SharedClientHttpStreamEndpoint> httpCM;
-  private final EndpointResolver endpointResolver;
+  private final io.vertx.core.net.impl.endpoint.EndpointManager<EndpointKey, SharedClientHttpStreamEndpoint> httpCM;
+  private final EndpointResolverImpl<?, Address, ?> endpointResolver;
   private volatile Function<HttpClientResponse, Future<RequestOptions>> redirectHandler = DEFAULT_HANDLER;
   private long timerID;
   private volatile Handler<HttpConnection> connectionHandler;
@@ -113,9 +113,9 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
                         PoolOptions poolOptions) {
     super(vertx, options);
 
-    this.endpointResolver = endpointResolver;
+    this.endpointResolver = (EndpointResolverImpl) endpointResolver;
     this.poolOptions = poolOptions;
-    httpCM = new EndpointManager<>();
+    httpCM = new io.vertx.core.net.impl.endpoint.EndpointManager<>();
     if (poolOptions.getCleanerPeriod() > 0 && (options.getKeepAliveTimeout() > 0L || options.getHttp2KeepAliveTimeout() > 0L)) {
       PoolChecker checker = new PoolChecker(this);
       ContextInternal timerContext = vertx.createEventLoopContext();
@@ -382,8 +382,10 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     ContextInternal connCtx = ctx.isEventLoopContext() ? ctx : vertx.createEventLoopContext(ctx.nettyEventLoop(), ctx.workerPool(), ctx.classLoader());
     Promise<HttpClientRequest> promise = ctx.promise();
     Future<ConnectionObtainedResult> future;
-    if (endpointResolver != null && endpointResolver.accepts(server) != null) {
-      Future<EndpointLookup> fut = endpointResolver.lookupEndpoint(ctx, server, routingKey);
+    if (endpointResolver != null) {
+      Future<EndpointNode> fut = endpointResolver
+        .lookupEndpoint(ctx, server)
+        .map(endpoint -> endpoint.selectNode(routingKey));
       future = fut.compose(lookup -> {
         SocketAddress address = lookup.address();
         ProxyOptions proxyOptions = computeProxyOptions(proxyConfig, address);
@@ -393,7 +395,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
           if (fut2 == null) {
             return null;
           } else {
-            EndpointRequest endpointRequest = lookup.initiateRequest();
+            Interaction endpointRequest = lookup.initiateInteraction();
             return fut2.andThen(ar -> {
               if (ar.failed()) {
                 endpointRequest.reportFailure(ar.cause());

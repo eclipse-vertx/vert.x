@@ -8,24 +8,25 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.spi.resolver.address;
+package io.vertx.core.spi.endpoint;
 
 import io.vertx.core.Future;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.Address;
 import io.vertx.core.net.SocketAddress;
 
 /**
- * Address resolver Service Provider Interface (SPI).
+ * Endpoint resolver Service Provider Interface (SPI).
  *
- * <p> {@link #resolve)} resolves an address to resolver managed state {@code <S>}. State modifying methods can be called concurrently, the implementation is responsible
- * to manage the concurrent state modifications.
+ * <p> {@link #resolve)} resolves an address to resolver managed state {@code <S>}. State modifying methods can be called
+ * concurrently, the implementation is responsible to manage the concurrent state modifications.
  *
- * @param <S> the type of the state managed by the resolver
+ * @param <D> the type of the state managed by the resolver
  * @param <A> the type of {@link Address} resolved
+ * @param <S> the type of the server
  * @param <E> the type of the endpoint
- * @param <L> the type of the list of endpoints
  */
-public interface AddressResolver<A extends Address, E, S, L> {
+public interface EndpointResolver<A extends Address, S, D, E> {
 
   /**
    * Try to cast the {@code address} to an address instance that can be resolved by this resolver instance.
@@ -38,42 +39,52 @@ public interface AddressResolver<A extends Address, E, S, L> {
   /**
    * Returns the socket address of a given {@code endpoint}.
    *
-   * @param endpoint the endpoint
+   * @param server the endpoint
    * @return the endpoint socket address
    */
-  SocketAddress addressOfEndpoint(E endpoint);
+  SocketAddress addressOf(S server);
+
+  /**
+   * Returns the known properties of a give {@code server}.
+   *
+   * @param server the endpoint
+   * @return the properties as a JSON object
+   */
+  default JsonObject propertiesOf(S server) {
+    return new JsonObject();
+  }
 
   /**
    * Resolve an address to the resolver state for this name.
    *
    * @param address the address to resolve
-   * @param builder the endpoint list builder
+   * @param builder the endpoint builder
    * @return a future notified with the result
    */
-  Future<S> resolve(A address, EndpointListBuilder<L, E> builder);
+  Future<D> resolve(A address, EndpointBuilder<E, S> builder);
 
   /**
    * Return the current list of endpoint visible by the resolver.
    *
-   * @param state the resolver state
+   * @param data the resolver state
    * @return the list of endpoints
    */
-  L endpoints(S state);
+  E endpoint(D data);
 
   /**
    * Check the state validity.
    *
-   * @param state resolver state
+   * @param data resolver state
    * @return the state validity
    */
-  boolean isValid(S state);
+  boolean isValid(D data);
 
   /**
    * Dispose the state.
    *
-   * @param state the state
+   * @param data the state
    */
-  void dispose(S state);
+  void dispose(D data);
 
   /**
    * Close this resolver.

@@ -1,7 +1,10 @@
 package io.vertx.core.loadbalancing;
 
-import io.vertx.core.spi.loadbalancing.Endpoint;
-import io.vertx.core.spi.loadbalancing.EndpointSelector;
+import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.endpoint.EndpointNode;
+import io.vertx.core.net.endpoint.Interaction;
+import io.vertx.core.net.endpoint.InteractionMetrics;
+import io.vertx.core.net.endpoint.EndpointSelector;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -33,15 +36,38 @@ public class LoadBalancingCornerCasesTest {
 
   @Test
   public void testCornerCases() {
-    List<Endpoint<?>>  metrics = new ArrayList<>();
-    EndpointSelector selector = loadBalancer.selector(metrics);
+    List<EndpointNode> instances = new ArrayList<>();
+    EndpointSelector selector = loadBalancer.selector(instances);
     // Randomness is involved in some policies.
     for (int i = 0; i < 1000; i++) {
-      assertEquals(-1, selector.selectEndpoint());
+      assertEquals(-1, selector.select());
     }
-    metrics.add(loadBalancer.endpointOf(null, null));
+    EndpointNode instance = new EndpointNode() {
+      InteractionMetrics<?> metrics = loadBalancer.newMetrics();
+      @Override
+      public SocketAddress address() {
+        return null;
+      }
+      @Override
+      public Object unwrap() {
+        return null;
+      }
+      @Override
+      public String key() {
+        return "";
+      }
+      @Override
+      public InteractionMetrics<?> metrics() {
+        return metrics;
+      }
+      @Override
+      public Interaction initiateInteraction() {
+        return null;
+      }
+    };
+    instances.add(instance);
     for (int i = 0; i < 1000; i++) {
-      assertEquals(0, selector.selectEndpoint());
+      assertEquals(0, selector.select());
     }
   }
 }

@@ -1,61 +1,38 @@
 package io.vertx.test.fakeloadbalancer;
 
-import io.vertx.core.spi.loadbalancing.Endpoint;
-import io.vertx.core.spi.loadbalancing.EndpointSelector;
+import io.vertx.core.net.endpoint.EndpointNode;
+import io.vertx.core.net.endpoint.EndpointSelector;
 import io.vertx.core.loadbalancing.LoadBalancer;
-import io.vertx.core.spi.loadbalancing.EndpointMetrics;
+import io.vertx.core.net.endpoint.InteractionMetrics;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class FakeLoadBalancer implements LoadBalancer {
 
-  List<? extends Endpoint<?>> endpoints;
+  List<? extends EndpointNode> endpoints;
 
-  public List<? extends Endpoint<?>> endpoints() {
+  public List<? extends EndpointNode> endpoints() {
     return endpoints;
   }
 
   @Override
-  public EndpointSelector selector(List<? extends Endpoint<?>> endpoints) {
-    this.endpoints = endpoints;
-    return LoadBalancer.ROUND_ROBIN.selector(endpoints);
+  public InteractionMetrics<?> newMetrics() {
+    return new FakeInteractionMetrics<>();
   }
 
   @Override
-  public <E> Endpoint<E> endpointOf(E endpoint, String id) {
-    return new FakeEndpointMetrics<>(endpoint, id);
+  public EndpointSelector selector(List<? extends EndpointNode> nodes) {
+    this.endpoints = nodes;
+    return LoadBalancer.ROUND_ROBIN.selector(nodes);
   }
 
-  public static class FakeEndpointMetrics<E> implements EndpointMetrics<FakeMetric>, Endpoint<E> {
+  public static class FakeInteractionMetrics<E> implements InteractionMetrics<FakeMetric> {
 
     List<FakeMetric> metrics = new ArrayList<>();
 
     public List<FakeMetric> metrics2() {
       return metrics;
-    }
-
-    private final E endpoint;
-    private final String id;
-
-    public FakeEndpointMetrics(E endpoint, String id) {
-      this.endpoint = endpoint;
-      this.id = id;
-    }
-
-    @Override
-    public EndpointMetrics<?> metrics() {
-      return this;
-    }
-
-    @Override
-    public String key() {
-      return id;
-    }
-
-    @Override
-    public E endpoint() {
-      return endpoint;
     }
 
     @Override

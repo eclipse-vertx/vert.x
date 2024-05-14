@@ -8,15 +8,18 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.spi.loadbalancing;
+package io.vertx.core.net.endpoint;
 
 /**
- * Gather metrics for an endpoint, this interface is write-only and used by the resolver to report
- * usage to build statistics for a load balancing algorithm.
+ * Gather metrics for a request/response interaction with an endpoint instance, this interface is write-only and used to report
+ * usage to build statistics for a load balancing implementation.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface EndpointMetrics<M> {
+public interface InteractionMetrics<M> {
+
+  InteractionMetrics<?> INSTANCE = new InteractionMetrics<>() {
+  };
 
   /**
    * Initiate a request

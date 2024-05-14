@@ -8,50 +8,31 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.spi.loadbalancing;
+package io.vertx.core.net.endpoint;
 
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 
-public class DefaultEndpointMetrics<E> implements Endpoint<E>, EndpointMetrics<RequestMetric> {
+/**
+ * Default interaction metrics.
+ */
+public class DefaultInteractionMetrics implements InteractionMetrics<InteractionMetric> {
 
-  private final E endpoint;
-  private final String id;
   private final LongAdder numberOfInflightRequests = new LongAdder();
   private final LongAdder numberOfRequests = new LongAdder();
   private final LongAdder numberOfFailures = new LongAdder();
   private final AtomicLong minResponseTime = new AtomicLong(Long.MAX_VALUE);
   private final AtomicLong maxResponseTime = new AtomicLong(0);
 
-  public DefaultEndpointMetrics(E endpoint, String id) {
-    this.endpoint = endpoint;
-    this.id = id;
-  }
-
   @Override
-  public String key() {
-    return id;
-  }
-
-  @Override
-  public E endpoint() {
-    return endpoint;
-  }
-
-  @Override
-  public EndpointMetrics<?> metrics() {
-    return this;
-  }
-
-  @Override
-  public RequestMetric initiateRequest() {
+  public InteractionMetric initiateRequest() {
     numberOfInflightRequests.increment();
     numberOfRequests.increment();
-    return new RequestMetric();
+    return new InteractionMetric();
   }
 
   @Override
-  public void reportFailure(RequestMetric metric, Throwable failure) {
+  public void reportFailure(InteractionMetric metric, Throwable failure) {
     if (metric.failure == null) {
       metric.failure = failure;
       numberOfInflightRequests.decrement();
@@ -60,22 +41,22 @@ public class DefaultEndpointMetrics<E> implements Endpoint<E>, EndpointMetrics<R
   }
 
   @Override
-  public void reportRequestBegin(RequestMetric metric) {
+  public void reportRequestBegin(InteractionMetric metric) {
     metric.requestBegin = System.currentTimeMillis();
   }
 
   @Override
-  public void reportRequestEnd(RequestMetric metric) {
+  public void reportRequestEnd(InteractionMetric metric) {
     metric.requestEnd = System.currentTimeMillis();
   }
 
   @Override
-  public void reportResponseBegin(RequestMetric metric) {
+  public void reportResponseBegin(InteractionMetric metric) {
     metric.responseBegin = System.currentTimeMillis();
   }
 
   @Override
-  public void reportResponseEnd(RequestMetric metric) {
+  public void reportResponseEnd(InteractionMetric metric) {
     metric.responseEnd = System.currentTimeMillis();
     if (metric.failure == null) {
       reportRequestMetric(metric);
@@ -83,7 +64,7 @@ public class DefaultEndpointMetrics<E> implements Endpoint<E>, EndpointMetrics<R
     }
   }
 
-  void reportRequestMetric(RequestMetric metric) {
+  private void reportRequestMetric(InteractionMetric metric) {
     long responseTime = metric.responseEnd - metric.requestBegin;
     while (true) {
       long val = minResponseTime.get();
@@ -120,10 +101,16 @@ public class DefaultEndpointMetrics<E> implements Endpoint<E>, EndpointMetrics<R
     return numberOfFailures.intValue();
   }
 
+  /**
+   * @return the min response time
+   */
   public int minResponseTime() {
     return minResponseTime.intValue();
   }
 
+  /**
+   * @return the max response time
+   */
   public int maxResponseTime() {
     return maxResponseTime.intValue();
   }

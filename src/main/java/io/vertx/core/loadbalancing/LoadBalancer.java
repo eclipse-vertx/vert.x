@@ -10,10 +10,12 @@
  */
 package io.vertx.core.loadbalancing;
 
-import io.vertx.core.spi.loadbalancing.DefaultEndpointMetrics;
-import io.vertx.core.spi.loadbalancing.Endpoint;
-import io.vertx.core.spi.loadbalancing.EndpointMetrics;
-import io.vertx.core.spi.loadbalancing.EndpointSelector;
+import io.vertx.core.loadbalancing.impl.ConsistentHashingSelector;
+import io.vertx.core.loadbalancing.impl.NoMetricsLoadBalancer;
+import io.vertx.core.net.endpoint.EndpointNode;
+import io.vertx.core.net.endpoint.DefaultInteractionMetrics;
+import io.vertx.core.net.endpoint.InteractionMetrics;
+import io.vertx.core.net.endpoint.EndpointSelector;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -21,63 +23,47 @@ import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * A load balancer.
- *
+ * <p>
  * A load balancer is stateless besides the configuration part. Effective load balancing can be achieved with
- * {@link #selector(List)} which creates a stateful {@link EndpointSelector} implementing the load balancing policy.
+ * {@link #selector(List)} which creates a stateful {@link EndpointSelector} implementing the load balancing algorithm.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public interface LoadBalancer {
 
   /**
-   * Create a load balancer endpoint view for the given generic {@code endpoint}
+   * @implSpec
+   * The default implementation returns a new instance of {@link DefaultInteractionMetrics}.
    *
-   * @param endpoint the endpoint to wrap
-   * @param id the id of the endpoint
-   * @return the wrapped endpoint
+   * @return a new interaction metrics instance
    */
-  default <E> Endpoint<E> endpointOf(E endpoint, String id) {
-    EndpointMetrics<?> metrics = new EndpointMetrics<>() {
-    };
-    return new Endpoint<>() {
-      @Override
-      public String key() {
-        return id;
-      }
-      @Override
-      public E endpoint() {
-        return endpoint;
-      }
-      @Override
-      public EndpointMetrics<?> metrics() {
-        return metrics;
-      }
-    };
+  default InteractionMetrics<?> newMetrics() {
+    return new DefaultInteractionMetrics();
   }
 
   /**
    * Simple round-robin load balancer.
    */
-  LoadBalancer ROUND_ROBIN = endpoints -> {
+  LoadBalancer ROUND_ROBIN = (NoMetricsLoadBalancer) nodes -> {
     AtomicInteger idx = new AtomicInteger();
-    return (EndpointSelector) () -> {
-      if (endpoints.isEmpty()) {
+    return () -> {
+      if (nodes.isEmpty()) {
         return -1;
       }
       int next = idx.getAndIncrement();
-      return next % endpoints.size();
+      return next % nodes.size();
     };
   };
 
   /**
    * Least requests load balancer.
    */
-  LoadBalancer LEAST_REQUESTS = (LoadBalancer2) endpoints -> () -> {
+  LoadBalancer LEAST_REQUESTS = nodes -> () -> {
     int numberOfRequests = Integer.MAX_VALUE;
     int selected = -1;
     int idx = 0;
-    for (Endpoint<?> endpoint : endpoints) {
-      int val = ((DefaultEndpointMetrics)endpoint).numberOfInflightRequests();
+    for (EndpointNode node : nodes) {
+      int val = ((DefaultInteractionMetrics)node.metrics()).numberOfInflightRequests();
       if (val < numberOfRequests) {
         numberOfRequests = val;
         selected = idx;
@@ -90,28 +76,28 @@ public interface LoadBalancer {
   /**
    * Random load balancer.
    */
-  LoadBalancer RANDOM = (LoadBalancer2) endpoints -> () -> {
-    if (endpoints.isEmpty()) {
+  LoadBalancer RANDOM = (NoMetricsLoadBalancer) nodes -> () -> {
+    if (nodes.isEmpty()) {
       return -1;
     }
-    return ThreadLocalRandom.current().nextInt(endpoints.size());
+    return ThreadLocalRandom.current().nextInt(nodes.size());
   };
 
   /**
    * Power of two choices load balancer.
    */
-  LoadBalancer POWER_OF_TWO_CHOICES = (LoadBalancer2) endpoints -> (EndpointSelector) () -> {
-    if (endpoints.isEmpty()) {
+  LoadBalancer POWER_OF_TWO_CHOICES = nodes -> () -> {
+    if (nodes.isEmpty()) {
       return -1;
-    } else if (endpoints.size() == 1) {
+    } else if (nodes.size() == 1) {
       return 0;
     }
-    int i1 = ThreadLocalRandom.current().nextInt(endpoints.size());
-    int i2 = ThreadLocalRandom.current().nextInt(endpoints.size());
+    int i1 = ThreadLocalRandom.current().nextInt(nodes.size());
+    int i2 = ThreadLocalRandom.current().nextInt(nodes.size());
     while (i2 == i1) {
-      i2 = ThreadLocalRandom.current().nextInt(endpoints.size());
+      i2 = ThreadLocalRandom.current().nextInt(nodes.size());
     }
-    if (((DefaultEndpointMetrics<?>) endpoints.get(i1)).numberOfInflightRequests() < ((DefaultEndpointMetrics<?>) endpoints.get(i2)).numberOfInflightRequests()) {
+    if (((DefaultInteractionMetrics) nodes.get(i1).metrics()).numberOfInflightRequests() < ((DefaultInteractionMetrics) nodes.get(i2).metrics()).numberOfInflightRequests()) {
       return i1;
     }
     return i2;
@@ -131,9 +117,9 @@ public interface LoadBalancer {
    * @return the load balancer
    */
   static LoadBalancer consistentHashing(int numberOfVirtualNodes, LoadBalancer fallback) {
-    return endpoints -> {
-      EndpointSelector fallbackSelector = fallback.selector(endpoints);
-      return new ConsistentHashingSelector(endpoints, numberOfVirtualNodes, fallbackSelector);
+    return nodes -> {
+      EndpointSelector fallbackSelector = fallback.selector(nodes);
+      return new ConsistentHashingSelector(nodes, numberOfVirtualNodes, fallbackSelector);
     };
   }
 
@@ -141,6 +127,6 @@ public interface LoadBalancer {
    * Create a stateful endpoint selector.
    * @return the selector
    */
-  EndpointSelector selector(List<? extends Endpoint<?>> endpoints);
+  EndpointSelector selector(List<? extends EndpointNode> nodes);
 
 }

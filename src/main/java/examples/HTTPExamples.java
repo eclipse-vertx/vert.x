@@ -24,7 +24,7 @@ import io.vertx.core.loadbalancing.LoadBalancer;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
-import io.vertx.core.spi.loadbalancing.Endpoint;
+import io.vertx.core.net.endpoint.EndpointNode;
 import io.vertx.core.streams.Pipe;
 import io.vertx.core.streams.ReadStream;
 
@@ -1457,7 +1457,7 @@ public class HTTPExamples {
       .build();
   }
 
-  private static int indexOfEndpoint(List<? extends Endpoint<?>> endpoints) {
+  private static int indexOfEndpoint(List<? extends EndpointNode> endpoints) {
     return 0;
   }
 

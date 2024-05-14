@@ -27,6 +27,7 @@ import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.endpoint.EndpointResolver;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.VertxMetricsFactory;

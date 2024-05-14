@@ -17,6 +17,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.Utils;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import org.hamcrest.Matcher;
@@ -620,7 +621,8 @@ public class AsyncTestBase {
     try {
       return cs.toCompletableFuture().get(timeout, unit);
     } catch (ExecutionException e) {
-      throw new RuntimeException(e);
+      Utils.throwAsUnchecked(e.getCause());
+      return null;
     } catch (TimeoutException e) {
       throw new AssertionError(e);
     }

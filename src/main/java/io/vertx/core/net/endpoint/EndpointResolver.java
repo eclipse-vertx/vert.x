@@ -8,10 +8,9 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.spi.resolver.endpoint;
+package io.vertx.core.net.endpoint;
 
 import io.vertx.core.Future;
-import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.Address;
 
 /**
@@ -22,29 +21,11 @@ import io.vertx.core.net.Address;
 public interface EndpointResolver<A extends Address> {
 
   /**
-   * Check whether the resolver accepts the {@code Address} and returns the cast address.
-   *
-   * @param address the addrss to check
-   * @return the cast address
-   */
-  A accepts(Address address);
-
-  /**
-   * Lookup an endpoint for the specified {@code address}
-   * @param ctx the vertx context
+   * Resolver an endpoint for the specified {@code address}
    * @param address the address to lookup
    * @return the endpoint lookup result
    */
-  Future<EndpointLookup> lookupEndpoint(ContextInternal ctx, A address);
-
-  /**
-   * Lookup an endpoint for the specified {@code address}
-   * @param ctx the vertx context
-   * @param address the address to lookup
-   * @param routingKey the key used to select an endpoint for sticky strategies
-   * @return the endpoint lookup result
-   */
-  Future<EndpointLookup> lookupEndpoint(ContextInternal ctx, A address, String routingKey);
+  Future<Endpoint> resolveEndpoint(A address);
 
   /**
    * Check expired endpoints, this method is called by the client periodically to give the opportunity to trigger eviction

@@ -10,8 +10,8 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.loadbalancing.LoadBalancer;
 import io.vertx.core.net.AddressResolver;
-import io.vertx.core.net.impl.resolver.EndpointResolverImpl;
-import io.vertx.core.spi.resolver.endpoint.EndpointResolver;
+import io.vertx.core.net.endpoint.impl.EndpointResolverImpl;
+import io.vertx.core.net.endpoint.EndpointResolver;
 
 import java.util.function.Function;
 
@@ -22,9 +22,8 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
   private PoolOptions poolOptions;
   private Handler<HttpConnection> connectHandler;
   private Function<HttpClientResponse, Future<RequestOptions>> redirectHandler;
-  private io.vertx.core.net.AddressResolver addressResolver;
+  private AddressResolver addressResolver;
   private LoadBalancer loadBalancer = null;
-  private EndpointResolver<?> endpointResolver;
 
   public HttpClientBuilderInternal(VertxInternal vertx) {
     this.vertx = vertx;
@@ -55,7 +54,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
   }
 
   @Override
-  public HttpClientBuilder withAddressResolver(io.vertx.core.net.AddressResolver addressResolver) {
+  public HttpClientBuilder withAddressResolver(AddressResolver addressResolver) {
     this.addressResolver = addressResolver;
     return this;
   }
@@ -66,17 +65,12 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
     return this;
   }
 
-  public HttpClientBuilderInternal withEndpointResolver(EndpointResolver<?> resolver) {
-    endpointResolver = resolver;
-    return this;
-  }
-
   private CloseFuture resolveCloseFuture() {
     ContextInternal context = vertx.getContext();
     return context != null ? context.closeFuture() : vertx.closeFuture();
   }
 
-  private EndpointResolver<?> endpointResolver(HttpClientOptions co) {
+  private EndpointResolver endpointResolver(HttpClientOptions co) {
     LoadBalancer _loadBalancer = loadBalancer;
     AddressResolver _addressResolver = addressResolver;
     if (_loadBalancer != null) {
@@ -88,11 +82,10 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
         _loadBalancer = LoadBalancer.ROUND_ROBIN;
       }
     }
-    EndpointResolver<?> resolver = endpointResolver;
-    if (endpointResolver == null && _addressResolver != null) {
-      resolver = new EndpointResolverImpl<>(_addressResolver.resolver(vertx), _loadBalancer, co.getKeepAliveTimeout() * 1000);
+    if (_addressResolver != null) {
+      return new EndpointResolverImpl<>(vertx, _addressResolver.endpointResolver(vertx), _loadBalancer, co.getKeepAliveTimeout() * 1000);
     }
-    return resolver;
+    return null;
   }
 
   @Override
