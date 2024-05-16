@@ -10,14 +10,13 @@
  */
 package io.vertx.core.streams.impl;
 
-import io.netty.util.concurrent.FastThreadLocalThread;
 import io.vertx.core.Context;
 import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
 import io.vertx.core.impl.ContextInternal;
 
 import java.util.ArrayDeque;
 import java.util.Collection;
+import java.util.Objects;
 
 /**
  * A buffer that transfers elements to an handler with back-pressure.
@@ -87,6 +86,28 @@ public class InboundBuffer<E> {
   }
 
   public InboundBuffer(Context context, long highWaterMark) {
+    this(context, highWaterMark, Long.MAX_VALUE, null, null);
+  }
+
+  public static <E> InboundBuffer<E> createPaused(Context context, long highWaterMark, Handler<Void> drainHandler, Handler<E> handler) {
+    Objects.requireNonNull(drainHandler);
+    Objects.requireNonNull(handler);
+    return new InboundBuffer<>(context, highWaterMark, 0L, drainHandler, handler);
+  }
+
+  public static <E> InboundBuffer<E> createAndFetch(Context context, long highWaterMark, long demand, Handler<Void> drainHandler, Handler<E> handler) {
+    Objects.requireNonNull(drainHandler);
+    Objects.requireNonNull(handler);
+    checkPositiveAmount(demand);
+    InboundBuffer<E> inboundBuffer = new InboundBuffer<>(context, highWaterMark, Long.MAX_VALUE, drainHandler, handler);
+    if (inboundBuffer.emit(demand)) {
+      inboundBuffer.asyncDrain();
+      inboundBuffer.context.runOnContext(v -> inboundBuffer.drain());
+    }
+    return inboundBuffer;
+  }
+
+  private InboundBuffer(Context context, long highWaterMark, long demand, Handler<Void> drainHandler, Handler<E> handler) {
     if (context == null) {
       throw new NullPointerException("context must not be null");
     }
@@ -95,9 +116,11 @@ public class InboundBuffer<E> {
     }
     this.context = (ContextInternal) context;
     this.highWaterMark = highWaterMark;
-    this.demand = Long.MAX_VALUE;
+    this.demand = demand;
     // empty ArrayDeque's constructor ArrayDeque allocates 16 elements; let's delay the allocation to be of the proper size
     this.pending = null;
+    this.drainHandler = drainHandler;
+    this.handler = handler;
   }
 
   private void checkThread() {
@@ -139,7 +162,8 @@ public class InboundBuffer<E> {
     if (demand == Long.MAX_VALUE) {
       return true;
     } else {
-      long actual = size() - demand;
+      int size = pending == null ? 0 : pending.size();
+      long actual = size - demand;
       boolean writable = actual < highWaterMark;
       overflow |= !writable;
       return writable;
@@ -279,21 +303,37 @@ public class InboundBuffer<E> {
    * @return {@code true} when the buffer will be drained
    */
   public boolean fetch(long amount) {
+    checkPositiveAmount(amount);
+    synchronized (this) {
+      if (!emit(amount)) {
+        return false;
+      }
+    }
+    asyncDrain();
+    return true;
+  }
+
+  private void asyncDrain() {
+    context.runOnContext(v -> drain());
+  }
+
+  private boolean emit(long amount) {
+    assert amount >= 0L;
+    demand += amount;
+    if (demand < 0L) {
+      demand = Long.MAX_VALUE;
+    }
+    if (emitting || (isEmpty() && !overflow)) {
+      return false;
+    }
+    emitting = true;
+    return true;
+  }
+
+  private static void checkPositiveAmount(long amount) {
     if (amount < 0L) {
       throw new IllegalArgumentException();
     }
-    synchronized (this) {
-      demand += amount;
-      if (demand < 0L) {
-        demand = Long.MAX_VALUE;
-      }
-      if (emitting || (isEmpty() && !overflow)) {
-        return false;
-      }
-      emitting = true;
-    }
-    context.runOnContext(v -> drain());
-    return true;
   }
 
   /**
