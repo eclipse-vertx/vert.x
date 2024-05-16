@@ -38,7 +38,7 @@ import java.util.function.BiFunction;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class EndpointResolverImpl<S, A extends Address, E> implements EndpointResolverInternal<A> {
+public class EndpointResolverImpl<S, A extends Address, E> implements EndpointResolverInternal {
 
   private final VertxInternal vertx;
   private final LoadBalancer loadBalancer;
@@ -67,11 +67,11 @@ public class EndpointResolverImpl<S, A extends Address, E> implements EndpointRe
   }
 
   @Override
-  public Future<io.vertx.core.net.endpoint.Endpoint> resolveEndpoint(A address) {
+  public Future<io.vertx.core.net.endpoint.Endpoint> resolveEndpoint(Address address) {
     return lookupEndpoint2(vertx.getOrCreateContext(), address);
   }
 
-  public Future<io.vertx.core.net.endpoint.Endpoint> lookupEndpoint(ContextInternal ctx, A address) {
+  public Future<io.vertx.core.net.endpoint.Endpoint> lookupEndpoint(ContextInternal ctx, Address address) {
     return lookupEndpoint2(ctx, address);
   }
 
@@ -116,7 +116,7 @@ public class EndpointResolverImpl<S, A extends Address, E> implements EndpointRe
     }
   }
 
-  private Future<io.vertx.core.net.endpoint.Endpoint> lookupEndpoint2(ContextInternal ctx, A address) {
+  private Future<io.vertx.core.net.endpoint.Endpoint> lookupEndpoint2(ContextInternal ctx, Address address) {
     A casted = endpointResolver.tryCast(address);
     if (casted == null) {
       return ctx.failedFuture("Cannot resolve address " + address);

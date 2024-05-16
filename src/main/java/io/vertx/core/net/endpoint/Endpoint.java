@@ -10,8 +10,11 @@
  */
 package io.vertx.core.net.endpoint;
 
+import io.vertx.codegen.annotations.VertxGen;
+
 import java.util.List;
 
+@VertxGen
 public interface Endpoint {
 
   /**

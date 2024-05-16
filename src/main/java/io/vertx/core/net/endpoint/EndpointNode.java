@@ -10,6 +10,8 @@
  */
 package io.vertx.core.net.endpoint;
 
+import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.net.SocketAddress;
 
 /**
@@ -17,6 +19,7 @@ import io.vertx.core.net.SocketAddress;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
+@VertxGen
 public interface EndpointNode {
 
   /**
@@ -37,7 +40,10 @@ public interface EndpointNode {
   EndpointInteraction newInteraction();
 
   // Should be private somehow
+  @GenIgnore
   InteractionMetrics<?> metrics();
+
+  @GenIgnore
   Object unwrap();
 
 }

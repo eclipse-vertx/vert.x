@@ -10,11 +10,14 @@
  */
 package io.vertx.core.net.endpoint;
 
+import io.vertx.codegen.annotations.VertxGen;
+
 /**
  * Request interaction with an endpoint, mostly callbacks to gather statistics.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
+@VertxGen
 public interface EndpointInteraction {
 
   /**

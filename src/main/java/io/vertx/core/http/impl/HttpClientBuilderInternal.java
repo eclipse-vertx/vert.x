@@ -95,7 +95,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
     CloseFuture cf = resolveCloseFuture();
     HttpClientAgent client;
     Closeable closeable;
-    EndpointResolver<?> resolver = endpointResolver(co);
+    EndpointResolver resolver = endpointResolver(co);
     if (co.isShared()) {
       CloseFuture closeFuture = new CloseFuture();
       client = vertx.createSharedResource("__vertx.shared.httpClients", co.getName(), closeFuture, cf_ -> {

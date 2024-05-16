@@ -102,14 +102,14 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
 
   private final PoolOptions poolOptions;
   private final io.vertx.core.net.impl.endpoint.EndpointManager<EndpointKey, SharedClientHttpStreamEndpoint> httpCM;
-  private final EndpointResolverInternal<Address> endpointResolver;
+  private final EndpointResolverInternal endpointResolver;
   private volatile Function<HttpClientResponse, Future<RequestOptions>> redirectHandler = DEFAULT_HANDLER;
   private long timerID;
   private volatile Handler<HttpConnection> connectionHandler;
   private final Function<ContextInternal, ContextInternal> contextProvider;
 
   public HttpClientImpl(VertxInternal vertx,
-                        EndpointResolver<?> endpointResolver,
+                        EndpointResolver endpointResolver,
                         HttpClientOptions options,
                         PoolOptions poolOptions) {
     super(vertx, options);

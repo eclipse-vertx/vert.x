@@ -10,6 +10,7 @@
  */
 package io.vertx.core.net.endpoint;
 
+import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.net.Address;
 
@@ -18,13 +19,14 @@ import io.vertx.core.net.Address;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface EndpointResolver<A extends Address> {
+@VertxGen
+public interface EndpointResolver {
 
   /**
    * Resolver an endpoint for the specified {@code address}
    * @param address the address to lookup
    * @return the endpoint lookup result
    */
-  Future<Endpoint> resolveEndpoint(A address);
+  Future<Endpoint> resolveEndpoint(Address address);
 
 }
