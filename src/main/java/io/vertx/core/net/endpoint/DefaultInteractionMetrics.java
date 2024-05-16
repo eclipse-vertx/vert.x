@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.LongAdder;
 /**
  * Default interaction metrics.
  */
-public class DefaultInteractionMetrics implements InteractionMetrics<InteractionMetric> {
+public class DefaultInteractionMetrics implements InteractionMetrics<DefaultInteractionMetric> {
 
   private final LongAdder numberOfInflightRequests = new LongAdder();
   private final LongAdder numberOfRequests = new LongAdder();
@@ -25,14 +25,14 @@ public class DefaultInteractionMetrics implements InteractionMetrics<Interaction
   private final AtomicLong maxResponseTime = new AtomicLong(0);
 
   @Override
-  public InteractionMetric initiateRequest() {
+  public DefaultInteractionMetric initiateRequest() {
     numberOfInflightRequests.increment();
     numberOfRequests.increment();
-    return new InteractionMetric();
+    return new DefaultInteractionMetric();
   }
 
   @Override
-  public void reportFailure(InteractionMetric metric, Throwable failure) {
+  public void reportFailure(DefaultInteractionMetric metric, Throwable failure) {
     if (metric.failure == null) {
       metric.failure = failure;
       numberOfInflightRequests.decrement();
@@ -41,22 +41,22 @@ public class DefaultInteractionMetrics implements InteractionMetrics<Interaction
   }
 
   @Override
-  public void reportRequestBegin(InteractionMetric metric) {
+  public void reportRequestBegin(DefaultInteractionMetric metric) {
     metric.requestBegin = System.currentTimeMillis();
   }
 
   @Override
-  public void reportRequestEnd(InteractionMetric metric) {
+  public void reportRequestEnd(DefaultInteractionMetric metric) {
     metric.requestEnd = System.currentTimeMillis();
   }
 
   @Override
-  public void reportResponseBegin(InteractionMetric metric) {
+  public void reportResponseBegin(DefaultInteractionMetric metric) {
     metric.responseBegin = System.currentTimeMillis();
   }
 
   @Override
-  public void reportResponseEnd(InteractionMetric metric) {
+  public void reportResponseEnd(DefaultInteractionMetric metric) {
     metric.responseEnd = System.currentTimeMillis();
     if (metric.failure == null) {
       reportRequestMetric(metric);
@@ -64,7 +64,7 @@ public class DefaultInteractionMetrics implements InteractionMetrics<Interaction
     }
   }
 
-  private void reportRequestMetric(InteractionMetric metric) {
+  private void reportRequestMetric(DefaultInteractionMetric metric) {
     long responseTime = metric.responseEnd - metric.requestBegin;
     while (true) {
       long val = minResponseTime.get();

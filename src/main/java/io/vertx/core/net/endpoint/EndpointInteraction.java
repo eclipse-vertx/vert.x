@@ -15,7 +15,7 @@ package io.vertx.core.net.endpoint;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface Interaction {
+public interface EndpointInteraction {
 
   /**
    * Report a failure.

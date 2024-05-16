@@ -27,10 +27,4 @@ public interface EndpointResolver<A extends Address> {
    */
   Future<Endpoint> resolveEndpoint(A address);
 
-  /**
-   * Check expired endpoints, this method is called by the client periodically to give the opportunity to trigger eviction
-   * or refreshes.
-   */
-  void checkExpired();
-
 }

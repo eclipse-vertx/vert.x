@@ -12,11 +12,11 @@ package io.vertx.core.net.endpoint.impl;
 
 import io.vertx.core.Future;
 import io.vertx.core.net.endpoint.EndpointNode;
-import io.vertx.core.net.endpoint.Interaction;
+import io.vertx.core.net.endpoint.EndpointInteraction;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.endpoint.InteractionMetrics;
-import io.vertx.core.loadbalancing.LoadBalancer;
+import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.Address;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.endpoint.Endpoint;
@@ -38,7 +38,7 @@ import java.util.function.BiFunction;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class EndpointResolverImpl<S, A extends Address, E> implements io.vertx.core.net.endpoint.EndpointResolver<A> {
+public class EndpointResolverImpl<S, A extends Address, E> implements EndpointResolverInternal<A> {
 
   private final VertxInternal vertx;
   private final LoadBalancer loadBalancer;
@@ -104,11 +104,11 @@ public class EndpointResolverImpl<S, A extends Address, E> implements io.vertx.c
       }
       return null;
     }
-    public EndpointNode selectNode(String routingKey) {
+    public EndpointNode selectNode(String key) {
       if (!endpointResolver.isValid(state)) {
         throw new IllegalStateException("Cannot resolve address " + address );
       }
-      EndpointNode endpoint = selectEndpoint(state, routingKey);
+      EndpointNode endpoint = selectEndpoint(state, key);
       if (endpoint == null) {
         throw new IllegalStateException("No results for " + address );
       }
@@ -245,11 +245,11 @@ public class EndpointResolverImpl<S, A extends Address, E> implements io.vertx.c
       return endpointResolver.addressOf(endpoint);
     }
     @Override
-    public Interaction initiateInteraction() {
+    public EndpointInteraction newInteraction() {
       lastAccessed.set(System.currentTimeMillis());
       InteractionMetrics metrics = this.metrics;
       Object metric = metrics.initiateRequest();
-      return new Interaction() {
+      return new EndpointInteraction() {
         @Override
         public void reportRequestBegin() {
           metrics.reportRequestBegin(metric);

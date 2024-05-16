@@ -6,7 +6,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.CleanableHttpClient;
 import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.http.impl.HttpClientInternal;
-import io.vertx.core.loadbalancing.LoadBalancer;
+import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.*;
 import io.vertx.core.net.endpoint.EndpointNode;
 import io.vertx.core.spi.endpoint.EndpointBuilder;
@@ -332,7 +332,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
       .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
       .compose(HttpClientResponse::body)
     ));
-    FakeLoadBalancer.FakeInteractionMetrics<?> endpoint = (FakeLoadBalancer.FakeInteractionMetrics<?>) ((EndpointNode) lb.endpoints().get(0)).metrics();
+    FakeLoadBalancer.FakeLoadBalancerMetrics<?> endpoint = (FakeLoadBalancer.FakeLoadBalancerMetrics<?>) ((EndpointNode) lb.endpoints().get(0)).metrics();
     FakeLoadBalancer.FakeMetric metric = endpoint.metrics2().get(0);
     assertTrue(metric.requestEnd() - metric.requestBegin() >= 0);
     assertTrue(metric.responseBegin() - metric.requestEnd() > 500);
@@ -367,7 +367,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     } catch (Throwable e) {
       assertTrue(e.getMessage().contains("timeout"));
     }
-    FakeLoadBalancer.FakeInteractionMetrics<?> endpoint = (FakeLoadBalancer.FakeInteractionMetrics) lb.endpoints().get(0).metrics();
+    FakeLoadBalancer.FakeLoadBalancerMetrics<?> endpoint = (FakeLoadBalancer.FakeLoadBalancerMetrics) lb.endpoints().get(0).metrics();
     assertWaitUntil(() -> endpoint.metrics2().size() == 6);
     FakeLoadBalancer.FakeMetric metric = endpoint.metrics2().get(5);
     assertNotNull(metric.failure);
@@ -466,7 +466,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     } catch (RuntimeException e) {
       assertTrue(e.getMessage().contains("Connection was closed"));
     }
-    FakeLoadBalancer.FakeInteractionMetrics<?> endpoint = (FakeLoadBalancer.FakeInteractionMetrics) (lb.endpoints().get(0).metrics());
+    FakeLoadBalancer.FakeLoadBalancerMetrics<?> endpoint = (FakeLoadBalancer.FakeLoadBalancerMetrics) (lb.endpoints().get(0).metrics());
     assertWaitUntil(() -> endpoint.metrics2().size() == 11);
     for (int i = 0;i < 10;i++) {
       FakeLoadBalancer.FakeMetric metric = endpoint.metrics2().get(i);

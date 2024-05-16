@@ -34,10 +34,10 @@ public interface EndpointNode {
    *
    * @return the request
    */
-  Interaction initiateInteraction();
+  EndpointInteraction newInteraction();
 
+  // Should be private somehow
   InteractionMetrics<?> metrics();
-
   Object unwrap();
 
 }

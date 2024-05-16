@@ -8,14 +8,10 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.loadbalancing;
+package io.vertx.core.net.endpoint;
 
-import io.vertx.core.loadbalancing.impl.ConsistentHashingSelector;
-import io.vertx.core.loadbalancing.impl.NoMetricsLoadBalancer;
-import io.vertx.core.net.endpoint.EndpointNode;
-import io.vertx.core.net.endpoint.DefaultInteractionMetrics;
-import io.vertx.core.net.endpoint.InteractionMetrics;
-import io.vertx.core.net.endpoint.EndpointSelector;
+import io.vertx.core.net.endpoint.impl.ConsistentHashingSelector;
+import io.vertx.core.net.endpoint.impl.NoMetricsLoadBalancer;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;

@@ -19,9 +19,10 @@ import io.vertx.core.net.endpoint.impl.EndpointResolverImpl;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.*;
 import io.vertx.core.net.*;
+import io.vertx.core.net.endpoint.impl.EndpointResolverInternal;
 import io.vertx.core.net.impl.endpoint.EndpointProvider;
 import io.vertx.core.net.impl.pool.*;
-import io.vertx.core.net.endpoint.Interaction;
+import io.vertx.core.net.endpoint.EndpointInteraction;
 import io.vertx.core.net.endpoint.EndpointNode;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
@@ -101,7 +102,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
 
   private final PoolOptions poolOptions;
   private final io.vertx.core.net.impl.endpoint.EndpointManager<EndpointKey, SharedClientHttpStreamEndpoint> httpCM;
-  private final EndpointResolverImpl<?, Address, ?> endpointResolver;
+  private final EndpointResolverInternal<Address> endpointResolver;
   private volatile Function<HttpClientResponse, Future<RequestOptions>> redirectHandler = DEFAULT_HANDLER;
   private long timerID;
   private volatile Handler<HttpConnection> connectionHandler;
@@ -395,7 +396,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
           if (fut2 == null) {
             return null;
           } else {
-            Interaction endpointRequest = lookup.initiateInteraction();
+            EndpointInteraction endpointRequest = lookup.newInteraction();
             return fut2.andThen(ar -> {
               if (ar.failed()) {
                 endpointRequest.reportFailure(ar.cause());

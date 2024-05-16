@@ -11,9 +11,9 @@
 package io.vertx.core.net.endpoint;
 
 /**
- * Carries request latencies.
+ * Carries request/response latencies.
  */
-public class InteractionMetric {
+public class DefaultInteractionMetric {
   long requestBegin;
   long requestEnd;
   long responseBegin;

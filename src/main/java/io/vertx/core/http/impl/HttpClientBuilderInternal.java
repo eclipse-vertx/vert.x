@@ -8,7 +8,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.loadbalancing.LoadBalancer;
+import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.AddressResolver;
 import io.vertx.core.net.endpoint.impl.EndpointResolverImpl;
 import io.vertx.core.net.endpoint.EndpointResolver;

@@ -8,9 +8,9 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.loadbalancing.impl;
+package io.vertx.core.net.endpoint.impl;
 
-import io.vertx.core.loadbalancing.LoadBalancer;
+import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.endpoint.InteractionMetrics;
 
 @FunctionalInterface

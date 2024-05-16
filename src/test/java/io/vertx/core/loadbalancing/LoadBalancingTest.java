@@ -11,10 +11,7 @@
 package io.vertx.core.loadbalancing;
 
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.endpoint.EndpointNode;
-import io.vertx.core.net.endpoint.Interaction;
-import io.vertx.core.net.endpoint.InteractionMetrics;
-import io.vertx.core.net.endpoint.EndpointSelector;
+import io.vertx.core.net.endpoint.*;
 import io.vertx.test.core.TestUtils;
 import org.junit.Test;
 
@@ -22,7 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static io.vertx.core.loadbalancing.LoadBalancer.*;
+import static io.vertx.core.net.endpoint.LoadBalancer.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -48,7 +45,7 @@ public class LoadBalancingTest {
         return metrics;
       }
       @Override
-      public Interaction initiateInteraction() {
+      public EndpointInteraction newInteraction() {
         return null;
       }
     };

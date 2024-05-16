@@ -1558,14 +1558,14 @@ The http client can be configured to perform client side load balancing instead
 
 Vert.x provides out of the box several load balancing policies you can use
 
-- {@link io.vertx.core.loadbalancing.LoadBalancer#ROUND_ROBIN Round-robin}
-- {@link io.vertx.core.loadbalancing.LoadBalancer#LEAST_REQUESTS Least requests}
-- {@link io.vertx.core.loadbalancing.LoadBalancer#POWER_OF_TWO_CHOICES Power of two choices}
-- {@link io.vertx.core.loadbalancing.LoadBalancer#CONSISTENT_HASHING Consistent hashing}
+- {@link io.vertx.core.net.endpoint.LoadBalancer#ROUND_ROBIN Round-robin}
+- {@link io.vertx.core.net.endpoint.LoadBalancer#LEAST_REQUESTS Least requests}
+- {@link io.vertx.core.net.endpoint.LoadBalancer#POWER_OF_TWO_CHOICES Power of two choices}
+- {@link io.vertx.core.net.endpoint.LoadBalancer#CONSISTENT_HASHING Consistent hashing}
 
 Most load balancing policies are pretty much self-explanatory.
 
-Hash based routing can be achieved with the {@link io.vertx.core.loadbalancing.LoadBalancer#CONSISTENT_HASHING} policy.
+Hash based routing can be achieved with the {@link io.vertx.core.net.endpoint.LoadBalancer#CONSISTENT_HASHING} policy.
 
 [source,$lang]
 ----

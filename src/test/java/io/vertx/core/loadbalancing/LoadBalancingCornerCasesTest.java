@@ -1,10 +1,7 @@
 package io.vertx.core.loadbalancing;
 
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.endpoint.EndpointNode;
-import io.vertx.core.net.endpoint.Interaction;
-import io.vertx.core.net.endpoint.InteractionMetrics;
-import io.vertx.core.net.endpoint.EndpointSelector;
+import io.vertx.core.net.endpoint.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -61,7 +58,7 @@ public class LoadBalancingCornerCasesTest {
         return metrics;
       }
       @Override
-      public Interaction initiateInteraction() {
+      public EndpointInteraction newInteraction() {
         return null;
       }
     };

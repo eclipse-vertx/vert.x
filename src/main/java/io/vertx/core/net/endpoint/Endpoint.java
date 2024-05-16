@@ -22,9 +22,18 @@ public interface Endpoint {
   /**
    * Select a node.
    *
-   * @param routingKey the optional routing key
    * @return the selected server
    */
-  EndpointNode selectNode(String routingKey);
+  default EndpointNode selectNode() {
+    return selectNode(null);
+  }
+
+  /**
+   * Select a node, using a routing {@code key}
+   *
+   * @param key the routing key
+   * @return the selected server
+   */
+  EndpointNode selectNode(String key);
 
 }
