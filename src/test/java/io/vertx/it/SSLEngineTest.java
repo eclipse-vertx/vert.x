@@ -24,6 +24,8 @@ import io.vertx.core.net.impl.SslContextProvider;
 import io.vertx.test.tls.Cert;
 import org.junit.Test;
 
+import static io.vertx.test.core.AssertExpectations.that;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -121,7 +123,7 @@ public class SSLEngineTest extends HttpTestBase {
     client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath")
       .compose(req -> req
         .send()
-        .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+        .expecting(that(resp -> assertEquals(200, resp.statusCode())))
         .compose(HttpClientResponse::end))
       .onComplete(onSuccess(v -> testComplete()));
     await();

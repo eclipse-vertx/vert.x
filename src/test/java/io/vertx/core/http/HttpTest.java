@@ -30,6 +30,7 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
 import io.vertx.core.streams.ReadStream;
+import io.vertx.test.core.AssertExpectations;
 import io.vertx.test.core.DetectFileDescriptorLeaks;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
@@ -41,7 +42,6 @@ import org.apache.directory.server.dns.messages.RecordClass;
 import org.apache.directory.server.dns.messages.RecordType;
 import org.apache.directory.server.dns.store.DnsAttribute;
 import org.junit.Assume;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -62,6 +62,7 @@ import java.util.function.*;
 import java.util.stream.IntStream;
 
 import static io.vertx.core.http.HttpMethod.*;
+import static io.vertx.test.core.AssertExpectations.that;
 import static io.vertx.test.core.TestUtils.*;
 import static org.hamcrest.CoreMatchers.instanceOf;
 
@@ -1864,7 +1865,7 @@ public abstract class HttpTest extends HttpTestBase {
     startServer(testAddress);
     client.request(requestOptions)
       .compose(req -> req.send()
-        .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+        .expecting(HttpResponseExpectation.SC_OK)
         .compose(HttpClientResponse::end)
       ).onComplete(onSuccess(v -> testComplete()));
     await();
@@ -1881,9 +1882,9 @@ public abstract class HttpTest extends HttpTestBase {
     client.request(requestOptions)
       .compose(req -> req
         .send()
-        .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+        .expecting(HttpResponseExpectation.SC_OK)
         .compose(HttpClientResponse::body)
-        .andThen(onSuccess(buff -> assertEquals(body, buff))))
+        .expecting(that(buff -> assertEquals(body, buff))))
       .onComplete(onSuccess(v -> testComplete()));
 
     await();
@@ -1927,9 +1928,9 @@ public abstract class HttpTest extends HttpTestBase {
     client.request(requestOptions)
       .compose(req -> req
         .send()
-        .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+        .expecting(HttpResponseExpectation.SC_OK)
         .compose(HttpClientResponse::body)
-        .andThen(onSuccess(buff -> assertEquals(body, buff))))
+        .expecting(that(buff -> assertEquals(body, buff))))
       .onComplete(onSuccess(v -> testComplete()));
 
     await();
@@ -1993,9 +1994,9 @@ public abstract class HttpTest extends HttpTestBase {
     client.request(requestOptions)
       .compose(req -> req
         .send()
-        .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+        .expecting(HttpResponseExpectation.SC_OK)
         .compose(HttpClientResponse::body)
-        .andThen(onSuccess(buff -> assertEquals(body, encoding == null ? buff.toString() : buff.toString(encoding)))))
+        .expecting(that(buff -> assertEquals(body, encoding == null ? buff.toString() : buff.toString(encoding)))))
       .onComplete(onSuccess(v -> testComplete()));
 
     await();
@@ -2015,9 +2016,9 @@ public abstract class HttpTest extends HttpTestBase {
     client.request(requestOptions)
       .compose(req -> req
         .send()
-        .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+        .expecting(HttpResponseExpectation.SC_OK)
         .compose(HttpClientResponse::body)
-        .andThen(onSuccess(buff -> assertEquals(body, buff))))
+        .expecting(that(buff -> assertEquals(body, buff))))
       .onComplete(onSuccess(v -> testComplete()));
 
     await();
@@ -2052,7 +2053,7 @@ public abstract class HttpTest extends HttpTestBase {
     startServer(testAddress);
     requestFact.get().compose(req -> req
         .send()
-        .andThen(onSuccess(resp -> {
+        .expecting(that(resp -> {
           assertEquals(200, resp.statusCode());
           assertEquals("text/html", resp.headers().get("Content-Type"));
           assertEquals(fileToSend.length(), Long.parseLong(resp.headers().get("content-length")));
@@ -2082,9 +2083,9 @@ public abstract class HttpTest extends HttpTestBase {
     client.request(requestOptions)
       .compose(req -> req
         .send()
-        .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+        .expecting(HttpResponseExpectation.SC_OK)
         .compose(HttpClientResponse::body)
-        .andThen(onSuccess(buff -> assertEquals("failed", buff.toString()))))
+        .expecting(that(buff -> assertEquals("failed", buff.toString()))))
       .onComplete(onSuccess(v -> testComplete()));
 
     await();
@@ -2104,13 +2105,13 @@ public abstract class HttpTest extends HttpTestBase {
     client.request(requestOptions)
       .compose(req -> req
         .send()
-        .andThen(onSuccess(resp -> {
+        .expecting(that(resp -> {
           assertEquals(200, resp.statusCode());
           assertEquals(file.length(), Long.parseLong(resp.headers().get("content-length")));
           assertEquals("wibble", resp.headers().get("content-type"));
         }))
         .compose(HttpClientResponse::body)
-        .andThen(onSuccess(buff -> assertEquals(content, buff.toString()))))
+        .expecting(that(buff -> assertEquals(content, buff.toString()))))
       .onComplete(onSuccess(v -> testComplete()));
 
     await();
@@ -2173,7 +2174,7 @@ public abstract class HttpTest extends HttpTestBase {
     client.request(requestOptions).onComplete(onSuccess(req -> {
       client.request(requestOptions)
         .compose(HttpClientRequest::send)
-        .andThen(onSuccess(resp -> assertEquals(String.valueOf(10), resp.headers().get("Content-Length"))))
+        .expecting(that(resp -> assertEquals(String.valueOf(10), resp.headers().get("Content-Length"))))
         .compose(HttpClientResponse::body)
         .onComplete(onSuccess(body -> {
           assertTrue(body.toString().startsWith("server.net"));
@@ -2193,7 +2194,7 @@ public abstract class HttpTest extends HttpTestBase {
     client.request(requestOptions)
       .compose(req -> req
         .send()
-        .andThen(onSuccess(resp -> assertEquals(String.valueOf(10), resp.headers().get("Content-Length"))))
+        .expecting(that(resp -> assertEquals(String.valueOf(10), resp.headers().get("Content-Length"))))
         .compose(HttpClientResponse::body))
       .onComplete(onSuccess(body -> {
         assertEquals("server.net", body.toString());
@@ -2211,7 +2212,7 @@ public abstract class HttpTest extends HttpTestBase {
     client.request(requestOptions)
       .compose(req -> req
         .send()
-        .andThen(onSuccess(resp -> assertEquals(String.valueOf(0), resp.headers().get("Content-Length"))))
+        .expecting(that(resp -> assertEquals(String.valueOf(0), resp.headers().get("Content-Length"))))
         .compose(HttpClientResponse::body))
       .onComplete(onSuccess(body -> {
         assertEquals("", body.toString());
@@ -2558,7 +2559,7 @@ public abstract class HttpTest extends HttpTestBase {
     client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.HEAD))
       .compose(req -> req
         .send()
-        .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+        .expecting(HttpResponseExpectation.SC_OK)
         .compose(resp -> resp.end().map(resp.headers().get("Content-Length"))))
       .onComplete(onSuccess(contentLength -> {
         assertEquals("41", contentLength);
@@ -2693,7 +2694,7 @@ public abstract class HttpTest extends HttpTestBase {
     client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.HEAD))
       .compose(req -> req
         .send()
-        .andThen(onSuccess(resp -> assertNull(resp.headers().get(HttpHeaders.CONTENT_LENGTH))))
+        .expecting(that(resp -> assertNull(resp.headers().get(HttpHeaders.CONTENT_LENGTH))))
         .compose(HttpClientResponse::end))
       .onComplete(onSuccess(v -> testComplete()));
 
@@ -2713,7 +2714,7 @@ public abstract class HttpTest extends HttpTestBase {
     client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.HEAD))
       .compose(req -> req
         .send()
-        .andThen(onSuccess(resp -> assertEquals("41", resp.headers().get(HttpHeaders.CONTENT_LENGTH))))
+        .expecting(that(resp -> assertEquals("41", resp.headers().get(HttpHeaders.CONTENT_LENGTH))))
         .compose(HttpClientResponse::end))
       .onComplete(onSuccess(v -> testComplete()));
 
@@ -2735,7 +2736,7 @@ public abstract class HttpTest extends HttpTestBase {
     client.request(requestOptions)
       .compose(req -> req
         .send()
-        .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+        .expecting(HttpResponseExpectation.SC_OK)
         .compose(HttpClientResponse::body))
       .onComplete(onSuccess(req -> {
         testComplete();
@@ -3179,7 +3180,7 @@ public abstract class HttpTest extends HttpTestBase {
     startServer(testAddress);
     client.request(requestOptions).compose(req -> req
       .send()
-      .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+      .expecting(HttpResponseExpectation.SC_OK)
       .compose(HttpClientResponse::body))
       .onComplete(onSuccess(buff -> {
         assertEquals(bodyBuff, buff);
@@ -6775,7 +6776,7 @@ public abstract class HttpTest extends HttpTestBase {
     client.request(requestOptions)
       .compose(req -> req
         .send()
-        .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+        .expecting(HttpResponseExpectation.SC_OK)
         .compose(HttpClientResponse::end))
       .onComplete(onSuccess(nothing -> complete()));
     await();
@@ -6803,7 +6804,7 @@ public abstract class HttpTest extends HttpTestBase {
     startServer(testAddress);
     client.request(requestOptions)
       .compose(req -> req.send()
-        .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+        .expecting(HttpResponseExpectation.SC_OK)
         .compose(HttpClientResponse::end))
       .onComplete(onSuccess(nothing -> complete()));
     await();

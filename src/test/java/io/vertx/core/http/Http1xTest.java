@@ -29,6 +29,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.streams.WriteStream;
+import io.vertx.test.core.AssertExpectations;
 import io.vertx.test.core.CheckingSender;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
@@ -50,6 +51,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static io.vertx.core.http.HttpMethod.PUT;
+import static io.vertx.test.core.AssertExpectations.that;
 import static io.vertx.test.core.TestUtils.*;
 
 /**
@@ -1038,10 +1040,10 @@ public class Http1xTest extends HttpTest {
               .putHeader("count", String.valueOf(theCount)))
           .compose(req -> req
             .send(Buffer.buffer("This is content " + theCount))
-            .andThen(onSuccess(resp -> assertEquals(theCount, Integer.parseInt(resp.headers().get("count")))))
+            .expecting(that(resp -> assertEquals(theCount, Integer.parseInt(resp.headers().get("count")))))
             .compose(resp -> resp
               .body()
-              .andThen(onSuccess(buff -> assertEquals("This is content " + theCount, buff.toString())))))
+              .expecting(that(buff -> assertEquals("This is content " + theCount, buff.toString())))))
           .onComplete(onSuccess(v -> complete()));
       }
     });
@@ -1500,7 +1502,7 @@ public class Http1xTest extends HttpTest {
       client.request(new RequestOptions(requestOptions).setURI(path))
         .compose(req -> req.putHeader("count", String.valueOf(theCount))
           .send()
-          .andThen(onSuccess(resp -> {
+          .expecting(that(resp -> {
             resp.exceptionHandler(this::fail);
             assertEquals(200, resp.statusCode());
             assertEquals(theCount, Integer.parseInt(resp.headers().get("count")));
@@ -1861,7 +1863,7 @@ public class Http1xTest extends HttpTest {
       for (int i = 0;i < 3;i++) {
         client.request(requestOptions).compose(req -> req
             .send()
-            .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+          .expecting(that(resp -> assertEquals(200, resp.statusCode())))
             .compose(HttpClientResponse::end))
           .onComplete(onSuccess(v -> complete()));
       }
@@ -2255,7 +2257,7 @@ public class Http1xTest extends HttpTest {
       client.request(new RequestOptions(requestOptions).setMethod(PUT))
         .compose(req -> req
           .send(Buffer.buffer("1"))
-          .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+          .expecting(that(resp -> assertEquals(200, resp.statusCode())))
           .compose(HttpClientResponse::end))
         .onComplete(onSuccess(v -> complete()));
     }
@@ -2813,7 +2815,7 @@ public class Http1xTest extends HttpTest {
           .request(new RequestOptions(requestOptions).setURI(uri))
           .compose(req -> req
             .send()
-            .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+            .expecting(that(resp -> assertEquals(200, resp.statusCode())))
             .compose(HttpClientResponse::end))
           .onComplete(onSuccess(v -> respLatch.countDown()));
       }
@@ -3211,7 +3213,7 @@ public class Http1xTest extends HttpTest {
               client.request(new RequestOptions(requestOptions).setURI("/somepath"))
                 .compose(req -> req
                   .send()
-                  .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+                  .expecting(that(resp -> assertEquals(200, resp.statusCode())))
                   .compose(HttpClientResponse::body))
                 .onComplete(onSuccess(body -> {
                   assertEquals("Hello world", body.toString());
@@ -3228,7 +3230,7 @@ public class Http1xTest extends HttpTest {
             client.request(new RequestOptions(requestOptions).setURI("/somepath"))
               .compose(req -> req
                 .send()
-                .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+                .expecting(that(resp -> assertEquals(200, resp.statusCode())))
                 .compose(HttpClientResponse::body))
               .onComplete(onSuccess(body -> {
                 assertEquals("Hello world", body.toString());
@@ -4236,7 +4238,7 @@ public class Http1xTest extends HttpTest {
     client.request(new RequestOptions(requestOptions).setMethod(PUT))
       .compose(req -> req
         .send(expected)
-        .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+        .expecting(that(resp -> assertEquals(200, resp.statusCode())))
         .compose(HttpClientResponse::body))
       .onComplete(onSuccess(body -> {
         assertEquals(expected, body);
@@ -4276,7 +4278,7 @@ public class Http1xTest extends HttpTest {
         client.request(new RequestOptions(requestOptions).setMethod(PUT))
           .compose(req -> req
             .send(TestUtils.randomAlphaString(1024))
-            .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+            .expecting(that(resp -> assertEquals(200, resp.statusCode())))
             .compose(HttpClientResponse::body))
           .onComplete(onSuccess(body -> {
             assertEquals(expected, body.toString());
@@ -4311,7 +4313,7 @@ public class Http1xTest extends HttpTest {
         client.request(new RequestOptions(requestOptions).setMethod(PUT))
           .compose(req -> req
             .send(TestUtils.randomAlphaString(1024))
-            .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+            .expecting(that(resp -> assertEquals(200, resp.statusCode())))
             .compose(HttpClientResponse::body))
           .onComplete(onSuccess(body -> {
             assertEquals(expected, body.toString());
@@ -5134,7 +5136,7 @@ public class Http1xTest extends HttpTest {
     startServer(testAddress);
     client.request(requestOptions).compose(req -> req
         .send()
-        .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+        .expecting(that(resp -> assertEquals(200, resp.statusCode())))
         .compose(HttpClientResponse::body)
       )
       .onComplete(onSuccess(body -> complete()));
@@ -5178,7 +5180,7 @@ public class Http1xTest extends HttpTest {
     for (int i = 0;i < 2;i++) {
       client.request(requestOptions).compose(req -> req
           .send()
-          .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+          .expecting(that(resp -> assertEquals(200, resp.statusCode())))
           .compose(HttpClientResponse::body)
         )
         .onComplete(onSuccess(body -> complete()));

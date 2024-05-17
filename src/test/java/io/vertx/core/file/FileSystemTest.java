@@ -45,6 +45,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
+import static io.vertx.test.core.AssertExpectations.that;
 import static io.vertx.test.core.TestUtils.*;
 import static org.hamcrest.CoreMatchers.instanceOf;
 
@@ -1980,7 +1981,7 @@ public class FileSystemTest extends VertxTestBase {
       .props(from)
       .compose(expected -> fs
         .props(from)
-        .andThen(onSuccess(actual -> {
+        .expecting(that(actual -> {
           assertEquals(expected.creationTime(), actual.creationTime());
           assertEquals(expected.lastModifiedTime(), actual.lastModifiedTime());
         }))
@@ -2015,12 +2016,12 @@ public class FileSystemTest extends VertxTestBase {
     fs.copy(from, to, options)
       .compose(v -> fs
         .lprops(to)
-        .andThen(onSuccess(props -> assertTrue(props.isSymbolicLink())))
+        .expecting(that(props -> assertTrue(props.isSymbolicLink())))
         .compose(v2 -> fs
           .readFile(from)
           .compose(expected -> fs
             .readFile(to)
-            .andThen(onSuccess(actual -> assertEquals(expected, actual)))))).onComplete(onSuccess(v -> complete()));
+            .expecting(that(actual -> assertEquals(expected, actual)))))).onComplete(onSuccess(v -> complete()));
     await();
   }
 
@@ -2169,7 +2170,7 @@ public class FileSystemTest extends VertxTestBase {
     createFileWithJunk(fileName, expected);
     AsyncFile file = vertx.fileSystem().openBlocking(testDir + pathSep + fileName, new OpenOptions());
     file.size()
-      .andThen(onSuccess(size -> assertEquals(expected, size.longValue())))
+      .expecting(that(size -> assertEquals(expected, size.longValue())))
       .compose(v -> file.close())
       .onComplete(onSuccess(v -> testComplete()));
     await();

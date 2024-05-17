@@ -121,8 +121,8 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
     long expectedLength = Files.size(Path.of(sampleF.getAbsolutePath()));
     testClient.request(HttpMethod.GET, testServer.actualPort(), DEFAULT_HTTP_HOST,"/get-file")
               .compose(req -> req.send()
-                                 .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
-                                 .compose(HttpClientResponse::body))
+                .expecting(HttpResponseExpectation.SC_OK)
+                .compose(HttpClientResponse::body))
               .onComplete(onSuccess(body -> {
                 receivedLength.set(body.getBytes().length);
                 Assert.assertEquals(expectedLength, receivedLength.get());
@@ -188,8 +188,8 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
       for (int i=0; i<2; i++) {
         testClient.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST,"/get-file")
                   .compose(req -> req.send()
-                                     .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
-                                     .compose(HttpClientResponse::body))
+                    .expecting(HttpResponseExpectation.SC_OK)
+                    .compose(HttpClientResponse::body))
                   .onComplete(onSuccess(body -> {
                       long receivedBytes = body.getBytes().length;
                       totalReceivedLength.addAndGet(receivedBytes);
@@ -278,8 +278,10 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
 
   private void read(Buffer expected, HttpServer server, HttpClient client) {
     client.request(HttpMethod.GET, server.actualPort(), DEFAULT_HTTP_HOST,"/buffer-read")
-          .compose(req -> req.send()
-                             .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode()))).compose(HttpClientResponse::body))
+          .compose(req -> req
+            .send()
+            .expecting(HttpResponseExpectation.SC_OK)
+            .compose(HttpClientResponse::body))
           .onComplete(onSuccess(body -> {
               assertEquals(expected.getBytes().length, body.getBytes().length);
               testComplete();

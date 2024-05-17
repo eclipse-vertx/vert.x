@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static io.vertx.test.core.AssertExpectations.that;
+
 public abstract class HttpClientConnectionTest extends HttpTestBase {
 
   protected HttpClientInternal client;
@@ -39,7 +41,7 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
       .compose(HttpClientConnection::request)
       .compose(request -> request
         .send()
-        .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+        .expecting(HttpResponseExpectation.SC_OK)
         .compose(HttpClientResponse::body))
       .onComplete(onSuccess(body -> {
         assertEquals("Hello World", body.toString());
@@ -57,9 +59,10 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
     HttpConnectOptions connect = new HttpConnectOptions().setServer(testAddress).setHost(requestOptions.getHost()).setPort(requestOptions.getPort());
     client.connect(connect).compose(conn -> conn.request().compose(req -> req
         .send()
-        .compose(HttpClientResponse::body)))
-      .andThen(onSuccess(body -> {
-        assertEquals("Hello World", body.toString());
+        .compose(HttpClientResponse::body)
+        .expecting(that(body -> assertEquals("Hello World", body.toString())))
+      ))
+      .onComplete(onSuccess(v -> {
         testComplete();
       }));
     await();

@@ -3509,7 +3509,7 @@ public class NetTest extends VertxTestBase {
     client.request(io.vertx.core.http.HttpMethod.GET, 1234, "localhost", "/somepath")
       .compose(req -> req
         .send()
-        .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+        .expecting(HttpResponseExpectation.SC_OK)
         .compose(HttpClientResponse::body)).onComplete(onSuccess(body -> {
         assertEquals("Hello World", body.toString());
         complete();
