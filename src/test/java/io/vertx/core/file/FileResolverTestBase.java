@@ -286,7 +286,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
         .request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, "localhost", "/")
         .compose(req -> req
           .send()
-          .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+          .expecting(HttpResponseExpectation.SC_OK)
           .compose(HttpClientResponse::body))
         .onComplete(onSuccess(body -> {
           assertTrue(body.toString().startsWith("<html><body>blah</body></html>"));

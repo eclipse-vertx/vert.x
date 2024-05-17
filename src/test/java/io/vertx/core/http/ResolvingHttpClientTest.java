@@ -87,7 +87,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     for (int i = 0;i < numServers * 2;i++) {
       client.request(new RequestOptions().setServer(new FakeAddress("example.com"))).compose(req -> req
         .send()
-        .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+        .expecting(HttpResponseExpectation.SC_OK)
         .compose(HttpClientResponse::body)
       ).onComplete(onSuccess(v -> {
         responses.add(v.toString());
@@ -118,7 +118,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     for (int i = 0;i < numServers;i++) {
       client.request(new RequestOptions().setServer(new FakeAddress("example.com"))).compose(req -> req
         .send()
-        .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+        .expecting(HttpResponseExpectation.SC_OK)
         .compose(HttpClientResponse::body)
       ).onComplete(onSuccess(v -> {
         latch.countDown();
@@ -147,13 +147,13 @@ public class ResolvingHttpClientTest extends VertxTestBase {
       .build();
     Future<Buffer> result = client.request(new RequestOptions().setServer(new FakeAddress("server1.com"))).compose(req -> req
       .send()
-      .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+      .expecting(HttpResponseExpectation.SC_OK)
       .compose(HttpClientResponse::body)
     ).compose(body -> client
       .request(new RequestOptions().setServer(new FakeAddress("server2.com")))
       .compose(req -> req
         .send()
-        .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+        .expecting(HttpResponseExpectation.SC_OK)
         .compose(HttpClientResponse::body)
       ));
     awaitFuture(result);
@@ -183,7 +183,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     for (RequestOptions request : requests) {
       Future<Buffer> result = client.request(request).compose(req -> req
         .send()
-        .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+        .expecting(HttpResponseExpectation.SC_OK)
         .compose(HttpClientResponse::body)
       );
       Buffer response = awaitFuture(result);
@@ -231,7 +231,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
       for (int i = 0;i < numServers * 2;i++) {
         client.request(new RequestOptions().setServer(new FakeAddress("example.com"))).compose(req -> req
           .send()
-          .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+          .expecting(HttpResponseExpectation.SC_OK)
           .compose(HttpClientResponse::body)
         ).onComplete(onSuccess(v -> {
           responses.add(v.toString());
@@ -259,7 +259,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
       .build();
     client.request(new RequestOptions().setServer(new FakeAddress("foo.com"))).compose(req -> req
       .send()
-      .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+      .expecting(HttpResponseExpectation.SC_OK)
       .compose(HttpClientResponse::body)
     ).onComplete(onFailure(err -> {
       assertSame(cause, err);
@@ -277,7 +277,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     client.request(new RequestOptions().setServer(new Address() {
     })).compose(req -> req
       .send()
-      .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+      .expecting(HttpResponseExpectation.SC_OK)
       .compose(HttpClientResponse::body)
     ).onComplete(onFailure(err -> {
       assertTrue(err.getMessage().contains("Cannot resolve address"));
@@ -304,7 +304,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
       .build();
     client.request(new RequestOptions().setServer(new FakeAddress("example.com"))).compose(req -> req
       .send()
-      .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+      .expecting(HttpResponseExpectation.SC_OK)
       .compose(HttpClientResponse::body)
     ).onComplete(onSuccess(v -> {
     }));
@@ -329,7 +329,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
       .build();
     awaitFuture(client.request(new RequestOptions().setServer(new FakeAddress("example.com"))).compose(req -> req
       .send()
-      .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+      .expecting(HttpResponseExpectation.SC_OK)
       .compose(HttpClientResponse::body)
     ));
     FakeLoadBalancer.FakeLoadBalancerMetrics<?> endpoint = (FakeLoadBalancer.FakeLoadBalancerMetrics<?>) ((EndpointNode) lb.endpoints().get(0)).metrics();
@@ -451,9 +451,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     for (int i = 0;i < 10;i++) {
       Future<Buffer> fut = client.request(new RequestOptions().setServer(new FakeAddress("example.com"))).compose(req -> req
         .send()
-        .andThen(onSuccess(resp -> {
-          assertEquals(200, resp.statusCode());
-        }))
+        .expecting(HttpResponseExpectation.SC_OK)
         .compose(HttpClientResponse::body));
       futures.add(fut);
     }
@@ -492,7 +490,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
       .build();
     String res = awaitFuture(client.request(new RequestOptions().setServer(new FakeAddress("example.com"))).compose(req -> req
       .send()
-      .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+      .expecting(HttpResponseExpectation.SC_OK)
       .compose(HttpClientResponse::body)
     )).toString();
     assertEquals("0", res);
@@ -500,7 +498,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     try {
       awaitFuture(client.request(new RequestOptions().setServer(new FakeAddress("example.com"))).compose(req -> req
         .send()
-        .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+        .expecting(HttpResponseExpectation.SC_OK)
         .compose(HttpClientResponse::body)
       ));
     } catch (Throwable e) {
@@ -524,7 +522,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
       .build();
     String res = awaitFuture(client.request(new RequestOptions().setServer(new FakeAddress("example.com"))).compose(req -> req
       .send()
-      .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+      .expecting(HttpResponseExpectation.SC_OK)
       .compose(HttpClientResponse::body)
     )).toString();
     assertEquals("0", res);
@@ -548,7 +546,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     for (int i = 0;i < numRequests;i++) {
       String res = awaitFuture(client.request(new RequestOptions().setServer(new FakeAddress("example.com"))).compose(req -> req
         .send()
-        .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+        .expecting(HttpResponseExpectation.SC_OK)
         .compose(HttpClientResponse::body)
       )).toString();
       assertEquals("0", res);
@@ -607,7 +605,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     try {
       String res = awaitFuture(client.request(request).compose(req -> req
         .send()
-        .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+        .expecting(HttpResponseExpectation.SC_OK)
         .compose(HttpClientResponse::body)
       )).toString();
       assertFalse(expectFailure);
@@ -641,7 +639,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
       String hashingKey = "client-" + idx;
       client.request(new RequestOptions().setServer(new FakeAddress("example.com")).setRoutingKey(hashingKey)).compose(req -> req
         .send()
-        .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+        .expecting(HttpResponseExpectation.SC_OK)
         .compose(HttpClientResponse::body)
       ).onComplete(onSuccess(v -> {
         responses.compute(idx, (id, list) -> {
@@ -676,7 +674,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     Set<String> responses = Collections.synchronizedSet(new HashSet<>());
     client.request(new RequestOptions().setServer(new FakeAddress("example.com"))).compose(req -> req
       .send()
-      .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+      .expecting(HttpResponseExpectation.SC_OK)
       .compose(HttpClientResponse::body)
     ).onComplete(onFailure(err -> {
       assertEquals("No results for ServiceName(example.com)", err.getMessage());

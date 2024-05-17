@@ -11,10 +11,7 @@
 package io.vertx.core.spi.tracing;
 
 import io.vertx.core.Context;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpClientResponse;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpTestBase;
+import io.vertx.core.http.*;
 import io.vertx.test.faketracer.FakeTracer;
 import io.vertx.test.faketracer.Span;
 import org.junit.Test;
@@ -93,7 +90,7 @@ public abstract class HttpTracingTestBase extends HttpTestBase {
         .request(HttpMethod.GET, DEFAULT_HTTP_PORT, "localhost", "/1")
         .compose(req -> req
           .send()
-          .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+          .expecting(HttpResponseExpectation.SC_OK)
           .compose(HttpClientResponse::end))
         .onComplete(onSuccess(v2 -> {
           assertEquals(rootSpan, tracer.activeSpan());

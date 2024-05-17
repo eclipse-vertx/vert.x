@@ -18,6 +18,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.test.core.VertxTestBase;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.Serializable;
@@ -25,6 +26,7 @@ import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
+import static io.vertx.test.core.AssertExpectations.that;
 import static io.vertx.test.core.TestUtils.*;
 
 /**
@@ -233,7 +235,7 @@ public abstract class AsyncMapTest extends VertxTestBase {
   public void testMapPutIfAbsentTtl() {
     SharedData sharedData = getVertx().sharedData();
     sharedData.<String, String>getAsyncMap("foo")
-      .compose(map -> map.putIfAbsent("pipo", "molo", 10).andThen(onSuccess(this::assertNull)))
+      .compose(map -> map.putIfAbsent("pipo", "molo", 10).expecting(that(Assert::assertNull)))
       .compose(v -> assertWaitUntilMapContains(sharedData, "foo", "pipo", 15, Objects::isNull))
       .onComplete(onSuccess(v -> testComplete()));
     await();
@@ -247,7 +249,7 @@ public abstract class AsyncMapTest extends VertxTestBase {
         .put("pipo", "molo")
         .compose(v -> map
           .putIfAbsent("pipo", "mili", 10)
-          .andThen(onSuccess(vd -> assertEquals("molo", vd)))))
+          .expecting(that(vd -> assertEquals("molo", vd)))))
       .compose(v -> assertWaitUntilMapContains(sharedData, "foo", "pipo", 15, "molo"::equals)).onComplete(onSuccess(v -> testComplete()));
     await();
   }
@@ -474,7 +476,7 @@ public abstract class AsyncMapTest extends VertxTestBase {
     sharedData.<String, String>getAsyncMap("foo")
       .compose(map -> map
         .replace("pipo", "molo", 10)
-        .andThen(onSuccess(this::assertNull)))
+        .expecting(that(Assert::assertNull)))
       .compose(v -> assertWaitUntilMapContains(sharedData, "foo", "pipo", 15, Objects::isNull))
       .onComplete(onSuccess(v -> testComplete()));
     await();
@@ -485,7 +487,8 @@ public abstract class AsyncMapTest extends VertxTestBase {
     SharedData sharedData = getVertx().sharedData();
     sharedData.<String, String>getAsyncMap("foo")
       .compose(map -> map
-        .put("pipo", "molo").andThen(onSuccess(this::assertNull))
+        .put("pipo", "molo")
+        .expecting(that(Assert::assertNull))
         .compose(vd -> map.replace("pipo", "mili", 10)))
       .compose(v -> assertWaitUntilMapContains(sharedData, "foo", "pipo", 15, Objects::isNull))
       .onComplete(onSuccess(v -> testComplete()));
@@ -569,8 +572,10 @@ public abstract class AsyncMapTest extends VertxTestBase {
     SharedData sharedData = getVertx().sharedData();
     sharedData.<String, String>getAsyncMap("foo")
       .compose(map -> map
-        .put("pipo", "molo").andThen(onSuccess(this::assertNull))
-        .compose(v -> map.replaceIfPresent("pipo", "molo", "mili", 10).andThen(onSuccess(this::assertTrue))))
+        .put("pipo", "molo")
+        .expecting(that(Assert::assertNull))
+        .compose(v -> map.replaceIfPresent("pipo", "molo", "mili", 10)
+          .expecting(that(Assert::assertTrue))))
       .compose(v -> assertWaitUntilMapContains(sharedData, "foo", "pipo", 15, Objects::isNull))
       .onComplete(onSuccess(v -> testComplete()));
     await();
@@ -581,7 +586,7 @@ public abstract class AsyncMapTest extends VertxTestBase {
     getVertx().sharedData().<String, String>getAsyncMap("foo")
       .compose(map -> map
         .replaceIfPresent("pipo", "molo", "mili",10)
-        .andThen(onSuccess(this::assertFalse)))
+        .expecting(that(Assert::assertFalse)))
       .onComplete(onSuccess(vd -> testComplete()));
     await();
   }
@@ -659,7 +664,7 @@ public abstract class AsyncMapTest extends VertxTestBase {
       .compose(v -> sharedData
         .<String, String>getAsyncMap("bar")
         .compose(map -> map.get("foo"))
-        .andThen(onSuccess(this::assertNull)))
+        .expecting(that(Assert::assertNull)))
       .onComplete(onSuccess(res -> testComplete()));
     await();
   }
@@ -683,12 +688,15 @@ public abstract class AsyncMapTest extends VertxTestBase {
     SharedData sharedData = getVertx().sharedData();
     sharedData.<String, String>getAsyncMap("foo")
       .compose(map -> map
-        .size().andThen(onSuccess(size -> assertEquals(0, size.intValue())))
+        .size()
+        .expecting(that(size -> assertEquals(0, size.intValue())))
         .compose(v -> map.put("foo", "bar"))
-        .compose(v -> map.size().andThen(onSuccess(size -> assertEquals(1, size.intValue())))))
+        .compose(v -> map.size()
+          .expecting(that(size -> assertEquals(1, size.intValue())))))
       .compose(v -> sharedData.
           <String, String>getAsyncMap("foo")
-          .compose(map -> map.size().andThen(onSuccess(size -> assertEquals(1, size.intValue())))))
+          .compose(map -> map.size()
+            .expecting(that(size -> assertEquals(1, size.intValue())))))
       .onComplete(onSuccess(v -> testComplete()));
     await();
   }
@@ -712,7 +720,7 @@ public abstract class AsyncMapTest extends VertxTestBase {
     loadData(map, (vertx, asyncMap) -> {
       asyncMap
         .values()
-        .andThen(onSuccess(values -> {
+        .expecting(that(values -> {
           assertEquals(map.values().size(), values.size());
           assertTrue(map.values().containsAll(values));
           assertTrue(values.containsAll(map.values()));
@@ -727,7 +735,8 @@ public abstract class AsyncMapTest extends VertxTestBase {
     Map<JsonObject, Buffer> map = genJsonToBuffer(100);
     loadData(map, (vertx, asyncMap) -> {
       asyncMap
-        .entries().andThen(onSuccess(res -> assertEquals(map.entrySet(), res.entrySet())))
+        .entries()
+        .expecting(that(res -> assertEquals(map.entrySet(), res.entrySet())))
         .onSuccess(res -> testComplete());
     });
     await();
@@ -760,7 +769,7 @@ public abstract class AsyncMapTest extends VertxTestBase {
         .<K, V>getAsyncMap("foo")
         .compose(map -> map
           .get(k))
-        .andThen(onSuccess(res -> assertEquals(v, res))))
+        .expecting(that(res -> assertEquals(v, res))))
       .onComplete(onSuccess(res -> testComplete()));
     await();
   }
@@ -769,13 +778,13 @@ public abstract class AsyncMapTest extends VertxTestBase {
     SharedData sharedData = getVertx().sharedData();
     sharedData.<K, V>getAsyncMap("foo")
       .compose(map -> map.putIfAbsent(k, v))
-      .andThen(onSuccess(this::assertNull))
+      .expecting(that(Assert::assertNull))
       .compose(v_ -> sharedData.<K, V>getAsyncMap("foo"))
       .compose(map -> map
         .get(k)
-        .andThen(onSuccess(res -> assertEquals(v, res)))
+        .expecting(that(res -> assertEquals(v, res)))
         .compose(res2 -> map.putIfAbsent(k, v))
-        .andThen(onSuccess(res -> assertEquals(v, res))))
+        .expecting(that(res -> assertEquals(v, res))))
       .onComplete(onSuccess(res -> testComplete()));
     await();
   }
@@ -783,11 +792,11 @@ public abstract class AsyncMapTest extends VertxTestBase {
   private <K, V> void testMapRemove(K k, V v) {
     SharedData sharedData = getVertx().sharedData();
     sharedData.<K, V>getAsyncMap("foo")
-      .compose(map -> map.put(k, v).andThen(onSuccess(this::assertNull)))
+      .compose(map -> map.put(k, v).expecting(that(Assert::assertNull)))
       .compose(v_ -> sharedData
         .<K, V>getAsyncMap("foo")
         .compose(map -> map.remove(k))
-        .andThen(onSuccess(res -> assertEquals(v, res))))
+        .expecting(that(res -> assertEquals(v, res))))
       .onComplete(onSuccess(res -> testComplete()));
     await();
   }
@@ -796,13 +805,13 @@ public abstract class AsyncMapTest extends VertxTestBase {
     SharedData sharedData = getVertx().sharedData();
     sharedData
       .<K, V>getAsyncMap("foo")
-      .compose(map -> map.put(k, v).andThen(onSuccess(this::assertNull)))
+      .compose(map -> map.put(k, v).expecting(that(Assert::assertNull)))
       .compose(v_ -> sharedData.<K, V>getAsyncMap("foo"))
       .compose(map -> map
         .removeIfPresent(otherKey, v)
-        .andThen(onSuccess(this::assertFalse))
-        .compose(res -> map.removeIfPresent(k, otherValue).andThen(onSuccess(this::assertFalse)))
-        .compose(res -> map.removeIfPresent(k, v).andThen(onSuccess(this::assertTrue))))
+        .expecting(that(Assert::assertFalse))
+        .compose(res -> map.removeIfPresent(k, otherValue).expecting(that(Assert::assertFalse)))
+        .compose(res -> map.removeIfPresent(k, v).expecting(that(Assert::assertTrue))))
       .onComplete(onSuccess(v_ -> testComplete()));
     await();
   }
@@ -811,13 +820,13 @@ public abstract class AsyncMapTest extends VertxTestBase {
     SharedData sharedData = getVertx().sharedData();
     sharedData
       .<K, V>getAsyncMap("foo")
-      .compose(map -> map.put(k, v).andThen(onSuccess(this::assertNull)))
+      .compose(map -> map.put(k, v).expecting(that(Assert::assertNull)))
       .compose(v_ -> sharedData
         .<K, V>getAsyncMap("foo")
-        .compose(map -> map.replace(k, other).andThen(onSuccess(res -> assertEquals(v, res)))
-          .compose(v__ -> map.get(k).andThen(onSuccess(res -> assertEquals(other, res))))
-          .compose(v__ -> map.remove(k)).compose(v__ -> map.replace(k, other).andThen(onSuccess(this::assertNull)))
-          .compose(v__ -> map.get(k).andThen(onSuccess(this::assertNull)))))
+        .compose(map -> map.replace(k, other).expecting(that(res -> assertEquals(v, res)))
+          .compose(v__ -> map.get(k).expecting(that(res -> assertEquals(other, res))))
+          .compose(v__ -> map.remove(k)).compose(v__ -> map.replace(k, other).expecting(that(Assert::assertNull)))
+          .compose(v__ -> map.get(k).expecting(that(Assert::assertNull)))))
       .onComplete(onSuccess(v_ -> testComplete()));
 
     await();
@@ -827,12 +836,12 @@ public abstract class AsyncMapTest extends VertxTestBase {
     SharedData sharedData = getVertx().sharedData();
     sharedData.<K, V>getAsyncMap("foo")
       .compose(map -> map.put(k, v)
-      .andThen(onSuccess(this::assertNull)))
+      .expecting(that(Assert::assertNull)))
       .compose(v_ -> sharedData.<K, V>getAsyncMap("foo"))
       .compose(map -> map
         .replaceIfPresent(k, v, other)
-        .compose(res2 -> map.replaceIfPresent(k, v, other).andThen(onSuccess(this::assertFalse)))
-        .compose(v_ -> map.get(k).andThen(onSuccess(res4 -> assertEquals(other, res4)))))
+        .compose(res2 -> map.replaceIfPresent(k, v, other).expecting(that(Assert::assertFalse)))
+        .compose(v_ -> map.get(k).expecting(that(res4 -> assertEquals(other, res4)))))
       .onComplete(onSuccess(v_ -> testComplete()));
     await();
   }

@@ -39,6 +39,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static io.vertx.test.core.AssertExpectations.that;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -72,7 +74,7 @@ public class Http2Test extends HttpTest {
     startServer(testAddress);
     client.request(requestOptions).compose(req -> req
         .send()
-        .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+      .expecting(that(resp -> assertEquals(200, resp.statusCode())))
       .compose(HttpClientResponse::body)).
       onComplete(onSuccess(body -> {
         assertEquals(Buffer.buffer("hello world"), body);
@@ -91,7 +93,7 @@ public class Http2Test extends HttpTest {
     startServer(testAddress);
     client.request(requestOptions).compose(req -> req
         .send()
-        .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+        .expecting(HttpResponseExpectation.SC_OK)
         .compose(HttpClientResponse::end))
       .onComplete(onSuccess(v -> testComplete()));
     await();
@@ -107,8 +109,8 @@ public class Http2Test extends HttpTest {
     startServer(testAddress);
     client.request(requestOptions).compose(req -> req
         .send()
-        .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
-        .compose(resp -> resp.end().andThen(onSuccess(v -> {
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(resp -> resp.end().expecting(that(v -> {
           assertEquals(1, resp.trailers().size());
           assertEquals("trailer", resp.trailers().get("some"));
         }))))

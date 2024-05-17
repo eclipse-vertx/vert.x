@@ -54,6 +54,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.zip.GZIPOutputStream;
 
+import static io.vertx.test.core.AssertExpectations.that;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -1070,10 +1072,8 @@ public class Http2ClientTest extends Http2TestBase {
         vertx.runOnContext(v -> {
           client.request(new RequestOptions(requestOptions).setTimeout(5000))
             .compose(HttpClientRequest::send)
-            .onComplete(onSuccess(resp2 -> {
-              assertEquals(2, connections.size());
-              testComplete();
-            }));
+            .expecting(that(v2 -> assertEquals(2, connections.size())))
+            .onComplete(onSuccess(resp2 -> testComplete()));
         });
       });
       req.send().onComplete(onFailure(resp -> {

@@ -128,7 +128,7 @@ public abstract class HttpClientTimeoutTest extends HttpTestBase {
         client.request(requestOptions)
           .compose(req -> req
             .send()
-            .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+            .expecting(HttpResponseExpectation.SC_OK)
             .compose(HttpClientResponse::body))
           .onComplete(onSuccess(buff -> {
             assertEquals("OK", buff.toString());
@@ -335,7 +335,7 @@ public abstract class HttpClientTimeoutTest extends HttpTestBase {
     client.request(new RequestOptions(requestOptions).setIdleTimeout(timeout))
       .compose(req -> req
         .send()
-        .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+        .expecting(HttpResponseExpectation.SC_OK)
         .compose(HttpClientResponse::end))
       .onComplete(onSuccess(v -> testComplete()));
 
