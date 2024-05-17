@@ -36,9 +36,11 @@ import io.vertx.core.impl.SysProps;
 public interface HttpHeaders {
 
   /** JVM system property that disables HTTP headers validation, don't use this in production. */
+  @Deprecated
   String DISABLE_HTTP_HEADERS_VALIDATION_PROP_NAME = SysProps.DISABLE_HTTP_HEADERS_VALIDATION.name;
 
   /** Constant that disables HTTP headers validation, this is a constant so the JIT can eliminate validation code. */
+  @Deprecated
   boolean DISABLE_HTTP_HEADERS_VALIDATION = SysProps.DISABLE_HTTP_HEADERS_VALIDATION.getBoolean();
 
   /**
