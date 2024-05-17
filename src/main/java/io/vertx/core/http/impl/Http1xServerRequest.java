@@ -48,6 +48,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.Set;
 
+import static io.netty.handler.codec.DecoderResult.failure;
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
 /**
@@ -147,6 +148,10 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
     response = new Http1xServerResponse((VertxInternal) conn.vertx(), context, conn, request, metric, writable, keepAlive);
     if (conn.handle100ContinueAutomatically) {
       check100();
+    }
+    // See https://datatracker.ietf.org/doc/html/rfc9112#section-3.2
+    if(request.decoderResult().isSuccess() && !headers().contains(io.vertx.core.http.HttpHeaders.HOST)) {
+      request.setDecoderResult(failure(new IllegalArgumentException("Invalid request, Host header must be present")));
     }
   }
 
