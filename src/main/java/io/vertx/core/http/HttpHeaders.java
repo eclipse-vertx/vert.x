@@ -35,6 +35,7 @@ import io.vertx.core.http.impl.headers.HeadersMultiMap;
 public interface HttpHeaders {
 
   /** JVM system property that disables HTTP headers validation, don't use this in production. */
+  @Deprecated
   String DISABLE_HTTP_HEADERS_VALIDATION_PROP_NAME = "vertx.disableHttpHeadersValidation";
 
   /** Constant that disables HTTP headers validation, this is a constant so the JIT can eliminate validation code. */
