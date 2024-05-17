@@ -23,7 +23,7 @@ jobs:
         with:
           ref: ${{ inputs.branch }}
       - name: Install JDK
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v4
         with:
           java-version: ${{ inputs.jdk }}
           distribution: temurin
