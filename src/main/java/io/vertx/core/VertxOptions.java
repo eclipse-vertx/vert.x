@@ -34,6 +34,10 @@ import java.util.concurrent.TimeUnit;
 @JsonGen(publicConverter = false)
 public class VertxOptions {
 
+  /**
+   * @deprecated instead use {@link VertxOptions#setDisableTCCL(boolean)}, removed in vertx 5
+   */
+  @Deprecated
   private static final String DISABLE_TCCL_PROP_NAME = "vertx.disableTCCL";
 
   /**
