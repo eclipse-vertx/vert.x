@@ -48,16 +48,19 @@ public enum SysProps {
 
   /**
    * Default value of {@link io.vertx.core.file.FileSystemOptions#DEFAULT_FILE_CACHING_ENABLED}
+   *
    */
   DISABLE_FILE_CACHING("vertx.disableFileCaching"),
 
   /**
    * Default value of {@link io.vertx.core.file.FileSystemOptions#DEFAULT_CLASS_PATH_RESOLVING_ENABLED}
+   *
    */
   DISABLE_FILE_CP_RESOLVING("vertx.disableFileCPResolving"),
 
   /**
    * Default value of {@link io.vertx.core.file.FileSystemOptions#DEFAULT_FILE_CACHING_DIR}
+   *
    */
   FILE_CACHE_DIR("vertx.cacheDirBase") {
     @Override
