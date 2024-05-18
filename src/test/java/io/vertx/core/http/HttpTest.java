@@ -6801,10 +6801,11 @@ public abstract class HttpTest extends HttpTestBase {
       }
     );
     startServer(testAddress);
-    client.request(requestOptions)
-      .compose(req -> req.send()
+    client.request(requestOptions, req -> req
+        .send()
         .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
-        .compose(HttpClientResponse::end))
+        .compose(HttpClientResponse::end)
+      )
       .onComplete(onSuccess(nothing -> complete()));
     await();
   }
