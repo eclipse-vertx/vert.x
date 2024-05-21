@@ -12,13 +12,17 @@
 package io.vertx.core.streams;
 
 import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.streams.impl.PipeImpl;
+
+import java.util.function.BiConsumer;
 
 /**
  * Represents a stream of items that can be read from.
@@ -132,5 +136,26 @@ public interface ReadStream<T> extends StreamBase {
    */
   default void pipeTo(WriteStream<T> dst, Handler<AsyncResult<Void>> handler) {
     new PipeImpl<>(this).to(dst, handler);
+  }
+
+  /**
+   * Apply a {@code collector} to this stream, the obtained result is returned as a future.
+   * <p/>
+   * Handlers of this stream are affected by this operation.
+   *
+   * @return a future notified with result produced by the {@code collector} applied to this stream
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  default <R, A> Future<R> collect(java.util.stream.Collector<T , A , R> collector) {
+    PromiseInternal<R> promise = (PromiseInternal<R>) Promise.promise();
+    A cumulation = collector.supplier().get();
+    BiConsumer<A, T> accumulator = collector.accumulator();
+    handler(elt -> accumulator.accept(cumulation, elt));
+    endHandler(v -> {
+      R result = collector.finisher().apply(cumulation);
+      promise.tryComplete(result);
+    });
+    exceptionHandler(promise::tryFail);
+    return promise.future();
   }
 }
