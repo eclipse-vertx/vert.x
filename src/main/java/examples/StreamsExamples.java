@@ -11,7 +11,7 @@
 
 package examples;
 
-import io.vertx.core.Handler;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
@@ -23,8 +23,10 @@ import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.streams.Pipe;
-import io.vertx.core.streams.Pump;
 import io.vertx.core.streams.ReadStream;
+import io.vertx.core.streams.Pump;
+
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -168,5 +170,12 @@ public class StreamsExamples {
         // Append some text and close the file
         dst.end(Buffer.buffer("done"));
       });
+  }
+
+  public <T> void reduce1(ReadStream<T> stream) {
+    // Count the number of elements
+    Future<Long> result = stream.collect(Collectors.counting());
+
+    result.onSuccess(count -> System.out.println("Stream emitted " + count + " elements"));
   }
 }
