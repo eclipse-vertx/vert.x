@@ -170,3 +170,15 @@ returns `true` if the write queue is considered full.
 Will be called if an exception occurs on the `WriteStream`.
 - {@link io.vertx.core.streams.WriteStream#drainHandler}:
 The handler will be called if the `WriteStream` is considered no longer full.
+
+=== Reducing streams
+
+Java collectors can reduce a `ReadStream` to a result in a similar fashion `java.util.Stream` does, yet in an asynchronous
+fashion.
+
+[source,$lang]
+----
+{@link examples.StreamsExamples#reduce1}
+----
+
+Note that `collect` overrides any previously handler set on the stream.
