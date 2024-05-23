@@ -22,6 +22,7 @@ import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
@@ -30,6 +31,8 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.OutboundMessageQueue;
 import io.vertx.core.net.impl.MessageWrite;
 import io.vertx.core.streams.impl.InboundBuffer;
+
+import java.util.List;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -51,6 +54,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   private long bytesRead;
   private long bytesWritten;
   protected boolean isConnect;
+  private Throwable failure;
 
   VertxHttp2Stream(C conn, ContextInternal context) {
     this.conn = conn;
@@ -108,9 +112,15 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   void onClose() {
     conn.flushBytesWritten();
     context.execute(ex -> handleClose());
+    List<MessageWrite> writes = messageQueue.clear();
+    Throwable cause = failure;
+    if (cause == null) {
+      cause = HttpUtils.STREAM_CLOSED_EXCEPTION;
+    }
   }
 
   void onException(Throwable cause) {
+    failure = cause;
     context.emit(cause, this::handleException);
   }
 
