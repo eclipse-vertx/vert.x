@@ -32,6 +32,10 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.net.ssl.SSLHandshakeException;
+import java.io.File;
+import java.io.RandomAccessFile;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -1127,6 +1131,43 @@ public class Http2Test extends HttpTest {
         }
       }
     });
+    await();
+  }
+
+  @Test
+  public void testSendFileCancellation() throws Exception {
+
+    Path webroot = Files.createTempDirectory("webroot");
+    File res = new File(webroot.toFile(), "large.dat");
+    RandomAccessFile f = new RandomAccessFile(res, "rw");
+    f.setLength(1024 * 1024);
+
+    AtomicInteger errors = new AtomicInteger();
+    vertx.getOrCreateContext().exceptionHandler(err -> {
+      errors.incrementAndGet();
+    });
+
+    server.requestHandler(request -> {
+      request
+        .response()
+        .sendFile(res.getAbsolutePath())
+        .onComplete(onFailure(ar -> {
+          assertEquals(0, errors.get());
+          testComplete();
+        }));
+    });
+
+    startServer();
+
+    client.request(requestOptions)
+      .onComplete(onSuccess(req -> {
+        req.send().onComplete(onSuccess(resp -> {
+          assertEquals(200, resp.statusCode());
+          assertEquals(HttpVersion.HTTP_2, resp.version());
+          req.connection().close();
+        }));
+      }));
+
     await();
   }
 }
