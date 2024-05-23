@@ -121,7 +121,7 @@ public interface ReadStream<T> extends StreamBase {
    *
    * @return a future notified with result produced by the {@code collector} applied to this stream
    */
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @GenIgnore
   default <R, A> Future<R> collect(java.util.stream.Collector<T , A , R> collector) {
     PromiseInternal<R> promise = (PromiseInternal<R>) Promise.promise();
     A cumulation = collector.supplier().get();
