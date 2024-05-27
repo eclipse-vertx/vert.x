@@ -336,8 +336,7 @@ public class AsyncFileImpl implements AsyncFile {
     if (exceptionHandler != null && t instanceof Exception) {
       exceptionHandler.handle(t);
     } else {
-      log.error("Unhandled exception", t);
-
+      context.reportException(t);
     }
   }
 
@@ -366,6 +365,9 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   private synchronized void doRead(ByteBuffer bb) {
+    if (handler == null) {
+      return;
+    }
     Buffer buff = Buffer.buffer(readBufferSize);
     int readSize = (int) Math.min((long)readBufferSize, readLength);
     bb.limit(readSize);

@@ -351,6 +351,7 @@ public class OutboundWriteQueue<E> {
    * @return the removed elements.
    */
   public final List<E> clear() {
+    // From event loop thread
     writeQueueFull = 0;
     List<E> elts = new ArrayList<>();
     if (overflow != null) {

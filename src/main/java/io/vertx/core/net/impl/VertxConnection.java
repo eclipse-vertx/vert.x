@@ -31,7 +31,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
@@ -192,10 +191,7 @@ public class VertxConnection extends ConnectionBase {
       shutdownTimeout = null;
       timeout.cancel(false);
     }
-    List<MessageWrite> pending = messageQueue.clear();
-    for (MessageWrite msg : pending) {
-      msg.cancel(CLOSED_EXCEPTION);
-    }
+    messageQueue.close();
     super.handleClosed();
   }
 
@@ -428,6 +424,11 @@ public class VertxConnection extends ConnectionBase {
       } else {
         return false;
       }
+    }
+
+    @Override
+    protected void disposeMessage(MessageWrite write) {
+      write.cancel(CLOSED_EXCEPTION);
     }
 
     @Override

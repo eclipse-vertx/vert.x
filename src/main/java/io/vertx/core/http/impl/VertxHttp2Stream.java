@@ -51,6 +51,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   private long bytesRead;
   private long bytesWritten;
   protected boolean isConnect;
+  private Throwable failure;
 
   VertxHttp2Stream(C conn, ContextInternal context) {
     this.conn = conn;
@@ -63,13 +64,21 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     this.messageQueue = new OutboundMessageQueue<>(conn.getContext().nettyEventLoop()) {
       // TODO implement stop drain to optimize flushes ?
       @Override
-      public boolean test(MessageWrite write) {
+      public boolean test(MessageWrite msg) {
         if (writable) {
-          write.write();
+          msg.write();
           return true;
         } else {
           return false;
         }
+      }
+      @Override
+      protected void disposeMessage(MessageWrite messageWrite) {
+        Throwable cause = failure;
+        if (cause == null) {
+          cause = HttpUtils.STREAM_CLOSED_EXCEPTION;
+        }
+        messageWrite.cancel(cause);
       }
       @Override
       protected void writeQueueDrained() {
@@ -108,9 +117,11 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   void onClose() {
     conn.flushBytesWritten();
     context.execute(ex -> handleClose());
+    messageQueue.close();
   }
 
   void onException(Throwable cause) {
+    failure = cause;
     context.emit(cause, this::handleException);
   }
 

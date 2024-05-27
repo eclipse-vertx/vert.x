@@ -469,9 +469,6 @@ public class OutboundWriteQueueTest extends AsyncTestBase {
         break;
       }
     }
-
-    System.out.println(wqf.get());
-
   }
 
   @Test
