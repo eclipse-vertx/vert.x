@@ -22,7 +22,6 @@ import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
@@ -31,8 +30,6 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.OutboundMessageQueue;
 import io.vertx.core.net.impl.MessageWrite;
 import io.vertx.core.streams.impl.InboundBuffer;
-
-import java.util.List;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -67,13 +64,21 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     this.messageQueue = new OutboundMessageQueue<>(conn.getContext().nettyEventLoop()) {
       // TODO implement stop drain to optimize flushes ?
       @Override
-      public boolean test(MessageWrite write) {
+      public boolean test(MessageWrite msg) {
         if (writable) {
-          write.write();
+          msg.write();
           return true;
         } else {
           return false;
         }
+      }
+      @Override
+      protected void disposeMessage(MessageWrite messageWrite) {
+        Throwable cause = failure;
+        if (cause == null) {
+          cause = HttpUtils.STREAM_CLOSED_EXCEPTION;
+        }
+        messageWrite.cancel(cause);
       }
       @Override
       protected void writeQueueDrained() {
@@ -112,11 +117,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   void onClose() {
     conn.flushBytesWritten();
     context.execute(ex -> handleClose());
-    List<MessageWrite> writes = messageQueue.clear();
-    Throwable cause = failure;
-    if (cause == null) {
-      cause = HttpUtils.STREAM_CLOSED_EXCEPTION;
-    }
+    messageQueue.close();
   }
 
   void onException(Throwable cause) {

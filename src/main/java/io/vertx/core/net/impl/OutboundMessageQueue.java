@@ -12,21 +12,24 @@ import static io.vertx.core.streams.impl.OutboundWriteQueue.numberOfUnwritableSi
 /**
  * Outbound write queue for event-loop and channel like structures.
  */
-public class OutboundMessageQueue<T> implements Predicate<T> {
+public class OutboundMessageQueue<M> implements Predicate<M> {
 
   private final EventLoop eventLoop;
   private final AtomicInteger numberOfUnwritableSignals = new AtomicInteger();
-  private final OutboundWriteQueue<T> writeQueue;
+  private final OutboundWriteQueue<M> writeQueue;
+  private volatile boolean eventuallyClosed;
 
   // State accessed exclusively by the event loop thread
   private boolean overflow;
+  private boolean closed;
+  private int reentrant = 0;
 
   /**
    * Create a queue.
    *
    * @param eventLoop the queue event-loop
    */
-  public OutboundMessageQueue(EventLoop eventLoop, Predicate<T> predicate) {
+  public OutboundMessageQueue(EventLoop eventLoop, Predicate<M> predicate) {
     this.eventLoop = eventLoop;
     this.writeQueue = new OutboundWriteQueue<>(predicate);
   }
@@ -42,7 +45,7 @@ public class OutboundMessageQueue<T> implements Predicate<T> {
   }
 
   @Override
-  public boolean test(T t) {
+  public boolean test(M msg) {
     throw new UnsupportedOperationException();
   }
 
@@ -60,16 +63,32 @@ public class OutboundMessageQueue<T> implements Predicate<T> {
    * @param message the message to be written
    * @return whether the writer can continue/stop writing to the queue
    */
-  public final boolean write(T message) {
+  public final boolean write(M message) {
     boolean inEventLoop = eventLoop.inEventLoop();
     int flags;
     if (inEventLoop) {
-      flags = writeQueue.add(message);
-      overflow |= (flags & OutboundWriteQueue.DRAIN_REQUIRED_MASK) != 0;
-      if ((flags & OutboundWriteQueue.QUEUE_WRITABLE_MASK) != 0) {
-        handleWriteQueueDrained(numberOfUnwritableSignals(flags));
+      if (closed) {
+        disposeMessage(message);
+        return true;
+      }
+      reentrant++;
+      try {
+        flags = writeQueue.add(message);
+        overflow |= (flags & OutboundWriteQueue.DRAIN_REQUIRED_MASK) != 0;
+        if ((flags & OutboundWriteQueue.QUEUE_WRITABLE_MASK) != 0) {
+          handleWriteQueueDrained(numberOfUnwritableSignals(flags));
+        }
+      } finally {
+        reentrant--;
+      }
+      if (reentrant == 0 && closed) {
+        releaseMessages();
       }
     } else {
+      if (eventuallyClosed) {
+        disposeMessage(message);
+        return true;
+      }
       flags = writeQueue.submit(message);
       if ((flags & OutboundWriteQueue.DRAIN_REQUIRED_MASK) != 0) {
         eventLoop.execute(this::drainWriteQueue);
@@ -90,23 +109,57 @@ public class OutboundMessageQueue<T> implements Predicate<T> {
     assert(eventLoop.inEventLoop());
     if (overflow) {
       startDraining();
-      int flags = writeQueue.drain();
-      overflow = (flags & OutboundWriteQueue.DRAIN_REQUIRED_MASK) != 0;
-      if ((flags & OutboundWriteQueue.QUEUE_WRITABLE_MASK) != 0) {
-        handleWriteQueueDrained(numberOfUnwritableSignals(flags));
+      reentrant++;
+      int flags;
+      try {
+        flags = writeQueue.drain();
+        overflow = (flags & OutboundWriteQueue.DRAIN_REQUIRED_MASK) != 0;
+        if ((flags & OutboundWriteQueue.QUEUE_WRITABLE_MASK) != 0) {
+          handleWriteQueueDrained(numberOfUnwritableSignals(flags));
+        }
+      } finally {
+        reentrant--;
       }
       stopDraining();
+      if (reentrant == 0 && closed) {
+        releaseMessages();
+      }
     }
+  }
+
+  /**
+   * Close the queue.
+   */
+  public final void close() {
+    assert(eventLoop.inEventLoop());
+    if (closed) {
+      return;
+    }
+    closed = true;
+    eventuallyClosed = true;
+    if (reentrant > 0) {
+      return;
+    }
+    releaseMessages();
   }
 
   private void drainWriteQueue() {
     startDraining();
-    int flags = writeQueue.drain();
-    overflow = (flags & OutboundWriteQueue.DRAIN_REQUIRED_MASK) != 0;
-    if ((flags & OutboundWriteQueue.QUEUE_WRITABLE_MASK) != 0) {
-      handleWriteQueueDrained(numberOfUnwritableSignals(flags));
+    reentrant++;
+    int flags;
+    try {
+      flags = writeQueue.drain();
+      overflow = (flags & OutboundWriteQueue.DRAIN_REQUIRED_MASK) != 0;
+      if ((flags & OutboundWriteQueue.QUEUE_WRITABLE_MASK) != 0) {
+        handleWriteQueueDrained(numberOfUnwritableSignals(flags));
+      }
+    } finally {
+      reentrant--;
     }
     stopDraining();
+    if (reentrant == 0 && closed) {
+      releaseMessages();
+    }
   }
 
   private void handleWriteQueueDrained(int numberOfSignals) {
@@ -116,14 +169,11 @@ public class OutboundMessageQueue<T> implements Predicate<T> {
     }
   }
 
-  /**
-   * Clear the queue.
-   *
-   * @return the pending writes
-   */
-  public final List<T> clear() {
-    assert(eventLoop.inEventLoop());
-    return writeQueue.clear();
+  private void releaseMessages() {
+    List<M> messages = writeQueue.clear();
+    for (M elt : messages) {
+      disposeMessage(elt);
+    }
   }
 
   /**
@@ -136,5 +186,13 @@ public class OutboundMessageQueue<T> implements Predicate<T> {
   }
 
   protected void stopDraining() {
+  }
+
+  /**
+   * Release a message, this is called when the queue has been closed and message resource cleanup.
+   *
+   * @param msg the message
+   */
+  protected void disposeMessage(M msg) {
   }
 }
