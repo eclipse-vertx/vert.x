@@ -366,7 +366,10 @@ public interface Vertx extends Measured {
    * @param unit the delay unit
    * @return the timer object
    */
-  Timer timer(long delay, TimeUnit unit);
+  default Timer timer(long delay, TimeUnit unit) {
+    ContextInternal ctx = (ContextInternal) getOrCreateContext();
+    return ctx.timer(delay, unit);
+  }
 
   /**
    * Set a one-shot timer to fire after {@code delay} milliseconds, at which point {@code handler} will be called with

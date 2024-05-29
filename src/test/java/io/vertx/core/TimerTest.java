@@ -372,7 +372,7 @@ public class TimerTest extends VertxTestBase {
   }
 
   @Test
-  public void testTimerFireOnContext() {
+  public void testTimerFireOnContext1() {
     new Thread(() -> {
       Context ctx = vertx.getOrCreateContext();
       Timer timer = vertx.timer(10, TimeUnit.MILLISECONDS);
@@ -381,6 +381,21 @@ public class TimerTest extends VertxTestBase {
         testComplete();
       }));
     }).start();
+    await();
+  }
+
+  @Test
+  public void testTimerFireOnContext2() {
+    vertx.runOnContext(v1 -> {
+      Context current = vertx.getOrCreateContext();
+      ContextInternal context = ((VertxInternal) vertx).createEventLoopContext();
+      assertNotSame(context, current);
+      Timer timer = context.timer(10, TimeUnit.MILLISECONDS);
+      timer.onComplete(onSuccess(v2 -> {
+        assertSame(context, Vertx.currentContext());
+        testComplete();
+      }));
+    });
     await();
   }
 

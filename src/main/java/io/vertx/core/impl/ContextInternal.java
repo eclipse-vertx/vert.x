@@ -22,6 +22,7 @@ import io.vertx.core.spi.context.storage.AccessMode;
 import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.core.spi.tracing.VertxTracer;
 
+import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.function.Supplier;
 
@@ -434,6 +435,33 @@ public interface ContextInternal extends Context {
   default long setTimer(long delay, Handler<Long> handler) {
     VertxImpl owner = (VertxImpl) owner();
     return owner.scheduleTimeout(this, false, delay, TimeUnit.MILLISECONDS, false, handler);
+  }
+
+  /**
+   * Like {@link #timer(long, TimeUnit)} with a unit in millis.
+   */
+  default Timer timer(long delay) {
+    return timer(delay, TimeUnit.MILLISECONDS);
+  }
+
+  /**
+   * Create a timer task configured with the specified {@code delay}, when the timeout fires the timer future
+   * is succeeded, when the timeout is cancelled the timer future is failed with a {@link java.util.concurrent.CancellationException}
+   * instance.
+   *
+   * @param delay the delay
+   * @param unit the delay unit
+   * @return the timer object
+   */
+  default Timer timer(long delay, TimeUnit unit) {
+    Objects.requireNonNull(unit);
+    if (delay <= 0) {
+      throw new IllegalArgumentException("Invalid timer delay: " + delay);
+    }
+    io.netty.util.concurrent.ScheduledFuture<Void> fut = nettyEventLoop().schedule(() -> null, delay, unit);
+    TimerImpl timer = new TimerImpl(this, fut);
+    fut.addListener(timer);
+    return timer;
   }
 
   /**
