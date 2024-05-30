@@ -2878,8 +2878,9 @@ public class WebSocketTest extends VertxTestBase {
         ws.close();
       });
     });
+    HttpClientAgent client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(version).setKeepAlive(false));
     server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST).onComplete(onSuccess(v1 -> {
-      handshake(vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(version).setKeepAlive(false)), req -> {
+      handshake(client, req -> {
         req.send().onComplete(onSuccess(resp -> {
           assertEquals(101, resp.statusCode());
           resp.endHandler(v -> {
@@ -2894,9 +2895,9 @@ public class WebSocketTest extends VertxTestBase {
             pipeline.addBefore("handler", "encoder", new WebSocket13FrameEncoder(true));
             pipeline.addBefore("handler", "decoder", new WebSocket13FrameDecoder(false, false, 1000));
             pipeline.remove("codec");
-            soi.writeMessage(new PingWebSocketFrame()).onComplete(onSuccess(written -> {
-            }));
+            Future<Void> pingSent = soi.writeMessage(new PingWebSocketFrame());
             soi.closeHandler(v2 -> {
+              assertTrue(pingSent.succeeded());
               testComplete();
             });
           });
