@@ -22,41 +22,7 @@ public interface AccessMode {
   /**
    * This access mode provides concurrent access to context local storage with thread safety and atomicity.
    */
-  AccessMode CONCURRENT = new AccessMode() {
-
-    private final VarHandle LOCALS_UPDATER = MethodHandles.arrayElementVarHandle(Object[].class);
-
-    @Override
-    public Object get(Object[] locals, int idx) {
-      return LOCALS_UPDATER.getVolatile(locals, idx);
-    }
-
-    @Override
-    public void put(Object[] locals, int idx, Object value) {
-      LOCALS_UPDATER.setRelease(locals, idx, value);
-    }
-
-    @Override
-    public Object getOrCreate(Object[] locals, int idx, Supplier<Object> initialValueSupplier) {
-      Object res;
-      while (true) {
-        res = LOCALS_UPDATER.getVolatile(locals, idx);
-        if (res != null) {
-          break;
-        }
-        Object initial = initialValueSupplier.get();
-        if (initial == null) {
-          throw new IllegalStateException();
-        }
-        if (LOCALS_UPDATER.compareAndSet(locals, idx, null, initial)) {
-          res = initial;
-          break;
-        }
-      }
-      return res;
-    }
-  };
-
+  AccessMode CONCURRENT = ConcurrentAccessMode.INSTANCE;
   /**
    * Return the object at index {@code idx} in the {@code locals} array.
    * @param locals the array
