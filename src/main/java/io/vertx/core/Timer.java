@@ -10,7 +10,11 @@
  */
 package io.vertx.core;
 
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
+
+import java.util.concurrent.Delayed;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A timer task that can be used as a future.
@@ -21,7 +25,7 @@ import io.vertx.codegen.annotations.VertxGen;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @VertxGen
-public interface Timer extends Future<Void> {
+public interface Timer extends Future<Void>, Delayed {
 
   /**
    * Attempt to cancel the timer task, when the timer is cancelled, the timer is
@@ -31,4 +35,11 @@ public interface Timer extends Future<Void> {
    */
   boolean cancel();
 
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @Override
+  long getDelay(TimeUnit unit);
+
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @Override
+  int compareTo(Delayed o);
 }

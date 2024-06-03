@@ -14,6 +14,9 @@ import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.Timer;
 import io.vertx.core.impl.future.FutureImpl;
 
+import java.util.concurrent.Delayed;
+import java.util.concurrent.TimeUnit;
+
 /**
  * A timer task as a vertx future.
  *
@@ -26,6 +29,16 @@ class TimerImpl extends FutureImpl<Void> implements FutureListener<Void>, Timer 
   TimerImpl(ContextInternal ctx, io.netty.util.concurrent.ScheduledFuture<Void> delegate) {
     super(ctx);
     this.delegate = delegate;
+  }
+
+  @Override
+  public long getDelay(TimeUnit unit) {
+    return delegate.getDelay(unit);
+  }
+
+  @Override
+  public int compareTo(Delayed o) {
+    return delegate.compareTo(o);
   }
 
   @Override
