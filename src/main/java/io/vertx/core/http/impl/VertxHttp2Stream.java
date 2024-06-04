@@ -98,7 +98,6 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
             conn.consumeCredits(this.stream, len);
           }
         });
-        bytesRead += data.length();
         handleData(data);
       }
     });
@@ -146,6 +145,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   void onData(Buffer data) {
+    bytesRead += data.length();
     conn.reportBytesRead(data.length());
     context.execute(data, pending::write);
   }
@@ -237,10 +237,10 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   void doWriteHeaders(Http2Headers headers, boolean end, boolean checkFlush, Promise<Void> promise) {
-    conn.handler.writeHeaders(stream, headers, end, priority.getDependency(), priority.getWeight(), priority.isExclusive(), checkFlush, (FutureListener<Void>) promise);
     if (end) {
       endWritten();
     }
+    conn.handler.writeHeaders(stream, headers, end, priority.getDependency(), priority.getWeight(), priority.isExclusive(), checkFlush, (FutureListener<Void>) promise);
   }
 
   protected void endWritten() {
@@ -273,10 +273,10 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     int numOfBytes = chunk.readableBytes();
     bytesWritten += numOfBytes;
     conn.reportBytesWritten(numOfBytes);
-    conn.handler.writeData(stream, chunk, end, (FutureListener<Void>) promise);
     if (end) {
       endWritten();
     }
+    conn.handler.writeData(stream, chunk, end, (FutureListener<Void>) promise);
   }
 
   final void writeReset(long code) {

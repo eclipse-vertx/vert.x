@@ -10,8 +10,10 @@
  */
 package io.vertx.core.http;
 
+import io.vertx.core.ThreadingModel;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.fakemetrics.*;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -27,19 +29,21 @@ public class Http2MetricsTest extends HttpMetricsTestBase {
   public static Collection<Object[]> params() {
     ArrayList<Object[]> params = new ArrayList<>();
     // h2
-    params.add(new Object[] { Http2TestBase.createHttp2ClientOptions(), Http2TestBase.createHttp2ServerOptions(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST) });
+    params.add(new Object[] { Http2TestBase.createHttp2ClientOptions(), Http2TestBase.createHttp2ServerOptions(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST), ThreadingModel.EVENT_LOOP });
+    // h2 + worker
+    params.add(new Object[] { Http2TestBase.createHttp2ClientOptions(), Http2TestBase.createHttp2ServerOptions(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST), ThreadingModel.WORKER });
     // h2c with upgrade
-    params.add(new Object[] { new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2).setHttp2ClearTextUpgrade(true), new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST) });
-    // h2c directq
-    params.add(new Object[] { new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2).setHttp2ClearTextUpgrade(false), new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST) });
+    params.add(new Object[] { new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2).setHttp2ClearTextUpgrade(true), new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST), ThreadingModel.EVENT_LOOP  });
+    // h2c direct
+    params.add(new Object[] { new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2).setHttp2ClearTextUpgrade(false), new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST), ThreadingModel.EVENT_LOOP  });
     return params;
   }
 
   private HttpClientOptions clientOptions;
   private HttpServerOptions serverOptions;
 
-  public Http2MetricsTest(HttpClientOptions clientOptions, HttpServerOptions serverOptions) {
-    super(HttpVersion.HTTP_2);
+  public Http2MetricsTest(HttpClientOptions clientOptions, HttpServerOptions serverOptions, ThreadingModel threadingModel) {
+    super(HttpVersion.HTTP_2, threadingModel);
 
     this.clientOptions = clientOptions;
     this.serverOptions = serverOptions.setHandle100ContinueAutomatically(true);
@@ -70,10 +74,11 @@ public class Http2MetricsTest extends HttpMetricsTestBase {
         AtomicInteger numBuffer = new AtomicInteger(numBuffers);
         vertx.setPeriodic(1, timerID -> {
           if (numBuffer.getAndDecrement() == 0) {
-            pushedResp.end();
-            assertNull(serverMetrics.getResponseMetric("/wibble"));
+            pushedResp.end().onComplete(onSuccess(v -> {
+              assertNull(serverMetrics.getResponseMetric("/wibble"));
+              complete();
+            }));
             vertx.cancelTimer(timerID);
-            complete();
           } else {
             pushedResp.write(TestUtils.randomBuffer(1000));
           }
