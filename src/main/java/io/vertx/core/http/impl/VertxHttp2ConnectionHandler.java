@@ -335,14 +335,8 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
         future.setFailure(fut.cause());
       }
     });
-    EventExecutor executor = chctx.executor();
-    if (executor.inEventLoop()) {
-      _writePushPromise(streamId, promisedStreamId, headers, promise);
-    } else {
-      executor.execute(() -> {
-        _writePushPromise(streamId, promisedStreamId, headers, promise);
-      });
-    }
+    _writePushPromise(streamId, promisedStreamId, headers, promise);
+    checkFlush();
     return future;
   }
 

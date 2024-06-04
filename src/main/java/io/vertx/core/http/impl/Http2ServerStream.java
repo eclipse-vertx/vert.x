@@ -10,6 +10,7 @@
  */
 package io.vertx.core.http.impl;
 
+import io.netty.channel.EventLoop;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http2.Http2Headers;
@@ -19,12 +20,10 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.HostAndPort;
-import io.vertx.core.net.impl.HostAndPortImpl;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.observability.HttpRequest;
@@ -242,13 +241,23 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
     return metric;
   }
 
-  public HttpServerRequest routed(String route) {
+  public void routed(String route) {
     if (METRICS_ENABLED) {
-      HttpServerMetrics metrics = conn.metrics();
-      if (metrics != null && !responseEnded) {
-        metrics.requestRouted(metric, route);
+      EventLoop eventLoop = vertx.getOrCreateContext().nettyEventLoop();
+      synchronized (this) {
+        if (shouldQueue(eventLoop)) {
+          queueForWrite(eventLoop, () -> routedInternal(route));
+          return;
+        }
       }
+      routedInternal(route);
     }
-    return null;
+  }
+
+  private void routedInternal(String route) {
+    HttpServerMetrics metrics = conn.metrics();
+    if (metrics != null && !responseEnded) {
+      metrics.requestRouted(metric, route);
+    }
   }
 }

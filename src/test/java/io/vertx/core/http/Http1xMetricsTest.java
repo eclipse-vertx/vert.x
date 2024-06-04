@@ -10,6 +10,7 @@
  */
 package io.vertx.core.http;
 
+import io.vertx.core.ThreadingModel;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
@@ -17,7 +18,11 @@ import java.util.concurrent.CountDownLatch;
 public class Http1xMetricsTest extends HttpMetricsTestBase {
 
   public Http1xMetricsTest() {
-    super(HttpVersion.HTTP_1_1);
+    this(ThreadingModel.EVENT_LOOP);
+  }
+
+  protected Http1xMetricsTest(ThreadingModel threadingModel) {
+    super(HttpVersion.HTTP_1_1, threadingModel);
   }
 
   @Test
