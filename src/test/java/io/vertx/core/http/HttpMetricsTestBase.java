@@ -13,10 +13,12 @@ package io.vertx.core.http;
 
 import io.vertx.core.Context;
 import io.vertx.core.Future;
+import io.vertx.core.ThreadingModel;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.http.impl.HttpServerRequestInternal;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.SocketAddress;
@@ -46,9 +48,19 @@ import java.util.concurrent.atomic.AtomicReference;
 public abstract class HttpMetricsTestBase extends HttpTestBase {
 
   private final HttpVersion protocol;
+  private final ThreadingModel threadingModel;
 
-  public HttpMetricsTestBase(HttpVersion protocol) {
+  public HttpMetricsTestBase(HttpVersion protocol, ThreadingModel threadingModel) {
     this.protocol = protocol;
+    this.threadingModel = threadingModel;
+  }
+
+  @Override
+  protected void startServer(SocketAddress bindAddress, Context context, HttpServer server) throws Exception {
+    if (threadingModel == ThreadingModel.WORKER) {
+      context = ((VertxInternal) vertx).createWorkerContext();
+    }
+    super.startServer(bindAddress, context, server);
   }
 
   @Override
@@ -83,6 +95,8 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
       assertTrue(serverMetric.get().socket.connected.get());
       assertNull(serverMetric.get().route.get());
       req.routed("/route/:param");
+      // Worker can wait
+      assertWaitUntil(() -> serverMetric.get().route.get() != null);
       assertEquals("/route/:param", serverMetric.get().route.get());
       req.bodyHandler(buff -> {
         assertEquals(contentLength, buff.length());
@@ -93,14 +107,21 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
         vertx.setPeriodic(1, timerID -> {
           Buffer chunk = TestUtils.randomBuffer(chunkSize);
           if (numBuffer.decrementAndGet() == 0) {
-            resp.end(chunk);
-            assertTrue(serverMetric.get().responseEnded.get());
-            assertEquals(contentLength, serverMetric.get().bytesWritten.get());
-            assertNull(serverMetrics.getRequestMetric(req));
+            resp
+              .end(chunk)
+              .onComplete(onSuccess(v -> {
+                assertTrue(serverMetric.get().responseEnded.get());
+                assertFalse(serverMetric.get().failed.get());
+                assertEquals(contentLength, serverMetric.get().bytesWritten.get());
+                assertNull(serverMetrics.getRequestMetric(req));
+              }));
             vertx.cancelTimer(timerID);
           } else {
-            resp.write(chunk);
-            assertSame(serverMetric.get().response.get(), resp);
+            resp
+              .write(chunk)
+              .onComplete(onSuccess(v -> {
+                assertSame(serverMetric.get().response.get(), resp);
+              }));
           }
         });
       });
@@ -205,9 +226,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
         });
       });
     });
-    CountDownLatch listenLatch = new CountDownLatch(1);
-    server.listen(HttpTestBase.DEFAULT_HTTP_PORT, "localhost", onSuccess(s -> { listenLatch.countDown(); }));
-    awaitLatch(listenLatch);
+    startServer(testAddress);
     FakeHttpClientMetrics clientMetrics = FakeMetricsBase.getMetrics(client);
     CountDownLatch responseBeginLatch = new CountDownLatch(1);
     CountDownLatch responseEndLatch = new CountDownLatch(1);
@@ -301,8 +320,13 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
       HttpServerMetric metric = metrics.getRequestMetric(req);
       assertNull(metric.route.get());
       req.routed("MyRoute");
+      // Worker can wait
+      assertWaitUntil(() -> metric.route.get() != null);
       assertEquals("MyRoute", metric.route.get());
+      metric.route.set(null);
       req.routed("MyRoute - rerouted");
+      // Worker can wait
+      assertWaitUntil(() -> metric.route.get() != null);
       assertEquals("MyRoute - rerouted", metric.route.get());
       req.response().end();
       testComplete();
