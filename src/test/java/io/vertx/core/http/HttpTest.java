@@ -3424,9 +3424,7 @@ public abstract class HttpTest extends HttpTestBase {
             req.response().end();
           }));
           req.pause();
-          System.out.println("pause " + this);
           vertx.setTimer(10, id -> {
-            System.out.println("resume " + this);
             req.resume();
           });
         }).listen(testAddress)
