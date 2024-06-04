@@ -450,7 +450,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
     @Override
     public boolean isNotWritable() {
-      return !messageQueue.isWritable();
+      return !isWritable();
     }
 
     @Override
@@ -552,7 +552,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect) {
       priority(priority);
       PromiseInternal<Void> promise = context.promise();
-      messageQueue.write(new MessageWrite() {
+      write(new MessageWrite() {
         @Override
         public void write() {
           writeHeaders(request, buf, end, priority, connect, promise);
@@ -562,7 +562,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
           promise.fail(cause);
         }
       });
-
       return promise.future();
     }
 
