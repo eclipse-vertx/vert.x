@@ -1,0 +1,894 @@
+== Writing TCP servers and clients
+
+Vert.x allows you to easily write non blocking TCP clients and servers.
+
+=== Creating a TCP server
+
+The simplest way to create a TCP server, using all default options is as follows:
+
+[source,$lang]
+----
+{@link examples.NetExamples#example1}
+----
+
+=== Configuring a TCP server
+
+If you don't want the default, a server can be configured by passing in a {@link io.vertx.core.net.NetServerOptions}
+instance when creating it:
+
+[source,$lang]
+----
+{@link examples.NetExamples#example2}
+----
+
+=== Start the Server Listening
+
+To tell the server to listen for incoming requests you use one of the {@link io.vertx.core.net.NetServer#listen}
+alternatives.
+
+To tell the server to listen at the host and port as specified in the options:
+
+[source,$lang]
+----
+{@link examples.NetExamples#example3}
+----
+
+Or to specify the host and port in the call to listen, ignoring what is configured in the options:
+
+[source,$lang]
+----
+{@link examples.NetExamples#example4}
+----
+
+The default host is `0.0.0.0` which means 'listen on all available addresses' and the default port is `0`, which is a
+special value that instructs the server to find a random unused local port and use that.
+
+The actual bind is asynchronous, so the server might not actually be listening until some time *after* the call to
+listen has returned.
+
+If you want to be notified when the server is actually listening you can provide a handler to the `listen` call.
+For example:
+
+[source,$lang]
+----
+{@link examples.NetExamples#example5}
+----
+
+=== Listening on a random port
+
+If `0` is used as the listening port, the server will find an unused random port to listen on.
+
+To find out the real port the server is listening on you can call {@link io.vertx.core.net.NetServer#actualPort()}.
+
+[source,$lang]
+----
+{@link examples.NetExamples#example5_1}
+----
+
+=== Getting notified of incoming connections
+
+To be notified when a connection is made you need to set a {@link io.vertx.core.net.NetServer#connectHandler(io.vertx.core.Handler)}:
+
+[source,$lang]
+----
+{@link examples.NetExamples#example6}
+----
+
+When a connection is made the handler will be called with an instance of {@link io.vertx.core.net.NetSocket}.
+
+This is a socket-like interface to the actual connection, and allows you to read and write data as well as do various
+other things like close the socket.
+
+=== Reading data from the socket
+
+To read data from the socket you set the {@link io.vertx.core.net.NetSocket#handler(io.vertx.core.Handler)} on the
+socket.
+
+This handler will be called with an instance of {@link io.vertx.core.buffer.Buffer} every time data is received on
+the socket.
+
+[source,$lang]
+----
+{@link examples.NetExamples#example7}
+----
+
+=== Writing data to a socket
+
+You write to a socket using one of {@link io.vertx.core.net.NetSocket#write}.
+
+[source,$lang]
+----
+{@link examples.NetExamples#example8}
+----
+
+Write operations are asynchronous and may not occur until some time after the call to write has returned.
+
+=== Closed handler
+
+If you want to be notified when a socket is closed, you can set a {@link io.vertx.core.net.NetSocket#closeHandler(io.vertx.core.Handler)}
+on it:
+
+[source,$lang]
+----
+{@link examples.NetExamples#example9_1}
+----
+
+=== Handling exceptions
+
+You can set an {@link io.vertx.core.net.NetSocket#exceptionHandler(io.vertx.core.Handler)} to receive any
+exceptions that happen on the socket.
+
+You can set an {@link io.vertx.core.net.NetServer#exceptionHandler(io.vertx.core.Handler)} to receive any
+exceptions that happens before the connection is passed to the {@link io.vertx.core.net.NetServer#connectHandler(io.vertx.core.Handler)}
+, e.g during the TLS handshake.
+
+=== Event bus write handler
+
+Every socket can register a handler on the event bus, and when any buffers are received in this handler,
+it writes them to itself. Those are local subscriptions, not reachable from other clustered nodes.
+
+This enables you to write data to a socket which is potentially in a completely different verticle by sending the buffer to the address of that handler.
+
+This feature is disabled by default, however you can enable it using {@link io.vertx.core.net.NetServerOptions#setRegisterWriteHandler} or {@link io.vertx.core.net.NetClientOptions#setRegisterWriteHandler}.
+
+The address of the handler is given by {@link io.vertx.core.net.NetSocket#writeHandlerID()}.
+
+=== Local and remote addresses
+
+The local address of a {@link io.vertx.core.net.NetSocket} can be retrieved using {@link io.vertx.core.net.NetSocket#localAddress()}.
+
+The remote address, (i.e. the address of the other end of the connection) of a {@link io.vertx.core.net.NetSocket}
+can be retrieved using {@link io.vertx.core.net.NetSocket#remoteAddress()}.
+
+=== Sending files or resources from the classpath
+
+Files and classpath resources can be written to the socket directly using {@link io.vertx.core.net.NetSocket#sendFile}. This can be a very
+efficient way to send files, as it can be handled by the OS kernel directly where supported by the operating system.
+
+Please see the chapter about <<classpath, serving files from the classpath>> for restrictions of the
+classpath resolution or disabling it.
+
+[source,$lang]
+----
+{@link examples.NetExamples#example10}
+----
+
+=== Streaming sockets
+
+Instances of {@link io.vertx.core.net.NetSocket} are also {@link io.vertx.core.streams.ReadStream} and
+{@link io.vertx.core.streams.WriteStream} instances, so they can be used to pipe data to or from other
+read and write streams.
+
+See the chapter on <<streams, streams >> for more information.
+
+=== Upgrading connections to SSL/TLS
+
+A non SSL/TLS connection can be upgraded to SSL/TLS using {@link io.vertx.core.net.NetSocket#upgradeToSsl()}.
+
+The server or client must be configured for SSL/TLS for this to work correctly. Please see the <<ssl, chapter on SSL/TLS>>
+for more information.
+
+=== Closing a TCP Server
+
+Call {@link io.vertx.core.net.NetServer#close()} to close the server. Closing the server closes any open connections
+and releases all server resources.
+
+The close is actually asynchronous and might not complete until some time after the call has returned.
+If you want to be notified when the actual close has completed then you can pass in a handler.
+
+This handler will then be called when the close has fully completed.
+
+[source,$lang]
+----
+{@link examples.NetExamples#example9}
+----
+
+=== Client socket shutdown
+
+When a client is closed with a grace period, each socket opened by the client will be notified with a shutdown event, to
+let the opportunity to perform a protocol level close before the actual socket close.
+
+[source,$lang]
+----
+{@link examples.NetExamples#shutdownHandler}
+----
+
+=== Automatic clean-up in verticles
+
+If you're creating TCP servers and clients from inside verticles, those servers and clients will be automatically closed
+when the verticle is undeployed.
+
+=== Scaling - sharing TCP servers
+
+The handlers of any TCP server are always executed on the same event loop thread.
+
+This means that if you are running on a server with a lot of cores, and you only have this one instance
+deployed then you will have at most one core utilised on your server.
+
+In order to utilise more cores of your server you will need to deploy more instances of the server.
+
+You can instantiate more instances programmatically in your code:
+
+[source,$lang]
+----
+{@link examples.NetExamples#example11}
+----
+
+Once you do this you will find the echo server works functionally identically to before, but all your cores on your
+server can be utilised and more work can be handled.
+
+At this point you might be asking yourself *'How can you have more than one server listening on the
+ same host and port? Surely you will get port conflicts as soon as you try and deploy more than one instance?'*
+
+_Vert.x does a little magic here.*_
+
+When you deploy another server on the same host and port as an existing server it doesn't actually try and create a
+new server listening on the same host/port.
+
+Instead it internally maintains just a single server, and, as incoming connections arrive it distributes
+them in a round-robin fashion to any of the connect handlers.
+
+Consequently Vert.x TCP servers can scale over available cores while each instance remains single threaded.
+
+=== Creating a TCP client
+
+The simplest way to create a TCP client, using all default options is as follows:
+
+[source,$lang]
+----
+{@link examples.NetExamples#example13}
+----
+
+=== Configuring a TCP client
+
+If you don't want the default, a client can be configured by passing in a {@link io.vertx.core.net.NetClientOptions}
+instance when creating it:
+
+[source,$lang]
+----
+{@link examples.NetExamples#example14}
+----
+
+=== Making connections
+
+To make a connection to a server you use {@link io.vertx.core.net.NetClient#connect(int,java.lang.String)},
+specifying the port and host of the server and a handler that will be called with a result containing the
+{@link io.vertx.core.net.NetSocket} when connection is successful or with a failure if connection failed.
+
+[source,$lang]
+----
+{@link examples.NetExamples#example15}
+----
+
+=== Configuring connection attempts
+
+A client can be configured to automatically retry connecting to the server in the event that it cannot connect.
+This is configured with {@link io.vertx.core.net.NetClientOptions#setReconnectInterval(long)} and
+{@link io.vertx.core.net.NetClientOptions#setReconnectAttempts(int)}.
+
+NOTE: Currently, Vert.x will not attempt to reconnect if a connection fails, reconnect attempts and interval
+only apply to creating initial connections.
+
+[source,$lang]
+----
+{@link examples.NetExamples#example16}
+----
+
+By default, multiple connection attempts are disabled.
+
+[[logging_network_activity]]
+=== Logging network activity
+
+For debugging purposes, network activity can be logged:
+
+[source,$lang]
+----
+{@link examples.NetExamples#exampleNetworkActivityLoggingOnServer}
+----
+
+Here is the output of a simple HTTP server
+
+[literal]
+----
+id: 0x359e3df6, L:/127.0.0.1:8080 - R:/127.0.0.1:65351] READ: 78B
+         +-------------------------------------------------+
+         |  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |
++--------+-------------------------------------------------+----------------+
+|00000000| 47 45 54 20 2f 20 48 54 54 50 2f 31 2e 31 0d 0a |GET / HTTP/1.1..|
+|00000010| 48 6f 73 74 3a 20 6c 6f 63 61 6c 68 6f 73 74 3a |Host: localhost:|
+|00000020| 38 30 38 30 0d 0a 55 73 65 72 2d 41 67 65 6e 74 |8080..User-Agent|
+|00000030| 3a 20 63 75 72 6c 2f 37 2e 36 34 2e 31 0d 0a 41 |: curl/7.64.1..A|
+|00000040| 63 63 65 70 74 3a 20 2a 2f 2a 0d 0a 0d 0a       |ccept: */*....  |
++--------+-------------------------------------------------+----------------+
+[id: 0x359e3df6, L:/127.0.0.1:8080 - R:/127.0.0.1:65351] WRITE: 50B
+         +-------------------------------------------------+
+         |  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |
++--------+-------------------------------------------------+----------------+
+|00000000| 48 54 54 50 2f 31 2e 31 20 32 30 30 20 4f 4b 0d |HTTP/1.1 200 OK.|
+|00000010| 0a 63 6f 6e 74 65 6e 74 2d 6c 65 6e 67 74 68 3a |.content-length:|
+|00000020| 20 31 31 0d 0a 0d 0a 48 65 6c 6c 6f 20 57 6f 72 | 11....Hello Wor|
+|00000030| 6c 64                                           |ld              |
++--------+-------------------------------------------------+----------------+
+[id: 0x359e3df6, L:/127.0.0.1:8080 - R:/127.0.0.1:65351] READ COMPLETE
+[id: 0x359e3df6, L:/127.0.0.1:8080 - R:/127.0.0.1:65351] FLUSH
+----
+
+By default, binary data is logged in hex format.
+
+You can reduce the data format verbosity to only print the buffer length instead of the entire data by setting the log data fomat.
+
+
+[source,$lang]
+----
+{@link examples.NetExamples#exampleNetworkActivityLoggingFormat}
+----
+
+Here is the same output with simple buffer format
+
+[literal]
+----
+[id: 0xda8d41dc, L:/127.0.0.1:8080 - R:/127.0.0.1:65399] READ: 78B
+[id: 0xda8d41dc, L:/127.0.0.1:8080 - R:/127.0.0.1:65399] WRITE: 50B
+[id: 0xda8d41dc, L:/127.0.0.1:8080 - R:/127.0.0.1:65399] READ COMPLETE
+[id: 0xda8d41dc, L:/127.0.0.1:8080 - R:/127.0.0.1:65399] FLUSH
+[id: 0xda8d41dc, L:/127.0.0.1:8080 - R:/127.0.0.1:65399] READ COMPLETE
+[id: 0xda8d41dc, L:/127.0.0.1:8080 ! R:/127.0.0.1:65399] INACTIVE
+[id: 0xda8d41dc, L:/127.0.0.1:8080 ! R:/127.0.0.1:65399] UNREGISTERED
+----
+
+Clients can also log network activity
+
+[source,$lang]
+----
+{@link examples.NetExamples#exampleNetworkActivityLoggingOnClient}
+----
+
+Network activity is logged by Netty with the `DEBUG` level and with the `io.netty.handler.logging.LoggingHandler`
+name. When using network activity logging there are a few things to keep in mind:
+
+- logging is not performed by Vert.x logging but by Netty
+- this is *not* a production feature
+
+You should read the <<netty-logging>> section.
+
+=== Throttling inbound and outbound bandwidth of TCP connections
+
+TCP server (Net/Http) can be configured with traffic shaping options to enable bandwidth limiting. Both inbound and outbound
+bandwidth can be limited through {@link io.vertx.core.net.TrafficShapingOptions}. For NetServer, traffic shaping options can be set
+through {@link io.vertx.core.net.NetServerOptions} and for HttpServer it can be set through {@link io.vertx.core.http.HttpServerOptions}.
+
+[source,$lang]
+----
+{@link examples.NetExamples#configureTrafficShapingForNetServer}
+----
+
+[source,$lang]
+----
+{@link examples.NetExamples#configureTrafficShapingForHttpServer}
+----
+
+These traffic shaping options can also be dynamically updated after server start.
+
+[source,$lang]
+----
+{@link examples.NetExamples#dynamicallyUpdateTrafficShapingForNetServer}
+----
+
+[source,$lang]
+----
+{@link examples.NetExamples#dynamicallyUpdateTrafficShapingForHttpServer}
+----
+
+[[ssl]]
+=== Configuring servers and clients to work with SSL/TLS
+
+TCP clients and servers can be configured to use http://en.wikipedia.org/wiki/Transport_Layer_Security[Transport Layer Security]
+- earlier versions of TLS were known as SSL.
+
+The APIs of the servers and clients are identical whether or not SSL/TLS is used, and it's enabled by configuring
+the {@link io.vertx.core.net.NetClientOptions} or {@link io.vertx.core.net.NetServerOptions} instances used
+to create the servers or clients.
+
+==== Enabling SSL/TLS on the server
+
+SSL/TLS is enabled with  {@link io.vertx.core.net.NetServerOptions#setSsl(boolean) ssl}.
+
+By default it is disabled.
+
+==== Specifying key/certificate for the server
+
+SSL/TLS servers usually provide certificates to clients in order to verify their identity to clients.
+
+Certificates/keys can be configured for servers in several ways:
+
+The first method is by specifying the location of a Java key-store which contains the certificate and private key.
+
+Java key stores can be managed with the http://docs.oracle.com/javase/6/docs/technotes/tools/solaris/keytool.html[keytool]
+utility which ships with the JDK.
+
+The password for the key store should also be provided:
+
+[source,$lang]
+----
+{@link examples.NetExamples#example17}
+----
+
+Alternatively you can read the key store yourself as a buffer and provide that directly:
+
+[source,$lang]
+----
+{@link examples.NetExamples#example18}
+----
+
+Key/certificate in PKCS#12 format (http://en.wikipedia.org/wiki/PKCS_12), usually with the `.pfx`  or the `.p12`
+extension can also be loaded in a similar fashion than JKS key stores:
+
+[source,$lang]
+----
+{@link examples.NetExamples#example19}
+----
+
+Buffer configuration is also supported:
+
+[source,$lang]
+----
+{@link examples.NetExamples#example20}
+----
+
+Another way of providing server private key and certificate separately using `.pem` files.
+
+[source,$lang]
+----
+{@link examples.NetExamples#example21}
+----
+
+Buffer configuration is also supported:
+
+[source,$lang]
+----
+{@link examples.NetExamples#example22}
+----
+
+Vert.x supports reading of unencrypted RSA and/or ECC based private keys from PKCS8 PEM files.
+RSA based private keys can also be read from PKCS1 PEM files.
+X.509 certificates can be read from PEM files containing a textual encoding of the certificate as defined by
+https://tools.ietf.org/html/rfc7468#section-5[RFC 7468, Section 5].
+
+WARNING: Keep in mind that the keys contained in an unencrypted PKCS8 or a PKCS1 PEM file can be extracted by
+anybody who can read the file. Thus, make sure to put proper access restrictions on such PEM files in order to
+prevent misuse.
+
+Finally, you can also load generic Java keystore, it is useful for using other KeyStore implementations
+like Bouncy Castle:
+
+[source,$lang]
+----
+{@link examples.NetExamples#exampleBKS}
+----
+
+==== Specifying trust for the server
+
+SSL/TLS servers can use a certificate authority in order to verify the identity of the clients.
+
+Certificate authorities can be configured for servers in several ways:
+
+Java trust stores can be managed with the http://docs.oracle.com/javase/6/docs/technotes/tools/solaris/keytool.html[keytool]
+utility which ships with the JDK.
+
+The password for the trust store should also be provided:
+
+[source,$lang]
+----
+{@link examples.NetExamples#example23}
+----
+
+Alternatively you can read the trust store yourself as a buffer and provide that directly:
+
+[source,$lang]
+----
+{@link examples.NetExamples#example24}
+----
+
+Certificate authority in PKCS#12 format (http://en.wikipedia.org/wiki/PKCS_12), usually with the `.pfx`  or the `.p12`
+extension can also be loaded in a similar fashion than JKS trust stores:
+
+[source,$lang]
+----
+{@link examples.NetExamples#example25}
+----
+
+Buffer configuration is also supported:
+
+[source,$lang]
+----
+{@link examples.NetExamples#example26}
+----
+
+Another way of providing server certificate authority using a list `.pem` files.
+
+[source,$lang]
+----
+{@link examples.NetExamples#example27}
+----
+
+Buffer configuration is also supported:
+
+[source,$lang]
+----
+{@link examples.NetExamples#example28}
+----
+
+==== Enabling SSL/TLS on the client
+
+Net Clients can also be easily configured to use SSL. They have the exact same API when using SSL as when using standard sockets.
+
+To enable SSL on a NetClient the function setSSL(true) is called.
+
+==== Client trust configuration
+
+If the {@link io.vertx.core.net.ClientOptionsBase#setTrustAll trustALl} is set to true on the client, then the client will
+trust all server certificates. The connection will still be encrypted but this mode is vulnerable to 'man in the middle' attacks. I.e. you can't
+be sure who you are connecting to. Use this with caution. Default value is false.
+
+[source,$lang]
+----
+{@link examples.NetExamples#example29}
+----
+
+If {@link io.vertx.core.net.ClientOptionsBase#setTrustAll trustAll} is not set then a client trust store must be
+configured and should contain the certificates of the servers that the client trusts.
+
+By default, host verification is *not* configured on the client. This verifies the CN portion of the server certificate against the server hostname to avoid https://en.wikipedia.org/wiki/Man-in-the-middle_attack[Man-in-the-middle attacks].
+
+You must configure it explicitly on your client
+
+- `""` (empty string) disables host verification
+- `"HTTPS"` enables HTTP over TLS https://datatracker.ietf.org/doc/html/rfc2818#section-3.1[verification]
+- `LDAPS` enables LDAP v3 extension for TLS https://datatracker.ietf.org/doc/html/rfc2830#section-3.6[verification]
+
+[source,$lang]
+----
+{@link examples.NetExamples#example46}
+----
+
+NOTE: the Vert.x HTTP client uses the TCP client and configures with `"HTTPS"` the verification algorithm.
+
+Like server configuration, the client trust can be configured in several ways:
+
+The first method is by specifying the location of a Java trust-store which contains the certificate authority.
+
+It is just a standard Java key store, the same as the key stores on the server side. The client
+trust store location is set by using the function {@link io.vertx.core.net.JksOptions#setPath path} on the
+{@link io.vertx.core.net.JksOptions jks options}. If a server presents a certificate during connection which is not
+in the client trust store, the connection attempt will not succeed.
+
+[source,$lang]
+----
+{@link examples.NetExamples#example30}
+----
+
+Buffer configuration is also supported:
+
+[source,$lang]
+----
+{@link examples.NetExamples#example31}
+----
+
+Certificate authority in PKCS#12 format (http://en.wikipedia.org/wiki/PKCS_12), usually with the `.pfx`  or the `.p12`
+extension can also be loaded in a similar fashion than JKS trust stores:
+
+[source,$lang]
+----
+{@link examples.NetExamples#example32}
+----
+
+Buffer configuration is also supported:
+
+[source,$lang]
+----
+{@link examples.NetExamples#example33}
+----
+
+Another way of providing server certificate authority using a list `.pem` files.
+
+[source,$lang]
+----
+{@link examples.NetExamples#example34}
+----
+
+Buffer configuration is also supported:
+
+[source,$lang]
+----
+{@link examples.NetExamples#example35}
+----
+
+==== Specifying key/certificate for the client
+
+If the server requires client authentication then the client must present its own certificate to the server when
+connecting. The client can be configured in several ways:
+
+The first method is by specifying the location of a Java key-store which contains the key and certificate.
+Again it's just a regular Java key store. The client keystore location is set by using the function
+{@link io.vertx.core.net.JksOptions#setPath(java.lang.String) path} on the
+{@link io.vertx.core.net.JksOptions jks options}.
+
+[source,$lang]
+----
+{@link examples.NetExamples#example36}
+----
+
+Buffer configuration is also supported:
+
+[source,$lang]
+----
+{@link examples.NetExamples#example37}
+----
+
+Key/certificate in PKCS#12 format (http://en.wikipedia.org/wiki/PKCS_12), usually with the `.pfx`  or the `.p12`
+extension can also be loaded in a similar fashion than JKS key stores:
+
+[source,$lang]
+----
+{@link examples.NetExamples#example38}
+----
+
+Buffer configuration is also supported:
+
+[source,$lang]
+----
+{@link examples.NetExamples#example39}
+----
+
+Another way of providing server private key and certificate separately using `.pem` files.
+
+[source,$lang]
+----
+{@link examples.NetExamples#example40}
+----
+
+Buffer configuration is also supported:
+
+[source,$lang]
+----
+{@link examples.NetExamples#example41}
+----
+
+Keep in mind that pem configuration, the private key is not crypted.
+
+==== Updating SSL/TLS configuration
+
+You can use the `updateSSLOptions` method to update the key/certifications or trust on a TCP server or client (e.g. to
+implement certificate rotation).
+
+[source,$lang]
+----
+{@link examples.NetExamples#updateSSLOptions}
+----
+
+When the update succeeds the new SSL configuration is used, otherwise the previous configuration is preserved.
+
+NOTE: The options object is compared (using `equals`) against the existing options to prevent an update when the objects
+are equals since loading options can be costly. When object are equals, you can use the `force` parameter to force
+the update.
+
+==== Self-signed certificates for testing and development purposes
+
+CAUTION: Do not use this in production settings, and note that the generated keys are very insecure.
+
+It is very often the case that self-signed certificates are required, be it for unit / integration tests or for
+running a development version of an application.
+
+{@link io.vertx.core.net.SelfSignedCertificate} can be used to provide self-signed PEM certificate helpers and
+give {@link io.vertx.core.net.KeyCertOptions} and {@link io.vertx.core.net.TrustOptions} configurations:
+
+[source,$lang]
+----
+{@link examples.NetExamples#example48}
+----
+
+The client can also be configured to trust all certificates:
+
+[source,$lang]
+----
+{@link examples.NetExamples#example49}
+----
+
+Note that self-signed certificates also work for other TCP protocols like HTTPS:
+
+[source,$lang]
+----
+{@link examples.NetExamples#example50}
+----
+
+==== Revoking certificate authorities
+
+Trust can be configured to use a certificate revocation list (CRL) for revoked certificates that should no
+longer be trusted. The {@link io.vertx.core.net.NetClientOptions#addCrlPath(java.lang.String) crlPath} configures
+the crl list to use:
+
+[source,$lang]
+----
+{@link examples.NetExamples#example42}
+----
+
+Buffer configuration is also supported:
+
+[source,$lang]
+----
+{@link examples.NetExamples#example43}
+----
+
+==== Configuring the Cipher suite
+
+By default, the TLS configuration will use the list of Cipher suites of the SSL engine:
+
+- JDK SSL engine when {@link io.vertx.core.net.JdkSSLEngineOptions} is used
+- OpenSSL engine when {@link io.vertx.core.net.OpenSSLEngineOptions} is used
+
+This Cipher suite can be configured with a suite of enabled ciphers:
+
+[source,$lang]
+----
+{@link examples.NetExamples#example44}
+----
+
+When the enabled cipher suites is defined (i.e not empty), it takes precedence over the default cipher suites of the SSL engine.
+
+Cipher suite can be specified on the {@link io.vertx.core.net.NetServerOptions} or {@link io.vertx.core.net.NetClientOptions} configuration.
+
+==== Configuring TLS protocol versions
+
+By default, the default TLS configuration enables the following protocols: TLSv1.2 and TLSv1.3. Protocol versions can be
+enabled by explicitly adding them:
+
+[source,$lang]
+----
+{@link examples.NetExamples#addEnabledTLSPrococol}
+----
+
+They can also be removed:
+
+[source,$lang]
+----
+{@link examples.NetExamples#removeEnabledTLSPrococol}
+----
+
+Protocol versions can be specified on the {@link io.vertx.core.net.NetServerOptions} or {@link io.vertx.core.net.NetClientOptions} configuration.
+
+NOTE: TLS 1.0 (TLSv1) and TLS 1.1 (TLSv1.1) are widely deprecated and have been disabled by default since Vert.x 4.4.0.
+
+==== SSL engine
+
+The engine implementation can be configured to use https://www.openssl.org[OpenSSL] instead of the JDK implementation.
+Before JDK started to use hardware intrinsics (CPU instructions) for AES in Java 8 and for RSA in Java 9,
+OpenSSL provided much better performances and CPU usage than the JDK engine.
+
+The engine options to use is
+
+- the {@link io.vertx.core.net.TCPSSLOptions#getSslEngineOptions()} options when it is set
+- otherwise {@link io.vertx.core.net.JdkSSLEngineOptions}
+
+[source,$lang]
+----
+{@link examples.NetExamples#exampleSSLEngine}
+----
+
+==== Server Name Indication (SNI)
+
+Server Name Indication (SNI) is a TLS extension by which a client specifies a hostname attempting to connect: during
+the TLS handshake the client gives a server name and the server can use it to respond with a specific certificate
+for this server name instead of the default deployed certificate.
+If the server requires client authentication the server can use a specific trusted CA certificate depending on the
+indicated server name.
+
+When SNI is active the server uses
+
+* the certificate CN or SAN DNS (Subject Alternative Name with DNS) to do an exact match, e.g `www.example.com`
+* the certificate CN or SAN DNS certificate to match a wildcard name, e.g `*.example.com`
+* otherwise the first certificate when the client does not present a server name or the presented server name cannot be matched
+
+When the server additionally requires client authentication:
+
+* if {@link io.vertx.core.net.JksOptions} were used to set the trust options
+ ({@link io.vertx.core.net.NetServerOptions#setTrustOptions options}) then an exact match with the trust store
+ alias is done
+* otherwise the available CA certificates are used in the same way as if no SNI is in place
+
+You can enable SNI on the server by setting {@link io.vertx.core.net.NetServerOptions#setSni(boolean)} to `true` and
+configured the server with multiple key/certificate pairs.
+
+Java KeyStore files or PKCS12 files can store multiple key/cert pairs out of the box.
+
+[source,$lang]
+----
+{@link examples.NetExamples#configureSNIServer}
+----
+
+{@link io.vertx.core.net.PemKeyCertOptions} can be configured to hold multiple entries:
+
+[source,$lang]
+----
+{@link examples.NetExamples#configureSNIServerWithPems}
+----
+
+The client implicitly sends the connecting host as an SNI server name for Fully Qualified Domain Name (FQDN).
+
+You can provide an explicit server name when connecting a socket
+
+[source,$lang]
+----
+{@link examples.NetExamples#useSNIInClient}
+----
+
+It can be used for different purposes:
+
+* present a server name different than the server host
+* present a server name while connecting to an IP
+* force to present a server name when using shortname
+
+==== Application-Layer Protocol Negotiation (ALPN)
+
+Application-Layer Protocol Negotiation (ALPN) is a TLS extension for application layer protocol negotiation. It is used by
+HTTP/2: during the TLS handshake the client gives the list of application protocols it accepts and the server responds
+with a protocol it supports.
+
+Java TLS supports ALPN (Java 8 with the most recent versions).
+
+===== OpenSSL ALPN support
+
+OpenSSL also supports (native) ALPN.
+
+OpenSSL requires to configure {@link io.vertx.core.net.TCPSSLOptions#setSslEngineOptions(SSLEngineOptions)}
+and use http://netty.io/wiki/forked-tomcat-native.html[netty-tcnative] jar on the classpath. Using tcnative may require
+OpenSSL to be installed on your OS depending on the tcnative implementation.
+
+=== Using a proxy for client connections
+
+The {@link io.vertx.core.net.NetClient} supports either an HTTP/1.x _CONNECT_, _SOCKS4a_ or _SOCKS5_ proxy.
+
+The proxy can be configured in the {@link io.vertx.core.net.NetClientOptions} by setting a
+{@link io.vertx.core.net.ProxyOptions} object containing proxy type, hostname, port and optionally username and password.
+
+Here's an example:
+
+[source,$lang]
+
+----
+{@link examples.NetExamples#example47}
+----
+
+The DNS resolution is always done on the proxy server, to achieve the functionality of a SOCKS4 client, it is necessary
+to resolve the DNS address locally.
+
+You can use {@link io.vertx.core.net.NetClientOptions#setNonProxyHosts} to configure a list of host bypassing
+the proxy. The lists accepts `*` wildcard for matching domains:
+
+[source,$lang]
+----
+{@link examples.NetExamples#nonProxyHosts}
+----
+
+
+=== Using HA PROXY protocol
+
+https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt[HA PROXY protocol] provides a convenient way to safely transport connection
+information such as a client's address across multiple layers of NAT or TCP
+proxies.
+
+HA PROXY protocol can be enabled by setting the option {@link io.vertx.core.net.NetServerOptions#setUseProxyProtocol(boolean)}
+and adding the following dependency in your classpath:
+
+[source,xml]
+----
+<dependency>
+  <groupId>io.netty</groupId>
+  <artifactId>netty-codec-haproxy</artifactId>
+  <!--<version>Should align with netty version that Vert.x uses</version>-->
+</dependency>
+----
+
+[source,$lang]
+----
+{@link examples.NetExamples#example51}
+----

@@ -1,0 +1,2220 @@
+== Writing HTTP servers and clients
+
+Vert.x allows you to easily write non blocking HTTP clients and servers.
+
+Vert.x supports the HTTP/1.0, HTTP/1.1 and HTTP/2 protocols.
+
+The base API for HTTP is the same for HTTP/1.x and HTTP/2, specific API features are available for dealing with the
+HTTP/2 protocol.
+
+=== Creating an HTTP Server
+
+The simplest way to create an HTTP server, using all default options is as follows:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example1}
+----
+
+=== Configuring an HTTP server
+
+If you don't want the default, a server can be configured by passing in a {@link io.vertx.core.http.HttpServerOptions}
+instance when creating it:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example2}
+----
+
+=== Configuring an HTTP/2 server
+
+Vert.x supports HTTP/2 over TLS `h2` and over TCP `h2c`.
+
+- `h2` identifies the HTTP/2 protocol when used over TLS negotiated by https://en.wikipedia.org/wiki/Application-Layer_Protocol_Negotiation[Application-Layer Protocol Negotiation] (ALPN)
+- `h2c` identifies the HTTP/2 protocol when using in clear text over TCP, such connections are established either with
+an HTTP/1.1 upgraded request or directly
+
+To handle `h2` requests, TLS must be enabled along with {@link io.vertx.core.http.HttpServerOptions#setUseAlpn(boolean)}:
+
+[source,$lang]
+----
+{@link examples.HTTP2Examples#example0}
+----
+
+ALPN is a TLS extension that negotiates the protocol before the client and the server start to exchange data.
+
+Clients that don't support ALPN will still be able to do a _classic_ SSL handshake.
+
+ALPN will usually agree on the `h2` protocol, although `http/1.1` can be used if the server or the client decides
+so.
+
+To handle `h2c` requests, TLS must be disabled, the server will upgrade to HTTP/2 any request HTTP/1.1 that wants to
+upgrade to HTTP/2. It will also accept a direct `h2c` connection beginning with the `PRI * HTTP/2.0\r\nSM\r\n` preface.
+
+WARNING: most browsers won't support `h2c`, so for serving web sites you should use `h2` and not `h2c`.
+
+When a server accepts an HTTP/2 connection, it sends to the client its {@link io.vertx.core.http.HttpServerOptions#getInitialSettings initial settings}.
+The settings define how the client can use the connection, the default initial settings for a server are:
+
+- {@link io.vertx.core.http.Http2Settings#getMaxConcurrentStreams}: `100` as recommended by the HTTP/2 RFC
+- the default HTTP/2 settings values for the others
+
+=== Configuring server supported HTTP versions
+
+Default supported HTTP versions depends on the server configuration.
+
+- when TLS is disabled
+  - HTTP/1.1, HTTP/1.0
+  - HTTP/2 when {@link io.vertx.core.http.HttpServerOptions#isHttp2ClearTextEnabled} is `true`
+- when TLS is enabled and ALPN disabled
+  - HTTP/1.1 and HTTP/1.0
+- when TLS is enabled and ALPN enabled
+  - the protocols defined by {@link io.vertx.core.http.HttpServerOptions#getAlpnVersions}: by default HTTP/1.1 and HTTP/2
+
+If you want to disable HTTP/2 on the server
+- when TLS is disabled, set {@link io.vertx.core.http.HttpServerOptions#setHttp2ClearTextEnabled} to `false`
+- when TLS is enabled
+  - set ({@link io.vertx.core.http.HttpServerOptions#isUseAlpn}) to `false`
+  - _or_ remove HTTP/2 from the {@link io.vertx.core.http.HttpServerOptions#getAlpnVersions} list
+
+=== Logging network server activity
+
+For debugging purposes, network activity can be logged.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#exampleServerLogging}
+----
+
+See the chapter on <<logging_network_activity, logging network activity>> for a detailed explanation.
+
+=== Start the Server Listening
+
+To tell the server to listen for incoming requests you use one of the {@link io.vertx.core.http.HttpServer#listen}
+alternatives.
+
+To tell the server to listen at the host and port as specified in the options:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example3}
+----
+
+Or to specify the host and port in the call to listen, ignoring what is configured in the options:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example4}
+----
+
+The default host is `0.0.0.0` which means 'listen on all available addresses' and the default port is `80`.
+
+The actual bind is asynchronous so the server might not actually be listening until some time *after* the call to
+listen has returned.
+
+If you want to be notified when the server is actually listening you can provide a handler to the `listen` call.
+For example:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example5}
+----
+
+=== Getting notified of incoming requests
+
+To be notified when a request arrives you need to set a {@link io.vertx.core.http.HttpServer#requestHandler}:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example6}
+----
+
+=== Handling requests
+
+When a request arrives, the request handler is called passing in an instance of {@link io.vertx.core.http.HttpServerRequest}.
+This object represents the server side HTTP request.
+
+The handler is called when the headers of the request have been fully read.
+
+If the request contains a body, that body will arrive at the server some time after the request handler has been called.
+
+The server request object allows you to retrieve the {@link io.vertx.core.http.HttpServerRequest#uri},
+{@link io.vertx.core.http.HttpServerRequest#path}, {@link io.vertx.core.http.HttpServerRequest#params} and
+{@link io.vertx.core.http.HttpServerRequest#headers}, amongst other things.
+
+Each server request object is associated with one server response object. You use
+{@link io.vertx.core.http.HttpServerRequest#response} to get a reference to the {@link io.vertx.core.http.HttpServerResponse}
+object.
+
+Here's a simple example of a server handling a request and replying with "hello world" to it.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example7_1}
+----
+
+==== Request version
+
+The version of HTTP specified in the request can be retrieved with {@link io.vertx.core.http.HttpServerRequest#version}
+
+==== Request method
+
+Use {@link io.vertx.core.http.HttpServerRequest#method} to retrieve the HTTP method of the request.
+(i.e. whether it's GET, POST, PUT, DELETE, HEAD, OPTIONS, etc).
+
+==== Request URI
+
+Use {@link io.vertx.core.http.HttpServerRequest#uri} to retrieve the URI of the request.
+
+Note that this is the actual URI as passed in the HTTP request, and it's almost always a relative URI.
+
+The URI is as defined in http://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html[Section 5.1.2 of the HTTP specification - Request-URI]
+
+==== Request path
+
+Use {@link io.vertx.core.http.HttpServerRequest#path} to return the path part of the URI
+
+For example, if the request URI was `a/b/c/page.html?param1=abc&param2=xyz
+
+Then the path would be `/a/b/c/page.html`
+
+==== Request query
+
+Use {@link io.vertx.core.http.HttpServerRequest#query} to return the query part of the URI
+
+For example, if the request URI was `a/b/c/page.html?param1=abc&param2=xyz`
+
+Then the query would be  `param1=abc&param2=xyz`
+
+==== Request headers
+
+Use {@link io.vertx.core.http.HttpServerRequest#headers} to return the headers of the HTTP request.
+
+This returns an instance of {@link io.vertx.core.MultiMap} - which is like a normal Map or Hash but allows multiple
+values for the same key - this is because HTTP allows multiple header values with the same key.
+
+It also has case-insensitive keys, that means you can do the following:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example8}
+----
+
+==== Request authority
+
+Use {@link io.vertx.core.http.HttpServerRequest#authority} to return the authority of the HTTP request.
+
+For HTTP/1.x requests the `host` header is returned, for HTTP/1 requests the `:authority` pseudo header is returned.
+
+==== Request parameters
+
+Use {@link io.vertx.core.http.HttpServerRequest#params} to return the parameters of the HTTP request.
+
+Just like {@link io.vertx.core.http.HttpServerRequest#headers} this returns an instance of {@link io.vertx.core.MultiMap}
+as there can be more than one parameter with the same name.
+
+Request parameters are sent on the request URI, after the path. For example if the URI was `/page.html?param1=abc&param2=xyz`
+
+Then the parameters would contain the following:
+
+----
+param1: 'abc'
+param2: 'xyz
+----
+
+Note that these request parameters are retrieved from the URL of the request. If you have form attributes that
+have been sent as part of the submission of an HTML form submitted in the body of a `multi-part/form-data` request
+then they will not appear in the params here.
+
+==== Remote address
+
+The address of the sender of the request can be retrieved with {@link io.vertx.core.http.HttpServerRequest#remoteAddress}.
+
+==== Absolute URI
+
+The URI passed in an HTTP request is usually relative. If you wish to retrieve the absolute URI corresponding
+to the request, you can get it with {@link io.vertx.core.http.HttpServerRequest#absoluteURI}
+
+==== End handler
+
+The {@link io.vertx.core.http.HttpServerRequest#endHandler} of the request is invoked when the entire request,
+including any body has been fully read.
+
+==== Reading Data from the Request Body
+
+Often an HTTP request contains a body that we want to read. As previously mentioned the request handler is called
+when just the headers of the request have arrived so the request object does not have a body at that point.
+
+This is because the body may be very large (e.g. a file upload) and we don't generally want to buffer the entire
+body in memory before handing it to you, as that could cause the server to exhaust available memory.
+
+To receive the body, you can use the {@link io.vertx.core.http.HttpServerRequest#handler}  on the request,
+this will get called every time a chunk of the request body arrives. Here's an example:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example9}
+----
+
+The object passed into the handler is a {@link io.vertx.core.buffer.Buffer}, and the handler can be called
+multiple times as data arrives from the network, depending on the size of the body.
+
+In some cases (e.g. if the body is small) you will want to aggregate the entire body in memory, so you could do
+the aggregation yourself as follows:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example10}
+----
+
+This is such a common case, that Vert.x provides a {@link io.vertx.core.http.HttpServerRequest#bodyHandler} to do this
+for you. The body handler is called once when all the body has been received:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example11}
+----
+
+==== Streaming requests
+
+The request object is a {@link io.vertx.core.streams.ReadStream} so you can pipe the request body to any
+{@link io.vertx.core.streams.WriteStream} instance.
+
+See the chapter on <<streams, streams>> for a detailed explanation.
+
+==== Handling HTML forms
+
+HTML forms can be submitted with either a content type of `application/x-www-form-urlencoded` or `multipart/form-data`.
+
+For url encoded forms, the form attributes are encoded in the url, just like normal query parameters.
+
+For multi-part forms they are encoded in the request body, and as such are not available until the entire body
+has been read from the wire.
+
+Multi-part forms can also contain file uploads.
+
+If you want to retrieve the attributes of a multi-part form you should tell Vert.x that you expect to receive
+such a form *before* any of the body is read by calling {@link io.vertx.core.http.HttpServerRequest#setExpectMultipart}
+with `true`, and then you should retrieve the actual attributes using {@link io.vertx.core.http.HttpServerRequest#formAttributes}
+once the entire body has been read:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example12}
+----
+
+Form attributes have a maximum size of `8192` bytes. When the client submits a form with an attribute
+size greater than this value, the file upload triggers an exception on `HttpServerRequest` exception handler. You
+can set a different maximum size with {@link io.vertx.core.http.HttpServerOptions#setMaxFormAttributeSize}.
+
+==== Handling form file uploads
+
+Vert.x can also handle file uploads which are encoded in a multi-part request body.
+
+To receive file uploads you tell Vert.x to expect a multi-part form and set an
+{@link io.vertx.core.http.HttpServerRequest#uploadHandler} on the request.
+
+This handler will be called once for every
+upload that arrives on the server.
+
+The object passed into the handler is a {@link io.vertx.core.http.HttpServerFileUpload} instance.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example13}
+----
+
+File uploads can be large we don't provide the entire upload in a single buffer as that might result in memory
+exhaustion, instead, the upload data is received in chunks:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example14}
+----
+
+The upload object is a {@link io.vertx.core.streams.ReadStream} so you can pipe the request body to any
+{@link io.vertx.core.streams.WriteStream} instance. See the chapter on <<streams, streams>> for a
+detailed explanation.
+
+If you just want to upload the file to disk somewhere you can use {@link io.vertx.core.http.HttpServerFileUpload#streamToFileSystem}:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example15}
+----
+
+WARNING: Make sure you check the filename in a production system to avoid malicious clients uploading files
+to arbitrary places on your filesystem. See <<Security notes, security notes>> for more information.
+
+==== Handling cookies
+
+You use {@link io.vertx.core.http.HttpServerRequest#getCookie(String)} to retrieve
+a cookie by name, or use {@link io.vertx.core.http.HttpServerRequest#cookieMap()} to retrieve all the cookies.
+
+To remove a cookie, use {@link io.vertx.core.http.HttpServerResponse#removeCookie(String)}.
+
+To add a cookie use {@link io.vertx.core.http.HttpServerResponse#addCookie(Cookie)}.
+
+The set of cookies will be written back in the response automatically when the response headers are written so the
+browser can store them.
+
+Cookies are described by instances of {@link io.vertx.core.http.Cookie}. This allows you to retrieve the name,
+value, domain, path and other normal cookie properties.
+
+Same Site Cookies let servers require that a cookie shouldn't be sent with cross-site (where Site is defined by the
+registrable domain) requests, which provides some protection against cross-site request forgery attacks. This kind
+of cookies are enabled using the setter: {@link io.vertx.core.http.Cookie#setSameSite(CookieSameSite)}.
+
+Same site cookies can have one of 3 values:
+
+* None - The browser will send cookies with both cross-site requests and same-site requests.
+* Strict - The browser will only send cookies for same-site requests (requests originating from the site that set the
+  cookie). If the request originated from a different URL than the URL of the current location, none of the cookies
+  tagged with the Strict attribute will be included.
+* Lax - Same-site cookies are withheld on cross-site subrequests, such as calls to load images or frames, but will be
+  sent when a user navigates to the URL from an external site; for example, by following a link.
+
+Here's an example of querying and adding cookies:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#exampleHandlingCookies}
+----
+
+==== Handling compressed body
+
+Vert.x can handle compressed body payloads which are encoded by the client with the _deflate_, _gzip_ or _brotli_
+algorithms.
+
+To enable decompression set {@link io.vertx.core.http.HttpServerOptions#setDecompressionSupported(boolean)} on the
+options when creating the server.
+
+You need to have Brotli4j on the classpath to decompress Brotli:
+
+* Maven (in your `pom.xml`):
+
+[source,xml]
+----
+<dependency>
+  <groupId>com.aayushatharva.brotli4j</groupId>
+  <artifactId>brotli4j</artifactId>
+  <version>${brotli4j.version}</version>
+</dependency>
+----
+* Gradle (in your `build.gradle` file):
+
+[source,groovy]
+----
+dependencies {
+  implementation 'com.aayushatharva.brotli4j:brotli4j:${brotli4j.version}'
+  runtimeOnly 'com.aayushatharva.brotli4j:native-$system-and-arch:${brotli4j.version}'
+}
+----
+
+When using Gradle, you need to add the runtime native library manually depending on your OS and architecture. See https://github.com/hyperxpro/Brotli4j#gradle[the Gradle section of Brotli4j] for more details.
+
+By default, decompression is disabled.
+
+==== Receiving custom HTTP/2 frames
+
+HTTP/2 is a framed protocol with various frames for the HTTP request/response model. The protocol allows other kind
+of frames to be sent and received.
+
+To receive custom frames, you can use the {@link io.vertx.core.http.HttpServerRequest#customFrameHandler} on the request,
+this will get called every time a custom frame arrives. Here's an example:
+
+[source,$lang]
+----
+{@link examples.HTTP2Examples#example1}
+----
+
+HTTP/2 frames are not subject to flow control - the frame handler will be called immediately when a
+custom frame is received whether the request is paused or is not
+
+=== Sending back responses
+
+The server response object is an instance of {@link io.vertx.core.http.HttpServerResponse} and is obtained from the
+request with {@link io.vertx.core.http.HttpServerRequest#response}.
+
+You use the response object to write a response back to the HTTP client.
+
+==== Setting status code and message
+
+The default HTTP status code for a response is `200`, representing `OK`.
+
+Use {@link io.vertx.core.http.HttpServerResponse#setStatusCode} to set a different code.
+
+You can also specify a custom status message with {@link io.vertx.core.http.HttpServerResponse#setStatusMessage}.
+
+If you don't specify a status message, the default one corresponding to the status code will be used.
+
+NOTE: for HTTP/2 the status won't be present in the response since the protocol won't transmit the message
+to the client
+
+==== Writing HTTP responses
+
+To write data to an HTTP response, you use one of the {@link io.vertx.core.http.HttpServerResponse#write} operations.
+
+These can be invoked multiple times before the response is ended. They can be invoked in a few ways:
+
+With a single buffer:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example16}
+----
+
+With a string. In this case the string will encoded using UTF-8 and the result written to the wire.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example17}
+----
+
+With a string and an encoding. In this case the string will encoded using the specified encoding and the
+result written to the wire.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example18}
+----
+
+Writing to a response is asynchronous and always returns immediately after write has been queued.
+
+If you are just writing a single string or buffer to the HTTP response you can write it and end the response in a
+single call to the {@link io.vertx.core.http.HttpServerResponse#end(String)}
+
+The first call to write results in the response header being written to the response. Consequently, if you are
+not using HTTP chunking then you must set the `Content-Length` header before writing to the response, since it will
+be too late otherwise. If you are using HTTP chunking you do not have to worry.
+
+==== Ending HTTP responses
+
+Once you have finished with the HTTP response you should {@link io.vertx.core.http.HttpServerResponse#end} it.
+
+This can be done in several ways:
+
+With no arguments, the response is simply ended.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example19}
+----
+
+It can also be called with a string or buffer in the same way `write` is called. In this case it's just the same as
+calling write with a string or buffer followed by calling end with no arguments. For example:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example20}
+----
+
+==== Closing the underlying TCP connection
+
+You can close the underlying TCP connection with {@link io.vertx.core.http.HttpConnection#close}.
+
+Non keep-alive connections will be automatically closed by Vert.x when the response is ended.
+
+Keep-alive connections are not automatically closed by Vert.x by default. If you want keep-alive connections to be
+closed after an idle time, then you configure {@link io.vertx.core.http.HttpServerOptions#setIdleTimeout}.
+
+HTTP/2 connections send a {@literal GOAWAY} frame before closing the response.
+
+==== Setting response headers
+
+HTTP response headers can be added to the response by adding them directly to the
+{@link io.vertx.core.http.HttpServerResponse#headers}:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example21}
+----
+
+Or you can use {@link io.vertx.core.http.HttpServerResponse#putHeader}
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example22}
+----
+
+Headers must all be added before any parts of the response body are written.
+
+==== Chunked HTTP responses and trailers
+
+Vert.x supports http://en.wikipedia.org/wiki/Chunked_transfer_encoding[HTTP Chunked Transfer Encoding].
+
+This allows the HTTP response body to be written in chunks, and is normally used when a large response body is
+being streamed to a client and the total size is not known in advance.
+
+You put the HTTP response into chunked mode as follows:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example23}
+----
+
+Default is non-chunked. When in chunked mode, each call to one of the {@link io.vertx.core.http.HttpServerResponse#write}
+methods will result in a new HTTP chunk being written out.
+
+When in chunked mode you can also write HTTP response trailers to the response. These are actually written in
+the final chunk of the response.
+
+NOTE: chunked response has no effect for an HTTP/2 stream
+
+To add trailers to the response, add them directly to the {@link io.vertx.core.http.HttpServerResponse#trailers}.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example24}
+----
+
+Or use {@link io.vertx.core.http.HttpServerResponse#putTrailer}.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example25}
+----
+
+==== Serving files directly from disk or the classpath
+
+If you were writing a web server, one way to serve a file from disk would be to open it as an {@link io.vertx.core.file.AsyncFile}
+and pipe it to the HTTP response.
+
+Or you could load it in one go using {@link io.vertx.core.file.FileSystem#readFile} and write it straight to the response.
+
+Alternatively, Vert.x provides a method which allows you to serve a file from disk or the filesystem to an HTTP response
+in one operation.
+Where supported by the underlying operating system this may result in the OS directly transferring bytes from the
+file to the socket without being copied through user-space at all.
+
+This is done by using {@link io.vertx.core.http.HttpServerResponse#sendFile}, and is usually more efficient for large
+files, but may be slower for small files.
+
+Here's a very simple web server that serves files from the file system using sendFile:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example26}
+----
+
+Sending a file is asynchronous and may not complete until some time after the call has returned. If you want to
+be notified when the file has been written you can use {@link io.vertx.core.http.HttpServerResponse#sendFile(String)}.
+
+Please see the chapter about <<classpath, serving files from the classpath>> for restrictions about the classpath resolution or disabling it.
+
+NOTE: If you use `sendFile` while using HTTPS it will copy through user-space, since if the kernel is copying data
+directly from disk to socket it doesn't give us an opportunity to apply any encryption.
+
+WARNING: If you're going to write web servers directly using Vert.x be careful that users cannot exploit the
+path to access files outside the directory from which you want to serve them or the classpath It may be safer instead to use
+Vert.x Web.
+
+When there is a need to serve just a segment of a file, say starting from a given byte, you can achieve this by doing:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example26b}
+----
+
+You are not required to supply the length if you want to send a file starting from an offset until the end, in this
+case you can just do:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example26c}
+----
+
+==== Piping responses
+
+The server response is a {@link io.vertx.core.streams.WriteStream} so you can pipe to it from any
+{@link io.vertx.core.streams.ReadStream}, e.g. {@link io.vertx.core.file.AsyncFile}, {@link io.vertx.core.net.NetSocket},
+{@link io.vertx.core.http.WebSocket} or {@link io.vertx.core.http.HttpServerRequest}.
+
+Here's an example which echoes the request body back in the response for any PUT methods.
+It uses a pipe for the body, so it will work even if the HTTP request body is much larger than can fit in memory
+at any one time:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example27}
+----
+
+You can also use the {@link io.vertx.core.http.HttpServerResponse#send(io.vertx.core.streams.ReadStream)} method to send a {@link io.vertx.core.streams.ReadStream}.
+
+Sending a stream is a pipe operation, however as this is a method of {@link io.vertx.core.http.HttpServerResponse}, it
+will also take  care of chunking the response when the `content-length` is not set.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#sendHttpServerResponse}
+----
+
+==== Writing HTTP/2 frames
+
+HTTP/2 is a framed protocol with various frames for the HTTP request/response model. The protocol allows other kind
+of frames to be sent and received.
+
+To send such frames, you can use the {@link io.vertx.core.http.HttpServerResponse#writeCustomFrame} on the response.
+Here's an example:
+
+[source,$lang]
+----
+{@link examples.HTTP2Examples#example2}
+----
+
+These frames are sent immediately and are not subject to flow control - when such frame is sent there it may be done
+before other {@literal DATA} frames.
+
+==== Stream reset
+
+HTTP/1.x does not allow a clean reset of a request or a response stream, for example when a client uploads
+a resource already present on the server, the server needs to accept the entire response.
+
+HTTP/2 supports stream reset at any time during the request/response:
+
+[source,$lang]
+----
+{@link examples.HTTP2Examples#example3}
+----
+
+By default, the `NO_ERROR` (0) error code is sent, another code can sent instead:
+
+[source,$lang]
+----
+{@link examples.HTTP2Examples#example4}
+----
+
+The HTTP/2 specification defines the list of http://httpwg.org/specs/rfc7540.html#ErrorCodes[error codes] one can use.
+
+The request handler are notified of stream reset events with the {@link io.vertx.core.http.HttpServerRequest#exceptionHandler request handler} and
+{@link io.vertx.core.http.HttpServerResponse#exceptionHandler response handler}:
+
+[source,$lang]
+----
+{@link examples.HTTP2Examples#example5}
+----
+
+==== Server push
+
+Server push is a new feature of HTTP/2 that enables sending multiple responses in parallel for a single client request.
+
+When a server process a request, it can push a request/response to the client:
+
+[source,$lang]
+----
+{@link examples.HTTP2Examples#example6}
+----
+
+When the server is ready to push the response, the push response handler is called and the handler can send the response.
+
+The push response handler may receive a failure, for instance the client may cancel the push because it already has `main.js` in its
+cache and does not want it anymore.
+
+The {@link io.vertx.core.http.HttpServerResponse#push} method must be called before the initiating response ends, however
+the pushed response can be written after.
+
+==== Handling exceptions
+
+You can set an {@link io.vertx.core.http.HttpServer#exceptionHandler(io.vertx.core.Handler)} to receive any
+exceptions that happens before the connection is passed to the {@link io.vertx.core.http.HttpServer#requestHandler(io.vertx.core.Handler)}
+or to the {@link io.vertx.core.http.HttpServer#webSocketHandler(io.vertx.core.Handler)}, e.g. during the TLS handshake.
+
+==== Handling invalid requests
+
+Vert.x will handle invalid HTTP requests and provides a default handler that will handle the common case
+appropriately, e.g. it does respond with `REQUEST_HEADER_FIELDS_TOO_LARGE` when a request header is too long.
+
+You can set your own {@link io.vertx.core.http.HttpServer#invalidRequestHandler(io.vertx.core.Handler)} to process
+invalid requests. Your implementation can handle specific cases and delegate other cases to to {@link io.vertx.core.http.HttpServerRequest#DEFAULT_INVALID_REQUEST_HANDLER}.
+
+=== HTTP Compression
+
+Vert.x comes with support for HTTP Compression out of the box.
+
+This means you are able to automatically compress the body of the responses before they are sent back to the client.
+
+If the client does not support HTTP compression the responses are sent back without compressing the body.
+
+This allows to handle Client that support HTTP Compression and those that not support it at the same time.
+
+To enable compression use can configure it with {@link io.vertx.core.http.HttpServerOptions#setCompressionSupported}.
+
+By default, compression is not enabled.
+
+When HTTP compression is enabled the server will check if the client includes an `Accept-Encoding` header which
+includes the supported compressions. Commonly used are deflate and gzip. Both are supported by Vert.x.
+
+If such a header is found the server will automatically compress the body of the response with one of the supported
+compressions and send it back to the client.
+
+Whenever the response needs to be sent without compression you can set the header `content-encoding` to `identity`:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#setIdentityContentEncodingHeader}
+----
+
+Be aware that compression may be able to reduce network traffic but is more CPU-intensive.
+
+To address this latter issue Vert.x allows you to tune the 'compression level' parameter that is native of the gzip/deflate compression algorithms.
+
+Compression level allows to configure gizp/deflate algorithms in terms of the compression ratio of the resulting data and the computational cost of the compress/decompress operation.
+
+The compression level is an integer value ranged from '1' to '9', where '1' means lower compression ratio but fastest algorithm and '9' means maximum compression ratio available but a slower algorithm.
+
+Using compression levels higher that 1-2 usually allows to save just some bytes in size - the gain is not linear, and depends on the specific data to be compressed
+- but it comports a non-trascurable cost in term of CPU cycles required to the server while generating the compressed response data
+( Note that at moment Vert.x doesn't support any form caching of compressed response data, even for static files, so the compression is done on-the-fly
+at every request body generation ) and in the same way it affects client(s) while decoding (inflating) received responses, operation that becomes more CPU-intensive
+the more the level increases.
+
+By default - if compression is enabled via {@link io.vertx.core.http.HttpServerOptions#setCompressionSupported} - Vert.x will use '6' as compression level,
+but the parameter can be configured to address any case with {@link io.vertx.core.http.HttpServerOptions#setCompressionLevel}.
+
+=== HTTP compression algorithms
+
+Vert.x supports out of the box deflate and gzip.
+
+Brotli and zstandard can also be used.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#setCompressors}
+----
+
+NOTE: use {@link io.netty.handler.codec.compression.StandardCompressionOptions} static methods to create {@link io.netty.handler.codec.compression.CompressionOptions}
+
+Brotli and zstandard libraries need to be added to the classpath.
+
+* Maven (in your `pom.xml`):
+
+[source,xml]
+----
+<dependency>
+  <groupId>com.aayushatharva.brotli4j</groupId>
+  <artifactId>brotli4j</artifactId>
+  <version>${brotli4j.version}</version>
+</dependency>
+<dependency>
+  <groupId>com.github.luben</groupId>
+  <artifactId>zstd-jni</artifactId>
+  <version>${zstd-jini.version}</version>
+</dependency>
+----
+* Gradle (in your `build.gradle` file):
+
+[source,groovy]
+----
+dependencies {
+  implementation 'com.aayushatharva.brotli4j:brotli4j:${brotli4j.version}'
+  runtimeOnly 'com.aayushatharva.brotli4j:native-$system-and-arch:${brotli4j.version}'
+  implementation 'com.github.luben:zstd-jni:${zstd-jini.version}'
+}
+----
+
+When using Gradle, you need to add the runtime native library manually depending on your OS and architecture. See https://github.com/hyperxpro/Brotli4j#gradle[the Gradle section of Brotli4j] for more details.
+
+You can configure compressors according to your needs
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#compressorConfig}
+----
+
+=== Creating an HTTP client
+
+You create an {@link io.vertx.core.http.HttpClient} instance with default options as follows:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example28}
+----
+
+If you want to configure options for the client, you create it as follows:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example29}
+----
+
+Vert.x supports HTTP/2 over TLS `h2` and over TCP `h2c`.
+
+By default, the http client performs HTTP/1.1 requests, to perform HTTP/2 requests the {@link io.vertx.core.http.HttpClientOptions#setProtocolVersion}
+must be set to {@link io.vertx.core.http.HttpVersion#HTTP_2}.
+
+For `h2` requests, TLS must be enabled with _Application-Layer Protocol Negotiation_:
+
+[source,$lang]
+----
+{@link examples.HTTP2Examples#example7}
+----
+
+For `h2c` requests, TLS must be disabled, the client will do an HTTP/1.1 requests and try an upgrade to HTTP/2:
+
+[source,$lang]
+----
+{@link examples.HTTP2Examples#example8}
+----
+
+`h2c` connections can also be established directly, i.e. connection started with a prior knowledge, when
+{@link io.vertx.core.http.HttpClientOptions#setHttp2ClearTextUpgrade(boolean)} options is set to false: after the
+connection is established, the client will send the HTTP/2 connection preface and expect to receive
+the same preface from the server.
+
+The http server may not support HTTP/2, the actual version can be checked
+with {@link io.vertx.core.http.HttpClientResponse#version()} when the response arrives.
+
+When a clients connects to an HTTP/2 server, it sends to the server its {@link io.vertx.core.http.HttpClientOptions#getInitialSettings initial settings}.
+The settings define how the server can use the connection, the default initial settings for a client are the default
+values defined by the HTTP/2 RFC.
+
+=== Pool configuration
+
+ For performance purpose, the client uses connection pooling when interacting with HTTP/1.1 servers. The pool creates up
+ to 5 connections per server. You can override the pool configuration like this:
+
+ [source,$lang]
+ ----
+ {@link examples.HTTPExamples#examplePoolConfiguration}
+ ----
+
+ You can configure various pool {@link io.vertx.core.http.PoolOptions options} as follows
+
+- {@link io.vertx.core.http.PoolOptions options#setHttp1MaxSize} the maximum number of opened per HTTP/1.x server (5 by default)
+- {@link io.vertx.core.http.PoolOptions options#setHttp2MaxSize} the maximum number of opened per HTTP/2 server (1 by default), you *should* not change this value since a single HTTP/2 connection is capable of delivering the same performance level than multiple HTTP/1.x connections
+- {@link io.vertx.core.http.PoolOptions options#setCleanerPeriod} the period in milliseconds at which the pool checks expired connections (1 second by default)
+- {@link io.vertx.core.http.PoolOptions options#setEventLoopSize} sets the number of event loops the pool use (0 by default)
+- a value of 0 configures the pool to use the event loop of the caller
+- a positive value configures the pool load balance the creation of connection over a list of event loops determined by the value
+- {@link io.vertx.core.http.PoolOptions options#setMaxWaitQueueSize} the maximum number of HTTP requests waiting until a connection is available, when the queue is full, the request is rejected
+
+=== Logging network client activity
+
+For debugging purposes, network activity can be logged.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#exampleClientLogging}
+----
+
+See the chapter on <<logging_network_activity, logging network activity>> for a detailed explanation.
+
+=== Advanced HTTP client creation
+
+You can pass options {@link io.vertx.core.Vertx#createHttpClient} methods to configure the HTTP client.
+
+Alternatively you can build a client with the builder {@link io.vertx.core.http.HttpClientBuilder API} :
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#exampleClientBuilder01}
+----
+
+In addition to {@link io.vertx.core.http.HttpClientOptions} and {@link io.vertx.core.http.PoolOptions}, you
+can set
+
+- a connection event handler notified when the client <<_client_connections,connects>> to a server
+- a redirection handler to implement an alternative HTTP <<_30x_redirection_handling,redirect>> behavior
+
+=== Making requests
+
+The http client is very flexible and there are various ways you can make requests with it.
+
+The first step when making a request is obtaining an HTTP connection to the remote server:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example30}
+----
+
+The client will connect to the remote server or reuse an available connection from the client connection pool.
+
+==== Default host and port
+
+Often you want to make many requests to the same host/port with an http client. To avoid you repeating the host/port
+every time you make a request you can configure the client with a default host/port:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example31}
+----
+
+==== Writing request headers
+
+You can write headers to a request using the {@link io.vertx.core.http.HttpHeaders} as follows:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example32}
+----
+
+The headers are an instance of {@link io.vertx.core.MultiMap} which provides operations for adding, setting and removing
+entries. Http headers allow more than one value for a specific key.
+
+You can also write headers using {@link io.vertx.core.http.HttpClientRequest#putHeader}
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example33}
+----
+
+If you wish to write headers to the request you must do so before any part of the request body is written.
+
+==== Writing request and processing response
+
+The {@link io.vertx.core.http.HttpClientRequest} `request` methods connects to the remote server
+or reuse an existing connection. The request instance obtained is pre-populated with some data
+ such like the host or the request URI, but you need to send this request to the server.
+
+You can call {@link io.vertx.core.http.HttpClientRequest#send()} to send a request such as an HTTP
+`GET` and process the asynchronous {@link io.vertx.core.http.HttpClientResponse}.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#sendRequest01}
+----
+
+You can also send the request with a body.
+
+{@link io.vertx.core.http.HttpClientRequest#send(java.lang.String)} with a string, the `Content-Length`
+header will be set for you if it was not previously set.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#sendRequest02}
+----
+
+{@link io.vertx.core.http.HttpClientRequest#send(io.vertx.core.buffer.Buffer)} with a buffer, the
+`Content-Length` header will be set for you if it was not previously set.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#sendRequest03}
+----
+
+{@link io.vertx.core.http.HttpClientRequest#send(io.vertx.core.streams.ReadStream)} with a stream, if
+the `Content-Length` header was not previously set, the request is sent with a chunked `Content-Encoding`.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#sendRequest04}
+----
+
+==== Streaming Request body
+
+The `send` method send requests at once.
+
+Sometimes you'll want to have low level control on how you write requests bodies.
+
+The {@link io.vertx.core.http.HttpClientRequest} can be used to write the request body.
+
+Here are some examples of writing a POST request with a body:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example34}
+----
+
+Methods exist to write strings in UTF-8 encoding and in any specific encoding and to write buffers:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example35}
+----
+
+If you are just writing a single string or buffer to the HTTP request you can write it and end the request in a
+single call to the `end` function.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example36}
+----
+
+When you're writing to a request, the first call to `write` will result in the request headers being written
+out to the wire.
+
+The actual write is asynchronous and might not occur until some time after the call has returned.
+
+Non-chunked HTTP requests with a request body require a `Content-Length` header to be provided.
+
+Consequently, if you are not using chunked HTTP then you must set the `Content-Length` header before writing
+to the request, as it will be too late otherwise.
+
+If you are calling one of the `end` methods that take a string or buffer then Vert.x will automatically calculate
+and set the `Content-Length` header before writing the request body.
+
+If you are using HTTP chunking a `Content-Length` header is not required, so you do not have to calculate the size
+up-front.
+
+==== Ending streamed HTTP requests
+
+Once you have finished with the HTTP request you must end it with one of the {@link io.vertx.core.http.HttpClientRequest#end}
+operations.
+
+Ending a request causes any headers to be written, if they have not already been written and the request to be marked
+as complete.
+
+Requests can be ended in several ways. With no arguments the request is simply ended:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example39}
+----
+
+Or a string or buffer can be provided in the call to `end`. This is like calling `write` with the string or buffer
+before calling `end` with no arguments
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example40}
+----
+
+==== Using the request as a stream
+
+An {@link io.vertx.core.http.HttpClientRequest} instance is also a {@link io.vertx.core.streams.WriteStream} instance.
+
+You can pipe to it from any {@link io.vertx.core.streams.ReadStream} instance.
+
+For, example, you could pipe a file on disk to an http request body as follows:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example44}
+----
+
+==== Chunked HTTP requests
+
+Vert.x supports http://en.wikipedia.org/wiki/Chunked_transfer_encoding[HTTP Chunked Transfer Encoding] for requests.
+
+This allows the HTTP request body to be written in chunks, and is normally used when a large request body is being streamed
+to the server, whose size is not known in advance.
+
+You put the HTTP request into chunked mode using {@link io.vertx.core.http.HttpClientRequest#setChunked(boolean)}.
+
+In chunked mode each call to write will cause a new chunk to be written to the wire. In chunked mode there is
+no need to set the `Content-Length` of the request up-front.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example41}
+----
+
+==== Request timeouts
+
+You can set an idle timeout to prevent your application from unresponsive servers using {@link io.vertx.core.http.RequestOptions#setIdleTimeout(long)} or {@link io.vertx.core.http.HttpClientRequest#idleTimeout(long)}. When the request does not return any data within the timeout period an exception will fail the result and the request will be reset.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#clientIdleTimeout}
+----
+
+NOTE: the timeout starts when the {@link io.vertx.core.http.HttpClientRequest} is available, implying a connection was
+obtained from the pool.
+
+You can set a connect timeout to prevent your application from unresponsive busy client connection pool. The
+`Future<HttpClientRequest>` is failed when a connection is not obtained before the timeout delay.
+
+The connect timeout option is not related to the TCP {@link io.vertx.core.http.HttpClientOptions#setConnectTimeout(int)} option, when a request is made against a pooled HTTP client, the timeout applies to the duration to obtain a connection from the pool to serve the request,
+the timeout might fire because the server does not respond in time or the pool is too busy to serve a request.
+
+You can configure both timeout using {@link io.vertx.core.http.RequestOptions#setTimeout(long)}
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#clientTimeout}
+----
+
+==== Writing HTTP/2 frames
+
+HTTP/2 is a framed protocol with various frames for the HTTP request/response model. The protocol allows other kind
+of frames to be sent and received.
+
+To send such frames, you can use the {@link io.vertx.core.http.HttpClientRequest#write} on the request. Here's an example:
+
+[source,$lang]
+----
+{@link examples.HTTP2Examples#example9}
+----
+
+==== Stream reset
+
+HTTP/1.x does not allow a clean reset of a request or a response stream, for example when a client uploads a resource already
+present on the server, the server needs to accept the entire response.
+
+HTTP/2 supports stream reset at any time during the request/response:
+
+[source,$lang]
+----
+{@link examples.HTTP2Examples#example10}
+----
+
+By default the NO_ERROR (0) error code is sent, another code can sent instead:
+
+[source,$lang]
+----
+{@link examples.HTTP2Examples#example11}
+----
+
+The HTTP/2 specification defines the list of http://httpwg.org/specs/rfc7540.html#ErrorCodes[error codes] one can use.
+
+The request handler are notified of stream reset events with the {@link io.vertx.core.http.HttpClientRequest#exceptionHandler request handler} and
+{@link io.vertx.core.http.HttpClientResponse#exceptionHandler response handler}:
+
+[source,$lang]
+----
+{@link examples.HTTP2Examples#example12}
+----
+
+=== HTTP/2 RST flood protection
+
+An HTTP/2 server is protected against RST flood DDOS attacks (https://github.com/netty/netty/security/advisories/GHSA-xpw8-rcwv-8f8p[CVE-2023-44487]): there is an upper bound to the number of `RST`
+frames a server can receive in a time window. The default configuration sets the upper bound to `200` for a duration of
+`30` seconds.
+
+You can use {@link io.vertx.core.http.HttpServerOptions#setHttp2RstFloodMaxRstFramePerWindow} and {@link io.vertx.core.http.HttpServerOptions#setHttp2RstFloodWindowDuration} to override these settings.
+
+=== Handling HTTP responses
+
+You receive an instance of {@link io.vertx.core.http.HttpClientResponse} into the handler that you specify in of
+the request methods or by setting a handler directly on the {@link io.vertx.core.http.HttpClientRequest} object.
+
+You can query the status code and the status message of the response with {@link io.vertx.core.http.HttpClientResponse#statusCode}
+and {@link io.vertx.core.http.HttpClientResponse#statusMessage}.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example45}
+----
+
+==== Using the response as a stream
+
+The {@link io.vertx.core.http.HttpClientResponse} instance is also a {@link io.vertx.core.streams.ReadStream} which means
+you can pipe it to any {@link io.vertx.core.streams.WriteStream} instance.
+
+==== Response headers and trailers
+
+Http responses can contain headers. Use {@link io.vertx.core.http.HttpClientResponse#headers} to get the headers.
+
+The object returned is a {@link io.vertx.core.MultiMap} as HTTP headers can contain multiple values for single keys.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example46}
+----
+
+Chunked HTTP responses can also contain trailers - these are sent in the last chunk of the response body.
+
+You use {@link io.vertx.core.http.HttpClientResponse#trailers} to get the trailers. Trailers are also a {@link io.vertx.core.MultiMap}.
+
+==== Reading the request body
+
+The response handler is called when the headers of the response have been read from the wire.
+
+If the response has a body this might arrive in several pieces some time after the headers have been read. We
+don't wait for all the body to arrive before calling the response handler as the response could be very large and we
+might be waiting a long time, or run out of memory for large responses.
+
+As parts of the response body arrive, the {@link io.vertx.core.http.HttpClientResponse#handler} is called with
+a {@link io.vertx.core.buffer.Buffer} representing the piece of the body:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example47}
+----
+
+If you know the response body is not very large and want to aggregate it all in memory before handling it, you can
+either aggregate it yourself:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example48}
+----
+
+Or you can use the convenience {@link io.vertx.core.http.HttpClientResponse#body()} which
+is called with the entire body when the response has been fully read:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example49}
+----
+
+==== Response end handler
+
+The response {@link io.vertx.core.http.HttpClientResponse#endHandler} is called when the entire response body has been read
+or immediately after the headers have been read and the response handler has been called if there is no body.
+
+==== Request and response composition
+
+The client interface is very simple and follows this pattern:
+
+1. `request` a connection
+2. `send` or `write`/`end` the request to the server
+3. handle the beginning of the {@link io.vertx.core.http.HttpClientResponse}
+4. process the response events
+
+You can use Vert.x future composition methods to make your code simpler, however the API is event driven,
+and you need to understand it otherwise you might experience possible data races (i.e. loosing events
+leading to corrupted data).
+
+NOTE: https://vertx.io/docs/vertx-web-client/java/[Vert.x Web Client] is a higher level API alternative (in fact it is built
+on top of this client) you might consider if this client is too low level for your use cases
+
+The client API intentionally does not return a `Future<HttpClientResponse>` because setting a completion
+handler on the future can be racy when this is set outside the event-loop.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#exampleClientComposition01}
+----
+
+Confining the `HttpClientRequest` usage within a verticle is the easiest solution as the Verticle
+will ensure that events are processed sequentially avoiding races.
+
+[source,$lang]
+----
+vertx.deployVerticle(() -> new AbstractVerticle() {
+  @Override
+  public void start() {
+
+    HttpClient client = vertx.createHttpClient();
+
+    Future<HttpClientRequest> future = client.request(HttpMethod.GET, "some-uri");
+  }
+}, new DeploymentOptions());
+----
+
+When you are interacting with the client possibly outside a verticle then you can safely perform
+composition as long as you do not delay the response events, e.g. processing  directly the response on the event-loop.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#exampleClientComposition03}
+----
+
+You can also guard the response body with <<response-expectations,HTTP responses expectations>>.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#exampleClientComposition03_}
+----
+
+If you need to delay the response processing then you need to `pause` the response or use a `pipe`, this
+might be necessary when another asynchronous operation is involved.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#exampleClientComposition04}
+----
+
+[[response-expectations]]
+==== Response expectations
+
+As seen above, you must perform sanity checks manually after the response is received.
+
+You can trade flexibility for clarity and conciseness using _response expectations_.
+
+{@link io.vertx.core.http.HttpResponseExpectation Response expectations} can guard the control flow when the response does
+not match a criteria.
+
+The HTTP Client comes with a set of out of the box predicates ready to use:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#usingPredefinedExpectations}
+----
+
+You can also create custom predicates when existing predicates don't fit your needs:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#usingPredicates}
+----
+
+==== Predefined expectations
+
+As a convenience, the HTTP Client ships a few predicates for common uses cases .
+
+For status codes, e.g. {@link io.vertx.core.http.HttpResponseExpectation#SC_SUCCESS} to verify that the
+response has a `2xx` code, you can also create a custom one:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#usingSpecificStatus(io.vertx.core.http.HttpClient,io.vertx.core.http.RequestOptions)}
+----
+
+For content types, e.g. {@link io.vertx.core.http.HttpResponseExpectation#JSON} to verify that the
+response body contains JSON data, you can also create a custom one:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#usingSpecificContentType}
+----
+
+Please refer to the {@link io.vertx.core.http.HttpResponseExpectation} documentation for a full list of predefined expectations.
+
+==== Creating custom failures
+
+By default, expectations (including the predefined ones) conveys a simple error message. You can customize the exception class by changing the error converter:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#expectationCustomError()}
+----
+
+WARNING: creating exception in Java can have a performance cost when it captures a stack trace, so you might want
+to create exceptions that do not capture the stack trace. By default exceptions are reported using an exception that
+does not capture the stack trace.
+
+==== Reading cookies from the response
+
+You can retrieve the list of cookies from a response using {@link io.vertx.core.http.HttpClientResponse#cookies()}.
+
+Alternatively you can just parse the `Set-Cookie` headers yourself in the response.
+
+==== 30x redirection handling
+
+The client can be configured to follow HTTP redirections provided by the `Location` response header when the client receives:
+
+* a `301`, `302`, `307` or `308` status code along with an HTTP GET or HEAD method
+* a `303` status code, in addition the directed request perform an HTTP GET method
+
+Here's an example:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#exampleFollowRedirect01}
+----
+
+The maximum redirects is `16` by default and can be changed with {@link io.vertx.core.http.HttpClientOptions#setMaxRedirects(int)}.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#exampleFollowRedirect02}
+----
+
+One size does not fit all and the default redirection policy may not be adapted to your needs.
+
+The default redirection policy can changed with a custom implementation:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#exampleFollowRedirect03}
+----
+
+The policy handles the original {@link io.vertx.core.http.HttpClientResponse} received and returns either `null`
+or a `Future<HttpClientRequest>`.
+
+- when `null` is returned, the original response is processed
+- when a future is returned, the request will be sent on its successful completion
+- when a future is returned, the exception handler set on the request is called on its failure
+
+The returned request must be unsent so the original request handlers can be sent and the client can send it after.
+
+Most of the original request settings will be propagated to the new request:
+
+* request headers, unless if you have set some headers
+* request body unless the returned request uses a `GET` method
+* response handler
+* request exception handler
+* request timeout
+
+==== 100-Continue handling
+
+According to the http://www.w3.org/Protocols/rfc2616/rfc2616-sec8.html[HTTP 1.1 specification] a client can set a
+header `Expect: 100-Continue` and send the request header before sending the rest of the request body.
+
+The server can then respond with an interim response status `Status: 100 (Continue)` to signify to the client that
+it is ok to send the rest of the body.
+
+The idea here is it allows the server to authorise and accept/reject the request before large amounts of data are sent.
+Sending large amounts of data if the request might not be accepted is a waste of bandwidth and ties up the server
+in reading data that it will just discard.
+
+Vert.x allows you to set a {@link io.vertx.core.http.HttpClientRequest#continueHandler(io.vertx.core.Handler)} on the
+client request object
+
+This will be called if the server sends back a `Status: 100 (Continue)` response to signify that it is ok to send
+the rest of the request.
+
+This is used in conjunction with {@link io.vertx.core.http.HttpClientRequest#sendHead()}to send the head of the request.
+
+Here's an example:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example50}
+----
+
+On the server side a Vert.x http server can be configured to automatically send back 100 Continue interim responses
+when it receives an `Expect: 100-Continue` header.
+
+This is done by setting the option {@link io.vertx.core.http.HttpServerOptions#setHandle100ContinueAutomatically(boolean)}.
+
+If you'd prefer to decide whether to send back continue responses manually, then this property should be set to
+`false` (the default), then you can inspect the headers and call {@link io.vertx.core.http.HttpServerResponse#writeContinue()}
+to have the client continue sending the body:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example50_1}
+----
+
+You can also reject the request by sending back a failure status code directly: in this case the body
+should either be ignored or the connection should be closed (100-Continue is a performance hint and
+cannot be a logical protocol constraint):
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example50_2}
+----
+
+==== Creating HTTP tunnels
+
+HTTP tunnels can be created with {@link io.vertx.core.http.HttpClientRequest#connect}:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#clientTunnel}
+----
+
+The handler will be called after the HTTP response header is received, the socket will be ready for tunneling
+and will send and receive buffers.
+
+`connect` works like `send`, but it reconfigures the transport to exchange
+raw buffers.
+
+==== Client push
+
+Server push is a new feature of HTTP/2 that enables sending multiple responses in parallel for a single client request.
+
+A push handler can be set on a request to receive the request/response pushed by the server:
+
+[source,$lang]
+----
+{@link examples.HTTP2Examples#example13}
+----
+
+If the client does not want to receive a pushed request, it can reset the stream:
+
+[source,$lang]
+----
+{@link examples.HTTP2Examples#example14}
+----
+
+When no handler is set, any stream pushed will be automatically cancelled by the client with
+a stream reset (`8` error code).
+
+==== Receiving custom HTTP/2 frames
+
+HTTP/2 is a framed protocol with various frames for the HTTP request/response model. The protocol allows other kind of
+frames to be sent and received.
+
+To receive custom frames, you can use the customFrameHandler on the request, this will get called every time a custom
+frame arrives. Here's an example:
+
+[source,$lang]
+----
+{@link examples.HTTP2Examples#example15}
+----
+
+=== Enabling compression on the client
+
+The http client comes with support for HTTP Compression out of the box.
+
+This means the client can let the remote http server know that it supports compression, and will be able to handle
+compressed response bodies.
+
+An http server is free to either compress with one of the supported compression algorithms or to send the body back
+without compressing it at all. So this is only a hint for the Http server which it may ignore at will.
+
+To tell the http server which compression is supported by the client it will include an `Accept-Encoding` header with
+the supported compression algorithm as value. Multiple compression algorithms are supported. In case of Vert.x this
+will result in the following header added:
+
+ Accept-Encoding: gzip, deflate
+
+The server will choose then from one of these. You can detect if a server compressed the body by checking for the
+`Content-Encoding` header in the response sent back from it.
+
+If the body of the response was compressed via gzip it will include for example the following header:
+
+ Content-Encoding: gzip
+
+To enable compression set {@link io.vertx.core.http.HttpClientOptions#setDecompressionSupported(boolean)} on the options
+used when creating the client.
+
+By default compression is disabled.
+
+=== Client side load balancing
+
+By default, when the client resolves a hostname to a list of several IP addresses, the client uses the first returned IP address.
+
+The http client can be configured to perform client side load balancing instead
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#httpClientSideLoadBalancing}
+----
+
+Vert.x provides out of the box several load balancing policies you can use
+
+- {@link io.vertx.core.net.endpoint.LoadBalancer#ROUND_ROBIN Round-robin}
+- {@link io.vertx.core.net.endpoint.LoadBalancer#LEAST_REQUESTS Least requests}
+- {@link io.vertx.core.net.endpoint.LoadBalancer#POWER_OF_TWO_CHOICES Power of two choices}
+- {@link io.vertx.core.net.endpoint.LoadBalancer#CONSISTENT_HASHING Consistent hashing}
+
+Most load balancing policies are pretty much self-explanatory.
+
+Hash based routing can be achieved with the {@link io.vertx.core.net.endpoint.LoadBalancer#CONSISTENT_HASHING} policy.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#httpClientSideLoadBalancing}
+----
+
+The default consistent hashing policy uses 4 virtual nodes per server and uses a random policy in the absence of a routing key.
+
+You can create a policy configuration that best fit your needs
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#consistentHashingConfiguration}
+----
+
+Custom load balancing policies can also be used.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#customLoadBalancingPolicy}
+----
+
+=== HTTP/1.x pooling and keep alive
+
+Http keep alive allows http connections to be used for more than one request. This can be a more efficient use of
+connections when you're making multiple requests to the same server.
+
+For HTTP/1.x versions, the http client supports pooling of connections, allowing you to reuse connections between requests.
+
+For pooling to work, keep alive must be true using {@link io.vertx.core.http.HttpClientOptions#setKeepAlive(boolean)}
+on the options used when configuring the client. The default value is true.
+
+When keep alive is enabled. Vert.x will add a `Connection: Keep-Alive` header to each HTTP/1.0 request sent.
+When keep alive is disabled. Vert.x will add a `Connection: Close` header to each HTTP/1.1 request sent to signal
+that the connection will be closed after completion of the response.
+
+The maximum number of connections to pool *for each server* is configured using {@link io.vertx.core.http.PoolOptions#setHttp1MaxSize(int)}
+
+When making a request with pooling enabled, Vert.x will create a new connection if there are less than the maximum number of
+connections already created for that server, otherwise it will add the request to a queue.
+
+Keep alive connections will be closed by the client automatically after a timeout. The timeout can be specified
+by the server using the `keep-alive` header:
+
+----
+ keep-alive: timeout=30
+----
+
+You can set the default timeout using {@link io.vertx.core.http.HttpClientOptions#setKeepAliveTimeout(int)} - any
+connections not used within this timeout will be closed. Please note the timeout value is in seconds not milliseconds.
+
+=== HTTP/1.1 pipe-lining
+
+The client also supports pipe-lining of requests on a connection.
+
+Pipe-lining means another request is sent on the same connection before the response from the preceding one has
+returned. Pipe-lining is not appropriate for all requests.
+
+To enable pipe-lining, it must be enabled using {@link io.vertx.core.http.HttpClientOptions#setPipelining(boolean)}.
+By default, pipe-lining is disabled.
+
+When pipe-lining is enabled requests will be written to connections without waiting for previous responses to return.
+
+The number of pipe-lined requests over a single connection is limited by {@link io.vertx.core.http.HttpClientOptions#setPipeliningLimit}.
+This option defines the maximum number of http requests sent to the server awaiting for a response. This limit ensures the
+fairness of the distribution of the client requests over the connections to the same server.
+
+=== HTTP/2 multiplexing
+
+HTTP/2 advocates to use a single connection to a server, by default the http client uses a single
+connection for each server, all the streams to the same server are multiplexed over the same connection.
+
+When the clients needs to use more than a single connection and use pooling, the {@link io.vertx.core.http.PoolOptions#setHttp2MaxSize(int)}
+shall be used.
+
+When it is desirable to limit the number of multiplexed streams per connection and use a connection
+pool instead of a single connection, {@link io.vertx.core.http.HttpClientOptions#setHttp2MultiplexingLimit(int)}
+can be used.
+
+[source,$lang]
+----
+{@link examples.HTTP2Examples#useMaxStreams}
+----
+
+The multiplexing limit for a connection is a setting set on the client that limits the number of streams
+of a single connection. The effective value can be even lower if the server sets a lower limit
+with the {@link io.vertx.core.http.Http2Settings#setMaxConcurrentStreams SETTINGS_MAX_CONCURRENT_STREAMS} setting.
+
+HTTP/2 connections will not be closed by the client automatically. To close them you can call {@link io.vertx.core.http.HttpConnection#close()}
+or close the client instance.
+
+Alternatively you can set idle timeout using {@link io.vertx.core.http.HttpClientOptions#setIdleTimeout(int)} - any
+connections not used within this timeout will be closed. Please note the idle timeout value is in seconds not milliseconds.
+
+==== Un-pooled client connections
+
+Most HTTP interactions are performed using {@code HttpClientAgent} request/response API: the client obtains
+a connection from its pool of connections to perform a request.
+
+Alternatively, you can connect directly to a server (bypassing the connection pool) and get an HTTP client connection.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#connect}
+----
+
+The {@link io.vertx.core.http.HttpClientConnection} can create {@link io.vertx.core.http.HttpClientRequest}:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#connectAndGet}
+----
+
+A client connection can handle a certain amount of concurrent requests. When the max number of connection is reached, any subsequent request is queued until a slot is available.
+
+=== HTTP connections
+
+The {@link io.vertx.core.http.HttpConnection} offers the API for dealing with HTTP connection events, lifecycle
+and settings.
+
+HTTP/2 implements fully the {@link io.vertx.core.http.HttpConnection} API.
+
+HTTP/1.x implements partially the {@link io.vertx.core.http.HttpConnection} API: only the close operation,
+the close handler and exception handler are implemented. This protocol does not provide semantics for
+the other operations.
+
+==== Server connections
+
+The {@link io.vertx.core.http.HttpServerRequest#connection()} method returns the request connection on the server:
+
+[source,$lang]
+----
+{@link examples.HTTP2Examples#example16}
+----
+
+A connection handler can be set on the server to be notified of any incoming connection:
+
+[source,$lang]
+----
+{@link examples.HTTP2Examples#example17}
+----
+
+==== Client connections
+
+The {@link io.vertx.core.http.HttpClientRequest#connection()} method returns the request connection on the client:
+
+[source,$lang]
+----
+{@link examples.HTTP2Examples#example18}
+----
+
+A connection handler can be set on a client builder to be notified when a connection has been established happens:
+
+[source,$lang]
+----
+{@link examples.HTTP2Examples#example19}
+----
+
+==== Connection settings
+
+The configuration of an HTTP/2 is configured by the {@link io.vertx.core.http.Http2Settings} data object.
+
+Each endpoint must respect the settings sent by the other side of the connection.
+
+When a connection is established, the client and the server exchange initial settings. Initial settings
+are configured by {@link io.vertx.core.http.HttpClientOptions#setInitialSettings} on the client and
+{@link io.vertx.core.http.HttpServerOptions#setInitialSettings} on the server.
+
+The settings can be changed at any time after the connection is established:
+
+[source,$lang]
+----
+{@link examples.HTTP2Examples#example20}
+----
+
+As the remote side should acknowledge on reception of the settings update, it's possible to give a callback
+to be notified of the acknowledgment:
+
+[source,$lang]
+----
+{@link examples.HTTP2Examples#example21}
+----
+
+Conversely the {@link io.vertx.core.http.HttpConnection#remoteSettingsHandler(io.vertx.core.Handler)} is notified
+when the new remote settings are received:
+
+[source,$lang]
+----
+{@link examples.HTTP2Examples#example22}
+----
+
+NOTE: this only applies to the HTTP/2 protocol
+
+==== Connection ping
+
+HTTP/2 connection ping is useful for determining the connection round-trip time or check the connection
+validity: {@link io.vertx.core.http.HttpConnection#ping} sends a {@literal PING} frame to the remote
+endpoint:
+
+[source,$lang]
+----
+{@link examples.HTTP2Examples#example23}
+----
+
+Vert.x will send automatically an acknowledgement when a {@literal PING} frame is received,
+an handler can be set to be notified for each ping received:
+
+[source,$lang]
+----
+{@link examples.HTTP2Examples#example24}
+----
+
+The handler is just notified, the acknowledgement is sent whatsoever. Such feature is aimed for
+implementing  protocols on top of HTTP/2.
+
+NOTE: this only applies to the HTTP/2 protocol
+
+==== Connection shutdown and go away
+
+Calling {@link io.vertx.core.http.HttpConnection#shutdown()} will send a {@literal GOAWAY} frame to the
+remote side of the connection, asking it to stop creating streams: a client will stop doing new requests
+and a server will stop pushing responses. After the {@literal GOAWAY} frame is sent, the connection
+waits some time (30 seconds by default) until all current streams closed and close the connection:
+
+[source,$lang]
+----
+{@link examples.HTTP2Examples#example25}
+----
+
+The {@link io.vertx.core.http.HttpConnection#shutdownHandler} notifies when all streams have been closed, the
+connection is not yet closed.
+
+It's possible to just send a {@literal GOAWAY} frame, the main difference with a shutdown is that
+it will just tell the remote side of the connection to stop creating new streams without scheduling a connection
+close:
+
+[source,$lang]
+----
+{@link examples.HTTP2Examples#example26}
+----
+
+Conversely, it is also possible to be notified when {@literal GOAWAY} are received:
+
+[source,$lang]
+----
+{@link examples.HTTP2Examples#example27}
+----
+
+The {@link io.vertx.core.http.HttpConnection#shutdownHandler} will be called when all current streams
+have been closed and the connection can be closed:
+
+[source,$lang]
+----
+{@link examples.HTTP2Examples#example28}
+----
+
+This applies also when a {@literal GOAWAY} is received.
+
+NOTE: this only applies to the HTTP/2 protocol
+
+==== Connection close
+
+Connection {@link io.vertx.core.http.HttpConnection#close} closes the connection:
+
+- it closes the socket for HTTP/1.x
+- a shutdown with no delay for HTTP/2, the {@literal GOAWAY} frame will still be sent before the connection is closed.
+
+The {@link io.vertx.core.http.HttpConnection#closeHandler} notifies when a connection is closed.
+
+=== Client sharing
+
+You can share an HTTP client between multiple verticles or instances of the same verticle. Such client should be created outside
+of a verticle otherwise it will be closed when the verticle that created it is undeployed
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#httpClientSharing1}
+----
+
+You can also create a shared HTTP client in each verticle:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#httpClientSharing2}
+----
+
+The first time a shared client is created it will create and return a client. Subsequent calls will reuse this client and
+create a lease to this client. The client is closed after all leases have been disposed.
+
+By default, a client reuses the current event-loop when it needs to create a TCP connection. The HTTP client will
+therefore randomly use event-loops of verticles using it in a safe fashion.
+
+You can assign a number of event loop a client will use independently of the client using it
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#httpClientSharing3}
+----
+
+=== Server sharing
+
+When several HTTP servers listen on the same port, vert.x orchestrates the request handling using a
+round-robin strategy.
+
+Let's take a verticle creating an HTTP server such as:
+
+.io.vertx.examples.http.sharing.HttpServerVerticle
+[source,$lang]
+----
+{@link examples.HTTPExamples#serversharing(io.vertx.core.Vertx)}
+----
+
+This service is listening on the port 8080.
+
+So, when this verticle is instantiated multiple times as with: `deploymentOptions.setInstances(2)`, what's happening ?
+If both verticles bound to the same port, you would receive a socket exception.
+Fortunately, vert.x is handling this case for you.
+When you deploy another server on the same host and port as an existing server it doesn't actually try and create a new server listening on the same host/port.
+It binds only once to the socket.
+When receiving a request it calls the server handlers following a round-robin strategy.
+
+Let's now imagine a client such as:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#serversharingclient(io.vertx.core.Vertx)}
+----
+
+Vert.x delegates the requests to one of the server sequentially:
+
+[source]
+----
+Hello from i.v.e.h.s.HttpServerVerticle@1
+Hello from i.v.e.h.s.HttpServerVerticle@2
+Hello from i.v.e.h.s.HttpServerVerticle@1
+Hello from i.v.e.h.s.HttpServerVerticle@2
+...
+----
+
+Consequently the servers can scale over available cores while each Vert.x verticle instance remains strictly
+single threaded, and you don't have to do any special tricks like writing load-balancers in order to scale your
+server on your multi-core machine.
+
+You can bind on a shared random ports using a negative port value, the first bind will pick a port randomly, subsequent binds
+on the same port value will share this random port.
+
+.io.vertx.examples.http.sharing.HttpServerVerticle
+[source,$lang]
+----
+{@link examples.HTTPExamples#randomServersharing(io.vertx.core.Vertx)}
+----
+
+=== Using HTTPS with Vert.x
+
+Vert.x http servers and clients can be configured to use HTTPS in exactly the same way as net servers.
+
+Please see <<ssl, configuring net servers to use SSL>> for more information.
+
+SSL can also be enabled/disabled per request with {@link io.vertx.core.http.RequestOptions} or when
+specifying a scheme with {@link io.vertx.core.http.RequestOptions#setAbsoluteURI(java.lang.String)}
+method.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#setSSLPerRequest(io.vertx.core.http.HttpClient)}
+----
+
+The {@link io.vertx.core.http.HttpClientOptions#setSsl(boolean)} setting acts as the default client setting.
+
+The {@link io.vertx.core.http.RequestOptions#setSsl(Boolean)} overrides the default client setting
+
+* setting the value to `false` will disable SSL/TLS even if the client is configured to use SSL/TLS
+* setting the value to `true` will enable SSL/TLS  even if the client is configured to not use SSL/TLS, the actual
+client SSL/TLS (such as trust, key/certificate, ciphers, ALPN, ...) will be reused
+
+Likewise {@link io.vertx.core.http.RequestOptions#setAbsoluteURI(java.lang.String)} scheme
+also overrides the default client setting.
+
+==== Server Name Indication (SNI)
+
+Vert.x http servers can be configured to use SNI in exactly the same way as {@linkplain io.vertx.core.net net servers}.
+
+Vert.x http client will present the actual hostname as _server name_ during the TLS handshake.
+
+=== WebSockets
+
+http://en.wikipedia.org/wiki/WebSocket[WebSockets] are a web technology that allows a full duplex socket-like
+connection between HTTP servers and HTTP clients (typically browsers).
+
+Vert.x supports WebSockets on both the client and server-side.
+
+==== WebSockets on the server
+
+There are two ways of handling WebSockets on the server side.
+
+===== WebSocket handler
+
+The first way involves providing a {@link io.vertx.core.http.HttpServer#webSocketHandler(io.vertx.core.Handler)}
+on the server instance.
+
+When a WebSocket connection is made to the server, the handler will be called, passing in an instance of
+{@link io.vertx.core.http.ServerWebSocket}.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example51}
+----
+
+You can choose to reject the WebSocket by calling {@link io.vertx.core.http.ServerWebSocket#reject()}.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example52}
+----
+
+You can perform an asynchronous handshake by calling {@link io.vertx.core.http.ServerWebSocket#setHandshake} with a `Future`:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#exampleAsynchronousHandshake}
+----
+
+NOTE: the WebSocket will be automatically accepted after the handler is called unless the WebSocket's handshake has been set
+
+===== Upgrading to WebSocket
+
+The second way of handling WebSockets is to handle the HTTP Upgrade request that was sent from the client, and
+call {@link io.vertx.core.http.HttpServerRequest#toWebSocket()} on the server request.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example53}
+----
+
+===== The server WebSocket
+
+The {@link io.vertx.core.http.ServerWebSocket} instance enables you to retrieve the {@link io.vertx.core.http.ServerWebSocket#headers() headers},
+{@link io.vertx.core.http.ServerWebSocket#path() path}, {@link io.vertx.core.http.ServerWebSocket#query() query} and
+{@link io.vertx.core.http.ServerWebSocket#uri() URI} of the HTTP request of the WebSocket handshake.
+
+==== WebSockets on the client
+
+e Vert.x {@link io.vertx.core.http.WebSocketClient} supports WebSockets.
+
+ You can connect a WebSocket to a server using one of the {@link io.vertx.core.http.WebSocketClient#connect} operations.
+
+ The returned future will be completed with an instance of {@link io.vertx.core.http.WebSocket} when the connection has been made:
+[source,$lang]
+----
+{@link examples.HTTPExamples#example54}
+----
+
+en connecting from a non Vert.x thread, you can create a {@link io.vertx.core.http.ClientWebSocket}, configure its handlers and
+then connect to the server:
+
+ [source,$lang]
+ ----
+ {@link examples.HTTPExamples#example54_bis}
+ ----
+
+By default, the client sets the `origin` header to the server host, e.g http://www.example.com. Some servers will refuse
+such request, you can configure the client to not set this header.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#exampleWebSocketDisableOriginHeader}
+----
+
+You can also set a different header:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#exampleWebSocketSetOriginHeader}
+----
+
+NOTE: older versions of the WebSocket protocol use `sec-websocket-origin` instead
+
+==== Writing messages to WebSockets
+
+If you wish to write a single WebSocket message to the WebSocket you can do this with
+{@link io.vertx.core.http.WebSocket#writeBinaryMessage(io.vertx.core.buffer.Buffer)} or
+{@link io.vertx.core.http.WebSocket#writeTextMessage(java.lang.String)} :
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example55}
+----
+
+If the WebSocket message is larger than the maximum WebSocket frame size as configured with
+{@link io.vertx.core.http.WebSocketClientOptions#setMaxFrameSize(int)}
+then Vert.x will split it into multiple WebSocket frames before sending it on the wire.
+
+==== Writing frames to WebSockets
+
+A WebSocket message can be composed of multiple frames. In this case the first frame is either a _binary_ or _text_ frame
+followed by zero or more _continuation_ frames.
+
+The last frame in the message is marked as _final_.
+
+To send a message consisting of multiple frames you create frames using
+{@link io.vertx.core.http.WebSocketFrame#binaryFrame(io.vertx.core.buffer.Buffer,boolean)}
+, {@link io.vertx.core.http.WebSocketFrame#textFrame(java.lang.String,boolean)} or
+{@link io.vertx.core.http.WebSocketFrame#continuationFrame(io.vertx.core.buffer.Buffer,boolean)} and write them
+to the WebSocket using {@link io.vertx.core.http.WebSocket#writeFrame(io.vertx.core.http.WebSocketFrame)}.
+
+Here's an example for binary frames:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example56}
+----
+
+In many cases you just want to send a WebSocket message that consists of a single final frame, so we provide a couple
+of shortcut methods to do that with {@link io.vertx.core.http.WebSocket#writeFinalBinaryFrame(io.vertx.core.buffer.Buffer)}
+and {@link io.vertx.core.http.WebSocket#writeFinalTextFrame(String)}.
+
+Here's an example:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example56_1}
+----
+
+==== Reading frames from WebSockets
+
+To read frames from a WebSocket you use the {@link io.vertx.core.http.WebSocket#frameHandler(io.vertx.core.Handler)}.
+
+The frame handler will be called with instances of {@link io.vertx.core.http.WebSocketFrame} when a frame arrives,
+for example:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example57}
+----
+
+==== Closing WebSockets
+
+Use {@link io.vertx.core.http.WebSocket#close()} to close the WebSocket connection when you have finished with it.
+
+==== Piping WebSockets
+
+The {@link io.vertx.core.http.WebSocket} instance is also a {@link io.vertx.core.streams.ReadStream} and a
+{@link io.vertx.core.streams.WriteStream} so it can be used with pipes.
+
+When using a WebSocket as a write stream or a read stream it can only be used with WebSockets connections that are
+used with binary frames that are no split over multiple frames.
+
+==== Event bus handlers
+
+Every WebSocket can register two handlers on the event bus, and when any data are received in these handlers,
+it writes the data to itself. Those are local subscriptions, not reachable from other clustered nodes.
+
+This enables you to write data to a WebSocket which is potentially in a completely different verticle sending data
+to the address of that handler.
+
+This feature is disabled by default, however you can enable it using {@link io.vertx.core.http.HttpServerOptions#setRegisterWebSocketWriteHandlers} or {@link io.vertx.core.http.WebSocketConnectOptions#setRegisterWriteHandlers}.
+
+The addresses of the handlers are given by {@link io.vertx.core.http.WebSocket#binaryHandlerID()} and
+{@link io.vertx.core.http.WebSocket#textHandlerID()}.
+
+=== Using a proxy for HTTP/HTTPS connections
+
+The http client supports accessing http/https URLs via an HTTP proxy (e.g. Squid) or _SOCKS4a_ or _SOCKS5_ proxy.
+The CONNECT protocol uses HTTP/1.x but can connect to HTTP/1.x and HTTP/2 servers.
+
+Connecting to h2c (unencrypted HTTP/2 servers) is likely not supported by http proxies since they will support
+HTTP/1.1 only.
+
+The proxy can be configured in the {@link io.vertx.core.http.HttpClientOptions} by setting a
+{@link io.vertx.core.net.ProxyOptions} object containing proxy type, hostname, port and optionally username and password.
+
+Here's an example of using an HTTP proxy:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example58}
+----
+
+When the client connects to an http URL, it connects to the proxy server and provides the full URL in the
+HTTP request ("GET http://www.somehost.com/path/file.html HTTP/1.1").
+
+When the client connects to an https URL, it asks the proxy to create a tunnel to the remote host with
+the CONNECT method.
+
+For a SOCKS5 proxy:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example59}
+----
+
+The DNS resolution is always done on the proxy server, to achieve the functionality of a SOCKS4 client, it is necessary
+to resolve the DNS address locally.
+
+Proxy options can also be set per request:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#perRequestProxyOptions}
+----
+
+NOTE: client connection pooling is aware of proxies (including authentication), consequently two requests to the same host through different proxies
+do not share the same pooled connection
+
+You can use {@link io.vertx.core.http.HttpClientOptions#setNonProxyHosts} to configure a list of host bypassing
+the proxy. The lists accept `*` wildcard for matching domains:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#nonProxyHosts}
+----
+
+==== Handling of other protocols
+
+The HTTP proxy implementation supports getting ftp:// urls if the proxy supports
+that.
+
+When the HTTP request URI contains the full URL then the client will not compute a full HTTP url and instead
+use the full URL specified in the request URI:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example60}
+----
+
+=== Using HA PROXY protocol
+
+https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt[HA PROXY protocol] provides a convenient way to safely transport connection
+information such as a client's address across multiple layers of NAT or TCP
+proxies.
+
+HA PROXY protocol can be enabled by setting the option {@link io.vertx.core.http.HttpServerOptions#setUseProxyProtocol(boolean)}
+and adding the following dependency in your classpath:
+
+[source,xml]
+----
+<dependency>
+  <groupId>io.netty</groupId>
+  <artifactId>netty-codec-haproxy</artifactId>
+  <!--<version>Should align with netty version that Vert.x uses</version>-->
+</dependency>
+----
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example61}
+----
+
+=== Automatic clean-up in verticles
+
+If you're creating http servers and clients from inside verticles, those servers and clients will be automatically closed
+when the verticle is undeployed.

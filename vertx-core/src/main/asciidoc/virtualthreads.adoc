@@ -1,0 +1,100 @@
+== Vert.x Virtual Threads
+
+Use virtual threads to write Vert.x code that looks like it is synchronous.
+
+You still write the traditional Vert.x code processing events, but you have the opportunity to write synchronous code for complex  workflows and use thread locals in such workflows.
+
+=== Introduction
+
+The non-blocking nature of Vert.x leads to asynchronous APIs. 
+Asynchronous APIs can take various forms including callback style, promises and reactive extensions.
+
+In some cases, programming using asynchronous APIs can be more challenging than using a direct synchronous style, in particular if you have several operations that you want to do sequentially.
+Also, error propagation is often more complex when using asynchronous APIs.
+
+Virtual thread support allows you to work with asynchronous APIs, but using a direct synchronous style that you're already familiar with.
+
+It does this by using Java 21 https://openjdk.org/jeps/444[virtual threads]. Virtual threads are very lightweight threads that do not correspond to underlying kernel threads. When they are blocked they do not block a kernel thread.
+
+=== Using virtual threads
+
+You can deploy virtual thread verticles.
+
+A virtual thread verticle is capable of awaiting Vert.x futures and gets the result synchronously.
+
+When the verticle *awaits* a result, the verticle can still process events like an event-loop verticle.
+
+[source,java]
+----
+{@link examples.VirtualThreadExamples#gettingStarted}
+----
+
+NOTE: Using virtual threads requires Java 21 or above.
+
+==== Blocking within a virtual thread verticle
+
+You can use {@link io.vertx.core.Future#await} to suspend the current virtual thread until the awaited result is available.
+
+The virtual thread is effectively blocked, but the application can still process events.
+
+When a virtual thread awaits for a result and the verticle needs to process a task, a new virtual thread is created to handle this task.
+
+When the result is available, the virtual thread execution is resumed and scheduled after the current task is suspended or finished.
+
+IMPORTANT: Like any verticle at most one task is executed at the same time.
+
+You can await on a Vert.x `Future`
+
+[source,java]
+----
+{@link examples.VirtualThreadExamples#awaitingFutures1}
+----
+
+or on a JDK `CompletionStage`
+
+[source,java]
+----
+{@link examples.VirtualThreadExamples#awaitingFutures2}
+----
+
+==== Field visibility
+
+A virtual thread verticle can interact safely with fields before an `await` call. However, if you are reading a field before an `await` call and reusing the value after the call, you should keep in mind that this value might have changed.
+
+[source,java]
+----
+{@link examples.VirtualThreadExamples#fieldVisibility1}
+----
+
+You should read/write fields before calling `await` to avoid this.
+
+[source,java]
+----
+{@link examples.VirtualThreadExamples#fieldVisibility2}
+----
+
+NOTE: this is the same behavior with an event-loop verticle
+
+==== Awaiting multiple futures
+
+When you need to await multiple futures, you can use Vert.x {@link io.vertx.core.CompositeFuture}:
+
+[source,java]
+----
+{@link examples.VirtualThreadExamples#awaitingMultipleFutures}
+----
+
+==== Blocking without await
+
+When your application blocks without using `await`, e.g. using `ReentrantLock#lock`, the Vert.x scheduler is not aware of it and cannot schedule events on the verticle: it behaves like a worker verticle, yet using virtual threads.
+
+This use case is not encouraged yet not forbidden, however the verticle should be deployed with several instances to deliver the desired concurrency, like a worker verticle.
+
+==== Thread local support
+
+Thread locals are only reliable within the execution of a context task.
+
+[source,java]
+----
+{@link examples.VirtualThreadExamples#threadLocalSupport1}
+----
