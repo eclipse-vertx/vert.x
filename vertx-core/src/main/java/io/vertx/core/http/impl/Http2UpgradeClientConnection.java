@@ -20,7 +20,6 @@ import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http.*;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.EventExecutor;
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
@@ -249,7 +248,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
     }
 
     @Override
-    public WriteStream<Buffer> exceptionHandler(@Nullable Handler<Throwable> handler) {
+    public WriteStream<Buffer> exceptionHandler(Handler<Throwable> handler) {
       delegate.exceptionHandler(handler);
       return this;
     }
@@ -266,7 +265,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
     }
 
     @Override
-    public WriteStream<Buffer> drainHandler(@Nullable Handler<Void> handler) {
+    public WriteStream<Buffer> drainHandler(Handler<Void> handler) {
       delegate.drainHandler(handler);
       return this;
     }
@@ -810,7 +809,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
   }
 
   @Override
-  public HttpConnection pingHandler(@Nullable Handler<Buffer> handler) {
+  public HttpConnection pingHandler(Handler<Buffer> handler) {
     if (current instanceof Http1xClientConnection) {
       pingHandler = handler;
     } else {
@@ -820,7 +819,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
   }
 
   @Override
-  public HttpConnection goAwayHandler(@Nullable Handler<GoAway> handler) {
+  public HttpConnection goAwayHandler(Handler<GoAway> handler) {
     if (current instanceof Http1xClientConnection) {
       goAwayHandler = handler;
     } else {
@@ -830,7 +829,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
   }
 
   @Override
-  public HttpConnection shutdownHandler(@Nullable Handler<Void> handler) {
+  public HttpConnection shutdownHandler(Handler<Void> handler) {
     if (current instanceof Http1xClientConnection) {
       shutdownHandler = handler;
     } else {

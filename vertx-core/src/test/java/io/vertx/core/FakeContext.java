@@ -1,7 +1,6 @@
 package io.vertx.core;
 
 import io.netty.channel.EventLoop;
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.Deployment;
@@ -47,7 +46,7 @@ class FakeContext implements ContextInternal {
   }
 
   @Override
-  public <T> Future<@Nullable T> executeBlocking(Callable<T> blockingCodeHandler, boolean ordered) {
+  public <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, boolean ordered) {
     return null;
   }
 
@@ -57,7 +56,7 @@ class FakeContext implements ContextInternal {
   }
 
   @Override
-  public @Nullable JsonObject config() {
+  public JsonObject config() {
     return null;
   }
 
@@ -67,12 +66,12 @@ class FakeContext implements ContextInternal {
   }
 
   @Override
-  public Context exceptionHandler(@Nullable Handler<Throwable> handler) {
+  public Context exceptionHandler(Handler<Throwable> handler) {
     return null;
   }
 
   @Override
-  public @Nullable Handler<Throwable> exceptionHandler() {
+  public Handler<Throwable> exceptionHandler() {
     return null;
   }
 

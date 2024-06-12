@@ -19,7 +19,6 @@ import io.netty.handler.codec.http.websocketx.ContinuationWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -36,6 +35,7 @@ import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.InboundMessageQueue;
 import io.vertx.core.net.impl.VertxConnection;
+import io.vertx.core.streams.impl.ReadStreamBase;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
@@ -55,7 +55,7 @@ import static io.vertx.core.net.impl.VertxHandler.*;
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @param <S> self return type
  */
-public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocketInternal {
+public abstract class WebSocketImplBase<S extends WebSocket> extends ReadStreamBase<Buffer> implements WebSocketInternal {
 
   private final boolean supportsContinuation;
   private final String textHandlerID;
@@ -154,7 +154,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   }
 
   @Override
-  public Future<Void> shutdown(long timeout, TimeUnit unit, short statusCode, @Nullable String reason) {
+  public Future<Void> shutdown(long timeout, TimeUnit unit, short statusCode, String reason) {
     // Close the WebSocket by sending a close frame with specified payload
     ByteBuf byteBuf = HttpUtils.generateWSCloseFrameByteBuf(statusCode, reason);
     CloseWebSocketFrame frame = new CloseWebSocketFrame(true, 0, byteBuf);

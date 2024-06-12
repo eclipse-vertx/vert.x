@@ -140,6 +140,11 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
+  public Timer timer(long delay, TimeUnit unit) {
+    return delegate.timer(delay, unit);
+  }
+
+  @Override
   public long setPeriodic(long initialDelay, long delay, Handler<Long> handler) {
     return delegate.setPeriodic(initialDelay, delay, handler);
   }

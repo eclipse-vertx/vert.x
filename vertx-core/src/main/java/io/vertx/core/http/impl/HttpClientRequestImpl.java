@@ -12,14 +12,12 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.impl.Arguments;
-import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.HostAndPort;
@@ -258,7 +256,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   @Override
-  public synchronized HttpClientRequest earlyHintsHandler(@Nullable Handler<MultiMap> handler) {
+  public synchronized HttpClientRequest earlyHintsHandler(Handler<MultiMap> handler) {
     if (handler != null) {
       checkEnded();
     }
@@ -267,7 +265,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   @Override
-  public synchronized HttpClientRequest redirectHandler(@Nullable Function<HttpClientResponse, Future<HttpClientRequest>> handler) {
+  public synchronized HttpClientRequest redirectHandler(Function<HttpClientResponse, Future<HttpClientRequest>> handler) {
     if (handler != null) {
       checkEnded();
     }

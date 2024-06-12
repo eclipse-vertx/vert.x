@@ -16,7 +16,6 @@ import io.netty.handler.codec.compression.DecompressionException;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http2.Http2Exception;
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
@@ -30,6 +29,7 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
 import io.vertx.core.streams.ReadStream;
+import io.vertx.core.streams.impl.ReadStreamBase;
 import io.vertx.test.core.AssertExpectations;
 import io.vertx.test.core.DetectFileDescriptorLeaks;
 import io.vertx.test.core.Repeat;
@@ -4417,12 +4417,12 @@ public abstract class HttpTest extends HttpTestBase {
       public Future<Void> write(String chunk, String enc) { throw new UnsupportedOperationException(); }
       public HttpClientRequest traceOperation(String op) { throw new UnsupportedOperationException(); }
       public String traceOperation() { throw new UnsupportedOperationException(); }
-      public HttpClientRequest continueHandler(@Nullable Handler<Void> handler) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest continueHandler(Handler<Void> handler) { throw new UnsupportedOperationException(); }
       public boolean isFollowRedirects() { throw new UnsupportedOperationException(); }
       public int getMaxRedirects() { throw new UnsupportedOperationException(); }
       public int numberOfRedirections() { throw new UnsupportedOperationException(); }
-      public HttpClientRequest redirectHandler(@Nullable Function<HttpClientResponse, Future<HttpClientRequest>> handler) { throw new UnsupportedOperationException(); }
-      public HttpClientRequest earlyHintsHandler(@Nullable Handler<MultiMap> handler) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest redirectHandler(Function<HttpClientResponse, Future<HttpClientRequest>> handler) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest earlyHintsHandler(Handler<MultiMap> handler) { throw new UnsupportedOperationException(); }
       public Future<Void> sendHead() { throw new UnsupportedOperationException(); }
       public Future<HttpClientResponse> connect() { throw new UnsupportedOperationException(); }
       public Future<Void> end(String chunk) { throw new UnsupportedOperationException(); }
@@ -4441,7 +4441,7 @@ public abstract class HttpTest extends HttpTestBase {
       public Future<HttpClientResponse> response() { throw new UnsupportedOperationException(); }
     }
     HttpClientRequest req = new MockReq();
-    class MockResp implements HttpClientResponse {
+    class MockResp extends ReadStreamBase<Buffer> implements HttpClientResponse {
       public HttpClientResponse resume() { throw new UnsupportedOperationException(); }
       public HttpClientResponse exceptionHandler(Handler<Throwable> handler) { throw new UnsupportedOperationException(); }
       public HttpClientResponse handler(Handler<Buffer> handler) { throw new UnsupportedOperationException(); }

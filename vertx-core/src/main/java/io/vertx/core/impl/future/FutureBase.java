@@ -19,7 +19,9 @@ import io.vertx.core.Expectation;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.NoStackTraceThrowable;
 import io.vertx.core.impl.NoStackTraceTimeoutException;
+import io.vertx.core.impl.Utils;
 
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -178,5 +180,24 @@ public abstract class FutureBase<T> implements FutureInternal<T> {
       }
     });
     return promise.future();
+  }
+
+  @Override
+  public T await() {
+    io.vertx.core.impl.WorkerExecutor executor = io.vertx.core.impl.WorkerExecutor.unwrapWorkerExecutor();
+    io.vertx.core.impl.WorkerExecutor.TaskController cont = executor.current();
+    onComplete(ar -> cont.resume());
+    try {
+      cont.suspendAndAwaitResume();
+    } catch (InterruptedException e) {
+      Utils.throwAsUnchecked(e);
+      return null;
+    }
+    if (succeeded()) {
+      return result();
+    } else {
+      Utils.throwAsUnchecked(cause());
+      return null;
+    }
   }
 }

@@ -18,7 +18,9 @@ import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.streams.Pipe;
 import io.vertx.core.streams.ReadStream;
+import io.vertx.core.streams.impl.PipeImpl;
 
 import java.util.*;
 
@@ -192,6 +194,11 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
    */
   public synchronized void discardHandler(Handler<Message<T>> handler) {
     this.discardHandler = handler;
+  }
+
+  @Override
+  public Pipe<Message<T>> pipe() {
+    return new PipeImpl<>(this);
   }
 
   @Override

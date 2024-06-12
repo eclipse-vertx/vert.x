@@ -30,6 +30,7 @@ import io.vertx.core.parsetools.JsonEvent;
 import io.vertx.core.parsetools.JsonEventType;
 import io.vertx.core.parsetools.JsonParser;
 import io.vertx.core.streams.ReadStream;
+import io.vertx.core.streams.impl.ReadStreamBase;
 
 import java.io.IOException;
 import java.util.*;
@@ -37,7 +38,7 @@ import java.util.*;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class JsonParserImpl implements JsonParser {
+public class JsonParserImpl extends ReadStreamBase<JsonEvent> implements JsonParser {
 
   private final NonBlockingJsonParser parser;
   private Handler<JsonEventImpl> tokenHandler = this::handleEvent;

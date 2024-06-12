@@ -261,6 +261,10 @@ public class FutureImpl<T> extends FutureBase<T> {
     return true;
   }
 
+  public boolean tryFail(String message) {
+    return tryFail(new NoStackTraceThrowable(message));
+  }
+
   public boolean tryFail(Throwable cause) {
     if (cause == null) {
       cause = new NoStackTraceThrowable(null);

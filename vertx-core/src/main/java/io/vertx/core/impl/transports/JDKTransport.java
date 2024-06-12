@@ -24,7 +24,7 @@ import io.vertx.core.spi.transport.Transport;
 
 import java.util.concurrent.ThreadFactory;
 
-public class JDKTransport implements Transport {
+public class JDKTransport extends TransportBase {
   /**
    * The JDK transport, always there.
    */

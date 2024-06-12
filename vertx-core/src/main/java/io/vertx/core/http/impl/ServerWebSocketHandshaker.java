@@ -17,7 +17,6 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketVersion;
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
@@ -25,6 +24,8 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.VertxHandler;
+import io.vertx.core.streams.Pipe;
+import io.vertx.core.streams.WriteStream;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
@@ -71,7 +72,7 @@ public class ServerWebSocketHandshaker implements ServerWebSocket {
   }
 
   @Override
-  public @Nullable String scheme() {
+  public String scheme() {
     Http1xServerRequest r = request;
     if (r != null) {
       return r.scheme();
@@ -81,7 +82,7 @@ public class ServerWebSocketHandshaker implements ServerWebSocket {
   }
 
   @Override
-  public @Nullable HostAndPort authority() {
+  public HostAndPort authority() {
     Http1xServerRequest r = request;
     if (r != null) {
       return r.authority();
@@ -111,7 +112,7 @@ public class ServerWebSocketHandshaker implements ServerWebSocket {
   }
 
   @Override
-  public @Nullable String query() {
+  public String query() {
     Http1xServerRequest r = request;
     if (r != null) {
       return r.query();
@@ -329,7 +330,12 @@ public class ServerWebSocketHandshaker implements ServerWebSocket {
   }
 
   @Override
-  public ServerWebSocket textMessageHandler(@Nullable Handler<String> handler) {
+  public Pipe<Buffer> pipe() {
+    return webSocketOrDie().pipe();
+  }
+
+  @Override
+  public ServerWebSocket textMessageHandler(Handler<String> handler) {
     textMessageHandler = handler;
     WebSocket ws = webSocket;
     if (ws != null) {
@@ -339,7 +345,7 @@ public class ServerWebSocketHandshaker implements ServerWebSocket {
   }
 
   @Override
-  public ServerWebSocket binaryMessageHandler(@Nullable Handler<Buffer> handler) {
+  public ServerWebSocket binaryMessageHandler(Handler<Buffer> handler) {
     binaryMessageHandler = handler;
     WebSocket ws = webSocket;
     if (ws != null) {
@@ -349,7 +355,7 @@ public class ServerWebSocketHandshaker implements ServerWebSocket {
   }
 
   @Override
-  public ServerWebSocket pongHandler(@Nullable Handler<Buffer> handler) {
+  public ServerWebSocket pongHandler(Handler<Buffer> handler) {
     pongHandler = handler;
     WebSocket ws = webSocket;
     if (ws != null) {
@@ -364,7 +370,7 @@ public class ServerWebSocketHandshaker implements ServerWebSocket {
   }
 
   @Override
-  public Future<Void> shutdown(long timeout, TimeUnit unit, short statusCode, @Nullable String reason) {
+  public Future<Void> shutdown(long timeout, TimeUnit unit, short statusCode, String reason) {
     WebSocket delegate = webSocketOrDie();
     return delegate.shutdown(timeout, unit, statusCode, reason);
   }

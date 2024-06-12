@@ -10,7 +10,6 @@
  */
 package io.vertx.core.net.impl;
 
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextInternal;
@@ -22,7 +21,7 @@ import io.vertx.core.net.*;
 public interface NetServerInternal extends NetServer {
 
   @Override
-  NetServerInternal connectHandler(@Nullable Handler<NetSocket> handler);
+  NetServerInternal connectHandler(Handler<NetSocket> handler);
 
   @Override
   NetServerInternal exceptionHandler(Handler<Throwable> handler);

@@ -14,6 +14,7 @@ package io.vertx.core.eventbus.impl;
 import io.vertx.core.Handler;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.streams.ReadStream;
+import io.vertx.core.streams.impl.ReadStreamBase;
 
 /**
  * A body stream that transform a <code>ReadStream&lt;Message&lt;T&gt;&gt;</code> into a
@@ -21,7 +22,7 @@ import io.vertx.core.streams.ReadStream;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class BodyReadStream<T> implements ReadStream<T> {
+public class BodyReadStream<T> extends ReadStreamBase<T> implements ReadStream<T> {
 
   private ReadStream<Message<T>> delegate;
 

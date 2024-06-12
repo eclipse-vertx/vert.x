@@ -22,8 +22,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.concurrent.FutureListener;
-import io.netty.util.internal.ObjectUtil;
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -307,7 +305,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public HttpServerResponse endHandler(@Nullable Handler<Void> handler) {
+  public HttpServerResponse endHandler(Handler<Void> handler) {
     synchronized (conn) {
       if (handler != null) {
         checkValid();
@@ -758,7 +756,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public @Nullable Cookie removeCookie(String name, boolean invalidate) {
+  public Cookie removeCookie(String name, boolean invalidate) {
     synchronized (conn) {
       checkHeadWritten();
       return cookies().removeOrInvalidate(name, invalidate);
@@ -766,7 +764,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public @Nullable Cookie removeCookie(String name, String domain, String path, boolean invalidate) {
+  public Cookie removeCookie(String name, String domain, String path, boolean invalidate) {
     synchronized (conn) {
       checkHeadWritten();
       return cookies().removeOrInvalidate(name, domain, path, invalidate);
@@ -774,7 +772,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public @Nullable Set<Cookie> removeCookies(String name, boolean invalidate) {
+  public Set<Cookie> removeCookies(String name, boolean invalidate) {
     synchronized (conn) {
       checkHeadWritten();
       return (Set) cookies().removeOrInvalidateAll(name, invalidate);

@@ -10,10 +10,6 @@
  */
 package io.vertx.core.http.impl;
 
-import io.vertx.codegen.annotations.CacheReturn;
-import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.GenIgnore;
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
@@ -83,43 +79,36 @@ public class UnpooledHttpClientConnection implements HttpClientConnection {
   }
 
   @Override
-  @Fluent
   public HttpConnection setWindowSize(int windowSize) {
     return actual.setWindowSize(windowSize);
   }
 
   @Override
-  @Fluent
   public HttpConnection goAway(long errorCode) {
     return actual.goAway(errorCode);
   }
 
   @Override
-  @Fluent
   public HttpConnection goAway(long errorCode, int lastStreamId) {
     return actual.goAway(errorCode, lastStreamId);
   }
 
   @Override
-  @Fluent
   public HttpConnection goAway(long errorCode, int lastStreamId, Buffer debugData) {
     return actual.goAway(errorCode, lastStreamId, debugData);
   }
 
   @Override
-  @Fluent
-  public HttpConnection goAwayHandler(@Nullable Handler<GoAway> handler) {
+  public HttpConnection goAwayHandler(Handler<GoAway> handler) {
     return actual.goAwayHandler(handler);
   }
 
   @Override
-  @Fluent
-  public HttpConnection shutdownHandler(@Nullable Handler<Void> handler) {
+  public HttpConnection shutdownHandler(Handler<Void> handler) {
     return actual.shutdownHandler(handler);
   }
 
   @Override
-  @Fluent
   public HttpConnection closeHandler(Handler<Void> handler) {
     return actual.closeHandler(handler);
   }
@@ -140,7 +129,6 @@ public class UnpooledHttpClientConnection implements HttpClientConnection {
   }
 
   @Override
-  @Fluent
   public HttpConnection remoteSettingsHandler(Handler<Http2Settings> handler) {
     return actual.remoteSettingsHandler(handler);
   }
@@ -151,19 +139,16 @@ public class UnpooledHttpClientConnection implements HttpClientConnection {
   }
 
   @Override
-  @Fluent
-  public HttpConnection pingHandler(@Nullable Handler<Buffer> handler) {
+  public HttpConnection pingHandler(Handler<Buffer> handler) {
     return actual.pingHandler(handler);
   }
 
   @Override
-  @Fluent
   public HttpConnection exceptionHandler(Handler<Throwable> handler) {
     return actual.exceptionHandler(handler);
   }
 
   @Override
-  @CacheReturn
   public SocketAddress remoteAddress() {
     return actual.remoteAddress();
   }
@@ -174,7 +159,6 @@ public class UnpooledHttpClientConnection implements HttpClientConnection {
   }
 
   @Override
-  @CacheReturn
   public SocketAddress localAddress() {
     return actual.localAddress();
   }
@@ -190,13 +174,11 @@ public class UnpooledHttpClientConnection implements HttpClientConnection {
   }
 
   @Override
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   public SSLSession sslSession() {
     return actual.sslSession();
   }
 
   @Override
-  @GenIgnore
   public List<Certificate> peerCertificates() throws SSLPeerUnverifiedException {
     return actual.peerCertificates();
   }

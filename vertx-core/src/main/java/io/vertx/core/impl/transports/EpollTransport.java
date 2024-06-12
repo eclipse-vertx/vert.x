@@ -37,7 +37,7 @@ import java.util.concurrent.ThreadFactory;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class EpollTransport implements Transport {
+public class EpollTransport extends TransportBase {
 
   private static volatile int pendingFastOpenRequestsThreshold = 256;
 
@@ -75,7 +75,7 @@ public class EpollTransport implements Transport {
     if (address.isDomainSocket()) {
       return new DomainSocketAddress(address.path());
     } else {
-      return Transport.super.convert(address);
+      return super.convert(address);
     }
   }
 
@@ -84,7 +84,7 @@ public class EpollTransport implements Transport {
     if (address instanceof DomainSocketAddress) {
       return new SocketAddressImpl(((DomainSocketAddress) address).path());
     }
-    return Transport.super.convert(address);
+    return super.convert(address);
   }
 
   @Override
@@ -133,7 +133,7 @@ public class EpollTransport implements Transport {
   @Override
   public void configure(DatagramChannel channel, DatagramSocketOptions options) {
     channel.config().setOption(EpollChannelOption.SO_REUSEPORT, options.isReusePort());
-    Transport.super.configure(channel, options);
+    super.configure(channel, options);
   }
 
   @Override
@@ -146,7 +146,7 @@ public class EpollTransport implements Transport {
       bootstrap.childOption(EpollChannelOption.TCP_QUICKACK, options.isTcpQuickAck());
       bootstrap.childOption(EpollChannelOption.TCP_CORK, options.isTcpCork());
     }
-    Transport.super.configure(options, domainSocket, bootstrap);
+    super.configure(options, domainSocket, bootstrap);
   }
 
   @Override
@@ -159,6 +159,6 @@ public class EpollTransport implements Transport {
       bootstrap.option(EpollChannelOption.TCP_QUICKACK, options.isTcpQuickAck());
       bootstrap.option(EpollChannelOption.TCP_CORK, options.isTcpCork());
     }
-    Transport.super.configure(options, connectTimeout, domainSocket, bootstrap);
+    super.configure(options, connectTimeout, domainSocket, bootstrap);
   }
 }

@@ -11,7 +11,6 @@
 
 package io.vertx.core.http.impl;
 
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -106,7 +105,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  public HttpClientRequest redirectHandler(@Nullable Function<HttpClientResponse, Future<HttpClientRequest>> handler) {
+  public HttpClientRequest redirectHandler(Function<HttpClientResponse, Future<HttpClientRequest>> handler) {
     throw new IllegalStateException();
   }
 
@@ -156,12 +155,12 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  public HttpClientRequest continueHandler(@Nullable Handler<Void> handler) {
+  public HttpClientRequest continueHandler(Handler<Void> handler) {
     throw new IllegalStateException();
   }
 
   @Override
-  public HttpClientRequest earlyHintsHandler(@Nullable Handler<MultiMap> handler) {
+  public HttpClientRequest earlyHintsHandler(Handler<MultiMap> handler) {
     throw new IllegalStateException();
   }
 

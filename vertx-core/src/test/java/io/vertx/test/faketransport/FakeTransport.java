@@ -6,11 +6,12 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.ServerChannel;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
+import io.vertx.core.impl.transports.TransportBase;
 import io.vertx.core.spi.transport.Transport;
 
 import java.util.concurrent.ThreadFactory;
 
-public class FakeTransport implements Transport {
+public class FakeTransport extends TransportBase {
 
   private static final Throwable CAUSE = new UnsupportedOperationException("Unavailable");
 

@@ -19,7 +19,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.util.CharsetUtil;
 import io.netty.util.ReferenceCounted;
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
@@ -31,7 +30,10 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.spi.metrics.TCPMetrics;
+import io.vertx.core.streams.Pipe;
+import io.vertx.core.streams.WriteStream;
 import io.vertx.core.streams.impl.InboundBuffer;
+import io.vertx.core.streams.impl.PipeImpl;
 
 import java.io.File;
 import java.io.RandomAccessFile;
@@ -176,6 +178,11 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
   public synchronized NetSocket handler(Handler<Buffer> dataHandler) {
     this.handler = dataHandler;
     return this;
+  }
+
+  @Override
+  public Pipe<Buffer> pipe() {
+    return new PipeImpl<>(this);
   }
 
   private synchronized Handler<Object> messageHandler() {
@@ -383,7 +390,7 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
   }
 
   @Override
-  public NetSocketImpl shutdownHandler(@Nullable Handler<Void> handler) {
+  public NetSocketImpl shutdownHandler(Handler<Void> handler) {
     super.shutdownHandler(handler);
     return this;
   }

@@ -22,6 +22,7 @@ import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
+import io.vertx.core.streams.impl.ReadStreamBase;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +36,7 @@ import java.util.List;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class HttpClientResponseImpl implements HttpClientResponse  {
+public class HttpClientResponseImpl extends ReadStreamBase<Buffer> implements HttpClientResponse  {
 
   private static final Logger log = LoggerFactory.getLogger(HttpClientResponseImpl.class);
 

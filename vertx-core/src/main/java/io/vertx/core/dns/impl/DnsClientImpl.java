@@ -17,7 +17,6 @@ import io.netty.resolver.ResolvedAddressTypes;
 import io.netty.resolver.dns.DnsNameResolver;
 import io.netty.resolver.dns.DnsNameResolverBuilder;
 import io.netty.util.concurrent.GenericFutureListener;
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
@@ -27,8 +26,10 @@ import io.vertx.core.dns.DnsResponseCode;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -37,7 +38,7 @@ public class DnsClientImpl implements DnsClient {
 
   public static final char[] HEX_TABLE = "0123456789abcdef".toCharArray();
 
-  private static final Function<List<String>, @Nullable String> FIRST_OF = lst -> lst.size() > 0 ? lst.get(0) : null;
+  private static final Function<List<String>, String> FIRST_OF = lst -> lst.size() > 0 ? lst.get(0) : null;
 
   private final VertxInternal vertx;
   private boolean closed;
@@ -100,19 +101,19 @@ public class DnsClientImpl implements DnsClient {
   }
 
   @Override
-  public Future<@Nullable String> lookup(String name) {
+  public Future<String> lookup(String name) {
     return resolveAll(name, null)
       // The DnsNameResolver does not allow to query with several questions so we need to fallback
       .map(FIRST_OF);
   }
 
   @Override
-  public Future<@Nullable String> lookup4(String name) {
+  public Future<String> lookup4(String name) {
     return resolveAll(name, InternetProtocolFamily.IPv4).map(FIRST_OF);
   }
 
   @Override
-  public Future<@Nullable String> lookup6(String name) {
+  public Future<String> lookup6(String name) {
     return resolveAll(name, InternetProtocolFamily.IPv6).map(FIRST_OF);
   }
 
@@ -148,7 +149,7 @@ public class DnsClientImpl implements DnsClient {
   }
 
   @Override
-  public Future<@Nullable String> resolvePTR(String name) {
+  public Future<String> resolvePTR(String name) {
     return queryAll(name, DnsRecordType.PTR, RecordDecoder.DOMAIN).map(FIRST_OF);
   }
 
@@ -243,6 +244,47 @@ public class DnsClientImpl implements DnsClient {
         return (Future<List<T>>) (Future)ar;
       }
     });
+  }
+
+  /**
+   * Try to do a reverse lookup of an IP address. This is basically the same as doing trying to resolve a PTR record
+   * but allows you to just pass in the IP address and not a valid ptr query string.
+   *
+   * @param ipaddress  the IP address to resolve the PTR for
+   * @return a future notified with the resolved {@link String} if a record was found. If none was found it will
+   *                 get notified with {@code null}. If an error occurs it will get failed.
+   */
+  public Future<String> reverseLookup(String ipaddress) {
+    try {
+      InetAddress inetAddress = InetAddress.getByName(ipaddress);
+      byte[] addr = inetAddress.getAddress();
+
+      StringBuilder reverseName = new StringBuilder(64);
+      if (inetAddress instanceof Inet4Address) {
+        // reverse ipv4 address
+        reverseName.append(addr[3] & 0xff).append(".")
+          .append(addr[2]& 0xff).append(".")
+          .append(addr[1]& 0xff).append(".")
+          .append(addr[0]& 0xff);
+      } else {
+        // It is an ipv 6 address time to reverse it
+        for (int i = 0; i < 16; i++) {
+          reverseName.append(HEX_TABLE[(addr[15 - i] & 0xf)]);
+          reverseName.append(".");
+          reverseName.append(HEX_TABLE[(addr[15 - i] >> 4) & 0xf]);
+          if (i != 15) {
+            reverseName.append(".");
+          }
+        }
+      }
+      reverseName.append(".in-addr.arpa");
+
+      return resolvePTR(reverseName.toString());
+    } catch (UnknownHostException e) {
+      // Should never happen as we work with ip addresses as input
+      // anyway just in case notify the handler
+      return Future.failedFuture(e);
+    }
   }
 
   @Override

@@ -10,12 +10,12 @@
  */
 package io.vertx.core.http.impl;
 
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.streams.Pipe;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
@@ -94,6 +94,11 @@ public class ClientWebSocketImpl implements ClientWebSocket {
       w.handler(handler);
     }
     return this;
+  }
+
+  @Override
+  public Pipe<Buffer> pipe() {
+    return delegate().pipe();
   }
 
   @Override
@@ -230,7 +235,7 @@ public class ClientWebSocketImpl implements ClientWebSocket {
   }
 
   @Override
-  public ClientWebSocket textMessageHandler(@Nullable Handler<String> handler) {
+  public ClientWebSocket textMessageHandler(Handler<String> handler) {
     textMessageHandler = handler;
     WebSocket w = ws;
     if (w != null) {
@@ -240,7 +245,7 @@ public class ClientWebSocketImpl implements ClientWebSocket {
   }
 
   @Override
-  public ClientWebSocket binaryMessageHandler(@Nullable Handler<Buffer> handler) {
+  public ClientWebSocket binaryMessageHandler(Handler<Buffer> handler) {
     binaryMessageHandler = handler;
     WebSocket w = ws;
     if (w != null) {
@@ -250,7 +255,7 @@ public class ClientWebSocketImpl implements ClientWebSocket {
   }
 
   @Override
-  public ClientWebSocket pongHandler(@Nullable Handler<Buffer> handler) {
+  public ClientWebSocket pongHandler(Handler<Buffer> handler) {
     pongHandler = handler;
     WebSocket w = ws;
     if (w != null) {
@@ -265,7 +270,7 @@ public class ClientWebSocketImpl implements ClientWebSocket {
   }
 
   @Override
-  public Future<Void> shutdown(long timeout, TimeUnit unit, short statusCode, @Nullable String reason) {
+  public Future<Void> shutdown(long timeout, TimeUnit unit, short statusCode, String reason) {
     return delegate().close(statusCode, reason);
   }
 

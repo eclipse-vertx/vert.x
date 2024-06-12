@@ -17,7 +17,6 @@ import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import io.netty.handler.codec.http2.Http2Headers;
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -321,7 +320,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   }
 
   @Override
-  public @Nullable HostAndPort authority() {
+  public HostAndPort authority() {
     return stream.authority;
   }
 
@@ -433,7 +432,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   }
 
   @Override
-  public HttpServerRequest uploadHandler(@Nullable Handler<HttpServerFileUpload> handler) {
+  public HttpServerRequest uploadHandler(Handler<HttpServerFileUpload> handler) {
     synchronized (stream.conn) {
       if (handler != null) {
         checkEnded();

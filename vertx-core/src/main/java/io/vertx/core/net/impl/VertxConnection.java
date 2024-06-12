@@ -19,7 +19,6 @@ import io.netty.util.ReferenceCounted;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.FutureListener;
 import io.netty.util.concurrent.ScheduledFuture;
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -76,7 +75,7 @@ public class VertxConnection extends ConnectionBase {
     this.voidPromise = new VoidChannelPromise(chctx.channel(), false);
   }
 
-  public synchronized ConnectionBase shutdownHandler(@Nullable Handler<Void> handler) {
+  public synchronized ConnectionBase shutdownHandler(Handler<Void> handler) {
     shutdownHandler = handler;
     return this;
   }

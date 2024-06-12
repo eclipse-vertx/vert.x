@@ -913,6 +913,7 @@ public class FutureTest extends FutureTestBase {
       public Future<T> otherwise(Function<Throwable, T> mapper) { throw new UnsupportedOperationException(); }
       public Future<T> otherwise(T value) { throw new UnsupportedOperationException(); }
       public Future<T> timeout(long delay, TimeUnit unit) { throw new UnsupportedOperationException(); }
+      public T await() { throw new UnsupportedOperationException(); }
 
       public void handle(AsyncResult<T> asyncResult) {
         if (asyncResult.succeeded()) {

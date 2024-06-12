@@ -423,6 +423,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return scheduleTimeout(ctx.unwrap(), true, initialDelay, delay, TimeUnit.MILLISECONDS, ctx.isDeployment(), handler);
   }
 
+  @Override
+  public Timer timer(long delay, TimeUnit unit) {
+    return getOrCreateContext().timer(delay, unit);
+  }
+
   public long setTimer(long delay, Handler<Long> handler) {
     ContextInternal ctx = getOrCreateContext();
     return scheduleTimeout(ctx, false, delay, TimeUnit.MILLISECONDS, ctx.isDeployment(), handler);

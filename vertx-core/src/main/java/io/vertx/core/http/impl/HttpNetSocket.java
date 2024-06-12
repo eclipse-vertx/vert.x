@@ -11,7 +11,6 @@
 
 package io.vertx.core.http.impl;
 
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
@@ -24,6 +23,7 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
+import io.vertx.core.streams.impl.ReadStreamBase;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
@@ -33,7 +33,7 @@ import java.util.List;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class HttpNetSocket implements NetSocket {
+class HttpNetSocket extends ReadStreamBase<Buffer> implements NetSocket {
 
   static HttpNetSocket netSocket(ConnectionBase conn, ContextInternal context, ReadStream<Buffer> readStream, WriteStream<Buffer> writeStream) {
     HttpNetSocket sock = new HttpNetSocket(conn, context, readStream, writeStream);
@@ -229,7 +229,7 @@ class HttpNetSocket implements NetSocket {
   }
 
   @Override
-  public NetSocket closeHandler(@Nullable Handler<Void> handler) {
+  public NetSocket closeHandler(Handler<Void> handler) {
     synchronized (conn) {
       closeHandler = handler;
     }
@@ -237,7 +237,7 @@ class HttpNetSocket implements NetSocket {
   }
 
   @Override
-  public NetSocket shutdownHandler(@Nullable Handler<Void> handler) {
+  public NetSocket shutdownHandler(Handler<Void> handler) {
     // Not sure, we can do something here
     return this;
   }

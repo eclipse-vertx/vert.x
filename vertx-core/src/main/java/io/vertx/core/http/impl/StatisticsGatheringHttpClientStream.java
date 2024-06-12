@@ -11,8 +11,6 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -186,7 +184,7 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  public WriteStream<Buffer> exceptionHandler(@Nullable Handler<Throwable> handler) {
+  public WriteStream<Buffer> exceptionHandler(Handler<Throwable> handler) {
     if (handler != null) {
       delegate.exceptionHandler(err -> {
         endpointRequest.reportFailure(err);
@@ -199,7 +197,6 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  @Fluent
   public WriteStream<Buffer> setWriteQueueMaxSize(int maxSize) {
     return delegate.setWriteQueueMaxSize(maxSize);
   }
@@ -210,8 +207,7 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  @Fluent
-  public WriteStream<Buffer> drainHandler(@Nullable Handler<Void> handler) {
+  public WriteStream<Buffer> drainHandler(Handler<Void> handler) {
     return delegate.drainHandler(handler);
   }
 }

@@ -16,6 +16,7 @@ import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.impl.clustered.ClusteredMessage;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.NoStackTraceThrowable;
 import io.vertx.core.spi.metrics.EventBusMetrics;
 import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.TagExtractor;
@@ -47,6 +48,11 @@ public class OutboundDeliveryContext<T> extends DeliveryContextBase<T> implement
   public boolean tryComplete(Void result) {
     written(null);
     return true;
+  }
+
+  @Override
+  public boolean tryFail(String message) {
+    return tryFail(new NoStackTraceThrowable(message));
   }
 
   @Override

@@ -936,6 +936,11 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
     private Future<T> fut = null;
 
     @Override
+    public boolean tryFail(String message) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
     public boolean tryComplete(T result) {
       throw new UnsupportedOperationException();
     }

@@ -138,5 +138,7 @@ public interface ReadStream<T> extends StreamBase {
    * @param dst the destination write stream
    * @return a future notified when the write stream will be ended with the outcome
    */
-  Future<Void> pipeTo(WriteStream<T> dst);
+  default Future<Void> pipeTo(WriteStream<T> dst) {
+    return pipe().to(dst);
+  }
 }

@@ -10,8 +10,6 @@
  */
 package io.vertx.core.streams;
 
-import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -27,7 +25,7 @@ public class WriteStreamTest extends AsyncTestBase {
     @Override public Future<Void> write(T data) { throw new UnsupportedOperationException(); }
     @Override public StreamBase<T> setWriteQueueMaxSize(int maxSize) { throw new UnsupportedOperationException(); }
     @Override public boolean writeQueueFull() { throw new UnsupportedOperationException(); }
-    @Override public StreamBase<T> drainHandler(@Nullable Handler<Void> handler) { throw new UnsupportedOperationException(); }
+    @Override public StreamBase<T> drainHandler(Handler<Void> handler) { throw new UnsupportedOperationException(); }
     @Override public Future<Void> end() { throw new UnsupportedOperationException(); }
   }
 

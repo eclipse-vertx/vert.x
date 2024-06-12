@@ -18,6 +18,7 @@ import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.streams.ReadStream;
+import io.vertx.core.streams.impl.ReadStreamBase;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
@@ -26,7 +27,7 @@ import java.util.Objects;
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @author <a href="mailto:larsdtimm@gmail.com">Lars Timm</a>
  */
-public class RecordParserImpl implements RecordParser {
+public class RecordParserImpl extends ReadStreamBase<Buffer> implements RecordParser {
 
   // Empty and unmodifiable
   private static final Buffer EMPTY_BUFFER = BufferInternal.buffer(Unpooled.EMPTY_BUFFER);

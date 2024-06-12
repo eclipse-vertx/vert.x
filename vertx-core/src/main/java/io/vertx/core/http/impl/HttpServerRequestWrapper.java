@@ -1,10 +1,6 @@
 package io.vertx.core.http.impl;
 
 import io.netty.handler.codec.DecoderResult;
-import io.vertx.codegen.annotations.CacheReturn;
-import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.GenIgnore;
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -22,6 +18,8 @@ import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.streams.Pipe;
+import io.vertx.core.streams.WriteStream;
 
 import java.util.Set;
 
@@ -160,7 +158,6 @@ public class HttpServerRequestWrapper extends HttpServerRequestInternal {
   }
 
   @Override
-  @Fluent
   public HttpServerRequest setExpectMultipart(boolean expect) {
     return delegate.setExpectMultipart(expect);
   }
@@ -171,25 +168,21 @@ public class HttpServerRequestWrapper extends HttpServerRequestInternal {
   }
 
   @Override
-  @Fluent
-  public HttpServerRequest uploadHandler(@Nullable Handler<HttpServerFileUpload> uploadHandler) {
+  public HttpServerRequest uploadHandler(Handler<HttpServerFileUpload> uploadHandler) {
     return delegate.uploadHandler(uploadHandler);
   }
 
   @Override
-  @CacheReturn
   public MultiMap formAttributes() {
     return delegate.formAttributes();
   }
 
   @Override
-  @Nullable
   public String getFormAttribute(String attributeName) {
     return delegate.getFormAttribute(attributeName);
   }
 
   @Override
-  @CacheReturn
   public int streamId() {
     return delegate.streamId();
   }
@@ -205,13 +198,11 @@ public class HttpServerRequestWrapper extends HttpServerRequestInternal {
   }
 
   @Override
-  @Fluent
   public HttpServerRequest customFrameHandler(Handler<HttpFrame> handler) {
     return delegate.customFrameHandler(handler);
   }
 
   @Override
-  @CacheReturn
   public HttpConnection connection() {
     return delegate.connection();
   }
@@ -222,24 +213,22 @@ public class HttpServerRequestWrapper extends HttpServerRequestInternal {
   }
 
   @Override
-  @Fluent
   public HttpServerRequest streamPriorityHandler(Handler<StreamPriority> handler) {
     return delegate.streamPriorityHandler(handler);
   }
 
   @Override
-  @GenIgnore
   public DecoderResult decoderResult() {
     return delegate.decoderResult();
   }
 
   @Override
-  public @Nullable Cookie getCookie(String name) {
+  public Cookie getCookie(String name) {
     return delegate.getCookie(name);
   }
 
   @Override
-  public @Nullable Cookie getCookie(String name, String domain, String path) {
+  public Cookie getCookie(String name, String domain, String path) {
     return delegate.getCookie(name, domain, path);
   }
 
@@ -254,7 +243,6 @@ public class HttpServerRequestWrapper extends HttpServerRequestInternal {
   }
 
   @Override
-  @Fluent
   public HttpServerRequest routed(String route) {
     return delegate.routed(route);
   }
@@ -269,4 +257,8 @@ public class HttpServerRequestWrapper extends HttpServerRequestInternal {
     return delegate.metric();
   }
 
+  @Override
+  public Pipe<Buffer> pipe() {
+    return delegate.pipe();
+  }
 }

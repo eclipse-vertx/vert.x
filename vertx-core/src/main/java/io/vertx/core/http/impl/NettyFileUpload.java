@@ -21,6 +21,7 @@ import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.impl.InboundBuffer;
+import io.vertx.core.streams.impl.ReadStreamBase;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,7 +31,7 @@ import java.nio.charset.Charset;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-final class NettyFileUpload implements FileUpload, ReadStream<Buffer> {
+final class NettyFileUpload extends ReadStreamBase<Buffer> implements FileUpload, ReadStream<Buffer> {
 
   private final String name;
   private String contentType;
