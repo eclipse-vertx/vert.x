@@ -15,17 +15,13 @@ import io.vertx.core.*;
 import io.vertx.core.impl.transports.EpollTransport;
 import io.vertx.core.impl.transports.JDKTransport;
 import io.vertx.core.impl.transports.KQueueTransport;
+import io.vertx.core.spi.*;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.file.impl.FileResolverImpl;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.transport.Transport;
-import io.vertx.core.spi.ExecutorServiceFactory;
-import io.vertx.core.spi.VertxMetricsFactory;
-import io.vertx.core.spi.VertxServiceProvider;
-import io.vertx.core.spi.VertxThreadFactory;
-import io.vertx.core.spi.VertxTracerFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeSelector;
 import io.vertx.core.spi.cluster.impl.DefaultNodeSelector;
@@ -41,11 +37,11 @@ import java.util.List;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class VertxBuilder {
+public class VertxBootstrap implements VertxFactory {
 
-  private static final Logger log = LoggerFactory.getLogger(VertxBuilder.class);
+  private static final Logger log = LoggerFactory.getLogger(VertxFactory.class);
 
-  private VertxOptions options;
+  private VertxOptions options = new VertxOptions();
   private JsonObject config;
   private Transport transport;
   private ClusterManager clusterManager;
@@ -58,24 +54,17 @@ public class VertxBuilder {
   private VertxMetrics metrics;
   private FileResolver fileResolver;
 
-  public VertxBuilder(JsonObject config) {
-    this(new VertxOptions(config));
-    this.config = config;
-  }
-
-  public VertxBuilder(VertxOptions options) {
-    this.options = options;
-  }
-
-  public VertxBuilder() {
-    this(new VertxOptions());
-  }
-
   /**
    * @return the vertx options
    */
   public VertxOptions options() {
     return options;
+  }
+
+  @Override
+  public VertxBootstrap options(VertxOptions options) {
+    this.options = options;
+    return this;
   }
 
   /**
@@ -97,7 +86,7 @@ public class VertxBuilder {
    * @param transport the transport
    * @return this builder instance
    */
-  public VertxBuilder findTransport(Transport transport) {
+  public VertxBootstrap findTransport(Transport transport) {
     this.transport = transport;
     return this;
   }
@@ -114,12 +103,12 @@ public class VertxBuilder {
    * @param clusterManager the cluster manager
    * @return this builder instance
    */
-  public VertxBuilder clusterManager(ClusterManager clusterManager) {
+  public VertxBootstrap clusterManager(ClusterManager clusterManager) {
     this.clusterManager = clusterManager;
     return this;
   }
 
-  public VertxBuilder metricsFactory(VertxMetricsFactory factory) {
+  public VertxBootstrap metricsFactory(VertxMetricsFactory factory) {
     this.metricsFactory = factory;
     return this;
   }
@@ -136,12 +125,12 @@ public class VertxBuilder {
    * @param selector the selector
    * @return this builder instance
    */
-  public VertxBuilder clusterNodeSelector(NodeSelector selector) {
+  public VertxBootstrap clusterNodeSelector(NodeSelector selector) {
     this.clusterNodeSelector = selector;
     return this;
   }
 
-  public VertxBuilder tracerFactory(VertxTracerFactory factory) {
+  public VertxBootstrap tracerFactory(VertxTracerFactory factory) {
     this.tracerFactory = factory;
     return this;
   }
@@ -158,7 +147,7 @@ public class VertxBuilder {
    * @param tracer the tracer
    * @return this builder instance
    */
-  public VertxBuilder tracer(VertxTracer tracer) {
+  public VertxBootstrap tracer(VertxTracer tracer) {
     this.tracer = tracer;
     return this;
   }
@@ -175,7 +164,7 @@ public class VertxBuilder {
    * @param metrics the metrics
    * @return this builder instance
    */
-  public VertxBuilder metrics(VertxMetrics metrics) {
+  public VertxBootstrap metrics(VertxMetrics metrics) {
     this.metrics = metrics;
     return this;
   }
@@ -192,7 +181,7 @@ public class VertxBuilder {
    * @param resolver the file resolver
    * @return this builder instance
    */
-  public VertxBuilder fileResolver(FileResolver resolver) {
+  public VertxBootstrap fileResolver(FileResolver resolver) {
     this.fileResolver = resolver;
     return this;
   }
@@ -209,7 +198,7 @@ public class VertxBuilder {
    * @param factory the metrics
    * @return this builder instance
    */
-  public VertxBuilder threadFactory(VertxThreadFactory factory) {
+  public VertxBootstrap threadFactory(VertxThreadFactory factory) {
     this.threadFactory = factory;
     return this;
   }
@@ -226,7 +215,7 @@ public class VertxBuilder {
    * @param factory the factory
    * @return this builder instance
    */
-  public VertxBuilder executorServiceFactory(ExecutorServiceFactory factory) {
+  public VertxBootstrap executorServiceFactory(ExecutorServiceFactory factory) {
     this.executorServiceFactory = factory;
     return this;
   }
@@ -275,7 +264,7 @@ public class VertxBuilder {
    * Initialize the service providers.
    * @return this builder instance
    */
-  public VertxBuilder init() {
+  public VertxBootstrap init() {
     initTransport();
     initMetrics();
     initTracing();

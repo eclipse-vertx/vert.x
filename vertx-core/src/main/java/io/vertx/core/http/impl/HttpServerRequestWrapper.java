@@ -257,8 +257,4 @@ public class HttpServerRequestWrapper extends HttpServerRequestInternal {
     return delegate.metric();
   }
 
-  @Override
-  public Pipe<Buffer> pipe() {
-    return delegate.pipe();
-  }
 }

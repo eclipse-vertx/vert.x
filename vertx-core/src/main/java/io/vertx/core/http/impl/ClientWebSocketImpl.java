@@ -97,11 +97,6 @@ public class ClientWebSocketImpl implements ClientWebSocket {
   }
 
   @Override
-  public Pipe<Buffer> pipe() {
-    return delegate().pipe();
-  }
-
-  @Override
   public ClientWebSocket pause() {
     delegate().pause();
     return this;

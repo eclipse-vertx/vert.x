@@ -21,7 +21,6 @@ import io.vertx.core.http.HttpServerFileUpload;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.streams.Pipe;
 import io.vertx.core.streams.ReadStream;
-import io.vertx.core.streams.impl.ReadStreamBase;
 
 import java.nio.charset.Charset;
 
@@ -34,7 +33,7 @@ import java.nio.charset.Charset;
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-class HttpServerFileUploadImpl extends ReadStreamBase<Buffer> implements HttpServerFileUpload {
+class HttpServerFileUploadImpl implements HttpServerFileUpload {
 
   private final ReadStream<Buffer> stream;
   private final ContextInternal context;

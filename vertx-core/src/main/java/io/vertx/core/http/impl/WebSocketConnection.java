@@ -15,16 +15,12 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.websocketx.*;
 import io.netty.util.concurrent.EventExecutor;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.ScheduledFuture;
+import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.http.WebSocketFrameType;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
-import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.impl.VertxConnection;
-import io.vertx.core.net.impl.ShutdownEvent;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.metrics.NetworkMetrics;
@@ -182,7 +178,7 @@ final class WebSocketConnection extends VertxConnection {
   }
 
   void handleWsFrame(WebSocketFrame msg) {
-    WebSocketFrameInternal frame = decodeFrame(msg);
+    io.vertx.core.http.WebSocketFrame frame = decodeFrame(msg);
     WebSocketImplBase<?> w;
     synchronized (this) {
       w = webSocket;
@@ -211,7 +207,7 @@ final class WebSocketConnection extends VertxConnection {
     }
   }
 
-  private WebSocketFrameInternal decodeFrame(io.netty.handler.codec.http.websocketx.WebSocketFrame msg) {
+  private io.vertx.core.http.WebSocketFrame decodeFrame(io.netty.handler.codec.http.websocketx.WebSocketFrame msg) {
     ByteBuf payload = safeBuffer(msg.content());
     boolean isFinal = msg.isFinalFragment();
     WebSocketFrameType frameType;
@@ -230,6 +226,6 @@ final class WebSocketConnection extends VertxConnection {
     } else {
       throw new IllegalStateException("Unsupported WebSocket msg " + msg);
     }
-    return new WebSocketFrameImpl(frameType, payload, isFinal);
+    return new WebSocketFrameImpl(frameType, BufferInternal.buffer(payload), isFinal);
   }
 }

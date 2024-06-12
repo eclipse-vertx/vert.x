@@ -15,6 +15,7 @@ import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.parsetools.impl.RecordParserImpl;
 import io.vertx.core.streams.ReadStream;
 
 /**
@@ -64,7 +65,7 @@ public interface RecordParser extends Handler<Buffer>, ReadStream<Buffer> {
    * @param output  handler that will receive the output
    */
   static RecordParser newDelimited(String delim, Handler<Buffer> output) {
-    throw new UnsupportedOperationException();
+    return RecordParserImpl.newDelimited(delim, null, output);
   }
 
   /**
@@ -77,7 +78,7 @@ public interface RecordParser extends Handler<Buffer>, ReadStream<Buffer> {
    * @param stream  the wrapped stream
    */
   static RecordParser newDelimited(String delim, ReadStream<Buffer> stream) {
-    throw new UnsupportedOperationException();
+    return RecordParserImpl.newDelimited(delim, stream, null);
   }
 
   /**
@@ -89,7 +90,7 @@ public interface RecordParser extends Handler<Buffer>, ReadStream<Buffer> {
    * @param delim  the initial delimiter string
    */
   static RecordParser newDelimited(String delim) {
-    throw new UnsupportedOperationException();
+    return RecordParserImpl.newDelimited(delim, null, null);
   }
 
   /**
@@ -100,7 +101,7 @@ public interface RecordParser extends Handler<Buffer>, ReadStream<Buffer> {
    * @param delim  the initial delimiter buffer
    */
   static RecordParser newDelimited(Buffer delim) {
-    throw new UnsupportedOperationException();
+    return RecordParserImpl.newDelimited(delim,null,  null);
   }
 
   /**
@@ -110,9 +111,9 @@ public interface RecordParser extends Handler<Buffer>, ReadStream<Buffer> {
    * @param delim  the initial delimiter buffer
    * @param output  handler that will receive the output
    */
-   static RecordParser newDelimited(Buffer delim, Handler<Buffer> output) {
-     throw new UnsupportedOperationException();
-   }
+  static RecordParser newDelimited(Buffer delim, Handler<Buffer> output) {
+    return RecordParserImpl.newDelimited(delim, null, output);
+  }
 
   /**
    * Like {@link #newDelimited(Buffer)} but wraps the {@code stream}. The {@code stream} handlers will be set/unset
@@ -124,7 +125,7 @@ public interface RecordParser extends Handler<Buffer>, ReadStream<Buffer> {
    * @param stream  the wrapped stream
    */
   static RecordParser newDelimited(Buffer delim, ReadStream<Buffer> stream) {
-    throw new UnsupportedOperationException();
+    return RecordParserImpl.newDelimited(delim, stream, null);
   }
 
   /**
@@ -136,7 +137,7 @@ public interface RecordParser extends Handler<Buffer>, ReadStream<Buffer> {
    * @param size  the initial record size
    */
   static RecordParser newFixed(int size) {
-    throw new UnsupportedOperationException();
+    return RecordParserImpl.newFixed(size, null, null);
   }
 
   /**
@@ -147,7 +148,7 @@ public interface RecordParser extends Handler<Buffer>, ReadStream<Buffer> {
    * @param output  handler that will receive the output
    */
   static RecordParser newFixed(int size, Handler<Buffer> output) {
-    throw new UnsupportedOperationException();
+    return RecordParserImpl.newFixed(size, null, output);
   }
 
   /**
@@ -160,7 +161,7 @@ public interface RecordParser extends Handler<Buffer>, ReadStream<Buffer> {
    * @param stream  the wrapped stream
    */
   static RecordParser newFixed(int size, ReadStream<Buffer> stream) {
-    throw new UnsupportedOperationException();
+    return RecordParserImpl.newFixed(size, stream, null);
   }
 
   /**

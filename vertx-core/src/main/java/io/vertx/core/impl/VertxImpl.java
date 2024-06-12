@@ -169,7 +169,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
             VertxTracer<?, ?> tracer, Transport transport, FileResolver fileResolver, VertxThreadFactory threadFactory,
             ExecutorServiceFactory executorServiceFactory) {
     // Sanity check
-    if (Vertx.currentContext() != null) {
+    if (ContextInternal.current() != null) {
       log.warn("You're already on a Vert.x context, are you sure you want to create a new Vertx instance?");
     }
 

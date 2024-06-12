@@ -20,6 +20,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.shareddata.ClusterSerializable;
 import io.vertx.core.shareddata.Shareable;
+import io.vertx.core.spi.BufferFactory;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -43,7 +44,7 @@ public interface Buffer extends ClusterSerializable, Shareable {
    * @return the buffer
    */
   static Buffer buffer() {
-    throw new UnsupportedOperationException();
+    return BufferFactory.INSTANCE.buffer();
   }
 
   /**
@@ -56,7 +57,7 @@ public interface Buffer extends ClusterSerializable, Shareable {
    * @return the buffer
    */
   static Buffer buffer(int initialSizeHint) {
-    throw new UnsupportedOperationException();
+    return BufferFactory.INSTANCE.buffer(initialSizeHint);
   }
 
   /**
@@ -66,7 +67,7 @@ public interface Buffer extends ClusterSerializable, Shareable {
    * @return the buffer
    */
   static Buffer buffer(String string) {
-    throw new UnsupportedOperationException();
+    return BufferFactory.INSTANCE.buffer(string);
   }
 
   /**
@@ -77,7 +78,7 @@ public interface Buffer extends ClusterSerializable, Shareable {
    * @return the buffer
    */
   static Buffer buffer(String string, String enc) {
-    throw new UnsupportedOperationException();
+    return BufferFactory.INSTANCE.buffer(string, enc);
   }
 
   /**
@@ -88,7 +89,7 @@ public interface Buffer extends ClusterSerializable, Shareable {
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   static Buffer buffer(byte[] bytes) {
-    throw new UnsupportedOperationException();
+    return BufferFactory.INSTANCE.buffer(bytes);
   }
 
   /**

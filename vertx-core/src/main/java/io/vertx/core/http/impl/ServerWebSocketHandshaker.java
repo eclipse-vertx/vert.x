@@ -330,11 +330,6 @@ public class ServerWebSocketHandshaker implements ServerWebSocket {
   }
 
   @Override
-  public Pipe<Buffer> pipe() {
-    return webSocketOrDie().pipe();
-  }
-
-  @Override
   public ServerWebSocket textMessageHandler(Handler<String> handler) {
     textMessageHandler = handler;
     WebSocket ws = webSocket;

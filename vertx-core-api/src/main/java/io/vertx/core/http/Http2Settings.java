@@ -172,7 +172,7 @@ public class Http2Settings {
     if (maxConcurrentStreams < Http2CodecUtil.MIN_CONCURRENT_STREAMS) {
       throw new IllegalArgumentException("maxConcurrentStreams must be >= " + Http2CodecUtil.MIN_CONCURRENT_STREAMS);
     }
-    if (maxConcurrentStreams <= Http2CodecUtil.MAX_CONCURRENT_STREAMS) {
+    if (maxConcurrentStreams > Http2CodecUtil.MAX_CONCURRENT_STREAMS) {
       throw new IllegalArgumentException("maxConcurrentStreams must be < " + Http2CodecUtil.MAX_CONCURRENT_STREAMS);
     }
     this.maxConcurrentStreams = maxConcurrentStreams;

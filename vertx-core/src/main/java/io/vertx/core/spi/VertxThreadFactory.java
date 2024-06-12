@@ -11,7 +11,7 @@
 
 package io.vertx.core.spi;
 
-import io.vertx.core.impl.VertxBuilder;
+import io.vertx.core.impl.VertxBootstrap;
 import io.vertx.core.impl.VertxThread;
 
 import java.util.concurrent.TimeUnit;
@@ -25,9 +25,10 @@ public interface VertxThreadFactory extends VertxServiceProvider {
   };
 
   @Override
-  default void init(VertxBuilder builder) {
-    if (builder.threadFactory() == null) {
-      builder.threadFactory(this);
+  default void init(VertxFactory builder) {
+    VertxBootstrap bootstrap = (VertxBootstrap) builder;
+    if (bootstrap.threadFactory() == null) {
+      bootstrap.threadFactory(this);
     }
   }
 

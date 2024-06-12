@@ -15,6 +15,8 @@ import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.json.impl.JsonUtil;
+import io.vertx.core.spi.JsonFactory;
 import io.vertx.core.streams.ReadStream;
 
 /**
@@ -40,14 +42,14 @@ public interface JsonParser extends Handler<Buffer>, ReadStream<JsonEvent> {
    * Create a new {@code JsonParser} instance.
    */
   static JsonParser newParser() {
-    throw new UnsupportedOperationException();
+    return newParser(null);
   }
 
   /**
    * Create a new {@code JsonParser} instance.
    */
   static JsonParser newParser(ReadStream<Buffer> stream) {
-    throw new UnsupportedOperationException();
+    return JsonUtil.FACTORY.parser(stream);
   }
 
   /**

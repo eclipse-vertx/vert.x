@@ -14,6 +14,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.shareddata.Shareable;
+import io.vertx.core.spi.JsonFactory;
 
 import java.time.Instant;
 import java.util.Base64;
@@ -30,6 +31,8 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
  * Implementation utilities (details) affecting the way JSON objects are wrapped.
  */
 public final class JsonUtil {
+
+  public static final JsonFactory FACTORY = JsonFactory.load();
 
   public static final Base64.Encoder BASE64_ENCODER = Base64.getUrlEncoder().withoutPadding();
   public static final Base64.Decoder BASE64_DECODER = Base64.getUrlDecoder();

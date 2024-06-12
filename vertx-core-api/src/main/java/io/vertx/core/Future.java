@@ -13,6 +13,7 @@ package io.vertx.core;
 
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.core.spi.FutureFactory;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -39,35 +40,35 @@ public interface Future<T> extends AsyncResult<T> {
    * @return the composite future
    */
   static CompositeFuture all(Future<?> f1, Future<?> f2) {
-    throw new UnsupportedOperationException();
+    return FutureFactory.INSTANCE.all(f1, f2);
   }
 
   /**
    * Like {@link #all(Future, Future)} but with 3 futures.
    */
   static CompositeFuture all(Future<?> f1, Future<?> f2, Future<?> f3) {
-    throw new UnsupportedOperationException();
+    return FutureFactory.INSTANCE.all(f1, f2, f3);
   }
 
   /**
    * Like {@link #all(Future, Future)} but with 4 futures.
    */
   static CompositeFuture all(Future<?> f1, Future<?> f2, Future<?> f3, Future<?> f4) {
-    throw new UnsupportedOperationException();
+    return FutureFactory.INSTANCE.all(f1, f2, f3, f4);
   }
 
   /**
    * Like {@link #all(Future, Future)} but with 5 futures.
    */
   static CompositeFuture all(Future<?> f1, Future<?> f2, Future<?> f3, Future<?> f4, Future<?> f5) {
-    throw new UnsupportedOperationException();
+    return FutureFactory.INSTANCE.all(f1, f2, f3, f4, f5);
   }
 
   /**
    * Like {@link #all(Future, Future)} but with 6 futures.
    */
   static CompositeFuture all(Future<?> f1, Future<?> f2, Future<?> f3, Future<?> f4, Future<?> f5, Future<?> f6) {
-    throw new UnsupportedOperationException();
+    return FutureFactory.INSTANCE.all(f1, f2, f3, f4, f5, f6);
   }
 
   /**
@@ -76,7 +77,7 @@ public interface Future<T> extends AsyncResult<T> {
    * When the list is empty, the returned future will be already completed.
    */
   static <T> CompositeFuture all(List<? extends Future<?>> futures) {
-    throw new UnsupportedOperationException();
+    return FutureFactory.INSTANCE.all(futures.toArray(new Future[0]));
   }
 
   /**
@@ -89,35 +90,35 @@ public interface Future<T> extends AsyncResult<T> {
    * @return the composite future
    */
   static CompositeFuture any(Future<?> f1, Future<?> f2) {
-    throw new UnsupportedOperationException();
+    return FutureFactory.INSTANCE.any(f1, f2);
   }
 
   /**
    * Like {@link #any(Future, Future)} but with 3 futures.
    */
   static CompositeFuture any(Future<?> f1, Future<?> f2, Future<?> f3) {
-    throw new UnsupportedOperationException();
+    return FutureFactory.INSTANCE.any(f1, f2, f3);
   }
 
   /**
    * Like {@link #any(Future, Future)} but with 4 futures.
    */
   static CompositeFuture any(Future<?> f1, Future<?> f2, Future<?> f3, Future<?> f4) {
-    throw new UnsupportedOperationException();
+    return FutureFactory.INSTANCE.any(f1, f2, f3, f4);
   }
 
   /**
    * Like {@link #any(Future, Future)} but with 5 futures.
    */
   static CompositeFuture any(Future<?> f1, Future<?> f2, Future<?> f3, Future<?> f4, Future<?> f5) {
-    throw new UnsupportedOperationException();
+    return FutureFactory.INSTANCE.any(f1, f2, f3, f4, f5);
   }
 
   /**
    * Like {@link #any(Future, Future)} but with 6 futures.
    */
   static CompositeFuture any(Future<?> f1, Future<?> f2, Future<?> f3, Future<?> f4, Future<?> f5, Future<?> f6) {
-    throw new UnsupportedOperationException();
+    return FutureFactory.INSTANCE.any(f1, f2, f3, f4, f5, f6);
   }
 
   /**
@@ -126,7 +127,7 @@ public interface Future<T> extends AsyncResult<T> {
    * When the list is empty, the returned future will be already completed.
    */
   static CompositeFuture any(List<? extends Future<?>> futures) {
-    throw new UnsupportedOperationException();
+    return FutureFactory.INSTANCE.any(futures.toArray(new Future[0]));
   }
 
   /**
@@ -139,35 +140,35 @@ public interface Future<T> extends AsyncResult<T> {
    * @return the composite future
    */
   static CompositeFuture join(Future<?> f1, Future<?> f2) {
-    throw new UnsupportedOperationException();
+    return FutureFactory.INSTANCE.join(f1, f2);
   }
 
   /**
    * Like {@link #join(Future, Future)} but with 3 futures.
    */
   static CompositeFuture join(Future<?> f1, Future<?> f2, Future<?> f3) {
-    throw new UnsupportedOperationException();
+    return FutureFactory.INSTANCE.join(f1, f2, f3);
   }
 
   /**
    * Like {@link #join(Future, Future)} but with 4 futures.
    */
   static CompositeFuture join(Future<?> f1, Future<?> f2, Future<?> f3, Future<?> f4) {
-    throw new UnsupportedOperationException();
+    return FutureFactory.INSTANCE.join(f1, f2, f3, f4);
   }
 
   /**
    * Like {@link #join(Future, Future)} but with 5 futures.
    */
   static CompositeFuture join(Future<?> f1, Future<?> f2, Future<?> f3, Future<?> f4, Future<?> f5) {
-    throw new UnsupportedOperationException();
+    return FutureFactory.INSTANCE.join(f1, f2, f3, f4, f5);
   }
 
   /**
    * Like {@link #join(Future, Future)} but with 6 futures.
    */
   static CompositeFuture join(Future<?> f1, Future<?> f2, Future<?> f3, Future<?> f4, Future<?> f5, Future<?> f6) {
-    throw new UnsupportedOperationException();
+    return FutureFactory.INSTANCE.join(f1, f2, f3, f4, f5, f6);
   }
 
   /**
@@ -176,7 +177,7 @@ public interface Future<T> extends AsyncResult<T> {
    * When the list is empty, the returned future will be already completed.
    */
   static CompositeFuture join(List<? extends Future<?>> futures) {
-    throw new UnsupportedOperationException();
+    return FutureFactory.INSTANCE.join(futures.toArray(new Future[0]));
   }
 
   /**
@@ -203,7 +204,7 @@ public interface Future<T> extends AsyncResult<T> {
    * @return  the future
    */
   static <T> Future<T> succeededFuture() {
-    throw new UnsupportedOperationException();
+    return succeededFuture(null);
   }
 
   /**
@@ -214,7 +215,7 @@ public interface Future<T> extends AsyncResult<T> {
    * @return  the future
    */
   static <T> Future<T> succeededFuture(T result) {
-    throw new UnsupportedOperationException();
+    return FutureFactory.INSTANCE.succeededFuture(result);
   }
 
   /**
@@ -225,7 +226,7 @@ public interface Future<T> extends AsyncResult<T> {
    * @return  the future
    */
   static <T> Future<T> failedFuture(Throwable t) {
-    throw new UnsupportedOperationException();
+    return FutureFactory.INSTANCE.failedFuture(t);
   }
 
   /**
@@ -236,7 +237,7 @@ public interface Future<T> extends AsyncResult<T> {
    * @return  the future
    */
   static <T> Future<T> failedFuture(String failureMessage) {
-    throw new UnsupportedOperationException();
+    return FutureFactory.INSTANCE.failedFuture(failureMessage);
   }
 
   /**
@@ -612,7 +613,7 @@ public interface Future<T> extends AsyncResult<T> {
    */
   @GenIgnore
   static <T> Future<T> fromCompletionStage(CompletionStage<T> completionStage, Context context) {
-    throw new UnsupportedOperationException();
+    return FutureFactory.INSTANCE.fromCompletionStage(completionStage, context);
   }
 
   /**

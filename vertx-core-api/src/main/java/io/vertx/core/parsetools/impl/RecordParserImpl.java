@@ -14,11 +14,9 @@ package io.vertx.core.parsetools.impl;
 import io.netty.buffer.Unpooled;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.buffer.impl.BufferInternal;
-import io.vertx.core.impl.Arguments;
 import io.vertx.core.parsetools.RecordParser;
+import io.vertx.core.spi.BufferFactory;
 import io.vertx.core.streams.ReadStream;
-import io.vertx.core.streams.impl.ReadStreamBase;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
@@ -27,10 +25,10 @@ import java.util.Objects;
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @author <a href="mailto:larsdtimm@gmail.com">Lars Timm</a>
  */
-public class RecordParserImpl extends ReadStreamBase<Buffer> implements RecordParser {
+public class RecordParserImpl implements RecordParser {
 
   // Empty and unmodifiable
-  private static final Buffer EMPTY_BUFFER = BufferInternal.buffer(Unpooled.EMPTY_BUFFER);
+  private static final Buffer EMPTY_BUFFER = BufferFactory.INSTANCE.buffer(Unpooled.EMPTY_BUFFER);
 
   private Buffer buff = EMPTY_BUFFER;
   private int pos;            // Current position in buffer
@@ -110,7 +108,9 @@ public class RecordParserImpl extends ReadStreamBase<Buffer> implements RecordPa
    * @param output  handler that will receive the output
    */
   public static RecordParser newFixed(int size, ReadStream<Buffer> stream, Handler<Buffer> output) {
-    Arguments.require(size > 0, "Size must be > 0");
+    if (size <= 0) {
+      throw new IllegalArgumentException("Size must be > 0");
+    }
     RecordParserImpl ls = new RecordParserImpl(stream);
     ls.handler(output);
     ls.fixedSizeMode(size);
@@ -155,7 +155,9 @@ public class RecordParserImpl extends ReadStreamBase<Buffer> implements RecordPa
    */
   @Override
   public void fixedSizeMode(int size) {
-    Arguments.require(size > 0, "Size must be > 0");
+    if (size <= 0) {
+      throw new IllegalArgumentException("Size must be > 0");
+    }
     delimited = false;
     recordSize = size;
   }
@@ -171,7 +173,9 @@ public class RecordParserImpl extends ReadStreamBase<Buffer> implements RecordPa
    */
   @Override
   public RecordParser maxRecordSize(int size) {
-    Arguments.require(size > 0, "Size must be > 0");
+    if (size <= 0) {
+      throw new IllegalArgumentException("Size must be > 0");
+    }
     maxRecordSize = size;
     return this;
   }
@@ -349,7 +353,9 @@ public class RecordParserImpl extends ReadStreamBase<Buffer> implements RecordPa
 
   @Override
   public RecordParser fetch(long amount) {
-    Arguments.require(amount > 0, "Fetch amount must be > 0");
+    if (amount <= 0) {
+      throw new IllegalArgumentException("Size must be > 0");
+    }
     demand += amount;
     if (demand < 0L) {
       demand = Long.MAX_VALUE;

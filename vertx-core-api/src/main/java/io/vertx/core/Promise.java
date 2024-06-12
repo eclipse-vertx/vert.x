@@ -13,6 +13,7 @@ package io.vertx.core;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.spi.FutureFactory;
 
 /**
  * Represents the writable side of an action that may, or may not, have occurred yet.
@@ -34,7 +35,7 @@ public interface Promise<T> extends Handler<AsyncResult<T>> {
    * @return  the promise
    */
   static <T> Promise<T> promise() {
-    throw new UnsupportedOperationException();
+    return FutureFactory.INSTANCE.promise();
   }
 
   /**

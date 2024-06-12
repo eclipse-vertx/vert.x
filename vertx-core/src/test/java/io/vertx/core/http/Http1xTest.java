@@ -4817,7 +4817,7 @@ public class Http1xTest extends HttpTest {
         for (int bindPort : bindPorts) {
           futures.add(vertx.createHttpServer().requestHandler(req -> {
             req.response().end();
-          }).listen(bindPort, DEFAULT_HTTP_HOST));
+          }).listen(SocketAddress.sharedRandomPort(-bindPort, DEFAULT_HTTP_HOST)));
         }
         Future.all(futures).onComplete(onSuccess(cf -> {
           futures.stream()

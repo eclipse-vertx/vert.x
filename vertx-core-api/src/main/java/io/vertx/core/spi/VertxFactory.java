@@ -9,14 +9,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.impl;
+package io.vertx.core.spi;
 
 import io.vertx.core.*;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.transport.Transport;
-import io.vertx.core.spi.VertxMetricsFactory;
-import io.vertx.core.spi.VertxTracerFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeSelector;
 import io.vertx.core.spi.metrics.VertxMetrics;
@@ -27,7 +25,13 @@ import io.vertx.core.spi.tracing.VertxTracer;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface VertxBuilder {
+public interface VertxFactory {
+
+  static VertxFactory factory() {
+    return ServiceHelper.loadFactory(VertxFactory.class);
+  }
+
+  VertxFactory options(VertxOptions options);
 
   /**
    * @return the vertx options
@@ -49,7 +53,7 @@ public interface VertxBuilder {
    * @param transport the transport
    * @return this builder instance
    */
-  VertxBuilder findTransport(Transport transport);
+  VertxFactory findTransport(Transport transport);
 
   /**
    * @return the cluster manager to use
@@ -61,9 +65,9 @@ public interface VertxBuilder {
    * @param clusterManager the cluster manager
    * @return this builder instance
    */
-  VertxBuilder clusterManager(ClusterManager clusterManager);
+  VertxFactory clusterManager(ClusterManager clusterManager);
 
-  VertxBuilder metricsFactory(VertxMetricsFactory factory);
+  VertxFactory metricsFactory(VertxMetricsFactory factory);
 
   /**
    * @return the node selector to use
@@ -75,9 +79,9 @@ public interface VertxBuilder {
    * @param selector the selector
    * @return this builder instance
    */
-  VertxBuilder clusterNodeSelector(NodeSelector selector);
+  VertxFactory clusterNodeSelector(NodeSelector selector);
 
-  VertxBuilder tracerFactory(VertxTracerFactory factory);
+  VertxFactory tracerFactory(VertxTracerFactory factory);
 
   /**
    * @return the tracer instance to use
@@ -89,7 +93,7 @@ public interface VertxBuilder {
    * @param tracer the tracer
    * @return this builder instance
    */
-  VertxBuilder tracer(VertxTracer tracer);
+  VertxFactory tracer(VertxTracer tracer);
 
   /**
    * @return the metrics instance to use
@@ -101,7 +105,7 @@ public interface VertxBuilder {
    * @param metrics the metrics
    * @return this builder instance
    */
-  VertxBuilder metrics(VertxMetrics metrics);
+  VertxFactory metrics(VertxMetrics metrics);
 
   /**
    * @return the {@code FileResolver} instance to use
@@ -113,7 +117,7 @@ public interface VertxBuilder {
    * @param resolver the file resolver
    * @return this builder instance
    */
-  VertxBuilder fileResolver(FileResolver resolver);
+  VertxFactory fileResolver(FileResolver resolver);
 
   /**
    * Build and return the vertx instance
@@ -129,6 +133,6 @@ public interface VertxBuilder {
    * Initialize the service providers.
    * @return this builder instance
    */
-  VertxBuilder init();
+  VertxFactory init();
 
 }

@@ -18,6 +18,7 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
+import io.vertx.core.streams.impl.PipeImpl;
 
 import java.util.function.BiConsumer;
 
@@ -107,7 +108,10 @@ public interface ReadStream<T> extends StreamBase {
    *
    * @return a pipe
    */
-  Pipe<T> pipe();
+  default Pipe<T> pipe() {
+    pause();
+    return new PipeImpl<>(this);
+  }
 
   /**
    * Apply a {@code collector} to this stream, the obtained result is returned as a future.
@@ -139,6 +143,6 @@ public interface ReadStream<T> extends StreamBase {
    * @return a future notified when the write stream will be ended with the outcome
    */
   default Future<Void> pipeTo(WriteStream<T> dst) {
-    return pipe().to(dst);
+    return new PipeImpl<>(this).to(dst);
   }
 }

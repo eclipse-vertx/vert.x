@@ -11,67 +11,30 @@
 
 package io.vertx.core.http.impl.ws;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.util.CharsetUtil;
 import io.netty.util.ReferenceCounted;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.buffer.impl.BufferInternal;
 import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.http.WebSocketFrameType;
 
 import java.nio.charset.StandardCharsets;
 
 /**
- * The default {@link WebSocketFrameInternal} implementation.
+ * The default {@link WebSocketFrame} implementation.
  *
  * @author <a href="http://www.jboss.org/netty/">The Netty Project</a>
  * @author <a href="http://gleamynode.net/">Trustin Lee</a>
  * @version $Rev: 2080 $, $Date: 2010-01-26 18:04:19 +0900 (Tue, 26 Jan 2010) $
  */
-public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCounted {
-
-  public static WebSocketFrame binaryFrame(Buffer data, boolean isFinal) {
-    return new WebSocketFrameImpl(WebSocketFrameType.BINARY, ((BufferInternal)data).getByteBuf(), isFinal);
-  }
-
-  public static WebSocketFrame textFrame(String str, boolean isFinal) {
-    return new WebSocketFrameImpl(str, isFinal);
-  }
-
-  public static WebSocketFrame continuationFrame(Buffer data, boolean isFinal) {
-    return new WebSocketFrameImpl(WebSocketFrameType.CONTINUATION, ((BufferInternal)data).getByteBuf(), isFinal);
-  }
-
-  public static WebSocketFrame pingFrame(Buffer data) {
-    return new WebSocketFrameImpl(WebSocketFrameType.PING, ((BufferInternal)data).getByteBuf(), true);
-  }
-
-  public static WebSocketFrame pongFrame(Buffer data) {
-    return new WebSocketFrameImpl(WebSocketFrameType.PONG, ((BufferInternal)data).getByteBuf(), true);
-  }
+public class WebSocketFrameImpl implements WebSocketFrame {
 
   private final WebSocketFrameType type;
   private final boolean isFinalFrame;
-  private ByteBuf binaryData;
+  private Buffer binaryData;
 
   private boolean closeParsed = false;
   private short closeStatusCode;
   private String closeReason;
-
-  /**
-   * Creates a new empty text frame.
-   */
-  public WebSocketFrameImpl() {
-    this(null, Unpooled.EMPTY_BUFFER, true);
-  }
-
-  /**
-   * Creates a new empty text frame.
-   */
-  public WebSocketFrameImpl(WebSocketFrameType frameType) {
-    this(frameType, Unpooled.EMPTY_BUFFER, true);
-  }
 
   /**
    * Creates a new text frame from with the specified string.
@@ -86,7 +49,7 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
   public WebSocketFrameImpl(String textData, boolean isFinalFrame) {
     this.type = WebSocketFrameType.TEXT;
     this.isFinalFrame = isFinalFrame;
-    this.binaryData = Unpooled.copiedBuffer(textData, CharsetUtil.UTF_8);
+    this.binaryData = Buffer.buffer(textData);
   }
 
   /**
@@ -98,7 +61,7 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
    * @throws IllegalArgumentException if If <tt>(type &amp; 0x80 == 0)</tt> and the data is not encoded
    *                                  in UTF-8
    */
-  public WebSocketFrameImpl(WebSocketFrameType type, ByteBuf binaryData) {
+  public WebSocketFrameImpl(WebSocketFrameType type, Buffer binaryData) {
     this(type, binaryData, true);
   }
 
@@ -112,10 +75,10 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
    * @throws IllegalArgumentException if If <tt>(type &amp; 0x80 == 0)</tt> and the data is not encoded
    *                                  in UTF-8
    */
-  public WebSocketFrameImpl(WebSocketFrameType type, ByteBuf binaryData, boolean isFinalFrame) {
+  public WebSocketFrameImpl(WebSocketFrameType type, Buffer binaryData, boolean isFinalFrame) {
     this.type = type;
     this.isFinalFrame = isFinalFrame;
-    this.binaryData = Unpooled.unreleasableBuffer(binaryData);
+    this.binaryData = binaryData;
   }
 
   public boolean isText() {
@@ -137,78 +100,23 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
     return this.type == WebSocketFrameType.PING;
   }
 
-  public ByteBuf getBinaryData() {
-    return binaryData;
-  }
-
   public String textData() {
-    return getBinaryData().toString(CharsetUtil.UTF_8);
+    return binaryData().toString(CharsetUtil.UTF_8);
   }
 
   public Buffer binaryData() {
-    return BufferInternal.buffer(binaryData);
-  }
-
-  public void setBinaryData(ByteBuf binaryData) {
-    if (this.binaryData != null) {
-      this.binaryData.release();
-    }
-    this.binaryData = binaryData;
-  }
-
-  public void setTextData(String textData) {
-    if (this.binaryData != null) {
-      this.binaryData.release();
-    }
-    this.binaryData = Unpooled.copiedBuffer(textData, CharsetUtil.UTF_8);
+    return binaryData;
   }
 
   @Override
   public int length() {
-    return binaryData.readableBytes();
+    return binaryData.length();
   }
 
   @Override
   public String toString() {
     return getClass().getSimpleName() +
-        "(type: " + type + ", " + "data: " + getBinaryData() + ')';
-  }
-
-  @Override
-  public int refCnt() {
-    return binaryData.refCnt();
-  }
-
-  @Override
-  public ReferenceCounted retain() {
-    return binaryData.retain();
-  }
-
-  @Override
-  public ReferenceCounted retain(int increment) {
-    return binaryData.retain(increment);
-  }
-
-  @Override
-  public boolean release() {
-    return binaryData.release();
-  }
-
-  @Override
-  public boolean release(int decrement) {
-    return binaryData.release(decrement);
-  }
-
-  @Override
-  public ReferenceCounted touch() {
-    binaryData.touch();
-    return this;
-  }
-
-  @Override
-  public ReferenceCounted touch(Object hint) {
-    binaryData.touch(hint);
-    return this;
+        "(type: " + type + ", " + "data: " + binaryData() + ')';
   }
 
   @Override
@@ -222,12 +130,11 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
       closeStatusCode = 1000;
       closeReason = null;
     } else {
-      int index = binaryData.readerIndex();
-      closeStatusCode = binaryData.getShort(index);
+      closeStatusCode = binaryData.getShort(0);
       if (length == 2) {
         closeReason = null;
       } else {
-        closeReason = binaryData.toString(index + 2, length - 2, StandardCharsets.UTF_8);
+        closeReason = binaryData.slice(2, length).toString(StandardCharsets.UTF_8);
       }
     }
   }

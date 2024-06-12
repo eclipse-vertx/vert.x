@@ -14,12 +14,8 @@ import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.streams.ReadStream;
-import io.vertx.core.streams.impl.ReadStreamBase;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
-
-class FakeStream extends ReadStreamBase<Buffer> implements ReadStream<Buffer> {
+class FakeStream implements ReadStream<Buffer> {
 
   private long demand = Long.MAX_VALUE;
   private Handler<Buffer> eventHandler;

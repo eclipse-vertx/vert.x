@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 public class WorkerExecutor implements EventExecutor {
 
   public static io.vertx.core.impl.WorkerExecutor unwrapWorkerExecutor() {
-    ContextInternal ctx = (ContextInternal) Vertx.currentContext();
+    ContextInternal ctx = ContextInternal.current();
     if (ctx != null) {
       ctx = ctx.unwrap();
       Executor executor = ctx.executor();

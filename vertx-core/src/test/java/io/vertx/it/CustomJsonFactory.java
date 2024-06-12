@@ -16,8 +16,10 @@ import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.EncodeException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.parsetools.JsonParser;
 import io.vertx.core.spi.JsonFactory;
 import io.vertx.core.spi.json.JsonCodec;
+import io.vertx.core.streams.ReadStream;
 
 import java.util.stream.Collectors;
 
@@ -64,5 +66,10 @@ public class CustomJsonFactory implements JsonFactory {
   @Override
   public JsonCodec codec() {
     return CODEC;
+  }
+
+  @Override
+  public JsonParser parser(ReadStream<Buffer> stream) {
+    throw new UnsupportedOperationException();
   }
 }

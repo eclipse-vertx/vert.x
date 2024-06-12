@@ -11,10 +11,6 @@
 
 package io.vertx.core.spi;
 
-import io.vertx.core.impl.VertxBuilder;
-import io.vertx.core.json.Json;
-import io.vertx.core.spi.json.JsonCodec;
-
 /**
  * Entry point for loading Vert.x SPI implementations.
  *
@@ -27,6 +23,6 @@ public interface VertxServiceProvider {
    *
    * @param builder the builder
    */
-  void init(VertxBuilder builder);
+  void init(VertxFactory bootstrap);
 
 }

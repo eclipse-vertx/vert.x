@@ -14,7 +14,7 @@ package io.vertx.core.spi.cluster;
 
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import io.vertx.core.impl.VertxBuilder;
+import io.vertx.core.spi.VertxFactory;
 import io.vertx.core.shareddata.AsyncMap;
 import io.vertx.core.shareddata.Counter;
 import io.vertx.core.shareddata.Lock;
@@ -44,7 +44,7 @@ import java.util.Map;
 public interface ClusterManager extends VertxServiceProvider {
 
   @Override
-  default void init(VertxBuilder builder) {
+  default void init(VertxFactory builder) {
     if (builder.clusterManager() == null) {
       builder.clusterManager(this);
     }

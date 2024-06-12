@@ -13,7 +13,7 @@ package io.vertx.core.spi.cluster;
 
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import io.vertx.core.impl.VertxBuilder;
+import io.vertx.core.spi.VertxFactory;
 import io.vertx.core.spi.VertxServiceProvider;
 
 /**
@@ -25,7 +25,7 @@ import io.vertx.core.spi.VertxServiceProvider;
 public interface NodeSelector extends VertxServiceProvider {
 
   @Override
-  default void init(VertxBuilder builder) {
+  default void init(VertxFactory builder) {
     if (builder.clusterNodeSelector() == null) {
       builder.clusterNodeSelector(this);
     }

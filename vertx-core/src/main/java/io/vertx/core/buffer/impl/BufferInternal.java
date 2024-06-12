@@ -26,8 +26,7 @@ public interface BufferInternal extends Buffer {
    * @return the buffer
    */
   static BufferInternal buffer(ByteBuf byteBuf) {
-    Objects.requireNonNull(byteBuf);
-    return new BufferImpl(byteBuf);
+    return new BufferImpl(Objects.requireNonNull(byteBuf));
   }
 
   static BufferInternal buffer(int initialSizeHint) {

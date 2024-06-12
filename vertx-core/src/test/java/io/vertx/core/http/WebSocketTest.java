@@ -2544,8 +2544,8 @@ public class WebSocketTest extends VertxTestBase {
     client = vertx.createWebSocketClient();
     client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(ws -> {
       try {
-        ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PONG, ((BufferInternal)ping1.copy()).getByteBuf(), false));
-        ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PONG, ((BufferInternal)ping2.copy()).getByteBuf(), true));
+        ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PONG, ping1.copy(), false));
+        ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PONG, ping2.copy(), true));
       } catch(Throwable t) {
         fail(t);
       }
@@ -2563,8 +2563,8 @@ public class WebSocketTest extends VertxTestBase {
     server = vertx.createHttpServer(new HttpServerOptions().setIdleTimeout(1).setPort(DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST).setMaxWebSocketFrameSize(maxFrameSize));
     server.webSocketHandler(ws -> {
       try {
-        ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PONG, ((BufferInternal)ping1.copy()).getByteBuf(), false));
-        ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PONG, ((BufferInternal)ping2.copy()).getByteBuf(), true));
+        ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PONG, ping1.copy(), false));
+        ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PONG, ping2.copy(), true));
       } catch(Throwable t) {
         fail(t);
       }
@@ -2610,8 +2610,8 @@ public class WebSocketTest extends VertxTestBase {
           }
         });
         try {
-          ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PING, ((BufferInternal)ping1.copy()).getByteBuf(), false));
-          ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PING, ((BufferInternal)ping2.copy()).getByteBuf(), true));
+          ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PING, ping1.copy(), false));
+          ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PING, ping2.copy(), true));
         } catch(Throwable t) {
           fail(t);
         }
@@ -2644,8 +2644,8 @@ public class WebSocketTest extends VertxTestBase {
           }
         });
         try {
-          ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PING, ((BufferInternal)ping1.copy()).getByteBuf(), false));
-          ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PING, ((BufferInternal)ping2.copy()).getByteBuf(), true));
+          ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PING, ping1.copy(), false));
+          ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PING, ping2.copy(), true));
         } catch(Throwable t) {
           fail(t);
         }

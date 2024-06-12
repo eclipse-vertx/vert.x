@@ -29,8 +29,6 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
 import io.vertx.core.streams.ReadStream;
-import io.vertx.core.streams.impl.ReadStreamBase;
-import io.vertx.test.core.AssertExpectations;
 import io.vertx.test.core.DetectFileDescriptorLeaks;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
@@ -4441,7 +4439,7 @@ public abstract class HttpTest extends HttpTestBase {
       public Future<HttpClientResponse> response() { throw new UnsupportedOperationException(); }
     }
     HttpClientRequest req = new MockReq();
-    class MockResp extends ReadStreamBase<Buffer> implements HttpClientResponse {
+    class MockResp implements HttpClientResponse {
       public HttpClientResponse resume() { throw new UnsupportedOperationException(); }
       public HttpClientResponse exceptionHandler(Handler<Throwable> handler) { throw new UnsupportedOperationException(); }
       public HttpClientResponse handler(Handler<Buffer> handler) { throw new UnsupportedOperationException(); }

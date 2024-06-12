@@ -197,11 +197,6 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
   }
 
   @Override
-  public Pipe<Message<T>> pipe() {
-    return new PipeImpl<>(this);
-  }
-
-  @Override
   public synchronized MessageConsumer<T> handler(Handler<Message<T>> h) {
     if (h != null) {
       synchronized (this) {

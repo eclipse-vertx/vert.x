@@ -30,7 +30,6 @@ import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.streams.impl.InboundBuffer;
-import io.vertx.core.streams.impl.ReadStreamBase;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -58,7 +57,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class AsyncFileImpl extends ReadStreamBase<Buffer> implements AsyncFile {
+public class AsyncFileImpl implements AsyncFile {
 
   private static final Logger log = LoggerFactory.getLogger(AsyncFile.class);
 

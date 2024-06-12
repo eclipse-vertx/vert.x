@@ -16,6 +16,7 @@ import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.spi.ContextProvider;
 
 import java.util.Collections;
 import java.util.List;
@@ -67,7 +68,7 @@ public interface Context {
    * @return true if current thread is a worker thread, false otherwise
    */
   static boolean isOnWorkerThread() {
-    throw new UnsupportedOperationException();
+    return ContextProvider.INSTANCE.isOnWorkerThread();
   }
 
   /**
@@ -79,7 +80,7 @@ public interface Context {
    * @return true if current thread is an event thread, false otherwise
    */
   static boolean isOnEventLoopThread() {
-    throw new UnsupportedOperationException();
+    return ContextProvider.INSTANCE.isOnEventLoopThread();
   }
 
   /**
@@ -88,7 +89,7 @@ public interface Context {
    * @return true if current thread is a Vert.x thread, false otherwise
    */
   static boolean isOnVertxThread() {
-    throw new UnsupportedOperationException();
+    return ContextProvider.INSTANCE.isOnVertxThread();
   }
 
   /**

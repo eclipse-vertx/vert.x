@@ -29,13 +29,11 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
-import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.InboundMessageQueue;
 import io.vertx.core.net.impl.VertxConnection;
-import io.vertx.core.streams.impl.ReadStreamBase;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
@@ -55,7 +53,7 @@ import static io.vertx.core.net.impl.VertxHandler.*;
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @param <S> self return type
  */
-public abstract class WebSocketImplBase<S extends WebSocket> extends ReadStreamBase<Buffer> implements WebSocketInternal {
+public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocketInternal {
 
   private final boolean supportsContinuation;
   private final String textHandlerID;
@@ -65,13 +63,13 @@ public abstract class WebSocketImplBase<S extends WebSocket> extends ReadStreamB
   private final VertxConnection conn;
   private ChannelHandlerContext chctx;
   protected final ContextInternal context;
-  private final InboundMessageQueue<WebSocketFrameInternal> pending;
+  private final InboundMessageQueue<WebSocketFrame> pending;
   private MessageConsumer binaryHandlerRegistration;
   private MessageConsumer textHandlerRegistration;
   private String subProtocol;
   private Object metric;
   private Handler<Buffer> handler;
-  private Handler<WebSocketFrameInternal> frameHandler;
+  private Handler<WebSocketFrame> frameHandler;
   private FrameAggregator frameAggregator;
   private Handler<Buffer> pongHandler;
   private Handler<Void> drainHandler;
@@ -112,7 +110,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> extends ReadStreamB
         conn.doPause();
       }
       @Override
-      protected void handleMessage(WebSocketFrameInternal msg) {
+      protected void handleMessage(WebSocketFrame msg) {
         receiveFrame(msg);
       }
     };
@@ -283,7 +281,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> extends ReadStreamB
     Buffer slice = data.slice(offset, end);
     WebSocketFrame frame;
     if (offset == 0 || !supportsContinuation) {
-      frame = new WebSocketFrameImpl(frameType, ((BufferInternal)slice).getByteBuf(), isFinal);
+      frame = new WebSocketFrameImpl(frameType, slice, isFinal);
     } else {
       frame = WebSocketFrame.continuationFrame(slice, isFinal);
     }
@@ -309,7 +307,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> extends ReadStreamB
   }
 
   private void writeBinaryFrameInternal(Buffer data) {
-    writeFrame(new WebSocketFrameImpl(WebSocketFrameType.BINARY, ((BufferInternal)data).getByteBuf()));
+    writeFrame(new WebSocketFrameImpl(WebSocketFrameType.BINARY, data));
   }
 
   private void writeTextFrameInternal(String str) {
@@ -317,7 +315,8 @@ public abstract class WebSocketImplBase<S extends WebSocket> extends ReadStreamB
   }
 
   private io.netty.handler.codec.http.websocketx.WebSocketFrame encodeFrame(WebSocketFrameImpl frame) {
-    ByteBuf buf = safeBuffer(frame.getBinaryData());
+    BufferInternal buffer = (BufferInternal) frame.binaryData();
+    ByteBuf buf = safeBuffer(buffer.getByteBuf());
     switch (frame.type()) {
       case BINARY:
         return new BinaryWebSocketFrame(frame.isFinal(), 0, buf);
@@ -348,11 +347,12 @@ public abstract class WebSocketImplBase<S extends WebSocket> extends ReadStreamB
     }
   }
 
-  void handleFrame(WebSocketFrameInternal frame) {
+  void handleFrame(WebSocketFrame frame) {
     switch (frame.type()) {
       case PING:
+        BufferInternal buffer = (BufferInternal) frame.binaryData();
         // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
-        conn.writeToChannel(new PongWebSocketFrame(frame.getBinaryData().copy()));
+        conn.writeToChannel(new PongWebSocketFrame(buffer.getByteBuf().copy()));
         break;
       case PONG:
         Handler<Buffer> pongHandler = pongHandler();
@@ -367,7 +367,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> extends ReadStreamB
     pending.write(frame);
   }
 
-  private void handleCloseFrame(WebSocketFrameInternal closeFrame) {
+  private void handleCloseFrame(WebSocketFrame closeFrame) {
     synchronized (this) {
       closeStatusCode = closeFrame.closeStatusCode();
       closeReason = closeFrame.closeReason();
@@ -405,9 +405,9 @@ public abstract class WebSocketImplBase<S extends WebSocket> extends ReadStreamB
     }
   }
 
-  private void receiveFrame(WebSocketFrameInternal frame) {
-    Handler<WebSocketFrameInternal> frameAggregator;
-    Handler<WebSocketFrameInternal> frameHandler;
+  private void receiveFrame(WebSocketFrame frame) {
+    Handler<WebSocketFrame> frameAggregator;
+    Handler<WebSocketFrame> frameHandler;
     synchronized (this) {
       frameHandler = this.frameHandler;
       frameAggregator = this.frameAggregator;
@@ -447,7 +447,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> extends ReadStreamB
     chctx.close();
   }
 
-  private class FrameAggregator implements Handler<WebSocketFrameInternal> {
+  private class FrameAggregator implements Handler<WebSocketFrame> {
     private Handler<String> textMessageHandler;
     private Handler<Buffer> binaryMessageHandler;
 
@@ -455,7 +455,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> extends ReadStreamB
     private Buffer binaryMessageBuffer;
 
     @Override
-    public void handle(WebSocketFrameInternal frame) {
+    public void handle(WebSocketFrame frame) {
       switch (frame.type()) {
         case TEXT:
           handleTextFrame(frame);
@@ -473,8 +473,8 @@ public abstract class WebSocketImplBase<S extends WebSocket> extends ReadStreamB
       }
     }
 
-    private void handleTextFrame(WebSocketFrameInternal frame) {
-      Buffer frameBuffer = BufferInternal.buffer(frame.getBinaryData());
+    private void handleTextFrame(WebSocketFrame frame) {
+      Buffer frameBuffer = frame.binaryData();
       if (textMessageBuffer == null) {
         textMessageBuffer = frameBuffer;
       } else {
@@ -497,8 +497,8 @@ public abstract class WebSocketImplBase<S extends WebSocket> extends ReadStreamB
       }
     }
 
-    private void handleBinaryFrame(WebSocketFrameInternal frame) {
-      Buffer frameBuffer = BufferInternal.buffer(frame.getBinaryData());
+    private void handleBinaryFrame(WebSocketFrame frame) {
+      Buffer frameBuffer = frame.binaryData();
       if (binaryMessageBuffer == null) {
         binaryMessageBuffer = frameBuffer;
       } else {

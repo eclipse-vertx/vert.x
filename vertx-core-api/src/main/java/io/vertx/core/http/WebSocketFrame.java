@@ -14,6 +14,9 @@ package io.vertx.core.http;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
+
+import java.util.Objects;
 
 /**
  * A WebSocket frame that represents either text or binary data.
@@ -41,7 +44,7 @@ public interface WebSocketFrame {
    * @return the frame
    */
   static WebSocketFrame binaryFrame(Buffer data, boolean isFinal) {
-    throw new UnsupportedOperationException();
+    return new WebSocketFrameImpl(WebSocketFrameType.BINARY, Objects.requireNonNull(data), isFinal);
   }
 
   /**
@@ -52,7 +55,7 @@ public interface WebSocketFrame {
    * @return the frame
    */
   static WebSocketFrame textFrame(String str, boolean isFinal) {
-    throw new UnsupportedOperationException();
+    return new WebSocketFrameImpl(Objects.requireNonNull(str), isFinal);
   }
 
   /**
@@ -62,7 +65,7 @@ public interface WebSocketFrame {
    * @return the frame
    */
   static WebSocketFrame pingFrame(Buffer data) {
-    throw new UnsupportedOperationException();
+    return new WebSocketFrameImpl(WebSocketFrameType.PING, Objects.requireNonNull(data), true);
   }
 
   /**
@@ -72,7 +75,7 @@ public interface WebSocketFrame {
    * @return the frame
    */
   static WebSocketFrame pongFrame(Buffer data) {
-    throw new UnsupportedOperationException();
+    return new WebSocketFrameImpl(WebSocketFrameType.PONG, Objects.requireNonNull(data), true);
   }
 
   /**
@@ -83,7 +86,7 @@ public interface WebSocketFrame {
    * @return the frame
    */
   static WebSocketFrame continuationFrame(Buffer data, boolean isFinal) {
-    throw new UnsupportedOperationException();
+    return new WebSocketFrameImpl(WebSocketFrameType.CONTINUATION, Objects.requireNonNull(data), isFinal);
   }
 
   /**
@@ -143,5 +146,10 @@ public interface WebSocketFrame {
    * @return string explaining close reason. Only use this for close frames
    */
   String closeReason();
+
+  /**
+   * @return the frame binary data length
+   */
+  int length();
 
 }

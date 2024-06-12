@@ -11,7 +11,11 @@
 
 package io.vertx.core.json.jackson;
 
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.parsetools.JsonParser;
+import io.vertx.core.parsetools.impl.JsonParserImpl;
 import io.vertx.core.spi.json.JsonCodec;
+import io.vertx.core.streams.ReadStream;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -36,5 +40,10 @@ public class JacksonFactory implements io.vertx.core.spi.JsonFactory {
   @Override
   public JsonCodec codec() {
     return CODEC;
+  }
+
+  @Override
+  public JsonParser parser(ReadStream<Buffer> stream) {
+    return new JsonParserImpl(stream);
   }
 }

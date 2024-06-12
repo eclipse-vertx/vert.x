@@ -14,14 +14,13 @@ import io.vertx.core.Context;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.spi.observability.HttpRequest;
-import io.vertx.core.streams.impl.ReadStreamBase;
 
 /**
  * Extends to expose internal methods that are necessary for integration.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class HttpServerRequestInternal extends ReadStreamBase<Buffer> implements HttpServerRequest {
+public abstract class HttpServerRequestInternal implements HttpServerRequest {
 
   /**
    * @return the Vert.x context associated with this server request

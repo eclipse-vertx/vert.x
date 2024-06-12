@@ -16,7 +16,6 @@ import io.vertx.core.Promise;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
-import io.vertx.core.streams.impl.ReadStreamBase;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -29,7 +28,7 @@ import java.util.stream.Stream;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class FakeStream<T> extends ReadStreamBase<T> implements ReadStream<T>, WriteStream<T> {
+public class FakeStream<T> implements ReadStream<T>, WriteStream<T> {
 
   private static final Object END_SENTINEL = new Object();
 

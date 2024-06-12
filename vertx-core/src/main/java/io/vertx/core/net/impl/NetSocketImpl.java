@@ -180,11 +180,6 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
     return this;
   }
 
-  @Override
-  public Pipe<Buffer> pipe() {
-    return new PipeImpl<>(this);
-  }
-
   private synchronized Handler<Object> messageHandler() {
     return messageHandler;
   }

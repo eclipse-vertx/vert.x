@@ -59,7 +59,7 @@ public interface SocketAddress extends Address {
    * @return the created socket address
    */
   static SocketAddress sharedRandomPort(int id, String host) {
-    if (id < 1) {
+    if (id < 0) {
       throw new IllegalArgumentException("Shared random port ID " + id + " must be > 0");
     }
     return new SocketAddressImpl(-id, host);
