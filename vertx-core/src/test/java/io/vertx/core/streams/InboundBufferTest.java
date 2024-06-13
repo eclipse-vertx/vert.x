@@ -11,7 +11,7 @@
 package io.vertx.core.streams;
 
 import io.vertx.core.Context;
-import io.vertx.core.streams.impl.InboundBuffer;
+import io.vertx.impl.core.streams.InboundBuffer;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 

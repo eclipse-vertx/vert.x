@@ -12,7 +12,7 @@
 package io.vertx.core;
 
 import io.vertx.internal.core.ContextInternal;
-import io.vertx.core.impl.VertxImpl;
+import io.vertx.impl.core.VertxImpl;
 import io.vertx.internal.core.VertxInternal;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.VertxTestBase;

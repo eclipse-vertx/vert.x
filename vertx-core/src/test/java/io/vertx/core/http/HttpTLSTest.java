@@ -35,7 +35,7 @@ import java.util.function.Supplier;
 import javax.net.ssl.*;
 
 import io.vertx.core.*;
-import io.vertx.core.impl.VertxThread;
+import io.vertx.impl.core.VertxThread;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.KeyStoreHelper;
 import org.junit.Assume;
@@ -45,7 +45,7 @@ import org.junit.rules.TemporaryFolder;
 
 import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.net.impl.TrustAllTrustManager;
+import io.vertx.impl.core.net.TrustAllTrustManager;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.proxy.HAProxy;
 import io.vertx.test.tls.Cert;

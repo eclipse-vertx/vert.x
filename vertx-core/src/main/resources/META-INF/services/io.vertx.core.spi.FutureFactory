@@ -1,1 +1,1 @@
-io.vertx.core.impl.future.FutureFactoryImpl
+io.vertx.impl.core.future.FutureFactoryImpl

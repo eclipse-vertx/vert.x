@@ -1,7 +1,7 @@
 package io.vertx.core.wrapper;
 
-import io.vertx.core.http.impl.HttpServerRequestInternal;
-import io.vertx.core.http.impl.HttpServerRequestWrapper;
+import io.vertx.impl.core.http.HttpServerRequestInternal;
+import io.vertx.impl.core.http.HttpServerRequestWrapper;
 
 /**
  * Just here to make sure that a class extending {@link HttpServerRequestWrapper} does not need to implement any method.

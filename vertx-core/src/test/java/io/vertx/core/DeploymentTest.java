@@ -11,10 +11,10 @@
 
 package io.vertx.core;
 
-import io.vertx.core.impl.VertxImpl;
+import io.vertx.impl.core.VertxImpl;
 import io.vertx.internal.core.ContextInternal;
 import io.vertx.internal.core.Deployment;
-import io.vertx.core.impl.verticle.CompilingClassLoader;
+import io.vertx.impl.core.verticle.CompilingClassLoader;
 import io.vertx.core.json.JsonObject;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;

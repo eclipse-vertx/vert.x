@@ -12,7 +12,7 @@
 package io.vertx.core.shareddata;
 
 import io.vertx.core.*;
-import io.vertx.core.impl.NoStackTraceException;
+import io.vertx.impl.core.NoStackTraceException;
 import io.vertx.internal.core.shareddata.LockInternal;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;

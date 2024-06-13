@@ -11,7 +11,7 @@
 
 package io.vertx.core;
 
-import io.vertx.core.impl.VertxThread;
+import io.vertx.impl.core.VertxThread;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;

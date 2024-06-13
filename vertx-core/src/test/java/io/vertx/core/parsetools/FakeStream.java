@@ -12,7 +12,7 @@ package io.vertx.core.parsetools;
 
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.impl.Arguments;
+import io.vertx.impl.core.Arguments;
 import io.vertx.core.streams.ReadStream;
 
 class FakeStream implements ReadStream<Buffer> {

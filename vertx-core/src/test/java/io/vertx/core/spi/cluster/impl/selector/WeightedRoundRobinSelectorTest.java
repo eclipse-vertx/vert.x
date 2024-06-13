@@ -11,6 +11,8 @@
 
 package io.vertx.core.spi.cluster.impl.selector;
 
+import io.vertx.impl.core.cluster.selector.Weight;
+import io.vertx.impl.core.cluster.selector.WeightedRoundRobinSelector;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;

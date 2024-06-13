@@ -13,8 +13,8 @@ package io.vertx.benchmarks;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.json.jackson.DatabindCodec;
-import io.vertx.core.json.jackson.JacksonCodec;
+import io.vertx.impl.core.json.jackson.DatabindCodec;
+import io.vertx.impl.core.json.jackson.JacksonCodec;
 import io.vertx.core.spi.json.JsonCodec;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;

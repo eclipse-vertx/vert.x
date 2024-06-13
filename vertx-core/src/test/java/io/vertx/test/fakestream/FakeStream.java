@@ -13,7 +13,7 @@ package io.vertx.test.fakestream;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
-import io.vertx.core.impl.Arguments;
+import io.vertx.impl.core.Arguments;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 

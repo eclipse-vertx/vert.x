@@ -1,1 +1,1 @@
-io.vertx.core.json.jackson.JacksonFactory
+io.vertx.impl.core.json.jackson.JacksonFactory

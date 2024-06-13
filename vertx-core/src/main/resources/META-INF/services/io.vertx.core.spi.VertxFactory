@@ -1,1 +1,1 @@
-io.vertx.core.impl.VertxBootstrap
+io.vertx.impl.core.VertxBootstrap

@@ -12,6 +12,7 @@
 package io.vertx.core.file.impl;
 
 import io.vertx.core.file.CopyOptions;
+import io.vertx.impl.core.file.FileSystemImpl;
 import org.junit.Test;
 
 import static org.junit.Assert.*;

@@ -18,9 +18,12 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.impl.core.http.Http1xServerConnection;
+import io.vertx.impl.core.http.VertxHttpRequestDecoder;
+import io.vertx.impl.core.http.VertxHttpResponseEncoder;
 import io.vertx.internal.core.ContextInternal;
 import io.vertx.internal.core.VertxInternal;
-import io.vertx.core.net.impl.VertxHandler;
+import io.vertx.impl.core.net.VertxHandler;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 

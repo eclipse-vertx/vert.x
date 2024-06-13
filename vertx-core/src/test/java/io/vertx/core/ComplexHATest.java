@@ -12,7 +12,7 @@
 package io.vertx.core;
 
 import io.vertx.internal.core.Deployment;
-import io.vertx.core.impl.VertxImpl;
+import io.vertx.impl.core.VertxImpl;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.core.Repeat;

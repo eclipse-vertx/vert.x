@@ -13,10 +13,7 @@ package io.vertx.core.http;
 
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.NetSocket;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 

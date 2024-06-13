@@ -10,6 +10,7 @@
  */
 package io.vertx.core.impl.utils;
 
+import io.vertx.impl.core.utils.ConcurrentCyclicSequence;
 import org.junit.Test;
 
 import java.util.*;

@@ -10,7 +10,7 @@
  */
 package io.vertx.core.http;
 
-import io.vertx.core.http.impl.HttpClientInternal;
+import io.vertx.impl.core.http.HttpClientInternal;
 import org.junit.Test;
 
 import java.util.ArrayList;

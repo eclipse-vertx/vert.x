@@ -13,7 +13,7 @@ package io.vertx.core;
 
 import io.netty.util.AsciiString;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.impl.ConversionHelper;
+import io.vertx.impl.core.ConversionHelper;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.junit.Test;

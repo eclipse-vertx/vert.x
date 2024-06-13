@@ -11,8 +11,8 @@
 
 package io.vertx.benchmarks;
 
-import io.vertx.core.net.impl.pool.CombinerExecutor;
-import io.vertx.core.net.impl.pool.Executor;
+import io.vertx.impl.core.net.pool.CombinerExecutor;
+import io.vertx.impl.core.net.pool.Executor;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Scope;

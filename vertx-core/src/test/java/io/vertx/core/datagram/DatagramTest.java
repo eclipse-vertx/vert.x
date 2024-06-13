@@ -15,7 +15,7 @@ import io.netty.buffer.UnpooledHeapByteBuf;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.internal.core.buffer.BufferInternal;
-import io.vertx.core.impl.Utils;
+import io.vertx.impl.core.Utils;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetworkOptions;
 import io.vertx.core.streams.WriteStream;

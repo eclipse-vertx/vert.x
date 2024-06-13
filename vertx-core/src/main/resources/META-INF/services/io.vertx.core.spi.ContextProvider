@@ -1,1 +1,1 @@
-io.vertx.core.impl.ContextProviderImpl
+io.vertx.impl.core.ContextProviderImpl

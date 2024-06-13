@@ -17,9 +17,9 @@ import io.vertx.internal.core.VertxInternal;
 import io.vertx.core.shareddata.AsyncMap;
 import io.vertx.core.shareddata.Counter;
 import io.vertx.core.shareddata.Lock;
-import io.vertx.core.shareddata.impl.AsynchronousCounter;
-import io.vertx.core.shareddata.impl.LocalAsyncLocks;
-import io.vertx.core.shareddata.impl.LocalAsyncMapImpl;
+import io.vertx.impl.core.shareddata.AsynchronousCounter;
+import io.vertx.impl.core.shareddata.LocalAsyncLocks;
+import io.vertx.impl.core.shareddata.LocalAsyncMapImpl;
 import io.vertx.core.spi.cluster.*;
 
 import java.util.*;

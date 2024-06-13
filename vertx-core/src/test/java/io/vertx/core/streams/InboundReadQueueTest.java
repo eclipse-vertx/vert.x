@@ -1,13 +1,13 @@
 package io.vertx.core.streams;
 
-import io.vertx.core.streams.impl.InboundReadQueue;
+import io.vertx.impl.core.streams.InboundReadQueue;
 import io.vertx.test.core.AsyncTestBase;
 import org.junit.Test;
 
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.vertx.core.streams.impl.InboundReadQueue.drainResult;
+import static io.vertx.impl.core.streams.InboundReadQueue.drainResult;
 
 public class InboundReadQueueTest extends AsyncTestBase {
 

@@ -13,8 +13,8 @@ package io.vertx.core;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import io.vertx.core.impl.future.FutureImpl;
-import io.vertx.core.impl.future.Listener;
+import io.vertx.impl.core.future.FutureImpl;
+import io.vertx.impl.core.future.Listener;
 import io.vertx.test.core.Repeat;
 
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;

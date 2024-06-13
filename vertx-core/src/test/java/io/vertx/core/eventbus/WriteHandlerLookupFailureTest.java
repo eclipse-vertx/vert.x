@@ -14,10 +14,9 @@ package io.vertx.core.eventbus;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
-import io.vertx.core.impl.VertxBootstrap;
-import io.vertx.core.spi.VertxFactory;
+import io.vertx.impl.core.VertxBootstrap;
 import io.vertx.core.spi.cluster.NodeSelector;
-import io.vertx.core.spi.cluster.impl.DefaultNodeSelector;
+import io.vertx.impl.core.cluster.DefaultNodeSelector;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 

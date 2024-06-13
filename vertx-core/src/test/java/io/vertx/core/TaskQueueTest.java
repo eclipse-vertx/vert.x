@@ -1,7 +1,7 @@
 package io.vertx.core;
 
-import io.vertx.core.impl.TaskQueue;
-import io.vertx.core.impl.WorkerExecutor;
+import io.vertx.impl.core.TaskQueue;
+import io.vertx.impl.core.WorkerExecutor;
 import io.vertx.test.core.AsyncTestBase;
 import org.junit.Test;
 

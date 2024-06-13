@@ -11,17 +11,8 @@
 package io.vertx.it;
 
 import io.vertx.core.VertxOptions;
-import io.vertx.core.spi.FileResolverFactory;
+import io.vertx.impl.core.spi.FileResolverFactory;
 import io.vertx.core.spi.file.FileResolver;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
-import static io.vertx.it.CustomExecutorServiceFactory.NUM;
 
 public class CustomFileResolverFactory implements FileResolverFactory {
 

@@ -13,6 +13,10 @@ package io.vertx.core.impl;
 
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.Vertx;
+import io.vertx.impl.core.ContextImpl;
+import io.vertx.impl.core.EventExecutor;
+import io.vertx.impl.core.TaskQueue;
+import io.vertx.impl.core.VertxImpl;
 import io.vertx.internal.core.ContextInternal;
 
 /**

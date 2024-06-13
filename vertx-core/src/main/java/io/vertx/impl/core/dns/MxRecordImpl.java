@@ -1,0 +1,54 @@
+/*
+ * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
+ */
+
+package io.vertx.impl.core.dns;
+
+import io.vertx.core.dns.MxRecord;
+
+/**
+ * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
+ */
+final class MxRecordImpl implements MxRecord, Comparable<MxRecord> {
+
+  private final long ttl;
+  private final int priority;
+  private final String name;
+
+  MxRecordImpl(long ttl, int priority, String name) {
+    this.ttl = ttl;
+    this.priority = priority;
+    this.name = name;
+  }
+
+  public long ttl() {
+    return ttl;
+  }
+
+  @Override
+  public int priority() {
+    return priority;
+  }
+
+  @Override
+  public String name() {
+    return name;
+  }
+
+  @Override
+  public String toString() {
+    return priority() + " " + name();
+  }
+
+  @Override
+  public int compareTo(MxRecord o) {
+    return Integer.valueOf(priority()).compareTo(o.priority());
+  }
+}

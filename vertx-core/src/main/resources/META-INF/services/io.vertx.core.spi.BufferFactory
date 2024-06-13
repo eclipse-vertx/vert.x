@@ -1,1 +1,1 @@
-io.vertx.core.buffer.impl.BufferFactoryImpl
+io.vertx.impl.core.buffer.BufferFactoryImpl

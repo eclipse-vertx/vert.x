@@ -13,6 +13,7 @@ package io.vertx.core.http.impl;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.impl.core.http.EndpointKey;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

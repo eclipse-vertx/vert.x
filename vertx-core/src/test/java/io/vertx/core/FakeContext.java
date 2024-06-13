@@ -1,7 +1,7 @@
 package io.vertx.core;
 
 import io.netty.channel.EventLoop;
-import io.vertx.core.impl.*;
+import io.vertx.impl.core.*;
 import io.vertx.internal.core.*;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.tracing.VertxTracer;

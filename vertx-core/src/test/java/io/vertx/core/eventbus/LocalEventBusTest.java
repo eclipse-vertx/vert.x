@@ -12,8 +12,8 @@
 package io.vertx.core.eventbus;
 
 import io.vertx.core.*;
+import io.vertx.impl.core.eventbus.MessageConsumerImpl;
 import io.vertx.internal.core.eventbus.EventBusInternal;
-import io.vertx.core.eventbus.impl.MessageConsumerImpl;
 import io.vertx.internal.core.ContextInternal;
 import io.vertx.internal.core.VertxInternal;
 import io.vertx.core.streams.ReadStream;

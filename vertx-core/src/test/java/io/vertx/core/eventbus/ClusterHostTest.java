@@ -12,7 +12,7 @@
 package io.vertx.core.eventbus;
 
 import io.vertx.core.VertxOptions;
-import io.vertx.core.impl.Utils;
+import io.vertx.impl.core.Utils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Assume;

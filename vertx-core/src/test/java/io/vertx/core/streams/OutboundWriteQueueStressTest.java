@@ -1,18 +1,14 @@
 package io.vertx.core.streams;
 
-import io.vertx.core.streams.impl.OutboundWriteQueue;
+import io.vertx.impl.core.streams.OutboundWriteQueue;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
-import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
 
-import static io.vertx.core.streams.impl.OutboundWriteQueue.numberOfUnwritableSignals;
+import static io.vertx.impl.core.streams.OutboundWriteQueue.numberOfUnwritableSignals;
 
 public class OutboundWriteQueueStressTest extends VertxTestBase {
 

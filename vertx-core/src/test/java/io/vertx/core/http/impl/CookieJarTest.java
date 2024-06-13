@@ -1,6 +1,9 @@
 package io.vertx.core.http.impl;
 
 import io.vertx.core.http.Cookie;
+import io.vertx.impl.core.http.CookieJar;
+import io.vertx.impl.core.http.ServerCookie;
+import io.vertx.impl.core.http.CookieImpl;
 import org.junit.Test;
 
 import java.util.Iterator;

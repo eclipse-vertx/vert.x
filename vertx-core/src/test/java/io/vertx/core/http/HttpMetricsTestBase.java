@@ -13,8 +13,8 @@ package io.vertx.core.http;
 
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.impl.HttpClientInternal;
-import io.vertx.core.http.impl.HttpServerRequestInternal;
+import io.vertx.impl.core.http.HttpClientInternal;
+import io.vertx.impl.core.http.HttpServerRequestInternal;
 import io.vertx.internal.core.VertxInternal;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.net.NetClient;

@@ -14,7 +14,7 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.impl.Utils;
+import io.vertx.impl.core.Utils;
 import io.vertx.core.net.NetServer;
 import io.vertx.test.core.TestUtils;
 import org.junit.Assume;

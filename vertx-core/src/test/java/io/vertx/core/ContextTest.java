@@ -12,7 +12,8 @@
 package io.vertx.core;
 
 import io.netty.channel.EventLoop;
-import io.vertx.core.impl.*;
+import io.vertx.core.impl.ContextLocalHelper;
+import io.vertx.impl.core.*;
 import io.vertx.internal.core.*;
 import io.vertx.internal.core.spi.context.AccessMode;
 import io.vertx.internal.core.spi.context.ContextLocal;

@@ -1,6 +1,6 @@
 package io.vertx.core.file;
 
-import io.vertx.core.file.impl.FileResolverImpl;
+import io.vertx.impl.core.file.FileResolverImpl;
 import io.vertx.core.spi.file.FileResolver;
 import org.assertj.core.api.Assertions;
 import org.junit.Test;

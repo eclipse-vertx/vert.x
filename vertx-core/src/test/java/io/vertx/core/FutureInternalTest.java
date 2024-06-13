@@ -11,8 +11,8 @@
 
 package io.vertx.core;
 
-import io.vertx.core.impl.future.FutureImpl;
-import io.vertx.core.impl.future.Listener;
+import io.vertx.impl.core.future.FutureImpl;
+import io.vertx.impl.core.future.Listener;
 import org.junit.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;

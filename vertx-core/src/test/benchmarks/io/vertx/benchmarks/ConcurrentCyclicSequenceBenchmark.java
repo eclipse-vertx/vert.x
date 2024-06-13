@@ -10,7 +10,7 @@
  */
 package io.vertx.benchmarks;
 
-import io.vertx.core.impl.utils.ConcurrentCyclicSequence;
+import io.vertx.impl.core.utils.ConcurrentCyclicSequence;
 import org.openjdk.jmh.annotations.*;
 
 import java.util.stream.IntStream;

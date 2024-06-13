@@ -1,7 +1,7 @@
 package io.vertx.it;
 
-import io.vertx.core.impl.VertxThread;
-import io.vertx.core.spi.VertxThreadFactory;
+import io.vertx.impl.core.VertxThread;
+import io.vertx.impl.core.spi.VertxThreadFactory;
 
 import java.util.concurrent.TimeUnit;
 

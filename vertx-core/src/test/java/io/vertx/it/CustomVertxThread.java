@@ -1,6 +1,6 @@
 package io.vertx.it;
 
-import io.vertx.core.impl.VertxThread;
+import io.vertx.impl.core.VertxThread;
 
 import java.util.concurrent.TimeUnit;
 

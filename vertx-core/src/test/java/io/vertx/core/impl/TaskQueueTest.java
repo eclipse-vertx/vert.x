@@ -1,5 +1,6 @@
 package io.vertx.core.impl;
 
+import io.vertx.impl.core.TaskQueue;
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
 

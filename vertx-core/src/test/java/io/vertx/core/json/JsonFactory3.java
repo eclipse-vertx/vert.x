@@ -1,7 +1,7 @@
 package io.vertx.core.json;
 
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.json.jackson.JacksonCodec;
+import io.vertx.impl.core.json.jackson.JacksonCodec;
 import io.vertx.core.parsetools.JsonParser;
 import io.vertx.core.spi.JsonFactory;
 import io.vertx.core.spi.json.JsonCodec;

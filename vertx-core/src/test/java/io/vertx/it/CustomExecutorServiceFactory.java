@@ -10,7 +10,7 @@
  */
 package io.vertx.it;
 
-import io.vertx.core.spi.ExecutorServiceFactory;
+import io.vertx.impl.core.spi.ExecutorServiceFactory;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;

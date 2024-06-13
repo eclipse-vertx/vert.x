@@ -11,9 +11,9 @@
 
 package io.vertx.core;
 
-import io.vertx.core.impl.VertxImpl;
+import io.vertx.impl.core.VertxImpl;
 import io.vertx.internal.core.ContextInternal;
-import io.vertx.core.impl.NoStackTraceThrowable;
+import io.vertx.impl.core.NoStackTraceThrowable;
 import io.vertx.internal.core.PromiseInternal;
 import io.vertx.test.core.Repeat;
 import org.junit.Test;

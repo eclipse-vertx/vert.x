@@ -1,7 +1,7 @@
 package io.vertx.core.wrapper;
 
 import io.vertx.internal.core.VertxInternal;
-import io.vertx.core.impl.VertxWrapper;
+import io.vertx.impl.core.VertxWrapper;
 
 /**
  * Just here to make sure that a class extending {@link VertxWrapper} does not need to implement any method.

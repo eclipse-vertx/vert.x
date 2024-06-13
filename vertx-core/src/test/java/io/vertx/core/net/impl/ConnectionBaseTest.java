@@ -16,6 +16,8 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.impl.core.net.VertxConnection;
+import io.vertx.impl.core.net.VertxHandler;
 import io.vertx.internal.core.buffer.BufferInternal;
 import io.vertx.internal.core.ContextInternal;
 import io.vertx.internal.core.VertxInternal;

@@ -10,7 +10,7 @@
  */
 package io.vertx.core.streams;
 
-import io.vertx.core.streams.impl.OutboundWriteQueue;
+import io.vertx.impl.core.streams.OutboundWriteQueue;
 import io.vertx.test.core.AsyncTestBase;
 import junit.framework.AssertionFailedError;
 import org.junit.Ignore;
@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static io.vertx.core.streams.impl.OutboundWriteQueue.*;
+import static io.vertx.impl.core.streams.OutboundWriteQueue.*;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>

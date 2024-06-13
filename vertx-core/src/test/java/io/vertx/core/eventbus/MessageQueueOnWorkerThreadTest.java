@@ -12,8 +12,7 @@
 package io.vertx.core.eventbus;
 
 import io.vertx.core.*;
-import io.vertx.core.eventbus.impl.clustered.Serializer;
-import io.vertx.core.impl.VertxBootstrap;
+import io.vertx.impl.core.VertxBootstrap;
 import io.vertx.core.spi.VertxFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeSelector;
@@ -27,7 +26,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * This test verifies the {@link Serializer} mechanism works when used from a worker context or execute blocking.
+ * This test verifies the {@link io.vertx.impl.core.eventbus.clustered.Serializer} mechanism works when used from a worker context or execute blocking.
  * <p>
  * See <a href="https://github.com/eclipse-vertx/vert.x/issues/4128">issue on GitHub</a>
  */

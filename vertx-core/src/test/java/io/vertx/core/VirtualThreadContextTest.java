@@ -12,7 +12,7 @@ package io.vertx.core;
 
 import io.vertx.internal.core.ContextInternal;
 import io.vertx.internal.core.VertxInternal;
-import io.vertx.core.impl.WorkerExecutor;
+import io.vertx.impl.core.WorkerExecutor;
 import io.vertx.internal.core.PromiseInternal;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Assume;

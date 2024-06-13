@@ -6,8 +6,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.ServerChannel;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
-import io.vertx.core.impl.transports.TransportBase;
-import io.vertx.core.spi.transport.Transport;
+import io.vertx.impl.core.transports.TransportBase;
 
 import java.util.concurrent.ThreadFactory;
 

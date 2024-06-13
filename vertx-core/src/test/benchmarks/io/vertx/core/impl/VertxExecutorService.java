@@ -11,7 +11,7 @@
 
 package io.vertx.core.impl;
 
-import io.vertx.core.spi.VertxThreadFactory;
+import io.vertx.impl.core.spi.VertxThreadFactory;
 
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;

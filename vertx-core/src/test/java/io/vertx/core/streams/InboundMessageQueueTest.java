@@ -13,7 +13,7 @@ package io.vertx.core.streams;
 import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.internal.core.ContextInternal;
-import io.vertx.core.net.impl.InboundMessageQueue;
+import io.vertx.impl.core.net.InboundMessageQueue;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 

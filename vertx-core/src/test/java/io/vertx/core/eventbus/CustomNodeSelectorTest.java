@@ -12,7 +12,7 @@
 package io.vertx.core.eventbus;
 
 import io.vertx.core.*;
-import io.vertx.core.impl.VertxBootstrap;
+import io.vertx.impl.core.VertxBootstrap;
 import io.vertx.core.spi.VertxFactory;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.cluster.ClusterManager;

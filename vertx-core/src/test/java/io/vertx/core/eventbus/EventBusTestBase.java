@@ -29,7 +29,7 @@ import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 
-import static io.vertx.core.eventbus.impl.CodecManager.STRING_MESSAGE_CODEC;
+import static io.vertx.impl.core.eventbus.CodecManager.STRING_MESSAGE_CODEC;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

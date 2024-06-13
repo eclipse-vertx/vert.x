@@ -1,5 +1,6 @@
 package io.vertx.core.impl;
 
+import io.vertx.impl.core.ThreadPerTaskExecutorService;
 import io.vertx.test.core.AsyncTestBase;
 import org.junit.Test;
 

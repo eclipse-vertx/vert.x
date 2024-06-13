@@ -17,7 +17,7 @@ import io.vertx.core.VertxOptions;
 import io.vertx.internal.core.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.metrics.MetricsOptions;
-import io.vertx.core.metrics.impl.DummyVertxMetrics;
+import io.vertx.impl.core.metrics.DummyVertxMetrics;
 import io.vertx.core.spi.VertxServiceProvider;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;

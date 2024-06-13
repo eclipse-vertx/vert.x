@@ -12,8 +12,8 @@
 package io.vertx.core;
 
 import io.netty.channel.EventLoopGroup;
-import io.vertx.core.impl.VertxBootstrap;
-import io.vertx.core.impl.transports.JDKTransport;
+import io.vertx.impl.core.VertxBootstrap;
+import io.vertx.impl.core.transports.JDKTransport;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.transport.Transport;
 import io.vertx.core.spi.cluster.NodeListener;

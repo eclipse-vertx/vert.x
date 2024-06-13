@@ -11,6 +11,7 @@
 package io.vertx.core.file.impl;
 
 import io.vertx.core.VertxException;
+import io.vertx.impl.core.file.FileCache;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 

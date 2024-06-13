@@ -6,6 +6,7 @@ import java.lang.invoke.MethodType;
 import java.util.concurrent.CountDownLatch;
 
 import com.fasterxml.jackson.core.util.BufferRecycler;
+import io.vertx.impl.core.json.jackson.HybridJacksonPool;
 import org.junit.Assume;
 import org.junit.Test;
 
