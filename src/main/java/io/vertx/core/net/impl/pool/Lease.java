@@ -25,4 +25,9 @@ public interface Lease<T> {
    */
   void recycle();
 
+  /**
+   * Remove the object.
+   */
+  void remove();
+
 }

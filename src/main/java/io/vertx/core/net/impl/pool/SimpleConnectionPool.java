@@ -723,6 +723,9 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
       slot.pool.recycle(this);
     }
 
+    @Override
+    public void remove() { slot.pool.remove(this.slot); }
+
     void emit() {
       Future<Lease<C>> fut = slot.context.succeededFuture(this);
       fut.onComplete(handler);
