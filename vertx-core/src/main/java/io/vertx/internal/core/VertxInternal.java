@@ -9,19 +9,15 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.impl;
+package io.vertx.internal.core;
 
 
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.resolver.AddressResolverGroup;
 import io.vertx.core.*;
-import io.vertx.core.dns.impl.DnsAddressResolverProvider;
-import io.vertx.core.impl.btc.BlockedThreadChecker;
-import io.vertx.core.impl.future.PromiseInternal;
+import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.net.impl.NetServerInternal;
-import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.spi.transport.Transport;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.file.FileResolver;
@@ -32,7 +28,6 @@ import java.io.File;
 import java.lang.ref.Cleaner;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -51,9 +46,7 @@ public interface VertxInternal extends Vertx {
   /**
    * @return the Vert.x version
    */
-  static String version() {
-    return VertxImpl.version();
-  }
+  String version();
 
   /**
    * @return a promise associated with the context returned by {@link #getOrCreateContext()}.
@@ -70,9 +63,9 @@ public interface VertxInternal extends Vertx {
 
   TimeUnit maxEventLoopExecTimeUnit();
 
-  NetServerInternal createNetServer(NetServerOptions options);
+  NetServer createNetServer(NetServerOptions options);
 
-  default NetServerInternal createNetServer() {
+  default NetServer createNetServer() {
     return createNetServer(new NetServerOptions());
   }
 
@@ -87,17 +80,13 @@ public interface VertxInternal extends Vertx {
 
   WorkerPool getInternalWorkerPool();
 
-  Map<ServerID, NetServerInternal> sharedTcpServers();
-
   VertxMetrics metricsSPI();
 
   Transport transport();
 
   Cleaner cleaner();
 
-  default <C> C createSharedResource(String resourceKey, String resourceName, CloseFuture closeFuture, Function<CloseFuture, C> supplier) {
-    return SharedResourceHolder.createSharedResource(this, resourceKey, resourceName, closeFuture, supplier);
-  }
+  <C> C createSharedResource(String resourceKey, String resourceName, CloseFuture closeFuture, Function<CloseFuture, C> supplier);
 
   /**
    * Get the current context
@@ -166,16 +155,6 @@ public interface VertxInternal extends Vertx {
 
   WorkerPool wrapWorkerPool(ExecutorService executor);
 
-  void simulateKill();
-
-  Deployment getDeployment(String deploymentID);
-
-  void failoverCompleteHandler(FailoverCompleteHandler failoverCompleteHandler);
-
-  boolean isKilled();
-
-  void failDuringFailover(boolean fail);
-
   File resolveFile(String fileName);
 
   default <T> Future<T> executeBlockingInternal(Callable<T> blockingCodeHandler) {
@@ -190,8 +169,6 @@ public interface VertxInternal extends Vertx {
 
   ClusterManager getClusterManager();
 
-  HAManager haManager();
-
   /**
    * Resolve an address (e.g. {@code vertx.io} into the first found A (IPv4) or AAAA (IPv6) record.
    *
@@ -199,13 +176,6 @@ public interface VertxInternal extends Vertx {
    * @return a future notified with the result
    */
   Future<InetAddress> resolveAddress(String hostname);
-
-  /**
-   * @return the default hostname resolver
-   */
-  HostnameResolver hostnameResolver();
-
-  DnsAddressResolverProvider dnsAddressResolverProvider(InetSocketAddress addr);
 
   /**
    * @return the file resolver
@@ -223,8 +193,6 @@ public interface VertxInternal extends Vertx {
    * @return the Netty {@code AddressResolverGroup} to use in a Netty {@code Bootstrap}
    */
   AddressResolverGroup<InetSocketAddress> nettyAddressResolverGroup();
-
-  BlockedThreadChecker blockedThreadChecker();
 
   CloseFuture closeFuture();
 

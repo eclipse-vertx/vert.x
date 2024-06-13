@@ -15,7 +15,7 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.HttpClientInternal;
 import io.vertx.core.http.impl.HttpServerRequestInternal;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.internal.core.VertxInternal;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.SocketAddress;

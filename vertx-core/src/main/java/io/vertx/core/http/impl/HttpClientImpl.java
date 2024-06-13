@@ -15,11 +15,11 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
+import io.vertx.core.impl.ContextBase;
 import io.vertx.core.net.endpoint.impl.EndpointResolverImpl;
 import io.vertx.core.http.*;
-import io.vertx.core.impl.*;
 import io.vertx.core.net.*;
-import io.vertx.core.net.endpoint.impl.EndpointResolverInternal;
+import io.vertx.internal.core.net.endpoint.EndpointResolverInternal;
 import io.vertx.core.net.impl.endpoint.EndpointProvider;
 import io.vertx.core.net.impl.pool.*;
 import io.vertx.core.net.endpoint.EndpointInteraction;
@@ -27,6 +27,8 @@ import io.vertx.core.net.endpoint.EndpointNode;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.net.endpoint.EndpointResolver;
+import io.vertx.internal.core.ContextInternal;
+import io.vertx.internal.core.VertxInternal;
 
 import java.lang.ref.WeakReference;
 import java.net.URI;
@@ -380,7 +382,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     ClientSSLOptions sslOptions,
     ProxyOptions proxyConfig) {
     ContextInternal ctx = vertx.getOrCreateContext();
-    ContextInternal connCtx = ctx.isEventLoopContext() ? ctx : vertx.createEventLoopContext(ctx.nettyEventLoop(), ctx.workerPool(), ctx.classLoader());
+    ContextInternal connCtx = ctx.asEventLoopContext();
     Promise<HttpClientRequest> promise = ctx.promise();
     Future<ConnectionObtainedResult> future;
     if (endpointResolver != null) {

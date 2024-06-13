@@ -11,7 +11,7 @@
 package io.vertx.core.net.impl.pool;
 
 import io.vertx.core.Future;
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.internal.core.ContextInternal;
 import io.vertx.core.net.impl.endpoint.EndpointManager;
 import io.vertx.core.net.impl.endpoint.Endpoint;
 import io.vertx.core.net.impl.endpoint.EndpointProvider;

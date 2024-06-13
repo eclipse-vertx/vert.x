@@ -16,7 +16,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBusOptions;
 import io.vertx.core.eventbus.impl.MessageImpl;
 import io.vertx.core.eventbus.impl.codecs.PingMessageCodec;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.internal.core.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;

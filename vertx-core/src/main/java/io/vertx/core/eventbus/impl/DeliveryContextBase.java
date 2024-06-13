@@ -13,9 +13,7 @@ package io.vertx.core.eventbus.impl;
 import io.vertx.core.Handler;
 import io.vertx.core.eventbus.DeliveryContext;
 import io.vertx.core.eventbus.Message;
-import io.vertx.core.impl.ContextInternal;
-
-import java.util.List;
+import io.vertx.internal.core.ContextInternal;
 
 abstract class DeliveryContextBase<T> implements DeliveryContext<T> {
 

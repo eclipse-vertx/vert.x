@@ -10,11 +10,9 @@
  */
 package io.vertx.core.streams.impl;
 
-import io.netty.util.concurrent.FastThreadLocalThread;
 import io.vertx.core.Context;
 import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.internal.core.ContextInternal;
 
 import java.util.ArrayDeque;
 import java.util.Collection;

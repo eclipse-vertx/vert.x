@@ -10,8 +10,7 @@
  */
 package io.vertx.core.eventbus;
 
-import io.vertx.core.Future;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.internal.core.VertxInternal;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Assume;
 import org.junit.Before;

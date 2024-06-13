@@ -12,10 +12,10 @@
 package io.vertx.core.eventbus;
 
 import io.vertx.core.*;
-import io.vertx.core.eventbus.impl.EventBusInternal;
+import io.vertx.internal.core.eventbus.EventBusInternal;
 import io.vertx.core.eventbus.impl.MessageConsumerImpl;
-import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.internal.core.ContextInternal;
+import io.vertx.internal.core.VertxInternal;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.TestUtils;
 import org.junit.Test;

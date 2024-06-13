@@ -11,8 +11,8 @@
 
 package io.vertx.core;
 
-import io.vertx.core.impl.Deployment;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.internal.core.Deployment;
+import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.core.VertxTestBase;
@@ -118,7 +118,7 @@ public class HATest extends VertxTestBase {
       deployLatch.countDown();
     }));
     awaitLatch(deployLatch);
-    ((VertxInternal)vertx1).failoverCompleteHandler((nodeID, haInfo, succeeded) -> {
+    ((VertxImpl) vertx1).failoverCompleteHandler((nodeID, haInfo, succeeded) -> {
       fail("Should not be called");
     });
     vertx2.close().onComplete(ar -> {
@@ -141,31 +141,31 @@ public class HATest extends VertxTestBase {
       latch1.countDown();
     }));
     awaitLatch(latch1);
-    ((VertxInternal)vertx2).failDuringFailover(true);
-    ((VertxInternal)vertx3).failDuringFailover(true);
+    ((VertxImpl) vertx2).failDuringFailover(true);
+    ((VertxImpl) vertx3).failDuringFailover(true);
     CountDownLatch latch2 = new CountDownLatch(1);
-    ((VertxInternal)vertx2).failoverCompleteHandler((nodeID, haInfo, succeeded) -> {
+    ((VertxImpl)vertx2).failoverCompleteHandler((nodeID, haInfo, succeeded) -> {
       assertFalse(succeeded);
       latch2.countDown();
     });
-    ((VertxInternal)vertx3).failoverCompleteHandler((nodeID, haInfo, succeeded) -> {
+    ((VertxImpl)vertx3).failoverCompleteHandler((nodeID, haInfo, succeeded) -> {
       assertFalse(succeeded);
       latch2.countDown();
     });
-    ((VertxInternal)vertx1).simulateKill();
+    ((VertxImpl)vertx1).simulateKill();
     awaitLatch(latch2);
 
     // Now try again - this time failover should work
 
     assertTrue(vertx2.deploymentIDs().isEmpty());
     assertTrue(vertx3.deploymentIDs().isEmpty());
-    ((VertxInternal)vertx2).failDuringFailover(false);
+    ((VertxImpl)vertx2).failDuringFailover(false);
     CountDownLatch latch3 = new CountDownLatch(1);
-    ((VertxInternal)vertx2).failoverCompleteHandler((nodeID, haInfo, succeeded) -> {
+    ((VertxImpl)vertx2).failoverCompleteHandler((nodeID, haInfo, succeeded) -> {
       assertTrue(succeeded);
       latch3.countDown();
     });
-    ((VertxInternal)vertx3).simulateKill();
+    ((VertxImpl)vertx3).simulateKill();
     awaitLatch(latch3);
     assertWaitUntil(() -> vertx2.deploymentIDs().size() == 1);
   }
@@ -187,28 +187,28 @@ public class HATest extends VertxTestBase {
     }));
     awaitLatch(latch1);
     CountDownLatch latch2 = new CountDownLatch(1);
-    ((VertxInternal)vertx1).failoverCompleteHandler((nodeID, haInfo, succeeded) -> {
+    ((VertxImpl)vertx1).failoverCompleteHandler((nodeID, haInfo, succeeded) -> {
       fail("Should not failover here 1");
     });
-    ((VertxInternal)vertx2).failoverCompleteHandler((nodeID, haInfo, succeeded) -> {
+    ((VertxImpl)vertx2).failoverCompleteHandler((nodeID, haInfo, succeeded) -> {
       fail("Should not failover here 2");
     });
-    ((VertxInternal)vertx4).failoverCompleteHandler((nodeID, haInfo, succeeded) -> {
+    ((VertxImpl)vertx4).failoverCompleteHandler((nodeID, haInfo, succeeded) -> {
       assertTrue(succeeded);
       latch2.countDown();
     });
-    ((VertxInternal)vertx3).simulateKill();
+    ((VertxImpl)vertx3).simulateKill();
     awaitLatch(latch2);
     assertTrue(vertx4.deploymentIDs().size() == 1);
     CountDownLatch latch3 = new CountDownLatch(1);
-    ((VertxInternal)vertx2).failoverCompleteHandler((nodeID, haInfo, succeeded) -> {
+    ((VertxImpl)vertx2).failoverCompleteHandler((nodeID, haInfo, succeeded) -> {
       assertTrue(succeeded);
       latch3.countDown();
     });
-    ((VertxInternal)vertx4).failoverCompleteHandler((nodeID, haInfo, succeeded) -> {
+    ((VertxImpl)vertx4).failoverCompleteHandler((nodeID, haInfo, succeeded) -> {
       fail("Should not failover here 4");
     });
-    ((VertxInternal)vertx1).simulateKill();
+    ((VertxImpl)vertx1).simulateKill();
     awaitLatch(latch3);
     assertTrue(vertx2.deploymentIDs().size() == 1);
   }
@@ -226,9 +226,9 @@ public class HATest extends VertxTestBase {
     }));
     awaitLatch(latch1);
 
-    ((VertxInternal) vertx2).failoverCompleteHandler((nodeID, haInfo, succeeded) -> fail("Should not failover here 2"));
-    ((VertxInternal) vertx1).failoverCompleteHandler((nodeID, haInfo, succeeded) -> fail("Should not failover here 1"));
-    ((VertxInternal) vertx1).simulateKill();
+    ((VertxImpl) vertx2).failoverCompleteHandler((nodeID, haInfo, succeeded) -> fail("Should not failover here 2"));
+    ((VertxImpl) vertx1).failoverCompleteHandler((nodeID, haInfo, succeeded) -> fail("Should not failover here 1"));
+    ((VertxImpl) vertx1).simulateKill();
     vertx2.close().onComplete(ar -> {
       vertx.setTimer(500, tid -> {
         // Wait a bit in case failover happens
@@ -256,16 +256,16 @@ public class HATest extends VertxTestBase {
     }));
     awaitLatch(latch1);
     CountDownLatch latch2 = new CountDownLatch(1);
-    ((VertxInternal)vertx1).failoverCompleteHandler((nodeID, haInfo, succeeded) -> {
+    ((VertxImpl)vertx1).failoverCompleteHandler((nodeID, haInfo, succeeded) -> {
       assertTrue(succeeded);
       latch2.countDown();
     });
-    ((VertxInternal)vertx2).simulateKill();
+    ((VertxImpl)vertx2).simulateKill();
     awaitLatch(latch2);
 
     assertTrue(vertx1.deploymentIDs().size() == 1);
     String depID = vertx1.deploymentIDs().iterator().next();
-    assertTrue(((VertxInternal) vertx1).getDeployment(depID).verticleIdentifier().equals("java:" + HAVerticle1.class.getName()));
+    assertTrue(((VertxImpl) vertx1).getDeployment(depID).verticleIdentifier().equals("java:" + HAVerticle1.class.getName()));
   }
 
   @Test
@@ -282,18 +282,18 @@ public class HATest extends VertxTestBase {
     CountDownLatch latch2 = new CountDownLatch(1);
     // Close vertx2 - this should not then participate in failover
     vertx2.close().onComplete(ar -> {
-      ((VertxInternal) vertx1).failoverCompleteHandler((nodeID, haInfo, succeeded) -> {
+      ((VertxImpl) vertx1).failoverCompleteHandler((nodeID, haInfo, succeeded) -> {
         assertTrue(succeeded);
         latch2.countDown();
       });
-      ((VertxInternal) vertx3).simulateKill();
+      ((VertxImpl) vertx3).simulateKill();
     });
 
     awaitLatch(latch2);
 
     assertTrue(vertx1.deploymentIDs().size() == 1);
     String depID = vertx1.deploymentIDs().iterator().next();
-    assertTrue(((VertxInternal) vertx1).getDeployment(depID).verticleIdentifier().equals("java:" + HAVerticle1.class.getName()));
+    assertTrue(((VertxImpl) vertx1).getDeployment(depID).verticleIdentifier().equals("java:" + HAVerticle1.class.getName()));
   }
 
   @Test
@@ -386,7 +386,7 @@ public class HATest extends VertxTestBase {
 
 
   protected void checkDeploymentExists(int pos, String verticleName, DeploymentOptions options) {
-    VertxInternal vi = (VertxInternal)vertices[pos];
+    VertxImpl vi = (VertxImpl)vertices[pos];
     for (String deploymentID: vi.deploymentIDs()) {
       Deployment dep = vi.getDeployment(deploymentID);
       if (verticleName.equals(dep.verticleIdentifier()) && options.toJson().equals(dep.deploymentOptions().toJson())) {
@@ -397,7 +397,7 @@ public class HATest extends VertxTestBase {
   }
 
   protected void kill(int pos) {
-    VertxInternal v = (VertxInternal)vertices[pos];
+    VertxImpl v = (VertxImpl)vertices[pos];
     v.executeBlocking(() -> {
       v.simulateKill();
       return null;

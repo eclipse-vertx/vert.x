@@ -16,13 +16,14 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.shareddata.LocalMap;
 import io.vertx.core.shareddata.Shareable;
+import io.vertx.internal.core.CloseFuture;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-class SharedResourceHolder<C> implements Shareable {
+public class SharedResourceHolder<C> implements Shareable {
 
   static <C> List<C> clearSharedResource(Vertx vertx, String resourceKey) {
     LocalMap<String, SharedResourceHolder<C>> localMap = vertx.sharedData().getLocalMap(resourceKey);
@@ -31,7 +32,7 @@ class SharedResourceHolder<C> implements Shareable {
     return values.stream().map(sc -> sc.resource).collect(Collectors.toList());
   }
 
-  static <R> R createSharedResource(Vertx vertx, String resourceKey, String resourceName, CloseFuture closeFuture, Function<CloseFuture, R> supplier) {
+  public static <R> R createSharedResource(Vertx vertx, String resourceKey, String resourceName, CloseFuture closeFuture, Function<CloseFuture, R> supplier) {
     LocalMap<String, SharedResourceHolder<R>> localMap = vertx.sharedData().getLocalMap(resourceKey);
     SharedResourceHolder<R> v = localMap.compute(resourceName, (key, value) -> {
       if (value == null) {

@@ -13,7 +13,7 @@ package io.vertx.core.http.impl;
 
 import io.vertx.core.Handler;
 import io.vertx.core.http.WebSocket;
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.internal.core.ContextInternal;
 import io.vertx.core.net.impl.VertxConnection;
 
 /**

@@ -1,4 +1,4 @@
-package io.vertx.core.spi.context.storage;
+package io.vertx.internal.core.spi.context;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;

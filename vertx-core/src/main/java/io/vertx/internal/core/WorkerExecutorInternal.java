@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2020 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -8,19 +8,16 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
+package io.vertx.internal.core;
 
-package io.vertx.core.shareddata.impl;
-
-import io.vertx.core.shareddata.Lock;
+import io.vertx.core.Vertx;
+import io.vertx.core.WorkerExecutor;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ * @author Thomas Segismont
  */
-public interface LockInternal extends Lock {
+public interface WorkerExecutorInternal extends WorkerExecutor {
+  Vertx vertx();
 
-  /**
-   * @return an estimate of the number of waiters
-   */
-  int waiters();
-
+  WorkerPool getPool();
 }

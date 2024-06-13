@@ -10,6 +10,8 @@
  */
 package io.vertx.core.impl;
 
+import io.vertx.internal.core.spi.context.impl.LocalSeq;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */

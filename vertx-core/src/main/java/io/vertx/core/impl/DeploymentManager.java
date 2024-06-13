@@ -15,6 +15,10 @@ import io.vertx.core.*;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.internal.core.CloseFuture;
+import io.vertx.internal.core.ContextInternal;
+import io.vertx.internal.core.Deployment;
+import io.vertx.internal.core.WorkerPool;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -147,7 +151,7 @@ public class DeploymentManager {
                         ContextInternal callingContext,
                         ClassLoader tccl, Verticle... verticles) {
     Promise<Deployment> promise = callingContext.promise();
-    Deployment parent = parentContext.getDeployment();
+    Deployment parent = ((ContextBase)parentContext).getDeployment();
     String deploymentID = generateDeploymentID();
 
     AtomicInteger deployCount = new AtomicInteger();

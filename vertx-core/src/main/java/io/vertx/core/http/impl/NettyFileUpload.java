@@ -17,7 +17,7 @@ import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.buffer.impl.BufferInternal;
+import io.vertx.internal.core.buffer.BufferInternal;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.impl.InboundBuffer;

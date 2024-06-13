@@ -26,7 +26,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.GoAway;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.HttpConnection;
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.internal.core.ContextInternal;
 import io.vertx.core.net.impl.VertxConnection;
 
 import java.util.concurrent.TimeUnit;

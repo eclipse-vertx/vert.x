@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2023 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -8,22 +8,19 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.impl;
+package io.vertx.internal.core;
 
-import io.vertx.core.spi.context.storage.ContextLocal;
+import io.netty.util.concurrent.FutureListener;
+import io.vertx.core.Promise;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class ContextLocalImpl<T> implements ContextLocal<T> {
+public interface PromiseInternal<T> extends Promise<T>, FutureListener<T>, FutureInternal<T> {
 
-  final int index;
+  /**
+   * @return the context associated with this promise or {@code null} when there is none
+   */
+  ContextInternal context();
 
-  public ContextLocalImpl(int index) {
-    this.index = index;
-  }
-
-  public ContextLocalImpl() {
-    this.index = LocalSeq.next();
-  }
 }

@@ -28,7 +28,8 @@ import io.vertx.core.dns.DnsClientOptions;
 import io.vertx.core.dns.impl.DnsClientImpl;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.impl.EventBusImpl;
-import io.vertx.core.eventbus.impl.EventBusInternal;
+import io.vertx.internal.core.*;
+import io.vertx.internal.core.eventbus.EventBusInternal;
 import io.vertx.core.eventbus.impl.clustered.ClusteredEventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
@@ -40,7 +41,6 @@ import io.vertx.core.impl.transports.JDKTransport;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.file.impl.FileSystemImpl;
 import io.vertx.core.file.impl.WindowsFileSystem;
-import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.dns.impl.DnsAddressResolverProvider;
@@ -57,6 +57,9 @@ import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.PoolMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
+import io.vertx.core.net.impl.NetClientInternal;
+import io.vertx.core.net.impl.NetServerInternal;
+import io.vertx.internal.core.spi.context.impl.LocalSeq;
 
 import java.io.File;
 import java.io.IOException;
@@ -72,6 +75,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -161,7 +165,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final CloseFuture closeFuture;
   private final Transport transport;
   private final VertxTracer tracer;
-  private final ThreadLocal<WeakReference<ContextInternal>> stickyContext = new ThreadLocal<>();
+  private final ThreadLocal<WeakReference<ContextBase>> stickyContext = new ThreadLocal<>();
   private final boolean disableTCCL;
   private final Boolean useDaemonThread;
 
@@ -169,7 +173,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
             VertxTracer<?, ?> tracer, Transport transport, FileResolver fileResolver, VertxThreadFactory threadFactory,
             ExecutorServiceFactory executorServiceFactory) {
     // Sanity check
-    if (ContextInternal.current() != null) {
+    if (currentContext() != null) {
       log.warn("You're already on a Vert.x context, are you sure you want to create a new Vertx instance?");
     }
 
@@ -356,6 +360,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
+  public <C> C createSharedResource(String resourceKey, String resourceName, CloseFuture closeFuture, Function<CloseFuture, C> supplier) {
+    return SharedResourceHolder.createSharedResource(this, resourceKey, resourceName, closeFuture, supplier);
+  }
+
+  @Override
   public boolean isNativeTransportEnabled() {
     return !(transport instanceof JDKTransport);
   }
@@ -474,8 +483,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return acceptorEventLoopGroup;
   }
 
-  public ContextInternal getOrCreateContext() {
-    ContextInternal ctx = getContext();
+  public ContextBase getOrCreateContext() {
+    ContextBase ctx = getContext();
     if (ctx == null) {
       // We are running embedded - Create a context
       ctx = createEventLoopContext();
@@ -640,12 +649,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return scheduleTimeout(context, periodic, delay, delay, timeUnit, addCloseHook, handler);
   }
 
-  public ContextInternal getContext() {
-    ContextInternal context = ContextInternal.current();
+  public ContextBase getContext() {
+    ContextBase context = currentContext();
     if (context != null && context.owner() == this) {
       return context;
     } else {
-      WeakReference<ContextInternal> ref = stickyContext.get();
+      WeakReference<ContextBase> ref = stickyContext.get();
       return ref != null ? ref.get() : null;
     }
   }
@@ -805,24 +814,20 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
   }
 
-  @Override
   public Deployment getDeployment(String deploymentID) {
     return deploymentManager.getDeployment(deploymentID);
   }
 
-  @Override
   public synchronized void failoverCompleteHandler(FailoverCompleteHandler failoverCompleteHandler) {
     if (haManager() != null) {
       haManager().setFailoverCompleteHandler(failoverCompleteHandler);
     }
   }
 
-  @Override
   public boolean isKilled() {
     return haManager().isKilled();
   }
 
-  @Override
   public void failDuringFailover(boolean fail) {
     if (haManager() != null) {
       haManager().failDuringFailover(fail);
@@ -844,12 +849,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return hostnameResolver.resolveHostname(hostname);
   }
 
-  @Override
   public HostnameResolver hostnameResolver() {
     return hostnameResolver;
   }
 
-  @Override
   public DnsAddressResolverProvider dnsAddressResolverProvider(InetSocketAddress addr) {
     AddressResolverOptions options = new AddressResolverOptions(addressResolverOptions);
     options.setServers(Collections.singletonList(addr.getHostString() + ":" + addr.getPort()));
@@ -867,7 +870,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return fileResolver;
   }
 
-  @Override
   public BlockedThreadChecker blockedThreadChecker() {
     return checker;
   }
@@ -1050,7 +1052,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     });
     return new WorkerPool(shared.executor(), shared.metrics()) {
       @Override
-      void close() {
+      public void close() {
         closeFuture.close();
       }
     };
@@ -1111,7 +1113,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   private CloseFuture resolveCloseFuture() {
-    ContextInternal context = getContext();
+    ContextBase context = getContext();
     return context != null ? context.closeFuture() : closeFuture;
   }
 
@@ -1123,7 +1125,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
    */
   void executeIsolated(Handler<Void> task) {
     if (Thread.currentThread() instanceof VertxThread) {
-      ContextInternal prev = beginDispatch(null);
+      ContextBase prev = beginDispatch(null);
       try {
         task.handle(null);
       } finally {
@@ -1134,8 +1136,21 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
   }
 
+  public static ContextBase currentContext() {
+    Thread thread = Thread.currentThread();
+    if (thread instanceof VertxThread) {
+      return ((VertxThread) thread).context();
+    } else {
+      VertxImpl.ContextDispatch current = VertxImpl.nonVertxContextDispatch.get();
+      if (current != null) {
+        return current.context;
+      }
+    }
+    return null;
+  }
+
   static class ContextDispatch {
-    ContextInternal context;
+    ContextBase context;
     ClassLoader topLevelTCCL;
   }
 
@@ -1148,9 +1163,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
    * @param context the context on which the event is emitted on
    * @return the current context that shall be restored
    */
-  ContextInternal beginDispatch(ContextInternal context) {
+  public ContextBase beginDispatch(ContextBase context) {
     Thread thread = Thread.currentThread();
-    ContextInternal prev;
+    ContextBase prev;
     if (thread instanceof VertxThread) {
       VertxThread vertxThread = (VertxThread) thread;
       prev = vertxThread.context;
@@ -1172,9 +1187,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return prev;
   }
 
-  private ContextInternal beginDispatch2(Thread thread, ContextInternal context) {
+  private ContextBase beginDispatch2(Thread thread, ContextBase context) {
     ContextDispatch current = nonVertxContextDispatch.get();
-    ContextInternal prev;
+    ContextBase prev;
     if (current != null) {
       prev = current.context;
     } else {
@@ -1200,7 +1215,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
    *
    * @param prev the previous context thread to restore, might be {@code null}
    */
-  void endDispatch(ContextInternal prev) {
+  public void endDispatch(ContextBase prev) {
     Thread thread = Thread.currentThread();
     if (thread instanceof VertxThread) {
       VertxThread vertxThread = (VertxThread) thread;
@@ -1223,7 +1238,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
   }
 
-  private void endDispatch2(ContextInternal prev) {
+  private void endDispatch2(ContextBase prev) {
     ClassLoader tccl;
     ContextDispatch current = nonVertxContextDispatch.get();
     if (prev != null) {
@@ -1238,12 +1253,17 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
   }
 
+  @Override
+  public String version() {
+    return loadVersion();
+  }
+
   /**
    * Reads the version from the {@code vertx-version.txt} file.
    *
    * @return the version
    */
-  public static String version() {
+  public static String loadVersion() {
     if (version != null) {
       return version;
     }
@@ -1257,4 +1277,5 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     } catch (IOException e) {
       throw new IllegalStateException(e.getMessage());
     }
-  }}
+  }
+}

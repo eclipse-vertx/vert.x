@@ -12,7 +12,7 @@
 package io.vertx.it;
 
 import io.vertx.core.Vertx;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.internal.core.VertxInternal;
 import io.vertx.test.core.AsyncTestBase;
 import org.junit.Test;
 

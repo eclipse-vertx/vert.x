@@ -2,12 +2,13 @@ package io.vertx.core.impl;
 
 import io.vertx.core.Context;
 import io.vertx.core.spi.ContextProvider;
+import io.vertx.internal.core.ContextInternal;
 
 public class ContextProviderImpl implements ContextProvider {
 
   @Override
   public Context current() {
-    return ContextInternal.current();
+    return VertxImpl.currentContext();
   }
 
   @Override

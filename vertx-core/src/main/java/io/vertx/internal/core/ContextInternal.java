@@ -9,20 +9,16 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.impl;
+package io.vertx.internal.core;
 
 import io.netty.channel.EventLoop;
 import io.vertx.core.*;
 import io.vertx.core.Future;
-import io.vertx.core.impl.future.FailedFuture;
-import io.vertx.core.impl.future.PromiseImpl;
-import io.vertx.core.impl.future.PromiseInternal;
-import io.vertx.core.impl.future.SucceededFuture;
-import io.vertx.core.spi.context.storage.AccessMode;
-import io.vertx.core.spi.context.storage.ContextLocal;
+import io.vertx.internal.core.spi.context.AccessMode;
+import io.vertx.internal.core.spi.context.ContextLocal;
 import io.vertx.core.spi.tracing.VertxTracer;
+import io.vertx.internal.core.spi.context.impl.ContextLocalImpl;
 
-import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.function.Supplier;
 
@@ -37,22 +33,6 @@ public interface ContextInternal extends Context {
 
   ContextLocal<ConcurrentMap<Object, Object>> LOCAL_MAP = new ContextLocalImpl<>(0);
 
-  /**
-   * @return the current context
-   */
-  static ContextInternal current() {
-    Thread thread = Thread.currentThread();
-    if (thread instanceof VertxThread) {
-      return ((VertxThread) thread).context();
-    } else {
-      VertxImpl.ContextDispatch current = VertxImpl.nonVertxContextDispatch.get();
-      if (current != null) {
-        return current.context;
-      }
-    }
-    return null;
-  }
-
   @Override
   default void runOnContext(Handler<Void> action) {
     executor().execute(() -> dispatch(action));
@@ -62,6 +42,8 @@ public interface ContextInternal extends Context {
    * @return an executor that schedule a task on this context, the thread executing the task will not be associated with this context
    */
   Executor executor();
+
+  ContextInternal asEventLoopContext();
 
   /**
    * Return the Netty EventLoop used by this Context. This can be used to integrate
@@ -74,9 +56,7 @@ public interface ContextInternal extends Context {
   /**
    * @return a {@link Promise} associated with this context
    */
-  default <T> PromiseInternal<T> promise() {
-    return new PromiseImpl<>(this);
-  }
+  <T> PromiseInternal<T> promise();
 
   /**
    * @return a {@link Promise} associated with this context or the {@code handler}
@@ -97,36 +77,22 @@ public interface ContextInternal extends Context {
   /**
    * @return an empty succeeded {@link Future} associated with this context
    */
-  default <T> Future<T> succeededFuture() {
-    return new SucceededFuture<>(this, null);
-  }
+  <T> Future<T> succeededFuture();
 
   /**
    * @return a succeeded {@link Future} of the {@code result} associated with this context
    */
-  default <T> Future<T> succeededFuture(T result) {
-    return new SucceededFuture<>(this, result);
-  }
+  <T> Future<T> succeededFuture(T result);
 
   /**
    * @return a {@link Future} failed with the {@code failure} associated with this context
    */
-  default <T> Future<T> failedFuture(Throwable failure) {
-    return new FailedFuture<>(this, failure);
-  }
+  <T> Future<T> failedFuture(Throwable failure);
 
   /**
    * @return a {@link Future} failed with the {@code message} associated with this context
    */
-  default <T> Future<T> failedFuture(String message) {
-    return new FailedFuture<>(this, message);
-  }
-
-  /**
-   * Like {@link #executeBlocking(Callable, boolean)} but uses the {@code queue} to order the tasks instead
-   * of the internal queue of this context.
-   */
-  <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, TaskQueue queue);
+  <T> Future<T> failedFuture(String message);
 
   /**
    * Execute an internal task on the internal blocking ordered executor.
@@ -137,11 +103,6 @@ public interface ContextInternal extends Context {
    * Execute an internal task on the internal blocking ordered executor.
    */
   <T> Future<T> executeBlockingInternal(Callable<T> action, boolean ordered);
-
-  /**
-   * @return the deployment associated with this context or {@code null}
-   */
-  Deployment getDeployment();
 
   @Override
   VertxInternal owner();
@@ -195,9 +156,7 @@ public interface ContextInternal extends Context {
   /**
    * @return whether the current thread is running on this context
    */
-  default boolean isRunningOnContext() {
-    return current() == this && inThread();
-  }
+  boolean isRunningOnContext();
 
   /**
    * @see #dispatch(Handler)
@@ -255,10 +214,7 @@ public interface ContextInternal extends Context {
    * @return the previous context that shall be restored after or {@code null} if there is none
    * @throws IllegalStateException when the current thread of execution cannot execute this task
    */
-  default ContextInternal beginDispatch() {
-    VertxImpl vertx = (VertxImpl) owner();
-    return vertx.beginDispatch(this);
-  }
+  ContextInternal beginDispatch();
 
   /**
    * End the execution of a task on this context, see {@link #beginDispatch()}
@@ -268,10 +224,7 @@ public interface ContextInternal extends Context {
    * @param previous the previous context to restore or {@code null} if there is none
    * @throws IllegalStateException when the current thread of execution cannot execute this task
    */
-  default void endDispatch(ContextInternal previous) {
-    VertxImpl vertx = (VertxImpl) owner();
-    vertx.endDispatch(previous);
-  }
+  void endDispatch(ContextInternal previous);
 
   /**
    * Report an exception to this context synchronously.
@@ -389,11 +342,6 @@ public interface ContextInternal extends Context {
   ClassLoader classLoader();
 
   /**
-   * @return the context worker pool
-   */
-  WorkerPool workerPool();
-
-  /**
    * @return the tracer for this context
    */
   VertxTracer tracer();
@@ -423,19 +371,13 @@ public interface ContextInternal extends Context {
    * Like {@link Vertx#setPeriodic(long, Handler)} except the periodic timer will fire on this context and the
    * timer will not be associated with the context close hook.
    */
-  default long setPeriodic(long delay, Handler<Long> handler) {
-    VertxImpl owner = (VertxImpl) owner();
-    return owner.scheduleTimeout(this, true, delay, TimeUnit.MILLISECONDS, false, handler);
-  }
+  long setPeriodic(long delay, Handler<Long> handler);
 
   /**
    * Like {@link Vertx#setTimer(long, Handler)} except the timer will fire on this context and the timer
    * will not be associated with the context close hook.
    */
-  default long setTimer(long delay, Handler<Long> handler) {
-    VertxImpl owner = (VertxImpl) owner();
-    return owner.scheduleTimeout(this, false, delay, TimeUnit.MILLISECONDS, false, handler);
-  }
+  long setTimer(long delay, Handler<Long> handler);
 
   /**
    * Like {@link #timer(long, TimeUnit)} with a unit in millis.
@@ -453,45 +395,16 @@ public interface ContextInternal extends Context {
    * @param unit the delay unit
    * @return the timer object
    */
-  default Timer timer(long delay, TimeUnit unit) {
-    Objects.requireNonNull(unit);
-    if (delay <= 0) {
-      throw new IllegalArgumentException("Invalid timer delay: " + delay);
-    }
-    io.netty.util.concurrent.ScheduledFuture<Void> fut = nettyEventLoop().schedule(() -> null, delay, unit);
-    TimerImpl timer = new TimerImpl(this, fut);
-    fut.addListener(timer);
-    return timer;
-  }
+  Timer timer(long delay, TimeUnit unit);
 
   /**
    * @return {@code true} when the context is associated with a deployment
    */
-  default boolean isDeployment() {
-    return getDeployment() != null;
-  }
+  boolean isDeployment();
 
-  default String deploymentID() {
-    Deployment deployment = getDeployment();
-    return deployment != null ? deployment.deploymentID() : null;
-  }
+  String deploymentID();
 
-  default int getInstanceCount() {
-    Deployment deployment = getDeployment();
-
-    // the no verticle case
-    if (deployment == null) {
-      return 0;
-    }
-
-    // the single verticle without an instance flag explicitly defined
-    if (deployment.deploymentOptions() == null) {
-      return 1;
-    }
-    return deployment.deploymentOptions().getInstances();
-  }
-
-  CloseFuture closeFuture();
+  int getInstanceCount();
 
   /**
    * Add a close hook.
@@ -501,9 +414,7 @@ public interface ContextInternal extends Context {
    *
    * @param hook the close hook
    */
-  default void addCloseHook(Closeable hook) {
-    closeFuture().add(hook);
-  }
+  void addCloseHook(Closeable hook);
 
   /**
    * Remove a close hook.
@@ -512,9 +423,7 @@ public interface ContextInternal extends Context {
    *
    * @param hook the close hook
    */
-  default void removeCloseHook(Closeable hook) {
-    closeFuture().remove(hook);
-  }
+  void removeCloseHook(Closeable hook);
 
   /**
    * Returns the original context, a duplicate context returns the wrapped context otherwise this instance is returned.

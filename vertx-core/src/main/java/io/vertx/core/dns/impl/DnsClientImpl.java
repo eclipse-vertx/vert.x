@@ -23,8 +23,9 @@ import io.vertx.core.VertxException;
 import io.vertx.core.datagram.impl.InternetProtocolFamily;
 import io.vertx.core.dns.*;
 import io.vertx.core.dns.DnsResponseCode;
-import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.VertxImpl;
+import io.vertx.internal.core.ContextInternal;
+import io.vertx.internal.core.VertxInternal;
 
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -49,7 +50,7 @@ public class DnsClientImpl implements DnsClient {
   private final DnsClientOptions options;
   private final Set<Promise<?>> inflightRequests = ConcurrentHashMap.newKeySet();
 
-  public DnsClientImpl(VertxInternal vertx, DnsClientOptions options) {
+  public DnsClientImpl(VertxImpl vertx, DnsClientOptions options) {
 
     InetSocketAddress dnsServer = new InetSocketAddress(options.getHost(), options.getPort());
     if (dnsServer.isUnresolved()) {

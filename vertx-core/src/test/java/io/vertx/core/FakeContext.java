@@ -1,29 +1,22 @@
 package io.vertx.core;
 
 import io.netty.channel.EventLoop;
-import io.vertx.core.impl.CloseFuture;
-import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.Deployment;
-import io.vertx.core.impl.TaskQueue;
-import io.vertx.core.impl.VertxImpl;
-import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.impl.WorkerPool;
+import io.vertx.core.impl.*;
+import io.vertx.internal.core.*;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.spi.context.storage.AccessMode;
-import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
-import java.util.function.Supplier;
 
-class FakeContext implements ContextInternal {
+class FakeContext extends ContextBase implements ContextInternal {
 
   private final VertxImpl impl;
   private final ClassLoader tccl;
 
   public FakeContext(VertxImpl impl, ClassLoader classLoader) {
+    super(new Object[0]);
     this.impl = impl;
     this.tccl = classLoader;
   }
@@ -166,18 +159,4 @@ class FakeContext implements ContextInternal {
     return null;
   }
 
-  @Override
-  public <T> T getLocal(ContextLocal<T> key, AccessMode accessMode) {
-    return null;
-  }
-
-  @Override
-  public <T> T getLocal(ContextLocal<T> key, AccessMode accessMode, Supplier<? extends T> initialValueSupplier) {
-    return null;
-  }
-
-  @Override
-  public <T> void putLocal(ContextLocal<T> key, AccessMode accessMode, T value) {
-
-  }
 }

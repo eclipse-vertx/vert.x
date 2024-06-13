@@ -5,9 +5,11 @@ import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.*;
-import io.vertx.core.impl.CloseFuture;
-import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.VertxImpl;
+import io.vertx.internal.core.CloseFuture;
+import io.vertx.core.impl.ContextBase;
+import io.vertx.internal.core.ContextInternal;
+import io.vertx.internal.core.VertxInternal;
 import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.AddressResolver;
 import io.vertx.core.net.endpoint.impl.EndpointResolverImpl;
@@ -17,7 +19,7 @@ import java.util.function.Function;
 
 public final class HttpClientBuilderInternal implements HttpClientBuilder {
 
-  private final VertxInternal vertx;
+  private final VertxImpl vertx;
   private HttpClientOptions clientOptions;
   private PoolOptions poolOptions;
   private Handler<HttpConnection> connectHandler;
@@ -26,7 +28,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
   private LoadBalancer loadBalancer = null;
 
   public HttpClientBuilderInternal(VertxInternal vertx) {
-    this.vertx = vertx;
+    this.vertx = (VertxImpl) vertx;
   }
 
   @Override
@@ -67,7 +69,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
 
   private CloseFuture resolveCloseFuture() {
     ContextInternal context = vertx.getContext();
-    return context != null ? context.closeFuture() : vertx.closeFuture();
+    return context != null ? ((ContextBase)context).closeFuture() : vertx.closeFuture();
   }
 
   private EndpointResolver endpointResolver(HttpClientOptions co) {

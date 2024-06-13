@@ -10,7 +10,7 @@
  */
 package io.vertx.core.net.impl.pool;
 
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.internal.core.ContextInternal;
 
 /**
  * A wrapper for the actual connection.

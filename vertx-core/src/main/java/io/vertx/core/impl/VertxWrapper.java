@@ -18,19 +18,14 @@ import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.dns.DnsClient;
 import io.vertx.core.dns.DnsClientOptions;
-import io.vertx.core.dns.impl.DnsAddressResolverProvider;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.HttpServerImpl;
-import io.vertx.core.impl.btc.BlockedThreadChecker;
-import io.vertx.core.impl.future.PromiseInternal;
+import io.vertx.core.net.NetServer;
+import io.vertx.internal.core.*;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.net.impl.NetServerImpl;
-import io.vertx.core.net.impl.NetServerInternal;
-import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.spi.transport.Transport;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.spi.VerticleFactory;
@@ -43,10 +38,10 @@ import java.io.File;
 import java.lang.ref.Cleaner;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -70,7 +65,7 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public NetServerInternal createNetServer(NetServerOptions options) {
+  public NetServer createNetServer(NetServerOptions options) {
     return delegate.createNetServer(options);
   }
 
@@ -107,11 +102,6 @@ public abstract class VertxWrapper implements VertxInternal {
   @Override
   public EventBus eventBus() {
     return delegate.eventBus();
-  }
-
-  @Override
-  public DnsAddressResolverProvider dnsAddressResolverProvider(InetSocketAddress addr) {
-    return delegate.dnsAddressResolverProvider(addr);
   }
 
   @Override
@@ -240,6 +230,11 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
+  public String version() {
+    return delegate.version();
+  }
+
+  @Override
   public <T> PromiseInternal<T> promise() {
     return delegate.promise();
   }
@@ -285,11 +280,6 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public Map<ServerID, NetServerInternal> sharedTcpServers() {
-    return delegate.sharedTcpServers();
-  }
-
-  @Override
   public VertxMetrics metricsSPI() {
     return delegate.metricsSPI();
   }
@@ -302,6 +292,11 @@ public abstract class VertxWrapper implements VertxInternal {
   @Override
   public Cleaner cleaner() {
     return delegate.cleaner();
+  }
+
+  @Override
+  public <C> C createSharedResource(String resourceKey, String resourceName, CloseFuture closeFuture, Function<CloseFuture, C> supplier) {
+    return delegate.createSharedResource(resourceKey, resourceName, closeFuture, supplier);
   }
 
   @Override
@@ -385,31 +380,6 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public void simulateKill() {
-    delegate.simulateKill();
-  }
-
-  @Override
-  public Deployment getDeployment(String deploymentID) {
-    return delegate.getDeployment(deploymentID);
-  }
-
-  @Override
-  public void failoverCompleteHandler(FailoverCompleteHandler failoverCompleteHandler) {
-    delegate.failoverCompleteHandler(failoverCompleteHandler);
-  }
-
-  @Override
-  public boolean isKilled() {
-    return delegate.isKilled();
-  }
-
-  @Override
-  public void failDuringFailover(boolean fail) {
-    delegate.failDuringFailover(fail);
-  }
-
-  @Override
   public File resolveFile(String fileName) {
     return delegate.resolveFile(fileName);
   }
@@ -420,18 +390,8 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public HAManager haManager() {
-    return delegate.haManager();
-  }
-
-  @Override
   public Future<InetAddress> resolveAddress(String hostname) {
     return delegate.resolveAddress(hostname);
-  }
-
-  @Override
-  public HostnameResolver hostnameResolver() {
-    return delegate.hostnameResolver();
   }
 
   @Override
@@ -442,11 +402,6 @@ public abstract class VertxWrapper implements VertxInternal {
   @Override
   public AddressResolverGroup<InetSocketAddress> nettyAddressResolverGroup() {
     return delegate.nettyAddressResolverGroup();
-  }
-
-  @Override
-  public BlockedThreadChecker blockedThreadChecker() {
-    return delegate.blockedThreadChecker();
   }
 
   @Override

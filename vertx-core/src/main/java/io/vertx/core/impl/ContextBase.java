@@ -10,9 +10,18 @@
  */
 package io.vertx.core.impl;
 
-import io.vertx.core.spi.context.storage.AccessMode;
-import io.vertx.core.spi.context.storage.ContextLocal;
+import io.vertx.core.*;
+import io.vertx.core.impl.future.PromiseImpl;
+import io.vertx.internal.core.*;
+import io.vertx.internal.core.spi.context.AccessMode;
+import io.vertx.internal.core.spi.context.ContextLocal;
+import io.vertx.internal.core.spi.context.impl.ContextLocalImpl;
+import io.vertx.core.impl.future.FailedFuture;
+import io.vertx.core.impl.future.SucceededFuture;
 
+import java.util.Objects;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 /**
@@ -20,12 +29,46 @@ import java.util.function.Supplier;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class ContextBase {
+public abstract class ContextBase implements ContextInternal {
 
   final Object[] locals;
 
-  ContextBase(Object[] locals) {
+  protected ContextBase(Object[] locals) {
     this.locals = locals;
+  }
+
+  public <T> PromiseInternal<T> promise() {
+    return new PromiseImpl<>(this);
+  }
+
+  public <T> Future<T> succeededFuture() {
+    return new SucceededFuture<>(this, null);
+  }
+
+  public <T> Future<T> succeededFuture(T result) {
+    return new SucceededFuture<>(this, result);
+  }
+
+  public <T> Future<T> failedFuture(Throwable failure) {
+    return new FailedFuture<>(this, failure);
+  }
+
+  public <T> Future<T> failedFuture(String message) {
+    return new FailedFuture<>(this, message);
+  }
+
+  public boolean isRunningOnContext() {
+    return VertxImpl.currentContext() == this && inThread();
+  }
+
+  public ContextInternal beginDispatch() {
+    VertxImpl vertx = (VertxImpl) owner();
+    return vertx.beginDispatch(this);
+  }
+
+  public void endDispatch(ContextInternal previous) {
+    VertxImpl vertx = (VertxImpl) owner();
+    vertx.endDispatch((ContextBase) previous);
   }
 
   public final <T> T getLocal(ContextLocal<T> key, AccessMode accessMode) {
@@ -55,5 +98,85 @@ class ContextBase {
       throw new IllegalArgumentException();
     }
     accessMode.put(locals, index, value);
+  }
+
+  public long setPeriodic(long delay, Handler<Long> handler) {
+    VertxImpl owner = (VertxImpl) owner();
+    return owner.scheduleTimeout(this, true, delay, TimeUnit.MILLISECONDS, false, handler);
+  }
+
+  public long setTimer(long delay, Handler<Long> handler) {
+    VertxImpl owner = (VertxImpl) owner();
+    return owner.scheduleTimeout(this, false, delay, TimeUnit.MILLISECONDS, false, handler);
+  }
+
+  public Timer timer(long delay, TimeUnit unit) {
+    Objects.requireNonNull(unit);
+    if (delay <= 0) {
+      throw new IllegalArgumentException("Invalid timer delay: " + delay);
+    }
+    io.netty.util.concurrent.ScheduledFuture<Void> fut = nettyEventLoop().schedule(() -> null, delay, unit);
+    TimerImpl timer = new TimerImpl(this, fut);
+    fut.addListener(timer);
+    return timer;
+  }
+
+  public boolean isDeployment() {
+    return getDeployment() != null;
+  }
+
+  public String deploymentID() {
+    Deployment deployment = getDeployment();
+    return deployment != null ? deployment.deploymentID() : null;
+  }
+
+  public int getInstanceCount() {
+    Deployment deployment = getDeployment();
+
+    // the no verticle case
+    if (deployment == null) {
+      return 0;
+    }
+
+    // the single verticle without an instance flag explicitly defined
+    if (deployment.deploymentOptions() == null) {
+      return 1;
+    }
+    return deployment.deploymentOptions().getInstances();
+  }
+
+  /**
+   * @return the deployment associated with this context or {@code null}
+   */
+  public abstract Deployment getDeployment();
+
+  /**
+   * @return the context worker pool
+   */
+  public abstract WorkerPool workerPool();
+
+  public abstract CloseFuture closeFuture();
+
+  public void addCloseHook(Closeable hook) {
+    closeFuture().add(hook);
+  }
+
+  public void removeCloseHook(Closeable hook) {
+    closeFuture().remove(hook);
+  }
+
+  /**
+   * Like {@link #executeBlocking(Callable, boolean)} but uses the {@code queue} to order the tasks instead
+   * of the internal queue of this context.
+   */
+  public abstract <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, TaskQueue queue);
+
+  @Override
+  public ContextInternal asEventLoopContext() {
+    if (isEventLoopContext()) {
+      return this;
+    } else {
+      return owner().createEventLoopContext(nettyEventLoop(), workerPool(), classLoader());
+    }
   }
 }

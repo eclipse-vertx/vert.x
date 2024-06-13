@@ -8,17 +8,13 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.impl;
-
-import io.vertx.core.Closeable;
-import io.vertx.core.Vertx;
-import io.vertx.core.WorkerExecutor;
+package io.vertx.internal.core;
 
 /**
- * @author Thomas Segismont
+ * Keeps a reference to an owner close future so we can unregister from it when the closeable is closed.
  */
-public interface WorkerExecutorInternal extends WorkerExecutor {
-  Vertx vertx();
+abstract class NestedCloseable {
 
-  WorkerPool getPool();
+  CloseFuture owner;
+
 }

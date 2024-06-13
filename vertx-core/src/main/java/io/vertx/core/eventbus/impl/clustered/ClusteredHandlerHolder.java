@@ -13,7 +13,7 @@ package io.vertx.core.eventbus.impl.clustered;
 
 import io.vertx.core.eventbus.impl.HandlerHolder;
 import io.vertx.core.eventbus.impl.HandlerRegistration;
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.internal.core.ContextInternal;
 
 public class ClusteredHandlerHolder<T> extends HandlerHolder<T> {
 

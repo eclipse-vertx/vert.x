@@ -3,6 +3,7 @@ package io.vertx.core.impl;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.spi.transport.Transport;
+import io.vertx.internal.core.VertxInternal;
 import io.vertx.test.core.AsyncTestBase;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.faketransport.FakeTransport;

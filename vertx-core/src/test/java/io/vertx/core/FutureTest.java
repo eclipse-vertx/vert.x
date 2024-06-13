@@ -11,9 +11,10 @@
 
 package io.vertx.core;
 
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.VertxImpl;
+import io.vertx.internal.core.ContextInternal;
 import io.vertx.core.impl.NoStackTraceThrowable;
-import io.vertx.core.impl.future.PromiseInternal;
+import io.vertx.internal.core.PromiseInternal;
 import io.vertx.test.core.Repeat;
 import org.junit.Test;
 
@@ -1614,26 +1615,26 @@ public class FutureTest extends FutureTestBase {
 
     Future.succeededFuture().onSuccess(v -> {
       assertSame(testThread, Thread.currentThread());
-      assertNull(ContextInternal.current());
+      assertNull(VertxImpl.currentContext());
       complete();
     });
 
     context.succeededFuture().onSuccess(v -> {
       assertNotSame(testThread, Thread.currentThread());
-      assertSame(context, ContextInternal.current());
+      assertSame(context, VertxImpl.currentContext());
       assertSame(contextThread, Thread.currentThread());
       complete();
     });
 
     Future.failedFuture(new Exception()).onFailure(v -> {
       assertSame(testThread, Thread.currentThread());
-      assertNull(ContextInternal.current());
+      assertNull(VertxImpl.currentContext());
       complete();
     });
 
     context.failedFuture(new Exception()).onFailure(v -> {
       assertNotSame(testThread, Thread.currentThread());
-      assertSame(context, ContextInternal.current());
+      assertSame(context, VertxImpl.currentContext());
       assertSame(contextThread, Thread.currentThread());
       complete();
     });
@@ -1776,11 +1777,11 @@ public class FutureTest extends FutureTestBase {
     AtomicBoolean invoked = new AtomicBoolean();
     fut.andThen(ar -> {
       assertTrue(invoked.compareAndSet(false, true));
-      assertTrue(context == null || ContextInternal.current() == context);
+      assertTrue(context == null || VertxImpl.currentContext() == context);
       assertTrue(throwable == null || (ar.failed() && ar.cause() == throwable));
     }).onComplete(ar -> {
       assertTrue(invoked.get());
-      assertTrue(context == null || ContextInternal.current() == context);
+      assertTrue(context == null || VertxImpl.currentContext() == context);
       assertTrue(throwable == null || (ar.failed() && ar.cause() == throwable));
       complete();
     });
@@ -1844,7 +1845,7 @@ public class FutureTest extends FutureTestBase {
     Future<String> timeout = fut.timeout(100, TimeUnit.MILLISECONDS);
     timeout.onComplete(onFailure(err -> {
       assertTrue(err instanceof TimeoutException);
-      assertSame(ContextInternal.current(), ctx);
+      assertSame(VertxImpl.currentContext(), ctx);
       testComplete();
     }));
     await();
@@ -1867,7 +1868,7 @@ public class FutureTest extends FutureTestBase {
   private void futureTimeoutExpires(Context ctx, Promise<String> promise) throws Exception {
     Future<String> timeout = promise.future().timeout(10, TimeUnit.SECONDS);
     timeout.onComplete(onSuccess(val -> {
-      assertSame(ContextInternal.current(), ctx);
+      assertSame(VertxImpl.currentContext(), ctx);
       assertEquals("value", val);
       testComplete();
     }));
@@ -1891,7 +1892,7 @@ public class FutureTest extends FutureTestBase {
   private void completedFutureTimeout(Context ctx, Future<String> future) throws Exception {
     Future<String> timeout = future.timeout(10, TimeUnit.SECONDS);
     timeout.onComplete(onSuccess(val -> {
-      assertSame(ContextInternal.current(), ctx);
+      assertSame(VertxImpl.currentContext(), ctx);
       assertEquals("value", val);
       testComplete();
     }));

@@ -13,6 +13,7 @@ package io.vertx.core.impl;
 
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.Vertx;
+import io.vertx.internal.core.ContextInternal;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>

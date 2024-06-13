@@ -24,8 +24,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.Promise;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.buffer.impl.BufferInternal;
+import io.vertx.internal.core.buffer.BufferInternal;
 import io.vertx.core.http.UpgradeRejectedException;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
 

@@ -2,7 +2,7 @@ package io.vertx.it;
 
 import io.vertx.core.spi.VertxFactory;
 import io.vertx.core.spi.VertxServiceProvider;
-import io.vertx.core.spi.context.storage.ContextLocal;
+import io.vertx.internal.core.spi.context.ContextLocal;
 
 public class CustomContextLocal implements VertxServiceProvider  {
 

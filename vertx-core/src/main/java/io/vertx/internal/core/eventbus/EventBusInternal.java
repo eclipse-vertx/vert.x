@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.eventbus.impl;
+package io.vertx.internal.core.eventbus;
 
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.EventBus;

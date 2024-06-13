@@ -8,14 +8,14 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.impl;
+package io.vertx.internal.core.spi.context.impl;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class LocalSeq {
+public class LocalSeq {
 
   // 0 : reserved slot for local context map
   private static final AtomicInteger seq = new AtomicInteger(1);
@@ -23,11 +23,11 @@ class LocalSeq {
   /**
    * Hook for testing purposes
    */
-  static void reset() {
+  public static void reset() {
     seq.set((1));
   }
 
-  static int get() {
+  public static int get() {
     return seq.get();
   }
 

@@ -12,7 +12,7 @@ package io.vertx.core.net.impl;
 
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.internal.core.ContextInternal;
 import io.vertx.core.net.*;
 
 /**

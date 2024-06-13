@@ -15,7 +15,7 @@ import io.netty.channel.EventLoop;
 import io.netty.resolver.AddressResolverGroup;
 import io.vertx.core.*;
 import io.vertx.core.dns.AddressResolverOptions;
-import io.vertx.core.impl.future.PromiseInternal;
+import io.vertx.internal.core.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.Address;
@@ -24,6 +24,7 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.endpoint.EndpointBuilder;
 import io.vertx.core.spi.dns.AddressResolverProvider;
 import io.vertx.core.spi.endpoint.EndpointResolver;
+import io.vertx.internal.core.ContextInternal;
 
 import java.io.File;
 import java.net.InetAddress;

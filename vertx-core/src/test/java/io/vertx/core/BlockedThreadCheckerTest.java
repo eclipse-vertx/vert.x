@@ -11,7 +11,8 @@
 
 package io.vertx.core;
 
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.VertxImpl;
+import io.vertx.internal.core.VertxInternal;
 import io.vertx.core.impl.btc.BlockedThreadEvent;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
@@ -48,7 +49,7 @@ public class BlockedThreadCheckerTest extends VertxTestBase {
   }
 
   private void catchBlockedThreadEvents(Vertx vertx) {
-    ((VertxInternal)vertx).blockedThreadChecker().setThreadBlockedHandler(event -> events.add(event));
+    ((VertxImpl)vertx).blockedThreadChecker().setThreadBlockedHandler(event -> events.add(event));
   }
 
   @Test
@@ -203,7 +204,7 @@ public class BlockedThreadCheckerTest extends VertxTestBase {
     vertxOptions.setWarningExceptionTime(warningExceptionTime);
     vertxOptions.setWarningExceptionTimeUnit(warningExceptionTimeUnit);
     Vertx newVertx = vertx(vertxOptions);
-    ((VertxInternal) newVertx).blockedThreadChecker().setThreadBlockedHandler(bte -> {
+    ((VertxImpl)newVertx).blockedThreadChecker().setThreadBlockedHandler(bte -> {
       assertEquals(NANOSECONDS.convert(maxWorkerExecuteTime, maxWorkerExecuteTimeUnit), bte.maxExecTime());
       assertEquals(NANOSECONDS.convert(warningExceptionTime, warningExceptionTimeUnit), bte.warningExceptionTime());
       complete();

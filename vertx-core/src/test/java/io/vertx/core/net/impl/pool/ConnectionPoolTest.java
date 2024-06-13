@@ -16,8 +16,9 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.ConnectionPoolTooBusyException;
-import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.ContextBase;
+import io.vertx.internal.core.ContextInternal;
+import io.vertx.internal.core.VertxInternal;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
@@ -917,7 +918,7 @@ public class ConnectionPoolTest extends VertxTestBase {
     }));
     awaitLatch(latch2);
     CountDownLatch latch3 = new CountDownLatch(1);
-    ContextInternal context2 = vertx.createEventLoopContext(context1.nettyEventLoop(), context1.workerPool(), context1.classLoader());
+    ContextInternal context2 = vertx.createEventLoopContext(context1.nettyEventLoop(), ((ContextBase)context1).workerPool(), context1.classLoader());
     pool.acquire(context2, 0, onSuccess(lease -> {
       assertEquals(expected, lease.get());
       lease.recycle();

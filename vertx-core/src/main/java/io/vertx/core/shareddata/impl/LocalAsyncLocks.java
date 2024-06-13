@@ -11,11 +11,11 @@
 
 package io.vertx.core.shareddata.impl;
 
-import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.internal.core.ContextInternal;
 import io.vertx.core.shareddata.Lock;
+import io.vertx.internal.core.shareddata.LockInternal;
 
 import java.util.ArrayList;
 import java.util.List;

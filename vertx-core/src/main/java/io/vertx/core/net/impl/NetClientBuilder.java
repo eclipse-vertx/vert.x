@@ -10,7 +10,7 @@
  */
 package io.vertx.core.net.impl;
 
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.internal.core.VertxInternal;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.spi.metrics.TCPMetrics;
 

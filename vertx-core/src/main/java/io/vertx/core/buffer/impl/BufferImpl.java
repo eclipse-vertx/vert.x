@@ -19,6 +19,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.internal.core.buffer.BufferInternal;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;

@@ -11,9 +11,9 @@
 
 package io.vertx.core;
 
-import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.Deployment;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.VertxImpl;
+import io.vertx.internal.core.ContextInternal;
+import io.vertx.internal.core.Deployment;
 import io.vertx.core.impl.verticle.CompilingClassLoader;
 import io.vertx.core.json.JsonObject;
 import io.vertx.test.core.TestUtils;
@@ -546,7 +546,7 @@ public class DeploymentTest extends VertxTestBase {
     awaitLatch(deployLatch);
     assertWaitUntil(() -> deployCount.get() == numInstances);
     assertEquals(1, vertx.deploymentIDs().size());
-    Deployment deployment = ((VertxInternal) vertx).getDeployment(vertx.deploymentIDs().iterator().next());
+    Deployment deployment = ((VertxImpl)vertx).getDeployment(vertx.deploymentIDs().iterator().next());
     Set<Verticle> verticles = deployment.getVerticles();
     assertEquals(numInstances, verticles.size());
     CountDownLatch undeployLatch = new CountDownLatch(1);
@@ -1084,7 +1084,7 @@ public class DeploymentTest extends VertxTestBase {
     vertx.deployVerticle(TestVerticle3.class.getCanonicalName(), new DeploymentOptions().setInstances(3))
       .onComplete(onSuccess(v -> {}));
     await();
-    Deployment deployment = ((VertxInternal) vertx).getDeployment(vertx.deploymentIDs().iterator().next());
+    Deployment deployment = ((VertxImpl)vertx).getDeployment(vertx.deploymentIDs().iterator().next());
     CountDownLatch latch = new CountDownLatch(1);
     vertx.undeploy(deployment.deploymentID()).onComplete(ar -> latch.countDown());
     awaitLatch(latch);

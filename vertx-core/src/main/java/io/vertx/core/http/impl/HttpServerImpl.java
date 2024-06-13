@@ -13,16 +13,17 @@ package io.vertx.core.http.impl;
 
 import io.vertx.core.*;
 import io.vertx.core.http.*;
-import io.vertx.core.impl.CloseSequence;
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.internal.core.CloseSequence;
+import io.vertx.internal.core.ContextInternal;
 import io.vertx.core.impl.SysProps;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.internal.core.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.*;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
+import io.vertx.core.net.impl.NetServerInternal;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -174,13 +175,8 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
       configureApplicationLayerProtocols(tcpOptions.getSslOptions());
     }
     ContextInternal context = vertx.getOrCreateContext();
-    ContextInternal listenContext;
-    if (context.isEventLoopContext()) {
-      listenContext = context;
-    } else {
-      listenContext = vertx.createEventLoopContext(context.nettyEventLoop(), context.workerPool(), context.classLoader());
-    }
-    NetServerInternal server = vertx.createNetServer(tcpOptions);
+    ContextInternal listenContext = context.asEventLoopContext();
+    NetServerInternal server = (NetServerInternal) vertx.createNetServer(tcpOptions);
     Handler<Throwable> h = exceptionHandler;
     Handler<Throwable> exceptionHandler = h != null ? h : DEFAULT_EXCEPTION_HANDLER;
     server.exceptionHandler(exceptionHandler);

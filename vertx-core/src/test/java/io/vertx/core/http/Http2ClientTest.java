@@ -26,7 +26,7 @@ import io.netty.handler.ssl.*;
 import io.netty.util.AsciiString;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.buffer.impl.BufferInternal;
+import io.vertx.internal.core.buffer.BufferInternal;
 import io.vertx.core.http.impl.Http2UpgradeClientConnection;
 import io.vertx.core.http.impl.HttpClientConnectionInternal;
 import io.vertx.core.net.NetServer;

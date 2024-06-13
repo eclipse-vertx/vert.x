@@ -2,7 +2,8 @@ package io.vertx.core.net;
 
 import io.vertx.core.VertxOptions;
 import io.vertx.core.dns.AddressResolverOptions;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.VertxImpl;
+import io.vertx.internal.core.VertxInternal;
 import io.vertx.core.spi.endpoint.EndpointResolver;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakedns.FakeDNSServer;
@@ -68,7 +69,7 @@ public class DnsResolverTest extends VertxTestBase {
       }
       return set;
     });
-    resolver = (EndpointResolver) ((VertxInternal)vertx).hostnameResolver().endpointResolver(vertx);
+    resolver = (EndpointResolver) ((VertxImpl)vertx).hostnameResolver().endpointResolver(vertx);
   }
 
   public void tearDown() throws Exception {

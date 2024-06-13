@@ -12,7 +12,7 @@
 package io.vertx.core.net.impl.pool;
 
 import io.vertx.core.*;
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.internal.core.ContextInternal;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 

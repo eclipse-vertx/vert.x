@@ -10,10 +10,10 @@
  */
 package io.vertx.core;
 
-import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.internal.core.ContextInternal;
+import io.vertx.internal.core.VertxInternal;
 import io.vertx.core.impl.VertxThread;
-import io.vertx.core.impl.WorkerPool;
+import io.vertx.internal.core.WorkerPool;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 

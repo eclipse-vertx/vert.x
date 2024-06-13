@@ -15,11 +15,12 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.CleanableHttpClient;
-import io.vertx.core.impl.CloseFuture;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.VertxImpl;
+import io.vertx.internal.core.CloseFuture;
+import io.vertx.internal.core.VertxInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.CleanableNetClient;
-import io.vertx.core.net.impl.NetSocketInternal;
+import io.vertx.internal.core.net.NetSocketInternal;
 import io.vertx.test.core.AsyncTestBase;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.RepeatRule;
@@ -504,6 +505,6 @@ public class VertxTest extends AsyncTestBase {
 
   @Test
   public void testVersion() {
-    assertNotNull(VertxInternal.version());
+    assertNotNull(VertxImpl.loadVersion());
   }
 }

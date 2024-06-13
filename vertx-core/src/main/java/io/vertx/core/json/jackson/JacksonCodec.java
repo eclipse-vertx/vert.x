@@ -17,7 +17,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.ByteBufOutputStream;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.buffer.impl.BufferInternal;
+import io.vertx.internal.core.buffer.BufferInternal;
 import io.vertx.core.buffer.impl.VertxByteBufAllocator;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.EncodeException;

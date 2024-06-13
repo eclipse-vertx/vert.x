@@ -14,7 +14,8 @@ import io.vertx.core.*;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebSocketClientOptions;
 import io.vertx.core.http.WebSocketConnectOptions;
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.ContextBase;
+import io.vertx.internal.core.ContextInternal;
 import io.vertx.core.net.impl.endpoint.Endpoint;
 import io.vertx.core.spi.metrics.ClientMetrics;
 
@@ -87,12 +88,7 @@ class WebSocketEndpoint extends Endpoint {
   }
 
   private Future<WebSocket> tryConnect(ContextInternal ctx, WebSocketConnectOptions connectOptions) {
-    ContextInternal eventLoopContext;
-    if (ctx.isEventLoopContext()) {
-      eventLoopContext = ctx;
-    } else {
-      eventLoopContext = ctx.owner().createEventLoopContext(ctx.nettyEventLoop(), ctx.workerPool(), ctx.classLoader());
-    }
+    ContextInternal eventLoopContext = ctx.asEventLoopContext();
     Future<HttpClientConnectionInternal> fut = connector.httpConnect(eventLoopContext);
     return fut.compose(c -> {
       if (!incRefCount()) {

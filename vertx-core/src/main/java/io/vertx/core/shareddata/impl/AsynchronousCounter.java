@@ -13,8 +13,8 @@ package io.vertx.core.shareddata.impl;
 
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.internal.core.ContextInternal;
+import io.vertx.internal.core.VertxInternal;
 import io.vertx.core.shareddata.Counter;
 
 import java.util.concurrent.atomic.AtomicLong;

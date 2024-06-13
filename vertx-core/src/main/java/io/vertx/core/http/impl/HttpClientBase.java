@@ -13,9 +13,8 @@ package io.vertx.core.http.impl;
 
 import io.vertx.core.*;
 import io.vertx.core.http.*;
-import io.vertx.core.impl.CloseSequence;
-import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.internal.core.CloseSequence;
+import io.vertx.internal.core.VertxInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.NetClientBuilder;
 import io.vertx.core.net.impl.NetClientInternal;

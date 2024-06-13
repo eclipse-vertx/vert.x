@@ -8,10 +8,8 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.spi.context.storage;
+package io.vertx.internal.core.spi.context;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
 import java.util.function.Supplier;
 
 /**

@@ -10,10 +10,7 @@
  */
 package io.vertx.core;
 
-import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.spi.VertxTracerFactory;
-import io.vertx.core.spi.tracing.VertxTracer;
-import io.vertx.core.tracing.TracingOptions;
+import io.vertx.internal.core.VertxInternal;
 import io.vertx.test.core.AsyncTestBase;
 import io.vertx.test.fakemetrics.FakeVertxMetrics;
 import io.vertx.test.faketracer.FakeTracer;

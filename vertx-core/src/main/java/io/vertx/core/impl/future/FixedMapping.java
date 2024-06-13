@@ -10,7 +10,7 @@
  */
 package io.vertx.core.impl.future;
 
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.internal.core.ContextInternal;
 
 /**
  * Map value transformation.

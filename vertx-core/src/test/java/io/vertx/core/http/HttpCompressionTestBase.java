@@ -19,13 +19,12 @@ import io.netty.util.CharsetUtil;
 import io.netty.util.internal.StringUtil;
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.buffer.impl.BufferInternal;
+import io.vertx.internal.core.buffer.BufferInternal;
 import org.junit.Test;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Queue;
 import java.util.function.Function;
 

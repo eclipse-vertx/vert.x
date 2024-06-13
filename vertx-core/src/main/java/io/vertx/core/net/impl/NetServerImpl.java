@@ -29,11 +29,12 @@ import io.vertx.core.Promise;
 import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.impl.CloseSequence;
+import io.vertx.core.impl.VertxImpl;
+import io.vertx.internal.core.CloseSequence;
 import io.vertx.core.impl.HostnameResolver;
-import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.future.PromiseInternal;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.internal.core.ContextInternal;
+import io.vertx.internal.core.PromiseInternal;
+import io.vertx.internal.core.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.*;
@@ -389,7 +390,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     this.eventLoop = context.nettyEventLoop();
 
     SocketAddress bindAddress;
-    Map<ServerID, NetServerInternal> sharedNetServers = vertx.sharedTcpServers();
+    Map<ServerID, NetServerInternal> sharedNetServers = ((VertxImpl)vertx).sharedTcpServers();
     synchronized (sharedNetServers) {
       actualPort = localAddress.port();
       String hostOrPath = localAddress.isInetSocket() ? localAddress.host() : localAddress.path();
@@ -615,7 +616,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     }
     listening = false;
     listenContext.removeCloseHook(this);
-    Map<ServerID, NetServerInternal> servers = vertx.sharedTcpServers();
+    Map<ServerID, NetServerInternal> servers = ((VertxImpl)vertx).sharedTcpServers();
     boolean hasHandlers;
     synchronized (servers) {
       ServerChannelLoadBalancer balancer = actualServer.channelBalancer;
@@ -656,7 +657,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
   public static io.netty.util.concurrent.Future<Channel> resolveAndBind(ContextInternal context,
                                                                         SocketAddress socketAddress,
                                                                         ServerBootstrap bootstrap) {
-    VertxInternal vertx = context.owner();
+    VertxImpl vertx = (VertxImpl) context.owner();
     io.netty.util.concurrent.Promise<Channel> promise = vertx.getAcceptorEventLoopGroup().next().newPromise();
     try {
       bootstrap.channelFactory(vertx.transport().serverChannelFactory(socketAddress.isDomainSocket()));

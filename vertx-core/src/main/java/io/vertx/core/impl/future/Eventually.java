@@ -11,9 +11,9 @@
 package io.vertx.core.impl.future;
 
 import io.vertx.core.Future;
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.internal.core.ContextInternal;
+import io.vertx.internal.core.FutureInternal;
 
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**

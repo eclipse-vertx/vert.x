@@ -8,11 +8,11 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.spi.context.storage;
+package io.vertx.internal.core.spi.context;
 
 import io.vertx.core.Context;
-import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.ContextLocalImpl;
+import io.vertx.internal.core.ContextInternal;
+import io.vertx.internal.core.spi.context.impl.ContextLocalImpl;
 
 import java.util.function.Supplier;
 

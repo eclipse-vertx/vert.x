@@ -3,6 +3,7 @@ package io.vertx.core.buffer.impl;
 import io.netty.buffer.ByteBuf;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.spi.BufferFactory;
+import io.vertx.internal.core.buffer.BufferInternal;
 
 import java.util.Objects;
 

@@ -13,9 +13,9 @@ package io.vertx.core;
 
 import io.netty.channel.EventLoop;
 import io.vertx.core.impl.*;
-import io.vertx.core.impl.future.PromiseInternal;
-import io.vertx.core.spi.context.storage.AccessMode;
-import io.vertx.core.spi.context.storage.ContextLocal;
+import io.vertx.internal.core.*;
+import io.vertx.internal.core.spi.context.AccessMode;
+import io.vertx.internal.core.spi.context.ContextLocal;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Assume;
 import org.junit.Test;
@@ -338,7 +338,7 @@ public class ContextTest extends VertxTestBase {
     for (int i = 0;i < 2;i++) {
       TaskQueue queue = new TaskQueue();
       lst.add(task -> {
-        context.executeBlocking(task, queue);
+        ((ContextBase)context).executeBlocking(task, queue);
       });
     }
     testInternalExecuteBlockingWithQueue(lst);
@@ -443,7 +443,7 @@ public class ContextTest extends VertxTestBase {
 
   private void checkDuplicate(ContextInternal ctx, ContextInternal duplicated) throws Exception {
     assertSame(ctx.nettyEventLoop(), duplicated.nettyEventLoop());
-    assertSame(ctx.getDeployment(), duplicated.getDeployment());
+    assertSame(((ContextBase)ctx).getDeployment(), ((ContextBase)ctx).getDeployment());
     assertSame(ctx.classLoader(), duplicated.classLoader());
     assertSame(ctx.owner(), duplicated.owner());
     Object shared = new Object();

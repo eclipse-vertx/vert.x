@@ -11,7 +11,7 @@
 
 package io.vertx.it;
 
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.internal.core.VertxInternal;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;

@@ -13,8 +13,8 @@ package io.vertx.core.net.endpoint.impl;
 import io.vertx.core.Future;
 import io.vertx.core.net.endpoint.EndpointNode;
 import io.vertx.core.net.endpoint.EndpointInteraction;
-import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.internal.core.ContextInternal;
+import io.vertx.internal.core.VertxInternal;
 import io.vertx.core.net.endpoint.InteractionMetrics;
 import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.Address;
@@ -24,6 +24,7 @@ import io.vertx.core.net.impl.endpoint.EndpointProvider;
 import io.vertx.core.net.endpoint.EndpointSelector;
 import io.vertx.core.spi.endpoint.EndpointResolver;
 import io.vertx.core.spi.endpoint.EndpointBuilder;
+import io.vertx.internal.core.net.endpoint.EndpointResolverInternal;
 
 import java.util.ArrayList;
 import java.util.Collections;

@@ -18,10 +18,10 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Expectation;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.NoStackTraceThrowable;
+import io.vertx.internal.core.ContextInternal;
 import io.vertx.core.impl.NoStackTraceTimeoutException;
 import io.vertx.core.impl.Utils;
+import io.vertx.internal.core.FutureInternal;
 
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;

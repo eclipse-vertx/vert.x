@@ -1,6 +1,6 @@
 package io.vertx.benchmarks;
 
-import io.vertx.core.spi.context.storage.AccessMode;
+import io.vertx.internal.core.spi.context.AccessMode;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;

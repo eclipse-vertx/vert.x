@@ -10,12 +10,12 @@
  */
 package io.vertx.core.impl;
 
-import io.vertx.core.Vertx;
 import io.vertx.core.spi.metrics.PoolMetrics;
+import io.vertx.internal.core.ContextInternal;
+import io.vertx.internal.core.WorkerPool;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Execute events on a worker pool.
@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 public class WorkerExecutor implements EventExecutor {
 
   public static io.vertx.core.impl.WorkerExecutor unwrapWorkerExecutor() {
-    ContextInternal ctx = ContextInternal.current();
+    ContextInternal ctx = VertxImpl.currentContext();
     if (ctx != null) {
       ctx = ctx.unwrap();
       Executor executor = ctx.executor();

@@ -16,6 +16,9 @@ import io.vertx.core.Promise;
 import io.vertx.core.ServiceHelper;
 import io.vertx.core.Verticle;
 import io.vertx.core.spi.VerticleFactory;
+import io.vertx.internal.core.ContextInternal;
+import io.vertx.internal.core.Deployment;
+import io.vertx.internal.core.VertxInternal;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -142,7 +145,7 @@ public class VerticleManager {
   }
 
   public Future<Deployment> deployVerticle(String identifier,
-                                       DeploymentOptions options) {
+                                           DeploymentOptions options) {
     ContextInternal callingContext = vertx.getOrCreateContext();
     ClassLoader loader = options.getClassLoader();
     if (loader == null) {

@@ -17,9 +17,9 @@ import io.vertx.core.Handler;
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.tracing.VertxTracer;
+import io.vertx.internal.core.*;
 
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 

@@ -22,6 +22,7 @@ import io.vertx.core.spi.VertxThreadFactory;
 import io.vertx.core.spi.VertxTracerFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.tracing.TracingOptions;
+import io.vertx.internal.core.VertxInternal;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import io.vertx.test.fakemetrics.FakeVertxMetrics;
 import io.vertx.test.faketracer.FakeTracer;

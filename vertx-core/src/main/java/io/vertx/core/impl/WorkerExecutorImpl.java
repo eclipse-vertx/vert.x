@@ -15,6 +15,10 @@ import io.vertx.core.*;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.PoolMetrics;
+import io.vertx.internal.core.ContextInternal;
+import io.vertx.internal.core.VertxInternal;
+import io.vertx.internal.core.WorkerExecutorInternal;
+import io.vertx.internal.core.WorkerPool;
 
 import java.lang.ref.Cleaner;
 import java.util.concurrent.Callable;

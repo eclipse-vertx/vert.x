@@ -19,6 +19,7 @@ import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.metrics.PoolMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
+import io.vertx.internal.core.*;
 
 import java.util.concurrent.*;
 

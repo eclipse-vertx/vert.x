@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2020 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -8,13 +8,19 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.impl;
+
+package io.vertx.internal.core.shareddata;
+
+import io.vertx.core.shareddata.Lock;
 
 /**
- * Keeps a reference to an owner close future so we can unregister from it when the closeable is closed.
+ * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class NestedCloseable {
+public interface LockInternal extends Lock {
 
-  CloseFuture owner;
+  /**
+   * @return an estimate of the number of waiters
+   */
+  int waiters();
 
 }

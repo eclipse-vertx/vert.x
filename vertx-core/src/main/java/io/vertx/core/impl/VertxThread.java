@@ -13,6 +13,7 @@ package io.vertx.core.impl;
 
 import io.netty.util.concurrent.FastThreadLocalThread;
 import io.vertx.core.impl.btc.ThreadInfo;
+import io.vertx.internal.core.ContextInternal;
 
 import java.util.concurrent.TimeUnit;
 
@@ -23,7 +24,7 @@ public class VertxThread extends FastThreadLocalThread {
 
   private final boolean worker;
   final ThreadInfo info;
-  ContextInternal context;
+  ContextBase context;
   ClassLoader topLevelTCCL;
 
   public VertxThread(Runnable target, String name, boolean worker, long maxExecTime, TimeUnit maxExecTimeUnit) {
@@ -35,7 +36,7 @@ public class VertxThread extends FastThreadLocalThread {
   /**
    * @return the current context of this thread, this method must be called from the current thread
    */
-  ContextInternal context() {
+  public ContextBase context() {
     return context;
   }
 

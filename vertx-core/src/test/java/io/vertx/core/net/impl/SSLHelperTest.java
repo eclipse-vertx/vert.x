@@ -13,10 +13,9 @@ package io.vertx.core.net.impl;
 
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.ssl.*;
-import io.vertx.core.Future;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.internal.core.ContextInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 import io.vertx.test.core.VertxTestBase;

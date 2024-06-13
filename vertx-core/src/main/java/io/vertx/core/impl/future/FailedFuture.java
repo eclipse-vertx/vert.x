@@ -14,7 +14,7 @@ package io.vertx.core.impl.future;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.internal.core.ContextInternal;
 import io.vertx.core.impl.NoStackTraceThrowable;
 
 import java.util.function.Function;

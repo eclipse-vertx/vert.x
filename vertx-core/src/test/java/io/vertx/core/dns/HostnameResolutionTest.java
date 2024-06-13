@@ -25,7 +25,7 @@ import io.vertx.core.http.HttpTestBase;
 import io.vertx.core.impl.HostnameResolver;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.impl.VertxImpl;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.internal.core.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetServer;

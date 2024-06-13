@@ -17,7 +17,7 @@ import io.netty.handler.codec.http.multipart.FileUpload;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerFileUpload;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.internal.core.ContextInternal;
 
 import java.nio.charset.Charset;
 import java.util.function.Supplier;

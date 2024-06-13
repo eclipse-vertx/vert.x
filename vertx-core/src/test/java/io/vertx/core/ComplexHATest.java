@@ -11,8 +11,8 @@
 
 package io.vertx.core;
 
-import io.vertx.core.impl.Deployment;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.internal.core.Deployment;
+import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.core.Repeat;
@@ -153,7 +153,7 @@ public class ComplexHATest extends VertxTestBase {
 
   protected void takeDeploymentSnapshots() {
     for (int i = 0; i < vertices.length; i++) {
-      VertxInternal v = (VertxInternal)vertices[i];
+      VertxImpl v = (VertxImpl) vertices[i];
       if (!v.isKilled()) {
         deploymentSnapshots[i] = takeDeploymentSnapshot(i);
       }
@@ -162,7 +162,7 @@ public class ComplexHATest extends VertxTestBase {
 
   protected Set<Deployment> takeDeploymentSnapshot(int pos) {
     Set<Deployment> snapshot = ConcurrentHashMap.newKeySet();
-    VertxInternal v = (VertxInternal)vertices[pos];
+    VertxImpl v = (VertxImpl) vertices[pos];
     for (String depID: v.deploymentIDs()) {
       snapshot.add(v.getDeployment(depID));
     }
@@ -172,7 +172,7 @@ public class ComplexHATest extends VertxTestBase {
   protected void kill(int pos) {
     // Save the deploymentIDs first
     takeDeploymentSnapshots();
-    VertxInternal v = (VertxInternal)vertices[pos];
+    VertxImpl v = (VertxImpl) vertices[pos];
     killedNode = pos;
     v.executeBlocking(() -> {
       v.simulateKill();
@@ -187,7 +187,7 @@ public class ComplexHATest extends VertxTestBase {
     for (int i = 0; i < nodes; i++) {
       aliveNodes.add(i);
       int pos = i;
-      ((VertxInternal)vertices[i]).failoverCompleteHandler((nodeID, haInfo, succeeded) -> {
+      ((VertxImpl) vertices[i]).failoverCompleteHandler((nodeID, haInfo, succeeded) -> {
         failedOverOnto(pos);
       });
     }
@@ -211,7 +211,7 @@ public class ComplexHATest extends VertxTestBase {
   protected void checkDeployments() {
     int totalDeployed = 0;
     for (int i = 0; i < vertices.length; i++) {
-      VertxInternal v = (VertxInternal)vertices[i];
+      VertxImpl v = (VertxImpl) vertices[i];
       if (!v.isKilled()) {
         totalDeployed += checkHasDeployments(i, i);
       }

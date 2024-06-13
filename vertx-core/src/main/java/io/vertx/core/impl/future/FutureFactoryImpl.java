@@ -15,6 +15,7 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.spi.FutureFactory;
+import io.vertx.internal.core.ContextInternal;
 
 import java.util.concurrent.CompletionStage;
 
@@ -57,7 +58,7 @@ public class FutureFactoryImpl implements FutureFactory {
 
   @Override
   public <T> Future<T> fromCompletionStage(CompletionStage<T> completionStage, Context context) {
-    Promise<T> promise = ((io.vertx.core.impl.ContextInternal) context).promise();
+    Promise<T> promise = ((ContextInternal) context).promise();
     completionStage.whenComplete((value, err) -> {
       if (err != null) {
         promise.fail(err);

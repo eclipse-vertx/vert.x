@@ -8,10 +8,10 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.impl.future;
+package io.vertx.internal.core;
 
 import io.vertx.core.Future;
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.future.Listener;
 
 /**
  * Expose some of the future internal stuff.

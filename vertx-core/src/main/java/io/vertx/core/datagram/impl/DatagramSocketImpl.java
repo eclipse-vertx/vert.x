@@ -26,17 +26,17 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.buffer.impl.BufferInternal;
+import io.vertx.core.impl.VertxImpl;
+import io.vertx.internal.core.buffer.BufferInternal;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.impl.HostnameResolver;
 import io.vertx.core.impl.Arguments;
-import io.vertx.core.impl.CloseFuture;
-import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.future.PromiseInternal;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.internal.core.CloseFuture;
+import io.vertx.internal.core.ContextInternal;
+import io.vertx.internal.core.PromiseInternal;
+import io.vertx.internal.core.VertxInternal;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.VertxConnection;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.transport.Transport;
@@ -234,7 +234,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
   }
 
   private Future<DatagramSocket> listen(SocketAddress local) {
-    HostnameResolver resolver = context.owner().hostnameResolver();
+    HostnameResolver resolver = ((VertxImpl)context.owner()).hostnameResolver();
     PromiseInternal<Void> promise = context.promise();
     io.netty.util.concurrent.Future<InetSocketAddress> f1 = resolver.resolveHostname(context.nettyEventLoop(), local.host());
     f1.addListener((GenericFutureListener<io.netty.util.concurrent.Future<InetSocketAddress>>) res1 -> {
@@ -262,7 +262,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
     if (port < 0 || port > 65535) {
       throw new IllegalArgumentException("port out of range:" + port);
     }
-    HostnameResolver resolver = context.owner().hostnameResolver();
+    HostnameResolver resolver = ((VertxImpl)context.owner()).hostnameResolver();
     PromiseInternal<Void> promise = context.promise();
     io.netty.util.concurrent.Future<InetSocketAddress> f1 = resolver.resolveHostname(context.nettyEventLoop(), host);
     f1.addListener((GenericFutureListener<io.netty.util.concurrent.Future<InetSocketAddress>>) res1 -> {

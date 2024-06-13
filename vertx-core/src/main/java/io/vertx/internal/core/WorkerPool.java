@@ -9,10 +9,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.impl;
+package io.vertx.internal.core;
 
 import io.vertx.core.spi.metrics.PoolMetrics;
 
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -21,10 +22,10 @@ import java.util.concurrent.ExecutorService;
 public class WorkerPool {
 
   private final ExecutorService pool;
-  private final PoolMetrics metrics;
+  private final PoolMetrics<?> metrics;
 
-  public WorkerPool(ExecutorService pool, PoolMetrics metrics) {
-    this.pool = pool;
+  public WorkerPool(ExecutorService pool, PoolMetrics<?> metrics) {
+    this.pool = Objects.requireNonNull(pool);
     this.metrics = metrics;
   }
 
@@ -32,11 +33,11 @@ public class WorkerPool {
     return pool;
   }
 
-  public PoolMetrics metrics() {
+  public PoolMetrics<?> metrics() {
     return metrics;
   }
 
-  void close() {
+  public void close() {
     if (metrics != null) {
       metrics.close();
     }

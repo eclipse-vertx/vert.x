@@ -1,10 +1,10 @@
-package io.vertx.core.buffer.impl;
+package io.vertx.internal.core.buffer;
 
 import io.netty.buffer.ByteBuf;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.spi.BufferFactory;
 
 import java.nio.ByteBuffer;
-import java.util.Objects;
 
 public interface BufferInternal extends Buffer {
 
@@ -26,27 +26,27 @@ public interface BufferInternal extends Buffer {
    * @return the buffer
    */
   static BufferInternal buffer(ByteBuf byteBuf) {
-    return new BufferImpl(Objects.requireNonNull(byteBuf));
+    return (BufferInternal) BufferFactory.INSTANCE.buffer(byteBuf);
   }
 
   static BufferInternal buffer(int initialSizeHint) {
-    return new BufferImpl(initialSizeHint);
+    return (BufferInternal) BufferFactory.INSTANCE.buffer(initialSizeHint);
   }
 
   static BufferInternal buffer() {
-    return new BufferImpl();
+    return (BufferInternal) BufferFactory.INSTANCE.buffer();
   }
 
   static BufferInternal buffer(String str) {
-    return new BufferImpl(str);
+    return (BufferInternal) BufferFactory.INSTANCE.buffer(str);
   }
 
   static BufferInternal buffer(String str, String enc) {
-    return new BufferImpl(str, enc);
+    return (BufferInternal) BufferFactory.INSTANCE.buffer(str, enc);
   }
 
   static BufferInternal buffer(byte[] bytes) {
-    return new BufferImpl(bytes);
+    return (BufferInternal) BufferFactory.INSTANCE.buffer(bytes);
   }
 
   @Override
