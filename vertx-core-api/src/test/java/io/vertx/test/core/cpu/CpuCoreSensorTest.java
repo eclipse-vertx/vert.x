@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.impl.cpu;
+package io.vertx.test.core.cpu;
 
 import io.vertx.core.impl.cpu.CpuCoreSensor;
 import org.junit.Test;

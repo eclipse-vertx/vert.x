@@ -75,7 +75,7 @@ public class CpuCoreSensor {
     return fromProcFile > 0 ? Math.min(fromJava, fromProcFile) : fromJava;
   }
 
-  protected static int readCPUMask(File file) throws IOException {
+  public static int readCPUMask(File file) throws IOException {
     if (file == null  || ! file.exists()) {
       return -1;
     }
