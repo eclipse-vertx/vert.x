@@ -29,7 +29,7 @@ public interface VertxTracerFactory extends VertxServiceProvider {
   VertxTracerFactory NOOP = options -> VertxTracer.NOOP;
 
   @Override
-  default void init(VertxFactory builder) {
+  default void init(VertxBootstrap builder) {
     if (builder.tracer() == null) {
       TracingOptions tracingOptions = builder.options().getTracingOptions();
       if (tracingOptions == null) {

@@ -11,9 +11,9 @@
 
 package io.vertx.impl.core.spi;
 
-import io.vertx.impl.core.VertxBootstrap;
-import io.vertx.core.spi.VertxFactory;
+import io.vertx.core.spi.VertxBootstrap;
 import io.vertx.core.spi.VertxServiceProvider;
+import io.vertx.impl.core.VertxBootstrapImpl;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -34,8 +34,8 @@ public interface ExecutorServiceFactory extends VertxServiceProvider {
     Executors.newFixedThreadPool(maxConcurrency, threadFactory);
 
   @Override
-  default void init(VertxFactory builder) {
-    VertxBootstrap bootstrap = (VertxBootstrap) builder;
+  default void init(VertxBootstrap builder) {
+    VertxBootstrapImpl bootstrap = (VertxBootstrapImpl) builder;
     if (bootstrap.executorServiceFactory() == null) {
       bootstrap.executorServiceFactory(this);
     }

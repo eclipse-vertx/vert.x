@@ -13,10 +13,10 @@ package io.vertx.core.impl;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.metrics.MetricsOptions;
-import io.vertx.impl.core.VertxBootstrap;
+import io.vertx.impl.core.VertxBootstrapImpl;
 import io.vertx.impl.core.VertxThread;
 import io.vertx.impl.core.transports.JDKTransport;
-import io.vertx.core.spi.VertxFactory;
+import io.vertx.core.spi.VertxBootstrap;
 import io.vertx.core.spi.transport.Transport;
 import io.vertx.impl.core.spi.ExecutorServiceFactory;
 import io.vertx.core.spi.VertxMetricsFactory;
@@ -47,21 +47,21 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
-public class VertxFactoryTest {
+public class VertxBootstrapTest {
 
   @Rule
   public TemporaryFolder testFolder = new TemporaryFolder();
 
   @Test
   public void testCreate() {
-    VertxFactory factory = new VertxBootstrap();
+    VertxBootstrap factory = new VertxBootstrapImpl();
     Vertx vertx = factory.init().vertx();
     assertNotNull(vertx);
   }
 
   @Test
   public void testCreateClustered() throws Exception {
-    VertxFactory factory = new VertxBootstrap().init();
+    VertxBootstrap factory = new VertxBootstrapImpl().init();
     CompletableFuture<Vertx> fut = new CompletableFuture<>();
     factory.init();
     factory.clusteredVertx().onComplete(ar -> {
@@ -81,7 +81,7 @@ public class VertxFactoryTest {
     runWithServiceFromMetaInf(VertxMetricsFactory.class, FakeVertxMetrics.class.getName(), () -> {
       FakeVertxMetrics metrics = new FakeVertxMetrics();
       MetricsOptions metricsOptions = new MetricsOptions().setEnabled(true);
-      VertxBootstrap factory = new VertxBootstrap().options(new VertxOptions().setMetricsOptions(metricsOptions));
+      VertxBootstrapImpl factory = new VertxBootstrapImpl().options(new VertxOptions().setMetricsOptions(metricsOptions));
       factory.metrics(metrics);
       factory.init();
       Vertx vertx = factory.vertx();
@@ -92,7 +92,7 @@ public class VertxFactoryTest {
   @Test
   public void testFactoryMetricsFactoryOverridesOptions() {
     FakeVertxMetrics metrics = new FakeVertxMetrics();
-    VertxBootstrap factory = new VertxBootstrap().options(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)));
+    VertxBootstrapImpl factory = new VertxBootstrapImpl().options(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)));
     factory.metrics(metrics);
     factory.metricsFactory(options -> {
       throw new AssertionError();
@@ -107,7 +107,7 @@ public class VertxFactoryTest {
     runWithServiceFromMetaInf(VertxTracerFactory.class, FakeTracerFactory.class.getName(), () -> {
       FakeTracer tracer = new FakeTracer();
       TracingOptions tracingOptions = new TracingOptions();
-      VertxBootstrap factory = new VertxBootstrap().options(new VertxOptions().setTracingOptions(tracingOptions));
+      VertxBootstrapImpl factory = new VertxBootstrapImpl().options(new VertxOptions().setTracingOptions(tracingOptions));
       factory.tracer(tracer);
       factory.init();
       Vertx vertx = factory.vertx();
@@ -118,7 +118,7 @@ public class VertxFactoryTest {
   @Test
   public void testFactoryTracerFactoryOverridesOptions() {
     FakeTracer tracer = new FakeTracer();
-    VertxBootstrap factory = new VertxBootstrap().options(new VertxOptions().setTracingOptions(new TracingOptions()))
+    VertxBootstrapImpl factory = new VertxBootstrapImpl().options(new VertxOptions().setTracingOptions(new TracingOptions()))
       .tracerFactory(options -> {
         throw new AssertionError();
       });
@@ -133,7 +133,7 @@ public class VertxFactoryTest {
     FakeClusterManager clusterManager = new FakeClusterManager();
     CompletableFuture<Vertx> res = new CompletableFuture<>();
     runWithServiceFromMetaInf(ClusterManager.class, FakeClusterManager.class.getName(), () -> {
-      VertxBootstrap factory = new VertxBootstrap().options(new VertxOptions());
+      VertxBootstrapImpl factory = new VertxBootstrapImpl().options(new VertxOptions());
       factory.clusterManager(clusterManager);
       factory.init();
       factory.clusteredVertx().onComplete(ar -> {
@@ -150,11 +150,11 @@ public class VertxFactoryTest {
 
   @Test
   public void testFactoryTransportOverridesDefault() {
-    VertxBootstrap factory = new VertxBootstrap();
+    VertxBootstrapImpl factory = new VertxBootstrapImpl();
     // JDK transport
     Transport override = new JDKTransport() {
     };
-    factory.findTransport(override);
+    factory.transport(override);
     factory.init();
     Vertx vertx = factory.vertx();
     assertSame(override, ((VertxInternal)vertx).transport());
@@ -162,7 +162,7 @@ public class VertxFactoryTest {
 
   @Test
   public void testThatThreadFactoryCanCreateThreadsDuringTheirInitialization() {
-    VertxBootstrap factory = new VertxBootstrap();
+    VertxBootstrapImpl factory = new VertxBootstrapImpl();
     VertxThreadFactory tf = new VertxThreadFactory() {
       @Override
       public VertxThread newVertxThread(Runnable target, String name, boolean worker, long maxExecTime, TimeUnit maxExecTimeUnit) {

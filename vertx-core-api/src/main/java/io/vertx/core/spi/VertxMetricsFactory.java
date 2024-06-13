@@ -24,7 +24,7 @@ import io.vertx.core.spi.metrics.VertxMetrics;
 public interface VertxMetricsFactory extends VertxServiceProvider {
 
   @Override
-  default void init(VertxFactory builder) {
+  default void init(VertxBootstrap builder) {
     if (builder.metrics() == null) {
       VertxOptions vertxOptions = builder.options();
       builder.metrics(metrics(vertxOptions));

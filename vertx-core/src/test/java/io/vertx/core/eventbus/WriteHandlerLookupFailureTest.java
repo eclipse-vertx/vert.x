@@ -14,7 +14,7 @@ package io.vertx.core.eventbus;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
-import io.vertx.impl.core.VertxBootstrap;
+import io.vertx.impl.core.VertxBootstrapImpl;
 import io.vertx.core.spi.cluster.NodeSelector;
 import io.vertx.impl.core.cluster.DefaultNodeSelector;
 import io.vertx.test.core.VertxTestBase;
@@ -47,7 +47,7 @@ public final class WriteHandlerLookupFailureTest extends VertxTestBase {
         promise.fail("Not implemented");
       }
     };
-    new VertxBootstrap().options(options).init().clusterNodeSelector(nodeSelector).clusteredVertx().onComplete(onSuccess(node -> {
+    new VertxBootstrapImpl().options(options).init().clusterNodeSelector(nodeSelector).clusteredVertx().onComplete(onSuccess(node -> {
       vertx = node;
       MessageProducer<String> sender = vertx.eventBus().sender("foo");
       sender.write("the_string").onComplete(onFailure(err -> {

@@ -96,7 +96,7 @@ public interface Vertx extends Measured {
       }
       @Override
       public Vertx build() {
-        VertxFactory factory = VertxFactory.factory();
+        VertxBootstrap factory = VertxBootstrap.bootstrap();
         factory.options(options != null ? options : new VertxOptions());
         factory.metricsFactory(metricsFactory);
         factory.tracerFactory(tracerFactory);
@@ -105,7 +105,7 @@ public interface Vertx extends Measured {
       }
       @Override
       public Future<Vertx> buildClustered() {
-        VertxFactory factory = VertxFactory.factory();
+        VertxBootstrap factory = VertxBootstrap.bootstrap();
         factory.options(options != null ? options : new VertxOptions());
         factory.clusterManager(clusterManager);
         factory.metricsFactory(metricsFactory);

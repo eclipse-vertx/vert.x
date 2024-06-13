@@ -35,13 +35,13 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * Vertx builder for creating vertx instances with SPI overrides.
+ * Vertx builder for creating vertx instances with overrides.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class VertxBootstrap implements VertxFactory {
+public class VertxBootstrapImpl implements VertxBootstrap {
 
-  private static final Logger log = LoggerFactory.getLogger(VertxFactory.class);
+  private static final Logger log = LoggerFactory.getLogger(io.vertx.core.spi.VertxBootstrap.class);
 
   private VertxOptions options = new VertxOptions();
   private JsonObject config;
@@ -49,7 +49,7 @@ public class VertxBootstrap implements VertxFactory {
   private ClusterManager clusterManager;
   private NodeSelector clusterNodeSelector;
   private VertxTracerFactory tracerFactory;
-  private VertxTracer tracer;
+  private VertxTracer<?, ?> tracer;
   private VertxThreadFactory threadFactory;
   private ExecutorServiceFactory executorServiceFactory;
   private VertxMetricsFactory metricsFactory;
@@ -64,55 +64,41 @@ public class VertxBootstrap implements VertxFactory {
   }
 
   @Override
-  public VertxBootstrap options(VertxOptions options) {
+  public VertxBootstrapImpl options(VertxOptions options) {
     this.options = options;
     return this;
   }
 
-  /**
-   * @return the optional config when instantiated from the command line or {@code null}
-   */
   public JsonObject config() {
     return config;
   }
 
-  /**
-   * @return the transport to use
-   */
-  public Transport findTransport() {
+  public Transport transport() {
     return transport;
   }
 
-  /**
-   * Set the transport to for building Vertx.
-   * @param transport the transport
-   * @return this builder instance
-   */
-  public VertxBootstrap findTransport(Transport transport) {
+  public VertxBootstrapImpl transport(Transport transport) {
     this.transport = transport;
     return this;
   }
 
-  /**
-   * @return the cluster manager to use
-   */
   public ClusterManager clusterManager() {
     return clusterManager;
   }
 
-  /**
-   * Set the cluster manager to use.
-   * @param clusterManager the cluster manager
-   * @return this builder instance
-   */
-  public VertxBootstrap clusterManager(ClusterManager clusterManager) {
-    this.clusterManager = clusterManager;
+  public VertxBootstrapImpl clusterManager(ClusterManager manager) {
+    this.clusterManager = manager;
     return this;
   }
 
-  public VertxBootstrap metricsFactory(VertxMetricsFactory factory) {
+  public VertxBootstrapImpl metricsFactory(VertxMetricsFactory factory) {
     this.metricsFactory = factory;
     return this;
+  }
+
+  @Override
+  public VertxMetricsFactory metricsFactory() {
+    return metricsFactory;
   }
 
   /**
@@ -127,104 +113,66 @@ public class VertxBootstrap implements VertxFactory {
    * @param selector the selector
    * @return this builder instance
    */
-  public VertxBootstrap clusterNodeSelector(NodeSelector selector) {
+  public VertxBootstrapImpl clusterNodeSelector(NodeSelector selector) {
     this.clusterNodeSelector = selector;
     return this;
   }
 
-  public VertxBootstrap tracerFactory(VertxTracerFactory factory) {
+  public VertxBootstrapImpl tracerFactory(VertxTracerFactory factory) {
     this.tracerFactory = factory;
     return this;
   }
 
-  /**
-   * @return the tracer instance to use
-   */
-  public VertxTracer tracer() {
+  @Override
+  public VertxTracerFactory tracerFactory() {
+    return tracerFactory;
+  }
+
+  public VertxTracer<?, ?> tracer() {
     return tracer;
   }
 
-  /**
-   * Set the tracer to use.
-   * @param tracer the tracer
-   * @return this builder instance
-   */
-  public VertxBootstrap tracer(VertxTracer tracer) {
+  public VertxBootstrapImpl tracer(VertxTracer<?, ?> tracer) {
     this.tracer = tracer;
     return this;
   }
 
-  /**
-   * @return the metrics instance to use
-   */
   public VertxMetrics metrics() {
     return metrics;
   }
 
-  /**
-   * Set the metrics instance to use.
-   * @param metrics the metrics
-   * @return this builder instance
-   */
-  public VertxBootstrap metrics(VertxMetrics metrics) {
+  public VertxBootstrapImpl metrics(VertxMetrics metrics) {
     this.metrics = metrics;
     return this;
   }
 
-  /**
-   * @return the {@code FileResolver} instance to use
-   */
   public FileResolver fileResolver() {
     return fileResolver;
   }
 
-  /**
-   * Set the {@code FileResolver} instance to use.
-   * @param resolver the file resolver
-   * @return this builder instance
-   */
-  public VertxBootstrap fileResolver(FileResolver resolver) {
+  public VertxBootstrapImpl fileResolver(FileResolver resolver) {
     this.fileResolver = resolver;
     return this;
   }
 
-  /**
-   * @return the {@code VertxThreadFactory} to use
-   */
   public VertxThreadFactory threadFactory() {
     return threadFactory;
   }
 
-  /**
-   * Set the {@code VertxThreadFactory} instance to use.
-   * @param factory the metrics
-   * @return this builder instance
-   */
-  public VertxBootstrap threadFactory(VertxThreadFactory factory) {
+  public VertxBootstrapImpl threadFactory(VertxThreadFactory factory) {
     this.threadFactory = factory;
     return this;
   }
 
-  /**
-   * @return the {@code ExecutorServiceFactory} to use
-   */
   public ExecutorServiceFactory executorServiceFactory() {
     return executorServiceFactory;
   }
 
-  /**
-   * Set the {@code ExecutorServiceFactory} instance to use.
-   * @param factory the factory
-   * @return this builder instance
-   */
-  public VertxBootstrap executorServiceFactory(ExecutorServiceFactory factory) {
+  public VertxBootstrapImpl executorServiceFactory(ExecutorServiceFactory factory) {
     this.executorServiceFactory = factory;
     return this;
   }
 
-  /**
-   * Build and return the vertx instance
-   */
   public Vertx vertx() {
     checkBeforeInstantiating();
     VertxImpl vertx = new VertxImpl(
@@ -262,11 +210,7 @@ public class VertxBootstrap implements VertxFactory {
     return vertx.initClustered(options);
   }
 
-  /**
-   * Initialize the service providers.
-   * @return this builder instance
-   */
-  public VertxBootstrap init() {
+  public VertxBootstrapImpl init() {
     initTransport();
     initMetrics();
     initTracing();
@@ -307,7 +251,7 @@ public class VertxBootstrap implements VertxFactory {
     if (transport != null) {
       return;
     }
-    transport = findTransport(options.getPreferNativeTransport());
+    transport = transport(options.getPreferNativeTransport());
   }
 
   private void initFileResolver() {
@@ -380,7 +324,7 @@ public class VertxBootstrap implements VertxFactory {
     return transport;
   }
 
-  static Transport findTransport(boolean preferNative) {
+  static Transport transport(boolean preferNative) {
     if (preferNative) {
       Collection<Transport> transports = ServiceHelper.loadFactories(Transport.class);
       Iterator<Transport> it = transports.iterator();

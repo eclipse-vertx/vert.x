@@ -12,11 +12,11 @@
 package io.vertx.core.eventbus;
 
 import io.vertx.core.*;
-import io.vertx.impl.core.VertxBootstrap;
-import io.vertx.core.spi.VertxFactory;
+import io.vertx.core.spi.VertxBootstrap;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeSelector;
 import io.vertx.core.spi.cluster.RegistrationUpdateEvent;
+import io.vertx.impl.core.VertxBootstrapImpl;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
@@ -38,7 +38,7 @@ public class MessageQueueOnWorkerThreadTest extends VertxTestBase {
   public void setUp() throws Exception {
     super.setUp();
     CustomNodeSelector selector = new CustomNodeSelector();
-    VertxFactory factory = new VertxBootstrap().init().clusterNodeSelector(selector);
+    VertxBootstrap factory = new VertxBootstrapImpl().init().clusterNodeSelector(selector);
     Future<Vertx> fut = factory.clusteredVertx();
     vertx = fut.toCompletionStage().toCompletableFuture().get();
   }

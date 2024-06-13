@@ -23,6 +23,6 @@ public interface VertxServiceProvider {
    *
    * @param builder the builder
    */
-  void init(VertxFactory bootstrap);
+  void init(VertxBootstrap bootstrap);
 
 }
