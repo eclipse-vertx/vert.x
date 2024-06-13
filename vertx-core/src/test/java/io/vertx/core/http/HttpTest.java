@@ -23,7 +23,6 @@ import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.impl.core.http.CleanableHttpClient;
 import io.vertx.impl.core.http.HttpClientImpl;
 import io.vertx.impl.core.http.HttpServerRequestInternal;
-import io.vertx.impl.core.http.ServerCookie;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.internal.core.VertxInternal;
 import io.vertx.core.net.*;
@@ -6115,7 +6114,7 @@ public abstract class HttpTest extends HttpTestBase {
       assertEquals(1, req.cookieCount());
       req.response().addCookie(Cookie.cookie("XSRF-TOKEN", "88533580000c314").setPath("/"));
       Map<String, Cookie> deprecatedMap = req.cookieMap();
-      assertFalse(((ServerCookie) deprecatedMap.get("XSRF-TOKEN")).isFromUserAgent());
+      assertFalse((deprecatedMap.get("XSRF-TOKEN")).isFromUserAgent());
       assertEquals("/", deprecatedMap.get("XSRF-TOKEN").getPath());
       req.response().end();
     }, resp -> {

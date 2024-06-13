@@ -11,6 +11,7 @@
 package io.vertx.impl.core.http;
 
 import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
+import io.vertx.core.http.Cookie;
 
 import java.util.*;
 
@@ -23,13 +24,13 @@ import java.util.*;
  *
  * @author <a href="http://pmlopes@gmail.com">Paulo Lopes</a>
  */
-public class CookieJar extends AbstractSet<ServerCookie> {
+public class CookieJar extends AbstractSet<Cookie> {
 
   // keep a shortcut to an empty jar to avoid unnecessary allocations
   private static final CookieJar EMPTY = new CookieJar(Collections.emptyList());
 
   // the real holder
-  private final List<ServerCookie> list;
+  private final List<Cookie> list;
 
   public CookieJar() {
     list = new ArrayList<>(4);
@@ -40,11 +41,11 @@ public class CookieJar extends AbstractSet<ServerCookie> {
     Set<io.netty.handler.codec.http.cookie.Cookie> nettyCookies = ServerCookieDecoder.STRICT.decode(cookieHeader.toString());
     list = new ArrayList<>(nettyCookies.size());
     for (io.netty.handler.codec.http.cookie.Cookie cookie : nettyCookies) {
-      list.add(new CookieImpl(cookie));
+      list.add(new ServerCookieImpl(cookie));
     }
   }
 
-  private CookieJar(List<ServerCookie> list) {
+  private CookieJar(List<Cookie> list) {
     Objects.requireNonNull(list, "list cannot be null");
     this.list = list;
   }
@@ -65,9 +66,9 @@ public class CookieJar extends AbstractSet<ServerCookie> {
    */
   @Override
   public boolean contains(Object o) {
-    ServerCookie needle = (ServerCookie) o;
+    Cookie needle = (Cookie) o;
 
-    for (ServerCookie cookie : list) {
+    for (Cookie cookie : list) {
       if (cookieUniqueIdComparator(cookie, needle.getName(), needle.getDomain(), needle.getPath()) == 0) {
         return true;
       }
@@ -77,7 +78,7 @@ public class CookieJar extends AbstractSet<ServerCookie> {
   }
 
   @Override
-  public Iterator<ServerCookie> iterator() {
+  public Iterator<Cookie> iterator() {
     return list.iterator();
   }
 
@@ -93,7 +94,7 @@ public class CookieJar extends AbstractSet<ServerCookie> {
    * @return {@code true} if cookie was added or replaced.
    */
   @Override
-  public boolean add(ServerCookie cookie) {
+  public boolean add(Cookie cookie) {
     if (cookie == null) {
       throw new NullPointerException("cookie cannot be null");
     }
@@ -138,7 +139,7 @@ public class CookieJar extends AbstractSet<ServerCookie> {
    * @param domain maybe nullable domain
    * @param path maybe nullable path
    */
-  private static int cookieUniqueIdComparator(ServerCookie cookie, String name, String domain, String path) {
+  private static int cookieUniqueIdComparator(Cookie cookie, String name, String domain, String path) {
     Objects.requireNonNull(cookie);
     Objects.requireNonNull(name);
 
@@ -193,8 +194,8 @@ public class CookieJar extends AbstractSet<ServerCookie> {
    * @param name name to search in the cookie jar
    * @return cookie or {@code null}.
    */
-  public ServerCookie get(String name) {
-    for (ServerCookie cookie : list) {
+  public Cookie get(String name) {
+    for (Cookie cookie : list) {
       if (cookie.getName().equals(name)) {
         return cookie;
       }
@@ -211,9 +212,9 @@ public class CookieJar extends AbstractSet<ServerCookie> {
    * @return read only cookie jar or an empty jar.
    */
   public CookieJar getAll(String name) {
-    List<ServerCookie> subList = null;
+    List<Cookie> subList = null;
 
-    for (ServerCookie cookie : list) {
+    for (Cookie cookie : list) {
       if (subList == null) {
         subList = new ArrayList<>(Math.min(4, list.size()));
       }
@@ -237,8 +238,8 @@ public class CookieJar extends AbstractSet<ServerCookie> {
    * @param path cookie path
    * @return a cookie or {@code null}
    */
-  public ServerCookie get(String name, String domain, String path) {
-    for (ServerCookie cookie : list) {
+  public Cookie get(String name, String domain, String path) {
+    for (Cookie cookie : list) {
       if (cookieUniqueIdComparator(cookie, name, domain, path) == 0) {
         return cookie;
       }
@@ -256,11 +257,11 @@ public class CookieJar extends AbstractSet<ServerCookie> {
    * @throws UnsupportedOperationException of this cookie jar is a slice view
    */
   public CookieJar removeOrInvalidateAll(String name, boolean invalidate) {
-    Iterator<ServerCookie> it = list.iterator();
-    List<ServerCookie> collector = null;
+    Iterator<Cookie> it = list.iterator();
+    List<Cookie> collector = null;
 
     while (it.hasNext()) {
-      ServerCookie cookie = it.next();
+      Cookie cookie = it.next();
       if (cookie.getName().equals(name)) {
         removeOrInvalidateCookie(it, cookie, invalidate);
         if (collector == null) {
@@ -286,10 +287,10 @@ public class CookieJar extends AbstractSet<ServerCookie> {
    * @return the matched cookie
    * @throws UnsupportedOperationException of this cookie jar is a slice view
    */
-  public ServerCookie removeOrInvalidate(String name, String domain, String path, boolean invalidate) {
-    Iterator<ServerCookie> it = list.iterator();
+  public Cookie removeOrInvalidate(String name, String domain, String path, boolean invalidate) {
+    Iterator<Cookie> it = list.iterator();
     while (it.hasNext()) {
-      ServerCookie cookie = it.next();
+      Cookie cookie = it.next();
       if (cookieUniqueIdComparator(cookie, name, domain, path) == 0) {
         removeOrInvalidateCookie(it, cookie, invalidate);
         return cookie;
@@ -307,10 +308,10 @@ public class CookieJar extends AbstractSet<ServerCookie> {
    * @return the matched cookie
    * @throws UnsupportedOperationException of this cookie jar is a slice view
    */
-  public ServerCookie removeOrInvalidate(String name, boolean invalidate) {
-    Iterator<ServerCookie> it = list.iterator();
+  public Cookie removeOrInvalidate(String name, boolean invalidate) {
+    Iterator<Cookie> it = list.iterator();
     while (it.hasNext()) {
-      ServerCookie cookie = it.next();
+      Cookie cookie = it.next();
       if (cookie.getName().equals(name)) {
         removeOrInvalidateCookie(it, cookie, invalidate);
         return cookie;
@@ -320,7 +321,7 @@ public class CookieJar extends AbstractSet<ServerCookie> {
     return null;
   }
 
-  private static void removeOrInvalidateCookie(Iterator<ServerCookie> it, ServerCookie cookie, boolean invalidate) {
+  private static void removeOrInvalidateCookie(Iterator<Cookie> it, Cookie cookie, boolean invalidate) {
     if (invalidate && cookie.isFromUserAgent()) {
       // in the case the cookie was passed from the User Agent
       // we need to expire it and sent it back to it can be

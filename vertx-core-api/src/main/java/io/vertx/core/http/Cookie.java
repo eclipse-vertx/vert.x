@@ -155,4 +155,18 @@ public interface Cookie {
    */
   String encode();
 
+  /**
+   * Has the cookie been changed? Changed cookie jar will be saved out in the response and sent to the browser.
+   *
+   * @return true  if changed
+   */
+  boolean isChanged();
+
+  /**
+   * Has this Cookie been sent from the User Agent (the browser)? or was created during the executing on the request.
+   *
+   * @return true if the cookie comes from the User Agent.
+   */
+  boolean isFromUserAgent();
+
 }

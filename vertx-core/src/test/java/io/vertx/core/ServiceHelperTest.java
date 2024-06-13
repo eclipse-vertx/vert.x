@@ -113,8 +113,12 @@ public class ServiceHelperTest {
 
   @Test
   public void loadFactoriesWithVertxClassloader() throws Exception {
+
+    URL location = ServiceHelper.class.getProtectionDomain().getCodeSource().getLocation();
+
     // This test is a bit more tricky as we need to load the ServiceHelper class from a custom classloader.
     ClassLoader custom = new URLClassLoader(new URL[]{
+      location,
         new File(TestUtils.MAVEN_TARGET_DIR, "classes").toURI().toURL(),
         new File(TestUtils.MAVEN_TARGET_DIR, "test-classes").toURI().toURL(),
         serviceHelperFile.toURI().toURL(),

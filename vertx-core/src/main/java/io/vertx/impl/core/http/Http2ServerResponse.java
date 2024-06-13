@@ -474,7 +474,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   private void setCookies() {
-    for (ServerCookie cookie: cookies) {
+    for (Cookie cookie: cookies) {
       if (cookie.isChanged()) {
         headers.add(SET_COOKIE, cookie.encode());
       }
@@ -684,7 +684,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   public HttpServerResponse addCookie(Cookie cookie) {
     synchronized (conn) {
       checkHeadWritten();
-      cookies().add((ServerCookie) cookie);
+      cookies().add(cookie);
     }
     return this;
   }

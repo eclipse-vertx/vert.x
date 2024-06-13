@@ -2,8 +2,6 @@ package io.vertx.core.http.impl;
 
 import io.vertx.core.http.Cookie;
 import io.vertx.impl.core.http.CookieJar;
-import io.vertx.impl.core.http.ServerCookie;
-import io.vertx.impl.core.http.CookieImpl;
 import org.junit.Test;
 
 import java.util.Iterator;
@@ -21,10 +19,10 @@ public class CookieJarTest {
     jar.add(new CookieImpl("foo", "bar"));
     assertEquals(1, jar.size());
 
-    jar.add((ServerCookie) new CookieImpl("foo", "bar").setDomain("vertx.io"));
+    jar.add(new CookieImpl("foo", "bar").setDomain("vertx.io"));
     assertEquals(2, jar.size());
 
-    jar.add((ServerCookie) new CookieImpl("foo", "bar").setDomain("vertx.io").setPath("/secret"));
+    jar.add(new CookieImpl("foo", "bar").setDomain("vertx.io").setPath("/secret"));
     assertEquals(3, jar.size());
   }
 
@@ -40,7 +38,7 @@ public class CookieJarTest {
     jar.add(new CookieImpl("foo", "barista"));
     assertEquals(1, jar.size());
 
-    for (ServerCookie cookie : jar) {
+    for (Cookie cookie : jar) {
       assertEquals("barista", cookie.getValue());
     }
   }
@@ -53,22 +51,22 @@ public class CookieJarTest {
     jar.add(new CookieImpl("foo", "bar"));
     assertEquals(1, jar.size());
 
-    jar.add((ServerCookie) new CookieImpl("foo", "bar").setDomain("a"));
+    jar.add(new CookieImpl("foo", "bar").setDomain("a"));
     assertEquals(2, jar.size());
 
-    jar.add((ServerCookie) new CookieImpl("foo", "bar").setDomain("b"));
+    jar.add(new CookieImpl("foo", "bar").setDomain("b"));
     assertEquals(3, jar.size());
 
-    jar.add((ServerCookie) new CookieImpl("foo", "bar").setPath("a"));
+    jar.add(new CookieImpl("foo", "bar").setPath("a"));
     assertEquals(4, jar.size());
 
-    jar.add((ServerCookie) new CookieImpl("foo", "bar").setPath("b"));
+    jar.add(new CookieImpl("foo", "bar").setPath("b"));
     assertEquals(5, jar.size());
 
-    jar.add((ServerCookie) new CookieImpl("foo", "bar").setPath("a").setDomain("a"));
+    jar.add(new CookieImpl("foo", "bar").setPath("a").setDomain("a"));
     assertEquals(6, jar.size());
 
-    jar.add((ServerCookie) new CookieImpl("foo", "bar").setPath("b").setDomain("b"));
+    jar.add(new CookieImpl("foo", "bar").setPath("b").setDomain("b"));
     assertEquals(7, jar.size());
   }
 
@@ -76,7 +74,7 @@ public class CookieJarTest {
   public void testFilterByName() {
     CookieJar jar = new CookieJar();
     jar.add(new CookieImpl("a", "a"));
-    jar.add((ServerCookie) new CookieImpl("a", "a").setPath("p"));
+    jar.add(new CookieImpl("a", "a").setPath("p"));
     jar.add(new CookieImpl("b", "b"));
 
     Set<Cookie> subJar = (Set) jar.getAll("a");
@@ -87,7 +85,7 @@ public class CookieJarTest {
   public void testFilterByUniqueId() {
     CookieJar jar = new CookieJar();
     jar.add(new CookieImpl("a", "a"));
-    jar.add((ServerCookie) new CookieImpl("a", "a").setPath("p"));
+    jar.add(new CookieImpl("a", "a").setPath("p"));
     jar.add(new CookieImpl("b", "b"));
 
     Cookie cookie = jar.get("a", null, "p");
@@ -98,10 +96,10 @@ public class CookieJarTest {
   public void testRemoveFromIterator() {
     CookieJar jar = new CookieJar();
     jar.add(new CookieImpl("a", "a"));
-    jar.add((ServerCookie) new CookieImpl("a", "a").setPath("p"));
+    jar.add(new CookieImpl("a", "a").setPath("p"));
     jar.add(new CookieImpl("b", "b"));
 
-    Iterator<ServerCookie> it = jar.iterator();
+    Iterator<Cookie> it = jar.iterator();
     assertTrue(it.hasNext());
     it.next();
     // should be allowed
@@ -112,7 +110,7 @@ public class CookieJarTest {
   public void testRemoveFromIteratorSubJar() {
     CookieJar jar = new CookieJar();
     jar.add(new CookieImpl("a", "a"));
-    jar.add((ServerCookie) new CookieImpl("a", "a").setPath("p"));
+    jar.add(new CookieImpl("a", "a").setPath("p"));
     jar.add(new CookieImpl("b", "b"));
 
     Set<Cookie> subJar = (Set) jar.getAll("a");
@@ -129,7 +127,7 @@ public class CookieJarTest {
     CookieJar jar = new CookieJar();
     jar.add(new CookieImpl("a", "a"));
 
-    for (ServerCookie cookie : jar.getAll("a")) {
+    for (Cookie cookie : jar.getAll("a")) {
       cookie.setValue("b");
     }
 

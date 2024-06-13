@@ -26,28 +26,16 @@ import io.vertx.core.http.CookieSameSite;
 public class CookieImpl implements Cookie {
 
   private final io.netty.handler.codec.http.cookie.Cookie nettyCookie;
-  // denotes if a cookie has been created from an HTTP request (true) or during the
-  // application/response life cycle (false)
-  private final boolean fromUserAgent;
 
-  private boolean changed;
   // extension feature(s)
   private CookieSameSite sameSite;
 
   public CookieImpl(String name, String value) {
     this.nettyCookie = new DefaultCookie(name, value);
-    fromUserAgent = false;
-    this.changed = true;
   }
 
-  /**
-   * Internal constructor, only used by the CookieJar.
-   *
-   * @param nettyCookie the underlying cookie object
-   */
-  CookieImpl(io.netty.handler.codec.http.cookie.Cookie nettyCookie) {
+  protected CookieImpl(io.netty.handler.codec.http.cookie.Cookie nettyCookie) {
     this.nettyCookie = nettyCookie;
-    fromUserAgent = true;
   }
 
   @Override
@@ -58,7 +46,6 @@ public class CookieImpl implements Cookie {
   @Override
   public Cookie setValue(final String value) {
     nettyCookie.setValue(value);
-    this.changed = true;
     return this;
   }
 
@@ -70,7 +57,6 @@ public class CookieImpl implements Cookie {
   @Override
   public Cookie setDomain(final String domain) {
     nettyCookie.setDomain(domain);
-    this.changed = true;
     return this;
   }
 
@@ -82,7 +68,6 @@ public class CookieImpl implements Cookie {
   @Override
   public Cookie setPath(final String path) {
     nettyCookie.setPath(path);
-    this.changed = true;
     return this;
   }
 
@@ -94,7 +79,6 @@ public class CookieImpl implements Cookie {
   @Override
   public Cookie setMaxAge(final long maxAge) {
     nettyCookie.setMaxAge(maxAge);
-    this.changed = true;
     return this;
   }
 
@@ -106,7 +90,6 @@ public class CookieImpl implements Cookie {
   @Override
   public Cookie setSecure(final boolean secure) {
     nettyCookie.setSecure(secure);
-    this.changed = true;
     return this;
   }
 
@@ -118,7 +101,6 @@ public class CookieImpl implements Cookie {
   @Override
   public Cookie setHttpOnly(final boolean httpOnly) {
     nettyCookie.setHttpOnly(httpOnly);
-    this.changed = true;
     return this;
   }
 
@@ -130,7 +112,6 @@ public class CookieImpl implements Cookie {
   @Override
   public Cookie setSameSite(final CookieSameSite sameSite) {
     this.sameSite = sameSite;
-    this.changed = true;
     return this;
   }
 
@@ -149,14 +130,10 @@ public class CookieImpl implements Cookie {
   }
 
   public boolean isChanged() {
-    return changed;
-  }
-
-  public void setChanged(boolean changed) {
-    this.changed = changed;
+    return true;
   }
 
   public boolean isFromUserAgent() {
-    return fromUserAgent;
+    return false;
   }
 }
