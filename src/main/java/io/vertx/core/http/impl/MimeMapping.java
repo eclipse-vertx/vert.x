@@ -1014,7 +1014,10 @@ public class MimeMapping {
   }
 
   public static String getMimeTypeForExtension(String ext) {
-    return m.get(ext);
+    if (ext == null) {
+      return null;
+    }
+    return m.get((String) HttpUtils.toLowerCase(ext));
   }
   public static String getMimeTypeForFilename(String filename) {
     int li = filename.lastIndexOf('.');
