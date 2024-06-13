@@ -122,6 +122,13 @@
     </dependency>
     <dependency>
       <groupId>io.vertx</groupId>
+      <artifactId>vertx-core-api</artifactId>
+      <type>test-jar</type>
+      <version>5.0.0-SNAPSHOT</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
       <artifactId>vertx-codegen</artifactId>
       <scope>test</scope>
     </dependency>

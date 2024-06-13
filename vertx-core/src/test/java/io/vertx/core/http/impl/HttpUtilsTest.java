@@ -24,15 +24,6 @@ import static org.junit.Assert.*;
 
 public class HttpUtilsTest {
 
-  // tchar
-  public static final Set<Byte> HEADER_NAME_ALLOWED_CHARS =
-    IntStream.concat(
-        IntStream.of('!', '#', '$', '%', '&', '\'', '*', '+', '-', '.', '^', '_', '`', '|', '~', '0', '1', '2', '3', '4', '5', '6', '8', '9'),
-        IntStream.concat(IntStream.range('0', '9' + 1),
-          IntStream.concat(IntStream.range('A', 'Z' + 1),
-            IntStream.range('a', 'z' + 1))))
-      .mapToObj(c -> (byte)c).collect(Collectors.toSet());
-
   @Test
   public void testParseKeepAliveTimeout() {
 

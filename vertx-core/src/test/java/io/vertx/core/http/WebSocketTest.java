@@ -17,7 +17,7 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.websocketx.*;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.*;
-import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
+import io.vertx.core.http.impl.WebSocketFrameImpl;
 import io.vertx.internal.core.VertxInternal;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.internal.core.buffer.BufferInternal;

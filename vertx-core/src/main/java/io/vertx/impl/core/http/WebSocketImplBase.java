@@ -28,7 +28,7 @@ import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
+import io.vertx.core.http.impl.WebSocketFrameImpl;
 import io.vertx.internal.core.ContextInternal;
 import io.vertx.internal.core.PromiseInternal;
 import io.vertx.core.net.SocketAddress;

@@ -9,11 +9,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.headers;
+package io.vertx.test.core.http.headers;
 
 import io.netty.util.AsciiString;
 import io.vertx.core.MultiMap;
-import io.vertx.core.http.impl.headers.HeadersMultiMap;
+import io.vertx.core.http.impl.HeadersMultiMap;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -22,14 +22,25 @@ import java.util.HashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
-import static io.vertx.core.http.impl.HttpUtilsTest.HEADER_NAME_ALLOWED_CHARS;
 import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class VertxHttpHeadersTest extends HeadersTestBase {
+
+  // tchar
+  public static final Set<Byte> HEADER_NAME_ALLOWED_CHARS =
+    IntStream.concat(
+        IntStream.of('!', '#', '$', '%', '&', '\'', '*', '+', '-', '.', '^', '_', '`', '|', '~', '0', '1', '2', '3', '4', '5', '6', '8', '9'),
+        IntStream.concat(IntStream.range('0', '9' + 1),
+          IntStream.concat(IntStream.range('A', 'Z' + 1),
+            IntStream.range('a', 'z' + 1))))
+      .mapToObj(c -> (byte)c).collect(Collectors.toSet());
+
 
   // Same hash
   protected String sameHash1;

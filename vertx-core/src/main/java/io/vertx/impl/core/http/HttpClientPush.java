@@ -13,7 +13,7 @@ package io.vertx.impl.core.http;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
+import io.vertx.impl.core.http.headers.Http2HeadersAdaptor;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.observability.HttpRequest;

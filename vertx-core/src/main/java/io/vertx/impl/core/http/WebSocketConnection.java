@@ -18,7 +18,7 @@ import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.ScheduledFuture;
 import io.vertx.internal.core.buffer.BufferInternal;
 import io.vertx.core.http.WebSocketFrameType;
-import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
+import io.vertx.core.http.impl.WebSocketFrameImpl;
 import io.vertx.internal.core.ContextInternal;
 import io.vertx.impl.core.net.VertxConnection;
 import io.vertx.core.spi.metrics.HttpClientMetrics;

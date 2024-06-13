@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl.headers;
+package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
@@ -17,7 +17,6 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.util.AsciiString;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.MultiMap;
-import io.vertx.core.http.impl.HttpUtils;
 
 import java.util.AbstractMap;
 import java.util.Arrays;

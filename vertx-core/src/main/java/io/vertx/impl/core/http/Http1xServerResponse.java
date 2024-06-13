@@ -33,7 +33,7 @@ import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.http.impl.headers.HeadersMultiMap;
+import io.vertx.core.http.impl.HeadersMultiMap;
 import io.vertx.internal.core.ContextInternal;
 import io.vertx.internal.core.VertxInternal;
 import io.vertx.internal.core.PromiseInternal;

@@ -23,7 +23,7 @@ import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.impl.core.http.CleanableHttpClient;
 import io.vertx.impl.core.http.HttpClientImpl;
 import io.vertx.impl.core.http.HttpServerRequestInternal;
-import io.vertx.core.http.impl.headers.HeadersMultiMap;
+import io.vertx.core.http.impl.HeadersMultiMap;
 import io.vertx.internal.core.VertxInternal;
 import io.vertx.core.net.*;
 import io.vertx.impl.core.net.HAProxyMessageCompletionHandler;

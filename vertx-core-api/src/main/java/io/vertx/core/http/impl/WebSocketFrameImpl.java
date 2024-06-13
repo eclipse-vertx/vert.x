@@ -9,10 +9,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl.ws;
+package io.vertx.core.http.impl;
 
 import io.netty.util.CharsetUtil;
-import io.netty.util.ReferenceCounted;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.http.WebSocketFrameType;

@@ -13,7 +13,8 @@ package io.vertx.core.http.headers;
 
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.vertx.core.MultiMap;
-import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
+import io.vertx.impl.core.http.headers.Http2HeadersAdaptor;
+import io.vertx.test.core.http.headers.HeadersTestBase;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;

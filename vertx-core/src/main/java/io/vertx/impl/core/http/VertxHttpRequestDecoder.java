@@ -13,7 +13,7 @@ package io.vertx.impl.core.http;
 import io.netty.handler.codec.http.*;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.impl.headers.HeadersMultiMap;
+import io.vertx.core.http.impl.HeadersMultiMap;
 
 /**
  * A request decoder using {@link HeadersMultiMap} which is faster than {@code DefaultHttpHeaders} used by the super class.

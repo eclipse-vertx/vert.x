@@ -27,7 +27,7 @@ import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
+import io.vertx.impl.core.http.headers.Http2HeadersAdaptor;
 import io.vertx.internal.core.ContextInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;

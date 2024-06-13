@@ -24,7 +24,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.StreamPriority;
-import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
+import io.vertx.impl.core.http.headers.Http2HeadersAdaptor;
 import io.vertx.internal.core.ContextInternal;
 import io.vertx.internal.core.VertxInternal;
 import io.vertx.impl.core.net.InboundMessageQueue;

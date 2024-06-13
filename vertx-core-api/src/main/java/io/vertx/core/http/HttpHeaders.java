@@ -18,7 +18,7 @@ import io.netty.util.AsciiString;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.MultiMap;
-import io.vertx.impl.core.http.headers.HeadersMultiMap;
+import io.vertx.core.http.impl.HeadersMultiMap;
 import io.vertx.core.impl.SysProps;
 
 /**

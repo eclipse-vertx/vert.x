@@ -14,7 +14,7 @@ package io.vertx.core.http;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
+import io.vertx.core.http.impl.WebSocketFrameImpl;
 
 import java.util.Objects;
 

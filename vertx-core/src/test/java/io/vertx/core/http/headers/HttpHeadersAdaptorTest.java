@@ -13,7 +13,7 @@ package io.vertx.core.http.headers;
 
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.vertx.core.MultiMap;
-import io.vertx.core.http.headers.HeadersTestBase;
+import io.vertx.test.core.http.headers.HeadersTestBase;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
 
 /**
