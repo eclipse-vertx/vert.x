@@ -101,18 +101,6 @@
       <optional>true</optional>
     </dependency>
 
-    <!-- Loggers -->
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-api</artifactId>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-      <optional>true</optional>
-    </dependency>
-
     <!-- Testing -->
     <dependency>
       <groupId>junit</groupId>
@@ -431,69 +419,6 @@
                 <javax.net.ssl.trustStore>${project.basedir}/src/test/resources/tls/client-truststore-root-ca.jks</javax.net.ssl.trustStore>
                 <javax.net.ssl.trustStorePassword>wibble</javax.net.ssl.trustStorePassword>
               </systemProperties>
-            </configuration>
-          </execution>
-          <execution>
-            <id>slf4j</id>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-            <configuration>
-              <includes>
-                <include>io/vertx/it/SLF4JLogDelegateTest.java</include>
-              </includes>
-              <systemProperties>
-                <org.slf4j.simpleLogger.logFile>System.out</org.slf4j.simpleLogger.logFile>
-                <org.slf4j.simpleLogger.cacheOutputStream>false</org.slf4j.simpleLogger.cacheOutputStream>
-              </systemProperties>
-            </configuration>
-          </execution>
-          <execution>
-            <id>slf4j-no-impl</id>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-            <configuration>
-              <includes>
-                <include>io/vertx/it/SLF4JNoImplTest.java</include>
-              </includes>
-              <classpathDependencyExcludes>
-                <classpathDependencyExclude>org.slf4j:slf4j-simple</classpathDependencyExclude>
-                <classpathDependencyExclude>org.apache.logging.log4j:log4j-api</classpathDependencyExclude>
-                <classpathDependencyExclude>org.apache.logging.log4j:log4j-core</classpathDependencyExclude>
-              </classpathDependencyExcludes>
-            </configuration>
-          </execution>
-          <execution>
-            <id>jul</id>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-            <configuration>
-              <includes>
-                <include>io/vertx/it/JULLogDelegateTest.java</include>
-              </includes>
-              <additionalClasspathElements>
-                <additionalClasspathElement>${project.basedir}/src/test/classpath/jul</additionalClasspathElement>
-              </additionalClasspathElements>
-            </configuration>
-          </execution>
-          <execution>
-            <id>log4j2</id>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-            <configuration>
-              <includes>
-                <include>io/vertx/it/Log4J2LogDelegateTest.java</include>
-              </includes>
-              <classpathDependencyExcludes>
-                <classpathDependencyExclude>org.slf4j:slf4j-simple</classpathDependencyExclude>
-              </classpathDependencyExcludes>
             </configuration>
           </execution>
           <execution>

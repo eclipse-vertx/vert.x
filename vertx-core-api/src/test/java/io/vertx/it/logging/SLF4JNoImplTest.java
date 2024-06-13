@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.it;
+package io.vertx.it.logging;
 
 import io.vertx.core.impl.logging.LoggerAdapter;
 import io.vertx.core.impl.logging.LoggerFactory;

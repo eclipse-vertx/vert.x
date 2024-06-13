@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.impl.logging;
+package io.vertx.test.core.logging;
 
 import io.vertx.core.impl.SysProps;
 import org.junit.After;
