@@ -469,6 +469,7 @@
               </classpathDependencyExcludes>
             </configuration>
           </execution>
+          <!--
           <execution>
             <id>custom-json-codec</id>
             <goals>
@@ -492,6 +493,7 @@
               </classpathDependencyExcludes>
             </configuration>
           </execution>
+          -->
           <execution>
             <id>custom-vertx-thread-factory</id>
             <goals>

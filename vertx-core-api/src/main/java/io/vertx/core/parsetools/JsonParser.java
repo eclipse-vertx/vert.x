@@ -49,7 +49,7 @@ public interface JsonParser extends Handler<Buffer>, ReadStream<JsonEvent> {
    * Create a new {@code JsonParser} instance.
    */
   static JsonParser newParser(ReadStream<Buffer> stream) {
-    return JsonUtil.FACTORY.parser(stream);
+    return JsonUtil.factory().parser(stream);
   }
 
   /**

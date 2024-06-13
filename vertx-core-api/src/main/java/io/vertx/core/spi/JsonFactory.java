@@ -20,6 +20,7 @@ import io.vertx.core.streams.ReadStream;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.ServiceConfigurationError;
 
 /**
  * A factory for the plug-able json SPI.
@@ -41,12 +42,21 @@ public interface JsonFactory {
    * will be used otherwise the codec will only use {@code jackson-core} and provide best effort mapping.
    */
   static JsonFactory load() {
-    List<JsonFactory> factories = new ArrayList<>(ServiceHelper.loadFactories(io.vertx.core.spi.JsonFactory.class));
-    factories.sort(Comparator.comparingInt(JsonFactory::order));
-    if (!factories.isEmpty()) {
-      return factories.iterator().next();
-    } else {
-      throw new IllegalStateException();
+    try {
+      List<JsonFactory> factories = new ArrayList<>(ServiceHelper.loadFactories(io.vertx.core.spi.JsonFactory.class));
+      factories.sort(Comparator.comparingInt(JsonFactory::order));
+      if (!factories.isEmpty()) {
+          return factories.iterator().next();
+      } else {
+        throw new ServiceConfigurationError("No json factory could be found");
+      }
+    } catch (ServiceConfigurationError e) {
+      Throwable cause = e.getCause();
+      if (cause instanceof Error) {
+        throw (Error)cause;
+      } else {
+        throw e;
+      }
     }
   }
 

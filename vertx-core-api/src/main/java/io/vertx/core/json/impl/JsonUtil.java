@@ -32,7 +32,34 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
  */
 public final class JsonUtil {
 
-  public static final JsonFactory FACTORY = JsonFactory.load();
+  private static final JsonFactory FACTORY;
+  private static final Throwable FACTORY_UNAVAILABILITY_CAUSE;
+
+  static {
+    JsonFactory factory = null;
+    Throwable cause = null;
+    try {
+      factory = JsonFactory.load();
+    } catch (Throwable t) {
+      cause = t;
+    }
+    FACTORY = factory;
+    FACTORY_UNAVAILABILITY_CAUSE = cause;
+  }
+
+  public static JsonFactory factory() {
+    if (FACTORY != null) {
+      return FACTORY;
+    } else {
+      if (FACTORY_UNAVAILABILITY_CAUSE instanceof Error) {
+        throw (Error)FACTORY_UNAVAILABILITY_CAUSE;
+      } else if (FACTORY_UNAVAILABILITY_CAUSE instanceof RuntimeException) {
+        throw (RuntimeException)FACTORY_UNAVAILABILITY_CAUSE;
+      } else {
+        throw new Error("JsonFactory unavailable", FACTORY_UNAVAILABILITY_CAUSE);
+      }
+    }
+  }
 
   public static final Base64.Encoder BASE64_ENCODER = Base64.getUrlEncoder().withoutPadding();
   public static final Base64.Decoder BASE64_DECODER = Base64.getUrlDecoder();

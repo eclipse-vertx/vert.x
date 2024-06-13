@@ -24,7 +24,7 @@ public class Json {
   /**
    * This will load the default codec.
    */
-  public static final JsonCodec CODEC = JsonUtil.FACTORY.codec();
+  public static final JsonCodec CODEC = load().codec();
 
   /**
    * Load the factory with the {@code ServiceLoader}, when no factory is found then a factory
@@ -34,7 +34,7 @@ public class Json {
    * the codec will only use {@code jackson-core} and provide best effort mapping.
    */
   public static io.vertx.core.spi.JsonFactory load() {
-    return JsonUtil.FACTORY;
+    return JsonUtil.factory();
   }
 
   /**
