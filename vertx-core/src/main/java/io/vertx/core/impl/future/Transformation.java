@@ -33,9 +33,9 @@ class Transformation<T, U> extends Operation<U> implements Listener<T> {
 
   @Override
   public void onSuccess(T value) {
-    FutureInternal<U> future;
+    FutureBase<U> future;
     try {
-      future = (FutureInternal<U>) mapper.apply(Future.succeededFuture(value));
+      future = (FutureBase<U>) mapper.apply(Future.succeededFuture(value));
     } catch (Throwable e) {
       tryFail(e);
       return;
@@ -45,9 +45,9 @@ class Transformation<T, U> extends Operation<U> implements Listener<T> {
 
   @Override
   public void onFailure(Throwable failure) {
-    FutureInternal<U> future;
+    FutureBase<U> future;
     try {
-      future = (FutureInternal<U>) mapper.apply(Future.failedFuture(failure));
+      future = (FutureBase<U>) mapper.apply(Future.failedFuture(failure));
     } catch (Throwable e) {
       tryFail(e);
       return;

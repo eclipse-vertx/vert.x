@@ -71,6 +71,7 @@
 
   <modules>
     <module>vertx-core-api</module>
+    <module>vertx-core-internal</module>
     <module>vertx-core</module>
   </modules>
 

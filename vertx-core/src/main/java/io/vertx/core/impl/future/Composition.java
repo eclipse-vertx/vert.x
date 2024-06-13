@@ -12,7 +12,6 @@ package io.vertx.core.impl.future;
 
 import io.vertx.core.Future;
 import io.vertx.internal.core.ContextInternal;
-import io.vertx.internal.core.FutureInternal;
 
 import java.util.function.Function;
 
@@ -34,9 +33,9 @@ class Composition<T, U> extends Operation<U> implements Listener<T> {
 
   @Override
   public void onSuccess(T value) {
-    FutureInternal<U> future;
+    FutureBase<U> future;
     try {
-      future = (FutureInternal<U>) successMapper.apply(value);
+      future = (FutureBase<U>) successMapper.apply(value);
     } catch (Throwable e) {
       tryFail(e);
       return;
@@ -46,9 +45,9 @@ class Composition<T, U> extends Operation<U> implements Listener<T> {
 
   @Override
   public void onFailure(Throwable failure) {
-    FutureInternal<U> future;
+    FutureBase<U> future;
     try {
-      future = (FutureInternal<U>) failureMapper.apply(failure);
+      future = (FutureBase<U>) failureMapper.apply(failure);
     } catch (Throwable e) {
       tryFail(e);
       return;
@@ -57,7 +56,7 @@ class Composition<T, U> extends Operation<U> implements Listener<T> {
   }
 
   private Listener<U> newListener() {
-    return new Listener<U>() {
+    return new Listener<>() {
       @Override
       public void onSuccess(U value) {
         tryComplete(value);

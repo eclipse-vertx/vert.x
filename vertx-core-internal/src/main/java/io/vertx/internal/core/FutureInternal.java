@@ -11,7 +11,6 @@
 package io.vertx.internal.core;
 
 import io.vertx.core.Future;
-import io.vertx.core.impl.future.Listener;
 
 /**
  * Expose some of the future internal stuff.
@@ -24,19 +23,5 @@ public interface FutureInternal<T> extends Future<T> {
    * @return the context associated with this promise or {@code null} when there is none
    */
   ContextInternal context();
-
-  /**
-   * Add a listener to the future result.
-   *
-   * @param listener the listener
-   */
-  void addListener(Listener<T> listener);
-
-  /**
-   * Remove a listener to the future result.
-   *
-   * @param listener the listener
-   */
-  void removeListener(Listener<T> listener);
 
 }

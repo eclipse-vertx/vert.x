@@ -200,4 +200,8 @@ public abstract class FutureBase<T> implements FutureInternal<T> {
       return null;
     }
   }
+
+  public abstract void addListener(Listener<T> listener);
+
+  public abstract void removeListener(Listener<T> l);
 }
