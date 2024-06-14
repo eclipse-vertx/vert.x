@@ -13,6 +13,7 @@ package io.vertx.core.buffer.impl;
 
 
 import io.netty.buffer.*;
+import io.vertx.core.internal.buffer.VertxByteBufAllocator;
 
 /**
  * A {@link io.netty.buffer.ByteBufAllocator} which is partial pooled. Which means only direct {@link io.netty.buffer.ByteBuf}s are pooled. The rest

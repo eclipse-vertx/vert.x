@@ -10,16 +10,11 @@
  */
 package io.vertx.core.spi.tracing;
 
-import io.vertx.core.Context;
-import io.vertx.core.Promise;
 import io.vertx.core.WorkerExecutor;
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.faketracer.FakeTracer;
 import org.junit.Test;
-
-import java.util.Collections;
-import java.util.concurrent.CountDownLatch;
 
 public class TracerTest extends VertxTestBase {
 

@@ -14,6 +14,7 @@ package io.vertx.core.impl;
 import io.vertx.core.Closeable;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.shareddata.LocalMap;
 import io.vertx.core.shareddata.Shareable;
 

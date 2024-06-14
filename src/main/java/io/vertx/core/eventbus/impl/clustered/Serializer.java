@@ -13,8 +13,8 @@ package io.vertx.core.eventbus.impl.clustered;
 
 import io.vertx.core.*;
 import io.vertx.core.eventbus.Message;
-import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.VertxInternal;
 
 import java.util.HashMap;
 import java.util.LinkedList;

@@ -19,7 +19,8 @@ import io.vertx.core.dns.DnsClientOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.VertxImpl;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.VertxBuilder;
 import io.vertx.core.dns.impl.DnsAddressResolverProvider;
 import io.vertx.core.metrics.Measured;
@@ -27,7 +28,6 @@ import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.net.endpoint.EndpointResolver;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.VertxMetricsFactory;
@@ -156,7 +156,7 @@ public interface Vertx extends Measured {
    * @return The current context or {@code null} if there is no current context
    */
   static @Nullable Context currentContext() {
-    return ContextInternal.current();
+    return VertxImpl.currentContext();
   }
 
   /**

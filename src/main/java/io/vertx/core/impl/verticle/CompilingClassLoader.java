@@ -11,9 +11,8 @@
 
 package io.vertx.core.impl.verticle;
 
-import io.vertx.core.impl.SysProps;
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.internal.logging.Logger;
+import io.vertx.core.internal.logging.LoggerFactory;
 
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
@@ -25,9 +24,7 @@ import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 import java.io.File;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 
 import static io.vertx.core.net.impl.URIDecoder.decodeURIComponent;
 

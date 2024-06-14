@@ -12,7 +12,7 @@
 package io.vertx.core.eventbus;
 
 import io.vertx.core.Promise;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeInfo;
 import io.vertx.test.core.VertxTestBase;

@@ -12,7 +12,7 @@
 package io.vertx.it;
 
 import io.vertx.core.http.*;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;

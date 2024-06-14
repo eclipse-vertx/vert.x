@@ -42,7 +42,7 @@ import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.buffer.impl.BufferInternal;
+import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.KeyCertOptions;

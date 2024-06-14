@@ -16,7 +16,9 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.impl.Arguments;
+import io.vertx.core.internal.buffer.VertxByteBufAllocator;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -44,27 +46,27 @@ public class BufferImpl implements BufferInternal {
     this(0);
   }
 
-  BufferImpl(int initialSizeHint) {
+  public BufferImpl(int initialSizeHint) {
     buffer = VertxByteBufAllocator.DEFAULT.heapBuffer(initialSizeHint, Integer.MAX_VALUE);
   }
 
-  BufferImpl(byte[] bytes) {
+  public BufferImpl(byte[] bytes) {
     buffer = VertxByteBufAllocator.DEFAULT.heapBuffer(bytes.length, Integer.MAX_VALUE).writeBytes(bytes);
   }
 
-  BufferImpl(String str, String enc) {
+  public BufferImpl(String str, String enc) {
     this(str.getBytes(Charset.forName(Objects.requireNonNull(enc))));
   }
 
-  BufferImpl(String str, Charset cs) {
+  public BufferImpl(String str, Charset cs) {
     this(str.getBytes(cs));
   }
 
-  BufferImpl(String str) {
+  public BufferImpl(String str) {
     this(str, StandardCharsets.UTF_8);
   }
 
-  BufferImpl(ByteBuf buffer) {
+  public BufferImpl(ByteBuf buffer) {
     this.buffer = buffer;
   }
 

@@ -13,7 +13,10 @@ package io.vertx.core;
 
 import io.netty.channel.EventLoop;
 import io.vertx.core.impl.*;
-import io.vertx.core.impl.future.PromiseInternal;
+import io.vertx.core.internal.PromiseInternal;
+import io.vertx.core.internal.CloseFuture;
+import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.spi.context.storage.AccessMode;
 import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.test.core.VertxTestBase;
@@ -970,8 +973,8 @@ public class ContextTest extends VertxTestBase {
     ClassLoader tccl1 = new URLClassLoader(new URL[0]);
     ClassLoader tccl2 = new URLClassLoader(new URL[0]);
     VertxImpl impl = (VertxImpl) vertx;
-    ContextInternal ctx1 = new FakeContext(impl, tccl1);
-    ContextInternal ctx2 = new FakeContext(impl, tccl2);
+    ContextInternal ctx1 = impl.createEventLoopContext(impl.getEventLoopGroup().next(), null, tccl1);
+    ContextInternal ctx2 = impl.createEventLoopContext(impl.getEventLoopGroup().next(), null, tccl2);
     AtomicInteger exec = new AtomicInteger();
     Thread thread = Thread.currentThread();
     ClassLoader current = thread.getContextClassLoader();

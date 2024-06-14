@@ -12,6 +12,7 @@ package io.vertx.core.impl;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.impl.transports.JDKTransport;
 import io.vertx.core.spi.transport.Transport;
@@ -20,7 +21,6 @@ import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.VertxThreadFactory;
 import io.vertx.core.spi.VertxTracerFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingOptions;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import io.vertx.test.fakemetrics.FakeVertxMetrics;

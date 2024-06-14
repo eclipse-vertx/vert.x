@@ -10,6 +10,8 @@
  */
 package io.vertx.core.impl;
 
+import io.vertx.core.ThreadingModel;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.spi.context.storage.AccessMode;
 import io.vertx.core.spi.context.storage.ContextLocal;
 
@@ -20,12 +22,22 @@ import java.util.function.Supplier;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class ContextBase {
+abstract class ContextBase implements ContextInternal {
 
   final Object[] locals;
 
   ContextBase(Object[] locals) {
     this.locals = locals;
+  }
+
+  public ContextInternal beginDispatch() {
+    VertxImpl vertx = (VertxImpl) owner();
+    return vertx.beginDispatch(this);
+  }
+
+  public void endDispatch(ContextInternal previous) {
+    VertxImpl vertx = (VertxImpl) owner();
+    vertx.endDispatch(previous);
   }
 
   public final <T> T getLocal(ContextLocal<T> key, AccessMode accessMode) {

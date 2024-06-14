@@ -11,7 +11,7 @@
 
 package io.vertx.core;
 
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.impl.btc.BlockedThreadEvent;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;

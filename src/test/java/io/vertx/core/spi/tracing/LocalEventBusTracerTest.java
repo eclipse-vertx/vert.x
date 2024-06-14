@@ -11,7 +11,7 @@
 package io.vertx.core.spi.tracing;
 
 import io.vertx.core.Context;
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.internal.ContextInternal;
 import org.junit.Ignore;
 import org.junit.Test;
 

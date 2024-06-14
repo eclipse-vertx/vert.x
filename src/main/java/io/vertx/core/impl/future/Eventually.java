@@ -11,9 +11,9 @@
 package io.vertx.core.impl.future;
 
 import io.vertx.core.Future;
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.FutureInternal;
 
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -32,9 +32,9 @@ class Eventually<T, U> extends Operation<T> implements Listener<T> {
 
   @Override
   public void onSuccess(T value) {
-    FutureInternal<U> future;
+    FutureBase<U> future;
     try {
-      future = (FutureInternal<U>) supplier.get();
+      future = (FutureBase<U>) supplier.get();
     } catch (Throwable e) {
       tryFail(e);
       return;
@@ -53,9 +53,9 @@ class Eventually<T, U> extends Operation<T> implements Listener<T> {
 
   @Override
   public void onFailure(Throwable failure) {
-    FutureInternal<U> future;
+    FutureBase<U> future;
     try {
-      future = (FutureInternal<U>) supplier.get();
+      future = (FutureBase<U>) supplier.get();
     } catch (Throwable e) {
       tryFail(e);
       return;

@@ -12,7 +12,6 @@ package io.vertx.core;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
-import io.vertx.core.impl.VertxInternal;
 import io.vertx.test.core.VertxTestBase;
 import junit.framework.AssertionFailedError;
 import org.junit.Assert;

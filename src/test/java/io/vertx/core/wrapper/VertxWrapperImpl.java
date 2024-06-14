@@ -1,6 +1,6 @@
 package io.vertx.core.wrapper;
 
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.impl.VertxWrapper;
 
 /**
