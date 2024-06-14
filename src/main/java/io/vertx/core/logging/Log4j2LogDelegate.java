@@ -11,7 +11,7 @@
 
 package io.vertx.core.logging;
 
-import io.vertx.core.impl.logging.LoggerAdapter;
+import io.vertx.core.internal.logging.LoggerAdapter;
 import io.vertx.core.spi.logging.LogDelegate;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.message.Message;

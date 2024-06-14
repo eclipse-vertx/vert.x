@@ -11,13 +11,11 @@
 
 package io.vertx.core.shareddata.impl;
 
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.impl.Arguments;
-import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.shareddata.*;
 import io.vertx.core.spi.cluster.ClusterManager;
 

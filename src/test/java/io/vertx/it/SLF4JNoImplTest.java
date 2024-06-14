@@ -11,8 +11,8 @@
 
 package io.vertx.it;
 
-import io.vertx.core.impl.logging.LoggerAdapter;
-import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.internal.logging.LoggerAdapter;
+import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.logging.JULLogDelegate;
 import io.vertx.core.logging.SLF4JLogDelegateFactory;
 import io.vertx.core.spi.logging.LogDelegate;

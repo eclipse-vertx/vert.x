@@ -12,7 +12,7 @@ package io.vertx.core.net.impl;
 
 import io.netty.channel.EventLoop;
 import io.vertx.core.ThreadingModel;
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.streams.impl.InboundReadQueue;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;

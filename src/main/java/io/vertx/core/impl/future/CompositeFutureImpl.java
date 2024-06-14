@@ -15,6 +15,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Handler;
+import io.vertx.core.internal.FutureInternal;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -64,7 +65,7 @@ public class CompositeFutureImpl extends FutureImpl<CompositeFuture> implements 
 
   private void init() {
     for (Future<?> result : results) {
-      FutureInternal internal = (FutureInternal<?>) result;
+      FutureBase internal = (FutureBase<?>) result;
       internal.addListener(this);
     }
     Object o;
@@ -201,7 +202,7 @@ public class CompositeFutureImpl extends FutureImpl<CompositeFuture> implements 
 
   private void complete(Object result) {
     for (Future<?> r : results) {
-      FutureInternal internal = (FutureInternal<?>) r;
+      FutureBase internal = (FutureBase<?>) r;
       internal.removeListener(this);
     }
     if (result == this) {

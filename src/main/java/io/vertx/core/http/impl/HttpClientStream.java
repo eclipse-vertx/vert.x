@@ -17,17 +17,10 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.buffer.impl.BufferInternal;
+import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.*;
-import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.net.HostAndPort;
-import io.vertx.core.net.ProxyOptions;
-import io.vertx.core.net.ProxyType;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.streams.WriteStream;
-
-import java.util.Base64;
-
-import static io.vertx.core.http.impl.HttpClientImpl.ABS_URI_START_PATTERN;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>

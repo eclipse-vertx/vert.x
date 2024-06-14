@@ -18,7 +18,6 @@ import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.Future;
 import io.vertx.core.*;
-import io.vertx.core.Timer;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.datagram.impl.DatagramSocketImpl;
@@ -34,15 +33,18 @@ import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.*;
 import io.vertx.core.impl.btc.BlockedThreadChecker;
+import io.vertx.core.internal.CloseFuture;
+import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.*;
 import io.vertx.core.impl.transports.JDKTransport;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.file.impl.FileSystemImpl;
 import io.vertx.core.file.impl.WindowsFileSystem;
-import io.vertx.core.impl.future.PromiseInternal;
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.internal.PromiseInternal;
+import io.vertx.core.internal.logging.Logger;
+import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.dns.impl.DnsAddressResolverProvider;
 import io.vertx.core.spi.transport.Transport;
 import io.vertx.core.shareddata.SharedData;
@@ -72,6 +74,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -467,6 +470,19 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   public EventLoopGroup getAcceptorEventLoopGroup() {
     return acceptorEventLoopGroup;
+  }
+
+  public static ContextInternal currentContext() {
+    Thread thread = Thread.currentThread();
+    if (thread instanceof VertxThread) {
+      return ((VertxThread) thread).context();
+    } else {
+      ContextDispatch current = nonVertxContextDispatch.get();
+      if (current != null) {
+        return current.context;
+      }
+    }
+    return null;
   }
 
   public ContextInternal getOrCreateContext() {
@@ -1233,6 +1249,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
   }
 
+  public <C> C createSharedResource(String resourceKey, String resourceName, CloseFuture closeFuture, Function<CloseFuture, C> supplier) {
+    return SharedResourceHolder.createSharedResource(this, resourceKey, resourceName, closeFuture, supplier);
+  }
+
   /**
    * Reads the version from the {@code vertx-version.txt} file.
    *
@@ -1252,4 +1272,5 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     } catch (IOException e) {
       throw new IllegalStateException(e.getMessage());
     }
-  }}
+  }
+}

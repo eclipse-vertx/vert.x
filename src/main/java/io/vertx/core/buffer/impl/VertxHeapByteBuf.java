@@ -17,7 +17,7 @@ import io.netty.buffer.UnpooledHeapByteBuf;
 /**
  * An un-releasable, un-pooled, un-instrumented heap {@code ByteBuf}.
  */
-final class VertxHeapByteBuf extends UnpooledHeapByteBuf {
+public final class VertxHeapByteBuf extends UnpooledHeapByteBuf {
 
   private static final byte[] EMPTY = new byte[0];
 

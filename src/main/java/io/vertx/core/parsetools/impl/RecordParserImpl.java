@@ -14,7 +14,7 @@ package io.vertx.core.parsetools.impl;
 import io.netty.buffer.Unpooled;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.buffer.impl.BufferInternal;
+import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.streams.ReadStream;

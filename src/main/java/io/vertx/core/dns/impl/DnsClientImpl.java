@@ -24,8 +24,8 @@ import io.vertx.core.VertxException;
 import io.vertx.core.datagram.impl.InternetProtocolFamily;
 import io.vertx.core.dns.*;
 import io.vertx.core.dns.DnsResponseCode;
-import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.VertxInternal;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;

@@ -15,10 +15,11 @@ import io.vertx.core.*;
 import io.vertx.core.impl.transports.EpollTransport;
 import io.vertx.core.impl.transports.JDKTransport;
 import io.vertx.core.impl.transports.KQueueTransport;
+import io.vertx.core.internal.VertxBootstrap;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.file.impl.FileResolverImpl;
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.internal.logging.Logger;
+import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.transport.Transport;
 import io.vertx.core.spi.ExecutorServiceFactory;
@@ -41,7 +42,7 @@ import java.util.List;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class VertxBuilder {
+public class VertxBuilder implements VertxBootstrap {
 
   private static final Logger log = LoggerFactory.getLogger(VertxBuilder.class);
 
@@ -71,11 +72,14 @@ public class VertxBuilder {
     this(new VertxOptions());
   }
 
-  /**
-   * @return the vertx options
-   */
   public VertxOptions options() {
     return options;
+  }
+
+  @Override
+  public VertxBootstrap options(VertxOptions options) {
+    this.options = options;
+    return this;
   }
 
   /**
@@ -88,7 +92,7 @@ public class VertxBuilder {
   /**
    * @return the transport to use
    */
-  public Transport findTransport() {
+  public Transport transport() {
     return transport;
   }
 
@@ -97,26 +101,23 @@ public class VertxBuilder {
    * @param transport the transport
    * @return this builder instance
    */
-  public VertxBuilder findTransport(Transport transport) {
+  public VertxBuilder transport(Transport transport) {
     this.transport = transport;
     return this;
   }
 
-  /**
-   * @return the cluster manager to use
-   */
   public ClusterManager clusterManager() {
     return clusterManager;
   }
 
-  /**
-   * Set the cluster manager to use.
-   * @param clusterManager the cluster manager
-   * @return this builder instance
-   */
   public VertxBuilder clusterManager(ClusterManager clusterManager) {
     this.clusterManager = clusterManager;
     return this;
+  }
+
+  @Override
+  public VertxMetricsFactory metricsFactory() {
+    return metricsFactory;
   }
 
   public VertxBuilder metricsFactory(VertxMetricsFactory factory) {
@@ -124,21 +125,18 @@ public class VertxBuilder {
     return this;
   }
 
-  /**
-   * @return the node selector to use
-   */
   public NodeSelector clusterNodeSelector() {
     return clusterNodeSelector;
   }
 
-  /**
-   * Set the cluster node selector to use.
-   * @param selector the selector
-   * @return this builder instance
-   */
   public VertxBuilder clusterNodeSelector(NodeSelector selector) {
     this.clusterNodeSelector = selector;
     return this;
+  }
+
+  @Override
+  public VertxTracerFactory tracerFactory() {
+    return tracerFactory;
   }
 
   public VertxBuilder tracerFactory(VertxTracerFactory factory) {
@@ -146,35 +144,19 @@ public class VertxBuilder {
     return this;
   }
 
-  /**
-   * @return the tracer instance to use
-   */
   public VertxTracer tracer() {
     return tracer;
   }
 
-  /**
-   * Set the tracer to use.
-   * @param tracer the tracer
-   * @return this builder instance
-   */
   public VertxBuilder tracer(VertxTracer tracer) {
     this.tracer = tracer;
     return this;
   }
 
-  /**
-   * @return the metrics instance to use
-   */
   public VertxMetrics metrics() {
     return metrics;
   }
 
-  /**
-   * Set the metrics instance to use.
-   * @param metrics the metrics
-   * @return this builder instance
-   */
   public VertxBuilder metrics(VertxMetrics metrics) {
     this.metrics = metrics;
     return this;
@@ -197,43 +179,24 @@ public class VertxBuilder {
     return this;
   }
 
-  /**
-   * @return the {@code VertxThreadFactory} to use
-   */
   public VertxThreadFactory threadFactory() {
     return threadFactory;
   }
 
-  /**
-   * Set the {@code VertxThreadFactory} instance to use.
-   * @param factory the metrics
-   * @return this builder instance
-   */
   public VertxBuilder threadFactory(VertxThreadFactory factory) {
     this.threadFactory = factory;
     return this;
   }
 
-  /**
-   * @return the {@code ExecutorServiceFactory} to use
-   */
   public ExecutorServiceFactory executorServiceFactory() {
     return executorServiceFactory;
   }
 
-  /**
-   * Set the {@code ExecutorServiceFactory} instance to use.
-   * @param factory the factory
-   * @return this builder instance
-   */
   public VertxBuilder executorServiceFactory(ExecutorServiceFactory factory) {
     this.executorServiceFactory = factory;
     return this;
   }
 
-  /**
-   * Build and return the vertx instance
-   */
   public Vertx vertx() {
     checkBeforeInstantiating();
     VertxImpl vertx = new VertxImpl(

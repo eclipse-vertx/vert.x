@@ -11,7 +11,7 @@
 
 package io.vertx.core;
 
-import io.vertx.core.impl.NoStackTraceException;
+import io.vertx.core.internal.NoStackTraceException;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 

@@ -12,7 +12,7 @@ package io.vertx.core.impl.future;
 
 import io.vertx.core.Expectation;
 import io.vertx.core.VertxException;
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.internal.ContextInternal;
 
 /**
  * Implements expectation.

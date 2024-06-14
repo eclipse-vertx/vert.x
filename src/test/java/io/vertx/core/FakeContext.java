@@ -2,12 +2,12 @@ package io.vertx.core;
 
 import io.netty.channel.EventLoop;
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.impl.CloseFuture;
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.internal.CloseFuture;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.Deployment;
 import io.vertx.core.impl.TaskQueue;
 import io.vertx.core.impl.VertxImpl;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.impl.WorkerPool;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.context.storage.AccessMode;
@@ -179,6 +179,14 @@ class FakeContext implements ContextInternal {
 
   @Override
   public <T> void putLocal(ContextLocal<T> key, AccessMode accessMode, T value) {
+  }
 
+  @Override
+  public ContextInternal beginDispatch() {
+    return null;
+  }
+
+  @Override
+  public void endDispatch(ContextInternal previous) {
   }
 }

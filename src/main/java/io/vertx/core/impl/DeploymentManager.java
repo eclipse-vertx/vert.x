@@ -12,9 +12,11 @@
 package io.vertx.core.impl;
 
 import io.vertx.core.*;
+import io.vertx.core.internal.CloseFuture;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.internal.logging.Logger;
+import io.vertx.core.internal.logging.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;

@@ -11,7 +11,7 @@
 
 package io.vertx.core.eventbus.impl;
 
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.internal.ContextInternal;
 
 import java.util.Objects;
 

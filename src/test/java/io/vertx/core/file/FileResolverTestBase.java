@@ -18,7 +18,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.file.impl.FileResolverImpl;
 import io.vertx.core.impl.Utils;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.internal.VertxInternal;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Assert;
 import org.junit.Assume;

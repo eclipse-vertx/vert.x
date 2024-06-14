@@ -10,11 +10,10 @@
  */
 package io.vertx.core.http;
 
-import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.impl.future.PromiseInternal;
+import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.PromiseInternal;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Assume;
 import org.junit.Before;

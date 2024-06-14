@@ -13,6 +13,7 @@ package io.vertx.core.impl;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.Timer;
 import io.vertx.core.impl.future.FutureImpl;
+import io.vertx.core.internal.ContextInternal;
 
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
@@ -22,11 +23,11 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class TimerImpl extends FutureImpl<Void> implements FutureListener<Void>, Timer {
+public class TimerImpl extends FutureImpl<Void> implements FutureListener<Void>, Timer {
 
   private final io.netty.util.concurrent.ScheduledFuture<Void> delegate;
 
-  TimerImpl(ContextInternal ctx, io.netty.util.concurrent.ScheduledFuture<Void> delegate) {
+  public TimerImpl(ContextInternal ctx, io.netty.util.concurrent.ScheduledFuture<Void> delegate) {
     super(ctx);
     this.delegate = delegate;
   }

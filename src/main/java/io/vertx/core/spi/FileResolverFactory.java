@@ -12,7 +12,7 @@
 package io.vertx.core.spi;
 
 import io.vertx.core.VertxOptions;
-import io.vertx.core.impl.VertxBuilder;
+import io.vertx.core.internal.VertxBootstrap;
 import io.vertx.core.spi.file.FileResolver;
 
 /**
@@ -23,7 +23,7 @@ import io.vertx.core.spi.file.FileResolver;
 public interface FileResolverFactory extends VertxServiceProvider {
 
   @Override
-  default void init(VertxBuilder builder) {
+  default void init(VertxBootstrap builder) {
     if (builder.fileResolver() == null) {
       FileResolver fileResolver = resolver(builder.options());
       builder.fileResolver(fileResolver);

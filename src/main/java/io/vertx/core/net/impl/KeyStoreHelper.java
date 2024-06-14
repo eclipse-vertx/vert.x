@@ -56,7 +56,7 @@ import javax.net.ssl.X509KeyManager;
 import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.impl.pkcs1.PrivateKeyParser;
 
 /**
