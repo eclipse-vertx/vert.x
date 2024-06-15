@@ -2,7 +2,6 @@ package io.vertx.core.file;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.impl.JsonUtil;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
@@ -13,9 +12,8 @@ import java.util.Base64;
  */
 public class CopyOptionsConverter {
 
-
-  private static final Base64.Decoder BASE64_DECODER = JsonUtil.BASE64_DECODER;
-  private static final Base64.Encoder BASE64_ENCODER = JsonUtil.BASE64_ENCODER;
+  private static final Base64.Decoder BASE64_DECODER = Base64.getUrlDecoder();
+  private static final Base64.Encoder BASE64_ENCODER = Base64.getUrlEncoder().withoutPadding();
 
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, CopyOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
