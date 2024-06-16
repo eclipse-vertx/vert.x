@@ -1,0 +1,63 @@
+/*
+ * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
+ */
+
+package io.vertx.tests.file;
+
+import io.vertx.test.core.TestUtils;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
+
+/**
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
+public class NestedJarFileResolverTest extends FileResolverTestBase {
+
+  @Override
+  protected ClassLoader resourcesLoader(File baseDir) throws Exception {
+    File nestedFiles = Files.createTempFile(TestUtils.MAVEN_TARGET_DIR.toPath(), "", "nested-files.jar").toFile();
+    File files = JarFileResolverTest.getFiles(baseDir);
+    try (JarOutputStream jar = new JarOutputStream(new FileOutputStream(nestedFiles))) {
+      jar.putNextEntry(new JarEntry("lib/"));
+      jar.closeEntry();
+      jar.putNextEntry(new JarEntry("lib/nested.jar"));
+      jar.write(Files.readAllBytes(files.toPath()));
+      jar.closeEntry();
+    }
+    URL webrootURL = nestedFiles.toURI().toURL();
+    return new ClassLoader(Thread.currentThread().getContextClassLoader()) {
+      @Override
+      public URL getResource(String name) {
+        try {
+          if (name.startsWith("lib/")) {
+            return new URL("jar:" + webrootURL + "!/" + name);
+          } else if (name.startsWith("webroot")) {
+            return new URL("jar:" + webrootURL + "!/lib/nested.jar!/" + name.substring(7));
+          } else if (name.equals("afile.html")) {
+            return new URL("jar:" + webrootURL + "!/lib/nested.jar!/afile.html");
+          } else if (name.equals("afile with spaces.html")) {
+            return new URL("jar:" + webrootURL + "!/lib/nested.jar!/afile with spaces.html");
+          } else if (name.equals("afilewithspaceatend ")) {
+            return new URL("jar:" + webrootURL + "!/lib/nested.jar!/afilewithspaceatend ");
+          }
+        } catch (MalformedURLException e) {
+          throw new AssertionError(e);
+        }
+        return super.getResource(name);
+      }
+    };
+  }
+}
