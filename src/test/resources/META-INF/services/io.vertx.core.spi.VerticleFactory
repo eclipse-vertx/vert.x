@@ -1,2 +1,0 @@
-io.vertx.core.ClasspathVerticleFactory
-io.vertx.core.AccessEventBusFromInitVerticleFactory

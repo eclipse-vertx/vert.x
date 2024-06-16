@@ -9,7 +9,6 @@ jobs:
         include:
           - os: ubuntu-latest
             jdk: 8
-            profile: ''
           - os: ubuntu-latest
             jdk: 8
             profile: '-PtestNativeTransport'
@@ -18,10 +17,8 @@ jobs:
             profile: '-PtestDomainSockets'
           - os: ubuntu-latest
             jdk: 21
-            profile: ''
           - os: windows-latest
             jdk: 8
-            profile: ''
     uses: ./.github/workflows/ci.yml
     with:
       branch: 4.x

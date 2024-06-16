@@ -15,7 +15,6 @@ jobs:
         include:
           - os: ubuntu-latest
             jdk: 11
-            profile: ''
           - os: ubuntu-latest
             jdk: 11
             profile: '-PtestNativeTransport'
@@ -24,10 +23,8 @@ jobs:
             profile: '-PtestDomainSockets'
           - os: ubuntu-latest
             jdk: 21
-            profile: ''
           - os: windows-latest
             jdk: 11
-            profile: ''
     uses: ./.github/workflows/ci.yml
     with:
       branch: ${{ github.event.pull_request.head.sha || github.ref_name }}
