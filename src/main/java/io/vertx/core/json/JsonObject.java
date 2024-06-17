@@ -1158,6 +1158,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     return encode();
   }
 
+
   @Override
   public boolean equals(Object o) {
     // null check
@@ -1182,72 +1183,58 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
 
       Object thisValue = this.getValue(key);
       Object otherValue = other.getValue(key);
-      // identity check
-      if (thisValue == otherValue) {
-        continue;
-      }
-      // special case for numbers
-
-      if (thisValue instanceof Number && otherValue instanceof Number) {
-        if (thisValue.getClass() == otherValue.getClass()) {
-          if (thisValue.equals(otherValue)) {
-            continue;
-          }
-        } else {
-          // meaning that the numbers are different types
-          Number n1 = (Number) thisValue;
-          Number n2 = (Number) otherValue;
-          if ((thisValue instanceof Float || thisValue instanceof Double) &&
-            (otherValue instanceof Float || otherValue instanceof Double)) {
-            // compare as floating point double
-            if (n1.doubleValue() == n2.doubleValue()) {
-              // same value, check the next entry
-              continue;
-            }
-          }
-
-          if ((thisValue instanceof Integer || thisValue instanceof Long) &&
-            (otherValue instanceof Integer || otherValue instanceof Long)) {
-            // compare as integer long
-            if (n1.longValue() == n2.longValue()) {
-              // same value, check the next entry
-              continue;
-            }
-          }
-
-
-          // if its either integer or long and the other is float or double or vice versa,
-          // compare as floating point double
-          if ((thisValue instanceof Integer || thisValue instanceof Long) &&
-            (otherValue instanceof Float || otherValue instanceof Double) ||
-            (thisValue instanceof Float || thisValue instanceof Double) &&
-              (otherValue instanceof Integer || otherValue instanceof Long)) {
-            // compare as floating point double
-            if (n1.doubleValue() == n2.doubleValue()) {
-              // same value, check the next entry
-              continue;
-            }
-          }
-        }
-      }
-
-      // special case for char sequences
-      if (thisValue instanceof CharSequence && otherValue instanceof CharSequence && thisValue.getClass() != otherValue.getClass()) {
-        CharSequence s1 = (CharSequence) thisValue;
-        CharSequence s2 = (CharSequence) otherValue;
-
-        if (Objects.equals(s1.toString(), s2.toString())) {
-          // same value, check the next entry
-          continue;
-        }
-      }
-      // fallback to standard object equals checks
-      if (!Objects.equals(thisValue, otherValue)) {
+      if (thisValue != otherValue && !compareObjects(thisValue, otherValue)) {
         return false;
       }
     }
     // all checks passed
     return true;
+  }
+
+  static boolean compareObjects(Object o1, Object o2) {
+    if (o1 instanceof Number && o2 instanceof Number) {
+      if (o1.getClass() == o2.getClass()) {
+        return o1.equals(o2);
+      } else {
+        // meaning that the numbers are different types
+        Number n1 = (Number) o1;
+        Number n2 = (Number) o2;
+        return compareNumbers(n1, n2);
+      }
+    } else if (o1 instanceof CharSequence && o2 instanceof CharSequence && o1.getClass() != o2.getClass()) {
+      return Objects.equals(o1.toString(), o2.toString());
+    } else {
+      return Objects.equals(o1, o2);
+    }
+  }
+
+  private static boolean compareNumbers(Number n1, Number n2) {
+    if (isDecimalNumber(n1) && isDecimalNumber(n2)) {
+      // compare as floating point double
+      return n1.doubleValue() == n2.doubleValue();
+    } else if (isWholeNumber(n1) && isWholeNumber(n2)) {
+      // compare as integer long
+      return n1.longValue() == n2.longValue();
+    } else if (isWholeNumber(n1) && isDecimalNumber(n2) ||
+      isDecimalNumber(n1) && isWholeNumber(n2)) {
+      // if its either integer or long and the other is float or double or vice versa,
+      // compare as floating point double
+      return n1.doubleValue() == n2.doubleValue();
+    } else {
+      if (isWholeNumber(n1)) {
+        return n1.longValue() == n2.longValue();
+      } else  {
+        return n1.doubleValue() == n2.doubleValue();
+      }
+    }
+  }
+
+  private static boolean isWholeNumber(Number thisValue) {
+    return thisValue instanceof Integer || thisValue instanceof Long;
+  }
+
+  private static boolean isDecimalNumber(Number thisValue) {
+    return thisValue instanceof Float || thisValue instanceof Double;
   }
 
   @Override
