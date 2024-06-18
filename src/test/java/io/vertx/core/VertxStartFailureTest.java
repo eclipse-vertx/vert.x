@@ -12,8 +12,8 @@
 package io.vertx.core;
 
 import io.netty.channel.EventLoopGroup;
-import io.vertx.core.impl.VertxBuilder;
 import io.vertx.core.impl.transports.JDKTransport;
+import io.vertx.core.internal.VertxBootstrap;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.transport.Transport;
 import io.vertx.core.spi.cluster.NodeListener;
@@ -112,7 +112,7 @@ public class VertxStartFailureTest extends AsyncTestBase {
       }
     };
     AtomicReference<AsyncResult<Vertx>> resultRef = new AtomicReference<>();
-    new VertxBuilder(options).clusterManager(clusterManager).init().findTransport(transport).clusteredVertx().onComplete(ar -> {
+    VertxBootstrap.create().options(options).clusterManager(clusterManager).init().transport(transport).clusteredVertx().onComplete(ar -> {
       resultRef.set(ar);
       latch.countDown();
     });
