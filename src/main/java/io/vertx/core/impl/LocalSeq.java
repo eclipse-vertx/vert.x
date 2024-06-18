@@ -10,7 +10,11 @@
  */
 package io.vertx.core.impl;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import io.vertx.core.spi.context.storage.ContextLocal;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.IntFunction;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -18,20 +22,34 @@ import java.util.concurrent.atomic.AtomicInteger;
 class LocalSeq {
 
   // 0 : reserved slot for local context map
-  private static final AtomicInteger seq = new AtomicInteger(1);
+  private static final List<ContextLocal<?>> locals = new ArrayList<>();
+
+  static {
+    reset();
+  }
 
   /**
    * Hook for testing purposes
    */
   static void reset() {
-    seq.set((1));
+    synchronized (locals) {
+      locals.clear();
+      locals.add(ContextInternal.LOCAL_MAP);
+    }
   }
 
-  static int get() {
-    return seq.get();
+  static ContextLocal<?>[] get() {
+    synchronized (locals) {
+      return locals.toArray(new ContextLocal[0]);
+    }
   }
 
-  static int next() {
-    return seq.getAndIncrement();
+  static <T> ContextLocal<T> add(IntFunction<ContextLocal<T>> provider) {
+    synchronized (locals) {
+      int idx = locals.size();
+      ContextLocal<T> local = provider.apply(idx);
+      locals.add(local);
+      return local;
+    }
   }
 }

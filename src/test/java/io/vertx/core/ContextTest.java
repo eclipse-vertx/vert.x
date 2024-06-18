@@ -1092,4 +1092,18 @@ public class ContextTest extends VertxTestBase {
     }
   }
 
+  @Test
+  public void testNestedDuplicate() {
+    ContextInternal ctx = ((ContextInternal) vertx.getOrCreateContext()).duplicate();
+    ctx.putLocal("foo", "bar");
+    Object expected = new Object();
+    ctx.putLocal(contextLocal, AccessMode.CONCURRENT, expected);
+    ContextInternal duplicate = ctx.duplicate();
+    assertEquals("bar", duplicate.getLocal("foo"));
+    assertEquals(expected, duplicate.getLocal(contextLocal));
+    ctx.removeLocal("foo");
+    ctx.removeLocal(contextLocal, AccessMode.CONCURRENT);
+    assertEquals("bar", duplicate.getLocal("foo"));
+    assertEquals(expected, duplicate.getLocal(contextLocal));
+  }
 }

@@ -17,10 +17,12 @@ import io.vertx.core.Future;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.core.spi.metrics.PoolMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.concurrent.*;
+import java.util.function.UnaryOperator;
 
 /**
  * A base class for {@link Context} implementations.

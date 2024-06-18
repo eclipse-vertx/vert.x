@@ -15,6 +15,7 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.ContextLocalImpl;
 
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 /**
  * A local storage for arbitrary data attached to a duplicated {@link Context}.
@@ -35,7 +36,16 @@ public interface ContextLocal<T> {
    * @return the context local storage
    */
   static <T> ContextLocal<T> registerLocal(Class<T> type) {
-    return new ContextLocalImpl<>();
+    return ContextLocalImpl.registerLocal(type);
+  }
+
+  /**
+   * Registers a context local storage.
+   *
+   * @return the context local storage
+   */
+  static <T> ContextLocal<T> registerLocal(Class<T> type, UnaryOperator<T> duplicator) {
+    return ContextLocalImpl.registerLocal(type, duplicator);
   }
 
   /**
@@ -56,6 +66,10 @@ public interface ContextLocal<T> {
    */
   default T get(Context context, Supplier<? extends T> initialValueSupplier) {
     return get(context, AccessMode.CONCURRENT, initialValueSupplier);
+  }
+
+  default T duplicate(T value) {
+    return  value;
   }
 
   /**

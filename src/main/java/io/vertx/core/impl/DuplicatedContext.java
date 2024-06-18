@@ -16,10 +16,10 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 
@@ -164,7 +164,28 @@ final class DuplicatedContext extends ContextBase implements ContextInternal {
 
   @Override
   public ContextInternal duplicate() {
-    return new DuplicatedContext(delegate, locals.length == 0 ? VertxImpl.EMPTY_CONTEXT_LOCALS : new Object[locals.length]);
+    Object[] localsDuplicate = locals.length == 0 ? VertxImpl.EMPTY_CONTEXT_LOCALS : locals.clone();
+    ContextLocal<?>[] contextLocals = ((VertxImpl) delegate.owner()).contextLocals;
+    for (int i = 0;i < localsDuplicate.length;i++) {
+      ContextLocalImpl<?> contextLocal = (ContextLocalImpl<?>) contextLocals[i];
+      Object local = locals[i];
+      if (local != null) {
+        if (local != ContextLocalImpl.IDENTITY) {
+          localsDuplicate[i] = duplicate(local, contextLocal);
+        } else {
+          localsDuplicate[i] = local;
+        }
+      }
+    }
+    return new DuplicatedContext(delegate, localsDuplicate);
+  }
+
+  private static <T> T duplicate(Object o, ContextLocalImpl<T> contextLocal) {
+    if (contextLocal.type.isInstance(o)) {
+      return contextLocal.duplicator.apply(contextLocal.type.cast(o));
+    } else {
+      throw new ClassCastException();
+    }
   }
 
   @Override

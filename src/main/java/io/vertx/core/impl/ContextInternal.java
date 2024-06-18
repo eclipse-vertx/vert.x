@@ -25,6 +25,7 @@ import io.vertx.core.spi.tracing.VertxTracer;
 import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 /**
  * This interface provides an api for vert.x core internal use only
@@ -35,7 +36,7 @@ import java.util.function.Supplier;
  */
 public interface ContextInternal extends Context {
 
-  ContextLocal<ConcurrentMap<Object, Object>> LOCAL_MAP = new ContextLocalImpl<>(0);
+  ContextLocal<ConcurrentMap<Object, Object>> LOCAL_MAP = (ContextLocal) new ContextLocalImpl<>(0, ConcurrentMap.class, t -> new ConcurrentHashMap<>(t));
 
   /**
    * @return the current context

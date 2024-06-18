@@ -37,6 +37,7 @@ import io.vertx.core.impl.btc.BlockedThreadChecker;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.*;
 import io.vertx.core.impl.transports.JDKTransport;
+import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.file.impl.FileSystemImpl;
 import io.vertx.core.file.impl.WindowsFileSystem;
@@ -73,6 +74,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -136,7 +138,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final VerticleManager verticleManager;
   private final FileResolver fileResolver;
   private final Map<ServerID, NetServerInternal> sharedNetServers = new HashMap<>();
-  private final int contextLocals;
+  final ContextLocal<?>[] contextLocals;
   final WorkerPool workerPool;
   final WorkerPool internalWorkerPool;
   final WorkerPool virtualThreaWorkerPool;
@@ -503,10 +505,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   private Object[] createContextLocals() {
-    if (contextLocals == 0) {
+    int len = contextLocals.length;
+    if (len == 0) {
       return EMPTY_CONTEXT_LOCALS;
     } else {
-      return new Object[contextLocals];
+      return new Object[len];
     }
   }
 

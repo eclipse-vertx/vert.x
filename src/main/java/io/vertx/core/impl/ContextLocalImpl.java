@@ -12,18 +12,31 @@ package io.vertx.core.impl;
 
 import io.vertx.core.spi.context.storage.ContextLocal;
 
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class ContextLocalImpl<T> implements ContextLocal<T> {
 
-  final int index;
-
-  public ContextLocalImpl(int index) {
-    this.index = index;
+  public static <T> ContextLocal<T> registerLocal(Class<T> type) {
+    return registerLocal(type, (UnaryOperator<T>) ContextLocalImpl.IDENTITY);
   }
 
-  public ContextLocalImpl() {
-    this.index = LocalSeq.next();
+  public static <T> ContextLocal<T> registerLocal(Class<T> type, Function<T, ? extends T> duplicator) {
+    return LocalSeq.add(idx -> new ContextLocalImpl<>(idx, type, duplicator));
+  }
+
+  public static final UnaryOperator<?> IDENTITY = UnaryOperator.identity();
+
+  final int index;
+  final Class<T> type;
+  final  Function<T, ? extends T> duplicator;
+
+  ContextLocalImpl(int index, Class<T> type, Function<T, ? extends T> duplicator) {
+    this.index = index;
+    this.type = type;
+    this.duplicator = duplicator;
   }
 }
