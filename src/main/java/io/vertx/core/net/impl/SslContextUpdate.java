@@ -10,6 +10,8 @@
  */
 package io.vertx.core.net.impl;
 
+import io.vertx.core.internal.net.SslChannelProvider;
+
 /**
  * Result of the SslContext update operation.
  */

@@ -8,11 +8,14 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.net.impl;
+package io.vertx.core.internal.tls;
 
+import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslContext;
+import io.netty.util.AsyncMapping;
 import io.vertx.core.VertxException;
 import io.vertx.core.http.ClientAuth;
+import io.vertx.core.internal.net.VertxSslContext;
 import io.vertx.core.spi.tls.SslContextFactory;
 
 import javax.net.ssl.*;
@@ -20,6 +23,8 @@ import java.security.cert.CRL;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -30,6 +35,11 @@ import java.util.function.Supplier;
  */
 public class SslContextProvider {
 
+  private static int idx(boolean useAlpn) {
+    return useAlpn ? 0 : 1;
+  }
+
+  private final boolean useWorkerPool;
   private final Supplier<SslContextFactory> provider;
   private final Set<String> enabledProtocols;
   private final List<CRL> crls;
@@ -42,7 +52,13 @@ public class SslContextProvider {
   private final Function<String, KeyManagerFactory> keyManagerFactoryMapper;
   private final Function<String, TrustManager[]> trustManagerMapper;
 
-  public SslContextProvider(ClientAuth clientAuth,
+  private final SslContext[] sslContexts = new SslContext[2];
+  private final Map<String, SslContext>[] sslContextMaps = new Map[]{
+    new ConcurrentHashMap<>(), new ConcurrentHashMap<>()
+  };
+
+  public SslContextProvider(boolean useWorkerPool,
+                            ClientAuth clientAuth,
                             String endpointIdentificationAlgorithm,
                             List<String> applicationProtocols,
                             Set<String> enabledCipherSuites,
@@ -53,6 +69,7 @@ public class SslContextProvider {
                             Function<String, TrustManager[]> trustManagerMapper,
                             List<CRL> crls,
                             Supplier<SslContextFactory> provider) {
+    this.useWorkerPool = useWorkerPool;
     this.provider = provider;
     this.clientAuth = clientAuth;
     this.endpointIdentificationAlgorithm = endpointIdentificationAlgorithm;
@@ -64,6 +81,14 @@ public class SslContextProvider {
     this.keyManagerFactoryMapper = keyManagerFactoryMapper;
     this.trustManagerMapper = trustManagerMapper;
     this.crls = crls;
+  }
+
+  public boolean useWorkerPool() {
+    return useWorkerPool;
+  }
+
+  public int sniEntrySize() {
+    return sslContextMaps[0].size() + sslContextMaps[1].size();
   }
 
   public VertxSslContext createContext(boolean server,
@@ -82,6 +107,59 @@ public class SslContextProvider {
     } else {
       return createClientContext(keyManagerFactory, trustManagers, serverName, useAlpn);
     }
+  }
+
+  public SslContext sslClientContext(String serverName, boolean useAlpn) {
+    try {
+      return sslContext(serverName, useAlpn, false);
+    } catch (Exception e) {
+      throw new VertxException(e);
+    }
+  }
+
+  public SslContext sslContext(String serverName, boolean useAlpn, boolean server) throws Exception {
+    int idx = idx(useAlpn);
+    if (serverName != null) {
+      KeyManagerFactory kmf = resolveKeyManagerFactory(serverName);
+      TrustManager[] trustManagers = resolveTrustManagers(serverName);
+      if (kmf != null || trustManagers != null || !server) {
+        return sslContextMaps[idx].computeIfAbsent(serverName, s -> createContext(server, kmf, trustManagers, s, useAlpn));
+      }
+    }
+    if (sslContexts[idx] == null) {
+      SslContext context = createContext(server, null, null, serverName, useAlpn);
+      sslContexts[idx] = context;
+    }
+    return sslContexts[idx];
+  }
+
+  public SslContext sslServerContext(boolean useAlpn) {
+    try {
+      return sslContext(null, useAlpn, true);
+    } catch (Exception e) {
+      throw new VertxException(e);
+    }
+  }
+
+  /**
+   * Server name {@link AsyncMapping} for {@link SniHandler}, mapping happens on a Vert.x worker thread.
+   *
+   * @return the {@link AsyncMapping}
+   */
+  public AsyncMapping<? super String, ? extends SslContext> serverNameMapping(Executor workerPool, boolean useAlpn) {
+    return (AsyncMapping<String, SslContext>) (serverName, promise) -> {
+      workerPool.execute(() -> {
+        SslContext sslContext;
+        try {
+          sslContext = sslContext(serverName, useAlpn, true);
+        } catch (Exception e) {
+          promise.setFailure(e);
+          return;
+        }
+        promise.setSuccess(sslContext);
+      });
+      return promise;
+    };
   }
 
   public VertxSslContext createContext(boolean server, boolean useAlpn) {
@@ -128,7 +206,7 @@ public class SslContextProvider {
         .forClient(false)
         .enabledCipherSuites(enabledCipherSuites)
         .applicationProtocols(applicationProtocols);
-      factory.clientAuth(SSLHelper.CLIENT_AUTH_MAPPING.get(clientAuth));
+      factory.clientAuth(SslContextManager.CLIENT_AUTH_MAPPING.get(clientAuth));
       if (serverName != null) {
         factory.serverName(serverName);
       }

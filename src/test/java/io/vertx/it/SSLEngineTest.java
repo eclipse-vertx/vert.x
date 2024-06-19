@@ -19,7 +19,7 @@ import io.vertx.core.net.JdkSSLEngineOptions;
 import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.core.net.SSLEngineOptions;
 import io.vertx.core.net.impl.NetServerInternal;
-import io.vertx.core.net.impl.SslContextProvider;
+import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.test.tls.Cert;
 import org.junit.Test;
 

@@ -14,6 +14,7 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.*;
 
 /**

@@ -29,6 +29,9 @@ import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
+import io.vertx.core.internal.tls.SslContextManager;
+import io.vertx.core.internal.net.SslChannelProvider;
+import io.vertx.core.internal.net.SslHandshakeCompletionHandler;
 import io.vertx.core.net.*;
 import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.spi.metrics.TCPMetrics;
@@ -53,7 +56,7 @@ import java.util.concurrent.TimeUnit;
 public class NetSocketImpl extends VertxConnection implements NetSocketInternal {
 
   private final String writeHandlerID;
-  private final SSLHelper sslHelper;
+  private final SslContextManager sslContextManager;
   private final SSLOptions sslOptions;
   private final SocketAddress remoteAddress;
   private final TCPMetrics metrics;
@@ -68,23 +71,23 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
 
   public NetSocketImpl(ContextInternal context,
                        ChannelHandlerContext channel,
-                       SSLHelper sslHelper,
+                       SslContextManager sslContextManager,
                        SSLOptions sslOptions,
                        TCPMetrics metrics,
                        boolean registerWriteHandler) {
-    this(context, channel, null, sslHelper, sslOptions, metrics, null, registerWriteHandler);
+    this(context, channel, null, sslContextManager, sslOptions, metrics, null, registerWriteHandler);
   }
 
   public NetSocketImpl(ContextInternal context,
                        ChannelHandlerContext channel,
                        SocketAddress remoteAddress,
-                       SSLHelper sslHelper,
+                       SslContextManager sslContextManager,
                        SSLOptions sslOptions,
                        TCPMetrics metrics,
                        String negotiatedApplicationLayerProtocol,
                        boolean registerWriteHandler) {
     super(context, channel);
-    this.sslHelper = sslHelper;
+    this.sslContextManager = sslContextManager;
     this.sslOptions = sslOptions;
     this.writeHandlerID = registerWriteHandler ? "__vertx.net." + UUID.randomUUID() : null;
     this.remoteAddress = remoteAddress;
@@ -300,25 +303,23 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
         .compose(v -> {
           if (sslOptions instanceof ClientSSLOptions) {
             ClientSSLOptions clientSSLOptions =  (ClientSSLOptions) sslOptions;
-            return sslHelper.resolveSslChannelProvider(
+            return sslContextManager.resolveSslContextProvider(
               sslOptions,
               clientSSLOptions.getHostnameVerificationAlgorithm(),
-              false,
               null,
               null,
-              context);
+              context).map(p -> new SslChannelProvider(context.owner(), p, false));
           } else {
             ServerSSLOptions serverSSLOptions = (ServerSSLOptions) sslOptions;
             ClientAuth clientAuth = serverSSLOptions.getClientAuth();
             if (clientAuth == null) {
               clientAuth = ClientAuth.NONE;
             }
-            return sslHelper.resolveSslChannelProvider(
+            return sslContextManager.resolveSslContextProvider(
               sslOptions,
               null,
-              serverSSLOptions.isSni(),
               clientAuth,
-              null, context);
+              null, context).map(p -> new SslChannelProvider(context.owner(), p, serverSSLOptions.isSni()));
           }
         })
         .transform(ar -> {

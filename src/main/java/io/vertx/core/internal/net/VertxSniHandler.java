@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.net.impl;
+package io.vertx.core.internal.net;
 
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.ssl.SniHandler;

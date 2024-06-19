@@ -8,9 +8,8 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.net.impl;
+package io.vertx.core.internal.net;
 
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.ssl.SniCompletionEvent;
@@ -18,18 +17,19 @@ import io.netty.handler.ssl.SslHandshakeCompletionEvent;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.Promise;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
 
 /**
- * An handler that waits for SSL handshake completion and dispatch it to the server handler.
+ * A handler that waits for SSL handshake completion and dispatch it to the server handler.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class SslHandshakeCompletionHandler extends ChannelInboundHandlerAdapter {
 
-  static AttributeKey<String> SERVER_NAME_ATTR = AttributeKey.valueOf("sniServerName");
+  /**
+   * The channel attribute providing the SNI server name, this name is set upon handshake completion when available.
+   */
+  public static AttributeKey<String> SERVER_NAME_ATTR = AttributeKey.valueOf("sniServerName");
+
   private final Promise<Void> promise;
 
   public SslHandshakeCompletionHandler(Promise<Void> promise) {

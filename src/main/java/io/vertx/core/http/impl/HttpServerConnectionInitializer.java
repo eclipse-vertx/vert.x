@@ -23,6 +23,8 @@ import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.tls.SslContextManager;
+import io.vertx.core.internal.net.SslChannelProvider;
 import io.vertx.core.net.impl.*;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
@@ -88,7 +90,7 @@ class HttpServerConnectionInitializer {
     this.encodingDetector = compressionOptions != null ? new EncodingDetector(compressionOptions)::determineEncoding : null;
   }
 
-  void configurePipeline(Channel ch, SslChannelProvider sslChannelProvider, SSLHelper sslHelper) {
+  void configurePipeline(Channel ch, SslChannelProvider sslChannelProvider, SslContextManager sslContextManager) {
     ChannelPipeline pipeline = ch.pipeline();
     if (options.isSsl()) {
       SslHandler sslHandler = pipeline.get(SslHandler.class);
@@ -101,23 +103,23 @@ class HttpServerConnectionInitializer {
               break;
             case "http/1.1":
             case "http/1.0":
-              configureHttp1Pipeline(ch.pipeline(), sslChannelProvider, sslHelper);
-              configureHttp1Handler(ch.pipeline(), sslChannelProvider, sslHelper);
+              configureHttp1Pipeline(ch.pipeline(), sslChannelProvider, sslContextManager);
+              configureHttp1Handler(ch.pipeline(), sslChannelProvider, sslContextManager);
               break;
           }
         } else {
           // No alpn presented or OpenSSL
-          configureHttp1Pipeline(ch.pipeline(), sslChannelProvider, sslHelper);
-          configureHttp1Handler(ch.pipeline(), sslChannelProvider, sslHelper);
+          configureHttp1Pipeline(ch.pipeline(), sslChannelProvider, sslContextManager);
+          configureHttp1Handler(ch.pipeline(), sslChannelProvider, sslContextManager);
         }
       } else {
-        configureHttp1Pipeline(ch.pipeline(), sslChannelProvider, sslHelper);
-        configureHttp1Handler(ch.pipeline(), sslChannelProvider, sslHelper);
+        configureHttp1Pipeline(ch.pipeline(), sslChannelProvider, sslContextManager);
+        configureHttp1Handler(ch.pipeline(), sslChannelProvider, sslContextManager);
       }
     } else {
       if (disableH2C) {
-        configureHttp1Pipeline(ch.pipeline(), sslChannelProvider, sslHelper);
-        configureHttp1Handler(ch.pipeline(), sslChannelProvider, sslHelper);
+        configureHttp1Pipeline(ch.pipeline(), sslChannelProvider, sslContextManager);
+        configureHttp1Handler(ch.pipeline(), sslChannelProvider, sslContextManager);
       } else {
         Http1xOrH2CHandler handler = new Http1xOrH2CHandler() {
           @Override
@@ -125,8 +127,8 @@ class HttpServerConnectionInitializer {
             if (h2c) {
               configureHttp2(ctx.pipeline());
             } else {
-              configureHttp1Pipeline(ctx.pipeline(), sslChannelProvider, sslHelper);
-              configureHttp1OrH2CUpgradeHandler(ctx.pipeline(), sslChannelProvider, sslHelper);
+              configureHttp1Pipeline(ctx.pipeline(), sslChannelProvider, sslContextManager);
+              configureHttp1OrH2CUpgradeHandler(ctx.pipeline(), sslChannelProvider, sslContextManager);
             }
           }
           @Override
@@ -205,9 +207,9 @@ class HttpServerConnectionInitializer {
     return handler;
   }
 
-  private void configureHttp1OrH2CUpgradeHandler(ChannelPipeline pipeline, SslChannelProvider sslChannelProvider, SSLHelper sslHelper) {
+  private void configureHttp1OrH2CUpgradeHandler(ChannelPipeline pipeline, SslChannelProvider sslChannelProvider, SslContextManager sslContextManager) {
     // DO WE NEED TO ADD SOMEWHERE BEFORE IDLE ?
-    pipeline.addAfter("httpEncoder", "h2c", new Http1xUpgradeToH2CHandler(this, sslChannelProvider, sslHelper, options.isCompressionSupported(), options.isDecompressionSupported()));
+    pipeline.addAfter("httpEncoder", "h2c", new Http1xUpgradeToH2CHandler(this, sslChannelProvider, sslContextManager, options.isCompressionSupported(), options.isDecompressionSupported()));
   }
 
   /**
@@ -226,7 +228,7 @@ class HttpServerConnectionInitializer {
     }
   }
 
-  private void configureHttp1Pipeline(ChannelPipeline pipeline, SslChannelProvider sslChannelProvider, SSLHelper sslHelper) {
+  private void configureHttp1Pipeline(ChannelPipeline pipeline, SslChannelProvider sslChannelProvider, SslContextManager sslContextManager) {
     String name = computeChannelName(pipeline);
     pipeline.addBefore(name, "httpDecoder", new VertxHttpRequestDecoder(options));
     pipeline.addBefore(name, "httpEncoder", new VertxHttpResponseEncoder());
@@ -238,7 +240,7 @@ class HttpServerConnectionInitializer {
     }
   }
 
-  void configureHttp1Handler(ChannelPipeline pipeline, SslChannelProvider sslChannelProvider, SSLHelper sslHelper) {
+  void configureHttp1Handler(ChannelPipeline pipeline, SslChannelProvider sslChannelProvider, SslContextManager sslContextManager) {
     if (!server.requestAccept()) {
       sendServiceUnavailable(pipeline.channel());
       return;
@@ -247,7 +249,7 @@ class HttpServerConnectionInitializer {
     VertxHandler<Http1xServerConnection> handler = VertxHandler.create(chctx -> {
       Http1xServerConnection conn = new Http1xServerConnection(
         streamContextSupplier,
-        sslHelper,
+        sslContextManager,
         options,
         chctx,
         context,
