@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.net.impl;
+package io.vertx.core.internal.tls;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.net.TrustOptions;
@@ -16,7 +16,6 @@ import io.vertx.core.net.TrustOptions;
 import javax.net.ssl.*;
 import java.security.KeyStore;
 import java.security.Provider;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.function.Function;
 

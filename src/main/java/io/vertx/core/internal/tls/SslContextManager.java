@@ -9,9 +9,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.net.impl;
+package io.vertx.core.internal.tls;
 
-import io.netty.handler.ssl.OpenSsl;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
@@ -34,7 +33,7 @@ import java.util.stream.Collectors;
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class SSLHelper {
+public class SslContextManager {
 
   private static final Config NULL_CONFIG = new Config(null, null, null, null, null);
   static final EnumMap<ClientAuth, io.netty.handler.ssl.ClientAuth> CLIENT_AUTH_MAPPING = new EnumMap<>(ClientAuth.class);
@@ -45,63 +44,22 @@ public class SSLHelper {
     CLIENT_AUTH_MAPPING.put(ClientAuth.NONE, io.netty.handler.ssl.ClientAuth.NONE);
   }
 
-  /**
-   * Resolve the ssl engine options to use for properly running the configured options.
-   */
-  public static SSLEngineOptions resolveEngineOptions(SSLEngineOptions engineOptions, boolean useAlpn) {
-    if (engineOptions == null) {
-      if (useAlpn) {
-        if (JdkSSLEngineOptions.isAlpnAvailable()) {
-          engineOptions = new JdkSSLEngineOptions();
-        } else if (OpenSSLEngineOptions.isAlpnAvailable()) {
-          engineOptions = new OpenSSLEngineOptions();
-        }
-      }
-    }
-    if (engineOptions == null) {
-      engineOptions = new JdkSSLEngineOptions();
-    } else if (engineOptions instanceof OpenSSLEngineOptions) {
-      if (!OpenSsl.isAvailable()) {
-        VertxException ex = new VertxException("OpenSSL is not available");
-        Throwable cause = OpenSsl.unavailabilityCause();
-        if (cause != null) {
-          ex.initCause(cause);
-        }
-        throw ex;
-      }
-    }
-
-    if (useAlpn) {
-      if (engineOptions instanceof JdkSSLEngineOptions) {
-        if (!JdkSSLEngineOptions.isAlpnAvailable()) {
-          throw new VertxException("ALPN not available for JDK SSL/TLS engine");
-        }
-      }
-      if (engineOptions instanceof OpenSSLEngineOptions) {
-        if (!OpenSSLEngineOptions.isAlpnAvailable()) {
-          throw new VertxException("ALPN is not available for OpenSSL SSL/TLS engine");
-        }
-      }
-    }
-    return engineOptions;
-  }
-
   private final Supplier<SslContextFactory> supplier;
   private final boolean useWorkerPool;
   private final Map<ConfigKey, Future<Config>> configMap;
-  private final Map<ConfigKey, Future<SslChannelProvider>> sslChannelProviderMap;
+  private final Map<ConfigKey, Future<SslContextProvider>> sslContextProviderMap;
 
-  public SSLHelper(SSLEngineOptions sslEngineOptions, int cacheMaxSize) {
+  public SslContextManager(SSLEngineOptions sslEngineOptions, int cacheMaxSize) {
     this.configMap = new LruCache<>(cacheMaxSize);
-    this.sslChannelProviderMap = new LruCache<>(cacheMaxSize);
+    this.sslContextProviderMap = new LruCache<>(cacheMaxSize);
     this.supplier = sslEngineOptions::sslContextFactory;
     this.useWorkerPool = sslEngineOptions.getUseWorkerThread();
   }
 
   public synchronized int sniEntrySize() {
     int size = 0;
-    for (Future<SslChannelProvider> fut : sslChannelProviderMap.values()) {
-      SslChannelProvider result = fut.result();
+    for (Future<SslContextProvider> fut : sslContextProviderMap.values()) {
+      SslContextProvider result = fut.result();
       if (result != null) {
         size += result.sniEntrySize();
       }
@@ -109,30 +67,30 @@ public class SSLHelper {
     return size;
   }
 
-  public SSLHelper(SSLEngineOptions sslEngineOptions) {
+  public SslContextManager(SSLEngineOptions sslEngineOptions) {
     this(sslEngineOptions, 256);
   }
 
-  public Future<SslChannelProvider> resolveSslChannelProvider(SSLOptions options, String endpointIdentificationAlgorithm, boolean useSNI, ClientAuth clientAuth, List<String> applicationProtocols, ContextInternal ctx) {
-    return resolveSslChannelProvider(options, endpointIdentificationAlgorithm, useSNI, clientAuth, applicationProtocols, false, ctx);
+  public Future<SslContextProvider> resolveSslContextProvider(SSLOptions options, String endpointIdentificationAlgorithm, ClientAuth clientAuth, List<String> applicationProtocols, ContextInternal ctx) {
+    return resolveSslContextProvider(options, endpointIdentificationAlgorithm, clientAuth, applicationProtocols, false, ctx);
   }
 
-  public Future<SslChannelProvider> resolveSslChannelProvider(SSLOptions options, String hostnameVerificationAlgorithm, boolean useSNI, ClientAuth clientAuth, List<String> applicationProtocols, boolean force, ContextInternal ctx) {
-    Promise<SslChannelProvider> promise;
+  public Future<SslContextProvider> resolveSslContextProvider(SSLOptions options, String hostnameVerificationAlgorithm, ClientAuth clientAuth, List<String> applicationProtocols, boolean force, ContextInternal ctx) {
+    Promise<SslContextProvider> promise;
     ConfigKey k = new ConfigKey(options);
     synchronized (this) {
       if (force) {
-        sslChannelProviderMap.remove(k);
+        sslContextProviderMap.remove(k);
       } else {
-        Future<SslChannelProvider> v = sslChannelProviderMap.get(k);
+        Future<SslContextProvider> v = sslContextProviderMap.get(k);
         if (v != null) {
           return v;
         }
       }
       promise = Promise.promise();
-      sslChannelProviderMap.put(k, promise.future());
+      sslContextProviderMap.put(k, promise.future());
     }
-    buildChannelProvider(options, hostnameVerificationAlgorithm, useSNI, clientAuth, applicationProtocols, force, ctx)
+    buildSslContextProvider(options, hostnameVerificationAlgorithm, clientAuth, applicationProtocols, force, ctx)
       .onComplete(promise);
     return promise.future();
   }
@@ -143,13 +101,14 @@ public class SSLHelper {
    * @param ctx the context
    * @return a future resolved when the helper is initialized
    */
-  Future<SslContextProvider> buildContextProvider(SSLOptions sslOptions,
-                                                  String hostnameVerificationAlgorithm,
-                                                  ClientAuth clientAuth,
-                                                  List<String> applicationProtocols,
-                                                  boolean force,
-                                                  ContextInternal ctx) {
-    return buildConfig(sslOptions, force, ctx).map(config -> buildSslContextProvider(sslOptions, hostnameVerificationAlgorithm, supplier, clientAuth, applicationProtocols, config));
+  Future<SslContextProvider> buildSslContextProvider(SSLOptions sslOptions,
+                                                     String hostnameVerificationAlgorithm,
+                                                     ClientAuth clientAuth,
+                                                     List<String> applicationProtocols,
+                                                     boolean force,
+                                                     ContextInternal ctx) {
+    return buildConfig(sslOptions, force, ctx)
+      .map(config -> buildSslContextProvider(sslOptions, hostnameVerificationAlgorithm, supplier, clientAuth, applicationProtocols, config));
   }
 
   private SslContextProvider buildSslContextProvider(SSLOptions sslOptions, String hostnameVerificationAlgorithm, Supplier<SslContextFactory> supplier, ClientAuth clientAuth, List<String> applicationProtocols, Config config) {
@@ -158,6 +117,7 @@ public class SSLHelper {
         " verification algorithm");
     }
     return new SslContextProvider(
+      useWorkerPool,
       clientAuth,
       hostnameVerificationAlgorithm,
       applicationProtocols,
@@ -169,31 +129,6 @@ public class SSLHelper {
       config.trustManagerMapper,
       config.crls,
       supplier);
-  }
-
-  /**
-   * Initialize the helper, this loads and validates the configuration.
-   *
-   * @param ctx the context
-   * @return a future resolved when the helper is initialized
-   */
-  protected Future<SslChannelProvider> buildChannelProvider(SSLOptions sslOptions,
-                                                            String endpointIdentificationAlgorithm,
-                                                            boolean useSNI,
-                                                            ClientAuth clientAuth,
-                                                            List<String> applicationProtocols,
-                                                            boolean force,
-                                                            ContextInternal ctx) {
-    Future<SslContextProvider> f;
-    boolean useWorker;
-    f = buildConfig(sslOptions, force, ctx).map(config -> buildSslContextProvider(sslOptions,
-      endpointIdentificationAlgorithm, supplier, clientAuth, applicationProtocols, config));
-    useWorker = useWorkerPool;
-    return f.map(c -> new SslChannelProvider(
-      c,
-      useSNI,
-      ctx.owner().getInternalWorkerPool().executor(),
-      useWorker));
   }
 
   private static TrustOptions trustOptionsOf(SSLOptions sslOptions) {

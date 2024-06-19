@@ -40,7 +40,7 @@ import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.MessageWrite;
 import io.vertx.core.net.impl.NetSocketImpl;
-import io.vertx.core.net.impl.SSLHelper;
+import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
@@ -87,10 +87,10 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
   final HttpServerMetrics metrics;
   final boolean handle100ContinueAutomatically;
   final HttpServerOptions options;
-  final SSLHelper sslHelper;
+  final SslContextManager sslContextManager;
 
   public Http1xServerConnection(Supplier<ContextInternal> streamContextSupplier,
-                                SSLHelper sslHelper,
+                                SslContextManager sslContextManager,
                                 HttpServerOptions options,
                                 ChannelHandlerContext chctx,
                                 ContextInternal context,
@@ -100,7 +100,7 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
     this.serverOrigin = serverOrigin;
     this.streamContextSupplier = streamContextSupplier;
     this.options = options;
-    this.sslHelper = sslHelper;
+    this.sslContextManager = sslContextManager;
     this.metrics = metrics;
     this.handle100ContinueAutomatically = options.isHandle100ContinueAutomatically();
     this.tracingPolicy = options.getTracingPolicy();
@@ -380,7 +380,7 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
       }
 
       pipeline.replace("handler", "handler", VertxHandler.create(ctx -> {
-        NetSocketImpl socket = new NetSocketImpl(context, ctx, sslHelper, options.getSslOptions(), metrics, false) {
+        NetSocketImpl socket = new NetSocketImpl(context, ctx, sslContextManager, options.getSslOptions(), metrics, false) {
           @Override
           protected void handleClosed() {
             if (metrics != null) {

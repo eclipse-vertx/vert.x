@@ -13,7 +13,6 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
@@ -21,12 +20,9 @@ import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http2.*;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
-import io.netty.handler.timeout.IdleStateHandler;
-import io.vertx.core.net.impl.SSLHelper;
-import io.vertx.core.net.impl.SslChannelProvider;
+import io.vertx.core.internal.tls.SslContextManager;
+import io.vertx.core.internal.net.SslChannelProvider;
 import io.vertx.core.net.impl.VertxHandler;
-
-import java.util.Map;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpResponseStatus.SWITCHING_PROTOCOLS;
@@ -36,15 +32,15 @@ public class Http1xUpgradeToH2CHandler extends ChannelInboundHandlerAdapter {
 
   private final HttpServerConnectionInitializer initializer;
   private final SslChannelProvider sslChannelProvider;
-  private final SSLHelper sslHelper;
+  private final SslContextManager sslContextManager;
   private VertxHttp2ConnectionHandler<Http2ServerConnection> handler;
   private final boolean isCompressionSupported;
   private final boolean isDecompressionSupported;
 
-  Http1xUpgradeToH2CHandler(HttpServerConnectionInitializer initializer, SslChannelProvider sslChannelProvider, SSLHelper sslHelper, boolean isCompressionSupported, boolean isDecompressionSupported) {
+  Http1xUpgradeToH2CHandler(HttpServerConnectionInitializer initializer, SslChannelProvider sslChannelProvider, SslContextManager sslContextManager, boolean isCompressionSupported, boolean isDecompressionSupported) {
     this.initializer = initializer;
     this.sslChannelProvider = sslChannelProvider;
-    this.sslHelper = sslHelper;
+    this.sslContextManager = sslContextManager;
     this.isCompressionSupported = isCompressionSupported;
     this.isDecompressionSupported = isDecompressionSupported;
   }
@@ -120,7 +116,7 @@ public class Http1xUpgradeToH2CHandler extends ChannelInboundHandlerAdapter {
           ctx.writeAndFlush(res);
         }
       } else {
-        initializer.configureHttp1Handler(ctx.pipeline(), sslChannelProvider, sslHelper);
+        initializer.configureHttp1Handler(ctx.pipeline(), sslChannelProvider, sslContextManager);
         ctx.fireChannelRead(msg);
         ctx.pipeline().remove(this);
       }

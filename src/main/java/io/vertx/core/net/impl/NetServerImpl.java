@@ -18,14 +18,12 @@ import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.ssl.OpenSsl;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.handler.traffic.GlobalTrafficShapingHandler;
 import io.netty.util.concurrent.GenericFutureListener;
-import io.vertx.core.Closeable;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
+import io.vertx.core.*;
 import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.HttpServerOptions;
@@ -36,6 +34,10 @@ import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
+import io.vertx.core.internal.tls.SslContextManager;
+import io.vertx.core.internal.net.SslChannelProvider;
+import io.vertx.core.internal.tls.SslContextProvider;
+import io.vertx.core.internal.net.SslHandshakeCompletionHandler;
 import io.vertx.core.net.*;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TCPMetrics;
@@ -76,9 +78,9 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
   private ChannelGroupFuture graceFuture;
 
   // Main
-  private SSLHelper sslHelper;
-  private volatile Future<SslChannelProvider> sslChannelProvider;
-  private Future<SslChannelProvider> updateInProgress;
+  private SslContextManager sslContextManager;
+  private volatile Future<SslContextProvider> sslContextProvider;
+  private Future<SslContextProvider> updateInProgress;
   private GlobalTrafficShapingHandler trafficShapingHandler;
   private ServerChannelLoadBalancer channelBalancer;
   private Future<Channel> bindFuture;
@@ -100,8 +102,49 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     this.closeSequence = closeSequence;
   }
 
+  /**
+   * Resolve the ssl engine options to use for properly running the configured options.
+   */
+  public static SSLEngineOptions resolveEngineOptions(SSLEngineOptions engineOptions, boolean useAlpn) {
+    if (engineOptions == null) {
+      if (useAlpn) {
+        if (JdkSSLEngineOptions.isAlpnAvailable()) {
+          engineOptions = new JdkSSLEngineOptions();
+        } else if (OpenSSLEngineOptions.isAlpnAvailable()) {
+          engineOptions = new OpenSSLEngineOptions();
+        }
+      }
+    }
+    if (engineOptions == null) {
+      engineOptions = new JdkSSLEngineOptions();
+    } else if (engineOptions instanceof OpenSSLEngineOptions) {
+      if (!OpenSsl.isAvailable()) {
+        VertxException ex = new VertxException("OpenSSL is not available");
+        Throwable cause = OpenSsl.unavailabilityCause();
+        if (cause != null) {
+          ex.initCause(cause);
+        }
+        throw ex;
+      }
+    }
+
+    if (useAlpn) {
+      if (engineOptions instanceof JdkSSLEngineOptions) {
+        if (!JdkSSLEngineOptions.isAlpnAvailable()) {
+          throw new VertxException("ALPN not available for JDK SSL/TLS engine");
+        }
+      }
+      if (engineOptions instanceof OpenSSLEngineOptions) {
+        if (!OpenSSLEngineOptions.isAlpnAvailable()) {
+          throw new VertxException("ALPN is not available for OpenSSL SSL/TLS engine");
+        }
+      }
+    }
+    return engineOptions;
+  }
+
   public SslContextProvider sslContextProvider() {
-    return sslChannelProvider.result().sslContextProvider();
+    return sslContextProvider.result();
   }
 
   @Override
@@ -193,7 +236,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
       return true;
     }
 
-    public void accept(Channel ch, SslChannelProvider sslChannelProvider, SSLHelper sslHelper, ServerSSLOptions sslOptions) {
+    public void accept(Channel ch, SslContextProvider sslChannelProvider, SslContextManager sslContextManager, ServerSSLOptions sslOptions) {
       if (!this.accept()) {
         ch.close();
         return;
@@ -213,31 +256,32 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
             if (idle != null) {
               ch.pipeline().remove(idle);
             }
-            configurePipeline(future.getNow(), sslChannelProvider, sslHelper, sslOptions);
+            configurePipeline(future.getNow(), sslChannelProvider, sslContextManager, sslOptions);
           } else {
             //No need to close the channel.HAProxyMessageDecoder already did
             handleException(future.cause());
           }
         });
       } else {
-        configurePipeline(ch, sslChannelProvider, sslHelper, sslOptions);
+        configurePipeline(ch, sslChannelProvider, sslContextManager, sslOptions);
       }
     }
 
-    private void configurePipeline(Channel ch, SslChannelProvider sslChannelProvider, SSLHelper sslHelper, SSLOptions sslOptions) {
+    private void configurePipeline(Channel ch, SslContextProvider sslContextProvider, SslContextManager sslContextManager, ServerSSLOptions sslOptions) {
       if (options.isSsl()) {
+        SslChannelProvider sslChannelProvider = new SslChannelProvider(vertx, sslContextProvider, sslOptions.isSni());
         ch.pipeline().addLast("ssl", sslChannelProvider.createServerHandler(options.isUseAlpn(), options.getSslHandshakeTimeout(), options.getSslHandshakeTimeoutUnit()));
         ChannelPromise p = ch.newPromise();
         ch.pipeline().addLast("handshaker", new SslHandshakeCompletionHandler(p));
         p.addListener(future -> {
           if (future.isSuccess()) {
-            connected(ch, sslHelper, sslOptions);
+            connected(ch, sslContextManager, sslOptions);
           } else {
             handleException(future.cause());
           }
         });
       } else {
-        connected(ch, sslHelper, sslOptions);
+        connected(ch, sslContextManager, sslOptions);
       }
       if (trafficShapingHandler != null) {
         ch.pipeline().addFirst("globalTrafficShaping", trafficShapingHandler);
@@ -250,10 +294,10 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
       }
     }
 
-    private void connected(Channel ch, SSLHelper sslHelper, SSLOptions sslOptions) {
+    private void connected(Channel ch, SslContextManager sslContextManager, SSLOptions sslOptions) {
       initChannel(ch.pipeline(), options.isSsl());
       TCPMetrics<?> metrics = getMetrics();
-      VertxHandler<NetSocketImpl> handler = VertxHandler.create(ctx -> new NetSocketImpl(context, ctx, sslHelper, sslOptions, metrics, options.isRegisterWriteHandler()));
+      VertxHandler<NetSocketImpl> handler = VertxHandler.create(ctx -> new NetSocketImpl(context, ctx, sslContextManager, sslOptions, metrics, options.isRegisterWriteHandler()));
       handler.removeHandler(NetSocketImpl::unregisterEventBusHandler);
       handler.addHandler(conn -> {
         if (metrics != null) {
@@ -309,7 +353,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
   }
 
   public int sniEntrySize() {
-    return sslHelper.sniEntrySize();
+    return sslContextManager.sniEntrySize();
   }
 
   public Future<Boolean> updateSSLOptions(ServerSSLOptions options, boolean force) {
@@ -318,10 +362,10 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
       return server.updateSSLOptions(options, force);
     } else {
       ContextInternal ctx = vertx.getOrCreateContext();
-      Future<SslChannelProvider> fut;
-      SslChannelProvider current;
+      Future<SslContextProvider> fut;
+      SslContextProvider current;
       synchronized (this) {
-        current = sslChannelProvider.result();
+        current = sslContextProvider.result();
         if (updateInProgress == null) {
           ServerSSLOptions sslOptions = options.copy();
           configure(sslOptions);
@@ -329,10 +373,9 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
           if (clientAuth == null) {
             clientAuth = ClientAuth.NONE;
           }
-          updateInProgress = sslHelper.resolveSslChannelProvider(
+          updateInProgress = sslContextManager.resolveSslContextProvider(
             sslOptions,
             null,
-            sslOptions.isSni(),
             clientAuth,
             sslOptions.getApplicationLayerProtocols(),
             force,
@@ -346,7 +389,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
         synchronized (this) {
           updateInProgress = null;
           if (ar.succeeded()) {
-            sslChannelProvider = fut;
+            sslContextProvider = fut;
           }
         }
       });
@@ -419,9 +462,9 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
       PromiseInternal<Channel> promise = listenContext.promise();
       if (main == null) {
 
-        SSLHelper helper;
+        SslContextManager helper;
         try {
-          helper = new SSLHelper(SSLHelper.resolveEngineOptions(options.getSslEngineOptions(), options.isUseAlpn()));
+          helper = new SslContextManager(resolveEngineOptions(options.getSslEngineOptions(), options.isUseAlpn()));
         } catch (Exception e) {
           return context.failedFuture(e);
         }
@@ -429,14 +472,14 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
         // The first server binds the socket
         actualServer = this;
         bindFuture = promise;
-        sslHelper = helper;
+        sslContextManager = helper;
         trafficShapingHandler = createTrafficShapingHandler();
         initializer = new NetSocketInitializer(context, handler, exceptionHandler, trafficShapingHandler);
         worker = ch -> {
           // Should close if the channel group is closed actually or check that
           channelGroup.add(ch);
-          Future<SslChannelProvider> scp = sslChannelProvider;
-          initializer.accept(ch, scp != null ? scp.result() : null, sslHelper, options.getSslOptions());
+          Future<SslContextProvider> scp = sslContextProvider;
+          initializer.accept(ch, scp != null ? scp.result() : null, sslContextManager, options.getSslOptions());
         };
         servers = new HashSet<>();
         servers.add(this);
@@ -457,7 +500,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
         if (options.isSsl()) {
           ServerSSLOptions sslOptions = options.getSslOptions();
           configure(sslOptions);
-          sslChannelProvider = sslHelper.resolveSslChannelProvider(sslOptions, null, sslOptions.isSni(), sslOptions.getClientAuth(), sslOptions.getApplicationLayerProtocols(), listenContext).onComplete(ar -> {
+          sslContextProvider = sslContextManager.resolveSslContextProvider(sslOptions, null, sslOptions.getClientAuth(), sslOptions.getApplicationLayerProtocols(), listenContext).onComplete(ar -> {
             if (ar.succeeded()) {
               bind(hostOrPath, context, bindAddress, localAddress, shared, promise, sharedNetServers, id);
             } else {
@@ -486,8 +529,8 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
         initializer = new NetSocketInitializer(context, handler, exceptionHandler, trafficShapingHandler);
         worker = ch -> {
           group.add(ch);
-          Future<SslChannelProvider> scp = actualServer.sslChannelProvider;
-          initializer.accept(ch, scp != null ? scp.result() : null, sslHelper, options.getSslOptions());
+          Future<SslContextProvider> scp = actualServer.sslContextProvider;
+          initializer.accept(ch, scp != null ? scp.result() : null, sslContextManager, options.getSslOptions());
         };
         actualServer.servers.add(this);
         actualServer.channelBalancer.addWorker(eventLoop, worker);
