@@ -18,6 +18,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static io.vertx.core.json.impl.JsonUtil.*;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
@@ -1114,7 +1115,13 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @return a Stream
    */
   public Stream<Map.Entry<String, Object>> stream() {
-    return asStream(iterator());
+    // JsonUtil.asStream(iterator()) is too generic
+    return StreamSupport.stream(spliterator(), false);
+  }
+
+  @Override
+  public Spliterator<Map.Entry<String,Object>> spliterator() {
+    return Spliterators.spliterator(iterator(), map.size(), Spliterator.DISTINCT | Spliterator.NONNULL);
   }
 
   /**
@@ -1287,7 +1294,9 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
       final Object wrapped = wrapJsonValue(val);
 
       if (val != wrapped) {
-        return new Entry(entry.getKey(), wrapped);
+        // Map.entry disallows null keys and values: we disallow null keys,
+        // (val != wrapped) skips null values (wrapJsonValue doesn't wrap null)
+        return Map.entry(entry.getKey(), wrapped);
       }
 
       return entry;
@@ -1296,31 +1305,6 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     @Override
     public void remove() {
       mapIter.remove();
-    }
-  }
-
-  private static final class Entry implements Map.Entry<String, Object> {
-    final String key;
-    final Object value;
-
-    public Entry(String key, Object value) {
-      this.key = key;
-      this.value = value;
-    }
-
-    @Override
-    public String getKey() {
-      return key;
-    }
-
-    @Override
-    public Object getValue() {
-      return value;
-    }
-
-    @Override
-    public Object setValue(Object value) {
-      throw new UnsupportedOperationException();
     }
   }
 }
