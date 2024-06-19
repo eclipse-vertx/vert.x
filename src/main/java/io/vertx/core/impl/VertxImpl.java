@@ -32,7 +32,7 @@ import io.vertx.core.eventbus.impl.clustered.ClusteredEventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.*;
-import io.vertx.core.impl.btc.BlockedThreadChecker;
+import io.vertx.core.internal.threadchecker.BlockedThreadChecker;
 import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;

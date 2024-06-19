@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.impl.btc;
+package io.vertx.core.internal.threadchecker;
 
 /**
  * A class containing status details about how long a particular thread has been blocked,

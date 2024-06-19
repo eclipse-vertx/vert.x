@@ -22,7 +22,7 @@ import io.vertx.core.dns.impl.DnsAddressResolverProvider;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
-import io.vertx.core.impl.btc.BlockedThreadChecker;
+import io.vertx.core.internal.threadchecker.BlockedThreadChecker;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.ContextInternal;

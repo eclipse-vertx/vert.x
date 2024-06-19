@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.impl.btc;
+package io.vertx.core.internal.threadchecker;
 
 import io.vertx.core.Handler;
 import io.vertx.core.VertxException;
