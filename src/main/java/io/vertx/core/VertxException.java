@@ -23,6 +23,36 @@ package io.vertx.core;
 public class VertxException extends RuntimeException {
 
   /**
+   * Create an exception that does not capture a stack trace.
+   *
+   * @param msg the message
+   * @return the created exception
+   */
+  public static VertxException noStackTrace(String msg) {
+    return new VertxException(msg, true);
+  }
+
+  /**
+   * Create an exception that does not capture a stack trace.
+   *
+   * @param msg the message
+   * @param cause the cause
+   * @return the created exception
+   */
+  public static VertxException noStackTrace(String msg, Throwable cause) {
+    return new VertxException(msg, cause, true);
+  }
+
+  /**
+   * Create an exception that does not capture a stack trace.
+   *
+   * @param cause the cause
+   * @return the created exception
+   */
+  public static VertxException noStackTrace(Throwable cause) {
+    return new VertxException(cause, true);
+  }
+  /**
    * Create an instance given a message
    *
    * @param message  the message
