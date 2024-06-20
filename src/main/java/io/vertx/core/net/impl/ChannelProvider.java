@@ -20,8 +20,10 @@ import io.netty.resolver.NoopAddressResolverGroup;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.Promise;
 import io.vertx.core.Handler;
-import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.net.SslChannelProvider;
+import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
@@ -42,14 +44,14 @@ import java.net.InetSocketAddress;
 public final class ChannelProvider {
 
   private final Bootstrap bootstrap;
-  private final SslChannelProvider sslContextProvider;
+  private final SslContextProvider sslContextProvider;
   private final ContextInternal context;
   private ProxyOptions proxyOptions;
   private String applicationProtocol;
   private Handler<Channel> handler;
 
   public ChannelProvider(Bootstrap bootstrap,
-                         SslChannelProvider sslContextProvider,
+                         SslContextProvider sslContextProvider,
                          ContextInternal context) {
     this.bootstrap = bootstrap;
     this.context = context;
@@ -107,7 +109,8 @@ public final class ChannelProvider {
 
   private void initSSL(Handler<Channel> handler, SocketAddress peerAddress, String serverName, boolean ssl, ClientSSLOptions sslOptions, Channel ch, Promise<Channel> channelHandler) {
     if (ssl) {
-      SslHandler sslHandler = sslContextProvider.createClientSslHandler(peerAddress, serverName, sslOptions.isUseAlpn(), sslOptions.getSslHandshakeTimeout(), sslOptions.getSslHandshakeTimeoutUnit());
+      SslChannelProvider sslChannelProvider = new SslChannelProvider(context.owner(), sslContextProvider, false);
+      SslHandler sslHandler = sslChannelProvider.createClientSslHandler(peerAddress, serverName, sslOptions.isUseAlpn(), sslOptions.getSslHandshakeTimeout(), sslOptions.getSslHandshakeTimeoutUnit());
       ChannelPipeline pipeline = ch.pipeline();
       pipeline.addLast("ssl", sslHandler);
       pipeline.addLast(new ChannelInboundHandlerAdapter() {

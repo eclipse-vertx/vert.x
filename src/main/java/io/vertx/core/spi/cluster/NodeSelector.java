@@ -13,8 +13,6 @@ package io.vertx.core.spi.cluster;
 
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import io.vertx.core.impl.VertxBuilder;
-import io.vertx.core.spi.VertxServiceProvider;
 
 /**
  * Used by the {@link io.vertx.core.eventbus.EventBus clustered EventBus} to select a node for a given message.
@@ -22,14 +20,7 @@ import io.vertx.core.spi.VertxServiceProvider;
  * This selector is skipped only when the user raises the {@link io.vertx.core.eventbus.DeliveryOptions#setLocalOnly(boolean)} flag.
  * Consequently, implementations must be aware of local {@link io.vertx.core.eventbus.EventBus} registrations.
  */
-public interface NodeSelector extends VertxServiceProvider {
-
-  @Override
-  default void init(VertxBuilder builder) {
-    if (builder.clusterNodeSelector() == null) {
-      builder.clusterNodeSelector(this);
-    }
-  }
+public interface NodeSelector {
 
   /**
    * Invoked before the {@code vertx} instance tries to join the cluster.

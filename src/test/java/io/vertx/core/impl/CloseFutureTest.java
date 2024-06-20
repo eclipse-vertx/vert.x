@@ -13,6 +13,7 @@ package io.vertx.core.impl;
 import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.internal.CloseFuture;
 import io.vertx.test.core.AsyncTestBase;
 import org.junit.Test;
 

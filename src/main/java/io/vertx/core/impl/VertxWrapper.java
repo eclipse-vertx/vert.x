@@ -22,13 +22,14 @@ import io.vertx.core.dns.impl.DnsAddressResolverProvider;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.HttpServerImpl;
-import io.vertx.core.impl.btc.BlockedThreadChecker;
-import io.vertx.core.impl.future.PromiseInternal;
+import io.vertx.core.internal.threadchecker.BlockedThreadChecker;
+import io.vertx.core.internal.PromiseInternal;
+import io.vertx.core.internal.CloseFuture;
+import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.NetServerInternal;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.spi.transport.Transport;
@@ -47,6 +48,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -67,6 +69,11 @@ public abstract class VertxWrapper implements VertxInternal {
       throw new NullPointerException("Null delegate not allowed");
     }
     this.delegate = delegate;
+  }
+
+  @Override
+  public <C> C createSharedResource(String resourceKey, String resourceName, CloseFuture closeFuture, Function<CloseFuture, C> supplier) {
+    return delegate.createSharedResource(resourceKey, resourceName, closeFuture, supplier);
   }
 
   @Override

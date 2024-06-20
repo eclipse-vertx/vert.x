@@ -11,7 +11,7 @@
 
 package io.vertx.core.spi;
 
-import io.vertx.core.impl.VertxBuilder;
+import io.vertx.core.internal.VertxBootstrap;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -32,7 +32,7 @@ public interface ExecutorServiceFactory extends VertxServiceProvider {
     Executors.newFixedThreadPool(maxConcurrency, threadFactory);
 
   @Override
-  default void init(VertxBuilder builder) {
+  default void init(VertxBootstrap builder) {
     if (builder.executorServiceFactory() == null) {
       builder.executorServiceFactory(this);
     }

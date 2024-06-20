@@ -15,13 +15,21 @@ import io.vertx.core.VertxException;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ * @deprecated instead use {@link io.vertx.core.VertxException}
  */
+@Deprecated(forRemoval = true)
 public class NoStackTraceException extends VertxException {
 
+  /**
+   * @deprecated instead use {@link io.vertx.core.VertxException#noStackTrace(String)}
+   */
   public NoStackTraceException(String message) {
     super(message, null, true);
   }
 
+  /**
+   * @deprecated instead use {@link io.vertx.core.VertxException#noStackTrace(Throwable)}
+   */
   public NoStackTraceException(Throwable cause) {
     super(cause, true);
   }

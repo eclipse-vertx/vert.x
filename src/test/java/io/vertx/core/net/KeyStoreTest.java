@@ -12,7 +12,7 @@
 package io.vertx.core.net;
 
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.impl.KeyStoreHelper;

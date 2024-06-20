@@ -18,8 +18,9 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Expectation;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.NoStackTraceTimeoutException;
+import io.vertx.core.internal.FutureInternal;
 
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -179,4 +180,18 @@ public abstract class FutureBase<T> implements FutureInternal<T> {
     });
     return promise.future();
   }
+
+  /**
+   * Add a listener to the future result.
+   *
+   * @param listener the listener
+   */
+  public abstract void addListener(Listener<T> listener);
+
+  /**
+   * Remove a listener to the future result.
+   *
+   * @param listener the listener
+   */
+  public abstract void removeListener(Listener<T> listener);
 }

@@ -13,12 +13,12 @@ package io.vertx.core.http.impl;
 
 import io.vertx.core.*;
 import io.vertx.core.http.*;
-import io.vertx.core.impl.CloseSequence;
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.internal.CloseSequence;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.SysProps;
-import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.logging.Logger;
+import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.*;
 import io.vertx.core.spi.metrics.Metrics;

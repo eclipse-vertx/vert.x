@@ -11,7 +11,7 @@
 
 package io.vertx.core.logging;
 
-import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.internal.logging.LoggerFactory;
 import org.junit.Test;
 
 /**

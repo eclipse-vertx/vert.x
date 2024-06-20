@@ -14,7 +14,7 @@ package io.vertx.core.http.impl;
 import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.http.*;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.impl.NetClientInternal;
 import io.vertx.core.spi.metrics.MetricsProvider;
 

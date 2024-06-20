@@ -14,7 +14,7 @@ import io.vertx.core.*;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebSocketClientOptions;
 import io.vertx.core.http.WebSocketConnectOptions;
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.impl.endpoint.Endpoint;
 import io.vertx.core.spi.metrics.ClientMetrics;
 

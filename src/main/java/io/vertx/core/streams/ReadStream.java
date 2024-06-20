@@ -18,7 +18,7 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
-import io.vertx.core.impl.future.PromiseInternal;
+import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.streams.impl.PipeImpl;
 
 import java.util.function.BiConsumer;

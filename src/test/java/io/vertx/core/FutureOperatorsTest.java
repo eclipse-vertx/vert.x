@@ -10,7 +10,7 @@
  */
 package io.vertx.core;
 
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 

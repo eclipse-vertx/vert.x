@@ -13,8 +13,8 @@ package io.vertx.core.shareddata.impl;
 
 import io.vertx.core.impl.ClusterSerializableUtils;
 import io.vertx.core.impl.SerializableUtils;
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.internal.logging.Logger;
+import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.shareddata.ClusterSerializable;
 import io.vertx.core.shareddata.Shareable;
 

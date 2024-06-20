@@ -14,13 +14,12 @@ package io.vertx.it;
 import io.netty.handler.ssl.OpenSslSessionContext;
 import io.netty.handler.ssl.SslContext;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.HttpServerImpl;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.JdkSSLEngineOptions;
 import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.core.net.SSLEngineOptions;
 import io.vertx.core.net.impl.NetServerInternal;
-import io.vertx.core.net.impl.SslContextProvider;
+import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.test.tls.Cert;
 import org.junit.Test;
 

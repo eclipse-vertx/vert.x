@@ -11,7 +11,7 @@
 package io.vertx.core.spi.context.storage;
 
 import io.vertx.core.Context;
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.ContextLocalImpl;
 
 import java.util.function.Supplier;

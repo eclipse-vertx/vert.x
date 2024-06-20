@@ -17,7 +17,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.http.StreamResetException;
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SSLOptions;
 import io.vertx.core.net.SocketAddress;
