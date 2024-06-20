@@ -159,6 +159,34 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
   }
 
   @Override
+  public Future<Void> bindStream(String address, Handler<MessageStream> handler) {
+    ContextInternal ctx = vertx.getOrCreateContext();
+    HandlerRegistration reg = new StreamServer(this, ctx, address, handler);
+    Promise<Void> promise = ctx.promise();
+    reg.register(true, false, promise);
+    return promise.future();
+  }
+
+  @Override
+  public Future<MessageStream> connectStream(String address) {
+    ContextInternal ctx = vertx.getOrCreateContext();
+    String sourceAddress = generateReplyAddress();
+    Promise<MessageStream> promise2 = ctx.promise();
+    StreamBase reg = new ClientStream(this, sourceAddress, ctx, promise2);
+    Promise<Void> promise = ctx.promise();
+    reg.register(false, false, promise);
+    promise.future().onComplete(ar -> {
+      if (ar.succeeded()) {
+        boolean localOnly = isLocalOnly(new DeliveryOptions()); // Change when options
+        MessageImpl msg = createMessage(true, localOnly, address, MultiMap.caseInsensitiveMultiMap(), new SynFrame(sourceAddress, address), null);
+        msg.setReplyAddress(sourceAddress);
+        sendOrPub(ctx, msg, new DeliveryOptions(), ctx.promise());
+      }
+    });
+    return promise2.future();
+  }
+
+  @Override
   public EventBus publish(String address, Object message) {
     return publish(address, message, new DeliveryOptions());
   }

@@ -67,7 +67,7 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
   }
 
   @Override
-  protected MessageImpl createReply(Object message, DeliveryOptions options) {
+  public MessageImpl createReply(Object message, DeliveryOptions options) {
     ClusteredMessage reply = (ClusteredMessage) super.createReply(message, options);
     reply.repliedTo = sender;
     return reply;
