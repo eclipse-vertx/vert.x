@@ -28,8 +28,13 @@ public interface ExecutorServiceFactory extends VertxServiceProvider {
   /**
    * Default instance that delegates to {@link Executors#newFixedThreadPool(int, ThreadFactory)}
    */
-  ExecutorServiceFactory INSTANCE = (threadFactory, concurrency, maxConcurrency) ->
-    Executors.newFixedThreadPool(maxConcurrency, threadFactory);
+  ExecutorServiceFactory INSTANCE = new ExecutorServiceFactory() {
+    @Override
+    public ExecutorService createExecutor(ThreadFactory threadFactory, Integer concurrency, Integer maxConcurrency) {
+      return Executors.newFixedThreadPool(maxConcurrency, threadFactory);
+    }
+  };
+
 
   @Override
   default void init(VertxBootstrap builder) {

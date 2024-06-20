@@ -185,34 +185,37 @@ public class DeploymentManager {
       }
       VerticleHolder holder = new VerticleHolder(verticle, context, closeFuture);
       deployment.addVerticle(holder);
-      context.runOnContext(v -> {
-        try {
-          verticle.init(vertx, context);
-          Promise<Void> startPromise = context.promise();
-          Future<Void> startFuture = startPromise.future();
-          verticle.start(startPromise);
-          startFuture.onComplete(ar -> {
-            if (ar.succeeded()) {
-              if (parent != null) {
-                if (parent.addChild(deployment)) {
-                  deployment.child = true;
-                } else {
-                  // Orphan
-                  deployment.doUndeploy(vertx.getOrCreateContext()).onComplete(ar2 -> promise.fail("Verticle deployment failed.Could not be added as child of parent verticle"));
-                  return;
+      context.runOnContext(new Handler<Void>() {
+        @Override
+        public void handle(Void event) {
+          try {
+            verticle.init(vertx, context);
+            Promise<Void> startPromise = context.promise();
+            Future<Void> startFuture = startPromise.future();
+            verticle.start(startPromise);
+            startFuture.onComplete(ar -> {
+              if (ar.succeeded()) {
+                if (parent != null) {
+                  if (parent.addChild(deployment)) {
+                    deployment.child = true;
+                  } else {
+                    // Orphan
+                    deployment.doUndeploy(vertx.getOrCreateContext()).onComplete(ar2 -> promise.fail("Verticle deployment failed.Could not be added as child of parent verticle"));
+                    return;
+                  }
                 }
+                deployments.put(deploymentID, deployment);
+                if (deployCount.incrementAndGet() == verticles.length) {
+                  promise.complete(deployment);
+                }
+              } else if (failureReported.compareAndSet(false, true)) {
+                deployment.rollback(callingContext, promise, context, holder, ar.cause());
               }
-              deployments.put(deploymentID, deployment);
-              if (deployCount.incrementAndGet() == verticles.length) {
-                promise.complete(deployment);
-              }
-            } else if (failureReported.compareAndSet(false, true)) {
-              deployment.rollback(callingContext, promise, context, holder, ar.cause());
-            }
-          });
-        } catch (Throwable t) {
-          if (failureReported.compareAndSet(false, true))
-            deployment.rollback(callingContext, promise, context, holder, t);
+            });
+          } catch (Throwable t) {
+            if (failureReported.compareAndSet(false, true))
+              deployment.rollback(callingContext, promise, context, holder, t);
+          }
         }
       });
     }
