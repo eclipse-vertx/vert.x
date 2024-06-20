@@ -805,7 +805,10 @@ public final class HttpUtils {
   }
 
   public static void validateHeaderValue(CharSequence seq) {
-
+    if (seq instanceof AsciiString) {
+      validateHeaderAsciiValue((AsciiString) seq);
+      return;
+    }
     int state = 0;
     // Start looping through each of the character
     for (int index = 0; index < seq.length(); index++) {
@@ -817,9 +820,23 @@ public final class HttpUtils {
     }
   }
 
+  public static void validateHeaderAsciiValue(AsciiString value) {
+    final int len = value.length();
+    final int off = value.arrayOffset();
+    final byte[] asciiChars = value.array();
+    int state = 0;
+    // Start looping through each of the character
+    for (int i = 0; i < len; i++) {
+      state = validateValueChar(value, state, asciiChars[off + i]);
+    }
+    if (state != 0) {
+      throw new IllegalArgumentException("a header value must not end with '\\r' or '\\n':" + value);
+    }
+  }
+
   private static final int HIGHEST_INVALID_VALUE_CHAR_MASK = ~0x1F;
 
-  private static int validateValueChar(CharSequence seq, int state, char character) {
+  private static int validateValueChar(CharSequence seq, int state, int character) {
     /*
      * State:
      * 0: Previous character was neither CR nor LF
@@ -827,27 +844,36 @@ public final class HttpUtils {
      * 2: The previous character was LF
      */
     if ((character & HIGHEST_INVALID_VALUE_CHAR_MASK) == 0 || character == 0x7F) { // 0x7F is "DEL".
-      // The only characters allowed in the range 0x00-0x1F are : HTAB, LF and CR
-      switch (character) {
-        case 0x09: // Horizontal tab - HTAB
-        case 0x0a: // Line feed - LF
-        case 0x0d: // Carriage return - CR
-          break;
-        default:
-          throw new IllegalArgumentException("a header value contains a prohibited character '" + (int) character + "': " + seq);
-      }
+      validateOO1FRange(seq, character);
     }
+    if (state == 0) {
+      if (character == '\r') {
+        return 1;
+      }
+      if (character == '\n') {
+        return 2;
+      }
+      return state;
+    }
+    return handleCRLF(seq, state, character);
+  }
 
+  private static void validateOO1FRange(CharSequence seq, int character) {
+    // The only characters allowed in the range 0x00-0x1F are : HTAB, LF and CR
+    switch (character) {
+      case 0x09: // Horizontal tab - HTAB
+      case 0x0a: // Line feed - LF
+      case 0x0d: // Carriage return - CR
+        break;
+      default:
+        throw new IllegalArgumentException("a header value contains a prohibited character '" + (int) character + "': " + seq);
+    }
+  }
+
+  private static Integer handleCRLF(CharSequence seq, int state, int character) {
+    assert state != 0;
     // Check the CRLF (HT | SP) pattern
     switch (state) {
-      case 0:
-        switch (character) {
-          case '\r':
-            return 1;
-          case '\n':
-            return 2;
-        }
-        break;
       case 1:
         switch (character) {
           case '\n':
