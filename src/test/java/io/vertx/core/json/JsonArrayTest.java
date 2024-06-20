@@ -1449,4 +1449,38 @@ public class JsonArrayTest {
   public void testJsonArrayOfEmpty() {
     assertEquals(new JsonArray(), JsonArray.of());
   }
+
+  @Test
+  public void testPR() {
+    JsonArray ja = new JsonArray(JsonArray.of(null, null).stream()
+      .collect(Collectors.toSet()));
+    assertEquals("[null]", ja.toString());
+    assertEquals("[null]", ja.toBuffer().toString());
+
+    ja.remove(null);
+    assertEquals(0, ja.size());
+
+    ja = new JsonArray(new ArrayList<>(Arrays.asList("a", null, Instant.MIN, Arrays.asList(1,2))));
+    assertEquals("[\"a\",null,\"-1000000000-01-01T00:00:00Z\",[1,2]]", ja.toString());
+
+    Buffer buf = Buffer.buffer();
+    buf.appendLong(Long.MIN_VALUE);
+    ja.writeToBuffer(buf);
+    JsonArray ja2 = new JsonArray();
+    ja2.readFromBuffer(8, buf);
+    assertEquals(ja, ja2);
+
+    // test remove
+    assertEquals(4, ja.size());
+
+    ja.remove(null);
+    assertEquals(3, ja.size());
+
+    ja.remove(Instant.MIN);
+    assertEquals(2, ja.size());
+
+    ja.remove(Arrays.asList(1,2));
+    assertEquals(1, ja.size());
+    assertEquals("[\"a\"]", ja.toString());
+  }
 }
