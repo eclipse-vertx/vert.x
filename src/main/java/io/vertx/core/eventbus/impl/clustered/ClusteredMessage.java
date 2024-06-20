@@ -115,7 +115,7 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
     buffer.appendByte(WIRE_PROTOCOL_VERSION);
     byte systemCodecID = messageCodec.systemCodecID();
     buffer.appendByte(systemCodecID);
-    if (systemCodecID == -1) {
+    if (systemCodecID == MessageCodec.USER_CODEC_ID) {
       // User codec
       writeString(buffer, messageCodec.name());
     }
