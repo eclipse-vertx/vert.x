@@ -289,11 +289,10 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
 
     HandlerHolder<T> holder = createHandlerHolder(registration, localOnly, context);
 
-    ConcurrentCyclicSequence<HandlerHolder> handlers = new ConcurrentCyclicSequence<HandlerHolder>().add(holder);
-    ConcurrentCyclicSequence<HandlerHolder> actualHandlers = handlerMap.merge(
-      address,
-      handlers,
-      (old, prev) -> old.add(prev.first()));
+    ConcurrentCyclicSequence<HandlerHolder> actualHandlers = handlerMap.compute(address,
+      (adr, prev) -> prev == null // first? => create new with one holder
+        ? new ConcurrentCyclicSequence<HandlerHolder>().add(holder)
+        : prev.add(holder));
 
     if (context.isDeployment()) {
       context.addCloseHook(registration);
@@ -503,4 +502,3 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
     return true;
   }
 }
-
