@@ -11,16 +11,17 @@
 
 package io.vertx.test.fakedns;
 
+import io.netty.handler.codec.dns.DnsRecordType;
+import io.vertx.core.Vertx;
+import io.vertx.core.dns.DnsResponseCode;
+import io.vertx.core.dns.dnsrecord.DohRecord;
+import io.vertx.core.dns.dnsrecord.DohResourceRecord;
+import io.vertx.core.http.*;
+import io.vertx.test.tls.Trust;
 import org.apache.directory.server.dns.DnsException;
 import org.apache.directory.server.dns.DnsServer;
 import org.apache.directory.server.dns.io.encoder.ResourceRecordEncoder;
-import org.apache.directory.server.dns.messages.DnsMessage;
-import org.apache.directory.server.dns.messages.DnsMessageModifier;
-import org.apache.directory.server.dns.messages.QuestionRecord;
-import org.apache.directory.server.dns.messages.RecordClass;
-import org.apache.directory.server.dns.messages.RecordType;
-import org.apache.directory.server.dns.messages.ResourceRecord;
-import org.apache.directory.server.dns.messages.ResourceRecordModifier;
+import org.apache.directory.server.dns.messages.*;
 import org.apache.directory.server.dns.protocol.DnsProtocolHandler;
 import org.apache.directory.server.dns.protocol.DnsTcpDecoder;
 import org.apache.directory.server.dns.protocol.DnsUdpDecoder;
@@ -33,11 +34,7 @@ import org.apache.directory.server.protocol.shared.transport.UdpTransport;
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.service.IoAcceptor;
 import org.apache.mina.core.session.IoSession;
-import org.apache.mina.filter.codec.ProtocolCodecFactory;
-import org.apache.mina.filter.codec.ProtocolCodecFilter;
-import org.apache.mina.filter.codec.ProtocolDecoder;
-import org.apache.mina.filter.codec.ProtocolEncoder;
-import org.apache.mina.filter.codec.ProtocolEncoderOutput;
+import org.apache.mina.filter.codec.*;
 import org.apache.mina.transport.socket.DatagramSessionConfig;
 
 import java.io.IOException;
@@ -88,8 +85,17 @@ public final class FakeDNSServer extends DnsServer {
   private volatile RecordStore store;
   private List<IoAcceptor> acceptors;
   private final Deque<DnsMessage> currentMessage = new ArrayDeque<>();
+  private final boolean ssl;
+  private Vertx vertx;
+  private HttpServer httpServer;
 
   public FakeDNSServer() {
+    this.ssl = false;
+  }
+
+  public FakeDNSServer(boolean ssl, Vertx vertx) {
+    this.ssl = ssl;
+    this.vertx = vertx;
   }
 
   public RecordStore store() {
@@ -114,9 +120,17 @@ public final class FakeDNSServer extends DnsServer {
     return this;
   }
 
+  public String ipAddress() {
+    return this.ipAddress;
+  }
+
   public FakeDNSServer port(int p) {
     port = p;
     return this;
+  }
+
+  public int port() {
+    return this.port;
   }
 
   public FakeDNSServer testResolveA(final String ipAddress) {
@@ -357,7 +371,7 @@ public final class FakeDNSServer extends DnsServer {
     return store(new RecordStore() {
       @Override
       public Set<ResourceRecord> getRecords(QuestionRecord questionRecord)
-          throws org.apache.directory.server.dns.DnsException {
+        throws org.apache.directory.server.dns.DnsException {
         // use LinkedHashSet since the order of the result records has to be preserved to make sure the unit test fails
         Set<ResourceRecord> set = new LinkedHashSet<>();
 
@@ -384,6 +398,18 @@ public final class FakeDNSServer extends DnsServer {
 
   @Override
   public void start() throws IOException {
+    if (this.ssl) {
+      HttpServerOptions options = new HttpServerOptions()
+        .setSsl(true)
+        .setPort(port)
+        .setHost(ipAddress)
+        .setKeyCertOptions(Trust.DOH_JKS_HOST.get());
+
+      httpServer = vertx.createHttpServer(options);
+      httpServer.requestHandler(this::simulateDohServer).listen();
+
+      return;
+    }
 
     DnsProtocolHandler handler = new DnsProtocolHandler(this, new RecordStore() {
       @Override
@@ -400,9 +426,9 @@ public final class FakeDNSServer extends DnsServer {
       public void sessionCreated(IoSession session) throws Exception {
         // Use our own codec to support AAAA testing
         if (session.getTransportMetadata().isConnectionless()) {
-          session.getFilterChain().addFirst( "codec", new ProtocolCodecFilter(new TestDnsProtocolUdpCodecFactory()));
+          session.getFilterChain().addFirst("codec", new ProtocolCodecFilter(new TestDnsProtocolUdpCodecFactory()));
         } else {
-          session.getFilterChain().addFirst( "codec", new ProtocolCodecFilter(new TestDnsProtocolTcpCodecFactory()));
+          session.getFilterChain().addFirst("codec", new ProtocolCodecFilter(new TestDnsProtocolTcpCodecFactory()));
         }
       }
 
@@ -418,13 +444,13 @@ public final class FakeDNSServer extends DnsServer {
     };
 
     UdpTransport udpTransport = new UdpTransport(ipAddress, port);
-    ((DatagramSessionConfig)udpTransport.getAcceptor().getSessionConfig()).setReuseAddress(true);
+    ((DatagramSessionConfig) udpTransport.getAcceptor().getSessionConfig()).setReuseAddress(true);
     TcpTransport tcpTransport = new TcpTransport(ipAddress, port);
     tcpTransport.getAcceptor().getSessionConfig().setReuseAddress(true);
 
     setTransports(udpTransport, tcpTransport);
 
-    for  (Transport transport : getTransports()) {
+    for (Transport transport : getTransports()) {
       IoAcceptor acceptor = transport.getAcceptor();
 
       acceptor.setHandler(handler);
@@ -434,10 +460,76 @@ public final class FakeDNSServer extends DnsServer {
     }
   }
 
+  private void simulateDohServer(HttpServerRequest request) {
+    if (HttpMethod.GET != request.method() ||
+      !request.getHeader("accept").equalsIgnoreCase("application/dns-json")) {
+      HttpServerResponse response = request.response();
+      response.setStatusCode(400);
+      response.send("DoH Request is not correct!");
+      return;
+    }
+
+    QuestionRecord questionRecord = createQuestionRecord(request);
+
+    cacheDnsMessage(questionRecord);
+
+    Set<ResourceRecord> resourceRecords = getStoredRecords(questionRecord);
+    List<DohResourceRecord> answers =
+      resourceRecords.stream().map(DohMessageEncoder::encode).collect(Collectors.toList());
+
+    if (answers.isEmpty()) {
+      DohRecord dohRecord = new DohRecord();
+      dohRecord.setStatus(DnsResponseCode.NXDOMAIN.code());
+      sendResponse(dohRecord, request.response());
+      return;
+    }
+
+    DohRecord dohRecord = new DohRecord();
+    dohRecord.setStatus(0);
+    dohRecord.setAnswer(answers);
+    sendResponse(dohRecord, request.response());
+  }
+
+  private QuestionRecord createQuestionRecord(HttpServerRequest request) {
+    String domainName = request.getParam("name");
+    RecordType type = RecordType.convert((short) DnsRecordType.valueOf(request.getParam("type")).intValue());
+    return new QuestionRecord(domainName, type, RecordClass.IN);
+  }
+
+  private void cacheDnsMessage(QuestionRecord questionRecord) {
+    DnsMessageModifier dnsMessageModifier = new DnsMessageModifier();
+    dnsMessageModifier.setMessageType(MessageType.QUERY);
+    dnsMessageModifier.setRecursionDesired(true);
+    dnsMessageModifier.setQuestionRecords(Collections.singletonList(questionRecord));
+    currentMessage.add(dnsMessageModifier.getDnsMessage());
+  }
+
+  private Set<ResourceRecord> getStoredRecords(QuestionRecord questionRecord) {
+    Set<ResourceRecord> records = null;
+    try {
+      records = store.getRecords(questionRecord);
+    } catch (DnsException ignored) {
+    }
+    if (records != null) {
+      return records;
+    }
+    return new HashSet<>();
+  }
+
+  private void sendResponse(DohRecord record, HttpServerResponse response) {
+    response.putHeader("content-type", "application/dns-json");
+    response.setStatusCode(200);
+    response.send(record.toJson().toBuffer());
+  }
+
   @Override
   public void stop() {
-    for (Transport transport : getTransports()) {
-      transport.getAcceptor().dispose();
+    if (this.ssl) {
+      this.httpServer.close();
+    } else {
+      for (Transport transport : getTransports()) {
+        transport.getAcceptor().dispose();
+      }
     }
   }
 
@@ -529,7 +621,7 @@ public final class FakeDNSServer extends DnsServer {
 
     encoder.encode(buf, dnsMessage);
 
-    for (ResourceRecord record: dnsMessage.getAnswerRecords()) {
+    for (ResourceRecord record : dnsMessage.getAnswerRecords()) {
       // This is a hack to allow to also test for AAAA resolution as DnsMessageEncoder does not support it and it
       // is hard to extend, because the interesting methods are private...
       // In case of RecordType.AAAA we need to encode the RecordType by ourself
@@ -554,10 +646,10 @@ public final class FakeDNSServer extends DnsServer {
 
         @Override
         public void encode(IoSession session, Object message, ProtocolEncoderOutput out) {
-          IoBuffer buf = IoBuffer.allocate( 1024 );
-          FakeDNSServer.this.encode((DnsMessage)message, buf);
+          IoBuffer buf = IoBuffer.allocate(1024);
+          FakeDNSServer.this.encode((DnsMessage) message, buf);
           buf.flip();
-          out.write( buf );
+          out.write(buf);
         }
       };
     }
@@ -578,17 +670,17 @@ public final class FakeDNSServer extends DnsServer {
 
         @Override
         public void encode(IoSession session, Object message, ProtocolEncoderOutput out) {
-          IoBuffer buf = IoBuffer.allocate( 1024 );
-          buf.putShort( ( short ) 0 );
+          IoBuffer buf = IoBuffer.allocate(1024);
+          buf.putShort((short) 0);
           FakeDNSServer.this.encode((DnsMessage) message, buf);
-          encoder.encode( buf, ( DnsMessage ) message );
+          encoder.encode(buf, (DnsMessage) message);
           int end = buf.position();
-          short recordLength = ( short ) ( end - 2 );
+          short recordLength = (short) (end - 2);
           buf.rewind();
-          buf.putShort( recordLength );
-          buf.position( end );
+          buf.putShort(recordLength);
+          buf.position(end);
           buf.flip();
-          out.write( buf );
+          out.write(buf);
         }
       };
     }
