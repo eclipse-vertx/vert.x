@@ -60,7 +60,6 @@ public class DohTest extends VertxTestBase {
   @Test
   public void testDefaultDnsClientWithOptions() throws Exception {
     int port = 53529;
-
     VertxOptions vertxOptions = new VertxOptions();
     vertxOptions.getAddressResolverOptions().addServer("127.0.0.1" + ":" + port);
 
