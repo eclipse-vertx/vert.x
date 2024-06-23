@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:imz.987.work@gmail.com">imz.987</a>
+ * @author <a href="mailto:zolfaghari19@gmail.com">imz87</a>
  */
 public class DohMessageEncoder {
   /**

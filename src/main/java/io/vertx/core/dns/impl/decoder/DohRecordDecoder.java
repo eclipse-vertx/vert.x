@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
- * @author <a href="mailto:imz.987.work@gmail.com">imz.987</a>
+ * @author <a href="mailto:zolfaghari19@gmail.com">imz87</a>
  */
 public class DohRecordDecoder {
   private static final Logger log = LoggerFactory.getLogger(DohRecordDecoder.class);

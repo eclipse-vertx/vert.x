@@ -20,7 +20,7 @@ import java.util.function.Function;
 import static io.vertx.test.core.TestUtils.assertNullPointerException;
 
 /**
- * @author <a href="mailto:imz.987.work@gmail.com">imz.987</a>
+ * @author <a href="mailto:zolfaghari19@gmail.com">imz87</a>
  */
 public class DohTest extends VertxTestBase {
 
