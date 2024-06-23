@@ -116,4 +116,16 @@ public class StartOfAuthorityRecord {
         return minimumTtl;
     }
 
+  @Override
+  public String toString() {
+    return String.join(" ",
+      primaryNameServer(),
+      responsiblePerson(),
+      String.valueOf(serial()),
+      String.valueOf(refreshTime()),
+      String.valueOf(retryTime()),
+      String.valueOf(expireTime()),
+      String.valueOf(minimumTtl())
+    );
+  }
 }

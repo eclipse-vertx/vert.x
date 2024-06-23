@@ -44,10 +44,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -113,6 +111,16 @@ public abstract class VertxWrapper implements VertxInternal {
   @Override
   public DnsClient createDnsClient() {
     return delegate.createDnsClient();
+  }
+
+  @Override
+  public DnsClient createDohClient(String host) {
+    return delegate.createDohClient(host);
+  }
+
+  @Override
+  public DnsClient createDohClient() {
+    return delegate.createDohClient();
   }
 
   @Override

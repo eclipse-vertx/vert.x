@@ -17,8 +17,8 @@ import io.netty.resolver.AddressResolverGroup;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.Future;
-import io.vertx.core.*;
 import io.vertx.core.Timer;
+import io.vertx.core.*;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.datagram.impl.DatagramSocketImpl;
@@ -26,33 +26,30 @@ import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.dns.DnsClient;
 import io.vertx.core.dns.DnsClientOptions;
 import io.vertx.core.dns.impl.DnsClientImpl;
+import io.vertx.core.dns.impl.DohClientImpl;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.impl.EventBusImpl;
 import io.vertx.core.eventbus.impl.EventBusInternal;
 import io.vertx.core.eventbus.impl.clustered.ClusteredEventBus;
 import io.vertx.core.file.FileSystem;
+import io.vertx.core.file.impl.FileSystemImpl;
+import io.vertx.core.file.impl.WindowsFileSystem;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.*;
 import io.vertx.core.impl.btc.BlockedThreadChecker;
-import io.vertx.core.net.impl.NetClientBuilder;
-import io.vertx.core.impl.transports.JDKTransport;
-import io.vertx.core.spi.file.FileResolver;
-import io.vertx.core.file.impl.FileSystemImpl;
-import io.vertx.core.file.impl.WindowsFileSystem;
-import io.vertx.core.http.impl.HttpClientImpl;
-import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.impl.resolver.DnsResolverProvider;
+import io.vertx.core.impl.transports.JDKTransport;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.impl.NetClientBuilder;
 import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.net.impl.TCPServerBase;
-import io.vertx.core.spi.transport.Transport;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.shareddata.impl.SharedDataImpl;
 import io.vertx.core.spi.ExecutorServiceFactory;
@@ -60,11 +57,13 @@ import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.VertxThreadFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeSelector;
+import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.PoolMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
+import io.vertx.core.spi.transport.Transport;
 
 import java.io.File;
 import java.io.IOException;
@@ -96,6 +95,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private static final String CLUSTER_MAP_NAME = "__vertx.haInfo";
   private static final String NETTY_IO_RATIO_PROPERTY_NAME = "vertx.nettyIORatio";
   private static final int NETTY_IO_RATIO = Integer.getInteger(NETTY_IO_RATIO_PROPERTY_NAME, 50);
+  public static final String DEFAULT_DOH_HOST = "1.1.1.1";
 
   // Not cached for graalvm
   private static ThreadFactory virtualThreadFactory() {
@@ -625,18 +625,34 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
+  public DnsClient createDohClient(String host) {
+    return createDnsClient(new DnsClientOptions().setSsl(true).setPort(443).setHost(host));
+  }
+
+  @Override
+  public DnsClient createDohClient() {
+    return createDnsClient(new DnsClientOptions().setSsl(true));
+  }
+
+  @Override
   public DnsClient createDnsClient(DnsClientOptions options) {
     String host = options.getHost();
     int port = options.getPort();
     if (host == null || port < 0) {
-      DnsResolverProvider provider = DnsResolverProvider.create(this, addressResolverOptions);
-      InetSocketAddress address = provider.nameServerAddresses().get(0);
-      // provide the host and port
-      options = new DnsClientOptions(options)
-      .setHost(address.getAddress().getHostAddress())
-      .setPort(address.getPort());
+      if (options.isSsl()) {
+        options = new DnsClientOptions(options)
+          .setHost(DEFAULT_DOH_HOST)
+          .setPort(443);
+      } else {
+        DnsResolverProvider provider = DnsResolverProvider.create(this, addressResolverOptions);
+        InetSocketAddress address = provider.nameServerAddresses().get(0);
+        // provide the host and port
+        options = new DnsClientOptions(options)
+          .setHost(address.getAddress().getHostAddress())
+          .setPort(address.getPort());
+      }
     }
-    return new DnsClientImpl(this, options);
+    return options.isSsl() ? new DohClientImpl(this, options) : new DnsClientImpl(this, options);
   }
 
   private long scheduleTimeout(ContextInternal context,
