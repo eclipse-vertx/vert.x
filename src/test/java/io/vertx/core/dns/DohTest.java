@@ -111,7 +111,7 @@ public class DohTest extends VertxTestBase {
       fail();
     } catch (Exception e) {
       assertTrue(e instanceof IllegalArgumentException);
-      assertEquals("Cannot resolve the host to a valid ip address", e.getMessage());
+      assertEquals("Cant resolve the host to a valid ip address", e.getMessage());
     }
   }
 
