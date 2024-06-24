@@ -480,7 +480,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         uri = "/";
       }
       HttpRequestHead head = new HttpRequestHead(method, uri, headers, authority(), absoluteURI(), traceOperation);
-      future = stream.writeHead(head, chunked, buff, writeEnd, priority, connect);
+      future = stream.writeHead(priority, new HttpHeaderWriteContext(head, chunked, buff, writeEnd, connect));
     } else {
       if (buff == null && !end) {
         throw new IllegalArgumentException();

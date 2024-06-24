@@ -45,7 +45,7 @@ public interface HttpClientStream extends WriteStream<Buffer> {
   HttpClientConnectionInternal connection();
   ContextInternal getContext();
 
-  Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect);
+  Future<Void> writeHead(StreamPriority priority, HttpHeaderWriteContext httpHeaderWriteContext);
   Future<Void> writeBuffer(ByteBuf buf, boolean end);
   Future<Void> writeFrame(int type, int flags, ByteBuf payload);
 

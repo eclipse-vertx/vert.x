@@ -549,13 +549,13 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect) {
+    public Future<Void> writeHead(StreamPriority priority, HttpHeaderWriteContext httpHeaderWriteContext) {
       priority(priority);
       PromiseInternal<Void> promise = context.promise();
       write(new MessageWrite() {
         @Override
         public void write() {
-          writeHeaders(request, buf, end, priority, connect, promise);
+          writeHeaders(httpHeaderWriteContext.getRequest(), httpHeaderWriteContext.getBuf(), httpHeaderWriteContext.getEnd(), priority, httpHeaderWriteContext.getConnect(), promise);
         }
         @Override
         public void cancel(Throwable cause) {

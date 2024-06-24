@@ -154,8 +154,8 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
     }
 
     @Override
-    public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect) {
-      return delegate.writeHead(request, chunked, buf, end, priority, connect);
+    public Future<Void> writeHead(StreamPriority priority, HttpHeaderWriteContext httpHeaderWriteContext) {
+      return delegate.writeHead(priority, httpHeaderWriteContext);
     }
 
     @Override
@@ -307,14 +307,11 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
 
     /**
      * HTTP/2 clear text upgrade here.
+     * @param httpHeaderWriteContext The HttpHeaderWriteContext object
      */
     @Override
-    public Future<Void> writeHead(HttpRequestHead request,
-                          boolean chunked,
-                          ByteBuf buf,
-                          boolean end,
-                          StreamPriority priority,
-                          boolean connect) {
+    public Future<Void> writeHead(StreamPriority priority,
+                                  HttpHeaderWriteContext httpHeaderWriteContext) {
       ChannelPipeline pipeline = upgradingConnection.channel().pipeline();
       HttpClientCodec httpCodec = pipeline.get(HttpClientCodec.class);
 
@@ -509,7 +506,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
       pipeline.addAfter("codec", null, new UpgradeRequestHandler());
       pipeline.addAfter("codec", null, upgradeHandler);
       PromiseInternal<Void> promise = upgradingStream.getContext().promise();
-      doWriteHead(request, chunked, buf, end, priority, connect, promise);
+      doWriteHead(httpHeaderWriteContext.getRequest(), httpHeaderWriteContext.getChunked(), httpHeaderWriteContext.getBuf(), httpHeaderWriteContext.getEnd(), priority, httpHeaderWriteContext.getConnect(), promise);
       return promise.future();
     }
 
@@ -522,7 +519,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
                              Handler<AsyncResult<Void>> handler) {
       EventExecutor exec = upgradingConnection.channelHandlerContext().executor();
       if (exec.inEventLoop()) {
-        upgradingStream.writeHead(head, chunked, buf, end, priority, connect);
+        upgradingStream.writeHead(priority, new HttpHeaderWriteContext(head, chunked, buf, end, connect));
         if (end) {
           ChannelPipeline pipeline = upgradingConnection.channelHandlerContext().pipeline();
           pipeline.fireUserEventTriggered(SEND_BUFFERED_MESSAGES);

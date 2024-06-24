@@ -236,29 +236,29 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
   private static boolean isZstdAvailable() {
     return Zstd.isAvailable();
   }
-  private void beginRequest(Stream stream, HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, PromiseInternal<Void> promise) {
-    request.id = stream.id;
-    request.remoteAddress = remoteAddress();
-    stream.bytesWritten += buf != null ? buf.readableBytes() : 0L;
-    HttpRequest nettyRequest = createRequest(request.method, request.uri, request.headers, request.authority, chunked, buf, end);
+  private void beginRequest(Stream stream, PromiseInternal<Void> promise, HttpHeaderWriteContext httpHeaderWriteContext) {
+    httpHeaderWriteContext.getRequest().id = stream.id;
+    httpHeaderWriteContext.getRequest().remoteAddress = remoteAddress();
+    stream.bytesWritten += httpHeaderWriteContext.getBuf() != null ? httpHeaderWriteContext.getBuf().readableBytes() : 0L;
+    HttpRequest nettyRequest = createRequest(httpHeaderWriteContext.getRequest().method, httpHeaderWriteContext.getRequest().uri, httpHeaderWriteContext.getRequest().headers, httpHeaderWriteContext.getRequest().authority, httpHeaderWriteContext.getChunked(), httpHeaderWriteContext.getBuf(), httpHeaderWriteContext.getEnd());
     synchronized (this) {
       responses.add(stream);
-      this.isConnect = connect;
+      this.isConnect = httpHeaderWriteContext.getConnect();
       if (this.metrics != null) {
-        stream.metric = this.metrics.requestBegin(request.uri, request);
+        stream.metric = this.metrics.requestBegin(httpHeaderWriteContext.getRequest().uri, httpHeaderWriteContext.getRequest());
       }
       VertxTracer tracer = context.tracer();
       if (tracer != null) {
         BiConsumer<String, String> headers = (key, val) -> new HeadersAdaptor(nettyRequest.headers()).add(key, val);
-        String operation = request.traceOperation;
+        String operation = httpHeaderWriteContext.getRequest().traceOperation;
         if (operation == null) {
-          operation = request.method.name();
+          operation = httpHeaderWriteContext.getRequest().method.name();
         }
-        stream.trace = tracer.sendRequest(stream.context, SpanKind.RPC, options.getTracingPolicy(), request, operation, headers, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
+        stream.trace = tracer.sendRequest(stream.context, SpanKind.RPC, options.getTracingPolicy(), httpHeaderWriteContext.getRequest(), operation, headers, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
       }
     }
     write(nettyRequest, false, promise);
-    if (end) {
+    if (httpHeaderWriteContext.getEnd()) {
       endRequest(stream);
     }
   }
@@ -332,12 +332,17 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     return false;
   }
 
-  private void writeHead(Stream stream, HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, PromiseInternal<Void> handler) {
+  private void writeHead(Stream stream, PromiseInternal<Void> handler, HttpHeaderWriteContext httpHeaderWriteContext) {
     writeToChannel(new MessageWrite() {
       @Override
       public void write() {
-        stream.request = request;
-        beginRequest(stream, request, chunked, buf, end, connect, handler);
+        stream.request = httpHeaderWriteContext.getRequest();
+        beginRequest(stream, handler, new HttpHeaderWriteContext(
+          httpHeaderWriteContext.getRequest(),
+          httpHeaderWriteContext.getChunked(),
+          httpHeaderWriteContext.getBuf(),
+          httpHeaderWriteContext.getEnd(),
+          httpHeaderWriteContext.getConnect()));
       }
       @Override
       public void cancel(Throwable cause) {
@@ -543,9 +548,9 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
 
     @Override
-    public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect) {
+    public Future<Void> writeHead(StreamPriority priority, HttpHeaderWriteContext httpHeaderWriteContext) {
       PromiseInternal<Void> promise = context.promise();
-      conn.writeHead(this, request, chunked, buf, end, connect, promise);
+      conn.writeHead(this, promise, httpHeaderWriteContext);
       return promise.future();
     }
 
