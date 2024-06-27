@@ -79,6 +79,7 @@ module io.vertx.core {
   exports io.vertx.core.internal;
   exports io.vertx.core.internal.buffer;
   exports io.vertx.core.internal.net;
+  exports io.vertx.core.internal.net.endpoint;
   exports io.vertx.core.internal.pool;
   exports io.vertx.core.internal.tls;
   exports io.vertx.core.internal.threadchecker;

@@ -11,6 +11,7 @@
 package io.vertx.core.net.endpoint.impl;
 
 import io.vertx.core.Future;
+import io.vertx.core.internal.net.endpoint.EndpointResolverInternal;
 import io.vertx.core.net.endpoint.EndpointNode;
 import io.vertx.core.net.endpoint.EndpointInteraction;
 import io.vertx.core.internal.ContextInternal;

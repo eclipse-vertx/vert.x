@@ -22,7 +22,7 @@ import io.vertx.core.internal.pool.Lease;
 import io.vertx.core.net.endpoint.impl.EndpointResolverImpl;
 import io.vertx.core.http.*;
 import io.vertx.core.net.*;
-import io.vertx.core.net.endpoint.impl.EndpointResolverInternal;
+import io.vertx.core.internal.net.endpoint.EndpointResolverInternal;
 import io.vertx.core.net.impl.endpoint.EndpointProvider;
 import io.vertx.core.net.endpoint.EndpointInteraction;
 import io.vertx.core.net.endpoint.EndpointNode;
