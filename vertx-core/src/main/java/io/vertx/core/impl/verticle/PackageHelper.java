@@ -22,7 +22,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.jar.JarEntry;
 
-import static io.vertx.core.net.impl.URIDecoder.decodeURIComponent;
+import static io.vertx.core.internal.net.URIDecoder.decodeURIComponent;
 
 /**
  * @author Janne Hietam&auml;ki

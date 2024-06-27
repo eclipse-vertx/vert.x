@@ -30,11 +30,10 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import static io.vertx.core.net.impl.URIDecoder.decodeURIComponent;
+import static io.vertx.core.internal.net.URIDecoder.decodeURIComponent;
 
 /**
  * Sometimes the file resources of an application are bundled into jars, or are somewhere on the classpath but not

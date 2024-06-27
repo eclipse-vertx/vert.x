@@ -15,7 +15,7 @@ import org.junit.Test;
 
 import java.net.URLEncoder;
 
-import static io.vertx.core.net.impl.URIDecoder.decodeURIComponent;
+import static io.vertx.core.internal.net.URIDecoder.decodeURIComponent;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
