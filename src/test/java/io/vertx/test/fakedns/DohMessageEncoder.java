@@ -14,8 +14,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:zolfaghari19@gmail.com">imz87</a>
+ * An encoder for DoH messages.
+ *
+ * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
  */
+
 public class DohMessageEncoder {
   /**
    * the log for this class

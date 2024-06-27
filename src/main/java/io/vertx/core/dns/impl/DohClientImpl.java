@@ -28,8 +28,9 @@ import java.util.stream.Collectors;
 import static io.vertx.core.dns.impl.decoder.JsonHelper.appendDotIfRequired;
 
 /**
- * @author <a href="mailto:zolfaghari19@gmail.com">imz87</a>
+ * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
  */
+
 public class DohClientImpl extends BaseDnsClientImpl {
   public static final String DOH_URL_FORMAT = "/dns-query?name=%s&type=%s";
   private final HttpClient httpClient;

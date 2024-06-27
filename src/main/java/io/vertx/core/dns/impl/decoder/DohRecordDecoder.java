@@ -13,7 +13,10 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
- * @author <a href="mailto:zolfaghari19@gmail.com">imz87</a>
+ *
+ * Handles the decoding of DoH records.
+ *
+ * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
  */
 public class DohRecordDecoder {
   private static final Logger log = LoggerFactory.getLogger(DohRecordDecoder.class);

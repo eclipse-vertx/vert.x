@@ -18,7 +18,10 @@ import java.net.UnknownHostException;
 import java.util.List;
 
 /**
- * @author <a href="mailto:imz.work.987@gmail.com">imz</a>
+ *
+ * Base class for both DnsClient and DohClient, containing some common methods shared between them.
+ *
+ * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
  */
 
 

@@ -4,6 +4,10 @@ import io.vertx.codegen.Helper;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
+/**
+ * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
+ */
+
 public class JsonHelper {
   public static <T> T normalizePropertyNames(T obj) {
     if (obj instanceof JsonObject) {

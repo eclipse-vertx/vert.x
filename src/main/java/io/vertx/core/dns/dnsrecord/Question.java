@@ -4,6 +4,10 @@ import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.json.JsonObject;
 
+/**
+ * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
+ */
+
 @DataObject
 @JsonGen(publicConverter = false)
 public class Question {

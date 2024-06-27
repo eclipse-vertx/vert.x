@@ -45,6 +45,7 @@ import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
+ * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
  */
 public final class FakeDNSServer extends DnsServer {
 

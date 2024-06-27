@@ -6,6 +6,10 @@ import io.vertx.core.json.JsonObject;
 
 import java.util.List;
 
+/**
+ * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
+ */
+
 @DataObject
 @JsonGen(publicConverter = false)
 public class DohRecord {
