@@ -1,4 +1,4 @@
-package io.vertx.core.net.impl;
+package io.vertx.core.internal.concurrent;
 
 import io.netty.channel.EventLoop;
 import io.vertx.core.streams.impl.OutboundWriteQueue;

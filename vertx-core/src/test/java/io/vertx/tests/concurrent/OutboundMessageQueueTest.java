@@ -12,7 +12,7 @@ package io.vertx.tests.concurrent;
 
 import io.netty.channel.EventLoop;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.net.impl.OutboundMessageQueue;
+import io.vertx.core.internal.concurrent.OutboundMessageQueue;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 

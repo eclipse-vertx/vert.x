@@ -13,7 +13,7 @@ package io.vertx.tests.concurrent;
 import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.net.impl.InboundMessageQueue;
+import io.vertx.core.internal.concurrent.InboundMessageQueue;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 

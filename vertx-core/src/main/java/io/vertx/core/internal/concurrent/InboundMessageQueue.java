@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.net.impl;
+package io.vertx.core.internal.concurrent;
 
 import io.netty.channel.EventLoop;
 import io.vertx.core.ThreadingModel;

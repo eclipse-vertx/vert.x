@@ -83,6 +83,7 @@ module io.vertx.core {
   exports io.vertx.core.internal.pool;
   exports io.vertx.core.internal.tls;
   exports io.vertx.core.internal.threadchecker;
+  exports io.vertx.core.internal.concurrent;
 
   // Testing
 
