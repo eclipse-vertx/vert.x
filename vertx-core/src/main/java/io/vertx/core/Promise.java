@@ -44,7 +44,7 @@ public interface Promise<T> extends Handler<AsyncResult<T>> {
    *
    * @param asyncResult the async result to handle
    */
-  @GenIgnore
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Override
   default void handle(AsyncResult<T> asyncResult) {
     if (asyncResult.succeeded()) {

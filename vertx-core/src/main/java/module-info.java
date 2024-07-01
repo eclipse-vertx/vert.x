@@ -77,6 +77,7 @@ module io.vertx.core {
   // Internal API
 
   exports io.vertx.core.internal;
+  exports io.vertx.core.internal.http;
   exports io.vertx.core.internal.buffer;
   exports io.vertx.core.internal.net;
   exports io.vertx.core.internal.net.endpoint;
@@ -107,6 +108,5 @@ module io.vertx.core {
   exports io.vertx.core.impl.transports to io.vertx.tests;
   exports io.vertx.core.net.impl.pkcs1 to io.vertx.tests;
   exports io.vertx.core.spi.cluster.impl.selector to io.vertx.tests;
-  exports io.vertx.core.internal.http to io.vertx.tests;
 
 }
