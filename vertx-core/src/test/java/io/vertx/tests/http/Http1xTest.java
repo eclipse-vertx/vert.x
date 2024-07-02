@@ -5560,7 +5560,7 @@ public class Http1xTest extends HttpTest {
   private void doTestCanUpgradeToWebSocket(UnaryOperator<RequestOptions> config, boolean shouldSucceed) throws Exception {
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
-      if (HttpUtils.canUpgradeToWebSocket(req)) {
+      if (req.canUpgradeToWebSocket()) {
         resp.headers()
           .set(HttpHeaders.CONNECTION, HttpHeaders.UPGRADE)
           .set(HttpHeaders.UPGRADE, HttpHeaders.WEBSOCKET);

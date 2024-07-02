@@ -20,6 +20,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
@@ -375,6 +376,14 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   @CacheReturn
   default int streamId() {
     return -1;
+  }
+
+  /**
+   * @return whether this request can be upgraded to a WebSocket, implying it uses HTTP/1.x and presents
+   * the correct characteristics for a proper upgrade.
+   */
+  default boolean canUpgradeToWebSocket() {
+    return HttpUtils.canUpgradeToWebSocket(this);
   }
 
   /**
