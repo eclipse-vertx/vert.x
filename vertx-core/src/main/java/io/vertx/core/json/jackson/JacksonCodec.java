@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Writer;
-import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
@@ -52,24 +51,8 @@ public class JacksonCodec implements JsonCodec {
 
   private static JsonFactory buildFactory() {
     TSFBuilder<?, ?> builder = JsonFactory.builder();
-    try {
-      // Use reflection to configure the recycler pool
-      Method[] methods = builder.getClass().getMethods();
-      for (Method method : methods) {
-        if (method.getName().equals("recyclerPool")) {
-          method.invoke(builder, JacksonPoolHolder.pool);
-          break;
-        }
-      }
-    } catch (Throwable e) {
-      // Ignore: most likely no Recycler Pool with Jackson < 2.16
-    }
+    builder.recyclerPool(HybridJacksonPool.getInstance());
     return builder.build();
-  }
-
-  private static final class JacksonPoolHolder {
-    // Use Initialization-on-demand holder idiom to lazy load the HybridJacksonPool only when we know that we are on Jackson 2.16+
-    private static final Object pool = HybridJacksonPool.getInstance();
   }
 
   static final JsonFactory factory = buildFactory();
