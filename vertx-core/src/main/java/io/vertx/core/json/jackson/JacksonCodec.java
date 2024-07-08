@@ -12,13 +12,13 @@
 package io.vertx.core.json.jackson;
 
 import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.core.io.SegmentedStringWriter;
 import com.fasterxml.jackson.core.type.TypeReference;
-import io.netty.buffer.ByteBuf;
+import com.fasterxml.jackson.core.util.BufferRecycler;
+import com.fasterxml.jackson.core.util.ByteArrayBuilder;
 import io.netty.buffer.ByteBufInputStream;
-import io.netty.buffer.ByteBufOutputStream;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.buffer.BufferInternal;
-import io.vertx.core.internal.buffer.VertxByteBufAllocator;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.EncodeException;
 import io.vertx.core.json.JsonArray;
@@ -29,9 +29,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.StringWriter;
 import java.io.Writer;
-import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
@@ -53,24 +51,8 @@ public class JacksonCodec implements JsonCodec {
 
   private static JsonFactory buildFactory() {
     TSFBuilder<?, ?> builder = JsonFactory.builder();
-    try {
-      // Use reflection to configure the recycler pool
-      Method[] methods = builder.getClass().getMethods();
-      for (Method method : methods) {
-        if (method.getName().equals("recyclerPool")) {
-          method.invoke(builder, JacksonPoolHolder.pool);
-          break;
-        }
-      }
-    } catch (Throwable e) {
-      // Ignore: most likely no Recycler Pool with Jackson < 2.16
-    }
+    builder.recyclerPool(HybridJacksonPool.getInstance());
     return builder.build();
-  }
-
-  private static final class JacksonPoolHolder {
-    // Use Initialization-on-demand holder idiom to lazy load the HybridJacksonPool only when we know that we are on Jackson 2.16+
-    private static final Object pool = HybridJacksonPool.getInstance();
   }
 
   static final JsonFactory factory = buildFactory();
@@ -109,38 +91,33 @@ public class JacksonCodec implements JsonCodec {
 
   @Override
   public String toString(Object object, boolean pretty) throws EncodeException {
-    StringWriter sw = new StringWriter();
-    JsonGenerator generator = createGenerator(sw, pretty);
-    try {
+    BufferRecycler br = factory._getBufferRecycler();
+    try (SegmentedStringWriter sw = new SegmentedStringWriter(br)) {
+      JsonGenerator generator = createGenerator(sw, pretty);
       encodeJson(object, generator);
-      generator.flush();
-      return sw.toString();
+      generator.close();
+      return sw.getAndClear();
     } catch (IOException e) {
       throw new EncodeException(e.getMessage(), e);
     } finally {
-      close(generator);
+      br.releaseToPool();
     }
   }
 
   @Override
   public Buffer toBuffer(Object object, boolean pretty) throws EncodeException {
-    // these buffers are not pooled and not instrumented, which make them faster
-    // This can use 0 as initial capacity, because Jackson will flush the tmp encoded buffer in one go, on flush
-    // causing a single resize of the right final size
-    ByteBuf nettyBuffer = VertxByteBufAllocator.DEFAULT.heapBuffer(0, Integer.MAX_VALUE);
-    // There is no need to use a try with resources here as jackson
-    // is a well-behaved and always calls the closes all streams in the
-    // "finally" block bellow.
-    ByteBufOutputStream out = new ByteBufOutputStream(nettyBuffer);
-    JsonGenerator generator = createGenerator(out, pretty);
-    try {
+    BufferRecycler br = factory._getBufferRecycler();
+    try (ByteArrayBuilder bb = new ByteArrayBuilder(br)) {
+      JsonGenerator generator = createGenerator(bb, pretty);
       encodeJson(object, generator);
-      generator.flush();
-      return BufferInternal.buffer(nettyBuffer);
+      generator.close();
+      byte[] result = bb.toByteArray();
+      bb.release();
+      return Buffer.buffer(result);
     } catch (IOException e) {
       throw new EncodeException(e.getMessage(), e);
     } finally {
-      close(generator);
+      br.releaseToPool();
     }
   }
 
@@ -290,7 +267,7 @@ public class JacksonCodec implements JsonCodec {
   }
 
   // In recursive calls, the callee is in charge of opening and closing the data structure
-  private static void encodeJson(Object json, JsonGenerator generator) throws EncodeException {
+  public static void encodeJson(Object json, JsonGenerator generator) throws EncodeException {
     try {
       if (json instanceof JsonObject) {
         json = ((JsonObject)json).getMap();
