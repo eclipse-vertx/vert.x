@@ -324,9 +324,9 @@ public class SslContextProvider {
     Set<String> protocols = new LinkedHashSet<>(enabledProtocols);
     protocols.retainAll(Arrays.asList(engine.getSupportedProtocols()));
     engine.setEnabledProtocols(protocols.toArray(new String[protocols.size()]));
-    if (client && endpointIdentificationAlgorithm != null && !endpointIdentificationAlgorithm.isEmpty()) {
+    if (client) {
       SSLParameters sslParameters = engine.getSSLParameters();
-      sslParameters.setEndpointIdentificationAlgorithm(endpointIdentificationAlgorithm);
+      sslParameters.setEndpointIdentificationAlgorithm(endpointIdentificationAlgorithm != null ? endpointIdentificationAlgorithm : "");
       engine.setSSLParameters(sslParameters);
     }
     if (serverName != null) {
