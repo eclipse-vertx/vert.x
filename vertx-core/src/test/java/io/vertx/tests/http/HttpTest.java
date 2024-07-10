@@ -90,28 +90,36 @@ public abstract class HttpTest extends HttpTestBase {
         .onComplete(onSuccess(connections::add));
     }
     waitUntil(() -> connections.size() == 4);
+    Set<String> actual = new HashSet<>();
+    Set<String> expected = new HashSet<>();
     for (int i = 0;i < num;i++) {
       Buffer body = awaitFuture(connections.get(i)
         .request(requestOptions)
         .compose(req -> req.send()
           .compose(HttpClientResponse::body)
         ));
-      assertEquals("Server " + i, body.toString());
+      expected.add("Server " + i);
+      actual.add(body.toString());
     }
+    assertEquals(expected, actual);
     awaitFuture(servers[3].close());
+    int successes = 0;
+    int failures = 0;
     for (int i = 0;i < num;i++) {
       Future<Buffer> fut = connections.get(i)
         .request(requestOptions)
         .compose(req -> req.send()
           .compose(HttpClientResponse::body)
         );
-      if (i < num - 1) {
-        fut.onComplete(onSuccess(body -> complete()));
-      } else {
-        fut.onComplete(onFailure(err -> complete()));
+      try {
+        awaitFuture(fut);
+        successes++;
+      } catch (Exception e) {
+        failures++;
       }
     }
-    await();
+    assertEquals(3, successes);
+    assertEquals(1, failures);
   }
 
   @Rule
