@@ -86,12 +86,12 @@
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
-      <artifactId>netty-transport-native-epoll</artifactId>
+      <artifactId>netty-transport-classes-epoll</artifactId>
       <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
-      <artifactId>netty-transport-native-kqueue</artifactId>
+      <artifactId>netty-transport-classes-kqueue</artifactId>
       <optional>true</optional>
     </dependency>
 
@@ -381,9 +381,7 @@
                 <include>io/vertx/it/transport/TransportTest.java</include>
               </includes>
               <classpathDependencyExcludes>
-                <classpathDependencyExclude>io.netty:netty-transport-native-epoll</classpathDependencyExclude>
                 <classpathDependencyExclude>io.netty:netty-transport-classes-epoll</classpathDependencyExclude>
-                <classpathDependencyExclude>io.netty:netty-transport-native-kqueue</classpathDependencyExclude>
                 <classpathDependencyExclude>io.netty:netty-transport-classes-kqueue</classpathDependencyExclude>
               </classpathDependencyExcludes>
             </configuration>
