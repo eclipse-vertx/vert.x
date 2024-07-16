@@ -163,14 +163,15 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final TimeUnit maxEventLoopExecTimeUnit;
   private final CloseFuture closeFuture;
   private final Transport transport;
+  private final Throwable transportUnavailabilityCause;
   private final VertxTracer tracer;
   private final ThreadLocal<WeakReference<ContextInternal>> stickyContext = new ThreadLocal<>();
   private final boolean disableTCCL;
   private final Boolean useDaemonThread;
 
   VertxImpl(VertxOptions options, ClusterManager clusterManager, NodeSelector nodeSelector, VertxMetrics metrics,
-            VertxTracer<?, ?> tracer, Transport transport, FileResolver fileResolver, VertxThreadFactory threadFactory,
-            ExecutorServiceFactory executorServiceFactory) {
+            VertxTracer<?, ?> tracer, Transport transport, Throwable transportUnavailabilityCause,
+            FileResolver fileResolver, VertxThreadFactory threadFactory, ExecutorServiceFactory executorServiceFactory) {
     // Sanity check
     if (Vertx.currentContext() != null) {
       log.warn("You're already on a Vert.x context, are you sure you want to create a new Vertx instance?");
@@ -218,6 +219,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     this.threadFactory = threadFactory;
     this.metrics = metrics;
     this.transport = transport;
+    this.transportUnavailabilityCause = transportUnavailabilityCause;
     this.fileResolver = fileResolver;
     this.addressResolverOptions = options.getAddressResolverOptions();
     this.hostnameResolver = new HostnameResolver(this, options.getAddressResolverOptions());
@@ -368,7 +370,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     if (isNativeTransportEnabled()) {
       return null;
     }
-    return transport.unavailabilityCause();
+    return transportUnavailabilityCause;
   }
 
   public FileSystem fileSystem() {

@@ -49,6 +49,7 @@ public class VertxBuilder implements VertxBootstrap {
   private VertxOptions options;
   private JsonObject config;
   private Transport transport;
+  private Throwable transportUnavailabilityCause;
   private ClusterManager clusterManager;
   private NodeSelector clusterNodeSelector;
   private VertxTracerFactory tracerFactory;
@@ -206,6 +207,7 @@ public class VertxBuilder implements VertxBootstrap {
       metrics,
       tracer,
       transport,
+      transportUnavailabilityCause,
       fileResolver,
       threadFactory,
       executorServiceFactory);
@@ -228,6 +230,7 @@ public class VertxBuilder implements VertxBootstrap {
       metrics,
       tracer,
       transport,
+      transportUnavailabilityCause,
       fileResolver,
       threadFactory,
       executorServiceFactory);
@@ -279,7 +282,17 @@ public class VertxBuilder implements VertxBootstrap {
     if (transport != null) {
       return;
     }
-    transport = findTransport(options.getPreferNativeTransport());
+    Transport t = findTransport(options.getPreferNativeTransport());
+    if (t != null) {
+      if (t.isAvailable()) {
+        transport = t;
+      } else {
+        transport = JDKTransport.INSTANCE;
+        transportUnavailabilityCause = t.unavailabilityCause();
+      }
+    } else {
+      transport = JDKTransport.INSTANCE;
+    }
   }
 
   private void initFileResolver() {
@@ -362,12 +375,7 @@ public class VertxBuilder implements VertxBootstrap {
           return transport;
         }
       }
-      Transport nativeTransport = nativeTransport();
-      if (nativeTransport != null && nativeTransport.isAvailable()) {
-        return nativeTransport;
-      } else {
-        return JDKTransport.INSTANCE;
-      }
+      return nativeTransport();
     } else {
       return JDKTransport.INSTANCE;
     }
