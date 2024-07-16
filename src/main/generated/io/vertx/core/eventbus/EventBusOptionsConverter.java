@@ -229,6 +229,21 @@ public class EventBusOptionsConverter {
             obj.setTcpKeepAlive((Boolean)member.getValue());
           }
           break;
+        case "tcpKeepAliveCount":
+          if (member.getValue() instanceof Number) {
+            obj.setTcpKeepAliveCount(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "tcpKeepAliveIdleSeconds":
+          if (member.getValue() instanceof Number) {
+            obj.setTcpKeepAliveIdleSeconds(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "tcpKeepAliveIntervalSeconds":
+          if (member.getValue() instanceof Number) {
+            obj.setTcpKeepAliveIntervalSeconds(((Number)member.getValue()).intValue());
+          }
+          break;
         case "tcpNoDelay":
           if (member.getValue() instanceof Boolean) {
             obj.setTcpNoDelay((Boolean)member.getValue());
@@ -361,6 +376,9 @@ public class EventBusOptionsConverter {
     json.put("tcpCork", obj.isTcpCork());
     json.put("tcpFastOpen", obj.isTcpFastOpen());
     json.put("tcpKeepAlive", obj.isTcpKeepAlive());
+    json.put("tcpKeepAliveCount", obj.getTcpKeepAliveCount());
+    json.put("tcpKeepAliveIdleSeconds", obj.getTcpKeepAliveIdleSeconds());
+    json.put("tcpKeepAliveIntervalSeconds", obj.getTcpKeepAliveIntervalSeconds());
     json.put("tcpNoDelay", obj.isTcpNoDelay());
     json.put("tcpQuickAck", obj.isTcpQuickAck());
     json.put("tcpUserTimeout", obj.getTcpUserTimeout());
