@@ -356,6 +356,24 @@ public interface Vertx extends Measured {
   DnsClient createDnsClient();
 
   /**
+   * Create a DoH client to connect to a DoH server at the specified host, with the default query timeout (5 seconds)
+   * <p/>
+   *
+   * @param host  the host
+   * @return the DNS client
+   */
+  DnsClient createDohClient(String host);
+
+  /**
+   * Create a DoH client to connect to the DoH server configured by {@link VertxOptions#getAddressResolverOptions()}
+   * <p>
+   * DNS client takes the first configured resolver address provided by {@link DnsResolverProvider#nameServerAddresses()}}
+   *
+   * @return the DNS client
+   */
+  DnsClient createDohClient();
+
+  /**
    * Create a DNS client to connect to a DNS server
    *
    * @param options the client options
