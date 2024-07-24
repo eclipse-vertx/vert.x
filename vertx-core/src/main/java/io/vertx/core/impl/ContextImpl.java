@@ -252,7 +252,7 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
   }
 
   @Override
-  public final <T> void execute(T argument, Handler<T> task) {
+  public <T> void execute(T argument, Handler<T> task) {
     execute(this, argument, task);
   }
 

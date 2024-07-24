@@ -54,22 +54,22 @@ final class DuplicatedContext extends ContextBase implements ContextInternal {
   }
 
   @Override
-  public final CloseFuture closeFuture() {
+  public CloseFuture closeFuture() {
     return delegate.closeFuture();
   }
 
   @Override
-  public final VertxTracer tracer() {
+  public VertxTracer tracer() {
     return delegate.tracer();
   }
 
   @Override
-  public final JsonObject config() {
+  public JsonObject config() {
     return delegate.config();
   }
 
   @Override
-  public final Context exceptionHandler(Handler<Throwable> handler) {
+  public Context exceptionHandler(Handler<Throwable> handler) {
     delegate.exceptionHandler(handler);
     return this;
   }
@@ -80,27 +80,27 @@ final class DuplicatedContext extends ContextBase implements ContextInternal {
   }
 
   @Override
-  public final Handler<Throwable> exceptionHandler() {
+  public Handler<Throwable> exceptionHandler() {
     return delegate.exceptionHandler();
   }
 
   @Override
-  public final EventLoop nettyEventLoop() {
+  public EventLoop nettyEventLoop() {
     return delegate.nettyEventLoop();
   }
 
   @Override
-  public final Deployment getDeployment() {
+  public Deployment getDeployment() {
     return delegate.getDeployment();
   }
 
   @Override
-  public final VertxInternal owner() {
+  public VertxInternal owner() {
     return delegate.owner();
   }
 
   @Override
-  public final ClassLoader classLoader() {
+  public ClassLoader classLoader() {
     return delegate.classLoader();
   }
 
@@ -110,12 +110,12 @@ final class DuplicatedContext extends ContextBase implements ContextInternal {
   }
 
   @Override
-  public final void reportException(Throwable t) {
+  public void reportException(Throwable t) {
     delegate.reportException(t);
   }
 
   @Override
-  public final ConcurrentMap<Object, Object> contextData() {
+  public ConcurrentMap<Object, Object> contextData() {
     return delegate.contextData();
   }
 
@@ -130,17 +130,17 @@ final class DuplicatedContext extends ContextBase implements ContextInternal {
   }
 
   @Override
-  public final <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, boolean ordered) {
+  public <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, boolean ordered) {
     return ContextImpl.executeBlocking(this, blockingCodeHandler, delegate.workerPool, ordered ? delegate.orderedTasks : null);
   }
 
   @Override
-  public final <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, TaskQueue queue) {
+  public <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, TaskQueue queue) {
     return ContextImpl.executeBlocking(this, blockingCodeHandler, delegate.workerPool, queue);
   }
 
   @Override
-  public final <T> void execute(T argument, Handler<T> task) {
+  public <T> void execute(T argument, Handler<T> task) {
     delegate.execute(this, argument, task);
   }
 
