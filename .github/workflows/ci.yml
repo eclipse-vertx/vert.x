@@ -12,6 +12,7 @@ on:
         default: ubuntu-latest
         type: string
       profile:
+        default: ''
         type: string
 jobs:
   Test:
