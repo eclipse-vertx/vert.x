@@ -11,6 +11,7 @@
 package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
+import io.vertx.core.ThreadingModel;
 
 /**
  * Execute events on an event-loop.
@@ -23,6 +24,11 @@ public class EventLoopExecutor implements EventExecutor {
 
   public EventLoopExecutor(EventLoop eventLoop) {
     this.eventLoop = eventLoop;
+  }
+
+  @Override
+  public ThreadingModel threadingModel() {
+    return ThreadingModel.EVENT_LOOP;
   }
 
   @Override
