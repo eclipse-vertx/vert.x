@@ -37,7 +37,6 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
 
   static final boolean DISABLE_TIMINGS = SysProps.DISABLE_CONTEXT_TIMINGS.getBoolean();
 
-  private final ThreadingModel threadingModel;
   private final VertxInternal owner;
   private final JsonObject config;
   private final Deployment deployment;
@@ -47,23 +46,19 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
   private final EventExecutor executor;
   private ConcurrentMap<Object, Object> data;
   private volatile Handler<Throwable> exceptionHandler;
-  final WorkerPool internalWorkerPool;
   final WorkerPool workerPool;
   final TaskQueue orderedTasks;
 
   public ContextImpl(VertxInternal vertx,
                         Object[] locals,
-                        ThreadingModel threadingModel,
                         EventLoop eventLoop,
                         EventExecutor executor,
-                        WorkerPool internalWorkerPool,
                         WorkerPool workerPool,
                         TaskQueue orderedTasks,
                         Deployment deployment,
                         CloseFuture closeFuture,
                         ClassLoader tccl) {
     super(locals);
-    this.threadingModel = threadingModel;
     this.deployment = deployment;
     this.config = deployment != null ? deployment.config() : new JsonObject();
     this.eventLoop = eventLoop;
@@ -72,7 +67,6 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
     this.owner = vertx;
     this.workerPool = workerPool;
     this.closeFuture = closeFuture;
-    this.internalWorkerPool = internalWorkerPool;
     this.orderedTasks = orderedTasks;
   }
 
@@ -100,7 +94,7 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
 
   @Override
   public <T> Future<T> executeBlockingInternal(Callable<T> action) {
-    return executeBlocking(this, action, internalWorkerPool, null);
+    return executeBlocking(this, action, null, null);
   }
 
   @Override
@@ -115,16 +109,16 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
 
   @Override
   public boolean isEventLoopContext() {
-    return threadingModel == ThreadingModel.EVENT_LOOP;
+    return executor.threadingModel() == ThreadingModel.EVENT_LOOP;
   }
 
   @Override
   public boolean isWorkerContext() {
-    return threadingModel == ThreadingModel.WORKER;
+    return executor.threadingModel() == ThreadingModel.WORKER;
   }
 
   public ThreadingModel threadingModel() {
-    return threadingModel;
+    return executor.threadingModel();
   }
 
   @Override
