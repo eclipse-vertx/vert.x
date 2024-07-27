@@ -527,7 +527,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   private ContextImpl createEventLoopContext(EventLoop eventLoop, CloseFuture closeFuture, WorkerPool workerPool, Deployment deployment, ClassLoader tccl) {
-    return new ContextImpl(this, createContextLocals(), ThreadingModel.EVENT_LOOP, eventLoop, new EventLoopExecutor(eventLoop), internalWorkerPool, workerPool != null ? workerPool : this.workerPool, new TaskQueue(), deployment, closeFuture, disableTCCL ? null : tccl);
+    return new ContextImpl(this, createContextLocals(), eventLoop, new EventLoopExecutor(eventLoop), workerPool != null ? workerPool : this.workerPool, new TaskQueue(), deployment, closeFuture, disableTCCL ? null : tccl);
   }
 
   @Override
@@ -554,7 +554,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   public ContextImpl createWorkerContext(Deployment deployment, CloseFuture closeFuture, EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
     TaskQueue orderedTasks = new TaskQueue();
     WorkerPool wp = workerPool != null ? workerPool : this.workerPool;
-    return new ContextImpl(this, createContextLocals(), ThreadingModel.WORKER, eventLoop, new WorkerExecutor(wp, orderedTasks), internalWorkerPool, wp, orderedTasks, deployment, closeFuture, disableTCCL ? null : tccl);
+    return new ContextImpl(this, createContextLocals(), eventLoop, new WorkerExecutor(wp, false, orderedTasks), wp, orderedTasks, deployment, closeFuture, disableTCCL ? null : tccl);
   }
 
   @Override
@@ -572,7 +572,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       throw new IllegalStateException("This Java runtime does not support virtual threads");
     }
     TaskQueue orderedTasks = new TaskQueue();
-    return new ContextImpl(this, createContextLocals(), ThreadingModel.VIRTUAL_THREAD, eventLoop, new WorkerExecutor(virtualThreaWorkerPool, orderedTasks), internalWorkerPool, virtualThreaWorkerPool, orderedTasks, deployment, closeFuture, disableTCCL ? null : tccl);
+    return new ContextImpl(this, createContextLocals(), eventLoop, new WorkerExecutor(virtualThreaWorkerPool, true, orderedTasks), virtualThreaWorkerPool, orderedTasks, deployment, closeFuture, disableTCCL ? null : tccl);
   }
 
   @Override
