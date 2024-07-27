@@ -377,9 +377,8 @@ public class EventBusInterceptorTest extends VertxTestBase {
     });
     eb.consumer("some-address", msg -> {
     });
-    Context ctx = vertx.getOrCreateContext();
     AtomicReference<Throwable> caught = new AtomicReference<>();
-    ctx.exceptionHandler(err -> caught.set(err));
+    vertx.exceptionHandler(err -> caught.set(err));
     eb.send("some-address", "armadillo");
     assertSame(expected, caught.get());
   }
@@ -417,9 +416,8 @@ public class EventBusInterceptorTest extends VertxTestBase {
     });
     eb.consumer("some-address", msg -> {
     });
-    Context ctx = vertx.getOrCreateContext();
     AtomicReference<Throwable> caught = new AtomicReference<>();
-    ctx.exceptionHandler(err -> caught.set(err));
+    vertx.exceptionHandler(err -> caught.set(err));
     eb.send("some-address", "armadillo");
     waitUntil(() -> caught.get() != null);
     assertSame(expected, caught.get());

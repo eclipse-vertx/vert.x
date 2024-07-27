@@ -27,11 +27,6 @@ public class EventLoopExecutor implements EventExecutor {
   }
 
   @Override
-  public ThreadingModel threadingModel() {
-    return ThreadingModel.EVENT_LOOP;
-  }
-
-  @Override
   public boolean inThread() {
     return eventLoop.inEventLoop();
   }

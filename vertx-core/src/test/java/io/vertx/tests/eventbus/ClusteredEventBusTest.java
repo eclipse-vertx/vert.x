@@ -192,7 +192,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     MessageConsumer<String> consumer = vertices[0].eventBus().<String>consumer("foobar").handler(msg -> {
       if (!sending.get()) {
         sending.set(true);
-        vertx.setTimer(4000, id -> {
+        vertices[1].setTimer(4000, id -> {
           vertices[1].eventBus().send("foobar", "whatever2");
         });
       } else {

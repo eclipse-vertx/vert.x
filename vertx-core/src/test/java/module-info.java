@@ -1,10 +1,7 @@
 import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.VertxServiceProvider;
 import io.vertx.test.fakecluster.FakeClusterManager;
-import io.vertx.it.servicehelper.FakeFactory;
 import io.vertx.tests.deployment.ClasspathVerticleFactory;
-import io.vertx.it.servicehelper.FakeFactoryImplA;
-import io.vertx.it.servicehelper.FakeFactoryImplB;
 
 open module io.vertx.tests {
   requires io.vertx.codegen.api;

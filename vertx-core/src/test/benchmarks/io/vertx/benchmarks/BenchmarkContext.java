@@ -26,10 +26,6 @@ public class BenchmarkContext {
 
   private static final EventExecutor EXECUTOR = new EventExecutor() {
     @Override
-    public ThreadingModel threadingModel() {
-      return ThreadingModel.WORKER;
-    }
-    @Override
     public boolean inThread() {
       throw new UnsupportedOperationException();
     }
@@ -45,8 +41,9 @@ public class BenchmarkContext {
       impl,
       new Object[0],
       impl.getEventLoopGroup().next(),
+      ThreadingModel.WORKER,
       EXECUTOR,
-            impl.getWorkerPool(),
+      impl.getWorkerPool(),
       new TaskQueue(),
       null,
       null,
