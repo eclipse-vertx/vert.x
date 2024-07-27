@@ -43,6 +43,7 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
   private final CloseFuture closeFuture;
   private final ClassLoader tccl;
   private final EventLoop eventLoop;
+  private final ThreadingModel threadingModel;
   private final EventExecutor executor;
   private ConcurrentMap<Object, Object> data;
   private volatile Handler<Throwable> exceptionHandler;
@@ -52,6 +53,7 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
   public ContextImpl(VertxInternal vertx,
                         Object[] locals,
                         EventLoop eventLoop,
+                        ThreadingModel threadingModel,
                         EventExecutor executor,
                         WorkerPool workerPool,
                         TaskQueue orderedTasks,
@@ -62,6 +64,7 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
     this.deployment = deployment;
     this.config = deployment != null ? deployment.config() : new JsonObject();
     this.eventLoop = eventLoop;
+    this.threadingModel = threadingModel;
     this.executor = executor;
     this.tccl = tccl;
     this.owner = vertx;
@@ -93,13 +96,8 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
   }
 
   @Override
-  public <T> Future<T> executeBlockingInternal(Callable<T> action) {
-    return executeBlocking(this, action, null, null);
-  }
-
-  @Override
   public <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, boolean ordered) {
-    return executeBlocking(this, blockingCodeHandler, workerPool, ordered ? orderedTasks : null);
+    return workerPool.executeBlocking(this, blockingCodeHandler, ordered ? orderedTasks : null);
   }
 
   @Override
@@ -109,74 +107,16 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
 
   @Override
   public boolean isEventLoopContext() {
-    return executor.threadingModel() == ThreadingModel.EVENT_LOOP;
+    return threadingModel() == ThreadingModel.EVENT_LOOP;
   }
 
   @Override
   public boolean isWorkerContext() {
-    return executor.threadingModel() == ThreadingModel.WORKER;
+    return threadingModel() == ThreadingModel.WORKER;
   }
 
   public ThreadingModel threadingModel() {
-    return executor.threadingModel();
-  }
-
-  @Override
-  public boolean inThread() {
-    return executor.inThread();
-  }
-
-  @Override
-  public <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, TaskQueue queue) {
-    return executeBlocking(this, blockingCodeHandler, workerPool, queue);
-  }
-
-  static <T> Future<T> executeBlocking(ContextInternal context, Callable<T> blockingCodeHandler,
-                                       WorkerPool workerPool, TaskQueue queue) {
-    return internalExecuteBlocking(context, promise -> {
-      T result;
-      try {
-        result = blockingCodeHandler.call();
-      } catch (Throwable e) {
-        promise.fail(e);
-        return;
-      }
-      promise.complete(result);
-    }, workerPool, queue);
-  }
-
-  private static <T> Future<T> internalExecuteBlocking(ContextInternal context, Handler<Promise<T>> blockingCodeHandler,
-      WorkerPool workerPool, TaskQueue queue) {
-    PoolMetrics metrics = workerPool.metrics();
-    Object queueMetric = metrics != null ? metrics.enqueue() : null;
-    Promise<T> promise = context.promise();
-    Future<T> fut = promise.future();
-    try {
-      Runnable command = () -> {
-        Object execMetric = null;
-        if (metrics != null) {
-          metrics.dequeue(queueMetric);
-          execMetric = metrics.begin();
-        }
-        context.dispatch(promise, blockingCodeHandler);
-        if (metrics != null) {
-          metrics.end(execMetric);
-        }
-      };
-      Executor exec = workerPool.executor();
-      if (queue != null) {
-        queue.execute(command, exec);
-      } else {
-        exec.execute(command);
-      }
-    } catch (RejectedExecutionException e) {
-      // Pool is already shut down
-      if (metrics != null) {
-        metrics.dequeue(queueMetric);
-      }
-      throw e;
-    }
-    return fut;
+    return threadingModel;
   }
 
   @Override
@@ -223,68 +163,6 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
   @Override
   public Handler<Throwable> exceptionHandler() {
     return exceptionHandler;
-  }
-
-  protected void runOnContext(ContextInternal ctx, Handler<Void> action) {
-    try {
-      Executor exec = ctx.executor();
-      exec.execute(() -> ctx.dispatch(action));
-    } catch (RejectedExecutionException ignore) {
-      // Pool is already shut down
-    }
-  }
-
-  @Override
-  public void execute(Runnable task) {
-    execute(this, task);
-  }
-
-  @Override
-  public <T> void execute(T argument, Handler<T> task) {
-    execute(this, argument, task);
-  }
-
-  protected void execute(ContextInternal ctx, Runnable task) {
-    if (inThread()) {
-      task.run();
-    } else {
-      executor.execute(task);
-    }
-  }
-
-  /**
-   * <ul>
-   *   <li>When the current thread is event-loop thread of this context the implementation will execute the {@code task} directly</li>
-   *   <li>When the current thread is a worker thread of this context the implementation will execute the {@code task} directly</li>
-   *   <li>Otherwise the task will be scheduled on the context thread for execution</li>
-   * </ul>
-   */
-  protected <T> void execute(ContextInternal ctx, T argument, Handler<T> task) {
-    if (inThread()) {
-      task.handle(argument);
-    } else {
-      executor.execute(() -> task.handle(argument));
-    }
-  }
-
-  @Override
-  public <T> void emit(T argument, Handler<T> task) {
-    emit(this, argument, task);
-  }
-
-  protected <T> void emit(ContextInternal ctx, T argument, Handler<T> task) {
-    if (inThread()) {
-      ContextInternal prev = ctx.beginDispatch();
-      try {
-        task.handle(argument);
-      } catch (Throwable t) {
-        reportException(t);
-      } finally {
-        ctx.endDispatch(prev);
-      }
-    } else {
-      executor.execute(() -> emit(ctx, argument, task));
-    }
   }
 
   @Override

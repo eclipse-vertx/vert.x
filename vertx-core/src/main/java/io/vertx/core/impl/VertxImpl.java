@@ -163,7 +163,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final Transport transport;
   private final Throwable transportUnavailabilityCause;
   private final VertxTracer tracer;
-  private final ThreadLocal<WeakReference<ContextInternal>> stickyContext = new ThreadLocal<>();
+  private final ThreadLocal<EventLoop> stickyContext = new ThreadLocal<>();
   private final boolean disableTCCL;
   private final Boolean useDaemonThread;
 
@@ -490,7 +490,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     if (ctx == null) {
       // We are running embedded - Create a context
       ctx = createEventLoopContext();
-      stickyContext.set(new WeakReference<>(ctx));
+      stickyContext.set(ctx.nettyEventLoop());
     }
     return ctx;
   }
@@ -527,7 +527,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   private ContextImpl createEventLoopContext(EventLoop eventLoop, CloseFuture closeFuture, WorkerPool workerPool, Deployment deployment, ClassLoader tccl) {
-    return new ContextImpl(this, createContextLocals(), eventLoop, new EventLoopExecutor(eventLoop), workerPool != null ? workerPool : this.workerPool, new TaskQueue(), deployment, closeFuture, disableTCCL ? null : tccl);
+    return new ContextImpl(this, createContextLocals(), eventLoop, ThreadingModel.EVENT_LOOP, new EventLoopExecutor(eventLoop), workerPool != null ? workerPool : this.workerPool, new TaskQueue(), deployment, closeFuture, disableTCCL ? null : tccl);
   }
 
   @Override
@@ -554,7 +554,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   public ContextImpl createWorkerContext(Deployment deployment, CloseFuture closeFuture, EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
     TaskQueue orderedTasks = new TaskQueue();
     WorkerPool wp = workerPool != null ? workerPool : this.workerPool;
-    return new ContextImpl(this, createContextLocals(), eventLoop, new WorkerExecutor(wp, false, orderedTasks), wp, orderedTasks, deployment, closeFuture, disableTCCL ? null : tccl);
+    return new ContextImpl(this, createContextLocals(), eventLoop, ThreadingModel.WORKER, new WorkerExecutor(wp, orderedTasks), wp, orderedTasks, deployment, closeFuture, disableTCCL ? null : tccl);
   }
 
   @Override
@@ -572,7 +572,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       throw new IllegalStateException("This Java runtime does not support virtual threads");
     }
     TaskQueue orderedTasks = new TaskQueue();
-    return new ContextImpl(this, createContextLocals(), eventLoop, new WorkerExecutor(virtualThreaWorkerPool, true, orderedTasks), virtualThreaWorkerPool, orderedTasks, deployment, closeFuture, disableTCCL ? null : tccl);
+    return new ContextImpl(this, createContextLocals(), eventLoop, ThreadingModel.VIRTUAL_THREAD, new WorkerExecutor(virtualThreaWorkerPool, orderedTasks), virtualThreaWorkerPool, orderedTasks, deployment, closeFuture, disableTCCL ? null : tccl);
   }
 
   @Override
@@ -654,11 +654,33 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   public ContextInternal getContext() {
     ContextInternal context = ContextInternal.current();
-    if (context != null && context.owner() == this) {
-      return context;
+    if (context != null) {
+      if (context.owner() == this) {
+        return context;
+      } else if (context instanceof ShadowContext) {
+        ShadowContext shadowContext = (ShadowContext) context;
+        if (shadowContext.owner == this) {
+          return shadowContext;
+        } else if (shadowContext.delegate.owner() == this) {
+          return shadowContext.delegate;
+        } else {
+          throw new UnsupportedOperationException("????");
+        }
+      } else {
+        EventLoop eventLoop = stickyContext.get();
+        if (eventLoop == null) {
+          eventLoop = eventLoopGroup.next();
+          stickyContext.set(eventLoop);
+        }
+        return new ShadowContext(this, eventLoop, context);
+      }
     } else {
-      WeakReference<ContextInternal> ref = stickyContext.get();
-      return ref != null ? ref.get() : null;
+      EventLoop eventLoop = stickyContext.get();
+      if (eventLoop != null) {
+        return createEventLoopContext(eventLoop, workerPool, Thread.currentThread().getContextClassLoader());
+      } else {
+        return null;
+      }
     }
   }
 

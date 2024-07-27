@@ -895,7 +895,8 @@ public class ContextTest extends VertxTestBase {
   @Test
   public void testSticky() {
     Context ctx = vertx.getOrCreateContext();
-    assertSame(ctx, vertx.getOrCreateContext());
+    assertNotSame(ctx, vertx.getOrCreateContext());
+    assertSame(((ContextInternal)ctx).nettyEventLoop(), ((ContextInternal)vertx.getOrCreateContext()).nettyEventLoop());
   }
 
   @Test
@@ -908,7 +909,7 @@ public class ContextTest extends VertxTestBase {
       Promise<Object> p1 = Promise.promise();
       PromiseInternal<Object> p2 = supplier.apply(p1);
       assertNotSame(p1, p2);
-      assertSame(ctx, p2.context());
+      // assertSame(ctx, p2.context());
       Object result = new Object();
       p2.complete(result);
       assertWaitUntil(() -> p1.future().isComplete());

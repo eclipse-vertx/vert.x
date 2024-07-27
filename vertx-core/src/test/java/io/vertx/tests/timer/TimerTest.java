@@ -375,10 +375,10 @@ public class TimerTest extends VertxTestBase {
   @Test
   public void testTimerFireOnContext1() {
     new Thread(() -> {
-      Context ctx = vertx.getOrCreateContext();
+      ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
       Timer timer = vertx.timer(10, TimeUnit.MILLISECONDS);
       timer.onComplete(onSuccess(v -> {
-        assertSame(ctx, Vertx.currentContext());
+        assertSame(ctx.nettyEventLoop(), ((ContextInternal)Vertx.currentContext()).nettyEventLoop());
         testComplete();
       }));
     }).start();
