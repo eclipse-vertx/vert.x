@@ -10,19 +10,12 @@
  */
 package io.vertx.core.impl;
 
-import io.vertx.core.ThreadingModel;
-
 import java.util.concurrent.Executor;
 
 /**
  * The Vert.x context event executor.
  */
 public interface EventExecutor extends Executor {
-
-  /**
-   * @return the executor threading model
-   */
-  ThreadingModel threadingModel();
 
   /**
    * @return whether the current thread is one of the event executor thread

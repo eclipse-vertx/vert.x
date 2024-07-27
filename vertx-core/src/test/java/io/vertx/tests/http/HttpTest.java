@@ -12,6 +12,7 @@
 package io.vertx.tests.http;
 
 import io.netty.channel.ConnectTimeoutException;
+import io.netty.channel.EventLoop;
 import io.netty.handler.codec.compression.DecompressionException;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -1498,20 +1499,22 @@ public abstract class HttpTest extends HttpTestBase {
     startServer(testAddress);
     // Exception handler should be called for any exceptions in the data handler
     Context ctx = vertx.getOrCreateContext();
-    RuntimeException cause = new RuntimeException("should be caught");
-    ctx.exceptionHandler(err -> {
-      if (err == cause) {
-        testComplete();
-      }
-    });
-    client = vertx.createHttpClient(createBaseClientOptions());
-    client.request(requestOptions).onComplete(onSuccess(req -> {
-      req.send().onComplete(onSuccess(resp -> {
-        resp.handler(data -> {
-          throw cause;
-        });
+    ctx.runOnContext(v -> {
+      RuntimeException cause = new RuntimeException("should be caught");
+      ctx.exceptionHandler(err -> {
+        if (err == cause) {
+          testComplete();
+        }
+      });
+      client = vertx.createHttpClient(createBaseClientOptions());
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        req.send().onComplete(onSuccess(resp -> {
+          resp.handler(data -> {
+            throw cause;
+          });
+        }));
       }));
-    }));
+    });
     await();
   }
 
@@ -1526,18 +1529,20 @@ public abstract class HttpTest extends HttpTestBase {
     // Exception handler should be called for any exceptions in the data handler
     Context ctx = vertx.getOrCreateContext();
     RuntimeException cause = new RuntimeException("should be caught");
-    ctx.exceptionHandler(err -> {
-      if (err == cause) {
-        testComplete();
-      }
-    });
-    client.request(requestOptions).onComplete(onSuccess(req -> {
-      req.send().onComplete(onSuccess(resp -> {
-        resp.bodyHandler(data -> {
-          throw cause;
-        });
+    ctx.runOnContext(v -> {
+      ctx.exceptionHandler(err -> {
+        if (err == cause) {
+          testComplete();
+        }
+      });
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        req.send().onComplete(onSuccess(resp -> {
+          resp.bodyHandler(data -> {
+            throw cause;
+          });
+        }));
       }));
-    }));
+    });
     await();
   }
 
@@ -6265,25 +6270,27 @@ public abstract class HttpTest extends HttpTestBase {
       assertTrue(req1.reset());
       new Thread(() -> {
         Context ctx = vertx.getOrCreateContext();
-        client.request(requestOptions).onComplete(onSuccess(req2 -> {
-          assertSame(ctx, vertx.getOrCreateContext());
-          req2.setChunked(true);
-          while (!req2.writeQueueFull()) {
-            req2.write(chunk);
-          }
-          resume.complete();
-          req2.drainHandler(v -> {
+        ctx.runOnContext(v1 -> {
+          client.request(requestOptions).onComplete(onSuccess(req2 -> {
             assertSame(ctx, vertx.getOrCreateContext());
-            req2.end();
-          });
-          req2.response().onComplete(onSuccess(resp -> {
-            assertSame(ctx, vertx.getOrCreateContext());
-            resp.end().onComplete(onSuccess(v -> {
+            req2.setChunked(true);
+            while (!req2.writeQueueFull()) {
+              req2.write(chunk);
+            }
+            resume.complete();
+            req2.drainHandler(v -> {
               assertSame(ctx, vertx.getOrCreateContext());
-              testComplete();
+              req2.end();
+            });
+            req2.response().onComplete(onSuccess(resp -> {
+              assertSame(ctx, vertx.getOrCreateContext());
+              resp.end().onComplete(onSuccess(v2 -> {
+                assertSame(ctx, vertx.getOrCreateContext());
+                testComplete();
+              }));
             }));
           }));
-        }));
+        });
       }).start();
     }));
     await();
@@ -6583,8 +6590,8 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testStickyContext() throws Exception {
-    Set<Context> contexts = new HashSet<>();
+  public void testStickyEventLoops() throws Exception {
+    Set<EventLoop> contexts = new HashSet<>();
     server.requestHandler(req -> {
       req.response().end();
     });
@@ -6594,7 +6601,7 @@ public abstract class HttpTest extends HttpTestBase {
     for (int i = 0;i < numReq;i++) {
       client.request(requestOptions).onComplete(onSuccess(req -> {
         req.send().onComplete(onSuccess(resp -> {
-          contexts.add(Vertx.currentContext());
+          contexts.add(((ContextInternal)Vertx.currentContext()).nettyEventLoop());
           latch.countDown();
         }));
       }));

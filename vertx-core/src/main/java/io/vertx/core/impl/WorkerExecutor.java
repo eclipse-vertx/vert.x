@@ -10,7 +10,6 @@
  */
 package io.vertx.core.impl;
 
-import io.vertx.core.ThreadingModel;
 import io.vertx.core.Vertx;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.spi.metrics.PoolMetrics;
@@ -40,19 +39,12 @@ public class WorkerExecutor implements EventExecutor {
   }
 
   private final WorkerPool workerPool;
-  private final boolean virtualThread;
   private final TaskQueue orderedTasks;
   private final ThreadLocal<Boolean> inThread = new ThreadLocal<>();
 
-  public WorkerExecutor(WorkerPool workerPool, boolean virtualThread, TaskQueue orderedTasks) {
+  public WorkerExecutor(WorkerPool workerPool, TaskQueue orderedTasks) {
     this.workerPool = workerPool;
     this.orderedTasks = orderedTasks;
-    this.virtualThread = virtualThread;
-  }
-
-  @Override
-  public ThreadingModel threadingModel() {
-    return virtualThread ? ThreadingModel.VIRTUAL_THREAD : ThreadingModel.WORKER;
   }
 
   @Override
