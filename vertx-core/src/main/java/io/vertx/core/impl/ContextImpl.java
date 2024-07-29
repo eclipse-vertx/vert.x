@@ -47,7 +47,6 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
   private final EventExecutor executor;
   private ConcurrentMap<Object, Object> data;
   private volatile Handler<Throwable> exceptionHandler;
-  final TaskQueue internalOrderedTasks;
   final WorkerPool internalWorkerPool;
   final WorkerPool workerPool;
   final TaskQueue orderedTasks;
@@ -75,7 +74,6 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
     this.closeFuture = closeFuture;
     this.internalWorkerPool = internalWorkerPool;
     this.orderedTasks = orderedTasks;
-    this.internalOrderedTasks = new TaskQueue();
   }
 
   public Deployment getDeployment() {
@@ -102,7 +100,7 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
 
   @Override
   public <T> Future<T> executeBlockingInternal(Callable<T> action) {
-    return executeBlocking(this, action, internalWorkerPool, internalOrderedTasks);
+    return executeBlocking(this, action, internalWorkerPool, null);
   }
 
   @Override
