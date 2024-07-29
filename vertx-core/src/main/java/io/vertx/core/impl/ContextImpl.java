@@ -106,6 +106,11 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
   }
 
   @Override
+  public <T> Future<T> executeBlockingInternal(Callable<T> action, boolean ordered) {
+    return executeBlocking(this, action, internalWorkerPool, ordered ? internalOrderedTasks : null);
+  }
+
+  @Override
   public <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, boolean ordered) {
     return executeBlocking(this, blockingCodeHandler, workerPool, ordered ? orderedTasks : null);
   }
