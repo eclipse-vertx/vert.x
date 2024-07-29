@@ -150,11 +150,6 @@ public interface ContextInternal extends Context {
   WorkerPool workerPool();
 
   /**
-   * Execute an internal task on the internal blocking ordered executor.
-   */
-  <T> Future<T> executeBlockingInternal(Callable<T> action, boolean ordered);
-
-  /**
    * @return the deployment associated with this context or {@code null}
    */
   DeploymentContext deployment();

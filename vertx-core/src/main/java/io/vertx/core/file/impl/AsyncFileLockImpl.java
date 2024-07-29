@@ -57,7 +57,7 @@ public class AsyncFileLockImpl implements AsyncFileLock {
 
   @Override
   public Future<Boolean> isValid() {
-    return vertx.getOrCreateContext().executeBlockingInternal(this::isValidBlocking);
+    return vertx.executeBlockingInternal(this::isValidBlocking);
   }
 
   @Override
@@ -71,7 +71,7 @@ public class AsyncFileLockImpl implements AsyncFileLock {
 
   @Override
   public Future<Void> release() {
-    return vertx.getOrCreateContext().executeBlockingInternal(() -> {
+    return vertx.executeBlockingInternal(() -> {
       try {
         fileLock.release();
         return null;
