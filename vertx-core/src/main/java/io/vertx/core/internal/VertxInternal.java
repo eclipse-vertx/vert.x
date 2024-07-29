@@ -181,11 +181,6 @@ public interface VertxInternal extends Vertx {
     return context.executeBlockingInternal(blockingCodeHandler);
   }
 
-  default <T> Future<T> executeBlockingInternal(Callable<T> blockingCodeHandler, boolean ordered) {
-    ContextInternal context = getOrCreateContext();
-    return context.executeBlockingInternal(blockingCodeHandler, ordered);
-  }
-
   ClusterManager getClusterManager();
 
   HAManager haManager();
