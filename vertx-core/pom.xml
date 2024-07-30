@@ -94,6 +94,11 @@
       <artifactId>netty-transport-classes-kqueue</artifactId>
       <optional>true</optional>
     </dependency>
+    <dependency>
+      <groupId>io.netty.incubator</groupId>
+      <artifactId>netty-incubator-codec-http3</artifactId>
+      <version>0.0.28.Final</version>
+    </dependency>
 
     <!-- Jackson -->
     <dependency>
