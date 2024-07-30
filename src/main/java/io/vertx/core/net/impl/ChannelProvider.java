@@ -17,6 +17,7 @@ import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.proxy.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.SslHandshakeCompletionEvent;
+import io.netty.incubator.codec.http3.Http3ClientConnectionHandler;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.resolver.NoopAddressResolverGroup;
 import io.netty.util.concurrent.Future;
@@ -24,7 +25,6 @@ import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.Promise;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.impl.VertxHttp3ClientConnectionHandler;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.ProxyOptions;
@@ -193,7 +193,7 @@ public final class ChannelProvider {
 
   private void quicInit(Handler<Channel> handler, Promise<Channel> channelHandler, SocketAddress remoteAddress, Channel channel) {
     QuicChannel.newBootstrap(channel)
-      .handler(new VertxHttp3ClientConnectionHandler())
+      .handler(new Http3ClientConnectionHandler())
       .remoteAddress(new InetSocketAddress(remoteAddress.hostAddress(), remoteAddress.port()))
       .connect()
       .addListener((GenericFutureListener<Future<QuicChannel>>) res -> {

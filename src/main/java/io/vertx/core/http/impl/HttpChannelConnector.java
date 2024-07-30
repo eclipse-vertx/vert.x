@@ -21,6 +21,7 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.incubator.codec.http3.DefaultHttp3HeadersFrame;
 import io.netty.incubator.codec.http3.Http3;
+import io.netty.incubator.codec.http3.Http3ClientConnectionHandler;
 import io.netty.incubator.codec.http3.Http3DataFrame;
 import io.netty.incubator.codec.http3.Http3HeadersFrame;
 import io.netty.incubator.codec.http3.Http3RequestStreamInboundHandler;
@@ -112,7 +113,7 @@ public class HttpChannelConnector {
     List<ChannelHandler> removedHandlers = new ArrayList<>();
     for (Map.Entry<String, ChannelHandler> stringChannelHandlerEntry : pipeline) {
       ChannelHandler handler = stringChannelHandlerEntry.getValue();
-      if (!(handler instanceof SslHandler) && !(handler instanceof Http3SslHandler) && !(handler instanceof VertxHttp3ClientConnectionHandler)) {
+      if (!(handler instanceof SslHandler) && !(handler instanceof Http3SslHandler) && !(handler instanceof Http3ClientConnectionHandler)) {
         removedHandlers.add(handler);
       }
     }
