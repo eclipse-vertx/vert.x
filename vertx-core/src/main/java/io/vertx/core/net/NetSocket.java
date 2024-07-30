@@ -201,30 +201,66 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
   NetSocket shutdownHandler(@Nullable Handler<Void> handler);
 
   /**
-   * Upgrade channel to use SSL/TLS. Be aware that for this to work SSL must be configured.
-   *
-   * @return a future completed when the connection has been upgraded to SSL
+   * Like {@link #upgradeToSsl(SSLOptions, String, Buffer)} with the default SSL options, without indicating a server name,
+   * without an upgrade message.
    */
   default Future<Void> upgradeToSsl() {
-    return upgradeToSsl((String) null);
+    return upgradeToSsl(null, null, null);
   }
 
   /**
-   * Upgrade channel to use SSL/TLS. Be aware that for this to work SSL must be configured.
-   *
-   * @param serverName the server name
-   * @return a future completed when the connection has been upgraded to SSL
+   * Like {@link #upgradeToSsl(SSLOptions, String, Buffer)} with the default SSL options and without indicating a server name.
    */
-  Future<Void> upgradeToSsl(String serverName);
+  default Future<Void> upgradeToSsl(Buffer msg) {
+    return upgradeToSsl(null, null, msg);
+  }
 
   /**
-   * Upgrade channel to use SSL/TLS. Be aware that for this to work SSL must be configured.
+   * Like {@link #upgradeToSsl(SSLOptions, String, Buffer)} with the default SSL options and without an update message.
+   */
+  default Future<Void> upgradeToSsl(String serverName) {
+    return upgradeToSsl(null, serverName, null);
+  }
+
+  /**
+   * Like {@link #upgradeToSsl(SSLOptions, String, Buffer)} with the default SSL options.
+   */
+  default Future<Void> upgradeToSsl(String serverName, Buffer msg) {
+    return upgradeToSsl(null, serverName, msg);
+  }
+
+  /**
+   * Like {@link #upgradeToSsl(SSLOptions, String, Buffer)} without an upgrade message.
+   */
+  default Future<Void> upgradeToSsl(SSLOptions sslOptions, String serverName) {
+    return upgradeToSsl(sslOptions, serverName, null);
+  }
+
+  /**
+   * Like {@link #upgradeToSsl(SSLOptions, String, Buffer)} without indicating a server name
+   */
+  default Future<Void> upgradeToSsl(SSLOptions sslOptions, Buffer msg) {
+    return upgradeToSsl(sslOptions, null, msg);
+  }
+
+  /**
+   * <p>Upgrade the channel to use SSL/TLS, in other words proceeds to the TLS handshake.</p>
+   *
+   * <p>The {@code upgrade} message will be sent after the socket is ready to proceed to the TLS handshake in
+   * order to avoid data races. In practice is usually send by a server when it sends a message to the client
+   * to proceed to the handshake, e.g. {@code 250 STARTTLS} for an SMTP server, it should
+   * be {@code null} on a client</p>
+   *
+   * <p>The server name is sent in the client handshake, it should be {@code null} on a server.</p>
+   *
+   * <p>Be aware that for this to work SSL must be configured.</p>
    *
    * @param sslOptions the SSL options
    * @param serverName the server name
+   * @param upgrade the upgrade message to send
    * @return a future completed when the connection has been upgraded to SSL
    */
-  Future<Void> upgradeToSsl(SSLOptions sslOptions, String serverName);
+  Future<Void> upgradeToSsl(SSLOptions sslOptions, String serverName, Buffer upgrade);
 
   /**
    * Upgrade channel to use SSL/TLS. Be aware that for this to work SSL must be configured.
@@ -233,7 +269,7 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @return a future completed when the connection has been upgraded to SSL
    */
   default Future<Void> upgradeToSsl(SSLOptions sslOptions) {
-    return upgradeToSsl(sslOptions, null);
+    return upgradeToSsl(sslOptions, null, null);
   }
 
   /**
