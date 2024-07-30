@@ -140,18 +140,25 @@ public class SslChannelProvider {
     SslContext sslContext = sslClientContext(serverName, useAlpn);
     ChannelHandler sslHandler;
     Executor delegatedTaskExec = useWorkerPool ? workerPool : ImmediateExecutor.INSTANCE;
-    if (remoteAddress.isDomainSocket()) {
-      sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, delegatedTaskExec);
-    } else {
+    if (http3) {
       sslHandler = Http3.newQuicClientCodecBuilder()
-      .sslTaskExecutor(delegatedTaskExec)
-      .sslContext((QuicSslContext) ((VertxSslContext) sslContext).unwrap())
-      .maxIdleTimeout(5000, TimeUnit.MILLISECONDS)
-      .initialMaxData(10000000)
-      .initialMaxStreamDataBidirectionalLocal(1000000)
-      .build();
+        .sslTaskExecutor(delegatedTaskExec)
+        .sslContext((QuicSslContext) ((VertxSslContext) sslContext).unwrap())
+        .maxIdleTimeout(5000, TimeUnit.MILLISECONDS)
+        .initialMaxData(10000000)
+        .initialMaxStreamDataBidirectionalLocal(1000000)
+        .build();
+    } else {
+      SslHandler sslHandler0;
+      if (remoteAddress.isDomainSocket()) {
+        sslHandler0 = sslContext.newHandler(ByteBufAllocator.DEFAULT, delegatedTaskExec);
+      } else {
+        sslHandler0 = sslContext.newHandler(ByteBufAllocator.DEFAULT, remoteAddress.host(), remoteAddress.port(),
+          delegatedTaskExec);
+      }
+      sslHandler0.setHandshakeTimeout(sslHandshakeTimeout, sslHandshakeTimeoutUnit);
+      sslHandler = sslHandler0;
     }
-//    sslHandler.setHandshakeTimeout(sslHandshakeTimeout, sslHandshakeTimeoutUnit);
     return sslHandler;
   }
 
