@@ -99,6 +99,11 @@
       <artifactId>netty-codec-http2</artifactId>
     </dependency>
     <dependency>
+      <groupId>io.netty.incubator</groupId>
+      <artifactId>netty-incubator-codec-http3</artifactId>
+      <version>0.0.28.Final</version>
+    </dependency>
+    <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-resolver</artifactId>
     </dependency>
