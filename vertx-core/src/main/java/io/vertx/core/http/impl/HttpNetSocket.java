@@ -249,13 +249,8 @@ class HttpNetSocket implements NetSocket {
   }
 
   @Override
-  public Future<Void> upgradeToSsl(String serverName) {
-    return Future.failedFuture("Cannot upgrade stream to SSL");
-  }
-
-  @Override
-  public Future<Void> upgradeToSsl(SSLOptions sslOptions, String serverName) {
-    return Future.failedFuture("Cannot upgrade stream to SSL");
+  public Future<Void> upgradeToSsl(SSLOptions sslOptions, String serverName, Buffer upgrade) {
+    return context.failedFuture("Cannot upgrade stream to SSL");
   }
 
   @Override

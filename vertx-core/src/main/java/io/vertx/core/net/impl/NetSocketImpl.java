@@ -278,16 +278,14 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
   }
 
   @Override
-  public Future<Void> upgradeToSsl(String serverName) {
-    return sslUpgrade(serverName, sslOptions);
+  public Future<Void> upgradeToSsl(SSLOptions sslOptions, String serverName, Buffer upgrade) {
+    return sslUpgrade(
+      serverName,
+      sslOptions != null ? sslOptions : this.sslOptions,
+      upgrade != null ? ((BufferInternal) upgrade).getByteBuf() : Unpooled.EMPTY_BUFFER);
   }
 
-  @Override
-  public Future<Void> upgradeToSsl(SSLOptions sslOptions, String serverName) {
-    return sslUpgrade(serverName, sslOptions);
-  }
-
-  private Future<Void> sslUpgrade(String serverName, SSLOptions sslOptions) {
+  private Future<Void> sslUpgrade(String serverName, SSLOptions sslOptions, ByteBuf msg) {
     if (sslOptions == null) {
       return context.failedFuture("Missing SSL options");
     }
@@ -298,54 +296,53 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
     }
     if (chctx.pipeline().get("ssl") == null) {
       doPause();
-      PromiseInternal<Void> flush = context.promise();
-      flush(flush);
-      return flush
-        .compose(v -> {
-          if (sslOptions instanceof ClientSSLOptions) {
-            ClientSSLOptions clientSSLOptions =  (ClientSSLOptions) sslOptions;
-            return sslContextManager.resolveSslContextProvider(
-              sslOptions,
-              clientSSLOptions.getHostnameVerificationAlgorithm(),
-              null,
-              null,
-              context).map(p -> new SslChannelProvider(context.owner(), p, false));
-          } else {
-            ServerSSLOptions serverSSLOptions = (ServerSSLOptions) sslOptions;
-            ClientAuth clientAuth = serverSSLOptions.getClientAuth();
-            if (clientAuth == null) {
-              clientAuth = ClientAuth.NONE;
-            }
-            return sslContextManager.resolveSslContextProvider(
-              sslOptions,
-              null,
-              clientAuth,
-              null, context).map(p -> new SslChannelProvider(context.owner(), p, serverSSLOptions.isSni()));
-          }
-        })
-        .transform(ar -> {
-          Future<Void> f;
-          if (ar.succeeded()) {
-            SslChannelProvider sslChannelProvider = ar.result();
+      Future<SslChannelProvider> f;
+      if (sslOptions instanceof ClientSSLOptions) {
+        ClientSSLOptions clientSSLOptions =  (ClientSSLOptions) sslOptions;
+        f = sslContextManager.resolveSslContextProvider(
+          sslOptions,
+          clientSSLOptions.getHostnameVerificationAlgorithm(),
+          null,
+          null,
+          context).map(p -> new SslChannelProvider(context.owner(), p, false));
+      } else {
+        ServerSSLOptions serverSSLOptions = (ServerSSLOptions) sslOptions;
+        ClientAuth clientAuth = serverSSLOptions.getClientAuth();
+        if (clientAuth == null) {
+          clientAuth = ClientAuth.NONE;
+        }
+        f = sslContextManager.resolveSslContextProvider(
+          sslOptions,
+          null,
+          clientAuth,
+          null, context).map(p -> new SslChannelProvider(context.owner(), p, serverSSLOptions.isSni()));
+      }
+      return f.compose(provider -> {
+        PromiseInternal<Void> p = context.promise();
+        ChannelPromise promise = chctx.newPromise();
+        writeToChannel(msg, true, promise);
+        promise.addListener(res -> {
+          if (res.isSuccess()) {
             ChannelPromise channelPromise = chctx.newPromise();
             chctx.pipeline().addFirst("handshaker", new SslHandshakeCompletionHandler(channelPromise));
             ChannelHandler sslHandler;
             if (sslOptions instanceof ClientSSLOptions) {
               ClientSSLOptions clientSSLOptions = (ClientSSLOptions) sslOptions;
-              sslHandler = sslChannelProvider.createClientSslHandler(remoteAddress, serverName, sslOptions.isUseAlpn(), clientSSLOptions.getSslHandshakeTimeout(), clientSSLOptions.getSslHandshakeTimeoutUnit());
+              sslHandler = provider.createClientSslHandler(remoteAddress, serverName, sslOptions.isUseAlpn(), clientSSLOptions.getSslHandshakeTimeout(), clientSSLOptions.getSslHandshakeTimeoutUnit());
             } else {
-              sslHandler = sslChannelProvider.createServerHandler(sslOptions.isUseAlpn(), sslOptions.getSslHandshakeTimeout(), sslOptions.getSslHandshakeTimeoutUnit());
+              sslHandler = provider.createServerHandler(sslOptions.isUseAlpn(), sslOptions.getSslHandshakeTimeout(), sslOptions.getSslHandshakeTimeoutUnit());
             }
             chctx.pipeline().addFirst("ssl", sslHandler);
-            PromiseInternal<Void> p = context.promise();
             channelPromise.addListener(p);
-            f = p.future();
           } else {
-            f = context.failedFuture(ar.cause());
+            p.fail(res.cause());
           }
-          doResume();
-          return f;
         });
+        return p.future();
+      }).transform(ar -> {
+        doResume();
+        return (Future<Void>) ar;
+      });
     } else {
       throw new IllegalStateException(); // ???
     }

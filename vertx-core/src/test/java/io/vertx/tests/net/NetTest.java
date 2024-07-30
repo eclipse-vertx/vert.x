@@ -1351,6 +1351,12 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
+  //Client doesn't specify cert but it's required
+  public void testTLSClientCertRequiredNoClientCert1_3() throws Exception {
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.CLIENT_JKS, true, false, false, false, new String[0], new String[]{"TLSv1.3"});
+  }
+
+  @Test
   //Client specifies cert but it's not trusted
   public void testTLSClientCertClientNotTrusted() throws Exception {
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE, true, false, false, false);
@@ -1614,7 +1620,11 @@ public class NetTest extends VertxTestBase {
     TLSTest test = new TLSTest()
       .serverCert(Cert.MULTIPLE_JKS_WRONG_ALIAS)
       .clientTrustAll(true);
-    test.setupServer(true);
+    server = vertx
+      .createNetServer(test.setupServer())
+      .connectHandler(so -> {
+
+    });
     server.listen(test.bindAddress).onComplete(onFailure(t -> {
       assertThat(t, is(instanceOf(IllegalArgumentException.class)));
       assertThat(t.getMessage(), containsString("alias does not exist in the keystore"));
@@ -1638,7 +1648,7 @@ public class NetTest extends VertxTestBase {
     boolean requireClientAuth, boolean clientTrustAll,
     boolean shouldPass, boolean startTLS) throws Exception {
         testTLS(clientCert, clientTrust, serverCert, serverTrust, requireClientAuth, clientTrustAll,
-        shouldPass, startTLS, new String[0], new String[0]);
+        shouldPass, startTLS, new String[0], new String[]{"TLSv1.2"});
   }
 
   void testTLS(Cert<?> clientCert, Trust<?> clientTrust,
@@ -1647,7 +1657,7 @@ public class NetTest extends VertxTestBase {
     boolean shouldPass, boolean startTLS,
     String[] enabledCipherSuites) throws Exception {
         testTLS(clientCert, clientTrust, serverCert, serverTrust, requireClientAuth, clientTrustAll,
-        shouldPass, startTLS, enabledCipherSuites, new String[0]);
+        shouldPass, startTLS, enabledCipherSuites, new String[]{"TLSv1.2"});
     }
 
   void testTLS(Cert<?> clientCert, Trust<?> clientTrust,
@@ -1665,7 +1675,8 @@ public class NetTest extends VertxTestBase {
         .clientTrustAll(clientTrustAll)
         .startTLS(startTLS)
         .enabledCipherSuites(enabledCipherSuites)
-        .enabledSecureTransportProtocols(enabledSecureTransportProtocols);
+        .clientVersion(enabledSecureTransportProtocols)
+        .serverVersion(enabledSecureTransportProtocols);
     test.run(shouldPass);
     await();
   }
@@ -1676,17 +1687,28 @@ public class NetTest extends VertxTestBase {
     Trust<?> clientTrust = Trust.NONE;
     Cert<?> serverCert = Cert.NONE;
     Trust<?> serverTrust = Trust.NONE;
+    Set<String> serverVersions = Collections.singleton("TLSv1.2");
+    Set<String> clientVersions = Collections.singleton("TLSv1.2");
     boolean requireClientAuth;
     boolean clientTrustAll;
     boolean startTLS;
     String[] enabledCipherSuites = new String[0];
-    String[] enabledSecureTransportProtocols = new String[0];
     boolean sni;
     SocketAddress bindAddress = SocketAddress.inetSocketAddress(DEFAULT_HTTPS_PORT, "localhost");
     SocketAddress connectAddress = bindAddress;
     String serverName;
     Certificate clientPeerCert;
     String indicatedServerName;
+
+    public TLSTest clientVersion(String... versions) {
+      clientVersions = new HashSet<>(Arrays.asList(versions));
+      return this;
+    }
+
+    public TLSTest serverVersion(String... versions) {
+      serverVersions = new HashSet<>(Arrays.asList(versions));
+      return this;
+    }
 
     public TLSTest clientCert(Cert<?> clientCert) {
       this.clientCert = clientCert;
@@ -1728,11 +1750,6 @@ public class NetTest extends VertxTestBase {
       return this;
     }
 
-    public TLSTest enabledSecureTransportProtocols(String[] enabledSecureTransportProtocols) {
-      this.enabledSecureTransportProtocols = enabledSecureTransportProtocols;
-      return this;
-    }
-
     public TLSTest address(SocketAddress address) {
       this.bindAddress = address;
       this.connectAddress = address;
@@ -1763,12 +1780,12 @@ public class NetTest extends VertxTestBase {
       return clientPeerCert;
     }
 
-    void setupServer(boolean shouldPass) {
-      server.close();
+    NetServerOptions setupServer() {
       NetServerOptions options = new NetServerOptions();
       if (!startTLS) {
         options.setSsl(true);
       }
+      options.setEnabledSecureTransportProtocols(serverVersions);
       options.setTrustOptions(serverTrust.get());
       options.setKeyCertOptions(serverCert.get());
       if (requireClientAuth) {
@@ -1777,81 +1794,83 @@ public class NetTest extends VertxTestBase {
       for (String suite: enabledCipherSuites) {
         options.addEnabledCipherSuite(suite);
       }
-      if(enabledSecureTransportProtocols.length > 0) {
-        options.getEnabledSecureTransportProtocols().forEach(options::removeEnabledSecureTransportProtocol);
-      }
-      for (String protocol : enabledSecureTransportProtocols) {
-        options.addEnabledSecureTransportProtocol(protocol);
-      }
       options.setSni(sni);
-
-      Consumer<NetSocket> certificateChainChecker = socket -> {
-        try {
-          List<Certificate> certs = socket.peerCertificates();
-          if (clientCert != Cert.NONE) {
-            assertNotNull(certs);
-            assertEquals(1, certs.size());
-          } else {
-            assertNull(certs);
-          }
-        } catch (SSLPeerUnverifiedException e) {
-          assertTrue(clientTrust.get() != Trust.NONE || clientTrustAll);
-        }
-      };
-
-      server = vertx.createNetServer(options);
-      if (!shouldPass) {
-        waitForMore(1);
-      }
-      server.exceptionHandler(err -> complete());
-      Handler<NetSocket> serverHandler = socket -> {
-        indicatedServerName = socket.indicatedServerName();
-        SSLSession sslSession = socket.sslSession();
-        if (socket.isSsl()) {
-          assertNotNull(sslSession);
-          certificateChainChecker.accept(socket);
-        } else {
-          assertNull(sslSession);
-        }
-        AtomicBoolean upgradedServer = new AtomicBoolean();
-        AtomicInteger upgradedServerCount = new AtomicInteger();
-        socket.handler(buff -> {
-          socket.write(buff); // echo the data
-          if (startTLS) {
-            if (upgradedServer.compareAndSet(false, true)) {
-              indicatedServerName = socket.indicatedServerName();
-              assertFalse(socket.isSsl());
-              Context ctx = Vertx.currentContext();
-              Handler<AsyncResult<Void>> handler;
-              if (shouldPass) {
-                handler = onSuccess(v -> {
-                  assertSame(ctx, Vertx.currentContext());
-                  certificateChainChecker.accept(socket);
-                  upgradedServerCount.incrementAndGet();
-                  assertTrue(socket.isSsl());
-                });
-              } else {
-                handler = onFailure(err -> {
-                  assertSame(ctx, Vertx.currentContext());
-                  complete();
-                });
-              }
-              socket.upgradeToSsl().onComplete(handler);
-            } else {
-              assertTrue(socket.isSsl());
-              assertEquals(1, upgradedServerCount.get());
-            }
-          } else {
-            assertTrue(socket.isSsl());
-          }
-        });
-      };
-      server.connectHandler(serverHandler);
+      return options;
     }
 
     void run(boolean shouldPass) {
-      setupServer(shouldPass);
-      server.listen(bindAddress).onComplete(onSuccess(ar -> {
+      if (!shouldPass) {
+        waitForMore(1);
+      }
+      Future<String> bind = vertx.deployVerticle(new AbstractVerticle() {
+        @Override
+        public void start(Promise<Void> startPromise) {
+          server.close();
+          Consumer<NetSocket> certificateChainChecker = socket -> {
+            try {
+              List<Certificate> certs = socket.peerCertificates();
+              if (clientCert != Cert.NONE) {
+                assertNotNull(certs);
+                assertEquals(1, certs.size());
+              } else {
+                assertNull(certs);
+              }
+            } catch (SSLPeerUnverifiedException e) {
+              assertTrue(clientTrust.get() != Trust.NONE || clientTrustAll);
+            }
+          };
+          server = vertx.createNetServer(setupServer());
+          if (!shouldPass) {
+            server.exceptionHandler(err -> complete());
+          }
+          Handler<NetSocket> serverHandler = socket -> {
+            indicatedServerName = socket.indicatedServerName();
+            SSLSession sslSession = socket.sslSession();
+            if (socket.isSsl()) {
+              assertNotNull(sslSession);
+              certificateChainChecker.accept(socket);
+            } else {
+              assertNull(sslSession);
+            }
+            AtomicBoolean upgradedServer = new AtomicBoolean();
+            socket.handler(buff -> {
+              if (startTLS) {
+                if (upgradedServer.compareAndSet(false, true)) {
+                  indicatedServerName = socket.indicatedServerName();
+                  assertFalse(socket.isSsl());
+                  Context ctx = Vertx.currentContext();
+                  Handler<AsyncResult<Void>> handler;
+                  if (shouldPass) {
+                    handler = onSuccess(v -> {
+                      assertSame(ctx, Vertx.currentContext());
+                      certificateChainChecker.accept(socket);
+                      assertTrue(socket.isSsl());
+                    });
+                  } else {
+                    handler = onFailure(err -> {
+                      assertSame(ctx, Vertx.currentContext());
+                      complete();
+                    });
+                  }
+                  socket.upgradeToSsl(buff).onComplete(handler);
+                } else {
+                  assertTrue(socket.isSsl());
+                  socket.write(buff);
+                }
+              } else {
+                assertTrue(socket.isSsl());
+                socket.write(buff);
+              }
+            });
+          };
+          server.connectHandler(serverHandler);
+          server
+            .listen(bindAddress)
+            .<Void>mapEmpty()
+            .onComplete(startPromise);
+        }
+      });
+      bind.onComplete(onSuccess(ar -> {
         client.close();
         NetClientOptions clientOptions = new NetClientOptions();
         if (!startTLS) {
@@ -1860,88 +1879,95 @@ public class NetTest extends VertxTestBase {
         if (clientTrustAll) {
           clientOptions.setTrustAll(true);
         }
+        clientOptions.setEnabledSecureTransportProtocols(clientVersions);
         clientOptions.setHostnameVerificationAlgorithm("");
         clientOptions.setTrustOptions(clientTrust.get());
         clientOptions.setKeyCertOptions(clientCert.get());
         for (String suite: enabledCipherSuites) {
           clientOptions.addEnabledCipherSuite(suite);
         }
-        if(enabledSecureTransportProtocols.length > 0) {
-          clientOptions.getEnabledSecureTransportProtocols().forEach(clientOptions::removeEnabledSecureTransportProtocol);
-        }
-        for (String protocol : enabledSecureTransportProtocols) {
-          clientOptions.addEnabledSecureTransportProtocol(protocol);
-        }
         client = vertx.createNetClient(clientOptions);
-        Future<Void> f = client.connect(connectAddress, serverName).compose(socket -> {
-          Promise<Void> result = Promise.promise();
-          final int numChunks = 100;
-          final int chunkSize = 100;
-          final List<Buffer> toSend = new ArrayList<>();
-          final Buffer expected = Buffer.buffer();
-          for (int i = 0; i< numChunks;i++) {
-            Buffer chunk = TestUtils.randomBuffer(chunkSize);
-            toSend.add(chunk);
-            expected.appendBuffer(chunk);
-          }
-          final Buffer received = Buffer.buffer();
-
-          if (socket.isSsl()) {
-            try {
-              clientPeerCert = socket.peerCertificates().get(0);
-            } catch (SSLPeerUnverifiedException ignore) {
+        Future<NetSocket> socketFuture = client.connect(connectAddress, serverName);
+        String tls1_3 = "TLSv1.3";
+        boolean clientAuthDeferred = clientVersions.contains(tls1_3) && serverVersions.contains(tls1_3);
+        if (shouldPass || startTLS) {
+          Future<Void> f = socketFuture.compose(socket -> {
+            Promise<Void> result = Promise.promise();
+            final int numChunks = 100;
+            final int chunkSize = 100;
+            final List<Buffer> toSend = new ArrayList<>();
+            final Buffer expected = Buffer.buffer();
+            for (int i = 0; i< numChunks;i++) {
+              Buffer chunk = TestUtils.randomBuffer(chunkSize);
+              toSend.add(chunk);
+              expected.appendBuffer(chunk);
             }
-          }
+            final Buffer received = Buffer.buffer();
 
-          final AtomicBoolean upgradedClient = new AtomicBoolean();
-          socket.exceptionHandler(result::tryFail);
-          socket.handler(buffer -> {
-            received.appendBuffer(buffer);
-            if (received.length() == expected.length()) {
-              assertEquals(expected, received);
-              complete();
+            if (socket.isSsl()) {
+              try {
+                clientPeerCert = socket.peerCertificates().get(0);
+              } catch (SSLPeerUnverifiedException ignore) {
+              }
             }
-            if (startTLS && !upgradedClient.get()) {
-              upgradedClient.set(true);
-              assertFalse(socket.isSsl());
-              Future<Void> fut;
-              if (serverName != null) {
-                fut = socket.upgradeToSsl(serverName);
+
+            final AtomicBoolean upgradedClient = new AtomicBoolean();
+            socket.exceptionHandler(result::tryFail);
+            socket.handler(buffer -> {
+              received.appendBuffer(buffer);
+              if (received.length() == expected.length()) {
+                assertEquals(expected, received);
+                complete();
+              }
+              if (startTLS && !upgradedClient.get()) {
+                upgradedClient.set(true);
+                assertFalse(socket.isSsl());
+                Future<Void> fut;
+                if (serverName != null) {
+                  fut = socket.upgradeToSsl(serverName);
+                } else {
+                  fut = socket.upgradeToSsl();
+                }
+                if (shouldPass) {
+                  fut.onSuccess(v -> {
+                    assertTrue(socket.isSsl());
+                    try {
+                      clientPeerCert = socket.peerCertificates().get(0);
+                    } catch (SSLPeerUnverifiedException ignore) {
+                    }
+                    // Now send the rest
+                    for (int i = 1; i < numChunks; i++) {
+                      socket.write(toSend.get(i));
+                    }
+                  });
+                } else {
+                  fut.onFailure(v -> result.complete());
+                }
               } else {
-                fut = socket.upgradeToSsl();
+                assertTrue(socket.isSsl());
               }
-              if (shouldPass) {
-                fut.onSuccess(v -> {
-                  assertTrue(socket.isSsl());
-                  try {
-                    clientPeerCert = socket.peerCertificates().get(0);
-                  } catch (SSLPeerUnverifiedException ignore) {
-                  }
-                  // Now send the rest
-                  for (int i = 1; i < numChunks; i++) {
-                    socket.write(toSend.get(i));
-                  }
-                });
-              }
-              fut.onFailure(result::tryFail);
-            } else {
-              assertTrue(socket.isSsl());
+            });
+
+            //Now send some data
+            int numToSend = startTLS ? 1 : numChunks;
+            for (int i = 0; i < numToSend; i++) {
+              socket.write(toSend.get(i));
             }
+
+            return result.future();
           });
 
-          //Now send some data
-          int numToSend = startTLS ? 1 : numChunks;
-          for (int i = 0; i < numToSend; i++) {
-            socket.write(toSend.get(i));
-          }
-
-          return result.future();
-        });
-
-        if (shouldPass) {
           f.onComplete(onSuccess(v -> complete()));
         } else {
-          f.onComplete(onFailure(v -> complete()));
+          if (clientAuthDeferred) {
+            socketFuture.onComplete(onSuccess(socket -> {
+              socket.exceptionHandler(err -> {
+                complete();
+              });
+            }));
+          } else {
+            socketFuture.onComplete(onFailure(v -> complete()));
+          }
         }
       }));
     }
