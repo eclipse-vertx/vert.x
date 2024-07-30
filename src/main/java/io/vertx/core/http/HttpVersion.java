@@ -20,7 +20,7 @@ import io.vertx.codegen.annotations.VertxGen;
  */
 @VertxGen
 public enum HttpVersion {
-  HTTP_1_0("http/1.0"), HTTP_1_1("http/1.1"), HTTP_2("h2");
+  HTTP_1_0("http/1.0"), HTTP_1_1("http/1.1"), HTTP_2("h2"), HTTP_3("h3");
 
   private final String alpnName;
 

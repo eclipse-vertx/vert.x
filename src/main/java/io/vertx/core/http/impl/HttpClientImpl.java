@@ -159,6 +159,9 @@ public class HttpClientImpl implements HttpClientInternal, MetricsProvider, Clos
     List<HttpVersion> alpnVersions = options.getAlpnVersions();
     if (alpnVersions == null || alpnVersions.isEmpty()) {
       switch (options.getProtocolVersion()) {
+        case HTTP_3:
+          alpnVersions = Arrays.asList(HttpVersion.HTTP_3, HttpVersion.HTTP_2, HttpVersion.HTTP_1_1);
+          break;
         case HTTP_2:
           alpnVersions = Arrays.asList(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1);
           break;
