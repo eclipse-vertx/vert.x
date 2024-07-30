@@ -38,6 +38,11 @@ public class SSLOptions {
   public static final boolean DEFAULT_USE_ALPN = false;
 
   /**
+   * Default use http3 = false
+   */
+  public static final boolean DEFAULT_HTTP3 = false;
+
+  /**
    * The default value of SSL handshake timeout = 10
    */
   public static final long DEFAULT_SSL_HANDSHAKE_TIMEOUT = 10L;
@@ -64,6 +69,7 @@ public class SSLOptions {
   private ArrayList<String> crlPaths;
   private ArrayList<Buffer> crlValues;
   private boolean useAlpn;
+  private boolean http3;
   private Set<String> enabledSecureTransportProtocols;
 
   /**
@@ -97,6 +103,7 @@ public class SSLOptions {
     this.crlPaths = new ArrayList<>(other.getCrlPaths());
     this.crlValues = new ArrayList<>(other.getCrlValues());
     this.useAlpn = other.useAlpn;
+    this.http3 = other.http3;
     this.enabledSecureTransportProtocols = other.getEnabledSecureTransportProtocols() == null ? new LinkedHashSet<>() : new LinkedHashSet<>(other.getEnabledSecureTransportProtocols());
   }
 
@@ -108,6 +115,7 @@ public class SSLOptions {
     crlPaths = new ArrayList<>();
     crlValues = new ArrayList<>();
     useAlpn = DEFAULT_USE_ALPN;
+    http3 = DEFAULT_HTTP3;
     enabledSecureTransportProtocols = new LinkedHashSet<>(DEFAULT_ENABLED_SECURE_TRANSPORT_PROTOCOLS);
   }
 
@@ -245,6 +253,23 @@ public class SSLOptions {
   }
 
   /**
+   * @return whether to use or not HTTP3
+   */
+  public boolean isHttp3() {
+    return http3;
+  }
+
+  /**
+   * Set the http3 usage.
+   *
+   * @param http3 true when http3 should be used
+   */
+  public SSLOptions setHttp3(boolean http3) {
+    this.http3 = http3;
+    return this;
+  }
+
+  /**
    * Returns the enabled SSL/TLS protocols
    * @return the enabled protocols
    */
@@ -338,6 +363,7 @@ public class SSLOptions {
          Objects.equals(crlPaths, that.crlPaths) &&
          Objects.equals(crlValues, that.crlValues) &&
          useAlpn == that.useAlpn &&
+         http3 == that.http3 &&
          Objects.equals(enabledSecureTransportProtocols, that.enabledSecureTransportProtocols);
     }
     return false;

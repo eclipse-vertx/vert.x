@@ -231,7 +231,8 @@ public class SSLHelper {
       trustAll,
       useAlpn,
       ctx.owner().getInternalWorkerPool().executor(),
-      c.useWorkerPool
+      c.useWorkerPool,
+      sslOptions.isHttp3()
     ));
   }
 

@@ -71,7 +71,7 @@ public class SslContextProvider {
                                        TrustManager[] trustManagers,
                                        String serverName,
                                        boolean useAlpn,
-                                       boolean trustAll) {
+                                       boolean trustAll, boolean http3) {
     if (keyManagerFactory == null) {
       keyManagerFactory = defaultKeyManagerFactory();
     }
@@ -81,24 +81,26 @@ public class SslContextProvider {
       trustManagers = defaultTrustManagers();
     }
     if (server) {
-      return createServerContext(keyManagerFactory, trustManagers, serverName, useAlpn);
+      return createServerContext(keyManagerFactory, trustManagers, serverName, useAlpn, http3);
     } else {
-      return createClientContext(keyManagerFactory, trustManagers, serverName, useAlpn);
+      return createClientContext(keyManagerFactory, trustManagers, serverName, useAlpn, http3);
     }
   }
 
   public VertxSslContext createContext(boolean server, boolean useAlpn) {
-    return createContext(server, defaultKeyManagerFactory(), defaultTrustManagers(), null, useAlpn, false);
+    return createContext(server, defaultKeyManagerFactory(), defaultTrustManagers(), null, useAlpn, false, false);
   }
 
   public VertxSslContext createClientContext(
     KeyManagerFactory keyManagerFactory,
     TrustManager[] trustManagers,
     String serverName,
-    boolean useAlpn) {
+    boolean useAlpn,
+    boolean http3) {
     try {
       SslContextFactory factory = provider.get()
         .useAlpn(useAlpn)
+        .http3(http3)
         .forClient(true)
         .enabledCipherSuites(enabledCipherSuites)
         .applicationProtocols(applicationProtocols);
@@ -122,12 +124,14 @@ public class SslContextProvider {
   }
 
   public VertxSslContext createServerContext(KeyManagerFactory keyManagerFactory,
-                                        TrustManager[] trustManagers,
-                                        String serverName,
-                                        boolean useAlpn) {
+                                             TrustManager[] trustManagers,
+                                             String serverName,
+                                             boolean useAlpn,
+                                             boolean http3) {
     try {
       SslContextFactory factory = provider.get()
         .useAlpn(useAlpn)
+        .http3(http3)
         .forClient(false)
         .enabledCipherSuites(enabledCipherSuites)
         .applicationProtocols(applicationProtocols);

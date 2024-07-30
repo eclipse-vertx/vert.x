@@ -29,6 +29,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -183,7 +184,9 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
     Future<SslContextUpdate> fut;
     ContextInternal ctx = vertx.getOrCreateContext();
     synchronized (this) {
-      fut = sslHelper.updateSslContext(new SSLOptions(options), ctx);
+      SSLOptions newOptions = new SSLOptions(options)
+        .setHttp3(this.options.getVersion() == HttpVersion.HTTP_3);
+      fut = sslHelper.updateSslContext(newOptions, ctx);
       sslChannelProvider = fut;
     }
     return fut.transform(ar -> {
@@ -261,7 +264,9 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
       synchronized (NetClientImpl.this) {
         fut = sslChannelProvider;
         if (fut == null) {
-          fut = sslHelper.updateSslContext(options.getSslOptions(), context);
+          SSLOptions sslOptions = options.getSslOptions();
+          sslOptions.setHttp3(options.getVersion() == HttpVersion.HTTP_3);
+          fut = sslHelper.updateSslContext(sslOptions, context);
           sslChannelProvider = fut;
         }
       }

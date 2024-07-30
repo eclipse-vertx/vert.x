@@ -42,6 +42,7 @@ public class SslChannelProvider {
   private final boolean useWorkerPool;
   private final boolean sni;
   private final boolean useAlpn;
+  private final boolean http3;
   private final boolean trustAll;
   private final SslContextProvider sslContextProvider;
   private final SslContext[] sslContexts = new SslContext[2];
@@ -56,7 +57,8 @@ public class SslChannelProvider {
                             boolean trustAll,
                             boolean useAlpn,
                             Executor workerPool,
-                            boolean useWorkerPool) {
+                            boolean useWorkerPool,
+                            boolean http3) {
     this.workerPool = workerPool;
     this.useWorkerPool = useWorkerPool;
     this.useAlpn = useAlpn;
@@ -65,6 +67,7 @@ public class SslChannelProvider {
     this.sslHandshakeTimeout = sslHandshakeTimeout;
     this.sslHandshakeTimeoutUnit = sslHandshakeTimeoutUnit;
     this.sslContextProvider = sslContextProvider;
+    this.http3 = http3;
   }
 
   public int sniEntrySize() {
@@ -93,11 +96,12 @@ public class SslChannelProvider {
       KeyManagerFactory kmf = sslContextProvider.resolveKeyManagerFactory(serverName);
       TrustManager[] trustManagers = trustAll ? null : sslContextProvider.resolveTrustManagers(serverName);
       if (kmf != null || trustManagers != null || !server) {
-        return sslContextMaps[idx].computeIfAbsent(serverName, s -> sslContextProvider.createContext(server, kmf, trustManagers, s, useAlpn, trustAll));
+        return sslContextMaps[idx].computeIfAbsent(serverName, s -> sslContextProvider.createContext(server, kmf,
+          trustManagers, s, useAlpn, trustAll, http3));
       }
     }
     if (sslContexts[idx] == null) {
-      SslContext context = sslContextProvider.createContext(server, null, null, serverName, useAlpn, trustAll);
+      SslContext context = sslContextProvider.createContext(server, null, null, serverName, useAlpn, trustAll, http3);
       sslContexts[idx] = context;
     }
     return sslContexts[idx];
