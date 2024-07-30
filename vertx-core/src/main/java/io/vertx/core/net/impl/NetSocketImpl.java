@@ -459,4 +459,3 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
     }
   }
 }
-
