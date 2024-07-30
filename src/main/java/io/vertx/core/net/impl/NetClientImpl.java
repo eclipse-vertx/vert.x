@@ -297,7 +297,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
       vertx.transport().configure(options, remoteAddress.isDomainSocket(), bootstrap);
 
       ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslChannelProvider, context)
-        .proxyOptions(proxyOptions);
+        .proxyOptions(proxyOptions).version(options.getVersion());
 
       channelProvider.handler(ch -> connected(context, ch, connectHandler, remoteAddress, sslChannelProvider, channelProvider.applicationProtocol(), registerWriteHandlers));
 

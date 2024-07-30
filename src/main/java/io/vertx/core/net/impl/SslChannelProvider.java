@@ -15,6 +15,8 @@ import io.netty.channel.ChannelHandler;
 import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.incubator.codec.http3.Http3;
+import io.netty.incubator.codec.quic.QuicSslContext;
 import io.netty.util.AsyncMapping;
 import io.netty.util.concurrent.ImmediateExecutor;
 import io.vertx.core.VertxException;
@@ -130,16 +132,22 @@ public class SslChannelProvider {
     };
   }
 
-  public SslHandler createClientSslHandler(SocketAddress remoteAddress, String serverName, boolean useAlpn) {
+  public ChannelHandler createClientSslHandler(SocketAddress remoteAddress, String serverName, boolean useAlpn) {
     SslContext sslContext = sslClientContext(serverName, useAlpn);
-    SslHandler sslHandler;
+    ChannelHandler sslHandler;
     Executor delegatedTaskExec = useWorkerPool ? workerPool : ImmediateExecutor.INSTANCE;
     if (remoteAddress.isDomainSocket()) {
       sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, delegatedTaskExec);
     } else {
-      sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, remoteAddress.host(), remoteAddress.port(), delegatedTaskExec);
+      sslHandler = Http3.newQuicClientCodecBuilder()
+      .sslTaskExecutor(delegatedTaskExec)
+      .sslContext((QuicSslContext) ((VertxSslContext) sslContext).unwrap())
+      .maxIdleTimeout(5000, TimeUnit.MILLISECONDS)
+      .initialMaxData(10000000)
+      .initialMaxStreamDataBidirectionalLocal(1000000)
+      .build();
     }
-    sslHandler.setHandshakeTimeout(sslHandshakeTimeout, sslHandshakeTimeoutUnit);
+//    sslHandler.setHandshakeTimeout(sslHandshakeTimeout, sslHandshakeTimeoutUnit);
     return sslHandler;
   }
 

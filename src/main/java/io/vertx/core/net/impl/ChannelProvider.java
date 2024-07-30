@@ -13,13 +13,18 @@ package io.vertx.core.net.impl;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
+import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.proxy.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.SslHandshakeCompletionEvent;
+import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.resolver.NoopAddressResolverGroup;
 import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.Promise;
 import io.vertx.core.Handler;
+import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.impl.VertxHttp3ClientConnectionHandler;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.ProxyOptions;
@@ -46,6 +51,7 @@ public final class ChannelProvider {
   private ProxyOptions proxyOptions;
   private String applicationProtocol;
   private Handler<Channel> handler;
+  private HttpVersion version;
 
   public ChannelProvider(Bootstrap bootstrap,
                          SslChannelProvider sslContextProvider,
@@ -63,6 +69,11 @@ public final class ChannelProvider {
    */
   public ChannelProvider proxyOptions(ProxyOptions proxyOptions) {
     this.proxyOptions = proxyOptions;
+    return this;
+  }
+
+  public ChannelProvider version(HttpVersion version) {
+    this.version = version;
     return this;
   }
 
@@ -92,7 +103,11 @@ public final class ChannelProvider {
 
   private void connect(Handler<Channel> handler, SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, boolean useAlpn, Promise<Channel> p) {
     try {
-      bootstrap.channelFactory(context.owner().transport().channelFactory(remoteAddress.isDomainSocket()));
+      if(version == HttpVersion.HTTP_3) {
+        bootstrap.channel(NioDatagramChannel.class);
+      } else {
+        bootstrap.channelFactory(context.owner().transport().channelFactory(remoteAddress.isDomainSocket()));
+      }
     } catch (Exception e) {
       p.setFailure(e);
       return;
@@ -106,7 +121,7 @@ public final class ChannelProvider {
 
   private void initSSL(Handler<Channel> handler, SocketAddress peerAddress, String serverName, boolean ssl, boolean useAlpn, Channel ch, Promise<Channel> channelHandler) {
     if (ssl) {
-      SslHandler sslHandler = sslContextProvider.createClientSslHandler(peerAddress, serverName, useAlpn);
+      ChannelHandler sslHandler = sslContextProvider.createClientSslHandler(peerAddress, serverName, useAlpn);
       ChannelPipeline pipeline = ch.pipeline();
       pipeline.addLast("ssl", sslHandler);
       pipeline.addLast(new ChannelInboundHandlerAdapter() {
@@ -118,7 +133,7 @@ public final class ChannelProvider {
             if (completion.isSuccess()) {
               // Remove from the pipeline after handshake result
               ctx.pipeline().remove(this);
-              applicationProtocol = sslHandler.applicationProtocol();
+              applicationProtocol = ((SslHandler)sslHandler).applicationProtocol();
               if (handler != null) {
                 context.dispatch(ch, handler);
               }
@@ -140,23 +155,60 @@ public final class ChannelProvider {
   }
 
 
-  private void handleConnect(Handler<Channel> handler, SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, boolean useAlpn, Promise<Channel> channelHandler) {
+  private void handleConnect(Handler<Channel> handler, SocketAddress remoteAddress, SocketAddress peerAddress,
+                             String serverName, boolean ssl, boolean useAlpn, Promise<Channel> channelHandler) {
     VertxInternal vertx = context.owner();
     bootstrap.resolver(vertx.nettyAddressResolverGroup());
-    bootstrap.handler(new ChannelInitializer<Channel>() {
-      @Override
-      protected void initChannel(Channel ch) {
-        initSSL(handler, peerAddress, serverName, ssl, useAlpn, ch, channelHandler);
+
+    if (version == HttpVersion.HTTP_3) {
+      if (ssl) {
+        ChannelHandler sslHandler = sslContextProvider.createClientSslHandler(peerAddress, serverName, useAlpn);
+        bootstrap.handler(sslHandler);
+      } else {
+        bootstrap.handler(new ChannelInitializer<Channel>() {
+          @Override
+          protected void initChannel(Channel ch) {
+          }
+        });
       }
-    });
+    } else {
+      bootstrap.handler(new ChannelInitializer<Channel>() {
+        @Override
+        protected void initChannel(Channel ch) {
+          initSSL(handler, peerAddress, serverName, ssl, useAlpn, ch, channelHandler);
+        }
+      });
+    }
+
     ChannelFuture fut = bootstrap.connect(vertx.transport().convert(remoteAddress));
     fut.addListener(res -> {
       if (res.isSuccess()) {
-        connected(handler, fut.channel(), ssl, channelHandler);
+        connected(handler, fut.channel(), ssl, channelHandler, remoteAddress);
       } else {
         channelHandler.setFailure(res.cause());
       }
     });
+
+  }
+
+  private void quicInit(Handler<Channel> handler, Promise<Channel> channelHandler, SocketAddress remoteAddress, Channel channel) {
+    QuicChannel.newBootstrap(channel)
+      .handler(new VertxHttp3ClientConnectionHandler())
+      .remoteAddress(new InetSocketAddress(remoteAddress.hostAddress(), remoteAddress.port()))
+      .connect()
+      .addListener((GenericFutureListener<Future<QuicChannel>>) res -> {
+        applicationProtocol = HttpVersion.HTTP_3.alpnName();
+
+        if(res.isSuccess()) {
+          QuicChannel quicChannel = res.get();
+          if (handler != null) {
+            context.dispatch(quicChannel, handler);
+          }
+          channelHandler.setSuccess(quicChannel);
+        } else {
+          channelHandler.setFailure(res.cause());
+        }
+      });
   }
 
   /**
@@ -164,9 +216,13 @@ public final class ChannelProvider {
    *
    * @param channel the channel
    * @param channelHandler the channel handler
+   * @param remoteAddress
    */
-  private void connected(Handler<Channel> handler, Channel channel, boolean ssl, Promise<Channel> channelHandler) {
-    if (!ssl) {
+  private void connected(Handler<Channel> handler, Channel channel, boolean ssl, Promise<Channel> channelHandler,
+                         SocketAddress remoteAddress) {
+    if(version == HttpVersion.HTTP_3)
+      quicInit(handler, channelHandler, remoteAddress, channel);
+    else if (!ssl) {
       // No handshake
       if (handler != null) {
         context.dispatch(channel, handler);
@@ -225,7 +281,7 @@ public final class ChannelProvider {
                   pipeline.remove(proxy);
                   pipeline.remove(this);
                   initSSL(handler, peerAddress, serverName, ssl, useAlpn, ch, channelHandler);
-                  connected(handler, ch, ssl, channelHandler);
+                  connected(handler, ch, ssl, channelHandler, remoteAddress);
                 }
                 ctx.fireUserEventTriggered(evt);
               }

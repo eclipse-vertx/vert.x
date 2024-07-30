@@ -13,6 +13,7 @@ package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.json.JsonObject;
 import io.netty.handler.logging.ByteBufFormat;
 
@@ -49,6 +50,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   private ProxyOptions proxyOptions;
   private String localAddress;
   private List<String> nonProxyHosts;
+  private HttpVersion version;
 
   /**
    * Default constructor
@@ -71,6 +73,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     this.proxyOptions = other.proxyOptions != null ? new ProxyOptions(other.proxyOptions) : null;
     this.localAddress = other.localAddress;
     this.nonProxyHosts = other.nonProxyHosts != null ? new ArrayList<>(other.nonProxyHosts) : null;
+    this.version = other.version;
   }
 
   /**
@@ -101,6 +104,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     this.metricsName = DEFAULT_METRICS_NAME;
     this.proxyOptions = null;
     this.localAddress = null;
+    this.version = HttpVersion.HTTP_3;
   }
 
   /**
@@ -119,6 +123,15 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
    */
   public ClientOptionsBase setTrustAll(boolean trustAll) {
     this.trustAll = trustAll;
+    return this;
+  }
+
+  public HttpVersion getVersion() {
+    return version;
+  }
+
+  public ClientOptionsBase setVersion(HttpVersion version) {
+    this.version = version;
     return this;
   }
 
