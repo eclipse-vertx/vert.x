@@ -11,22 +11,52 @@
 package io.vertx.core.buffer.impl;
 
 import io.netty.buffer.AbstractByteBufAllocator;
+import io.netty.buffer.AdaptiveByteBufAllocator;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.util.internal.PlatformDependent;
+import io.netty.util.internal.SystemPropertyUtil;
 
 public abstract class VertxByteBufAllocator extends AbstractByteBufAllocator {
 
   /**
    * Vert.x pooled allocator.
    */
-  public static final ByteBufAllocator POOLED_ALLOCATOR = new PooledByteBufAllocator(true);
+  public static final ByteBufAllocator POOLED_ALLOCATOR = pooledAllocator();
+
+  /**
+   * Tries hard to reuse the existing default Netty allocators instances to avoid creating new instances.
+   */
+  private static ByteBufAllocator pooledAllocator() {
+    String allocType = allocType();
+    if (PooledByteBufAllocator.defaultPreferDirect()) {
+      if ("adaptive".equals(allocType)) {
+        assert ByteBufAllocator.DEFAULT instanceof AdaptiveByteBufAllocator;
+        return ByteBufAllocator.DEFAULT;
+      } else {
+        return PooledByteBufAllocator.DEFAULT;
+      }
+    } else {
+      if ("adaptive".equals(allocType)) {
+        return new AdaptiveByteBufAllocator(true);
+      } else {
+        return new PooledByteBufAllocator(true);
+      }
+    }
+  }
+
+  private static String allocType() {
+    return SystemPropertyUtil.get("io.netty.allocator.type", PlatformDependent.isAndroid() ? "unpooled" : "pooled");
+  }
+
   /**
    * Vert.x shared unpooled allocator.
    */
-  public static final ByteBufAllocator UNPOOLED_ALLOCATOR = new UnpooledByteBufAllocator(false);
+  public static final ByteBufAllocator UNPOOLED_ALLOCATOR = !PooledByteBufAllocator.defaultPreferDirect() ?
+    UnpooledByteBufAllocator.DEFAULT :
+    new UnpooledByteBufAllocator(false);
 
   private static final VertxByteBufAllocator UNSAFE_IMPL = new VertxByteBufAllocator() {
     @Override
