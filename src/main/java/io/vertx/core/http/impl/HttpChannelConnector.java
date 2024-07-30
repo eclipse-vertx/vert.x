@@ -13,11 +13,22 @@ package io.vertx.core.http.impl;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.incubator.codec.http3.DefaultHttp3HeadersFrame;
+import io.netty.incubator.codec.http3.Http3;
+import io.netty.incubator.codec.http3.Http3DataFrame;
+import io.netty.incubator.codec.http3.Http3HeadersFrame;
+import io.netty.incubator.codec.http3.Http3RequestStreamInboundHandler;
+import io.netty.incubator.codec.quic.QuicChannel;
+import io.netty.incubator.codec.quic.QuicStreamChannel;
+import io.netty.util.CharsetUtil;
+import io.netty.util.ReferenceCountUtil;
+import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -31,6 +42,7 @@ import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.impl.Http3SslHandler;
 import io.vertx.core.net.impl.NetClientImpl;
 import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.VertxHandler;
@@ -100,7 +112,7 @@ public class HttpChannelConnector {
     List<ChannelHandler> removedHandlers = new ArrayList<>();
     for (Map.Entry<String, ChannelHandler> stringChannelHandlerEntry : pipeline) {
       ChannelHandler handler = stringChannelHandlerEntry.getValue();
-      if (!(handler instanceof SslHandler)) {
+      if (!(handler instanceof SslHandler) && !(handler instanceof Http3SslHandler) && !(handler instanceof VertxHttp3ClientConnectionHandler)) {
         removedHandlers.add(handler);
       }
     }
@@ -111,7 +123,10 @@ public class HttpChannelConnector {
     if (ssl) {
       String protocol = so.applicationLayerProtocol();
       if (useAlpn) {
-        if ("h2".equals(protocol)) {
+        if ("h3".equals(protocol)) {
+          applyHttp3ConnectionOptions(ch.pipeline());
+          http3Connected(context, metric, ch, promise);
+        } else if ("h2".equals(protocol)) {
           applyHttp2ConnectionOptions(ch.pipeline());
           http2Connected(context, metric, ch, promise);
         } else {
@@ -125,7 +140,10 @@ public class HttpChannelConnector {
         http1xConnected(version, server, true, context, metric, ch, promise);
       }
     } else {
-      if (version == HttpVersion.HTTP_2) {
+      if (version == HttpVersion.HTTP_3) {
+        applyHttp3ConnectionOptions(pipeline);
+        http3Connected(context, metric, ch, promise);
+      }else if (version == HttpVersion.HTTP_2) {
         if (this.options.isHttp2ClearTextUpgrade()) {
           applyHttp1xConnectionOptions(pipeline);
           http1xConnected(version, server, false, context, metric, ch, promise);
@@ -149,6 +167,15 @@ public class HttpChannelConnector {
   }
 
   private void applyHttp2ConnectionOptions(ChannelPipeline pipeline) {
+    int idleTimeout = options.getIdleTimeout();
+    int readIdleTimeout = options.getReadIdleTimeout();
+    int writeIdleTimeout = options.getWriteIdleTimeout();
+    if (idleTimeout > 0 || readIdleTimeout > 0 || writeIdleTimeout > 0) {
+      pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, options.getIdleTimeoutUnit()));
+    }
+  }
+
+  private void applyHttp3ConnectionOptions(ChannelPipeline pipeline) {
     int idleTimeout = options.getIdleTimeout();
     int readIdleTimeout = options.getReadIdleTimeout();
     int writeIdleTimeout = options.getWriteIdleTimeout();
@@ -244,6 +271,42 @@ public class HttpChannelConnector {
       return;
     }
     clientHandler.connectFuture().addListener(promise);
+  }
+
+  private void http3Connected(EventLoopContext context,
+                              Object metric,
+                              Channel ch,
+                              PromiseInternal<HttpClientConnection> promise) {
+
+//    ch.pipeline().addLast(new Http3FrameToHttpObjectCodec(false));
+//    ch.flush();
+
+    Http3.newRequestStream((QuicChannel) ch,
+      new Http3RequestStreamInboundHandler() {
+        @Override
+        protected void channelRead(ChannelHandlerContext ctx, Http3HeadersFrame frame) {
+          ReferenceCountUtil.release(frame);
+        }
+
+        @Override
+        protected void channelRead(ChannelHandlerContext ctx, Http3DataFrame frame) {
+          System.err.print(frame.content().toString(CharsetUtil.US_ASCII));
+          ReferenceCountUtil.release(frame);
+        }
+
+        @Override
+        protected void channelInputClosed(ChannelHandlerContext ctx) {
+          ctx.close();
+        }
+      }).addListener((GenericFutureListener<io.netty.util.concurrent.Future<QuicStreamChannel>>) future -> {
+        QuicStreamChannel streamChannel = future.get();
+
+        Http3HeadersFrame frame = new DefaultHttp3HeadersFrame();
+        frame.headers().method("GET").path("/")
+          .authority(peerAddress.hostAddress() + ":" + peerAddress.port())
+          .scheme("https");
+        streamChannel.writeAndFlush(frame).addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);
+      });
   }
 
   private void connectFailed(Channel ch, Throwable t, Promise<HttpClientConnection> future) {
