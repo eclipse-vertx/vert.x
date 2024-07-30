@@ -55,15 +55,19 @@ public class JdkSSLEngineOptions extends SSLEngineOptions {
     return jdkAlpnAvailable;
   }
 
+  private boolean usePooledHeapBuffers;
+
   public JdkSSLEngineOptions() {
   }
 
   public JdkSSLEngineOptions(JsonObject json) {
     super(json);
+    this.usePooledHeapBuffers = json.getBoolean("usePooledHeapBuffers", false);
   }
 
   public JdkSSLEngineOptions(JdkSSLEngineOptions that) {
     super(that);
+    this.usePooledHeapBuffers = that.usePooledHeapBuffers;
   }
 
   @Override
@@ -72,7 +76,9 @@ public class JdkSSLEngineOptions extends SSLEngineOptions {
   }
 
   public JsonObject toJson() {
-    return new JsonObject();
+    JsonObject json = new JsonObject();
+    json.put("usePooledHeapBuffers", usePooledHeapBuffers);
+    return json;
   }
 
   @Override
@@ -83,5 +89,17 @@ public class JdkSSLEngineOptions extends SSLEngineOptions {
   @Override
   public SslContextFactory sslContextFactory() {
     return new DefaultSslContextFactory(SslProvider.JDK, false);
+  }
+
+  /**
+   * Set whether to use pooled heap buffers. Default is {@code false}, but it is recommended to use pooled buffers
+   */
+  public JdkSSLEngineOptions setUsePooledHeapBuffers(boolean usePooledHeapBuffers) {
+    this.usePooledHeapBuffers = usePooledHeapBuffers;
+    return this;
+  }
+
+  public boolean getUsePooledHeapBuffers() {
+    return usePooledHeapBuffers;
   }
 }

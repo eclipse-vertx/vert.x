@@ -11,12 +11,15 @@
 
 package io.vertx.core.net.impl;
 
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.ssl.OpenSsl;
 import io.netty.handler.ssl.SslProvider;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
+import io.vertx.core.buffer.impl.VertxByteBufAllocator;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.ClientOptionsBase;
@@ -132,6 +135,15 @@ public class SSLHelper {
       return res.sslChannelProvider.sniEntrySize();
     }
     return 0;
+  }
+
+  public ByteBufAllocator preferredNettyAllocatorWith(TCPSSLOptions options) {
+    if (!options.isSsl() ||
+      (sslEngineOptions instanceof JdkSSLEngineOptions &&
+        ((JdkSSLEngineOptions) sslEngineOptions).getUsePooledHeapBuffers())) {
+      return VertxByteBufAllocator.POOLED_ALLOCATOR;
+    }
+    return PartialPooledByteBufAllocator.INSTANCE;
   }
 
   private static class CachedProvider {

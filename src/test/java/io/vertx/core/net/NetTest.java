@@ -504,12 +504,14 @@ public class NetTest extends VertxTestBase {
     int reconnectAttempts = TestUtils.randomPositiveInt();
     long reconnectInterval = TestUtils.randomPositiveInt();
     boolean useAlpn = TestUtils.randomBoolean();
+    boolean jdkSslEngineOptionsUsePooledHeapBuffers = rand.nextBoolean();
     String hostnameVerificationAlgorithm = TestUtils.randomAlphaString(10);
     String sslEngine;
     JsonObject sslEngineOptions;
     if (TestUtils.randomBoolean()) {
       sslEngine = "jdkSslEngineOptions";
-      sslEngineOptions = new JsonObject();
+      sslEngineOptions = new JsonObject()
+        .put("usePooledHeapBuffers", jdkSslEngineOptionsUsePooledHeapBuffers);
     } else {
       sslEngine = "openSslEngineOptions";
       boolean sessionCacheEnabled = rand.nextBoolean();
@@ -577,6 +579,8 @@ public class NetTest extends VertxTestBase {
     switch (sslEngine) {
       case "jdkSslEngineOptions":
         assertTrue(options.getSslEngineOptions() instanceof JdkSSLEngineOptions);
+        JdkSSLEngineOptions jdkSSLEngineOptions = (JdkSSLEngineOptions) options.getSslEngineOptions();
+        assertEquals(jdkSslEngineOptionsUsePooledHeapBuffers, jdkSSLEngineOptions.getUsePooledHeapBuffers());
         break;
       case "openSslEngineOptions":
         assertTrue(options.getSslEngineOptions() instanceof OpenSSLEngineOptions);

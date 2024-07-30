@@ -29,6 +29,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
+import io.vertx.core.buffer.impl.VertxByteBufAllocator;
 import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -49,7 +50,6 @@ import java.io.FileNotFoundException;
 import java.net.ConnectException;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 /**
@@ -297,7 +297,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
       Objects.requireNonNull(connectHandler, "No null connectHandler accepted");
       Bootstrap bootstrap = new Bootstrap();
       bootstrap.group(eventLoop);
-      bootstrap.option(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
+      bootstrap.option(ChannelOption.ALLOCATOR, sslHelper.preferredNettyAllocatorWith(options));
 
       vertx.transport().configure(options, remoteAddress.isDomainSocket(), bootstrap);
 

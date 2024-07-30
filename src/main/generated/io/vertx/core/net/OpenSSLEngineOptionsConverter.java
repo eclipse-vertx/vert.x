@@ -1,11 +1,6 @@
 package io.vertx.core.net;
 
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.impl.JsonUtil;
-import java.time.Instant;
-import java.time.format.DateTimeFormatter;
-import java.util.Base64;
 
 /**
  * Converter and mapper for {@link io.vertx.core.net.OpenSSLEngineOptions}.
@@ -13,9 +8,6 @@ import java.util.Base64;
  */
 public class OpenSSLEngineOptionsConverter {
 
-
-  private static final Base64.Decoder BASE64_DECODER = JsonUtil.BASE64_DECODER;
-  private static final Base64.Encoder BASE64_ENCODER = JsonUtil.BASE64_ENCODER;
 
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, OpenSSLEngineOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
