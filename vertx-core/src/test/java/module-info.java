@@ -30,6 +30,7 @@ open module io.vertx.tests {
   requires io.netty.codec.http;
   requires io.netty.codec.haproxy;
   requires io.netty.codec.http2;
+  requires io.netty.incubator.codec.http3;
   requires io.netty.resolver.dns;
   requires jmh.core;
   requires org.apache.logging.log4j.core;
