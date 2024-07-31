@@ -121,6 +121,11 @@ public interface VertxInternal extends Vertx {
   /**
    * @return worker context
    */
+  ContextInternal createWorkerContext(Deployment deployment, CloseFuture closeFuture, EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl);
+
+  /**
+   * @return worker context
+   */
   ContextInternal createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl);
 
   /**
@@ -132,6 +137,11 @@ public interface VertxInternal extends Vertx {
    * @return worker context
    */
   ContextInternal createWorkerContext();
+
+  /**
+   * @return virtual thread context
+   */
+  ContextInternal createVirtualThreadContext(Deployment deployment, CloseFuture closeFuture, EventLoop eventLoop, ClassLoader tccl);
 
   /**
    * @return virtual thread context
