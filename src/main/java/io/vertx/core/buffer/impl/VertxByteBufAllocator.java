@@ -22,7 +22,10 @@ import io.netty.util.internal.SystemPropertyUtil;
 public abstract class VertxByteBufAllocator extends AbstractByteBufAllocator {
 
   /**
-   * Vert.x pooled allocator.
+   * Vert.x pooled allocator.<br>
+   * Setting {@code -Dio.netty.allocator.type=adaptive} will use {@link AdaptiveByteBufAllocator} in
+   * {@link ByteBufAllocator#DEFAULT} instead of the default {@link PooledByteBufAllocator#DEFAULT} one.<br>
+   * Setting anything different from {@code adaptive} will still use {@link PooledByteBufAllocator#DEFAULT} as the allocator.
    */
   public static final ByteBufAllocator POOLED_ALLOCATOR = pooledAllocator();
 
@@ -47,6 +50,10 @@ public abstract class VertxByteBufAllocator extends AbstractByteBufAllocator {
     }
   }
 
+  /**
+   * This is how currently Netty decide which allocator to use
+   * @see <a href="https://github.com/netty/netty/blob/netty-4.1.112.Final/buffer/src/main/java/io/netty/buffer/ByteBufUtil.java#L80-L98">ByteBufUtil</a>
+   */
   private static String allocType() {
     return SystemPropertyUtil.get("io.netty.allocator.type", PlatformDependent.isAndroid() ? "unpooled" : "pooled");
   }
