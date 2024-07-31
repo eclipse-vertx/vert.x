@@ -13,22 +13,14 @@ package io.vertx.core.http.impl;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.HttpClientCodec;
+import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
-import io.netty.incubator.codec.http3.DefaultHttp3HeadersFrame;
-import io.netty.incubator.codec.http3.Http3;
 import io.netty.incubator.codec.http3.Http3ClientConnectionHandler;
-import io.netty.incubator.codec.http3.Http3DataFrame;
-import io.netty.incubator.codec.http3.Http3HeadersFrame;
-import io.netty.incubator.codec.http3.Http3RequestStreamInboundHandler;
 import io.netty.incubator.codec.quic.QuicChannel;
-import io.netty.incubator.codec.quic.QuicStreamChannel;
-import io.netty.util.CharsetUtil;
-import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -37,8 +29,8 @@ import io.vertx.core.Promise;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.ProxyOptions;
@@ -50,6 +42,7 @@ import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -113,7 +106,7 @@ public class HttpChannelConnector {
     List<ChannelHandler> removedHandlers = new ArrayList<>();
     for (Map.Entry<String, ChannelHandler> stringChannelHandlerEntry : pipeline) {
       ChannelHandler handler = stringChannelHandlerEntry.getValue();
-      if (!(handler instanceof SslHandler) && !(handler instanceof Http3SslHandler) && !(handler instanceof Http3ClientConnectionHandler)) {
+      if (!(handler instanceof SslHandler) && !(handler.getClass().getSimpleName().equals("QuicheQuicClientCodec"))) {
         removedHandlers.add(handler);
       }
     }
@@ -278,36 +271,30 @@ public class HttpChannelConnector {
                               Object metric,
                               Channel ch,
                               PromiseInternal<HttpClientConnection> promise) {
+    Http3ClientConnectionHandler clientHandler;
+    try {
 
+      clientHandler = Http3ClientConnection.createHttp3ConnectionHandler(client, metrics, context, false, metric);
+//      ch.pipeline().addLast("handler", clientHandler);
 //    ch.pipeline().addLast(new Http3FrameToHttpObjectCodec(false));
-//    ch.flush();
+//      ch.flush();
 
-    Http3.newRequestStream((QuicChannel) ch,
-      new Http3RequestStreamInboundHandler() {
-        @Override
-        protected void channelRead(ChannelHandlerContext ctx, Http3HeadersFrame frame) {
-          ReferenceCountUtil.release(frame);
-        }
+      QuicChannel.newBootstrap(ch)
+        .handler(clientHandler)
+        .remoteAddress(new InetSocketAddress(peerAddress.hostAddress(), peerAddress.port()))
+        .connect()
+        .addListener((GenericFutureListener<io.netty.util.concurrent.Future<QuicChannel>>) quicChannelFuture -> {
+//            promise.complete();
+          VertxHttp3.newRequestStream(quicChannelFuture, peerAddress);
+        });
 
-        @Override
-        protected void channelRead(ChannelHandlerContext ctx, Http3DataFrame frame) {
-          System.err.print(frame.content().toString(CharsetUtil.US_ASCII));
-          ReferenceCountUtil.release(frame);
-        }
+    }catch (Exception e){
+      connectFailed(ch, e, promise);
+      return;
+    }
+//    clientHandler.connectFuture().addListener(promise);
+//    if(true) return;
 
-        @Override
-        protected void channelInputClosed(ChannelHandlerContext ctx) {
-          ctx.close();
-        }
-      }).addListener((GenericFutureListener<io.netty.util.concurrent.Future<QuicStreamChannel>>) future -> {
-        QuicStreamChannel streamChannel = future.get();
-
-        Http3HeadersFrame frame = new DefaultHttp3HeadersFrame();
-        frame.headers().method("GET").path("/")
-          .authority(peerAddress.hostAddress() + ":" + peerAddress.port())
-          .scheme("https");
-        streamChannel.writeAndFlush(frame).addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);
-      });
   }
 
   private void connectFailed(Channel ch, Throwable t, Promise<HttpClientConnection> future) {

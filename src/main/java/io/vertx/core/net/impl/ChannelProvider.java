@@ -12,17 +12,25 @@
 package io.vertx.core.net.impl;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.nio.NioDatagramChannel;
-import io.netty.handler.proxy.*;
+import io.netty.handler.proxy.HttpProxyHandler;
+import io.netty.handler.proxy.ProxyConnectionEvent;
+import io.netty.handler.proxy.ProxyHandler;
+import io.netty.handler.proxy.Socks4ProxyHandler;
+import io.netty.handler.proxy.Socks5ProxyHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.SslHandshakeCompletionEvent;
-import io.netty.incubator.codec.http3.Http3ClientConnectionHandler;
-import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.resolver.NoopAddressResolverGroup;
 import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.Promise;
+import io.netty.util.concurrent.SucceededFuture;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.ContextInternal;
@@ -183,7 +191,7 @@ public final class ChannelProvider {
     ChannelFuture fut = bootstrap.connect(vertx.transport().convert(remoteAddress));
     fut.addListener(res -> {
       if (res.isSuccess()) {
-        connected(handler, fut.channel(), ssl, channelHandler, remoteAddress);
+        connected(handler, fut.channel(), ssl, channelHandler, res);
       } else {
         channelHandler.setFailure(res.cause());
       }
@@ -191,38 +199,26 @@ public final class ChannelProvider {
 
   }
 
-  private void quicInit(Handler<Channel> handler, Promise<Channel> channelHandler, SocketAddress remoteAddress, Channel channel) {
-    QuicChannel.newBootstrap(channel)
-      .handler(new Http3ClientConnectionHandler())
-      .remoteAddress(new InetSocketAddress(remoteAddress.hostAddress(), remoteAddress.port()))
-      .connect()
-      .addListener((GenericFutureListener<Future<QuicChannel>>) res -> {
-        applicationProtocol = HttpVersion.HTTP_3.alpnName();
-
-        if(res.isSuccess()) {
-          QuicChannel quicChannel = res.get();
-          if (handler != null) {
-            context.dispatch(quicChannel, handler);
-          }
-          channelHandler.setSuccess(quicChannel);
-        } else {
-          channelHandler.setFailure(res.cause());
-        }
-      });
-  }
-
   /**
    * Signal we are connected to the remote server.
    *
-   * @param channel the channel
+   * @param channel        the channel
    * @param channelHandler the channel handler
-   * @param remoteAddress
+   * @param res            the res
    */
   private void connected(Handler<Channel> handler, Channel channel, boolean ssl, Promise<Channel> channelHandler,
-                         SocketAddress remoteAddress) {
-    if(version == HttpVersion.HTTP_3)
-      quicInit(handler, channelHandler, remoteAddress, channel);
-    else if (!ssl) {
+                         Future<? super Void> res) {
+    if(version == HttpVersion.HTTP_3) {
+      if(res.isSuccess()) {
+        applicationProtocol = HttpVersion.HTTP_3.alpnName();
+        if (handler != null) {
+          context.dispatch(channel, handler);
+        }
+        channelHandler.setSuccess(channel);
+      } else {
+        channelHandler.setFailure(res.cause());
+      }
+    } else if (!ssl) {
       // No handshake
       if (handler != null) {
         context.dispatch(channel, handler);
@@ -281,7 +277,7 @@ public final class ChannelProvider {
                   pipeline.remove(proxy);
                   pipeline.remove(this);
                   initSSL(handler, peerAddress, serverName, ssl, useAlpn, ch, channelHandler);
-                  connected(handler, ch, ssl, channelHandler, remoteAddress);
+                  connected(handler, ch, ssl, channelHandler, new SucceededFuture(ctx.executor(), Void.TYPE));
                 }
                 ctx.fireUserEventTriggered(evt);
               }
