@@ -113,17 +113,18 @@ public class HTTP2Examples {
   public void example7(Vertx vertx) {
 
     HttpClientOptions options = new HttpClientOptions().
-        setProtocolVersion(HttpVersion.HTTP_2).
         setSsl(true).
         setUseAlpn(true).
         setTrustAll(true);
+    options.setProtocolVersion(HttpVersion.HTTP_2);
 
     HttpClient client = vertx.createHttpClient(options);
   }
 
   public void example8(Vertx vertx) {
 
-    HttpClientOptions options = new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2);
+    HttpClientOptions options = new HttpClientOptions();
+    options.setProtocolVersion(HttpVersion.HTTP_2);
 
     HttpClient client = vertx.createHttpClient(options);
   }

@@ -50,7 +50,6 @@ import java.io.FileNotFoundException;
 import java.net.ConnectException;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 /**
@@ -185,7 +184,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
     ContextInternal ctx = vertx.getOrCreateContext();
     synchronized (this) {
       SSLOptions newOptions = new SSLOptions(options)
-        .setHttp3(this.options.getVersion() == HttpVersion.HTTP_3);
+        .setHttp3(this.options.getProtocolVersion() == HttpVersion.HTTP_3);
       fut = sslHelper.updateSslContext(newOptions, ctx);
       sslChannelProvider = fut;
     }
@@ -265,7 +264,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
         fut = sslChannelProvider;
         if (fut == null) {
           SSLOptions sslOptions = options.getSslOptions();
-          sslOptions.setHttp3(options.getVersion() == HttpVersion.HTTP_3);
+          sslOptions.setHttp3(options.getProtocolVersion() == HttpVersion.HTTP_3);
           fut = sslHelper.updateSslContext(sslOptions, context);
           sslChannelProvider = fut;
         }
@@ -302,7 +301,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
       vertx.transport().configure(options, remoteAddress.isDomainSocket(), bootstrap);
 
       ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslChannelProvider, context)
-        .proxyOptions(proxyOptions).version(options.getVersion());
+        .proxyOptions(proxyOptions).version(options.getProtocolVersion());
 
       channelProvider.handler(ch -> connected(context, ch, connectHandler, remoteAddress, sslChannelProvider, channelProvider.applicationProtocol(), registerWriteHandlers));
 

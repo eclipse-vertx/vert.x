@@ -116,11 +116,6 @@ public class HttpClientOptions extends ClientOptionsBase {
   public static final int DEFAULT_DEFAULT_PORT = 80;
 
   /**
-   * The default protocol version = HTTP/1.1
-   */
-  public static final HttpVersion DEFAULT_PROTOCOL_VERSION = HttpVersion.HTTP_1_1;
-
-  /**
    * Default max HTTP chunk size = 8192
    */
   public static final int DEFAULT_MAX_CHUNK_SIZE = 8192;
@@ -249,7 +244,6 @@ public class HttpClientOptions extends ClientOptionsBase {
   private int maxWebSockets;
   private String defaultHost;
   private int defaultPort;
-  private HttpVersion protocolVersion;
   private int maxChunkSize;
   private int maxInitialLineLength;
   private int maxHeaderSize;
@@ -306,7 +300,6 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.maxWebSockets = other.maxWebSockets;
     this.defaultHost = other.defaultHost;
     this.defaultPort = other.defaultPort;
-    this.protocolVersion = other.protocolVersion;
     this.maxChunkSize = other.maxChunkSize;
     this.maxInitialLineLength = other.getMaxInitialLineLength();
     this.maxHeaderSize = other.getMaxHeaderSize();
@@ -371,7 +364,6 @@ public class HttpClientOptions extends ClientOptionsBase {
     maxWebSockets = DEFAULT_MAX_WEBSOCKETS;
     defaultHost = DEFAULT_DEFAULT_HOST;
     defaultPort = DEFAULT_DEFAULT_PORT;
-    protocolVersion = DEFAULT_PROTOCOL_VERSION;
     maxChunkSize = DEFAULT_MAX_CHUNK_SIZE;
     maxInitialLineLength = DEFAULT_MAX_INITIAL_LINE_LENGTH;
     maxHeaderSize = DEFAULT_MAX_HEADER_SIZE;
@@ -970,29 +962,6 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public HttpClientOptions setDefaultPort(int defaultPort) {
     this.defaultPort = defaultPort;
-    return this;
-  }
-
-  /**
-   * Get the protocol version.
-   *
-   * @return the protocol version
-   */
-  public HttpVersion getProtocolVersion() {
-    return protocolVersion;
-  }
-
-  /**
-   * Set the protocol version.
-   *
-   * @param protocolVersion the protocol version
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientOptions setProtocolVersion(HttpVersion protocolVersion) {
-    if (protocolVersion == null) {
-      throw new IllegalArgumentException("protocolVersion must not be null");
-    }
-    this.protocolVersion = protocolVersion;
     return this;
   }
 

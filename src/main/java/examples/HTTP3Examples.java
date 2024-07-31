@@ -27,10 +27,10 @@ public class HTTP3Examples {
   public void example01(Vertx vertx) {
 
     HttpClientOptions options = new HttpClientOptions().
-      setProtocolVersion(HttpVersion.HTTP_3).
       setSsl(true).
       setUseAlpn(true).
       setTrustAll(true);
+    options.setProtocolVersion(HttpVersion.HTTP_3);
 
     HttpClient client = vertx.createHttpClient(options);
     client.request(HttpMethod.GET, 9999, NetUtil.LOCALHOST4.getHostAddress(),

@@ -44,13 +44,18 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
    */
   public static final String DEFAULT_METRICS_NAME = "";
 
+  /**
+   * The default protocol version = HTTP/1.1
+   */
+  public static final HttpVersion DEFAULT_PROTOCOL_VERSION = HttpVersion.HTTP_1_1;
+
   private int connectTimeout;
   private boolean trustAll;
   private String metricsName;
   private ProxyOptions proxyOptions;
   private String localAddress;
   private List<String> nonProxyHosts;
-  private HttpVersion version;
+  private HttpVersion protocolVersion;
 
   /**
    * Default constructor
@@ -73,7 +78,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     this.proxyOptions = other.proxyOptions != null ? new ProxyOptions(other.proxyOptions) : null;
     this.localAddress = other.localAddress;
     this.nonProxyHosts = other.nonProxyHosts != null ? new ArrayList<>(other.nonProxyHosts) : null;
-    this.version = other.version;
+    this.protocolVersion = other.protocolVersion;
   }
 
   /**
@@ -104,7 +109,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     this.metricsName = DEFAULT_METRICS_NAME;
     this.proxyOptions = null;
     this.localAddress = null;
-    this.version = HttpVersion.HTTP_3;
+    this.protocolVersion = DEFAULT_PROTOCOL_VERSION;
   }
 
   /**
@@ -126,12 +131,26 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     return this;
   }
 
-  public HttpVersion getVersion() {
-    return version;
+  /**
+   * Get the protocol version.
+   *
+   * @return the protocol version
+   */
+  public HttpVersion getProtocolVersion() {
+    return protocolVersion;
   }
 
-  public ClientOptionsBase setVersion(HttpVersion version) {
-    this.version = version;
+  /**
+   * Set the protocol version.
+   *
+   * @param protocolVersion the protocol version
+   * @return a reference to this, so the API can be used fluently
+   */
+  public ClientOptionsBase setProtocolVersion(HttpVersion protocolVersion) {
+    if (protocolVersion == null) {
+      throw new IllegalArgumentException("protocolVersion must not be null");
+    }
+    this.protocolVersion = protocolVersion;
     return this;
   }
 
