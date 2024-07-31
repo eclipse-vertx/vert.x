@@ -117,6 +117,12 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    */
   public static final TimeUnit DEFAULT_SSL_HANDSHAKE_TIMEOUT_TIME_UNIT = SSLOptions.DEFAULT_SSL_HANDSHAKE_TIMEOUT_TIME_UNIT;
 
+  /**
+   * SSL heap pooling options
+   */
+  public static final boolean DEFAULT_ENABLE_SSL_HEAP_POOLS = false;
+
+
   private boolean tcpNoDelay;
   private boolean tcpKeepAlive;
   private int soLinger;
@@ -131,6 +137,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   private boolean tcpCork;
   private boolean tcpQuickAck;
   private int tcpUserTimeout;
+  private boolean useSSLHeapPools;
+
 
   /**
    * Default constructor
@@ -200,6 +208,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     tcpQuickAck = DEFAULT_TCP_QUICKACK;
     tcpUserTimeout = DEFAULT_TCP_USER_TIMEOUT;
     sslOptions = new SSLOptions();
+    useSSLHeapPools = DEFAULT_ENABLE_SSL_HEAP_POOLS;
   }
 
   @GenIgnore
@@ -870,6 +879,24 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   @Override
   public TCPSSLOptions setReusePort(boolean reusePort) {
     return (TCPSSLOptions) super.setReusePort(reusePort);
+  }
+
+  /**
+   * Set using heap pools with SSL.
+   * <p>
+   * This should be set to {@code true} when the server is using the SSL engine provided by the JVM.<br>
+   * If {@link #isSsl()} is {@code false}, this options will be ignored.
+   */
+  public TCPSSLOptions setUseSSLHeapPools(boolean useSSLHeapPools) {
+    this.useSSLHeapPools = useSSLHeapPools;
+    return this;
+  }
+
+  /**
+   * @return {@code true} if using heap pools with SSL.
+   */
+  public boolean isUseSSLHeapPools() {
+    return useSSLHeapPools;
   }
 
 }

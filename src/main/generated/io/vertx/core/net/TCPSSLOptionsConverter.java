@@ -3,8 +3,6 @@ package io.vertx.core.net;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.impl.JsonUtil;
-import java.time.Instant;
-import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 
 /**
@@ -169,6 +167,11 @@ public class TCPSSLOptionsConverter {
             obj.setWriteIdleTimeout(((Number)member.getValue()).intValue());
           }
           break;
+        case "useSSLHeapPools":
+          if (member.getValue() instanceof Boolean) {
+            obj.setUseSSLHeapPools((Boolean)member.getValue());
+          }
+          break;
       }
     }
   }
@@ -241,5 +244,6 @@ public class TCPSSLOptionsConverter {
     }
     json.put("useAlpn", obj.isUseAlpn());
     json.put("writeIdleTimeout", obj.getWriteIdleTimeout());
+     json.put("useSSLHeapPools", obj.isUseSSLHeapPools());
   }
 }

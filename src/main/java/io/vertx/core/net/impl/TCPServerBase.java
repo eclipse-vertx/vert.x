@@ -11,7 +11,6 @@
 package io.vertx.core.net.impl;
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -26,6 +25,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
+import io.vertx.core.buffer.impl.VertxByteBufAllocator;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -243,9 +243,10 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
             ServerBootstrap bootstrap = new ServerBootstrap();
             bootstrap.group(vertx.getAcceptorEventLoopGroup(), channelBalancer.workers());
             if (options.isSsl()) {
-              bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
+              bootstrap.childOption(ChannelOption.ALLOCATOR, options.isUseSSLHeapPools() ?
+                VertxByteBufAllocator.POOLED_ALLOCATOR : PartialPooledByteBufAllocator.INSTANCE);
             } else {
-              bootstrap.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+              bootstrap.childOption(ChannelOption.ALLOCATOR, VertxByteBufAllocator.POOLED_ALLOCATOR);
             }
 
             bootstrap.childHandler(channelBalancer);
@@ -256,7 +257,9 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
             bindFuture.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) res -> {
               if (res.isSuccess()) {
                 Channel ch = res.getNow();
-                log.trace("Net server listening on " + hostOrPath + ":" + ch.localAddress());
+                if (log.isTraceEnabled()) {
+                  log.trace("Net server listening on " + hostOrPath + ":" + ch.localAddress());
+                }
                 if (shared) {
                   ch.closeFuture().addListener((ChannelFutureListener) channelFuture -> {
                     synchronized (sharedNetServers) {
