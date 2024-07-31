@@ -882,7 +882,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   /**
-   * Set whether the server should use heap pools while using SSL.
+   * Set using heap pools with SSL.
    * <p>
    * This should be set to {@code true} when the server is using the SSL engine provided by the JVM.<br>
    * If {@link #isSsl()} is {@code false}, this options will be ignored.
@@ -893,7 +893,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   /**
-   * @return whether the server uses heap pools while using SSL.
+   * @return {@code true} if using heap pools with SSL.
    */
   public boolean isUseSSLHeapPools() {
     return useSSLHeapPools;
