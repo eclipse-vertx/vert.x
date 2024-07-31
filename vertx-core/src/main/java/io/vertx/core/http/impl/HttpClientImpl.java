@@ -17,6 +17,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.internal.pool.ConnectionPool;
 import io.vertx.core.internal.pool.Lease;
 import io.vertx.core.net.endpoint.impl.EndpointResolverImpl;
