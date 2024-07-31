@@ -41,6 +41,7 @@ import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;

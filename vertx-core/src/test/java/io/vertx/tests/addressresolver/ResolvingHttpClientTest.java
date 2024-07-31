@@ -6,7 +6,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.CleanableHttpClient;
 import io.vertx.core.http.impl.HttpClientImpl;
-import io.vertx.core.http.impl.HttpClientInternal;
+import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.*;
 import io.vertx.core.net.endpoint.EndpointNode;

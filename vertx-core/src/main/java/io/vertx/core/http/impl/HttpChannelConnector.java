@@ -27,7 +27,7 @@ import io.vertx.core.http.HttpVersion;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.net.*;
-import io.vertx.core.net.impl.NetClientInternal;
+import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.ClientMetrics;

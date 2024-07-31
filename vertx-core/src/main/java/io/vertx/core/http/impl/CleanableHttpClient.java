@@ -14,8 +14,9 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.net.ClientSSLOptions;
-import io.vertx.core.net.impl.NetClientInternal;
+import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.spi.metrics.Metrics;
 
 import java.lang.ref.Cleaner;

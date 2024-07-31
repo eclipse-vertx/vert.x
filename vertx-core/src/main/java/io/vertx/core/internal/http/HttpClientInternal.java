@@ -9,15 +9,18 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl;
+package io.vertx.core.internal.http;
 
 import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.core.net.impl.NetClientInternal;
+import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.spi.metrics.MetricsProvider;
 
+/**
+ * Http client internal API.
+ */
 public interface HttpClientInternal extends HttpClientAgent, MetricsProvider, Closeable {
 
   /**

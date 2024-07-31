@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.net.impl;
+package io.vertx.core.internal.net;
 
 import io.vertx.core.Closeable;
 import io.vertx.core.Future;
@@ -17,6 +17,9 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.spi.metrics.MetricsProvider;
 
+/**
+ * Net client internal API.
+ */
 public interface NetClientInternal extends NetClient, MetricsProvider, Closeable {
 
   /**

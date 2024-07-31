@@ -11,6 +11,7 @@
 package io.vertx.core.net.impl;
 
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.spi.metrics.TCPMetrics;
 
