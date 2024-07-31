@@ -547,20 +547,21 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return createEventLoopContext(null, closeFuture, null, Thread.currentThread().getContextClassLoader());
   }
 
-  private ContextImpl createWorkerContext(EventLoop eventLoop, CloseFuture closeFuture, WorkerPool workerPool, Deployment deployment, ClassLoader tccl) {
+  @Override
+  public ContextImpl createWorkerContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
+    return createWorkerContext(null, closeFuture, eventLoop, workerPool, tccl);
+  }
+
+  @Override
+  public ContextImpl createWorkerContext(Deployment deployment, CloseFuture closeFuture, EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
     TaskQueue orderedTasks = new TaskQueue();
     WorkerPool wp = workerPool != null ? workerPool : this.workerPool;
     return new ContextImpl(this, createContextLocals(), ThreadingModel.WORKER, eventLoop, new WorkerExecutor(wp, orderedTasks), internalWorkerPool, wp, orderedTasks, deployment, closeFuture, disableTCCL ? null : tccl);
   }
 
   @Override
-  public ContextInternal createWorkerContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
-    return createWorkerContext(eventLoop, closeFuture, workerPool, null, tccl);
-  }
-
-  @Override
   public ContextImpl createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
-    return createWorkerContext(eventLoopGroup.next(), closeFuture, workerPool, deployment, tccl);
+    return createWorkerContext(deployment, closeFuture, eventLoopGroup.next(), workerPool, tccl);
   }
 
   @Override
@@ -568,7 +569,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return createWorkerContext(null, closeFuture, null, Thread.currentThread().getContextClassLoader());
   }
 
-  private ContextImpl createVirtualThreadContext(EventLoop eventLoop, CloseFuture closeFuture, Deployment deployment, ClassLoader tccl) {
+  public ContextImpl createVirtualThreadContext(Deployment deployment, CloseFuture closeFuture, EventLoop eventLoop, ClassLoader tccl) {
     if (!isVirtualThreadAvailable()) {
       throw new IllegalStateException("This Java runtime does not support virtual threads");
     }
@@ -578,12 +579,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public ContextImpl createVirtualThreadContext(Deployment deployment, CloseFuture closeFuture, ClassLoader tccl) {
-    return createVirtualThreadContext(eventLoopGroup.next(), closeFuture, deployment, tccl);
+    return createVirtualThreadContext(deployment, closeFuture, eventLoopGroup.next(), tccl);
   }
 
   @Override
   public ContextImpl createVirtualThreadContext(EventLoop eventLoop, ClassLoader tccl) {
-    return createVirtualThreadContext(eventLoop, closeFuture, null, tccl);
+    return createVirtualThreadContext(null, closeFuture, eventLoop, tccl);
   }
 
   @Override

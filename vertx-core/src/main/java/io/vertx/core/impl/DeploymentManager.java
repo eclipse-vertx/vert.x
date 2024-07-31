@@ -11,6 +11,7 @@
 
 package io.vertx.core.impl;
 
+import io.netty.channel.EventLoop;
 import io.vertx.core.*;
 import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.ContextInternal;
@@ -144,10 +145,11 @@ public class DeploymentManager {
   }
 
   private Future<Deployment> doDeploy(String identifier,
-                        DeploymentOptions options,
-                        ContextInternal parentContext,
-                        ContextInternal callingContext,
-                        ClassLoader tccl, Verticle... verticles) {
+                                      DeploymentOptions options,
+                                      ContextInternal parentContext,
+                                      ContextInternal callingContext,
+                                      ClassLoader tccl,
+                                      Verticle... verticles) {
     Promise<Deployment> promise = callingContext.promise();
     Deployment parent = parentContext.getDeployment();
     String deploymentID = generateDeploymentID();
@@ -168,6 +170,7 @@ public class DeploymentManager {
         return callingContext.failedFuture("This Java runtime does not support virtual threads");
       }
     }
+    EventLoop workerLoop = null;
     DeploymentImpl deployment = new DeploymentImpl(parent, workerPool, deploymentID, identifier, options);
     for (Verticle verticle: verticles) {
       CloseFuture closeFuture = new CloseFuture(log);
@@ -177,10 +180,20 @@ public class DeploymentManager {
           context = vertx.createEventLoopContext(deployment, closeFuture, workerPool, tccl);
           break;
         case WORKER:
-          context = vertx.createWorkerContext(deployment, closeFuture, workerPool, tccl);
+          if (workerLoop == null) {
+            context = vertx.createWorkerContext(deployment, closeFuture, workerPool, tccl);
+            workerLoop = context.nettyEventLoop();
+          } else {
+            context = vertx.createWorkerContext(deployment, closeFuture, workerLoop, workerPool, tccl);
+          }
           break;
         case VIRTUAL_THREAD:
-          context = vertx.createVirtualThreadContext(deployment, closeFuture, tccl);
+          if (workerLoop == null) {
+            context = vertx.createVirtualThreadContext(deployment, closeFuture, tccl);
+            workerLoop = context.nettyEventLoop();
+          } else {
+            context = vertx.createVirtualThreadContext(deployment, closeFuture, workerLoop, tccl);
+          }
           break;
       }
       VerticleHolder holder = new VerticleHolder(verticle, context, closeFuture);
