@@ -11,6 +11,7 @@
 
 package io.vertx.tests.deployment;
 
+import io.netty.channel.EventLoop;
 import io.vertx.core.*;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.Deployment;
@@ -1224,6 +1225,23 @@ public class DeploymentTest extends VertxTestBase {
       testComplete();
     }));
     await();
+  }
+
+  @Test
+  public void testWorkerInstancesUseSameEventLoopThread() throws Exception {
+    Set<EventLoop> eventLoops = Collections.synchronizedSet(new HashSet<>());
+    Future<String> fut = vertx.deployVerticle(() -> {
+      return new AbstractVerticle() {
+        @Override
+        public void start() throws Exception {
+          EventLoop eventLoop = ((ContextInternal) context).nettyEventLoop();
+          eventLoops.add(eventLoop);
+          super.start();
+        }
+      };
+    }, new DeploymentOptions().setInstances(5).setThreadingModel(ThreadingModel.WORKER));
+    awaitFuture(fut);
+    assertEquals(1, eventLoops.size());
   }
 
   @Test
