@@ -14,7 +14,7 @@ package io.vertx.tests.metrics;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.HttpClientInternal;
+import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.internal.http.HttpServerRequestInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.metrics.MetricsOptions;

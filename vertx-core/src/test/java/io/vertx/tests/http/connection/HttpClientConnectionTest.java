@@ -14,7 +14,7 @@ import io.vertx.core.http.HttpClientConnection;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpConnectOptions;
 import io.vertx.core.http.HttpResponseExpectation;
-import io.vertx.core.http.impl.HttpClientInternal;
+import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.test.http.HttpTestBase;
 import org.junit.Test;
 
