@@ -27,6 +27,7 @@ import io.netty.util.AsciiString;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.impl.Http2UpgradeClientConnection;
 import io.vertx.core.http.impl.HttpClientConnectionInternal;
@@ -1306,7 +1307,7 @@ public class Http2ClientTest extends Http2TestBase {
     });
     ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
     try {
-      Context ctx = vertx.getOrCreateContext();
+      ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
       client.close();
       ctx.runOnContext(v -> {
         client = vertx.createHttpClient(createBaseClientOptions());
@@ -1314,7 +1315,7 @@ public class Http2ClientTest extends Http2TestBase {
           .with(clientOptions)
           .withConnectHandler(conn -> {
             conn.exceptionHandler(err -> {
-              assertSame(ctx, Vertx.currentContext());
+              assertSame(ctx.nettyEventLoop(), ((ContextInternal)Vertx.currentContext()).nettyEventLoop());
               if (err instanceof Http2Exception) {
                 complete();
               }
@@ -1795,13 +1796,13 @@ public class Http2ClientTest extends Http2TestBase {
     });
     startServer(testAddress);
     client.close();
-    Context ctx = vertx.getOrCreateContext();
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
     ctx.runOnContext(v1 -> {
       client = vertx.httpClientBuilder()
         .with(clientOptions.setIdleTimeout(2))
         .withConnectHandler(conn -> {
           conn.closeHandler(v2 -> {
-            assertSame(ctx, Vertx.currentContext());
+            assertSame(ctx.nettyEventLoop(), ((ContextInternal)Vertx.currentContext()).nettyEventLoop());
             complete();
           });
         })
