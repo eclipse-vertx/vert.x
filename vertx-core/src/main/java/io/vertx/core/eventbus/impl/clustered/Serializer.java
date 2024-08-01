@@ -14,7 +14,6 @@ package io.vertx.core.eventbus.impl.clustered;
 import io.vertx.core.*;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.VertxInternal;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -32,16 +31,10 @@ public class Serializer implements Closeable {
   private final Map<String, SerializerQueue> queues;
 
   private Serializer(ContextInternal context) {
-    ContextInternal unwrapped = context.unwrap();
-    if (unwrapped.isEventLoopContext()) {
-      ctx = unwrapped;
-    } else {
-      VertxInternal vertx = unwrapped.owner();
-      ctx = vertx.createEventLoopContext(unwrapped.nettyEventLoop(), unwrapped.workerPool(), unwrapped.classLoader());
-    }
+    ctx = context.owner().createEventLoopContext(context.nettyEventLoop(), context.workerPool(), context.classLoader());
     queues = new HashMap<>();
-    if (unwrapped.isDeployment()) {
-      unwrapped.addCloseHook(this);
+    if (context.isDeployment()) {
+      context.addCloseHook(this);
     }
   }
 

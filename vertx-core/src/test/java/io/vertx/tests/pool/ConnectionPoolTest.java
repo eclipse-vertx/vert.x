@@ -51,13 +51,13 @@ public class ConnectionPoolTest extends VertxTestBase {
     Connection expected = new Connection();
     pool.acquire(context, 0, onSuccess(lease -> {
       assertSame(expected, lease.get());
-      assertSame(context, Vertx.currentContext());
+      assertSame(context.nettyEventLoop(), ((ContextInternal)Vertx.currentContext()).nettyEventLoop());
       assertEquals(0, pool.requests());
       testComplete();
     }));
     assertEquals(1, pool.requests());
     ConnectionRequest request = mgr.assertRequest();
-    assertSame(context, request.context);
+    assertSame(context.nettyEventLoop(), request.context.nettyEventLoop());
     request.connect(expected, 0);
     await();
   }
@@ -74,12 +74,12 @@ public class ConnectionPoolTest extends VertxTestBase {
       latch.countDown();
     }));
     ConnectionRequest request = mgr.assertRequest();
-    assertSame(context, request.context);
+    assertSame(context.nettyEventLoop(), request.context.nettyEventLoop());
     request.connect(expected, 0);
     awaitLatch(latch);
     pool.acquire(context, 0, onSuccess(lease -> {
       assertSame(expected, lease.get());
-      assertSame(context, Vertx.currentContext());
+      assertSame(context.nettyEventLoop(), ((ContextInternal)Vertx.currentContext()).nettyEventLoop());
       testComplete();
     }));
     await();
@@ -105,7 +105,7 @@ public class ConnectionPoolTest extends VertxTestBase {
     Connection expected2 = new Connection();
     pool.acquire(context, 0, onSuccess(lease -> {
       assertSame(expected2, lease.get());
-      assertSame(context, Vertx.currentContext());
+      assertSame(context.nettyEventLoop(), ((ContextInternal)Vertx.currentContext()).nettyEventLoop());
       testComplete();
     }));
     ConnectionRequest request2 = mgr.assertRequest();
@@ -255,7 +255,7 @@ public class ConnectionPoolTest extends VertxTestBase {
     AtomicBoolean recycled = new AtomicBoolean();
     ContextInternal ctx2 = vertx.createEventLoopContext();
     pool.acquire(ctx2, 0, onSuccess(lease2 -> {
-      assertSame(ctx1, Vertx.currentContext());
+      assertSame(ctx1.nettyEventLoop(), ((ContextInternal)Vertx.currentContext()).nettyEventLoop());
       assertTrue(recycled.get());
       testComplete();
     }));
@@ -318,7 +318,7 @@ public class ConnectionPoolTest extends VertxTestBase {
     Connection conn2 = new Connection();
     ContextInternal ctx2 = vertx.createEventLoopContext();
     pool.acquire(ctx2, 0, onSuccess(lease2 -> {
-      assertSame(ctx2, Vertx.currentContext());
+      assertSame(ctx2.nettyEventLoop(), ((ContextInternal)Vertx.currentContext()).nettyEventLoop());
       assertTrue(evicted.get());
       assertSame(conn2, lease2.get());
       testComplete();
@@ -885,7 +885,7 @@ public class ConnectionPoolTest extends VertxTestBase {
       assertEquals(1, pooled.available());
       assertEquals(1, pooled.concurrency());
       assertSame(conn1, pooled.get());
-      assertSame(context, pooled.context());
+      assertSame(context.nettyEventLoop(), pooled.context().nettyEventLoop());
       assertSame(context, waiter.context());
       return pooled;
     });
@@ -936,7 +936,7 @@ public class ConnectionPoolTest extends VertxTestBase {
     }));
     assertEquals(1, pool.requests());
     ConnectionRequest request = mgr.assertRequest();
-    assertSame(context, request.context);
+    assertSame(context.nettyEventLoop(), request.context.nettyEventLoop());
   }
 
   @Test

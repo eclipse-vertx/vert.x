@@ -27,7 +27,6 @@ public class WorkerExecutor implements EventExecutor {
   public static io.vertx.core.impl.WorkerExecutor unwrapWorkerExecutor() {
     ContextInternal ctx = (ContextInternal) Vertx.currentContext();
     if (ctx != null) {
-      ctx = ctx.unwrap();
       Executor executor = ctx.executor();
       if (executor instanceof io.vertx.core.impl.WorkerExecutor) {
         return (io.vertx.core.impl.WorkerExecutor) executor;

@@ -31,13 +31,8 @@ public interface ConnectionPool<C> {
    * it returns a new event-loop context that reuses the Netty event-loop of the context argument.
    */
   Function<ContextInternal, ContextInternal> EVENT_LOOP_CONTEXT_PROVIDER = ctx -> {
-    ctx = ctx.unwrap();
-    if (ctx.isEventLoopContext()) {
-      return ctx;
-    } else {
-      VertxInternal vertx = ctx.owner();
-      return vertx.createEventLoopContext(ctx.nettyEventLoop(), ctx.workerPool(), ctx.classLoader());
-    }
+    VertxInternal vertx = ctx.owner();
+    return vertx.createEventLoopContext(ctx.nettyEventLoop(), vertx.getWorkerPool(), null);
   };
 
   static <C> ConnectionPool<C> pool(PoolConnector<C> connector, int[] maxSizes) {

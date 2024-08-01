@@ -24,6 +24,7 @@ import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.CleanableHttpClient;
 import io.vertx.core.http.impl.HttpClientImpl;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.http.HttpServerRequestInternal;
 import io.vertx.core.http.impl.ServerCookie;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
@@ -3635,12 +3636,12 @@ public abstract class HttpTest extends HttpTestBase {
       req.response().end();
     });
     startServer(testAddress);
-    Context ctx = vertx.getOrCreateContext();
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
     client.close();
     client = vertx.httpClientBuilder()
       .with(createBaseClientOptions())
       .withConnectHandler(conn -> {
-        assertSame(ctx, Vertx.currentContext());
+        assertSame(ctx.nettyEventLoop(), ((ContextInternal)Vertx.currentContext()).nettyEventLoop());
         complete();
       })
       .build();
