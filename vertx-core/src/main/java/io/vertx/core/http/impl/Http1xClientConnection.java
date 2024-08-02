@@ -216,7 +216,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
 
   static CharSequence determineCompressionAcceptEncoding() {
     if (isBrotliAvailable() && isZstdAvailable()) {
-      return DEFLATE_GZIP_ZSTD_BR;
+      return DEFLATE_GZIP_ZSTD_BR_SNAPPY;
     }
     else if (!isBrotliAvailable() && isZstdAvailable()) {
       return DEFLATE_GZIP_ZSTD;
