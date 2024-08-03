@@ -373,7 +373,7 @@ public class HAManager {
           if (group.equals(this.group)) {
             count++;
           }
-        } else if(!attainedQuorum) {
+        } else if (!attainedQuorum) {
           checkQuorumWhenAdded(node, System.currentTimeMillis());
         }
       }
