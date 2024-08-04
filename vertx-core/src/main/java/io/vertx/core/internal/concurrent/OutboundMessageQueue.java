@@ -144,6 +144,9 @@ public class OutboundMessageQueue<M> implements Predicate<M> {
   }
 
   private void drainWriteQueue() {
+    if (closed) {
+      return;
+    }
     startDraining();
     reentrant++;
     int flags;
