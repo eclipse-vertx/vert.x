@@ -19,6 +19,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -156,4 +157,38 @@ public class OutboundMessageQueueTest extends VertxTestBase {
     });
     await();
   }
+
+  @Test
+  public void testCloseWhileDrainScheduled() {
+    AtomicInteger drains = new AtomicInteger();
+    queue = new OutboundMessageQueue<>(eventLoop) {
+      @Override
+      public boolean test(Integer msg) {
+        return false;
+      }
+      @Override
+      protected void startDraining() {
+        drains.incrementAndGet();
+      }
+    };
+    eventLoop.execute(() -> {
+      Thread thread = new Thread(() -> {
+        int idx = 0;
+        while (queue.write(idx++)) {
+          //
+        }
+      });
+      thread.start();
+      try {
+        thread.join();
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+      queue.close();
+      eventLoop.execute(() -> {
+        assertEquals(0, drains.get());
+        testComplete();
+      });
+    });
+    await();  }
 }
