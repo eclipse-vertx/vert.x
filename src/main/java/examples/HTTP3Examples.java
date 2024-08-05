@@ -37,21 +37,25 @@ public class HTTP3Examples {
         "/")
 //    client.request(HttpMethod.GET, 443, "www.google.com",
 //    client.request(HttpMethod.GET, 443, "216.239.38.120", "/")
-      .compose(req -> {
-        req.send("");
-        req.end();
-        return req.response();
-      })
-      .compose(res -> {
-        MultiMap headers = res.headers();
+      .onSuccess(req -> {
+        req
+          .response().onComplete(response -> {
+            System.out.println("response = " + response);
+          });
 
-        System.out.println("res.statusCode() = " + res.statusCode());
-        System.out.println("https = " + headers.get("Alt-Svc"));
-        return res.body();
+        req.end();
       })
-      .onSuccess(buffer -> System.out.println("buffer = " + buffer.toString().substring(0, 100)))
+//      .compose(res -> {
+//        MultiMap headers = res.headers();
+//
+//        System.out.println("res.statusCode() = " + res.statusCode());
+//        System.out.println("https = " + headers.get("Alt-Svc"));
+//        return res.body();
+//      })
+//      .onSuccess(buffer -> System.out.println("buffer = " + buffer.toString().substring(0, 100)))
       .onFailure(Throwable::printStackTrace)
-      .onComplete(event -> vertx.close());
+//      .onComplete(event -> vertx.close())
+    ;
   }
 
   public static void main(String[] args) {
