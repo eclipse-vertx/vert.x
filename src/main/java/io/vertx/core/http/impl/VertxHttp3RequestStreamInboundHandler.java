@@ -5,9 +5,10 @@ import io.netty.handler.ssl.SslHandshakeCompletionEvent;
 import io.netty.incubator.codec.http3.Http3DataFrame;
 import io.netty.incubator.codec.http3.Http3HeadersFrame;
 import io.netty.incubator.codec.http3.Http3RequestStreamInboundHandler;
+import io.netty.incubator.codec.quic.QuicChannel;
+import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.netty.util.CharsetUtil;
 import io.netty.util.ReferenceCountUtil;
-import io.vertx.core.http.impl.http3FromHttp1x.Http3ClientConnectionMine;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.spi.metrics.ClientMetrics;
@@ -18,23 +19,24 @@ public class VertxHttp3RequestStreamInboundHandler extends Http3RequestStreamInb
   private final HttpClientImpl client;
   private final ClientMetrics metrics;
   private final boolean upgrade;
-  private final Object socketMetric;
+  private final Object metric;
 
   public VertxHttp3RequestStreamInboundHandler(
     PromiseInternal<HttpClientConnection> promise, HttpClientImpl client, ClientMetrics metrics,
-    EventLoopContext context, boolean upgrade, Object socketMetric) {
+    EventLoopContext context, boolean upgrade, Object metric) {
     this.promise = promise;
     this.context = context;
     this.client = client;
     this.metrics = metrics;
     this.upgrade = upgrade;
-    this.socketMetric = socketMetric;
+    this.metric = metric;
   }
 
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
     super.handlerAdded(ctx);
-    promise.complete(new Http3ClientConnectionMine(ctx, promise, client, metrics, context, upgrade, socketMetric));
+    promise.complete(new Http3ClientConnection((QuicChannel) ctx.channel().parent(), (QuicStreamChannel) ctx.channel(),
+      ctx, promise, client, metrics, context, upgrade, metric));
   }
 
   @Override
