@@ -1,15 +1,42 @@
 package io.vertx.core.http.impl;
 
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.ssl.SslHandshakeCompletionEvent;
 import io.netty.incubator.codec.http3.Http3DataFrame;
-import io.netty.incubator.codec.http3.Http3Exception;
 import io.netty.incubator.codec.http3.Http3HeadersFrame;
 import io.netty.incubator.codec.http3.Http3RequestStreamInboundHandler;
-import io.netty.incubator.codec.quic.QuicException;
 import io.netty.util.CharsetUtil;
 import io.netty.util.ReferenceCountUtil;
+import io.vertx.core.http.impl.http3FromHttp1x.Http3ClientConnectionMine;
+import io.vertx.core.impl.EventLoopContext;
+import io.vertx.core.impl.future.PromiseInternal;
+import io.vertx.core.spi.metrics.ClientMetrics;
 
 public class VertxHttp3RequestStreamInboundHandler extends Http3RequestStreamInboundHandler {
+  private final EventLoopContext context;
+  private final PromiseInternal<HttpClientConnection> promise;
+  private final HttpClientImpl client;
+  private final ClientMetrics metrics;
+  private final boolean upgrade;
+  private final Object socketMetric;
+
+  public VertxHttp3RequestStreamInboundHandler(
+    PromiseInternal<HttpClientConnection> promise, HttpClientImpl client, ClientMetrics metrics,
+    EventLoopContext context, boolean upgrade, Object socketMetric) {
+    this.promise = promise;
+    this.context = context;
+    this.client = client;
+    this.metrics = metrics;
+    this.upgrade = upgrade;
+    this.socketMetric = socketMetric;
+  }
+
+  @Override
+  public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+    super.handlerAdded(ctx);
+    promise.complete(new Http3ClientConnectionMine(ctx, promise, client, metrics, context, upgrade, socketMetric));
+  }
+
   @Override
   protected void channelRead(ChannelHandlerContext ctx, Http3HeadersFrame frame) {
     ReferenceCountUtil.release(frame);
@@ -27,17 +54,17 @@ public class VertxHttp3RequestStreamInboundHandler extends Http3RequestStreamInb
   }
 
   @Override
-  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-    super.exceptionCaught(ctx, cause);
-  }
-
-  @Override
-  protected void handleQuicException(ChannelHandlerContext ctx, QuicException exception) {
-    super.handleQuicException(ctx, exception);
-  }
-
-  @Override
-  protected void handleHttp3Exception(ChannelHandlerContext ctx, Http3Exception exception) {
-    super.handleHttp3Exception(ctx, exception);
+  public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+    if (evt instanceof SslHandshakeCompletionEvent) {
+      SslHandshakeCompletionEvent completion = (SslHandshakeCompletionEvent) evt;
+      if (completion.isSuccess()) {
+        ctx.pipeline().remove(this);
+        promise.tryComplete(null);
+      } else {
+        promise.tryFail(completion.cause());
+      }
+    } else {
+      ctx.fireUserEventTriggered(evt);
+    }
   }
 }
