@@ -41,6 +41,7 @@ import java.net.InetSocketAddress;
 import java.security.cert.Certificate;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
@@ -562,7 +563,18 @@ public abstract class ConnectionBase {
   }
 
   public boolean isSsl() {
-    return chctx.pipeline().get(SslHandler.class) != null;
+    return chctx.pipeline().get(SslHandler.class) != null || getHttp3SslHandler(chctx.channel().parent().parent().pipeline()) != null;
+  }
+
+  private ChannelHandler getHttp3SslHandler(ChannelPipeline pipeline){
+    for (Map.Entry<String, ChannelHandler> stringChannelHandlerEntry : pipeline) {
+      ChannelHandler handler = stringChannelHandlerEntry.getValue();
+      if (handler.getClass().getSimpleName().equals("QuicheQuicClientCodec")) {
+        return handler;
+      }
+    }
+
+    return null;
   }
 
   public boolean isTrafficShaped() {
@@ -570,6 +582,7 @@ public abstract class ConnectionBase {
   }
 
   public SSLSession sslSession() {
+    //TODO: should return sslSession for http3.
     ChannelHandlerContext sslHandlerContext = chctx.pipeline().context(SslHandler.class);
     if (sslHandlerContext != null) {
       SslHandler sslHandler = (SslHandler) sslHandlerContext.handler();
