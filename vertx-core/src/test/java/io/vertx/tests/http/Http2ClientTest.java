@@ -1403,7 +1403,7 @@ public class Http2ClientTest extends Http2TestBase {
     in.close();
     byte[] compressed = baos.toByteArray();
     server.requestHandler(req -> {
-      assertEquals(enabled ? "deflate, gzip, zstd, br" : null, req.getHeader(HttpHeaderNames.ACCEPT_ENCODING));
+      assertEquals(enabled ? "deflate, gzip, zstd, br, snappy" : null, req.getHeader(HttpHeaderNames.ACCEPT_ENCODING));
       req.response().putHeader(HttpHeaderNames.CONTENT_ENCODING.toLowerCase(), "gzip").end(Buffer.buffer(compressed));
     });
     startServer();
