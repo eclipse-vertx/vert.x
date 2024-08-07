@@ -12,10 +12,10 @@
 package examples;
 
 import io.netty.util.NetUtil;
-import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 
@@ -38,11 +38,13 @@ public class HTTP3Examples {
 //    client.request(HttpMethod.GET, 443, "www.google.com",
 //    client.request(HttpMethod.GET, 443, "216.239.38.120", "/")
       .onSuccess(req -> {
-        req
-          .response().onComplete(response -> {
-            System.out.println("response = " + response);
-          });
-
+        req.response().onSuccess(resp -> {
+          System.out.println("resp.headers() = " + resp.headers());
+          vertx.close();
+        });
+        req.response().compose(HttpClientResponse::body).onSuccess(buffer -> {
+          System.out.println("response = " + buffer.toString());
+        });
         req.end();
       })
 //      .compose(res -> {
@@ -52,7 +54,8 @@ public class HTTP3Examples {
 //        System.out.println("https = " + headers.get("Alt-Svc"));
 //        return res.body();
 //      })
-//      .onSuccess(buffer -> System.out.println("buffer = " + buffer.toString().substring(0, 100)))
+//      .onSuccess(buffer -> System.out.println("buffer = " + buffer.toString
+//      ().substring(0, 100)))
       .onFailure(Throwable::printStackTrace)
 //      .onComplete(event -> vertx.close())
     ;
