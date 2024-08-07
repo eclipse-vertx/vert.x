@@ -23,7 +23,6 @@ import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executor;
 
 /**
  * A context that forwards most operations to a delegate. This context
@@ -49,11 +48,6 @@ final class DuplicatedContext extends ContextBase implements ContextInternal {
   }
 
   @Override
-  public boolean inThread() {
-    return delegate.inThread();
-  }
-
-  @Override
   public CloseFuture closeFuture() {
     return delegate.closeFuture();
   }
@@ -75,7 +69,7 @@ final class DuplicatedContext extends ContextBase implements ContextInternal {
   }
 
   @Override
-  public Executor executor() {
+  public EventExecutor executor() {
     return delegate.executor();
   }
 
@@ -120,33 +114,8 @@ final class DuplicatedContext extends ContextBase implements ContextInternal {
   }
 
   @Override
-  public <T> Future<T> executeBlockingInternal(Callable<T> action) {
-    return ContextImpl.executeBlocking(this, action, delegate.internalWorkerPool, null);
-  }
-
-  @Override
   public <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, boolean ordered) {
-    return ContextImpl.executeBlocking(this, blockingCodeHandler, delegate.workerPool, ordered ? delegate.orderedTasks : null);
-  }
-
-  @Override
-  public <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, TaskQueue queue) {
-    return ContextImpl.executeBlocking(this, blockingCodeHandler, delegate.workerPool, queue);
-  }
-
-  @Override
-  public <T> void execute(T argument, Handler<T> task) {
-    delegate.execute(this, argument, task);
-  }
-
-  @Override
-  public <T> void emit(T argument, Handler<T> task) {
-    delegate.emit(this, argument, task);
-  }
-
-  @Override
-  public void execute(Runnable task) {
-    delegate.execute(this, task);
+    return delegate.workerPool.executeBlocking(this, blockingCodeHandler, ordered ? delegate.orderedTasks : null);
   }
 
   @Override

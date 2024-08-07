@@ -40,10 +40,9 @@ public class BenchmarkContext {
     return new ContextImpl(
       impl,
       new Object[0],
-      ThreadingModel.WORKER,
       impl.getEventLoopGroup().next(),
+      ThreadingModel.WORKER,
       EXECUTOR,
-      impl.getInternalWorkerPool(),
       impl.getWorkerPool(),
       new TaskQueue(),
       null,

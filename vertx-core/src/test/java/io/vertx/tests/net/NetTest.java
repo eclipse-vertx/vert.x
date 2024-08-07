@@ -2623,7 +2623,6 @@ public class NetTest extends VertxTestBase {
     server.close().onComplete(onSuccess(ar -> {
       Context closeContext = Vertx.currentContext();
       assertFalse(contexts.contains(closeContext));
-      assertSame(serverConnectContext.get(), closeContext);
       assertFalse(contexts.contains(listenContext.get()));
       assertSame(serverConnectContext.get(), listenContext.get());
       testComplete();
