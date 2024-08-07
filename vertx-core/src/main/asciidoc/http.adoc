@@ -389,6 +389,8 @@ algorithms.
 To enable decompression set {@link io.vertx.core.http.HttpServerOptions#setDecompressionSupported(boolean)} on the
 options when creating the server.
 
+Snappy is supported without external dependencies.
+
 You need to have Brotli4j on the classpath to decompress Brotli:
 
 * Maven (in your `pom.xml`):
