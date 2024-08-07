@@ -777,7 +777,7 @@ but the parameter can be configured to address any case with {@link io.vertx.cor
 
 Vert.x supports out of the box deflate and gzip.
 
-Brotli and zstandard can also be used.
+Brotli, snappy and zstandard can also be used.
 
 [source,$lang]
 ----
@@ -786,7 +786,7 @@ Brotli and zstandard can also be used.
 
 NOTE: use {@link io.netty.handler.codec.compression.StandardCompressionOptions} static methods to create {@link io.netty.handler.codec.compression.CompressionOptions}
 
-Brotli and zstandard libraries need to be added to the classpath.
+Brotli and zstandard libraries need to be added to the classpath, snappy is provided by default.
 
 * Maven (in your `pom.xml`):
 
