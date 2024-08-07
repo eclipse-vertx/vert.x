@@ -712,4 +712,8 @@ public abstract class ConnectionBase {
 
   protected void handleMessage(Object msg) {
   }
+
+  public VertxInternal vertx() {
+    return vertx;
+  }
 }

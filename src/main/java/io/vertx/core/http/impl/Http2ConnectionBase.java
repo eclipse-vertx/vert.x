@@ -87,7 +87,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     this.localSettings = handler.initialSettings();
   }
 
-  VertxInternal vertx() {
+  public VertxInternal vertx() {
     return vertx;
   }
 
@@ -107,7 +107,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   synchronized void onConnectionError(Throwable cause) {
-    ArrayList<VertxHttp2Stream> streams = new ArrayList<>();
+    ArrayList<VertxHttpStreamBase> streams = new ArrayList<>();
     try {
       handler.connection().forEachActiveStream(stream -> {
         streams.add(stream.getProperty(streamKey));
@@ -116,13 +116,13 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     } catch (Http2Exception e) {
       log.error("Could not get the list of active streams", e);
     }
-    for (VertxHttp2Stream stream : streams) {
+    for (VertxHttpStreamBase stream : streams) {
       stream.context.dispatch(v -> stream.handleException(cause));
     }
     handleException(cause);
   }
 
-  VertxHttp2Stream<?> stream(int id) {
+  VertxHttpStreamBase<?, ?, Http2Headers> stream(int id) {
     Http2Stream s = handler.connection().stream(id);
     if (s == null) {
       return null;
@@ -131,21 +131,21 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   void onStreamError(int streamId, Throwable cause) {
-    VertxHttp2Stream stream = stream(streamId);
+    VertxHttpStreamBase<?, ?, Http2Headers> stream = stream(streamId);
     if (stream != null) {
       stream.onException(cause);
     }
   }
 
   void onStreamWritabilityChanged(Http2Stream s) {
-    VertxHttp2Stream stream = s.getProperty(streamKey);
+    VertxHttpStreamBase<?, ?, Http2Headers> stream = s.getProperty(streamKey);
     if (stream != null) {
       stream.onWritabilityChanged();
     }
   }
 
   void onStreamClosed(Http2Stream s) {
-    VertxHttp2Stream stream = s.getProperty(streamKey);
+    VertxHttpStreamBase<?, ?, Http2Headers> stream = s.getProperty(streamKey);
     if (stream != null) {
       boolean active = chctx.channel().isActive();
       if (goAwayStatus != null) {
@@ -189,7 +189,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   public void onPriorityRead(ChannelHandlerContext ctx, int streamId, int streamDependency, short weight, boolean exclusive) {
-      VertxHttp2Stream stream = stream(streamId);
+    VertxHttpStreamBase<?, ?, Http2Headers> stream = stream(streamId);
       if (stream != null) {
         StreamPriority streamPriority = new StreamPriority()
           .setDependency(streamDependency)
@@ -291,7 +291,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   @Override
   public void onUnknownFrame(ChannelHandlerContext ctx, byte frameType, int streamId,
                              Http2Flags flags, ByteBuf payload) {
-    VertxHttp2Stream stream = stream(streamId);
+    VertxHttpStreamBase<?, ?, Http2Headers> stream = stream(streamId);
     if (stream != null) {
       Buffer buff = Buffer.buffer(safeBuffer(payload));
       stream.onCustomFrame(new HttpFrameImpl(frameType, flags.value(), buff));
@@ -300,7 +300,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   public void onRstStreamRead(ChannelHandlerContext ctx, int streamId, long errorCode) {
-    VertxHttp2Stream stream = stream(streamId);
+    VertxHttpStreamBase<?, ?, Http2Headers> stream = stream(streamId);
     if (stream != null) {
       stream.onReset(errorCode);
     }
@@ -308,7 +308,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) {
-    VertxHttp2Stream stream = stream(streamId);
+    VertxHttpStreamBase<?, ?, Http2Headers> stream = stream(streamId);
     if (stream != null) {
       data = safeBuffer(data);
       Buffer buff = Buffer.buffer(data);

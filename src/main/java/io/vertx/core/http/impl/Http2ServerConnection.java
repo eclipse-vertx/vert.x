@@ -53,7 +53,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
   Handler<HttpServerRequest> requestHandler;
   private int concurrentStreams;
   private final ArrayDeque<Push> pendingPushes = new ArrayDeque<>(8);
-  private VertxHttp2Stream upgraded;
+  private VertxHttpStreamBase upgraded;
 
   Http2ServerConnection(
     EventLoopContext context,
@@ -159,8 +159,8 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     return vertxStream;
   }
 
-  VertxHttp2Stream<?> stream(int id) {
-    VertxHttp2Stream<?> stream = super.stream(id);
+  VertxHttpStreamBase<?, ?, Http2Headers> stream(int id) {
+    VertxHttpStreamBase<?, ?, Http2Headers> stream = super.stream(id);
     if (stream == null && id == 1 && handler.upgraded) {
       return upgraded;
     }
@@ -169,7 +169,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
 
   @Override
   protected synchronized void onHeadersRead(int streamId, Http2Headers headers, StreamPriority streamPriority, boolean endOfStream) {
-    VertxHttp2Stream stream = stream(streamId);
+    VertxHttpStreamBase<?, ?, Http2Headers> stream = stream(streamId);
     if (stream == null) {
       if (isMalformedRequest(headers)) {
         handler.writeReset(streamId, Http2Error.PROTOCOL_ERROR.code());
