@@ -61,6 +61,8 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     return buffer;
   }
 
+  protected abstract void onHeadersRead(int streamId, Http2Headers headers, StreamPriority streamPriority, boolean endOfStream);
+
   protected final ChannelHandlerContext handlerContext;
   protected final VertxHttp2ConnectionHandler handler;
   protected final Http2Connection.PropertyKey streamKey;
@@ -212,8 +214,6 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int padding, boolean endOfStream) throws Http2Exception {
     onHeadersRead(streamId, headers, null, endOfStream);
   }
-
-  protected abstract void onHeadersRead(int streamId, Http2Headers headers, StreamPriority streamPriority, boolean endOfStream);
 
   @Override
   public void onSettingsAckRead(ChannelHandlerContext ctx) {

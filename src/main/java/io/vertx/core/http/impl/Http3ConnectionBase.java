@@ -1,3 +1,14 @@
+/*
+ * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
+ */
+
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
@@ -23,13 +34,48 @@ import io.vertx.core.spi.metrics.NetworkMetrics;
 import static io.vertx.core.net.impl.VertxHandler.safeBuffer;
 
 public abstract class Http3ConnectionBase extends ConnectionBase implements HttpConnection {
+
+
   protected Http3ConnectionBase(ContextInternal context, ChannelHandlerContext chctx) {
     super(context, chctx);
   }
 
   @Override
+  protected void handleInterestedOpsChanged() {
+
+  }
+
+  //  @Override
+  public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http3Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endOfStream) throws Http2Exception {
+    StreamPriority streamPriority = new StreamPriority()
+      .setDependency(streamDependency)
+      .setWeight(weight)
+      .setExclusive(exclusive);
+    onHeadersRead(streamId, headers, streamPriority, endOfStream);
+  }
+
+//  @Override
+  public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http3Headers headers, boolean endOfStream) throws Http2Exception {
+    onHeadersRead(streamId, headers, null, endOfStream);
+  }
+
+  //  @Override
+  public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) {
+    VertxHttpStreamBase<?, ?, Http3Headers> stream = stream(streamId);
+    if (stream != null) {
+      data = safeBuffer(data);
+      Buffer buff = Buffer.buffer(data);
+      stream.onData(buff);
+      if (endOfStream) {
+        stream.onEnd();
+      }
+    }
+    return padding;
+  }
+
+  @Override
   public int getWindowSize() {
-    return HttpConnection.super.getWindowSize();
+    return -1;
   }
 
   @Override
@@ -84,6 +130,7 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
     shutdown(timeoutMs, promise);
     return promise.future();
   }
+
   private void shutdown(long timeout, PromiseInternal<Void> promise) {
 //    if (timeout < 0) {
 //      promise.fail("Invalid timeout value " + timeout);
@@ -145,11 +192,6 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
   }
 
   @Override
-  protected void handleInterestedOpsChanged() {
-
-  }
-
-  @Override
   public Http3ConnectionBase exceptionHandler(Handler<Throwable> handler) {
     return (Http3ConnectionBase)super.exceptionHandler(handler);
   }
@@ -169,34 +211,6 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
 
   abstract VertxHttpStreamBase stream(int id);
 
-//  @Override
-  public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data) {
-    VertxHttpStreamBase stream = stream(streamId);
-    if (stream != null) {
-      data = safeBuffer(data);
-      Buffer buff = Buffer.buffer(data);
-      stream.onData(buff);
-//      if (endOfStream) {
-//        stream.onEnd();
-//      }
-    }
-    return 0;
-  }
-
-//  @Override
-  public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http3Headers headers, int streamDependency,
-                            short weight, boolean exclusive, int padding, boolean endOfStream) throws Http2Exception {
-    StreamPriority streamPriority = new StreamPriority()
-      .setDependency(streamDependency)
-      .setWeight(weight)
-      .setExclusive(exclusive);
-    onHeadersRead(streamId, headers, streamPriority, endOfStream);
-  }
-
-//  @Override
-  public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http3Headers headers, boolean endOfStream) throws Http2Exception {
-    onHeadersRead(streamId, headers, null, endOfStream);
-  }
 
   protected abstract void onHeadersRead(int streamId, Http3Headers headers, StreamPriority streamPriority, boolean endOfStream);
 

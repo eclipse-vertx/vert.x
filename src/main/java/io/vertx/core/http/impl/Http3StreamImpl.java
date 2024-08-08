@@ -61,7 +61,7 @@ class Http3StreamImpl extends HttpStreamImpl<Http3ClientConnection, QuicStreamCh
         @Override
         protected void channelRead(ChannelHandlerContext ctx, Http3DataFrame frame) throws Exception {
           System.err.print(frame.content().toString(CharsetUtil.US_ASCII));
-          conn.onDataRead(ctx, connectionDelegate.getStreamId(), frame.content());
+          conn.onDataRead(ctx, connectionDelegate.getStreamId(), frame.content(), 0, true);
           read = true;
         }
 
