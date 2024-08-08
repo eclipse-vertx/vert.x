@@ -1448,4 +1448,10 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.name = name;
     return this;
   }
+
+  @Override
+  public HttpClientOptions setProtocolVersion(HttpVersion protocolVersion) {
+    super.setProtocolVersion(protocolVersion);
+    return this;
+  }
 }
