@@ -51,7 +51,7 @@ abstract class HttpStream<C extends ConnectionBase, S,
   abstract void metricsEnd(HttpStream<?, ?, ?> stream);
 
   HttpStream(C conn, ContextInternal context, boolean push, VertxHttpConnectionDelegate<S, H> connectionDelegate,
-             ClientMetrics metrics) {
+             ClientMetrics<? ,?, ?, ?> metrics) {
     super(conn, context, connectionDelegate);
 
     this.push = push;

@@ -22,7 +22,7 @@ import io.vertx.core.tracing.TracingPolicy;
 class Http3StreamImpl extends HttpStreamImpl<Http3ClientConnection, QuicStreamChannel, Http3Headers> {
   Http3StreamImpl(Http3ClientConnection conn, ContextInternal context, boolean push,
                   VertxHttpConnectionDelegate<QuicStreamChannel, Http3Headers> connectionDelegate,
-                  ClientMetrics metrics) {
+                  ClientMetrics<? ,?, ?, ?> metrics) {
     super(conn, context, push, connectionDelegate, metrics);
   }
 
@@ -48,15 +48,14 @@ class Http3StreamImpl extends HttpStreamImpl<Http3ClientConnection, QuicStreamCh
 
   @Override
   int lastStreamCreated() {
-//    return this.conn.handler.encoder().connection().local().lastStreamCreated(); //V2
-    return this.conn.quicStreamChannel != null ? (int) this.conn.quicStreamChannel.streamId() : 0;  //TODO: review this!
+    return this.conn.quicStreamChannel != null ? (int) this.conn.quicStreamChannel.streamId() : 0;
   }
 
   @Override
-  protected void createStream2(int id, boolean b, Handler<AsyncResult<QuicStreamChannel>> onComplete) throws HttpException {
+  protected void createStream2(int id, boolean b, Handler<AsyncResult<QuicStreamChannel>> onComplete) {
     Http3.newRequestStream(conn.quicChannel, new Http3RequestStreamInboundHandler() {
         @Override
-        protected void channelRead(ChannelHandlerContext ctx, Http3DataFrame frame) throws Exception {
+        protected void channelRead(ChannelHandlerContext ctx, Http3DataFrame frame) {
           System.err.print(frame.content().toString(CharsetUtil.US_ASCII));
           conn.onDataRead(ctx, connectionDelegate.getStreamId(), frame.content(), 0, true);
         }
@@ -67,7 +66,7 @@ class Http3StreamImpl extends HttpStreamImpl<Http3ClientConnection, QuicStreamCh
         }
 
         @Override
-        protected void channelInputClosed(ChannelHandlerContext ctx) throws Exception {
+        protected void channelInputClosed(ChannelHandlerContext ctx) {
           ctx.close();
         }
       })

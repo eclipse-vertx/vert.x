@@ -33,7 +33,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S,
   abstract VertxDefaultHttpHeaders<H> createHttpHeadersWrapper();
 
   HttpStreamImpl(C conn, ContextInternal context, boolean push, VertxHttpConnectionDelegate<S, H> connectionDelegate,
-                 ClientMetrics metrics) {
+                 ClientMetrics<? ,?, ?, ?> metrics) {
     super(conn, context, push, connectionDelegate, metrics);
   }
 
