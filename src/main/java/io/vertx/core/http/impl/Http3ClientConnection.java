@@ -38,8 +38,6 @@ public class Http3ClientConnection extends Http3ConnectionBase implements HttpCl
   private long writeWindow;
   private boolean writeOverflow;
 
-  private Map<Integer, Http3StreamImpl>streams = new HashMap<>();
-
   private PromiseInternal<HttpClientConnection> promise;
   private Object socketMetric;
 
@@ -79,7 +77,6 @@ public class Http3ClientConnection extends Http3ConnectionBase implements HttpCl
     synchronized (this) {
       try {
         Http3StreamImpl stream = createStream(context);
-        streams.put(stream.id(), stream);
         fut = Future.succeededFuture(stream);
       } catch (Exception e) {
         fut = Future.failedFuture(e);
@@ -113,17 +110,9 @@ public class Http3ClientConnection extends Http3ConnectionBase implements HttpCl
     }
   }
 
-
-
-
-
-
-
-
   @Override
   protected synchronized void onHeadersRead(
-    int streamId, Http3Headers headers, StreamPriority streamPriority, boolean endOfStream) {
-    VertxHttpStreamBase<?, ?, Http3Headers> stream = stream(streamId);
+    VertxHttpStreamBase<?, ?, Http3Headers> stream, Http3Headers headers, StreamPriority streamPriority, boolean endOfStream) {
     if (!stream.isTrailersReceived()) {
       stream.onHeaders(headers, streamPriority);
     if (endOfStream) {
@@ -132,12 +121,5 @@ public class Http3ClientConnection extends Http3ConnectionBase implements HttpCl
     } else {
       stream.onEnd(new Http3HeadersAdaptor(headers));
     }
-  }
-
-
-  @Override
-  VertxHttpStreamBase stream(int id) {
-    return streams.values().iterator().next();
-//    return streams.get(id);
   }
 }

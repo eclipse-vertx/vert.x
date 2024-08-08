@@ -7,6 +7,8 @@ import io.netty.incubator.codec.http3.Http3Headers;
 import io.netty.incubator.codec.http3.Http3HeadersFrame;
 import io.netty.incubator.codec.http3.Http3RequestStreamInboundHandler;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
+import io.netty.util.Attribute;
+import io.netty.util.AttributeKey;
 import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.AsyncResult;
@@ -57,12 +59,24 @@ class Http3StreamImpl extends HttpStreamImpl<Http3ClientConnection, QuicStreamCh
         @Override
         protected void channelRead(ChannelHandlerContext ctx, Http3DataFrame frame) {
           System.err.print(frame.content().toString(CharsetUtil.US_ASCII));
-          conn.onDataRead(ctx, connectionDelegate.getStreamId(), frame.content(), 0, true);
+          AttributeKey<Object> streamAttr = AttributeKey.valueOf("MY_STREAM");
+          Attribute<Object> stream = controlStream(ctx).attr(streamAttr);
+          conn.onDataRead(ctx, (Http3StreamImpl) stream.get(), frame.content(), 0, true);
         }
 
         @Override
         protected void channelRead(ChannelHandlerContext ctx, Http3HeadersFrame frame) throws Exception {
-          conn.onHeadersRead(ctx, connectionDelegate.getStreamId(), frame.headers(), true);
+          AttributeKey<Object> streamAttr = AttributeKey.valueOf("MY_STREAM");
+          Attribute<Object> stream = controlStream(ctx).attr(streamAttr);
+          conn.onHeadersRead(ctx, (Http3StreamImpl) stream.get(), frame.headers(), true);
+        }
+
+        @Override
+        public void channelActive(ChannelHandlerContext ctx) throws Exception {
+          super.channelActive(ctx);
+          QuicStreamChannel quicStreamChannel = controlStream(ctx);
+          Attribute<Object> fff = quicStreamChannel.attr(AttributeKey.newInstance("MY_STREAM"));
+          fff.set(Http3StreamImpl.this);
         }
 
         @Override

@@ -46,13 +46,12 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
   }
 
 //  @Override
-  public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http3Headers headers, boolean endOfStream) throws Http2Exception {
-    onHeadersRead(streamId, headers, null, endOfStream);
+  public void onHeadersRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?, Http3Headers> stream, Http3Headers headers, boolean endOfStream) throws Http2Exception {
+    onHeadersRead(stream, headers, null, endOfStream);
   }
 
   //  @Override
-  public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) {
-    VertxHttpStreamBase<?, ?, Http3Headers> stream = stream(streamId);
+  public int onDataRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?, Http3Headers> stream, ByteBuf data, int padding, boolean endOfStream) {
     if (stream != null) {
       data = safeBuffer(data);
       Buffer buff = Buffer.buffer(data);
@@ -195,14 +194,6 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
 //    throw new RuntimeException("Method not implemented");
   }
 
-
-
-
-
-
-  abstract VertxHttpStreamBase stream(int id);
-
-
-  protected abstract void onHeadersRead(int streamId, Http3Headers headers, StreamPriority streamPriority, boolean endOfStream);
+  protected abstract void onHeadersRead(VertxHttpStreamBase<?, ?, Http3Headers> stream, Http3Headers headers, StreamPriority streamPriority, boolean endOfStream);
 
 }
