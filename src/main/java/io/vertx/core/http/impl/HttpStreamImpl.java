@@ -2,20 +2,35 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.Headers;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.StreamResetException;
+import io.vertx.core.http.impl.headers.VertxDefaultHttpHeaders;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.metrics.ClientMetrics;
+import io.vertx.core.spi.tracing.SpanKind;
+import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.streams.WriteStream;
+import io.vertx.core.tracing.TracingPolicy;
+
+import java.util.Map;
+import java.util.function.BiConsumer;
 
 abstract class HttpStreamImpl<C extends ConnectionBase, S,
   H extends Headers<CharSequence, CharSequence, H>> extends HttpStream<C, S, H> implements HttpClientStream {
+
+  protected abstract boolean isTryUseCompression();
+  abstract int lastStreamCreated();
+  protected abstract S createStream2(int id, boolean b) throws HttpException;
+  protected abstract TracingPolicy getTracingPolicy();
+  abstract VertxDefaultHttpHeaders<H> createHttpHeadersWrapper();
 
   HttpStreamImpl(C conn, ContextInternal context, boolean push, VertxHttpConnectionDelegate<S, H> connectionDelegate,
                  ClientMetrics metrics) {
@@ -169,9 +184,79 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S,
     });
   }
 
-  protected abstract void writeHeaders(HttpRequestHead request, ByteBuf buf, boolean end, StreamPriority priority,
-                                       boolean connect,
-                                       Handler<AsyncResult<Void>> handler);
+  private void writeHeaders(HttpRequestHead request, ByteBuf buf, boolean end, StreamPriority priority,
+                              boolean connect,
+                              Handler<AsyncResult<Void>> handler) {
+    VertxDefaultHttpHeaders<H> headers = createHttpHeadersWrapper();
+    headers.method(request.method.name());
+    boolean e;
+    if (request.method == HttpMethod.CONNECT) {
+      if (request.authority == null) {
+        throw new IllegalArgumentException("Missing :authority / host header");
+      }
+      headers.authority(request.authority);
+      // don't end stream for CONNECT
+      e = false;
+    } else {
+      headers.path(request.uri);
+      headers.scheme(conn.isSsl() ? "https" : "http");
+      if (request.authority != null) {
+        headers.authority(request.authority);
+      }
+      e = end;
+    }
+    if (request.headers != null && request.headers.size() > 0) {
+      for (Map.Entry<String, String> header : request.headers) {
+        headers.add(HttpUtils.toLowerCase(header.getKey()), header.getValue());
+      }
+    }
+    if (isTryUseCompression() && headers.get(HttpHeaderNames.ACCEPT_ENCODING) == null) {
+      headers.set(HttpHeaderNames.ACCEPT_ENCODING, Http1xClientConnection.determineCompressionAcceptEncoding());
+    }
+    try {
+      createStream(request, headers, handler);
+    } catch (HttpException ex) {
+      if (handler != null) {
+        handler.handle(context.failedFuture(ex));
+      }
+      handleException(ex);
+      return;
+    }
+    if (buf != null) {
+      doWriteHeaders(headers.getHttpHeaders(), false, false, null);
+      doWriteData(buf, e, handler);
+    } else {
+      doWriteHeaders(headers.getHttpHeaders(), e, true, handler);
+    }
+  }
+
+  private void createStream(HttpRequestHead head, VertxDefaultHttpHeaders<H> headers, Handler<AsyncResult<Void>> handler) throws HttpException {
+    int id = lastStreamCreated();
+    if (id == 0) {
+      id = 1;
+    } else {
+      id += 2;
+    }
+    head.id = id;
+    head.remoteAddress = conn.remoteAddress();
+    S stream = createStream2(id, false);
+    init(stream);
+    if (metrics != null) {
+      metric = metrics.requestBegin(headers.path().toString(), head);
+    }
+    VertxTracer tracer = context.tracer();
+    if (tracer != null) {
+      BiConsumer<String, String> headers_ = (key, val) -> connectionDelegate.createHeaderAdapter(headers.getHttpHeaders()).add(key
+        , val);
+      String operation = head.traceOperation;
+      if (operation == null) {
+        operation = headers.method().toString();
+      }
+      trace = tracer.sendRequest(context, SpanKind.RPC, getTracingPolicy(), head, operation,
+        headers_,
+        HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
+    }
+  }
 
   @Override
   public void writeBuffer(ByteBuf buf, boolean end, Handler<AsyncResult<Void>> listener) {
