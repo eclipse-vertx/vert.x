@@ -28,7 +28,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S,
 
   protected abstract boolean isTryUseCompression();
   abstract int lastStreamCreated();
-  protected abstract S createStream2(int id, boolean b) throws HttpException;
+  protected abstract void createStream2(int id, boolean b, Handler<AsyncResult<S>> onComplete) throws HttpException;
   protected abstract TracingPolicy getTracingPolicy();
   abstract VertxDefaultHttpHeaders<H> createHttpHeadersWrapper();
 
@@ -239,23 +239,24 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S,
     }
     head.id = id;
     head.remoteAddress = conn.remoteAddress();
-    S stream = createStream2(id, false);
-    init(stream);
-    if (metrics != null) {
-      metric = metrics.requestBegin(headers.path().toString(), head);
-    }
-    VertxTracer tracer = context.tracer();
-    if (tracer != null) {
-      BiConsumer<String, String> headers_ = (key, val) -> connectionDelegate.createHeaderAdapter(headers.getHttpHeaders()).add(key
-        , val);
-      String operation = head.traceOperation;
-      if (operation == null) {
-        operation = headers.method().toString();
+    createStream2(id, false, streamX -> {
+      init(streamX.result());
+      if (metrics != null) {
+        metric = metrics.requestBegin(headers.path().toString(), head);
       }
-      trace = tracer.sendRequest(context, SpanKind.RPC, getTracingPolicy(), head, operation,
-        headers_,
-        HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
-    }
+      VertxTracer tracer = context.tracer();
+      if (tracer != null) {
+        BiConsumer<String, String> headers_ = (key, val) -> connectionDelegate.createHeaderAdapter(headers.getHttpHeaders()).add(key
+          , val);
+        String operation = head.traceOperation;
+        if (operation == null) {
+          operation = headers.method().toString();
+        }
+        trace = tracer.sendRequest(context, SpanKind.RPC, getTracingPolicy(), head, operation,
+          headers_,
+          HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
+      }
+    });
   }
 
   @Override

@@ -1,6 +1,9 @@
 package io.vertx.core.http.impl;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http2.Http2Exception;
+import io.netty.incubator.codec.http3.Http3Headers;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
@@ -10,12 +13,16 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.GoAway;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.StreamPriority;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.metrics.NetworkMetrics;
 
-public class Http3ConnectionBase extends ConnectionBase implements HttpConnection {
+import static io.vertx.core.net.impl.VertxHandler.safeBuffer;
+
+public abstract class Http3ConnectionBase extends ConnectionBase implements HttpConnection {
   protected Http3ConnectionBase(ContextInternal context, ChannelHandlerContext chctx) {
     super(context, chctx);
   }
@@ -51,11 +58,6 @@ public class Http3ConnectionBase extends ConnectionBase implements HttpConnectio
   }
 
   @Override
-  public HttpConnection shutdownHandler(@Nullable Handler<Void> handler) {
-    return null;
-  }
-
-  @Override
   public void shutdown(Handler<AsyncResult<Void>> handler) {
     HttpConnection.super.shutdown(handler);
   }
@@ -66,13 +68,35 @@ public class Http3ConnectionBase extends ConnectionBase implements HttpConnectio
   }
 
   @Override
-  public void shutdown(long timeout, Handler<AsyncResult<Void>> handler) {
+  public synchronized HttpConnection shutdownHandler(Handler<Void> handler) {
+//    shutdownHandler = handler;
+    return this;
+  }
 
+  @Override
+  public void shutdown(long timeout, Handler<AsyncResult<Void>> handler) {
+    shutdown(timeout, vertx.promise(handler));
   }
 
   @Override
   public Future<Void> shutdown(long timeoutMs) {
-    return null;
+    PromiseInternal<Void> promise = vertx.promise();
+    shutdown(timeoutMs, promise);
+    return promise.future();
+  }
+  private void shutdown(long timeout, PromiseInternal<Void> promise) {
+//    if (timeout < 0) {
+//      promise.fail("Invalid timeout value " + timeout);
+//      return;
+//    }
+//    handler.gracefulShutdownTimeoutMillis(timeout);
+//    ChannelFuture fut = channel().close();
+//    fut.addListener(promise);
+  }
+
+  @Override
+  public Http3ConnectionBase closeHandler(Handler<Void> handler) {
+    return (Http3ConnectionBase) super.closeHandler(handler);
   }
 
   @Override
@@ -126,11 +150,6 @@ public class Http3ConnectionBase extends ConnectionBase implements HttpConnectio
   }
 
   @Override
-  public Http3ConnectionBase closeHandler(Handler<Void> handler) {
-    return (Http3ConnectionBase)super.closeHandler(handler);
-  }
-
-  @Override
   public Http3ConnectionBase exceptionHandler(Handler<Throwable> handler) {
     return (Http3ConnectionBase)super.exceptionHandler(handler);
   }
@@ -140,6 +159,45 @@ public class Http3ConnectionBase extends ConnectionBase implements HttpConnectio
   }
 
   public void consumeCredits(QuicStreamChannel stream, int len) {
-    throw new RuntimeException("Method not implemented");
+//    throw new RuntimeException("Method not implemented");
   }
+
+
+
+
+
+
+  abstract VertxHttpStreamBase stream(int id);
+
+//  @Override
+  public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data) {
+    VertxHttpStreamBase stream = stream(streamId);
+    if (stream != null) {
+      data = safeBuffer(data);
+      Buffer buff = Buffer.buffer(data);
+      stream.onData(buff);
+//      if (endOfStream) {
+//        stream.onEnd();
+//      }
+    }
+    return 0;
+  }
+
+//  @Override
+  public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http3Headers headers, int streamDependency,
+                            short weight, boolean exclusive, int padding, boolean endOfStream) throws Http2Exception {
+    StreamPriority streamPriority = new StreamPriority()
+      .setDependency(streamDependency)
+      .setWeight(weight)
+      .setExclusive(exclusive);
+    onHeadersRead(streamId, headers, streamPriority, endOfStream);
+  }
+
+//  @Override
+  public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http3Headers headers, boolean endOfStream) throws Http2Exception {
+    onHeadersRead(streamId, headers, null, endOfStream);
+  }
+
+  protected abstract void onHeadersRead(int streamId, Http3Headers headers, StreamPriority streamPriority, boolean endOfStream);
+
 }
