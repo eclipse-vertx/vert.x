@@ -35,4 +35,13 @@ interface VertxHttpConnectionDelegate<S, H extends Headers<CharSequence, CharSeq
   boolean isWritable();
 
   boolean isTrailersReceived();
+
+  long getWindowSize();
+
+  CharSequence getHeaderMethod(H headers);
+
+  String getHeaderStatus(H headers);
+
+  MultiMap createHeaderAdapter(H headers);
+
 }

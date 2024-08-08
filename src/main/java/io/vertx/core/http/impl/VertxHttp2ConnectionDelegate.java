@@ -92,4 +92,24 @@ class VertxHttp2ConnectionDelegate implements VertxHttpConnectionDelegate<Http2S
   public boolean isTrailersReceived() {
     return stream.isTrailersReceived();
   }
+
+  @Override
+  public long getWindowSize() {
+    return conn.getWindowSize();
+  }
+
+  @Override
+  public CharSequence getHeaderMethod(Http2Headers headers) {
+    return headers.method();
+  }
+
+  @Override
+  public String getHeaderStatus(Http2Headers headers) {
+    return headers.status().toString();
+  }
+
+  @Override
+  public MultiMap createHeaderAdapter(Http2Headers headers) {
+    return new Http2HeadersAdaptor(headers);
+  }
 }

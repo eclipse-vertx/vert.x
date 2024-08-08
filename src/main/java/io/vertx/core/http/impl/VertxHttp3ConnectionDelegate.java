@@ -94,4 +94,24 @@ class VertxHttp3ConnectionDelegate implements VertxHttpConnectionDelegate<QuicSt
   public boolean isTrailersReceived() {
     return false;  //TODO review
   }
+
+  @Override
+  public long getWindowSize() {
+    return conn.getWindowSize();
+  }
+
+  @Override
+  public CharSequence getHeaderMethod(Http3Headers headers) {
+    return headers.method();
+  }
+
+  @Override
+  public String getHeaderStatus(Http3Headers headers) {
+    return headers.status().toString();
+  }
+
+  @Override
+  public MultiMap createHeaderAdapter(Http3Headers headers) {
+    return new Http3HeadersAdaptor(headers);
+  }
 }
