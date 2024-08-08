@@ -69,10 +69,6 @@ class VertxHttp2ConnectionDelegate implements VertxHttpConnectionDelegate<Http2S
     return stream.state().remoteSideOpen();
   }
 
-  public int id() {
-    return stream.id();
-  }
-
   @Override
   public boolean hasStream() {
     return stream != null;

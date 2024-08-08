@@ -26,8 +26,6 @@ interface VertxHttpConnectionDelegate<S, H extends Headers<CharSequence, CharSeq
 
   boolean remoteSideOpen();
 
-  int id();
-
   boolean hasStream();
 
   MultiMap getEmptyHeaders();

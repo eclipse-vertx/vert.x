@@ -57,7 +57,6 @@ class VertxHttp3ConnectionDelegate implements VertxHttpConnectionDelegate<QuicSt
   public void init(QuicStreamChannel quicStreamChannel) {
     this.quicStreamChannel = quicStreamChannel;
     this.writable = quicStreamChannel.isWritable();
-//    quicStreamChannel.attr(this); //TODO: review
   }
 
   @Override
@@ -68,11 +67,6 @@ class VertxHttp3ConnectionDelegate implements VertxHttpConnectionDelegate<QuicSt
   @Override
   public boolean remoteSideOpen() {
     return quicStreamChannel.isOutputShutdown();  //TODO: review
-  }
-
-  @Override
-  public int id() {
-    return (int) quicStreamChannel.streamId(); //TODO: review
   }
 
   @Override
