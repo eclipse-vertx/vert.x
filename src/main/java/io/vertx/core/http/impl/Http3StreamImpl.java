@@ -22,7 +22,7 @@ import io.vertx.core.tracing.TracingPolicy;
 class Http3StreamImpl extends HttpStreamImpl<Http3ClientConnection, QuicStreamChannel, Http3Headers> {
   Http3StreamImpl(Http3ClientConnection conn, ContextInternal context, boolean push,
                   VertxHttpConnectionDelegate<QuicStreamChannel, Http3Headers> connectionDelegate,
-                  ClientMetrics<? ,?, ?, ?> metrics) {
+                  ClientMetrics<?, ?, ?, ?> metrics) {
     super(conn, context, push, connectionDelegate, metrics);
   }
 

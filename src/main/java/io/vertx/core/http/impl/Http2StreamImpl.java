@@ -6,7 +6,6 @@ import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.headers.VertxDefaultHttp2Headers;
 import io.vertx.core.http.impl.headers.VertxDefaultHttpHeaders;
