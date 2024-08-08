@@ -70,42 +70,4 @@ class Http2StreamImpl extends HttpStreamImpl<Http2ClientConnection, Http2Stream,
     return new VertxDefaultHttp2Headers();
   }
 
-
-
-
-
-
-
-  //TODO: implement the following methods correctly!
-
-  @Override
-  public Future<Void> write(Buffer data) {
-    return super.write(data);
-  }
-
-  @Override
-  public void write(Buffer data, Handler<AsyncResult<Void>> handler) {
-    super.write(data, handler);
-  }
-
-  @Override
-  public Future<Void> end(Buffer data) {
-    return super.end(data);
-  }
-
-  @Override
-  public void end(Buffer data, Handler<AsyncResult<Void>> handler) {
-    super.end(data, handler);
-  }
-
-  @Override
-  public Future<Void> end() {
-    return super.end();
-  }
-
-  @Override
-  public void end(Handler<AsyncResult<Void>> handler) {
-    super.end(handler);
-  }
-
 }

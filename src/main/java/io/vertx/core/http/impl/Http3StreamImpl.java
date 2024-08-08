@@ -56,18 +56,15 @@ class Http3StreamImpl extends HttpStreamImpl<Http3ClientConnection, QuicStreamCh
   @Override
   protected void createStream2(int id, boolean b, Handler<AsyncResult<QuicStreamChannel>> onComplete) throws HttpException {
     Http3.newRequestStream(conn.quicChannel, new Http3RequestStreamInboundHandler() {
-        private boolean read;
-
         @Override
         protected void channelRead(ChannelHandlerContext ctx, Http3DataFrame frame) throws Exception {
           System.err.print(frame.content().toString(CharsetUtil.US_ASCII));
           conn.onDataRead(ctx, connectionDelegate.getStreamId(), frame.content(), 0, true);
-          read = true;
         }
 
         @Override
         protected void channelRead(ChannelHandlerContext ctx, Http3HeadersFrame frame) throws Exception {
-          conn.onHeadersRead(ctx, id, frame.headers(), true);
+          conn.onHeadersRead(ctx, connectionDelegate.getStreamId(), frame.headers(), true);
         }
 
         @Override
@@ -99,47 +96,6 @@ class Http3StreamImpl extends HttpStreamImpl<Http3ClientConnection, QuicStreamCh
   @Override
   VertxDefaultHttpHeaders<Http3Headers> createHttpHeadersWrapper() {
     return new VertxDefaultHttp3Headers();
-  }
-
-
-
-
-
-
-
-
-
-
-  //TODO: implement the following methods correctly!
-
-  @Override
-  public Future<Void> write(Buffer data) {
-    return super.write(data);
-  }
-
-  @Override
-  public void write(Buffer data, Handler<AsyncResult<Void>> handler) {
-    super.write(data, handler);
-  }
-
-  @Override
-  public Future<Void> end(Buffer data) {
-    return super.end(data);
-  }
-
-  @Override
-  public void end(Buffer data, Handler<AsyncResult<Void>> handler) {
-    super.end(data, handler);
-  }
-
-  @Override
-  public Future<Void> end() {
-    return super.end();
-  }
-
-  @Override
-  public void end(Handler<AsyncResult<Void>> handler) {
-    super.end(handler);
   }
 
 }
