@@ -18,17 +18,15 @@ public class VertxHttp3RequestStreamInboundHandler extends Http3RequestStreamInb
   private final PromiseInternal<HttpClientConnection> promise;
   private final HttpClientImpl client;
   private final ClientMetrics metrics;
-  private final boolean upgrade;
   private final Object metric;
 
   public VertxHttp3RequestStreamInboundHandler(
     PromiseInternal<HttpClientConnection> promise, HttpClientImpl client, ClientMetrics metrics,
-    EventLoopContext context, boolean upgrade, Object metric) {
+    EventLoopContext context, Object metric) {
     this.promise = promise;
     this.context = context;
     this.client = client;
     this.metrics = metrics;
-    this.upgrade = upgrade;
     this.metric = metric;
   }
 
@@ -36,7 +34,7 @@ public class VertxHttp3RequestStreamInboundHandler extends Http3RequestStreamInb
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
     super.handlerAdded(ctx);
     promise.complete(new Http3ClientConnection((QuicChannel) ctx.channel().parent(), (QuicStreamChannel) ctx.channel(),
-      ctx, promise, client, metrics, context, upgrade, metric));
+      ctx, promise, client, metrics, context, metric));
   }
 
   @Override

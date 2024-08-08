@@ -41,19 +41,17 @@ public class Http3ClientConnection extends Http3ConnectionBase implements HttpCl
   private Map<Integer, Http3StreamImpl>streams = new HashMap<>();
 
   private PromiseInternal<HttpClientConnection> promise;
-  private boolean upgrade;
   private Object socketMetric;
 
 
   public QuicStreamChannel quicStreamChannel;
   public QuicChannel quicChannel;
 
-  public Http3ClientConnection(QuicChannel quicChannel, QuicStreamChannel quicStreamChannel, ChannelHandlerContext ctx, PromiseInternal<HttpClientConnection> promise, HttpClientImpl client, ClientMetrics metrics, EventLoopContext context, boolean upgrade, Object socketMetric) {
+  public Http3ClientConnection(QuicChannel quicChannel, QuicStreamChannel quicStreamChannel, ChannelHandlerContext ctx, PromiseInternal<HttpClientConnection> promise, HttpClientImpl client, ClientMetrics metrics, EventLoopContext context, Object socketMetric) {
     super(context, ctx);
     this.promise = promise;
     this.client = client;
     this.metrics = metrics;
-    this.upgrade = upgrade;
     this.socketMetric = socketMetric;
 
     this.quicStreamChannel = quicStreamChannel;

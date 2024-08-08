@@ -276,7 +276,7 @@ public class HttpChannelConnector {
                               PromiseInternal<HttpClientConnection> promise) {
     try {
       VertxHttp3RequestStreamInboundHandler inboundControlStreamHandler =
-        new VertxHttp3RequestStreamInboundHandler(promise, client, metrics, context, false, metric);
+        new VertxHttp3RequestStreamInboundHandler(promise, client, metrics, context, metric);
       QuicChannel.newBootstrap(ch)
         .handler(new Http3ClientConnectionHandler(inboundControlStreamHandler, null, null, null, false))
         .remoteAddress(new InetSocketAddress(peerAddress.hostAddress(), peerAddress.port()))
