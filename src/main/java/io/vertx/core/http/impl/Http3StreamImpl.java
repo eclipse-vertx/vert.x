@@ -12,7 +12,6 @@ import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.headers.VertxDefaultHttp3Headers;
 import io.vertx.core.http.impl.headers.VertxDefaultHttpHeaders;
@@ -80,17 +79,12 @@ class Http3StreamImpl extends HttpStreamImpl<Http3ClientConnection, QuicStreamCh
 
   @Override
   protected TracingPolicy getTracingPolicy() {
-    //TODO: review this!
-    throw new RuntimeException("Method not implemented");
-//    return conn.client.options().getTracingPolicy();
+    return conn.client.options().getTracingPolicy();
   }
 
   @Override
   protected boolean isTryUseCompression() {
-    //TODO: review this!
-//    throw new RuntimeException("Method not implemented");
-//    return this.conn.client.options().isTryUseCompression();
-    return true;
+    return this.conn.client.options().isTryUseCompression();
   }
 
   @Override

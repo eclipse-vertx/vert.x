@@ -27,7 +27,7 @@ public class Http3ClientConnection extends Http3ConnectionBase implements HttpCl
   public ClientMetrics metrics;
   private HttpVersion version;
   private boolean isConnect;
-  private HttpClientImpl client;
+  public HttpClientImpl client;
   private HttpClientOptions options;
   private Deque<Http3StreamImpl> requests = new ArrayDeque<>();
   private Deque<Http3StreamImpl> responses = new ArrayDeque<>();
