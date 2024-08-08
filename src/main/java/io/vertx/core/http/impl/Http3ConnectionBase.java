@@ -45,15 +45,6 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
 
   }
 
-  //  @Override
-  public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http3Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endOfStream) throws Http2Exception {
-    StreamPriority streamPriority = new StreamPriority()
-      .setDependency(streamDependency)
-      .setWeight(weight)
-      .setExclusive(exclusive);
-    onHeadersRead(streamId, headers, streamPriority, endOfStream);
-  }
-
 //  @Override
   public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http3Headers headers, boolean endOfStream) throws Http2Exception {
     onHeadersRead(streamId, headers, null, endOfStream);
