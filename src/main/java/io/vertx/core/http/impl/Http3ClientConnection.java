@@ -108,7 +108,9 @@ public class Http3ClientConnection extends Http3ConnectionBase implements HttpCl
   }
 
   public void metricsEnd(HttpStream<?, ?, ?> stream) {
-    throw new RuntimeException("Method not implemented");
+    if (metrics != null) {
+      metrics.responseEnd(stream.metric, stream.bytesRead());
+    }
   }
 
 
@@ -121,15 +123,15 @@ public class Http3ClientConnection extends Http3ConnectionBase implements HttpCl
   @Override
   protected synchronized void onHeadersRead(
     int streamId, Http3Headers headers, StreamPriority streamPriority, boolean endOfStream) {
-    VertxHttpStreamBase stream = stream(streamId);
-//    if (!stream.stream.isTrailersReceived()) {
+    VertxHttpStreamBase<?, ?, Http3Headers> stream = stream(streamId);
+    if (!stream.isTrailersReceived()) {
       stream.onHeaders(headers, streamPriority);
-//      if (endOfStream) {
-//        stream.onEnd();
-//      }
-//    } else {
+    if (endOfStream) {
+        stream.onEnd();
+      }
+    } else {
       stream.onEnd(new Http3HeadersAdaptor(headers));
-//    }
+    }
   }
 
 
