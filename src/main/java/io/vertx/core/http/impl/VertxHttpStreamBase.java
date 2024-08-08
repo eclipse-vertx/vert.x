@@ -137,7 +137,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S, H extends Header
   }
 
   public int id() {
-    return connectionDelegate.getStreamId();  //TODO: review
+    return connectionDelegate.getStreamId();
   }
 
   long bytesWritten() {
@@ -184,7 +184,8 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S, H extends Header
 
   void doWriteHeaders(H headers, boolean end, boolean checkFlush, Handler<AsyncResult<Void>> handler) {
     FutureListener<Void> promise = handler == null ? null : context.promise(handler);
-    connectionDelegate.writeHeaders(headers, end, priority.getDependency(), priority.getWeight(), priority.isExclusive(), checkFlush, promise);
+    connectionDelegate.writeHeaders(headers, end, priority.getDependency(), priority.getWeight(),
+      priority.isExclusive(), checkFlush, promise);
     if (end) {
       endWritten();
     }
@@ -279,7 +280,8 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S, H extends Header
 
   void handlePriorityChange(StreamPriority newPriority) {
   }
-  boolean isTrailersReceived(){
+
+  boolean isTrailersReceived() {
     return connectionDelegate.isTrailersReceived();
   }
 }
