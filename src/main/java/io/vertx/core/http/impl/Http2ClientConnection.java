@@ -133,7 +133,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     Future<HttpClientStream> fut;
     synchronized (this) {
       try {
-        Stream stream = createStream(context);
+        HttpStream stream = createStream(context);
         stream.init(handler.connection().stream(1));
         stream.metric = metric;
         stream.trace = trace;
@@ -151,7 +151,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     Future<HttpClientStream> fut;
     synchronized (this) {
       try {
-        StreamImpl stream = createStream(context);
+        HttpStreamImpl stream = createStream(context);
         fut = Future.succeededFuture(stream);
       } catch (Exception e) {
         fut = Future.failedFuture(e);
@@ -180,7 +180,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   protected synchronized void onHeadersRead(int streamId, Http2Headers headers, StreamPriority streamPriority, boolean endOfStream) {
-    Stream stream = (Stream) stream(streamId);
+    HttpStream stream = (HttpStream) stream(streamId);
     if (!stream.isTrailersReceived()) {
       stream.onHeaders(headers, streamPriority);
       if (endOfStream) {
