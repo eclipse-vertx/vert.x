@@ -27,13 +27,17 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S,
   H extends Headers<CharSequence, CharSequence, H>> extends HttpStream<C, S, H> implements HttpClientStream {
 
   protected abstract boolean isTryUseCompression();
+
   abstract int lastStreamCreated();
+
   protected abstract void createStream2(int id, boolean b, Handler<AsyncResult<S>> onComplete) throws HttpException;
+
   protected abstract TracingPolicy getTracingPolicy();
+
   abstract VertxDefaultHttpHeaders<H> createHttpHeadersWrapper();
 
   HttpStreamImpl(C conn, ContextInternal context, boolean push, VertxHttpConnectionDelegate<S, H> connectionDelegate,
-                 ClientMetrics<? ,?, ?, ?> metrics) {
+                 ClientMetrics<?, ?, ?, ?> metrics) {
     super(conn, context, push, connectionDelegate, metrics);
   }
 
@@ -185,8 +189,8 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S,
   }
 
   private void writeHeaders(HttpRequestHead request, ByteBuf buf, boolean end, StreamPriority priority,
-                              boolean connect,
-                              Handler<AsyncResult<Void>> handler) {
+                            boolean connect,
+                            Handler<AsyncResult<Void>> handler) {
     VertxDefaultHttpHeaders<H> headers = createHttpHeadersWrapper();
     headers.method(request.method.name());
     boolean e;
@@ -230,7 +234,8 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S,
     }
   }
 
-  private void createStream(HttpRequestHead head, VertxDefaultHttpHeaders<H> headers, Handler<AsyncResult<Void>> handler) throws HttpException {
+  private void createStream(HttpRequestHead head, VertxDefaultHttpHeaders<H> headers,
+                            Handler<AsyncResult<Void>> handler) throws HttpException {
     int id = lastStreamCreated();
     if (id == 0) {
       id = 1;
@@ -246,7 +251,8 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S,
       }
       VertxTracer tracer = context.tracer();
       if (tracer != null) {
-        BiConsumer<String, String> headers_ = (key, val) -> connectionDelegate.createHeaderAdapter(headers.getHttpHeaders()).add(key
+        BiConsumer<String, String> headers_ =
+          (key, val) -> connectionDelegate.createHeaderAdapter(headers.getHttpHeaders()).add(key
           , val);
         String operation = head.traceOperation;
         if (operation == null) {
