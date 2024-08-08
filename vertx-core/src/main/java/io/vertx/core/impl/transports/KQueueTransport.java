@@ -15,7 +15,7 @@ import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.kqueue.*;
 import io.netty.channel.socket.DatagramChannel;
-import io.netty.channel.socket.InternetProtocolFamily;
+import io.netty.channel.socket.SocketProtocolFamily;
 import io.netty.channel.unix.DomainSocketAddress;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.net.NetServerOptions;
@@ -75,7 +75,7 @@ public class KQueueTransport implements Transport {
   }
 
   @Override
-  public DatagramChannel datagramChannel(InternetProtocolFamily family) {
+  public DatagramChannel datagramChannel(SocketProtocolFamily family) {
     return new KQueueDatagramChannel();
   }
 

@@ -13,13 +13,11 @@ package io.vertx.core.impl.transports;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.DatagramChannel;
-import io.netty.channel.socket.InternetProtocolFamily;
+import io.netty.channel.socket.SocketProtocolFamily;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.vertx.core.spi.transport.Transport;
-
-import java.util.concurrent.ThreadFactory;
 
 public class JDKTransport implements Transport {
   /**
@@ -36,12 +34,11 @@ public class JDKTransport implements Transport {
     return new NioDatagramChannel();
   }
 
-  public DatagramChannel datagramChannel(InternetProtocolFamily family) {
+  public DatagramChannel datagramChannel(SocketProtocolFamily family) {
     switch (family) {
-      case IPv4:
-        return new NioDatagramChannel(InternetProtocolFamily.IPv4);
-      case IPv6:
-        return new NioDatagramChannel(InternetProtocolFamily.IPv6);
+      case INET:
+      case INET6:
+        return new NioDatagramChannel(family);
       default:
         throw new UnsupportedOperationException();
     }

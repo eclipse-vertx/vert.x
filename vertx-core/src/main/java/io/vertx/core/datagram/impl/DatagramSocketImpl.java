@@ -18,7 +18,7 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.MaxMessagesRecvByteBufAllocator;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.DatagramPacket;
-import io.netty.channel.socket.InternetProtocolFamily;
+import io.netty.channel.socket.SocketProtocolFamily;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.codegen.annotations.Nullable;
@@ -70,7 +70,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
 
   private DatagramSocketImpl(VertxInternal vertx, CloseFuture closeFuture, DatagramSocketOptions options) {
     Transport transport = vertx.transport();
-    DatagramChannel channel = transport.datagramChannel(options.isIpV6() ? InternetProtocolFamily.IPv6 : InternetProtocolFamily.IPv4);
+    DatagramChannel channel = transport.datagramChannel(options.isIpV6() ? SocketProtocolFamily.INET6 : SocketProtocolFamily.INET);
     transport.configure(channel, new DatagramSocketOptions(options));
     ContextInternal context = vertx.getOrCreateContext();
     channel.config().setOption(ChannelOption.DATAGRAM_CHANNEL_ACTIVE_ON_REGISTRATION, true);

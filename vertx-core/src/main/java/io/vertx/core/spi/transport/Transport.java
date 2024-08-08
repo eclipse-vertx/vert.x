@@ -15,7 +15,7 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.socket.DatagramChannel;
-import io.netty.channel.socket.InternetProtocolFamily;
+import io.netty.channel.socket.SocketProtocolFamily;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.net.ClientOptionsBase;
 import io.vertx.core.net.NetServerOptions;
@@ -106,7 +106,7 @@ public interface Transport {
   /**
    * @return a new datagram channel
    */
-  DatagramChannel datagramChannel(InternetProtocolFamily family);
+  DatagramChannel datagramChannel(SocketProtocolFamily family);
 
   /**
    * @return the type for channel

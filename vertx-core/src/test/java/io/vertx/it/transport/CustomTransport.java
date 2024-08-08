@@ -2,7 +2,7 @@ package io.vertx.it.transport;
 
 import io.netty.channel.*;
 import io.netty.channel.socket.DatagramChannel;
-import io.netty.channel.socket.InternetProtocolFamily;
+import io.netty.channel.socket.SocketProtocolFamily;
 import io.vertx.core.impl.transports.JDKTransport;
 import io.vertx.core.spi.transport.Transport;
 
@@ -29,7 +29,7 @@ public class CustomTransport implements Transport {
   }
 
   @Override
-  public DatagramChannel datagramChannel(InternetProtocolFamily family) {
+  public DatagramChannel datagramChannel(SocketProtocolFamily family) {
     throw new UnsupportedOperationException();
   }
 
