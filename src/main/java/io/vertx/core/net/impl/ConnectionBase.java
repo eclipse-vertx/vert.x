@@ -74,7 +74,7 @@ public abstract class ConnectionBase {
   public final VoidChannelPromise voidPromise;
   protected final VertxInternal vertx;
   protected final ChannelHandlerContext chctx;
-  protected final ContextInternal context;
+  public final ContextInternal context;
   private Handler<Throwable> exceptionHandler;
   private Handler<Void> closeHandler;
   private int writeInProgress;
