@@ -102,7 +102,6 @@ public class AddressResolverOptions {
   private boolean optResourceEnabled;
   private int cacheMinTimeToLive;
   private int cacheMaxTimeToLive;
-  private int cacheNegativeTimeToLive;
   private long queryTimeout;
   private int maxQueries;
   private boolean rdFlag;
@@ -116,7 +115,6 @@ public class AddressResolverOptions {
     optResourceEnabled = DEFAULT_OPT_RESOURCE_ENABLED;
     cacheMinTimeToLive = DEFAULT_CACHE_MIN_TIME_TO_LIVE;
     cacheMaxTimeToLive = DEFAULT_CACHE_MAX_TIME_TO_LIVE;
-    cacheNegativeTimeToLive = DEFAULT_CACHE_NEGATIVE_TIME_TO_LIVE;
     queryTimeout = DEFAULT_QUERY_TIMEOUT;
     maxQueries = DEFAULT_MAX_QUERIES;
     rdFlag = DEFAULT_RD_FLAG;
@@ -135,7 +133,6 @@ public class AddressResolverOptions {
     this.optResourceEnabled = other.optResourceEnabled;
     this.cacheMinTimeToLive = other.cacheMinTimeToLive;
     this.cacheMaxTimeToLive = other.cacheMaxTimeToLive;
-    this.cacheNegativeTimeToLive = other.cacheNegativeTimeToLive;
     this.queryTimeout = other.queryTimeout;
     this.maxQueries = other.maxQueries;
     this.rdFlag = other.rdFlag;
@@ -316,9 +313,11 @@ public class AddressResolverOptions {
 
   /**
    * @return the cache negative TTL in seconds
+   * @deprecated no replacement
    */
+  @Deprecated(forRemoval = true)
   public int getCacheNegativeTimeToLive() {
-    return cacheNegativeTimeToLive;
+    return 0;
   }
 
   /**
@@ -328,12 +327,13 @@ public class AddressResolverOptions {
    *
    * @param cacheNegativeTimeToLive the cache negative TTL in seconds
    * @return a reference to this, so the API can be used fluently
+   * @deprecated no replacement
    */
+  @Deprecated(forRemoval = true)
   public AddressResolverOptions setCacheNegativeTimeToLive(int cacheNegativeTimeToLive) {
     if (cacheNegativeTimeToLive < 0) {
       throw new IllegalArgumentException("cacheNegativeTimeToLive must be >= 0");
     }
-    this.cacheNegativeTimeToLive = cacheNegativeTimeToLive;
     return this;
   }
 

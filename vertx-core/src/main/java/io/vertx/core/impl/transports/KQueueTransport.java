@@ -12,13 +12,10 @@
 package io.vertx.core.impl.transports;
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFactory;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.ServerChannel;
+import io.netty.channel.*;
 import io.netty.channel.kqueue.*;
 import io.netty.channel.socket.DatagramChannel;
-import io.netty.channel.socket.InternetProtocolFamily;
+import io.netty.channel.socket.SocketProtocolFamily;
 import io.netty.channel.unix.DomainSocketAddress;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.net.NetServerOptions;
@@ -26,7 +23,6 @@ import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.spi.transport.Transport;
 
 import java.net.SocketAddress;
-import java.util.concurrent.ThreadFactory;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -69,10 +65,8 @@ public class KQueueTransport implements Transport {
   }
 
   @Override
-  public EventLoopGroup eventLoopGroup(int type, int nThreads, ThreadFactory threadFactory, int ioRatio) {
-    KQueueEventLoopGroup eventLoopGroup = new KQueueEventLoopGroup(nThreads, threadFactory);
-    eventLoopGroup.setIoRatio(ioRatio);
-    return eventLoopGroup;
+  public IoHandlerFactory ioHandlerFactory() {
+    return KQueueIoHandler.newFactory();
   }
 
   @Override
@@ -81,7 +75,7 @@ public class KQueueTransport implements Transport {
   }
 
   @Override
-  public DatagramChannel datagramChannel(InternetProtocolFamily family) {
+  public DatagramChannel datagramChannel(SocketProtocolFamily family) {
     return new KQueueDatagramChannel();
   }
 

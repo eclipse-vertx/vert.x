@@ -15,7 +15,7 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.socket.DatagramChannel;
-import io.netty.channel.socket.InternetProtocolFamily;
+import io.netty.channel.socket.SocketProtocolFamily;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.net.ClientOptionsBase;
 import io.vertx.core.net.NetServerOptions;
@@ -84,6 +84,8 @@ public interface Transport {
     }
   }
 
+  IoHandlerFactory ioHandlerFactory();
+
   /**
    * @param type one of {@link #ACCEPTOR_EVENT_LOOP_GROUP} or {@link #IO_EVENT_LOOP_GROUP}.
    * @param nThreads the number of threads that will be used by this instance.
@@ -92,7 +94,9 @@ public interface Transport {
    *
    * @return a new event loop group
    */
-  EventLoopGroup eventLoopGroup(int type, int nThreads, ThreadFactory threadFactory, int ioRatio);
+  default EventLoopGroup eventLoopGroup(int type, int nThreads, ThreadFactory threadFactory, int ioRatio) {
+    return new MultiThreadIoEventLoopGroup(nThreads, threadFactory, ioHandlerFactory());
+  }
 
   /**
    * @return a new datagram channel
@@ -102,7 +106,7 @@ public interface Transport {
   /**
    * @return a new datagram channel
    */
-  DatagramChannel datagramChannel(InternetProtocolFamily family);
+  DatagramChannel datagramChannel(SocketProtocolFamily family);
 
   /**
    * @return the type for channel

@@ -48,7 +48,7 @@ public class DnsAddressResolverProvider implements AddressResolverProvider, Host
   private final VertxInternal vertx;
   private final List<ResolverRegistration> resolvers = Collections.synchronizedList(new ArrayList<>());
   private final DnsNameResolverBuilder dnsNameResolverBuilder;
-  private AddressResolverGroup<InetSocketAddress> resolverGroup;
+  private final AddressResolverGroup<InetSocketAddress> resolverGroup;
   private final List<InetSocketAddress> serverList = new ArrayList<>();
   private final String hostsPath;
   private final Buffer hostsValue;
@@ -96,7 +96,7 @@ public class DnsAddressResolverProvider implements AddressResolverProvider, Host
     int maxTtl = intValue(options.getCacheMaxTimeToLive(), Integer.MAX_VALUE);
     int negativeTtl = intValue(options.getCacheNegativeTimeToLive(), 0);
     DnsCache resolveCache = new DefaultDnsCache(minTtl, maxTtl, negativeTtl);
-    DnsCache authoritativeDnsServerCache = new DefaultDnsCache(minTtl, maxTtl, negativeTtl);
+    AuthoritativeDnsServerCache authoritativeDnsServerCache = new DefaultAuthoritativeDnsServerCache(minTtl, maxTtl, null);
 
     this.vertx = vertx;
     this.hostsPath = options.getHostsPath();
