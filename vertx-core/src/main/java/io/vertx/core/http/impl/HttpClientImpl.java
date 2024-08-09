@@ -28,7 +28,6 @@ import io.vertx.core.net.endpoint.ServerInteraction;
 import io.vertx.core.net.endpoint.impl.EndpointResolverImpl;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
-import io.vertx.core.spi.metrics.PoolMetrics;
 
 import java.lang.ref.WeakReference;
 import java.util.Objects;
