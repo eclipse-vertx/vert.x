@@ -31,7 +31,7 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
-import io.vertx.core.spi.metrics.PoolMetrics;
+import io.vertx.core.spi.metrics.QueueMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
@@ -930,11 +930,11 @@ public class MetricsTest extends VertxTestBase {
 
   @Test
   public void testThreadPoolMetricsWithExecuteBlocking() throws Exception {
-    Map<String, PoolMetrics> all = FakePoolMetrics.getPoolMetrics();
+    Map<String, QueueMetrics> all = FakeQueueMetrics.getPoolMetrics();
 
     FakePoolMetrics metrics = (FakePoolMetrics) all.get("vert.x-worker-thread");
 
-    assertThat(metrics.getPoolSize(), is(getOptions().getInternalBlockingPoolSize()));
+    assertThat(metrics.maxSize(), is(getOptions().getInternalBlockingPoolSize()));
     assertThat(metrics.numberOfIdleThreads(), is(getOptions().getWorkerPoolSize()));
 
     Callable<Void> job = getSomeDumbTask();
@@ -971,10 +971,10 @@ public class MetricsTest extends VertxTestBase {
 
   @Test
   public void testThreadPoolMetricsWithInternalExecuteBlocking() {
-    Map<String, PoolMetrics> all = FakePoolMetrics.getPoolMetrics();
+    Map<String, QueueMetrics> all = FakeQueueMetrics.getPoolMetrics();
     FakePoolMetrics metrics = (FakePoolMetrics) all.get("vert.x-internal-blocking");
 
-    assertThat(metrics.getPoolSize(), is(getOptions().getInternalBlockingPoolSize()));
+    assertThat(metrics.maxSize(), is(getOptions().getInternalBlockingPoolSize()));
     assertThat(metrics.numberOfIdleThreads(), is(getOptions().getInternalBlockingPoolSize()));
 
     int num = VertxOptions.DEFAULT_INTERNAL_BLOCKING_POOL_SIZE;
@@ -1024,10 +1024,10 @@ public class MetricsTest extends VertxTestBase {
   @Test
   public void testThreadPoolMetricsWithWorkerVerticle() throws Exception {
     AtomicInteger counter = new AtomicInteger();
-    Map<String, PoolMetrics> all = FakePoolMetrics.getPoolMetrics();
+    Map<String, QueueMetrics> all = FakeQueueMetrics.getPoolMetrics();
     FakePoolMetrics metrics = (FakePoolMetrics) all.get("vert.x-worker-thread");
 
-    assertThat(metrics.getPoolSize(), is(getOptions().getInternalBlockingPoolSize()));
+    assertThat(metrics.maxSize(), is(getOptions().getInternalBlockingPoolSize()));
     assertThat(metrics.numberOfIdleThreads(), is(getOptions().getWorkerPoolSize()));
 
     AtomicBoolean hadWaitingQueue = new AtomicBoolean();
@@ -1101,11 +1101,11 @@ public class MetricsTest extends VertxTestBase {
 
     WorkerExecutor workerExec = vertx.createSharedWorkerExecutor("my-pool", 10);
 
-    Map<String, PoolMetrics> all = FakePoolMetrics.getPoolMetrics();
+    Map<String, QueueMetrics> all = FakeQueueMetrics.getPoolMetrics();
 
     FakePoolMetrics metrics = (FakePoolMetrics) all.get("my-pool");
 
-    assertThat(metrics.getPoolSize(), is(10));
+    assertThat(metrics.maxSize(), is(10));
     assertThat(metrics.numberOfIdleThreads(), is(10));
 
     Callable<Void> job = getSomeDumbTask();
@@ -1144,9 +1144,9 @@ public class MetricsTest extends VertxTestBase {
     WorkerExecutor ex1 = vertx.createSharedWorkerExecutor("ex1");
     WorkerExecutor ex1_ = vertx.createSharedWorkerExecutor("ex1");
     WorkerExecutor ex2 = vertx.createSharedWorkerExecutor("ex2");
-    Map<String, PoolMetrics> all = FakePoolMetrics.getPoolMetrics();
-    FakePoolMetrics metrics1 = (FakePoolMetrics) all.get("ex1");
-    FakePoolMetrics metrics2 = (FakePoolMetrics) all.get("ex2");
+    Map<String, QueueMetrics> all = FakeQueueMetrics.getPoolMetrics();
+    FakeQueueMetrics metrics1 = (FakeQueueMetrics) all.get("ex1");
+    FakeQueueMetrics metrics2 = (FakeQueueMetrics) all.get("ex2");
     assertNotNull(metrics1);
     assertNotNull(metrics2);
     assertNotSame(metrics1, metrics2);

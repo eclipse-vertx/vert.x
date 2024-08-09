@@ -131,14 +131,25 @@ public interface VertxMetrics extends Metrics, Measured {
   }
 
   /**
+   * Provides the queue metrics SPI.
+   *
+   * @param queueType the type of the queue e.g. worker, datasource, etc...
+   * @param name the name of the resource the inherent queue belongs to
+   * @return the queue metrics SPI or {@code null} when metrics are disabled
+   */
+  default QueueMetrics<?> createQueueMetrics(String queueType, String name) {
+    return null;
+  }
+
+  /**
    * Provides the pool metrics SPI.
    *
-   * @param poolType the type of the pool e.g worker, datasource, etc..
-   * @param poolName the name of the pool
-   * @param maxPoolSize the pool max size, or -1 if the number cannot be determined
-   * @return the thread pool metrics SPI or {@code null} when metrics are disabled
+   * @param type the type of the pool e.g. worker, datasource, etc...
+   * @param name the name of the resource the inherent pool belongs to
+   * @param maxSize the max size, or {@code -1} if the number cannot be determined
+   * @return the pool metrics SPI or {@code null} when metrics are disabled
    */
-  default PoolMetrics<?> createPoolMetrics(String poolType, String poolName, int maxPoolSize) {
+  default PoolMetrics<?, ?> createPoolMetrics(String type, String name, int maxSize) {
     return null;
   }
 

@@ -56,9 +56,9 @@ public class DummyVertxMetrics implements VertxMetrics {
 
   }
 
-  public static class DummyWorkerPoolMetrics implements PoolMetrics<Void> {
+  public static class DummyPoolMetrics implements QueueMetrics<Void> {
 
-    public static final DummyWorkerPoolMetrics INSTANCE = new DummyWorkerPoolMetrics();
+    public static final DummyPoolMetrics INSTANCE = new DummyPoolMetrics();
 
   }
 }
