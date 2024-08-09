@@ -13,7 +13,20 @@ package io.vertx.core.spi.metrics;
 /**
  * Worker pool metrics
  */
-public interface PoolMetrics<Q, T> extends QueueMetrics<Q> {
+public interface PoolMetrics<Q, T> extends Metrics {
+
+  /**
+   * Called when a resource is requested.
+   */
+  default Q enqueue() {
+    return null;
+  }
+
+  /**
+   * Called when a request for connection is satisfied.
+   */
+  default void dequeue(Q queueMetric) {
+  }
 
   /**
    * Begin the execution of a task.

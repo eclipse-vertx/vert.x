@@ -24,7 +24,7 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.endpoint.EndpointManager;
 import io.vertx.core.net.impl.endpoint.EndpointProvider;
 import io.vertx.core.spi.metrics.ClientMetrics;
-import io.vertx.core.spi.metrics.QueueMetrics;
+import io.vertx.core.spi.metrics.PoolMetrics;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -73,7 +73,7 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
     EndpointProvider<EndpointKey, WebSocketEndpoint> provider = (key_, dispose) -> {
       int maxPoolSize = options.getMaxConnections();
       ClientMetrics clientMetrics = WebSocketClientImpl.this.metrics != null ? WebSocketClientImpl.this.metrics.createEndpointMetrics(key_.server, maxPoolSize) : null;
-      QueueMetrics queueMetrics = WebSocketClientImpl.this.metrics != null ? vertx.metricsSPI().createQueueMetrics("ws", key_.server.toString()) : null;
+      PoolMetrics queueMetrics = WebSocketClientImpl.this.metrics != null ? vertx.metricsSPI().createPoolMetrics("ws", key_.server.toString(), maxPoolSize) : null;
       HttpChannelConnector connector = new HttpChannelConnector(WebSocketClientImpl.this, netClient, sslOptions, key_.proxyOptions, clientMetrics, HttpVersion.HTTP_1_1, key_.ssl, false, key_.authority, key_.server, false);
       return new WebSocketEndpoint(null, queueMetrics, options, maxPoolSize, connector, dispose);
     };

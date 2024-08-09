@@ -13,16 +13,16 @@ package io.vertx.core.http.impl;
 import io.vertx.core.Future;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.impl.endpoint.Endpoint;
-import io.vertx.core.spi.metrics.QueueMetrics;
+import io.vertx.core.spi.metrics.PoolMetrics;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 abstract class ClientHttpEndpointBase<C> extends Endpoint {
 
-  private final QueueMetrics metrics;
+  private final PoolMetrics metrics;
 
-  ClientHttpEndpointBase(QueueMetrics metrics, Runnable dispose) {
+  ClientHttpEndpointBase(PoolMetrics metrics, Runnable dispose) {
     super(dispose);
     this.metrics = metrics;
   }

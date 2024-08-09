@@ -31,7 +31,6 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
-import io.vertx.core.spi.metrics.QueueMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
@@ -690,7 +689,7 @@ public class MetricsTest extends VertxTestBase {
         responsesLatch.countDown();
       });
     }
-    FakeQueueMetrics queueMetrics = FakeQueueMetrics.getMetrics("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT);
+    FakePoolMetrics queueMetrics = FakePoolMetrics.getMetrics("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT);
     assertWaitUntil(() -> requests.size() == 5);
     assertEquals(Collections.singleton("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT), clientMetrics.endpoints());
     assertEquals(0, queueMetrics.size());
@@ -759,10 +758,10 @@ public class MetricsTest extends VertxTestBase {
   public void testHttpClientConnectionCloseAfterRequestEnd() throws Exception {
     client = vertx.createHttpClient();
     AtomicReference<EndpointMetric> endpointMetrics = new AtomicReference<>();
-    AtomicReference<FakeQueueMetrics> queueMetrics = new AtomicReference<>();
+    AtomicReference<FakePoolMetrics> queueMetrics = new AtomicReference<>();
     server = vertx.createHttpServer().requestHandler(req -> {
       endpointMetrics.set(((FakeHttpClientMetrics)FakeHttpClientMetrics.getMetrics(client)).endpoint("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT));
-      queueMetrics.set(FakeQueueMetrics.getMetrics("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT));
+      queueMetrics.set(FakePoolMetrics.getMetrics("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT));
       req.response().end();
     });
     awaitFuture(server.listen(HttpTestBase.DEFAULT_HTTP_PORT, "localhost"));
@@ -932,7 +931,7 @@ public class MetricsTest extends VertxTestBase {
 
   @Test
   public void testThreadPoolMetricsWithExecuteBlocking() throws Exception {
-    Map<String, FakeQueueMetrics> all = FakeQueueMetrics.getMetrics();
+    Map<String, FakePoolMetrics> all = FakePoolMetrics.getMetrics();
 
     FakePoolMetrics metrics = (FakePoolMetrics) all.get("vert.x-worker-thread");
 
@@ -973,7 +972,7 @@ public class MetricsTest extends VertxTestBase {
 
   @Test
   public void testThreadPoolMetricsWithInternalExecuteBlocking() {
-    Map<String, FakeQueueMetrics> all = FakeQueueMetrics.getMetrics();
+    Map<String, FakePoolMetrics> all = FakePoolMetrics.getMetrics();
     FakePoolMetrics metrics = (FakePoolMetrics) all.get("vert.x-internal-blocking");
 
     assertThat(metrics.maxSize(), is(getOptions().getInternalBlockingPoolSize()));
@@ -1026,7 +1025,7 @@ public class MetricsTest extends VertxTestBase {
   @Test
   public void testThreadPoolMetricsWithWorkerVerticle() throws Exception {
     AtomicInteger counter = new AtomicInteger();
-    Map<String, FakeQueueMetrics> all = FakeQueueMetrics.getMetrics();
+    Map<String, FakePoolMetrics> all = FakePoolMetrics.getMetrics();
     FakePoolMetrics metrics = (FakePoolMetrics) all.get("vert.x-worker-thread");
 
     assertThat(metrics.maxSize(), is(getOptions().getInternalBlockingPoolSize()));
@@ -1103,7 +1102,7 @@ public class MetricsTest extends VertxTestBase {
 
     WorkerExecutor workerExec = vertx.createSharedWorkerExecutor("my-pool", 10);
 
-    Map<String, FakeQueueMetrics> all = FakeQueueMetrics.getMetrics();
+    Map<String, FakePoolMetrics> all = FakePoolMetrics.getMetrics();
 
     FakePoolMetrics metrics = (FakePoolMetrics) all.get("my-pool");
 
@@ -1146,9 +1145,9 @@ public class MetricsTest extends VertxTestBase {
     WorkerExecutor ex1 = vertx.createSharedWorkerExecutor("ex1");
     WorkerExecutor ex1_ = vertx.createSharedWorkerExecutor("ex1");
     WorkerExecutor ex2 = vertx.createSharedWorkerExecutor("ex2");
-    Map<String, FakeQueueMetrics> all = FakeQueueMetrics.getMetrics();
-    FakeQueueMetrics metrics1 = all.get("ex1");
-    FakeQueueMetrics metrics2 = all.get("ex2");
+    Map<String, FakePoolMetrics> all = FakePoolMetrics.getMetrics();
+    FakePoolMetrics metrics1 = all.get("ex1");
+    FakePoolMetrics metrics2 = all.get("ex2");
     assertNotNull(metrics1);
     assertNotNull(metrics2);
     assertNotSame(metrics1, metrics2);

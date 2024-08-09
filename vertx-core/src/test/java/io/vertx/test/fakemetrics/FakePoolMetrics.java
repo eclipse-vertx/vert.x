@@ -12,12 +12,21 @@ package io.vertx.test.fakemetrics;
 
 import io.vertx.core.spi.metrics.PoolMetrics;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class FakePoolMetrics extends FakeQueueMetrics implements PoolMetrics<Object, Object> {
+public class FakePoolMetrics implements PoolMetrics<Object, Object> {
 
+  private final static Map<String, FakePoolMetrics> METRICS = new ConcurrentHashMap<>();
+
+  private static final Object TASK_SUBMITTED = new Object();
   private static final Object TASK_BEGIN = new Object();
 
+  private final AtomicInteger waiting = new AtomicInteger();
+  private final String name;
+  private final AtomicBoolean closed = new AtomicBoolean();
   private final int maxSize;
   private final AtomicInteger completed = new AtomicInteger();
   private final AtomicInteger submitted = new AtomicInteger();
@@ -25,9 +34,14 @@ public class FakePoolMetrics extends FakeQueueMetrics implements PoolMetrics<Obj
   private final AtomicInteger running = new AtomicInteger();
 
   public FakePoolMetrics(String name, int maxSize) {
-    super(name);
+    this.name = name;
     this.maxSize = maxSize;
     this.idle.set(maxSize);
+    METRICS.put(name, this);
+  }
+
+  public String name() {
+    return name;
   }
 
   public int maxSize() {
@@ -35,9 +49,15 @@ public class FakePoolMetrics extends FakeQueueMetrics implements PoolMetrics<Obj
   }
 
   @Override
+  public void dequeue(Object queueMetric) {
+    waiting.decrementAndGet();
+  }
+
+  @Override
   public synchronized Object enqueue() {
+    waiting.incrementAndGet();
     submitted.incrementAndGet();
-    return super.enqueue();
+    return TASK_SUBMITTED;
   }
 
   @Override
@@ -69,5 +89,27 @@ public class FakePoolMetrics extends FakeQueueMetrics implements PoolMetrics<Obj
 
   public int numberOfCompletedTasks() {
     return completed.get();
+  }
+
+  public boolean isClosed() {
+    return closed.get();
+  }
+
+  public int size() {
+    return waiting.get();
+  }
+
+  @Override
+  public void close() {
+    closed.set(true);
+    METRICS.remove(name);
+  }
+
+  public static Map<String, FakePoolMetrics> getMetrics() {
+    return METRICS;
+  }
+
+  public static FakePoolMetrics getMetrics(String name) {
+    return METRICS.get(name);
   }
 }
