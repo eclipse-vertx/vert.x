@@ -26,7 +26,7 @@ import io.vertx.core.internal.pool.PoolConnector;
 import io.vertx.core.internal.pool.Lease;
 import io.vertx.core.internal.pool.PoolWaiter;
 import io.vertx.core.spi.metrics.ClientMetrics;
-import io.vertx.core.spi.metrics.QueueMetrics;
+import io.vertx.core.spi.metrics.PoolMetrics;
 
 import java.util.List;
 import java.util.function.BiFunction;
@@ -66,13 +66,13 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
 
   public SharedClientHttpStreamEndpoint(HttpClientImpl client,
                                         ClientMetrics clientMetrics,
-                                        QueueMetrics queueMetrics,
+                                        PoolMetrics poolMetrics,
                                         int queueMaxSize,
                                         int http1MaxSize,
                                         int http2MaxSize,
                                         HttpChannelConnector connector,
                                         Runnable dispose) {
-    super(queueMetrics, dispose);
+    super(poolMetrics, dispose);
 
     ConnectionPool<HttpClientConnectionInternal> pool = ConnectionPool.pool(this, new int[]{http1MaxSize, http2MaxSize}, queueMaxSize)
       .connectionSelector(LIFO_SELECTOR).contextProvider(client.contextProvider());

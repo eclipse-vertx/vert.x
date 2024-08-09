@@ -131,17 +131,6 @@ public interface VertxMetrics extends Metrics, Measured {
   }
 
   /**
-   * Provides the queue metrics SPI.
-   *
-   * @param queueType the type of the queue e.g. worker, datasource, etc...
-   * @param name the name of the resource the inherent queue belongs to
-   * @return the queue metrics SPI or {@code null} when metrics are disabled
-   */
-  default QueueMetrics<?> createQueueMetrics(String queueType, String name) {
-    return null;
-  }
-
-  /**
    * Provides the pool metrics SPI.
    *
    * @param type the type of the pool e.g. worker, datasource, etc...

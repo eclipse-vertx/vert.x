@@ -30,7 +30,7 @@ import io.vertx.core.net.endpoint.EndpointNode;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.net.endpoint.EndpointResolver;
-import io.vertx.core.spi.metrics.QueueMetrics;
+import io.vertx.core.spi.metrics.PoolMetrics;
 
 import java.lang.ref.WeakReference;
 import java.net.URI;
@@ -182,7 +182,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     return (key, dispose) -> {
       int maxPoolSize = Math.max(poolOptions.getHttp1MaxSize(), poolOptions.getHttp2MaxSize());
       ClientMetrics clientMetrics = HttpClientImpl.this.metrics != null ? HttpClientImpl.this.metrics.createEndpointMetrics(key.server, maxPoolSize) : null;
-      QueueMetrics queueMetrics = HttpClientImpl.this.metrics != null ? vertx.metricsSPI().createQueueMetrics("http", key.server.toString()) : null;
+      PoolMetrics poolMetrics = HttpClientImpl.this.metrics != null ? vertx.metricsSPI().createPoolMetrics("http", key.server.toString(), maxPoolSize) : null;
       ProxyOptions proxyOptions = key.proxyOptions;
       if (proxyOptions != null && !key.ssl && proxyOptions.getType() == ProxyType.HTTP) {
         SocketAddress server = SocketAddress.inetSocketAddress(proxyOptions.getPort(), proxyOptions.getHost());
@@ -193,7 +193,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       return new SharedClientHttpStreamEndpoint(
         HttpClientImpl.this,
         clientMetrics,
-        queueMetrics,
+        poolMetrics,
         poolOptions.getMaxWaitQueueSize(),
         poolOptions.getHttp1MaxSize(),
         poolOptions.getHttp2MaxSize(),

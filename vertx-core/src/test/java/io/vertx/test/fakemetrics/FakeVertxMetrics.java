@@ -75,11 +75,6 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
   }
 
   @Override
-  public QueueMetrics<?> createQueueMetrics(String queueType, String name) {
-    return new FakeQueueMetrics(name);
-  }
-
-  @Override
   public PoolMetrics<?, ?> createPoolMetrics(String type, String name, int maxSize) {
     return new FakePoolMetrics(name, maxSize);
   }
