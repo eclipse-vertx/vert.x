@@ -30,6 +30,7 @@ import io.vertx.core.net.endpoint.EndpointNode;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.net.endpoint.EndpointResolver;
+import io.vertx.core.spi.metrics.QueueMetrics;
 
 import java.lang.ref.WeakReference;
 import java.net.URI;
@@ -180,17 +181,19 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   private EndpointProvider<EndpointKey, SharedClientHttpStreamEndpoint> httpEndpointProvider() {
     return (key, dispose) -> {
       int maxPoolSize = Math.max(poolOptions.getHttp1MaxSize(), poolOptions.getHttp2MaxSize());
-      ClientMetrics metrics = HttpClientImpl.this.metrics != null ? HttpClientImpl.this.metrics.createEndpointMetrics(key.server, maxPoolSize) : null;
+      ClientMetrics clientMetrics = HttpClientImpl.this.metrics != null ? HttpClientImpl.this.metrics.createEndpointMetrics(key.server, maxPoolSize) : null;
+      QueueMetrics queueMetrics = HttpClientImpl.this.metrics != null ? vertx.metricsSPI().createQueueMetrics("http", key.server.toString()) : null;
       ProxyOptions proxyOptions = key.proxyOptions;
       if (proxyOptions != null && !key.ssl && proxyOptions.getType() == ProxyType.HTTP) {
         SocketAddress server = SocketAddress.inetSocketAddress(proxyOptions.getPort(), proxyOptions.getHost());
         key = new EndpointKey(key.ssl, key.sslOptions, proxyOptions, server, key.authority);
         proxyOptions = null;
       }
-      HttpChannelConnector connector = new HttpChannelConnector(HttpClientImpl.this, netClient, key.sslOptions, proxyOptions, metrics, options.getProtocolVersion(), key.ssl, options.isUseAlpn(), key.authority, key.server, true);
+      HttpChannelConnector connector = new HttpChannelConnector(HttpClientImpl.this, netClient, key.sslOptions, proxyOptions, clientMetrics, options.getProtocolVersion(), key.ssl, options.isUseAlpn(), key.authority, key.server, true);
       return new SharedClientHttpStreamEndpoint(
         HttpClientImpl.this,
-        metrics,
+        clientMetrics,
+        queueMetrics,
         poolOptions.getMaxWaitQueueSize(),
         poolOptions.getHttp1MaxSize(),
         poolOptions.getHttp2MaxSize(),

@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class FakeHttpClientMetrics extends FakeTCPMetrics implements HttpClientMetrics<HttpClientMetric, WebSocketMetric, SocketMetric, Void> {
+public class FakeHttpClientMetrics extends FakeTCPMetrics implements HttpClientMetrics<HttpClientMetric, WebSocketMetric, SocketMetric> {
 
   private final String name;
   private final ConcurrentMap<WebSocketBase, WebSocketMetric> webSockets = new ConcurrentHashMap<>();
@@ -71,10 +71,10 @@ public class FakeHttpClientMetrics extends FakeTCPMetrics implements HttpClientM
     return null;
   }
 
-  public Integer queueSize(String name) {
-    EndpointMetric server = endpoint(name);
-    return server != null ? server.queueSize.get() : null;
-  }
+//  public Integer queueSize(String name) {
+//    EndpointMetric server = endpoint(name);
+//    return server != null ? server.queueSize.get() : null;
+//  }
 
   public Integer connectionCount(String name) {
     EndpointMetric endpoint = endpoint(name);
@@ -82,7 +82,7 @@ public class FakeHttpClientMetrics extends FakeTCPMetrics implements HttpClientM
   }
 
   @Override
-  public ClientMetrics<HttpClientMetric, Void, HttpRequest, HttpResponse> createEndpointMetrics(SocketAddress remoteAddress, int maxPoolSize) {
+  public ClientMetrics<HttpClientMetric, HttpRequest, HttpResponse> createEndpointMetrics(SocketAddress remoteAddress, int maxPoolSize) {
     EndpointMetric metric = new EndpointMetric() {
       @Override
       public void close() {
@@ -94,12 +94,12 @@ public class FakeHttpClientMetrics extends FakeTCPMetrics implements HttpClientM
   }
 
   @Override
-  public void endpointConnected(ClientMetrics<HttpClientMetric, Void, ?, ?> endpointMetric) {
+  public void endpointConnected(ClientMetrics<HttpClientMetric, ?, ?> endpointMetric) {
     ((EndpointMetric)endpointMetric).connectionCount.incrementAndGet();
   }
 
   @Override
-  public void endpointDisconnected(ClientMetrics<HttpClientMetric, Void, ?, ?> endpointMetric) {
+  public void endpointDisconnected(ClientMetrics<HttpClientMetric, ?, ?> endpointMetric) {
     ((EndpointMetric)endpointMetric).connectionCount.decrementAndGet();
   }
 

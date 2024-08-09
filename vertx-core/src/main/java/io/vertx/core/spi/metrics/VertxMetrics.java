@@ -72,7 +72,7 @@ public interface VertxMetrics extends Metrics, Measured {
    * @param namespace an optional namespace for scoping the metrics
    * @return the client metrics SPI or {@code null} when metrics are disabled
    */
-  default ClientMetrics<?, ?, ?, ?> createClientMetrics(SocketAddress remoteAddress, String type, String namespace) {
+  default ClientMetrics<?, ?, ?> createClientMetrics(SocketAddress remoteAddress, String type, String namespace) {
     return null;
   }
 
@@ -84,7 +84,7 @@ public interface VertxMetrics extends Metrics, Measured {
    * @param options the options used to create the {@link HttpClient}
    * @return the http client metrics SPI or {@code null} when metrics are disabled
    */
-  default HttpClientMetrics<?, ?, ?, ?> createHttpClientMetrics(HttpClientOptions options) {
+  default HttpClientMetrics<?, ?, ?> createHttpClientMetrics(HttpClientOptions options) {
     return null;
   }
 

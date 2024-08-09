@@ -58,7 +58,7 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
     return new FakeHttpServerMetrics();
   }
 
-  public HttpClientMetrics<?, ?, ?, Void> createHttpClientMetrics(HttpClientOptions options) {
+  public HttpClientMetrics<?, ?, ?> createHttpClientMetrics(HttpClientOptions options) {
     return new FakeHttpClientMetrics(options.getMetricsName());
   }
 

@@ -17,6 +17,7 @@ import io.vertx.core.http.WebSocketConnectOptions;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.impl.endpoint.Endpoint;
 import io.vertx.core.spi.metrics.ClientMetrics;
+import io.vertx.core.spi.metrics.QueueMetrics;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -47,28 +48,25 @@ class WebSocketEndpoint extends Endpoint {
   private final Deque<Waiter> waiters;
   private int inflightConnections;
 
-  private final ClientMetrics metrics; // Shall be removed later combining the PoolMetrics with HttpClientMetrics
+  private final ClientMetrics clientMetrics;
+  private final QueueMetrics queueMetrics;
 
-  WebSocketEndpoint(ClientMetrics metrics, WebSocketClientOptions options, int maxPoolSize, HttpChannelConnector connector, Runnable dispose) {
+  WebSocketEndpoint(ClientMetrics clientMetrics, QueueMetrics queueMetrics, WebSocketClientOptions options, int maxPoolSize, HttpChannelConnector connector, Runnable dispose) {
     super(dispose);
     this.options = options;
     this.maxPoolSize = maxPoolSize;
     this.connector = connector;
     this.waiters = new ArrayDeque<>();
-    this.metrics = metrics;
+    this.clientMetrics = clientMetrics;
+    this.queueMetrics = queueMetrics;
   }
 
   public Future<WebSocket> requestConnection(ContextInternal ctx, WebSocketConnectOptions connectOptions, long timeout) {
     Future<WebSocket> fut = requestConnection2(ctx, connectOptions, timeout);
-    if (metrics != null) {
-      Object metric;
-      if (metrics != null) {
-        metric = metrics.enqueueRequest();
-      } else {
-        metric = null;
-      }
+    if (queueMetrics != null) {
+      Object metric = queueMetrics.enqueue();
       fut = fut.andThen(ar -> {
-        metrics.dequeueRequest(metric);
+        queueMetrics.dequeue(metric);
       });
     }
     return fut;
@@ -152,8 +150,11 @@ class WebSocketEndpoint extends Endpoint {
 
   @Override
   protected void dispose() {
-    if (metrics != null) {
-      metrics.close();
+    if (clientMetrics != null) {
+      clientMetrics.close();
+    }
+    if (queueMetrics != null) {
+      queueMetrics.close();
     }
   }
 }
