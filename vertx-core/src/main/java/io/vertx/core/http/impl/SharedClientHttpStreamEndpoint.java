@@ -26,6 +26,7 @@ import io.vertx.core.internal.pool.PoolConnector;
 import io.vertx.core.internal.pool.Lease;
 import io.vertx.core.internal.pool.PoolWaiter;
 import io.vertx.core.spi.metrics.ClientMetrics;
+import io.vertx.core.spi.metrics.PoolMetrics;
 
 import java.util.List;
 import java.util.function.BiFunction;
@@ -59,22 +60,25 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
   };
 
   private final HttpClientImpl client;
+  private final ClientMetrics clientMetrics;
   private final HttpChannelConnector connector;
   private final ConnectionPool<HttpClientConnectionInternal> pool;
 
   public SharedClientHttpStreamEndpoint(HttpClientImpl client,
-                                        ClientMetrics metrics,
+                                        ClientMetrics clientMetrics,
+                                        PoolMetrics poolMetrics,
                                         int queueMaxSize,
                                         int http1MaxSize,
                                         int http2MaxSize,
                                         HttpChannelConnector connector,
                                         Runnable dispose) {
-    super(metrics, dispose);
+    super(poolMetrics, dispose);
 
     ConnectionPool<HttpClientConnectionInternal> pool = ConnectionPool.pool(this, new int[]{http1MaxSize, http2MaxSize}, queueMaxSize)
       .connectionSelector(LIFO_SELECTOR).contextProvider(client.contextProvider());
 
     this.client = client;
+    this.clientMetrics = clientMetrics;
     this.connector = connector;
     this.pool = pool;
   }
@@ -177,5 +181,13 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
   @Override
   protected void handleClose() {
     pool.close();
+  }
+
+  @Override
+  protected void dispose() {
+    if (clientMetrics != null) {
+      clientMetrics.close();
+    }
+    super.dispose();
   }
 }

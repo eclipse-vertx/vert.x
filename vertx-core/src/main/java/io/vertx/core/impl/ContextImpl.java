@@ -154,18 +154,19 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
   private static <T> Future<T> internalExecuteBlocking(ContextInternal context, Handler<Promise<T>> blockingCodeHandler,
       WorkerPool workerPool, TaskQueue queue) {
     PoolMetrics metrics = workerPool.metrics();
-    Object queueMetric = metrics != null ? metrics.submitted() : null;
+    Object queueMetric = metrics != null ? metrics.enqueue() : null;
     Promise<T> promise = context.promise();
     Future<T> fut = promise.future();
     try {
       Runnable command = () -> {
         Object execMetric = null;
         if (metrics != null) {
-          execMetric = metrics.begin(queueMetric);
+          metrics.dequeue(queueMetric);
+          execMetric = metrics.begin();
         }
         context.dispatch(promise, blockingCodeHandler);
         if (metrics != null) {
-          metrics.end(execMetric, fut.succeeded());
+          metrics.end(execMetric);
         }
       };
       Executor exec = workerPool.executor();
@@ -177,7 +178,7 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
     } catch (RejectedExecutionException e) {
       // Pool is already shut down
       if (metrics != null) {
-        metrics.rejected(queueMetric);
+        metrics.dequeue(queueMetric);
       }
       throw e;
     }

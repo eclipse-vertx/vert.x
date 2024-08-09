@@ -19,30 +19,16 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.assertNotNull;
-
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class EndpointMetric implements ClientMetrics<HttpClientMetric, Void, HttpRequest, HttpResponse> {
+public class EndpointMetric implements ClientMetrics<HttpClientMetric, HttpRequest, HttpResponse> {
 
-  public final AtomicInteger queueSize = new AtomicInteger();
   public final AtomicInteger connectionCount = new AtomicInteger();
   public final AtomicInteger requestCount = new AtomicInteger();
   public final ConcurrentMap<HttpRequest, HttpClientMetric> requests = new ConcurrentHashMap<>();
 
   public EndpointMetric() {
-  }
-
-  @Override
-  public Void enqueueRequest() {
-    queueSize.incrementAndGet();
-    return null;
-  }
-
-  @Override
-  public void dequeueRequest(Void taskMetric) {
-    queueSize.decrementAndGet();
   }
 
   @Override

@@ -47,6 +47,7 @@ import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.dns.impl.DnsAddressResolverProvider;
+import io.vertx.core.spi.metrics.*;
 import io.vertx.core.spi.transport.Transport;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.shareddata.impl.SharedDataImpl;
@@ -55,10 +56,6 @@ import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.VertxThreadFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeSelector;
-import io.vertx.core.spi.metrics.Metrics;
-import io.vertx.core.spi.metrics.MetricsProvider;
-import io.vertx.core.spi.metrics.PoolMetrics;
-import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.io.File;
@@ -1073,7 +1070,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public WorkerPool wrapWorkerPool(ExecutorService executor) {
-    PoolMetrics workerMetrics = metrics != null ? metrics.createPoolMetrics("worker", null, -1) : null;
+    PoolMetrics workerMetrics = metrics != null ? metrics.createPoolMetrics( "worker", null, -1) : null;
     return new WorkerPool(executor, workerMetrics);
   }
 

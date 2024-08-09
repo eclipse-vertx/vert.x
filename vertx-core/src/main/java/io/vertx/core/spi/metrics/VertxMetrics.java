@@ -72,7 +72,7 @@ public interface VertxMetrics extends Metrics, Measured {
    * @param namespace an optional namespace for scoping the metrics
    * @return the client metrics SPI or {@code null} when metrics are disabled
    */
-  default ClientMetrics<?, ?, ?, ?> createClientMetrics(SocketAddress remoteAddress, String type, String namespace) {
+  default ClientMetrics<?, ?, ?> createClientMetrics(SocketAddress remoteAddress, String type, String namespace) {
     return null;
   }
 
@@ -84,7 +84,7 @@ public interface VertxMetrics extends Metrics, Measured {
    * @param options the options used to create the {@link HttpClient}
    * @return the http client metrics SPI or {@code null} when metrics are disabled
    */
-  default HttpClientMetrics<?, ?, ?, ?> createHttpClientMetrics(HttpClientOptions options) {
+  default HttpClientMetrics<?, ?, ?> createHttpClientMetrics(HttpClientOptions options) {
     return null;
   }
 
@@ -133,12 +133,12 @@ public interface VertxMetrics extends Metrics, Measured {
   /**
    * Provides the pool metrics SPI.
    *
-   * @param poolType the type of the pool e.g worker, datasource, etc..
-   * @param poolName the name of the pool
-   * @param maxPoolSize the pool max size, or -1 if the number cannot be determined
-   * @return the thread pool metrics SPI or {@code null} when metrics are disabled
+   * @param type the type of the pool e.g. worker, datasource, etc...
+   * @param name the name of the resource the inherent pool belongs to
+   * @param maxSize the max size, or {@code -1} if the number cannot be determined
+   * @return the pool metrics SPI or {@code null} when metrics are disabled
    */
-  default PoolMetrics<?> createPoolMetrics(String poolType, String poolName, int maxPoolSize) {
+  default PoolMetrics<?, ?> createPoolMetrics(String type, String name, int maxSize) {
     return null;
   }
 

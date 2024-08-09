@@ -35,7 +35,7 @@ import io.vertx.core.spi.observability.HttpResponse;
  *
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public interface HttpClientMetrics<R, W, S, T> extends TCPMetrics<S> {
+public interface HttpClientMetrics<R, W, S> extends TCPMetrics<S> {
 
   /**
    * Provides metrics for a particular endpoint
@@ -44,7 +44,7 @@ public interface HttpClientMetrics<R, W, S, T> extends TCPMetrics<S> {
    * @param maxPoolSize the client max pool size
    * @return the endpoint metric
    */
-  default ClientMetrics<R, T, HttpRequest, HttpResponse> createEndpointMetrics(SocketAddress remoteAddress, int maxPoolSize) {
+  default ClientMetrics<R, HttpRequest, HttpResponse> createEndpointMetrics(SocketAddress remoteAddress, int maxPoolSize) {
     return null;
   }
 
@@ -53,7 +53,7 @@ public interface HttpClientMetrics<R, W, S, T> extends TCPMetrics<S> {
    *  @param endpointMetric the endpoint metric
    *
    */
-  default void endpointConnected(ClientMetrics<R, T, ?, ?> endpointMetric) {
+  default void endpointConnected(ClientMetrics<R, ?, ?> endpointMetric) {
   }
 
   /**
@@ -61,7 +61,7 @@ public interface HttpClientMetrics<R, W, S, T> extends TCPMetrics<S> {
    *  @param endpointMetric the endpoint metric
    *
    */
-  default void endpointDisconnected(ClientMetrics<R, T, ?, ?> endpointMetric) {
+  default void endpointDisconnected(ClientMetrics<R, ?, ?> endpointMetric) {
   }
 
   /**

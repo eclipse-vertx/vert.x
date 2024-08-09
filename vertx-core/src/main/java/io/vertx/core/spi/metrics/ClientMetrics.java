@@ -16,20 +16,7 @@ package io.vertx.core.spi.metrics;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface ClientMetrics<M, T, Req, Resp> extends Metrics {
-
-  /**
-   * Called when a connection is requested.
-   */
-  default T enqueueRequest() {
-    return null;
-  }
-
-  /**
-   * Called when a request for connection is satisfied.
-   */
-  default void dequeueRequest(T taskMetric) {
-  }
+public interface ClientMetrics<M, Req, Resp> extends Metrics {
 
   /**
    * Called when a client request begins. Vert.x will invoke {@link #requestEnd} when the request
