@@ -19,7 +19,7 @@ import io.vertx.core.internal.WorkerExecutorInternal;
 import io.vertx.core.internal.WorkerPool;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
-import io.vertx.core.spi.metrics.QueueMetrics;
+import io.vertx.core.spi.metrics.PoolMetrics;
 
 import java.lang.ref.Cleaner;
 import java.util.concurrent.Callable;
@@ -46,7 +46,7 @@ class WorkerExecutorImpl implements MetricsProvider, WorkerExecutorInternal {
 
   @Override
   public boolean isMetricsEnabled() {
-    QueueMetrics metrics = pool.metrics();
+    PoolMetrics metrics = pool.metrics();
     return metrics != null;
   }
 
