@@ -32,13 +32,13 @@ public class DummyVertxMetrics implements VertxMetrics {
 
   }
 
-  public static class DummyHttpClientMetrics implements HttpClientMetrics<Void, Void, Void, Void> {
+  public static class DummyHttpClientMetrics implements HttpClientMetrics<Void, Void, Void> {
 
     public static final DummyHttpClientMetrics INSTANCE = new DummyHttpClientMetrics();
 
   }
 
-  public static class DummyClientMetrics implements ClientMetrics<Void, Void, Void, Void> {
+  public static class DummyClientMetrics implements ClientMetrics<Void, Void, Void> {
 
     public static final DummyClientMetrics INSTANCE = new DummyClientMetrics();
 

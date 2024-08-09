@@ -27,7 +27,7 @@ public class FakeQueueMetrics implements QueueMetrics<Object> {
 
   private static final Object TASK_SUBMITTED = new Object();
 
-  private final static Map<String, QueueMetrics> METRICS = new ConcurrentHashMap<>();
+  private final static Map<String, FakeQueueMetrics> METRICS = new ConcurrentHashMap<>();
 
   private final AtomicInteger waiting = new AtomicInteger();
   private final String name;
@@ -63,12 +63,15 @@ public class FakeQueueMetrics implements QueueMetrics<Object> {
     return closed.get();
   }
 
-  public int numberOfWaitingTasks() {
+  public int size() {
     return waiting.get();
   }
 
-  public static Map<String, QueueMetrics> getPoolMetrics() {
+  public static Map<String, FakeQueueMetrics> getMetrics() {
     return METRICS;
   }
 
+  public static FakeQueueMetrics getMetrics(String name) {
+    return METRICS.get(name);
+  }
 }

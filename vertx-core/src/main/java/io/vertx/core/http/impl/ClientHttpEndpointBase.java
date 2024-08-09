@@ -13,32 +13,26 @@ package io.vertx.core.http.impl;
 import io.vertx.core.Future;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.impl.endpoint.Endpoint;
-import io.vertx.core.spi.metrics.ClientMetrics;
+import io.vertx.core.spi.metrics.QueueMetrics;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 abstract class ClientHttpEndpointBase<C> extends Endpoint {
 
-  private final ClientMetrics metrics; // Shall be removed later combining the PoolMetrics with HttpClientMetrics
+  private final QueueMetrics metrics;
 
-  ClientHttpEndpointBase(ClientMetrics metrics, Runnable dispose) {
+  ClientHttpEndpointBase(QueueMetrics metrics, Runnable dispose) {
     super(dispose);
-
     this.metrics = metrics;
   }
 
   public Future<C> requestConnection(ContextInternal ctx, long timeout) {
     Future<C> fut = requestConnection2(ctx, timeout);
     if (metrics != null) {
-      Object metric;
-      if (metrics != null) {
-        metric = metrics.enqueueRequest();
-      } else {
-        metric = null;
-      }
+      Object metric = metrics.enqueue();
       fut = fut.andThen(ar -> {
-        metrics.dequeueRequest(metric);
+        metrics.dequeue(metric);
       });
     }
     return fut;
