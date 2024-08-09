@@ -55,11 +55,12 @@ public class WorkerExecutor implements EventExecutor {
   @Override
   public void execute(Runnable command) {
     PoolMetrics metrics = workerPool.metrics();
-    Object queueMetric = metrics != null ? metrics.submitted() : null;
+    Object queueMetric = metrics != null ? metrics.enqueue() : null;
     orderedTasks.execute(() -> {
       Object execMetric = null;
       if (metrics != null) {
-        execMetric = metrics.begin(queueMetric);
+        metrics.dequeue(queueMetric);
+        execMetric = metrics.begin();
       }
       try {
         inThread.set(true);
@@ -70,7 +71,7 @@ public class WorkerExecutor implements EventExecutor {
         }
       } finally {
         if (metrics != null) {
-          metrics.end(execMetric, true);
+          metrics.end(execMetric);
         }
       }
     }, workerPool.executor());
