@@ -412,10 +412,10 @@ public class MetricsContextTest extends VertxTestBase {
     VertxMetricsFactory factory = (options) -> new VertxMetrics() {
       @Override
       public HttpClientMetrics createHttpClientMetrics(HttpClientOptions options) {
-        return new HttpClientMetrics<Void, Void, Void, Void>() {
+        return new HttpClientMetrics<Void, Void, Void>() {
           @Override
-          public ClientMetrics<Void, Void, HttpRequest, HttpResponse> createEndpointMetrics(SocketAddress remoteAddress, int maxPoolSize) {
-            return new ClientMetrics<Void, Void, HttpRequest, HttpResponse>() {
+          public ClientMetrics<Void, HttpRequest, HttpResponse> createEndpointMetrics(SocketAddress remoteAddress, int maxPoolSize) {
+            return new ClientMetrics<>() {
               @Override
               public Void requestBegin(String uri, HttpRequest request) {
                 requestBeginCalled.set(uri);
@@ -512,10 +512,10 @@ public class MetricsContextTest extends VertxTestBase {
     VertxMetricsFactory factory = (options) -> new VertxMetrics() {
       @Override
       public HttpClientMetrics createHttpClientMetrics(HttpClientOptions options) {
-        return new HttpClientMetrics<Void, Void, Void, Void>() {
+        return new HttpClientMetrics<Void, Void, Void>() {
           @Override
-          public ClientMetrics<Void, Void, HttpRequest, HttpResponse> createEndpointMetrics(SocketAddress remoteAddress, int maxPoolSize) {
-            return new ClientMetrics<Void, Void, HttpRequest, HttpResponse>() {
+          public ClientMetrics<Void, HttpRequest, HttpResponse> createEndpointMetrics(SocketAddress remoteAddress, int maxPoolSize) {
+            return new ClientMetrics<>() {
             };
           }
           @Override

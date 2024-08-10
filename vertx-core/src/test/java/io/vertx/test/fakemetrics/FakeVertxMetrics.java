@@ -11,7 +11,6 @@
 
 package io.vertx.test.fakemetrics;
 
-import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.http.HttpClientOptions;
@@ -59,7 +58,7 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
     return new FakeHttpServerMetrics();
   }
 
-  public HttpClientMetrics<?, ?, ?, Void> createHttpClientMetrics(HttpClientOptions options) {
+  public HttpClientMetrics<?, ?, ?> createHttpClientMetrics(HttpClientOptions options) {
     return new FakeHttpClientMetrics(options.getMetricsName());
   }
 
@@ -76,8 +75,8 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
   }
 
   @Override
-  public PoolMetrics<?> createPoolMetrics(String poolType, String poolName, int maxPoolSize) {
-    return new FakePoolMetrics(poolName, maxPoolSize);
+  public PoolMetrics<?, ?> createPoolMetrics(String type, String name, int maxSize) {
+    return new FakePoolMetrics(name, maxSize);
   }
 
   @Override

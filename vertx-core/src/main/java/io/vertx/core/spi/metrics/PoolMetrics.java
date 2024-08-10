@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2024 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -8,52 +8,40 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-
 package io.vertx.core.spi.metrics;
 
 /**
- * An SPI used internally by Vert.x to gather metrics on pools used by Vert.x  (execute blocking, worker verticle or data source).
- * <p>
- * Usually these metrics measure the latency of a task queuing and the latency a task execution.
- *
- * @author <a href="http://escoffier.me">Clement Escoffier</a>
+ * Worker pool metrics
  */
-public interface PoolMetrics<T> extends Metrics {
+public interface PoolMetrics<Q, T> extends Metrics {
 
   /**
-   * A new task has been submitted to access the resource.
-   * This method is called from the submitter context.
-   *
-   * @return the timer measuring the task queuing
+   * Signals a request is enqueued to obtain a resource.
    */
-  default T submitted() {
+  default Q enqueue() {
     return null;
   }
 
   /**
-   * The submitted task start to use the resource.
-   *
-   * @param t the timer measuring the task queuing returned by {@link #submitted()}
-   * @return the timer measuring the task execution
+   * Signals the request was removed from the queue.
    */
-  default T begin(T t) {
+  default void dequeue(Q queueMetric) {
+  }
+
+  /**
+   * Signal the beginning of the utilisation of a pool resource.
+   *
+   * @return the timer measuring the resource utilisation
+   */
+  default T begin() {
     return null;
   }
 
   /**
-   * The task has been rejected. The underlying resource has probably be shutdown.
+   * Signal the release of a pool resource.
    *
-   * @param t the timer measuring the task queuing returned by {@link #submitted()}
+   * @param t the timer measuring the resource utilisation returned by {@link #begin}
    */
-  default void rejected(T t) {
-  }
-
-  /**
-   * The submitted tasks has completed its execution and release the resource.
-   *
-   * @param succeeded whether or not the task has gracefully completed
-   * @param t the timer measuring the task execution returned by {@link #begin}
-   */
-  default void end(T t, boolean succeeded) {
+  default void end(T t) {
   }
 }

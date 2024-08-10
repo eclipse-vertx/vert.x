@@ -31,7 +31,6 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
-import io.vertx.core.spi.metrics.PoolMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
@@ -681,7 +680,7 @@ public class MetricsTest extends VertxTestBase {
     });
     awaitFuture(server.listen(HttpTestBase.DEFAULT_HTTP_PORT, "localhost"));
     client = vertx.createHttpClient(new HttpClientOptions().setKeepAliveTimeout(1));
-    FakeHttpClientMetrics metrics = FakeHttpClientMetrics.getMetrics(client);
+    FakeHttpClientMetrics clientMetrics = FakeHttpClientMetrics.getMetrics(client);
     CountDownLatch responsesLatch = new CountDownLatch(5);
     for (int i = 0;i < 5;i++) {
       client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, "localhost", "/somepath")
@@ -690,38 +689,39 @@ public class MetricsTest extends VertxTestBase {
         responsesLatch.countDown();
       });
     }
+    FakePoolMetrics queueMetrics = FakePoolMetrics.getMetrics("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT);
     assertWaitUntil(() -> requests.size() == 5);
-    assertEquals(Collections.singleton("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT), metrics.endpoints());
-    assertEquals(0, (int)metrics.queueSize("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT));
-    assertEquals(5, (int)metrics.connectionCount("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT));
+    assertEquals(Collections.singleton("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT), clientMetrics.endpoints());
+    assertEquals(0, queueMetrics.pending());
+    assertEquals(5, (int)clientMetrics.connectionCount("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT));
     for (int i = 0;i < 8;i++) {
       client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, "localhost", "/somepath")
         .compose(HttpClientRequest::send)
         .onComplete(onSuccess(resp -> {
       }));
     }
-    assertEquals(Collections.singleton("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT), metrics.endpoints());
-    assertEquals(8, (int)metrics.queueSize("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT));
-    assertEquals(5, (int)metrics.connectionCount("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT));
+    assertEquals(Collections.singleton("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT), clientMetrics.endpoints());
+    assertEquals(8, queueMetrics.pending());
+    assertEquals(5, (int)clientMetrics.connectionCount("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT));
     ArrayList<Runnable> copy = new ArrayList<>(requests);
     requests.clear();
     copy.forEach(Runnable::run);
     awaitLatch(responsesLatch);
     assertWaitUntil(() -> requests.size() == 5);
-    assertEquals(Collections.singleton("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT), metrics.endpoints());
-    assertEquals(3, (int)metrics.queueSize("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT));
-    assertEquals(5, (int)metrics.connectionCount("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT));
+    assertEquals(Collections.singleton("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT), clientMetrics.endpoints());
+    assertEquals(3, queueMetrics.pending());
+    assertEquals(5, (int)clientMetrics.connectionCount("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT));
     copy = new ArrayList<>(requests);
     requests.clear();
     copy.forEach(Runnable::run);
     assertWaitUntil(() -> requests.size() == 3);
-    assertEquals(Collections.singleton("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT), metrics.endpoints());
-    assertEquals(0, (int)metrics.queueSize("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT));
-    assertWaitUntil(() -> metrics.connectionCount("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT) == 3);
+    assertEquals(Collections.singleton("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT), clientMetrics.endpoints());
+    assertEquals(0, queueMetrics.pending());
+    assertWaitUntil(() -> clientMetrics.connectionCount("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT) == 3);
     copy = new ArrayList<>(requests);
     requests.clear();
     copy.forEach(Runnable::run);
-    assertWaitUntil(() -> metrics.connectionCount("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT) == null);
+    assertWaitUntil(() -> clientMetrics.connectionCount("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT) == null);
   }
 
   @Test
@@ -758,8 +758,10 @@ public class MetricsTest extends VertxTestBase {
   public void testHttpClientConnectionCloseAfterRequestEnd() throws Exception {
     client = vertx.createHttpClient();
     AtomicReference<EndpointMetric> endpointMetrics = new AtomicReference<>();
+    AtomicReference<FakePoolMetrics> queueMetrics = new AtomicReference<>();
     server = vertx.createHttpServer().requestHandler(req -> {
       endpointMetrics.set(((FakeHttpClientMetrics)FakeHttpClientMetrics.getMetrics(client)).endpoint("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT));
+      queueMetrics.set(FakePoolMetrics.getMetrics("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT));
       req.response().end();
     });
     awaitFuture(server.listen(HttpTestBase.DEFAULT_HTTP_PORT, "localhost"));
@@ -770,10 +772,9 @@ public class MetricsTest extends VertxTestBase {
       .toCompletionStage()
       .toCompletableFuture()
       .get(20, TimeUnit.SECONDS);
-    EndpointMetric val = endpointMetrics.get();
-    assertWaitUntil(() -> val.connectionCount.get() == 0);
-    assertEquals(0, val.queueSize.get());
-    assertEquals(0, val.requestCount.get());
+    assertWaitUntil(() -> endpointMetrics.get().connectionCount.get() == 0);
+    assertEquals(0, endpointMetrics.get().requestCount.get());
+    assertEquals(0, queueMetrics.get().pending());
   }
 
   @Test
@@ -929,13 +930,13 @@ public class MetricsTest extends VertxTestBase {
   }
 
   @Test
-  public void testThreadPoolMetricsWithExecuteBlocking() throws Exception {
-    Map<String, PoolMetrics> all = FakePoolMetrics.getPoolMetrics();
+  public void testThreadPoolMetricsWithExecuteBlocking() {
+    Map<String, FakePoolMetrics> all = FakePoolMetrics.getMetrics();
 
-    FakePoolMetrics metrics = (FakePoolMetrics) all.get("vert.x-worker-thread");
+    FakePoolMetrics metrics = all.get("vert.x-worker-thread");
 
-    assertThat(metrics.getPoolSize(), is(getOptions().getInternalBlockingPoolSize()));
-    assertThat(metrics.numberOfIdleThreads(), is(getOptions().getWorkerPoolSize()));
+    assertThat(metrics.maxSize(), is(getOptions().getInternalBlockingPoolSize()));
+    assertThat(metrics.available(), is(getOptions().getWorkerPoolSize()));
 
     Callable<Void> job = getSomeDumbTask();
 
@@ -945,37 +946,37 @@ public class MetricsTest extends VertxTestBase {
     for (int i = 0; i < 100; i++) {
       vertx.executeBlocking(job).onComplete(
           ar -> {
-            if (metrics.numberOfWaitingTasks() > 0) {
+            if (metrics.pending() > 0) {
               hadWaitingQueue.set(true);
             }
-            if (metrics.numberOfIdleThreads() > 0) {
+            if (metrics.available() > 0) {
               hadIdle.set(true);
             }
-            if (metrics.numberOfRunningTasks() > 0) {
+            if (metrics.borrowed() > 0) {
               hadRunning.set(true);
             }
           }
       );
     }
 
-    assertWaitUntil(() -> metrics.numberOfSubmittedTask() == 100);
-    assertWaitUntil(() -> metrics.numberOfCompletedTasks() == 100);
+    assertWaitUntil(() -> metrics.numberOfEnqueues() == 100);
+    assertWaitUntil(() -> metrics.numberOfReleases() == 100);
     assertTrue(hadIdle.get());
     assertTrue(hadWaitingQueue.get());
     assertTrue(hadRunning.get());
 
-    assertEquals(metrics.numberOfIdleThreads(), getOptions().getWorkerPoolSize());
-    assertEquals(metrics.numberOfRunningTasks(), 0);
-    assertEquals(metrics.numberOfWaitingTasks(), 0);
+    assertEquals(metrics.available(), getOptions().getWorkerPoolSize());
+    assertEquals(metrics.borrowed(), 0);
+    assertEquals(metrics.pending(), 0);
   }
 
   @Test
   public void testThreadPoolMetricsWithInternalExecuteBlocking() {
-    Map<String, PoolMetrics> all = FakePoolMetrics.getPoolMetrics();
+    Map<String, FakePoolMetrics> all = FakePoolMetrics.getMetrics();
     FakePoolMetrics metrics = (FakePoolMetrics) all.get("vert.x-internal-blocking");
 
-    assertThat(metrics.getPoolSize(), is(getOptions().getInternalBlockingPoolSize()));
-    assertThat(metrics.numberOfIdleThreads(), is(getOptions().getInternalBlockingPoolSize()));
+    assertThat(metrics.maxSize(), is(getOptions().getInternalBlockingPoolSize()));
+    assertThat(metrics.available(), is(getOptions().getInternalBlockingPoolSize()));
 
     int num = VertxOptions.DEFAULT_INTERNAL_BLOCKING_POOL_SIZE;
     int count = num * 5;
@@ -996,39 +997,39 @@ public class MetricsTest extends VertxTestBase {
           fail(e);
           Thread.currentThread().interrupt();
         }
-        if (metrics.numberOfRunningTasks() > 0) {
+        if (metrics.borrowed() > 0) {
           hadRunning.set(true);
         }
-        if (metrics.numberOfWaitingTasks() > 0) {
+        if (metrics.pending() > 0) {
           hadWaitingQueue.set(true);
         }
         return null;
       }).onComplete(ar -> {
-        if (metrics.numberOfIdleThreads() > 0) {
+        if (metrics.available() > 0) {
           hadIdle.set(true);
         }
       });
     }
 
-    assertWaitUntil(() -> metrics.numberOfSubmittedTask() == 100);
-    assertWaitUntil(() -> metrics.numberOfCompletedTasks() == 100);
+    assertWaitUntil(() -> metrics.numberOfEnqueues() == 100);
+    assertWaitUntil(() -> metrics.numberOfReleases() == 100);
     assertWaitUntil(() -> hadIdle.get());
     assertTrue(hadWaitingQueue.get());
     assertTrue(hadRunning.get());
 
-    assertEquals(metrics.numberOfIdleThreads(), getOptions().getWorkerPoolSize());
-    assertEquals(metrics.numberOfRunningTasks(), 0);
-    assertEquals(metrics.numberOfWaitingTasks(), 0);
+    assertEquals(metrics.available(), getOptions().getWorkerPoolSize());
+    assertEquals(metrics.borrowed(), 0);
+    assertEquals(metrics.pending(), 0);
   }
 
   @Test
   public void testThreadPoolMetricsWithWorkerVerticle() throws Exception {
     AtomicInteger counter = new AtomicInteger();
-    Map<String, PoolMetrics> all = FakePoolMetrics.getPoolMetrics();
-    FakePoolMetrics metrics = (FakePoolMetrics) all.get("vert.x-worker-thread");
+    Map<String, FakePoolMetrics> all = FakePoolMetrics.getMetrics();
+    FakePoolMetrics metrics = all.get("vert.x-worker-thread");
 
-    assertThat(metrics.getPoolSize(), is(getOptions().getInternalBlockingPoolSize()));
-    assertThat(metrics.numberOfIdleThreads(), is(getOptions().getWorkerPoolSize()));
+    assertThat(metrics.maxSize(), is(getOptions().getInternalBlockingPoolSize()));
+    assertThat(metrics.available(), is(getOptions().getWorkerPoolSize()));
 
     AtomicBoolean hadWaitingQueue = new AtomicBoolean();
     AtomicBoolean hadIdle = new AtomicBoolean();
@@ -1047,13 +1048,13 @@ public class MetricsTest extends VertxTestBase {
           try {
             Thread.sleep(10);
 
-            if (metrics.numberOfWaitingTasks() > 0) {
+            if (metrics.pending() > 0) {
               hadWaitingQueue.set(true);
             }
-            if (metrics.numberOfIdleThreads() > 0) {
+            if (metrics.available() > 0) {
               hadIdle.set(true);
             }
-            if (metrics.numberOfRunningTasks() > 0) {
+            if (metrics.borrowed() > 0) {
               hadRunning.set(true);
             }
 
@@ -1078,16 +1079,16 @@ public class MetricsTest extends VertxTestBase {
     awaitLatch(latch2);
 
     // The verticle deployment is also executed on the worker thread pool
-    assertWaitUntil(() -> count + 1 == metrics.numberOfCompletedTasks());
-    assertEquals(count + 1, metrics.numberOfSubmittedTask());
-    assertEquals(count + 1, metrics.numberOfCompletedTasks());
+    assertWaitUntil(() -> count + 1 == metrics.numberOfReleases());
+    assertEquals(count + 1, metrics.numberOfEnqueues());
+    assertEquals(count + 1, metrics.numberOfReleases());
     assertTrue("Had no idle threads", hadIdle.get());
     assertTrue("Had no waiting tasks", hadWaitingQueue.get());
     assertTrue("Had running tasks", hadRunning.get());
 
-    assertEquals(getOptions().getWorkerPoolSize(), metrics.numberOfIdleThreads());
-    assertEquals(0, metrics.numberOfRunningTasks());
-    assertEquals(0, metrics.numberOfWaitingTasks());
+    assertEquals(getOptions().getWorkerPoolSize(), metrics.available());
+    assertEquals(0, metrics.borrowed());
+    assertEquals(0, metrics.pending());
   }
 
   @Test
@@ -1101,12 +1102,12 @@ public class MetricsTest extends VertxTestBase {
 
     WorkerExecutor workerExec = vertx.createSharedWorkerExecutor("my-pool", 10);
 
-    Map<String, PoolMetrics> all = FakePoolMetrics.getPoolMetrics();
+    Map<String, FakePoolMetrics> all = FakePoolMetrics.getMetrics();
 
     FakePoolMetrics metrics = (FakePoolMetrics) all.get("my-pool");
 
-    assertThat(metrics.getPoolSize(), is(10));
-    assertThat(metrics.numberOfIdleThreads(), is(10));
+    assertThat(metrics.maxSize(), is(10));
+    assertThat(metrics.available(), is(10));
 
     Callable<Void> job = getSomeDumbTask();
 
@@ -1117,26 +1118,26 @@ public class MetricsTest extends VertxTestBase {
       workerExec.executeBlocking(
           job,
           false).onComplete(ar -> {
-            if (metrics.numberOfWaitingTasks() > 0) {
+            if (metrics.pending() > 0) {
               hadWaitingQueue.set(true);
             }
-            if (metrics.numberOfIdleThreads() > 0) {
+            if (metrics.available() > 0) {
               hadIdle.set(true);
             }
-            if (metrics.numberOfRunningTasks() > 0) {
+            if (metrics.borrowed() > 0) {
               hadRunning.set(true);
             }
           });
     }
 
-    waitUntil(() -> metrics.numberOfSubmittedTask() == 100 && metrics.numberOfCompletedTasks() == 100);
+    waitUntil(() -> metrics.numberOfEnqueues() == 100 && metrics.numberOfReleases() == 100);
     assertTrue(hadIdle.get());
     assertTrue(hadWaitingQueue.get());
     assertTrue(hadRunning.get());
 
-    assertEquals(metrics.numberOfIdleThreads(), 10);
-    assertEquals(metrics.numberOfRunningTasks(), 0);
-    assertEquals(metrics.numberOfWaitingTasks(), 0);
+    assertEquals(metrics.available(), 10);
+    assertEquals(metrics.borrowed(), 0);
+    assertEquals(metrics.pending(), 0);
   }
 
   @Test
@@ -1144,9 +1145,9 @@ public class MetricsTest extends VertxTestBase {
     WorkerExecutor ex1 = vertx.createSharedWorkerExecutor("ex1");
     WorkerExecutor ex1_ = vertx.createSharedWorkerExecutor("ex1");
     WorkerExecutor ex2 = vertx.createSharedWorkerExecutor("ex2");
-    Map<String, PoolMetrics> all = FakePoolMetrics.getPoolMetrics();
-    FakePoolMetrics metrics1 = (FakePoolMetrics) all.get("ex1");
-    FakePoolMetrics metrics2 = (FakePoolMetrics) all.get("ex2");
+    Map<String, FakePoolMetrics> all = FakePoolMetrics.getMetrics();
+    FakePoolMetrics metrics1 = all.get("ex1");
+    FakePoolMetrics metrics2 = all.get("ex2");
     assertNotNull(metrics1);
     assertNotNull(metrics2);
     assertNotSame(metrics1, metrics2);
@@ -1230,7 +1231,7 @@ public class MetricsTest extends VertxTestBase {
         @Override
         public HttpServerMetrics<?, ?, ?> createHttpServerMetrics(HttpServerOptions options, SocketAddress localAddress) {
           lifecycle.compareAndSet(0, 1);
-          return new HttpServerMetrics<Object, Object, Object>() {
+          return new HttpServerMetrics<>() {
             @Override
             public void close() {
               lifecycle.compareAndSet(1, 2);
@@ -1247,5 +1248,4 @@ public class MetricsTest extends VertxTestBase {
     }));
     await();
   }
-
 }
