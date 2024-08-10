@@ -16,31 +16,31 @@ package io.vertx.core.spi.metrics;
 public interface PoolMetrics<Q, T> extends Metrics {
 
   /**
-   * Called when a resource is requested.
+   * Signals a request is enqueued to obtain a resource.
    */
   default Q enqueue() {
     return null;
   }
 
   /**
-   * Called when a request for connection is satisfied.
+   * Signals the request was removed from the queue.
    */
   default void dequeue(Q queueMetric) {
   }
 
   /**
-   * Begin the execution of a task.
+   * Signal the beginning of the utilisation of a pool resource.
    *
-   * @return the timer measuring the task execution
+   * @return the timer measuring the resource utilisation
    */
   default T begin() {
     return null;
   }
 
   /**
-   * The submitted tasks has completed its execution and release the resource.
+   * Signal the release of a pool resource.
    *
-   * @param t the timer measuring the task execution returned by {@link #begin}
+   * @param t the timer measuring the resource utilisation returned by {@link #begin}
    */
   default void end(T t) {
   }

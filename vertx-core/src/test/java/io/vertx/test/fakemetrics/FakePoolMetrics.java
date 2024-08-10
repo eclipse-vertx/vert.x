@@ -24,79 +24,99 @@ public class FakePoolMetrics implements PoolMetrics<Object, Object> {
   private static final Object TASK_SUBMITTED = new Object();
   private static final Object TASK_BEGIN = new Object();
 
-  private final AtomicInteger waiting = new AtomicInteger();
   private final String name;
-  private final AtomicBoolean closed = new AtomicBoolean();
   private final int maxSize;
-  private final AtomicInteger completed = new AtomicInteger();
-  private final AtomicInteger submitted = new AtomicInteger();
-  private final AtomicInteger idle = new AtomicInteger();
-  private final AtomicInteger running = new AtomicInteger();
+  private final AtomicInteger pending = new AtomicInteger();
+  private final AtomicInteger releaseCount = new AtomicInteger();
+  private final AtomicInteger enqueueCount = new AtomicInteger();
+  private final AtomicInteger acquired = new AtomicInteger();
+  private final AtomicBoolean closed = new AtomicBoolean();
 
   public FakePoolMetrics(String name, int maxSize) {
     this.name = name;
     this.maxSize = maxSize;
-    this.idle.set(maxSize);
     METRICS.put(name, this);
-  }
-
-  public String name() {
-    return name;
-  }
-
-  public int maxSize() {
-    return maxSize;
-  }
-
-  @Override
-  public void dequeue(Object queueMetric) {
-    waiting.decrementAndGet();
   }
 
   @Override
   public synchronized Object enqueue() {
-    waiting.incrementAndGet();
-    submitted.incrementAndGet();
+    pending.incrementAndGet();
+    enqueueCount.incrementAndGet();
     return TASK_SUBMITTED;
   }
 
   @Override
+  public void dequeue(Object queueMetric) {
+    assert queueMetric == TASK_SUBMITTED;
+    pending.decrementAndGet();
+  }
+
+  @Override
   public Object begin() {
-    idle.decrementAndGet();
-    running.incrementAndGet();
+    acquired.incrementAndGet();
     return TASK_BEGIN;
   }
 
   public void end(Object t) {
-    if (t == TASK_BEGIN) {
-      running.decrementAndGet();
-      idle.incrementAndGet();
-      completed.incrementAndGet();
-    }
+    assert t == TASK_BEGIN;
+    acquired.decrementAndGet();
+    releaseCount.incrementAndGet();
   }
 
-  public int numberOfIdleThreads() {
-    return idle.get();
+  /**
+   * @return the pool name
+   */
+  public String name() {
+    return name;
   }
 
-  public int numberOfRunningTasks() {
-    return running.get();
+  /**
+   * @return the maximum number of elements this pool can hold
+   */
+  public int maxSize() {
+    return maxSize;
   }
 
-  public int numberOfSubmittedTask() {
-    return submitted.get();
+  /**
+   * @return the number of enqueued requests since the pool metrics was created
+   */
+  public int numberOfEnqueues() {
+    return enqueueCount.get();
   }
 
-  public int numberOfCompletedTasks() {
-    return completed.get();
+  /**
+   * @return the number of elements released to the pool
+   */
+  public int numberOfReleases() {
+    return releaseCount.get();
   }
 
+  /**
+   * @return the number of requests pending in the queue
+   */
+  public int pending() {
+    return pending.get();
+  }
+
+  /**
+   * @return the number of elements currently borrowed from the pool
+   */
+  public int borrowed() {
+    return acquired.get();
+  }
+
+  /**
+   * @return the number of available elements currently in the pool
+   */
+  public int available() {
+    return maxSize - acquired.get();
+  }
+
+  /**
+   * @return whether the pool is closed
+   */
   public boolean isClosed() {
     return closed.get();
-  }
-
-  public int size() {
-    return waiting.get();
   }
 
   @Override
