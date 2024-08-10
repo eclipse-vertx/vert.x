@@ -952,7 +952,7 @@ public class MetricsTest extends VertxTestBase {
             if (metrics.available() > 0) {
               hadIdle.set(true);
             }
-            if (metrics.borrowed() > 0) {
+            if (metrics.inUse() > 0) {
               hadRunning.set(true);
             }
           }
@@ -966,7 +966,7 @@ public class MetricsTest extends VertxTestBase {
     assertTrue(hadRunning.get());
 
     assertEquals(metrics.available(), getOptions().getWorkerPoolSize());
-    assertEquals(metrics.borrowed(), 0);
+    assertEquals(metrics.inUse(), 0);
     assertEquals(metrics.pending(), 0);
   }
 
@@ -997,7 +997,7 @@ public class MetricsTest extends VertxTestBase {
           fail(e);
           Thread.currentThread().interrupt();
         }
-        if (metrics.borrowed() > 0) {
+        if (metrics.inUse() > 0) {
           hadRunning.set(true);
         }
         if (metrics.pending() > 0) {
@@ -1018,7 +1018,7 @@ public class MetricsTest extends VertxTestBase {
     assertTrue(hadRunning.get());
 
     assertEquals(metrics.available(), getOptions().getWorkerPoolSize());
-    assertEquals(metrics.borrowed(), 0);
+    assertEquals(metrics.inUse(), 0);
     assertEquals(metrics.pending(), 0);
   }
 
@@ -1054,7 +1054,7 @@ public class MetricsTest extends VertxTestBase {
             if (metrics.available() > 0) {
               hadIdle.set(true);
             }
-            if (metrics.borrowed() > 0) {
+            if (metrics.inUse() > 0) {
               hadRunning.set(true);
             }
 
@@ -1087,7 +1087,7 @@ public class MetricsTest extends VertxTestBase {
     assertTrue("Had running tasks", hadRunning.get());
 
     assertEquals(getOptions().getWorkerPoolSize(), metrics.available());
-    assertEquals(0, metrics.borrowed());
+    assertEquals(0, metrics.inUse());
     assertEquals(0, metrics.pending());
   }
 
@@ -1124,7 +1124,7 @@ public class MetricsTest extends VertxTestBase {
             if (metrics.available() > 0) {
               hadIdle.set(true);
             }
-            if (metrics.borrowed() > 0) {
+            if (metrics.inUse() > 0) {
               hadRunning.set(true);
             }
           });
@@ -1136,7 +1136,7 @@ public class MetricsTest extends VertxTestBase {
     assertTrue(hadRunning.get());
 
     assertEquals(metrics.available(), 10);
-    assertEquals(metrics.borrowed(), 0);
+    assertEquals(metrics.inUse(), 0);
     assertEquals(metrics.pending(), 0);
   }
 
