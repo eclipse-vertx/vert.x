@@ -29,7 +29,7 @@ public class FakePoolMetrics implements PoolMetrics<Object, Object> {
   private final AtomicInteger pending = new AtomicInteger();
   private final AtomicInteger releaseCount = new AtomicInteger();
   private final AtomicInteger enqueueCount = new AtomicInteger();
-  private final AtomicInteger acquired = new AtomicInteger();
+  private final AtomicInteger inUse = new AtomicInteger();
   private final AtomicBoolean closed = new AtomicBoolean();
 
   public FakePoolMetrics(String name, int maxSize) {
@@ -53,13 +53,13 @@ public class FakePoolMetrics implements PoolMetrics<Object, Object> {
 
   @Override
   public Object begin() {
-    acquired.incrementAndGet();
+    inUse.incrementAndGet();
     return TASK_BEGIN;
   }
 
   public void end(Object t) {
     assert t == TASK_BEGIN;
-    acquired.decrementAndGet();
+    inUse.decrementAndGet();
     releaseCount.incrementAndGet();
   }
 
@@ -99,17 +99,17 @@ public class FakePoolMetrics implements PoolMetrics<Object, Object> {
   }
 
   /**
-   * @return the number of elements currently borrowed from the pool
+   * @return the number of elements currently in use from the pool
    */
-  public int borrowed() {
-    return acquired.get();
+  public int inUse() {
+    return inUse.get();
   }
 
   /**
    * @return the number of available elements currently in the pool
    */
   public int available() {
-    return maxSize - acquired.get();
+    return maxSize - inUse.get();
   }
 
   /**
