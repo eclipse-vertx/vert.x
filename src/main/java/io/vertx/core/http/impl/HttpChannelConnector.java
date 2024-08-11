@@ -21,6 +21,7 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.incubator.codec.http3.Http3ClientConnectionHandler;
 import io.netty.incubator.codec.quic.QuicChannel;
+import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -280,7 +281,8 @@ public class HttpChannelConnector {
       QuicChannel.newBootstrap(ch)
         .handler(new Http3ClientConnectionHandler(inboundControlStreamHandler, null, null, null, false))
         .remoteAddress(new InetSocketAddress(peerAddress.hostAddress(), peerAddress.port()))
-        .connect();
+        .connect().addListener((GenericFutureListener<io.netty.util.concurrent.Future<QuicChannel>>) future ->
+          future.get().pipeline().addLast(new Http3SslHandshakeHandler(promise)));
 
     } catch (Exception e) {
       connectFailed(ch, e, promise);
