@@ -12,7 +12,7 @@
 package io.vertx.core.spi;
 
 import io.vertx.core.VertxOptions;
-import io.vertx.core.impl.VertxBuilder;
+import io.vertx.core.impl.VertxBootstrapImpl;
 import io.vertx.core.internal.VertxBootstrap;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.metrics.MetricsOptions;
@@ -27,7 +27,7 @@ public interface VertxMetricsFactory extends VertxServiceProvider {
 
   @Override
   default void init(VertxBootstrap bootstrap) {
-    VertxBuilder builder = (VertxBuilder) bootstrap;
+    VertxBootstrapImpl builder = (VertxBootstrapImpl) bootstrap;
     if (builder.metrics() == null) {
       VertxOptions vertxOptions = builder.options();
       builder.metrics(metrics(vertxOptions));

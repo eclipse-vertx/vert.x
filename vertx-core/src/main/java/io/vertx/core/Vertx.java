@@ -21,7 +21,6 @@ import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.impl.VertxBuilder;
 import io.vertx.core.dns.impl.DnsAddressResolverProvider;
 import io.vertx.core.internal.VertxBootstrap;
 import io.vertx.core.metrics.Measured;

@@ -13,7 +13,7 @@ package io.vertx.tests.eventbus;
 
 import io.vertx.core.*;
 import io.vertx.core.eventbus.MessageConsumer;
-import io.vertx.core.impl.VertxBuilder;
+import io.vertx.core.impl.VertxBootstrapImpl;
 import io.vertx.core.internal.VertxBootstrap;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.cluster.ClusterManager;
@@ -46,7 +46,7 @@ public class CustomNodeSelectorTest extends VertxTestBase {
         return vertxOptions;
       })
       .map(options -> {
-        VertxBootstrap factory = ((VertxBuilder)VertxBootstrap.create().options(options).init()).clusterNodeSelector(new CustomNodeSelector());
+        VertxBootstrap factory = ((VertxBootstrapImpl)VertxBootstrap.create().options(options).init()).clusterNodeSelector(new CustomNodeSelector());
         return factory.clusteredVertx();
       })
       .collect(collectingAndThen(toList(), Future::all));

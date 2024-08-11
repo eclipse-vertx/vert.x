@@ -13,20 +13,27 @@ package io.vertx.core.internal;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
-import io.vertx.core.impl.VertxBuilder;
+import io.vertx.core.impl.VertxBootstrapImpl;
 import io.vertx.core.spi.ExecutorServiceFactory;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.VertxThreadFactory;
 import io.vertx.core.spi.VertxTracerFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.core.spi.cluster.NodeSelector;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.spi.transport.Transport;
 
+/**
+ * Vertx bootstrap for creating vertx instances with SPI overrides.
+ *
+ * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ */
 public interface VertxBootstrap {
 
+  /**
+   * @return a new fresh to use bootstrap
+   */
   static VertxBootstrap create() {
-    return new VertxBuilder();
+    return new VertxBootstrapImpl();
   }
 
   /**
@@ -117,7 +124,7 @@ public interface VertxBootstrap {
    * @param transport the transport
    * @return this builder instance
    */
-  VertxBuilder transport(Transport transport);
+  VertxBootstrapImpl transport(Transport transport);
 
   /**
    * @return the cluster manager to use
