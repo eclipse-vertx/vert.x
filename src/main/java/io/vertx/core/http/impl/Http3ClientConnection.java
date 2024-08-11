@@ -18,8 +18,6 @@ import io.vertx.core.spi.metrics.ClientMetrics;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.HashMap;
-import java.util.Map;
 
 
 public class Http3ClientConnection extends Http3ConnectionBase implements HttpClientConnection {
@@ -45,7 +43,10 @@ public class Http3ClientConnection extends Http3ConnectionBase implements HttpCl
   public QuicStreamChannel quicStreamChannel;
   public QuicChannel quicChannel;
 
-  public Http3ClientConnection(QuicChannel quicChannel, QuicStreamChannel quicStreamChannel, ChannelHandlerContext ctx, PromiseInternal<HttpClientConnection> promise, HttpClientImpl client, ClientMetrics metrics, EventLoopContext context, Object socketMetric) {
+  public Http3ClientConnection(QuicChannel quicChannel, QuicStreamChannel quicStreamChannel,
+                               ChannelHandlerContext ctx, PromiseInternal<HttpClientConnection> promise,
+                               HttpClientImpl client, ClientMetrics metrics, EventLoopContext context,
+                               Object socketMetric) {
     super(context, ctx);
     this.promise = promise;
     this.client = client;
@@ -112,10 +113,11 @@ public class Http3ClientConnection extends Http3ConnectionBase implements HttpCl
 
   @Override
   protected synchronized void onHeadersRead(
-    VertxHttpStreamBase<?, ?, Http3Headers> stream, Http3Headers headers, StreamPriority streamPriority, boolean endOfStream) {
+    VertxHttpStreamBase<?, ?, Http3Headers> stream, Http3Headers headers, StreamPriority streamPriority,
+    boolean endOfStream) {
     if (!stream.isTrailersReceived()) {
       stream.onHeaders(headers, streamPriority);
-    if (endOfStream) {
+      if (endOfStream) {
         stream.onEnd();
       }
     } else {
