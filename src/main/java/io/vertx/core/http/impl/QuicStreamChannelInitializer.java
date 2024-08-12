@@ -28,9 +28,7 @@ public class QuicStreamChannelInitializer extends ChannelInitializer<QuicStreamC
 
   @Override
   protected void initChannel(QuicStreamChannel ch) {
-    Http3ClientConnection conn = new Http3ClientConnection(ch.parent(), ch, ctx, promise, client, metrics, context,
-      metric);
-    promise.tryComplete(conn);
+    promise.tryComplete(new Http3ClientConnection(ch.parent(), ch, ctx, client, metrics, context, metric));
   }
 
   @Override

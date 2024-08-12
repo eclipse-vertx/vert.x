@@ -55,7 +55,7 @@ class Http3StreamImpl extends HttpStreamImpl<Http3ClientConnection, QuicStreamCh
 
   @Override
   protected void createStreamInternal(int id, boolean b, Handler<AsyncResult<QuicStreamChannel>> onComplete) {
-    VertxHttp3ControlStreamHandler handler = new VertxHttp3ControlStreamHandler(client, clientMetrics,
+    VertxHttp3StreamHandler handler = new VertxHttp3StreamHandler(client, clientMetrics,
       metric, this);
 
     Http3.newRequestStream(conn.quicChannel, handler)

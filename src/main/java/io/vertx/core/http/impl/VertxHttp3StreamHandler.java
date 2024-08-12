@@ -10,7 +10,7 @@ import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
-public class VertxHttp3ControlStreamHandler extends Http3RequestStreamInboundHandler {
+public class VertxHttp3StreamHandler extends Http3RequestStreamInboundHandler {
   private final HttpClientImpl client;
   private final ClientMetrics metrics;
   private final Object metric;
@@ -23,7 +23,7 @@ public class VertxHttp3ControlStreamHandler extends Http3RequestStreamInboundHan
   private static final AttributeKey<Http3StreamImpl> HTTP3_MY_STREAM_KEY = AttributeKey.valueOf(Http3StreamImpl.class
     , "HTTP3MyStream");
 
-  public VertxHttp3ControlStreamHandler(
+  public VertxHttp3StreamHandler(
     HttpClientImpl client, ClientMetrics metrics,
     Object metric,
     Http3StreamImpl http3Stream) {

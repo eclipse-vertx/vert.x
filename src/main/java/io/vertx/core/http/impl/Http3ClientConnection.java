@@ -39,7 +39,6 @@ public class Http3ClientConnection extends Http3ConnectionBase implements HttpCl
   private long writeWindow;
   private boolean writeOverflow;
 
-  private PromiseInternal<HttpClientConnection> promise;
   private Object socketMetric;
 
 
@@ -47,11 +46,10 @@ public class Http3ClientConnection extends Http3ConnectionBase implements HttpCl
   public QuicChannel quicChannel;
 
   public Http3ClientConnection(QuicChannel quicChannel, QuicStreamChannel quicStreamChannel,
-                               ChannelHandlerContext ctx, PromiseInternal<HttpClientConnection> promise,
+                               ChannelHandlerContext ctx,
                                HttpClientImpl client, ClientMetrics metrics, EventLoopContext context,
                                Object socketMetric) {
     super(context, ctx);
-    this.promise = promise;
     this.client = client;
     this.metrics = metrics;
     this.socketMetric = socketMetric;
@@ -136,7 +134,7 @@ public class Http3ClientConnection extends Http3ConnectionBase implements HttpCl
     }
   }
 
-  public static Http3ConnectionHandler createHttp3ConnectionHandler(
+  public static Http3ConnectionHandler createHttp3ClientConnectionHandler(
     HttpClientImpl client,
     ClientMetrics metrics,
     EventLoopContext context,
