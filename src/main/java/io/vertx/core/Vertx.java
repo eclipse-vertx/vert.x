@@ -177,7 +177,7 @@ public interface Vertx extends Measured {
    * @return The current context or {@code null} if there is no current context
    */
   static @Nullable Context currentContext() {
-    return ContextInternal.current();
+    return ContextInternal.current(Thread.currentThread());
   }
 
   /**

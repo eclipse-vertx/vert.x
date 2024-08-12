@@ -41,8 +41,7 @@ public interface ContextInternal extends Context {
   /**
    * @return the current context
    */
-  static ContextInternal current() {
-    Thread thread = Thread.currentThread();
+  static ContextInternal current(Thread thread) {
     if (thread instanceof VertxThread) {
       return ((VertxThread) thread).context();
     } else {
@@ -237,7 +236,7 @@ public interface ContextInternal extends Context {
    * @return whether the current thread is running on this context
    */
   default boolean isRunningOnContext() {
-    return current() == this && inThread();
+    return current(Thread.currentThread()) == this && inThread();
   }
 
   /**
