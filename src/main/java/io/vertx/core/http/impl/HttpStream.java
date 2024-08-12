@@ -44,18 +44,19 @@ abstract class HttpStream<C extends ConnectionBase, S,
 
   protected final ClientMetrics metrics;
 
-  abstract HttpVersion version();
+  protected abstract CharSequence getHeaderMethod(H headers);
+  protected abstract String getHeaderStatus(H headers);
+  protected abstract MultiMap createHeaderAdapter(H headers);
+  protected abstract long getWindowSize();
+  protected abstract HttpVersion version();
+  protected abstract void recycle();
+  protected abstract void metricsEnd(HttpStream<?, ?, ?> stream);
 
-  abstract void recycle();
-
-  abstract void metricsEnd(HttpStream<?, ?, ?> stream);
-
-  HttpStream(C conn, ContextInternal context, boolean push, VertxHttpConnectionDelegate<S, H> connectionDelegate,
-             ClientMetrics<? ,?, ?, ?> metrics) {
-    super(conn, context, connectionDelegate);
+  HttpStream(C conn, ContextInternal context, boolean push, ClientMetrics<? ,?, ?, ?> metrics) {
+    super(conn, context);
 
     this.push = push;
-    this.windowSize = connectionDelegate.getWindowSize();
+    this.windowSize = getWindowSize();
 
     this.metrics = metrics;
   }
@@ -87,7 +88,7 @@ abstract class HttpStream<C extends ConnectionBase, S,
 
   @Override
   void doWriteHeaders(H headers, boolean end, boolean checkFlush, Handler<AsyncResult<Void>> handler) {
-    isConnect = "CONNECT".contentEquals(connectionDelegate.getHeaderMethod(headers));
+    isConnect = "CONNECT".contentEquals(getHeaderMethod(headers));
     super.doWriteHeaders(headers, end, checkFlush, handler);
   }
 
@@ -129,7 +130,7 @@ abstract class HttpStream<C extends ConnectionBase, S,
       int status;
       String statusMessage;
       try {
-        status = Integer.parseInt(connectionDelegate.getHeaderStatus(headers));
+        status = Integer.parseInt(getHeaderStatus(headers));
         statusMessage = HttpResponseStatus.valueOf(status).reasonPhrase();
       } catch (Exception e) {
         handleException(e);
@@ -152,7 +153,7 @@ abstract class HttpStream<C extends ConnectionBase, S,
         version(),
         status,
         statusMessage,
-        connectionDelegate.createHeaderAdapter(headers));
+        createHeaderAdapter(headers));
       removeStatusHeaders(headers);
 
       if (metrics != null) {

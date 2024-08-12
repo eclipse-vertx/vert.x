@@ -30,8 +30,8 @@ public class Http3ClientConnection extends Http3ConnectionBase implements HttpCl
   private boolean isConnect;
   public HttpClientImpl client;
   private HttpClientOptions options;
-  private Deque<Http3StreamImpl> requests = new ArrayDeque<>();
-  private Deque<Http3StreamImpl> responses = new ArrayDeque<>();
+  private Deque<Http3ClientStream> requests = new ArrayDeque<>();
+  private Deque<Http3ClientStream> responses = new ArrayDeque<>();
   private boolean closed;
   private long expirationTimestamp;
   private boolean evicted;
@@ -78,7 +78,7 @@ public class Http3ClientConnection extends Http3ConnectionBase implements HttpCl
     Future<HttpClientStream> fut;
     synchronized (this) {
       try {
-        Http3StreamImpl stream = createStream(context);
+        Http3ClientStream stream = createStream(context);
         fut = Future.succeededFuture(stream);
       } catch (Exception e) {
         fut = Future.failedFuture(e);
@@ -87,9 +87,8 @@ public class Http3ClientConnection extends Http3ConnectionBase implements HttpCl
     context.emit(fut, handler);
   }
 
-  private Http3StreamImpl createStream(ContextInternal context) {
-    return new Http3StreamImpl(this, context, false, new VertxHttp3ConnectionDelegate(this), metrics,
-      client, metrics);
+  private Http3ClientStream createStream(ContextInternal context) {
+    return new Http3ClientStream(this, context, false, metrics, client, metrics);
   }
 
   @Override

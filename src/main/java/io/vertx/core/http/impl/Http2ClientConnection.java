@@ -149,7 +149,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   private HttpStreamImpl<Http2ClientConnection, Http2Stream, Http2Headers> createStream(ContextInternal context) {
-    return new Http2StreamImpl(this, context, false, new VertxHttp2ConnectionDelegate(this), metrics);
+    return new Http2ClientStream(this, context, false, metrics);
   }
 
   public void recycle() {
@@ -192,8 +192,8 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       Handler<HttpClientPush> pushHandler = stream.pushHandler;
       if (pushHandler != null) {
         Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
-        HttpStreamImpl<Http2ClientConnection, Http2Stream, Http2Headers> pushStream = new Http2StreamImpl(this, context,
-          true, new VertxHttp2ConnectionDelegate(this), metrics);
+        HttpStreamImpl<Http2ClientConnection, Http2Stream, Http2Headers> pushStream = new Http2ClientStream(this, context,
+          true, metrics);
         pushStream.init(promisedStream);
         HttpClientPush push = new HttpClientPush(headers, pushStream);
         if (metrics != null) {

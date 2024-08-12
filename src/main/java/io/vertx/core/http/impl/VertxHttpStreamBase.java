@@ -43,12 +43,26 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S, H extends Header
   private long bytesRead;
   private long bytesWritten;
   protected boolean isConnect;
-  protected final VertxHttpConnectionDelegate<S, H> connectionDelegate;
 
-  VertxHttpStreamBase(C conn, ContextInternal context, VertxHttpConnectionDelegate<S, H> connectionDelegate) {
+  protected S stream;
+  protected abstract void consumeCredits(int len);
+  protected abstract void writeFrame(byte type, short flags, ByteBuf payload);
+  protected abstract void writeHeaders(H headers, boolean end, int dependency, short weight, boolean exclusive, boolean checkFlush,
+                    FutureListener<Void> promise);
+  protected abstract void writePriorityFrame(StreamPriority priority);
+  protected abstract void writeData_(ByteBuf chunk, boolean end, FutureListener<Void> promise);
+  protected abstract void writeReset_(int streamId, long code);
+  protected abstract void init_(VertxHttpStreamBase vertxHttpStream, S stream);
+  protected abstract int getStreamId();
+  protected abstract boolean remoteSideOpen();
+  protected abstract boolean hasStream();
+  protected abstract MultiMap getEmptyHeaders();
+  protected abstract boolean isWritable_();
+  protected abstract boolean isTrailersReceived_();
+
+  VertxHttpStreamBase(C conn, ContextInternal context) {
     this.conn = conn;
     this.vertx = conn.vertx();
-    this.connectionDelegate = connectionDelegate;
     this.context = context;
     this.pending = new InboundBuffer<>(context, 5);
     this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
@@ -61,10 +75,10 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S, H extends Header
         Buffer data = (Buffer) item;
         int len = data.length();
         conn.getContext().emit(null, v -> {
-          if (connectionDelegate.remoteSideOpen()) {
+          if (remoteSideOpen()) {
             // Handle the HTTP upgrade case
             // buffers are received by HTTP/1 and not accounted by HTTP/2
-            connectionDelegate.consumeCredits(len);
+            consumeCredits(len);
           }
         });
         bytesRead += data.length();
@@ -76,9 +90,10 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S, H extends Header
   }
 
   void init(S stream) {
+    this.stream = stream;
     synchronized (this) {
-      this.connectionDelegate.init(this, stream);
-      this.writable = this.connectionDelegate.isWritable();
+      this.init_(this, stream);
+      this.writable = this.isWritable_();
     }
   }
 
@@ -128,7 +143,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S, H extends Header
   }
 
   void onEnd() {
-    onEnd(connectionDelegate.getEmptyHeaders());
+    onEnd(getEmptyHeaders());
   }
 
   void onEnd(MultiMap trailers) {
@@ -137,7 +152,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S, H extends Header
   }
 
   public int id() {
-    return connectionDelegate.getStreamId();
+    return getStreamId();
   }
 
   long bytesWritten() {
@@ -170,7 +185,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S, H extends Header
   }
 
   private void doWriteFrame(int type, int flags, ByteBuf payload) {
-    connectionDelegate.writeFrame((byte) type, (short) flags, payload);
+    writeFrame((byte) type, (short) flags, payload);
   }
 
   final void writeHeaders(H headers, boolean end, boolean checkFlush, Handler<AsyncResult<Void>> handler) {
@@ -184,7 +199,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S, H extends Header
 
   void doWriteHeaders(H headers, boolean end, boolean checkFlush, Handler<AsyncResult<Void>> handler) {
     FutureListener<Void> promise = handler == null ? null : context.promise(handler);
-    connectionDelegate.writeHeaders(headers, end, priority.getDependency(), priority.getWeight(),
+    writeHeaders(headers, end, priority.getDependency(), priority.getWeight(),
       priority.isExclusive(), checkFlush, promise);
     if (end) {
       endWritten();
@@ -215,7 +230,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S, H extends Header
     bytesWritten += numOfBytes;
     conn.reportBytesWritten(numOfBytes);
     FutureListener<Void> promise = handler == null ? null : context.promise(handler);
-    connectionDelegate.writeData(chunk, end, promise);
+    writeData_(chunk, end, promise);
     if (end) {
       endWritten();
     }
@@ -231,9 +246,9 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S, H extends Header
   }
 
   protected void doWriteReset(long code) {
-    int streamId = connectionDelegate.getStreamId();
+    int streamId = getStreamId();
     if (streamId != -1) {
-      connectionDelegate.writeReset(streamId, code);
+      writeReset_(streamId, code);
     } else {
       // Reset happening before stream allocation
       handleReset(code);
@@ -272,8 +287,8 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S, H extends Header
   synchronized void updatePriority(StreamPriority priority) {
     if (!this.priority.equals(priority)) {
       this.priority = priority;
-      if (connectionDelegate.hasStream()) {
-        connectionDelegate.writePriorityFrame(priority);
+      if (hasStream()) {
+        writePriorityFrame(priority);
       }
     }
   }
@@ -282,6 +297,6 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S, H extends Header
   }
 
   boolean isTrailersReceived() {
-    return connectionDelegate.isTrailersReceived();
+    return isTrailersReceived_();
   }
 }

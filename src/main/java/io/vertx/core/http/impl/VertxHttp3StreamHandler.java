@@ -15,18 +15,18 @@ public class VertxHttp3StreamHandler extends Http3RequestStreamInboundHandler {
   private final ClientMetrics metrics;
   private final Object metric;
   private final Http3ClientConnection conn;
-  private final Http3StreamImpl http3Stream;
+  private final Http3ClientStream http3Stream;
   private ChannelHandlerContext chctx;
 
   private boolean read;
 
-  private static final AttributeKey<Http3StreamImpl> HTTP3_MY_STREAM_KEY = AttributeKey.valueOf(Http3StreamImpl.class
+  private static final AttributeKey<Http3ClientStream> HTTP3_MY_STREAM_KEY = AttributeKey.valueOf(Http3ClientStream.class
     , "HTTP3MyStream");
 
   public VertxHttp3StreamHandler(
     HttpClientImpl client, ClientMetrics metrics,
     Object metric,
-    Http3StreamImpl http3Stream) {
+    Http3ClientStream http3Stream) {
     this.client = client;
     this.metrics = metrics;
     this.metric = metric;

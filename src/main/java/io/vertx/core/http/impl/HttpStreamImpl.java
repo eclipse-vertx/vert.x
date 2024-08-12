@@ -36,9 +36,8 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S,
 
   abstract VertxDefaultHttpHeaders<H> createHttpHeadersWrapper();
 
-  HttpStreamImpl(C conn, ContextInternal context, boolean push, VertxHttpConnectionDelegate<S, H> connectionDelegate,
-                 ClientMetrics<?, ?, ?, ?> metrics) {
-    super(conn, context, push, connectionDelegate, metrics);
+  HttpStreamImpl(C conn, ContextInternal context, boolean push, ClientMetrics<?, ?, ?, ?> metrics) {
+    super(conn, context, push, metrics);
   }
 
   @Override
@@ -252,7 +251,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S,
       VertxTracer tracer = context.tracer();
       if (tracer != null) {
         BiConsumer<String, String> headers_ =
-          (key, val) -> connectionDelegate.createHeaderAdapter(headers.getHttpHeaders()).add(key
+          (key, val) -> createHeaderAdapter(headers.getHttpHeaders()).add(key
           , val);
         String operation = head.traceOperation;
         if (operation == null) {
