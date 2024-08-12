@@ -126,7 +126,7 @@ public class OutboundWriteQueueTest extends AsyncTestBase {
       }
       return false;
     });
-    assertEquals(DRAIN_REQUIRED_MASK | QUEUE_UNWRITABLE_MASK, queue.add(0));
+    assertEquals(DRAIN_REQUIRED_MASK, queue.add(0));
   }
 
   @Test
@@ -525,5 +525,27 @@ public class OutboundWriteQueueTest extends AsyncTestBase {
 
   private static List<Integer> range(int start, int end) {
     return IntStream.range(start, end).boxed().collect(Collectors.toList());
+  }
+
+  @Test
+  public void testAddShouldNotReturnUnwritableWithOverflowSubmissions() {
+    queue = new OutboundWriteQueue<>(elt -> {
+      if (elt == 0) {
+        Thread th = new Thread(() -> {
+          int idx = 1;
+          while ((queue.submit(idx++) & QUEUE_UNWRITABLE_MASK) == 0) {
+
+          }
+        });
+        th.start();
+        try {
+          th.join();
+        } catch (InterruptedException e) {
+          throw new RuntimeException(e);
+        }
+      }
+      return false;
+    });
+    assertEquals(0, (queue.add(0) & QUEUE_UNWRITABLE_MASK));
   }
 }
