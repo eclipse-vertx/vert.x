@@ -56,7 +56,6 @@ public class VertxHttp3StreamHandler extends Http3RequestStreamInboundHandler {
   @Override
   protected void channelRead(ChannelHandlerContext ctx, Http3DataFrame frame) {
     read = true;
-    System.err.print(frame.content().toString(CharsetUtil.US_ASCII));
     conn.onDataRead(ctx, controlStream(ctx).attr(HTTP3_MY_STREAM_KEY).get(), frame.content(), 0, true);
     checkFlush();
   }
@@ -64,7 +63,7 @@ public class VertxHttp3StreamHandler extends Http3RequestStreamInboundHandler {
   @Override
   protected void channelRead(ChannelHandlerContext ctx, Http3HeadersFrame frame) throws Exception {
     read = true;
-    conn.onHeadersRead(ctx, controlStream(ctx).attr(HTTP3_MY_STREAM_KEY).get(), frame.headers(), true);
+    conn.onHeadersRead(ctx, controlStream(ctx).attr(HTTP3_MY_STREAM_KEY).get(), frame.headers(), false);
   }
 
   @Override
