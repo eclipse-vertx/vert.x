@@ -1,10 +1,13 @@
 package io.vertx.tests.concurrent;
 
+import io.vertx.core.VertxOptions;
 import io.vertx.core.streams.impl.OutboundWriteQueue;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
 
@@ -63,17 +66,22 @@ public class OutboundWriteQueueStressTest extends VertxTestBase {
     assertEquals(numThreads * numEmissions * numReps, counter.intValue());
   }
 
+  @Repeat(times = 50)
   @Test
   public void testWriteQueueFull() throws Exception {
-    OutboundWriteQueue<Object> queue = new OutboundWriteQueue<>(elt -> true);
-    // Simulate pending elements that are drained when the queue becomes writable
-    AtomicInteger pending = new AtomicInteger();
-    // Write queue full
-    AtomicInteger wqf = new AtomicInteger();
-    int reps = 10000;
-    Thread[] producers = new Thread[10];
+    int numProducers = VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE / 2;
+    int numReps = 10000;
+    int[] consumedLocal = new int[1];
+    OutboundWriteQueue<Object> queue = new OutboundWriteQueue<>(elt -> {
+      consumedLocal[0]++;
+      return true;
+    });
+    // The number of consumed elements
+    AtomicInteger numOfConsumedElements = new AtomicInteger();
+    AtomicInteger numOfUnwritableSignalsFromDrain = new AtomicInteger();
+    AtomicInteger numOfUnwritableSignalsFromSubmit = new AtomicInteger();
+    Thread[] producers = new Thread[numProducers];
     CyclicBarrier start = new CyclicBarrier(1 + producers.length);
-    CyclicBarrier stop = new CyclicBarrier(1 + producers.length);
     for (int i = 0;i < producers.length;i++) {
       int val = i;
       String name = "producer-" + val;
@@ -82,13 +90,13 @@ public class OutboundWriteQueueStressTest extends VertxTestBase {
           start.await();
         } catch (Exception e) {
           fail(e);
+          return;
         }
-        int iter = reps;
+        int iter = numReps;
         while (iter-- > 0) {
           int flags = queue.submit(val);
           if ((flags & OutboundWriteQueue.QUEUE_UNWRITABLE_MASK) != 0) {
-            wqf.decrementAndGet();
-            pending.incrementAndGet(); // Simulate pending elements
+            numOfUnwritableSignalsFromSubmit.incrementAndGet();
           }
           if ((flags & OutboundWriteQueue.DRAIN_REQUIRED_MASK) != 0) {
             int flags2;
@@ -96,30 +104,25 @@ public class OutboundWriteQueueStressTest extends VertxTestBase {
             // todo : we should sync that although in practice this is always the same thread (event-loop)
             // it's just more convenient to do that for writing this test
             synchronized (OutboundWriteQueueStressTest.class) {
+              consumedLocal[0] = 0;
               flags2 = queue.drain();
+              numOfConsumedElements.addAndGet(consumedLocal[0]);
             }
             if ((flags2 & OutboundWriteQueue.QUEUE_WRITABLE_MASK) != 0) {
               int unwritable = numberOfUnwritableSignals(flags2);
-              int writable = wqf.addAndGet(unwritable);
-              if (writable - unwritable < 0 && writable == 0) {
-                // Drain pending elements
-                pending.set(0);
-              }
+              numOfUnwritableSignalsFromDrain.addAndGet(unwritable);
             }
           }
         }
-        try {
-          stop.await();
-        } catch (Exception e) {
-          fail(e);
-        }
       }, name);
-      producer.start();;
+      producer.start();
       producers[i] = producer;
     }
     start.await();
-    stop.await();
-    assertEquals(0, wqf.get());
-    assertEquals(0, pending.get());
+    for (int i = 0;i < numProducers;i++) {
+      producers[i].join(10_000);
+    }
+    assertEquals((long) numProducers * numReps, numOfConsumedElements.get());
+    assertEquals(numOfUnwritableSignalsFromSubmit.get(), numOfUnwritableSignalsFromDrain.get());
   }
 }
