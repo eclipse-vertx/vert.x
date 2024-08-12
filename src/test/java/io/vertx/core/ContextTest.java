@@ -1121,4 +1121,31 @@ public class ContextTest extends VertxTestBase {
     }
   }
 
+  @Test
+  public void testContextShouldNotBeStickyFromUnassociatedEventLoopThread() {
+    ContextInternal ctx = ((VertxInternal)vertx).createEventLoopContext();
+    testContextShouldNotBeStickyFromUnassociatedVertxThread(ctx);
+  }
+
+  @Test
+  public void testContextShouldNotBeStickyFromUnassociatedWorkerThread() {
+    ContextInternal ctx = ((VertxInternal)vertx).createWorkerContext();
+    testContextShouldNotBeStickyFromUnassociatedVertxThread(ctx);
+  }
+
+  private void testContextShouldNotBeStickyFromUnassociatedVertxThread(ContextInternal ctx) {
+    ctx.execute(() -> {
+      assertEquals(null, Vertx.currentContext());
+      Context created1 = vertx.getOrCreateContext();
+      assertNotSame(ctx, created1);
+      ctx.execute(() -> {
+        assertEquals(null, Vertx.currentContext());
+        Context created2 = vertx.getOrCreateContext();
+        assertNotSame(ctx, created2);
+        assertNotSame(created1, created2);
+        testComplete();
+      });
+    });
+    await();
+  }
 }
