@@ -15,24 +15,20 @@ public class VertxHttp3StreamHandler extends Http3RequestStreamInboundHandler {
   private final ClientMetrics metrics;
   private final Object metric;
   private final Http3ClientConnection conn;
-  private final Http3ClientStream http3Stream;
-  private ChannelHandlerContext chctx;
 
+  private ChannelHandlerContext chctx;
   private boolean read;
 
-  private static final AttributeKey<Http3ClientStream> HTTP3_MY_STREAM_KEY = AttributeKey.valueOf(Http3ClientStream.class
+  public static final AttributeKey<Http3ClientStream> HTTP3_MY_STREAM_KEY = AttributeKey.valueOf(Http3ClientStream.class
     , "HTTP3MyStream");
 
   public VertxHttp3StreamHandler(
-    HttpClientImpl client, ClientMetrics metrics,
-    Object metric,
-    Http3ClientStream http3Stream) {
+    HttpClientImpl client, ClientMetrics metrics, Object metric, Http3ClientConnection http3ClientConnection) {
     this.client = client;
     this.metrics = metrics;
     this.metric = metric;
 
-    this.http3Stream = http3Stream;
-    this.conn = http3Stream.conn;
+    this.conn = http3ClientConnection;
   }
 
   @Override
@@ -69,12 +65,6 @@ public class VertxHttp3StreamHandler extends Http3RequestStreamInboundHandler {
   protected void channelRead(ChannelHandlerContext ctx, Http3HeadersFrame frame) throws Exception {
     read = true;
     conn.onHeadersRead(ctx, controlStream(ctx).attr(HTTP3_MY_STREAM_KEY).get(), frame.headers(), true);
-  }
-
-  @Override
-  public void channelActive(ChannelHandlerContext ctx) throws Exception {
-    super.channelActive(ctx);
-    controlStream(ctx).attr(HTTP3_MY_STREAM_KEY).set(http3Stream);
   }
 
   @Override
