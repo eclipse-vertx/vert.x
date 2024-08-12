@@ -248,7 +248,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
       if (this.metrics != null) {
         stream.metric = this.metrics.requestBegin(request.uri, request);
       }
-      VertxTracer tracer = context.tracer();
+      VertxTracer tracer = stream.context.tracer();
       if (tracer != null) {
         BiConsumer<String, String> headers = (key, val) -> new HeadersAdaptor(nettyRequest.headers()).add(key, val);
         String operation = request.traceOperation;
@@ -901,7 +901,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
       stream.responseEnded = true;
       check = requests.peek() != stream;
     }
-    VertxTracer tracer = context.tracer();
+    VertxTracer tracer = stream.context.tracer();
     if (tracer != null) {
       tracer.receiveResponse(stream.context, response, stream.trace, null, HttpUtils.CLIENT_RESPONSE_TAG_EXTRACTOR);
     }
@@ -1164,7 +1164,6 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
         evictionHandler.handle(null);
       }
     }
-    VertxTracer tracer = context.tracer();
     List<Stream> allocatedStreams;
     List<Stream> sentStreams;
     synchronized (this) {
@@ -1180,6 +1179,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
         metrics.requestReset(stream.metric);
       }
       Object trace = stream.trace;
+      VertxTracer tracer = stream.context.tracer();
       if (tracer != null && trace != null) {
         tracer.receiveResponse(stream.context, null, trace, HttpUtils.CONNECTION_CLOSED_EXCEPTION, TagExtractor.empty());
       }
