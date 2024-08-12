@@ -214,7 +214,7 @@ public class OutboundWriteQueue<E> {
     if (WIP_UPDATER.compareAndSet(this, 0, 1)) {
       if (!consumer.test(element)) {
         overflow = element;
-        return DRAIN_REQUIRED_MASK | (WIP_UPDATER.get(this) == highWaterMark ? QUEUE_UNWRITABLE_MASK : 0);
+        return DRAIN_REQUIRED_MASK;
       }
       if (consume(1) == 0) {
         return 0;
