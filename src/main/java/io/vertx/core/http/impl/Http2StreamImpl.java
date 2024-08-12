@@ -45,7 +45,7 @@ class Http2StreamImpl extends HttpStreamImpl<Http2ClientConnection, Http2Stream,
   }
 
   @Override
-  protected void createStream2(int id, boolean b, Handler<AsyncResult<Http2Stream>> onComplete) throws HttpException {
+  protected void createStreamInternal(int id, boolean b, Handler<AsyncResult<Http2Stream>> onComplete) throws HttpException {
     try {
       Http2Stream stream = this.conn.handler.encoder().connection().local().createStream(id, false);
       onComplete.handle(Future.succeededFuture(stream));

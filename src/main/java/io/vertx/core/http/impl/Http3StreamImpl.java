@@ -1,15 +1,8 @@
 package io.vertx.core.http.impl;
 
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.incubator.codec.http3.Http3;
-import io.netty.incubator.codec.http3.Http3DataFrame;
 import io.netty.incubator.codec.http3.Http3Headers;
-import io.netty.incubator.codec.http3.Http3HeadersFrame;
-import io.netty.incubator.codec.http3.Http3RequestStreamInboundHandler;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
-import io.netty.util.Attribute;
-import io.netty.util.AttributeKey;
-import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -22,10 +15,17 @@ import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.tracing.TracingPolicy;
 
 class Http3StreamImpl extends HttpStreamImpl<Http3ClientConnection, QuicStreamChannel, Http3Headers> {
+  private final HttpClientImpl client;
+  private final ClientMetrics clientMetrics;
+
   Http3StreamImpl(Http3ClientConnection conn, ContextInternal context, boolean push,
                   VertxHttpConnectionDelegate<QuicStreamChannel, Http3Headers> connectionDelegate,
-                  ClientMetrics<?, ?, ?, ?> metrics) {
+                  ClientMetrics<?, ?, ?, ?> metrics,
+                  HttpClientImpl client, ClientMetrics clientMetrics) {
     super(conn, context, push, connectionDelegate, metrics);
+
+    this.client = client;
+    this.clientMetrics = clientMetrics;
   }
 
   @Override
@@ -54,33 +54,11 @@ class Http3StreamImpl extends HttpStreamImpl<Http3ClientConnection, QuicStreamCh
   }
 
   @Override
-  protected void createStream2(int id, boolean b, Handler<AsyncResult<QuicStreamChannel>> onComplete) {
-    Http3.newRequestStream(conn.quicChannel, new Http3RequestStreamInboundHandler() {
-        @Override
-        protected void channelRead(ChannelHandlerContext ctx, Http3DataFrame frame) {
-          System.err.print(frame.content().toString(CharsetUtil.US_ASCII));
-          Attribute<Object> stream = controlStream(ctx).attr(AttributeKey.valueOf("MY_STREAM"));
-          conn.onDataRead(ctx, (Http3StreamImpl) stream.get(), frame.content(), 0, true);
-        }
+  protected void createStreamInternal(int id, boolean b, Handler<AsyncResult<QuicStreamChannel>> onComplete) {
+    VertxHttp3ControlStreamHandler handler = new VertxHttp3ControlStreamHandler(client, clientMetrics,
+      metric, this);
 
-        @Override
-        protected void channelRead(ChannelHandlerContext ctx, Http3HeadersFrame frame) throws Exception {
-          Attribute<Object> stream = controlStream(ctx).attr(AttributeKey.valueOf("MY_STREAM"));
-          conn.onHeadersRead(ctx, (Http3StreamImpl) stream.get(), frame.headers(), true);
-        }
-
-        @Override
-        public void channelActive(ChannelHandlerContext ctx) throws Exception {
-          super.channelActive(ctx);
-          Attribute<Object> streamAttr = controlStream(ctx).attr(AttributeKey.newInstance("MY_STREAM"));
-          streamAttr.set(Http3StreamImpl.this);
-        }
-
-        @Override
-        protected void channelInputClosed(ChannelHandlerContext ctx) {
-          ctx.close();
-        }
-      })
+    Http3.newRequestStream(conn.quicChannel, handler)
       .addListener((GenericFutureListener<io.netty.util.concurrent.Future<QuicStreamChannel>>) quicStreamChannelFuture -> {
         QuicStreamChannel quicStreamChannel = quicStreamChannelFuture.get();
         onComplete.handle(Future.succeededFuture(quicStreamChannel));

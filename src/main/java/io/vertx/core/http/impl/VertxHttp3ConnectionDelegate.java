@@ -35,7 +35,8 @@ class VertxHttp3ConnectionDelegate implements VertxHttpConnectionDelegate<QuicSt
     quicStreamChannel
       .write(headers)
       .addListener(promise)
-      .addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);  //TODO: review
+      .addListener(QuicStreamChannel.SHUTDOWN_OUTPUT)
+    ;  //TODO: review
   }
 
   @Override
@@ -54,7 +55,7 @@ class VertxHttp3ConnectionDelegate implements VertxHttpConnectionDelegate<QuicSt
   }
 
   @Override
-  public void init(QuicStreamChannel quicStreamChannel) {
+  public void init(VertxHttpStreamBase vertxHttpStream, QuicStreamChannel quicStreamChannel) {
     this.quicStreamChannel = quicStreamChannel;
     this.writable = quicStreamChannel.isWritable();
   }

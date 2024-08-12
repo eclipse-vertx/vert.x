@@ -53,10 +53,10 @@ class VertxHttp2ConnectionDelegate implements VertxHttpConnectionDelegate<Http2S
   }
 
   @Override
-  public void init(Http2Stream stream) {
+  public void init(VertxHttpStreamBase vertxHttpStream, Http2Stream stream) {
     this.stream = stream;
     this.writable = this.conn.handler.encoder().flowController().isWritable(this.stream);
-    stream.setProperty(conn.streamKey, this);
+    stream.setProperty(conn.streamKey, vertxHttpStream);
   }
 
   @Override

@@ -276,10 +276,8 @@ public class HttpChannelConnector {
                               Channel ch,
                               PromiseInternal<HttpClientConnection> promise) {
     try {
-      VertxHttp3RequestStreamInboundHandler inboundControlStreamHandler =
-        new VertxHttp3RequestStreamInboundHandler(promise, client, metrics, context, metric);
       QuicChannel.newBootstrap(ch)
-        .handler(new Http3ClientConnectionHandler(inboundControlStreamHandler, null, null, null, false))
+        .handler(Http3ClientConnection.createHttp3ConnectionHandler(client, metrics, context, metric, promise))
         .remoteAddress(new InetSocketAddress(peerAddress.hostAddress(), peerAddress.port()))
         .connect().addListener((GenericFutureListener<io.netty.util.concurrent.Future<QuicChannel>>) future ->
           future.get().pipeline().addLast(new Http3SslHandshakeHandler(promise)));

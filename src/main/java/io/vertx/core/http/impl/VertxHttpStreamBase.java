@@ -77,7 +77,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S, H extends Header
 
   void init(S stream) {
     synchronized (this) {
-      this.connectionDelegate.init(stream);
+      this.connectionDelegate.init(this, stream);
       this.writable = this.connectionDelegate.isWritable();
     }
   }

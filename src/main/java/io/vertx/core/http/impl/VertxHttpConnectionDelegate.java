@@ -20,7 +20,7 @@ interface VertxHttpConnectionDelegate<S, H extends Headers<CharSequence, CharSeq
 
   void writeReset(int streamId, long code);
 
-  void init(S stream);
+  void init(VertxHttpStreamBase vertxHttpStream, S stream);
 
   int getStreamId();
 

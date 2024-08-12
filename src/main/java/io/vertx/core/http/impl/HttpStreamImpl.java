@@ -30,7 +30,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S,
 
   abstract int lastStreamCreated();
 
-  protected abstract void createStream2(int id, boolean b, Handler<AsyncResult<S>> onComplete) throws HttpException;
+  protected abstract void createStreamInternal(int id, boolean b, Handler<AsyncResult<S>> onComplete) throws HttpException;
 
   protected abstract TracingPolicy getTracingPolicy();
 
@@ -244,7 +244,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S,
     }
     head.id = id;
     head.remoteAddress = conn.remoteAddress();
-    createStream2(id, false, streamX -> {
+    createStreamInternal(id, false, streamX -> {
       init(streamX.result());
       if (metrics != null) {
         metric = metrics.requestBegin(headers.path().toString(), head);

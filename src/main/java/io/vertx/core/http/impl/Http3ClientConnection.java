@@ -1,6 +1,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.incubator.codec.http3.Http3ConnectionHandler;
 import io.netty.incubator.codec.http3.Http3Headers;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
@@ -21,6 +22,8 @@ import java.util.Deque;
 
 
 public class Http3ClientConnection extends Http3ConnectionBase implements HttpClientConnection {
+
+  private Handler<Void> evictionHandler = DEFAULT_EVICTION_HANDLER;
 
   public ClientMetrics metrics;
   private HttpVersion version;
@@ -87,7 +90,8 @@ public class Http3ClientConnection extends Http3ConnectionBase implements HttpCl
   }
 
   private Http3StreamImpl createStream(ContextInternal context) {
-    return new Http3StreamImpl(this, context, false, new VertxHttp3ConnectionDelegate(this), metrics);
+    return new Http3StreamImpl(this, context, false, new VertxHttp3ConnectionDelegate(this), metrics,
+      client, metrics);
   }
 
   @Override
@@ -123,5 +127,24 @@ public class Http3ClientConnection extends Http3ConnectionBase implements HttpCl
     } else {
       stream.onEnd(new Http3HeadersAdaptor(headers));
     }
+  }
+
+  public void tryEvict() {
+    if (!evicted) {
+      evicted = true;
+      evictionHandler.handle(null);
+    }
+  }
+
+  public static Http3ConnectionHandler createHttp3ConnectionHandler(
+    HttpClientImpl client,
+    ClientMetrics metrics,
+    EventLoopContext context,
+    Object metric,
+    PromiseInternal<HttpClientConnection> promise) {
+
+    return new VertxHttp3ConnectionHandlerBuilder()
+      .server(false)
+      .build(new QuicStreamChannelInitializer(client, metrics, context, metric, promise), null);
   }
 }
