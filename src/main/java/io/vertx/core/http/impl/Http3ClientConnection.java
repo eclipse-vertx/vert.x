@@ -134,10 +134,7 @@ public class Http3ClientConnection extends Http3ConnectionBase implements HttpCl
   }
 
   public static Http3ConnectionHandler createHttp3ClientConnectionHandler(
-    HttpClientImpl client,
-    ClientMetrics metrics,
-    EventLoopContext context,
-    Object metric,
+    HttpClientImpl client, ClientMetrics metrics, EventLoopContext context, Object metric,
     PromiseInternal<HttpClientConnection> promise) {
 
     return new VertxHttp3ConnectionHandlerBuilder()
