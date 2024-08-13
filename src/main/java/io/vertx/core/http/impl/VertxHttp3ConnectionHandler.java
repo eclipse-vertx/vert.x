@@ -169,4 +169,8 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends 
   public Http3ClientConnectionHandler createHttp3ClientConnectionHandler() {
     return new Http3ClientConnectionHandler(quicStreamChannelInitializer, null, null, http3InitialSettings, false);
   }
+
+  public C connection() {
+    return conn;
+  }
 }

@@ -4,6 +4,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.incubator.codec.http3.DefaultHttp3Headers;
 import io.netty.incubator.codec.http3.Http3;
 import io.netty.incubator.codec.http3.Http3Headers;
+import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.netty.util.concurrent.FutureListener;
 import io.netty.util.concurrent.GenericFutureListener;
@@ -52,12 +53,12 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
 
   @Override
   int lastStreamCreated() {
-    return this.conn.quicStreamChannel != null ? (int) this.conn.quicStreamChannel.streamId() : 0;
+    return this.stream != null ? (int) this.stream.streamId() : 0;
   }
 
   @Override
   protected void createStreamInternal(int id, boolean b, Handler<AsyncResult<QuicStreamChannel>> onComplete) {
-    Http3.newRequestStream(conn.quicChannel, conn.handler)
+    Http3.newRequestStream((QuicChannel) conn.channelHandlerContext().channel().parent(), conn.handler)
       .addListener((GenericFutureListener<io.netty.util.concurrent.Future<QuicStreamChannel>>) quicStreamChannelFuture -> {
         QuicStreamChannel quicStreamChannel = quicStreamChannelFuture.get();
         onComplete.handle(Future.succeededFuture(quicStreamChannel));
