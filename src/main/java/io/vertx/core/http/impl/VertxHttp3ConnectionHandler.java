@@ -6,6 +6,7 @@ import io.netty.incubator.codec.http3.Http3DataFrame;
 import io.netty.incubator.codec.http3.Http3HeadersFrame;
 import io.netty.incubator.codec.http3.Http3RequestStreamInboundHandler;
 import io.netty.incubator.codec.http3.Http3ServerConnectionHandler;
+import io.netty.incubator.codec.http3.Http3SettingsFrame;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.Future;
@@ -23,6 +24,7 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends 
   private final HttpClientImpl client;
   private final ClientMetrics metrics;
   private final Object metric;
+  private final Http3SettingsFrame http3InitialSettings;
   private C conn;
   private EventLoopContext context;
   private Promise<C> connectFuture;
@@ -37,11 +39,13 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends 
   public VertxHttp3ConnectionHandler(Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory,
                                      HttpClientImpl client, ClientMetrics metrics, Object metric,
                                      EventLoopContext context,
-                                     QuicStreamChannelInitializer quicStreamChannelInitializer) {
+                                     QuicStreamChannelInitializer quicStreamChannelInitializer,
+                                     Http3SettingsFrame http3InitialSettings) {
     this.client = client;
     this.metrics = metrics;
     this.metric = metric;
     this.connectionFactory = connectionFactory;
+    this.http3InitialSettings = http3InitialSettings;
     this.quicStreamChannelInitializer = quicStreamChannelInitializer;
     connectFuture = new DefaultPromise<>(context.nettyEventLoop());
 
@@ -133,10 +137,10 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends 
   }
 
   public Http3ServerConnectionHandler createHttp3ServerConnectionHandler() {
-    return new Http3ServerConnectionHandler(quicStreamChannelInitializer, null, null, null, false);
+    return new Http3ServerConnectionHandler(quicStreamChannelInitializer, null, null, http3InitialSettings, false);
   }
 
   public Http3ClientConnectionHandler createHttp3ClientConnectionHandler() {
-    return new Http3ClientConnectionHandler(quicStreamChannelInitializer, null, null, null, false);
+    return new Http3ClientConnectionHandler(quicStreamChannelInitializer, null, null, http3InitialSettings, false);
   }
 }

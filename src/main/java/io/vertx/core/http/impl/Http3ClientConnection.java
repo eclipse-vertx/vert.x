@@ -13,6 +13,7 @@ import io.vertx.core.http.impl.headers.Http3HeadersAdaptor;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.spi.metrics.ClientMetrics;
+import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -128,11 +129,17 @@ public class Http3ClientConnection extends Http3ConnectionBase implements HttpCl
     }
   }
 
-  public static VertxHttp3ConnectionHandler<Http3ClientConnection> createHttp3ClientConnectionHandler(
-    HttpClientImpl client, ClientMetrics metrics, EventLoopContext context, Object socketMetric) {
+  public static VertxHttp3ConnectionHandler<Http3ClientConnection> createVertxHttp3ConnectionHandler(
+    HttpClientImpl client,
+    ClientMetrics metrics,
+    EventLoopContext context,
+    Object socketMetric) {
+    HttpClientOptions options = client.options();
+    HttpClientMetrics met = client.metrics();
 
-    VertxHttp3ConnectionHandlerBuilder<Http3ClientConnection> builder =
+    VertxHttp3ConnectionHandler<Http3ClientConnection> handler =
       new VertxHttp3ConnectionHandlerBuilder<Http3ClientConnection>()
+        .http3InitialSettings(options.getHttp3InitialSettings())
         .channelInitializer(new QuicStreamChannelInitializer(context))
         .connectionFactory(connHandler -> {
 
@@ -143,8 +150,8 @@ public class Http3ClientConnection extends Http3ConnectionBase implements HttpCl
             conn.metric(m);
           }
           return conn;
-        });
-
-    return builder.build(client, metrics, context, socketMetric);
+        })
+        .build(client, metrics, context, socketMetric);
+    return handler;
   }
 }

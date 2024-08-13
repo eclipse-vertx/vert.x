@@ -11,6 +11,7 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.incubator.codec.http3.Http3SettingsFrame;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.spi.metrics.ClientMetrics;
 
@@ -20,6 +21,7 @@ class VertxHttp3ConnectionHandlerBuilder<C extends Http3ConnectionBase> {
 
   private Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory;
   private QuicStreamChannelInitializer channelInitializer;
+  private Http3SettingsFrame http3InitialSettings;
 
   protected VertxHttp3ConnectionHandlerBuilder<C> channelInitializer(QuicStreamChannelInitializer channelInitializer) {
     this.channelInitializer = channelInitializer;
@@ -31,8 +33,14 @@ class VertxHttp3ConnectionHandlerBuilder<C extends Http3ConnectionBase> {
     return this;
   }
 
+  public VertxHttp3ConnectionHandlerBuilder<C> http3InitialSettings(Http3SettingsFrame http3InitialSettings) {
+    this.http3InitialSettings = http3InitialSettings;
+    return this;
+  }
+
   protected VertxHttp3ConnectionHandler<C> build(HttpClientImpl client, ClientMetrics metrics,
                                                  EventLoopContext context, Object metric) {
-    return new VertxHttp3ConnectionHandler<C>(connectionFactory, client, metrics, metric, context, channelInitializer);
+    return new VertxHttp3ConnectionHandler<C>(connectionFactory, client, metrics, metric, context, channelInitializer
+      , http3InitialSettings);
   }
 }

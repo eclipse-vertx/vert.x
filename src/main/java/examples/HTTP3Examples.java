@@ -11,7 +11,10 @@
 
 package examples;
 
+import io.netty.incubator.codec.http3.DefaultHttp3SettingsFrame;
+import io.netty.incubator.codec.http3.Http3SettingsFrame;
 import io.netty.util.NetUtil;
+import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
@@ -26,20 +29,26 @@ public class HTTP3Examples {
 
   public void example01(Vertx vertx) {
 
+    DefaultHttp3SettingsFrame settings = new DefaultHttp3SettingsFrame();
+    settings.put(Http3SettingsFrame.HTTP3_SETTINGS_MAX_FIELD_SECTION_SIZE,
+      100000000000L);
+
     HttpClientOptions options = new HttpClientOptions().
       setSsl(true).
       setUseAlpn(true).
+      setHttp3InitialSettings(settings).
       setTrustAll(true);
     options.setProtocolVersion(HttpVersion.HTTP_3);
 
     HttpClient client = vertx.createHttpClient(options);
-    client.request(HttpMethod.GET, 9999, NetUtil.LOCALHOST4.getHostAddress(),
-        "/")
-//    client.request(HttpMethod.GET, 443, "www.google.com",
+    client.request(HttpMethod.GET, 9999, NetUtil.LOCALHOST4.getHostAddress(), "/")
+//    client.request(HttpMethod.GET, 443, "www.google.com", "/")
 //    client.request(HttpMethod.GET, 443, "216.239.38.120", "/")
       .onSuccess(req -> {
         req.response().onSuccess(resp -> {
-          System.out.println("resp.headers() = " + resp.headers());
+          MultiMap headers = resp.headers();
+          System.out.println("resp.headers() = " + headers);
+          System.out.println("Alt-Svc = " + headers.get("Alt-Svc"));
           vertx.close();
         });
         req.response().compose(HttpClientResponse::body).onSuccess(buffer -> {
@@ -47,15 +56,6 @@ public class HTTP3Examples {
         });
         req.end();
       })
-//      .compose(res -> {
-//        MultiMap headers = res.headers();
-//
-//        System.out.println("res.statusCode() = " + res.statusCode());
-//        System.out.println("https = " + headers.get("Alt-Svc"));
-//        return res.body();
-//      })
-//      .onSuccess(buffer -> System.out.println("buffer = " + buffer.toString
-//      ().substring(0, 100)))
       .onFailure(Throwable::printStackTrace)
 //      .onComplete(event -> vertx.close())
     ;
