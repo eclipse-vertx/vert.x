@@ -182,11 +182,6 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
   }
 
   @Override
-  public NetworkMetrics metrics() {
-    return null;
-  }
-
-  @Override
   public Http3ConnectionBase exceptionHandler(Handler<Throwable> handler) {
     return (Http3ConnectionBase) super.exceptionHandler(handler);
   }

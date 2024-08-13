@@ -37,19 +37,13 @@ public class Http3ClientConnection extends Http3ConnectionBase implements HttpCl
   private long writeWindow;
   private boolean writeOverflow;
 
-  private Object socketMetric;
-
-
   public QuicStreamChannel quicStreamChannel;
   public QuicChannel quicChannel;
 
-  public Http3ClientConnection(HttpClientImpl client, ClientMetrics metrics, EventLoopContext context,
-                               Object socketMetric,
-                               VertxHttp3ConnectionHandler<? extends Http3ConnectionBase> connHandler) {
+  public Http3ClientConnection(HttpClientImpl client, EventLoopContext context, VertxHttp3ConnectionHandler<? extends Http3ConnectionBase> connHandler, ClientMetrics metrics) {
     super(context, connHandler);
     this.client = client;
     this.metrics = metrics;
-    this.socketMetric = socketMetric;
     this.quicStreamChannel = (QuicStreamChannel) connHandler.context().channel();
     this.quicChannel = (QuicChannel) connHandler.context().channel().parent();
   }
@@ -67,6 +61,11 @@ public class Http3ClientConnection extends Http3ConnectionBase implements HttpCl
   @Override
   public long concurrency() {
     return 5;
+  }
+
+  @Override
+  public HttpClientMetrics metrics() {
+    return client.metrics();
   }
 
   @Override
@@ -136,15 +135,12 @@ public class Http3ClientConnection extends Http3ConnectionBase implements HttpCl
     Object socketMetric) {
     HttpClientOptions options = client.options();
     HttpClientMetrics met = client.metrics();
-
     VertxHttp3ConnectionHandler<Http3ClientConnection> handler =
       new VertxHttp3ConnectionHandlerBuilder<Http3ClientConnection>()
         .http3InitialSettings(options.getHttp3InitialSettings())
         .channelInitializer(new QuicStreamChannelInitializer(context))
         .connectionFactory(connHandler -> {
-
-          Http3ClientConnection conn = new Http3ClientConnection(client, metrics, context, null, connHandler);
-
+          Http3ClientConnection conn = new Http3ClientConnection(client, context, connHandler, metrics);
           if (metrics != null) {
             Object m = socketMetric;
             conn.metric(m);
