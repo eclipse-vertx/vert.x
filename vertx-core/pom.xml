@@ -543,6 +543,21 @@
             </configuration>
           </execution>
           <execution>
+            <id>custom-event-executor</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/eventexecutor/CustomEventExecutorTest.java</include>
+              </includes>
+              <additionalClasspathElements>
+                <additionalClasspathElement>${project.basedir}/src/test/classpath/customeventexecutor</additionalClasspathElement>
+              </additionalClasspathElements>
+            </configuration>
+          </execution>
+          <execution>
             <id>custom-vertx-tracer-factory</id>
             <goals>
               <goal>integration-test</goal>

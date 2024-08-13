@@ -11,7 +11,7 @@
 package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
-import io.vertx.core.ThreadingModel;
+import io.vertx.core.internal.EventExecutor;
 
 /**
  * Execute events on an event-loop.

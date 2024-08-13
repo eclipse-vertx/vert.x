@@ -18,22 +18,23 @@ package io.vertx.core;
 public enum ThreadingModel {
 
   /**
-   * Tasks are scheduled on the event-loop thread.
+   * Tasks are scheduled on the event-loop thread of the vertx instance.
    */
   EVENT_LOOP,
 
   /**
-   * Tasks are scheduled on a worker pool.
+   * Tasks are scheduled on a worker pool of platform threads managed by the vertx instance.
    */
   WORKER,
 
   /**
-   * Tasks are scheduled on a virtual thread.
+   * Tasks are scheduled on a virtual thread, no assumption on whether virtual threads are pooled.
    */
   VIRTUAL_THREAD,
 
   /**
-   * Tasks are scheduled on threads not managed by the current vertx instance.
+   * Tasks are scheduled on threads not managed by the current vertx instance, the nature of the thread is unknown
+   * to the vertx instance. Note that an event-loop thread of another vertx instance falls in this category.
    */
   OTHER
 }

@@ -12,6 +12,7 @@ package io.vertx.core.impl;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.EventExecutor;
 import io.vertx.core.spi.metrics.PoolMetrics;
 
 import java.util.concurrent.CountDownLatch;

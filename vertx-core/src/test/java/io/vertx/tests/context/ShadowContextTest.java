@@ -1,10 +1,7 @@
 package io.vertx.tests.context;
 
 import io.netty.channel.EventLoop;
-import io.vertx.core.Context;
-import io.vertx.core.Future;
-import io.vertx.core.ThreadingModel;
-import io.vertx.core.Vertx;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.http.*;
@@ -26,6 +23,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -480,6 +478,29 @@ public class ShadowContextTest extends AsyncTestBase {
           assertSame(actualCtx, actualVertx.getOrCreateContext());
           testComplete();
       });
+    });
+    await();
+  }
+
+  @Test
+  public void testGetOrCreateContextFromUnassociatedEventLoopThread() {
+    Executor executor = actualVertx.nettyEventLoopGroup().next();
+    testGetOrCreateContextFromUnassociatedThread(executor);
+  }
+
+  @Test
+  public void testGetOrCreateContextFromUnassociatedWorkerThread() {
+    Executor executor = actualVertx.getWorkerPool().executor();
+    testGetOrCreateContextFromUnassociatedThread(executor);
+  }
+
+  private void testGetOrCreateContextFromUnassociatedThread(Executor executor) {
+    executor.execute(() -> {
+      Context ctx = shadowVertx.getOrCreateContext();
+      assertSame(ctx.owner(), shadowVertx);
+      // Maybe should not always be event-loop
+      assertEquals(ThreadingModel.EVENT_LOOP, ctx.threadingModel());
+      testComplete();
     });
     await();
   }
