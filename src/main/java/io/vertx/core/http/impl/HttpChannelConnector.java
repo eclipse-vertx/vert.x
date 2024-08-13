@@ -275,7 +275,7 @@ public class HttpChannelConnector {
                               PromiseInternal<HttpClientConnection> promise) {
     VertxHttp3ConnectionHandler<Http3ClientConnection> clientHandler;
     try {
-      clientHandler = Http3ClientConnection.createVertxHttp3ConnectionHandler(client, metrics, context, metric);
+      clientHandler = Http3ClientConnection.createVertxHttp3ConnectionHandler(client, metrics, context, false, metric);
 
       QuicChannel.newBootstrap(ch)
         .handler(clientHandler.createHttp3ClientConnectionHandler())

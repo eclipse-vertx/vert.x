@@ -12,6 +12,7 @@ import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.Promise;
+import io.vertx.core.Handler;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.spi.metrics.ClientMetrics;
@@ -32,6 +33,8 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends 
 
   private ChannelHandlerContext chctx;
   private boolean read;
+  private Handler<C> addHandler;
+  private Handler<C> removeHandler;
 
   public static final AttributeKey<Http3ClientStream> HTTP3_MY_STREAM_KEY = AttributeKey.valueOf(Http3ClientStream.class
     , "HTTP3MyStream");
@@ -134,6 +137,29 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends 
 
   public ChannelHandlerContext context() {
     return chctx;
+  }
+
+  /**
+   * Set a handler to be called when the connection is unset from this handler.
+   *
+   * @param handler the handler to be notified
+   * @return this
+   */
+  public VertxHttp3ConnectionHandler<C> removeHandler(Handler<C> handler) {
+    removeHandler = handler;
+    conn = null;
+    return this;
+  }
+
+  /**
+   * Set a handler to be called when the connection is set on this handler.
+   *
+   * @param handler the handler to be notified
+   * @return this
+   */
+  public VertxHttp3ConnectionHandler<C> addHandler(Handler<C> handler) {
+    this.addHandler = handler;
+    return this;
   }
 
   public Http3ServerConnectionHandler createHttp3ServerConnectionHandler() {

@@ -121,7 +121,12 @@ public class Http3ClientConnection extends Http3ConnectionBase implements HttpCl
     }
   }
 
-  public void tryEvict() {
+  /**
+   * Try to evict the connection from the pool. This can be called multiple times since
+   * the connection can be eagerly removed from the pool on emission or reception of a {@code GOAWAY}
+   * frame.
+   */
+  private void tryEvict() {
     if (!evicted) {
       evicted = true;
       evictionHandler.handle(null);
@@ -132,12 +137,13 @@ public class Http3ClientConnection extends Http3ConnectionBase implements HttpCl
     HttpClientImpl client,
     ClientMetrics metrics,
     EventLoopContext context,
+    boolean upgrade,
     Object socketMetric) {
     HttpClientOptions options = client.options();
     HttpClientMetrics met = client.metrics();
     VertxHttp3ConnectionHandler<Http3ClientConnection> handler =
       new VertxHttp3ConnectionHandlerBuilder<Http3ClientConnection>()
-        .http3InitialSettings(options.getHttp3InitialSettings())
+        .http3InitialSettings(client.options().getHttp3InitialSettings())
         .channelInitializer(new QuicStreamChannelInitializer(context))
         .connectionFactory(connHandler -> {
           Http3ClientConnection conn = new Http3ClientConnection(client, context, connHandler, metrics);
@@ -148,6 +154,22 @@ public class Http3ClientConnection extends Http3ConnectionBase implements HttpCl
           return conn;
         })
         .build(client, metrics, context, socketMetric);
+    handler.addHandler(conn -> {
+      if (options.getHttp2ConnectionWindowSize() > 0) {
+        conn.setWindowSize(options.getHttp2ConnectionWindowSize());
+      }
+      if (metrics != null) {
+        if (!upgrade)  {
+          met.endpointConnected(metrics);
+        }
+      }
+    });
+    handler.removeHandler(conn -> {
+      if (metrics != null) {
+        met.endpointDisconnected(metrics);
+      }
+      conn.tryEvict();
+    });
     return handler;
   }
 }
