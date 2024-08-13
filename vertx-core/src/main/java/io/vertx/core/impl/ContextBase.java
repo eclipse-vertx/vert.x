@@ -10,15 +10,12 @@
  */
 package io.vertx.core.impl;
 
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.ThreadingModel;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.EventExecutor;
 import io.vertx.core.spi.context.storage.AccessMode;
 import io.vertx.core.spi.context.storage.ContextLocal;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 
 /**

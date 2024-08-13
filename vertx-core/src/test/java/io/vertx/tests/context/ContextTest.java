@@ -895,7 +895,7 @@ public class ContextTest extends VertxTestBase {
   @Test
   public void testSticky() {
     Context ctx = vertx.getOrCreateContext();
-    assertNotSame(ctx, vertx.getOrCreateContext());
+    assertSame(ctx, vertx.getOrCreateContext());
     assertSame(((ContextInternal)ctx).nettyEventLoop(), ((ContextInternal)vertx.getOrCreateContext()).nettyEventLoop());
   }
 
@@ -1099,4 +1099,32 @@ public class ContextTest extends VertxTestBase {
     }
   }
 
+  @Test
+  public void testContextShouldNotBeStickyFromUnassociatedEventLoopThread() {
+    ContextInternal ctx = ((VertxInternal)vertx).createEventLoopContext();
+    testContextShouldNotBeStickyFromUnassociatedWorkerThread(ctx);
+  }
+
+  @Test
+  public void testContextShouldNotBeStickyFromUnassociatedWorkerThreadAndIsCurrentlyNotSupported() {
+    ContextInternal ctx = ((VertxInternal)vertx).createWorkerContext();
+    testContextShouldNotBeStickyFromUnassociatedWorkerThread(ctx);
+  }
+
+  private void testContextShouldNotBeStickyFromUnassociatedWorkerThread(ContextInternal ctx) {
+    ctx.execute(() -> {
+      assertEquals(null, Vertx.currentContext());
+      Context created1 = vertx.getOrCreateContext();
+      assertNotSame(ctx, created1);
+      ctx.execute(() -> {
+        assertEquals(null, Vertx.currentContext());
+        Context created2 = vertx.getOrCreateContext();
+        assertSame(ctx.threadingModel(), created2.threadingModel());
+        assertNotSame(ctx, created2);
+        assertNotSame(created1, created2);
+        testComplete();
+      });
+    });
+    await();
+  }
 }

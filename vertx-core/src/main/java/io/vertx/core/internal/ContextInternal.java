@@ -41,7 +41,7 @@ public interface ContextInternal extends Context {
    * @return the current context
    */
   static ContextInternal current() {
-    return VertxImpl.currentContext();
+    return VertxImpl.currentContext(Thread.currentThread());
   }
 
   @Override
@@ -50,9 +50,9 @@ public interface ContextInternal extends Context {
   }
 
   /**
-   * @return an executor that schedule a task on this context, the thread executing the task will not be associated with this context
+   * @return an event executor that schedule a task on this context, the thread executing the task will not be associated with this context
    */
-  Executor executor();
+  EventExecutor executor();
 
   default ContextInternal asEventLoopContext() {
     if (threadingModel() == ThreadingModel.EVENT_LOOP) {
