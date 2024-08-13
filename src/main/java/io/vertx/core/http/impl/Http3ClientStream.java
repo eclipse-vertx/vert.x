@@ -20,21 +20,14 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.tracing.TracingPolicy;
 
-import static io.vertx.core.http.impl.VertxHttp3StreamHandler.HTTP3_MY_STREAM_KEY;
+import static io.vertx.core.http.impl.VertxHttp3ConnectionHandler.HTTP3_MY_STREAM_KEY;
 
 class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStreamChannel, Http3Headers> {
   private static final MultiMap EMPTY = new Http3HeadersAdaptor(new DefaultHttp3Headers());
 
-  private final HttpClientImpl client;
-  private final ClientMetrics clientMetrics;
-
   Http3ClientStream(Http3ClientConnection conn, ContextInternal context, boolean push,
-                    ClientMetrics<?, ?, ?, ?> metrics,
-                    HttpClientImpl client, ClientMetrics clientMetrics) {
+                    ClientMetrics<?, ?, ?, ?> metrics) {
     super(conn, context, push, metrics);
-
-    this.client = client;
-    this.clientMetrics = clientMetrics;
   }
 
   @Override
@@ -64,9 +57,7 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
 
   @Override
   protected void createStreamInternal(int id, boolean b, Handler<AsyncResult<QuicStreamChannel>> onComplete) {
-    VertxHttp3StreamHandler handler = new VertxHttp3StreamHandler(client, clientMetrics, metric, conn);
-
-    Http3.newRequestStream(conn.quicChannel, handler)
+    Http3.newRequestStream(conn.quicChannel, conn.handler)
       .addListener((GenericFutureListener<io.netty.util.concurrent.Future<QuicStreamChannel>>) quicStreamChannelFuture -> {
         QuicStreamChannel quicStreamChannel = quicStreamChannelFuture.get();
         onComplete.handle(Future.succeededFuture(quicStreamChannel));
@@ -96,6 +87,7 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
   public void writeFrame(byte type, short flags, ByteBuf payload) {
     stream.write(payload);
   }
+
   @Override
   public CharSequence getHeaderMethod(Http3Headers headers) {
     return headers.method();
@@ -115,6 +107,7 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
   public long getWindowSize() {
     return conn.getWindowSize();
   }
+
   @Override
   public void writeHeaders(Http3Headers headers, boolean end, int dependency, short weight, boolean exclusive,
                            boolean checkFlush, FutureListener<Void> promise) {

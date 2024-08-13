@@ -40,7 +40,6 @@ import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
-import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -274,16 +273,21 @@ public class HttpChannelConnector {
                               Object metric,
                               Channel ch,
                               PromiseInternal<HttpClientConnection> promise) {
+    VertxHttp3ConnectionHandler<Http3ClientConnection> clientHandler;
     try {
+      clientHandler = Http3ClientConnection.createHttp3ClientConnectionHandler(client, metrics, context, metric);
+
       QuicChannel.newBootstrap(ch)
-        .handler(Http3ClientConnection.createHttp3ClientConnectionHandler(client, metrics, context, metric, promise))
+        .handler(clientHandler.createHttp3ClientConnectionHandler())
         .remoteAddress(client.vertx().transport().convert(peerAddress))
         .connect().addListener((GenericFutureListener<io.netty.util.concurrent.Future<QuicChannel>>) future ->
           future.get().pipeline().addLast(new Http3SslHandshakeHandler(promise)));
 
     } catch (Exception e) {
       connectFailed(ch, e, promise);
+      return;
     }
+    clientHandler.connectFuture().addListener(promise);
   }
 
   private void connectFailed(Channel ch, Throwable t, Promise<HttpClientConnection> future) {

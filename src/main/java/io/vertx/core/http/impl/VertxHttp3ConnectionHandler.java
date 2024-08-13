@@ -1,20 +1,32 @@
 package io.vertx.core.http.impl;
 
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.incubator.codec.http3.Http3ClientConnectionHandler;
 import io.netty.incubator.codec.http3.Http3DataFrame;
 import io.netty.incubator.codec.http3.Http3HeadersFrame;
 import io.netty.incubator.codec.http3.Http3RequestStreamInboundHandler;
+import io.netty.incubator.codec.http3.Http3ServerConnectionHandler;
 import io.netty.util.AttributeKey;
-import io.netty.util.CharsetUtil;
+import io.netty.util.concurrent.DefaultPromise;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
+import io.netty.util.concurrent.Promise;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
-public class VertxHttp3StreamHandler extends Http3RequestStreamInboundHandler {
+import java.util.function.Function;
+
+public class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3RequestStreamInboundHandler {
+  private final Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory;
   private final HttpClientImpl client;
   private final ClientMetrics metrics;
   private final Object metric;
-  private final Http3ClientConnection conn;
+  private C conn;
+  private EventLoopContext context;
+  private Promise<C> connectFuture;
+  private final QuicStreamChannelInitializer quicStreamChannelInitializer;
 
   private ChannelHandlerContext chctx;
   private boolean read;
@@ -22,13 +34,23 @@ public class VertxHttp3StreamHandler extends Http3RequestStreamInboundHandler {
   public static final AttributeKey<Http3ClientStream> HTTP3_MY_STREAM_KEY = AttributeKey.valueOf(Http3ClientStream.class
     , "HTTP3MyStream");
 
-  public VertxHttp3StreamHandler(
-    HttpClientImpl client, ClientMetrics metrics, Object metric, Http3ClientConnection http3ClientConnection) {
+  public VertxHttp3ConnectionHandler(Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory,
+                                     HttpClientImpl client, ClientMetrics metrics, Object metric,
+                                     EventLoopContext context,
+                                     QuicStreamChannelInitializer quicStreamChannelInitializer) {
     this.client = client;
     this.metrics = metrics;
     this.metric = metric;
+    this.connectionFactory = connectionFactory;
+    this.quicStreamChannelInitializer = quicStreamChannelInitializer;
+    connectFuture = new DefaultPromise<>(context.nettyEventLoop());
 
-    this.conn = http3ClientConnection;
+    quicStreamChannelInitializer.quicStreamChannelInitFuture().addListener((GenericFutureListener<Future<ChannelHandlerContext>>) future -> {
+      ChannelHandlerContext ctx = future.get();
+      this.chctx = ctx;
+      this.conn = connectionFactory.apply(this);
+      connectFuture.setSuccess(conn);
+    });
   }
 
   @Override
@@ -72,6 +94,13 @@ public class VertxHttp3StreamHandler extends Http3RequestStreamInboundHandler {
     super.channelReadComplete(ctx);
   }
 
+  public Future<C> connectFuture() {
+    if (connectFuture == null) {
+      throw new IllegalStateException();
+    }
+    return connectFuture;
+  }
+
   @Override
   protected void channelInputClosed(ChannelHandlerContext ctx) {
     ctx.close();
@@ -84,7 +113,7 @@ public class VertxHttp3StreamHandler extends Http3RequestStreamInboundHandler {
     if (metrics != null) {
       met.endpointDisconnected(metrics);
     }
-    conn.tryEvict();
+//    conn.tryEvict();  //TODO: review
   }
 
   @Override
@@ -97,5 +126,17 @@ public class VertxHttp3StreamHandler extends Http3RequestStreamInboundHandler {
     if (!read) {
       chctx.channel().flush();
     }
+  }
+
+  public ChannelHandlerContext context() {
+    return chctx;
+  }
+
+  public Http3ServerConnectionHandler createHttp3ServerConnectionHandler() {
+    return new Http3ServerConnectionHandler(quicStreamChannelInitializer, null, null, null, false);
+  }
+
+  public Http3ClientConnectionHandler createHttp3ClientConnectionHandler() {
+    return new Http3ClientConnectionHandler(quicStreamChannelInitializer, null, null, null, false);
   }
 }

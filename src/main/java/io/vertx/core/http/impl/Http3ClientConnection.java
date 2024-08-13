@@ -1,7 +1,5 @@
 package io.vertx.core.http.impl;
 
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.incubator.codec.http3.Http3ConnectionHandler;
 import io.netty.incubator.codec.http3.Http3Headers;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
@@ -14,7 +12,6 @@ import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.headers.Http3HeadersAdaptor;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
-import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.spi.metrics.ClientMetrics;
 
 import java.util.ArrayDeque;
@@ -45,17 +42,15 @@ public class Http3ClientConnection extends Http3ConnectionBase implements HttpCl
   public QuicStreamChannel quicStreamChannel;
   public QuicChannel quicChannel;
 
-  public Http3ClientConnection(QuicChannel quicChannel, QuicStreamChannel quicStreamChannel,
-                               ChannelHandlerContext ctx,
-                               HttpClientImpl client, ClientMetrics metrics, EventLoopContext context,
-                               Object socketMetric) {
-    super(context, ctx);
+  public Http3ClientConnection(HttpClientImpl client, ClientMetrics metrics, EventLoopContext context,
+                               Object socketMetric,
+                               VertxHttp3ConnectionHandler<? extends Http3ConnectionBase> connHandler) {
+    super(context, connHandler);
     this.client = client;
     this.metrics = metrics;
     this.socketMetric = socketMetric;
-
-    this.quicStreamChannel = quicStreamChannel;
-    this.quicChannel = quicChannel;
+    this.quicStreamChannel = (QuicStreamChannel) connHandler.context().channel();
+    this.quicChannel = (QuicChannel) connHandler.context().channel().parent();
   }
 
   @Override
@@ -88,7 +83,7 @@ public class Http3ClientConnection extends Http3ConnectionBase implements HttpCl
   }
 
   private Http3ClientStream createStream(ContextInternal context) {
-    return new Http3ClientStream(this, context, false, metrics, client, metrics);
+    return new Http3ClientStream(this, context, false, metrics);
   }
 
   @Override
@@ -133,12 +128,23 @@ public class Http3ClientConnection extends Http3ConnectionBase implements HttpCl
     }
   }
 
-  public static Http3ConnectionHandler createHttp3ClientConnectionHandler(
-    HttpClientImpl client, ClientMetrics metrics, EventLoopContext context, Object metric,
-    PromiseInternal<HttpClientConnection> promise) {
+  public static VertxHttp3ConnectionHandler<Http3ClientConnection> createHttp3ClientConnectionHandler(
+    HttpClientImpl client, ClientMetrics metrics, EventLoopContext context, Object socketMetric) {
 
-    return new VertxHttp3ConnectionHandlerBuilder()
-      .server(false)
-      .build(new QuicStreamChannelInitializer(client, metrics, context, metric, promise), null);
+    VertxHttp3ConnectionHandlerBuilder<Http3ClientConnection> builder =
+      new VertxHttp3ConnectionHandlerBuilder<Http3ClientConnection>()
+        .channelInitializer(new QuicStreamChannelInitializer(context))
+        .connectionFactory(connHandler -> {
+
+          Http3ClientConnection conn = new Http3ClientConnection(client, metrics, context, null, connHandler);
+
+          if (metrics != null) {
+            Object m = socketMetric;
+            conn.metric(m);
+          }
+          return conn;
+        });
+
+    return builder.build(client, metrics, context, socketMetric);
   }
 }

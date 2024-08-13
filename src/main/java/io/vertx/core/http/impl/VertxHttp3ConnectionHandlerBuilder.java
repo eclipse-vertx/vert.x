@@ -11,31 +11,28 @@
 
 package io.vertx.core.http.impl;
 
-import io.netty.channel.ChannelHandler;
-import io.netty.incubator.codec.http3.Http3ClientConnectionHandler;
-import io.netty.incubator.codec.http3.Http3ConnectionHandler;
-import io.netty.incubator.codec.http3.Http3ServerConnectionHandler;
-import io.netty.incubator.codec.http3.Http3SettingsFrame;
+import io.vertx.core.impl.EventLoopContext;
+import io.vertx.core.spi.metrics.ClientMetrics;
 
-class VertxHttp3ConnectionHandlerBuilder {
+import java.util.function.Function;
 
-  private boolean isServer;
+class VertxHttp3ConnectionHandlerBuilder<C extends Http3ConnectionBase> {
 
-  protected VertxHttp3ConnectionHandlerBuilder server(boolean isServer) {
-    this.isServer = isServer;
+  private Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory;
+  private QuicStreamChannelInitializer channelInitializer;
+
+  protected VertxHttp3ConnectionHandlerBuilder<C> channelInitializer(QuicStreamChannelInitializer channelInitializer) {
+    this.channelInitializer = channelInitializer;
     return this;
   }
 
-  protected Http3ConnectionHandler build(ChannelHandler controlStreamHandler,
-                                         Http3SettingsFrame initialSettings) {
-    Http3ConnectionHandler handler;
-    if (isServer) {
-      handler = new Http3ServerConnectionHandler(controlStreamHandler,
-        null, null, initialSettings, false);
-    } else {
-      handler = new Http3ClientConnectionHandler(controlStreamHandler,
-        null, null, initialSettings, false);
-    }
-    return handler;
+  VertxHttp3ConnectionHandlerBuilder<C> connectionFactory(Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory) {
+    this.connectionFactory = connectionFactory;
+    return this;
+  }
+
+  protected VertxHttp3ConnectionHandler<C> build(HttpClientImpl client, ClientMetrics metrics,
+                                                 EventLoopContext context, Object metric) {
+    return new VertxHttp3ConnectionHandler<C>(connectionFactory, client, metrics, metric, context, channelInitializer);
   }
 }

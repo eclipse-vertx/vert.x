@@ -25,7 +25,7 @@ import io.vertx.core.http.GoAway;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.StreamPriority;
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.impl.ConnectionBase;
@@ -35,9 +35,12 @@ import static io.vertx.core.net.impl.VertxHandler.safeBuffer;
 
 public abstract class Http3ConnectionBase extends ConnectionBase implements HttpConnection {
 
+  protected VertxHttp3ConnectionHandler<? extends Http3ConnectionBase> handler;
 
-  protected Http3ConnectionBase(ContextInternal context, ChannelHandlerContext chctx) {
-    super(context, chctx);
+  public Http3ConnectionBase(EventLoopContext context,
+                             VertxHttp3ConnectionHandler<? extends Http3ConnectionBase> connHandler) {
+    super(context, connHandler.context());
+    this.handler = connHandler;
   }
 
   @Override
@@ -45,13 +48,15 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
 
   }
 
-//  @Override
-  public void onHeadersRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?, Http3Headers> stream, Http3Headers headers, boolean endOfStream) throws Http2Exception {
+  //  @Override
+  public void onHeadersRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?, Http3Headers> stream,
+                            Http3Headers headers, boolean endOfStream) throws Http2Exception {
     onHeadersRead(stream, headers, null, endOfStream);
   }
 
   //  @Override
-  public int onDataRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?, Http3Headers> stream, ByteBuf data, int padding, boolean endOfStream) {
+  public int onDataRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?, Http3Headers> stream, ByteBuf data,
+                        int padding, boolean endOfStream) {
     if (stream != null) {
       data = safeBuffer(data);
       Buffer buff = Buffer.buffer(data);
@@ -183,10 +188,10 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
 
   @Override
   public Http3ConnectionBase exceptionHandler(Handler<Throwable> handler) {
-    return (Http3ConnectionBase)super.exceptionHandler(handler);
+    return (Http3ConnectionBase) super.exceptionHandler(handler);
   }
 
-  public VertxInternal vertx(){
+  public VertxInternal vertx() {
     return this.vertx;
   }
 
@@ -194,6 +199,7 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
 //    throw new RuntimeException("Method not implemented");
   }
 
-  protected abstract void onHeadersRead(VertxHttpStreamBase<?, ?, Http3Headers> stream, Http3Headers headers, StreamPriority streamPriority, boolean endOfStream);
+  protected abstract void onHeadersRead(VertxHttpStreamBase<?, ?, Http3Headers> stream, Http3Headers headers,
+                                        StreamPriority streamPriority, boolean endOfStream);
 
 }
