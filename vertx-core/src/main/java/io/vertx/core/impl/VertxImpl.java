@@ -16,6 +16,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.resolver.AddressResolverGroup;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.GenericFutureListener;
+import io.netty.util.internal.ThreadExecutorMap;
 import io.vertx.core.Future;
 import io.vertx.core.*;
 import io.vertx.core.datagram.DatagramSocket;
@@ -32,18 +33,16 @@ import io.vertx.core.eventbus.impl.clustered.ClusteredEventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.*;
+import io.vertx.core.internal.*;
 import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.internal.threadchecker.BlockedThreadChecker;
-import io.vertx.core.internal.CloseFuture;
-import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.*;
 import io.vertx.core.impl.transports.JDKTransport;
+import io.vertx.core.spi.context.executor.EventExecutorProvider;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.file.impl.FileSystemImpl;
 import io.vertx.core.file.impl.WindowsFileSystem;
-import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.dns.impl.DnsAddressResolverProvider;
@@ -136,6 +135,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final DeploymentManager deploymentManager;
   private final VerticleManager verticleManager;
   private final FileResolver fileResolver;
+  private final EventExecutorProvider eventExecutorProvider;
   private final Map<ServerID, NetServerInternal> sharedNetServers = new HashMap<>();
   private final int contextLocals;
   final WorkerPool workerPool;
@@ -163,13 +163,15 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final Transport transport;
   private final Throwable transportUnavailabilityCause;
   private final VertxTracer tracer;
-  private final ThreadLocal<EventLoop> stickyContext = new ThreadLocal<>();
+  private final ThreadLocal<WeakReference<EventLoop>> stickyEventLoop = new ThreadLocal<>();
+  private final ThreadLocal<WeakReference<ContextInternal>> stickyContext = new ThreadLocal<>();
   private final boolean disableTCCL;
   private final Boolean useDaemonThread;
 
   VertxImpl(VertxOptions options, ClusterManager clusterManager, NodeSelector nodeSelector, VertxMetrics metrics,
             VertxTracer<?, ?> tracer, Transport transport, Throwable transportUnavailabilityCause,
-            FileResolver fileResolver, VertxThreadFactory threadFactory, ExecutorServiceFactory executorServiceFactory) {
+            FileResolver fileResolver, VertxThreadFactory threadFactory, ExecutorServiceFactory executorServiceFactory,
+            EventExecutorProvider eventExecutorProvider) {
     // Sanity check
     if (Vertx.currentContext() != null) {
       log.warn("You're already on a Vert.x context, are you sure you want to create a new Vertx instance?");
@@ -228,6 +230,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     this.sharedData = new SharedDataImpl(this, clusterManager);
     this.deploymentManager = new DeploymentManager(this);
     this.verticleManager = new VerticleManager(this, deploymentManager);
+    this.eventExecutorProvider = eventExecutorProvider;
   }
 
   void init() {
@@ -472,8 +475,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return acceptorEventLoopGroup;
   }
 
-  public static ContextInternal currentContext() {
-    Thread thread = Thread.currentThread();
+  public static ContextInternal currentContext(Thread thread) {
     if (thread instanceof VertxThread) {
       return ((VertxThread) thread).context();
     } else {
@@ -486,13 +488,44 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public ContextInternal getOrCreateContext() {
-    ContextInternal ctx = getContext();
+    Thread thread = Thread.currentThread();
+    ContextInternal ctx = getContext(thread);
     if (ctx == null) {
-      // We are running embedded - Create a context
-      ctx = createEventLoopContext();
-      stickyContext.set(ctx.nettyEventLoop());
+      if (thread instanceof VertxThread && ((VertxThread) thread).owner == this) {
+        io.netty.util.concurrent.EventExecutor eventLoop = ThreadExecutorMap.currentExecutor();
+        // Might not be the correct event-loop with multiple instance
+        if (((VertxThread)thread).isWorker()) {
+          return createWorkerContext((EventLoop) eventLoop, workerPool, null);
+        } else {
+          return createEventLoopContext((EventLoop) eventLoop, workerPool, null);
+        }
+      } else {
+        EventLoop eventLoop = stickyEventLoop();
+        EventExecutor eventExecutor;
+        if (eventExecutorProvider != null && (eventExecutor = eventExecutorProvider.eventExecutorFor(Thread.currentThread())) != null) {
+          ctx = new ContextImpl(this, createContextLocals(), eventLoop, ThreadingModel.OTHER, eventExecutor, workerPool, new TaskQueue(), null, closeFuture, Thread.currentThread().getContextClassLoader());
+        } else {
+          ctx = createEventLoopContext(eventLoop, workerPool, Thread.currentThread().getContextClassLoader());
+        }
+        stickyContext.set(new WeakReference<>(ctx));
+      }
     }
     return ctx;
+  }
+
+  private EventLoop stickyEventLoop() {
+    EventLoop eventLoop;
+    WeakReference<EventLoop> r = stickyEventLoop.get();
+    if (r != null) {
+      eventLoop = r.get();
+    } else {
+      eventLoop = null;
+    }
+    if (eventLoop == null) {
+      eventLoop = eventLoopGroup.next();
+      stickyEventLoop.set(new WeakReference<>(eventLoop));
+    }
+    return eventLoop;
   }
 
   public Map<ServerID, NetServerInternal> sharedTcpServers() {
@@ -653,7 +686,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public ContextInternal getContext() {
-    ContextInternal context = ContextInternal.current();
+    return getContext(Thread.currentThread());
+  }
+
+  private ContextInternal getContext(Thread thread) {
+    ContextInternal context = currentContext(thread);
     if (context != null) {
       if (context.owner() == this) {
         return context;
@@ -667,20 +704,15 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
           throw new UnsupportedOperationException("????");
         }
       } else {
-        EventLoop eventLoop = stickyContext.get();
-        if (eventLoop == null) {
-          eventLoop = eventLoopGroup.next();
-          stickyContext.set(eventLoop);
-        }
+        EventLoop eventLoop = stickyEventLoop();
         return new ShadowContext(this, eventLoop, context);
       }
     } else {
-      EventLoop eventLoop = stickyContext.get();
-      if (eventLoop != null) {
-        return createEventLoopContext(eventLoop, workerPool, Thread.currentThread().getContextClassLoader());
-      } else {
-        return null;
+      WeakReference<ContextInternal> ref = stickyContext.get();
+      if (ref != null) {
+        return ref.get();
       }
+      return null;
     }
   }
 
@@ -1096,10 +1128,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return new WorkerPool(executor, workerMetrics);
   }
 
-  private static ThreadFactory createThreadFactory(VertxThreadFactory threadFactory, BlockedThreadChecker checker, Boolean useDaemonThread, long maxExecuteTime, TimeUnit maxExecuteTimeUnit, String prefix, boolean worker) {
+  private ThreadFactory createThreadFactory(VertxThreadFactory threadFactory, BlockedThreadChecker checker, Boolean useDaemonThread, long maxExecuteTime, TimeUnit maxExecuteTimeUnit, String prefix, boolean worker) {
     AtomicInteger threadCount = new AtomicInteger(0);
     return runnable -> {
       VertxThread thread = threadFactory.newVertxThread(runnable, prefix + threadCount.getAndIncrement(), worker, maxExecuteTime, maxExecuteTimeUnit);
+      thread.owner = VertxImpl.this;
       checker.registerThread(thread, thread.info);
       if (useDaemonThread != null && thread.isDaemon() != useDaemonThread) {
         thread.setDaemon(useDaemonThread);

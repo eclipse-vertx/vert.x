@@ -16,6 +16,7 @@ import io.vertx.core.impl.transports.EpollTransport;
 import io.vertx.core.impl.transports.JDKTransport;
 import io.vertx.core.impl.transports.KQueueTransport;
 import io.vertx.core.internal.VertxBootstrap;
+import io.vertx.core.spi.context.executor.EventExecutorProvider;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.file.impl.FileResolverImpl;
 import io.vertx.core.internal.logging.Logger;
@@ -50,6 +51,7 @@ public class VertxBootstrapImpl implements VertxBootstrap {
   private JsonObject config;
   private Transport transport;
   private Throwable transportUnavailabilityCause;
+  private EventExecutorProvider eventExecutorProvider;
   private ClusterManager clusterManager;
   private NodeSelector clusterNodeSelector;
   private VertxTracerFactory tracerFactory;
@@ -88,6 +90,17 @@ public class VertxBootstrapImpl implements VertxBootstrap {
    */
   public JsonObject config() {
     return config;
+  }
+
+  @Override
+  public VertxBootstrap eventExecutorProvider(EventExecutorProvider provider) {
+    this.eventExecutorProvider = provider;
+    return this;
+  }
+
+  @Override
+  public EventExecutorProvider eventExecutorProvider() {
+    return eventExecutorProvider;
   }
 
   /**
@@ -210,7 +223,8 @@ public class VertxBootstrapImpl implements VertxBootstrap {
       transportUnavailabilityCause,
       fileResolver,
       threadFactory,
-      executorServiceFactory);
+      executorServiceFactory,
+      eventExecutorProvider);
     vertx.init();
     return vertx;
   }
@@ -233,7 +247,8 @@ public class VertxBootstrapImpl implements VertxBootstrap {
       transportUnavailabilityCause,
       fileResolver,
       threadFactory,
-      executorServiceFactory);
+      executorServiceFactory,
+      eventExecutorProvider);
     return vertx.initClustered(options);
   }
 

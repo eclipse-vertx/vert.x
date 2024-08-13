@@ -14,7 +14,7 @@ package io.vertx.benchmarks;
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.Vertx;
 import io.vertx.core.impl.ContextImpl;
-import io.vertx.core.impl.EventExecutor;
+import io.vertx.core.internal.EventExecutor;
 import io.vertx.core.impl.TaskQueue;
 import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.internal.ContextInternal;

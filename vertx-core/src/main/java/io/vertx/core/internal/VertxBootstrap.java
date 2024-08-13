@@ -19,6 +19,7 @@ import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.VertxThreadFactory;
 import io.vertx.core.spi.VertxTracerFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.spi.context.executor.EventExecutorProvider;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.spi.transport.Transport;
 
@@ -48,6 +49,19 @@ public interface VertxBootstrap {
    * @return this builder instance
    */
   VertxBootstrap options(VertxOptions options);
+
+  /**
+   * Set an event executor {@code provider} to use.
+   *
+   * @param provider a provider to use
+   * @return this builder instance
+   */
+  VertxBootstrap eventExecutorProvider(EventExecutorProvider provider);
+
+  /**
+   * @return the event executor provider to use
+   */
+  EventExecutorProvider eventExecutorProvider();
 
   /**
    * @return the {@code FileResolver} instance to use

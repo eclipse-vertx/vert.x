@@ -162,7 +162,7 @@ public interface Vertx extends Measured {
    * @return The current context or {@code null} if there is no current context
    */
   static @Nullable Context currentContext() {
-    return VertxImpl.currentContext();
+    return VertxImpl.currentContext(Thread.currentThread());
   }
 
   /**

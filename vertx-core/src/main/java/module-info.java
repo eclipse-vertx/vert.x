@@ -42,6 +42,7 @@ module io.vertx.core {
   uses io.vertx.core.spi.VerticleFactory;
   uses io.vertx.core.spi.JsonFactory;
   uses io.vertx.core.spi.transport.Transport;
+  uses io.vertx.core.spi.context.executor.EventExecutorProvider;
 
   // API
 
@@ -63,9 +64,13 @@ module io.vertx.core {
   exports io.vertx.core.streams;
   exports io.vertx.core.spi;
   exports io.vertx.core.file;
+
+  // SPI
+
   exports io.vertx.core.spi.tracing;
   exports io.vertx.core.spi.metrics;
   exports io.vertx.core.spi.context.storage;
+  exports io.vertx.core.spi.context.executor;
   exports io.vertx.core.spi.cluster;
   exports io.vertx.core.spi.file;
   exports io.vertx.core.spi.json;

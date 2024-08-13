@@ -24,6 +24,7 @@ public class VertxThread extends FastThreadLocalThread {
 
   private final boolean worker;
   final ThreadInfo info;
+  VertxImpl owner;
   ContextInternal context;
   ClassLoader topLevelTCCL;
 
