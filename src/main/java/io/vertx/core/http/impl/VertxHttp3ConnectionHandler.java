@@ -28,6 +28,7 @@ import io.netty.util.concurrent.Promise;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.impl.EventLoopContext;
+import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
@@ -42,6 +43,7 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends 
   private C conn;
   private final EventLoopContext context;
   private final Promise<C> connectFuture;
+  private boolean settingsRead;
 
   private ChannelHandlerContext chctx;
   private boolean read;
@@ -52,10 +54,11 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends 
   public static final AttributeKey<Http3ClientStream> HTTP3_MY_STREAM_KEY = AttributeKey.valueOf(Http3ClientStream.class
     , "HTTP3MyStream");
 
-  public VertxHttp3ConnectionHandler(Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory,
-                                     HttpClientImpl client, ClientMetrics metrics, Object metric,
-                                     EventLoopContext context,
-                                     Http3SettingsFrame http3InitialSettings, boolean isServer) {
+  public VertxHttp3ConnectionHandler(
+    Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory,
+    HttpClientImpl client, ClientMetrics metrics, Object metric,
+    EventLoopContext context,
+    Http3SettingsFrame http3InitialSettings, boolean isServer) {
     this.client = client;
     this.metrics = metrics;
     this.metric = metric;
@@ -66,9 +69,27 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends 
     createHttp3ConnectionHandler(isServer);
   }
 
+  public Future<C> connectFuture() {
+    if (connectFuture == null) {
+      throw new IllegalStateException();
+    }
+    return connectFuture;
+  }
+
+  public ChannelHandlerContext context() {
+    return chctx;
+  }
+
+  /**
+   * This method will be called during channel initialization, and the onSettingsRead logic from HTTP/2 has been copied here.
+   */
   private void channelInitialized(ChannelHandlerContext ctx) {
     this.chctx = ctx;
     this.conn = connectionFactory.apply(this);
+    this.settingsRead = true;
+    if (addHandler != null) {
+      addHandler.handle(conn);
+    }
     this.connectFuture.setSuccess(conn);
   }
 
@@ -94,6 +115,34 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends 
     }
   }
 
+//  @Override
+//  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+//    Http2Exception http2Cause = Http2CodecUtil.getEmbeddedHttp2Exception(cause);
+//    if (http2Cause != null) {
+//      // Super will only handle Http2Exception otherwise it will be reach the end of the pipeline
+//      super.exceptionCaught(ctx, http2Cause);
+//    }
+//    ctx.close();
+//  }
+//
+//
+  @Override
+  public void channelInactive(ChannelHandlerContext chctx) throws Exception {
+    if (conn != null) {
+      if (settingsRead) {
+        if (removeHandler != null) {
+          removeHandler.handle(conn);
+        }
+      } else {
+        connectFuture.tryFailure(ConnectionBase.CLOSED_EXCEPTION);
+      }
+      super.channelInactive(chctx);
+      conn.handleClosed();
+    } else {
+      super.channelInactive(chctx);
+    }
+  }
+
   @Override
   protected void channelRead(ChannelHandlerContext ctx, Http3DataFrame frame) {
     read = true;
@@ -110,14 +159,8 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends 
   @Override
   public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
     read = false;
+    // Super will flush
     super.channelReadComplete(ctx);
-  }
-
-  public Future<C> connectFuture() {
-    if (connectFuture == null) {
-      throw new IllegalStateException();
-    }
-    return connectFuture;
   }
 
   @Override
@@ -145,10 +188,6 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends 
     if (!read) {
       chctx.channel().flush();
     }
-  }
-
-  public ChannelHandlerContext context() {
-    return chctx;
   }
 
   /**
