@@ -153,14 +153,16 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
     if (options == null) {
       throw new IllegalArgumentException("Invalid null value passed for traffic shaping options update");
     }
-    if (trafficShapingHandler == null) {
-      throw new IllegalStateException("Unable to update traffic shaping options because the server was not configured " +
-                                      "to use traffic shaping during startup");
-    }
     TCPServerBase server = actualServer;
+    // Update the traffic shaping options only for the actual/main server
     if (server != null && server != this) {
-      server.updateTrafficShapingOptions(options);
+       server.updateTrafficShapingOptions(options);
     } else {
+      if (trafficShapingHandler == null) {
+        throw new IllegalStateException("Unable to update traffic shaping options because the server was not configured " +
+                                        "to use traffic shaping during startup");
+      }
+
       long checkIntervalForStatsInMillis = options.getCheckIntervalForStatsTimeUnit().toMillis(options.getCheckIntervalForStats());
       trafficShapingHandler.configure(options.getOutboundGlobalBandwidth(), options.getInboundGlobalBandwidth(), checkIntervalForStatsInMillis);
 
@@ -292,8 +294,10 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
       } else {
         // Server already exists with that host/port - we will use that
         actualServer = main;
-        metrics = main.metrics;
-        childHandler =  childHandler(listenContext, localAddress, main.trafficShapingHandler);
+        metrics = actualServer.metrics;
+        // Ensure the workers inherit the actual server's traffic-shaping handler
+        trafficShapingHandler = actualServer.trafficShapingHandler;
+        childHandler =  childHandler(listenContext, localAddress, actualServer.trafficShapingHandler);
         worker = ch -> childHandler.accept(ch, actualServer.sslChannelProvider.result().sslChannelProvider());
         actualServer.servers.add(this);
         actualServer.channelBalancer.addWorker(eventLoop, worker);
