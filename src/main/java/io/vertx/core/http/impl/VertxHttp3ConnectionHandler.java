@@ -16,6 +16,7 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.incubator.codec.http3.Http3ClientConnectionHandler;
 import io.netty.incubator.codec.http3.Http3ConnectionHandler;
 import io.netty.incubator.codec.http3.Http3DataFrame;
+import io.netty.incubator.codec.http3.Http3Headers;
 import io.netty.incubator.codec.http3.Http3HeadersFrame;
 import io.netty.incubator.codec.http3.Http3RequestStreamInboundHandler;
 import io.netty.incubator.codec.http3.Http3ServerConnectionHandler;
@@ -24,6 +25,7 @@ import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.FutureListener;
 import io.netty.util.concurrent.Promise;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.EventLoopContext;
@@ -140,6 +142,20 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
       super.channelInactive(chctx);
     }
   }
+
+  public void writeHeaders(QuicStreamChannel stream, Http3Headers headers, boolean end, int streamDependency,
+                           short weight, boolean exclusive, boolean checkFlush, FutureListener<Void> listener) {
+//    ChannelPromise promise = listener == null ? chctx.voidPromise() : chctx.newPromise().addListener(listener);
+    stream
+      .write(headers)
+      .addListener(listener)
+      .addListener(QuicStreamChannel.SHUTDOWN_OUTPUT)  //TODO: review
+    ;
+    if (checkFlush) {
+      checkFlush();
+    }
+  }
+
 
   @Override
   protected void channelRead(ChannelHandlerContext ctx, Http3DataFrame frame) {

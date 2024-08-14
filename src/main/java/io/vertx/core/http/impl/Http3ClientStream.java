@@ -80,6 +80,7 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
     return new VertxDefaultHttp3Headers();
   }
 
+  @Override
   protected void consumeCredits(int len) {
     conn.consumeCredits(this.stream, len);
   }
@@ -112,11 +113,7 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
   @Override
   public void writeHeaders(Http3Headers headers, boolean end, int dependency, short weight, boolean exclusive,
                            boolean checkFlush, FutureListener<Void> promise) {
-    stream
-      .write(headers)
-      .addListener(promise)
-      .addListener(QuicStreamChannel.SHUTDOWN_OUTPUT)
-    ;  //TODO: review
+    conn.handler.writeHeaders(stream, headers, end, dependency, weight, exclusive, checkFlush, promise);
   }
 
   @Override
