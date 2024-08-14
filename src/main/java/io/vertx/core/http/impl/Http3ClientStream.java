@@ -148,7 +148,7 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
 
   @Override
   public boolean remoteSideOpen() {
-    return stream.isOutputShutdown();  //TODO: review
+    return stream.isOpen();
   }
 
   @Override

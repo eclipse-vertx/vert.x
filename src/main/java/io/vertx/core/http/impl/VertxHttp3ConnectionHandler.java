@@ -193,6 +193,7 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends 
         super.handlerAdded(ctx);
       }
     };
+
   }
 
   public C connection() {
