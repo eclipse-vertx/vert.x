@@ -391,7 +391,7 @@ options when creating the server.
 
 Snappy is supported without external dependencies.
 
-You need to have Brotli4j on the classpath to decompress Brotli:
+You need to have Brotli4j on the classpath to decompress Brotli, and Zstd-jni for Zstandard:
 
 * Maven (in your `pom.xml`):
 
@@ -402,6 +402,11 @@ You need to have Brotli4j on the classpath to decompress Brotli:
   <artifactId>brotli4j</artifactId>
   <version>${brotli4j.version}</version>
 </dependency>
+<dependency>
+  <groupId>com.github.luben</groupId>
+  <artifactId>zstd-jni</artifactId>
+  <version>${zstd-jini.version}</version>
+</dependency>
 ----
 * Gradle (in your `build.gradle` file):
 
@@ -410,6 +415,7 @@ You need to have Brotli4j on the classpath to decompress Brotli:
 dependencies {
   implementation 'com.aayushatharva.brotli4j:brotli4j:${brotli4j.version}'
   runtimeOnly 'com.aayushatharva.brotli4j:native-$system-and-arch:${brotli4j.version}'
+  implementation 'com.github.luben:zstd-jni:${zstd-jini.version}'
 }
 ----
 
