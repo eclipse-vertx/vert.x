@@ -39,9 +39,7 @@ class VertxHttp3ConnectionHandlerBuilder<C extends Http3ConnectionBase> {
     return this;
   }
 
-  protected VertxHttp3ConnectionHandler<C> build(HttpClientImpl client, ClientMetrics metrics,
-                                                 EventLoopContext context, Object metric) {
-    return new VertxHttp3ConnectionHandler<>(connectionFactory, client, metrics, metric, context,
-      http3InitialSettings, isServer);
+  protected VertxHttp3ConnectionHandler<C> build(EventLoopContext context) {
+    return new VertxHttp3ConnectionHandler<>(connectionFactory, context, http3InitialSettings, isServer);
   }
 }

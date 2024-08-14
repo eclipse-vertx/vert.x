@@ -192,7 +192,7 @@ class Http3ClientConnection extends Http3ConnectionBase implements HttpClientCon
           }
           return conn;
         })
-        .build(client, metrics, context, socketMetric);
+        .build(context);
     handler.addHandler(conn -> {
       if (options.getHttp2ConnectionWindowSize() > 0) {
         conn.setWindowSize(options.getHttp2ConnectionWindowSize());

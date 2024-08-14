@@ -26,29 +26,26 @@ import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.Promise;
 import io.vertx.core.Handler;
-import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.net.impl.ConnectionBase;
-import io.vertx.core.spi.metrics.ClientMetrics;
-import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.function.Function;
 
-public class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3RequestStreamInboundHandler {
+/**
+ * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
+ */
+class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3RequestStreamInboundHandler {
+
   private final Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory;
-  private final HttpClientImpl client;
-  private final ClientMetrics metrics;
-  private final Object metric;
-  private final Http3SettingsFrame http3InitialSettings;
-  private C conn;
-  private final EventLoopContext context;
+  private C connection;
+  private ChannelHandlerContext chctx;
   private final Promise<C> connectFuture;
   private boolean settingsRead;
-
-  private ChannelHandlerContext chctx;
-  private boolean read;
   private Handler<C> addHandler;
   private Handler<C> removeHandler;
+  private final Http3SettingsFrame http3InitialSettings;
+
+  private boolean read;
   private Http3ConnectionHandler connectionHandlerInternal;
 
   public static final AttributeKey<Http3ClientStream> HTTP3_MY_STREAM_KEY = AttributeKey.valueOf(Http3ClientStream.class
@@ -56,15 +53,10 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends 
 
   public VertxHttp3ConnectionHandler(
     Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory,
-    HttpClientImpl client, ClientMetrics metrics, Object metric,
     EventLoopContext context,
     Http3SettingsFrame http3InitialSettings, boolean isServer) {
-    this.client = client;
-    this.metrics = metrics;
-    this.metric = metric;
     this.connectionFactory = connectionFactory;
     this.http3InitialSettings = http3InitialSettings;
-    this.context = context;
     connectFuture = new DefaultPromise<>(context.nettyEventLoop());
     createHttp3ConnectionHandler(isServer);
   }
@@ -86,34 +78,18 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends 
    */
   private void channelInitialized(ChannelHandlerContext ctx) {
     this.chctx = ctx;
-    this.conn = connectionFactory.apply(this);
+    this.connection = connectionFactory.apply(this);
     this.settingsRead = true;
     if (addHandler != null) {
-      addHandler.handle(conn);
+      addHandler.handle(connection);
     }
-    this.connectFuture.setSuccess(conn);
+    this.connectFuture.setSuccess(connection);
   }
 
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
-    this.chctx = ctx;
     super.handlerAdded(ctx);
-
-    HttpClientOptions options = client.options();
-    HttpClientMetrics met = client.metrics();
-    boolean upgrade = false;
-
-    if (metrics != null) {
-      conn.metric(metric);
-    }
-    if (options.getHttp2ConnectionWindowSize() > 0) {
-      conn.setWindowSize(options.getHttp2ConnectionWindowSize());
-    }
-    if (metrics != null) {
-      if (!upgrade) {
-        met.endpointConnected(metrics);
-      }
-    }
+    chctx = ctx;
   }
 
   @Override
@@ -126,16 +102,16 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends 
 
   @Override
   public void channelInactive(ChannelHandlerContext chctx) throws Exception {
-    if (conn != null) {
+    if (connection != null) {
       if (settingsRead) {
         if (removeHandler != null) {
-          removeHandler.handle(conn);
+          removeHandler.handle(connection);
         }
       } else {
         connectFuture.tryFailure(ConnectionBase.CLOSED_EXCEPTION);
       }
       super.channelInactive(chctx);
-      conn.handleClosed();
+      connection.handleClosed();
     } else {
       super.channelInactive(chctx);
     }
@@ -144,14 +120,14 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends 
   @Override
   protected void channelRead(ChannelHandlerContext ctx, Http3DataFrame frame) {
     read = true;
-    conn.onDataRead(ctx, controlStream(ctx).attr(HTTP3_MY_STREAM_KEY).get(), frame.content(), 0, true);
+    connection.onDataRead(ctx, controlStream(ctx).attr(HTTP3_MY_STREAM_KEY).get(), frame.content(), 0, true);
     checkFlush();
   }
 
   @Override
   protected void channelRead(ChannelHandlerContext ctx, Http3HeadersFrame frame) throws Exception {
     read = true;
-    conn.onHeadersRead(ctx, controlStream(ctx).attr(HTTP3_MY_STREAM_KEY).get(), frame.headers(), false);
+    connection.onHeadersRead(ctx, controlStream(ctx).attr(HTTP3_MY_STREAM_KEY).get(), frame.headers(), false);
   }
 
   @Override
@@ -164,16 +140,6 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends 
   @Override
   protected void channelInputClosed(ChannelHandlerContext ctx) {
     ctx.close();
-  }
-
-  @Override
-  public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
-    super.handlerRemoved(ctx);
-    HttpClientMetrics met = client.metrics();
-    if (metrics != null) {
-      met.endpointDisconnected(metrics);
-    }
-//    conn.tryEvict();  //TODO: review
   }
 
   private void checkFlush() {
@@ -190,7 +156,7 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends 
    */
   public VertxHttp3ConnectionHandler<C> removeHandler(Handler<C> handler) {
     removeHandler = handler;
-    conn = null;
+    connection = null;
     return this;
   }
 
@@ -240,6 +206,6 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends 
   }
 
   public C connection() {
-    return conn;
+    return connection;
   }
 }
