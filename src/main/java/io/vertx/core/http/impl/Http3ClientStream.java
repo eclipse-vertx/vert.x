@@ -142,7 +142,7 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
   }
 
   @Override
-  public int getStreamId() {
+  public synchronized int getStreamId() {
     return stream != null ? (int) stream.streamId() : -1;
   }
 

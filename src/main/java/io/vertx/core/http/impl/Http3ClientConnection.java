@@ -68,6 +68,26 @@ class Http3ClientConnection extends Http3ConnectionBase implements HttpClientCon
     return 5;
   }
 
+//  @Override
+//  boolean onGoAwaySent(GoAway goAway) {
+//    boolean goneAway = super.onGoAwaySent(goAway);
+//    if (goneAway) {
+//      // Eagerly evict from the pool
+//      tryEvict();
+//    }
+//    return goneAway;
+//  }
+//
+//  @Override
+//  boolean onGoAwayReceived(GoAway goAway) {
+//    boolean goneAway = super.onGoAwayReceived(goAway);
+//    if (goneAway) {
+//      // Eagerly evict from the pool
+//      tryEvict();
+//    }
+//    return goneAway;
+//  }
+
   /**
    * Try to evict the connection from the pool. This can be called multiple times since
    * the connection can be eagerly removed from the pool on emission or reception of a {@code GOAWAY}
@@ -79,6 +99,15 @@ class Http3ClientConnection extends Http3ConnectionBase implements HttpClientCon
       evictionHandler.handle(null);
     }
   }
+
+//  @Override
+//  protected void concurrencyChanged(long concurrency) {
+//    int limit = client.options().getHttp2MultiplexingLimit();
+//    if (limit > 0) {
+//      concurrency = Math.min(concurrency, limit);
+//    }
+//    concurrencyChangeHandler.handle(concurrency);
+//  }
 
   @Override
   public HttpClientMetrics metrics() {

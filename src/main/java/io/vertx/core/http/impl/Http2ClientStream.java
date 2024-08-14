@@ -86,6 +86,7 @@ class Http2ClientStream extends HttpStreamImpl<Http2ClientConnection, Http2Strea
   public void writeFrame(byte type, short flags, ByteBuf payload) {
     conn.handler.writeFrame(stream, type, flags, payload);
   }
+
   @Override
   public CharSequence getHeaderMethod(Http2Headers headers) {
     return headers.method();
@@ -105,6 +106,7 @@ class Http2ClientStream extends HttpStreamImpl<Http2ClientConnection, Http2Strea
   public long getWindowSize() {
     return conn.getWindowSize();
   }
+
   @Override
   public void writeHeaders(Http2Headers headers, boolean end, int dependency, short weight, boolean exclusive,
                            boolean checkFlush, FutureListener<Void> promise) {
