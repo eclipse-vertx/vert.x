@@ -182,6 +182,7 @@ class Http3ClientConnection extends Http3ConnectionBase implements HttpClientCon
     HttpClientMetrics met = client.metrics();
     VertxHttp3ConnectionHandler<Http3ClientConnection> handler =
       new VertxHttp3ConnectionHandlerBuilder<Http3ClientConnection>()
+        .server(false)
         .http3InitialSettings(client.options().getHttp3InitialSettings())
         .connectionFactory(connHandler -> {
           Http3ClientConnection conn = new Http3ClientConnection(client, context, connHandler, metrics);

@@ -21,9 +21,16 @@ class VertxHttp3ConnectionHandlerBuilder<C extends Http3ConnectionBase> {
 
   private Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory;
   private Http3SettingsFrame http3InitialSettings;
+  private boolean isServer;
 
   VertxHttp3ConnectionHandlerBuilder<C> connectionFactory(Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory) {
     this.connectionFactory = connectionFactory;
+    return this;
+  }
+
+
+  protected VertxHttp3ConnectionHandlerBuilder<C> server(boolean isServer) {
+    this.isServer = isServer;
     return this;
   }
 
@@ -34,7 +41,7 @@ class VertxHttp3ConnectionHandlerBuilder<C extends Http3ConnectionBase> {
 
   protected VertxHttp3ConnectionHandler<C> build(HttpClientImpl client, ClientMetrics metrics,
                                                  EventLoopContext context, Object metric) {
-    return new VertxHttp3ConnectionHandler<C>(connectionFactory, client, metrics, metric, context,
-      http3InitialSettings);
+    return new VertxHttp3ConnectionHandler<>(connectionFactory, client, metrics, metric, context,
+      http3InitialSettings, isServer);
   }
 }

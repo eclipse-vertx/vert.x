@@ -14,6 +14,7 @@ package io.vertx.core.http.impl;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.incubator.codec.http3.Http3ClientConnectionHandler;
+import io.netty.incubator.codec.http3.Http3ConnectionHandler;
 import io.netty.incubator.codec.http3.Http3DataFrame;
 import io.netty.incubator.codec.http3.Http3HeadersFrame;
 import io.netty.incubator.codec.http3.Http3RequestStreamInboundHandler;
@@ -46,6 +47,7 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends 
   private boolean read;
   private Handler<C> addHandler;
   private Handler<C> removeHandler;
+  private Http3ConnectionHandler connectionHandlerInternal;
 
   public static final AttributeKey<Http3ClientStream> HTTP3_MY_STREAM_KEY = AttributeKey.valueOf(Http3ClientStream.class
     , "HTTP3MyStream");
@@ -53,7 +55,7 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends 
   public VertxHttp3ConnectionHandler(Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory,
                                      HttpClientImpl client, ClientMetrics metrics, Object metric,
                                      EventLoopContext context,
-                                     Http3SettingsFrame http3InitialSettings) {
+                                     Http3SettingsFrame http3InitialSettings, boolean isServer) {
     this.client = client;
     this.metrics = metrics;
     this.metric = metric;
@@ -61,6 +63,7 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends 
     this.http3InitialSettings = http3InitialSettings;
     this.context = context;
     connectFuture = new DefaultPromise<>(context.nettyEventLoop());
+    createHttp3ConnectionHandler(isServer);
   }
 
   private void channelInitialized(ChannelHandlerContext ctx) {
@@ -171,12 +174,17 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends 
     return this;
   }
 
-  public Http3ServerConnectionHandler createHttp3ServerConnectionHandler() {
+  private void createHttp3ConnectionHandler(boolean isServer) {
+    this.connectionHandlerInternal = isServer ? createHttp3ServerConnectionHandler() :
+      createHttp3ClientConnectionHandler();
+  }
+
+  private Http3ServerConnectionHandler createHttp3ServerConnectionHandler() {
     return new Http3ServerConnectionHandler(getInboundControlStreamHandler(), null, null,
       http3InitialSettings, false);
   }
 
-  public Http3ClientConnectionHandler createHttp3ClientConnectionHandler() {
+  private Http3ClientConnectionHandler createHttp3ClientConnectionHandler() {
     return new Http3ClientConnectionHandler(getInboundControlStreamHandler(), null, null,
       http3InitialSettings, false);
   }
@@ -194,6 +202,10 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends 
       }
     };
 
+  }
+
+  public Http3ConnectionHandler getHttp3ConnectionHandler() {
+    return connectionHandlerInternal;
   }
 
   public C connection() {

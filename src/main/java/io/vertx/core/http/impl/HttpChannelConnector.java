@@ -278,7 +278,7 @@ public class HttpChannelConnector {
       clientHandler = Http3ClientConnection.createVertxHttp3ConnectionHandler(client, metrics, context, false, metric);
 
       QuicChannel.newBootstrap(ch)
-        .handler(clientHandler.createHttp3ClientConnectionHandler())
+        .handler(clientHandler.getHttp3ConnectionHandler())
         .remoteAddress(client.vertx().transport().convert(peerAddress))
         .connect().addListener((GenericFutureListener<io.netty.util.concurrent.Future<QuicChannel>>) future ->
           future.get().pipeline().addLast(new Http3SslHandshakeHandler(promise)));
