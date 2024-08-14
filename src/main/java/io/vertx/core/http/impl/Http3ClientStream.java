@@ -123,7 +123,7 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
 
   @Override
   public void writeData_(ByteBuf chunk, boolean end, FutureListener<Void> promise) {
-    stream.write(chunk).addListener(promise);
+    conn.handler.writeData(stream, chunk, end, promise);
   }
 
   @Override
