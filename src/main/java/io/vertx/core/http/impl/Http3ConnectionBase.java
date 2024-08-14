@@ -44,6 +44,11 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
   }
 
   @Override
+  public void handleClosed() {
+    super.handleClosed();
+  }
+
+  @Override
   protected void handleInterestedOpsChanged() {
 
   }
