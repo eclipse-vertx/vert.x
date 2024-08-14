@@ -81,7 +81,8 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends 
   }
 
   /**
-   * This method will be called during channel initialization, and the onSettingsRead logic from HTTP/2 has been copied here.
+   * This method will be called during channel initialization, and the onSettingsRead logic from HTTP/2 has been
+   * copied here.
    */
   private void channelInitialized(ChannelHandlerContext ctx) {
     this.chctx = ctx;
@@ -115,17 +116,14 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends 
     }
   }
 
-//  @Override
-//  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-//    Http2Exception http2Cause = Http2CodecUtil.getEmbeddedHttp2Exception(cause);
-//    if (http2Cause != null) {
-//      // Super will only handle Http2Exception otherwise it will be reach the end of the pipeline
-//      super.exceptionCaught(ctx, http2Cause);
-//    }
-//    ctx.close();
-//  }
-//
-//
+  @Override
+  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+    cause.printStackTrace();
+    super.exceptionCaught(ctx, cause);
+    ctx.close();
+  }
+
+
   @Override
   public void channelInactive(ChannelHandlerContext chctx) throws Exception {
     if (conn != null) {
@@ -176,12 +174,6 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends 
       met.endpointDisconnected(metrics);
     }
 //    conn.tryEvict();  //TODO: review
-  }
-
-  @Override
-  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-    cause.printStackTrace();
-    super.exceptionCaught(ctx, cause);
   }
 
   private void checkFlush() {
