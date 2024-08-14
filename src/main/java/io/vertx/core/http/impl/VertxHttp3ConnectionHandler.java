@@ -86,6 +86,30 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
     this.connectFuture.setSuccess(connection);
   }
 
+
+  /**
+   * Set a handler to be called when the connection is set on this handler.
+   *
+   * @param handler the handler to be notified
+   * @return this
+   */
+  public VertxHttp3ConnectionHandler<C> addHandler(Handler<C> handler) {
+    this.addHandler = handler;
+    return this;
+  }
+
+  /**
+   * Set a handler to be called when the connection is unset from this handler.
+   *
+   * @param handler the handler to be notified
+   * @return this
+   */
+  public VertxHttp3ConnectionHandler<C> removeHandler(Handler<C> handler) {
+    removeHandler = handler;
+    connection = null;
+    return this;
+  }
+
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
     super.handlerAdded(ctx);
@@ -121,7 +145,6 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
   protected void channelRead(ChannelHandlerContext ctx, Http3DataFrame frame) {
     read = true;
     connection.onDataRead(ctx, controlStream(ctx).attr(HTTP3_MY_STREAM_KEY).get(), frame.content(), 0, true);
-    checkFlush();
   }
 
   @Override
@@ -146,29 +169,6 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
     if (!read) {
       chctx.channel().flush();
     }
-  }
-
-  /**
-   * Set a handler to be called when the connection is unset from this handler.
-   *
-   * @param handler the handler to be notified
-   * @return this
-   */
-  public VertxHttp3ConnectionHandler<C> removeHandler(Handler<C> handler) {
-    removeHandler = handler;
-    connection = null;
-    return this;
-  }
-
-  /**
-   * Set a handler to be called when the connection is set on this handler.
-   *
-   * @param handler the handler to be notified
-   * @return this
-   */
-  public VertxHttp3ConnectionHandler<C> addHandler(Handler<C> handler) {
-    this.addHandler = handler;
-    return this;
   }
 
   private void createHttp3ConnectionHandler(boolean isServer) {
