@@ -243,7 +243,7 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
     awaitLatch(waitForResponse);
     TrafficShapingOptions updatedTrafficOptions = new TrafficShapingOptions()
                                              .setInboundGlobalBandwidth(INBOUND_LIMIT) // unchanged
-                                             .setOutboundGlobalBandwidth(OUTBOUND_LIMIT);
+                                             .setOutboundGlobalBandwidth(2 * OUTBOUND_LIMIT);
 
     for (int i = 0; i < numEventLoops; i++) {
       servers.forEach(s -> s.updateTrafficShapingOptions(updatedTrafficOptions));
