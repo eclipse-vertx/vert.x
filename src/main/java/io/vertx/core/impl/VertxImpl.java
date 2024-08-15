@@ -688,8 +688,23 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return getContext(Thread.currentThread());
   }
 
+  /**
+   * @return the current context
+   */
+  public static ContextInternal currentContext(Thread thread) {
+    if (thread instanceof VertxThread) {
+      return ((VertxThread) thread).context();
+    } else {
+      VertxImpl.ContextDispatch current = VertxImpl.nonVertxContextDispatch.get();
+      if (current != null) {
+        return current.context;
+      }
+    }
+    return null;
+  }
+
   private ContextInternal getContext(Thread current) {
-    ContextInternal context = ContextInternal.current(current);
+    ContextInternal context = currentContext(current);
     if (context != null && context.owner() == this) {
       return context;
     } else {
