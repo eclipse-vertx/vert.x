@@ -56,8 +56,6 @@ public class DeploymentTest extends VertxTestBase {
     assertFalse(options.isHa());
     assertEquals(options, options.setHa(true));
     assertTrue(options.isHa());
-    List<String> cp = Arrays.asList("foo", "bar");
-    List<String> isol = Arrays.asList("com.foo.MyClass", "org.foo.*");
     String workerPoolName = TestUtils.randomAlphaString(10);
     assertEquals(options, options.setWorkerPoolName(workerPoolName));
     assertEquals(workerPoolName, options.getWorkerPoolName());
@@ -1307,6 +1305,25 @@ public class DeploymentTest extends VertxTestBase {
     }));
     awaitLatch(deployLatch);
     vertx.undeploy(deploymentID.get());
+    await();
+  }
+
+  @Test
+  public void testCloseDeploymentInProgress() {
+    Vertx vertx = Vertx.vertx();
+    waitFor(2);
+    vertx.deployVerticle(new AbstractVerticle() {
+      Promise<Void> startPromise;
+      @Override
+      public void start(Promise<Void> startPromise) {
+        this.startPromise = startPromise;
+        vertx.close().onComplete(onSuccess(v -> complete()));
+      }
+      @Override
+      public void stop(Promise<Void> stopPromise) {
+        fail();
+      }
+    }).onComplete(onFailure(err -> complete()));
     await();
   }
 
