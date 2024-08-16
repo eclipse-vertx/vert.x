@@ -58,12 +58,12 @@ import java.util.function.Predicate;
  *
  * <h3>Connection eviction</h3>
  *
- * Connections can be evicted from the pool with {@link ConnectionPool#evict(Predicate, Handler)}. It
+ * Connections can be evicted from the pool with {@link ConnectionPool#evict(Predicate)}. It
  * can be used to implement keep alive timeout.
  *
  * <h3>Waiter lifecycle</h3>
  *
- * Connection requests are done with {@link ConnectionPool#acquire(ContextInternal, int, Handler)}. Such request
+ * Connection requests are done with {@link ConnectionPool#acquire(ContextInternal, int)}. Such request
  * creates a {@link PoolWaiter}. When such request is made
  *
  * <ul>
@@ -74,7 +74,7 @@ import java.util.function.Predicate;
  * </ul>
  *
  * A connection acquisition a {@link PoolWaiter.Listener} can be provided, letting the requester
- * to get a reference on the waiter and later use {@link #cancel(PoolWaiter, Handler)} to cancel
+ * to get a reference on the waiter and later use {@link #cancel(PoolWaiter)} to cancel
  * a request.
  */
 public class SimpleConnectionPool<C> implements ConnectionPool<C> {

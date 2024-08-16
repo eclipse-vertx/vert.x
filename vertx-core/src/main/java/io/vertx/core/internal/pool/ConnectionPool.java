@@ -77,6 +77,7 @@ public interface ConnectionPool<C> {
    */
   Future<Lease<C>> acquire(ContextInternal context, int kind);
 
+  @Deprecated(forRemoval = true)
   default void acquire(ContextInternal context, int kind, Handler<AsyncResult<Lease<C>>> handler) {
     acquire(context, kind).onComplete(handler);
   }
@@ -91,6 +92,7 @@ public interface ConnectionPool<C> {
    */
   Future<Lease<C>> acquire(ContextInternal context, PoolWaiter.Listener<C> listener, int kind);
 
+  @Deprecated(forRemoval = true)
   default void acquire(ContextInternal context, PoolWaiter.Listener<C> listener, int kind, Handler<AsyncResult<Lease<C>>> handler) {
     acquire(context, listener, kind).onComplete(handler);
   }
@@ -108,6 +110,7 @@ public interface ConnectionPool<C> {
    */
   Future<Boolean> cancel(PoolWaiter<C> waiter);
 
+  @Deprecated(forRemoval = true)
   default void cancel(PoolWaiter<C> waiter, Handler<AsyncResult<Boolean>> handler) {
     cancel(waiter).onComplete(handler);
   }
@@ -122,6 +125,7 @@ public interface ConnectionPool<C> {
    */
   Future<List<C>> evict(Predicate<C> predicate);
 
+  @Deprecated(forRemoval = true)
   default void evict(Predicate<C> predicate, Handler<AsyncResult<List<C>>> handler) {
     evict(predicate).onComplete(handler);
   }
@@ -136,6 +140,7 @@ public interface ConnectionPool<C> {
    */
   Future<List<Future<C>>> close();
 
+  @Deprecated(forRemoval = true)
   default void close(Handler<AsyncResult<List<Future<C>>>> handler) {
     close().onComplete(handler);
   }
