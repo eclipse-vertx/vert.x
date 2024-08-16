@@ -19,14 +19,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -42,6 +35,7 @@ public class DeploymentManager {
   private static final Logger log = LoggerFactory.getLogger(DeploymentManager.class);
 
   private final VertxImpl vertx;
+  private final Map<String, Deployment> deploying = new HashMap<>();
   private final Map<String, Deployment> deployments = new ConcurrentHashMap<>();
 
   public DeploymentManager(VertxImpl vertx) {
@@ -91,6 +85,24 @@ public class DeploymentManager {
     // TODO timeout if it takes too long - e.g. async stop verticle fails to call future
 
     // We only deploy the top level verticles as the children will be undeployed when the parent is
+    while (true) {
+      DeploymentImpl deployment;
+      synchronized (deploying) {
+        if (deploying.isEmpty()) {
+          break;
+        }
+        Iterator<Map.Entry<String, Deployment>> it = deploying.entrySet().iterator();
+        Map.Entry<String, Deployment> entry = it.next();
+        it.remove();
+        deployment = (DeploymentImpl) entry.getValue();
+      }
+      deployment.verticles.forEach(holder -> {
+        Promise<Void> startPromise = holder.startPromise;
+        if (startPromise != null) {
+          startPromise.tryFail(new VertxException("Verticle undeployed", true));
+        }
+      });
+    }
     Set<String> deploymentIDs = new HashSet<>();
     for (Map.Entry<String, Deployment> entry: deployments.entrySet()) {
       if (!entry.getValue().isChild()) {
@@ -172,6 +184,9 @@ public class DeploymentManager {
     }
     EventLoop workerLoop = null;
     DeploymentImpl deployment = new DeploymentImpl(parent, workerPool, deploymentID, identifier, options);
+    synchronized (deploying) {
+      deploying.put(deploymentID, deployment);
+    }
     for (Verticle verticle: verticles) {
       CloseFuture closeFuture = new CloseFuture(log);
       ContextImpl context;
@@ -197,14 +212,16 @@ public class DeploymentManager {
           break;
       }
       VerticleHolder holder = new VerticleHolder(verticle, context, closeFuture);
+      Promise<Void> startPromise = context.promise();
+      holder.startPromise = startPromise;
       deployment.addVerticle(holder);
       context.runOnContext(v -> {
         try {
           verticle.init(vertx, context);
-          Promise<Void> startPromise = context.promise();
           Future<Void> startFuture = startPromise.future();
           verticle.start(startPromise);
           startFuture.onComplete(ar -> {
+            holder.startPromise = null;
             if (ar.succeeded()) {
               if (parent != null) {
                 if (parent.addChild(deployment)) {
@@ -217,6 +234,9 @@ public class DeploymentManager {
               }
               deployments.put(deploymentID, deployment);
               if (deployCount.incrementAndGet() == verticles.length) {
+                synchronized (deploying) {
+                  deploying.remove(deploymentID);
+                }
                 promise.complete(deployment);
               }
             } else if (failureReported.compareAndSet(false, true)) {
@@ -238,6 +258,7 @@ public class DeploymentManager {
     final Verticle verticle;
     final ContextImpl context;
     final CloseFuture closeFuture;
+    Promise<Void> startPromise;
 
     VerticleHolder(Verticle verticle, ContextImpl context, CloseFuture closeFuture) {
       this.verticle = verticle;
