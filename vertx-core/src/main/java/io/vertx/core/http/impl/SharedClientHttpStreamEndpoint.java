@@ -115,12 +115,14 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
   }
 
   protected void checkExpired() {
-    pool.evict(conn -> !conn.isValid(), ar -> {
-      if (ar.succeeded()) {
-        List<HttpClientConnectionInternal> lst = ar.result();
-        lst.forEach(HttpConnection::close);
-      }
-    });
+    pool
+      .evict(conn -> !conn.isValid())
+      .onComplete(ar -> {
+        if (ar.succeeded()) {
+          List<HttpClientConnectionInternal> lst = ar.result();
+          lst.forEach(HttpConnection::close);
+        }
+      });
   }
 
   private class Request implements PoolWaiter.Listener<HttpClientConnectionInternal>, Handler<AsyncResult<Lease<HttpClientConnectionInternal>>> {
@@ -148,11 +150,12 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
     public void onConnect(PoolWaiter<HttpClientConnectionInternal> waiter) {
       if (timeout > 0L && timerID == -1L) {
         timerID = context.setTimer(timeout, id -> {
-          pool.cancel(waiter, ar -> {
-            if (ar.succeeded() && ar.result()) {
-              promise.fail(new NoStackTraceTimeoutException("The timeout of " + timeout + " ms has been exceeded when getting a connection to " + connector.server()));
-            }
-          });
+          pool.cancel(waiter)
+            .onComplete(ar -> {
+              if (ar.succeeded() && ar.result()) {
+                promise.fail(new NoStackTraceTimeoutException("The timeout of " + timeout + " ms has been exceeded when getting a connection to " + connector.server()));
+              }
+            });
         });
       }
     }
@@ -166,7 +169,8 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
     }
 
     void acquire() {
-      pool.acquire(context, this, protocol == HttpVersion.HTTP_2 ? 1 : 0, this);
+      pool.acquire(context, this, protocol == HttpVersion.HTTP_2 ? 1 : 0)
+        .onComplete(this);
     }
   }
 
