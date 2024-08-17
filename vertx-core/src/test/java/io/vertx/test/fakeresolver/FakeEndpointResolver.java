@@ -5,7 +5,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.net.Address;
 import io.vertx.core.net.AddressResolver;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.endpoint.EndpointNode;
+import io.vertx.core.net.endpoint.EndpointServer;
 import io.vertx.core.spi.endpoint.EndpointResolver;
 import io.vertx.core.spi.endpoint.EndpointBuilder;
 
@@ -49,7 +49,7 @@ public class FakeEndpointResolver<B> implements AddressResolver, EndpointResolve
       Iterator s1 = ((Iterable) state.state.get().endpoints).iterator();
       List<FakeEndpoint> list = new ArrayList<>();
       for (Object o : ((Iterable) state.state.get().endpoints)) {
-        EndpointNode instance = (EndpointNode) o;
+        EndpointServer instance = (EndpointServer) o;
         list.add((FakeEndpoint) instance.unwrap());
       }
       return list;
@@ -73,7 +73,7 @@ public class FakeEndpointResolver<B> implements AddressResolver, EndpointResolve
     if (state != null) {
       if (state.state.get() == null) {
         for (SocketAddress socketAddress : state.endpoints) {
-          builder = builder.addNode(new FakeEndpoint(socketAddress));
+          builder = builder.addServer(new FakeEndpoint(socketAddress));
         }
         state.state.set(new FakeState<>(state.name, builder.build()));
       }
@@ -84,13 +84,13 @@ public class FakeEndpointResolver<B> implements AddressResolver, EndpointResolve
   }
 
   @Override
-  public B endpoint(FakeState<B> data) {
-    return data.endpoints;
+  public B endpoint(FakeState<B> state) {
+    return state.endpoints;
   }
 
   @Override
-  public boolean isValid(FakeState<B> data) {
-    return data.isValid;
+  public boolean isValid(FakeState<B> state) {
+    return state.isValid;
   }
 
   @Override

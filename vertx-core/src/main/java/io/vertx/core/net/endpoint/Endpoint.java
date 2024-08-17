@@ -18,17 +18,17 @@ import java.util.List;
 public interface Endpoint {
 
   /**
-   * The nodes capable of serving requests for this endpoint.
+   * The servers capable of serving requests for this endpoint.
    */
-  List<EndpointNode> nodes();
+  List<EndpointServer> servers();
 
   /**
-   * Select a node.
+   * Select a server.
    *
    * @return the selected server
    */
-  default EndpointNode selectNode() {
-    return selectNode(null);
+  default EndpointServer selectServer() {
+    return selectServer(null);
   }
 
   /**
@@ -37,6 +37,6 @@ public interface Endpoint {
    * @param key the routing key
    * @return the selected server
    */
-  EndpointNode selectNode(String key);
+  EndpointServer selectServer(String key);
 
 }

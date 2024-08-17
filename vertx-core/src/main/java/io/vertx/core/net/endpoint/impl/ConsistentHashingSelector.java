@@ -10,8 +10,8 @@
  */
 package io.vertx.core.net.endpoint.impl;
 
-import io.vertx.core.net.endpoint.EndpointNode;
-import io.vertx.core.net.endpoint.EndpointSelector;
+import io.vertx.core.net.endpoint.EndpointServer;
+import io.vertx.core.net.endpoint.ServerSelector;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -25,21 +25,21 @@ import java.util.TreeMap;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class ConsistentHashingSelector implements EndpointSelector {
+public class ConsistentHashingSelector implements ServerSelector {
 
-  private final List<? extends EndpointNode> endpoints;
-  private final SortedMap<Long, EndpointNode> nodes;
-  private final EndpointSelector fallbackSelector;
+  private final List<? extends EndpointServer> endpoints;
+  private final SortedMap<Long, EndpointServer> nodes;
+  private final ServerSelector fallbackSelector;
 
-  public ConsistentHashingSelector(List<? extends EndpointNode> endpoints, int numberOfVirtualNodes, EndpointSelector fallbackSelector) {
+  public ConsistentHashingSelector(List<? extends EndpointServer> endpoints, int numberOfVirtualNodes, ServerSelector fallbackSelector) {
     MessageDigest instance;
     try {
       instance = MessageDigest.getInstance("MD5");
     } catch (NoSuchAlgorithmException e) {
       throw new UnsupportedOperationException(e);
     }
-    SortedMap<Long, EndpointNode> ring = new TreeMap<>();
-    for (EndpointNode node : endpoints) {
+    SortedMap<Long, EndpointServer> ring = new TreeMap<>();
+    for (EndpointServer node : endpoints) {
       for (int idx = 0;idx < numberOfVirtualNodes;idx++) {
         String nodeId = node.key() + "-" + idx;
         long hash = hash(instance, nodeId.getBytes(StandardCharsets.UTF_8));
@@ -86,14 +86,14 @@ public class ConsistentHashingSelector implements EndpointSelector {
       throw new UnsupportedOperationException(e);
     }
     long hash = hash(md, key.getBytes(StandardCharsets.UTF_8));
-    SortedMap<Long, EndpointNode> map = nodes.tailMap(hash);
+    SortedMap<Long, EndpointServer> map = nodes.tailMap(hash);
     Long val;
     if (map.isEmpty()) {
       val = nodes.firstKey();
     } else {
       val = map.firstKey();
     }
-    EndpointNode endpoint = nodes.get(val);
+    EndpointServer endpoint = nodes.get(val);
     return endpoints.indexOf(endpoint); // TODO IMPROVE THAT
   }
 }

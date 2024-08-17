@@ -9,7 +9,7 @@ import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.*;
-import io.vertx.core.net.endpoint.EndpointNode;
+import io.vertx.core.net.endpoint.EndpointServer;
 import io.vertx.core.spi.endpoint.EndpointBuilder;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakeloadbalancer.FakeLoadBalancer;
@@ -334,7 +334,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
       .expecting(HttpResponseExpectation.SC_OK)
       .compose(HttpClientResponse::body)
     ));
-    FakeLoadBalancer.FakeLoadBalancerMetrics<?> endpoint = (FakeLoadBalancer.FakeLoadBalancerMetrics<?>) ((EndpointNode) lb.endpoints().get(0)).metrics();
+    FakeLoadBalancer.FakeLoadBalancerMetrics<?> endpoint = (FakeLoadBalancer.FakeLoadBalancerMetrics<?>) ((EndpointServer) lb.endpoints().get(0)).metrics();
     FakeLoadBalancer.FakeMetric metric = endpoint.metrics2().get(0);
     assertTrue(metric.requestEnd() - metric.requestBegin() >= 0);
     assertTrue(metric.responseBegin() - metric.requestEnd() > 500);
