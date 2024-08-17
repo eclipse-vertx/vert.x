@@ -75,12 +75,12 @@ public interface HttpClientBuilder {
   HttpClientBuilder withRedirectHandler(Function<HttpClientResponse, Future<RequestOptions>> handler);
 
   /**
-   * Configure the client to use a specific address lookup.
+   * Configure the client to use a specific address resolver.
    *
-   * @param lookup the address lookup
+   * @param resolver the address resolver
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  HttpClientBuilder withAddressResolver(AddressResolver lookup);
+  HttpClientBuilder withAddressResolver(AddressResolver resolver);
 
   /**
    * Configure the client to use a load balancer.
