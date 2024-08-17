@@ -1,7 +1,7 @@
 package io.vertx.test.fakeloadbalancer;
 
-import io.vertx.core.net.endpoint.EndpointNode;
-import io.vertx.core.net.endpoint.EndpointSelector;
+import io.vertx.core.net.endpoint.EndpointServer;
+import io.vertx.core.net.endpoint.ServerSelector;
 import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.endpoint.InteractionMetrics;
 
@@ -10,9 +10,9 @@ import java.util.List;
 
 public class FakeLoadBalancer implements LoadBalancer {
 
-  List<? extends EndpointNode> endpoints;
+  List<? extends EndpointServer> endpoints;
 
-  public List<? extends EndpointNode> endpoints() {
+  public List<? extends EndpointServer> endpoints() {
     return endpoints;
   }
 
@@ -22,9 +22,9 @@ public class FakeLoadBalancer implements LoadBalancer {
   }
 
   @Override
-  public EndpointSelector selector(List<? extends EndpointNode> nodes) {
-    this.endpoints = nodes;
-    return LoadBalancer.ROUND_ROBIN.selector(nodes);
+  public ServerSelector selector(List<? extends EndpointServer> listOfServers) {
+    this.endpoints = listOfServers;
+    return LoadBalancer.ROUND_ROBIN.selector(listOfServers);
   }
 
   public static class FakeLoadBalancerMetrics<E> implements InteractionMetrics<FakeMetric> {

@@ -82,13 +82,13 @@ public class DnsResolverTest extends VertxTestBase {
   public void testResolveMultipleAddresses() {
     Future<List<SocketAddress>> fut = resolver.resolve(SocketAddress.inetSocketAddress(8080, nameToResolve), new EndpointBuilder<List<SocketAddress>, SocketAddress>() {
       @Override
-      public EndpointBuilder<List<SocketAddress>, SocketAddress> addNode(SocketAddress node, String key) {
+      public EndpointBuilder<List<SocketAddress>, SocketAddress> addServer(SocketAddress server, String key) {
         List<SocketAddress> list = new ArrayList<>();
-        list.add(node);
+        list.add(server);
         return new EndpointBuilder<>() {
           @Override
-          public EndpointBuilder<List<SocketAddress>, SocketAddress> addNode(SocketAddress node, String key) {
-            list.add(node);
+          public EndpointBuilder<List<SocketAddress>, SocketAddress> addServer(SocketAddress server, String key) {
+            list.add(server);
             return this;
           }
           @Override

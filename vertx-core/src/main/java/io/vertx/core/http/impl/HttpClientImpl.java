@@ -25,8 +25,8 @@ import io.vertx.core.http.*;
 import io.vertx.core.net.*;
 import io.vertx.core.internal.net.endpoint.EndpointResolverInternal;
 import io.vertx.core.net.impl.endpoint.EndpointProvider;
-import io.vertx.core.net.endpoint.EndpointInteraction;
-import io.vertx.core.net.endpoint.EndpointNode;
+import io.vertx.core.net.endpoint.ServerInteraction;
+import io.vertx.core.net.endpoint.EndpointServer;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.net.endpoint.EndpointResolver;
@@ -390,9 +390,9 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     Promise<HttpClientRequest> promise = ctx.promise();
     Future<ConnectionObtainedResult> future;
     if (endpointResolver != null) {
-      Future<EndpointNode> fut = endpointResolver
+      Future<EndpointServer> fut = endpointResolver
         .lookupEndpoint(ctx, server)
-        .map(endpoint -> endpoint.selectNode(routingKey));
+        .map(endpoint -> endpoint.selectServer(routingKey));
       future = fut.compose(lookup -> {
         SocketAddress address = lookup.address();
         ProxyOptions proxyOptions = computeProxyOptions(proxyConfig, address);
@@ -402,7 +402,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
           if (fut2 == null) {
             return null;
           } else {
-            EndpointInteraction endpointRequest = lookup.newInteraction();
+            ServerInteraction endpointRequest = lookup.newInteraction();
             return fut2.andThen(ar -> {
               if (ar.failed()) {
                 endpointRequest.reportFailure(ar.cause());
