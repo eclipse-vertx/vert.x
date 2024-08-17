@@ -55,8 +55,8 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
   }
 
   @Override
-  public HttpClientBuilder withAddressResolver(AddressResolver addressResolver) {
-    this.addressResolver = addressResolver;
+  public HttpClientBuilder withAddressResolver(AddressResolver resolver) {
+    this.addressResolver = resolver;
     return this;
   }
 
