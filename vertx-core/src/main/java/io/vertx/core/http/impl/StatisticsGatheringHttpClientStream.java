@@ -21,7 +21,7 @@ import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.net.endpoint.EndpointInteraction;
+import io.vertx.core.net.endpoint.ServerInteraction;
 import io.vertx.core.streams.WriteStream;
 
 /**
@@ -32,9 +32,9 @@ import io.vertx.core.streams.WriteStream;
 class StatisticsGatheringHttpClientStream implements HttpClientStream {
 
   private final HttpClientStream delegate;
-  private final EndpointInteraction endpointRequest;
+  private final ServerInteraction endpointRequest;
 
-  StatisticsGatheringHttpClientStream(HttpClientStream delegate, EndpointInteraction endpointRequest) {
+  StatisticsGatheringHttpClientStream(HttpClientStream delegate, ServerInteraction endpointRequest) {
     this.delegate = delegate;
     this.endpointRequest = endpointRequest;
   }

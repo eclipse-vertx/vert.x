@@ -161,7 +161,7 @@ public class HostnameResolver implements AddressResolver {
         EndpointBuilder<L, SocketAddress> builder2 = builder;
         if (ar.succeeded()) {
           for (InetSocketAddress addr : ar.result()) {
-            builder2 = builder2.addNode(SocketAddress.inetSocketAddress(address.port(), addr.getAddress().getHostAddress()));
+            builder2 = builder2.addServer(SocketAddress.inetSocketAddress(address.port(), addr.getAddress().getHostAddress()));
           }
           promise.complete(builder2.build());
         } else {
@@ -172,12 +172,12 @@ public class HostnameResolver implements AddressResolver {
     }
 
     @Override
-    public L endpoint(L data) {
-      return data;
+    public L endpoint(L state) {
+      return state;
     }
 
     @Override
-    public boolean isValid(L data) {
+    public boolean isValid(L state) {
       // NEED EXPIRATION
       return true;
     }

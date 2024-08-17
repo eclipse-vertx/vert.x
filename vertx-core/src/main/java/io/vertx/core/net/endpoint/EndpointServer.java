@@ -15,12 +15,12 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.net.SocketAddress;
 
 /**
- * A physical node of an endpoint.
+ * A physical server of an endpoint.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @VertxGen
-public interface EndpointNode {
+public interface EndpointServer {
 
   /**
    * @return the node key for hashing strategies
@@ -37,7 +37,7 @@ public interface EndpointNode {
    *
    * @return the request
    */
-  EndpointInteraction newInteraction();
+  ServerInteraction newInteraction();
 
   // Should be private somehow
   @GenIgnore

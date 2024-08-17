@@ -15,26 +15,26 @@ package io.vertx.core.spi.endpoint;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface EndpointBuilder<L, N> {
+public interface EndpointBuilder<E, S> {
 
   /**
-   * Add a node with its associated {@code key}
-   * @param node the node
+   * Add a {@code server} with its associated {@code key}
+   * @param server the server
    * @param key the key
    * @return the next builder to be used, it might return a new instance
    */
-  EndpointBuilder<L, N> addNode(N node, String key);
+  EndpointBuilder<E, S> addServer(S server, String key);
 
   /**
-   * Like {@link #addNode(Object, String)} with a default key.
+   * Like {@link #addServer(Object, String)} with a default key.
    */
-  default EndpointBuilder<L, N> addNode(N node) {
-    return addNode(node, "" + System.identityHashCode(node));
+  default EndpointBuilder<E, S> addServer(S server) {
+    return addServer(server, "" + System.identityHashCode(server));
   }
 
   /**
-   * @return the list
+   * @return the endpoint
    */
-  L build();
+  E build();
 
 }

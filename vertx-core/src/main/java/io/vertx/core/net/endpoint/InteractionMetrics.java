@@ -11,8 +11,8 @@
 package io.vertx.core.net.endpoint;
 
 /**
- * Gather metrics for a request/response interaction with an endpoint instance, this interface is write-only and used to report
- * usage to build statistics for a load balancing implementation.
+ * Gather metrics for a request/response interaction with the server, this interface is write-only and used to report
+ * usage to build statistics for a load balancing purpose.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */

@@ -15,7 +15,7 @@ package io.vertx.core.net.endpoint;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface EndpointSelector {
+public interface ServerSelector {
 
   /**
    * Selects a server.
