@@ -459,10 +459,10 @@ public abstract class EventBusTestBase extends VertxTestBase {
     String expectedBody = TestUtils.randomAlphaString(20);
     Vertx[] vertices = vertices(2);
     CountDownLatch latch = new CountDownLatch(1);
-    vertices[0].deployVerticle(new AbstractVerticle() {
+    vertices[1].deployVerticle(new AbstractVerticle() {
       @Override
-      public void start() throws Exception {
-        vertices[1].eventBus().<String>consumer(ADDRESS1, msg -> {
+      public void start() {
+        vertx.eventBus().<String>consumer(ADDRESS1, msg -> {
           msg.reply(expectedBody);
         }).completion().onComplete(ar -> {
           assertTrue(ar.succeeded());
