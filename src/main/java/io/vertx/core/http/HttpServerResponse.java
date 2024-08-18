@@ -672,12 +672,6 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
       return this;
   }
 
-  @Fluent
-  default HttpServerResponse setStreamPriority(StreamPriority streamPriority) {
-      setStreamPriority(new Http2StreamPriority(streamPriority));
-      return this;
-  }
-
   /**
    * Add a cookie. This will be sent back to the client in the response.
    *

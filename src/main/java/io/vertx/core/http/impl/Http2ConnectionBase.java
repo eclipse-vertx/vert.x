@@ -195,20 +195,20 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   public void onPriorityRead(ChannelHandlerContext ctx, int streamId, int streamDependency, short weight, boolean exclusive) {
     VertxHttpStreamBase<?, ?, Http2Headers> stream = stream(streamId);
       if (stream != null) {
-        StreamPriorityBase streamPriority = new Http2StreamPriority(new StreamPriority()
+        StreamPriorityBase streamPriority = new Http2StreamPriority()
           .setDependency(streamDependency)
           .setWeight(weight)
-          .setExclusive(exclusive));
+          .setExclusive(exclusive);
         stream.onPriorityChange(streamPriority);
       }
   }
 
   @Override
   public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endOfStream) throws Http2Exception {
-    StreamPriorityBase streamPriority = new Http2StreamPriority(new StreamPriority()
+    StreamPriorityBase streamPriority = new Http2StreamPriority()
       .setDependency(streamDependency)
       .setWeight(weight)
-      .setExclusive(exclusive));
+      .setExclusive(exclusive);
     onHeadersRead(streamId, headers, streamPriority, endOfStream);
   }
 

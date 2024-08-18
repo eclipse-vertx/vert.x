@@ -2221,7 +2221,7 @@ public class Http2ClientTest extends Http2TestBase {
   @Ignore("Cannot pass reliably for now (https://github.com/netty/netty/issues/9842)")
   @Test
   public void testServerStreamPriorityNoChange() throws Exception {
-    StreamPriority streamPriority = new StreamPriority().setDependency(123).setWeight((short)45).setExclusive(true);
+    StreamPriorityBase streamPriority = new Http2StreamPriority().setDependency(123).setWeight((short)45).setExclusive(true);
     waitFor(1);
     ServerBootstrap bootstrap = createH2Server((decoder, encoder) -> new Http2EventAdapter() {
       @Override

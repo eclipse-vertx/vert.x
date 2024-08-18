@@ -627,12 +627,6 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
       return this;
   }
 
-  @Fluent
-  default HttpClientRequest setStreamPriority(StreamPriority streamPriority) {
-      setStreamPriority(new Http2StreamPriority(streamPriority));
-      return this;
-  }
-
   /**
    * @return the priority of the associated HTTP/2 stream for HTTP/2 otherwise {@code null}
    */
