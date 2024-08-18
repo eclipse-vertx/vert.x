@@ -473,7 +473,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   /**
    * @return the priority of the associated HTTP/2 stream for HTTP/2 otherwise {@code null}
    */
-  default StreamPriority streamPriority() {
+  default StreamPriorityBase streamPriority() {
       return null;
   }
 
@@ -485,7 +485,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * @param handler the handler to be called when stream priority changes
    */
   @Fluent
-  HttpServerRequest streamPriorityHandler(Handler<StreamPriority> handler);
+  HttpServerRequest streamPriorityHandler(Handler<StreamPriorityBase> handler);
 
   /**
    * @return Netty's decoder result useful for handling invalid requests with {@link HttpServer#invalidRequestHandler}

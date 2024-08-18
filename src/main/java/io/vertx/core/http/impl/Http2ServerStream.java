@@ -24,7 +24,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.HostAndPort;
@@ -103,7 +103,7 @@ class Http2ServerStream extends VertxHttpStreamBase<Http2ServerConnection, Http2
   }
 
   @Override
-  void onHeaders(Http2Headers headers, StreamPriority streamPriority) {
+  void onHeaders(Http2Headers headers, StreamPriorityBase streamPriority) {
     if (streamPriority != null) {
       priority(streamPriority);
     }
@@ -193,7 +193,7 @@ class Http2ServerStream extends VertxHttpStreamBase<Http2ServerConnection, Http2
   }
 
   @Override
-  void handlePriorityChange(StreamPriority newPriority) {
+  void handlePriorityChange(StreamPriorityBase newPriority) {
     request.handlePriorityChange(newPriority);
   }
 
@@ -264,7 +264,7 @@ class Http2ServerStream extends VertxHttpStreamBase<Http2ServerConnection, Http2
   }
 
   @Override
-  public void writePriorityFrame(StreamPriority priority) {
+  public void writePriorityFrame(StreamPriorityBase priority) {
     conn.handler.writePriority(stream, priority.getDependency(), priority.getWeight(), priority.isExclusive());
   }
 

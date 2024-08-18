@@ -168,7 +168,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
   }
 
   @Override
-  protected synchronized void onHeadersRead(int streamId, Http2Headers headers, StreamPriority streamPriority, boolean endOfStream) {
+  protected synchronized void onHeadersRead(int streamId, Http2Headers headers, StreamPriorityBase streamPriority, boolean endOfStream) {
     VertxHttpStreamBase<?, ?, Http2Headers> stream = stream(streamId);
     if (stream == null) {
       if (isMalformedRequest(headers)) {
@@ -190,7 +190,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     }
   }
 
-  void sendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<HttpServerResponse> promise) {
+  void sendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriorityBase streamPriority, Promise<HttpServerResponse> promise) {
     EventLoop eventLoop = context.nettyEventLoop();
     if (eventLoop.inEventLoop()) {
       doSendPush(streamId, authority, method, headers, path, streamPriority, promise);
@@ -199,7 +199,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     }
   }
 
-  private synchronized void doSendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<HttpServerResponse> promise) {
+  private synchronized void doSendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriorityBase streamPriority, Promise<HttpServerResponse> promise) {
     boolean ssl = isSsl();
     Http2Headers headers_ = new DefaultHttp2Headers();
     headers_.method(method.name());

@@ -27,10 +27,12 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.file.OpenOptions;
+import io.vertx.core.http.Http2StreamPriority;
 import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.tracing.TagExtractor;
@@ -163,7 +165,7 @@ public final class HttpUtils {
     }
   };
 
-  static final StreamPriority DEFAULT_STREAM_PRIORITY = new StreamPriority() {
+  static final StreamPriorityBase DEFAULT_STREAM_PRIORITY = new Http2StreamPriority(new StreamPriority() {
     @Override
     public StreamPriority setWeight(short weight) {
       throw new UnsupportedOperationException("Unmodifiable stream priority");
@@ -178,7 +180,7 @@ public final class HttpUtils {
     public StreamPriority setExclusive(boolean exclusive) {
       throw new UnsupportedOperationException("Unmodifiable stream priority");
     }
-  };
+  });
 
 
   private HttpUtils() {

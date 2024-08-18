@@ -13,7 +13,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.http.impl.headers.Http3HeadersAdaptor;
 import io.vertx.core.http.impl.headers.VertxDefaultHttp3Headers;
 import io.vertx.core.http.impl.headers.VertxDefaultHttpHeaders;
@@ -117,8 +117,8 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
   }
 
   @Override
-  public void writePriorityFrame(StreamPriority priority) {
-    throw new RuntimeException("Method not implemented");
+  public void writePriorityFrame(StreamPriorityBase priority) {
+    conn.handler.writePriority(stream, priority.urgency(), priority.isIncremental());
   }
 
   @Override

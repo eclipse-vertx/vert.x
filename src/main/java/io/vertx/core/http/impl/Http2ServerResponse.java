@@ -27,7 +27,7 @@ import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.impl.future.PromiseInternal;
@@ -735,7 +735,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public HttpServerResponse setStreamPriority(StreamPriority priority) {
+  public HttpServerResponse setStreamPriority(StreamPriorityBase priority) {
     stream.updatePriority(priority);
     return this;
   }

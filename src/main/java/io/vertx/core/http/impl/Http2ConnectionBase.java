@@ -33,9 +33,11 @@ import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.buffer.impl.VertxByteBufAllocator;
 import io.vertx.core.http.GoAway;
+import io.vertx.core.http.Http2StreamPriority;
 import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -61,7 +63,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     return buffer;
   }
 
-  protected abstract void onHeadersRead(int streamId, Http2Headers headers, StreamPriority streamPriority, boolean endOfStream);
+  protected abstract void onHeadersRead(int streamId, Http2Headers headers, StreamPriorityBase streamPriority, boolean endOfStream);
 
   protected final ChannelHandlerContext handlerContext;
   protected final VertxHttp2ConnectionHandler handler;
@@ -193,20 +195,20 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   public void onPriorityRead(ChannelHandlerContext ctx, int streamId, int streamDependency, short weight, boolean exclusive) {
     VertxHttpStreamBase<?, ?, Http2Headers> stream = stream(streamId);
       if (stream != null) {
-        StreamPriority streamPriority = new StreamPriority()
+        StreamPriorityBase streamPriority = new Http2StreamPriority(new StreamPriority()
           .setDependency(streamDependency)
           .setWeight(weight)
-          .setExclusive(exclusive);
+          .setExclusive(exclusive));
         stream.onPriorityChange(streamPriority);
       }
   }
 
   @Override
   public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endOfStream) throws Http2Exception {
-    StreamPriority streamPriority = new StreamPriority()
+    StreamPriorityBase streamPriority = new Http2StreamPriority(new StreamPriority()
       .setDependency(streamDependency)
       .setWeight(weight)
-      .setExclusive(exclusive);
+      .setExclusive(exclusive));
     onHeadersRead(streamId, headers, streamPriority, endOfStream);
   }
 

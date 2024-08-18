@@ -23,8 +23,10 @@ import io.netty.incubator.codec.http3.Http3RequestStreamInboundHandler;
 import io.netty.incubator.codec.http3.Http3ServerConnectionHandler;
 import io.netty.incubator.codec.http3.Http3SettingsFrame;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
+import io.netty.incubator.codec.quic.QuicStreamPriority;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.DefaultPromise;
+import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.FutureListener;
 import io.netty.util.concurrent.Promise;
@@ -227,5 +229,20 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
 
   public C connection() {
     return connection;
+  }
+
+  private void _writePriority(QuicStreamChannel stream, int urgency, boolean incremental) {
+    stream.updatePriority(new QuicStreamPriority(urgency, incremental));
+  }
+
+  public void writePriority(QuicStreamChannel stream, int urgency, boolean incremental) {
+    EventExecutor executor = chctx.executor();
+    if (executor.inEventLoop()) {
+      _writePriority(stream, urgency, incremental);
+    } else {
+      executor.execute(() -> {
+        _writePriority(stream, urgency, incremental);
+      });
+    }
   }
 }

@@ -11,7 +11,6 @@
 
 package io.vertx.core.http;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.vertx.codegen.annotations.*;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -190,5 +189,5 @@ public interface HttpClientResponse extends ReadStream<Buffer> {
    * @param handler the handler to be called when the stream priority changes
    */
   @Fluent
-  HttpClientResponse streamPriorityHandler(Handler<StreamPriority> handler);
+  HttpClientResponse streamPriorityHandler(Handler<StreamPriorityBase> handler);
 }

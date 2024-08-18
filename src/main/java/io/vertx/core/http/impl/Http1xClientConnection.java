@@ -64,7 +64,7 @@ import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebsocketVersion;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
@@ -502,7 +502,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     }
 
     @Override
-    public void priorityHandler(Handler<StreamPriority> handler) {
+    public void priorityHandler(Handler<StreamPriorityBase> handler) {
       // No op
     }
 
@@ -547,7 +547,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     }
 
     @Override
-    public void writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect, Handler<AsyncResult<Void>> handler) {
+    public void writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriorityBase priority, boolean connect, Handler<AsyncResult<Void>> handler) {
       writeHead(request, chunked, buf, end, connect, handler == null ? null : context.promise(handler));
     }
 
@@ -660,12 +660,12 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     }
 
     @Override
-    public StreamPriority priority() {
+    public StreamPriorityBase priority() {
       return null;
     }
 
     @Override
-    public void updatePriority(StreamPriority streamPriority) {
+    public void updatePriority(StreamPriorityBase streamPriority) {
     }
 
     @Override

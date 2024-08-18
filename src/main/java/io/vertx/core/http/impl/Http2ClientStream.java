@@ -11,7 +11,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.http.impl.headers.VertxDefaultHttp2Headers;
 import io.vertx.core.http.impl.headers.VertxDefaultHttpHeaders;
@@ -114,7 +114,7 @@ class Http2ClientStream extends HttpStreamImpl<Http2ClientConnection, Http2Strea
   }
 
   @Override
-  public void writePriorityFrame(StreamPriority priority) {
+  public void writePriorityFrame(StreamPriorityBase priority) {
     conn.handler.writePriority(stream, priority.getDependency(), priority.getWeight(), priority.isExclusive());
   }
 

@@ -21,7 +21,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
-import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.ConnectionBase;
@@ -37,7 +37,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S, H extends Header
   protected final ContextInternal context;
 
   // Client context
-  private StreamPriority priority;
+  private StreamPriorityBase priority;
   private final InboundBuffer<Object> pending;
   protected boolean writable;
   private long bytesRead;
@@ -49,7 +49,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S, H extends Header
   protected abstract void writeFrame(byte type, short flags, ByteBuf payload);
   protected abstract void writeHeaders(H headers, boolean end, int dependency, short weight, boolean exclusive, boolean checkFlush,
                     FutureListener<Void> promise);
-  protected abstract void writePriorityFrame(StreamPriority priority);
+  protected abstract void writePriorityFrame(StreamPriorityBase priority);
   protected abstract void writeData_(ByteBuf chunk, boolean end, FutureListener<Void> promise);
   protected abstract void writeReset_(int streamId, long code);
   protected abstract void init_(VertxHttpStreamBase vertxHttpStream, S stream);
@@ -110,7 +110,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S, H extends Header
     context.emit(code, this::handleReset);
   }
 
-  void onPriorityChange(StreamPriority newPriority) {
+  void onPriorityChange(StreamPriorityBase newPriority) {
     context.emit(newPriority, priority -> {
       if (!this.priority.equals(priority)) {
         this.priority = priority;
@@ -123,7 +123,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S, H extends Header
     context.emit(frame, this::handleCustomFrame);
   }
 
-  void onHeaders(H headers, StreamPriority streamPriority) {
+  void onHeaders(H headers, StreamPriorityBase streamPriority) {
   }
 
   void onData(Buffer data) {
@@ -276,15 +276,15 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S, H extends Header
   void handleClose() {
   }
 
-  synchronized void priority(StreamPriority streamPriority) {
+  synchronized void priority(StreamPriorityBase streamPriority) {
     this.priority = streamPriority;
   }
 
-  synchronized StreamPriority priority() {
+  synchronized StreamPriorityBase priority() {
     return priority;
   }
 
-  synchronized void updatePriority(StreamPriority priority) {
+  synchronized void updatePriority(StreamPriorityBase priority) {
     if (!this.priority.equals(priority)) {
       this.priority = priority;
       if (hasStream()) {
@@ -293,7 +293,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S, H extends Header
     }
   }
 
-  void handlePriorityChange(StreamPriority newPriority) {
+  void handlePriorityChange(StreamPriorityBase newPriority) {
   }
 
   boolean isTrailersReceived() {

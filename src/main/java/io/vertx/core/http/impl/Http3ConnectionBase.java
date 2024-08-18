@@ -24,12 +24,11 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.GoAway;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.impl.ConnectionBase;
-import io.vertx.core.spi.metrics.NetworkMetrics;
 
 import static io.vertx.core.net.impl.VertxHandler.safeBuffer;
 
@@ -200,6 +199,6 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
   }
 
   protected abstract void onHeadersRead(VertxHttpStreamBase<?, ?, Http3Headers> stream, Http3Headers headers,
-                                        StreamPriority streamPriority, boolean endOfStream);
+                                        StreamPriorityBase streamPriority, boolean endOfStream);
 
 }

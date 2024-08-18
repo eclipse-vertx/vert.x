@@ -54,7 +54,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private Throwable reset;
   private int followRedirects;
   private HeadersMultiMap headers;
-  private StreamPriority priority;
+  private StreamPriorityBase priority;
   private boolean headWritten;
   private boolean isConnect;
   private String traceOperation;
@@ -526,7 +526,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   @Override
-  public synchronized HttpClientRequest setStreamPriority(StreamPriority priority) {
+  public synchronized HttpClientRequest setStreamPriority(StreamPriorityBase priority) {
     if (headWritten) {
       stream.updatePriority(priority);
     } else {
@@ -536,7 +536,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   @Override
-  public synchronized StreamPriority getStreamPriority() {
+  public synchronized StreamPriorityBase getStreamPriority() {
     return stream.priority();
   }
 }

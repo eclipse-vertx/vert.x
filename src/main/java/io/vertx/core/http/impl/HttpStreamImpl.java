@@ -9,7 +9,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.impl.headers.VertxDefaultHttpHeaders;
 import io.vertx.core.impl.ContextInternal;
@@ -103,7 +103,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S,
   }
 
   @Override
-  public void priorityHandler(Handler<StreamPriority> handler) {
+  public void priorityHandler(Handler<StreamPriorityBase> handler) {
     priorityHandler = handler;
   }
 
@@ -113,12 +113,12 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S,
   }
 
   @Override
-  public StreamPriority priority() {
+  public StreamPriorityBase priority() {
     return super.priority();
   }
 
   @Override
-  public void updatePriority(StreamPriority streamPriority) {
+  public void updatePriority(StreamPriorityBase streamPriority) {
     super.updatePriority(streamPriority);
   }
 
@@ -154,7 +154,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S,
 
 
   @Override
-  void handlePriorityChange(StreamPriority streamPriority) {
+  void handlePriorityChange(StreamPriorityBase streamPriority) {
     if (priorityHandler != null) {
       priorityHandler.handle(streamPriority);
     }
@@ -179,7 +179,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S,
   }
 
   @Override
-  public void writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority,
+  public void writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriorityBase priority,
                         boolean connect, Handler<AsyncResult<Void>> handler) {
     priority(priority);
     conn.context.emit(null, v -> {
@@ -187,7 +187,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S,
     });
   }
 
-  private void writeHeaders(HttpRequestHead request, ByteBuf buf, boolean end, StreamPriority priority,
+  private void writeHeaders(HttpRequestHead request, ByteBuf buf, boolean end, StreamPriorityBase priority,
                             boolean connect,
                             Handler<AsyncResult<Void>> handler) {
     VertxDefaultHttpHeaders<H> headers = createHttpHeadersWrapper();
