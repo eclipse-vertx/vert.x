@@ -1114,8 +1114,9 @@ public class ContextTest extends VertxTestBase {
   private void testContextShouldNotBeStickyFromUnassociatedWorkerThread(ContextInternal ctx) {
     ctx.execute(() -> {
       assertEquals(null, Vertx.currentContext());
-      Context created1 = vertx.getOrCreateContext();
+      ContextInternal created1 = (ContextInternal) vertx.getOrCreateContext();
       assertNotSame(ctx, created1);
+      assertNotNull(created1.nettyEventLoop());
       ctx.execute(() -> {
         assertEquals(null, Vertx.currentContext());
         Context created2 = vertx.getOrCreateContext();
