@@ -27,7 +27,9 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import static io.vertx.core.eventbus.impl.CodecManager.STRING_MESSAGE_CODEC;
@@ -949,5 +951,29 @@ public abstract class EventBusTestBase extends VertxTestBase {
     public byte systemCodecID() {
       return -1;
     }
+  }
+
+  @Test
+  public void testConsumerUnregistrationContextCallback() throws Exception {
+    Vertx[] vertices = vertices(1);
+    Vertx vertx = vertices[0];
+    CompletableFuture<MessageConsumer<?>> latch = new CompletableFuture<>();
+    Thread th = new Thread(() -> {
+      Context ctx = vertx.getOrCreateContext();
+      ctx.runOnContext(v1 -> {
+        MessageConsumer<?> consumer = vertx.eventBus().consumer(ADDRESS1);
+        latch.complete(consumer);
+      });
+    });
+    th.start();
+    MessageConsumer<?> consumer = latch.get(20, TimeUnit.SECONDS);
+    Context ctx = vertx.getOrCreateContext();
+    ctx.runOnContext(v1 -> {
+      consumer.unregister().onComplete(onSuccess(v2 -> {
+        assertSame(ctx, Vertx.currentContext());
+        testComplete();
+      }));
+    });
+    await();
   }
 }
