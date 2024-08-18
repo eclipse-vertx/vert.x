@@ -24,8 +24,8 @@ import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.*;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.SocketAddress;
@@ -563,10 +563,14 @@ public abstract class ConnectionBase {
   }
 
   public boolean isSsl() {
-    return chctx.pipeline().get(SslHandler.class) != null || getHttp3SslHandler(chctx.channel().parent().parent().pipeline()) != null;
+    return chctx.pipeline().get(SslHandler.class) != null || getHttp3SslHandler(chctx) != null;
   }
 
-  private ChannelHandler getHttp3SslHandler(ChannelPipeline pipeline){
+  private ChannelHandler getHttp3SslHandler(ChannelHandlerContext chctx) {
+    if (chctx.channel() == null || chctx.channel().parent() == null || chctx.channel().parent().parent() == null)
+      return null;
+
+    ChannelPipeline pipeline = chctx.channel().parent().parent().pipeline();
     for (Map.Entry<String, ChannelHandler> stringChannelHandlerEntry : pipeline) {
       ChannelHandler handler = stringChannelHandlerEntry.getValue();
       if (handler.getClass().getSimpleName().equals("QuicheQuicClientCodec")) {

@@ -45,6 +45,11 @@ public class ClientOptionsBaseConverter {
             obj.setNonProxyHosts(list);
           }
           break;
+        case "protocolVersion":
+          if (member.getValue() instanceof String) {
+            obj.setProtocolVersion(io.vertx.core.http.HttpVersion.valueOf((String)member.getValue()));
+          }
+          break;
         case "proxyOptions":
           if (member.getValue() instanceof JsonObject) {
             obj.setProxyOptions(new io.vertx.core.net.ProxyOptions((io.vertx.core.json.JsonObject)member.getValue()));
@@ -75,6 +80,9 @@ public class ClientOptionsBaseConverter {
       JsonArray array = new JsonArray();
       obj.getNonProxyHosts().forEach(item -> array.add(item));
       json.put("nonProxyHosts", array);
+    }
+    if (obj.getProtocolVersion() != null) {
+      json.put("protocolVersion", obj.getProtocolVersion().name());
     }
     if (obj.getProxyOptions() != null) {
       json.put("proxyOptions", obj.getProxyOptions().toJson());

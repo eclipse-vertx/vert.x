@@ -54,7 +54,7 @@ public class Http3StreamPriority implements StreamPriorityBase {
 
   @Override
   public boolean equals(Object obj) {
-    return this.quicStreamPriority.equals(obj);
+    return obj instanceof Http3StreamPriority && this.quicStreamPriority.equals(((Http3StreamPriority) obj).quicStreamPriority);
   }
 
   @Override

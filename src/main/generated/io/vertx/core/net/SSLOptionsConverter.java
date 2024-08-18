@@ -54,6 +54,11 @@ public class SSLOptionsConverter {
             obj.setEnabledSecureTransportProtocols(list);
           }
           break;
+        case "http3":
+          if (member.getValue() instanceof Boolean) {
+            obj.setHttp3((Boolean)member.getValue());
+          }
+          break;
         case "sslHandshakeTimeout":
           if (member.getValue() instanceof Number) {
             obj.setSslHandshakeTimeout(((Number)member.getValue()).longValue());
@@ -98,6 +103,7 @@ public class SSLOptionsConverter {
       obj.getEnabledSecureTransportProtocols().forEach(item -> array.add(item));
       json.put("enabledSecureTransportProtocols", array);
     }
+    json.put("http3", obj.isHttp3());
     json.put("sslHandshakeTimeout", obj.getSslHandshakeTimeout());
     if (obj.getSslHandshakeTimeoutUnit() != null) {
       json.put("sslHandshakeTimeoutUnit", obj.getSslHandshakeTimeoutUnit().name());

@@ -55,7 +55,7 @@ public class Http2StreamPriority implements StreamPriorityBase {
 
   @Override
   public boolean equals(Object obj) {
-    return this.streamPriority.equals(obj);
+    return obj instanceof Http2StreamPriority && this.streamPriority.equals(((Http2StreamPriority) obj).streamPriority);
   }
 
   @Override

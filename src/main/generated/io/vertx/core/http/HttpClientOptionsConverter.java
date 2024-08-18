@@ -165,11 +165,6 @@ public class HttpClientOptionsConverter {
             obj.setPoolEventLoopSize(((Number)member.getValue()).intValue());
           }
           break;
-        case "protocolVersion":
-          if (member.getValue() instanceof String) {
-            obj.setProtocolVersion(io.vertx.core.http.HttpVersion.valueOf((String)member.getValue()));
-          }
-          break;
         case "sendUnmaskedFrames":
           if (member.getValue() instanceof Boolean) {
             obj.setSendUnmaskedFrames((Boolean)member.getValue());
@@ -274,9 +269,6 @@ public class HttpClientOptionsConverter {
     json.put("pipeliningLimit", obj.getPipeliningLimit());
     json.put("poolCleanerPeriod", obj.getPoolCleanerPeriod());
     json.put("poolEventLoopSize", obj.getPoolEventLoopSize());
-    if (obj.getProtocolVersion() != null) {
-      json.put("protocolVersion", obj.getProtocolVersion().name());
-    }
     json.put("sendUnmaskedFrames", obj.isSendUnmaskedFrames());
     json.put("shared", obj.isShared());
     if (obj.getTracingPolicy() != null) {
