@@ -492,11 +492,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     ContextInternal ctx = getContext(thread);
     if (ctx == null) {
       if (thread instanceof VertxThread && ((VertxThread) thread).owner == this) {
-        io.netty.util.concurrent.EventExecutor eventLoop = ThreadExecutorMap.currentExecutor();
-        // Might not be the correct event-loop with multiple instance
         if (((VertxThread)thread).isWorker()) {
-          return createWorkerContext((EventLoop) eventLoop, workerPool, null);
+          return createWorkerContext(eventLoopGroup.next(), workerPool, null);
         } else {
+          io.netty.util.concurrent.EventExecutor eventLoop = ThreadExecutorMap.currentExecutor();
           return createEventLoopContext((EventLoop) eventLoop, workerPool, null);
         }
       } else {
