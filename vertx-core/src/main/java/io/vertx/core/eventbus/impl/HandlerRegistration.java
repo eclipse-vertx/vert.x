@@ -77,7 +77,7 @@ public abstract class HandlerRegistration<T> implements Closeable {
   }
 
   public Future<Void> unregister() {
-    Promise<Void> promise = context.promise();
+    Promise<Void> promise = context.owner().promise();
     synchronized (this) {
       if (registered != null) {
         registered.accept(promise);
