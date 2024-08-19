@@ -65,7 +65,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     this.chunked = false;
     this.endPromise = context.promise();
     this.endFuture = endPromise.future();
-    this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
+    this.priority = stream.createDefaultStreamPriority();
     this.traceOperation = traceOperation;
 
     //

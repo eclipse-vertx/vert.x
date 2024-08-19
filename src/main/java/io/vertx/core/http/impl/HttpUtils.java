@@ -17,6 +17,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http2.Http2Settings;
+import io.netty.incubator.codec.quic.QuicStreamPriority;
 import io.netty.util.AsciiString;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.AsyncResult;
@@ -28,6 +29,7 @@ import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.Http2StreamPriority;
+import io.vertx.core.http.Http3StreamPriority;
 import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
@@ -182,6 +184,7 @@ public final class HttpUtils {
     }
   });
 
+  static final StreamPriorityBase DEFAULT_QUIC_STREAM_PRIORITY = new Http3StreamPriority(new QuicStreamPriority(0, true));
 
   private HttpUtils() {
   }

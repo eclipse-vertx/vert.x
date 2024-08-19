@@ -114,5 +114,5 @@ public interface HttpClientStream extends WriteStream<Buffer> {
 
   StreamPriorityBase priority();
   void updatePriority(StreamPriorityBase streamPriority);
-
+  StreamPriorityBase createDefaultStreamPriority();
 }

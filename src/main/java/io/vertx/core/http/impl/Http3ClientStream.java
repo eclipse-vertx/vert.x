@@ -111,9 +111,9 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
   }
 
   @Override
-  public void writeHeaders(Http3Headers headers, boolean end, int dependency, short weight, boolean exclusive,
+  public void writeHeaders(Http3Headers headers, boolean end, StreamPriorityBase priority,
                            boolean checkFlush, FutureListener<Void> promise) {
-    conn.handler.writeHeaders(stream, headers, end, dependency, weight, exclusive, checkFlush, promise);
+    conn.handler.writeHeaders(stream, headers, end, priority, checkFlush, promise);
   }
 
   @Override
@@ -166,5 +166,10 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
   @Override
   public boolean isTrailersReceived_() {
     return false;  //TODO review
+  }
+
+  @Override
+  public StreamPriorityBase createDefaultStreamPriority() {
+    return HttpUtils.DEFAULT_QUIC_STREAM_PRIORITY;
   }
 }

@@ -31,6 +31,7 @@ import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.FutureListener;
 import io.netty.util.concurrent.Promise;
 import io.vertx.core.Handler;
+import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.net.impl.ConnectionBase;
 
@@ -146,8 +147,8 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
     }
   }
 
-  public void writeHeaders(QuicStreamChannel stream, Http3Headers headers, boolean end, int streamDependency,
-                           short weight, boolean exclusive, boolean checkFlush, FutureListener<Void> listener) {
+  public void writeHeaders(QuicStreamChannel stream, Http3Headers headers, boolean end, StreamPriorityBase priority,
+                           boolean checkFlush, FutureListener<Void> listener) {
 //    ChannelPromise promise = listener == null ? chctx.voidPromise() : chctx.newPromise().addListener(listener);
     stream
       .write(headers)

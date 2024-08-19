@@ -258,9 +258,10 @@ class Http2ServerStream extends VertxHttpStreamBase<Http2ServerConnection, Http2
     conn.handler.writeFrame(stream, type, flags, payload);
   }
   @Override
-  public void writeHeaders(Http2Headers headers, boolean end, int dependency, short weight, boolean exclusive,
+  public void writeHeaders(Http2Headers headers, boolean end, StreamPriorityBase priority,
                            boolean checkFlush, FutureListener<Void> promise) {
-    conn.handler.writeHeaders(stream, headers, end, dependency, weight, exclusive, checkFlush, promise);
+    conn.handler.writeHeaders(stream, headers, end, priority.getDependency(), priority.getWeight(), priority.isExclusive(),
+      checkFlush, promise);
   }
 
   @Override
@@ -313,5 +314,10 @@ class Http2ServerStream extends VertxHttpStreamBase<Http2ServerConnection, Http2
   @Override
   public boolean isTrailersReceived_() {
     return stream.isTrailersReceived();
+  }
+
+  @Override
+  protected StreamPriorityBase createDefaultStreamPriority() {
+    return HttpUtils.DEFAULT_STREAM_PRIORITY;
   }
 }

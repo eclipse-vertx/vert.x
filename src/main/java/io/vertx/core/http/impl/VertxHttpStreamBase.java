@@ -47,7 +47,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S, H extends Header
   protected S stream;
   protected abstract void consumeCredits(int len);
   protected abstract void writeFrame(byte type, short flags, ByteBuf payload);
-  protected abstract void writeHeaders(H headers, boolean end, int dependency, short weight, boolean exclusive, boolean checkFlush,
+  protected abstract void writeHeaders(H headers, boolean end, StreamPriorityBase priority, boolean checkFlush,
                     FutureListener<Void> promise);
   protected abstract void writePriorityFrame(StreamPriorityBase priority);
   protected abstract void writeData_(ByteBuf chunk, boolean end, FutureListener<Void> promise);
@@ -59,13 +59,14 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S, H extends Header
   protected abstract MultiMap getEmptyHeaders();
   protected abstract boolean isWritable_();
   protected abstract boolean isTrailersReceived_();
+  protected abstract StreamPriorityBase createDefaultStreamPriority();
 
   VertxHttpStreamBase(C conn, ContextInternal context) {
     this.conn = conn;
     this.vertx = conn.vertx();
     this.context = context;
     this.pending = new InboundBuffer<>(context, 5);
-    this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
+    this.priority = createDefaultStreamPriority();
     this.writable = true;
     this.isConnect = false;
     pending.handler(item -> {
@@ -199,8 +200,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S, H extends Header
 
   void doWriteHeaders(H headers, boolean end, boolean checkFlush, Handler<AsyncResult<Void>> handler) {
     FutureListener<Void> promise = handler == null ? null : context.promise(handler);
-    writeHeaders(headers, end, priority.getDependency(), priority.getWeight(),
-      priority.isExclusive(), checkFlush, promise);
+    writeHeaders(headers, end, priority, checkFlush, promise);
     if (end) {
       endWritten();
     }

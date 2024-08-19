@@ -734,6 +734,11 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
         }
       }
     }
+
+    @Override
+    public StreamPriorityBase createDefaultStreamPriority() {
+      return HttpUtils.DEFAULT_STREAM_PRIORITY;
+    }
   }
 
   private void checkLifecycle() {

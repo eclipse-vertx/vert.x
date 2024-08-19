@@ -259,6 +259,11 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
       delegate.drainHandler(handler);
       return this;
     }
+
+    @Override
+    public StreamPriorityBase createDefaultStreamPriority() {
+      return delegate.createDefaultStreamPriority();
+    }
   }
 
   /**
@@ -762,6 +767,15 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
         upgradedStream.updatePriority(streamPriority);
       } else {
         upgradingStream.updatePriority(streamPriority);
+      }
+    }
+
+    @Override
+    public StreamPriorityBase createDefaultStreamPriority() {
+      if (upgradedStream != null) {
+        return upgradedStream.createDefaultStreamPriority();
+      } else {
+        return upgradingStream.createDefaultStreamPriority();
       }
     }
   }
