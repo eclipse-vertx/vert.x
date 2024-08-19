@@ -11,7 +11,6 @@
 package io.vertx.core.spi.context.executor;
 
 import io.vertx.codegen.annotations.Unstable;
-import io.vertx.core.internal.EventExecutor;
 import io.vertx.core.internal.VertxBootstrap;
 import io.vertx.core.spi.VertxServiceProvider;
 
@@ -31,12 +30,12 @@ public interface EventExecutorProvider extends VertxServiceProvider {
   }
 
   /**
-   * Give vertx an event executor for the given {@code thread}.
+   * Provide to vertx an executor for the given {@code thread}, that will execute context tasks.
    *
    * @param thread the thread for which an executor is required
-   * @return an event executor suitable for the given thread, tasks executed on this executor will be declared as
+   * @return an executor suitable for the given thread, tasks executed on this executor will be declared as
    * running on {@link io.vertx.core.ThreadingModel#OTHER}.
    */
-  EventExecutor eventExecutorFor(Thread thread);
+  java.util.concurrent.Executor eventExecutorFor(Thread thread);
 
 }
