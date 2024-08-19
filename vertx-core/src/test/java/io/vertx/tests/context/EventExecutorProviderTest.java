@@ -13,6 +13,7 @@ package io.vertx.tests.context;
 import io.vertx.core.Context;
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.Vertx;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.EventExecutor;
 import io.vertx.core.internal.VertxBootstrap;
 import io.vertx.test.core.AsyncTestBase;
@@ -20,6 +21,7 @@ import org.junit.Test;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.Executor;
 
 public class EventExecutorProviderTest extends AsyncTestBase {
 
@@ -27,23 +29,15 @@ public class EventExecutorProviderTest extends AsyncTestBase {
   public void testExecuteTasks() {
     Deque<Runnable> toRun = new ConcurrentLinkedDeque<>();
     VertxBootstrap bootstrap = VertxBootstrap.create();
-    bootstrap.eventExecutorProvider(thread -> new EventExecutor() {
-      @Override
-      public boolean inThread() {
-        return thread == Thread.currentThread();
-      }
-      @Override
-      public void execute(Runnable command) {
-        toRun.add(command);
-      }
-    });
+    bootstrap.eventExecutorProvider(thread -> toRun::add);
     bootstrap.init();
     Vertx vertx = bootstrap.vertx();
-    Context ctx = vertx.getOrCreateContext();
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
     assertEquals(ThreadingModel.OTHER, ctx.threadingModel());
     assertEquals(0, toRun.size());
     int[] cnt = new int[1];
     ctx.runOnContext(v -> {
+      assertTrue(ctx.inThread());
       assertSame(ctx, Vertx.currentContext());
       assertSame(ctx, vertx.getOrCreateContext());
       cnt[0]++;

@@ -10,17 +10,15 @@
  */
 package io.vertx.it.eventexecutor;
 
-import io.vertx.core.internal.EventExecutor;
 import io.vertx.core.spi.context.executor.EventExecutorProvider;
 
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
 
-public class CustomEventExecutorProvider implements EventExecutorProvider, EventExecutor {
+public class CustomEventExecutorProvider implements EventExecutorProvider, java.util.concurrent.Executor {
 
   private static final Deque<Runnable> tasks = new LinkedList<>();
-  private static volatile Thread executing;
 
   static synchronized boolean hasNext() {
     return !tasks.isEmpty();
@@ -38,22 +36,12 @@ public class CustomEventExecutorProvider implements EventExecutorProvider, Event
               throw new IllegalStateException();
             }
             executed = true;
-            executing = Thread.currentThread();
-            try {
-              task.run();
-            } finally {
-              executing = null;
-            }
+            task.run();
           }
         }
       };
     }
     throw new NoSuchElementException();
-  }
-
-  @Override
-  public boolean inThread() {
-    return executing == Thread.currentThread();
   }
 
   @Override
@@ -64,7 +52,7 @@ public class CustomEventExecutorProvider implements EventExecutorProvider, Event
   }
 
   @Override
-  public EventExecutor eventExecutorFor(Thread thread) {
+  public java.util.concurrent.Executor eventExecutorFor(Thread thread) {
     if (thread instanceof CustomThread) {
       return this;
     } else {

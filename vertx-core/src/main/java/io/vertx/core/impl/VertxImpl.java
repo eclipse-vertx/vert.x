@@ -491,25 +491,54 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     Thread thread = Thread.currentThread();
     ContextInternal ctx = getContext(thread);
     if (ctx == null) {
-      if (thread instanceof VertxThread && ((VertxThread) thread).owner == this) {
-        if (((VertxThread)thread).isWorker()) {
-          return createWorkerContext(eventLoopGroup.next(), workerPool, null);
-        } else {
-          io.netty.util.concurrent.EventExecutor eventLoop = ThreadExecutorMap.currentExecutor();
-          return createEventLoopContext((EventLoop) eventLoop, workerPool, null);
-        }
-      } else {
-        EventLoop eventLoop = stickyEventLoop();
-        EventExecutor eventExecutor;
-        if (eventExecutorProvider != null && (eventExecutor = eventExecutorProvider.eventExecutorFor(Thread.currentThread())) != null) {
-          ctx = new ContextImpl(this, createContextLocals(), eventLoop, ThreadingModel.OTHER, eventExecutor, workerPool, new TaskQueue(), null, closeFuture, Thread.currentThread().getContextClassLoader());
-        } else {
-          ctx = createEventLoopContext(eventLoop, workerPool, Thread.currentThread().getContextClassLoader());
-        }
-        stickyContext.set(new WeakReference<>(ctx));
-      }
+      return createContext(thread);
     }
     return ctx;
+  }
+
+  private ContextInternal createContext(Thread thread) {
+    if (thread instanceof VertxThread && ((VertxThread) thread).owner == this) {
+      if (((VertxThread)thread).isWorker()) {
+        return createWorkerContext(eventLoopGroup.next(), workerPool, null);
+      } else {
+        io.netty.util.concurrent.EventExecutor eventLoop = ThreadExecutorMap.currentExecutor();
+        return createEventLoopContext((EventLoop) eventLoop, workerPool, null);
+      }
+    } else {
+      ContextInternal ctx;
+      EventLoop eventLoop = stickyEventLoop();
+      EventExecutor eventExecutor = null;
+      if (eventExecutorProvider != null) {
+        java.util.concurrent.Executor executor = eventExecutorProvider.eventExecutorFor(thread);
+        if (executor != null)  {
+          eventExecutor = new EventExecutor() {
+            final ThreadLocal<Boolean> inThread = new ThreadLocal<>();
+            @Override
+            public boolean inThread() {
+              return inThread.get() != null;
+            }
+            @Override
+            public void execute(Runnable command) {
+              executor.execute(() -> {
+                inThread.set(true);
+                try {
+                  command.run();
+                } finally {
+                  inThread.remove();
+                }
+              });
+            }
+          };
+        }
+      }
+      if (eventExecutor != null) {
+        ctx = new ContextImpl(this, createContextLocals(), eventLoop, ThreadingModel.OTHER, eventExecutor, workerPool, new TaskQueue(), null, closeFuture, Thread.currentThread().getContextClassLoader());
+      } else {
+        ctx = createEventLoopContext(eventLoop, workerPool, Thread.currentThread().getContextClassLoader());
+      }
+      stickyContext.set(new WeakReference<>(ctx));
+      return ctx;
+    }
   }
 
   private EventLoop stickyEventLoop() {
