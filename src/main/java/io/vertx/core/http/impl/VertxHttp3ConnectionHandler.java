@@ -12,8 +12,10 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
+import io.netty.incubator.codec.http3.DefaultHttp3HeadersFrame;
 import io.netty.incubator.codec.http3.Http3ClientConnectionHandler;
 import io.netty.incubator.codec.http3.Http3ConnectionHandler;
 import io.netty.incubator.codec.http3.Http3DataFrame;
@@ -149,12 +151,14 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
 
   public void writeHeaders(QuicStreamChannel stream, Http3Headers headers, boolean end, StreamPriorityBase priority,
                            boolean checkFlush, FutureListener<Void> listener) {
-//    ChannelPromise promise = listener == null ? chctx.voidPromise() : chctx.newPromise().addListener(listener);
-    stream
-      .write(headers)
-      .addListener(listener)
-      .addListener(QuicStreamChannel.SHUTDOWN_OUTPUT)  //TODO: review
-    ;
+    stream.updatePriority(new QuicStreamPriority(priority.urgency(), priority.isIncremental()));
+
+    ChannelFuture future = stream.write(new DefaultHttp3HeadersFrame(headers));
+    if (listener != null) {
+      future.addListener(listener);
+    }
+    future.addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);  //TODO: review
+
     if (checkFlush) {
       checkFlush();
     }
