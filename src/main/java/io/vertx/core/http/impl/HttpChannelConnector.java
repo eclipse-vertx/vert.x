@@ -280,8 +280,16 @@ public class HttpChannelConnector {
       QuicChannel.newBootstrap(ch)
         .handler(clientHandler.getHttp3ConnectionHandler())
         .remoteAddress(client.vertx().transport().convert(peerAddress))
-        .connect().addListener((GenericFutureListener<io.netty.util.concurrent.Future<QuicChannel>>) future ->
-          future.get().pipeline().addLast(new Http3SslHandshakeHandler(promise)));
+        .connect()
+        .addListener((io.netty.util.concurrent.Future<QuicChannel> future) -> {
+          if(!future.isSuccess()) {
+            connectFailed(ch, future.cause(), promise);
+            return;
+          }
+
+          QuicChannel quicChannel = future.get();
+          quicChannel.pipeline().addLast(new Http3SslHandshakeHandler(promise));
+        });
 
     } catch (Exception e) {
       connectFailed(ch, e, promise);
