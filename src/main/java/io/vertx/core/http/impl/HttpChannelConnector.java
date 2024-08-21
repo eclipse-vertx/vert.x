@@ -279,7 +279,7 @@ public class HttpChannelConnector {
 
       QuicChannel.newBootstrap(ch)
         .handler(clientHandler.getHttp3ConnectionHandler())
-        .remoteAddress(client.vertx().transport().convert(peerAddress))
+        .remoteAddress(ch.remoteAddress())
         .connect()
         .addListener((io.netty.util.concurrent.Future<QuicChannel> future) -> {
           if(!future.isSuccess()) {
