@@ -13,6 +13,7 @@ package examples;
 
 import io.netty.incubator.codec.http3.DefaultHttp3SettingsFrame;
 import io.netty.incubator.codec.http3.Http3SettingsFrame;
+import io.netty.util.NetUtil;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
@@ -40,21 +41,13 @@ public class HTTP3Examples {
     options.setProtocolVersion(HttpVersion.HTTP_3);
 
     HttpClient client = vertx.createHttpClient(options);
-    String ip = "216.239.38.120";
-//    int port = 443;
-//    String ip = "104.16.133.229";
-//    String ip = "media-router-fp73.prod.media.vip.bf1.yahoo.com";
-//    String ip = "74.6.143.25";
-//    String ip = "yahoo.com";
-    int port = 443;
-//    String ip = NetUtil.LOCALHOST4.getHostAddress();
-//    int port = 9999;
 
-//    client.request(HttpMethod.GET, port, ip, "/")
-//    client.request(HttpMethod.GET, 443, "www.google.com", "/")
+    client.request(HttpMethod.GET, 443, "www.google.com", "/")
+//    client.request(HttpMethod.GET, 9999, NetUtil.LOCALHOST4.getHostAddress(), "/")
+//    client.request(HttpMethod.GET, 443, "www.mozilla.org", "/")
 //    client.request(HttpMethod.GET, 443, "www.bing.com", "/")
-//    client.request(HttpMethod.GET, 443, "216.239.38.120", "/")
-    client.request(HttpMethod.GET, port, ip, "/")
+//    client.request(HttpMethod.GET, 443, "www.yahoo.com", "/")
+//    client.request(HttpMethod.GET, 443, "http3.is", "/")
       .onSuccess(req -> {
         req.response().onSuccess(resp -> {
           MultiMap headers = resp.headers();
