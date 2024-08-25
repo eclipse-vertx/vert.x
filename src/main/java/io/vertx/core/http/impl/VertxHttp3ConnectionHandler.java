@@ -19,6 +19,7 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.incubator.codec.http3.DefaultHttp3Headers;
@@ -40,9 +41,11 @@ import io.vertx.core.Handler;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriorityBase;
+import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.net.impl.ConnectionBase;
 
+import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -159,15 +162,33 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
                            boolean checkFlush, FutureListener<Void> listener) {
     stream.updatePriority(new QuicStreamPriority(priority.urgency(), priority.isIncremental()));
 
-    ChannelFuture future = stream.write(new DefaultHttp3HeadersFrame(headers));
+    DefaultFullHttpRequest request = new DefaultFullHttpRequest(
+      HttpUtils.toNettyHttpVersion(HttpVersion.HTTP_1_1),
+      HttpMethod.valueOf(String.valueOf(headers.method())).toNetty(),
+      String.valueOf(headers.path())
+    );
+
+    request.headers().setAll(convertToHttpHeaders(headers));
+
+    ChannelFuture future = stream.write(request);
     if (listener != null) {
       future.addListener(listener);
     }
-    future.addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);  //TODO: review
+//    future.addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);
 
     if (checkFlush) {
       checkFlush();
     }
+  }
+
+  private HttpHeaders convertToHttpHeaders(Http3Headers http3Headers) {
+    HttpHeaders headers = new HeadersMultiMap();
+    http3Headers.iterator().forEachRemaining(entry -> {
+      String name = Objects.requireNonNull(Http3Headers.PseudoHeaderName.getPseudoHeader(entry.getKey())).name();
+      headers.add(name, String.valueOf(entry.getValue()));
+    });
+    headers.add(HttpHeaderNames.HOST, http3Headers.authority());
+    return headers;
   }
 
   public void writeData(QuicStreamChannel stream, ByteBuf chunk, boolean end, FutureListener<Void> promise) {
