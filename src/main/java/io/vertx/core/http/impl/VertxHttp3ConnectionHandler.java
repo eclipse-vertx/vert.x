@@ -174,7 +174,6 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     if (listener != null) {
       future.addListener(listener);
     }
-//    future.addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);
 
     if (checkFlush) {
       checkFlush();
