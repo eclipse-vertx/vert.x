@@ -53,10 +53,10 @@ public class HTTP3Examples {
           MultiMap headers = resp.headers();
           System.out.println("resp.headers() = " + headers);
           System.out.println("Alt-Svc = " + headers.get("Alt-Svc"));
-          vertx.close();
         });
         req.response().compose(HttpClientResponse::body).onSuccess(buffer -> {
           System.out.println("response = " + buffer.toString());
+          vertx.close();
         });
         req.end();
       })
