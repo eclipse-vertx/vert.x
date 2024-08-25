@@ -13,8 +13,6 @@ package examples;
 
 import io.netty.incubator.codec.http3.DefaultHttp3SettingsFrame;
 import io.netty.incubator.codec.http3.Http3SettingsFrame;
-import io.netty.util.NetUtil;
-import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
@@ -43,25 +41,24 @@ public class HTTP3Examples {
     HttpClient client = vertx.createHttpClient(options);
 
     client.request(HttpMethod.GET, 443, "www.google.com", "/")
-//    client.request(HttpMethod.GET, 9999, NetUtil.LOCALHOST4.getHostAddress(), "/")
+//    client.request(HttpMethod.GET, 9999, NetUtil.LOCALHOST4.getHostAddress
+//    (), "/")
 //    client.request(HttpMethod.GET, 443, "www.mozilla.org", "/")
 //    client.request(HttpMethod.GET, 443, "www.bing.com", "/")
 //    client.request(HttpMethod.GET, 443, "www.yahoo.com", "/")
 //    client.request(HttpMethod.GET, 443, "http3.is", "/")
-      .onSuccess(req -> {
-        req.response().onSuccess(resp -> {
-          MultiMap headers = resp.headers();
-          System.out.println("resp.headers() = " + headers);
-          System.out.println("Alt-Svc = " + headers.get("Alt-Svc"));
-        });
-        req.response().compose(HttpClientResponse::body).onSuccess(buffer -> {
-          System.out.println("response = " + buffer.toString());
-          vertx.close();
-        });
-        req.end();
-      })
+      .compose(req -> req
+        .end()
+        .compose(res -> req
+          .response()
+          .onSuccess(resp -> {
+            System.out.println("resp.headers() = " + resp.headers());
+            System.out.println("Alt-Svc = " + resp.headers().get("Alt-Svc"));
+          }).compose(HttpClientResponse::body).onSuccess(body ->
+            System.out.println("response = " + body.toString()))
+        ))
       .onFailure(Throwable::printStackTrace)
-//      .onComplete(event -> vertx.close())
+      .onComplete(event -> vertx.close())
     ;
   }
 
