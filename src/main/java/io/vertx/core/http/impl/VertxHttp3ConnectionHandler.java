@@ -178,7 +178,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   public void channelRead(ChannelHandlerContext ctx, Object frame) throws Exception {
     read = true;
 
-    Http3ClientStream stream = Http3.getLocalControlStream(ctx.channel().parent()).attr(HTTP3_MY_STREAM_KEY).get();
+    Http3ClientStream stream = getHttp3ClientStream(ctx);
 
     if (frame instanceof HttpResponse) {
       HttpResponse httpResp = (HttpResponse) frame;
@@ -193,6 +193,14 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
       HttpContent respBody = (HttpContent) frame;
       connection.onDataRead(ctx, stream, respBody.content(), 0, false);
     }
+  }
+
+  private static Http3ClientStream getHttp3ClientStream(ChannelHandlerContext ctx) {
+    return Http3.getLocalControlStream(ctx.channel().parent()).attr(HTTP3_MY_STREAM_KEY).get();
+  }
+
+  static void setHttp3ClientStream(QuicStreamChannel quicStreamChannel, Http3ClientStream stream) {
+    Http3.getLocalControlStream(quicStreamChannel.parent()).attr(HTTP3_MY_STREAM_KEY).set(stream);
   }
 
   @Override

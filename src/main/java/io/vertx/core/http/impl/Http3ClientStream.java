@@ -23,8 +23,6 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.tracing.TracingPolicy;
 
-import static io.vertx.core.http.impl.VertxHttp3ConnectionHandler.HTTP3_MY_STREAM_KEY;
-
 class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStreamChannel, Http3Headers> {
   private static final MultiMap EMPTY = new Http3HeadersAdaptor(new DefaultHttp3Headers());
 
@@ -145,7 +143,7 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
   public void init_(VertxHttpStreamBase vertxHttpStream, QuicStreamChannel stream) {
     this.stream = stream;
     this.writable = stream.isWritable();
-    Http3.getLocalControlStream(stream.parent()).attr(HTTP3_MY_STREAM_KEY).set(this);
+    VertxHttp3ConnectionHandler.setHttp3ClientStream(stream, this);
   }
 
   @Override
