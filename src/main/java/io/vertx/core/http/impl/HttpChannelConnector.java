@@ -290,7 +290,7 @@ public class HttpChannelConnector {
           }
 
           QuicChannel quicChannel = future.get();
-          quicChannel.pipeline().addLast(new Http3SslHandshakeHandler(promise));
+          quicChannel.pipeline().addLast(clientHandler.getUserEventHandler());
         });
 
     } catch (Exception e) {

@@ -19,12 +19,16 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPromise;
+import io.netty.channel.socket.ChannelInputShutdownEvent;
+import io.netty.channel.socket.ChannelInputShutdownReadComplete;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.ssl.SslHandshakeCompletionEvent;
+import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.incubator.codec.http3.DefaultHttp3GoAwayFrame;
 import io.netty.incubator.codec.http3.DefaultHttp3Headers;
 import io.netty.incubator.codec.http3.DefaultHttp3SettingsFrame;
@@ -35,7 +39,10 @@ import io.netty.incubator.codec.http3.Http3ConnectionHandler;
 import io.netty.incubator.codec.http3.Http3Headers;
 import io.netty.incubator.codec.http3.Http3ServerConnectionHandler;
 import io.netty.incubator.codec.http3.Http3SettingsFrame;
+import io.netty.incubator.codec.quic.QuicConnectionCloseEvent;
+import io.netty.incubator.codec.quic.QuicDatagramExtensionEvent;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
+import io.netty.incubator.codec.quic.QuicStreamLimitChangedEvent;
 import io.netty.incubator.codec.quic.QuicStreamPriority;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.DefaultPromise;
@@ -76,6 +83,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   private boolean read;
   private Http3ConnectionHandler connectionHandlerInternal;
   private ChannelHandler streamHandlerInternal;
+  private ChannelHandler userEventHandlerInternal;
 
   public static final AttributeKey<Http3ClientStream> HTTP3_MY_STREAM_KEY = AttributeKey.valueOf(Http3ClientStream.class
     , "HTTP3MyStream");
@@ -89,6 +97,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     connectFuture = new DefaultPromise<>(context.nettyEventLoop());
     createHttp3ConnectionHandler(isServer);
     createStreamHandler();
+    createUserEventHandler();
   }
 
   public Future<C> connectFuture() {
@@ -166,6 +175,35 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
       connection.handleClosed();
     } else {
       super.channelInactive(chctx);
+    }
+  }
+
+  @Override
+  public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+    if (evt instanceof SslHandshakeCompletionEvent) {
+      SslHandshakeCompletionEvent completion = (SslHandshakeCompletionEvent) evt;
+      if (!completion.isSuccess()) {
+        connectFuture.tryFailure(completion.cause());
+      }
+    } else if (evt instanceof IdleStateEvent) {
+      connection.handleIdle((IdleStateEvent) evt);
+    } else if (evt instanceof QuicDatagramExtensionEvent) {
+      logger.debug("Received event QuicDatagramExtensionEvent: {}", evt);
+      ctx.fireUserEventTriggered(evt);
+    } else if (evt instanceof QuicStreamLimitChangedEvent) {
+      logger.debug("Received event QuicStreamLimitChangedEvent: {}", evt);
+      ctx.fireUserEventTriggered(evt);
+    } else if (evt instanceof QuicConnectionCloseEvent) {
+      logger.debug("Received event QuicConnectionCloseEvent: {}", evt);
+      ctx.fireUserEventTriggered(evt);
+    } else if (evt == ChannelInputShutdownEvent.INSTANCE) {
+      logger.debug("Received event ChannelInputShutdownEvent: {}", evt);
+      channelInputClosed(ctx);
+    } else if (evt == ChannelInputShutdownReadComplete.INSTANCE) {
+      logger.debug("Received event ChannelInputShutdownReadComplete: {}", evt);
+      channelInputClosed(ctx);
+    } else {
+      ctx.fireUserEventTriggered(evt);
     }
   }
 
@@ -253,10 +291,10 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     Http3.getLocalControlStream(quicStreamChannel.parent()).attr(HTTP3_MY_STREAM_KEY).set(stream);
   }
 
-//  @Override
-//  protected void channelInputClosed(ChannelHandlerContext ctx) {
-//    ctx.close();
-//  }
+  //  @Override
+  protected void channelInputClosed(ChannelHandlerContext ctx) {
+    ctx.close();
+  }
 
   private void createHttp3ConnectionHandler(boolean isServer) {
     this.connectionHandlerInternal = isServer ? createHttp3ServerConnectionHandler() :
@@ -269,7 +307,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
       public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (msg instanceof DefaultHttp3SettingsFrame) {
           DefaultHttp3SettingsFrame http3SettingsFrame = (DefaultHttp3SettingsFrame) msg;
-          logger.debug("Received http3SettingsFrame: {} ", http3SettingsFrame);
+          logger.debug("Received frame http3SettingsFrame: {} ", http3SettingsFrame);
 //          VertxHttp3ConnectionHandler.this.connection.updateSettings(http3SettingsFrame);
           onSettingsRead(ctx, http3SettingsFrame);
 //          Thread.sleep(70000);
@@ -277,11 +315,11 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
         } else if (msg instanceof DefaultHttp3GoAwayFrame) {
           super.channelRead(ctx, msg);
           DefaultHttp3GoAwayFrame http3GoAwayFrame = (DefaultHttp3GoAwayFrame) msg;
-          logger.debug("Received http3GoAwayFrame: {}", http3GoAwayFrame);
+          logger.debug("Received frame http3GoAwayFrame: {}", http3GoAwayFrame);
           onGoAwayReceived((int) http3GoAwayFrame.id(), -1, Unpooled.EMPTY_BUFFER);
         } else if (msg instanceof DefaultHttp3UnknownFrame) {
           DefaultHttp3UnknownFrame http3UnknownFrame = (DefaultHttp3UnknownFrame) msg;
-          logger.debug("Received http3UnknownFrame: {}", http3UnknownFrame);
+          logger.debug("Received frame http3UnknownFrame: {}", http3UnknownFrame);
           super.channelRead(ctx, msg);
         } else {
           super.channelRead(ctx, msg);
@@ -353,4 +391,16 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     return connection;
   }
 
+  private void createUserEventHandler() {
+    this.userEventHandlerInternal = new ChannelInboundHandlerAdapter() {
+      @Override
+      public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+        VertxHttp3ConnectionHandler.this.userEventTriggered(ctx, evt);
+      }
+    };
+  }
+
+  public ChannelHandler getUserEventHandler() {
+    return this.userEventHandlerInternal;
+  }
 }
