@@ -13,7 +13,6 @@ package examples;
 
 import io.netty.incubator.codec.http3.DefaultHttp3SettingsFrame;
 import io.netty.incubator.codec.http3.Http3SettingsFrame;
-import io.netty.util.NetUtil;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
@@ -52,10 +51,11 @@ public class HTTP3Examples {
         .compose(res -> req
           .response()
           .onSuccess(resp -> {
-            System.out.println("resp.headers() = " + resp.headers());
-            System.out.println("Alt-Svc = " + resp.headers().get("Alt-Svc"));
+            System.out.println("The returned headers are: " + resp.headers());
+            System.out.println("The returned Alt-Svc is: " + resp.headers().get(
+              "Alt-Svc"));
           }).compose(HttpClientResponse::body).onSuccess(body ->
-            System.out.println("response = " + body.toString()))
+            System.out.println("The response body is: " + body.toString()))
         ))
       .onFailure(Throwable::printStackTrace)
       .onComplete(event -> vertx.close())
