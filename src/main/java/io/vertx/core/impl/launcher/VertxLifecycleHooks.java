@@ -14,9 +14,7 @@ package io.vertx.core.impl.launcher;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
-import io.vertx.core.impl.VertxBuilder;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.spi.tracing.VertxTracer;
 
 /**
  * Interface that let sub-classes of launcher to be notified on different events.
@@ -32,18 +30,6 @@ public interface VertxLifecycleHooks {
    * @param config the json config file passed via -conf on the command line, an empty json object is not set.
    */
   void afterConfigParsed(JsonObject config);
-
-  /**
-   * Default implementation for the {@link VertxBuilder} creation.
-   * <p>
-   * This can be overridden in order to customize, for example, the tracer, with {@link VertxBuilder#tracer(VertxTracer)}.
-   *
-   * @param config the Vert.x options to use, in JSON format
-   * @return the Vert.x builder instance
-   */
-  default VertxBuilder createVertxBuilder(JsonObject config) {
-    return config == null ? new VertxBuilder() : new VertxBuilder(config);
-  }
 
   /**
    * Hook for sub-classes of the {@link io.vertx.core.Launcher} class before the vertx instance is started. Options

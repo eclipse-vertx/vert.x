@@ -201,8 +201,15 @@ public class BareCommand extends ClasspathHandler {
   protected Vertx startVertx() {
     JsonObject optionsJson = getJsonFromFileOrString(vertxOptions, "options");
 
-    EventBusOptions eventBusOptions = optionsJson == null ? getEventBusOptions() : getEventBusOptions(optionsJson.getJsonObject("eventBusOptions"));
-    VertxBuilder builder = createVertxBuilder(optionsJson);
+    EventBusOptions eventBusOptions;
+    VertxBuilder builder;
+    if (optionsJson == null) {
+      eventBusOptions = getEventBusOptions();
+      builder = new VertxBuilder();
+    } else {
+      eventBusOptions = getEventBusOptions(optionsJson.getJsonObject("eventBusOptions"));
+      builder = new VertxBuilder(optionsJson);
+    }
     options = builder.options();
     options.setEventBusOptions(eventBusOptions);
 
@@ -329,14 +336,6 @@ public class BareCommand extends ClasspathHandler {
     if (main instanceof VertxLifecycleHooks) {
       ((VertxLifecycleHooks) main).beforeStartingVertx(options);
     }
-  }
-
-  protected VertxBuilder createVertxBuilder(JsonObject config) {
-    Object main = executionContext.main();
-    if (main instanceof VertxLifecycleHooks) {
-      return ((VertxLifecycleHooks) main).createVertxBuilder(config);
-    }
-    return new VertxBuilder(config);
   }
 
   /**
