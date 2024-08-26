@@ -12,34 +12,83 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http2.Http2Exception;
+import io.netty.handler.codec.http2.Http2Headers;
+import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.incubator.codec.http3.Http3Headers;
+import io.netty.incubator.codec.http3.Http3SettingsFrame;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.impl.VertxByteBufAllocator;
 import io.vertx.core.http.GoAway;
 import io.vertx.core.http.Http2Settings;
+import io.vertx.core.http.Http2StreamPriority;
+import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.future.PromiseInternal;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.impl.ConnectionBase;
 
-import static io.vertx.core.net.impl.VertxHandler.safeBuffer;
+import java.util.ArrayDeque;
 
+/**
+ * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
+ */
 public abstract class Http3ConnectionBase extends ConnectionBase implements HttpConnection {
 
-  protected VertxHttp3ConnectionHandler<? extends Http3ConnectionBase> handler;
+  private static final Logger log = LoggerFactory.getLogger(Http2ConnectionBase.class);
 
-  public Http3ConnectionBase(EventLoopContext context,
-                             VertxHttp3ConnectionHandler<? extends Http3ConnectionBase> connHandler) {
-    super(context, connHandler.context());
-    this.handler = connHandler;
+  private static ByteBuf safeBuffer(ByteBuf buf) {
+    ByteBuf buffer = VertxByteBufAllocator.DEFAULT.heapBuffer(buf.readableBytes());
+    buffer.writeBytes(buf);
+    return buffer;
+  }
+
+  protected abstract void onHeadersRead(VertxHttpStreamBase<?, ?, Http3Headers> stream, Http3Headers headers,
+                                        StreamPriorityBase streamPriority, boolean endOfStream);
+
+  protected final ChannelHandlerContext handlerContext;
+  protected VertxHttp3ConnectionHandler<? extends Http3ConnectionBase> handler;
+//  protected final Http2Connection.PropertyKey streamKey;
+  private boolean shutdown;
+  private Handler<Http3SettingsFrame> remoteSettingsHandler;
+  private final ArrayDeque<Handler<Void>> updateSettingsHandlers = new ArrayDeque<>();
+  private final ArrayDeque<Promise<Buffer>> pongHandlers = new ArrayDeque<>();
+  private Http3SettingsFrame localSettings;
+  private Http3SettingsFrame remoteSettings;
+  private Handler<GoAway> goAwayHandler;
+  private Handler<Void> shutdownHandler;
+  private Handler<Buffer> pingHandler;
+  private GoAway goAwayStatus;
+  private int windowSize;
+  private long maxConcurrentStreams;
+
+  public Http3ConnectionBase(EventLoopContext context, VertxHttp3ConnectionHandler<? extends Http3ConnectionBase> handler) {
+    super(context, handler.context());
+    this.handler = handler;
+    this.handlerContext = chctx;
+    this.windowSize = -1;  //TODO: old code: handler.connection().local().flowController().windowSize(handler.connection().connectionStream());
+    this.maxConcurrentStreams = 0xFFFFFFFFL;  //TODO: old code: io.vertx.core.http.Http2Settings.DEFAULT_MAX_CONCURRENT_STREAMS;
+//    this.streamKey = handler.connection().newKey();
+    this.localSettings = handler.initialSettings();
+  }
+
+  public VertxInternal vertx() {
+    return vertx;
   }
 
   @Override
@@ -49,18 +98,216 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
 
   @Override
   protected void handleInterestedOpsChanged() {
-
+    // Handled by HTTP/3
   }
 
-  //  @Override
-  public void onHeadersRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?, Http3Headers> stream,
-                            Http3Headers headers, boolean endOfStream) throws Http2Exception {
+  @Override
+  protected void handleIdle(IdleStateEvent event) {
+    super.handleIdle(event);
+  }
+
+  synchronized void onConnectionError(Throwable cause) {
+//    ArrayList<VertxHttpStreamBase> streams = new ArrayList<>();
+//    try {
+//      handler.connection().forEachActiveStream(stream -> {
+//        streams.add(stream.getProperty(streamKey));
+//        return true;
+//      });
+//    } catch (Http2Exception e) {
+//      log.error("Could not get the list of active streams", e);
+//    }
+//    for (VertxHttpStreamBase stream : streams) {
+//      stream.context.dispatch(v -> stream.handleException(cause));
+//    }
+    handleException(cause);
+  }
+
+//  VertxHttpStreamBase<?, ?, Http3Headers> stream(int id) {
+//    VertxHttpStreamBase<?, ?, Http3Headers> s = handler.connection().stream(id);
+//    if (s == null) {
+//      return null;
+//    }
+//    return s.getProperty(streamKey);
+//  }
+
+  void onStreamError(VertxHttpStreamBase<?, ?, Http3Headers> stream, Throwable cause) {
+    if (stream != null) {
+      stream.onException(cause);
+    }
+  }
+
+  void onStreamWritabilityChanged(VertxHttpStreamBase<?, ?, Http3Headers> stream) {
+//    this.handler.getHttp3ConnectionHandler().channelWritabilityChanged();
+    if (stream != null) {
+      stream.onWritabilityChanged();
+    }
+  }
+
+  void onStreamClosed(VertxHttpStreamBase<?, ?, Http3Headers> stream) {
+    if (stream != null) {
+      boolean active = chctx.channel().isActive();
+      if (goAwayStatus != null) {
+        stream.onException(new HttpClosedException(goAwayStatus));
+      } else if (!active) {
+        stream.onException(HttpUtils.STREAM_CLOSED_EXCEPTION);
+      }
+      stream.onClose();
+    }
+    checkShutdown();
+  }
+
+  boolean onGoAwaySent(GoAway goAway) {
+    synchronized (this) {
+      if (this.goAwayStatus != null) {
+        return false;
+      }
+      this.goAwayStatus = goAway;
+    }
+    checkShutdown();
+    return true;
+  }
+
+  boolean onGoAwayReceived(GoAway goAway) {
+    Handler<GoAway> handler;
+    synchronized (this) {
+      if (this.goAwayStatus != null) {
+        return false;
+      }
+      this.goAwayStatus = goAway;
+      handler = goAwayHandler;
+    }
+    if (handler != null) {
+      context.dispatch(new GoAway(goAway), handler);
+    }
+    checkShutdown();
+    return true;
+  }
+
+  // Http3FrameListener
+
+//  @Override
+  public void onPriorityRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?, ?> stream, int streamDependency,
+                             short weight, boolean exclusive) {
+    if (stream != null) {
+      StreamPriorityBase streamPriority = new Http2StreamPriority()
+        .setDependency(streamDependency)
+        .setWeight(weight)
+        .setExclusive(exclusive);
+      stream.onPriorityChange(streamPriority);
+    }
+  }
+
+//  @Override
+  public void onHeadersRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?, Http3Headers> stream, Http3Headers headers,
+                            int streamDependency, short weight, boolean exclusive, int padding, boolean endOfStream) throws Http2Exception {
+    StreamPriorityBase streamPriority = new Http2StreamPriority()
+      .setDependency(streamDependency)
+      .setWeight(weight)
+      .setExclusive(exclusive);
+    onHeadersRead(stream, headers, streamPriority, endOfStream);
+  }
+
+//  @Override
+  public void onHeadersRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?, Http3Headers> stream, Http3Headers headers,
+                            int padding, boolean endOfStream) throws Http2Exception {
     onHeadersRead(stream, headers, null, endOfStream);
   }
 
-  //  @Override
-  public int onDataRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?, Http3Headers> stream, ByteBuf data,
-                        int padding, boolean endOfStream) {
+//  @Override
+  public void onSettingsAckRead(ChannelHandlerContext ctx) {
+    Handler<Void> handler;
+    synchronized (this) {
+      handler = updateSettingsHandlers.poll();
+    }
+    if (handler != null) {
+      // No need to run on a particular context it shall be done by the handler instead
+      context.emit(handler);
+    }
+  }
+
+  protected void concurrencyChanged(long concurrency) {
+  }
+
+//  @Override
+  public void onSettingsRead(ChannelHandlerContext ctx, Http3SettingsFrame settings) {
+    boolean changed;
+    Handler<Http3SettingsFrame> handler;
+    synchronized (this) {
+//      Long val = settings.maxConcurrentStreams();  //TODO:
+      Long val = 5L;
+      if (val != null) {
+        if (remoteSettings != null) {
+          changed = val != maxConcurrentStreams;
+        } else {
+          changed = false;
+        }
+        maxConcurrentStreams = val;
+      } else {
+        changed = false;
+      }
+      remoteSettings = settings;
+      handler = remoteSettingsHandler;
+    }
+    if (handler != null) {
+      context.dispatch(settings, handler);
+    }
+    if (changed) {
+      concurrencyChanged(maxConcurrentStreams);
+    }
+  }
+
+//  @Override
+  public void onPingRead(ChannelHandlerContext ctx, long data) throws Http2Exception {
+    Handler<Buffer> handler = pingHandler;
+    if (handler != null) {
+      Buffer buff = Buffer.buffer().appendLong(data);
+      context.dispatch(v -> handler.handle(buff));
+    }
+  }
+
+//  @Override
+  public void onPingAckRead(ChannelHandlerContext ctx, long data) {
+    Promise<Buffer> handler = pongHandlers.poll();
+    if (handler != null) {
+      Buffer buff = Buffer.buffer().appendLong(data);
+      handler.complete(buff);
+    }
+  }
+
+//  @Override
+  public void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId,
+                                Http2Headers headers, int padding) throws Http2Exception {
+  }
+
+//  @Override
+  public void onGoAwayRead(ChannelHandlerContext ctx, int lastStreamId, long errorCode, ByteBuf debugData) {
+  }
+
+//  @Override
+  public void onWindowUpdateRead(ChannelHandlerContext ctx, int streamId, int windowSizeIncrement) {
+  }
+
+//  @Override
+//  public void onUnknownFrame(ChannelHandlerContext ctx, byte frameType, VertxHttpStreamBase<?, ?, ?> stream,
+//                             Http2Flags flags, ByteBuf payload) {
+//    VertxHttpStreamBase<?, ?, Http2Headers> stream = stream(streamId);
+//    if (stream != null) {
+//      Buffer buff = Buffer.buffer(safeBuffer(payload));
+//      stream.onCustomFrame(new HttpFrameImpl(frameType, flags.value(), buff));
+//    }
+//  }
+
+//  @Override
+  public void onRstStreamRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?, ?> stream, long errorCode) {
+//    VertxHttpStreamBase<?, ?, Http2Headers> stream = stream(streamId);
+    if (stream != null) {
+      stream.onReset(errorCode);
+    }
+  }
+
+//  @Override
+  public int onDataRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?, Http3Headers> stream,
+    ByteBuf data, int padding, boolean endOfStream) {
     if (stream != null) {
       data = safeBuffer(data);
       Buffer buff = Buffer.buffer(data);
@@ -74,47 +321,44 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
 
   @Override
   public int getWindowSize() {
-    return -1;
+    return windowSize;
   }
 
   @Override
   public HttpConnection setWindowSize(int windowSize) {
-    return HttpConnection.super.setWindowSize(windowSize);
-  }
-
-  @Override
-  public HttpConnection goAway(long errorCode) {
-    return HttpConnection.super.goAway(errorCode);
-  }
-
-  @Override
-  public HttpConnection goAway(long errorCode, int lastStreamId) {
-    return HttpConnection.super.goAway(errorCode, lastStreamId);
+//    try {
+//      Http2Stream stream = handler.encoder().connection().connectionStream();
+//      int delta = windowSize - this.windowSize;
+//      handler.decoder().flowController().incrementWindowSize(stream, delta);
+//      this.windowSize = windowSize;
+//      return this;
+//    } catch (Http2Exception e) {
+//      throw new VertxException(e);
+//    }
+    return this;
   }
 
   @Override
   public HttpConnection goAway(long errorCode, int lastStreamId, Buffer debugData) {
-    return null;
+//    if (errorCode < 0) {
+//      throw new IllegalArgumentException();
+//    }
+//    if (lastStreamId < 0) {
+//      lastStreamId = handler.connection().remote().lastStreamCreated();
+//    }
+//    handler.writeGoAway(errorCode, lastStreamId, debugData != null ? debugData.getByteBuf() : Unpooled.EMPTY_BUFFER);
+    return this;
   }
 
   @Override
-  public HttpConnection goAwayHandler(@Nullable Handler<GoAway> handler) {
-    return null;
-  }
-
-  @Override
-  public void shutdown(Handler<AsyncResult<Void>> handler) {
-    HttpConnection.super.shutdown(handler);
-  }
-
-  @Override
-  public Future<Void> shutdown() {
-    return HttpConnection.super.shutdown();
+  public synchronized HttpConnection goAwayHandler(Handler<GoAway> handler) {
+    goAwayHandler = handler;
+    return this;
   }
 
   @Override
   public synchronized HttpConnection shutdownHandler(Handler<Void> handler) {
-//    shutdownHandler = handler;
+    shutdownHandler = handler;
     return this;
   }
 
@@ -131,13 +375,13 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
   }
 
   private void shutdown(long timeout, PromiseInternal<Void> promise) {
-//    if (timeout < 0) {
-//      promise.fail("Invalid timeout value " + timeout);
-//      return;
-//    }
-//    handler.gracefulShutdownTimeoutMillis(timeout);
-//    ChannelFuture fut = channel().close();
-//    fut.addListener(promise);
+    if (timeout < 0) {
+      promise.fail("Invalid timeout value " + timeout);
+      return;
+    }
+    handler.gracefulShutdownTimeoutMillis(timeout);
+    ChannelFuture fut = channel().close();
+    fut.addListener(promise);
   }
 
   @Override
@@ -146,59 +390,147 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
   }
 
   @Override
-  public Http2Settings settings() {
+  public Future<Void> close() {
+    PromiseInternal<Void> promise = context.promise();
+    ChannelPromise pr = chctx.newPromise();
+    ChannelPromise channelPromise = pr.addListener(promise);
+    handlerContext.writeAndFlush(Unpooled.EMPTY_BUFFER, pr);
+    channelPromise.addListener((ChannelFutureListener) future -> shutdown(0L));
+    return promise.future();
+  }
+
+  @Override
+  public synchronized HttpConnection remoteSettingsHandler(Handler<Http2Settings> handler) {
+//    remoteSettingsHandler = handler;
+    return this;
+  }
+
+  @Override
+  public synchronized io.vertx.core.http.Http2Settings remoteSettings() {
+//    return HttpUtils.toVertxSettings(remoteSettings);
     return null;
   }
 
   @Override
-  public Future<Void> updateSettings(Http2Settings settings) {
+  public synchronized io.vertx.core.http.Http2Settings settings() {
+//    return HttpUtils.toVertxSettings(localSettings);
     return null;
   }
 
   @Override
-  public HttpConnection updateSettings(Http2Settings settings, Handler<AsyncResult<Void>> completionHandler) {
-    return null;
+  public Future<Void> updateSettings(io.vertx.core.http.Http2Settings settings) {
+    Promise<Void> promise = context.promise();
+    io.netty.handler.codec.http2.Http2Settings settingsUpdate = HttpUtils.fromVertxSettings(settings);
+    updateSettings(settingsUpdate, promise);
+    return promise.future();
   }
 
   @Override
-  public Http2Settings remoteSettings() {
-    return null;
+  public HttpConnection updateSettings(io.vertx.core.http.Http2Settings settings, @Nullable Handler<AsyncResult<Void>> completionHandler) {
+    updateSettings(settings).onComplete(completionHandler);
+    return this;
   }
 
-  @Override
-  public HttpConnection remoteSettingsHandler(Handler<Http2Settings> handler) {
-    return null;
-  }
-
-  @Override
-  public HttpConnection ping(Buffer data, Handler<AsyncResult<Buffer>> pongHandler) {
-    return null;
+  protected void updateSettings(io.netty.handler.codec.http2.Http2Settings settingsUpdate, Handler<AsyncResult<Void>> completionHandler) {
+//    Http2Settings current = handler.decoder().localSettings();
+//    for (Map.Entry<Character, Long> entry : current.entrySet()) {
+//      Character key = entry.getKey();
+//      if (Objects.equals(settingsUpdate.get(key), entry.getValue())) {
+//        settingsUpdate.remove(key);
+//      }
+//    }
+//    Handler<Void> pending = v -> {
+//      synchronized (Http2ConnectionBase.this) {
+//        localSettings.putAll(settingsUpdate);
+//      }
+//      if (completionHandler != null) {
+//        completionHandler.handle(Future.succeededFuture());
+//      }
+//    };
+//    updateSettingsHandlers.add(pending);
+//    handler.writeSettings(settingsUpdate).addListener(fut -> {
+//      if (!fut.isSuccess()) {
+//        synchronized (Http2ConnectionBase.this) {
+//          updateSettingsHandlers.remove(pending);
+//        }
+//        if (completionHandler != null) {
+//          completionHandler.handle(Future.failedFuture(fut.cause()));
+//        }
+//      }
+//    });
   }
 
   @Override
   public Future<Buffer> ping(Buffer data) {
-    return null;
+    if (data.length() != 8) {
+      throw new IllegalArgumentException("Ping data must be exactly 8 bytes");
+    }
+    Promise<Buffer> promise = context.promise();
+    handler.writePing(data.getLong(0)).addListener(fut -> {
+      if (fut.isSuccess()) {
+        synchronized (Http3ConnectionBase.this) {
+          pongHandlers.add(promise);
+        }
+      } else {
+        promise.fail(fut.cause());
+      }
+    });
+    return promise.future();
   }
 
   @Override
-  public HttpConnection pingHandler(@Nullable Handler<Buffer> handler) {
-    return null;
+  public HttpConnection ping(Buffer data, Handler<AsyncResult<Buffer>> pongHandler) {
+    Future<Buffer> fut = ping(data);
+    if (pongHandler != null) {
+      fut.onComplete(pongHandler);
+    }
+    return this;
   }
 
+  @Override
+  public synchronized HttpConnection pingHandler(Handler<Buffer> handler) {
+    pingHandler = handler;
+    return this;
+  }
+
+  // Necessary to set the covariant return type
   @Override
   public Http3ConnectionBase exceptionHandler(Handler<Throwable> handler) {
     return (Http3ConnectionBase) super.exceptionHandler(handler);
   }
 
-  public VertxInternal vertx() {
-    return this.vertx;
-  }
-
-  public void consumeCredits(QuicStreamChannel stream, int len) {
+  public void consumeCredits(QuicStreamChannel stream, int numBytes) {
 //    throw new RuntimeException("Method not implemented");
   }
 
-  protected abstract void onHeadersRead(VertxHttpStreamBase<?, ?, Http3Headers> stream, Http3Headers headers,
-                                        StreamPriorityBase streamPriority, boolean endOfStream);
 
+  //  @Override
+  public void onHeadersRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?, Http3Headers> stream,
+                            Http3Headers headers, boolean endOfStream) throws Http2Exception {
+    onHeadersRead(stream, headers, null, endOfStream);
+  }
+
+  // Private
+
+  private void checkShutdown() {
+    Handler<Void> shutdownHandler;
+    synchronized (this) {
+      if (shutdown) {
+        return;
+      }
+      Http3ConnectionBase conn = handler.connection();
+//      if ((!conn.goAwayReceived() && !conn.goAwaySent()) || conn.numActiveStreams() > 0) {
+//        return;
+//      }// TODO: correct these
+      shutdown  = true;
+      shutdownHandler = this.shutdownHandler;
+    }
+    doShutdown(shutdownHandler);
+  }
+
+  protected void doShutdown(Handler<Void> shutdownHandler) {
+    if (shutdownHandler != null) {
+      context.dispatch(shutdownHandler);
+    }
+  }
 }
