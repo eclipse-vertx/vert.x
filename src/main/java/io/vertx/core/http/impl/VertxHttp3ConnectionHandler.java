@@ -266,6 +266,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     this.streamHandlerInternal = new ChannelInboundHandlerAdapter() {
       @Override
       public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        super.channelRead(ctx, msg);
         if (msg instanceof DefaultHttp3SettingsFrame) {
           DefaultHttp3SettingsFrame http3SettingsFrame = (DefaultHttp3SettingsFrame) msg;
           logger.debug("Received http3SettingsFrame: {} ", http3SettingsFrame);
@@ -277,7 +278,6 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
           logger.debug("Received http3GoAwayFrame: {}", http3GoAwayFrame);
           onGoAwayReceived((int) http3GoAwayFrame.id(), -1, Unpooled.EMPTY_BUFFER);
         }
-        super.channelRead(ctx, msg);
       }
 
       @Override
@@ -340,5 +340,9 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     ChannelPromise promise = chctx.newPromise();
     //TODO: implement
     return promise;
+  }
+
+  public boolean goAwayReceived() {
+    return getHttp3ConnectionHandler().isGoAwayReceived();
   }
 }

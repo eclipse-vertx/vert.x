@@ -519,9 +519,10 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
         return;
       }
       Http3ConnectionBase conn = handler.connection();
-//      if ((!conn.goAwayReceived() && !conn.goAwaySent()) || conn.numActiveStreams() > 0) {
-//        return;
-//      }// TODO: correct these
+      if ((!handler.goAwayReceived() /*&& !conn.goAwaySent()*/) /*|| conn.numActiveStreams() > 0*/) {
+        // TODO: correct these
+        return;
+      }
       shutdown  = true;
       shutdownHandler = this.shutdownHandler;
     }
