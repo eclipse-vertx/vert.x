@@ -28,6 +28,7 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.incubator.codec.http3.DefaultHttp3GoAwayFrame;
 import io.netty.incubator.codec.http3.DefaultHttp3Headers;
 import io.netty.incubator.codec.http3.DefaultHttp3SettingsFrame;
+import io.netty.incubator.codec.http3.DefaultHttp3UnknownFrame;
 import io.netty.incubator.codec.http3.Http3;
 import io.netty.incubator.codec.http3.Http3ClientConnectionHandler;
 import io.netty.incubator.codec.http3.Http3ConnectionHandler;
@@ -208,6 +209,12 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     stream.write(chunk).addListener(promise);
   }
 
+  private void checkFlush() {
+    if (!read) {
+      chctx.channel().flush();
+    }
+  }
+
   @Override
   public void channelRead(ChannelHandlerContext ctx, Object frame) throws Exception {
     read = true;
@@ -231,6 +238,13 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     }
   }
 
+  @Override
+  public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+    read = false;
+    // Super will flush
+    super.channelReadComplete(ctx);
+  }
+
   private static Http3ClientStream getHttp3ClientStream(ChannelHandlerContext ctx) {
     return Http3.getLocalControlStream(ctx.channel().parent()).attr(HTTP3_MY_STREAM_KEY).get();
   }
@@ -239,23 +253,10 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     Http3.getLocalControlStream(quicStreamChannel.parent()).attr(HTTP3_MY_STREAM_KEY).set(stream);
   }
 
-  @Override
-  public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-    read = false;
-    // Super will flush
-    super.channelReadComplete(ctx);
-  }
-
 //  @Override
 //  protected void channelInputClosed(ChannelHandlerContext ctx) {
 //    ctx.close();
 //  }
-
-  private void checkFlush() {
-    if (!read) {
-      chctx.channel().flush();
-    }
-  }
 
   private void createHttp3ConnectionHandler(boolean isServer) {
     this.connectionHandlerInternal = isServer ? createHttp3ServerConnectionHandler() :
@@ -266,17 +267,24 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     this.streamHandlerInternal = new ChannelInboundHandlerAdapter() {
       @Override
       public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        super.channelRead(ctx, msg);
         if (msg instanceof DefaultHttp3SettingsFrame) {
           DefaultHttp3SettingsFrame http3SettingsFrame = (DefaultHttp3SettingsFrame) msg;
           logger.debug("Received http3SettingsFrame: {} ", http3SettingsFrame);
 //          VertxHttp3ConnectionHandler.this.connection.updateSettings(http3SettingsFrame);
           onSettingsRead(ctx, http3SettingsFrame);
-//          Thread.sleep(10000);
+//          Thread.sleep(70000);
+          super.channelRead(ctx, msg);
         } else if (msg instanceof DefaultHttp3GoAwayFrame) {
+          super.channelRead(ctx, msg);
           DefaultHttp3GoAwayFrame http3GoAwayFrame = (DefaultHttp3GoAwayFrame) msg;
           logger.debug("Received http3GoAwayFrame: {}", http3GoAwayFrame);
           onGoAwayReceived((int) http3GoAwayFrame.id(), -1, Unpooled.EMPTY_BUFFER);
+        } else if (msg instanceof DefaultHttp3UnknownFrame) {
+          DefaultHttp3UnknownFrame http3UnknownFrame = (DefaultHttp3UnknownFrame) msg;
+          logger.debug("Received http3UnknownFrame: {}", http3UnknownFrame);
+          super.channelRead(ctx, msg);
+        } else {
+          super.channelRead(ctx, msg);
         }
       }
 
@@ -292,8 +300,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
       @Override
       protected void initChannel(QuicStreamChannel ch) throws Exception {
       }
-    }, null, null,
-      http3InitialSettings, false);
+    }, null, null, http3InitialSettings, false);
   }
 
   private Http3ClientConnectionHandler createHttp3ClientConnectionHandler() {
@@ -303,10 +310,6 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
 
   public Http3ConnectionHandler getHttp3ConnectionHandler() {
     return connectionHandlerInternal;
-  }
-
-  public C connection() {
-    return connection;
   }
 
   private void _writePriority(QuicStreamChannel stream, int urgency, boolean incremental) {
@@ -345,4 +348,9 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   public boolean goAwayReceived() {
     return getHttp3ConnectionHandler().isGoAwayReceived();
   }
+
+  public C connection() {
+    return connection;
+  }
+
 }
