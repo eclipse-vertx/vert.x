@@ -12,6 +12,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -44,6 +45,8 @@ import io.netty.util.concurrent.Promise;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.vertx.core.Handler;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.GoAway;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriorityBase;
@@ -165,6 +168,10 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     }
   }
 
+  public void onGoAwayReceived(int lastStreamId, long errorCode, ByteBuf debugData) {
+    connection.onGoAwayReceived(new GoAway().setErrorCode(errorCode).setLastStreamId(lastStreamId).setDebugData(Buffer.buffer(debugData)));
+  }
+
   public void writeHeaders(QuicStreamChannel stream, Http3Headers headers, boolean end, StreamPriorityBase priority,
                            boolean checkFlush, FutureListener<Void> listener) {
     stream.updatePriority(new QuicStreamPriority(priority.urgency(), priority.isIncremental()));
@@ -268,7 +275,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
         } else if (msg instanceof DefaultHttp3GoAwayFrame) {
           DefaultHttp3GoAwayFrame http3GoAwayFrame = (DefaultHttp3GoAwayFrame) msg;
           logger.debug("Received http3GoAwayFrame: {}", http3GoAwayFrame);
-//          VertxHttp3ConnectionHandler.this.connection.goAway(http3GoAwayFrame.id());
+          onGoAwayReceived((int) http3GoAwayFrame.id(), -1, Unpooled.EMPTY_BUFFER);
         }
         super.channelRead(ctx, msg);
       }

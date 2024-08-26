@@ -46,17 +46,30 @@ public class HTTP3Examples {
 //    client.request(HttpMethod.GET, 443, "www.bing.com", "/")
 //    client.request(HttpMethod.GET, 443, "www.yahoo.com", "/")
 //    client.request(HttpMethod.GET, 443, "http3.is", "/")
-      .compose(req -> req
-        .end()
-        .compose(res -> req
-          .response()
-          .onSuccess(resp -> {
-            System.out.println("The returned headers are: " + resp.headers());
-            System.out.println("The returned Alt-Svc is: " + resp.headers().get(
-              "Alt-Svc"));
-          }).compose(HttpClientResponse::body).onSuccess(body ->
-            System.out.println("The response body is: " + body.toString()))
-        ))
+      .compose(req -> {
+
+        req.connection().goAwayHandler(goAway -> {
+          System.out.println(" Received goAway from server! ");
+        });
+
+        req.connection().shutdownHandler(v -> {
+          System.out.println(" Received shutdown signal! ");
+          req.connection().close();
+          vertx.close();
+        });
+
+        return req
+          .end()
+          .compose(res -> req
+            .response()
+            .onSuccess(resp -> {
+              System.out.println("The returned headers are: " + resp.headers());
+              System.out.println("The returned Alt-Svc is: " + resp.headers().get(
+                "Alt-Svc"));
+            }).compose(HttpClientResponse::body).onSuccess(body ->
+              System.out.println("The response body is: " + body.toString()))
+          );
+      })
       .onFailure(Throwable::printStackTrace)
       .onComplete(event -> vertx.close())
     ;
