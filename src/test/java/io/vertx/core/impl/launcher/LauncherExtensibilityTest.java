@@ -16,6 +16,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.cli.CLIException;
 import io.vertx.core.cli.annotations.Name;
+import io.vertx.core.impl.VertxBuilder;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.launcher.commands.CommandTestBase;
 import io.vertx.core.impl.launcher.commands.HttpTestVerticle;
@@ -38,7 +39,7 @@ import static org.junit.Assert.assertSame;
  */
 public class LauncherExtensibilityTest extends CommandTestBase {
 
-  private static AtomicReference<Boolean> spy = new AtomicReference<>();
+  private static final AtomicReference<Boolean> spy = new AtomicReference<>();
 
   private Vertx vertx;
 
@@ -218,8 +219,8 @@ public class LauncherExtensibilityTest extends CommandTestBase {
       }
 
       @Override
-      public void beforeStartingVertx(VertxOptions options) {
-        options.setClusterManager(clusterManager);
+      public VertxBuilder createVertxBuilder(JsonObject config) {
+        return super.createVertxBuilder(config).clusterManager(clusterManager);
       }
     };
 
