@@ -1,6 +1,5 @@
 package io.vertx.core.http.impl.headers;
 
-import io.netty.handler.codec.Headers;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Headers;
@@ -9,25 +8,14 @@ import io.vertx.core.MultiMap;
 import java.util.Map;
 import java.util.Objects;
 
-public class VertxHttp2Headers implements VertxHttpHeaders {
-  private final Http2Headers headers;
+public class VertxHttp2Headers extends VertxHttpHeadersBase<Http2Headers> implements VertxHttpHeaders {
 
   public VertxHttp2Headers() {
-    this.headers = new DefaultHttp2Headers();
+    this(new DefaultHttp2Headers());
   }
 
   public VertxHttp2Headers(Http2Headers headers) {
-    this.headers = headers;
-  }
-
-  @Override
-  public <T extends Headers<CharSequence, CharSequence, T>> T getHeaders() {
-    return (T) headers;
-  }
-
-  @Override
-  public Iterable<Map.Entry<CharSequence, CharSequence>> getIterable() {
-    return headers;
+    super(headers);
   }
 
   @Override
@@ -56,21 +44,6 @@ public class VertxHttp2Headers implements VertxHttpHeaders {
   }
 
   @Override
-  public void add(CharSequence name, String value) {
-    this.headers.add(name, value);
-  }
-
-  @Override
-  public CharSequence get(CharSequence name) {
-    return this.headers.get(name);
-  }
-
-  @Override
-  public void set(CharSequence name, CharSequence value) {
-    this.headers.set(name, value);
-  }
-
-  @Override
   public CharSequence path() {
     return this.headers.path();
   }
@@ -78,12 +51,6 @@ public class VertxHttp2Headers implements VertxHttpHeaders {
   @Override
   public CharSequence method() {
     return this.headers.method();
-  }
-
-  @Override
-  public VertxHttp2Headers add(String name, String value) {
-    this.headers.add(name, value);
-    return this;
   }
 
   @Override
@@ -106,13 +73,4 @@ public class VertxHttp2Headers implements VertxHttpHeaders {
     return headers;
   }
 
-  @Override
-  public boolean contains(CharSequence name, CharSequence value) {
-    return headers.contains(name, value);
-  }
-
-  @Override
-  public void remove(CharSequence name) {
-    headers.remove(name);
-  }
 }
