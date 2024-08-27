@@ -24,6 +24,7 @@ import io.vertx.core.http.GoAway;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
+import io.vertx.core.http.impl.headers.VertxDefaultHttp2Headers;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.spi.metrics.ClientMetrics;
@@ -148,7 +149,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     context.emit(fut, handler);
   }
 
-  private HttpStreamImpl<Http2ClientConnection, Http2Stream, Http2Headers> createStream(ContextInternal context) {
+  private HttpStreamImpl<Http2ClientConnection, Http2Stream> createStream(ContextInternal context) {
     return new Http2ClientStream(this, context, false, metrics);
   }
 
@@ -170,7 +171,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   protected synchronized void onHeadersRead(int streamId, Http2Headers headers, StreamPriorityBase streamPriority, boolean endOfStream) {
     HttpStream stream = (HttpStream) stream(streamId);
     if (!stream.isTrailersReceived()) {
-      stream.onHeaders(headers, streamPriority);
+      stream.onHeaders(new VertxDefaultHttp2Headers(headers), streamPriority);
       if (endOfStream) {
         stream.onEnd();
       }
@@ -187,12 +188,12 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
   @Override
   public synchronized void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId, Http2Headers headers, int padding) throws Http2Exception {
-    HttpStreamImpl<Http2ClientConnection, Http2Stream, Http2Headers> stream = (HttpStreamImpl) stream(streamId);
+    HttpStreamImpl<Http2ClientConnection, Http2Stream> stream = (HttpStreamImpl) stream(streamId);
     if (stream != null) {
       Handler<HttpClientPush> pushHandler = stream.pushHandler;
       if (pushHandler != null) {
         Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
-        HttpStreamImpl<Http2ClientConnection, Http2Stream, Http2Headers> pushStream = new Http2ClientStream(this, context,
+        HttpStreamImpl<Http2ClientConnection, Http2Stream> pushStream = new Http2ClientStream(this, context,
           true, metrics);
         pushStream.init(promisedStream);
         HttpClientPush push = new HttpClientPush(headers, pushStream);

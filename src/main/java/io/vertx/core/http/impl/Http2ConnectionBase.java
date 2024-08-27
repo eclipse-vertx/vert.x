@@ -126,7 +126,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     handleException(cause);
   }
 
-  VertxHttpStreamBase<?, ?, Http2Headers> stream(int id) {
+  VertxHttpStreamBase<?, ?> stream(int id) {
     Http2Stream s = handler.connection().stream(id);
     if (s == null) {
       return null;
@@ -135,21 +135,21 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   void onStreamError(int streamId, Throwable cause) {
-    VertxHttpStreamBase<?, ?, Http2Headers> stream = stream(streamId);
+    VertxHttpStreamBase<?, ?> stream = stream(streamId);
     if (stream != null) {
       stream.onException(cause);
     }
   }
 
   void onStreamWritabilityChanged(Http2Stream s) {
-    VertxHttpStreamBase<?, ?, Http2Headers> stream = s.getProperty(streamKey);
+    VertxHttpStreamBase<?, ?> stream = s.getProperty(streamKey);
     if (stream != null) {
       stream.onWritabilityChanged();
     }
   }
 
   void onStreamClosed(Http2Stream s) {
-    VertxHttpStreamBase<?, ?, Http2Headers> stream = s.getProperty(streamKey);
+    VertxHttpStreamBase<?, ?> stream = s.getProperty(streamKey);
     if (stream != null) {
       boolean active = chctx.channel().isActive();
       if (goAwayStatus != null) {
@@ -193,7 +193,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   public void onPriorityRead(ChannelHandlerContext ctx, int streamId, int streamDependency, short weight, boolean exclusive) {
-    VertxHttpStreamBase<?, ?, Http2Headers> stream = stream(streamId);
+    VertxHttpStreamBase<?, ?> stream = stream(streamId);
       if (stream != null) {
         StreamPriorityBase streamPriority = new Http2StreamPriority()
           .setDependency(streamDependency)
@@ -293,7 +293,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   @Override
   public void onUnknownFrame(ChannelHandlerContext ctx, byte frameType, int streamId,
                              Http2Flags flags, ByteBuf payload) {
-    VertxHttpStreamBase<?, ?, Http2Headers> stream = stream(streamId);
+    VertxHttpStreamBase<?, ?> stream = stream(streamId);
     if (stream != null) {
       Buffer buff = Buffer.buffer(safeBuffer(payload));
       stream.onCustomFrame(new HttpFrameImpl(frameType, flags.value(), buff));
@@ -302,7 +302,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   public void onRstStreamRead(ChannelHandlerContext ctx, int streamId, long errorCode) {
-    VertxHttpStreamBase<?, ?, Http2Headers> stream = stream(streamId);
+    VertxHttpStreamBase<?, ?> stream = stream(streamId);
     if (stream != null) {
       stream.onReset(errorCode);
     }
@@ -310,7 +310,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) {
-    VertxHttpStreamBase<?, ?, Http2Headers> stream = stream(streamId);
+    VertxHttpStreamBase<?, ?> stream = stream(streamId);
     if (stream != null) {
       data = safeBuffer(data);
       Buffer buff = Buffer.buffer(data);

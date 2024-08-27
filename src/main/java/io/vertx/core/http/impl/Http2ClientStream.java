@@ -19,7 +19,7 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.tracing.TracingPolicy;
 
-class Http2ClientStream extends HttpStreamImpl<Http2ClientConnection, Http2Stream, Http2Headers> {
+class Http2ClientStream extends HttpStreamImpl<Http2ClientConnection, Http2Stream> {
   private static final MultiMap EMPTY = new Http2HeadersAdaptor(EmptyHttp2Headers.INSTANCE);
 
   Http2ClientStream(Http2ClientConnection conn, ContextInternal context, boolean push,
@@ -38,7 +38,7 @@ class Http2ClientStream extends HttpStreamImpl<Http2ClientConnection, Http2Strea
   }
 
   @Override
-  protected void metricsEnd(HttpStream<?, ?, ?> stream) {
+  protected void metricsEnd(HttpStream<?, ?> stream) {
     conn.metricsEnd(stream);
   }
 
@@ -88,18 +88,18 @@ class Http2ClientStream extends HttpStreamImpl<Http2ClientConnection, Http2Strea
   }
 
   @Override
-  public CharSequence getHeaderMethod(Http2Headers headers) {
+  public CharSequence getHeaderMethod(VertxDefaultHttpHeaders headers) {
     return headers.method();
   }
 
   @Override
-  public String getHeaderStatus(Http2Headers headers) {
+  public String getHeaderStatus(VertxDefaultHttpHeaders headers) {
     return headers.status().toString();
   }
 
   @Override
-  public MultiMap createHeaderAdapter(Http2Headers headers) {
-    return new Http2HeadersAdaptor(headers);
+  public MultiMap createHeaderAdapter(VertxDefaultHttpHeaders headers) {
+    return new Http2HeadersAdaptor(headers.getHeaders());
   }
 
   @Override

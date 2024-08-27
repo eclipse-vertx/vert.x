@@ -23,8 +23,7 @@ import io.vertx.core.tracing.TracingPolicy;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
-abstract class HttpStreamImpl<C extends ConnectionBase, S,
-  H extends Headers<CharSequence, CharSequence, H>> extends HttpStream<C, S, H> implements HttpClientStream {
+abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C, S> implements HttpClientStream {
 
   protected abstract boolean isTryUseCompression();
 
@@ -66,13 +65,13 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S,
   }
 
   @Override
-  public HttpStreamImpl<?, ?, ?> drainHandler(Handler<Void> handler) {
+  public HttpStreamImpl<?, ?> drainHandler(Handler<Void> handler) {
     drainHandler = handler;
     return this;
   }
 
   @Override
-  public HttpStreamImpl<?, ?, ?> exceptionHandler(Handler<Throwable> handler) {
+  public HttpStreamImpl<?, ?> exceptionHandler(Handler<Throwable> handler) {
     exceptionHandler = handler;
     return this;
   }

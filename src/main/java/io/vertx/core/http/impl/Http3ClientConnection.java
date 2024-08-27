@@ -20,6 +20,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.http.impl.headers.Http3HeadersAdaptor;
+import io.vertx.core.http.impl.headers.VertxDefaultHttp3Headers;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.spi.metrics.ClientMetrics;
@@ -128,7 +129,7 @@ class Http3ClientConnection extends Http3ConnectionBase implements HttpClientCon
     context.emit(fut, handler);
   }
 
-  private HttpStreamImpl<Http3ClientConnection, QuicStreamChannel, Http3Headers> createStream(ContextInternal context) {
+  private HttpStreamImpl<Http3ClientConnection, QuicStreamChannel> createStream(ContextInternal context) {
     return new Http3ClientStream(this, context, false, metrics);
   }
 
@@ -148,9 +149,9 @@ class Http3ClientConnection extends Http3ConnectionBase implements HttpClientCon
   }
 
   @Override
-  protected synchronized void onHeadersRead(VertxHttpStreamBase<?, ?, Http3Headers> stream, Http3Headers headers, StreamPriorityBase streamPriority, boolean endOfStream) {
+  protected synchronized void onHeadersRead(VertxHttpStreamBase<?, ?> stream, Http3Headers headers, StreamPriorityBase streamPriority, boolean endOfStream) {
     if (!stream.isTrailersReceived()) {
-      stream.onHeaders(headers, streamPriority);
+      stream.onHeaders(new VertxDefaultHttp3Headers(headers), streamPriority);
       if (endOfStream) {
         stream.onEnd();
       }

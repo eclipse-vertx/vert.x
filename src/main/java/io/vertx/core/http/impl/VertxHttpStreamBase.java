@@ -31,7 +31,7 @@ import io.vertx.core.streams.impl.InboundBuffer;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class VertxHttpStreamBase<C extends ConnectionBase, S, H extends Headers<CharSequence, CharSequence, H>> {
+abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
 
   protected final C conn;
   protected final VertxInternal vertx;
@@ -125,7 +125,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S, H extends Header
     context.emit(frame, this::handleCustomFrame);
   }
 
-  void onHeaders(H headers, StreamPriorityBase streamPriority) {
+  void onHeaders(VertxDefaultHttpHeaders headers, StreamPriorityBase streamPriority) {
   }
 
   void onData(Buffer data) {

@@ -2,12 +2,17 @@ package io.vertx.core.http.impl.headers;
 
 import io.netty.handler.codec.Headers;
 import io.netty.incubator.codec.http3.DefaultHttp3Headers;
+import io.netty.incubator.codec.http3.Http3Headers;
 
 public class VertxDefaultHttp3Headers implements VertxDefaultHttpHeaders {
-  private final DefaultHttp3Headers headers;
+  private final Http3Headers headers;
 
   public VertxDefaultHttp3Headers() {
     this.headers = new DefaultHttp3Headers();
+  }
+
+  public VertxDefaultHttp3Headers(Http3Headers headers) {
+    this.headers = headers;
   }
 
   @Override
@@ -69,5 +74,10 @@ public class VertxDefaultHttp3Headers implements VertxDefaultHttpHeaders {
   public VertxDefaultHttp3Headers add(String name, String value) {
     this.headers.add(name, value);
     return this;
+  }
+
+  @Override
+  public CharSequence status() {
+    return this.headers.status();
   }
 }

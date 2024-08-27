@@ -58,7 +58,7 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
     return buffer;
   }
 
-  protected abstract void onHeadersRead(VertxHttpStreamBase<?, ?, Http3Headers> stream, Http3Headers headers,
+  protected abstract void onHeadersRead(VertxHttpStreamBase<?, ?> stream, Http3Headers headers,
                                         StreamPriorityBase streamPriority, boolean endOfStream);
 
   protected final ChannelHandlerContext handlerContext;
@@ -122,28 +122,28 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
     handleException(cause);
   }
 
-//  VertxHttpStreamBase<?, ?, Http3Headers> stream(int id) {
-//    VertxHttpStreamBase<?, ?, Http3Headers> s = handler.connection().stream(id);
+//  VertxHttpStreamBase<?, ?> stream(int id) {
+//    VertxHttpStreamBase<?, ?> s = handler.connection().stream(id);
 //    if (s == null) {
 //      return null;
 //    }
 //    return s.getProperty(streamKey);
 //  }
 
-  void onStreamError(VertxHttpStreamBase<?, ?, Http3Headers> stream, Throwable cause) {
+  void onStreamError(VertxHttpStreamBase<?, ?> stream, Throwable cause) {
     if (stream != null) {
       stream.onException(cause);
     }
   }
 
-  void onStreamWritabilityChanged(VertxHttpStreamBase<?, ?, Http3Headers> stream) {
+  void onStreamWritabilityChanged(VertxHttpStreamBase<?, ?> stream) {
 //    this.handler.getHttp3ConnectionHandler().channelWritabilityChanged();
     if (stream != null) {
       stream.onWritabilityChanged();
     }
   }
 
-  void onStreamClosed(VertxHttpStreamBase<?, ?, Http3Headers> stream) {
+  void onStreamClosed(VertxHttpStreamBase<?, ?> stream) {
     if (stream != null) {
       boolean active = chctx.channel().isActive();
       if (goAwayStatus != null) {
@@ -186,7 +186,7 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
   // Http3FrameListener
 
 //  @Override
-  public void onPriorityRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?, ?> stream, int streamDependency,
+  public void onPriorityRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?> stream, int streamDependency,
                              short weight, boolean exclusive) {
     if (stream != null) {
       StreamPriorityBase streamPriority = new Http2StreamPriority()
@@ -198,7 +198,7 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
   }
 
 //  @Override
-  public void onHeadersRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?, Http3Headers> stream, Http3Headers headers,
+  public void onHeadersRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?> stream, Http3Headers headers,
                             int streamDependency, short weight, boolean exclusive, int padding, boolean endOfStream) throws Http2Exception {
     StreamPriorityBase streamPriority = new Http2StreamPriority()
       .setDependency(streamDependency)
@@ -208,7 +208,7 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
   }
 
 //  @Override
-  public void onHeadersRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?, Http3Headers> stream, Http3Headers headers,
+  public void onHeadersRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?> stream, Http3Headers headers,
                             int padding, boolean endOfStream) throws Http2Exception {
     onHeadersRead(stream, headers, null, endOfStream);
   }
@@ -288,7 +288,7 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
   }
 
 //  @Override
-//  public void onUnknownFrame(ChannelHandlerContext ctx, byte frameType, VertxHttpStreamBase<?, ?, ?> stream,
+//  public void onUnknownFrame(ChannelHandlerContext ctx, byte frameType, VertxHttpStreamBase<?, ?> stream,
 //                             Http2Flags flags, ByteBuf payload) {
 //    VertxHttpStreamBase<?, ?, Http2Headers> stream = stream(streamId);
 //    if (stream != null) {
@@ -298,7 +298,7 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
 //  }
 
 //  @Override
-  public void onRstStreamRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?, ?> stream, long errorCode) {
+  public void onRstStreamRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?> stream, long errorCode) {
 //    VertxHttpStreamBase<?, ?, Http2Headers> stream = stream(streamId);
     if (stream != null) {
       stream.onReset(errorCode);
@@ -306,7 +306,7 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
   }
 
 //  @Override
-  public int onDataRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?, Http3Headers> stream,
+  public int onDataRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?> stream,
     ByteBuf data, int padding, boolean endOfStream) {
     if (stream != null) {
       data = safeBuffer(data);
@@ -505,7 +505,7 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
 
 
   //  @Override
-  public void onHeadersRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?, Http3Headers> stream,
+  public void onHeadersRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?> stream,
                             Http3Headers headers, boolean endOfStream) throws Http2Exception {
     onHeadersRead(stream, headers, null, endOfStream);
   }

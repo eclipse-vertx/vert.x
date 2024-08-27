@@ -23,7 +23,7 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.tracing.TracingPolicy;
 
-class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStreamChannel, Http3Headers> {
+class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStreamChannel> {
   private static final MultiMap EMPTY = new Http3HeadersAdaptor(new DefaultHttp3Headers());
 
   Http3ClientStream(Http3ClientConnection conn, ContextInternal context, boolean push,
@@ -42,7 +42,7 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
   }
 
   @Override
-  protected void metricsEnd(HttpStream<?, ?, ?> stream) {
+  protected void metricsEnd(HttpStream<?, ?> stream) {
     conn.metricsEnd(stream);
   }
 
@@ -99,18 +99,18 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
   }
 
   @Override
-  public CharSequence getHeaderMethod(Http3Headers headers) {
+  public CharSequence getHeaderMethod(VertxDefaultHttpHeaders headers) {
     return headers.method();
   }
 
   @Override
-  public String getHeaderStatus(Http3Headers headers) {
+  public String getHeaderStatus(VertxDefaultHttpHeaders headers) {
     return headers.status().toString();
   }
 
   @Override
-  public MultiMap createHeaderAdapter(Http3Headers headers) {
-    return new Http3HeadersAdaptor(headers);
+  public MultiMap createHeaderAdapter(VertxDefaultHttpHeaders headers) {
+    return new Http3HeadersAdaptor(headers.getHeaders());
   }
 
   @Override

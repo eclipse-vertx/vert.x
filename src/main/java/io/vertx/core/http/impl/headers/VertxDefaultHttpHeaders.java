@@ -27,4 +27,7 @@ public interface VertxDefaultHttpHeaders {
   CharSequence method();
 
   VertxDefaultHttpHeaders add(String name, String value);
+
+  CharSequence status();
+
 }

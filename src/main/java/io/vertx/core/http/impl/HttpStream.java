@@ -20,8 +20,7 @@ import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.Map;
 
-abstract class HttpStream<C extends ConnectionBase, S,
-  H extends Headers<CharSequence, CharSequence, H>> extends VertxHttpStreamBase<C, S, H> {
+abstract class HttpStream<C extends ConnectionBase, S> extends VertxHttpStreamBase<C, S> {
 
   private final boolean push;
   private HttpResponseHead response;
@@ -45,13 +44,14 @@ abstract class HttpStream<C extends ConnectionBase, S,
 
   protected final ClientMetrics metrics;
 
-  protected abstract CharSequence getHeaderMethod(H headers);
-  protected abstract String getHeaderStatus(H headers);
-  protected abstract MultiMap createHeaderAdapter(H headers);
+  //TODO: move all the header related methods to VertxDefaultHttpHeaders
+  protected abstract CharSequence getHeaderMethod(VertxDefaultHttpHeaders headers);
+  protected abstract String getHeaderStatus(VertxDefaultHttpHeaders headers);
+  protected abstract MultiMap createHeaderAdapter(VertxDefaultHttpHeaders headers);
   protected abstract long getWindowSize();
   protected abstract HttpVersion version();
   protected abstract void recycle();
-  protected abstract void metricsEnd(HttpStream<?, ?, ?> stream);
+  protected abstract void metricsEnd(HttpStream<?, ?> stream);
 
   HttpStream(C conn, ContextInternal context, boolean push, ClientMetrics<? ,?, ?, ?> metrics) {
     super(conn, context);
@@ -123,7 +123,7 @@ abstract class HttpStream<C extends ConnectionBase, S,
   }
 
   @Override
-  void onHeaders(H headers, StreamPriorityBase streamPriority) {
+  void onHeaders(VertxDefaultHttpHeaders headers, StreamPriorityBase streamPriority) {
     if (streamPriority != null) {
       priority(streamPriority);
     }
@@ -144,7 +144,7 @@ abstract class HttpStream<C extends ConnectionBase, S,
       } else if (status == 103) {
         MultiMap headersMultiMap = HeadersMultiMap.httpHeaders();
         removeStatusHeaders(headers);
-        for (Map.Entry<CharSequence, CharSequence> header : headers) {
+        for (Map.Entry<CharSequence, CharSequence> header : headers.getHeaders()) {
           headersMultiMap.add(header.getKey(), header.getValue());
         }
         onEarlyHints(headersMultiMap);
@@ -167,8 +167,8 @@ abstract class HttpStream<C extends ConnectionBase, S,
     }
   }
 
-  private void removeStatusHeaders(H headers) {
-    headers.remove(":status");
+  private void removeStatusHeaders(VertxDefaultHttpHeaders headers) {
+    headers.getHeaders().remove(":status");
   }
 
   @Override

@@ -39,7 +39,7 @@ import io.vertx.core.tracing.TracingPolicy;
 
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
-class Http2ServerStream extends VertxHttpStreamBase<Http2ServerConnection, Http2Stream, Http2Headers> {
+class Http2ServerStream extends VertxHttpStreamBase<Http2ServerConnection, Http2Stream> {
   private static final MultiMap EMPTY = new Http2HeadersAdaptor(EmptyHttp2Headers.INSTANCE);
 
   protected final Http2Headers headers;
@@ -104,20 +104,21 @@ class Http2ServerStream extends VertxHttpStreamBase<Http2ServerConnection, Http2
   }
 
   @Override
-  void onHeaders(Http2Headers headers, StreamPriorityBase streamPriority) {
+  void onHeaders(VertxDefaultHttpHeaders headers, StreamPriorityBase streamPriority) {
     if (streamPriority != null) {
       priority(streamPriority);
     }
     registerMetrics();
-    CharSequence value = headers.get(HttpHeaderNames.EXPECT);
+    CharSequence value = headers.getHeaders().get(HttpHeaderNames.EXPECT);
     if (conn.options.isHandle100ContinueAutomatically() &&
       ((value != null && HttpHeaderValues.CONTINUE.equals(value)) ||
-        headers.contains(HttpHeaderNames.EXPECT, HttpHeaderValues.CONTINUE))) {
+        headers.getHeaders().contains(HttpHeaderNames.EXPECT, HttpHeaderValues.CONTINUE))) {
       request.response().writeContinue();
     }
     VertxTracer tracer = context.tracer();
     if (tracer != null) {
-      trace = tracer.receiveRequest(context, SpanKind.RPC, tracingPolicy, request, method().name(), new Http2HeadersAdaptor(headers), HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
+      trace = tracer.receiveRequest(context, SpanKind.RPC, tracingPolicy, request, method().name(),
+        new Http2HeadersAdaptor(headers.getHeaders()), HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
     }
     request.dispatch(conn.requestHandler);
   }
