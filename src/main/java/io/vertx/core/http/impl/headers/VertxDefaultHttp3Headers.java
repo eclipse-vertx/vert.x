@@ -3,6 +3,7 @@ package io.vertx.core.http.impl.headers;
 import io.netty.handler.codec.Headers;
 import io.netty.incubator.codec.http3.DefaultHttp3Headers;
 import io.netty.incubator.codec.http3.Http3Headers;
+import io.vertx.core.MultiMap;
 
 public class VertxDefaultHttp3Headers implements VertxDefaultHttpHeaders {
   private final Http3Headers headers;
@@ -79,5 +80,10 @@ public class VertxDefaultHttp3Headers implements VertxDefaultHttpHeaders {
   @Override
   public CharSequence status() {
     return this.headers.status();
+  }
+
+  @Override
+  public MultiMap toHeaderAdapter() {
+    return new Http3HeadersAdaptor(headers);
   }
 }

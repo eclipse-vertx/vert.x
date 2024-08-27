@@ -3,6 +3,7 @@ package io.vertx.core.http.impl.headers;
 import io.netty.handler.codec.Headers;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Headers;
+import io.vertx.core.MultiMap;
 
 public class VertxDefaultHttp2Headers implements VertxDefaultHttpHeaders {
   private final Http2Headers headers;
@@ -79,5 +80,10 @@ public class VertxDefaultHttp2Headers implements VertxDefaultHttpHeaders {
   @Override
   public CharSequence status() {
     return this.headers.status();
+  }
+
+  @Override
+  public MultiMap toHeaderAdapter() {
+    return new Http2HeadersAdaptor(headers);
   }
 }

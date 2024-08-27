@@ -99,21 +99,6 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
   }
 
   @Override
-  public CharSequence getHeaderMethod(VertxDefaultHttpHeaders headers) {
-    return headers.method();
-  }
-
-  @Override
-  public String getHeaderStatus(VertxDefaultHttpHeaders headers) {
-    return headers.status().toString();
-  }
-
-  @Override
-  public MultiMap createHeaderAdapter(VertxDefaultHttpHeaders headers) {
-    return new Http3HeadersAdaptor(headers.getHeaders());
-  }
-
-  @Override
   public long getWindowSize() {
     return conn.getWindowSize();
   }

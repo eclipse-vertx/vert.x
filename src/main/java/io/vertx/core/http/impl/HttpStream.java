@@ -44,10 +44,6 @@ abstract class HttpStream<C extends ConnectionBase, S> extends VertxHttpStreamBa
 
   protected final ClientMetrics metrics;
 
-  //TODO: move all the header related methods to VertxDefaultHttpHeaders
-  protected abstract CharSequence getHeaderMethod(VertxDefaultHttpHeaders headers);
-  protected abstract String getHeaderStatus(VertxDefaultHttpHeaders headers);
-  protected abstract MultiMap createHeaderAdapter(VertxDefaultHttpHeaders headers);
   protected abstract long getWindowSize();
   protected abstract HttpVersion version();
   protected abstract void recycle();
@@ -131,7 +127,7 @@ abstract class HttpStream<C extends ConnectionBase, S> extends VertxHttpStreamBa
       int status;
       String statusMessage;
       try {
-        status = Integer.parseInt(getHeaderStatus(headers));
+        status = Integer.parseInt(String.valueOf(headers.status()));
         statusMessage = HttpResponseStatus.valueOf(status).reasonPhrase();
       } catch (Exception e) {
         handleException(e);
@@ -154,7 +150,7 @@ abstract class HttpStream<C extends ConnectionBase, S> extends VertxHttpStreamBa
         version(),
         status,
         statusMessage,
-        createHeaderAdapter(headers));
+        headers.toHeaderAdapter());
       removeStatusHeaders(headers);
 
       if (metrics != null) {

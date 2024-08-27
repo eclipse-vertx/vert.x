@@ -88,21 +88,6 @@ class Http2ClientStream extends HttpStreamImpl<Http2ClientConnection, Http2Strea
   }
 
   @Override
-  public CharSequence getHeaderMethod(VertxDefaultHttpHeaders headers) {
-    return headers.method();
-  }
-
-  @Override
-  public String getHeaderStatus(VertxDefaultHttpHeaders headers) {
-    return headers.status().toString();
-  }
-
-  @Override
-  public MultiMap createHeaderAdapter(VertxDefaultHttpHeaders headers) {
-    return new Http2HeadersAdaptor(headers.getHeaders());
-  }
-
-  @Override
   public long getWindowSize() {
     return conn.getWindowSize();
   }

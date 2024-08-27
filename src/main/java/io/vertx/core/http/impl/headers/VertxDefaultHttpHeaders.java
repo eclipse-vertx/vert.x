@@ -1,6 +1,7 @@
 package io.vertx.core.http.impl.headers;
 
 import io.netty.handler.codec.Headers;
+import io.vertx.core.MultiMap;
 
 public interface VertxDefaultHttpHeaders {
 
@@ -30,4 +31,5 @@ public interface VertxDefaultHttpHeaders {
 
   CharSequence status();
 
+  MultiMap toHeaderAdapter();
 }
