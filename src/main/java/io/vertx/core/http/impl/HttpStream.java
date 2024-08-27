@@ -11,7 +11,7 @@ import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
-import io.vertx.core.http.impl.headers.VertxDefaultHttpHeaders;
+import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.metrics.ClientMetrics;
@@ -83,7 +83,7 @@ abstract class HttpStream<C extends ConnectionBase, S> extends VertxHttpStreamBa
   }
 
   @Override
-  void doWriteHeaders(VertxDefaultHttpHeaders headers, boolean end, boolean checkFlush, Handler<AsyncResult<Void>> handler) {
+  void doWriteHeaders(VertxHttpHeaders headers, boolean end, boolean checkFlush, Handler<AsyncResult<Void>> handler) {
     isConnect = "CONNECT".contentEquals(headers.method());
     super.doWriteHeaders(headers, end, checkFlush, handler);
   }
@@ -118,7 +118,7 @@ abstract class HttpStream<C extends ConnectionBase, S> extends VertxHttpStreamBa
   }
 
   @Override
-  void onHeaders(VertxDefaultHttpHeaders headers, StreamPriorityBase streamPriority) {
+  void onHeaders(VertxHttpHeaders headers, StreamPriorityBase streamPriority) {
     if (streamPriority != null) {
       priority(streamPriority);
     }
@@ -162,7 +162,7 @@ abstract class HttpStream<C extends ConnectionBase, S> extends VertxHttpStreamBa
     }
   }
 
-  private void removeStatusHeaders(VertxDefaultHttpHeaders headers) {
+  private void removeStatusHeaders(VertxHttpHeaders headers) {
     headers.remove(":status");
   }
 

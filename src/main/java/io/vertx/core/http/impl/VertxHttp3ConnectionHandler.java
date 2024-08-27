@@ -58,7 +58,7 @@ import io.vertx.core.http.GoAway;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriorityBase;
-import io.vertx.core.http.impl.headers.VertxDefaultHttpHeaders;
+import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.net.impl.ConnectionBase;
 
@@ -210,7 +210,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     connection.onGoAwayReceived(new GoAway().setErrorCode(errorCode).setLastStreamId(lastStreamId).setDebugData(Buffer.buffer(debugData)));
   }
 
-  public void writeHeaders(QuicStreamChannel stream, VertxDefaultHttpHeaders headers, boolean end, StreamPriorityBase priority,
+  public void writeHeaders(QuicStreamChannel stream, VertxHttpHeaders headers, boolean end, StreamPriorityBase priority,
                            boolean checkFlush, FutureListener<Void> listener) {
     stream.updatePriority(new QuicStreamPriority(priority.urgency(), priority.isIncremental()));
 

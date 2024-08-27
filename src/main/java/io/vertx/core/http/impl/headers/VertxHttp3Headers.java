@@ -9,14 +9,14 @@ import io.vertx.core.MultiMap;
 import java.util.Map;
 import java.util.Objects;
 
-public class VertxDefaultHttp3Headers implements VertxDefaultHttpHeaders {
+public class VertxHttp3Headers implements VertxHttpHeaders {
   private final Http3Headers headers;
 
-  public VertxDefaultHttp3Headers() {
+  public VertxHttp3Headers() {
     this.headers = new DefaultHttp3Headers();
   }
 
-  public VertxDefaultHttp3Headers(Http3Headers headers) {
+  public VertxHttp3Headers(Http3Headers headers) {
     this.headers = headers;
   }
 
@@ -81,7 +81,7 @@ public class VertxDefaultHttp3Headers implements VertxDefaultHttpHeaders {
   }
 
   @Override
-  public VertxDefaultHttp3Headers add(String name, String value) {
+  public VertxHttp3Headers add(String name, String value) {
     this.headers.add(name, value);
     return this;
   }

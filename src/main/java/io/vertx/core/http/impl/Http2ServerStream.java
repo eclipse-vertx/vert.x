@@ -26,7 +26,7 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
-import io.vertx.core.http.impl.headers.VertxDefaultHttpHeaders;
+import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.impl.HostAndPortImpl;
@@ -104,7 +104,7 @@ class Http2ServerStream extends VertxHttpStreamBase<Http2ServerConnection, Http2
   }
 
   @Override
-  void onHeaders(VertxDefaultHttpHeaders headers, StreamPriorityBase streamPriority) {
+  void onHeaders(VertxHttpHeaders headers, StreamPriorityBase streamPriority) {
     if (streamPriority != null) {
       priority(streamPriority);
     }
@@ -136,7 +136,7 @@ class Http2ServerStream extends VertxHttpStreamBase<Http2ServerConnection, Http2
   }
 
   @Override
-  void doWriteHeaders(VertxDefaultHttpHeaders headers, boolean end, boolean checkFlush, Handler<AsyncResult<Void>> handler) {
+  void doWriteHeaders(VertxHttpHeaders headers, boolean end, boolean checkFlush, Handler<AsyncResult<Void>> handler) {
     if (Metrics.METRICS_ENABLED && !end) {
       HttpServerMetrics metrics = conn.metrics();
       if (metrics != null) {
@@ -260,7 +260,7 @@ class Http2ServerStream extends VertxHttpStreamBase<Http2ServerConnection, Http2
     conn.handler.writeFrame(stream, type, flags, payload);
   }
   @Override
-  public void writeHeaders(VertxDefaultHttpHeaders headers, boolean end, StreamPriorityBase priority,
+  public void writeHeaders(VertxHttpHeaders headers, boolean end, StreamPriorityBase priority,
                            boolean checkFlush, FutureListener<Void> promise) {
     conn.handler.writeHeaders(stream, headers, end, priority.getDependency(), priority.getWeight(), priority.isExclusive(),
       checkFlush, promise);

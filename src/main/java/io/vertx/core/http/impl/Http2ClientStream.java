@@ -3,7 +3,6 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http2.EmptyHttp2Headers;
 import io.netty.handler.codec.http2.Http2Exception;
-import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.AsyncResult;
@@ -13,8 +12,8 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
-import io.vertx.core.http.impl.headers.VertxDefaultHttp2Headers;
-import io.vertx.core.http.impl.headers.VertxDefaultHttpHeaders;
+import io.vertx.core.http.impl.headers.VertxHttp2Headers;
+import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.tracing.TracingPolicy;
@@ -73,8 +72,8 @@ class Http2ClientStream extends HttpStreamImpl<Http2ClientConnection, Http2Strea
   }
 
   @Override
-  VertxDefaultHttpHeaders createHttpHeadersWrapper() {
-    return new VertxDefaultHttp2Headers();
+  VertxHttpHeaders createHttpHeadersWrapper() {
+    return new VertxHttp2Headers();
   }
 
   @Override
@@ -93,7 +92,7 @@ class Http2ClientStream extends HttpStreamImpl<Http2ClientConnection, Http2Strea
   }
 
   @Override
-  public void writeHeaders(VertxDefaultHttpHeaders headers, boolean end, StreamPriorityBase priority,
+  public void writeHeaders(VertxHttpHeaders headers, boolean end, StreamPriorityBase priority,
                            boolean checkFlush, FutureListener<Void> promise) {
     conn.handler.writeHeaders(stream, headers, end, priority.getDependency(), priority.getWeight(), priority.isExclusive(),
       checkFlush, promise);

@@ -6,7 +6,7 @@ import io.vertx.core.MultiMap;
 
 import java.util.Map;
 
-public interface VertxDefaultHttpHeaders {
+public interface VertxHttpHeaders {
 
   <T extends Headers<CharSequence, CharSequence, T>> T getHeaders();
 
@@ -32,7 +32,7 @@ public interface VertxDefaultHttpHeaders {
 
   CharSequence method();
 
-  VertxDefaultHttpHeaders add(String name, String value);
+  VertxHttpHeaders add(String name, String value);
 
   CharSequence status();
 

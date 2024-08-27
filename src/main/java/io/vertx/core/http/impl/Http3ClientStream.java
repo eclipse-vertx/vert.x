@@ -4,7 +4,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.incubator.codec.http3.DefaultHttp3Headers;
 import io.netty.incubator.codec.http3.Http3;
 import io.netty.incubator.codec.http3.Http3FrameToHttpObjectCodec;
-import io.netty.incubator.codec.http3.Http3Headers;
 import io.netty.incubator.codec.http3.Http3RequestStreamInitializer;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
@@ -17,8 +16,8 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.http.impl.headers.Http3HeadersAdaptor;
-import io.vertx.core.http.impl.headers.VertxDefaultHttp3Headers;
-import io.vertx.core.http.impl.headers.VertxDefaultHttpHeaders;
+import io.vertx.core.http.impl.headers.VertxHttp3Headers;
+import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.tracing.TracingPolicy;
@@ -84,8 +83,8 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
   }
 
   @Override
-  VertxDefaultHttpHeaders createHttpHeadersWrapper() {
-    return new VertxDefaultHttp3Headers();
+  VertxHttpHeaders createHttpHeadersWrapper() {
+    return new VertxHttp3Headers();
   }
 
   @Override
@@ -104,7 +103,7 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
   }
 
   @Override
-  public void writeHeaders(VertxDefaultHttpHeaders headers, boolean end, StreamPriorityBase priority,
+  public void writeHeaders(VertxHttpHeaders headers, boolean end, StreamPriorityBase priority,
                            boolean checkFlush, FutureListener<Void> promise) {
     conn.handler.writeHeaders(stream, headers, end, priority, checkFlush, promise);
   }

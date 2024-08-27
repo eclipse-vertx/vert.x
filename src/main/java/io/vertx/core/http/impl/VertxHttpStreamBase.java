@@ -14,7 +14,6 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.EventLoop;
-import io.netty.handler.codec.Headers;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
@@ -22,7 +21,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.StreamPriorityBase;
-import io.vertx.core.http.impl.headers.VertxDefaultHttpHeaders;
+import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.ConnectionBase;
@@ -48,8 +47,8 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
   protected S stream;
   protected abstract void consumeCredits(int len);
   protected abstract void writeFrame(byte type, short flags, ByteBuf payload);
-  protected abstract void writeHeaders(VertxDefaultHttpHeaders headers, boolean end, StreamPriorityBase priority, boolean checkFlush,
-                    FutureListener<Void> promise);
+  protected abstract void writeHeaders(VertxHttpHeaders headers, boolean end, StreamPriorityBase priority, boolean checkFlush,
+                                       FutureListener<Void> promise);
   protected abstract void writePriorityFrame(StreamPriorityBase priority);
   protected abstract void writeData_(ByteBuf chunk, boolean end, FutureListener<Void> promise);
   protected abstract void writeReset_(int streamId, long code);
@@ -125,7 +124,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
     context.emit(frame, this::handleCustomFrame);
   }
 
-  void onHeaders(VertxDefaultHttpHeaders headers, StreamPriorityBase streamPriority) {
+  void onHeaders(VertxHttpHeaders headers, StreamPriorityBase streamPriority) {
   }
 
   void onData(Buffer data) {
@@ -190,7 +189,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
     writeFrame((byte) type, (short) flags, payload);
   }
 
-  final void writeHeaders(VertxDefaultHttpHeaders headers, boolean end, boolean checkFlush, Handler<AsyncResult<Void>> handler) {
+  final void writeHeaders(VertxHttpHeaders headers, boolean end, boolean checkFlush, Handler<AsyncResult<Void>> handler) {
     EventLoop eventLoop = conn.getContext().nettyEventLoop();
     if (eventLoop.inEventLoop()) {
       doWriteHeaders(headers, end, checkFlush, handler);
@@ -199,7 +198,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
     }
   }
 
-  void doWriteHeaders(VertxDefaultHttpHeaders headers, boolean end, boolean checkFlush, Handler<AsyncResult<Void>> handler) {
+  void doWriteHeaders(VertxHttpHeaders headers, boolean end, boolean checkFlush, Handler<AsyncResult<Void>> handler) {
     FutureListener<Void> promise = handler == null ? null : context.promise(handler);
     writeHeaders(headers, end, priority, checkFlush, promise);
     if (end) {

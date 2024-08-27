@@ -9,14 +9,14 @@ import io.vertx.core.MultiMap;
 import java.util.Map;
 import java.util.Objects;
 
-public class VertxDefaultHttp2Headers implements VertxDefaultHttpHeaders {
+public class VertxHttp2Headers implements VertxHttpHeaders {
   private final Http2Headers headers;
 
-  public VertxDefaultHttp2Headers() {
+  public VertxHttp2Headers() {
     this.headers = new DefaultHttp2Headers();
   }
 
-  public VertxDefaultHttp2Headers(Http2Headers headers) {
+  public VertxHttp2Headers(Http2Headers headers) {
     this.headers = headers;
   }
 
@@ -81,7 +81,7 @@ public class VertxDefaultHttp2Headers implements VertxDefaultHttpHeaders {
   }
 
   @Override
-  public VertxDefaultHttp2Headers add(String name, String value) {
+  public VertxHttp2Headers add(String name, String value) {
     this.headers.add(name, value);
     return this;
   }

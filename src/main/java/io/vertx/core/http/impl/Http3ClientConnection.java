@@ -20,7 +20,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.http.impl.headers.Http3HeadersAdaptor;
-import io.vertx.core.http.impl.headers.VertxDefaultHttp3Headers;
+import io.vertx.core.http.impl.headers.VertxHttp3Headers;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.spi.metrics.ClientMetrics;
@@ -151,7 +151,7 @@ class Http3ClientConnection extends Http3ConnectionBase implements HttpClientCon
   @Override
   protected synchronized void onHeadersRead(VertxHttpStreamBase<?, ?> stream, Http3Headers headers, StreamPriorityBase streamPriority, boolean endOfStream) {
     if (!stream.isTrailersReceived()) {
-      stream.onHeaders(new VertxDefaultHttp3Headers(headers), streamPriority);
+      stream.onHeaders(new VertxHttp3Headers(headers), streamPriority);
       if (endOfStream) {
         stream.onEnd();
       }

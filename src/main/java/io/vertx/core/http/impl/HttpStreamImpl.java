@@ -1,7 +1,6 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.handler.codec.Headers;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
@@ -11,7 +10,7 @@ import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.http.StreamResetException;
-import io.vertx.core.http.impl.headers.VertxDefaultHttpHeaders;
+import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.metrics.ClientMetrics;
@@ -33,7 +32,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
 
   protected abstract TracingPolicy getTracingPolicy();
 
-  abstract VertxDefaultHttpHeaders createHttpHeadersWrapper();
+  abstract VertxHttpHeaders createHttpHeadersWrapper();
 
   HttpStreamImpl(C conn, ContextInternal context, boolean push, ClientMetrics<?, ?, ?, ?> metrics) {
     super(conn, context, push, metrics);
@@ -189,7 +188,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
   private void writeHeaders(HttpRequestHead request, ByteBuf buf, boolean end, StreamPriorityBase priority,
                             boolean connect,
                             Handler<AsyncResult<Void>> handler) {
-    VertxDefaultHttpHeaders headers = createHttpHeadersWrapper();
+    VertxHttpHeaders headers = createHttpHeadersWrapper();
     headers.method(request.method.name());
     boolean e;
     if (request.method == HttpMethod.CONNECT) {
@@ -232,7 +231,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
     }
   }
 
-  private void createStream(HttpRequestHead head, VertxDefaultHttpHeaders headers,
+  private void createStream(HttpRequestHead head, VertxHttpHeaders headers,
                             Handler<AsyncResult<Void>> handler) throws HttpException {
     int id = lastStreamCreated();
     if (id == 0) {
