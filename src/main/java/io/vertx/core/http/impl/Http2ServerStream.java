@@ -109,16 +109,16 @@ class Http2ServerStream extends VertxHttpStreamBase<Http2ServerConnection, Http2
       priority(streamPriority);
     }
     registerMetrics();
-    CharSequence value = headers.getHeaders().get(HttpHeaderNames.EXPECT);
+    CharSequence value = headers.get(HttpHeaderNames.EXPECT);
     if (conn.options.isHandle100ContinueAutomatically() &&
       ((value != null && HttpHeaderValues.CONTINUE.equals(value)) ||
-        headers.getHeaders().contains(HttpHeaderNames.EXPECT, HttpHeaderValues.CONTINUE))) {
+        headers.contains(HttpHeaderNames.EXPECT, HttpHeaderValues.CONTINUE))) {
       request.response().writeContinue();
     }
     VertxTracer tracer = context.tracer();
     if (tracer != null) {
       trace = tracer.receiveRequest(context, SpanKind.RPC, tracingPolicy, request, method().name(),
-        new Http2HeadersAdaptor(headers.getHeaders()), HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
+        headers.toHeaderAdapter(), HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
     }
     request.dispatch(conn.requestHandler);
   }

@@ -58,12 +58,10 @@ import io.vertx.core.http.GoAway;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriorityBase;
-import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.http.impl.headers.VertxDefaultHttpHeaders;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.net.impl.ConnectionBase;
 
-import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -222,7 +220,10 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
       String.valueOf(headers.path())
     );
 
-    request.headers().setAll(convertToHttpHeaders(headers));
+    HttpHeaders httpHeaders = headers.toHttpHeaders();
+    httpHeaders.add(HttpHeaderNames.HOST, headers.authority());
+
+    request.headers().setAll(httpHeaders);
 
     ChannelFuture future = stream.write(request);
     if (listener != null) {
@@ -232,17 +233,6 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     if (checkFlush) {
       checkFlush();
     }
-  }
-
-  //TODO: refactor this
-  private HttpHeaders convertToHttpHeaders(VertxDefaultHttpHeaders http3Headers) {
-    HttpHeaders headers = new HeadersMultiMap();
-    http3Headers.getHeaders().iterator().forEachRemaining(entry -> {
-      String name = Objects.requireNonNull(Http3Headers.PseudoHeaderName.getPseudoHeader(entry.getKey())).name();
-      headers.add(name, String.valueOf(entry.getValue()));
-    });
-    headers.add(HttpHeaderNames.HOST, http3Headers.authority());
-    return headers;
   }
 
   public void writeData(QuicStreamChannel stream, ByteBuf chunk, boolean end, FutureListener<Void> promise) {

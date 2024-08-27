@@ -1,7 +1,6 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.handler.codec.Headers;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
@@ -140,7 +139,7 @@ abstract class HttpStream<C extends ConnectionBase, S> extends VertxHttpStreamBa
       } else if (status == 103) {
         MultiMap headersMultiMap = HeadersMultiMap.httpHeaders();
         removeStatusHeaders(headers);
-        for (Map.Entry<CharSequence, CharSequence> header : headers.getHeaders()) {
+        for (Map.Entry<CharSequence, CharSequence> header : headers.getIterable()) {
           headersMultiMap.add(header.getKey(), header.getValue());
         }
         onEarlyHints(headersMultiMap);
@@ -164,7 +163,7 @@ abstract class HttpStream<C extends ConnectionBase, S> extends VertxHttpStreamBa
   }
 
   private void removeStatusHeaders(VertxDefaultHttpHeaders headers) {
-    headers.getHeaders().remove(":status");
+    headers.remove(":status");
   }
 
   @Override
