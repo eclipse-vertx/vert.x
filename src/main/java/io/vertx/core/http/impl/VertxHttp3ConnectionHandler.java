@@ -59,6 +59,7 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
+import io.vertx.core.http.impl.headers.VertxDefaultHttpHeaders;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.net.impl.ConnectionBase;
 
@@ -211,7 +212,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     connection.onGoAwayReceived(new GoAway().setErrorCode(errorCode).setLastStreamId(lastStreamId).setDebugData(Buffer.buffer(debugData)));
   }
 
-  public void writeHeaders(QuicStreamChannel stream, Http3Headers headers, boolean end, StreamPriorityBase priority,
+  public void writeHeaders(QuicStreamChannel stream, VertxDefaultHttpHeaders headers, boolean end, StreamPriorityBase priority,
                            boolean checkFlush, FutureListener<Void> listener) {
     stream.updatePriority(new QuicStreamPriority(priority.urgency(), priority.isIncremental()));
 
@@ -233,9 +234,10 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     }
   }
 
-  private HttpHeaders convertToHttpHeaders(Http3Headers http3Headers) {
+  //TODO: refactor this
+  private HttpHeaders convertToHttpHeaders(VertxDefaultHttpHeaders http3Headers) {
     HttpHeaders headers = new HeadersMultiMap();
-    http3Headers.iterator().forEachRemaining(entry -> {
+    http3Headers.getHeaders().iterator().forEachRemaining(entry -> {
       String name = Objects.requireNonNull(Http3Headers.PseudoHeaderName.getPseudoHeader(entry.getKey())).name();
       headers.add(name, String.valueOf(entry.getValue()));
     });

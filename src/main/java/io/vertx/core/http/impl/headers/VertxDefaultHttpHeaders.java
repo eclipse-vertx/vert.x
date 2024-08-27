@@ -2,13 +2,15 @@ package io.vertx.core.http.impl.headers;
 
 import io.netty.handler.codec.Headers;
 
-public interface VertxDefaultHttpHeaders<H extends Headers<CharSequence, CharSequence, H>> {
+public interface VertxDefaultHttpHeaders {
 
-  H getHttpHeaders();
+  <T extends Headers<CharSequence, CharSequence, T>> T getHeaders();
 
   void method(String value);
 
   void authority(String authority);
+
+  CharSequence authority();
 
   void path(String value);
 
@@ -23,4 +25,6 @@ public interface VertxDefaultHttpHeaders<H extends Headers<CharSequence, CharSeq
   CharSequence path();
 
   CharSequence method();
+
+  VertxDefaultHttpHeaders add(String name, String value);
 }

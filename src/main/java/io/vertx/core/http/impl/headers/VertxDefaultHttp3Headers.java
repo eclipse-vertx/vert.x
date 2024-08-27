@@ -1,9 +1,9 @@
 package io.vertx.core.http.impl.headers;
 
+import io.netty.handler.codec.Headers;
 import io.netty.incubator.codec.http3.DefaultHttp3Headers;
-import io.netty.incubator.codec.http3.Http3Headers;
 
-public class VertxDefaultHttp3Headers implements VertxDefaultHttpHeaders<Http3Headers> {
+public class VertxDefaultHttp3Headers implements VertxDefaultHttpHeaders {
   private final DefaultHttp3Headers headers;
 
   public VertxDefaultHttp3Headers() {
@@ -11,8 +11,8 @@ public class VertxDefaultHttp3Headers implements VertxDefaultHttpHeaders<Http3He
   }
 
   @Override
-  public Http3Headers getHttpHeaders() {
-    return this.headers;
+  public <T extends Headers<CharSequence, CharSequence, T>> T getHeaders() {
+    return (T) headers;
   }
 
   @Override
@@ -23,6 +23,11 @@ public class VertxDefaultHttp3Headers implements VertxDefaultHttpHeaders<Http3He
   @Override
   public void authority(String authority) {
     this.headers.authority(authority);
+  }
+
+  @Override
+  public CharSequence authority() {
+    return this.headers.authority();
   }
 
   @Override
@@ -58,5 +63,11 @@ public class VertxDefaultHttp3Headers implements VertxDefaultHttpHeaders<Http3He
   @Override
   public CharSequence method() {
     return this.headers.method();
+  }
+
+  @Override
+  public VertxDefaultHttp3Headers add(String name, String value) {
+    this.headers.add(name, value);
+    return this;
   }
 }

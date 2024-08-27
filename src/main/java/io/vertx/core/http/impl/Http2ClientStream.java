@@ -73,7 +73,7 @@ class Http2ClientStream extends HttpStreamImpl<Http2ClientConnection, Http2Strea
   }
 
   @Override
-  VertxDefaultHttpHeaders<Http2Headers> createHttpHeadersWrapper() {
+  VertxDefaultHttpHeaders createHttpHeadersWrapper() {
     return new VertxDefaultHttp2Headers();
   }
 
@@ -108,7 +108,7 @@ class Http2ClientStream extends HttpStreamImpl<Http2ClientConnection, Http2Strea
   }
 
   @Override
-  public void writeHeaders(Http2Headers headers, boolean end, StreamPriorityBase priority,
+  public void writeHeaders(VertxDefaultHttpHeaders headers, boolean end, StreamPriorityBase priority,
                            boolean checkFlush, FutureListener<Void> promise) {
     conn.handler.writeHeaders(stream, headers, end, priority.getDependency(), priority.getWeight(), priority.isExclusive(),
       checkFlush, promise);

@@ -1,18 +1,22 @@
 package io.vertx.core.http.impl.headers;
 
+import io.netty.handler.codec.Headers;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
-import io.netty.handler.codec.http2.Http2Headers;
 
-public class VertxDefaultHttp2Headers implements VertxDefaultHttpHeaders<Http2Headers> {
+public class VertxDefaultHttp2Headers implements VertxDefaultHttpHeaders {
   private final DefaultHttp2Headers headers;
 
   public VertxDefaultHttp2Headers() {
     this.headers = new DefaultHttp2Headers();
   }
 
+  public VertxDefaultHttp2Headers(DefaultHttp2Headers headers) {
+    this.headers = headers;
+  }
+
   @Override
-  public Http2Headers getHttpHeaders() {
-    return this.headers;
+  public <T extends Headers<CharSequence, CharSequence, T>> T getHeaders() {
+    return (T) headers;
   }
 
   @Override
@@ -23,6 +27,11 @@ public class VertxDefaultHttp2Headers implements VertxDefaultHttpHeaders<Http2He
   @Override
   public void authority(String authority) {
     this.headers.authority(authority);
+  }
+
+  @Override
+  public CharSequence authority() {
+    return this.headers.authority();
   }
 
   @Override
@@ -58,5 +67,11 @@ public class VertxDefaultHttp2Headers implements VertxDefaultHttpHeaders<Http2He
   @Override
   public CharSequence method() {
     return this.headers.method();
+  }
+
+  @Override
+  public VertxDefaultHttp2Headers add(String name, String value) {
+    this.headers.add(name, value);
+    return this;
   }
 }

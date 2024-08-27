@@ -34,7 +34,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S,
 
   protected abstract TracingPolicy getTracingPolicy();
 
-  abstract VertxDefaultHttpHeaders<H> createHttpHeadersWrapper();
+  abstract VertxDefaultHttpHeaders createHttpHeadersWrapper();
 
   HttpStreamImpl(C conn, ContextInternal context, boolean push, ClientMetrics<?, ?, ?, ?> metrics) {
     super(conn, context, push, metrics);
@@ -190,7 +190,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S,
   private void writeHeaders(HttpRequestHead request, ByteBuf buf, boolean end, StreamPriorityBase priority,
                             boolean connect,
                             Handler<AsyncResult<Void>> handler) {
-    VertxDefaultHttpHeaders<H> headers = createHttpHeadersWrapper();
+    VertxDefaultHttpHeaders headers = createHttpHeadersWrapper();
     headers.method(request.method.name());
     boolean e;
     if (request.method == HttpMethod.CONNECT) {
@@ -226,14 +226,14 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S,
       return;
     }
     if (buf != null) {
-      doWriteHeaders(headers.getHttpHeaders(), false, false, null);
+      doWriteHeaders(headers, false, false, null);
       doWriteData(buf, e, handler);
     } else {
-      doWriteHeaders(headers.getHttpHeaders(), e, true, handler);
+      doWriteHeaders(headers, e, true, handler);
     }
   }
 
-  private void createStream(HttpRequestHead head, VertxDefaultHttpHeaders<H> headers,
+  private void createStream(HttpRequestHead head, VertxDefaultHttpHeaders headers,
                             Handler<AsyncResult<Void>> handler) throws HttpException {
     int id = lastStreamCreated();
     if (id == 0) {
@@ -251,8 +251,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S,
       VertxTracer tracer = context.tracer();
       if (tracer != null) {
         BiConsumer<String, String> headers_ =
-          (key, val) -> createHeaderAdapter(headers.getHttpHeaders()).add(key
-          , val);
+          (key, val) -> headers.add(key, val);
         String operation = head.traceOperation;
         if (operation == null) {
           operation = headers.method().toString();

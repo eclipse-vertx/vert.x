@@ -84,7 +84,7 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
   }
 
   @Override
-  VertxDefaultHttpHeaders<Http3Headers> createHttpHeadersWrapper() {
+  VertxDefaultHttpHeaders createHttpHeadersWrapper() {
     return new VertxDefaultHttp3Headers();
   }
 
@@ -119,7 +119,7 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
   }
 
   @Override
-  public void writeHeaders(Http3Headers headers, boolean end, StreamPriorityBase priority,
+  public void writeHeaders(VertxDefaultHttpHeaders headers, boolean end, StreamPriorityBase priority,
                            boolean checkFlush, FutureListener<Void> promise) {
     conn.handler.writeHeaders(stream, headers, end, priority, checkFlush, promise);
   }

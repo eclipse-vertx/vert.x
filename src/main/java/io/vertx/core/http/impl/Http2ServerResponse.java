@@ -30,6 +30,7 @@ import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
+import io.vertx.core.http.impl.headers.VertxDefaultHttp2Headers;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
@@ -52,9 +53,9 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   private final Http2ServerConnection conn;
   private final boolean push;
   private final String contentEncoding;
-  private final Http2Headers headers = new DefaultHttp2Headers();
+  private final DefaultHttp2Headers headers = new DefaultHttp2Headers();
   private Http2HeadersAdaptor headersMap;
-  private Http2Headers trailers;
+  private DefaultHttp2Headers trailers;
   private Http2HeadersAdaptor trailedMap;
   private boolean chunked;
   private boolean headWritten;
@@ -247,7 +248,8 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   public MultiMap trailers() {
     synchronized (conn) {
       if (trailedMap == null) {
-        trailedMap = new Http2HeadersAdaptor(trailers = new DefaultHttp2Headers());
+        trailers = new DefaultHttp2Headers();
+        trailedMap = new Http2HeadersAdaptor(trailers);
       }
       return trailedMap;
     }
@@ -315,7 +317,10 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   public HttpServerResponse writeContinue() {
     synchronized (conn) {
       checkHeadWritten();
-      stream.writeHeaders(new DefaultHttp2Headers().status(HttpResponseStatus.CONTINUE.codeAsText()), false, true, null);
+      DefaultHttp2Headers defaultHttp2Headers = new DefaultHttp2Headers();
+      defaultHttp2Headers.status(HttpResponseStatus.CONTINUE.codeAsText());
+      stream.writeHeaders(new VertxDefaultHttp2Headers(defaultHttp2Headers), false, true,
+        null);
       return this;
     }
   }
@@ -337,7 +342,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     synchronized (conn) {
       checkHeadWritten();
     }
-    stream.writeHeaders(http2Headers, false, true, handler);
+    stream.writeHeaders(new VertxDefaultHttp2Headers(http2Headers), false, true, handler);
   }
 
   @Override
@@ -471,7 +476,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
         invokeHandler = true;
       }
       if (end && trailers != null) {
-        stream.writeHeaders(trailers, true, true, null);
+        stream.writeHeaders(new VertxDefaultHttp2Headers(trailers), true, true, null);
       }
       bodyEndHandler = this.bodyEndHandler;
       endHandler = this.endHandler;
@@ -507,7 +512,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       }
       prepareHeaders();
       headWritten = true;
-      stream.writeHeaders(headers, end, checkFlush, null);
+      stream.writeHeaders(new VertxDefaultHttp2Headers(headers), end, checkFlush, null);
       return true;
     } else {
       return false;

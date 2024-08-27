@@ -22,6 +22,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.StreamPriorityBase;
+import io.vertx.core.http.impl.headers.VertxDefaultHttpHeaders;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.ConnectionBase;
@@ -47,7 +48,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S, H extends Header
   protected S stream;
   protected abstract void consumeCredits(int len);
   protected abstract void writeFrame(byte type, short flags, ByteBuf payload);
-  protected abstract void writeHeaders(H headers, boolean end, StreamPriorityBase priority, boolean checkFlush,
+  protected abstract void writeHeaders(VertxDefaultHttpHeaders headers, boolean end, StreamPriorityBase priority, boolean checkFlush,
                     FutureListener<Void> promise);
   protected abstract void writePriorityFrame(StreamPriorityBase priority);
   protected abstract void writeData_(ByteBuf chunk, boolean end, FutureListener<Void> promise);
@@ -189,7 +190,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S, H extends Header
     writeFrame((byte) type, (short) flags, payload);
   }
 
-  final void writeHeaders(H headers, boolean end, boolean checkFlush, Handler<AsyncResult<Void>> handler) {
+  final void writeHeaders(VertxDefaultHttpHeaders headers, boolean end, boolean checkFlush, Handler<AsyncResult<Void>> handler) {
     EventLoop eventLoop = conn.getContext().nettyEventLoop();
     if (eventLoop.inEventLoop()) {
       doWriteHeaders(headers, end, checkFlush, handler);
@@ -198,7 +199,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S, H extends Header
     }
   }
 
-  void doWriteHeaders(H headers, boolean end, boolean checkFlush, Handler<AsyncResult<Void>> handler) {
+  void doWriteHeaders(VertxDefaultHttpHeaders headers, boolean end, boolean checkFlush, Handler<AsyncResult<Void>> handler) {
     FutureListener<Void> promise = handler == null ? null : context.promise(handler);
     writeHeaders(headers, end, priority, checkFlush, promise);
     if (end) {
