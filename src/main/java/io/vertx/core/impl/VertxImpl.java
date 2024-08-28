@@ -504,10 +504,18 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public ContextInternal getOrCreateContext() {
-    ContextInternal ctx = getContext();
+    Thread thread = Thread.currentThread();
+    ContextInternal ctx = getContext(thread);
     if (ctx == null) {
-      // We are running embedded - Create a context
-      ctx = createEventLoopContext();
+      return createContext(thread);
+    }
+    return ctx;
+  }
+
+  private ContextInternal createContext(Thread thread) {
+    // We are running embedded - Create a context
+    ContextInternal ctx = createEventLoopContext();
+    if (!(thread instanceof VertxThread)) {
       stickyContext.set(new WeakReference<>(ctx));
     }
     return ctx;
@@ -693,13 +701,36 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public ContextInternal getContext() {
-    ContextInternal context = ContextInternal.current();
+    return getContext(Thread.currentThread());
+  }
+
+  /**
+   * @return the current context
+   */
+  public static ContextInternal currentContext(Thread thread) {
+    if (thread instanceof VertxThread) {
+      return ((VertxThread) thread).context();
+    } else {
+      VertxImpl.ContextDispatch current = VertxImpl.nonVertxContextDispatch.get();
+      if (current != null) {
+        return current.context;
+      }
+    }
+    return null;
+  }
+
+  private ContextInternal getContext(Thread current) {
+    ContextInternal context = currentContext(current);
     if (context != null && context.owner() == this) {
       return context;
     } else {
-      WeakReference<ContextInternal> ref = stickyContext.get();
-      return ref != null ? ref.get() : null;
+      return getStickyContext();
     }
+  }
+
+  private ContextInternal getStickyContext() {
+    WeakReference<ContextInternal> ref = stickyContext.get();
+    return ref != null ? ref.get() : null;
   }
 
   public ClusterManager getClusterManager() {

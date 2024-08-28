@@ -42,16 +42,7 @@ public interface ContextInternal extends Context {
    * @return the current context
    */
   static ContextInternal current() {
-    Thread thread = Thread.currentThread();
-    if (thread instanceof VertxThread) {
-      return ((VertxThread) thread).context();
-    } else {
-      VertxImpl.ContextDispatch current = VertxImpl.nonVertxContextDispatch.get();
-      if (current != null) {
-        return current.context;
-      }
-    }
-    return null;
+    return VertxImpl.currentContext(Thread.currentThread());
   }
 
   @Override
@@ -237,7 +228,7 @@ public interface ContextInternal extends Context {
    * @return whether the current thread is running on this context
    */
   default boolean isRunningOnContext() {
-    return current() == this && inThread();
+    return VertxImpl.currentContext(Thread.currentThread()) == this && inThread();
   }
 
   /**

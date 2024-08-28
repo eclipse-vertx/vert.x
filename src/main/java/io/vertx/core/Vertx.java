@@ -21,6 +21,7 @@ import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.metrics.Measured;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.net.NetClient;
@@ -177,7 +178,7 @@ public interface Vertx extends Measured {
    * @return The current context or {@code null} if there is no current context
    */
   static @Nullable Context currentContext() {
-    return ContextInternal.current();
+    return VertxImpl.currentContext(Thread.currentThread());
   }
 
   /**
