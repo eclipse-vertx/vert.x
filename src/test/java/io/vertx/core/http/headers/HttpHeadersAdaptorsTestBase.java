@@ -38,11 +38,6 @@ public abstract class HttpHeadersAdaptorsTestBase extends HeadersTestBase {
   protected DefaultHeaders<CharSequence, CharSequence, ?> headers;
   protected MultiMap map;
 
-  @Override
-  protected MultiMap newMultiMap() {
-    throw new RuntimeException("Implement this method");
-  }
-
   @Test
   public void testGetConvertUpperCase() {
     map.set("foo", "foo_value");
