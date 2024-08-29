@@ -1,5 +1,6 @@
 package io.vertx.core.http.headers;
 
+import io.netty.handler.codec.Headers;
 import io.vertx.core.http.impl.headers.VertxHttpHeadersBase;
 import org.junit.Before;
 import org.junit.Test;
@@ -9,10 +10,10 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
  */
-public abstract class VertxHttpHeadersTestBase extends HeadersTestBase {
-  private VertxHttpHeadersBase vertxHttpHeaders;
+public abstract class VertxHttpHeadersTestBase<H extends Headers<CharSequence, CharSequence, H>> extends HeadersTestBase {
+  private VertxHttpHeadersBase<H> vertxHttpHeaders;
 
-  protected abstract VertxHttpHeadersBase newVertxHttpHeaders();
+  protected abstract VertxHttpHeadersBase<H> newVertxHttpHeaders();
 
   @Before
   public void doBefore() {
