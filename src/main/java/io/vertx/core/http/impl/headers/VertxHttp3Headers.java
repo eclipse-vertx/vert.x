@@ -29,8 +29,8 @@ public class VertxHttp3Headers extends VertxHttpHeadersBase<Http3Headers> implem
   }
 
   @Override
-  public CharSequence authority() {
-    return this.headers.authority();
+  public String authority() {
+    return String.valueOf(this.headers.authority());
   }
 
   @Override
@@ -44,18 +44,28 @@ public class VertxHttp3Headers extends VertxHttpHeadersBase<Http3Headers> implem
   }
 
   @Override
-  public CharSequence path() {
-    return this.headers.path();
+  public String path() {
+    return String.valueOf(this.headers.path());
   }
 
   @Override
-  public CharSequence method() {
-    return this.headers.method();
+  public String method() {
+    return String.valueOf(this.headers.method());
   }
 
   @Override
-  public CharSequence status() {
-    return this.headers.status();
+  public String status() {
+    return String.valueOf(this.headers.status());
+  }
+
+  @Override
+  public void status(CharSequence status) {
+    this.headers.status(status);
+  }
+
+  @Override
+  public CharSequence scheme() {
+    return this.headers.scheme();
   }
 
   @Override

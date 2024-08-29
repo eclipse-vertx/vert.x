@@ -112,7 +112,7 @@ class Http2ServerStream extends VertxHttpStreamBase<Http2ServerConnection, Http2
     CharSequence value = headers.get(HttpHeaderNames.EXPECT);
     if (conn.options.isHandle100ContinueAutomatically() &&
       ((value != null && HttpHeaderValues.CONTINUE.equals(value)) ||
-        headers.contains(HttpHeaderNames.EXPECT, HttpHeaderValues.CONTINUE))) {
+        headers.contains(String.valueOf(HttpHeaderNames.EXPECT), String.valueOf(HttpHeaderValues.CONTINUE)))) {
       request.response().writeContinue();
     }
     VertxTracer tracer = context.tracer();

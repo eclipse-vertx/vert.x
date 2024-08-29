@@ -6,7 +6,7 @@ import io.vertx.core.MultiMap;
 
 import java.util.Map;
 
-public interface VertxHttpHeaders {
+public interface VertxHttpHeaders extends MultiMap {
 
   <T extends Headers<CharSequence, CharSequence, T>> T getHeaders();
 
@@ -16,31 +16,26 @@ public interface VertxHttpHeaders {
 
   void authority(String authority);
 
-  CharSequence authority();
+  String authority();
 
   void path(String value);
 
   void scheme(String value);
 
-  void add(CharSequence name, String value);
+  CharSequence scheme();
 
-  CharSequence get(CharSequence name);
+  String path();
 
-  void set(CharSequence name, CharSequence value);
+  String method();
 
-  CharSequence path();
+  String status();
 
-  CharSequence method();
-
-  VertxHttpHeaders add(String name, String value);
-
-  CharSequence status();
+  void status(CharSequence status);
 
   MultiMap toHeaderAdapter();
 
   HttpHeaders toHttpHeaders();
 
-  boolean contains(CharSequence name, CharSequence value);
+  boolean contains(String name, String value);
 
-  void remove(CharSequence name);
 }
