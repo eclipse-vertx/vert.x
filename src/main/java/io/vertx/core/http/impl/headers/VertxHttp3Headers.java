@@ -8,6 +8,9 @@ import io.vertx.core.MultiMap;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
+ */
 public class VertxHttp3Headers extends VertxHttpHeadersBase<Http3Headers> implements VertxHttpHeaders {
 
   public VertxHttp3Headers() {

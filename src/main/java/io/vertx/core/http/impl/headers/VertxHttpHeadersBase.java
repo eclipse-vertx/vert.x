@@ -10,6 +10,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
+ */
 public abstract class VertxHttpHeadersBase<H extends Headers<CharSequence, CharSequence, H>> implements VertxHttpHeaders {
   protected H headers;
 

@@ -6,6 +6,9 @@ import io.vertx.core.MultiMap;
 
 import java.util.Map;
 
+/**
+ * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
+ */
 public interface VertxHttpHeaders extends MultiMap {
 
   <T extends Headers<CharSequence, CharSequence, T>> T getHeaders();
