@@ -389,16 +389,7 @@ public class DeploymentTest extends VertxTestBase {
   }
 
   @Test
-  public void testUndeployNoHandler() throws Exception {
-    MyVerticle verticle = new MyVerticle();
-    vertx.deployVerticle(verticle).onComplete(onSuccess(id -> {
-      vertx.undeploy(id);
-    }));
-    assertWaitUntil(() -> vertx.deploymentIDs().isEmpty());
-  }
-
-  @Test
-  public void testUndeployTwice() throws Exception {
+  public void testUndeployTwice() {
     MyVerticle verticle = new MyVerticle();
     vertx.deployVerticle(verticle).onComplete(onSuccess(id -> {
       vertx.undeploy(id).onComplete(onSuccess(v -> {
@@ -412,7 +403,7 @@ public class DeploymentTest extends VertxTestBase {
   }
 
   @Test
-  public void testUndeployInvalidID() throws Exception {
+  public void testUndeployInvalidID() {
     vertx
       .undeploy("uqhwdiuhqwd")
       .onComplete(onFailure(err -> {
