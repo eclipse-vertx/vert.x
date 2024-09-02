@@ -54,14 +54,6 @@ public interface ContextInternal extends Context {
    */
   EventExecutor executor();
 
-  default ContextInternal asEventLoopContext() {
-    if (threadingModel() == ThreadingModel.EVENT_LOOP) {
-      return this;
-    } else {
-      return owner().createEventLoopContext(nettyEventLoop(), workerPool(), classLoader());
-    }
-  }
-
   /**
    * Return the Netty EventLoop used by this Context. This can be used to integrate
    * a Netty Server with a Vert.x runtime, specially the Context part.
@@ -91,6 +83,24 @@ public interface ContextInternal extends Context {
     PromiseInternal<T> promise = promise();
     promise.future().onComplete(p);
     return promise;
+  }
+
+  /**
+   * Create a promise and pass it to the {@code handler}, and then returns this future's promise. The {@code handler}
+   * is responsible for completing the promise, if the {@code handler} throws an exception, the promise is attempted
+   * to be failed with this exception.
+   *
+   * @param handler the handler completing the promise
+   * @return the future of the created promise
+   */
+  default <T> Future<T> future(Handler<Promise<T>> handler) {
+    Promise<T> promise = promise();
+    try {
+      handler.handle(promise);
+    } catch (Throwable t) {
+      promise.tryFail(t);
+    }
+    return promise.future();
   }
 
   /**

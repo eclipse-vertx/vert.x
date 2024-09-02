@@ -19,6 +19,7 @@ import io.vertx.core.http.HttpVersion;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.NoStackTraceTimeoutException;
 import io.vertx.core.internal.PromiseInternal;
+import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.pool.ConnectResult;
 import io.vertx.core.internal.pool.ConnectionPool;
 import io.vertx.core.internal.pool.PoolConnection;
@@ -59,12 +60,14 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
     return selected;
   };
 
+  private final VertxInternal vertx;
   private final HttpClientImpl client;
   private final ClientMetrics clientMetrics;
   private final HttpChannelConnector connector;
   private final ConnectionPool<HttpClientConnectionInternal> pool;
 
-  public SharedClientHttpStreamEndpoint(HttpClientImpl client,
+  public SharedClientHttpStreamEndpoint(VertxInternal vertx,
+                                        HttpClientImpl client,
                                         ClientMetrics clientMetrics,
                                         PoolMetrics poolMetrics,
                                         int queueMaxSize,
@@ -77,6 +80,7 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
     ConnectionPool<HttpClientConnectionInternal> pool = ConnectionPool.pool(this, new int[]{http1MaxSize, http2MaxSize}, queueMaxSize)
       .connectionSelector(LIFO_SELECTOR).contextProvider(client.contextProvider());
 
+    this.vertx = vertx;
     this.client = client;
     this.clientMetrics = clientMetrics;
     this.connector = connector;
@@ -177,7 +181,9 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
   @Override
   protected Future<Lease<HttpClientConnectionInternal>> requestConnection2(ContextInternal ctx, long timeout) {
     PromiseInternal<Lease<HttpClientConnectionInternal>> promise = ctx.promise();
-    Request request = new Request(ctx, client.options().getProtocolVersion(), timeout, promise);
+    // ctx.workerPool() -> not sure we want that in a pool
+    ContextInternal connCtx = vertx.createEventLoopContext(ctx.nettyEventLoop(), ctx.workerPool(), ctx.classLoader());
+    Request request = new Request(connCtx, client.options().getProtocolVersion(), timeout, promise);
     request.acquire();
     return promise.future();
   }

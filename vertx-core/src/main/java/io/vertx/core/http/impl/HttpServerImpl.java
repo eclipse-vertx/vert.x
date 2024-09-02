@@ -175,6 +175,7 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
     }
     ContextInternal context = vertx.getOrCreateContext();
     ContextInternal listenContext;
+    // Not sure of this
     if (context.isEventLoopContext()) {
       listenContext = context;
     } else {

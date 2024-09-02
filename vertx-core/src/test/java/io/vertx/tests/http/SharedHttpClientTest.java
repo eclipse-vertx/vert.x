@@ -42,7 +42,9 @@ public class SharedHttpClientTest extends VertxTestBase {
     CountDownLatch receivedLatch = new CountDownLatch(TOTAL_REQUESTS);
     ServerVerticle serverVerticle = new ServerVerticle();
 
-    vertx.deployVerticle(serverVerticle).onComplete(onSuccess(serverId -> {
+    vertx
+      .deployVerticle(serverVerticle)
+      .onComplete(onSuccess(serverId -> {
 
       DeploymentOptions deploymentOptions = deploymentOptions(
         CLIENT_VERTICLE_INSTANCES,

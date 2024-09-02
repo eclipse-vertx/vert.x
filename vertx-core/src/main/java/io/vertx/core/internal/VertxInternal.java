@@ -56,15 +56,44 @@ public interface VertxInternal extends Vertx {
   }
 
   /**
+   * Create a promise and pass it to the {@code handler}, and then returns this future's promise. The {@code handler}
+   * is responsible for completing the promise, if the {@code handler} throws an exception, the promise is attempted
+   * to be failed with this exception.
+   *
+   * @param handler the handler completing the promise
+   * @return the future of the created promise
+   */
+  default <T> Future<T> future(Handler<Promise<T>> handler) {
+    return getOrCreateContext().future(handler);
+  }
+
+  /**
    * @return a promise associated with the context returned by {@link #getOrCreateContext()}.
    */
-  <T> PromiseInternal<T> promise();
+  default <T> PromiseInternal<T> promise() {
+    return getOrCreateContext().promise();
+  }
 
   /**
    * @return a promise associated with the context returned by {@link #getOrCreateContext()} or the {@code handler}
    *         if that handler is already an instance of {@code PromiseInternal}
    */
-  <T> PromiseInternal<T> promise(Promise<T> promise);
+  default <T> PromiseInternal<T> promise(Promise<T> p) {
+    if (p instanceof PromiseInternal) {
+      PromiseInternal<T> promise = (PromiseInternal<T>) p;
+      if (promise.context() != null) {
+        return promise;
+      }
+    }
+    PromiseInternal<T> promise = promise();
+    promise.future().onComplete(p);
+    return promise;
+  }
+
+  default void runOnContext(Handler<Void> task) {
+    ContextInternal context = getOrCreateContext();
+    context.runOnContext(task);
+  }
 
   long maxEventLoopExecTime();
 
