@@ -75,7 +75,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
         } else {
           Buffer data = (Buffer) item;
           int len = data.length();
-          conn.getContext().emit(null, v -> {
+          conn.context.emit(null, v -> {
             if (remoteSideOpen(stream)) {
               // Handle the HTTP upgrade case
               // buffers are received by HTTP/1 and not accounted by HTTP/2
@@ -89,7 +89,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
     this.priority = createDefaultStreamPriority();
     this.isConnect = false;
     this.writable = true;
-    this.outboundQueue = new OutboundMessageQueue<>(conn.getContext().nettyEventLoop()) {
+    this.outboundQueue = new OutboundMessageQueue<>(conn.context().nettyEventLoop()) {
       // TODO implement stop drain to optimize flushes ?
       @Override
       public boolean test(MessageWrite msg) {
@@ -210,7 +210,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
 
   public final Future<Void> writeFrame(int type, int flags, ByteBuf payload) {
     Promise<Void> promise = context.promise();
-    EventLoop eventLoop = conn.getContext().nettyEventLoop();
+    EventLoop eventLoop = conn.context().nettyEventLoop();
     if (eventLoop.inEventLoop()) {
       doWriteFrame(type, flags, payload, promise);
     } else {
@@ -220,7 +220,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
   }
 
   public final void writeFrame(int type, int flags, ByteBuf payload, Promise<Void> promise) {
-    EventLoop eventLoop = conn.getContext().nettyEventLoop();
+    EventLoop eventLoop = conn.context().nettyEventLoop();
     if (eventLoop.inEventLoop()) {
       doWriteFrame(type, flags, payload, promise);
     } else {
@@ -234,7 +234,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
 
   final void writeHeaders(VertxHttpHeaders headers, boolean first, boolean end, boolean checkFlush, Promise<Void> promise) {
     if (first) {
-      EventLoop eventLoop = conn.getContext().nettyEventLoop();
+      EventLoop eventLoop = conn.context().nettyEventLoop();
       if (eventLoop.inEventLoop()) {
         doWriteHeaders(headers, end, checkFlush, promise);
       } else {
@@ -294,7 +294,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
   }
 
   final void writeReset(long code) {
-    EventLoop eventLoop = conn.getContext().nettyEventLoop();
+    EventLoop eventLoop = conn.context().nettyEventLoop();
     if (eventLoop.inEventLoop()) {
       doWriteReset(code);
     } else {

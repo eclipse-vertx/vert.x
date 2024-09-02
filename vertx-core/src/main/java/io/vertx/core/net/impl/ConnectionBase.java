@@ -236,7 +236,7 @@ public abstract class ConnectionBase {
     return chctx;
   }
 
-  public final ContextInternal getContext() {
+  public final ContextInternal context() {
     return context;
   }
 

@@ -505,7 +505,7 @@ public class ServerWebSocketHandshaker implements ServerWebSocket {
       return webSocketConn;
     });
     CompletableFuture<Void> latch = new CompletableFuture<>();
-    httpConn.getContext().execute(() -> {
+    httpConn.context().execute(() -> {
       // Must be done on event-loop
       pipeline.replace(VertxHandler.class, "handler", handler);
       latch.complete(null);
@@ -520,7 +520,7 @@ public class ServerWebSocketHandshaker implements ServerWebSocket {
     if (METRICS_ENABLED && httpConn.metrics != null) {
       webSocket.setMetric(httpConn.metrics.connected(httpConn.metric(), requestMetric, this));
     }
-    webSocket.registerHandler(httpConn.getContext().owner().eventBus());
+    webSocket.registerHandler(httpConn.context().owner().eventBus());
     return webSocket;
   }
 }
