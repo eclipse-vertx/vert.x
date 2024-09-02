@@ -10,14 +10,14 @@
  */
 package io.vertx.core.http.impl.headers;
 
-import io.netty.handler.codec.http2.Http2Headers;
+import io.netty.incubator.codec.http3.Http3Headers;
 
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
  */
-public class Http2HeadersAdaptor extends HttpHeadersAdaptor<Http2Headers> {
+public class Http3HeadersAdaptor extends HttpHeadersAdaptor<Http3Headers> {
 
-  public Http2HeadersAdaptor(Http2Headers headers) {
+  public Http3HeadersAdaptor(Http3Headers headers) {
     super(headers);
   }
 
