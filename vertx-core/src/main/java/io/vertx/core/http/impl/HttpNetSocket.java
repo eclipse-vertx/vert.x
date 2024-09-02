@@ -194,7 +194,7 @@ class HttpNetSocket implements NetSocket {
 
   @Override
   public Future<Void> sendFile(String filename, long offset, long length) {
-    return HttpUtils.resolveFile(conn.getContext(), filename, offset, length)
+    return HttpUtils.resolveFile(conn.context(), filename, offset, length)
       .compose(file -> file
         .pipe()
         .endOnComplete(false)
