@@ -69,11 +69,6 @@ public interface HttpClientConnectionInternal extends HttpConnection {
   boolean pooled();
 
   /**
-   * @return the connection channel
-   */
-  Channel channel();
-
-  /**
    * @return the {@link ChannelHandlerContext} of the handler managing the connection
    */
   ChannelHandlerContext channelHandlerContext();
@@ -86,7 +81,10 @@ public interface HttpClientConnectionInternal extends HttpConnection {
    */
   Future<HttpClientStream> createStream(ContextInternal context);
 
-  ContextInternal getContext();
+  /**
+   * @return the connection context
+   */
+  ContextInternal context();
 
   boolean isValid();
 

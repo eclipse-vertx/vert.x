@@ -185,11 +185,12 @@ public interface Future<T> extends AsyncResult<T> {
   }
 
   /**
-   * Create a future that hasn't completed yet and that is passed to the {@code handler} before it is returned.
+   * Create a promise and pass it to the {@code handler}, and then returns this future's promise. The {@code handler}
+   * is responsible for completing the promise, if the {@code handler} throws an exception, the promise is attempted
+   * to be failed with this exception.
    *
-   * @param handler the handler
-   * @param <T> the result type
-   * @return the future.
+   * @param handler the handler completing the promise
+   * @return the future of the created promise
    */
   static <T> Future<T> future(Handler<Promise<T>> handler) {
     Promise<T> promise = Promise.promise();

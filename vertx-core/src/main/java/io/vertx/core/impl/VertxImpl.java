@@ -434,29 +434,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return scheduleTimeout(ctx, false, delay, TimeUnit.MILLISECONDS, ctx.isDeployment(), handler);
   }
 
-  @Override
-  public <T> PromiseInternal<T> promise() {
-    ContextInternal context = getOrCreateContext();
-    return context.promise();
-  }
-
-  public <T> PromiseInternal<T> promise(Promise<T> p) {
-    if (p instanceof PromiseInternal) {
-      PromiseInternal<T> promise = (PromiseInternal<T>) p;
-      if (promise.context() != null) {
-        return promise;
-      }
-    }
-    PromiseInternal<T> promise = promise();
-    promise.future().onComplete(p);
-    return promise;
-  }
-
-  public void runOnContext(Handler<Void> task) {
-    ContextInternal context = getOrCreateContext();
-    context.runOnContext(task);
-  }
-
   // The background pool is used for making blocking calls to legacy synchronous APIs
   public WorkerPool getWorkerPool() {
     return workerPool;

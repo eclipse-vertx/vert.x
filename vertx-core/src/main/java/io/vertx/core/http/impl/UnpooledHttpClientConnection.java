@@ -247,7 +247,7 @@ public class UnpooledHttpClientConnection implements HttpClientConnection {
 
   @Override
   public Future<HttpClientRequest> request(RequestOptions options) {
-    ContextInternal ctx = actual.getContext().owner().getOrCreateContext();
+    ContextInternal ctx = actual.context().owner().getOrCreateContext();
     return request(ctx, options);
   }
 }
