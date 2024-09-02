@@ -1696,7 +1696,7 @@ public class Http2ClientTest extends Http2TestBase {
           assertEquals(HttpVersion.HTTP_2, resp1.version());
           client.request(requestOptions).onComplete(onSuccess(req2 -> {
             req2.send().onComplete(onSuccess(resp2 -> {
-              assertSame(((HttpClientConnectionInternal)conn).channel(), ((HttpClientConnectionInternal)resp2.request().connection()).channel());
+              assertSame(((HttpClientConnectionInternal)conn).channelHandlerContext().channel(), ((HttpClientConnectionInternal)resp2.request().connection()).channelHandlerContext().channel());
               testComplete();
             }));
           }));
@@ -1735,8 +1735,8 @@ public class Http2ClientTest extends Http2TestBase {
       client.request(requestOptions).onComplete(onSuccess(req -> {
         req.send().onComplete(onSuccess(resp -> {
           Http2UpgradeClientConnection connection = (Http2UpgradeClientConnection) resp.request().connection();
-          Channel ch = connection.channel();
-          ChannelPipeline pipeline = ch.pipeline();
+          ChannelHandlerContext chctx = connection.channelHandlerContext();
+          ChannelPipeline pipeline = chctx.pipeline();
           for (Map.Entry<String, ?> entry : pipeline) {
             assertTrue("Was not expecting pipeline handler " + entry.getValue().getClass(), entry.getKey().equals("codec") || entry.getKey().equals("handler"));
           }

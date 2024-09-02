@@ -22,9 +22,10 @@ import io.vertx.core.internal.ContextInternal;
  */
 public interface HttpServerConnection extends HttpConnection {
 
-  ContextInternal getContext();
-
-  Channel channel();
+  /**
+   * @return the connection context
+   */
+  ContextInternal context();
 
   ChannelHandlerContext channelHandlerContext();
 

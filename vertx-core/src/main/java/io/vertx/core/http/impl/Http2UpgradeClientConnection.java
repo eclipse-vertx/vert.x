@@ -99,11 +99,6 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
   }
 
   @Override
-  public Channel channel() {
-    return current.channel();
-  }
-
-  @Override
   public Object metric() {
     return current.metric();
   }
@@ -795,8 +790,8 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
   }
 
   @Override
-  public ContextInternal getContext() {
-    return current.getContext();
+  public ContextInternal context() {
+    return current.context();
   }
 
   @Override

@@ -72,7 +72,7 @@ class HttpServerConnectionHandler implements Handler<HttpServerConnection> {
     conn.invalidRequestHandler(invalidRequestHandler);
     if (connectionHandler != null) {
       // We hand roll event-loop execution in case of a worker context
-      ContextInternal ctx = conn.getContext();
+      ContextInternal ctx = conn.context();
       ContextInternal prev = ctx.beginDispatch();
       try {
         connectionHandler.handle(conn);

@@ -11,6 +11,7 @@
 package io.vertx.core.net.endpoint.impl;
 
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.internal.net.endpoint.EndpointResolverInternal;
 import io.vertx.core.net.endpoint.EndpointServer;
 import io.vertx.core.net.endpoint.ServerInteraction;
@@ -69,11 +70,17 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
 
   @Override
   public Future<io.vertx.core.net.endpoint.Endpoint> resolveEndpoint(Address address) {
-    return lookupEndpoint2(vertx.getOrCreateContext(), address);
+    return vertx.future(promise -> lookupEndpoint(address, promise));
   }
 
-  public Future<io.vertx.core.net.endpoint.Endpoint> lookupEndpoint(ContextInternal ctx, Address address) {
-    return lookupEndpoint2(ctx, address);
+  public void lookupEndpoint(Address address, Promise<io.vertx.core.net.endpoint.Endpoint> promise) {
+    A casted = endpointResolver.tryCast(address);
+    if (casted == null) {
+      promise.fail("Cannot resolve address " + address);
+      return;
+    }
+    ManagedEndpoint resolved = resolveAddress(casted);
+    ((Future) resolved.endpoint).onComplete(promise);
   }
 
   private class EndpointImpl implements io.vertx.core.net.endpoint.Endpoint {
@@ -115,15 +122,6 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
       }
       return endpoint;
     }
-  }
-
-  private Future<io.vertx.core.net.endpoint.Endpoint> lookupEndpoint2(ContextInternal ctx, Address address) {
-    A casted = endpointResolver.tryCast(address);
-    if (casted == null) {
-      return ctx.failedFuture("Cannot resolve address " + address);
-    }
-    ManagedEndpoint resolved = resolveAddress(casted);
-    return (Future) resolved.endpoint;
   }
 
   private class ManagedEndpoint extends Endpoint {

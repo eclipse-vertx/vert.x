@@ -35,7 +35,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
     HttpMethod method,
     String uri,
     MultiMap headers) {
-    super(connection, stream, stream.connection().getContext().promise(), method, uri);
+    super(connection, stream, stream.connection().context().promise(), method, uri);
     this.stream = stream;
     this.headers = headers;
   }
