@@ -371,6 +371,8 @@ public class HAManager {
           if (group.equals(this.group)) {
             count++;
           }
+        } else if (!attainedQuorum) {
+          checkQuorumWhenAdded(node, System.currentTimeMillis());
         }
       }
       boolean attained = count >= quorumSize;
