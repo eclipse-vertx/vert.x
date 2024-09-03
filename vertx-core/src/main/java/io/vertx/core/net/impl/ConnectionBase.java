@@ -36,6 +36,7 @@ import java.net.InetSocketAddress;
 import java.security.cert.Certificate;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -63,7 +64,7 @@ public abstract class ConnectionBase {
   protected final VertxInternal vertx;
   protected final ChannelHandlerContext chctx;
   protected final Channel channel;
-  protected final ContextInternal context;
+  public final ContextInternal context;
   private Handler<Throwable> exceptionHandler;
   private Handler<Void> closeHandler;
   private Object metric;
@@ -390,7 +391,22 @@ public abstract class ConnectionBase {
   }
 
   public boolean isSsl() {
-    return chctx.pipeline().get(SslHandler.class) != null;
+    return chctx.pipeline().get(SslHandler.class) != null || getHttp3SslHandler(chctx) != null;
+  }
+
+  private ChannelHandler getHttp3SslHandler(ChannelHandlerContext chctx) {
+    if (chctx.channel() == null || chctx.channel().parent() == null || chctx.channel().parent().parent() == null)
+      return null;
+
+    ChannelPipeline pipeline = chctx.channel().parent().parent().pipeline();
+    for (Map.Entry<String, ChannelHandler> stringChannelHandlerEntry : pipeline) {
+      ChannelHandler handler = stringChannelHandlerEntry.getValue();
+      if (handler.getClass().getSimpleName().equals("QuicheQuicClientCodec")) {
+        return handler;
+      }
+    }
+
+    return null;
   }
 
   public boolean isTrafficShaped() {
@@ -398,6 +414,7 @@ public abstract class ConnectionBase {
   }
 
   public SSLSession sslSession() {
+    //TODO: should return sslSession for http3.
     ChannelHandlerContext sslHandlerContext = chctx.pipeline().context(SslHandler.class);
     if (sslHandlerContext != null) {
       SslHandler sslHandler = (SslHandler) sslHandlerContext.handler();
@@ -519,4 +536,7 @@ public abstract class ConnectionBase {
     }
   }
 
+  public VertxInternal vertx() {
+    return vertx;
+  }
 }

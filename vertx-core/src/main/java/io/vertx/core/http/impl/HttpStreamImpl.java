@@ -4,16 +4,21 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.EventLoop;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.http.StreamResetException;
+import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.net.impl.ConnectionBase;
+import io.vertx.core.net.impl.MessageWrite;
 import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.streams.WriteStream;
@@ -87,6 +92,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
 
   @Override
   public synchronized boolean isNotWritable() {
+    //    return !isWritable();  //TODO: the following line is from 5.x! my old code is current line. choose correct one.
     return writeWindow > windowSize;
   }
 
@@ -120,10 +126,6 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
     super.updatePriority(streamPriority);
   }
 
-  @Override
-  public HttpVersion version() {
-    return HttpVersion.HTTP_2;
-  }
 
   @Override
   void handleEnd(MultiMap trailers) {
@@ -190,23 +192,23 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
   }
 
   @Override
-  public void writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriorityBase priority,
-                        boolean connect, Handler<AsyncResult<Void>> handler) {
+  public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriorityBase priority, boolean connect) {
     priority(priority);
-    ContextInternal ctx = conn.getContext();
-    EventLoop eventLoop = ctx.nettyEventLoop();
-    synchronized (this) {
-      if (shouldQueue(eventLoop)) {
-        queueForWrite(eventLoop, () -> writeHeaders(request, buf, end, priority, connect, handler));
-        return;
+    PromiseInternal<Void> promise = context.promise();
+    write(new MessageWrite() {
+      @Override
+      public void write() {
+        writeHeaders(request, buf, end, priority, connect, promise);
       }
-    }
-    writeHeaders(request, buf, end, priority, connect, handler);
+      @Override
+      public void cancel(Throwable cause) {
+        promise.fail(cause);
+      }
+    });
+    return promise.future();
   }
 
-  private void writeHeaders(HttpRequestHead request, ByteBuf buf, boolean end, StreamPriorityBase priority,
-                            boolean connect,
-                            Handler<AsyncResult<Void>> handler) {
+  private void writeHeaders(HttpRequestHead request, ByteBuf buf, boolean end, StreamPriorityBase priority, boolean connect, Promise<Void> promise) {
     VertxHttpHeaders headers = createHttpHeadersWrapper();
     headers.method(request.method.name());
     boolean e;
@@ -230,28 +232,26 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
         headers.add(HttpUtils.toLowerCase(header.getKey()), header.getValue());
       }
     }
+    //TODO: check with old impl: if (conn.client.options().isDecompressionSupported() && headers.get(HttpHeaderNames.ACCEPT_ENCODING) == null) {
     if (isTryUseCompression() && headers.get(HttpHeaderNames.ACCEPT_ENCODING) == null) {
       headers.set(HttpHeaderNames.ACCEPT_ENCODING, Http1xClientConnection.determineCompressionAcceptEncoding());
     }
     try {
-      createStream(request, headers, handler);
+      createStream(request, headers);
     } catch (HttpException ex) {
-      if (handler != null) {
-        handler.handle(context.failedFuture(ex));
-      }
+      promise.fail(ex);
       handleException(ex);
       return;
     }
     if (buf != null) {
       doWriteHeaders(headers, false, false, null);
-      doWriteData(buf, e, handler);
+      doWriteData(buf, e, promise);
     } else {
-      doWriteHeaders(headers, e, true, handler);
+      doWriteHeaders(headers, e, true, promise);
     }
   }
 
-  private void createStream(HttpRequestHead head, VertxHttpHeaders headers,
-                            Handler<AsyncResult<Void>> handler) throws HttpException {
+  private void createStream(HttpRequestHead head, VertxHttpHeaders headers) throws HttpException {
     int id = lastStreamCreated();
     if (id == 0) {
       id = 1;
@@ -267,12 +267,12 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
       }
       VertxTracer tracer = context.tracer();
       if (tracer != null) {
-        BiConsumer<String, String> headers_ =
-          (key, val) -> headers.add(key, val);
+        BiConsumer<String, String> headers_ = (key, val) -> headers.add(key, val);
         String operation = head.traceOperation;
         if (operation == null) {
           operation = headers.method().toString();
         }
+        //TODO: verify the following line with version 5.x: trace = tracer.sendRequest(context, SpanKind.RPC, conn.client.options().getTracingPolicy(), head, operation, headers_, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
         trace = tracer.sendRequest(context, SpanKind.RPC, getTracingPolicy(), head, operation, headers_,
           HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
       }
@@ -280,7 +280,14 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
   }
 
   @Override
-  public void writeBuffer(ByteBuf buf, boolean end, Handler<AsyncResult<Void>> listener) {
+  public Future<Void> writeBuffer(ByteBuf buf, boolean end) {
+    Promise<Void> promise = context.promise();
+    writeData(buf, end, promise);
+    return promise.future();
+
+
+    //TODO: the following codes are commented from 4.x
+/*
     if (buf != null) {
       int size = buf.readableBytes();
       synchronized (this) {
@@ -307,6 +314,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
       }
     }
     writeData(buf, end, listener);
+*/
   }
 
   @Override
@@ -331,4 +339,8 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
     conn.context.emit(code, this::writeReset);
   }
 
+  @Override
+  public HttpClientConnectionInternal connection() {
+    return (HttpClientConnectionInternal) conn;
+  }
 }
