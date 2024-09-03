@@ -8,15 +8,20 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.impl;
+package io.vertx.core.impl.verticle;
 
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.ServiceHelper;
 import io.vertx.core.Verticle;
+import io.vertx.core.impl.*;
+import io.vertx.core.impl.deployment.Deployable;
+import io.vertx.core.impl.deployment.Deployment;
+import io.vertx.core.impl.deployment.DeploymentManager;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.spi.VerticleFactory;
 
 import java.util.ArrayList;
@@ -28,20 +33,23 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class VerticleManager {
 
-  private final VertxInternal vertx;
+  private final Logger log;
+  private final VertxImpl vertx;
   private final DeploymentManager deploymentManager;
   private final Map<String, List<VerticleFactory>> verticleFactories = new ConcurrentHashMap<>();
   private final List<VerticleFactory> defaultFactories = new ArrayList<>();
 
-  public VerticleManager(VertxInternal vertx, DeploymentManager deploymentManager) {
-    this.vertx = vertx;
+  public VerticleManager(VertxInternal vertx, Logger log, DeploymentManager deploymentManager) {
+    this.vertx = (VertxImpl) vertx;
     this.deploymentManager = deploymentManager;
+    this.log = log;
     loadVerticleFactories();
   }
 
@@ -144,7 +152,7 @@ public class VerticleManager {
   }
 
   public Future<Deployment> deployVerticle(String identifier,
-                                       DeploymentOptions options) {
+                                           DeploymentOptions options) {
     ContextInternal callingContext = vertx.getOrCreateContext();
     ClassLoader loader = options.getClassLoader();
     if (loader == null) {
@@ -202,7 +210,7 @@ public class VerticleManager {
       return Future.failedFuture(e);
     }
     return p.future()
-      .compose(callable -> deploymentManager.doDeploy(options, v -> identifier, parentContext, callingContext, cl, callable));
+      .compose(callable -> deployVerticle(options, v -> identifier, parentContext, callingContext, cl, callable));
   }
 
   static ClassLoader getCurrentClassLoader() {
@@ -211,5 +219,44 @@ public class VerticleManager {
       cl = VerticleManager.class.getClassLoader();
     }
     return cl;
+  }
+
+  public Future<String> deployVerticle2(ContextInternal parentContext, Callable<Verticle> verticleSupplier, DeploymentOptions options) {
+    if (options.getInstances() < 1) {
+      throw new IllegalArgumentException("Can't specify < 1 instances to deploy");
+    }
+    options.checkIsolationNotDefined();
+    ClassLoader cl = options.getClassLoader();
+    if (cl == null) {
+      cl = Thread.currentThread().getContextClassLoader();
+      if (cl == null) {
+        cl = getClass().getClassLoader();
+      }
+    }
+    return deployVerticle(
+      options,
+      v -> "java:" + v.getClass().getName(),
+      parentContext,
+      parentContext,
+      cl,
+      verticleSupplier)
+      .map(Deployment::deploymentID);
+  }
+  public Future<Deployment> deployVerticle(DeploymentOptions options,
+                                           Function<Verticle, String> identifierProvider,
+                                           ContextInternal parentContext,
+                                           ContextInternal callingContext,
+                                           ClassLoader tccl,
+                                           Callable<Verticle> verticleSupplier) {
+
+
+    Deployable verticleDeployable;
+    try {
+      verticleDeployable = VerticleDeployable.deployable(vertx, log, options, identifierProvider, tccl, verticleSupplier);
+    } catch (Exception e) {
+      return callingContext.failedFuture(e);
+    }
+
+    return deploymentManager.deploy(options, parentContext, callingContext, verticleDeployable);
   }
 }

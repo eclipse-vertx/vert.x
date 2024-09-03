@@ -33,6 +33,10 @@ import io.vertx.core.eventbus.impl.clustered.ClusteredEventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.*;
+import io.vertx.core.impl.deployment.DefaultDeploymentManager;
+import io.vertx.core.impl.deployment.Deployment;
+import io.vertx.core.impl.deployment.DeploymentManager;
+import io.vertx.core.impl.verticle.VerticleManager;
 import io.vertx.core.internal.*;
 import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.internal.threadchecker.BlockedThreadChecker;
@@ -228,8 +232,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     this.nodeSelector = nodeSelector;
     this.eventBus = clusterManager != null ? new ClusteredEventBus(this, options, clusterManager, nodeSelector) : new EventBusImpl(this);
     this.sharedData = new SharedDataImpl(this, clusterManager);
-    this.deploymentManager = new DeploymentManager(this);
-    this.verticleManager = new VerticleManager(this, deploymentManager);
+    this.deploymentManager = new DefaultDeploymentManager(this);
+    this.verticleManager = new VerticleManager(this, DefaultDeploymentManager.log, deploymentManager);
     this.eventExecutorProvider = eventExecutorProvider;
   }
 
@@ -820,7 +824,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       // If we are closed use a context less future
       return Future.failedFuture("Vert.x closed");
     } else {
-      return deploymentManager.deployVerticle(verticleSupplier, options);
+      ContextInternal currentContext = getOrCreateContext();
+      return verticleManager.deployVerticle2(currentContext, verticleSupplier, options);
     }
   }
 
@@ -836,7 +841,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     } else {
       future = getOrCreateContext().succeededFuture();
     }
-    return future.compose(v -> deploymentManager.undeployVerticle(deploymentID));
+    return future.compose(v -> deploymentManager.undeploy(deploymentID));
   }
 
   @Override
@@ -1121,7 +1126,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     });
     return new WorkerPool(shared.executor(), shared.metrics()) {
       @Override
-      void close() {
+      public void close() {
         closeFuture.close();
       }
     };

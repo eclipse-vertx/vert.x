@@ -13,8 +13,9 @@ package io.vertx.tests.deployment;
 
 import io.netty.channel.EventLoop;
 import io.vertx.core.*;
+import io.vertx.core.impl.verticle.VerticleDeployable;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.impl.Deployment;
+import io.vertx.core.impl.deployment.Deployment;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.test.core.TestUtils;
@@ -535,7 +536,7 @@ public class DeploymentTest extends VertxTestBase {
     assertWaitUntil(() -> deployCount.get() == numInstances);
     assertEquals(1, vertx.deploymentIDs().size());
     Deployment deployment = ((VertxInternal) vertx).getDeployment(vertx.deploymentIDs().iterator().next());
-    Set<Verticle> verticles = deployment.getVerticles();
+    Set<Verticle> verticles = ((VerticleDeployable)deployment.deployable()).verticles();
     assertEquals(numInstances, verticles.size());
     CountDownLatch undeployLatch = new CountDownLatch(1);
     assertEquals(numInstances, deployCount.get());
@@ -839,7 +840,6 @@ public class DeploymentTest extends VertxTestBase {
 
   @Test
   public void testAsyncUndeployFailsAfterSuccess() {
-    waitFor(2);
     Verticle verticle = new AbstractVerticle() {
       @Override
       public void stop(Promise<Void> stopPromise) throws Exception {
@@ -850,9 +850,6 @@ public class DeploymentTest extends VertxTestBase {
     Context ctx = vertx.getOrCreateContext();
     ctx.runOnContext(v1 -> {
       vertx.deployVerticle(verticle).onComplete(onSuccess(id -> {
-        ctx.exceptionHandler(err -> {
-          complete();
-        });
         vertx.undeploy(id).onComplete(onSuccess(v2 -> {
           complete();
         }));
@@ -1095,7 +1092,7 @@ public class DeploymentTest extends VertxTestBase {
     };
     Verticle verticleParent = new AbstractVerticle() {
       @Override
-      public void start(Promise<Void> startPromise) throws Exception {
+      public void start(Promise<Void> startPromise) {
         vertx.deployVerticle(verticleChild).onComplete(onFailure(v -> {
           startPromise.complete();
         }));
@@ -1296,6 +1293,45 @@ public class DeploymentTest extends VertxTestBase {
     }));
     awaitLatch(deployLatch);
     vertx.undeploy(deploymentID.get());
+    await();
+  }
+
+  @Ignore()
+  @Test
+  public void testDeployWithPartialFailure() {
+    testDeployWithPartialFailure(3, 2);
+  }
+
+  private void testDeployWithPartialFailure(int num, int i) {
+    AtomicInteger count = new AtomicInteger();
+    Map<Integer, Promise<Void>> startPromises = Collections.synchronizedMap(new HashMap<>());
+    Context ctx = vertx.getOrCreateContext();
+    vertx.deployVerticle(() -> {
+      int idx = count.getAndIncrement();
+      return new AbstractVerticle() {
+        @Override
+        public void start(Promise<Void> startPromise) {
+          startPromises.put(idx, startPromise);
+          if (startPromises.size() == num) {
+            startPromises
+              .forEach((idx, p) -> {
+              if (idx != i) {
+                p.tryComplete();
+              }
+            });
+            ctx.runOnContext(v -> {
+              Promise<Void> toFail = startPromises.get(i);
+              toFail.tryFail("it-failed");
+            });
+          }
+        }
+
+        @Override
+        public void stop() throws Exception {
+          System.out.println("Stopping " + idx);
+        }
+      };
+    }, new DeploymentOptions().setInstances(num));
     await();
   }
 

@@ -15,7 +15,7 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
-import io.vertx.core.impl.Deployment;
+import io.vertx.core.impl.deployment.Deployment;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.cluster.ClusterManager;
@@ -230,7 +230,7 @@ public class ComplexHATest extends VertxTestBase {
     for (Deployment prev: prevSet) {
       boolean contains = false;
       for (Deployment curr: currSet) {
-        if (curr.verticleIdentifier().equals(prev.verticleIdentifier()) && curr.deploymentOptions().toJson().equals(prev.deploymentOptions().toJson())) {
+        if (curr.identifier().equals(prev.identifier()) && curr.deploymentOptions().toJson().equals(prev.deploymentOptions().toJson())) {
           contains = true;
           break;
         }

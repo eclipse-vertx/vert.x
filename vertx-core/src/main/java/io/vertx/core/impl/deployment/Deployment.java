@@ -9,17 +9,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.impl;
+package io.vertx.core.impl.deployment;
 
-import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Verticle;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.json.JsonObject;
-
-import java.util.Set;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -36,13 +32,11 @@ public interface Deployment {
 
   String deploymentID();
 
-  String verticleIdentifier();
+  String identifier();
 
   DeploymentOptions deploymentOptions();
 
-  Set<Context> getContexts();
-
-  Set<Verticle> getVerticles();
+  Deployable deployable();
 
   void undeployHandler(Handler<Void> handler);
 

@@ -18,6 +18,7 @@ import io.netty.resolver.AddressResolverGroup;
 import io.vertx.core.*;
 import io.vertx.core.dns.impl.DnsAddressResolverProvider;
 import io.vertx.core.impl.*;
+import io.vertx.core.impl.deployment.Deployment;
 import io.vertx.core.internal.threadchecker.BlockedThreadChecker;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.impl.NetServerInternal;
