@@ -4451,7 +4451,7 @@ public abstract class HttpTest extends HttpTestBase {
       public HttpClientConnection connection() { throw new UnsupportedOperationException(); }
       public Future<Void> writeCustomFrame(int type, int flags, Buffer payload) { throw new UnsupportedOperationException(); }
       public boolean writeQueueFull() { throw new UnsupportedOperationException(); }
-      public StreamPriority getStreamPriority() { return null; }
+      public StreamPriorityBase getStreamPriority() { return null; }
       public HttpClientRequest setMethod(HttpMethod method) { throw new UnsupportedOperationException(); }
       public Future<HttpClientResponse> response() { throw new UnsupportedOperationException(); }
     }
@@ -4475,7 +4475,7 @@ public abstract class HttpTest extends HttpTestBase {
       public HttpClientResponse customFrameHandler(Handler<HttpFrame> handler) { throw new UnsupportedOperationException(); }
       public NetSocket netSocket() { throw new UnsupportedOperationException(); }
       public HttpClientRequest request() { return req; }
-      public HttpClientResponse streamPriorityHandler(Handler<StreamPriority> handler) { return this; }
+      public HttpClientResponse streamPriorityHandler(Handler<StreamPriorityBase> handler) { return this; }
       public Future<Buffer> body() { throw new UnsupportedOperationException(); }
       public Future<Void> end() { throw new UnsupportedOperationException(); }
     }
