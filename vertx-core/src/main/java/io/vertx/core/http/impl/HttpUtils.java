@@ -16,7 +16,10 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http2.Http2Settings;
+import io.netty.incubator.codec.quic.QuicStreamPriority;
 import io.netty.util.AsciiString;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.Future;
@@ -25,10 +28,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.file.OpenOptions;
-import io.vertx.core.http.HttpClosedException;
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.HostAndPort;
@@ -175,7 +175,7 @@ public final class HttpUtils {
     }
   };
 
-  static final StreamPriority DEFAULT_STREAM_PRIORITY = new StreamPriority() {
+  static final StreamPriorityBase DEFAULT_STREAM_PRIORITY = new Http2StreamPriority(new StreamPriority() {
     @Override
     public StreamPriority setWeight(short weight) {
       throw new UnsupportedOperationException("Unmodifiable stream priority");
@@ -190,8 +190,9 @@ public final class HttpUtils {
     public StreamPriority setExclusive(boolean exclusive) {
       throw new UnsupportedOperationException("Unmodifiable stream priority");
     }
-  };
+  });
 
+  static final StreamPriorityBase DEFAULT_QUIC_STREAM_PRIORITY = new Http3StreamPriority(new QuicStreamPriority(0, true));
 
   private HttpUtils() {
   }

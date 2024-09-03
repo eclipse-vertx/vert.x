@@ -516,7 +516,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * @param streamPriority the priority for this request's stream
    */
   @Fluent
-  default HttpServerResponse setStreamPriority(StreamPriority streamPriority) {
+  default HttpServerResponse setStreamPriority(StreamPriorityBase streamPriority) {
       return this;
   }
 

@@ -67,7 +67,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   private boolean expectMultipart;
   private HttpPostRequestDecoder postRequestDecoder;
   private Handler<HttpFrame> customFrameHandler;
-  private Handler<StreamPriority> streamPriorityHandler;
+  private Handler<StreamPriorityBase> streamPriorityHandler;
 
   Http2ServerRequest(Http2ServerStream stream,
                      String serverOrigin,
@@ -502,12 +502,12 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
     return eventHandler(true).end();
   }
 
-  public StreamPriority streamPriority() {
+  public StreamPriorityBase streamPriority() {
     return stream.priority();
   }
 
   @Override
-  public HttpServerRequest streamPriorityHandler(Handler<StreamPriority> handler) {
+  public HttpServerRequest streamPriorityHandler(Handler<StreamPriorityBase> handler) {
     synchronized (stream.conn) {
       streamPriorityHandler = handler;
     }
@@ -520,8 +520,8 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   }
 
   @Override
-  public void handlePriorityChange(StreamPriority streamPriority) {
-    Handler<StreamPriority> handler;
+  public void handlePriorityChange(StreamPriorityBase streamPriority) {
+    Handler<StreamPriorityBase> handler;
     synchronized (stream.conn) {
       handler = streamPriorityHandler;
     }

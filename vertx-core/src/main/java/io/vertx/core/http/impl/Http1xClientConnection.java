@@ -499,7 +499,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
 
     @Override
-    public void priorityHandler(Handler<StreamPriority> handler) {
+    public void priorityHandler(Handler<StreamPriorityBase> handler) {
       // No op
     }
 
@@ -544,7 +544,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
 
     @Override
-    public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect) {
+    public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriorityBase priority, boolean connect) {
       PromiseInternal<Void> promise = context.promise();
       conn.writeHead(this, request, chunked, buf, end, connect, promise);
       return promise.future();
@@ -612,12 +612,12 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
 
     @Override
-    public StreamPriority priority() {
+    public StreamPriorityBase priority() {
       return null;
     }
 
     @Override
-    public void updatePriority(StreamPriority streamPriority) {
+    public void updatePriority(StreamPriorityBase streamPriority) {
     }
 
     @Override
@@ -691,6 +691,11 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
           context.emit(null, handler);
         }
       }
+    }
+
+    @Override
+    public StreamPriorityBase createDefaultStreamPriority() {
+      return HttpUtils.DEFAULT_STREAM_PRIORITY;
     }
   }
 

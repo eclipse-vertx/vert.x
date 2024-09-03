@@ -15,6 +15,8 @@ import io.netty.channel.ChannelHandler;
 import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.incubator.codec.http3.Http3;
+import io.netty.incubator.codec.quic.QuicSslContext;
 import io.netty.util.concurrent.ImmediateExecutor;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.tls.SslContextProvider;
@@ -46,10 +48,21 @@ public class SslChannelProvider {
     return sslContextProvider;
   }
 
-  public SslHandler createClientSslHandler(SocketAddress peerAddress, String serverName, boolean useAlpn, long sslHandshakeTimeout, TimeUnit sslHandshakeTimeoutUnit) {
-    SslContext sslContext = sslContextProvider.sslClientContext(serverName, useAlpn);
+  public ChannelHandler createClientSslHandler(SocketAddress peerAddress, String serverName, boolean useAlpn, boolean http3,
+                                           long sslHandshakeTimeout, TimeUnit sslHandshakeTimeoutUnit) {
+    SslContext sslContext = sslContextProvider.sslClientContext(serverName, useAlpn, http3);
     SslHandler sslHandler;
     Executor delegatedTaskExec = sslContextProvider.useWorkerPool() ? workerPool : ImmediateExecutor.INSTANCE;
+    //TODO: verify
+    if (http3) {
+      return Http3.newQuicClientCodecBuilder()
+        .sslTaskExecutor(delegatedTaskExec)
+        .sslContext((QuicSslContext) ((VertxSslContext) sslContext).unwrap())
+        .maxIdleTimeout(5000, TimeUnit.MILLISECONDS)
+        .initialMaxData(10000000)
+        .initialMaxStreamDataBidirectionalLocal(1000000)
+        .build();
+    }
     if (peerAddress != null && peerAddress.isInetSocket()) {
       sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, peerAddress.host(), peerAddress.port(), delegatedTaskExec);
     } else {
@@ -59,25 +72,26 @@ public class SslChannelProvider {
     return sslHandler;
   }
 
-  public ChannelHandler createServerHandler(boolean useAlpn, long sslHandshakeTimeout, TimeUnit sslHandshakeTimeoutUnit) {
+  public ChannelHandler createServerHandler(boolean useAlpn, boolean http3, long sslHandshakeTimeout, TimeUnit sslHandshakeTimeoutUnit) {
     if (sni) {
-      return createSniHandler(useAlpn, sslHandshakeTimeout, sslHandshakeTimeoutUnit);
+      return createSniHandler(useAlpn, http3, sslHandshakeTimeout, sslHandshakeTimeoutUnit);
     } else {
-      return createServerSslHandler(useAlpn, sslHandshakeTimeout, sslHandshakeTimeoutUnit);
+      return createServerSslHandler(useAlpn, http3, sslHandshakeTimeout, sslHandshakeTimeoutUnit);
     }
   }
 
-  private SslHandler createServerSslHandler(boolean useAlpn, long sslHandshakeTimeout, TimeUnit sslHandshakeTimeoutUnit) {
-    SslContext sslContext = sslContextProvider.sslServerContext(useAlpn);
+  private SslHandler createServerSslHandler(boolean useAlpn, boolean http3, long sslHandshakeTimeout, TimeUnit sslHandshakeTimeoutUnit) {
+    SslContext sslContext = sslContextProvider.sslServerContext(useAlpn, http3);
     Executor delegatedTaskExec = sslContextProvider.useWorkerPool() ? workerPool : ImmediateExecutor.INSTANCE;
     SslHandler sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, delegatedTaskExec);
     sslHandler.setHandshakeTimeout(sslHandshakeTimeout, sslHandshakeTimeoutUnit);
     return sslHandler;
   }
 
-  private SniHandler createSniHandler(boolean useAlpn, long sslHandshakeTimeout, TimeUnit sslHandshakeTimeoutUnit) {
+  private SniHandler createSniHandler(boolean useAlpn, boolean http3, long sslHandshakeTimeout, TimeUnit sslHandshakeTimeoutUnit) {
     Executor delegatedTaskExec = sslContextProvider.useWorkerPool() ? workerPool : ImmediateExecutor.INSTANCE;
-    return new VertxSniHandler(sslContextProvider.serverNameMapping(delegatedTaskExec, useAlpn), sslHandshakeTimeoutUnit.toMillis(sslHandshakeTimeout), delegatedTaskExec);
+    return new VertxSniHandler(sslContextProvider.serverNameMapping(delegatedTaskExec, useAlpn, http3),
+      sslHandshakeTimeoutUnit.toMillis(sslHandshakeTimeout), delegatedTaskExec);
   }
 
 }

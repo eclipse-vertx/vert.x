@@ -5,6 +5,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
@@ -39,8 +40,8 @@ abstract class HttpStream<C extends ConnectionBase, S> extends VertxHttpStreamBa
   protected Handler<Throwable> exceptionHandler;
   protected Handler<HttpClientPush> pushHandler;
   protected Handler<Void> closeHandler;
-  protected long writeWindow;
-  protected final long windowSize;
+  protected long writeWindow;//todo: this prop is removed in 5.x
+  protected final long windowSize;//todo: this prop is removed in 5.x
 
   protected abstract long getWindowSize();
   protected abstract HttpVersion version();
@@ -75,14 +76,14 @@ abstract class HttpStream<C extends ConnectionBase, S> extends VertxHttpStreamBa
   }
 
   @Override
-  void doWriteData(ByteBuf chunk, boolean end, Handler<AsyncResult<Void>> handler) {
-    super.doWriteData(chunk, end, handler);
+  void doWriteData(ByteBuf chunk, boolean end, Promise<Void> promise) {
+    super.doWriteData(chunk, end, promise);
   }
 
   @Override
-  void doWriteHeaders(VertxHttpHeaders headers, boolean end, boolean checkFlush, Handler<AsyncResult<Void>> handler) {
+  void doWriteHeaders(VertxHttpHeaders headers, boolean end, boolean checkFlush, Promise<Void> promise) {
     isConnect = "CONNECT".contentEquals(headers.method());
-    super.doWriteHeaders(headers, end, checkFlush, handler);
+    super.doWriteHeaders(headers, end, checkFlush, promise);
   }
 
   @Override

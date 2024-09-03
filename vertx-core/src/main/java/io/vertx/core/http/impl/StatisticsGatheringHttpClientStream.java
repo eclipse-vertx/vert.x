@@ -20,6 +20,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.endpoint.ServerInteraction;
 import io.vertx.core.streams.WriteStream;
@@ -70,7 +71,7 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect) {
+  public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriorityBase priority, boolean connect) {
     endpointRequest.reportRequestBegin();
     if (end) {
       endpointRequest.reportRequestEnd();
@@ -141,7 +142,7 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  public void priorityHandler(Handler<StreamPriority> handler) {
+  public void priorityHandler(Handler<StreamPriorityBase> handler) {
     delegate.priorityHandler(handler);
   }
 
@@ -176,12 +177,12 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  public StreamPriority priority() {
+  public StreamPriorityBase priority() {
     return delegate.priority();
   }
 
   @Override
-  public void updatePriority(StreamPriority streamPriority) {
+  public void updatePriority(StreamPriorityBase streamPriority) {
     delegate.updatePriority(streamPriority);
   }
 
@@ -213,5 +214,10 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   @Fluent
   public WriteStream<Buffer> drainHandler(@Nullable Handler<Void> handler) {
     return delegate.drainHandler(handler);
+  }
+
+  @Override
+  public StreamPriorityBase createDefaultStreamPriority() {
+    return HttpUtils.DEFAULT_STREAM_PRIORITY;
   }
 }

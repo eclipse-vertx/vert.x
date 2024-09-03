@@ -45,7 +45,7 @@ public interface HttpClientStream extends WriteStream<Buffer> {
   HttpClientConnectionInternal connection();
   ContextInternal getContext();
 
-  Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect);
+  Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriorityBase priority, boolean connect);
   Future<Void> writeBuffer(ByteBuf buf, boolean end);
   Future<Void> writeFrame(int type, int flags, ByteBuf payload);
 
@@ -72,7 +72,7 @@ public interface HttpClientStream extends WriteStream<Buffer> {
   void headHandler(Handler<HttpResponseHead> handler);
   void chunkHandler(Handler<Buffer> handler);
   void endHandler(Handler<MultiMap> handler);
-  void priorityHandler(Handler<StreamPriority> handler);
+  void priorityHandler(Handler<StreamPriorityBase> handler);
   void closeHandler(Handler<Void> handler);
 
   void doSetWriteQueueMaxSize(int size);
@@ -82,7 +82,7 @@ public interface HttpClientStream extends WriteStream<Buffer> {
 
   void reset(Throwable cause);
 
-  StreamPriority priority();
-  void updatePriority(StreamPriority streamPriority);
-
+  StreamPriorityBase priority();
+  void updatePriority(StreamPriorityBase streamPriority);
+  StreamPriorityBase createDefaultStreamPriority();
 }
