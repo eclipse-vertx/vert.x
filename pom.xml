@@ -26,7 +26,7 @@
       
     <artifactId>vertx-core</artifactId>
       
-    <version>4.5.10</version>
+    <version>4.5.11-SNAPSHOT</version>
       
     <name>Vert.x Core</name>
       
@@ -74,7 +74,7 @@
             
         <generated.dir>${project.basedir}/src/main/generated</generated.dir>
             
-        <stack.version>4.5.10</stack.version>
+        <stack.version>4.5.11-SNAPSHOT</stack.version>
             
         <jmh.version>1.36</jmh.version>
             
