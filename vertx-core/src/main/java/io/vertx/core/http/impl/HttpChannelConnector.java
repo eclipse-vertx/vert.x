@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 
 import static io.vertx.core.http.HttpMethod.OPTIONS;
+import static io.vertx.core.net.impl.ChannelProvider.*;
 
 /**
  * Performs the channel configuration and connection according to the client options and the protocol version.
@@ -121,8 +122,7 @@ public class HttpChannelConnector {
     List<ChannelHandler> removedHandlers = new ArrayList<>();
     for (Map.Entry<String, ChannelHandler> stringChannelHandlerEntry : pipeline) {
       ChannelHandler handler = stringChannelHandlerEntry.getValue();
-      //TODO: Find a better way to skip removing QuicheQuicClientCodec during HTTP/3 handling.
-      if (!(handler instanceof SslHandler) && !(handler.getClass().getSimpleName().equals("QuicheQuicClientCodec"))) {
+      if (!(handler instanceof SslHandler) && !(SSL_CHANNEL_NAME.equals(stringChannelHandlerEntry.getKey()))) {
         removedHandlers.add(handler);
       }
     }
