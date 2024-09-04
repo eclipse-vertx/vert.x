@@ -121,7 +121,8 @@ public class HttpChannelConnector {
     List<ChannelHandler> removedHandlers = new ArrayList<>();
     for (Map.Entry<String, ChannelHandler> stringChannelHandlerEntry : pipeline) {
       ChannelHandler handler = stringChannelHandlerEntry.getValue();
-      if (!(handler instanceof SslHandler)) {
+      //TODO: Find a better way to skip removing QuicheQuicClientCodec during HTTP/3 handling.
+      if (!(handler instanceof SslHandler) && !(handler.getClass().getSimpleName().equals("QuicheQuicClientCodec"))) {
         removedHandlers.add(handler);
       }
     }
