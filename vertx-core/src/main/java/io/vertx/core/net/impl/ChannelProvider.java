@@ -160,29 +160,12 @@ public final class ChannelProvider {
   private void handleConnect(Handler<Channel> handler, SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, ClientSSLOptions sslOptions, Promise<Channel> channelHandler) {
     VertxInternal vertx = context.owner();
     bootstrap.resolver(vertx.nettyAddressResolverGroup());
-
-    if (version == HttpVersion.HTTP_3) {
-      if (ssl) {
-        ChannelHandler sslHandler = sslContextProvider.createClientSslHandler(peerAddress, serverName,
-          sslOptions.isUseAlpn(), sslOptions.isHttp3(), sslOptions.getSslHandshakeTimeout(),
-          sslOptions.getSslHandshakeTimeoutUnit());
-        bootstrap.handler(sslHandler);
-      } else {
-        bootstrap.handler(new ChannelInitializer<Channel>() {
-          @Override
-          protected void initChannel(Channel ch) {
-          }
-        });
+    bootstrap.handler(new ChannelInitializer<>() {
+      @Override
+      protected void initChannel(Channel ch) {
+        initSSL(handler, peerAddress, serverName, ssl, sslOptions, ch, channelHandler);
       }
-    } else {
-      bootstrap.handler(new ChannelInitializer<Channel>() {
-        @Override
-        protected void initChannel(Channel ch) {
-          initSSL(handler, peerAddress, serverName, ssl, sslOptions, ch, channelHandler);
-        }
-      });
-    }
-
+    });
     ChannelFuture fut = bootstrap.connect(vertx.transport().convert(remoteAddress));
     fut.addListener(res -> {
       if (res.isSuccess()) {
