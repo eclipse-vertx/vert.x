@@ -104,7 +104,7 @@ public final class ChannelProvider {
   private void connect(Handler<Channel> handler, SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, ClientSSLOptions sslOptions, Promise<Channel> p) {
     try {
       if(version == HttpVersion.HTTP_3) {
-        bootstrap.channel(NioDatagramChannel.class);
+        bootstrap.channelFactory(() -> context.owner().transport().datagramChannel());
       } else {
         bootstrap.channelFactory(context.owner().transport().channelFactory(remoteAddress.isDomainSocket()));
       }
