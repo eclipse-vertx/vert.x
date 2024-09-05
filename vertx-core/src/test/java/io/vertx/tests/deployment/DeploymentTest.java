@@ -14,6 +14,7 @@ package io.vertx.tests.deployment;
 import io.netty.channel.EventLoop;
 import io.vertx.core.*;
 import io.vertx.core.impl.verticle.VerticleDeployable;
+import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.deployment.Deployment;
 import io.vertx.core.internal.VertxInternal;
@@ -1296,42 +1297,53 @@ public class DeploymentTest extends VertxTestBase {
     await();
   }
 
-  @Ignore()
   @Test
   public void testDeployWithPartialFailure() {
     testDeployWithPartialFailure(3, 2);
   }
 
-  private void testDeployWithPartialFailure(int num, int i) {
+  private void testDeployWithPartialFailure(int numberOfInstances, int instanceToFail) {
     AtomicInteger count = new AtomicInteger();
     Map<Integer, Promise<Void>> startPromises = Collections.synchronizedMap(new HashMap<>());
-    Context ctx = vertx.getOrCreateContext();
-    vertx.deployVerticle(() -> {
+    Map<Integer, Boolean> stopped = Collections.synchronizedMap(new HashMap<>());
+    Set<Integer> closeHooks = Collections.synchronizedSet(new HashSet<>());
+    Future<String> fut = vertx.deployVerticle(() -> {
       int idx = count.getAndIncrement();
       return new AbstractVerticle() {
         @Override
         public void start(Promise<Void> startPromise) {
+          ContextInternal ctx = (ContextInternal) context;
+          ctx.addCloseHook(completion -> {
+            closeHooks.add(idx);
+            completion.complete();
+          });
           startPromises.put(idx, startPromise);
-          if (startPromises.size() == num) {
+          if (startPromises.size() == numberOfInstances) {
             startPromises
               .forEach((idx, p) -> {
-              if (idx != i) {
-                p.tryComplete();
-              }
-            });
-            ctx.runOnContext(v -> {
-              Promise<Void> toFail = startPromises.get(i);
-              toFail.tryFail("it-failed");
-            });
+                if (idx != instanceToFail) {
+                  p.tryComplete();
+                } else {
+                  p.tryFail("it-failed");
+                }
+              });
           }
         }
-
         @Override
-        public void stop() throws Exception {
-          System.out.println("Stopping " + idx);
+        public void stop() {
+          stopped.put(idx, true);
         }
       };
-    }, new DeploymentOptions().setInstances(num));
+    }, new DeploymentOptions().setInstances(numberOfInstances));
+    fut.onComplete(onFailure(expected -> {
+      for (int j = 0;j < numberOfInstances;j++) {
+        if (instanceToFail != j) {
+          assertTrue(stopped.containsKey(j));
+        }
+        assertTrue(closeHooks.contains(j));
+      }
+      testComplete();
+    }));
     await();
   }
 

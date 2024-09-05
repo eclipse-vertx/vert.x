@@ -144,11 +144,13 @@ public class VerticleDeployable implements Deployable {
       Promise<Void> startPromise = context.promise();
       holder.startPromise = startPromise;
       holders.add(holder);
-      futures.add(startPromise.future().andThen(ar -> {
-        if (ar.succeeded()) {
-          holder.startPromise = null;
-        }
-      }));
+      futures.add(startPromise
+              .future()
+              .andThen(ar -> {
+                if (ar.succeeded()) {
+                  holder.startPromise = null;
+                }
+              }));
       context.runOnContext(v -> {
         try {
           verticle.init(vertx, context);
@@ -158,7 +160,15 @@ public class VerticleDeployable implements Deployable {
         }
       });
     }
-    return Future.all(futures);
+    return Future
+            .join(futures)
+            .transform(ar -> {
+      if (ar.failed()) {
+        return undeploy().transform(ar2 -> (Future<?>) ar);
+      } else {
+        return Future.succeededFuture();
+      }
+    });
   }
 
   @Override
@@ -167,7 +177,7 @@ public class VerticleDeployable implements Deployable {
     for (VerticleHolder holder: holders) {
       Promise<Void> startPromise = holder.startPromise;
       if (startPromise != null) {
-        startPromise.tryFail(new VertxException("Verticle undeployed", true));
+        startPromise.tryFail(new VertxException("Verticle un-deployed", true));
       } else {
         ContextImpl context = holder.context;
         Promise<Void> p = Promise.promise();
@@ -176,11 +186,9 @@ public class VerticleDeployable implements Deployable {
           Promise<Void> stopPromise = Promise.promise();
           Future<Void> stopFuture = stopPromise.future();
           stopFuture
-            .eventually(() -> {
-              return holder
-                .close()
-                .onFailure(err -> log.error("Failed to run close hook", err));
-            }).onComplete(p);
+            .eventually(() -> holder
+              .close()
+              .onFailure(err -> log.error("Failed to run close hook", err))).onComplete(p);
           try {
             holder.verticle.stop(stopPromise);
           } catch (Throwable t) {
