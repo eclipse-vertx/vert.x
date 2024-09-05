@@ -209,6 +209,8 @@
                   <annotationProcessor>io.vertx.codegen.CodeGenProcessor</annotationProcessor>
                   <annotationProcessor>io.vertx.docgen.JavaDocGenProcessor</annotationProcessor>
                 </annotationProcessors>
+                <!-- Like in 4.x but handled by maven-compiler-plugin natively -->
+                <generatedSourcesDirectory>${project.basedir}/src/main/generated</generatedSourcesDirectory>
                 <annotationProcessorPaths>
                   <annotationProcessorPath>
                     <groupId>io.vertx</groupId>
@@ -278,10 +280,12 @@
               <goal>testCompile</goal>
             </goals>
             <configuration>
+              <useModulePath>false</useModulePath>
+              <generatedTestSourcesDirectory>${project.build.directory}/generated-test-sources/servicehelper-annotations</generatedTestSourcesDirectory>
               <compileSourceRoots>
                 <compileSourceRoot>${project.basedir}/src/test/classpath/servicehelper</compileSourceRoot>
               </compileSourceRoots>
-              <outputDirectory>${project.build.directory}/classpath/servicehelper</outputDirectory>
+              <outputDirectory>${project.build.directory}/servicehelper-classes</outputDirectory>
             </configuration>
           </execution>
         </executions>
@@ -297,32 +301,12 @@
               <goal>copy-resources</goal>
             </goals>
             <configuration>
-              <outputDirectory>${project.build.directory}/classpath</outputDirectory>
+              <outputDirectory>${project.build.directory}/servicehelper-classes</outputDirectory>
               <resources>
                 <resource>
-                  <directory>src/test/classpath</directory>
+                  <directory>src/test/classpath/servicehelper</directory>
                 </resource>
               </resources>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>build-helper-maven-plugin</artifactId>
-        <version>3.0.0</version>
-        <executions>
-          <execution>
-            <id>add-test-source</id>
-            <phase>generate-test-sources</phase>
-            <goals>
-              <goal>add-test-source</goal>
-            </goals>
-            <configuration>
-              <sources>
-                <source>${project.basedir}/src/test/benchmarks</source>
-              </sources>
             </configuration>
           </execution>
         </executions>
@@ -726,6 +710,27 @@
     <profile>
       <id>benchmarks</id>
       <build>
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <artifactId>maven-compiler-plugin</artifactId>
+              <executions>
+                <execution>
+                  <id>default-testCompile</id>
+                  <configuration>
+                    <annotationProcessorPaths>
+                      <annotationProcessorPath>
+                        <groupId>org.openjdk.jmh</groupId>
+                        <artifactId>jmh-generator-annprocess</artifactId>
+                        <version>${jmh.version}</version>
+                      </annotationProcessorPath>
+                    </annotationProcessorPaths>
+                  </configuration>
+                </execution>
+              </executions>
+            </plugin>
+          </plugins>
+        </pluginManagement>
         <plugins>
           <plugin>
             <artifactId>maven-assembly-plugin</artifactId>
@@ -742,23 +747,38 @@
                       <mainClass>org.openjdk.jmh.Main</mainClass>
                     </manifest>
                   </archive>
-                  <descriptors>
-                    <descriptor>src/test/assembly/benchmarks.xml</descriptor>
-                  </descriptors>
+                  <inlineDescriptors>
+                    <inlineDescriptor>
+                      <id>benchmarks</id>
+                      <formats>
+                        <format>jar</format>
+                      </formats>
+                      <includeBaseDirectory>false</includeBaseDirectory>
+                      <fileSets>
+                        <fileSet>
+                          <directory>${project.build.testOutputDirectory}</directory>
+                          <includes>
+                            <include>io/vertx/benchmarks/**</include>
+                            <include>META-INF/</include>
+                          </includes>
+                          <outputDirectory>/</outputDirectory>
+                        </fileSet>
+                      </fileSets>
+                      <dependencySets>
+                        <dependencySet>
+                          <outputDirectory>/</outputDirectory>
+                          <unpack>true</unpack>
+                          <scope>test</scope>
+                        </dependencySet>
+                      </dependencySets>
+                    </inlineDescriptor>
+                  </inlineDescriptors>
                 </configuration>
               </execution>
             </executions>
           </plugin>
         </plugins>
       </build>
-      <dependencies>
-        <dependency>
-          <groupId>org.openjdk.jmh</groupId>
-          <artifactId>jmh-generator-annprocess</artifactId>
-          <version>${jmh.version}</version>
-          <scope>test</scope>
-        </dependency>
-      </dependencies>
     </profile>
 
     <profile>

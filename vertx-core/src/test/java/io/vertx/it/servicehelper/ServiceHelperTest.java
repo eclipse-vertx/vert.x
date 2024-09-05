@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class ServiceHelperTest {
 
-  private final File serviceHelperFile = new File(new File(TestUtils.MAVEN_TARGET_DIR, "classpath"), "servicehelper");
+  private final File serviceHelperFile = new File(TestUtils.MAVEN_TARGET_DIR, "servicehelper-classes");
 
   @Test
   public void loadFactory() {

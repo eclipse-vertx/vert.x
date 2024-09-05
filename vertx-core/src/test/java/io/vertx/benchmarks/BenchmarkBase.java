@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
     "-XX:BiasedLockingStartupDelay=0",
     "-XX:+AggressiveOpts",
     "-Djmh.executor=CUSTOM",
-    "-Djmh.executor.class=io.vertx.core.impl.VertxExecutorService"
+    "-Djmh.executor.class=io.vertx.benchmarks.VertxExecutorService"
 })
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 public abstract class BenchmarkBase {
