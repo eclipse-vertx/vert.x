@@ -13,10 +13,10 @@ package io.vertx.core.net.impl;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
-import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.proxy.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.SslHandshakeCompletionEvent;
+import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.resolver.NoopAddressResolverGroup;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.Promise;
@@ -45,6 +45,11 @@ import java.net.InetSocketAddress;
 public final class ChannelProvider {
 
   public static final String SSL_CHANNEL_NAME = "ssl";
+  public static final ChannelInitializer<Channel> EMPTY_HANDLER = new ChannelInitializer<>() {
+    @Override
+    protected void initChannel(Channel channel) {
+    }
+  };
   private final Bootstrap bootstrap;
   private final SslChannelProvider sslContextProvider;
   private final ContextInternal context;
@@ -103,7 +108,7 @@ public final class ChannelProvider {
 
   private void connect(Handler<Channel> handler, SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, ClientSSLOptions sslOptions, Promise<Channel> p) {
     try {
-      if(version == HttpVersion.HTTP_3) {
+      if (version == HttpVersion.HTTP_3) {
         bootstrap.channelFactory(() -> context.owner().transport().datagramChannel());
       } else {
         bootstrap.channelFactory(context.owner().transport().channelFactory(remoteAddress.isDomainSocket()));
@@ -124,6 +129,8 @@ public final class ChannelProvider {
       ChannelHandler sslHandler = sslContextProvider.createClientSslHandler(peerAddress, serverName,
         sslOptions.isUseAlpn(), sslOptions.isHttp3(), sslOptions.getSslHandshakeTimeout(),
         sslOptions.getSslHandshakeTimeoutUnit());
+      //todo: correct the following code:
+//      ChannelPipeline pipeline = version == HttpVersion.HTTP_3 ? ch.parent().pipeline() : ch.pipeline();
       ChannelPipeline pipeline = ch.pipeline();
       pipeline.addLast(SSL_CHANNEL_NAME, sslHandler);
       pipeline.addLast(new ChannelInboundHandlerAdapter() {
@@ -168,22 +175,41 @@ public final class ChannelProvider {
     });
     ChannelFuture fut = bootstrap.connect(vertx.transport().convert(remoteAddress));
     fut.addListener(res -> {
-      if (res.isSuccess()) {
-        connected(handler, fut.channel(), ssl, channelHandler);
-      } else {
+      if (!res.isSuccess()) {
         channelHandler.setFailure(res.cause());
+        return;
       }
+      if (version != HttpVersion.HTTP_3) {
+        connected(handler, fut.channel(), ssl, channelHandler);
+        return;
+      }
+      Channel nioDatagramChannel = fut.channel();
+
+      QuicChannel.newBootstrap(nioDatagramChannel)
+        .handler(EMPTY_HANDLER)
+        .localAddress(nioDatagramChannel.localAddress())
+        .remoteAddress(nioDatagramChannel.remoteAddress())
+        .connect()
+        .addListener((io.netty.util.concurrent.Future<QuicChannel> future) -> {
+          if (!future.isSuccess()) {
+            channelHandler.setFailure(future.cause());
+            return;
+          }
+
+          QuicChannel quicChannel = future.get();
+          connected(handler, quicChannel, ssl, channelHandler);
+        });
     });
   }
 
   /**
    * Signal we are connected to the remote server.
    *
-   * @param channel the channel
+   * @param channel        the channel
    * @param channelHandler the channel handler
    */
   private void connected(Handler<Channel> handler, Channel channel, boolean ssl, Promise<Channel> channelHandler) {
-    if(version == HttpVersion.HTTP_3) {
+    if (version == HttpVersion.HTTP_3) {
       applicationProtocol = HttpVersion.HTTP_3.alpnName();
       if (handler != null) {
         context.dispatch(channel, handler);

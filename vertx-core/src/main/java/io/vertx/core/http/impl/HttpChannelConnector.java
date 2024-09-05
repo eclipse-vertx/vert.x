@@ -19,7 +19,6 @@ import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
-import io.netty.incubator.codec.quic.QuicChannel;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpClientOptions;
@@ -27,8 +26,8 @@ import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
-import io.vertx.core.net.*;
 import io.vertx.core.internal.net.NetClientInternal;
+import io.vertx.core.net.*;
 import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.ClientMetrics;
@@ -38,7 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static io.vertx.core.http.HttpMethod.OPTIONS;
+import static io.vertx.core.http.HttpMethod.*;
 import static io.vertx.core.net.impl.ChannelProvider.*;
 
 /**
@@ -295,23 +294,9 @@ public class HttpChannelConnector {
     try {
       clientHandler = Http3ClientConnection.createVertxHttp3ConnectionHandler(client, metrics, context, false, metric
         , authority, pooled);
-
-      QuicChannel.newBootstrap(ch)
-        .handler(clientHandler.getHttp3ConnectionHandler())
-        .streamHandler(clientHandler.getStreamHandler())
-        .localAddress(ch.localAddress())
-        .remoteAddress(ch.remoteAddress())
-        .connect()
-        .addListener((io.netty.util.concurrent.Future<QuicChannel> future) -> {
-          if(!future.isSuccess()) {
-            connectFailed(ch, future.cause(), promise);
-            return;
-          }
-
-          QuicChannel quicChannel = future.get();
-          quicChannel.pipeline().addLast(clientHandler.getUserEventHandler());
-        });
-
+      ch.pipeline().addLast("handler", clientHandler.getHttp3ConnectionHandler());
+      ch.pipeline().addLast(clientHandler.getUserEventHandler());
+      ch.flush();
     } catch (Exception e) {
       connectFailed(ch, e, promise);
       return;

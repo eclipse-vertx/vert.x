@@ -13,32 +13,13 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPromise;
+import io.netty.channel.*;
 import io.netty.channel.socket.ChannelInputShutdownEvent;
 import io.netty.channel.socket.ChannelInputShutdownReadComplete;
-import io.netty.handler.codec.http.DefaultFullHttpRequest;
-import io.netty.handler.codec.http.HttpContent;
-import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.http.*;
 import io.netty.handler.ssl.SslHandshakeCompletionEvent;
 import io.netty.handler.timeout.IdleStateEvent;
-import io.netty.incubator.codec.http3.DefaultHttp3GoAwayFrame;
-import io.netty.incubator.codec.http3.DefaultHttp3Headers;
-import io.netty.incubator.codec.http3.DefaultHttp3SettingsFrame;
-import io.netty.incubator.codec.http3.DefaultHttp3UnknownFrame;
-import io.netty.incubator.codec.http3.Http3;
-import io.netty.incubator.codec.http3.Http3ClientConnectionHandler;
-import io.netty.incubator.codec.http3.Http3ConnectionHandler;
-import io.netty.incubator.codec.http3.Http3Headers;
-import io.netty.incubator.codec.http3.Http3ServerConnectionHandler;
-import io.netty.incubator.codec.http3.Http3SettingsFrame;
+import io.netty.incubator.codec.http3.*;
 import io.netty.incubator.codec.quic.QuicConnectionCloseEvent;
 import io.netty.incubator.codec.quic.QuicDatagramExtensionEvent;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
@@ -53,7 +34,6 @@ import io.netty.util.concurrent.Promise;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.vertx.core.Handler;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.GoAway;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
@@ -95,9 +75,9 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     this.connectionFactory = connectionFactory;
     this.http3InitialSettings = http3InitialSettings;
     connectFuture = new DefaultPromise<>(context.nettyEventLoop());
-    createHttp3ConnectionHandler(isServer);
     createStreamHandler();
     createUserEventHandler();
+    createHttp3ConnectionHandler(isServer);
   }
 
   public Future<C> connectFuture() {
@@ -335,7 +315,8 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   }
 
   private Http3ClientConnectionHandler createHttp3ClientConnectionHandler() {
-    return new Http3ClientConnectionHandler(null, null, null,
+    assert this.streamHandlerInternal != null;
+    return new Http3ClientConnectionHandler(this.streamHandlerInternal, null, null,
       http3InitialSettings, false);
   }
 
@@ -356,10 +337,6 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
         _writePriority(stream, urgency, incremental);
       });
     }
-  }
-
-  public ChannelHandler getStreamHandler() {
-    return streamHandlerInternal;
   }
 
   public Http3SettingsFrame initialSettings() {
