@@ -13,6 +13,7 @@ package examples;
 
 import io.netty.incubator.codec.http3.DefaultHttp3SettingsFrame;
 import io.netty.incubator.codec.http3.Http3SettingsFrame;
+import io.netty.util.NetUtil;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
@@ -40,7 +41,8 @@ public class HTTP3Examples {
 
     HttpClient client = vertx.createHttpClient(options);
 
-    client.request(HttpMethod.GET, 443, "www.google.com", "/")
+//    client.request(HttpMethod.GET, 443, "www.google.com", "/")
+    client.request(HttpMethod.GET, 443, "www.cloudflare.com", "/cdn-cgi/trace")
 //    client.request(HttpMethod.GET, 9999, NetUtil.LOCALHOST4.getHostAddress(), "/")
 //    client.request(HttpMethod.GET, 443, "www.mozilla.org", "/")
 //    client.request(HttpMethod.GET, 443, "www.bing.com", "/")
