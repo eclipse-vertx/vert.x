@@ -13,7 +13,6 @@ package io.vertx.core.impl.deployment;
 
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.json.JsonObject;
 
@@ -37,8 +36,6 @@ public interface Deployment {
   DeploymentOptions deploymentOptions();
 
   Deployable deployable();
-
-  void undeployHandler(Handler<Void> handler);
 
   boolean isChild();
 
