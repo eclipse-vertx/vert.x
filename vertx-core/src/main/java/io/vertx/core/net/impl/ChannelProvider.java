@@ -13,9 +13,11 @@ package io.vertx.core.net.impl;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
-import io.netty.handler.proxy.*;
-import io.netty.handler.ssl.SslHandler;
-import io.netty.handler.ssl.SslHandshakeCompletionEvent;
+import io.netty.handler.proxy.HttpProxyHandler;
+import io.netty.handler.proxy.ProxyConnectionEvent;
+import io.netty.handler.proxy.ProxyHandler;
+import io.netty.handler.proxy.Socks4ProxyHandler;
+import io.netty.handler.proxy.Socks5ProxyHandler;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.resolver.NoopAddressResolverGroup;
 import io.netty.util.concurrent.Future;
@@ -30,7 +32,6 @@ import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
 
-import javax.net.ssl.SSLHandshakeException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
@@ -129,37 +130,12 @@ public final class ChannelProvider {
       ChannelHandler sslHandler = sslContextProvider.createClientSslHandler(peerAddress, serverName,
         sslOptions.isUseAlpn(), sslOptions.isHttp3(), sslOptions.getSslHandshakeTimeout(),
         sslOptions.getSslHandshakeTimeoutUnit());
-      //todo: correct the following code:
-//      ChannelPipeline pipeline = version == HttpVersion.HTTP_3 ? ch.parent().pipeline() : ch.pipeline();
       ChannelPipeline pipeline = ch.pipeline();
       pipeline.addLast(SSL_CHANNEL_NAME, sslHandler);
-      pipeline.addLast(new ChannelInboundHandlerAdapter() {
-        @Override
-        public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
-          if (evt instanceof SslHandshakeCompletionEvent) {
-            // Notify application
-            SslHandshakeCompletionEvent completion = (SslHandshakeCompletionEvent) evt;
-            if (completion.isSuccess()) {
-              // Remove from the pipeline after handshake result
-              ctx.pipeline().remove(this);
-              applicationProtocol = ((SslHandler)sslHandler).applicationProtocol();
-              if (handler != null) {
-                context.dispatch(ch, handler);
-              }
-              channelHandler.setSuccess(ctx.channel());
-            } else {
-              SSLHandshakeException sslException = new SSLHandshakeException("Failed to create SSL connection");
-              sslException.initCause(completion.cause());
-              channelHandler.setFailure(sslException);
-            }
-          }
-          ctx.fireUserEventTriggered(evt);
-        }
-        @Override
-        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-          // Ignore these exception as they will be reported to the handler
-        }
-      });
+      if (version != HttpVersion.HTTP_3) {
+        pipeline.addLast(new HttpSslHandshaker(context, handler, channelHandler, version, sslHandler,
+          this::setApplicationProtocol));
+      }
     }
   }
 
@@ -197,7 +173,9 @@ public final class ChannelProvider {
           }
 
           QuicChannel quicChannel = future.get();
-          connected(handler, quicChannel, ssl, channelHandler);
+          ChannelPipeline pipeline = quicChannel.pipeline();
+          pipeline.addLast(new HttpSslHandshaker(context, handler, channelHandler, HttpVersion.HTTP_3,
+            null, this::setApplicationProtocol));
         });
     });
   }
@@ -209,13 +187,7 @@ public final class ChannelProvider {
    * @param channelHandler the channel handler
    */
   private void connected(Handler<Channel> handler, Channel channel, boolean ssl, Promise<Channel> channelHandler) {
-    if (version == HttpVersion.HTTP_3) {
-      applicationProtocol = HttpVersion.HTTP_3.alpnName();
-      if (handler != null) {
-        context.dispatch(channel, handler);
-      }
-      channelHandler.setSuccess(channel);
-    } else if (!ssl) {
+    if (!ssl) {
       // No handshake
       if (handler != null) {
         context.dispatch(channel, handler);
@@ -297,5 +269,9 @@ public final class ChannelProvider {
         channelHandler.setFailure(dnsRes.cause());
       }
     });
+  }
+
+  private void setApplicationProtocol(String applicationProtocol) {
+    this.applicationProtocol = applicationProtocol;
   }
 }
