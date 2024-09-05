@@ -64,12 +64,9 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
             ch.pipeline()
               .addLast(new Http3FrameToHttpObjectCodec(false))
               .addLast(conn.handler);
+            onComplete.handle(Future.succeededFuture(ch));
           }
-        })
-      .addListener((GenericFutureListener<io.netty.util.concurrent.Future<QuicStreamChannel>>) quicStreamChannelFuture -> {
-        QuicStreamChannel quicStreamChannel = quicStreamChannelFuture.get();
-        onComplete.handle(Future.succeededFuture(quicStreamChannel));
-      });
+        });
   }
 
   @Override
