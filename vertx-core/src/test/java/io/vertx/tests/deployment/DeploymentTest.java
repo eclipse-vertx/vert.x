@@ -1344,12 +1344,16 @@ public class DeploymentTest extends VertxTestBase {
   @Test
   public void testCloseDeploymentInProgress() {
     Vertx vertx = Vertx.vertx();
-    waitFor(2);
+    waitFor(3);
     vertx.deployVerticle(new AbstractVerticle() {
       Promise<Void> startPromise;
       @Override
       public void start(Promise<Void> startPromise) {
         this.startPromise = startPromise;
+        ((ContextInternal)context).addCloseHook(completion -> {
+          complete();
+          completion.complete();
+        });
         vertx.close().onComplete(onSuccess(v -> complete()));
       }
       @Override
