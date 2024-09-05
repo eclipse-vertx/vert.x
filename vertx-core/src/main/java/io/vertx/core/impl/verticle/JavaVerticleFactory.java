@@ -9,11 +9,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.impl;
+package io.vertx.core.impl.verticle;
 
 import io.vertx.core.Promise;
 import io.vertx.core.Verticle;
-import io.vertx.core.impl.verticle.CompilingClassLoader;
 import io.vertx.core.spi.VerticleFactory;
 
 import java.util.concurrent.Callable;

@@ -51,7 +51,7 @@ public class AsyncTestBase {
   private boolean threadChecksEnabled = true;
   private volatile boolean tearingDown;
   private volatile Thread mainThread;
-  private volatile boolean lateFailure;
+  private volatile Throwable lateFailure;
   private Map<String, Exception> threadNames = new ConcurrentHashMap<>();
   @Rule
   public TestName name = new TestName();
@@ -66,7 +66,7 @@ public class AsyncTestBase {
     testCompleteCalled = false;
     awaitCalled = false;
     threadNames.clear();
-    lateFailure = false;
+    lateFailure = null;
   }
 
   protected void tearDown() throws Exception {
@@ -163,7 +163,9 @@ public class AsyncTestBase {
       // Throwable caught from non main thread
       throw new IllegalStateException("Assert or failure from non main thread but no await() on main thread", throwable);
     }
-    if (lateFailure) {
+    Throwable late = lateFailure;
+    if (late != null) {
+      late.printStackTrace(System.out);
       throw new IllegalStateException("Test reported a failure after completion");
     }
     for (Map.Entry<String, Exception> entry: threadNames.entrySet()) {
@@ -180,7 +182,7 @@ public class AsyncTestBase {
 
   private void handleThrowable(Throwable t) {
     if (Thread.currentThread() != mainThread && testCompleteCalled) {
-      lateFailure = true;
+      lateFailure = t;
       throw new IllegalStateException("assert or failure occurred after test has completed", t);
     }
     throwable = t;

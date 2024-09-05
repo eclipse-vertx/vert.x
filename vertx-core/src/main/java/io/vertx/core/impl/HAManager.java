@@ -12,6 +12,9 @@
 package io.vertx.core.impl;
 
 import io.vertx.core.*;
+import io.vertx.core.impl.deployment.Deployment;
+import io.vertx.core.impl.deployment.DeploymentManager;
+import io.vertx.core.impl.verticle.VerticleManager;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.VertxInternal;
@@ -433,14 +436,14 @@ public class HAManager {
       if (dep != null) {
         if (dep.deploymentOptions().isHa()) {
           ((VertxImpl)vertx).executeIsolated(v -> {
-            deploymentManager.undeployVerticle(deploymentID).onComplete(result -> {
+            deploymentManager.undeploy(deploymentID).onComplete(result -> {
               if (result.succeeded()) {
-                log.info("Successfully undeployed HA deployment " + deploymentID + "-" + dep.verticleIdentifier() + " as there is no quorum");
-                addToHADeployList(dep.verticleIdentifier(), dep.deploymentOptions(), result1 -> {
+                log.info("Successfully undeployed HA deployment " + deploymentID + "-" + dep.identifier() + " as there is no quorum");
+                addToHADeployList(dep.identifier(), dep.deploymentOptions(), result1 -> {
                   if (result1.succeeded()) {
-                    log.info("Successfully redeployed verticle " + dep.verticleIdentifier() + " after quorum was re-attained");
+                    log.info("Successfully redeployed verticle " + dep.identifier() + " after quorum was re-attained");
                   } else {
-                    log.error("Failed to redeploy verticle " + dep.verticleIdentifier() + " after quorum was re-attained", result1.cause());
+                    log.error("Failed to redeploy verticle " + dep.identifier() + " after quorum was re-attained", result1.cause());
                   }
                 });
               } else {

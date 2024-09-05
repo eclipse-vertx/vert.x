@@ -43,7 +43,7 @@ public class WorkerPool {
     return metrics;
   }
 
-  void close() {
+  public void close() {
     if (metrics != null) {
       metrics.close();
     }

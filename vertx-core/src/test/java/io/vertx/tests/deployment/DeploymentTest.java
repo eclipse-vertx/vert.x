@@ -13,10 +13,13 @@ package io.vertx.tests.deployment;
 
 import io.netty.channel.EventLoop;
 import io.vertx.core.*;
+import io.vertx.core.impl.verticle.VerticleDeployable;
+import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.impl.Deployment;
+import io.vertx.core.impl.deployment.Deployment;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.json.JsonObject;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Ignore;
@@ -535,7 +538,7 @@ public class DeploymentTest extends VertxTestBase {
     assertWaitUntil(() -> deployCount.get() == numInstances);
     assertEquals(1, vertx.deploymentIDs().size());
     Deployment deployment = ((VertxInternal) vertx).getDeployment(vertx.deploymentIDs().iterator().next());
-    Set<Verticle> verticles = deployment.getVerticles();
+    Set<Verticle> verticles = ((VerticleDeployable)deployment.deployable()).verticles();
     assertEquals(numInstances, verticles.size());
     CountDownLatch undeployLatch = new CountDownLatch(1);
     assertEquals(numInstances, deployCount.get());
@@ -839,7 +842,6 @@ public class DeploymentTest extends VertxTestBase {
 
   @Test
   public void testAsyncUndeployFailsAfterSuccess() {
-    waitFor(2);
     Verticle verticle = new AbstractVerticle() {
       @Override
       public void stop(Promise<Void> stopPromise) throws Exception {
@@ -850,9 +852,6 @@ public class DeploymentTest extends VertxTestBase {
     Context ctx = vertx.getOrCreateContext();
     ctx.runOnContext(v1 -> {
       vertx.deployVerticle(verticle).onComplete(onSuccess(id -> {
-        ctx.exceptionHandler(err -> {
-          complete();
-        });
         vertx.undeploy(id).onComplete(onSuccess(v2 -> {
           complete();
         }));
@@ -1061,23 +1060,16 @@ public class DeploymentTest extends VertxTestBase {
   public void testGetInstanceCountMultipleVerticles() throws Exception {
     AtomicInteger messageCount = new AtomicInteger(0);
     AtomicInteger totalReportedInstances = new AtomicInteger(0);
-
     vertx.eventBus().consumer("instanceCount", event -> {
-      messageCount.incrementAndGet();
       totalReportedInstances.addAndGet((int)event.body());
-      if(messageCount.intValue() == 3) {
-        assertEquals(9, totalReportedInstances.get());
-        testComplete();
-      }
+      messageCount.incrementAndGet();
     });
-
-    vertx.deployVerticle(TestVerticle3.class.getCanonicalName(), new DeploymentOptions().setInstances(3))
-      .onComplete(onSuccess(v -> {}));
-    await();
+    awaitFuture(vertx.deployVerticle(TestVerticle3.class.getCanonicalName(), new DeploymentOptions().setInstances(3)));
+    assertWaitUntil(() -> messageCount.get() == 3);
+    assertEquals(9, totalReportedInstances.get());
+    assertWaitUntil(() -> vertx.deploymentIDs().size() == 1);
     Deployment deployment = ((VertxInternal) vertx).getDeployment(vertx.deploymentIDs().iterator().next());
-    CountDownLatch latch = new CountDownLatch(1);
-    vertx.undeploy(deployment.deploymentID()).onComplete(ar -> latch.countDown());
-    awaitLatch(latch);
+    awaitFuture(vertx.undeploy(deployment.deploymentID()));
   }
 
   @Test
@@ -1095,7 +1087,7 @@ public class DeploymentTest extends VertxTestBase {
     };
     Verticle verticleParent = new AbstractVerticle() {
       @Override
-      public void start(Promise<Void> startPromise) throws Exception {
+      public void start(Promise<Void> startPromise) {
         vertx.deployVerticle(verticleChild).onComplete(onFailure(v -> {
           startPromise.complete();
         }));
@@ -1296,6 +1288,56 @@ public class DeploymentTest extends VertxTestBase {
     }));
     awaitLatch(deployLatch);
     vertx.undeploy(deploymentID.get());
+    await();
+  }
+
+  @Test
+  public void testDeployWithPartialFailure() {
+    testDeployWithPartialFailure(3, 2);
+  }
+
+  private void testDeployWithPartialFailure(int numberOfInstances, int instanceToFail) {
+    AtomicInteger count = new AtomicInteger();
+    Map<Integer, Promise<Void>> startPromises = Collections.synchronizedMap(new HashMap<>());
+    Map<Integer, Boolean> stopped = Collections.synchronizedMap(new HashMap<>());
+    Set<Integer> closeHooks = Collections.synchronizedSet(new HashSet<>());
+    Future<String> fut = vertx.deployVerticle(() -> {
+      int idx = count.getAndIncrement();
+      return new AbstractVerticle() {
+        @Override
+        public void start(Promise<Void> startPromise) {
+          ContextInternal ctx = (ContextInternal) context;
+          ctx.addCloseHook(completion -> {
+            closeHooks.add(idx);
+            completion.complete();
+          });
+          startPromises.put(idx, startPromise);
+          if (startPromises.size() == numberOfInstances) {
+            startPromises
+              .forEach((idx, p) -> {
+                if (idx != instanceToFail) {
+                  p.tryComplete();
+                } else {
+                  p.tryFail("it-failed");
+                }
+              });
+          }
+        }
+        @Override
+        public void stop() {
+          stopped.put(idx, true);
+        }
+      };
+    }, new DeploymentOptions().setInstances(numberOfInstances));
+    fut.onComplete(onFailure(expected -> {
+      for (int j = 0;j < numberOfInstances;j++) {
+        if (instanceToFail != j) {
+          assertTrue(stopped.containsKey(j));
+        }
+        assertTrue(closeHooks.contains(j));
+      }
+      testComplete();
+    }));
     await();
   }
 

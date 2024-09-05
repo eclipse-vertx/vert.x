@@ -113,5 +113,7 @@ module io.vertx.core {
   exports io.vertx.core.impl.transports to io.vertx.tests;
   exports io.vertx.core.net.impl.pkcs1 to io.vertx.tests;
   exports io.vertx.core.spi.cluster.impl.selector to io.vertx.tests;
+  exports io.vertx.core.impl.verticle to io.vertx.tests;
+  exports io.vertx.core.impl.deployment to io.vertx.tests;
 
 }
