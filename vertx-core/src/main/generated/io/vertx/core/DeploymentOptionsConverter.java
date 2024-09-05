@@ -18,11 +18,6 @@ public class DeploymentOptionsConverter {
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, DeploymentOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
-        case "foo":
-          if (member.getValue() instanceof String) {
-            obj.setFoo((String)member.getValue());
-          }
-          break;
         case "config":
           if (member.getValue() instanceof JsonObject) {
             obj.setConfig(((JsonObject)member.getValue()).copy());
@@ -72,9 +67,6 @@ public class DeploymentOptionsConverter {
   }
 
    static void toJson(DeploymentOptions obj, java.util.Map<String, Object> json) {
-    if (obj.getFoo() != null) {
-      json.put("foo", obj.getFoo());
-    }
     if (obj.getConfig() != null) {
       json.put("config", obj.getConfig());
     }
