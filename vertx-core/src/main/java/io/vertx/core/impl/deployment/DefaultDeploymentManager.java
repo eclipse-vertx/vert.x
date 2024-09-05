@@ -106,46 +106,41 @@ public class DefaultDeploymentManager implements DeploymentManager {
                                       ContextInternal parentContext,
                                       ContextInternal callingContext,
                                       Deployable deployable) {
-    Promise<Deployment> promise = callingContext.promise();
-
     String deploymentID = generateDeploymentID();
-
     Deployment parent = parentContext.getDeployment();
     DeploymentImpl deployment = new DeploymentImpl(deployable, parent, deploymentID, options);
     synchronized (deploying) {
       deploying.put(deploymentID, deployment);
     }
-    deployable.deploy(deployment, new Promise<>() {
-      @Override
-      public boolean tryComplete(Void result) {
+    Promise<Deployment> result = callingContext.promise();
+    Future<?> f = deployable.deploy(deployment);
+    f.onComplete(ar -> {
+      if (ar.succeeded()) {
         deployments.put(deploymentID, deployment);
         if (parent != null) {
           if (parent.addChild(deployment)) {
             deployment.child = true;
           } else {
             // Orphan
-            deployment.doUndeploy(vertx.getOrCreateContext()).onComplete(ar2 -> promise.fail("Deployment failed.Could not be added as child of parent deployment"));
-            return false;
+            deployment
+              .doUndeploy(vertx.getOrCreateContext())
+              .onComplete(ar2 -> {
+                result.fail("Deployment failed.Could not be added as child of parent deployment");
+            });
+            return;
           }
         }
         synchronized (deploying) {
           deploying.remove(deploymentID);
         }
-        promise.complete(deployment);
-        return false;
-      }
-      @Override
-      public boolean tryFail(Throwable cause) {
-        deployment.rollback(callingContext, promise, cause);
-        return false;
-      }
-      @Override
-      public Future<Void> future() {
-        throw new UnsupportedOperationException();
+        result.complete(deployment);
+      } else {
+        deployment
+          .rollback(callingContext)
+          .onComplete(ar2 -> result.fail(ar.cause()));
       }
     });
-
-    return promise.future();
+    return result.future();
   }
 
   private class DeploymentImpl implements Deployment {
@@ -158,7 +153,6 @@ public class DefaultDeploymentManager implements DeploymentManager {
     private final JsonObject conf;
     private final Set<Deployment> children = ConcurrentHashMap.newKeySet();
     private final DeploymentOptions options;
-    private Handler<Void> undeployHandler;
     private int status = ST_DEPLOYED;
     private volatile boolean child;
 
@@ -173,46 +167,34 @@ public class DefaultDeploymentManager implements DeploymentManager {
       this.options = options;
     }
 
-    private synchronized void rollback(ContextInternal callingContext, Promise<Deployment> completionPromise, Throwable cause) {
+    private synchronized Future<?> rollback(ContextInternal callingContext) {
       if (status == ST_DEPLOYED) {
         status = ST_UNDEPLOYING;
-        doUndeployChildren(callingContext).onComplete(childrenResult -> {
-          Handler<Void> handler;
-          synchronized (DeploymentImpl.this) {
-            status = ST_UNDEPLOYED;
-            handler = undeployHandler;
-            undeployHandler = null;
-          }
-          if (handler != null) {
-            try {
-              handler.handle(null);
-            } catch (Exception e) {
-              callingContext.reportException(e);
+        return doUndeployChildren(callingContext)
+          .transform(childrenResult -> {
+            synchronized (DeploymentImpl.this) {
+              status = ST_UNDEPLOYED;
             }
-          }
-          if (childrenResult.failed()) {
-            completionPromise.fail(cause);
-          } else {
-            deployable
-              .cleanup()
-              .transform(ar -> Future.<Deployment>failedFuture(cause)).onComplete(completionPromise);
-          }
-        });
+            if (childrenResult.failed()) {
+              return (Future)childrenResult;
+            } else {
+              return deployable.cleanup();
+            }
+          });
+      } else {
+        return callingContext.succeededFuture();
       }
     }
 
-    private synchronized Future<Void> doUndeployChildren(ContextInternal undeployingContext) {
+    private synchronized Future<?> doUndeployChildren(ContextInternal undeployingContext) {
       if (!children.isEmpty()) {
         List<Future<?>> childFuts = new ArrayList<>();
         for (Deployment childDeployment: new HashSet<>(children)) {
-          Promise<Void> p = Promise.promise();
-          childFuts.add(p.future());
-          childDeployment.doUndeploy(undeployingContext).onComplete(ar -> {
-            children.remove(childDeployment);
-            p.handle(ar);
-          });
+          childFuts.add(childDeployment
+            .doUndeploy(undeployingContext)
+            .andThen(ar -> children.remove(childDeployment)));
         }
-        return Future.all(childFuts).mapEmpty();
+        return Future.all(childFuts);
       } else {
         return Future.succeededFuture();
       }
@@ -220,27 +202,30 @@ public class DefaultDeploymentManager implements DeploymentManager {
 
     public synchronized Future<Void> doUndeploy(ContextInternal undeployingContext) {
       if (status == ST_UNDEPLOYED) {
-        return Future.failedFuture(new IllegalStateException("Already undeployed"));
+        return undeployingContext.failedFuture(new IllegalStateException("Already undeployed"));
       }
       if (!children.isEmpty()) {
         status = ST_UNDEPLOYING;
-        return doUndeployChildren(undeployingContext).compose(v -> doUndeploy(undeployingContext));
+        return doUndeployChildren(undeployingContext)
+          .compose(v -> doUndeploy(undeployingContext));
       } else {
         status = ST_UNDEPLOYED;
         if (parent != null) {
           parent.removeChild(this);
         }
-        Future<?> undeployFutures = deployable.undeploy().andThen(ar -> deployments.remove(deploymentID));
-        Promise<Void> resolvingPromise = undeployingContext.promise();
-        undeployFutures.<Void>mapEmpty().onComplete(resolvingPromise);
-        Future<Void> fut = resolvingPromise.future();
-        fut = fut.eventually(deployable::cleanup);
-        Handler<Void> handler = undeployHandler;
-        if (handler != null) {
-          undeployHandler = null;
-          return fut.andThen(ar -> handler.handle(null));
-        }
-        return fut;
+        Future<?> undeployFutures = deployable
+          .undeploy()
+          .andThen(ar -> deployments.remove(deploymentID))
+          .eventually(deployable::cleanup);
+        return undeployingContext.future(p -> {
+          undeployFutures.onComplete(ar -> {
+            if (ar.succeeded()) {
+              p.complete();
+            } else {
+              p.fail(ar.cause());
+            }
+          });
+        });
       }
     }
 
@@ -280,17 +265,6 @@ public class DefaultDeploymentManager implements DeploymentManager {
     }
 
     @Override
-    public void undeployHandler(Handler<Void> handler) {
-      synchronized (this) {
-        if (status != ST_UNDEPLOYED) {
-          undeployHandler = handler;
-          return;
-        }
-      }
-      handler.handle(null);
-    }
-
-    @Override
     public boolean isChild() {
       return child;
     }
@@ -300,5 +274,4 @@ public class DefaultDeploymentManager implements DeploymentManager {
       return deploymentID;
     }
   }
-
 }
