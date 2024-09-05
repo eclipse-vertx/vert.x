@@ -19,6 +19,7 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.deployment.Deployment;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.json.JsonObject;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Ignore;
@@ -1059,23 +1060,16 @@ public class DeploymentTest extends VertxTestBase {
   public void testGetInstanceCountMultipleVerticles() throws Exception {
     AtomicInteger messageCount = new AtomicInteger(0);
     AtomicInteger totalReportedInstances = new AtomicInteger(0);
-
     vertx.eventBus().consumer("instanceCount", event -> {
-      messageCount.incrementAndGet();
       totalReportedInstances.addAndGet((int)event.body());
-      if(messageCount.intValue() == 3) {
-        assertEquals(9, totalReportedInstances.get());
-        testComplete();
-      }
+      messageCount.incrementAndGet();
     });
-
-    vertx.deployVerticle(TestVerticle3.class.getCanonicalName(), new DeploymentOptions().setInstances(3))
-      .onComplete(onSuccess(v -> {}));
-    await();
+    awaitFuture(vertx.deployVerticle(TestVerticle3.class.getCanonicalName(), new DeploymentOptions().setInstances(3)));
+    assertWaitUntil(() -> messageCount.get() == 3);
+    assertEquals(9, totalReportedInstances.get());
+    assertWaitUntil(() -> vertx.deploymentIDs().size() == 1);
     Deployment deployment = ((VertxInternal) vertx).getDeployment(vertx.deploymentIDs().iterator().next());
-    CountDownLatch latch = new CountDownLatch(1);
-    vertx.undeploy(deployment.deploymentID()).onComplete(ar -> latch.countDown());
-    awaitLatch(latch);
+    awaitFuture(vertx.undeploy(deployment.deploymentID()));
   }
 
   @Test
