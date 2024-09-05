@@ -1341,7 +1341,7 @@ public class Http1xTest extends HttpTest {
     NetClient client = vertx.createNetClient();
     client.connect(testAddress).onComplete(onSuccess(so -> {
       so.write(
-        "PUT / HTTP/1.1 \r\n" +
+        "PUT / HTTP/1.1\r\n" +
           "connection: close\r\n" +
           "content-length: 1\r\n" +
           "\r\n");

@@ -27,6 +27,7 @@ open module io.vertx.tests {
   requires io.netty.transport;
   requires io.netty.handler;
   requires io.netty.codec;
+  requires io.netty.codec.compression;
   requires io.netty.codec.http;
   requires io.netty.codec.haproxy;
   requires io.netty.codec.http2;
