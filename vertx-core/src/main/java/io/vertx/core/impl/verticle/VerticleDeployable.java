@@ -21,8 +21,6 @@ import io.vertx.core.internal.logging.Logger;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 public class VerticleDeployable implements Deployable {
@@ -115,17 +113,13 @@ public class VerticleDeployable implements Deployable {
   }
 
   @Override
-  public void deploy(Deployment deployment, Promise<Void> completion) {
-    AtomicInteger deployCount = new AtomicInteger();
-    AtomicBoolean failureReported = new AtomicBoolean();
+  public Future<?> deploy(Deployment deployment) {
     EventLoop workerLoop = null;
+    List<Future<?>> futures = new ArrayList<>();
     for (Verticle verticle: verticles) {
       CloseFuture closeFuture = new CloseFuture(log);
       ContextImpl context;
       switch (threading) {
-        default:
-          context = vertx.createEventLoopContext(deployment, closeFuture, workerPool, tccl);
-          break;
         case WORKER:
           if (workerLoop == null) {
             context = vertx.createWorkerContext(deployment, closeFuture, workerPool, tccl);
@@ -142,32 +136,29 @@ public class VerticleDeployable implements Deployable {
             context = vertx.createVirtualThreadContext(deployment, closeFuture, workerLoop, tccl);
           }
           break;
+        default:
+          context = vertx.createEventLoopContext(deployment, closeFuture, workerPool, tccl);
+          break;
       }
       VerticleHolder holder = new VerticleHolder(verticle, context, closeFuture);
       Promise<Void> startPromise = context.promise();
       holder.startPromise = startPromise;
       holders.add(holder);
+      futures.add(startPromise.future().andThen(ar -> {
+        if (ar.succeeded()) {
+          holder.startPromise = null;
+        }
+      }));
       context.runOnContext(v -> {
         try {
           verticle.init(vertx, context);
-          Future<Void> startFuture = startPromise.future();
           verticle.start(startPromise);
-          startFuture.onComplete(ar -> {
-            if (ar.succeeded()) {
-              holder.startPromise = null;
-              if (deployCount.incrementAndGet() == verticles.size()) {
-                completion.tryComplete();
-              }
-            } else if (failureReported.compareAndSet(false, true)) {
-              completion.tryFail(ar.cause());
-            }
-          });
         } catch (Throwable t) {
-          if (failureReported.compareAndSet(false, true))
-            completion.tryFail(t);
+          startPromise.tryFail(t);
         }
       });
     }
+    return Future.all(futures);
   }
 
   @Override

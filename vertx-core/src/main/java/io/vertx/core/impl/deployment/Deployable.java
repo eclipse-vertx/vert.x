@@ -20,7 +20,7 @@ public interface Deployable {
 
   String identifier();
 
-  void deploy(Deployment deployment, Promise<Void> completion);
+  Future<?> deploy(Deployment deployment);
 
   Future<?> undeploy();
 
