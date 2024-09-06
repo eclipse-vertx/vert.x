@@ -223,7 +223,7 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
 
     private void configurePipeline(Channel ch, SslChannelProvider sslChannelProvider) {
       if (options.isSsl()) {
-        ch.pipeline().addLast("ssl", sslChannelProvider.createServerHandler());
+        ch.pipeline().addLast("ssl", sslChannelProvider.createServerHandler(ch.remoteAddress()));
         ChannelPromise p = ch.newPromise();
         ch.pipeline().addLast("handshaker", new SslHandshakeCompletionHandler(p));
         p.addListener(future -> {
