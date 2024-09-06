@@ -16,6 +16,8 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.AsyncMapping;
 
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
@@ -27,16 +29,25 @@ import java.util.concurrent.TimeUnit;
 class VertxSniHandler extends SniHandler {
 
   private final Executor delegatedTaskExec;
+  private final SocketAddress remoteAddress;
 
-  public VertxSniHandler(AsyncMapping<? super String, ? extends SslContext> mapping, long handshakeTimeoutMillis, Executor delegatedTaskExec) {
+  public VertxSniHandler(AsyncMapping<? super String, ? extends SslContext> mapping, long handshakeTimeoutMillis, Executor delegatedTaskExec,
+      SocketAddress remoteAddress) {
     super(mapping, handshakeTimeoutMillis);
 
     this.delegatedTaskExec = delegatedTaskExec;
+    this.remoteAddress = remoteAddress;
   }
 
   @Override
   protected SslHandler newSslHandler(SslContext context, ByteBufAllocator allocator) {
-    SslHandler sslHandler = context.newHandler(allocator, delegatedTaskExec);
+    SslHandler sslHandler;
+    if (remoteAddress instanceof InetSocketAddress) {
+      InetSocketAddress inetSocketAddress = (InetSocketAddress) remoteAddress;
+      sslHandler = context.newHandler(allocator, inetSocketAddress.getHostString(), inetSocketAddress.getPort(), delegatedTaskExec);
+    } else {
+      sslHandler = context.newHandler(allocator, delegatedTaskExec);
+    }
     sslHandler.setHandshakeTimeout(handshakeTimeoutMillis, TimeUnit.MILLISECONDS);
     return sslHandler;
   }
