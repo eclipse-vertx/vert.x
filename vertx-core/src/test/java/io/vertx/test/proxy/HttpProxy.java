@@ -190,9 +190,7 @@ public class HttpProxy extends TestProxyBase<HttpProxy> {
     });
     server
       .listen()
-      .toCompletionStage()
-      .toCompletableFuture()
-      .get(10, TimeUnit.SECONDS);
+      .await(10, TimeUnit.SECONDS);
     return this;
   }
 

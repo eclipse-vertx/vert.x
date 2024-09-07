@@ -2677,7 +2677,7 @@ public abstract class HttpTest extends HttpTestBase {
     });
     startServer(testAddress);
     try {
-      CompletionStage<MultiMap> result = client
+      Future<MultiMap> result = client
         .request(new RequestOptions(requestOptions).setMethod(method)).compose(req ->
           req
             .setFollowRedirects(false)
@@ -2690,8 +2690,8 @@ public abstract class HttpTest extends HttpTestBase {
                   return Future.succeededFuture(resp.headers());
                 }
               })
-            )).toCompletionStage();
-      return result.toCompletableFuture().get(20, TimeUnit.SECONDS);
+            ));
+      return result.await(20, TimeUnit.SECONDS);
     } finally {
       client.close();
     }
@@ -3398,9 +3398,7 @@ public abstract class HttpTest extends HttpTestBase {
           .onComplete(startPromise);
       }
     })
-      .toCompletionStage()
-      .toCompletableFuture()
-      .get(20, TimeUnit.SECONDS);
+      .await(20, TimeUnit.SECONDS);
     vertx.deployVerticle(new AbstractVerticle() {
       HttpClient client;
       @Override
@@ -3447,9 +3445,7 @@ public abstract class HttpTest extends HttpTestBase {
           .onComplete(startPromise);
       }
     }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER))
-      .toCompletionStage()
-      .toCompletableFuture()
-      .get(20, TimeUnit.SECONDS);
+      .await(20, TimeUnit.SECONDS);
     vertx.deployVerticle(new AbstractVerticle() {
       HttpClient client;
       @Override
@@ -6874,7 +6870,7 @@ public abstract class HttpTest extends HttpTestBase {
       }));
       await();
     } finally {
-      vertx.close().toCompletionStage().toCompletableFuture().get();
+      vertx.close().await();
       server.stop();
     }
   }

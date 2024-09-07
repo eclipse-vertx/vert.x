@@ -20,9 +20,9 @@ import io.vertx.core.impl.future.FailedFuture;
 import io.vertx.core.impl.future.SucceededFuture;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.TimeUnit;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -642,17 +642,52 @@ public interface Future<T> extends AsyncResult<T> {
    *   <li>otherwise, the failure is thrown</li>
    * </ul>
    *
-   * This method must be called from a virtual thread.
+   * This method must be called from a vertx virtual thread or a non vertx thread.
    *
    * @return the result
-   * @throws IllegalStateException when called from an event-loop thread or a non Vert.x thread
+   * @throws IllegalStateException when called from a vertx event-loop or worker thread
    */
   default T await() {
-    io.vertx.core.impl.WorkerExecutor executor = io.vertx.core.impl.WorkerExecutor.unwrapWorkerExecutor();
-    io.vertx.core.impl.WorkerExecutor.TaskController cont = executor.current();
-    onComplete(ar -> cont.resume());
     try {
-      cont.suspendAndAwaitResume();
+      return await(-1, null);
+    } catch (TimeoutException e) {
+      // Not a possible case
+      return null;
+    }
+  }
+
+  /**
+   * Like {@link #await()} but with a timeout.
+   *
+   * @param timeout the timeout
+   * @param unit the timeout unit
+   * @return the result
+   * @throws TimeoutException when the timeout fires before the future completes
+   * @throws IllegalStateException when called from a vertx event-loop or worker thread
+   */
+  default T await(long timeout, TimeUnit unit) throws TimeoutException {
+    if (timeout >= 0L && unit == null) {
+      throw new NullPointerException();
+    }
+    io.vertx.core.impl.WorkerExecutor executor = io.vertx.core.impl.WorkerExecutor.unwrapWorkerExecutor();
+    CountDownLatch latch;
+    if (executor != null) {
+      io.vertx.core.impl.WorkerExecutor.TaskController cont = executor.current();
+      onComplete(ar -> cont.resume());
+      latch = cont.suspend();
+    } else {
+      latch = new CountDownLatch(1);
+      onComplete(ar -> latch.countDown());
+    }
+    try {
+      if (timeout >= 0) {
+        Objects.requireNonNull(unit);
+        if (!latch.await(timeout, unit)) {
+          throw new TimeoutException();
+        }
+      } else {
+        latch.await();
+      }
     } catch (InterruptedException e) {
       Utils.throwAsUnchecked(e);
       return null;

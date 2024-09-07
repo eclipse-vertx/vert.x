@@ -1846,18 +1846,18 @@ public abstract class HttpTLSTest extends HttpTestBase {
       clients[i] = vertx.createHttpClient(createBaseClientOptions().setVerifyHost(false).setTrustOptions(Trust.SERVER_JKS.get()));
     }
     for (int i = 0;i < num;i++) {
-      Buffer body = clients[i].request(requestOptions).compose(req -> req.send().compose(HttpClientResponse::body)).toCompletionStage().toCompletableFuture().get();
+      Buffer body = clients[i].request(requestOptions).compose(req -> req.send().compose(HttpClientResponse::body)).await();
       assertEquals("Hello World " + i, body.toString());
     }
     for (int i = 0;i < num;i++) {
-      servers[i].updateSSLOptions(createBaseServerOptions().setKeyCertOptions(Cert.SERVER_PKCS12.get()).getSslOptions()).toCompletionStage().toCompletableFuture().get();
+      servers[i].updateSSLOptions(createBaseServerOptions().setKeyCertOptions(Cert.SERVER_PKCS12.get()).getSslOptions()).await();
     }
     for (int i = 0;i < num;i++) {
       clients[i].close();
       clients[i] = vertx.createHttpClient(createBaseClientOptions().setVerifyHost(false).setTrustOptions(Trust.SERVER_JKS.get()));
     }
     for (int i = 0;i < num;i++) {
-      Buffer body = clients[i].request(requestOptions).compose(req -> req.send().compose(HttpClientResponse::body)).toCompletionStage().toCompletableFuture().get();
+      Buffer body = clients[i].request(requestOptions).compose(req -> req.send().compose(HttpClientResponse::body)).await();
       assertEquals("Hello World " + i, body.toString());
     }
   }

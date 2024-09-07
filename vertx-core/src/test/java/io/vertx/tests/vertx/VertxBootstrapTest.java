@@ -177,7 +177,7 @@ public class VertxBootstrapTest {
       .executorServiceFactory(new CustomExecutorServiceFactory())
       .init()
       .vertx()
-      .close().toCompletionStage().toCompletableFuture().join();
+      .close().await();
   }
 
   private class CustomExecutorServiceFactory implements ExecutorServiceFactory {

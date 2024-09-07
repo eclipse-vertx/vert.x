@@ -1009,7 +1009,7 @@ public class ContextTest extends VertxTestBase {
 
   @Test
   public void testAwaitFromWorkerThread() {
-    testAwaitFromContextThread(ThreadingModel.WORKER, false);
+    testAwaitFromContextThread(ThreadingModel.WORKER, true);
   }
 
   @Test

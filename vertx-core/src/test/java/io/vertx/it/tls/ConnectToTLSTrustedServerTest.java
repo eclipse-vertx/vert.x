@@ -34,11 +34,11 @@ public class ConnectToTLSTrustedServerTest {
     try {
       HttpServer server = vertx.createHttpServer(serverOptions)
         .requestHandler(req -> req.response().end(req.isSSL() + "/" + req.version()));
-      server.listen(8443, "localhost").toCompletionStage().toCompletableFuture().get();
+      server.listen(8443, "localhost").await();
       HttpClient client = vertx.createHttpClient(new HttpClientOptions().setUseAlpn(true).setProtocolVersion(HttpVersion.HTTP_2));
       Future<HttpClientRequest> fut = client.request(new RequestOptions().setAbsoluteURI("https://localhost:8443"));
       Future<Buffer> buff = fut.compose(req -> req.send().compose(HttpClientResponse::body));
-      return buff.toCompletionStage().toCompletableFuture().get().toString();
+      return buff.await().toString();
     } finally {
       vertx.close();
     }

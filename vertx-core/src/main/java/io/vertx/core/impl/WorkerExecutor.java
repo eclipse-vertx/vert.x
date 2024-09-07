@@ -10,13 +10,17 @@
  */
 package io.vertx.core.impl;
 
+import io.vertx.core.ThreadingModel;
 import io.vertx.core.Vertx;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.EventExecutor;
 import io.vertx.core.spi.metrics.PoolMetrics;
 
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Execute events on a worker pool.
@@ -26,17 +30,19 @@ import java.util.concurrent.Executor;
 public class WorkerExecutor implements EventExecutor {
 
   public static io.vertx.core.impl.WorkerExecutor unwrapWorkerExecutor() {
-    ContextInternal ctx = (ContextInternal) Vertx.currentContext();
-    if (ctx != null) {
-      Executor executor = ctx.executor();
-      if (executor instanceof io.vertx.core.impl.WorkerExecutor) {
-        return (io.vertx.core.impl.WorkerExecutor) executor;
-      } else {
-        throw new IllegalStateException("Cannot be called on a Vert.x event-loop thread");
-      }
+    Thread thread = Thread.currentThread();
+    if (thread instanceof VertxThread) {
+      VertxThread vertxThread = (VertxThread) thread;
+      String msg = vertxThread.isWorker() ? "Cannot be called on a Vert.x worker thread" :
+        "Cannot be called on a Vert.x event-loop thread";
+      throw new IllegalStateException(msg);
     }
-    // Technically it works also for worker threads but we don't want to encourage this
-    throw new IllegalStateException("Not running from a Vert.x virtual thread");
+    ContextInternal ctx = VertxImpl.currentContext(thread);
+    if (ctx != null && ctx.threadingModel() == ThreadingModel.VIRTUAL_THREAD) {
+      return (io.vertx.core.impl.WorkerExecutor) ctx.executor();
+    } else {
+      return null;
+    }
   }
 
   private final WorkerPool workerPool;
