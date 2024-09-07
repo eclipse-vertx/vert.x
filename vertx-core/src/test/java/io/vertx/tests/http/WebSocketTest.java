@@ -1742,9 +1742,7 @@ public class WebSocketTest extends VertxTestBase {
 
       })
       .listen(1234, DEFAULT_HTTP_HOST)
-      .toCompletionStage()
-      .toCompletableFuture()
-      .get(20, TimeUnit.SECONDS);
+      .await(20, TimeUnit.SECONDS);
     try {
       client = vertx.createWebSocketClient(new WebSocketClientOptions().setConnectTimeout(1000));
       WebSocketConnectOptions options = new WebSocketConnectOptions()

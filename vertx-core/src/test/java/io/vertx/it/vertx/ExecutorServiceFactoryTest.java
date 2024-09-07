@@ -41,7 +41,7 @@ public class ExecutorServiceFactoryTest extends VertxTestBase {
       }
       awaitLatch(latch);
     } finally {
-      vertx.close().toCompletionStage().toCompletableFuture().get(30, TimeUnit.SECONDS);
+      vertx.close().await(30, TimeUnit.SECONDS);
     }
     assertEquals(initialValue, CustomExecutorServiceFactory.NUM.get());
   }

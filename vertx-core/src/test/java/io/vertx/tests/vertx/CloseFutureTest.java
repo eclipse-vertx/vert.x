@@ -94,7 +94,6 @@ public class CloseFutureTest extends AsyncTestBase {
         if (blocking) {
           Promise<Void> promise = Promise.promise();
           resource.close(promise);
-          promise.future().toCompletionStage().toCompletableFuture();
         } else {
           resource.close(Promise.promise());
         }

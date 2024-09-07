@@ -112,9 +112,7 @@ public class VirtualThreadDeploymentTest extends VertxTestBase {
           server.listen(HttpTestBase.DEFAULT_HTTP_PORT, "localhost").await();
         }
       }, new DeploymentOptions().setThreadingModel(ThreadingModel.VIRTUAL_THREAD))
-      .toCompletionStage()
-      .toCompletableFuture()
-      .get();
+      .await();
     HttpClient client = vertx.createHttpClient();
     int numReq = 10;
     waitFor(numReq);

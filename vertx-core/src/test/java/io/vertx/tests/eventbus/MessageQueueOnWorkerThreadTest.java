@@ -40,7 +40,7 @@ public class MessageQueueOnWorkerThreadTest extends VertxTestBase {
     CustomNodeSelector selector = new CustomNodeSelector();
     VertxBootstrapImpl factory = new VertxBootstrapImpl().init().clusterNodeSelector(selector);
     Future<Vertx> fut = factory.clusteredVertx();
-    vertx = fut.toCompletionStage().toCompletableFuture().get();
+    vertx = fut.await();
   }
 
   @Test
