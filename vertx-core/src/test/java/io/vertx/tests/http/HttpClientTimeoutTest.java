@@ -42,7 +42,7 @@ public abstract class HttpClientTimeoutTest extends HttpTestBase {
     startServer(testAddress);
     List<HttpClientRequest> requests = new ArrayList<>();
     for (int i = 0;i < 5;i++) {
-      HttpClientRequest request = client.request(new RequestOptions(requestOptions)).toCompletionStage().toCompletableFuture().get();
+      HttpClientRequest request = client.request(new RequestOptions(requestOptions)).await();
       requests.add(request);
     }
     long now = System.currentTimeMillis();
@@ -64,7 +64,7 @@ public abstract class HttpClientTimeoutTest extends HttpTestBase {
     startServer(testAddress);
     List<HttpClientRequest> requests = new ArrayList<>();
     for (int i = 0;i < 5;i++) {
-      HttpClientRequest request = client.request(new RequestOptions(requestOptions)).toCompletionStage().toCompletableFuture().get();
+      HttpClientRequest request = client.request(new RequestOptions(requestOptions)).await();
       requests.add(request);
     }
     vertx.setTimer(timeout * ratio / 100, id -> {
@@ -119,10 +119,7 @@ public abstract class HttpClientTimeoutTest extends HttpTestBase {
 
     CountDownLatch latch = new CountDownLatch(requests);
 
-    server.listen(testAddress)
-      .toCompletionStage()
-      .toCompletableFuture()
-      .get(20, TimeUnit.SECONDS);
+    server.listen(testAddress).await(20, TimeUnit.SECONDS);
 
     for(int count = 0; count < requests; count++) {
 

@@ -769,9 +769,7 @@ public class MetricsTest extends VertxTestBase {
       .compose(req -> req.send()
         .compose(HttpClientResponse::end)
         .compose(v ->  req.connection().close()))
-      .toCompletionStage()
-      .toCompletableFuture()
-      .get(20, TimeUnit.SECONDS);
+      .await(20, TimeUnit.SECONDS);
     assertWaitUntil(() -> endpointMetrics.get().connectionCount.get() == 0);
     assertEquals(0, endpointMetrics.get().requestCount.get());
     assertEquals(0, queueMetrics.get().pending());
@@ -1203,7 +1201,8 @@ public class MetricsTest extends VertxTestBase {
     HttpServer server = vertx.createHttpServer(options);
     server.requestHandler(req -> {
 
-    }).listen().toCompletionStage().toCompletableFuture().get(20, TimeUnit.SECONDS);
+    }).listen()
+      .await(20, TimeUnit.SECONDS);
     FakeHttpServerMetrics metrics = FakeVertxMetrics.getMetrics(server);
     NetClient client = vertx.createNetClient(new NetClientOptions()
       .setSslEngineOptions(new JdkSSLEngineOptions())

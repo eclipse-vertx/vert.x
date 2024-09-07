@@ -1087,9 +1087,7 @@ public class Http1xTest extends HttpTest {
 
     server
       .listen(testAddress)
-      .toCompletionStage()
-      .toCompletableFuture()
-      .get(20, TimeUnit.SECONDS);
+      .await(20, TimeUnit.SECONDS);
 
     AtomicInteger responses = new AtomicInteger();
     for (int i = 0;i < requests;i++) {

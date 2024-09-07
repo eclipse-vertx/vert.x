@@ -367,19 +367,18 @@ public class VertxTest extends AsyncTestBase {
       vertx.createSharedWorkerExecutor("LeakTest").executeBlocking(() -> {
         threads[0] = Thread.currentThread();
         return null;
-      }).toCompletionStage().toCompletableFuture().get(20, TimeUnit.SECONDS);
+      }).await(20, TimeUnit.SECONDS);
       vertx.createSharedWorkerExecutor("LeakTest").executeBlocking(() -> {
         threads[1] = Thread.currentThread();
         return null;
-      }).toCompletionStage().toCompletableFuture().get(20, TimeUnit.SECONDS);
+      }).await(20, TimeUnit.SECONDS);
       runGC();
       assertFalse(threads[0].isAlive());
       assertFalse(threads[1].isAlive());
     } finally {
       vertx
         .close()
-        .toCompletionStage().toCompletableFuture()
-        .get(20, TimeUnit.SECONDS);
+        .await(20, TimeUnit.SECONDS);
     }
   }
 
@@ -487,8 +486,8 @@ public class VertxTest extends AsyncTestBase {
       WorkerExecutor exec = vertx.createSharedWorkerExecutor("pool");
       WeakReference<Thread> ref = exec.executeBlocking(() -> {
         return new WeakReference<>(Thread.currentThread());
-      }).toCompletionStage().toCompletableFuture().get();
-      exec.close().toCompletionStage().toCompletableFuture().get();
+      }).await();
+      exec.close().await();
       long now = System.currentTimeMillis();
       do {
         assertTrue(System.currentTimeMillis() - now < 20_000);

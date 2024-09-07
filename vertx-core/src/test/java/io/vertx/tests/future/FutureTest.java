@@ -1819,15 +1819,6 @@ public class FutureTest extends FutureTestBase {
   }
 
   @Test
-  public void testAwaitFromPlainThread() {
-    try {
-      Promise.promise().future().await();
-      fail();
-    } catch (IllegalStateException e) {
-    }
-  }
-
-  @Test
   public void contextFutureTimeoutFires() {
     ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
     Promise<String> promise = ctx.promise();
