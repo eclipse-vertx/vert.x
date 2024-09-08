@@ -43,13 +43,7 @@ class HttpSslHandshaker extends ChannelInboundHandlerAdapter {
       if (completion.isSuccess()) {
         // Remove from the pipeline after handshake result
         ctx.pipeline().remove(this);
-        String protocol;
-        if (version == HttpVersion.HTTP_3) {
-          protocol = Objects.requireNonNull(((QuicChannel) ctx.channel()).sslEngine()).getApplicationProtocol();
-        } else {
-          protocol = ((SslHandler) sslHandler).applicationProtocol();
-        }
-        applicationProtocolHandler.handle(protocol);
+        applicationProtocolHandler.handle(applicationProtocol(ctx));
         if (handler != null) {
           context.dispatch(ctx.channel(), handler);
         }
@@ -61,6 +55,13 @@ class HttpSslHandshaker extends ChannelInboundHandlerAdapter {
       }
     }
     ctx.fireUserEventTriggered(evt);
+  }
+
+  private String applicationProtocol(ChannelHandlerContext ctx) {
+    if (version == HttpVersion.HTTP_3) {
+      return Objects.requireNonNull(((QuicChannel) ctx.channel()).sslEngine()).getApplicationProtocol();
+    }
+    return ((SslHandler) sslHandler).applicationProtocol();
   }
 
   @Override
