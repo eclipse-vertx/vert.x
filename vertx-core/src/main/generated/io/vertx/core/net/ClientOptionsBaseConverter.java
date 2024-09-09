@@ -23,6 +23,11 @@ public class ClientOptionsBaseConverter {
             obj.setTrustAll((Boolean)member.getValue());
           }
           break;
+        case "protocolVersion":
+          if (member.getValue() instanceof String) {
+            obj.setProtocolVersion(io.vertx.core.http.HttpVersion.valueOf((String)member.getValue()));
+          }
+          break;
         case "connectTimeout":
           if (member.getValue() instanceof Number) {
             obj.setConnectTimeout(((Number)member.getValue()).intValue());
@@ -63,6 +68,9 @@ public class ClientOptionsBaseConverter {
 
    static void toJson(ClientOptionsBase obj, java.util.Map<String, Object> json) {
     json.put("trustAll", obj.isTrustAll());
+    if (obj.getProtocolVersion() != null) {
+      json.put("protocolVersion", obj.getProtocolVersion().name());
+    }
     json.put("connectTimeout", obj.getConnectTimeout());
     if (obj.getMetricsName() != null) {
       json.put("metricsName", obj.getMetricsName());

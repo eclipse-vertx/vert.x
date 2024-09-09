@@ -73,11 +73,6 @@ public class HttpClientOptionsConverter {
             obj.setDefaultPort(((Number)member.getValue()).intValue());
           }
           break;
-        case "protocolVersion":
-          if (member.getValue() instanceof String) {
-            obj.setProtocolVersion(io.vertx.core.http.HttpVersion.valueOf((String)member.getValue()));
-          }
-          break;
         case "maxChunkSize":
           if (member.getValue() instanceof Number) {
             obj.setMaxChunkSize(((Number)member.getValue()).intValue());
@@ -170,9 +165,6 @@ public class HttpClientOptionsConverter {
       json.put("defaultHost", obj.getDefaultHost());
     }
     json.put("defaultPort", obj.getDefaultPort());
-    if (obj.getProtocolVersion() != null) {
-      json.put("protocolVersion", obj.getProtocolVersion().name());
-    }
     json.put("maxChunkSize", obj.getMaxChunkSize());
     json.put("maxInitialLineLength", obj.getMaxInitialLineLength());
     json.put("maxHeaderSize", obj.getMaxHeaderSize());

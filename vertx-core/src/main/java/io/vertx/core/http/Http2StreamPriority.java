@@ -1,6 +1,6 @@
 package io.vertx.core.http;
 
-public class Http2StreamPriority implements StreamPriorityBase {
+public class Http2StreamPriority extends StreamPriorityBase {
   private final StreamPriority streamPriority;
 
   public Http2StreamPriority(StreamPriority streamPriority) {

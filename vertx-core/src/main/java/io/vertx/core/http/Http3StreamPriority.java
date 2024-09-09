@@ -2,7 +2,7 @@ package io.vertx.core.http;
 
 import io.netty.incubator.codec.quic.QuicStreamPriority;
 
-public class Http3StreamPriority implements StreamPriorityBase {
+public class Http3StreamPriority extends StreamPriorityBase {
   private final QuicStreamPriority quicStreamPriority;
 
   public Http3StreamPriority(QuicStreamPriority quicStreamPriority) {
