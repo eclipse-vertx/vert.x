@@ -612,6 +612,15 @@ public class HttpServerOptions extends NetServerOptions {
     return this;
   }
 
+  public int getCompressionContentSizeThreshold() {
+    return compressionContentSizeThreshold;
+  }
+
+  public HttpServerOptions setCompressionContentSizeThreshold(int compressionContentSizeThreshold) {
+    this.compressionContentSizeThreshold = compressionContentSizeThreshold;
+    return this;
+  }
+
   /**
    * @return the compression content size threshold
    */
