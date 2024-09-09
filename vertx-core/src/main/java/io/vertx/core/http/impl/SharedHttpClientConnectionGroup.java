@@ -207,10 +207,12 @@ class SharedHttpClientConnectionGroup extends ManagedResource implements PoolCon
   }
 
   @Override
-  protected void dispose() {
+  protected void cleanup() {
     if (clientMetrics != null) {
       clientMetrics.close();
     }
-    super.dispose();
+    if (poolMetrics != null) {
+      poolMetrics.close();
+    }
   }
 }
