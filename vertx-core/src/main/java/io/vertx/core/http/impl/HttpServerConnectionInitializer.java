@@ -87,7 +87,7 @@ class HttpServerConnectionInitializer {
     this.exceptionHandler = exceptionHandler;
     this.metric = metric;
     this.compressionOptions = compressionOptions;
-    this.encodingDetector = compressionOptions != null ? new EncodingDetector(compressionOptions)::determineEncoding : null;
+    this.encodingDetector = compressionOptions != null ? new EncodingDetector(options.getCompressionContentSizeThreshold(), compressionOptions)::determineEncoding : null;
   }
 
   void configurePipeline(Channel ch, SslChannelProvider sslChannelProvider, SslContextManager sslContextManager) {
@@ -265,8 +265,8 @@ class HttpServerConnectionInitializer {
 
   private static class EncodingDetector extends HttpContentCompressor {
 
-    private EncodingDetector(CompressionOptions[] compressionOptions) {
-      super(compressionOptions);
+    private EncodingDetector(int contentSizeThreshold, CompressionOptions[] compressionOptions) {
+      super(contentSizeThreshold, compressionOptions);
     }
 
     @Override
