@@ -214,20 +214,18 @@
               <id>default-compile</id>
               <phase>compile</phase>
               <configuration>
-                <annotationProcessors>
-                  <annotationProcessor>io.vertx.codegen.CodeGenProcessor</annotationProcessor>
-                  <annotationProcessor>io.vertx.docgen.processor.JavaDocGenProcessor</annotationProcessor>
-                </annotationProcessors>
                 <!-- Like in 4.x but handled by maven-compiler-plugin natively -->
                 <generatedSourcesDirectory>${project.basedir}/src/main/generated</generatedSourcesDirectory>
                 <annotationProcessorPaths>
                   <annotationProcessorPath>
                     <groupId>io.vertx</groupId>
                     <artifactId>vertx-codegen</artifactId>
+                    <classifier>processor</classifier>
                   </annotationProcessorPath>
                   <annotationProcessorPath>
                     <groupId>io.vertx</groupId>
                     <artifactId>vertx-docgen-processor</artifactId>
+                    <classifier>processor</classifier>
                   </annotationProcessorPath>
                 </annotationProcessorPaths>
               </configuration>
