@@ -1,20 +1,45 @@
 package io.vertx.core.http;
 
-public interface StreamPriorityBase {
-  short getWeight();
+import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.json.annotations.JsonGen;
 
-  StreamPriorityBase setWeight(short weight);
+/**
+ * NOTE: This class couldn't be an interface because it is being used in the
+ * {@link io.vertx.core.http.HttpClientRequest}
+ */
+@DataObject
+@JsonGen(publicConverter = false)
+public class StreamPriorityBase {
+  public short getWeight() {
+    throw new RuntimeException("Not implemented in child class");
+  }
 
-  int getDependency();
+  public StreamPriorityBase setWeight(short weight) {
+    throw new RuntimeException("Not implemented in child class");
+  }
 
-  StreamPriorityBase setDependency(int dependency);
+  public int getDependency() {
+    throw new RuntimeException("Not implemented in child class");
+  }
 
-  boolean isExclusive();
+  public StreamPriorityBase setDependency(int dependency) {
+    throw new RuntimeException("Not implemented in child class");
+  }
 
-  StreamPriorityBase setExclusive(boolean exclusive);
+  public boolean isExclusive() {
+    throw new RuntimeException("Not implemented in child class");
+  }
 
-  int urgency();
+  public StreamPriorityBase setExclusive(boolean exclusive) {
+    throw new RuntimeException("Not implemented in child class");
+  }
 
-  boolean isIncremental();
+  public int urgency() {
+    throw new RuntimeException("Not implemented in child class");
+  }
+
+  public boolean isIncremental() {
+    throw new RuntimeException("Not implemented in child class");
+  }
 
 }
