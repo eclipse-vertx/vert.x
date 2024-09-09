@@ -130,7 +130,12 @@
     <!-- Generators -->
     <dependency>
       <groupId>io.vertx</groupId>
-      <artifactId>vertx-codegen</artifactId>
+      <artifactId>vertx-codegen-api</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-codegen-json</artifactId>
       <optional>true</optional>
     </dependency>
     <dependency>
