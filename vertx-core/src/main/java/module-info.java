@@ -30,12 +30,12 @@ module io.vertx.core {
 
   requires static io.vertx.codegen.api;
   requires static io.vertx.codegen.json;
+  requires static io.vertx.docgen;
 
   // Compile time only
 
   requires static org.apache.logging.log4j;
   requires static org.slf4j;
-  requires static vertx.docgen;
 
   // Uses
 

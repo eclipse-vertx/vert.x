@@ -135,7 +135,7 @@
     </dependency>
     <dependency>
       <groupId>io.vertx</groupId>
-      <artifactId>vertx-docgen</artifactId>
+      <artifactId>vertx-docgen-api</artifactId>
       <optional>true</optional>
     </dependency>
 
@@ -216,7 +216,7 @@
               <configuration>
                 <annotationProcessors>
                   <annotationProcessor>io.vertx.codegen.CodeGenProcessor</annotationProcessor>
-                  <annotationProcessor>io.vertx.docgen.JavaDocGenProcessor</annotationProcessor>
+                  <annotationProcessor>io.vertx.docgen.processor.JavaDocGenProcessor</annotationProcessor>
                 </annotationProcessors>
                 <!-- Like in 4.x but handled by maven-compiler-plugin natively -->
                 <generatedSourcesDirectory>${project.basedir}/src/main/generated</generatedSourcesDirectory>
@@ -227,7 +227,7 @@
                   </annotationProcessorPath>
                   <annotationProcessorPath>
                     <groupId>io.vertx</groupId>
-                    <artifactId>vertx-docgen</artifactId>
+                    <artifactId>vertx-docgen-processor</artifactId>
                   </annotationProcessorPath>
                 </annotationProcessorPaths>
               </configuration>
