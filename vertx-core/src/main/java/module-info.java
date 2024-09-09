@@ -93,6 +93,7 @@ module io.vertx.core {
   exports io.vertx.core.internal.tls;
   exports io.vertx.core.internal.threadchecker;
   exports io.vertx.core.internal.concurrent;
+  exports io.vertx.core.internal.resource;
 
   // Testing
 
@@ -101,7 +102,6 @@ module io.vertx.core {
   exports io.vertx.core.impl.future to io.vertx.tests;
   exports io.vertx.core.impl.utils to io.vertx.tests;
   exports io.vertx.core.net.impl to io.vertx.tests;
-  exports io.vertx.core.net.impl.endpoint to io.vertx.tests;
   exports io.vertx.core.shareddata.impl to io.vertx.tests;
   exports io.vertx.core.buffer.impl to io.vertx.tests;
   exports io.vertx.core.streams.impl to io.vertx.tests;

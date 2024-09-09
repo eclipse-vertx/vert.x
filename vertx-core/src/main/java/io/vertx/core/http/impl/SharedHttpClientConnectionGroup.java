@@ -26,6 +26,7 @@ import io.vertx.core.internal.pool.PoolConnection;
 import io.vertx.core.internal.pool.PoolConnector;
 import io.vertx.core.internal.pool.Lease;
 import io.vertx.core.internal.pool.PoolWaiter;
+import io.vertx.core.internal.resource.ManagedResource;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.PoolMetrics;
 
@@ -35,7 +36,7 @@ import java.util.function.BiFunction;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpClientConnectionInternal>> implements PoolConnector<HttpClientConnectionInternal> {
+class SharedHttpClientConnectionGroup extends ManagedResource implements PoolConnector<HttpClientConnectionInternal> {
 
   /**
    * LIFO pool selector.
@@ -60,28 +61,27 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
     return selected;
   };
 
+  private final PoolMetrics poolMetrics;
   private final VertxInternal vertx;
   private final HttpClientImpl client;
   private final ClientMetrics clientMetrics;
   private final HttpChannelConnector connector;
   private final ConnectionPool<HttpClientConnectionInternal> pool;
 
-  public SharedClientHttpStreamEndpoint(VertxInternal vertx,
-                                        HttpClientImpl client,
-                                        ClientMetrics clientMetrics,
-                                        PoolMetrics poolMetrics,
-                                        int queueMaxSize,
-                                        int http1MaxSize,
-                                        int http2MaxSize,
-                                        HttpChannelConnector connector,
-                                        Runnable dispose) {
-    super(poolMetrics, dispose);
-
+  public SharedHttpClientConnectionGroup(VertxInternal vertx,
+                                         HttpClientImpl client,
+                                         ClientMetrics clientMetrics,
+                                         PoolMetrics poolMetrics,
+                                         int queueMaxSize,
+                                         int http1MaxSize,
+                                         int http2MaxSize,
+                                         HttpChannelConnector connector) {
     ConnectionPool<HttpClientConnectionInternal> pool = ConnectionPool.pool(this, new int[]{http1MaxSize, http2MaxSize}, queueMaxSize)
       .connectionSelector(LIFO_SELECTOR).contextProvider(client.contextProvider());
 
     this.vertx = vertx;
     this.client = client;
+    this.poolMetrics = poolMetrics;
     this.clientMetrics = clientMetrics;
     this.connector = connector;
     this.pool = pool;
@@ -178,8 +178,18 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
     }
   }
 
-  @Override
-  protected Future<Lease<HttpClientConnectionInternal>> requestConnection2(ContextInternal ctx, long timeout) {
+  public Future<Lease<HttpClientConnectionInternal>> requestConnection(ContextInternal ctx, long timeout) {
+    Future<Lease<HttpClientConnectionInternal>> fut = requestConnection2(ctx, timeout);
+    if (poolMetrics != null) {
+      Object metric = poolMetrics.enqueue();
+      fut = fut.andThen(ar -> {
+        poolMetrics.dequeue(metric);
+      });
+    }
+    return fut;
+  }
+
+  private Future<Lease<HttpClientConnectionInternal>> requestConnection2(ContextInternal ctx, long timeout) {
     PromiseInternal<Lease<HttpClientConnectionInternal>> promise = ctx.promise();
     // ctx.workerPool() -> not sure we want that in a pool
     ContextInternal connCtx = vertx.createEventLoopContext(ctx.nettyEventLoop(), ctx.workerPool(), ctx.classLoader());
@@ -194,10 +204,12 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
   }
 
   @Override
-  protected void dispose() {
+  protected void cleanup() {
     if (clientMetrics != null) {
       clientMetrics.close();
     }
-    super.dispose();
+    if (poolMetrics != null) {
+      poolMetrics.close();
+    }
   }
 }

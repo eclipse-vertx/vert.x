@@ -15,7 +15,7 @@ import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebSocketClientOptions;
 import io.vertx.core.http.WebSocketConnectOptions;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.net.impl.endpoint.Endpoint;
+import io.vertx.core.internal.resource.ManagedResource;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.PoolMetrics;
 
@@ -27,7 +27,7 @@ import java.util.Deque;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class WebSocketEndpoint extends Endpoint {
+class WebSocketGroup extends ManagedResource {
 
   private static class Waiter {
 
@@ -51,8 +51,8 @@ class WebSocketEndpoint extends Endpoint {
   private final ClientMetrics clientMetrics;
   private final PoolMetrics poolMetrics;
 
-  WebSocketEndpoint(ClientMetrics clientMetrics, PoolMetrics poolMetrics, WebSocketClientOptions options, int maxPoolSize, HttpChannelConnector connector, Runnable dispose) {
-    super(dispose);
+  WebSocketGroup(ClientMetrics clientMetrics, PoolMetrics poolMetrics, WebSocketClientOptions options, int maxPoolSize, HttpChannelConnector connector) {
+    super();
     this.options = options;
     this.maxPoolSize = maxPoolSize;
     this.connector = connector;
@@ -75,7 +75,7 @@ class WebSocketEndpoint extends Endpoint {
   private void onEvict() {
     decRefCount();
     Waiter h;
-    synchronized (WebSocketEndpoint.this) {
+    synchronized (WebSocketGroup.this) {
       if (--inflightConnections > maxPoolSize || waiters.isEmpty()) {
         return;
       }
@@ -149,7 +149,7 @@ class WebSocketEndpoint extends Endpoint {
   }
 
   @Override
-  protected void dispose() {
+  protected void cleanup() {
     if (clientMetrics != null) {
       clientMetrics.close();
     }

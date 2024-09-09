@@ -15,15 +15,14 @@ import io.vertx.core.Promise;
 import io.vertx.core.internal.net.endpoint.EndpointResolverInternal;
 import io.vertx.core.net.endpoint.EndpointServer;
 import io.vertx.core.net.endpoint.ServerInteraction;
-import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.endpoint.InteractionMetrics;
 import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.Address;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.impl.endpoint.Endpoint;
-import io.vertx.core.net.impl.endpoint.EndpointProvider;
+import io.vertx.core.internal.resource.ManagedResource;
 import io.vertx.core.net.endpoint.ServerSelector;
+import io.vertx.core.internal.resource.ResourceManager;
 import io.vertx.core.spi.endpoint.EndpointResolver;
 import io.vertx.core.spi.endpoint.EndpointBuilder;
 
@@ -34,6 +33,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * A resolver for endpoints.
@@ -45,7 +45,7 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
   private final VertxInternal vertx;
   private final LoadBalancer loadBalancer;
   private final EndpointResolver<A, N, S, ListOfServers> endpointResolver;
-  private final io.vertx.core.net.impl.endpoint.EndpointManager<A, ManagedEndpoint> endpointManager;
+  private final ResourceManager<A, ManagedEndpoint> endpointManager;
   private final long expirationMillis;
 
   public EndpointResolverImpl(VertxInternal vertx, EndpointResolver<A, N, S, ?> endpointResolver, LoadBalancer loadBalancer, long expirationMillis) {
@@ -57,7 +57,7 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
     this.vertx = vertx;
     this.loadBalancer = loadBalancer;
     this.endpointResolver = (EndpointResolver<A, N, S, ListOfServers>) endpointResolver;
-    this.endpointManager = new io.vertx.core.net.impl.endpoint.EndpointManager<>();
+    this.endpointManager = new ResourceManager<>();
     this.expirationMillis = expirationMillis;
   }
 
@@ -124,18 +124,18 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
     }
   }
 
-  private class ManagedEndpoint extends Endpoint {
+  private class ManagedEndpoint extends ManagedResource {
 
     private final Future<EndpointImpl> endpoint;
     private final AtomicBoolean disposed = new AtomicBoolean();
 
-    public ManagedEndpoint(Future<EndpointImpl> endpoint, Runnable dispose) {
-      super(dispose);
+    public ManagedEndpoint(Future<EndpointImpl> endpoint) {
+      super();
       this.endpoint = endpoint;
     }
 
     @Override
-    protected void dispose() {
+    protected void cleanup() {
       if (endpoint.succeeded()) {
         endpoint.result().close();
       }
@@ -176,9 +176,9 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
   }
 
   // Does not depend on address
-  private final EndpointProvider<A, ManagedEndpoint> provider = (key, dispose) -> {
+  private final Function<A, ManagedEndpoint> provider = (key) -> {
     Future<EndpointImpl> holder = resolve(key);
-    ManagedEndpoint endpoint = new ManagedEndpoint(holder, dispose);
+    ManagedEndpoint endpoint = new ManagedEndpoint(holder);
     endpoint.incRefCount();
     return endpoint;
   };
@@ -186,7 +186,7 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
   private final BiFunction<ManagedEndpoint, Boolean, Result> fn = (endpoint, created) -> new Result(endpoint.endpoint, endpoint, created);
 
   private ManagedEndpoint resolveAddress(A address) {
-    Result sFuture = endpointManager.withEndpoint2(address, provider, t -> true, fn);
+    Result sFuture = endpointManager.withResource(address, provider, t -> true, fn);
     if (sFuture.created) {
       sFuture.fut.onFailure(err -> {
         if (sFuture.endpoint.disposed.compareAndSet(false, true)) {
