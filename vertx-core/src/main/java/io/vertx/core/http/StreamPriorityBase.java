@@ -2,10 +2,10 @@ package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.json.annotations.JsonGen;
+import io.vertx.core.json.JsonObject;
 
 /**
- * NOTE: This class couldn't be an interface because it is being used in the
- * {@link io.vertx.core.http.HttpClientRequest}
+ * NOTE: This class cannot be an interface because it is used in {@link io.vertx.core.http.HttpClientRequest}
  */
 @DataObject
 @JsonGen(publicConverter = false)
@@ -42,4 +42,15 @@ public class StreamPriorityBase {
     throw new RuntimeException("Not implemented in child class");
   }
 
+  public StreamPriorityBase() {
+  }
+
+  public StreamPriorityBase(JsonObject json) {
+  }
+
+  public JsonObject toJson() {
+    JsonObject json = new JsonObject();
+    StreamPriorityBaseConverter.toJson(this, json);
+    return json;
+  }
 }
