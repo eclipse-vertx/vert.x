@@ -21,19 +21,19 @@ import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.impl.endpoint.EndpointManager;
-import io.vertx.core.net.impl.endpoint.EndpointProvider;
+import io.vertx.core.internal.resource.ResourceManager;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.PoolMetrics;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.function.Function;
 
 public class WebSocketClientImpl extends HttpClientBase implements WebSocketClient {
 
   private final WebSocketClientOptions options;
-  private final EndpointManager<EndpointKey, WebSocketEndpoint> webSocketCM;
+  private final ResourceManager<EndpointKey, WebSocketGroup> webSocketCM;
 
   public WebSocketClientImpl(VertxInternal vertx, HttpClientOptions options, WebSocketClientOptions wsOptions) {
     super(vertx, options);
@@ -42,8 +42,8 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
     this.webSocketCM = webSocketConnectionManager();
   }
 
-  private EndpointManager<EndpointKey, WebSocketEndpoint> webSocketConnectionManager() {
-    return new EndpointManager<>();
+  private ResourceManager<EndpointKey, WebSocketGroup> webSocketConnectionManager() {
+    return new ResourceManager<>();
   }
 
   protected void doShutdown(Promise<Void> p) {
@@ -70,15 +70,15 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
     ClientSSLOptions sslOptions = sslOptions(connectOptions);
     EndpointKey key = new EndpointKey(connectOptions.isSsl() != null ? connectOptions.isSsl() : options.isSsl(), sslOptions, proxyOptions, addr, peer);
     // todo: cache
-    EndpointProvider<EndpointKey, WebSocketEndpoint> provider = (key_, dispose) -> {
+    Function<EndpointKey, WebSocketGroup> provider = (key_) -> {
       int maxPoolSize = options.getMaxConnections();
       ClientMetrics clientMetrics = WebSocketClientImpl.this.metrics != null ? WebSocketClientImpl.this.metrics.createEndpointMetrics(key_.server, maxPoolSize) : null;
       PoolMetrics queueMetrics = WebSocketClientImpl.this.metrics != null ? vertx.metricsSPI().createPoolMetrics("ws", key_.server.toString(), maxPoolSize) : null;
       HttpChannelConnector connector = new HttpChannelConnector(WebSocketClientImpl.this, netClient, sslOptions, key_.proxyOptions, clientMetrics, HttpVersion.HTTP_1_1, key_.ssl, false, key_.authority, key_.server, false);
-      return new WebSocketEndpoint(null, queueMetrics, options, maxPoolSize, connector, dispose);
+      return new WebSocketGroup(null, queueMetrics, options, maxPoolSize, connector);
     };
     webSocketCM
-      .withEndpointAsync(key, provider, (endpoint, created) -> endpoint.requestConnection(ctx, connectOptions, 0L))
+      .withResourceAsync(key, provider, (endpoint, created) -> endpoint.requestConnection(ctx, connectOptions, 0L))
       .onComplete(c -> {
         if (c.succeeded()) {
           WebSocket conn = c.result();

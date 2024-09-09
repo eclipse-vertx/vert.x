@@ -26,9 +26,8 @@ import io.vertx.core.net.endpoint.impl.EndpointResolverImpl;
 import io.vertx.core.http.*;
 import io.vertx.core.net.*;
 import io.vertx.core.internal.net.endpoint.EndpointResolverInternal;
-import io.vertx.core.net.impl.endpoint.EndpointProvider;
 import io.vertx.core.net.endpoint.ServerInteraction;
-import io.vertx.core.net.endpoint.EndpointServer;
+import io.vertx.core.internal.resource.ResourceManager;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.net.endpoint.EndpointResolver;
@@ -107,7 +106,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   };
 
   private final PoolOptions poolOptions;
-  private final io.vertx.core.net.impl.endpoint.EndpointManager<EndpointKey, SharedClientHttpStreamEndpoint> httpCM;
+  private final ResourceManager<EndpointKey, SharedHttpClientConnectionGroup> httpCM;
   private final EndpointResolverInternal endpointResolver;
   private volatile Function<HttpClientResponse, Future<RequestOptions>> redirectHandler = DEFAULT_HANDLER;
   private long timerID;
@@ -122,7 +121,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
 
     this.endpointResolver = (EndpointResolverImpl) endpointResolver;
     this.poolOptions = poolOptions;
-    httpCM = new io.vertx.core.net.impl.endpoint.EndpointManager<>();
+    httpCM = new ResourceManager<>();
     if (poolOptions.getCleanerPeriod() > 0 && (options.getKeepAliveTimeout() > 0L || options.getHttp2KeepAliveTimeout() > 0L)) {
       PoolChecker checker = new PoolChecker(this);
       ContextInternal timerContext = vertx.createEventLoopContext();
@@ -180,8 +179,8 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     }
   }
 
-  private EndpointProvider<EndpointKey, SharedClientHttpStreamEndpoint> httpEndpointProvider() {
-    return (key, dispose) -> {
+  private Function<EndpointKey, SharedHttpClientConnectionGroup> httpEndpointProvider() {
+    return (key) -> {
       int maxPoolSize = Math.max(poolOptions.getHttp1MaxSize(), poolOptions.getHttp2MaxSize());
       ClientMetrics clientMetrics = HttpClientImpl.this.metrics != null ? HttpClientImpl.this.metrics.createEndpointMetrics(key.server, maxPoolSize) : null;
       PoolMetrics poolMetrics = HttpClientImpl.this.metrics != null ? vertx.metricsSPI().createPoolMetrics("http", key.server.toString(), maxPoolSize) : null;
@@ -192,7 +191,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         proxyOptions = null;
       }
       HttpChannelConnector connector = new HttpChannelConnector(HttpClientImpl.this, netClient, key.sslOptions, proxyOptions, clientMetrics, options.getProtocolVersion(), key.ssl, options.isUseAlpn(), key.authority, key.server, true);
-      return new SharedClientHttpStreamEndpoint(
+      return new SharedHttpClientConnectionGroup(
         vertx,
         HttpClientImpl.this,
         clientMetrics,
@@ -200,8 +199,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         poolOptions.getMaxWaitQueueSize(),
         poolOptions.getHttp1MaxSize(),
         poolOptions.getHttp2MaxSize(),
-        connector,
-        dispose);
+        connector);
     };
   }
 
@@ -399,7 +397,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         SocketAddress address = lookup.address();
         ProxyOptions proxyOptions = computeProxyOptions(proxyConfig, address);
         EndpointKey key = new EndpointKey(useSSL, sslOptions, proxyOptions, address, authority != null ? authority : HostAndPort.create(address.host(), address.port()));
-        return httpCM.withEndpointAsync(key, httpEndpointProvider(), (endpoint, created) -> {
+        return httpCM.withResourceAsync(key, httpEndpointProvider(), (endpoint, created) -> {
           Future<Lease<HttpClientConnectionInternal>> fut2 = endpoint.requestConnection(streamCtx, connectTimeout);
           if (fut2 == null) {
             return null;
@@ -423,7 +421,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     } else if (server instanceof SocketAddress) {
       ProxyOptions proxyOptions = computeProxyOptions(proxyConfig, (SocketAddress) server);
       EndpointKey key = new EndpointKey(useSSL, sslOptions, proxyOptions, (SocketAddress) server, authority);
-      future = httpCM.withEndpointAsync(key, httpEndpointProvider(), (endpoint, created) -> {
+      future = httpCM.withResourceAsync(key, httpEndpointProvider(), (endpoint, created) -> {
         Future<Lease<HttpClientConnectionInternal>> fut = endpoint.requestConnection(streamCtx, connectTimeout);
         if (fut == null) {
           return null;

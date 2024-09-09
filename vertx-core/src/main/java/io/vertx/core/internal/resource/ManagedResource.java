@@ -8,24 +8,23 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.net.impl.endpoint;
+package io.vertx.core.internal.resource;
 
 /**
- * An endpoint, i.e a set of connection to the same address.
+ * A managed resource.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class Endpoint {
+public abstract class ManagedResource {
 
-  private final Runnable dispose;
+  Runnable cleaner;
   private boolean shutdown;
   private boolean closed;
   private boolean disposed;
-  private long pendingRequestCount;
+  private long acquireInProgress;
   private long refCount;
 
-  public Endpoint(Runnable dispose) {
-    this.dispose = dispose;
+  public ManagedResource() {
   }
 
   boolean before() {
@@ -33,15 +32,15 @@ public abstract class Endpoint {
       if (disposed) {
         return false;
       }
-      pendingRequestCount++;
+      acquireInProgress++;
     }
     return true;
   }
 
   void after() {
     boolean dispose;
-    synchronized (Endpoint.this) {
-      pendingRequestCount--;
+    synchronized (this) {
+      acquireInProgress--;
       dispose = checkDispose();
     }
     // Dispose before callback otherwise we can have the callback handler retrying the same
@@ -62,7 +61,6 @@ public abstract class Endpoint {
   }
 
   protected boolean decRefCount() {
-    // CHECK SHOULD CLOSE
     synchronized (this) {
       refCount--;
       if (!checkDispose()) {
@@ -74,12 +72,12 @@ public abstract class Endpoint {
   }
 
   private void disposeInternal() {
-    dispose.run();
-    dispose();
+    cleaner.run();
+    cleanup();
   }
 
   private boolean checkDispose() {
-    if (!disposed && refCount == 0 && pendingRequestCount == 0) {
+    if (!disposed && refCount == 0 && acquireInProgress == 0) {
       disposed = true;
       return true;
     }
@@ -87,15 +85,7 @@ public abstract class Endpoint {
   }
 
   /**
-   * Hook to cleanup when all metrics have been processed, e.g unregistering metrics, this method is called when
-   * the endpoint will not accept anymore requests.
-   */
-  protected void dispose() {
-  }
-
-  /**
-   * Close the endpoint, this will close all connections, this method is called by the {@link EndpointManager} when
-   * it is closed.
+   * Close the resource, this method is called by the {@link ResourceManager} when it is closed.
    */
   final void close() {
     shutdown();
@@ -103,16 +93,13 @@ public abstract class Endpoint {
       if (closed) {
         return;
       }
+      closed = true;
     }
     handleClose();
   }
 
-  protected void handleClose() {
-  }
-
   /**
-   * Close the endpoint, this will close all connections, this method is called by the {@link EndpointManager} when
-   * it is closed.
+   * Close the resource, this method is called by the {@link ResourceManager} when it is closed.
    */
   final void shutdown() {
     synchronized (this) {
@@ -124,6 +111,22 @@ public abstract class Endpoint {
     handleShutdown();
   }
 
+  /**
+   * Hook to clean-up, e.g. unregistering metrics, this method is called when
+   * the resource will not accept anymore reference counting.
+   */
+  protected void cleanup() {
+  }
+
+  /**
+   * Hook to shut down the resource.
+   */
   protected void handleShutdown() {
+  }
+
+  /**
+   * Hook to close the resource.
+   */
+  protected void handleClose() {
   }
 }

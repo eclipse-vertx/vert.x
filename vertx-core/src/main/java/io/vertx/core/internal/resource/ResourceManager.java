@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.net.impl.endpoint;
+package io.vertx.core.internal.resource;
 
 import io.vertx.core.Future;
 
@@ -18,22 +18,23 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
- * The endpoint manager associates an arbitrary {@code <K>} key with endpoints, it also tracks all endpoints, so they
- * can be closed when the manager is closed.
+ * The resource manager associates an arbitrary {@code <K>} key with a reference counted resource, it also tracks all
+ * resources so they can be closed when the manager is closed.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class EndpointManager<K, E extends Endpoint> {
+public class ResourceManager<K, R extends ManagedResource> {
 
-  private static final Consumer<Endpoint> EXPIRED_CHECKER = Endpoint::checkExpired;
+  private static final Consumer<ManagedResource> EXPIRED_CHECKER = ManagedResource::checkExpired;
 
-  private final Map<K, E> endpointMap = new ConcurrentHashMap<>();
+  private final Map<K, R> resources = new ConcurrentHashMap<>();
   private final AtomicInteger status = new AtomicInteger();
 
-  public EndpointManager() {
+  public ResourceManager() {
   }
 
   /**
@@ -48,8 +49,8 @@ public class EndpointManager<K, E extends Endpoint> {
    *
    * @param consumer the consumer to apply
    */
-  public void forEach(Consumer<Endpoint> consumer) {
-    endpointMap.values().forEach(consumer);
+  public void forEach(Consumer<ManagedResource> consumer) {
+    resources.values().forEach(consumer);
   }
 
   /**
@@ -59,19 +60,20 @@ public class EndpointManager<K, E extends Endpoint> {
    * @param function the function to apply on the endpoint
    * @return the value returned by the function when applied on the resolved endpoint.
    */
-  public <T> T withEndpoint(K key, EndpointProvider<K, E> provider, BiFunction<E, Boolean, T> function) {
+  public <T> T withResource(K key, Function<K, R> provider, BiFunction<R, Boolean, T> function) {
     checkStatus();
-    Endpoint[] ref = new Endpoint[1];
+    ManagedResource[] ref = new ManagedResource[1];
     while (true) {
       ref[0] = null;
-      E endpoint = endpointMap.computeIfAbsent(key, k -> {
-        E ep = provider.create(key, () -> endpointMap.remove(key, ref[0]));
-        ref[0] = ep;
-        return ep;
+      R resource = resources.computeIfAbsent(key, k -> {
+        R r = provider.apply(key);
+        r.cleaner = () -> resources.remove(key, ref[0]);
+        ref[0] = r;
+        return r;
       });
-      if (endpoint.before()) {
-        T value = function.apply(endpoint, endpoint == ref[0]);
-        endpoint.after();
+      if (resource.before()) {
+        T value = function.apply(resource, resource == ref[0]);
+        resource.after();
         return value;
       }
     }
@@ -84,19 +86,20 @@ public class EndpointManager<K, E extends Endpoint> {
    * @param function the function to apply on the endpoint
    * @return the value returned by the function when applied on the resolved endpoint.
    */
-  public <T> T withEndpoint2(K key, EndpointProvider<K, E> provider, Predicate<E> checker, BiFunction<E, Boolean, T> function) {
+  public <T> T withResource(K key, Function<K, R> provider, Predicate<R> checker, BiFunction<R, Boolean, T> function) {
     checkStatus();
-    Endpoint[] ref = new Endpoint[1];
+    ManagedResource[] ref = new ManagedResource[1];
     while (true) {
       ref[0] = null;
-      E endpoint = endpointMap.compute(key, (k, prev) -> {
+      R endpoint = resources.compute(key, (k, prev) -> {
         if (prev != null && checker.test(prev)) {
           return prev;
         }
         if (prev != null) {
           // Do we need to do anything else ????
         }
-        E ep = provider.create(key, () -> endpointMap.remove(key, ref[0]));
+        R ep = provider.apply(key);
+        ep.cleaner = () -> resources.remove(key, ref[0]);
         ref[0] = ep;
         return ep;
       });
@@ -109,18 +112,19 @@ public class EndpointManager<K, E extends Endpoint> {
   }
 
   /**
-   * Get a connection to an endpoint resolved by {@code key}
+   * Get a resource resolved by {@code key}
    *
-   * @param key the endpoint key
-   * @return the future resolved with the connection
+   * @param key the resource key
+   * @return the future resolved with the resource
    */
-  public <T> Future<T> withEndpointAsync(K key, EndpointProvider<K, E> provider, BiFunction<E, Boolean, Future<T>> function) {
+  public <T> Future<T> withResourceAsync(K key, Function<K, R> provider, BiFunction<R, Boolean, Future<T>> function) {
     checkStatus();
-    Endpoint[] ref = new Endpoint[1];
+    ManagedResource[] ref = new ManagedResource[1];
     while (true) {
       ref[0] = null;
-      E endpoint = endpointMap.computeIfAbsent(key, k -> {
-        E ep = provider.create(key, () -> endpointMap.remove(key, ref[0]));
+      R endpoint = resources.computeIfAbsent(key, k -> {
+        R ep = provider.apply(key);
+        ep.cleaner = () -> resources.remove(key, ref[0]);
         ref[0] = ep;
         return ep;
       });
@@ -137,32 +141,32 @@ public class EndpointManager<K, E extends Endpoint> {
   private void checkStatus() {
     int st = status.get();
     if (st == 1) {
-      throw new IllegalStateException("Pool shutdown");
+      throw new IllegalStateException("Resource manager shutdown");
     } else if (st == 2) {
-      throw new IllegalStateException("Pool closed");
+      throw new IllegalStateException("Resource manager closed");
     }
   }
 
   /**
-   * Shutdown the connection manager: any new request will be rejected.
+   * Shutdown the resource manager: any new request will be rejected.
    */
   public void shutdown() {
     if (status.compareAndSet(0, 1)) {
-      for (Endpoint endpoint : endpointMap.values()) {
-        endpoint.shutdown();
+      for (ManagedResource resource : resources.values()) {
+        resource.shutdown();
       }
       status.set(2);
     }
   }
 
   /**
-   * Close the connection manager, all endpoints are closed forcibly.
+   * Close the resource manager, all resource are closed forcibly.
    */
   public void close() {
     shutdown();
     if (status.compareAndSet(2, 3)) {
-      for (Endpoint endpoint : endpointMap.values()) {
-        endpoint.close();
+      for (ManagedResource resource : resources.values()) {
+        resource.close();
       }
       status.set(4);
     }
