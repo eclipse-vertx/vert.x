@@ -60,6 +60,11 @@ public class HttpServerOptions extends NetServerOptions {
   public static final int DEFAULT_COMPRESSION_LEVEL = 6;
 
   /**
+   * Default content size threshold for compression = 0 (Netty default)
+   */
+  public static final int DEFAULT_COMPRESSION_CONTENT_SIZE_THRESHOLD = 0;
+
+  /**
    * Default max WebSocket frame size = 65536
    */
   public static final int DEFAULT_MAX_WEBSOCKET_FRAME_SIZE = 65536;
@@ -197,6 +202,7 @@ public class HttpServerOptions extends NetServerOptions {
 
   private boolean compressionSupported;
   private int compressionLevel;
+  private int compressionContentSizeThreshold;
   private List<CompressionOptions> compressors;
   private int maxWebSocketFrameSize;
   private int maxWebSocketMessageSize;
@@ -246,6 +252,7 @@ public class HttpServerOptions extends NetServerOptions {
     super(other);
     this.compressionSupported = other.isCompressionSupported();
     this.compressionLevel = other.getCompressionLevel();
+    this.compressionContentSizeThreshold = other.getCompressionContentSizeThreshold();
     this.compressors = other.compressors != null ? new ArrayList<>(other.compressors) : null;
     this.maxWebSocketFrameSize = other.maxWebSocketFrameSize;
     this.maxWebSocketMessageSize = other.maxWebSocketMessageSize;
@@ -304,6 +311,7 @@ public class HttpServerOptions extends NetServerOptions {
   private void init() {
     compressionSupported = DEFAULT_COMPRESSION_SUPPORTED;
     compressionLevel = DEFAULT_COMPRESSION_LEVEL;
+    compressionContentSizeThreshold = DEFAULT_COMPRESSION_CONTENT_SIZE_THRESHOLD;
     maxWebSocketFrameSize = DEFAULT_MAX_WEBSOCKET_FRAME_SIZE;
     maxWebSocketMessageSize = DEFAULT_MAX_WEBSOCKET_MESSAGE_SIZE;
     handle100ContinueAutomatically = DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY;
@@ -593,6 +601,15 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public HttpServerOptions setCompressionLevel(int compressionLevel) {
     this.compressionLevel = compressionLevel;
+    return this;
+  }
+
+  public int getCompressionContentSizeThreshold() {
+    return compressionContentSizeThreshold;
+  }
+
+  public HttpServerOptions setCompressionContentSizeThreshold(int compressionContentSizeThreshold) {
+    this.compressionContentSizeThreshold = compressionContentSizeThreshold;
     return this;
   }
 

@@ -24,6 +24,11 @@ public class HttpServerOptionsConverter {
             obj.setCompressionLevel(((Number)member.getValue()).intValue());
           }
           break;
+        case "compressionContentSizeThreshold":
+          if (member.getValue() instanceof Number) {
+            obj.setCompressionContentSizeThreshold(((Number)member.getValue()).intValue());
+          }
+          break;
         case "acceptUnmaskedFrames":
           if (member.getValue() instanceof Boolean) {
             obj.setAcceptUnmaskedFrames((Boolean)member.getValue());
@@ -190,6 +195,7 @@ public class HttpServerOptionsConverter {
    static void toJson(HttpServerOptions obj, java.util.Map<String, Object> json) {
     json.put("compressionSupported", obj.isCompressionSupported());
     json.put("compressionLevel", obj.getCompressionLevel());
+    json.put("compressionContentSizeThreshold", obj.getCompressionContentSizeThreshold());
     json.put("acceptUnmaskedFrames", obj.isAcceptUnmaskedFrames());
     json.put("maxWebSocketFrameSize", obj.getMaxWebSocketFrameSize());
     json.put("maxWebSocketMessageSize", obj.getMaxWebSocketMessageSize());
