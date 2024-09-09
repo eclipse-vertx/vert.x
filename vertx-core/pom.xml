@@ -125,12 +125,17 @@
     <!-- Generators -->
     <dependency>
       <groupId>io.vertx</groupId>
-      <artifactId>vertx-codegen</artifactId>
+      <artifactId>vertx-codegen-api</artifactId>
       <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>io.vertx</groupId>
-      <artifactId>vertx-docgen</artifactId>
+      <artifactId>vertx-codegen-json</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-docgen-api</artifactId>
       <optional>true</optional>
     </dependency>
 
@@ -183,7 +188,7 @@
     <dependency>
       <groupId>com.github.luben</groupId>
       <artifactId>zstd-jni</artifactId>
-      <version>1.5.6-3</version>
+      <version>1.5.6-5</version>
       <scope>test</scope>
     </dependency>
 
@@ -211,7 +216,7 @@
               <configuration>
                 <annotationProcessors>
                   <annotationProcessor>io.vertx.codegen.CodeGenProcessor</annotationProcessor>
-                  <annotationProcessor>io.vertx.docgen.JavaDocGenProcessor</annotationProcessor>
+                  <annotationProcessor>io.vertx.docgen.processor.JavaDocGenProcessor</annotationProcessor>
                 </annotationProcessors>
                 <!-- Like in 4.x but handled by maven-compiler-plugin natively -->
                 <generatedSourcesDirectory>${project.basedir}/src/main/generated</generatedSourcesDirectory>
@@ -222,7 +227,7 @@
                   </annotationProcessorPath>
                   <annotationProcessorPath>
                     <groupId>io.vertx</groupId>
-                    <artifactId>vertx-docgen</artifactId>
+                    <artifactId>vertx-docgen-processor</artifactId>
                   </annotationProcessorPath>
                 </annotationProcessorPaths>
               </configuration>
