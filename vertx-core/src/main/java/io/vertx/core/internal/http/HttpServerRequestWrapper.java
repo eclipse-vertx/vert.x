@@ -110,6 +110,11 @@ public class HttpServerRequestWrapper extends HttpServerRequestInternal {
   }
 
   @Override
+  public boolean isValidAuthority() {
+    return delegate.isValidAuthority();
+  }
+
+  @Override
   public long bytesRead() {
     return delegate.bytesRead();
   }
