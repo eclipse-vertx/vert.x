@@ -13,7 +13,7 @@ package io.vertx.core.impl.verticle;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.ServiceHelper;
+import io.vertx.core.internal.ServiceHelper;
 import io.vertx.core.Verticle;
 import io.vertx.core.impl.*;
 import io.vertx.core.impl.deployment.Deployable;

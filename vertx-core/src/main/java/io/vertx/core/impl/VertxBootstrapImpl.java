@@ -15,6 +15,7 @@ import io.vertx.core.*;
 import io.vertx.core.impl.transports.EpollTransport;
 import io.vertx.core.impl.transports.JDKTransport;
 import io.vertx.core.impl.transports.KQueueTransport;
+import io.vertx.core.internal.ServiceHelper;
 import io.vertx.core.internal.VertxBootstrap;
 import io.vertx.core.spi.context.executor.EventExecutorProvider;
 import io.vertx.core.spi.file.FileResolver;
