@@ -84,6 +84,8 @@ public interface Transport {
     }
   }
 
+  IoHandlerFactory ioHandlerFactory();
+
   /**
    * @param type one of {@link #ACCEPTOR_EVENT_LOOP_GROUP} or {@link #IO_EVENT_LOOP_GROUP}.
    * @param nThreads the number of threads that will be used by this instance.
@@ -92,7 +94,9 @@ public interface Transport {
    *
    * @return a new event loop group
    */
-  EventLoopGroup eventLoopGroup(int type, int nThreads, ThreadFactory threadFactory, int ioRatio);
+  default EventLoopGroup eventLoopGroup(int type, int nThreads, ThreadFactory threadFactory, int ioRatio) {
+    return new MultiThreadIoEventLoopGroup(nThreads, threadFactory, ioHandlerFactory());
+  }
 
   /**
    * @return a new datagram channel
