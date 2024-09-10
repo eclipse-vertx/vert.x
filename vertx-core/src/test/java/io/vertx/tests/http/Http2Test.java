@@ -190,7 +190,6 @@ public class Http2Test extends HttpTest {
     await();
   }
 
-  @Ignore("does not pass with modules")
   @Test
   public void testServerOpenSSL() throws Exception {
     HttpServerOptions opts = new HttpServerOptions()
@@ -972,7 +971,6 @@ public class Http2Test extends HttpTest {
     testUnsupportedAlpnVersion(new JdkSSLEngineOptions(), false);
   }
 
-  @Ignore("does not pass in modules")
   @Test
   public void testUnsupportedAlpnVersionOpenSSL() throws Exception {
     testUnsupportedAlpnVersion(new OpenSSLEngineOptions(), true);

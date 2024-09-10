@@ -54,7 +54,6 @@ public class SslContextManagerTest extends VertxTestBase {
     await();
   }
 
-  @Ignore
   @Test
   public void testUseOpenSSLCiphersWhenNotSpecified() throws Exception {
     Set<String> expected = OpenSsl.availableOpenSslCipherSuites();
@@ -67,13 +66,11 @@ public class SslContextManagerTest extends VertxTestBase {
     await();
   }
 
-  @Ignore("native loading")
   @Test
   public void testDefaultOpenSslServerSessionContext() throws Exception {
     testOpenSslServerSessionContext(true);
   }
 
-  @Ignore("native loading")
   @Test
   public void testUserSetOpenSslServerSessionContext() throws Exception {
     testOpenSslServerSessionContext(false);
