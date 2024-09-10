@@ -30,8 +30,8 @@ public class WrappedClusterManager implements ClusterManager {
   }
 
   @Override
-  public void init(Vertx vertx, NodeSelector nodeSelector) {
-    delegate.init(vertx, nodeSelector);
+  public void init(Vertx vertx) {
+    delegate.init(vertx);
   }
 
   @Override
@@ -97,6 +97,11 @@ public class WrappedClusterManager implements ClusterManager {
   @Override
   public boolean isActive() {
     return delegate.isActive();
+  }
+
+  @Override
+  public void registrationListener(RegistrationListener registrationListener) {
+    delegate.registrationListener(registrationListener);
   }
 
   @Override
