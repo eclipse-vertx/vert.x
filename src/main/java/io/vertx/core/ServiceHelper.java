@@ -17,7 +17,9 @@ import java.util.*;
  * A helper class for loading factories from the classpath.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
+ * @deprecated this utility class is for internal usage of Vert.x and will be moved to an internal vertx package in Vert.x 5
  */
+@Deprecated
 public class ServiceHelper {
 
   public static <T> T loadFactory(Class<T> clazz) {
