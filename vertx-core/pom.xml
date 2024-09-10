@@ -492,6 +492,21 @@
             </configuration>
           </execution>
           <execution>
+            <id>metrics-service-loader</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/metrics/ServiceLoadedTest.java</include>
+              </includes>
+              <additionalClasspathElements>
+                <additionalClasspathElement>${project.basedir}/src/test/classpath/metrics</additionalClasspathElement>
+              </additionalClasspathElements>
+            </configuration>
+          </execution>
+          <execution>
             <id>custom-vertx-thread-factory</id>
             <goals>
               <goal>integration-test</goal>
