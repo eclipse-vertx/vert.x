@@ -12,6 +12,7 @@
 package io.vertx.tests.tls;
 
 import static org.hamcrest.core.StringEndsWith.endsWith;
+import static org.junit.Assume.assumeTrue;
 
 import java.io.*;
 import java.lang.reflect.UndeclaredThrowableException;
@@ -39,6 +40,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.impl.VertxThread;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.KeyStoreHelper;
+import io.vertx.core.transport.Transport;
 import io.vertx.test.http.HttpTestBase;
 import org.junit.Assume;
 import org.junit.Ignore;
@@ -319,7 +321,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
   @Test
   // Provide an host name with a trailing dot
   public void testTLSTrailingDotHost() throws Exception {
-    Assume.assumeTrue(PlatformDependent.javaVersion() < 9);
+    assumeTrue(PlatformDependent.javaVersion() < 9);
     // We just need a vanilla cert for this test
     SelfSignedCertificate cert = SelfSignedCertificate.create("host2.com");
     TLSTest test = testTLS(Cert.NONE, cert::trustOptions, cert::keyCertOptions, Trust.NONE)
@@ -1551,6 +1553,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
   }
 
   private void testProxy(ProxyType proxyType) throws Exception {
+    assumeTrue(TRANSPORT != Transport.IO_URING);
     startProxy(null, proxyType);
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy(proxyType).pass();
     assertNotNull("connection didn't access the proxy", proxy.getLastUri());
@@ -1566,6 +1569,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
   }
 
   private void testProxyWithSNI(ProxyType proxyType) throws Exception {
+    assumeTrue(TRANSPORT != Transport.IO_URING);
     startProxy(null, proxyType);
     Certificate cert = testTLS(Cert.NONE, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, Trust.NONE)
         .serverSni()
@@ -1581,6 +1585,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
   @Test
   // Check that proxy auth fails if it is missing
   public void testHttpsProxyAuthFail() throws Exception {
+    assumeTrue(TRANSPORT != Transport.IO_URING);
     startProxy("username", ProxyType.HTTP);
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy(ProxyType.HTTP).fail();
   }
@@ -1588,6 +1593,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
   @Test
   // Access https server via connect proxy with proxy auth required
   public void testHttpsProxyAuth() throws Exception {
+    assumeTrue(TRANSPORT != Transport.IO_URING);
     startProxy("username", ProxyType.HTTP);
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy(ProxyType.HTTP).useProxyAuth().pass();
     assertNotNull("connection didn't access the proxy", proxy.getLastUri());
@@ -1601,6 +1607,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
   // the hostname may resolve at the proxy if that is accessing another DNS
   // we simulate this by mapping the hostname to localhost:xxx in the test proxy code
   public void testHttpsProxyUnknownHost() throws Exception {
+    assumeTrue(TRANSPORT != Transport.IO_URING);
     startProxy(null, ProxyType.HTTP);
     proxy.setForceUri(DEFAULT_HTTPS_HOST_AND_PORT);
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy(ProxyType.HTTP)

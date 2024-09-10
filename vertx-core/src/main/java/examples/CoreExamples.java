@@ -25,6 +25,7 @@ import io.vertx.core.net.NetServer;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.transport.Transport;
 
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
@@ -470,6 +471,19 @@ public class CoreExamples {
     // True when native is available
     boolean usingNative = vertx.isNativeTransportEnabled();
     System.out.println("Running with native: " + usingNative);
+  }
+
+  public void configureTransport() {
+
+    // Use epoll/kqueue native transport depending on OS
+    Transport transport = Transport.nativeTransport();
+
+    // Or use a very specific transport
+    transport = Transport.EPOLL;
+
+    Vertx vertx = Vertx.builder()
+      .withTransport(transport)
+      .build();
   }
 
   public void configureLinuxOptions(Vertx vertx, boolean fastOpen, boolean cork, boolean quickAck, boolean reusePort) {

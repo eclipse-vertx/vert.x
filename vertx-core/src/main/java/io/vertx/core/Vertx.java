@@ -20,6 +20,7 @@ import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.VertxImpl;
+import io.vertx.core.impl.transports.TransportInternal;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.dns.impl.DnsAddressResolverProvider;
 import io.vertx.core.internal.VertxBootstrap;
@@ -33,6 +34,7 @@ import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.VertxTracerFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.transport.Transport;
 
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -79,6 +81,7 @@ public interface Vertx extends Measured {
       private ClusterManager clusterManager;
       private VertxMetricsFactory metricsFactory;
       private VertxTracerFactory tracerFactory;
+      private Transport transport;
       @Override
       public io.vertx.core.VertxBuilder with(VertxOptions options) {
         this.options = options;
@@ -100,27 +103,39 @@ public interface Vertx extends Measured {
         return this;
       }
       @Override
-      public Vertx build() {
-        VertxBootstrap builder = VertxBootstrap.create();
+      public VertxBuilder withTransport(Transport transport) {
+        this.transport = transport;
+        return this;
+      }
+      private VertxBootstrap bootstrap() {
+        VertxBootstrap bootstrap = VertxBootstrap.create();
         if (options != null) {
-          builder.options(options);
+          bootstrap.options(options);
         }
-        builder.metricsFactory(metricsFactory);
-        builder.tracerFactory(tracerFactory);
-        builder.init();
-        return builder.vertx();
+        bootstrap.metricsFactory(metricsFactory);
+        bootstrap.tracerFactory(tracerFactory);
+        Transport tr = transport;
+        if (tr == null && options != null && options.getPreferNativeTransport()) {
+          tr = Transport.nativeTransport();
+        }
+        if (tr == null) {
+          tr = Transport.NIO;
+        }
+        bootstrap.transport(tr.implementation());
+        return bootstrap;
+      }
+      @Override
+      public Vertx build() {
+        return bootstrap()
+          .init()
+          .vertx();
       }
       @Override
       public Future<Vertx> buildClustered() {
-        VertxBootstrap builder = VertxBootstrap.create();
-        if (options != null) {
-          builder.options(options);
-        }
-        builder.clusterManager(clusterManager);
-        builder.metricsFactory(metricsFactory);
-        builder.tracerFactory(tracerFactory);
-        builder.init();
-        return builder.clusteredVertx();
+        return bootstrap()
+          .clusterManager(clusterManager)
+          .init()
+          .clusteredVertx();
       }
     };
   }
@@ -141,7 +156,7 @@ public interface Vertx extends Measured {
    * @return the instance
    */
   static Vertx vertx(VertxOptions options) {
-    return VertxBootstrap.create().options(options).init().vertx();
+    return builder().with(options).build();
   }
 
   /**
@@ -153,7 +168,7 @@ public interface Vertx extends Measured {
    * @return a future completed with the clustered vertx
    */
   static Future<Vertx> clusteredVertx(VertxOptions options) {
-    return VertxBootstrap.create().options(options).init().clusteredVertx();
+    return builder().with(options).buildClustered();
   }
 
   /**

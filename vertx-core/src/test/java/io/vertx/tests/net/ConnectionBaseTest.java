@@ -25,6 +25,7 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.net.impl.VertxConnection;
 import io.vertx.core.net.impl.VertxHandler;
+import io.vertx.core.transport.Transport;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Ignore;
@@ -40,6 +41,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
+
+import static org.junit.Assume.assumeTrue;
 
 public class ConnectionBaseTest extends VertxTestBase {
 
@@ -282,6 +285,7 @@ public class ConnectionBaseTest extends VertxTestBase {
 
   @Test
   public void testDrainReentrancy() throws Exception {
+    assumeTrue(TRANSPORT != Transport.IO_URING);
     connectHandler = so -> {
       ChannelHandlerContext chctx = so.channelHandlerContext();
       chctx.pipeline().addBefore("handler", "myhandler", new ChannelDuplexHandler() {

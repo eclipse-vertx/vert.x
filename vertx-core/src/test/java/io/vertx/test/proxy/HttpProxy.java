@@ -84,16 +84,16 @@ public class HttpProxy extends TestProxyBase<HttpProxy> {
         String auth = request.getHeader("Proxy-Authorization");
         String expected = "Basic " + Base64.getEncoder().encodeToString((username + ":" + username).getBytes());
         if (auth == null || !auth.equals(expected)) {
-          request.response().setStatusCode(407).end("proxy authentication failed");
+          request.response().setStatusCode(407).end("Proxy authentication failed");
           return;
         }
       }
       lastRequestHeaders = HttpHeaders.headers().addAll(request.headers());
       if (error != 0) {
-        request.response().setStatusCode(error).end("proxy request failed");
+        request.response().setStatusCode(error).end("Proxy request failed");
       } else if (method == HttpMethod.CONNECT) {
         if (!uri.contains(":")) {
-          request.response().setStatusCode(403).end("invalid request");
+          request.response().setStatusCode(403).end("Invalid request");
         } else {
           lastUri = uri;
           lastMethod = HttpMethod.CONNECT;
