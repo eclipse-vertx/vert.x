@@ -14,9 +14,10 @@ package io.vertx.tests.eventbus;
 import io.vertx.core.*;
 import io.vertx.core.eventbus.*;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.spi.cluster.RegistrationListener;
 import io.vertx.tests.shareddata.AsyncMapTest.SomeClusterSerializableObject;
 import io.vertx.tests.shareddata.AsyncMapTest.SomeSerializableObject;
-import io.vertx.core.spi.cluster.NodeSelector;
+import io.vertx.core.spi.cluster.impl.NodeSelector;
 import io.vertx.core.spi.cluster.RegistrationUpdateEvent;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.tls.Cert;
@@ -395,8 +396,8 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     CountDownLatch updateLatch = new CountDownLatch(3);
     startNodes(2, () -> new WrappedClusterManager(getClusterManager()) {
       @Override
-      public void init(Vertx vertx, NodeSelector nodeSelector) {
-        super.init(vertx, new WrappedNodeSelector(nodeSelector) {
+      public void registrationListener(RegistrationListener registrationListener) {
+        super.registrationListener(new WrappedNodeSelector((NodeSelector) registrationListener) {
           @Override
           public void registrationsUpdated(RegistrationUpdateEvent event) {
             super.registrationsUpdated(event);
@@ -488,9 +489,9 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     AtomicReference<NodeSelector> nodeSelectorRef = new AtomicReference<>();
     startNodes(1, () -> new WrappedClusterManager(getClusterManager()) {
       @Override
-      public void init(Vertx vertx, NodeSelector nodeSelector) {
-        nodeSelectorRef.set(nodeSelector);
-        super.init(vertx, nodeSelector);
+      public void registrationListener(RegistrationListener registrationListener) {
+        nodeSelectorRef.set((NodeSelector) registrationListener);
+        super.registrationListener(registrationListener);
       }
     });
     assertNotNull(nodeSelectorRef.get());
@@ -506,9 +507,8 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     AtomicReference<NodeSelector> nodeSelectorRef = new AtomicReference<>();
     startNodes(1, () -> new WrappedClusterManager(getClusterManager()) {
       @Override
-      public void init(Vertx vertx, NodeSelector nodeSelector) {
-        nodeSelectorRef.set(nodeSelector);
-        super.init(vertx, nodeSelector);
+      public void registrationListener(RegistrationListener registrationListener) {
+        nodeSelectorRef.set((NodeSelector) registrationListener);
       }
     });
     assertNotNull(nodeSelectorRef.get());

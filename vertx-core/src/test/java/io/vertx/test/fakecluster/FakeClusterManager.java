@@ -47,13 +47,12 @@ public class FakeClusterManager implements ClusterManager {
 
   private volatile String nodeID;
   private NodeListener nodeListener;
+  private RegistrationListener registrationListener;
   private VertxInternal vertx;
-  private NodeSelector nodeSelector;
 
   @Override
-  public void init(Vertx vertx, NodeSelector nodeSelector) {
+  public void init(Vertx vertx) {
     this.vertx = (VertxInternal) vertx;
-    this.nodeSelector = nodeSelector;
   }
 
   private static void doJoin(String nodeID, FakeClusterManager node) {
@@ -202,8 +201,8 @@ public class FakeClusterManager implements ClusterManager {
       synchronized (this) {
         if (nodeID != null) {
           nodeInfos.remove(nodeID);
-          if (nodeListener != null) {
-            nodeListener = null;
+          if (registrationListener != null) {
+            registrationListener = null;
           }
           doLeave(nodeID);
           this.nodeID = null;
@@ -221,7 +220,7 @@ public class FakeClusterManager implements ClusterManager {
       for (RegistrationUpdateEvent event : events) {
         FakeClusterManager clusterManager = nodes.get(nid);
         if (clusterManager != null && clusterManager.isActive()) {
-          clusterManager.nodeSelector.registrationsUpdated(event);
+          clusterManager.registrationListener.registrationsUpdated(event);
         }
       }
     }
@@ -230,6 +229,11 @@ public class FakeClusterManager implements ClusterManager {
   @Override
   public boolean isActive() {
     return nodeID != null;
+  }
+
+  @Override
+  public void registrationListener(RegistrationListener registrationListener) {
+    this.registrationListener = registrationListener;
   }
 
   @Override

@@ -628,10 +628,10 @@ public class EventBusOptions extends TCPSSLOptions {
   /**
    * User-supplied information about this node when Vert.x is clustered.
    * <p>
-   * The data may be used by the {@link io.vertx.core.spi.cluster.NodeSelector} to select a node for a given message.
+   * The data may be to select a node for a given message.
    * For example, it could be used to implement a partioning strategy.
    * <p>
-   * The default {@link io.vertx.core.spi.cluster.NodeSelector} does not use the node metadata.
+   * Not used by default.
    *
    * @return user-supplied information about this node when Vert.x is clustered
    */
@@ -642,10 +642,10 @@ public class EventBusOptions extends TCPSSLOptions {
   /**
    * Set information about this node when Vert.x is clustered.
    * <p>
-   * The data may be used by the {@link io.vertx.core.spi.cluster.NodeSelector} to select a node for a given message.
+   * The data may be used to select a node for a given message.
    * For example, it could be used to implement a partioning strategy.
    * <p>
-   * The default {@link io.vertx.core.spi.cluster.NodeSelector} does not use the node metadata.
+   * Not used by default.
    *
    * @param clusterNodeMetadata user-supplied information about this node when Vert.x is clustered
    * @return a reference to this, so the API can be used fluently

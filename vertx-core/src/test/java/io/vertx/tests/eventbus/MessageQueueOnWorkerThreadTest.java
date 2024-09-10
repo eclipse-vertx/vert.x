@@ -15,8 +15,7 @@ import io.vertx.core.*;
 import io.vertx.core.eventbus.impl.clustered.Serializer;
 import io.vertx.core.impl.VertxBootstrapImpl;
 import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.core.spi.cluster.NodeSelector;
-import io.vertx.core.spi.cluster.RegistrationUpdateEvent;
+import io.vertx.core.spi.cluster.impl.NodeSelector;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
@@ -101,14 +100,6 @@ public class MessageQueueOnWorkerThreadTest extends VertxTestBase {
     @Override
     public void selectForPublish(String address, Promise<Iterable<String>> promise) {
       throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void registrationsUpdated(RegistrationUpdateEvent event) {
-    }
-
-    @Override
-    public void registrationsLost() {
     }
   }
 

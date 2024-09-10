@@ -18,9 +18,10 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.eventbus.*;
+import io.vertx.core.spi.cluster.RegistrationListener;
 import io.vertx.tests.shareddata.AsyncMapTest;
 import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.core.spi.cluster.NodeSelector;
+import io.vertx.core.spi.cluster.impl.NodeSelector;
 import io.vertx.core.spi.cluster.RegistrationUpdateEvent;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.fakecluster.FakeClusterManager;
@@ -130,8 +131,8 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
     CountDownLatch updateLatch = new CountDownLatch(3);
     startNodes(2, () -> new WrappedClusterManager(getClusterManager()) {
       @Override
-      public void init(Vertx vertx, NodeSelector nodeSelector) {
-        super.init(vertx, new WrappedNodeSelector(nodeSelector) {
+      public void registrationListener(RegistrationListener registrationListener) {
+        super.registrationListener(new WrappedNodeSelector((NodeSelector) registrationListener) {
           @Override
           public void registrationsUpdated(RegistrationUpdateEvent event) {
             super.registrationsUpdated(event);

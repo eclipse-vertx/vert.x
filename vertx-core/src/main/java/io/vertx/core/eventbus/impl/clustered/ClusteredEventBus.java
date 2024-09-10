@@ -37,7 +37,7 @@ import io.vertx.core.net.impl.NetClientBuilder;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeInfo;
-import io.vertx.core.spi.cluster.NodeSelector;
+import io.vertx.core.spi.cluster.impl.NodeSelector;
 import io.vertx.core.spi.cluster.RegistrationInfo;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
