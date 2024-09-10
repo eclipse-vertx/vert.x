@@ -5281,6 +5281,7 @@ public class Http1xTest extends HttpTest {
   private void testEmptyHostPortionOfHostHeader(String hostHeader, int expectedPort) throws Exception {
     server.requestHandler(req -> {
       assertEquals(hostHeader, req.host());
+      assertTrue(((HttpServerRequestInternal) req).isValidAuthority());
       assertEquals("", req.authority().host());
       assertEquals(expectedPort, req.authority().port());
       req.response().end();
@@ -5298,7 +5299,8 @@ public class Http1xTest extends HttpTest {
   public void testMissingHostHeader() throws Exception {
     server.requestHandler(req -> {
       assertEquals(null, req.host());
-      assertEquals(null, req.authority());
+      assertFalse(((HttpServerRequestInternal) req).isValidAuthority());
+      assertNull(req.authority());
       testComplete();
     });
     startServer(testAddress);
