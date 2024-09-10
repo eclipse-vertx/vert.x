@@ -119,6 +119,11 @@ public class HttpServerRequestWrapper extends HttpServerRequestInternal {
   }
 
   @Override
+  public boolean isValidAuthority() {
+    return delegate.isValidAuthority();
+  }
+
+  @Override
   public String host() {
     return delegate.host();
   }

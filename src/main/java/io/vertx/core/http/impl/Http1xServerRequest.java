@@ -30,11 +30,10 @@ import io.vertx.core.http.impl.headers.HeadersAdaptor;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.future.PromiseInternal;
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.impl.HostAndPortImpl;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.TagExtractor;
@@ -63,7 +62,7 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
  */
 public class Http1xServerRequest extends HttpServerRequestInternal implements io.vertx.core.spi.observability.HttpRequest {
 
-  private static final Logger log = LoggerFactory.getLogger(Http1xServerRequest.class);
+  private static final HostAndPort NULL_HOST_AND_PORT = HostAndPort.create("", -1);
 
   private final Http1xServerConnection conn;
   final ContextInternal context;
@@ -240,12 +239,38 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   }
 
   @Override
-  public synchronized HostAndPort authority() {
+  public boolean isValidAuthority() {
+    HostAndPort authority = this.authority;
+    if (authority == NULL_HOST_AND_PORT) {
+      return false;
+    }
+    if (authority != null) {
+      return true;
+    }
+    String host = getHeader(HttpHeaderNames.HOST);
+    if (host == null || !HostAndPortImpl.isValidAuthority(host)) {
+      this.authority = NULL_HOST_AND_PORT;
+      return false;
+    }
+    return true;
+  }
+
+  @Override
+  public HostAndPort authority() {
+    HostAndPort authority = this.authority;
+    if (authority == NULL_HOST_AND_PORT) {
+      return null;
+    }
     if (authority == null) {
       String host = getHeader(HttpHeaderNames.HOST);
-      if (host != null) {
-        authority = HostAndPort.parseAuthority(host, -1);
+      if (host == null) {
+        this.authority = NULL_HOST_AND_PORT;
+        return null;
       }
+      // it's fine to have a benign race here as long as HostAndPort is immutable
+      // to ensure safe publication
+      authority = HostAndPort.parseAuthority(host, -1);
+      this.authority = authority;
     }
     return authority;
   }
@@ -269,6 +294,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
 
   @Override
   public MultiMap headers() {
+    MultiMap headers = this.headers;
     if (headers == null) {
       HttpHeaders reqHeaders = request.headers();
       if (reqHeaders instanceof MultiMap) {
@@ -276,6 +302,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
       } else {
         headers = new HeadersAdaptor(reqHeaders);
       }
+      this.headers = headers;
     }
     return headers;
   }
