@@ -9,10 +9,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.spi.cluster;
+package io.vertx.core.spi.cluster.impl;
 
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.spi.cluster.RegistrationListener;
 
 /**
  * Used by the {@link io.vertx.core.eventbus.EventBus clustered EventBus} to select a node for a given message.
@@ -20,7 +22,7 @@ import io.vertx.core.Vertx;
  * This selector is skipped only when the user raises the {@link io.vertx.core.eventbus.DeliveryOptions#setLocalOnly(boolean)} flag.
  * Consequently, implementations must be aware of local {@link io.vertx.core.eventbus.EventBus} registrations.
  */
-public interface NodeSelector {
+public interface NodeSelector extends RegistrationListener {
 
   /**
    * Invoked before the {@code vertx} instance tries to join the cluster.
@@ -47,25 +49,5 @@ public interface NodeSelector {
    * as it might completed outside the selector.
    */
   void selectForPublish(String address, Promise<Iterable<String>> promise);
-
-  /**
-   * Invoked by the {@link ClusterManager} when messaging handler registrations are added or removed.
-   */
-  void registrationsUpdated(RegistrationUpdateEvent event);
-
-  /**
-   * Invoked by the {@link ClusterManager} when some handler registrations have been lost.
-   */
-  void registrationsLost();
-
-  /**
-   * Invoked by the {@link ClusterManager} to determine if the node selector wants updates for the given {@code address}.
-   *
-   * @param address the event bus address
-   * @return {@code true} if the node selector wants updates for the given {@code address}, {@code false} otherwise
-   */
-  default boolean wantsUpdatesFor(String address) {
-    return true;
-  }
 
 }
