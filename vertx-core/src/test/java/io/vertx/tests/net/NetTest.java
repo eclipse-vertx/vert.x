@@ -932,7 +932,7 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
-  public void testConnectInvalidHost() {
+  public void testConnectInvwalidHost() {
     assertNullPointerException(() -> client.connect(80, null));
     client.connect(1234, "127.0.0.2").onComplete(onFailure(err -> testComplete()));
     await();

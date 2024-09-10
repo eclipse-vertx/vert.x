@@ -370,14 +370,12 @@ public abstract class HttpTLSTest extends HttpTestBase {
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_MIM, Trust.NONE).clientVerifyHost().fail();
   }
 
-  @Ignore
   @Test
   // Test host verification with a CN matching localhost
   public void testTLSVerifyMatchingHostOpenSSL() throws Exception {
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).clientVerifyHost().clientOpenSSL().pass();
   }
 
-  @Ignore
   @Test
   // Test host verification with a CN NOT matching localhost
   public void testTLSVerifyNonMatchingHostOpenSSL() throws Exception {
@@ -386,63 +384,54 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
   // OpenSSL tests
 
-  @Ignore
   @Test
   // Server uses OpenSSL with JKS
   public void testTLSClientTrustServerCertJKSOpenSSL() throws Exception {
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).serverOpenSSL().pass();
   }
 
-  @Ignore
   @Test
   // Server uses OpenSSL with PKCS12
   public void testTLSClientTrustServerCertPKCS12OpenSSL() throws Exception {
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_PKCS12, Trust.NONE).serverOpenSSL().pass();
   }
 
-  @Ignore
   @Test
   // Server uses OpenSSL with PEM
   public void testTLSClientTrustServerCertPEMOpenSSL() throws Exception {
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_PEM, Trust.NONE).serverOpenSSL().pass();
   }
 
-  @Ignore
   @Test
   // Client trusts OpenSSL with PEM
   public void testTLSClientTrustServerCertWithJKSOpenSSL() throws Exception {
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).clientOpenSSL().pass();
   }
 
-  @Ignore
   @Test
   // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustServerCertWithPKCS12OpenSSL() throws Exception {
     testTLS(Cert.NONE, Trust.SERVER_PKCS12, Cert.SERVER_JKS, Trust.NONE).clientOpenSSL().pass();
   }
 
-  @Ignore
   @Test
   // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustServerCertWithPEMOpenSSL() throws Exception {
     testTLS(Cert.NONE, Trust.SERVER_PEM, Cert.SERVER_JKS, Trust.NONE).clientOpenSSL().pass();
   }
 
-  @Ignore
   @Test
   // Client specifies cert and it is required
   public void testTLSClientCertRequiredOpenSSL() throws Exception {
     testTLS(Cert.CLIENT_JKS, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.CLIENT_JKS).clientOpenSSL().requiresClientAuth().pass();
   }
 
-  @Ignore
   @Test
   // Client specifies cert and it is required
   public void testTLSClientCertPKCS12RequiredOpenSSL() throws Exception {
     testTLS(Cert.CLIENT_PKCS12, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.CLIENT_JKS).clientOpenSSL().requiresClientAuth().pass();
   }
 
-  @Ignore
   @Test
   // Client specifies cert and it is required
   public void testTLSClientCertPEMRequiredOpenSSL() throws Exception {
@@ -458,7 +447,6 @@ public abstract class HttpTLSTest extends HttpTestBase {
       .serverEnabledSecureTransportProtocol(new String[]{"TLSv1.3"}).pass();
   }
 
-  @Ignore
   @Test
   // TLSv1.3 with OpenSSL
   public void testTLSv1_3OpenSSL() throws Exception {
@@ -479,7 +467,6 @@ public abstract class HttpTLSTest extends HttpTestBase {
       .fail();
   }
 
-  @Ignore
   @Test
   // Disable TLSv1.3 with OpenSSL
   public void testDisableTLSv1_3OpenSSL() throws Exception {
@@ -500,7 +487,6 @@ public abstract class HttpTLSTest extends HttpTestBase {
       .fail();
   }
 
-  @Ignore
   @Test
   // Disable TLSv1.2 with OpenSSL
   public void testDisableTLSv1_2OpenSSL() throws Exception {
@@ -797,7 +783,6 @@ public abstract class HttpTLSTest extends HttpTestBase {
     assertEquals("host2.com", TestUtils.cnOf(cert));
   }
 
-  @Ignore
   @Test
   public void testSNIWithOpenSSL() throws Exception {
     Certificate cert = testTLS(Cert.NONE, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, Trust.NONE)
