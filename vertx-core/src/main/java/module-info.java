@@ -43,7 +43,6 @@ module io.vertx.core {
   uses io.vertx.core.spi.VerticleFactory;
   uses io.vertx.core.spi.JsonFactory;
   uses io.vertx.core.spi.transport.Transport;
-  uses io.vertx.core.spi.context.executor.EventExecutorProvider;
 
   // API
 
