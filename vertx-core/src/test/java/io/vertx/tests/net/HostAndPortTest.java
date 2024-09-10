@@ -42,6 +42,7 @@ public class HostAndPortTest {
     assertEquals(-1, HostAndPortImpl.parseIPv4Address("10.0.0.1.nip.io", 0, 9));
     assertEquals(8, HostAndPortImpl.parseIPv4Address("10.0.0.1.nip.io", 0, 8));
     assertEquals(-1, HostAndPortImpl.parseIPv4Address("10.0.0.1:", 0, 9));
+    assertEquals(8, HostAndPortImpl.parseIPv4Address("10.0.0.1:0", 0, 10));
   }
 
   @Test
@@ -60,12 +61,14 @@ public class HostAndPortTest {
     assertEquals(7, HostAndPortImpl.parseHost("0.0.0.0", 0, 7));
     assertEquals(8, HostAndPortImpl.parseHost("10.0.0.1.nip.io", 0, 8));
     assertEquals(15, HostAndPortImpl.parseHost("10.0.0.1.nip.io", 0, 15));
+    assertEquals(8, HostAndPortImpl.parseHost("10.0.0.1:8080", 0, 15));
   }
 
   @Test
   public void testParseHostAndPort() {
     assertHostAndPort("10.0.0.1.nip.io", -1, "10.0.0.1.nip.io");
     assertHostAndPort("10.0.0.1.nip.io", 8443, "10.0.0.1.nip.io:8443");
+    assertHostAndPort("127.0.0.1", 8080, "127.0.0.1:8080");
     assertHostAndPort("example.com", 8080, "example.com:8080");
     assertHostAndPort("example.com", -1, "example.com");
     assertHostAndPort("0.1.2.3", -1, "0.1.2.3");
@@ -73,21 +76,28 @@ public class HostAndPortTest {
     assertHostAndPort("", -1, "");
     assertHostAndPort("", 8080, ":8080");
     assertNull(HostAndPortImpl.parseAuthority("/", -1));
+    assertFalse(HostAndPortImpl.isValidAuthority("/"));
     assertNull(HostAndPortImpl.parseAuthority("10.0.0.1:x", -1));
+    assertFalse(HostAndPortImpl.isValidAuthority("10.0.0.1:x"));
   }
 
   @Test
   public void testParseInvalid() {
     assertHostAndPort("localhost", 65535, "localhost:65535");
     assertNull(HostAndPortImpl.parseAuthority("localhost:65536", -1));
+    assertFalse(HostAndPortImpl.isValidAuthority("localhost:65536"));
     assertNull(HostAndPortImpl.parseAuthority("localhost:8080a", -1));
+    assertFalse(HostAndPortImpl.isValidAuthority("localhost:8080a"));
     assertNull(HostAndPortImpl.parseAuthority("http://localhost:8080", -1));
+    assertFalse(HostAndPortImpl.isValidAuthority("http://localhost:8080"));
     assertNull(HostAndPortImpl.parseAuthority("^", -1));
+    assertFalse(HostAndPortImpl.isValidAuthority("^"));
   }
 
   private void assertHostAndPort(String expectedHost, int expectedPort, String actual) {
     HostAndPortImpl hostAndPort = HostAndPortImpl.parseAuthority(actual, -1);
     assertNotNull(hostAndPort);
+    assertTrue(HostAndPortImpl.isValidAuthority(actual));
     assertEquals(expectedHost, hostAndPort.host());
     assertEquals(expectedPort, hostAndPort.port());
   }

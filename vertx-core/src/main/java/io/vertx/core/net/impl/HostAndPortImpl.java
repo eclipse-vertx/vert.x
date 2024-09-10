@@ -1,8 +1,20 @@
 package io.vertx.core.net.impl;
 
+import java.util.Arrays;
+
 import io.vertx.core.net.HostAndPort;
 
 public class HostAndPortImpl implements HostAndPort {
+
+  // digits lookup table to speed-up parsing
+  private static final byte[] DIGITS = new byte[128];
+
+  static {
+    Arrays.fill(DIGITS, (byte) -1);
+    for (int i = '0';i <= '9';i++) {
+      DIGITS[i] = (byte) (i - '0');
+    }
+  }
 
   public static int parseHost(String val, int from, int to) {
     int pos;
@@ -30,42 +42,60 @@ public class HostAndPortImpl implements HostAndPort {
         return -1;
       }
     }
-    return from < to && (from + 1 == s.length() || s.charAt(from + 1) != ':') ? -1 : from;
+    // from is the next position to parse: whatever come before is a valid IPv4 address
+    if (from == to) {
+      // we're done
+      return from;
+    }
+    assert from < to;
+    // we have more characters, let's check if it has enough space for a port
+    if (from + 1 == s.length()) {
+      // just a single character left, we don't care what it is
+      return -1;
+    }
+    // we have more characters
+    if (s.charAt(from) != ':') {
+      // we need : to start a port
+      return -1;
+    }
+    // we (maybe) have a port - even with a single digit; the ipv4 addr is fineFi
+    return from;
   }
 
   public static int parseDecOctet(String s, int from, int to) {
     int val = parseDigit(s, from++, to);
-    switch (val) {
-      case 0:
-        return from;
-      case 1:
-      case 2:
-      case 3:
-      case 4:
-      case 5:
-      case 6:
-      case 7:
-      case 8:
-      case 9:
-        int n = parseDigit(s, from, to);
-        if (n != -1) {
-          val = val * 10 + n;
-          n = parseDigit(s, ++from, to);
-          if (n != -1) {
-            from++;
-            val = val * 10 + n;
-          }
-        }
-        if (val < 256) {
-          return from;
-        }
+    if (val == 0) {
+      return from;
+    }
+    if (val < 0 || val > 9) {
+      return -1;
+    }
+    int n = parseDigit(s, from, to);
+    if (n != -1) {
+      val = val * 10 + n;
+      n = parseDigit(s, ++from, to);
+      if (n != -1) {
+        from++;
+        val = val * 10 + n;
+      }
+    }
+    if (val < 256) {
+      return from;
     }
     return -1;
   }
 
   private static int parseDigit(String s, int from, int to) {
-    char c;
-    return from < to && isDIGIT(c = s.charAt(from)) ? c - '0' : -1;
+    if (from >= to) {
+      return -1;
+    }
+    char ch = s.charAt(from);
+    // a very predictable condition
+    if (ch < 128) {
+      // negative short values are still positive ints
+      return DIGITS[ch];
+    }
+    return -1;
   }
 
   public static int parseIPLiteral(String s, int from, int to) {
@@ -96,7 +126,7 @@ public class HostAndPortImpl implements HostAndPort {
   }
 
   private static boolean isDIGIT(char ch) {
-    return ('0' <= ch && ch <= '9');
+    return DIGITS[ch] != -1;
   }
 
   private static boolean isSubDelims(char ch) {
@@ -105,6 +135,27 @@ public class HostAndPortImpl implements HostAndPort {
 
   static boolean isHEXDIG(char ch) {
     return isDIGIT(ch) || ('A' <= ch && ch <= 'F') || ('a' <= ch && ch <= 'f');
+  }
+
+  /**
+   * Validate an authority HTTP header, that is <i>host [':' port]</i> <br>
+   * This method should behave like {@link #parseAuthority(String, int)},
+   * but without the overhead of creating an object: when {@code true}
+   * {@code parseAuthority(s, -1)} should return a non-null value.
+   *
+   * @param s the string to parse
+   * @return {@code true} when the string is a valid authority
+   * @throws NullPointerException when the string is {@code null}
+   */
+  public static boolean isValidAuthority(String s) {
+    int pos = parseHost(s, 0, s.length());
+    if (pos == s.length()) {
+      return true;
+    }
+    if (pos < s.length() && s.charAt(pos) == ':') {
+      return parsePort(s, pos) != -1;
+    }
+    return false;
   }
 
   /**
@@ -120,20 +171,28 @@ public class HostAndPortImpl implements HostAndPort {
     }
     if (pos < s.length() && s.charAt(pos) == ':') {
       String host = s.substring(0, pos);
-      int port = 0;
-      while (++pos < s.length()) {
-        int digit = parseDigit(s, pos, s.length());
-        if (digit == -1) {
-          return null;
-        }
-        port = port * 10 + digit;
-        if (port > 65535) {
-          return null;
-        }
+      int port = parsePort(s, pos);
+      if (port == -1) {
+        return null;
       }
       return new HostAndPortImpl(host, port);
     }
     return null;
+  }
+
+  private static int parsePort(String s, int pos) {
+    int port = 0;
+    while (++pos < s.length()) {
+      int digit = parseDigit(s, pos, s.length());
+      if (digit == -1) {
+        return -1;
+      }
+      port = port * 10 + digit;
+      if (port > 65535) {
+        return -1;
+      }
+    }
+    return port;
   }
 
   private final String host;

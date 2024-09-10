@@ -32,4 +32,10 @@ public abstract class HttpServerRequestInternal implements HttpServerRequest {
    */
   public abstract Object metric();
 
+  /**
+   * This method act as {@link #authority()}{@code != null}, trying to not allocated a new object if the authority is not yet parsed.
+   */
+  public boolean isValidAuthority() {
+    return authority() != null;
+  }
 }
