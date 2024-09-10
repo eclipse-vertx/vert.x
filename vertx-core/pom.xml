@@ -419,7 +419,7 @@
             </goals>
             <configuration>
               <includes>
-                <include>io/vertx/it/json/JsonTest.java</include>
+                <include>io/vertx/it/json/NoJacksonTest.java</include>
               </includes>
               <systemProperties>
                 <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
@@ -458,7 +458,7 @@
             </goals>
             <configuration>
               <includes>
-                <include>io/vertx/it/json/JsonCodecTest.java</include>
+                <include>io/vertx/it/json/NoDatabindTest.java</include>
               </includes>
               <systemProperties>
                 <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
@@ -470,26 +470,45 @@
             </configuration>
           </execution>
           <execution>
-            <id>custom-json-codec</id>
+            <id>custom-json-factory</id>
             <goals>
               <goal>integration-test</goal>
               <goal>verify</goal>
             </goals>
             <configuration>
               <includes>
-                <include>io/vertx/it/json/CustomJsonCodecTest.java</include>
+                <include>io/vertx/it/json/CustomJsonFactoryTest.java</include>
               </includes>
               <systemProperties>
                 <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
                 <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
               </systemProperties>
               <additionalClasspathElements>
-                <additionalClasspathElement>${project.basedir}/src/test/classpath/customjsoncodec</additionalClasspathElement>
+                <additionalClasspathElement>${project.basedir}/src/test/classpath/customjsonfactory</additionalClasspathElement>
               </additionalClasspathElements>
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-core</classpathDependencyExclude>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
               </classpathDependencyExcludes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>json-factory-ordering</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/json/JsonFactoryOrdering.java</include>
+              </includes>
+              <systemProperties>
+                <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
+                <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
+              </systemProperties>
+              <additionalClasspathElements>
+                <additionalClasspathElement>${project.basedir}/src/test/classpath/jsonfactoryordering</additionalClasspathElement>
+              </additionalClasspathElements>
             </configuration>
           </execution>
           <execution>

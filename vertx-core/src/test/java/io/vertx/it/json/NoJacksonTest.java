@@ -27,7 +27,7 @@ import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTP_PORT;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class JsonTest extends VertxTestBase {
+public class NoJacksonTest extends VertxTestBase {
 
   @Test
   public void testJsonObject() {

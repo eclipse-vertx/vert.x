@@ -11,6 +11,7 @@
 
 package io.vertx.it.json;
 
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.test.core.VertxTestBase;
@@ -19,10 +20,11 @@ import org.junit.Test;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class CustomJsonCodecTest extends VertxTestBase {
+public class CustomJsonFactoryTest extends VertxTestBase {
 
   @Test
   public void testJsonObject() {
+    assertSame(CustomJsonFactory.CODEC, Json.CODEC);
     JsonObject obj = new JsonObject();
     obj.put("foo", "bar");
     assertEquals("{\"foo\":\"bar\"}", obj.toString());
@@ -30,6 +32,7 @@ public class CustomJsonCodecTest extends VertxTestBase {
 
   @Test
   public void testJsonArray() {
+    assertSame(CustomJsonFactory.CODEC, Json.CODEC);
     JsonArray array = new JsonArray();
     array.add("foo");
     assertEquals("[\"foo\"]", array.toString());

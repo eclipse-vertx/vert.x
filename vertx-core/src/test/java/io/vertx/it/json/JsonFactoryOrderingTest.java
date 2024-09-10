@@ -9,12 +9,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.tests.json;
+package io.vertx.it.json;
 
 import io.vertx.core.json.Json;
 import io.vertx.core.spi.JsonFactory;
 import io.vertx.test.core.VertxTestBase;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -25,14 +24,13 @@ import java.util.TreeMap;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class JsonFactoryTest extends VertxTestBase {
+public class JsonFactoryOrderingTest extends VertxTestBase {
 
   static {
     // Make sure that the default Jackson codec is initialized before running this test
     Object codec = Json.CODEC;
   }
 
-  @Ignore("can only run in non modular mode")
   @Test
   public void loadFactoriesFromTCCL() throws Exception {
     ClassLoader custom = new URLClassLoader(new URL[]{new File("target/classpath/jsonfactory").toURI().toURL()});
