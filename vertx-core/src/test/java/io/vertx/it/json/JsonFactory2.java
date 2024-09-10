@@ -1,4 +1,4 @@
-package io.vertx.tests.json;
+package io.vertx.it.json;
 
 import io.vertx.core.json.jackson.JacksonCodec;
 import io.vertx.core.spi.JsonFactory;

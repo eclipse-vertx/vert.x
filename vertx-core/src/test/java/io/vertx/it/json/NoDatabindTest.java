@@ -19,7 +19,7 @@ import org.junit.Test;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class JsonCodecTest extends VertxTestBase {
+public class NoDatabindTest extends VertxTestBase {
 
   @Test
   public void testJsonObject() {

@@ -419,12 +419,8 @@
             </goals>
             <configuration>
               <includes>
-                <include>io/vertx/it/json/JsonTest.java</include>
+                <include>io/vertx/it/json/NoJacksonTest.java</include>
               </includes>
-              <systemProperties>
-                <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
-                <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
-              </systemProperties>
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-core</classpathDependencyExclude>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
@@ -441,10 +437,6 @@
               <includes>
                 <include>io/vertx/it/net/HAProxyTest.java</include>
               </includes>
-              <systemProperties>
-                <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
-                <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
-              </systemProperties>
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>io.netty:netty-codec-haproxy</classpathDependencyExclude>
               </classpathDependencyExcludes>
@@ -458,38 +450,60 @@
             </goals>
             <configuration>
               <includes>
-                <include>io/vertx/it/json/JsonCodecTest.java</include>
+                <include>io/vertx/it/json/NoDatabindTest.java</include>
               </includes>
-              <systemProperties>
-                <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
-                <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
-              </systemProperties>
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
               </classpathDependencyExcludes>
             </configuration>
           </execution>
           <execution>
-            <id>custom-json-codec</id>
+            <id>custom-json-factory</id>
             <goals>
               <goal>integration-test</goal>
               <goal>verify</goal>
             </goals>
             <configuration>
               <includes>
-                <include>io/vertx/it/json/CustomJsonCodecTest.java</include>
+                <include>io/vertx/it/json/CustomJsonFactoryTest.java</include>
               </includes>
-              <systemProperties>
-                <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
-                <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
-              </systemProperties>
               <additionalClasspathElements>
-                <additionalClasspathElement>${project.basedir}/src/test/classpath/customjsoncodec</additionalClasspathElement>
+                <additionalClasspathElement>${project.basedir}/src/test/classpath/customjsonfactory</additionalClasspathElement>
               </additionalClasspathElements>
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-core</classpathDependencyExclude>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
               </classpathDependencyExcludes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>json-factory-ordering</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/json/JsonFactoryOrdering.java</include>
+              </includes>
+              <additionalClasspathElements>
+                <additionalClasspathElement>${project.basedir}/src/test/classpath/jsonfactoryordering</additionalClasspathElement>
+              </additionalClasspathElements>
+            </configuration>
+          </execution>
+          <execution>
+            <id>metrics-service-loader</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/metrics/ServiceLoadedTest.java</include>
+              </includes>
+              <additionalClasspathElements>
+                <additionalClasspathElement>${project.basedir}/src/test/classpath/metrics</additionalClasspathElement>
+              </additionalClasspathElements>
             </configuration>
           </execution>
           <execution>
@@ -502,10 +516,6 @@
               <includes>
                 <include>io/vertx/it/vertx/VertxThreadFactoryTest.java</include>
               </includes>
-              <systemProperties>
-                <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
-                <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
-              </systemProperties>
               <additionalClasspathElements>
                 <additionalClasspathElement>${project.basedir}/src/test/classpath/customthreadfactory</additionalClasspathElement>
               </additionalClasspathElements>
@@ -521,10 +531,6 @@
               <includes>
                 <include>io/vertx/it/vertx/ExecutorServiceFactoryTest.java</include>
               </includes>
-              <systemProperties>
-                <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
-                <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
-              </systemProperties>
               <additionalClasspathElements>
                 <additionalClasspathElement>${project.basedir}/src/test/classpath/customexecutorservicefactory</additionalClasspathElement>
               </additionalClasspathElements>
@@ -555,10 +561,6 @@
               <includes>
                 <include>io/vertx/it/tracing/VertxTracerFactoryTest.java</include>
               </includes>
-              <systemProperties>
-                <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
-                <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
-              </systemProperties>
               <additionalClasspathElements>
                 <additionalClasspathElement>${project.basedir}/src/test/classpath/tracerfactory</additionalClasspathElement>
               </additionalClasspathElements>

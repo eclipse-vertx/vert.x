@@ -1,6 +1,6 @@
 package io.vertx.core.spi;
 
-import io.vertx.core.ServiceHelper;
+import io.vertx.core.internal.ServiceHelper;
 import io.vertx.core.json.jackson.JacksonFactory;
 
 import java.util.ArrayList;
