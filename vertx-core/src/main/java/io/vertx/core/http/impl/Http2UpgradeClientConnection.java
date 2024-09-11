@@ -504,7 +504,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
       pipeline.addAfter("codec", null, new UpgradeRequestHandler());
       pipeline.addAfter("codec", null, upgradeHandler);
       PromiseInternal<Void> promise = upgradingStream.getContext().promise();
-      doWriteHead(request, chunked, buf, end, priority, connect, promise);
+      doWriteHead(request, chunked, buf, end, priority, connect, promise::handle);
       return promise.future();
     }
 

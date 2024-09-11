@@ -37,6 +37,7 @@ import io.vertx.core.spi.cluster.ClusterManager;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -489,6 +490,16 @@ public interface Vertx extends Measured {
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   Future<String> deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options);
+
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  default Future<String> deploy1(Function<Context, Deployment1> supplier, DeploymentOptions options) {
+    return null;
+  }
+
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  default Future<String> deploy2(Function<Context, Deployment2> supplier, DeploymentOptions options) {
+    return null;
+  }
 
   /**
    * Deploy a verticle instance given a name.

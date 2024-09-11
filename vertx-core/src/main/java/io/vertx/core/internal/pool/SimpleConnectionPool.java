@@ -315,7 +315,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
           lease = null;
           c = 0;
         } else {
-          lease = new LeaseImpl<>(slot, waiter.handler);
+          lease = new LeaseImpl<>(slot, waiter.handler::handle);
           c = 1;
           waiter.disposed = true;
           acquisitions--;
@@ -326,7 +326,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
           c += m;
           leases = new LeaseImpl[m];
           for (int i = 0;i < m;i++) {
-            leases[i] = new LeaseImpl<>(slot, pool.waiters.poll().handler);
+            leases[i] = new LeaseImpl<>(slot, pool.waiters.poll().handler::handle);
           }
         } else {
           leases = null;
@@ -379,7 +379,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
             } else {
               waiterFailure = Future.failedFuture(cause);
             }
-            removed.context.emit(waiterFailure, waiter.handler);
+            removed.context.emit(waiterFailure, waiter.handler::handle);
           }
           removed.result.fail(cause);
         }
@@ -468,7 +468,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
           if (m > 0) {
             extra = new LeaseImpl[m];
             for (int i = 0;i < m;i++) {
-              extra[i] = new LeaseImpl<>(slot, pool.waiters.poll().handler);
+              extra[i] = new LeaseImpl<>(slot, pool.waiters.poll().handler::handle);
             }
             slot.usage += m;
             return new Task() {
@@ -575,7 +575,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
       Slot<C> slot1 = (Slot<C>) pool.selector.apply(this, pool.list);
       if (slot1 != null) {
         slot1.usage++;
-        LeaseImpl<C> lease = new LeaseImpl<>(slot1, handler);
+        LeaseImpl<C> lease = new LeaseImpl<>(slot1, handler::handle);
         return new Task() {
           @Override
           public void run() {
@@ -606,7 +606,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
       Slot<C> slot3 = (Slot<C>) pool.fallbackSelector.apply(this, pool.list);
       if (slot3 != null) {
         slot3.usage++;
-        LeaseImpl<C> lease = new LeaseImpl<>(slot3, handler);
+        LeaseImpl<C> lease = new LeaseImpl<>(slot3, handler::handle);
         return new Task() {
           @Override
           public void run() {
@@ -742,7 +742,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
       if (!pool.closed && slot.connection != null) {
         PoolWaiter<C> waiter;
         if (slot.usage <= slot.concurrency && (waiter = pool.waiters.poll()) != null) {
-          LeaseImpl<C> lease = new LeaseImpl<>(slot, waiter.handler);
+          LeaseImpl<C> lease = new LeaseImpl<>(slot, waiter.handler::handle);
           return new Task() {
             @Override
             public void run() {
@@ -815,7 +815,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
       return new Task() {
         @Override
         public void run() {
-          waiters.forEach(w -> w.context.emit(POOL_CLOSED, w.handler));
+          waiters.forEach(w -> w.context.emit(POOL_CLOSED, w.handler::handle));
           handler.handle(Future.succeededFuture(list));
         }
       };

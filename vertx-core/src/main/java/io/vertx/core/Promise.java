@@ -27,7 +27,7 @@ import io.vertx.core.impl.future.PromiseImpl;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @VertxGen
-public interface Promise<T> extends Handler<AsyncResult<T>> {
+public interface Promise<T> extends Completable<T> {
 
   /**
    * Create a promise that hasn't completed yet
@@ -39,13 +39,17 @@ public interface Promise<T> extends Handler<AsyncResult<T>> {
     return new PromiseImpl<>();
   }
 
+  @Override
+  default void complete(T result, Throwable err) {
+    throw new UnsupportedOperationException();
+  }
+
   /**
    * Succeed or fail this promise with the {@link AsyncResult} event.
    *
    * @param asyncResult the async result to handle
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  @Override
   default void handle(AsyncResult<T> asyncResult) {
     if (asyncResult.succeeded()) {
       complete(asyncResult.result());

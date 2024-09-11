@@ -46,7 +46,7 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
   @Override
   protected void clusteredVertx(VertxOptions options, ClusterManager clusterManager, Handler<AsyncResult<Vertx>> ar) {
     Promise<Vertx> promise = Promise.promise();
-    super.clusteredVertx(options, clusterManager, promise);
+    super.clusteredVertx(options, clusterManager, promise::handle);
     promise.future().onSuccess(vertx -> {
       ImmutableObjectCodec immutableObjectCodec = new ImmutableObjectCodec();
       vertx.eventBus().registerCodec(immutableObjectCodec);

@@ -1202,7 +1202,7 @@ public class ConnectionPoolTest extends VertxTestBase {
     @Override
     public Future<ConnectResult<Connection>> connect(ContextInternal context, Listener listener) {
       Promise<ConnectResult<Connection>> promise = Promise.promise();
-      requests.add(new ConnectionRequest(context, listener, promise));
+      requests.add(new ConnectionRequest(context, listener, promise::handle));
       return promise.future();
     }
 

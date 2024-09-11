@@ -273,7 +273,7 @@ public class PipeTest extends AsyncTestBase {
     FakeStream<Object> src = new FakeStream<>();
     Pipe<Object> pipe = src.pipe();
     List<AsyncResult<Void>> res = new ArrayList<>();
-    pipe.to(dst).onComplete(res::add);
+    pipe.to(dst).onComplete(ar -> res.add(ar));
     assertEquals(Collections.emptyList(), res);
     pipe.close();
     assertEquals(1, res.size());

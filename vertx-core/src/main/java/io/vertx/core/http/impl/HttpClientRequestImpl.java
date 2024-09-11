@@ -387,7 +387,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
             .compose(v -> next, err -> next)
             .onComplete(ar1 -> {
               if (ar1.succeeded()) {
-                handleNextRequest(ar1.result(), promise, timeoutMs);
+                handleNextRequest(ar1.result(), promise::handle, timeoutMs);
               } else {
                 fail(ar1.cause());
               }

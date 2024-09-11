@@ -790,7 +790,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   public Future<String> deployVerticle(String name, DeploymentOptions options) {
     if (options.isHa() && haManager() != null) {
       Promise<String> promise = getOrCreateContext().promise();
-      haManager().deployVerticle(name, options, promise);
+      haManager().deployVerticle(name, options, promise::handle);
       return promise.future();
     } else {
       return verticleManager.deployVerticle(name, options).map(Deployment::deploymentID);

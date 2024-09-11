@@ -270,6 +270,11 @@ public interface Future<T> extends AsyncResult<T> {
   @Fluent
   Future<T> onComplete(Handler<AsyncResult<T>> handler);
 
+  @Fluent
+  default Future<T> onComplete(Completable<? super T> completable) {
+    return onComplete(ar -> completable.complete(ar.succeeded() ? ar.result() : null, ar.succeeded() ? null : ar.cause()));
+  }
+
   /**
    * Add handlers to be notified on succeeded result and failed result.
    * <p>

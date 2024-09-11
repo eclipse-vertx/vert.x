@@ -178,7 +178,7 @@ public class FutureTest extends FutureTestBase {
   public void testResolveFutureToHandler() {
     Consumer<Handler<AsyncResult<String>>> consumer = handler -> handler.handle(io.vertx.core.Future.succeededFuture("the-result"));
     Promise<String> promise = Promise.promise();
-    consumer.accept(promise);
+    consumer.accept(promise::handle);
     assertTrue(promise.future().isComplete());
     assertTrue(promise.future().succeeded());
     assertEquals("the-result", promise.future().result());
@@ -191,7 +191,7 @@ public class FutureTest extends FutureTestBase {
       handler.handle(io.vertx.core.Future.failedFuture(cause));
     };
     Promise<String> promise = Promise.promise();
-    consumer.accept(promise);
+    consumer.accept(promise::handle);
     assertTrue(promise.future().isComplete());
     assertTrue(promise.future().failed());
     assertEquals(cause, promise.future().cause());
@@ -1239,13 +1239,13 @@ public class FutureTest extends FutureTestBase {
   public void testSetNullHandler() throws Exception {
     Promise<String> promise = Promise.promise();
     try {
-      promise.future().onComplete(null);
+      promise.future().onComplete((Handler<AsyncResult<String>>) null);
       fail();
     } catch (NullPointerException ignore) {
     }
     promise.complete();
     try {
-      promise.future().onComplete(null);
+      promise.future().onComplete((Handler<AsyncResult<String>>) null);
       fail();
     } catch (NullPointerException ignore) {
     }

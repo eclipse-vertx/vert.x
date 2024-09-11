@@ -125,14 +125,14 @@ public class AsyncFileImpl implements AsyncFile {
   @Override
   public Future<Void> close() {
     Promise<Void> promise = context.promise();
-    closeInternal(promise);
+    closeInternal(promise::handle);
     return promise.future();
   }
 
   @Override
   public Future<Void> end() {
     Promise<Void> promise = context.promise();
-    closeInternal(promise);
+    closeInternal(promise::handle);
     return promise.future();
   }
 
@@ -158,7 +158,7 @@ public class AsyncFileImpl implements AsyncFile {
   @Override
   public Future<Void> write(Buffer buffer, long position) {
     Promise<Void> promise = context.promise();
-    doWrite(buffer, position, promise);
+    doWrite(buffer, position, promise::handle);
     return promise.future();
   }
 
@@ -217,7 +217,7 @@ public class AsyncFileImpl implements AsyncFile {
   public synchronized Future<Void> write(Buffer buffer) {
     Promise<Void> promise = context.promise();
     int length = buffer.length();
-    doWrite(buffer, writePos, promise);
+    doWrite(buffer, writePos, promise::handle);
     writePos += length;
     return promise.future();
   }
@@ -299,7 +299,7 @@ public class AsyncFileImpl implements AsyncFile {
   @Override
   public Future<Void> flush() {
     Promise<Void> promise = context.promise();
-    doFlush(promise);
+    doFlush(promise::handle);
     return promise.future();
   }
 
