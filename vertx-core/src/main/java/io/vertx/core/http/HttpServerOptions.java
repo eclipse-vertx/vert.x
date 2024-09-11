@@ -596,11 +596,22 @@ public class HttpServerOptions extends NetServerOptions {
     return this;
   }
 
+  /**
+   * @return the compression content size threshold
+   */
   public int getCompressionContentSizeThreshold() {
     return compressionContentSizeThreshold;
   }
 
+  /**
+   * Set the compression content size threshold if compression is enabled.
+   * If the response content size in bytes is greater than this threshold, then the response is compressed. Otherwise, it is not compressed.
+   *
+   * @param compressionContentSizeThreshold integer greater than or equal to 0.
+   * @return a reference to this, so the API can be used fluently
+   */
   public HttpServerOptions setCompressionContentSizeThreshold(int compressionContentSizeThreshold) {
+    Arguments.require(compressionContentSizeThreshold >= 0, "compressionContentSizeThreshold must be >= 0");
     this.compressionContentSizeThreshold = compressionContentSizeThreshold;
     return this;
   }
