@@ -237,16 +237,12 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
         // Initialize SSL before binding
         sslChannelProvider = sslHelper.updateSslContext(options.getSslOptions(), true, listenContext).onComplete(ar -> {
           if (ar.succeeded()) {
-
             // Socket bind
             channelBalancer.addWorker(eventLoop, worker);
             ServerBootstrap bootstrap = new ServerBootstrap();
             bootstrap.group(vertx.getAcceptorEventLoopGroup(), channelBalancer.workers());
-            if (options.isSsl()) {
-              bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
-            } else {
-              bootstrap.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
-            }
+            bootstrap.childOption(ChannelOption.ALLOCATOR,
+              sslHelper.serverByteBufAllocator(ar.result().sslChannelProvider().sslContextProvider()));
 
             bootstrap.childHandler(channelBalancer);
             applyConnectionOptions(localAddress.isDomainSocket(), bootstrap);

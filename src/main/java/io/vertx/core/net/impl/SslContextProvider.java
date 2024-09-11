@@ -11,6 +11,7 @@
 package io.vertx.core.net.impl;
 
 import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslProvider;
 import io.vertx.core.VertxException;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.spi.tls.SslContextFactory;
@@ -30,6 +31,7 @@ import java.util.function.Supplier;
  */
 public class SslContextProvider {
 
+  private final SslProvider providerType;
   private final Supplier<SslContextFactory> provider;
   private final Set<String> enabledProtocols;
   private final List<CRL> crls;
@@ -42,7 +44,8 @@ public class SslContextProvider {
   private final Function<String, KeyManagerFactory> keyManagerFactoryMapper;
   private final Function<String, TrustManager[]> trustManagerMapper;
 
-  public SslContextProvider(ClientAuth clientAuth,
+  public SslContextProvider(SslProvider providerType,
+                            ClientAuth clientAuth,
                             String endpointIdentificationAlgorithm,
                             List<String> applicationProtocols,
                             Set<String> enabledCipherSuites,
@@ -53,6 +56,7 @@ public class SslContextProvider {
                             Function<String, TrustManager[]> trustManagerMapper,
                             List<CRL> crls,
                             Supplier<SslContextFactory> provider) {
+    this.providerType = providerType;
     this.provider = provider;
     this.clientAuth = clientAuth;
     this.endpointIdentificationAlgorithm = endpointIdentificationAlgorithm;
@@ -64,6 +68,10 @@ public class SslContextProvider {
     this.keyManagerFactoryMapper = keyManagerFactoryMapper;
     this.trustManagerMapper = trustManagerMapper;
     this.crls = crls;
+  }
+
+  SslProvider sslProvider() {
+    return providerType;
   }
 
   public VertxSslContext createContext(boolean server,
