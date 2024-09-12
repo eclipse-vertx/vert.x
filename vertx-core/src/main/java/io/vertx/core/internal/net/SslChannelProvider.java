@@ -58,7 +58,7 @@ public class SslChannelProvider {
       return Http3.newQuicClientCodecBuilder()
         .sslTaskExecutor(delegatedTaskExec)
         .sslContext((QuicSslContext) ((VertxSslContext) sslContext).unwrap())
-        .maxIdleTimeout(5000, TimeUnit.MILLISECONDS)
+        .maxIdleTimeout(sslHandshakeTimeout, sslHandshakeTimeoutUnit)
         .initialMaxData(10000000)
         .initialMaxStreamDataBidirectionalLocal(1000000)
         .build();
