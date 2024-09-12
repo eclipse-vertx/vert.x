@@ -14,7 +14,7 @@ package io.vertx.tests.ha;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
-import io.vertx.core.impl.deployment.Deployment;
+import io.vertx.core.impl.deployment.DeploymentContext;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.cluster.ClusterManager;
@@ -266,7 +266,7 @@ public class HATest extends VertxTestBase {
 
     assertTrue(vertx1.deploymentIDs().size() == 1);
     String depID = vertx1.deploymentIDs().iterator().next();
-    assertTrue(((VertxInternal) vertx1).getDeployment(depID).identifier().equals("java:" + HAVerticle1.class.getName()));
+    assertTrue(((VertxInternal) vertx1).getDeployment(depID).deployment().identifier().equals("java:" + HAVerticle1.class.getName()));
   }
 
   @Test
@@ -294,7 +294,7 @@ public class HATest extends VertxTestBase {
 
     assertTrue(vertx1.deploymentIDs().size() == 1);
     String depID = vertx1.deploymentIDs().iterator().next();
-    assertTrue(((VertxInternal) vertx1).getDeployment(depID).identifier().equals("java:" + HAVerticle1.class.getName()));
+    assertTrue(((VertxInternal) vertx1).getDeployment(depID).deployment().identifier().equals("java:" + HAVerticle1.class.getName()));
   }
 
   @Test
@@ -389,8 +389,8 @@ public class HATest extends VertxTestBase {
   protected void checkDeploymentExists(int pos, String verticleName, DeploymentOptions options) {
     VertxInternal vi = (VertxInternal)vertices[pos];
     for (String deploymentID: vi.deploymentIDs()) {
-      Deployment dep = vi.getDeployment(deploymentID);
-      if (verticleName.equals(dep.identifier()) && options.toJson().equals(dep.deploymentOptions().toJson())) {
+      DeploymentContext dep = vi.getDeployment(deploymentID);
+      if (verticleName.equals(dep.deployment().identifier()) && options.toJson().equals(dep.deployment().options().toJson())) {
         return;
       }
     }

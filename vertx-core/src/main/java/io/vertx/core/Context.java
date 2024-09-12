@@ -253,7 +253,7 @@ public interface Context {
    * @return  the number of instances of the verticle that were deployed in the deployment (if any) related
    * to this context
    */
-  int getInstanceCount();
+  int instances();
 
   /**
    * Set an exception handler called when the context runs an action throwing an uncaught throwable.<p/>

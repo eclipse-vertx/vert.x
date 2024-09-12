@@ -15,7 +15,7 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.ThreadingModel;
-import io.vertx.core.impl.deployment.Deployment;
+import io.vertx.core.impl.deployment.DeploymentContext;
 import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.EventExecutor;
@@ -86,8 +86,8 @@ final class DuplicatedContext extends ContextBase implements ContextInternal {
   }
 
   @Override
-  public Deployment getDeployment() {
-    return delegate.getDeployment();
+  public DeploymentContext deployment() {
+    return delegate.deployment();
   }
 
   @Override

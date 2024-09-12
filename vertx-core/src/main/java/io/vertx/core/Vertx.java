@@ -453,6 +453,53 @@ public interface Vertx extends Measured {
    * @return a future completed with the result
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  default Future<String> deployVerticle(Deployable verticle) {
+    return deployVerticle(verticle, new DeploymentOptions());
+  }
+
+  /**
+   * Like {@link #deployVerticle(Verticle)} but {@link io.vertx.core.DeploymentOptions} are provided to configure the
+   * deployment.
+   *
+   * @param verticle  the verticle instance to deploy
+   * @param options  the deployment options.
+   * @return a future completed with the result
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  default Future<String> deployVerticle(Deployable verticle, DeploymentOptions options) {
+    return deployVerticle(() -> verticle, options);
+  }
+
+  /**
+   * Like {@link #deployVerticle(Deployable, DeploymentOptions)} but {@link Deployable} instance is created by invoking the
+   * {@code verticleSupplier}.
+   * <p>
+   * The supplier will be invoked as many times as {@link DeploymentOptions#getInstances()}.
+   * It must not return the same instance twice.
+   * <p>
+   * Note that the supplier will be invoked on the caller thread.
+   *
+   * @return a future completed with the result
+   */
+  @GenIgnore
+  Future<String> deployVerticle(Callable<? extends Deployable> supplier, DeploymentOptions options);
+
+  /**
+   * Deploy a verticle instance that you have created yourself.
+   * <p>
+   * Vert.x will assign the verticle a context and start the verticle.
+   * <p>
+   * The actual deploy happens asynchronously and may not complete until after the call has returned.
+   * <p>
+   * If the deployment is successful the result will contain a string representing the unique deployment ID of the
+   * deployment.
+   * <p>
+   * This deployment ID can subsequently be used to undeploy the verticle.
+   *
+   * @param verticle  the verticle instance to deploy.
+   * @return a future completed with the result
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   default Future<String> deployVerticle(Verticle verticle) {
     return deployVerticle(verticle, new DeploymentOptions());
   }
@@ -466,7 +513,12 @@ public interface Vertx extends Measured {
    * @return a future completed with the result
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  Future<String> deployVerticle(Verticle verticle, DeploymentOptions options);
+  default Future<String> deployVerticle(Verticle verticle, DeploymentOptions options) {
+    if (options.getInstances() != 1) {
+      throw new IllegalArgumentException("Can't specify > 1 instances for already created verticle");
+    }
+    return deployVerticle((Callable<Verticle>) () -> verticle, options);
+  }
 
   /**
    * Like {@link #deployVerticle(Verticle, DeploymentOptions)} but {@link Verticle} instance is created by invoking the
@@ -474,7 +526,9 @@ public interface Vertx extends Measured {
    * @return a future completed with the result
    */
   @GenIgnore
-  Future<String> deployVerticle(Class<? extends Verticle> verticleClass, DeploymentOptions options);
+  default Future<String> deployVerticle(Class<? extends Verticle> verticleClass, DeploymentOptions options) {
+    return deployVerticle((Callable<Verticle>) verticleClass::newInstance, options);
+  }
 
   /**
    * Like {@link #deployVerticle(Verticle, DeploymentOptions)} but {@link Verticle} instance is created by invoking the
@@ -488,7 +542,9 @@ public interface Vertx extends Measured {
    * @return a future completed with the result
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  Future<String> deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options);
+  default Future<String> deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options) {
+    return deployVerticle((Callable<Verticle>) verticleSupplier::get, options);
+  }
 
   /**
    * Deploy a verticle instance given a name.

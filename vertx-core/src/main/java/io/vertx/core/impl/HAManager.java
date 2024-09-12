@@ -12,7 +12,7 @@
 package io.vertx.core.impl;
 
 import io.vertx.core.*;
-import io.vertx.core.impl.deployment.Deployment;
+import io.vertx.core.impl.deployment.DeploymentContext;
 import io.vertx.core.impl.deployment.DeploymentManager;
 import io.vertx.core.impl.verticle.VerticleManager;
 import io.vertx.core.internal.logging.Logger;
@@ -159,8 +159,8 @@ public class HAManager {
 
   // Remove the information on the deployment from the cluster - this is called when an HA module is undeployed
   public void removeFromHA(String depID) {
-    Deployment dep = deploymentManager.getDeployment(depID);
-    if (dep == null || !dep.deploymentOptions().isHa()) {
+    DeploymentContext dep = deploymentManager.getDeployment(depID);
+    if (dep == null || !dep.deployment().options().isHa()) {
       return;
     }
     synchronized (haInfo) {
@@ -265,7 +265,7 @@ public class HAManager {
 
   private Future<String> doDeployVerticle(String verticleName, DeploymentOptions deploymentOptions) {
     return verticleFactoryManager
-            .deployVerticle(verticleName, deploymentOptions).map(Deployment::deploymentID)
+            .deployVerticle(verticleName, deploymentOptions).map(DeploymentContext::deploymentID)
             .compose(deploymentID -> vertx
                     .executeBlocking(() -> {
                       // Tell the other nodes of the cluster about the verticle for HA purposes
@@ -416,20 +416,20 @@ public class HAManager {
 
   // Undeploy any HA deploymentIDs now there is no quorum
   private void undeployHADeployments() {
-    for (String deploymentID: deploymentManager.deployments()) {
-      Deployment dep = deploymentManager.getDeployment(deploymentID);
-      if (dep != null) {
-        if (dep.deploymentOptions().isHa()) {
+    for (DeploymentContext deployment: deploymentManager.deployments()) {
+      if (deployment != null) {
+        String identifier = deployment.deployment().identifier();
+        if (deployment.deployment().options().isHa()) {
           ((VertxImpl)vertx).executeIsolated(v -> {
-            deploymentManager.undeploy(deploymentID).onComplete(result -> {
+            deploymentManager.undeploy(deployment.deploymentID()).onComplete(result -> {
               if (result.succeeded()) {
-                log.info("Successfully undeployed HA deployment " + deploymentID + "-" + dep.identifier() + " as there is no quorum");
-                Future<String> fut = Future.future(promise -> addToHADeployList(dep.identifier(), dep.deploymentOptions(), promise));
+                log.info("Successfully undeployed HA deployment " + deployment.deploymentID() + "-" + identifier + " as there is no quorum");
+                Future<String> fut = Future.future(promise -> addToHADeployList(identifier, deployment.deployment().options(), promise));
                 fut.onComplete(ar -> {
                   if (ar.succeeded()) {
-                    log.info("Successfully redeployed verticle " + dep.identifier() + " after quorum was re-attained");
+                    log.info("Successfully redeployed verticle " + identifier + " after quorum was re-attained");
                   } else {
-                    log.error("Failed to redeploy verticle " + dep.identifier() + " after quorum was re-attained", ar.cause());
+                    log.error("Failed to redeploy verticle " + identifier + " after quorum was re-attained", ar.cause());
                   }
                 });
               } else {

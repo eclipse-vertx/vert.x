@@ -14,7 +14,7 @@ package io.vertx.core.impl;
 import io.netty.channel.EventLoop;
 import io.vertx.core.*;
 import io.vertx.core.Future;
-import io.vertx.core.impl.deployment.Deployment;
+import io.vertx.core.impl.deployment.DeploymentContext;
 import io.vertx.core.internal.EventExecutor;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
@@ -40,7 +40,7 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
 
   private final VertxInternal owner;
   private final JsonObject config;
-  private final Deployment deployment;
+  private final DeploymentContext deployment;
   private final CloseFuture closeFuture;
   private final ClassLoader tccl;
   private final EventLoop eventLoop;
@@ -58,12 +58,19 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
                         EventExecutor executor,
                         WorkerPool workerPool,
                         TaskQueue orderedTasks,
-                        Deployment deployment,
+                        DeploymentContext deployment,
                         CloseFuture closeFuture,
                         ClassLoader tccl) {
     super(locals);
+    JsonObject config = null;
+    if (deployment != null) {
+      config = deployment.deployment().options().getConfig();
+    }
+    if (config == null) {
+      config = new JsonObject();
+    }
     this.deployment = deployment;
-    this.config = deployment != null ? deployment.config() : new JsonObject();
+    this.config = config;
     this.eventLoop = eventLoop;
     this.threadingModel = threadingModel;
     this.executor = executor;
@@ -74,7 +81,7 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
     this.orderedTasks = orderedTasks;
   }
 
-  public Deployment getDeployment() {
+  public DeploymentContext deployment() {
     return deployment;
   }
 
