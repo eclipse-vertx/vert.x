@@ -58,8 +58,8 @@ public class SslChannelProvider {
         .sslTaskExecutor(delegatedTaskExec)
         .sslContext((QuicSslContext) ((VertxSslContext) sslContext).unwrap())
         .maxIdleTimeout(sslHandshakeTimeout, sslHandshakeTimeoutUnit)
-        .initialMaxData(10000000)
-        .initialMaxStreamDataBidirectionalLocal(1000000)
+        .initialMaxData(10000000) // Todo: Make this values configurable!
+        .initialMaxStreamDataBidirectionalLocal(1000000) // Todo: Make this values configurable!
         .build();
     }
     if (peerAddress != null && peerAddress.isInetSocket()) {
