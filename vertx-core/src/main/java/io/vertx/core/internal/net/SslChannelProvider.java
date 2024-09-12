@@ -53,7 +53,6 @@ public class SslChannelProvider {
     SslContext sslContext = sslContextProvider.sslClientContext(serverName, useAlpn, http3);
     SslHandler sslHandler;
     Executor delegatedTaskExec = sslContextProvider.useWorkerPool() ? workerPool : ImmediateExecutor.INSTANCE;
-    //TODO: verify
     if (http3) {
       return Http3.newQuicClientCodecBuilder()
         .sslTaskExecutor(delegatedTaskExec)
