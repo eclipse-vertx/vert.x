@@ -21,18 +21,16 @@ import java.util.*;
  */
 public interface DeploymentManager {
 
-  Future<Deployment> deploy(DeploymentOptions options,
-                            ContextInternal parentContext,
-                            ContextInternal callingContext,
-                            Deployable verticleDeployable);
+  Future<DeploymentContext> deploy(DeploymentContext parent,
+                                   ContextInternal callingContext,
+                                   Deployment deployment);
 
   Future<Void> undeploy(String deploymentID);
 
-  Set<String> deployments();
+  Collection<DeploymentContext> deployments();
 
-  Deployment getDeployment(String deploymentID);
+  DeploymentContext getDeployment(String deploymentID);
 
   Future<Void> undeployAll();
-
 
 }
