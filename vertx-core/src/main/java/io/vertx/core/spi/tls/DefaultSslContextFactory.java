@@ -154,7 +154,7 @@ public class DefaultSslContextFactory implements SslContextFactory {
 
     if (useAlpn && applicationProtocols != null && applicationProtocols.size() > 0) {
       if(http3) {
-        builder.supportedApplicationProtocols(Http3.supportedApplicationProtocols());
+        builder.supportedApplicationProtocols(applicationProtocols.toArray(new String[]{}));
       } else {
         ApplicationProtocolConfig.SelectorFailureBehavior sfb;
         ApplicationProtocolConfig.SelectedListenerFailureBehavior slfb;

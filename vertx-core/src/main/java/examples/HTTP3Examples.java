@@ -15,11 +15,7 @@ import io.netty.incubator.codec.http3.DefaultHttp3SettingsFrame;
 import io.netty.incubator.codec.http3.Http3SettingsFrame;
 import io.netty.util.NetUtil;
 import io.vertx.core.Vertx;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpClientResponse;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.*;
 
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
@@ -32,22 +28,32 @@ public class HTTP3Examples {
     settings.put(Http3SettingsFrame.HTTP3_SETTINGS_MAX_FIELD_SECTION_SIZE,
       100000000000L);
 
+//    String path = "/";
+    String path = "/cdn-cgi/trace";
+    int port = 443;
+//    int port = 9999;
+//    String host = "http3.is";
+//    String host = "www.google.com";
+    String host = "www.cloudflare.com";
+//    String host = NetUtil.LOCALHOST4.getHostAddress();
+//    String host = "www.mozilla.org";
+//    String host = "www.bing.com";
+//    String host = "www.yahoo.com";
+
     HttpClientOptions options = new HttpClientOptions().
       setSsl(true).
       setUseAlpn(true).
-//      setHttp3InitialSettings(settings).
-      setTrustAll(true);
-    options.setProtocolVersion(HttpVersion.HTTP_3);
+      setForceSni(true).
+      setDefaultHost(host).
+      setHttp3InitialSettings(settings).
+      setVerifyHost(false).
+      setTrustAll(true).
+      setProtocolVersion(HttpVersion.HTTP_3);
 
     HttpClient client = vertx.createHttpClient(options);
 
-//    client.request(HttpMethod.GET, 443, "www.google.com", "/")
-    client.request(HttpMethod.GET, 443, "www.cloudflare.com", "/cdn-cgi/trace")
-//    client.request(HttpMethod.GET, 9999, NetUtil.LOCALHOST4.getHostAddress(), "/")
-//    client.request(HttpMethod.GET, 443, "www.mozilla.org", "/")
-//    client.request(HttpMethod.GET, 443, "www.bing.com", "/")
-//    client.request(HttpMethod.GET, 443, "www.yahoo.com", "/")
-//    client.request(HttpMethod.GET, 443, "http3.is", "/")
+    System.out.printf("Trying to fetch %s:%s%s\n", host, port, path);
+    client.request(HttpMethod.GET, port, host, path)
       .compose(req -> {
 
         req.connection().goAwayHandler(goAway -> {

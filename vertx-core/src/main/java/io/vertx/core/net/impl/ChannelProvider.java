@@ -46,11 +46,6 @@ import java.net.InetSocketAddress;
 public final class ChannelProvider {
 
   public static final String SSL_CHANNEL_NAME = "ssl";
-  public static final ChannelInitializer<Channel> EMPTY_HANDLER = new ChannelInitializer<>() {
-    @Override
-    protected void initChannel(Channel channel) {
-    }
-  };
   private final Bootstrap bootstrap;
   private final SslChannelProvider sslContextProvider;
   private final ContextInternal context;
@@ -162,20 +157,21 @@ public final class ChannelProvider {
       Channel nioDatagramChannel = fut.channel();
 
       QuicChannel.newBootstrap(nioDatagramChannel)
-        .handler(EMPTY_HANDLER)
+        .handler(new ChannelInitializer<>() {
+          @Override
+          protected void initChannel(Channel quicChannel) {
+            ChannelPipeline pipeline = quicChannel.pipeline();
+            pipeline.addLast(new HttpSslHandshaker(context, handler, channelHandler, HttpVersion.HTTP_3, null,
+              ChannelProvider.this::setApplicationProtocol));
+          }
+        })
         .localAddress(nioDatagramChannel.localAddress())
         .remoteAddress(nioDatagramChannel.remoteAddress())
         .connect()
         .addListener((io.netty.util.concurrent.Future<QuicChannel> future) -> {
           if (!future.isSuccess()) {
             channelHandler.setFailure(future.cause());
-            return;
           }
-
-          QuicChannel quicChannel = future.get();
-          ChannelPipeline pipeline = quicChannel.pipeline();
-          pipeline.addLast(new HttpSslHandshaker(context, handler, channelHandler, HttpVersion.HTTP_3,
-            null, this::setApplicationProtocol));
         });
     });
   }
