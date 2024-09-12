@@ -12,6 +12,7 @@
 package io.vertx.core.impl.future;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.internal.ContextInternal;
@@ -57,7 +58,7 @@ public final class SucceededFuture<T> extends FutureBase<T> {
   }
 
   @Override
-  public Future<T> onSuccess(Handler<T> handler) {
+  public Future<T> onSuccess(Handler<? super T> handler) {
     if (context != null) {
       context.emit(result, handler);
     } else {
@@ -67,14 +68,14 @@ public final class SucceededFuture<T> extends FutureBase<T> {
   }
 
   @Override
-  public Future<T> onFailure(Handler<Throwable> handler) {
+  public Future<T> onFailure(Handler<? super Throwable> handler) {
     return this;
   }
 
   @Override
   public Future<T> onComplete(Handler<AsyncResult<T>> handler) {
-    if (handler instanceof Listener) {
-      emitSuccess(result ,(Listener<T>) handler);
+    if (handler instanceof Completable) {
+      emitResult(result, null, (Completable<T>) handler);
     } else if (context != null) {
       context.emit(this, handler);
     } else {
@@ -84,12 +85,12 @@ public final class SucceededFuture<T> extends FutureBase<T> {
   }
 
   @Override
-  public void addListener(Listener<T> listener) {
-    emitSuccess(result ,listener);
+  public void addListener(Completable<T> listener) {
+    emitResult(result, null, listener);
   }
 
   @Override
-  public void removeListener(Listener<T> listener) {
+  public void removeListener(Completable<T> listener) {
   }
 
   @Override

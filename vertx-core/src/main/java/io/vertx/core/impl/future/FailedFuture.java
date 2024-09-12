@@ -12,6 +12,7 @@
 package io.vertx.core.impl.future;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.internal.ContextInternal;
@@ -68,8 +69,8 @@ public final class FailedFuture<T> extends FutureBase<T> {
 
   @Override
   public Future<T> onComplete(Handler<AsyncResult<T>> handler) {
-    if (handler instanceof Listener) {
-      emitFailure(cause, (Listener<T>) handler);
+    if (handler instanceof Completable) {
+      emitResult(null, cause, (Completable<T>) handler);
     } else if (context != null) {
       context.emit(this, handler);
     } else {
@@ -79,12 +80,12 @@ public final class FailedFuture<T> extends FutureBase<T> {
   }
 
   @Override
-  public Future<T> onSuccess(Handler<T> handler) {
+  public Future<T> onSuccess(Handler<? super T> handler) {
     return this;
   }
 
   @Override
-  public Future<T> onFailure(Handler<Throwable> handler) {
+  public Future<T> onFailure(Handler<? super Throwable> handler) {
     if (context != null) {
       context.emit(cause, handler);
     } else {
@@ -94,12 +95,12 @@ public final class FailedFuture<T> extends FutureBase<T> {
   }
 
   @Override
-  public void addListener(Listener<T> listener) {
-    emitFailure(cause, listener);
+  public void addListener(Completable<T> listener) {
+    emitResult(null, cause, listener);
   }
 
   @Override
-  public void removeListener(Listener<T> listener) {
+  public void removeListener(Completable<T> listener) {
   }
 
   @Override
@@ -123,7 +124,7 @@ public final class FailedFuture<T> extends FutureBase<T> {
   }
 
   @Override
-  public <U> Future<U> map(Function<T, U> mapper) {
+  public <U> Future<U> map(Function<? super T, U> mapper) {
     return (Future<U>) this;
   }
 

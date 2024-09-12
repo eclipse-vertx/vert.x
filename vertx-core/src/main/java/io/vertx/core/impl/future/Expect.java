@@ -10,6 +10,7 @@
  */
 package io.vertx.core.impl.future;
 
+import io.vertx.core.Completable;
 import io.vertx.core.Expectation;
 import io.vertx.core.VertxException;
 import io.vertx.core.internal.ContextInternal;
@@ -17,7 +18,7 @@ import io.vertx.core.internal.ContextInternal;
 /**
  * Implements expectation.
  */
-public class Expect<T> extends Operation<T> implements Listener<T> {
+public class Expect<T> extends Operation<T> implements Completable<T> {
 
   private final Expectation<? super T> expectation;
 
@@ -27,27 +28,19 @@ public class Expect<T> extends Operation<T> implements Listener<T> {
   }
 
   @Override
-  public void onSuccess(T value) {
-    Throwable err = null;
-    try {
-      if (!expectation.test(value)) {
-        err = expectation.describe(value);
-        if (err == null) {
-          err = new VertxException("Unexpected result: " + value, true);
+  public void complete(T result, Throwable failure) {
+    if (failure == null) {
+      try {
+        if (!expectation.test(result)) {
+          failure = expectation.describe(result);
+          if (failure == null) {
+            failure = new VertxException("Unexpected result: " + result, true);
+          }
         }
+      } catch (Throwable e) {
+        failure = e;
       }
-    } catch (Throwable e) {
-      err = e;
     }
-    if (err != null) {
-      tryFail(err);
-    } else {
-      tryComplete(value);
-    }
-  }
-
-  @Override
-  public void onFailure(Throwable failure) {
-    tryFail(failure);
+    handleInternal(result, failure);
   }
 }

@@ -140,10 +140,6 @@ public class CoreExamples {
     });
   }
 
-  public void promiseAsHandler() {
-    Future<String> greeting = Future.future(promise -> legacyGreetAsync(promise));
-  }
-
   public void promiseCallbackOrder(Future<Void> future) {
     future.onComplete(ar -> {
       // Do something

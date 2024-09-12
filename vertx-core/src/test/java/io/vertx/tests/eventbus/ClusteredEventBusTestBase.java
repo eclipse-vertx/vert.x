@@ -11,12 +11,7 @@
 
 package io.vertx.tests.eventbus;
 
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
+import io.vertx.core.*;
 import io.vertx.core.eventbus.*;
 import io.vertx.tests.shareddata.AsyncMapTest;
 import io.vertx.core.spi.cluster.ClusterManager;
@@ -44,10 +39,9 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
   }
 
   @Override
-  protected void clusteredVertx(VertxOptions options, ClusterManager clusterManager, Handler<AsyncResult<Vertx>> ar) {
-    Promise<Vertx> promise = Promise.promise();
-    super.clusteredVertx(options, clusterManager, promise);
-    promise.future().onSuccess(vertx -> {
+  protected Future<Vertx> clusteredVertx(VertxOptions options, ClusterManager clusterManager) {
+    Future<Vertx> fut = super.clusteredVertx(options, clusterManager);
+    return fut.onSuccess(vertx -> {
       ImmutableObjectCodec immutableObjectCodec = new ImmutableObjectCodec();
       vertx.eventBus().registerCodec(immutableObjectCodec);
       vertx.eventBus().codecSelector(obj -> obj instanceof ImmutableObject ? immutableObjectCodec.name() : null);
@@ -55,7 +49,7 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
       vertx.eventBus().serializableChecker(className -> {
         return EventBus.DEFAULT_SERIALIZABLE_CHECKER.apply(className) || className.startsWith(AsyncMapTest.class.getName());
       });
-    }).onComplete(ar);
+    });
   }
 
   @Override

@@ -10,6 +10,7 @@
  */
 package io.vertx.core.impl.future;
 
+import io.vertx.core.Completable;
 import io.vertx.core.internal.ContextInternal;
 
 /**
@@ -17,22 +18,17 @@ import io.vertx.core.internal.ContextInternal;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class FixedOtherwise<T> extends Operation<T> implements Listener<T> {
+class FixedOtherwise<T> extends Operation<T> implements Completable<T> {
 
-  private final T value;
+  private final T fallback;
 
-  FixedOtherwise(ContextInternal context, T value) {
+  FixedOtherwise(ContextInternal context, T fallback) {
     super(context);
-    this.value = value;
+    this.fallback = fallback;
   }
 
   @Override
-  public void onSuccess(T value) {
-    tryComplete(value);
-  }
-
-  @Override
-  public void onFailure(Throwable failure) {
-    tryComplete(value);
+  public void complete(T result, Throwable failure) {
+    handleInternal(failure != null ? fallback : result, null);
   }
 }

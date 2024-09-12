@@ -11,9 +11,9 @@
 
 package io.vertx.tests.future;
 
+import io.vertx.core.Completable;
 import io.vertx.core.Promise;
 import io.vertx.core.impl.future.FutureImpl;
-import io.vertx.core.impl.future.Listener;
 import org.junit.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -28,16 +28,7 @@ public class FutureInternalTest extends FutureTestBase {
     FutureImpl<Void> future = (FutureImpl<Void>) Promise.promise();
     AtomicInteger successes = new AtomicInteger();
     AtomicInteger failures = new AtomicInteger();
-    Listener<Void> listener = new Listener<Void>() {
-      @Override
-      public void onSuccess(Void value) {
-        successes.incrementAndGet();
-      }
-      @Override
-      public void onFailure(Throwable failure) {
-        failures.incrementAndGet();
-      }
-    };
+    Completable<Void> listener = (value, err) -> (err == null ? successes : failures).incrementAndGet();
     future.addListener(listener);
     future.tryComplete(null);
     assertEquals(1, successes.get());
@@ -58,16 +49,7 @@ public class FutureInternalTest extends FutureTestBase {
 
   private void testRemoveListener(FutureImpl<Void> future) {
     AtomicInteger count = new AtomicInteger();
-    Listener<Void> listener = new Listener<Void>() {
-      @Override
-      public void onSuccess(Void value) {
-        count.incrementAndGet();
-      }
-      @Override
-      public void onFailure(Throwable failure) {
-        count.incrementAndGet();
-      }
-    };
+    Completable<Void> listener = (value, err) -> count.incrementAndGet();
     future.addListener(listener);
     future.removeListener(listener);
     future.tryComplete(null);
