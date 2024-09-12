@@ -52,6 +52,7 @@ public class MyVerticle extends AbstractVerticle {
 
   private HttpServer server;
 
+  @Override
   public void start(Promise<Void> startPromise) {
     server = vertx.createHttpServer().requestHandler(req -> {
       req.response()
@@ -60,13 +61,9 @@ public class MyVerticle extends AbstractVerticle {
       });
 
     // Now bind the server:
-    server.listen(8080, res -> {
-      if (res.succeeded()) {
-        startPromise.complete();
-      } else {
-        startPromise.fail(res.cause());
-      }
-    });
+    server.listen(8080)
+      .<Void>mapEmpty()
+      .onComplete(startPromise);
   }
 }
 ----
@@ -77,18 +74,11 @@ cleanup that takes some time.
 ----
 public class MyVerticle extends AbstractVerticle {
 
-  public void start() {
-    // Do something
-  }
-
+  @Override
   public void stop(Promise<Void> stopPromise) {
-    obj.doSomethingThatTakesTime(res -> {
-      if (res.succeeded()) {
-        stopPromise.complete();
-      } else {
-        stopPromise.fail();
-      }
-    });
+    doSomethingThatTakesTime()
+      .<Void>mapEmpty()
+      .onComplete(stopPromise);
   }
 }
 ----
