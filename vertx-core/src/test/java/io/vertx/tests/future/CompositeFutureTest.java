@@ -13,11 +13,11 @@ package io.vertx.tests.future;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import io.vertx.core.Completable;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.impl.future.FutureImpl;
-import io.vertx.core.impl.future.Listener;
 import io.vertx.test.core.Repeat;
 
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
@@ -537,14 +537,14 @@ public class CompositeFutureTest extends FutureTestBase {
   }
 
   private static final class MonitoringFuture extends FutureImpl<Void> {
-    Set<Listener<Void>> listeners = new HashSet<>();
+    Set<Completable<Void>> listeners = new HashSet<>();
     @Override
-    public void addListener(Listener<Void> listener) {
+    public void addListener(Completable<Void> listener) {
       listeners.add(listener);
       super.addListener(listener);
     }
     @Override
-    public void removeListener(Listener<Void> listener) {
+    public void removeListener(Completable<Void> listener) {
       listeners.remove(listener);
       super.removeListener(listener);
     }

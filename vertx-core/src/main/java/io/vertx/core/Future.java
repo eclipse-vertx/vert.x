@@ -21,8 +21,8 @@ import io.vertx.core.impl.future.SucceededFuture;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.*;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -280,7 +280,7 @@ public interface Future<T> extends AsyncResult<T> {
    * @param failureHandler the handler that will be called with the failed result
    * @return a reference to this, so it can be used fluently
    */
-  default Future<T> onComplete(Handler<T> successHandler, Handler<Throwable> failureHandler) {
+  default Future<T> onComplete(Handler<? super T> successHandler, Handler<? super Throwable> failureHandler) {
       return onComplete(ar -> {
         if (successHandler != null && ar.succeeded()) {
           successHandler.handle(ar.result());
@@ -288,6 +288,21 @@ public interface Future<T> extends AsyncResult<T> {
           failureHandler.handle(ar.cause());
         }
       });
+  }
+
+  /**
+   * Add handlers to be notified on succeeded result and failed result.
+   * <p>
+   * <em><strong>WARNING</strong></em>: this is a terminal operation.
+   * If several {@code handler}s are registered, there is no guarantee that they will be invoked in order of registration.
+   *
+   * @param handler the handler that will be called with the completion outcome
+   * @return a reference to this, so it can be used fluently
+   */
+  default Future<T> onComplete(Completable<? super T> handler) {
+    return onComplete(ar -> {
+      handler.complete(ar.succeeded() ? ar.result() : null, ar.failed() ? ar.cause() : null);
+    });
   }
 
   /**
@@ -300,7 +315,7 @@ public interface Future<T> extends AsyncResult<T> {
    * @return a reference to this, so it can be used fluently
    */
   @Fluent
-  default Future<T> onSuccess(Handler<T> handler) {
+  default Future<T> onSuccess(Handler<? super T> handler) {
     return onComplete(handler, null);
   }
 
@@ -314,7 +329,7 @@ public interface Future<T> extends AsyncResult<T> {
    * @return a reference to this, so it can be used fluently
    */
   @Fluent
-  default Future<T> onFailure(Handler<Throwable> handler) {
+  default Future<T> onFailure(Handler<? super Throwable> handler) {
     return onComplete(null, handler);
   }
 
@@ -353,7 +368,7 @@ public interface Future<T> extends AsyncResult<T> {
   /**
    * Alias for {@link #compose(Function)}.
    */
-  default <U> Future<U> flatMap(Function<T, Future<U>> mapper) {
+  default <U> Future<U> flatMap(Function<? super T, Future<U>> mapper) {
     return compose(mapper);
   }
 
@@ -372,7 +387,7 @@ public interface Future<T> extends AsyncResult<T> {
    * @param mapper the mapper function
    * @return the composed future
    */
-  default <U> Future<U> compose(Function<T, Future<U>> mapper) {
+  default <U> Future<U> compose(Function<? super T, Future<U>> mapper) {
     return compose(mapper, Future::failedFuture);
   }
 
@@ -404,21 +419,37 @@ public interface Future<T> extends AsyncResult<T> {
    * @param failureMapper the function mapping the failure
    * @return the composed future
    */
-  <U> Future<U> compose(Function<T, Future<U>> successMapper, Function<Throwable, Future<U>> failureMapper);
+  <U> Future<U> compose(Function<? super T, Future<U>> successMapper, Function<Throwable, Future<U>> failureMapper);
 
   /**
-   * Transform this future with a {@code mapper} functions.<p>
+   * Transform this future with a {@code mapper} function.<p>
    *
    * When this future (the one on which {@code transform} is called) completes, the {@code mapper} will be called with
-   * the async result and this mapper returns another future object. This returned future completion will complete
+   * the async result returning another future instance. This returned future completion will complete
    * the future returned by this method call.<p>
    *
-   * If any mapper function throws an exception, the returned future will be failed with this exception.<p>
+   * When {@code mapper} throws an exception, the returned future will be failed with this exception.<p>
    *
    * @param mapper the function mapping the future
    * @return the transformed future
    */
   <U> Future<U> transform(Function<AsyncResult<T>, Future<U>> mapper);
+
+  /**
+   * Transform this future with a {@code mapper} function.<p>
+   *
+   * When this future (the one on which {@code transform} is called) completes, the {@code mapper} will be called with
+   * the result/failure returning another future instance. This returned future completion will complete
+   * the future returned by this method call.<p>
+   *
+   * When {@code mapper} throws an exception, the returned future will be failed with this exception.<p>
+   *
+   * @param mapper the function mapping the future
+   * @return the transformed future
+   */
+  default <U> Future<U> transform(BiFunction<? super T, ? super Throwable, Future<U>> mapper) {
+    return transform(ar -> mapper.apply(ar.succeeded() ? ar.result() : null, ar.failed() ? ar.cause() : null));
+  }
 
   /**
    * Compose this future with a {@code mapper} that will be always be called.
@@ -449,7 +480,7 @@ public interface Future<T> extends AsyncResult<T> {
    * @param mapper the mapper function
    * @return the mapped future
    */
-  <U> Future<U> map(Function<T, U> mapper);
+  <U> Future<U> map(Function<? super T, U> mapper);
 
   /**
    * Map the result of a future to a specific {@code value}.<p>
@@ -535,6 +566,18 @@ public interface Future<T> extends AsyncResult<T> {
       handler.handle(ar);
       return (Future<T>) ar;
     });
+  }
+
+  /**
+   * Invokes the given {@code handler} upon completion.
+   * <p>
+   * If the {@code handler} throws an exception, the returned future will be failed with this exception.
+   *
+   * @param handler invoked upon completion of this future
+   * @return a future completed after the {@code handler} has been invoked
+   */
+  default Future<T> andThen(Completable<? super T> handler) {
+    return andThen(ar -> handler.complete(ar.succeeded() ? ar.result() : null, ar.failed() ? ar.cause() : null));
   }
 
   /**

@@ -22,4 +22,5 @@ abstract class Operation<T> extends FutureImpl<T> {
   protected Operation(ContextInternal context) {
     super(context);
   }
+
 }

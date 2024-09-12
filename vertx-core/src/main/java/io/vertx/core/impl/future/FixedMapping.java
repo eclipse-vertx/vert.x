@@ -10,6 +10,7 @@
  */
 package io.vertx.core.impl.future;
 
+import io.vertx.core.Completable;
 import io.vertx.core.internal.ContextInternal;
 
 /**
@@ -17,7 +18,7 @@ import io.vertx.core.internal.ContextInternal;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class FixedMapping<T, U> extends Operation<U> implements Listener<T> {
+class FixedMapping<T, U> extends Operation<U> implements Completable<T> {
 
   private final U value;
 
@@ -27,12 +28,7 @@ class FixedMapping<T, U> extends Operation<U> implements Listener<T> {
   }
 
   @Override
-  public void onSuccess(T value) {
-    tryComplete(this.value);
-  }
-
-  @Override
-  public void onFailure(Throwable failure) {
-    tryFail(failure);
+  public void complete(T result, Throwable failure) {
+    handleInternal(this.value, failure);
   }
 }

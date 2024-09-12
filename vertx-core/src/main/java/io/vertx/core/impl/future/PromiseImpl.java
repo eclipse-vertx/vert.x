@@ -11,7 +11,6 @@
 
 package io.vertx.core.impl.future;
 
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
@@ -21,7 +20,7 @@ import io.vertx.core.internal.PromiseInternal;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public final class PromiseImpl<T> extends FutureImpl<T> implements PromiseInternal<T>, Listener<T> {
+public final class PromiseImpl<T> extends FutureImpl<T> implements PromiseInternal<T> {
 
   /**
    * Create a promise that hasn't completed yet
@@ -35,24 +34,6 @@ public final class PromiseImpl<T> extends FutureImpl<T> implements PromiseIntern
    */
   public PromiseImpl(ContextInternal context) {
     super(context);
-  }
-
-  public void handle(AsyncResult<T> ar) {
-    if (ar.succeeded()) {
-      onSuccess(ar.result());
-    } else {
-      onFailure(ar.cause());
-    }
-  }
-
-  @Override
-  public void onSuccess(T value) {
-    tryComplete(value);
-  }
-
-  @Override
-  public void onFailure(Throwable failure) {
-    tryFail(failure);
   }
 
   @Override
