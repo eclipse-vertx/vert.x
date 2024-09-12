@@ -133,60 +133,105 @@ public interface VertxInternal extends Vertx {
    */
   ContextInternal getContext();
 
-  /**
-   * @return event loop context
-   */
-  ContextInternal createEventLoopContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl);
+  ContextInternal createContext(ThreadingModel threadingModel, EventLoop eventLoop, CloseFuture closeFuture, WorkerPool workerPool, Deployment deployment, ClassLoader tccl);
 
   /**
    * @return event loop context
    */
-  ContextInternal createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl);
+  default ContextInternal createContext(ThreadingModel threadingModel, Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
+    return createContext(threadingModel, nettyEventLoopGroup().next(), closeFuture, workerPool, deployment, tccl);
+  }
 
   /**
    * @return event loop context
    */
-  ContextInternal createEventLoopContext();
+  default ContextInternal createContext(ThreadingModel threadingModel, EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
+    return createContext(threadingModel, eventLoop, closeFuture(), workerPool, null, tccl);
+  }
+
+  /**
+   * @return event loop context
+   */
+  default ContextInternal createContext(ThreadingModel threadingModel) {
+    return createContext(threadingModel, null, closeFuture(), null, Thread.currentThread().getContextClassLoader());
+  }
+
+  /**
+   * @return event loop context
+   */
+  default ContextInternal createEventLoopContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
+    return createContext(ThreadingModel.EVENT_LOOP, deployment, closeFuture, workerPool, tccl);
+  }
+
+  /**
+   * @return event loop context
+   */
+  default ContextInternal createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
+    return createContext(ThreadingModel.EVENT_LOOP, eventLoop, workerPool, tccl);
+  }
+
+  /**
+   * @return event loop context
+   */
+  default ContextInternal createEventLoopContext() {
+    return createContext(ThreadingModel.EVENT_LOOP);
+  }
 
   /**
    * @return worker context
    */
-  ContextInternal createWorkerContext(Deployment deployment, CloseFuture closeFuture, EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl);
+  default ContextInternal createWorkerContext(Deployment deployment, CloseFuture closeFuture, EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
+    return createContext(ThreadingModel.WORKER, eventLoop, closeFuture, workerPool, deployment, tccl);
+  }
 
   /**
    * @return worker context
    */
-  ContextInternal createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl);
+  default ContextInternal createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
+    return createContext(ThreadingModel.WORKER, deployment, closeFuture, workerPool, tccl);
+  }
 
   /**
    * @return worker context
    */
-  ContextInternal createWorkerContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl);
+  default ContextInternal createWorkerContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
+    return createContext(ThreadingModel.WORKER, eventLoop, workerPool, tccl);
+  }
 
   /**
    * @return worker context
    */
-  ContextInternal createWorkerContext();
+  default ContextInternal createWorkerContext() {
+    return createContext(ThreadingModel.WORKER);
+  }
 
   /**
    * @return virtual thread context
    */
-  ContextInternal createVirtualThreadContext(Deployment deployment, CloseFuture closeFuture, EventLoop eventLoop, ClassLoader tccl);
+  default ContextInternal createVirtualThreadContext(Deployment deployment, CloseFuture closeFuture, EventLoop eventLoop, ClassLoader tccl) {
+    return createContext(ThreadingModel.VIRTUAL_THREAD, eventLoop, closeFuture, null, deployment, tccl);
+  }
 
   /**
    * @return virtual thread context
    */
-  ContextInternal createVirtualThreadContext(Deployment deployment, CloseFuture closeFuture, ClassLoader tccl);
+  default ContextInternal createVirtualThreadContext(Deployment deployment, CloseFuture closeFuture, ClassLoader tccl) {
+    return createContext(ThreadingModel.VIRTUAL_THREAD, deployment, closeFuture, null, tccl);
+  }
 
   /**
    * @return virtual thread context
    */
-  ContextInternal createVirtualThreadContext(EventLoop eventLoop, ClassLoader tccl);
+  default ContextInternal createVirtualThreadContext(EventLoop eventLoop, ClassLoader tccl) {
+    return createContext(ThreadingModel.VIRTUAL_THREAD, eventLoop, null, tccl);
+  }
 
   /**
    * @return virtual thread context
    */
-  ContextInternal createVirtualThreadContext();
+  default ContextInternal createVirtualThreadContext() {
+    return createContext(ThreadingModel.VIRTUAL_THREAD);
+  }
 
   @Override
   WorkerExecutorInternal createSharedWorkerExecutor(String name);

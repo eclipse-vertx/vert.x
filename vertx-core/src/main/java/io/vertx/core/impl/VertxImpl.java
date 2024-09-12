@@ -568,68 +568,44 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
   }
 
-  private ContextImpl createEventLoopContext(EventLoop eventLoop, CloseFuture closeFuture, WorkerPool workerPool, Deployment deployment, ClassLoader tccl) {
-    return new ContextImpl(this, createContextLocals(), eventLoop, ThreadingModel.EVENT_LOOP, new EventLoopExecutor(eventLoop), workerPool != null ? workerPool : this.workerPool, new TaskQueue(), deployment, closeFuture, disableTCCL ? null : tccl);
-  }
-
-  @Override
-  public ContextImpl createEventLoopContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
-    return createEventLoopContext(eventLoopGroup.next(), closeFuture, workerPool, deployment, tccl);
-  }
-
-  @Override
-  public ContextImpl createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
-    return createEventLoopContext(eventLoop, closeFuture, workerPool, null, tccl);
-  }
-
-  @Override
-  public ContextImpl createEventLoopContext() {
-    return createEventLoopContext(null, closeFuture, null, Thread.currentThread().getContextClassLoader());
-  }
-
-  @Override
-  public ContextImpl createWorkerContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
-    return createWorkerContext(null, closeFuture, eventLoop, workerPool, tccl);
-  }
-
-  @Override
-  public ContextImpl createWorkerContext(Deployment deployment, CloseFuture closeFuture, EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
+  public ContextImpl createContext(ThreadingModel threadingModel,
+                                   EventLoop eventLoop,
+                                   CloseFuture closeFuture,
+                                   WorkerPool workerPool,
+                                   Deployment deployment,
+                                   ClassLoader tccl) {
+    EventExecutor eventExecutor;
     TaskQueue orderedTasks = new TaskQueue();
-    WorkerPool wp = workerPool != null ? workerPool : this.workerPool;
-    return new ContextImpl(this, createContextLocals(), eventLoop, ThreadingModel.WORKER, new WorkerExecutor(wp, orderedTasks), wp, orderedTasks, deployment, closeFuture, disableTCCL ? null : tccl);
-  }
-
-  @Override
-  public ContextImpl createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
-    return createWorkerContext(deployment, closeFuture, eventLoopGroup.next(), workerPool, tccl);
-  }
-
-  @Override
-  public ContextImpl createWorkerContext() {
-    return createWorkerContext(null, closeFuture, null, Thread.currentThread().getContextClassLoader());
-  }
-
-  public ContextImpl createVirtualThreadContext(Deployment deployment, CloseFuture closeFuture, EventLoop eventLoop, ClassLoader tccl) {
-    if (!isVirtualThreadAvailable()) {
-      throw new IllegalStateException("This Java runtime does not support virtual threads");
+    WorkerPool wp;
+    switch (threadingModel) {
+      case EVENT_LOOP:
+        wp = workerPool != null ? workerPool : this.workerPool;
+        eventExecutor = new EventLoopExecutor(eventLoop);
+        break;
+      case WORKER:
+        wp = workerPool != null ? workerPool : this.workerPool;
+        eventExecutor = new WorkerExecutor(wp, orderedTasks);
+        break;
+      case VIRTUAL_THREAD:
+        if (!isVirtualThreadAvailable()) {
+          throw new IllegalStateException("This Java runtime does not support virtual threads");
+        }
+        wp = virtualThreaWorkerPool;
+        eventExecutor = new WorkerExecutor(virtualThreaWorkerPool, orderedTasks);
+        break;
+      default:
+        throw new UnsupportedOperationException();
     }
-    TaskQueue orderedTasks = new TaskQueue();
-    return new ContextImpl(this, createContextLocals(), eventLoop, ThreadingModel.VIRTUAL_THREAD, new WorkerExecutor(virtualThreaWorkerPool, orderedTasks), virtualThreaWorkerPool, orderedTasks, deployment, closeFuture, disableTCCL ? null : tccl);
-  }
-
-  @Override
-  public ContextImpl createVirtualThreadContext(Deployment deployment, CloseFuture closeFuture, ClassLoader tccl) {
-    return createVirtualThreadContext(deployment, closeFuture, eventLoopGroup.next(), tccl);
-  }
-
-  @Override
-  public ContextImpl createVirtualThreadContext(EventLoop eventLoop, ClassLoader tccl) {
-    return createVirtualThreadContext(null, closeFuture, eventLoop, tccl);
-  }
-
-  @Override
-  public ContextImpl createVirtualThreadContext() {
-    return createVirtualThreadContext(null, closeFuture, Thread.currentThread().getContextClassLoader());
+    return new ContextImpl(this,
+      createContextLocals(),
+      eventLoop,
+      threadingModel,
+      eventExecutor,
+      wp,
+      orderedTasks,
+      deployment,
+      closeFuture,
+      disableTCCL ? null : tccl);
   }
 
   @Override
