@@ -23,7 +23,7 @@ import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.*;
-import io.vertx.core.impl.deployment.Deployment;
+import io.vertx.core.impl.deployment.DeploymentContext;
 import io.vertx.core.internal.threadchecker.BlockedThreadChecker;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
@@ -44,10 +44,10 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 /**
  * A wrapper class that delegates all method calls to the {@link #delegate} instance.
@@ -160,18 +160,8 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public Future<String> deployVerticle(Verticle verticle, DeploymentOptions options) {
-    return delegate.deployVerticle(verticle, options);
-  }
-
-  @Override
-  public Future<String> deployVerticle(Class<? extends Verticle> verticleClass, DeploymentOptions options) {
-    return delegate.deployVerticle(verticleClass, options);
-  }
-
-  @Override
-  public Future<String> deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options) {
-    return delegate.deployVerticle(verticleSupplier, options);
+  public Future<String> deployVerticle(Callable<? extends Deployable> supplier, DeploymentOptions options) {
+    return delegate.deployVerticle(supplier, options);
   }
 
   @Override
@@ -295,7 +285,7 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public ContextInternal createContext(ThreadingModel threadingModel, EventLoop eventLoop, CloseFuture closeFuture, WorkerPool workerPool, Deployment deployment, ClassLoader tccl) {
+  public ContextInternal createContext(ThreadingModel threadingModel, EventLoop eventLoop, CloseFuture closeFuture, WorkerPool workerPool, DeploymentContext deployment, ClassLoader tccl) {
     return delegate.createContext(threadingModel, eventLoop, closeFuture, workerPool, deployment, tccl);
   }
 
@@ -335,7 +325,7 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public Deployment getDeployment(String deploymentID) {
+  public DeploymentContext getDeployment(String deploymentID) {
     return delegate.getDeployment(deploymentID);
   }
 

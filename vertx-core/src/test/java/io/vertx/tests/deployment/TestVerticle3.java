@@ -20,6 +20,6 @@ public class TestVerticle3 extends AbstractVerticle {
 
   @Override
   public void start() throws Exception {
-    vertx.eventBus().send("instanceCount", vertx.getOrCreateContext().getInstanceCount());
+    vertx.eventBus().send("instanceCount", vertx.getOrCreateContext().instances());
   }
 }

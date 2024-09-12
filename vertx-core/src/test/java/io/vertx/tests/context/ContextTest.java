@@ -449,7 +449,7 @@ public class ContextTest extends VertxTestBase {
 
   private void checkDuplicate(ContextInternal ctx, ContextInternal duplicated) throws Exception {
     assertSame(ctx.nettyEventLoop(), duplicated.nettyEventLoop());
-    assertSame(ctx.getDeployment(), duplicated.getDeployment());
+    assertSame(ctx.deployment(), duplicated.deployment());
     assertSame(ctx.classLoader(), duplicated.classLoader());
     assertSame(ctx.owner(), duplicated.owner());
     Object shared = new Object();

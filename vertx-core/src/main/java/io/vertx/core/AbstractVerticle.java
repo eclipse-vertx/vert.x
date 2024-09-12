@@ -11,12 +11,14 @@
 
 package io.vertx.core;
 
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.json.JsonObject;
 
 import java.util.Collections;
 import java.util.List;
 
 /**
+ * WARNING : this class is not deprecated, however we encourage instead to use {@link VerticleBase}
  *
  * An abstract base class that you can extend to write your own Verticle classes.
  * <p>
@@ -93,6 +95,35 @@ public abstract class AbstractVerticle implements Verticle {
   @Deprecated
   public List<String> processArgs() {
     return Collections.emptyList();
+  }
+
+  @Override
+  public final Future<?> deploy(Context context) {
+    init(context.owner(), context);
+    ContextInternal internal = (ContextInternal) context;
+    Promise<Void> promise = internal.promise();
+    try {
+      start(promise);
+    } catch (Throwable t) {
+      if (!promise.tryFail(t)) {
+        internal.reportException(t);
+      }
+    }
+    return promise.future();
+  }
+
+  @Override
+  public final Future<?> undeploy(Context context) {
+    ContextInternal internal = (ContextInternal) context;
+    Promise<Void> promise = internal.promise();
+    try {
+      stop(promise);
+    } catch (Throwable t) {
+      if (!promise.tryFail(t)) {
+        internal.reportException(t);
+      }
+    }
+    return promise.future();
   }
 
   /**

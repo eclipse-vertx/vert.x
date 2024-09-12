@@ -11,8 +11,8 @@
 
 package io.vertx.tests.deployment;
 
+import io.vertx.core.Deployable;
 import io.vertx.core.Promise;
-import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
 import io.vertx.core.spi.VerticleFactory;
 
@@ -33,7 +33,7 @@ public class ClasspathVerticleFactory implements VerticleFactory {
   }
 
   @Override
-  public void createVerticle(String verticleName, ClassLoader classLoader, Promise<Callable<Verticle>> promise) {
+  public void createVerticle2(String verticleName, ClassLoader classLoader, Promise<Callable<? extends Deployable>> promise) {
     promise.complete();
   }
 

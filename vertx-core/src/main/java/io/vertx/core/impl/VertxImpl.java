@@ -35,6 +35,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.impl.*;
 import io.vertx.core.impl.deployment.DefaultDeploymentManager;
 import io.vertx.core.impl.deployment.Deployment;
+import io.vertx.core.impl.deployment.DeploymentContext;
 import io.vertx.core.impl.deployment.DeploymentManager;
 import io.vertx.core.impl.verticle.VerticleManager;
 import io.vertx.core.internal.*;
@@ -76,7 +77,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -572,7 +573,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
                                    EventLoop eventLoop,
                                    CloseFuture closeFuture,
                                    WorkerPool workerPool,
-                                   Deployment deployment,
+                                   DeploymentContext deployment,
                                    ClassLoader tccl) {
     EventExecutor eventExecutor;
     TaskQueue orderedTasks = new TaskQueue();
@@ -763,35 +764,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public Future<String> deployVerticle(String name, DeploymentOptions options) {
-    if (options.isHa() && haManager() != null) {
-      Promise<String> promise = getOrCreateContext().promise();
-      haManager().deployVerticle(name, options, promise);
-      return promise.future();
-    } else {
-      return verticleManager.deployVerticle(name, options).map(Deployment::deploymentID);
-    }
-  }
-
-  @Override
-  public Future<String> deployVerticle(Verticle verticle, DeploymentOptions options) {
-    if (options.getInstances() != 1) {
-      throw new IllegalArgumentException("Can't specify > 1 instances for already created verticle");
-    }
-    return deployVerticle((Callable<Verticle>) () -> verticle, options);
-  }
-
-  @Override
-  public Future<String> deployVerticle(Class<? extends Verticle> verticleClass, DeploymentOptions options) {
-    return deployVerticle((Callable<Verticle>) verticleClass::newInstance, options);
-  }
-
-  @Override
-  public Future<String> deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options) {
-    return deployVerticle((Callable<Verticle>) verticleSupplier::get, options);
-  }
-
-  private Future<String> deployVerticle(Callable<Verticle> verticleSupplier, DeploymentOptions options) {
+  public Future<String> deployVerticle(Callable<? extends Deployable> supplier, DeploymentOptions options) {
     boolean closed;
     synchronized (this) {
       closed = this.closed;
@@ -801,7 +774,35 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       return Future.failedFuture("Vert.x closed");
     } else {
       ContextInternal currentContext = getOrCreateContext();
-      return verticleManager.deployVerticle2(currentContext, verticleSupplier, options);
+      if (options.getInstances() < 1) {
+        throw new IllegalArgumentException("Can't specify < 1 instances to deploy");
+      }
+      ClassLoader cl = options.getClassLoader();
+      if (cl == null) {
+        cl = Thread.currentThread().getContextClassLoader();
+        if (cl == null) {
+          cl = getClass().getClassLoader();
+        }
+      }
+      Deployment deployment;
+      try {
+        deployment = Deployment.deployment(this, log, options, v -> "java:" + v.getClass().getName(), cl, supplier);
+      } catch (Exception e) {
+        return currentContext.failedFuture(e);
+      }
+      return deploymentManager.deploy(currentContext.deployment(), currentContext, deployment).
+        map(DeploymentContext::deploymentID);
+    }
+  }
+
+  @Override
+  public Future<String> deployVerticle(String name, DeploymentOptions options) {
+    if (options.isHa() && haManager() != null) {
+      Promise<String> promise = getOrCreateContext().promise();
+      haManager().deployVerticle(name, options, promise);
+      return promise.future();
+    } else {
+      return verticleManager.deployVerticle(name, options).map(DeploymentContext::deploymentID);
     }
   }
 
@@ -822,7 +823,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public Set<String> deploymentIDs() {
-    return deploymentManager.deployments();
+    return deploymentManager
+      .deployments()
+      .stream()
+      .map(DeploymentContext::deploymentID)
+      .collect(Collectors.toSet());
   }
 
   @Override
@@ -858,7 +863,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public Deployment getDeployment(String deploymentID) {
+  public DeploymentContext getDeployment(String deploymentID) {
     return deploymentManager.getDeployment(deploymentID);
   }
 
