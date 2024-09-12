@@ -295,58 +295,8 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public ContextInternal createEventLoopContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
-    return delegate.createEventLoopContext(deployment, closeFuture, workerPool, tccl);
-  }
-
-  @Override
-  public ContextInternal createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
-    return delegate.createEventLoopContext(eventLoop, workerPool, tccl);
-  }
-
-  @Override
-  public ContextInternal createEventLoopContext() {
-    return delegate.createEventLoopContext();
-  }
-
-  @Override
-  public ContextInternal createVirtualThreadContext(Deployment deployment, CloseFuture closeFuture, ClassLoader tccl) {
-    return delegate.createVirtualThreadContext(deployment, closeFuture, tccl);
-  }
-
-  @Override
-  public ContextInternal createVirtualThreadContext(EventLoop eventLoop, ClassLoader tccl) {
-    return delegate.createVirtualThreadContext(eventLoop, tccl);
-  }
-
-  @Override
-  public ContextInternal createVirtualThreadContext(Deployment deployment, CloseFuture closeFuture, EventLoop eventLoop, ClassLoader tccl) {
-    return delegate.createVirtualThreadContext(deployment, closeFuture, eventLoop, tccl);
-  }
-
-  @Override
-  public ContextInternal createVirtualThreadContext() {
-    return delegate.createVirtualThreadContext();
-  }
-
-  @Override
-  public ContextInternal createWorkerContext(Deployment deployment, CloseFuture closeFuture, EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
-    return delegate.createWorkerContext(deployment, closeFuture, eventLoop, workerPool, tccl);
-  }
-
-  @Override
-  public ContextInternal createWorkerContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
-    return delegate.createWorkerContext(eventLoop, workerPool, tccl);
-  }
-
-  @Override
-  public ContextInternal createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
-    return delegate.createWorkerContext(deployment, closeFuture, workerPool, tccl);
-  }
-
-  @Override
-  public ContextInternal createWorkerContext() {
-    return delegate.createWorkerContext();
+  public ContextInternal createContext(ThreadingModel threadingModel, EventLoop eventLoop, CloseFuture closeFuture, WorkerPool workerPool, Deployment deployment, ClassLoader tccl) {
+    return delegate.createContext(threadingModel, eventLoop, closeFuture, workerPool, deployment, tccl);
   }
 
   @Override

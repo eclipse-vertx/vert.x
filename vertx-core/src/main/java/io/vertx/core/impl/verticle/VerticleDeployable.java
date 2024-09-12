@@ -16,6 +16,7 @@ import io.vertx.core.impl.*;
 import io.vertx.core.impl.deployment.Deployable;
 import io.vertx.core.impl.deployment.Deployment;
 import io.vertx.core.internal.CloseFuture;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.logging.Logger;
 
 import java.util.*;
@@ -118,7 +119,7 @@ public class VerticleDeployable implements Deployable {
     List<Future<?>> futures = new ArrayList<>();
     for (Verticle verticle: verticles) {
       CloseFuture closeFuture = new CloseFuture(log);
-      ContextImpl context;
+      ContextInternal context;
       switch (threading) {
         case WORKER:
           if (workerLoop == null) {
@@ -179,7 +180,7 @@ public class VerticleDeployable implements Deployable {
       if (startPromise != null) {
         startPromise.tryFail(new VertxException("Verticle un-deployed", true));
       } else {
-        ContextImpl context = holder.context;
+        ContextInternal context = holder.context;
         Promise<Void> p = Promise.promise();
         undeployFutures.add(p.future());
         context.runOnContext(v -> {
@@ -219,11 +220,11 @@ public class VerticleDeployable implements Deployable {
   private static class VerticleHolder {
 
     final Verticle verticle;
-    final ContextImpl context;
+    final ContextInternal context;
     final CloseFuture closeFuture;
     Promise<Void> startPromise;
 
-    VerticleHolder(Verticle verticle, ContextImpl context, CloseFuture closeFuture) {
+    VerticleHolder(Verticle verticle, ContextInternal context, CloseFuture closeFuture) {
       this.verticle = verticle;
       this.context = context;
       this.closeFuture = closeFuture;
