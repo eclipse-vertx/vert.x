@@ -29,10 +29,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.function.*;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -178,7 +175,7 @@ public class FutureTest extends FutureTestBase {
   public void testResolveFutureToHandler() {
     Consumer<Handler<AsyncResult<String>>> consumer = handler -> handler.handle(io.vertx.core.Future.succeededFuture("the-result"));
     Promise<String> promise = Promise.promise();
-    consumer.accept(promise);
+    consumer.accept(promise::handle);
     assertTrue(promise.future().isComplete());
     assertTrue(promise.future().succeeded());
     assertEquals("the-result", promise.future().result());
@@ -191,7 +188,7 @@ public class FutureTest extends FutureTestBase {
       handler.handle(io.vertx.core.Future.failedFuture(cause));
     };
     Promise<String> promise = Promise.promise();
-    consumer.accept(promise);
+    consumer.accept(promise::handle);
     assertTrue(promise.future().isComplete());
     assertTrue(promise.future().failed());
     assertEquals(cause, promise.future().cause());
@@ -381,7 +378,7 @@ public class FutureTest extends FutureTestBase {
     Promise<Integer> p = Promise.promise();
     io.vertx.core.Future<Integer> f = p.future();
     try {
-      f.transform(null);
+      f.transform((Function) null);
       fail();
     } catch (NullPointerException ignore) {
     }
@@ -908,10 +905,10 @@ public class FutureTest extends FutureTestBase {
       public Throwable cause() { throw new UnsupportedOperationException(); }
       public boolean succeeded() { throw new UnsupportedOperationException(); }
       public boolean failed() { throw new UnsupportedOperationException(); }
-      public <U> io.vertx.core.Future<U> compose(Function<T, io.vertx.core.Future<U>> successMapper, Function<Throwable, io.vertx.core.Future<U>> failureMapper) { throw new UnsupportedOperationException(); }
+      public <U> io.vertx.core.Future<U> compose(Function<? super T, io.vertx.core.Future<U>> successMapper, Function<Throwable, io.vertx.core.Future<U>> failureMapper) { throw new UnsupportedOperationException(); }
       public <U> io.vertx.core.Future<U> transform(Function<AsyncResult<T>, io.vertx.core.Future<U>> mapper) { throw new UnsupportedOperationException(); }
       public <U> io.vertx.core.Future<T> eventually(Supplier<io.vertx.core.Future<U>> mapper) { throw new UnsupportedOperationException(); }
-      public <U> io.vertx.core.Future<U> map(Function<T, U> mapper) { throw new UnsupportedOperationException(); }
+      public <U> io.vertx.core.Future<U> map(Function<? super T, U> mapper) { throw new UnsupportedOperationException(); }
       public <V> io.vertx.core.Future<V> map(V value) { throw new UnsupportedOperationException(); }
       public io.vertx.core.Future<T> otherwise(Function<Throwable, T> mapper) { throw new UnsupportedOperationException(); }
       public io.vertx.core.Future<T> otherwise(T value) { throw new UnsupportedOperationException(); }
@@ -1239,13 +1236,13 @@ public class FutureTest extends FutureTestBase {
   public void testSetNullHandler() throws Exception {
     Promise<String> promise = Promise.promise();
     try {
-      promise.future().onComplete(null);
+      promise.future().onComplete((Handler<AsyncResult<String>>) null);
       fail();
     } catch (NullPointerException ignore) {
     }
     promise.complete();
     try {
-      promise.future().onComplete(null);
+      promise.future().onComplete((Handler<AsyncResult<String>>) null);
       fail();
     } catch (NullPointerException ignore) {
     }
@@ -1890,5 +1887,44 @@ public class FutureTest extends FutureTestBase {
       testComplete();
     }));
     await();
+  }
+
+  // Not executed but check that we can compile with contravariant method parameter type
+
+  private void testMapParameterTypeIsContravariant(Future<String> fut, Function<CharSequence, Integer> fn) {
+    fut.map(fn);
+    fut.map(res -> res.length());
+  }
+
+  private void testFlatMapParameterTypeIsContravariant(Future<String> fut, Function<CharSequence, Future<Integer>> fn) {
+    fut.flatMap(fn);
+    fut.flatMap(res -> Future.succeededFuture(res.length()));
+  }
+
+  private void testOnSuccessParameterTypeIsContravariant(Future<String> fut, Handler<CharSequence> fn) {
+    fut.onSuccess(fn);
+    fut.onSuccess(res -> {
+      String cq = res;
+    });
+  }
+
+  public void testTransformParameterTypeIsContravariant(Future<String> fut, BiFunction<CharSequence, Throwable, Future<Integer>> fn) {
+    fut.transform(fn);
+    fut.transform((res, err) -> Future.succeededFuture(res.length()));
+  }
+
+  public void testAndThenParameterTypeIsContravariant(Future<String> fut, Completable<CharSequence> fn) {
+    fut.andThen(fn);
+    fut.andThen((res, err) -> {
+      String cq = res;
+    });
+  }
+
+  public void testOnCompleteParameterTypeIsContravariant(Future<String> fut, Completable<CharSequence> fn, Promise<CharSequence> promise) {
+    fut.onComplete(fn);
+    fut.onComplete(promise);
+    fut.onComplete((res, err) -> {
+      String cq = res;
+    });
   }
 }

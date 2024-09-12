@@ -10,9 +10,7 @@
  */
 package io.vertx.tests.pool;
 
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.ConnectionPoolTooBusyException;
@@ -1161,13 +1159,13 @@ public class ConnectionPoolTest extends VertxTestBase {
   static class ConnectionRequest {
     final ContextInternal context;
     final PoolConnector.Listener listener;
-    final Handler<AsyncResult<ConnectResult<Connection>>> handler;
+    final Promise<ConnectResult<Connection>> completion;
     private int concurrency;
     private Connection connection;
-    ConnectionRequest(ContextInternal context, PoolConnector.Listener listener, Handler<AsyncResult<ConnectResult<Connection>>> handler) {
+    ConnectionRequest(ContextInternal context, PoolConnector.Listener listener, Promise<ConnectResult<Connection>> completion) {
       this.context = context;
       this.listener = listener;
-      this.handler = handler;
+      this.completion = completion;
       this.concurrency = 1;
     }
     void connect(Connection connection, int type) {
@@ -1175,7 +1173,7 @@ public class ConnectionPoolTest extends VertxTestBase {
         throw new IllegalStateException();
       }
       this.connection = connection;
-      handler.handle(Future.succeededFuture(new ConnectResult<>(connection, concurrency, type)));
+      completion.handle(Future.succeededFuture(new ConnectResult<>(connection, concurrency, type)));
     }
     ConnectionRequest concurrency(int value) {
       if (value < concurrency) {
@@ -1191,7 +1189,7 @@ public class ConnectionPoolTest extends VertxTestBase {
     }
 
     public void fail(Throwable cause) {
-      handler.handle(Future.failedFuture(cause));
+      completion.handle(Future.failedFuture(cause));
     }
   }
 

@@ -11,9 +11,9 @@
 package io.vertx.core.impl.future;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.FutureInternal;
 
 import java.util.function.Function;
 
@@ -22,7 +22,7 @@ import java.util.function.Function;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class Transformation<T, U> extends Operation<U> implements Listener<T> {
+class Transformation<T, U> extends Operation<U> implements Completable<T> {
 
   private final Function<AsyncResult<T>, Future<U>> mapper;
 
@@ -32,39 +32,15 @@ class Transformation<T, U> extends Operation<U> implements Listener<T> {
   }
 
   @Override
-  public void onSuccess(T value) {
+  public void complete(T result, Throwable failure) {
+    Future<T> f = failure == null ? Future.succeededFuture(result) : Future.failedFuture(failure);
     FutureBase<U> future;
     try {
-      future = (FutureBase<U>) mapper.apply(Future.succeededFuture(value));
+      future = (FutureBase<U>) mapper.apply(f);
     } catch (Throwable e) {
       tryFail(e);
       return;
     }
-    future.addListener(newListener());
-  }
-
-  @Override
-  public void onFailure(Throwable failure) {
-    FutureBase<U> future;
-    try {
-      future = (FutureBase<U>) mapper.apply(Future.failedFuture(failure));
-    } catch (Throwable e) {
-      tryFail(e);
-      return;
-    }
-    future.addListener(newListener());
-  }
-
-  private Listener<U> newListener() {
-    return new Listener<U>() {
-      @Override
-      public void onSuccess(U value) {
-        tryComplete(value);
-      }
-      @Override
-      public void onFailure(Throwable failure) {
-        tryFail(failure);
-      }
-    };
+    future.addListener(this::handleInternal);
   }
 }

@@ -107,8 +107,8 @@ public class VertxTestBase extends AsyncTestBase {
 
   protected void close(List<Vertx> instances) throws Exception {
     CountDownLatch latch = new CountDownLatch(instances.size());
-    for (Vertx clusteredVertx : instances) {
-      clusteredVertx.close().onComplete(ar -> {
+    for (Vertx instance : instances) {
+      instance.close().onComplete(ar -> {
         if (ar.failed()) {
           log.error("Failed to shutdown vert.x", ar.cause());
         }
@@ -167,21 +167,20 @@ public class VertxTestBase extends AsyncTestBase {
   /**
    * Create a blank new clustered Vert.x instance with @{@code options} closed when tear down executes.
    */
-  protected void clusteredVertx(VertxOptions options, Handler<AsyncResult<Vertx>> ar) {
-    clusteredVertx(options, getClusterManager(), ar);
+  protected Future<Vertx> clusteredVertx(VertxOptions options) {
+    return clusteredVertx(options, getClusterManager());
   }
 
-  protected void clusteredVertx(VertxOptions options, ClusterManager clusterManager, Handler<AsyncResult<Vertx>> ar) {
+  protected Future<Vertx> clusteredVertx(VertxOptions options, ClusterManager clusterManager) {
     if (created == null) {
       created = Collections.synchronizedList(new ArrayList<>());
     }
-    createVertxBuilder(options)
+    return createVertxBuilder(options)
       .withClusterManager(clusterManager)
-      .buildClustered().onComplete(event -> {
+      .buildClustered().andThen(event -> {
         if (event.succeeded()) {
           created.add(event.result());
         }
-        ar.handle(event);
       });
   }
 
@@ -208,17 +207,18 @@ public class VertxTestBase extends AsyncTestBase {
       int index = i;
       VertxOptions toUse = new VertxOptions(options);
       toUse.getEventBusOptions().setHost("localhost").setPort(0);
-      clusteredVertx(toUse, clusterManagerSupplier.get(), ar -> {
-        try {
-          if (ar.failed()) {
-            ar.cause().printStackTrace();
+      clusteredVertx(toUse, clusterManagerSupplier.get())
+        .onComplete(ar -> {
+          try {
+            if (ar.failed()) {
+              ar.cause().printStackTrace();
+            }
+            assertTrue("Failed to start node", ar.succeeded());
+            vertices[index] = ar.result();
+          } finally {
+            latch.countDown();
           }
-          assertTrue("Failed to start node", ar.succeeded());
-          vertices[index] = ar.result();
-        } finally {
-          latch.countDown();
-        }
-      });
+        });
     }
     try {
       assertTrue(latch.await(2, TimeUnit.MINUTES));

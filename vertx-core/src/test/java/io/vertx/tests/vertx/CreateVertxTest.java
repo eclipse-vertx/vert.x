@@ -11,6 +11,7 @@
 
 package io.vertx.tests.vertx;
 
+import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
@@ -41,16 +42,11 @@ public class CreateVertxTest extends VertxTestBase {
   @Test
   public void testCreateClusteredVertxAsync() {
     VertxOptions options = new VertxOptions();
-    clusteredVertx(options, ar -> {
-      assertTrue(ar.succeeded());
-      assertNotNull(ar.result());
-      assertTrue(ar.result().isClustered());
-      Vertx v = ar.result();
-      v.close().onComplete(onSuccess(v2 -> {
-        testComplete();
-      }));
-    });
-    await();
+    clusteredVertx(options)
+      .compose(v -> {
+        assertTrue(v.isClustered());
+        return v.close();
+      }).await();
   }
 
   @Test
@@ -61,11 +57,12 @@ public class CreateVertxTest extends VertxTestBase {
         promise.fail("joinfailure");
       }
     };
-    clusteredVertx(new VertxOptions(), clusterManager, ar -> {
-      assertTrue(ar.failed());
-      assertEquals("joinfailure", ar.cause().getMessage());
-      testComplete();
-    });
-    await();
+    try {
+      clusteredVertx(new VertxOptions(), clusterManager).await();
+    } catch (Throwable e) {
+      assertEquals("joinfailure", e.getMessage());
+      return;
+    }
+    fail();
   }
 }

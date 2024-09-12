@@ -519,7 +519,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
                              boolean end,
                              StreamPriorityBase priority,
                              boolean connect,
-                             Handler<AsyncResult<Void>> handler) {
+                             Promise<Void> promise) {
       EventExecutor exec = upgradingConnection.channelHandlerContext().executor();
       if (exec.inEventLoop()) {
         upgradingStream.writeHead(head, chunked, buf, end, priority, connect);
@@ -528,7 +528,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
           pipeline.fireUserEventTriggered(SEND_BUFFERED_MESSAGES);
         }
       } else {
-        exec.execute(() -> doWriteHead(head, chunked, buf, end, priority, connect, handler));
+        exec.execute(() -> doWriteHead(head, chunked, buf, end, priority, connect, promise));
       }
     }
 

@@ -335,7 +335,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     context.dispatch(handler);
   }
 
-  private void handleNextRequest(HttpClientRequest next, Handler<AsyncResult<HttpClientResponse>> handler, long timeoutMs) {
+  private void handleNextRequest(HttpClientRequest next, Promise<HttpClientResponse> handler, long timeoutMs) {
     next.response().onComplete(handler);
     next.exceptionHandler(exceptionHandler());
     exceptionHandler(null);

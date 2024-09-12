@@ -14,10 +14,7 @@ package io.vertx.core.impl.future;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import io.netty.util.concurrent.OrderedEventExecutor;
 import io.netty.util.concurrent.ScheduledFuture;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Expectation;
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
+import io.vertx.core.*;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.NoStackTraceTimeoutException;
 import io.vertx.core.internal.FutureInternal;
@@ -54,38 +51,23 @@ public abstract class FutureBase<T> implements FutureInternal<T> {
     return context;
   }
 
-  protected final void emitSuccess(T value, Listener<T> listener) {
+  protected final void emitResult(T result, Throwable cause, Completable<? super T> listener) {
     if (context != null && !context.isRunningOnContext()) {
       context.execute(() -> {
         ContextInternal prev = context.beginDispatch();
         try {
-          listener.onSuccess(value);
+          listener.complete(result, cause);
         } finally {
           context.endDispatch(prev);
         }
       });
     } else {
-      listener.onSuccess(value);
-    }
-  }
-
-  protected final void emitFailure(Throwable cause, Listener<T> listener) {
-    if (context != null && !context.isRunningOnContext()) {
-      context.execute(() -> {
-        ContextInternal prev = context.beginDispatch();
-        try {
-          listener.onFailure(cause);
-        } finally {
-          context.endDispatch(prev);
-        }
-      });
-    } else {
-      listener.onFailure(cause);
+      listener.complete(result, cause);
     }
   }
 
   @Override
-  public <U> Future<U> compose(Function<T, Future<U>> successMapper, Function<Throwable, Future<U>> failureMapper) {
+  public <U> Future<U> compose(Function<? super T, Future<U>> successMapper, Function<Throwable, Future<U>> failureMapper) {
     Objects.requireNonNull(successMapper, "No null success mapper accepted");
     Objects.requireNonNull(failureMapper, "No null failure mapper accepted");
     Composition<T, U> operation = new Composition<>(context, successMapper, failureMapper);
@@ -110,7 +92,7 @@ public abstract class FutureBase<T> implements FutureInternal<T> {
   }
 
   @Override
-  public <U> Future<U> map(Function<T, U> mapper) {
+  public <U> Future<U> map(Function<? super T, U> mapper) {
     Objects.requireNonNull(mapper, "No null mapper accepted");
     Mapping<T, U> operation = new Mapping<>(context, mapper);
     addListener(operation);
@@ -164,18 +146,9 @@ public abstract class FutureBase<T> implements FutureInternal<T> {
       String msg = "Timeout " + unit.toMillis(delay) + " (ms) fired";
       promise.fail(new NoStackTraceTimeoutException(msg));
     }, delay, unit);
-    addListener(new Listener<T>() {
-      @Override
-      public void onSuccess(T value) {
-        if (task.cancel(false)) {
-          promise.complete(value);
-        }
-      }
-      @Override
-      public void onFailure(Throwable failure) {
-        if (task.cancel(false)) {
-          promise.fail(failure);
-        }
+    addListener((value, err) -> {
+      if (task.cancel(false)) {
+        promise.complete(value, err);
       }
     });
     return promise.future();
@@ -186,12 +159,12 @@ public abstract class FutureBase<T> implements FutureInternal<T> {
    *
    * @param listener the listener
    */
-  public abstract void addListener(Listener<T> listener);
+  public abstract void addListener(Completable<T> listener);
 
   /**
    * Remove a listener to the future result.
    *
    * @param listener the listener
    */
-  public abstract void removeListener(Listener<T> listener);
+  public abstract void removeListener(Completable<T> listener);
 }
