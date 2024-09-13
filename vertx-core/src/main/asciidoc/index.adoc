@@ -322,11 +322,11 @@ You can't block waiting for the HTTP server to bind in your start method as that
 
 So how can you do this?
 
-The way to do it is to implement the *asynchronous* start method. This version of the method takes a Future as a parameter.
+The way to do it is to implement the *asynchronous* start method. This version of the method takes a Promise as a parameter.
 When the method returns the verticle will *not* be considered deployed.
 
 Some time later, after you've done everything you need to do (e.g. start the HTTP server), you can call complete
-on the Future (or fail) to signal that you're done.
+on the Promise (or fail) to signal that you're done.
 
 Here's an example:
 
