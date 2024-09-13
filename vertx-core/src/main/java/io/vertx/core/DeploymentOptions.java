@@ -291,11 +291,6 @@ public class DeploymentOptions {
     this.classLoader = classLoader;
     return this;
   }
-  /**
-   * Does nothing.
-   */
-  public void checkIsolationNotDefined() {
-  }
 
   /**
    * Convert this to JSON
