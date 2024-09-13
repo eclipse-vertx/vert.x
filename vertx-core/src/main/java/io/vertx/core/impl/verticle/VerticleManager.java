@@ -225,7 +225,6 @@ public class VerticleManager {
     if (options.getInstances() < 1) {
       throw new IllegalArgumentException("Can't specify < 1 instances to deploy");
     }
-    options.checkIsolationNotDefined();
     ClassLoader cl = options.getClassLoader();
     if (cl == null) {
       cl = Thread.currentThread().getContextClassLoader();
