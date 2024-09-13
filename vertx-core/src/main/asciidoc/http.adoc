@@ -383,13 +383,15 @@ Here's an example of querying and adding cookies:
 
 ==== Handling compressed body
 
-Vert.x can handle compressed body payloads which are encoded by the client with the _deflate_, _gzip_ or _brotli_
+Vert.x can handle compressed body payloads which are encoded by the client with the _deflate_, _gzip_, _snappy_ or _brotli_
 algorithms.
 
 To enable decompression set {@link io.vertx.core.http.HttpServerOptions#setDecompressionSupported(boolean)} on the
 options when creating the server.
 
-You need to have Brotli4j on the classpath to decompress Brotli:
+Snappy is supported without external dependencies.
+
+You need to have Brotli4j on the classpath to decompress Brotli, and Zstd-jni for Zstandard:
 
 * Maven (in your `pom.xml`):
 
@@ -400,6 +402,11 @@ You need to have Brotli4j on the classpath to decompress Brotli:
   <artifactId>brotli4j</artifactId>
   <version>${brotli4j.version}</version>
 </dependency>
+<dependency>
+  <groupId>com.github.luben</groupId>
+  <artifactId>zstd-jni</artifactId>
+  <version>${zstd-jini.version}</version>
+</dependency>
 ----
 * Gradle (in your `build.gradle` file):
 
@@ -408,6 +415,7 @@ You need to have Brotli4j on the classpath to decompress Brotli:
 dependencies {
   implementation 'com.aayushatharva.brotli4j:brotli4j:${brotli4j.version}'
   runtimeOnly 'com.aayushatharva.brotli4j:native-$system-and-arch:${brotli4j.version}'
+  implementation 'com.github.luben:zstd-jni:${zstd-jini.version}'
 }
 ----
 
@@ -775,7 +783,7 @@ but the parameter can be configured to address any case with {@link io.vertx.cor
 
 Vert.x supports out of the box deflate and gzip.
 
-Brotli and zstandard can also be used.
+Brotli, snappy and zstandard can also be used.
 
 [source,$lang]
 ----
@@ -784,7 +792,7 @@ Brotli and zstandard can also be used.
 
 NOTE: use {@link io.netty.handler.codec.compression.StandardCompressionOptions} static methods to create {@link io.netty.handler.codec.compression.CompressionOptions}
 
-Brotli and zstandard libraries need to be added to the classpath.
+Brotli and zstandard libraries need to be added to the classpath, snappy is provided by default.
 
 * Maven (in your `pom.xml`):
 
