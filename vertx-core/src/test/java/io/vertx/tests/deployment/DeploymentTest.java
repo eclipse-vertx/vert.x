@@ -482,9 +482,9 @@ public class DeploymentTest extends VertxTestBase {
     assertTrue(vertx.deploymentIDs().isEmpty());
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test(expected = VertxException.class)
   public void testDeployInstanceSetInstances() throws Exception {
-    vertx.deployVerticle(new MyVerticle(), new DeploymentOptions().setInstances(2));
+    vertx.deployVerticle(new MyVerticle(), new DeploymentOptions().setInstances(2)).await();
   }
 
   @Test
