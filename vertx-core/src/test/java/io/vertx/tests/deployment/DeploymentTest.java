@@ -1045,7 +1045,7 @@ public class DeploymentTest extends VertxTestBase {
     class MultiInstanceVerticle extends AbstractVerticle {
       @Override
       public void start() {
-        assertEquals(vertx.getOrCreateContext().instances(), 1);
+        assertEquals(vertx.getOrCreateContext().getInstanceCount(), 1);
       }
     }
 

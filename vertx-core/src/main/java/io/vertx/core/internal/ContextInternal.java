@@ -479,7 +479,7 @@ public interface ContextInternal extends Context {
     return deployment != null ? deployment.deploymentID() : null;
   }
 
-  default int instances() {
+  default int getInstanceCount() {
     DeploymentContext deployment = deployment();
     if (deployment == null) {
       return 0;
