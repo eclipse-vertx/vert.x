@@ -11,6 +11,7 @@
 
 package io.vertx.core.impl.verticle;
 
+import io.vertx.core.Deployable;
 import io.vertx.core.Promise;
 import io.vertx.core.Verticle;
 import io.vertx.core.spi.VerticleFactory;
@@ -28,16 +29,16 @@ public class JavaVerticleFactory implements VerticleFactory {
   }
 
   @Override
-  public void createVerticle(String verticleName, ClassLoader classLoader, Promise<Callable<Verticle>> promise) {
+  public void createVerticle2(String verticleName, ClassLoader classLoader, Promise<Callable<? extends Deployable>> promise) {
     verticleName = VerticleFactory.removePrefix(verticleName);
-    Class<Verticle> clazz;
+    Class<Deployable> clazz;
     try {
       if (verticleName.endsWith(".java")) {
         CompilingClassLoader compilingLoader = new CompilingClassLoader(classLoader, verticleName);
         String className = compilingLoader.resolveMainClassName();
-        clazz = (Class<Verticle>) compilingLoader.loadClass(className);
+        clazz = (Class<Deployable>) compilingLoader.loadClass(className);
       } else {
-        clazz = (Class<Verticle>) classLoader.loadClass(verticleName);
+        clazz = (Class<Deployable>) classLoader.loadClass(verticleName);
       }
     } catch (ClassNotFoundException e) {
       promise.fail(e);
@@ -45,5 +46,4 @@ public class JavaVerticleFactory implements VerticleFactory {
     }
     promise.complete(() -> clazz.getDeclaredConstructor().newInstance());
   }
-
 }

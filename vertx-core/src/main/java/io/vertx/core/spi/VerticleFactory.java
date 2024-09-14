@@ -11,9 +11,7 @@
 
 package io.vertx.core.spi;
 
-import io.vertx.core.Promise;
-import io.vertx.core.Verticle;
-import io.vertx.core.Vertx;
+import io.vertx.core.*;
 
 import java.util.concurrent.Callable;
 
@@ -72,13 +70,32 @@ public interface VerticleFactory {
   String prefix();
 
   /**
-   * Create a verticle instance. If this method is likely to be slow (e.g. Ruby or JS verticles which might have to
-   * start up a language engine) then make sure it is run on a worker thread by {@link Vertx#executeBlocking}.
+   * Create a verticle instance. If this method is likely to be slow then make sure it is run on a
+   * worker thread by {@link Vertx#executeBlocking}.
+   *
+   * @param verticleName  The verticle name
+   * @param classLoader  The class loader
+   * @param promise the promise to complete with the result
+   * @deprecated deprecated, instead implement {@link #createVerticle2(String, ClassLoader, Promise)}
+   */
+  @Deprecated
+  default void createVerticle(String verticleName, ClassLoader classLoader, Promise<Callable<Verticle>> promise) {
+    promise.fail("Should not be called, now deploys deployable");
+  }
+
+  /**
+   * Create a verticle instance. If this method is likely to be slow then make sure it is run on a
+   * worker thread by {@link Vertx#executeBlocking}.
    *
    * @param verticleName  The verticle name
    * @param classLoader  The class loader
    * @param promise the promise to complete with the result
    */
-  void createVerticle(String verticleName, ClassLoader classLoader, Promise<Callable<Verticle>> promise);
-
+  default void createVerticle2(String verticleName, ClassLoader classLoader, Promise<Callable<? extends Deployable>> promise) {
+    Promise<Callable<Verticle>> p = Promise.promise();
+    createVerticle(verticleName, classLoader, p);
+    Future<Callable<Verticle>> fut = p.future();
+    Future<Callable<? extends Deployable>> f = fut.map(callable -> callable);
+    fut.onComplete(promise);
+  }
 }

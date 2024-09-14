@@ -229,28 +229,100 @@ public class CoreExamples {
     Future.join(Arrays.asList(future1, future2, future3));
   }
 
+  class MyOrderProcessorVerticle extends VerticleBase {
+
+  }
+
+  public void simplestVerticle() {
+    class MyVerticle extends VerticleBase {
+
+      // Called when verticle is deployed
+      public Future<?> start() throws Exception {
+        return super.start();
+      }
+
+      // Optional - called when verticle is un-deployed
+      public Future<?> stop() throws Exception {
+        return super.stop();
+      }
+    }
+  }
+
+  public void httpServerVerticle() {
+    class MyVerticle extends VerticleBase {
+
+      private HttpServer server;
+
+      @Override
+      public Future<?> start() {
+        server = vertx.createHttpServer().requestHandler(req -> {
+          req.response()
+            .putHeader("content-type", "text/plain")
+            .end("Hello from Vert.x!");
+        });
+
+        // Now bind the server:
+        return server.listen(8080);
+      }
+    }
+  }
+
+  public void oneLinerVerticle(Vertx vertx) {
+    Deployable verticle = context -> vertx
+      .createHttpServer()
+      .requestHandler(req -> req.response()
+        .putHeader("content-type", "text/plain")
+        .end("Hello from Vert.x!"))
+      .listen(8080);
+  }
+
+  public void verticleContract() {
+
+    class MyVerticle extends AbstractVerticle {
+      @Override
+      public void start(Promise<Void> startPromise) throws Exception {
+        Future<String> future = bindService();
+
+        // Requires to write
+        future.onComplete(ar -> {
+          if (ar.succeeded()) {
+            startPromise.complete();
+          } else {
+            startPromise.fail(ar.cause());
+          }
+        });
+
+        // Or
+        future
+          .<Void>mapEmpty()
+          .onComplete(startPromise);
+      }
+    }
+
+  }
+
+  static Future<String> bindService() {
+    throw new UnsupportedOperationException();
+  }
+
+
   public void example7_1(Vertx vertx) {
     DeploymentOptions options = new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER);
-    vertx.deployVerticle("com.mycompany.MyOrderProcessorVerticle", options);
+    vertx.deployVerticle(new MyOrderProcessorVerticle(), options);
   }
 
   public void example7_2(Vertx vertx) {
     DeploymentOptions options = new DeploymentOptions().setThreadingModel(ThreadingModel.VIRTUAL_THREAD);
-    vertx.deployVerticle("com.mycompany.MyOrderProcessorVerticle", options);
+    vertx.deployVerticle(new MyOrderProcessorVerticle(), options);
   }
 
   public void example8(Vertx vertx) {
 
-    Verticle myVerticle = new MyVerticle();
+    VerticleBase myVerticle = new MyVerticle();
     vertx.deployVerticle(myVerticle);
   }
 
-  class MyVerticle extends AbstractVerticle {
-
-    @Override
-    public void start() throws Exception {
-      super.start();
-    }
+  static class MyVerticle extends VerticleBase {
   }
 
   public void example9(Vertx vertx) {
@@ -258,17 +330,11 @@ public class CoreExamples {
     // Deploy a Java verticle - the name is the fully qualified class name of the verticle class
     vertx.deployVerticle("com.mycompany.MyOrderProcessorVerticle");
 
-    // Deploy a JavaScript verticle
-    vertx.deployVerticle("verticles/myverticle.js");
-
-    // Deploy a Ruby verticle verticle
-    vertx.deployVerticle("verticles/my_verticle.rb");
-
   }
 
   public void example10(Vertx vertx) {
     vertx
-      .deployVerticle("com.mycompany.MyOrderProcessorVerticle")
+      .deployVerticle(new MyOrderProcessorVerticle())
       .onComplete(res -> {
         if (res.succeeded()) {
           System.out.println("Deployment id is: " + res.result());
@@ -292,14 +358,14 @@ public class CoreExamples {
 
   public void example12(Vertx vertx) {
     DeploymentOptions options = new DeploymentOptions().setInstances(16);
-    vertx.deployVerticle("com.mycompany.MyOrderProcessorVerticle", options);
+    vertx.deployVerticle(() -> new MyOrderProcessorVerticle(), options);
   }
 
 
   public void example13(Vertx vertx) {
     JsonObject config = new JsonObject().put("name", "tim").put("directory", "/blah");
     DeploymentOptions options = new DeploymentOptions().setConfig(config);
-    vertx.deployVerticle("com.mycompany.MyOrderProcessorVerticle", options);
+    vertx.deployVerticle(new MyOrderProcessorVerticle(), options);
   }
 
   public void example15(Vertx vertx) {
@@ -393,7 +459,7 @@ public class CoreExamples {
   }
 
   public void deployVerticleWithDifferentWorkerPool(Vertx vertx) {
-    vertx.deployVerticle("the-verticle", new DeploymentOptions().setWorkerPoolName("the-specific-pool"));
+    vertx.deployVerticle(new MyOrderProcessorVerticle(), new DeploymentOptions().setWorkerPoolName("the-specific-pool"));
   }
 
   public void configureNative() {

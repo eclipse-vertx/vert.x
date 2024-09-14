@@ -453,12 +453,12 @@ public interface Vertx extends Measured {
    * @return a future completed with the result
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  default Future<String> deployVerticle(Verticle verticle) {
+  default Future<String> deployVerticle(Deployable verticle) {
     return deployVerticle(verticle, new DeploymentOptions());
   }
 
   /**
-   * Like {@link #deployVerticle(Verticle)} but {@link io.vertx.core.DeploymentOptions} are provided to configure the
+   * Like {@link #deployVerticle(Deployable)} but {@link io.vertx.core.DeploymentOptions} are provided to configure the
    * deployment.
    *
    * @param verticle  the verticle instance to deploy
@@ -466,18 +466,12 @@ public interface Vertx extends Measured {
    * @return a future completed with the result
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  Future<String> deployVerticle(Verticle verticle, DeploymentOptions options);
+  default Future<String> deployVerticle(Deployable verticle, DeploymentOptions options) {
+    return deployVerticle(() -> verticle, options);
+  }
 
   /**
-   * Like {@link #deployVerticle(Verticle, DeploymentOptions)} but {@link Verticle} instance is created by invoking the
-   * default constructor of {@code verticleClass}.
-   * @return a future completed with the result
-   */
-  @GenIgnore
-  Future<String> deployVerticle(Class<? extends Verticle> verticleClass, DeploymentOptions options);
-
-  /**
-   * Like {@link #deployVerticle(Verticle, DeploymentOptions)} but {@link Verticle} instance is created by invoking the
+   * Like {@link #deployVerticle(Deployable, DeploymentOptions)} but {@link Deployable} instance is created by invoking the
    * {@code verticleSupplier}.
    * <p>
    * The supplier will be invoked as many times as {@link DeploymentOptions#getInstances()}.
@@ -487,8 +481,16 @@ public interface Vertx extends Measured {
    *
    * @return a future completed with the result
    */
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  Future<String> deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options);
+  @GenIgnore
+  Future<String> deployVerticle(Supplier<? extends Deployable> supplier, DeploymentOptions options);
+
+  /**
+   * Like {@link #deployVerticle(Deployable, DeploymentOptions)} but {@link Deployable} instance is created by invoking the
+   * default constructor of {@code verticleClass}.
+   * @return a future completed with the result
+   */
+  @GenIgnore
+  Future<String> deployVerticle(Class<? extends Deployable> verticleClass, DeploymentOptions options);
 
   /**
    * Deploy a verticle instance given a name.
@@ -510,7 +512,7 @@ public interface Vertx extends Measured {
   }
 
   /**
-   * Like {@link #deployVerticle(Verticle)} but {@link io.vertx.core.DeploymentOptions} are provided to configure the
+   * Like {@link #deployVerticle(Deployable)} but {@link io.vertx.core.DeploymentOptions} are provided to configure the
    * deployment.
    *
    * @param name  the name

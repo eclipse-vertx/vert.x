@@ -15,7 +15,7 @@ import io.netty.channel.EventLoop;
 import io.vertx.core.*;
 import io.vertx.core.Future;
 import io.vertx.core.impl.*;
-import io.vertx.core.impl.deployment.Deployment;
+import io.vertx.core.impl.deployment.DeploymentContext;
 import io.vertx.core.impl.future.FailedFuture;
 import io.vertx.core.impl.future.PromiseImpl;
 import io.vertx.core.impl.future.SucceededFuture;
@@ -150,7 +150,7 @@ public interface ContextInternal extends Context {
   /**
    * @return the deployment associated with this context or {@code null}
    */
-  Deployment getDeployment();
+  DeploymentContext deployment();
 
   @Override
   VertxInternal owner();
@@ -471,27 +471,20 @@ public interface ContextInternal extends Context {
    * @return {@code true} when the context is associated with a deployment
    */
   default boolean isDeployment() {
-    return getDeployment() != null;
+    return deployment() != null;
   }
 
   default String deploymentID() {
-    Deployment deployment = getDeployment();
+    DeploymentContext deployment = deployment();
     return deployment != null ? deployment.deploymentID() : null;
   }
 
   default int getInstanceCount() {
-    Deployment deployment = getDeployment();
-
-    // the no verticle case
+    DeploymentContext deployment = deployment();
     if (deployment == null) {
       return 0;
     }
-
-    // the single verticle without an instance flag explicitly defined
-    if (deployment.deploymentOptions() == null) {
-      return 1;
-    }
-    return deployment.deploymentOptions().getInstances();
+    return deployment.deployment().options().getInstances();
   }
 
   CloseFuture closeFuture();
