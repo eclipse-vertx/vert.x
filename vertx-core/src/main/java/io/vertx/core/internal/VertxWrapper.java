@@ -48,6 +48,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * A wrapper class that delegates all method calls to the {@link #delegate} instance.
@@ -160,8 +161,13 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public Future<String> deployVerticle(Callable<? extends Deployable> supplier, DeploymentOptions options) {
+  public Future<String> deployVerticle(Supplier<? extends Deployable> supplier, DeploymentOptions options) {
     return delegate.deployVerticle(supplier, options);
+  }
+
+  @Override
+  public Future<String> deployVerticle(Class<? extends Deployable> verticleClass, DeploymentOptions options) {
+    return delegate.deployVerticle(verticleClass, options);
   }
 
   @Override
