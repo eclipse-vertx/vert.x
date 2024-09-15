@@ -172,7 +172,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   protected synchronized void onHeadersRead(int streamId, Http2Headers headers, StreamPriorityBase streamPriority, boolean endOfStream) {
-    //TODO: verify the following line
     VertxHttpStreamBase<?, ?> stream = stream(streamId);
     if (!stream.isTrailersReceived()) {
       stream.onHeaders(new VertxHttp2Headers(headers), streamPriority);
