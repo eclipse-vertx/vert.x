@@ -40,10 +40,7 @@ abstract class HttpStream<C extends ConnectionBase, S> extends VertxHttpStreamBa
   protected Handler<Throwable> exceptionHandler;
   protected Handler<HttpClientPush> pushHandler;
   protected Handler<Void> closeHandler;
-  protected long writeWindow;//todo: this prop is removed in 5.x
-  protected final long windowSize;//todo: this prop is removed in 5.x
 
-  protected abstract long getWindowSize();
   protected abstract HttpVersion version();
   protected abstract void recycle();
   protected abstract void metricsEnd(HttpStream<?, ?> stream);
@@ -52,7 +49,6 @@ abstract class HttpStream<C extends ConnectionBase, S> extends VertxHttpStreamBa
     super(conn, context);
 
     this.push = push;
-    this.windowSize = getWindowSize();
   }
 
   void onContinue() {

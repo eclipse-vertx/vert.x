@@ -86,11 +86,6 @@ class Http2ClientStream extends HttpStreamImpl<Http2ClientConnection, Http2Strea
   }
 
   @Override
-  public long getWindowSize() {
-    return conn.getWindowSize();
-  }
-
-  @Override
   public void writeHeaders(Http2Stream stream, VertxHttpHeaders headers, boolean end, StreamPriorityBase priority,
                            boolean checkFlush, FutureListener<Void> promise) {
     conn.handler.writeHeaders(stream, headers, end, priority.getDependency(), priority.getWeight(), priority.isExclusive(),

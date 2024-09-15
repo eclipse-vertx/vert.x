@@ -92,8 +92,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
 
   @Override
   public synchronized boolean isNotWritable() {
-    //    return !isWritable();  //TODO: the following line is from 5.x! my old code is current line. choose correct one.
-    return writeWindow > windowSize;
+    return !isWritable();
   }
 
   @Override
