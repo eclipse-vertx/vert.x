@@ -231,7 +231,6 @@ class Http3ClientConnection extends Http3ConnectionBase implements HttpClientCon
 
   @Override
   public long activeStreams() {
-    //TODO: what is the correct logic for this method
-    return concurrency();
+    throw new RuntimeException("We have no access to active streams in HTTP/3!");
   }
 }
