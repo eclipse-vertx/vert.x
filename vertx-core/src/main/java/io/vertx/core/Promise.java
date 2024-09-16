@@ -90,7 +90,7 @@ public interface Promise<T> extends Completable<T> {
   }
 
   default void succeed(T result) {
-    if (!tryComplete(null)) {
+    if (!tryComplete(result)) {
       throw new IllegalStateException("Promise already completed");
     }
   }
