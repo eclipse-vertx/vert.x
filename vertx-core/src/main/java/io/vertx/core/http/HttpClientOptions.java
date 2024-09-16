@@ -12,8 +12,6 @@
 package io.vertx.core.http;
 
 import io.netty.handler.logging.ByteBufFormat;
-import io.netty.incubator.codec.http3.DefaultHttp3SettingsFrame;
-import io.netty.incubator.codec.http3.Http3SettingsFrame;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.buffer.Buffer;
@@ -170,7 +168,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private int maxInitialLineLength;
   private int maxHeaderSize;
   private Http2Settings initialSettings;
-  private Http3SettingsFrame http3InitialSettings;
+  private Http3Settings initialHttp3Settings;
   private List<HttpVersion> alpnVersions;
   private boolean http2ClearTextUpgrade;
   private boolean http2ClearTextUpgradeWithPreflightRequest;
@@ -223,7 +221,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.maxInitialLineLength = other.getMaxInitialLineLength();
     this.maxHeaderSize = other.getMaxHeaderSize();
     this.initialSettings = other.initialSettings != null ? new Http2Settings(other.initialSettings) : null;
-    this.http3InitialSettings = other.http3InitialSettings != null ? DefaultHttp3SettingsFrame.copyOf(other.http3InitialSettings) : null;
+    this.initialHttp3Settings = other.initialHttp3Settings != null ? new Http3Settings(other.initialHttp3Settings) : null;
     this.alpnVersions = other.alpnVersions != null ? new ArrayList<>(other.alpnVersions) : null;
     this.http2ClearTextUpgrade = other.http2ClearTextUpgrade;
     this.http2ClearTextUpgradeWithPreflightRequest = other.http2ClearTextUpgradeWithPreflightRequest;
@@ -273,7 +271,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     maxInitialLineLength = DEFAULT_MAX_INITIAL_LINE_LENGTH;
     maxHeaderSize = DEFAULT_MAX_HEADER_SIZE;
     initialSettings = new Http2Settings();
-    http3InitialSettings = new DefaultHttp3SettingsFrame();
+    initialHttp3Settings = new Http3Settings();
     alpnVersions = new ArrayList<>(DEFAULT_ALPN_VERSIONS);
     http2ClearTextUpgrade = DEFAULT_HTTP2_CLEAR_TEXT_UPGRADE;
     http2ClearTextUpgradeWithPreflightRequest = DEFAULT_HTTP2_CLEAR_TEXT_UPGRADE_WITH_PREFLIGHT_REQUEST;
@@ -775,8 +773,8 @@ public class HttpClientOptions extends ClientOptionsBase {
   /**
    * @return the initial HTTP/3 connection settings
    */
-  public Http3SettingsFrame getHttp3InitialSettings() {
-    return http3InitialSettings;
+  public Http3Settings getInitialHttp3Settings() {
+    return initialHttp3Settings;
   }
 
   /**
@@ -785,8 +783,8 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @param settings the settings value
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpClientOptions setHttp3InitialSettings(Http3SettingsFrame settings) {
-    this.http3InitialSettings = settings;
+  public HttpClientOptions setInitialHttp3Settings(Http3Settings settings) {
+    this.initialHttp3Settings = settings;
     return this;
   }
 

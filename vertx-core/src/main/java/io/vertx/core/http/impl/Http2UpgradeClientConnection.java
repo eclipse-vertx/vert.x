@@ -805,11 +805,11 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
   }
 
   @Override
-  public HttpConnection remoteSettingsHandler(Handler<Http2Settings> handler) {
+  public HttpConnection remoteHttpSettingsHandler(Handler<HttpSettings> handler) {
     if (current instanceof Http1xClientConnection) {
-      remoteSettingsHandler = handler;
+      remoteSettingsHandler = settings -> handler.handle(new HttpSettings(settings));
     } else {
-      current.remoteSettingsHandler(handler);
+      current.remoteHttpSettingsHandler(handler);
     }
     return this;
   }
@@ -891,18 +891,18 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
   }
 
   @Override
-  public Future<Void> updateSettings(Http2Settings settings) {
-    return current.updateSettings(settings);
+  public HttpSettings httpSettings() {
+    return current.httpSettings();
   }
 
   @Override
-  public Http2Settings settings() {
-    return current.settings();
+  public Future<Void> updateHttpSettings(HttpSettings settings) {
+    return current.updateHttpSettings(settings);
   }
 
   @Override
-  public Http2Settings remoteSettings() {
-    return current.remoteSettings();
+  public HttpSettings remoteHttpSettings() {
+    return current.remoteHttpSettings();
   }
 
   @Override

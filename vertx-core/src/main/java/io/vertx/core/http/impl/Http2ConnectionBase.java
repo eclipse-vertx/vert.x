@@ -64,7 +64,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   protected final VertxHttp2ConnectionHandler handler;
   protected final Http2Connection.PropertyKey streamKey;
   private boolean shutdown;
-  private Handler<io.vertx.core.http.Http2Settings> remoteSettingsHandler;
+  private Handler<HttpSettings> remoteSettingsHandler;
   private final ArrayDeque<Handler<Void>> updateSettingsHandlers = new ArrayDeque<>();
   private final ArrayDeque<Promise<Buffer>> pongHandlers = new ArrayDeque<>();
   private Http2Settings localSettings;
@@ -83,7 +83,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     this.windowSize = handler.connection().local().flowController().windowSize(handler.connection().connectionStream());
     this.maxConcurrentStreams = io.vertx.core.http.Http2Settings.DEFAULT_MAX_CONCURRENT_STREAMS;
     this.streamKey = handler.connection().newKey();
-    this.localSettings = handler.initialSettings();
+    this.localSettings = handler.initialSettings().toNettyHttp2Settings();
   }
 
   public VertxInternal vertx() {
@@ -232,7 +232,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   @Override
   public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) {
     boolean changed;
-    Handler<io.vertx.core.http.Http2Settings> handler;
+    Handler<HttpSettings> handler;
     synchronized (this) {
       Long val = settings.maxConcurrentStreams();
       if (val != null) {
@@ -245,11 +245,11 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
       } else {
         changed = false;
       }
-      remoteSettings = settings;
+      remoteSettings = new HttpSettings(settings).toNettyHttp2Settings();
       handler = remoteSettingsHandler;
     }
     if (handler != null) {
-      context.dispatch(HttpUtils.toVertxSettings(settings), handler);
+      context.dispatch(new HttpSettings(settings), handler);
     }
     if (changed) {
       concurrencyChanged(maxConcurrentStreams);
@@ -400,24 +400,24 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public synchronized HttpConnection remoteSettingsHandler(Handler<io.vertx.core.http.Http2Settings> handler) {
-    remoteSettingsHandler = handler;
+  public HttpConnection remoteHttpSettingsHandler(Handler<HttpSettings> handler) {
+    this.remoteSettingsHandler = handler;
     return this;
   }
 
   @Override
-  public synchronized io.vertx.core.http.Http2Settings remoteSettings() {
-    return HttpUtils.toVertxSettings(remoteSettings);
+  public HttpSettings remoteHttpSettings() {
+    return new HttpSettings(remoteSettings);
   }
 
   @Override
-  public synchronized io.vertx.core.http.Http2Settings settings() {
-    return HttpUtils.toVertxSettings(localSettings);
+  public HttpSettings httpSettings() {
+    return new HttpSettings(localSettings);
   }
 
   @Override
-  public Future<Void> updateSettings(io.vertx.core.http.Http2Settings settings) {
-    return updateSettings(HttpUtils.fromVertxSettings(settings));
+  public Future<Void> updateHttpSettings(HttpSettings settings) {
+    return updateSettings(settings.toNettyHttp2Settings());
   }
 
   protected Future<Void> updateSettings(Http2Settings settingsUpdate) {
