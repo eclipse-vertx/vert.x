@@ -280,8 +280,8 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
         if (msg instanceof DefaultHttp3SettingsFrame) {
           DefaultHttp3SettingsFrame http3SettingsFrame = (DefaultHttp3SettingsFrame) msg;
           logger.debug("Received frame http3SettingsFrame: {} ", http3SettingsFrame);
-//          VertxHttp3ConnectionHandler.this.connection.updateSettings(http3SettingsFrame);
           onSettingsRead(ctx, new HttpSettings(http3SettingsFrame));
+          VertxHttp3ConnectionHandler.this.connection.updateHttpSettings(new HttpSettings(http3SettingsFrame));
 //          Thread.sleep(70000);
           super.channelRead(ctx, msg);
         } else if (msg instanceof DefaultHttp3GoAwayFrame) {
