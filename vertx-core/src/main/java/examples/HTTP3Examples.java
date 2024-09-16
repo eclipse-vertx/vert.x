@@ -24,17 +24,17 @@ public class HTTP3Examples {
 
   public void example01(Vertx vertx) {
 
-    DefaultHttp3SettingsFrame settings = new DefaultHttp3SettingsFrame();
-    settings.put(Http3SettingsFrame.HTTP3_SETTINGS_MAX_FIELD_SECTION_SIZE,
-      100000000000L);
+    Http3Settings settings = new Http3Settings();
+    settings.setMaxFieldSectionSize(100000000000L);
 
-//    String path = "/";
-    String path = "/cdn-cgi/trace";
+    String path = "/";
+//    String path = "/cdn-cgi/trace";
     int port = 443;
 //    int port = 9999;
 //    String host = "http3.is";
-//    String host = "www.google.com";
-    String host = "www.cloudflare.com";
+    String host = "www.google.com";
+//    String host = "quic.nginx.org";
+//    String host = "www.cloudflare.com";
 //    String host = NetUtil.LOCALHOST4.getHostAddress();
 //    String host = "www.mozilla.org";
 //    String host = "www.bing.com";
@@ -45,7 +45,7 @@ public class HTTP3Examples {
       setUseAlpn(true).
       setForceSni(true).
       setDefaultHost(host).
-      setHttp3InitialSettings(settings).
+      setInitialHttp3Settings(settings).
       setVerifyHost(false).
       setTrustAll(true).
       setProtocolVersion(HttpVersion.HTTP_3);

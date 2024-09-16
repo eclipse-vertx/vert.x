@@ -34,10 +34,9 @@ import io.netty.util.concurrent.Promise;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.vertx.core.Handler;
-import io.vertx.core.http.GoAway;
+import io.vertx.core.http.*;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
@@ -58,7 +57,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   private boolean settingsRead;
   private Handler<C> addHandler;
   private Handler<C> removeHandler;
-  private final Http3SettingsFrame http3InitialSettings;
+  private final HttpSettings httpSettings;
 
   private boolean read;
   private Http3ConnectionHandler connectionHandlerInternal;
@@ -71,9 +70,9 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   public VertxHttp3ConnectionHandler(
     Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory,
     ContextInternal context,
-    Http3SettingsFrame http3InitialSettings, boolean isServer) {
+    HttpSettings httpSettings, boolean isServer) {
     this.connectionFactory = connectionFactory;
-    this.http3InitialSettings = http3InitialSettings;
+    this.httpSettings = httpSettings;
     connectFuture = new DefaultPromise<>(context.nettyEventLoop());
     createStreamHandler();
     createUserEventHandler();
@@ -91,7 +90,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     return chctx;
   }
 
-  private void onSettingsRead(ChannelHandlerContext ctx, Http3SettingsFrame settings) {
+  private void onSettingsRead(ChannelHandlerContext ctx, HttpSettings settings) {
     this.chctx = ctx;
     this.connection = connectionFactory.apply(this);
     this.connection.onSettingsRead(ctx, settings);
@@ -282,7 +281,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
           DefaultHttp3SettingsFrame http3SettingsFrame = (DefaultHttp3SettingsFrame) msg;
           logger.debug("Received frame http3SettingsFrame: {} ", http3SettingsFrame);
 //          VertxHttp3ConnectionHandler.this.connection.updateSettings(http3SettingsFrame);
-          onSettingsRead(ctx, http3SettingsFrame);
+          onSettingsRead(ctx, new HttpSettings(http3SettingsFrame));
 //          Thread.sleep(70000);
           super.channelRead(ctx, msg);
         } else if (msg instanceof DefaultHttp3GoAwayFrame) {
@@ -311,13 +310,13 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
       @Override
       protected void initChannel(QuicStreamChannel ch) throws Exception {
       }
-    }, null, null, http3InitialSettings, false);
+    }, null, null, httpSettings.toNettyHttp3Settings(), false);
   }
 
   private Http3ClientConnectionHandler createHttp3ClientConnectionHandler() {
     assert this.streamHandlerInternal != null;
     return new Http3ClientConnectionHandler(this.streamHandlerInternal, null, null,
-      http3InitialSettings, false);
+      httpSettings.toNettyHttp3Settings(), false);
   }
 
   public Http3ConnectionHandler getHttp3ConnectionHandler() {
@@ -339,8 +338,8 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     }
   }
 
-  public Http3SettingsFrame initialSettings() {
-    return http3InitialSettings;
+  public HttpSettings initialSettings() {
+    return httpSettings;
   }
 
   public void gracefulShutdownTimeoutMillis(long timeout) {

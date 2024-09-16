@@ -11,15 +11,13 @@
 
 package io.vertx.core.http.impl;
 
-import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.incubator.codec.http3.Http3Headers;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpSettings;
 import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.http.impl.headers.Http3HeadersAdaptor;
 import io.vertx.core.http.impl.headers.VertxHttp3Headers;
@@ -199,7 +197,7 @@ class Http3ClientConnection extends Http3ConnectionBase implements HttpClientCon
     VertxHttp3ConnectionHandler<Http3ClientConnection> handler =
       new VertxHttp3ConnectionHandlerBuilder<Http3ClientConnection>()
         .server(false)
-        .http3InitialSettings(client.options().getHttp3InitialSettings())
+        .httpSettings(new HttpSettings(client.options().getInitialHttp3Settings()))
         .connectionFactory(connHandler -> {
           Http3ClientConnection conn = new Http3ClientConnection(client, context, connHandler, metrics, authority,
             pooled);

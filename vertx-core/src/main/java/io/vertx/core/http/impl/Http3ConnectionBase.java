@@ -60,11 +60,11 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
   protected VertxHttp3ConnectionHandler<? extends Http3ConnectionBase> handler;
 //  protected final Http2Connection.PropertyKey streamKey;
   private boolean shutdown;
-  private Handler<Http3SettingsFrame> remoteSettingsHandler;
+  private Handler<HttpSettings> remoteSettingsHandler;
   private final ArrayDeque<Handler<Void>> updateSettingsHandlers = new ArrayDeque<>();
   private final ArrayDeque<Promise<Buffer>> pongHandlers = new ArrayDeque<>();
-  private Http3SettingsFrame localSettings;
-  private Http3SettingsFrame remoteSettings;
+  private HttpSettings localSettings;
+  private HttpSettings remoteSettings;
   private Handler<GoAway> goAwayHandler;
   private Handler<Void> shutdownHandler;
   private Handler<Buffer> pingHandler;
@@ -223,9 +223,9 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
   }
 
 //  @Override
-  public void onSettingsRead(ChannelHandlerContext ctx, Http3SettingsFrame settings) {
+  public void onSettingsRead(ChannelHandlerContext ctx, HttpSettings settings) {
     boolean changed;
-    Handler<Http3SettingsFrame> handler;
+    Handler<HttpSettings> handler;
     synchronized (this) {
 //      Long val = settings.maxConcurrentStreams();  //TODO:
       Long val = 5L;
@@ -405,23 +405,38 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
 //  }
 
   @Override
-  public synchronized HttpConnection remoteSettingsHandler(Handler<Http2Settings> handler) {
-//    remoteSettingsHandler = handler;
+  public HttpConnection remoteSettingsHandler(Handler<Http2Settings> handler) {
+    throw new UnsupportedOperationException("This method is not implemented for HTTP/3 and should not be used. Please" +
+      " use remoteHttpSettingsHandler() instead.");
+  }
+
+  @Override
+  public HttpConnection remoteHttpSettingsHandler(Handler<HttpSettings> handler) {
+    remoteSettingsHandler = handler;
     return this;
   }
 
   @Override
-  public synchronized Http2Settings remoteSettings() {
-//    return HttpUtils.toVertxSettings(remoteSettings);
-    return null;
+  public Http2Settings remoteSettings() {
+    throw new UnsupportedOperationException("This method is not implemented for HTTP/3 and should not be used. Please" +
+      " use remoteHttpSettings() instead.");
   }
 
   @Override
-  public synchronized Http2Settings settings() {
-//    return HttpUtils.toVertxSettings(localSettings);
-    return null;
+  public HttpSettings remoteHttpSettings() {
+    return remoteSettings;
   }
 
+  @Override
+  public Http2Settings settings() {
+    throw new UnsupportedOperationException("This method is not implemented for HTTP/3 and should not be used. Please" +
+      " use httpSettings() instead.");
+  }
+
+  @Override
+  public HttpSettings httpSettings() {
+    return localSettings;
+  }
 //  @Override
 //  public Future<Void> updateSettings(Http2Settings settings) {
 //    Promise<Void> promise = context.promise();
@@ -432,11 +447,12 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
 
   @Override
   public Future<Void> updateSettings(io.vertx.core.http.Http2Settings settings) {
-    io.netty.handler.codec.http2.Http2Settings http2Settings = HttpUtils.fromVertxSettings(settings);
-    return updateSettings(http2Settings);
+    throw new UnsupportedOperationException("This method is not implemented for HTTP/3 and should not be used. Please" +
+      " use updateHttpSettings() instead.");
   }
 
-  public Future<Void> updateSettings(io.netty.handler.codec.http2.Http2Settings settingsUpdate) {
+  @Override
+  public Future<Void> updateHttpSettings(HttpSettings settings) {
 //    Http2Settings current = handler.decoder().localSettings();
 //    for (Map.Entry<Character, Long> entry : current.entrySet()) {
 //      Character key = entry.getKey();
