@@ -31,8 +31,8 @@ import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.net.NetClientInternal;
-import io.vertx.core.internal.net.SslChannelProvider;
 import io.vertx.core.internal.tls.SslContextManager;
+import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.*;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.TCPMetrics;
@@ -253,23 +253,13 @@ class NetClientImpl implements NetClientInternal {
         }
         sslOptions.setHttp3(options.getProtocolVersion() == HttpVersion.HTTP_3);
 
-        Future<SslChannelProvider> fut;
+        Future<SslContextProvider> fut;
         fut = sslContextManager.resolveSslContextProvider(
           sslOptions,
           sslOptions.getHostnameVerificationAlgorithm(),
           null,
           sslOptions.getApplicationLayerProtocols(),
-          context).map(p -> new SslChannelProvider(context.owner(), p, false));
-
-        //TODO: verify this is working correctly
-//        Future<SslContextProvider> fut;
-//        fut = sslContextManager.resolveSslContextProvider(
-//          sslOptions,
-//          sslOptions.getHostnameVerificationAlgorithm(),
-//          null,
-//          sslOptions.getApplicationLayerProtocols(),
-//          context);
-
+          context);
         fut.onComplete(ar -> {
           if (ar.succeeded()) {
             connectInternal2(connectOptions, sslOptions, ar.result(), registerWriteHandlers, connectHandler, context, remainingAttempts);
@@ -285,7 +275,7 @@ class NetClientImpl implements NetClientInternal {
 
   private void connectInternal2(ConnectOptions connectOptions,
                                 ClientSSLOptions sslOptions,
-                                SslChannelProvider sslChannelProvider,
+                                SslContextProvider sslContextProvider,
                                 boolean registerWriteHandlers,
                                 Promise<NetSocket> connectHandler,
                                 ContextInternal context,
@@ -326,7 +316,7 @@ class NetClientImpl implements NetClientInternal {
         }
       }
 
-      ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslChannelProvider, context)
+      ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslContextProvider, context)
         .proxyOptions(proxyOptions).version(options.getProtocolVersion());;
 
       SocketAddress captured = remoteAddress;
@@ -370,7 +360,7 @@ class NetClientImpl implements NetClientInternal {
         }
       });
     } else {
-      eventLoop.execute(() -> connectInternal2(connectOptions, sslOptions, sslChannelProvider, registerWriteHandlers, connectHandler, context, remainingAttempts));
+      eventLoop.execute(() -> connectInternal2(connectOptions, sslOptions, sslContextProvider, registerWriteHandlers, connectHandler, context, remainingAttempts));
     }
   }
 
