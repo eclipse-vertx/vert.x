@@ -86,10 +86,10 @@ public interface Transport {
   }
 
   /**
-   * @param type          one of {@link #ACCEPTOR_EVENT_LOOP_GROUP} or {@link #IO_EVENT_LOOP_GROUP}.
-   * @param nThreads      the number of threads that will be used by this instance.
+   * @param type one of {@link #ACCEPTOR_EVENT_LOOP_GROUP} or {@link #IO_EVENT_LOOP_GROUP}.
+   * @param nThreads the number of threads that will be used by this instance.
    * @param threadFactory the ThreadFactory to use.
-   * @param ioRatio       the IO ratio
+   * @param ioRatio the IO ratio
    * @return a new event loop group
    */
   EventLoopGroup eventLoopGroup(int type, int nThreads, ThreadFactory threadFactory, int ioRatio);
@@ -105,14 +105,14 @@ public interface Transport {
   DatagramChannel datagramChannel(InternetProtocolFamily family);
 
   /**
-   * @param domainSocket whether to create a unix domain channel or a socket channel
    * @return the type for channel
+   * @param domainSocket whether to create a unix domain channel or a socket channel
    */
   ChannelFactory<? extends Channel> channelFactory(boolean domainSocket);
 
   /**
-   * @param domainSocket whether to create a server unix domain channel or a regular server socket channel
    * @return the type for server channel
+   * @param domainSocket whether to create a server unix domain channel or a regular server socket channel
    */
   ChannelFactory<? extends ServerChannel> serverChannelFactory(boolean domainSocket);
 

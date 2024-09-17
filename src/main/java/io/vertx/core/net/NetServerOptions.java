@@ -103,7 +103,7 @@ public class NetServerOptions extends TCPSSLOptions {
   /**
    * Copy constructor
    *
-   * @param other the options to copy
+   * @param other  the options to copy
    */
   public NetServerOptions(NetServerOptions other) {
     super(other);
@@ -124,7 +124,7 @@ public class NetServerOptions extends TCPSSLOptions {
   /**
    * Create some options from JSON
    *
-   * @param json the JSON
+   * @param json  the JSON
    */
   public NetServerOptions(JsonObject json) {
     super(json);
@@ -377,6 +377,7 @@ public class NetServerOptions extends TCPSSLOptions {
   }
 
   /**
+   *
    * @return the port
    */
   public int getPort() {
@@ -386,7 +387,7 @@ public class NetServerOptions extends TCPSSLOptions {
   /**
    * Set the port
    *
-   * @param port the port
+   * @param port  the port
    * @return a reference to this, so the API can be used fluently
    */
   public NetServerOptions setPort(int port) {
@@ -398,6 +399,7 @@ public class NetServerOptions extends TCPSSLOptions {
   }
 
   /**
+   *
    * @return the host
    */
   public String getHost() {
@@ -406,8 +408,7 @@ public class NetServerOptions extends TCPSSLOptions {
 
   /**
    * Set the host
-   *
-   * @param host the host
+   * @param host  the host
    * @return a reference to this, so the API can be used fluently
    */
   public NetServerOptions setHost(String host) {
@@ -462,9 +463,7 @@ public class NetServerOptions extends TCPSSLOptions {
   /**
    * @return whether the server uses the HA Proxy protocol
    */
-  public boolean isUseProxyProtocol() {
-    return useProxyProtocol;
-  }
+  public boolean isUseProxyProtocol() { return useProxyProtocol; }
 
   /**
    * Set whether the server uses the HA Proxy protocol
@@ -532,7 +531,6 @@ public class NetServerOptions extends TCPSSLOptions {
     this.trafficShapingOptions = trafficShapingOptions;
     return this;
   }
-
 
   private void init() {
     this.port = DEFAULT_PORT;
