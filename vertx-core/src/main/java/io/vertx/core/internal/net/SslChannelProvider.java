@@ -60,6 +60,7 @@ public class SslChannelProvider {
         .maxIdleTimeout(sslHandshakeTimeout, sslHandshakeTimeoutUnit)
         .initialMaxData(10000000) // Todo: Make this value configurable!
         .initialMaxStreamDataBidirectionalLocal(1000000) // Todo: Make this value configurable!
+        .initialMaxStreamsBidirectional(100)
         .build();
     }
     if (peerAddress != null && peerAddress.isInetSocket()) {
