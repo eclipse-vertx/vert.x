@@ -331,9 +331,9 @@ public class DeploymentTest extends VertxTestBase {
 
   private void testDeployFromThrowableInStart(int startAction, Class<? extends Throwable> expectedThrowable) throws Exception {
     MyVerticle verticle = new MyVerticle();
+    MyVerticle verticle2 = new MyVerticle(startAction, MyVerticle.NOOP);
     vertx.deployVerticle(verticle).onComplete(onSuccess(v -> {
       Context ctx = Vertx.currentContext();
-      MyVerticle verticle2 = new MyVerticle(startAction, MyVerticle.NOOP);
       vertx.deployVerticle(verticle2).onComplete(onFailure(err -> {
         assertEquals(expectedThrowable, err.getClass());
         assertEquals("FooBar!", err.getMessage());
@@ -344,6 +344,7 @@ public class DeploymentTest extends VertxTestBase {
       }));
     }));
     await();
+    assertTrue(verticle2.completion.future().isComplete());
   }
 
   @Test
@@ -1348,11 +1349,23 @@ public class DeploymentTest extends VertxTestBase {
       @Override
       public void start(Promise<Void> startPromise) {
         this.startPromise = startPromise;
+        AtomicBoolean hookCompletion = new AtomicBoolean();
         ((ContextInternal)context).addCloseHook(completion -> {
           complete();
-          completion.complete();
+          new Thread(() -> {
+            try {
+              Thread.sleep(500);
+            } catch (InterruptedException e) {
+              fail(e);
+            }
+            hookCompletion.set(true);
+            completion.complete();
+          }).start();
         });
-        vertx.close().onComplete(onSuccess(v -> complete()));
+        vertx.close().onComplete(onSuccess(v -> {
+          assertTrue(hookCompletion.get());
+          complete();
+        }));
       }
       @Override
       public void stop(Promise<Void> stopPromise) {
@@ -1431,6 +1444,7 @@ public class DeploymentTest extends VertxTestBase {
     int stopAction;
     String deploymentID;
     JsonObject config;
+    Promise<Void> completion;
 
     MyVerticle() {
       this(NOOP, NOOP);
@@ -1443,6 +1457,10 @@ public class DeploymentTest extends VertxTestBase {
 
     @Override
     public void start() throws Exception {
+      ((ContextInternal)context).addCloseHook(promise -> {
+        completion = promise;
+        promise.complete();
+      });
       switch (startAction) {
         case THROW_EXCEPTION:
           throw new Exception("FooBar!");

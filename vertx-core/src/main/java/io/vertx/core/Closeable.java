@@ -25,5 +25,6 @@ public interface Closeable {
    *
    * @param completion the promise to signal when close has completed
    */
+  // SHOULD BE COMPLETABLE HERE
   void close(Promise<Void> completion);
 }

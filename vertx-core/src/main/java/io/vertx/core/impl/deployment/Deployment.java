@@ -183,7 +183,9 @@ public class Deployment {
     for (Instance instance : instances) {
       Promise<Object> startPromise = instance.startPromise;
       if (startPromise != null) {
-        startPromise.tryFail(new VertxException("Verticle un-deployed", true));
+        if (startPromise.tryFail(new VertxException("Verticle un-deployed", true))) {
+          undeployFutures.add(instance.closeFuture.future());
+        }
       } else {
         ContextInternal context = instance.context;
         Promise<Object> p = Promise.promise();
