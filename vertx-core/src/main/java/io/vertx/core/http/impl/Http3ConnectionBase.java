@@ -21,7 +21,6 @@ import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.incubator.codec.http3.Http3Headers;
-import io.netty.incubator.codec.http3.Http3SettingsFrame;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -45,7 +44,7 @@ import java.util.concurrent.TimeUnit;
  */
 public abstract class Http3ConnectionBase extends ConnectionBase implements HttpConnection {
 
-  private static final Logger log = LoggerFactory.getLogger(Http2ConnectionBase.class);
+  private static final Logger log = LoggerFactory.getLogger(Http3ConnectionBase.class);
 
   private static ByteBuf safeBuffer(ByteBuf buf) {
     ByteBuf buffer = VertxByteBufAllocator.DEFAULT.heapBuffer(buf.readableBytes());
