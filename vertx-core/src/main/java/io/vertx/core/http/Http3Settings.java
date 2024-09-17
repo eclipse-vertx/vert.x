@@ -36,9 +36,9 @@ import java.util.Set;
 @JsonGen(publicConverter = false)
 public class Http3Settings {
 
-  private final static long HTTP3_SETTINGS_ENABLE_CONNECT_PROTOCOL = 0x08;
-  private final static long HTTP3_SETTINGS_H3_DATAGRAM = 0x33;
-  private final static long HTTP3_SETTINGS_ENABLE_METADATA = 0x4d44;
+  public final static long HTTP3_SETTINGS_ENABLE_CONNECT_PROTOCOL = 0x08;
+  public final static long HTTP3_SETTINGS_H3_DATAGRAM = 0x33;
+  public final static long HTTP3_SETTINGS_ENABLE_METADATA = 0x4d44;
 
   /**
    * Default HTTP/3 spec value for {@link #getQpackMaxTableCapacity} : {@code 0}
@@ -67,7 +67,7 @@ public class Http3Settings {
 
   public static final Map<Long, Long> DEFAULT_EXTRA_SETTINGS = null;
 
-  private static final Set<Long> SETTING_KEYS = Set.of(
+  public static final Set<Long> SETTING_KEYS = Set.of(
     Http3SettingsFrame.HTTP3_SETTINGS_QPACK_MAX_TABLE_CAPACITY,
     Http3SettingsFrame.HTTP3_SETTINGS_MAX_FIELD_SECTION_SIZE,
     Http3SettingsFrame.HTTP3_SETTINGS_QPACK_BLOCKED_STREAMS,
@@ -100,35 +100,6 @@ public class Http3Settings {
 
     extraSettings = DEFAULT_EXTRA_SETTINGS;
   }
-
-  /**
-   * Default constructor from netty
-   */
-  public Http3Settings(Http3SettingsFrame settings) {
-    qpackMaxTableCapacity = settings.getOrDefault(Http3SettingsFrame.HTTP3_SETTINGS_QPACK_MAX_TABLE_CAPACITY,
-      DEFAULT_QPACK_MAX_TABLE_CAPACITY);
-    maxFieldSectionSize = settings.getOrDefault(Http3SettingsFrame.HTTP3_SETTINGS_MAX_FIELD_SECTION_SIZE,
-      DEFAULT_MAX_FIELD_SECTION_SIZE);
-    qpackMaxBlockedStreams =
-      Math.toIntExact(settings.getOrDefault(Http3SettingsFrame.HTTP3_SETTINGS_QPACK_BLOCKED_STREAMS,
-        DEFAULT_QPACK_BLOCKED_STREAMS));
-    enableConnectProtocol = settings.getOrDefault(HTTP3_SETTINGS_ENABLE_CONNECT_PROTOCOL,
-      DEFAULT_ENABLE_CONNECT_PROTOCOL);
-    h3Datagram = settings.getOrDefault(HTTP3_SETTINGS_H3_DATAGRAM, DEFAULT_H3_DATAGRAM);
-    enableMetadata = settings.getOrDefault(HTTP3_SETTINGS_ENABLE_METADATA, DEFAULT_ENABLE_METADATA);
-
-    extraSettings = DEFAULT_EXTRA_SETTINGS;
-
-    settings.forEach(entry -> {
-      if (!SETTING_KEYS.contains(entry.getKey())) {
-        if (extraSettings == null) {
-          extraSettings = new HashMap<>();
-        }
-        extraSettings.put(entry.getKey(), entry.getValue());
-      }
-    });
-  }
-
 
   /**
    * Create a settings from JSON
@@ -346,20 +317,6 @@ public class Http3Settings {
         extraSettings.put(id, value);
     }
     return this;
-  }
-
-  public Http3SettingsFrame toNettyHttp3Settings() {
-    Http3SettingsFrame converted = new DefaultHttp3SettingsFrame();
-    converted.put(Http3SettingsFrame.HTTP3_SETTINGS_QPACK_MAX_TABLE_CAPACITY, this.getQpackMaxTableCapacity());
-    converted.put(Http3SettingsFrame.HTTP3_SETTINGS_MAX_FIELD_SECTION_SIZE, this.getMaxFieldSectionSize());
-    converted.put(Http3SettingsFrame.HTTP3_SETTINGS_QPACK_BLOCKED_STREAMS, this.getQpackMaxBlockedStreams());
-    converted.put(HTTP3_SETTINGS_ENABLE_CONNECT_PROTOCOL, this.getEnableConnectProtocol());
-    converted.put(HTTP3_SETTINGS_H3_DATAGRAM, this.getH3Datagram());
-    converted.put(HTTP3_SETTINGS_ENABLE_METADATA, this.getEnableMetadata());
-    if (getExtraSettings() != null) {
-      getExtraSettings().forEach((key, value) -> converted.put(key, value));
-    }
-    return converted;
   }
 
   @Override

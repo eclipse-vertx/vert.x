@@ -11,8 +11,11 @@
 package io.vertx.core.http;
 
 import io.netty.incubator.codec.http3.Http3SettingsFrame;
+import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.impl.Arguments;
+import io.vertx.core.json.JsonObject;
 
 /**
  * HTTP settings, is a general settings class for http2Settings and http3Settings.<p>
@@ -20,12 +23,24 @@ import io.vertx.core.impl.Arguments;
  *
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
  */
+@DataObject
+@JsonGen(publicConverter = false)
 public class HttpSettings {
   private HttpVersion version;
   private Http2Settings http2Settings;
   private Http3Settings http3Settings;
 
   public HttpSettings() {
+  }
+
+  /**
+   * Create a settings from JSON
+   *
+   * @param json the JSON
+   */
+  public HttpSettings(JsonObject json) {
+    this();
+    HttpSettingsConverter.fromJson(json, this);
   }
 
   public HttpSettings(Http2Settings http2Settings) {
@@ -44,7 +59,7 @@ public class HttpSettings {
   }
 
   public HttpSettings(Http3SettingsFrame nettyHttp3Settings) {
-    this.http3Settings = new Http3Settings(nettyHttp3Settings);
+    this.http3Settings = HttpUtils.toVertxSettings(nettyHttp3Settings);
     this.version = HttpVersion.HTTP_3;
   }
 
@@ -72,7 +87,7 @@ public class HttpSettings {
 
   public Http3SettingsFrame toNettyHttp3Settings() {
     Arguments.require(version == HttpVersion.HTTP_3, "The settings is not for HTTP/3");
-    return http3Settings.toNettyHttp3Settings();
+    return HttpUtils.fromVertxSettings(http3Settings);
   }
 
   public Long get(Character key) {
@@ -83,6 +98,17 @@ public class HttpSettings {
       return http3Settings.get(key);
     }
     return null;
+  }
+
+  @Override
+  public String toString() {
+    return toJson().encode();
+  }
+
+  public JsonObject toJson() {
+    JsonObject json = new JsonObject();
+    HttpSettingsConverter.toJson(this, json);
+    return json;
   }
 
 }

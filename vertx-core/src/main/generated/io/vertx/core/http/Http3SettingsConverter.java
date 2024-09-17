@@ -30,7 +30,7 @@ public class Http3SettingsConverter {
           break;
         case "qpackMaxBlockedStreams":
           if (member.getValue() instanceof Number) {
-            obj.setQpackMaxBlockedStreams(((Number)member.getValue()).intValue());
+            obj.setQpackMaxBlockedStreams(((Number)member.getValue()).longValue());
           }
           break;
         case "enableConnectProtocol":
