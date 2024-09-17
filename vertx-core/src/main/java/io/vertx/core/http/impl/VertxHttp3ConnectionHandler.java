@@ -202,6 +202,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
 
     HttpHeaders httpHeaders = headers.toHttpHeaders();
     httpHeaders.add(HttpHeaderNames.HOST, headers.authority());
+    httpHeaders.add(HttpHeaderNames.USER_AGENT, "Vertx Http3Client");
 
     request.headers().setAll(httpHeaders);
 
