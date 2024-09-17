@@ -59,7 +59,7 @@ public class DefaultDeploymentManager implements DeploymentManager {
 
   public Future<Void> undeployAll() {
     // TODO timeout if it takes too long - e.g. async stop verticle fails to call future
-
+    List<Future<?>> completionList = new ArrayList<>();
     // We only deploy the top level verticles as the children will be undeployed when the parent is
     while (true) {
       DeploymentContextImpl deployment;
@@ -72,7 +72,8 @@ public class DefaultDeploymentManager implements DeploymentManager {
         it.remove();
         deployment = (DeploymentContextImpl) entry.getValue();
       }
-      deployment.deployment.undeploy().andThen(ar -> deployments.remove(deployment.deploymentID));
+      Future<?> f = deployment.deployment.undeploy();
+      completionList.add(f);
     }
     Set<String> deploymentIDs = new HashSet<>();
     for (Map.Entry<String, DeploymentContext> entry: deployments.entrySet()) {
@@ -80,25 +81,20 @@ public class DefaultDeploymentManager implements DeploymentManager {
         deploymentIDs.add(entry.getKey());
       }
     }
-    List<Future<?>> completionList = new ArrayList<>();
-    if (!deploymentIDs.isEmpty()) {
-      for (String deploymentID : deploymentIDs) {
-        Promise<Void> promise = Promise.promise();
-        completionList.add(promise.future());
-        undeploy(deploymentID).onComplete(ar -> {
-          if (ar.failed()) {
-            // Log but carry on regardless
-            log.error("Undeploy failed", ar.cause());
-          }
-          promise.handle(ar);
-        });
-      }
-      Promise<Void> promise = vertx.getOrCreateContext().promise();
-      Future.join(completionList).<Void>mapEmpty().onComplete(promise);
-      return promise.future();
-    } else {
-      return vertx.getOrCreateContext().succeededFuture();
+    for (String deploymentID : deploymentIDs) {
+      Promise<Void> promise = Promise.promise();
+      completionList.add(promise.future());
+      undeploy(deploymentID).onComplete(ar -> {
+        if (ar.failed()) {
+          // Log but carry on regardless
+          log.error("Undeploy failed", ar.cause());
+        }
+        promise.handle(ar);
+      });
     }
+    Promise<Void> promise = vertx.getOrCreateContext().promise();
+    Future.join(completionList).<Void>mapEmpty().onComplete(promise);
+    return promise.future();
   }
 
   public Future<DeploymentContext> deploy(DeploymentContext parent,
@@ -127,9 +123,11 @@ public class DefaultDeploymentManager implements DeploymentManager {
             return;
           }
         }
+        boolean removedFromDeploying;
         synchronized (deploying) {
-          deploying.remove(deploymentID);
+          removedFromDeploying = (deploying.remove(deploymentID) != null);
         }
+        assert removedFromDeploying;
         result.complete(context);
       } else {
         context
