@@ -16,7 +16,6 @@ import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
-import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
 
 import java.util.Set;

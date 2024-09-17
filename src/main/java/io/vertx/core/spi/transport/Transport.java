@@ -14,7 +14,6 @@ package io.vertx.core.spi.transport;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
-import io.netty.channel.epoll.EpollChannelOption;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
 import io.vertx.core.datagram.DatagramSocketOptions;
@@ -90,6 +89,7 @@ public interface Transport {
    * @param nThreads the number of threads that will be used by this instance.
    * @param threadFactory the ThreadFactory to use.
    * @param ioRatio the IO ratio
+   *
    * @return a new event loop group
    */
   EventLoopGroup eventLoopGroup(int type, int nThreads, ThreadFactory threadFactory, int ioRatio);
