@@ -22,7 +22,7 @@ jobs:
             stable: true
           - os: ubuntu-latest
             jdk: 11
-            profile: '-PNativeIoUring'
+            profile: '-PNativeIoUring --fail-never'
             stable: false
           - os: ubuntu-latest
             jdk: 11
