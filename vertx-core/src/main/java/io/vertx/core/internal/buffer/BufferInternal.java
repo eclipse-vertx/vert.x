@@ -3,11 +3,23 @@ package io.vertx.core.internal.buffer;
 import io.netty.buffer.ByteBuf;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.buffer.impl.BufferImpl;
+import io.vertx.core.net.impl.VertxHandler;
 
 import java.nio.ByteBuffer;
 import java.util.Objects;
 
 public interface BufferInternal extends Buffer {
+
+  /**
+   * Create a new Vert.x buffer from a Netty {@code ByteBuf}. Pooled {@code byteBuf} are copied and released,
+   * otherwise it is wrapped.
+   *
+   * @param byteBuf the buffer
+   * @return a Vert.x buffer to use
+   */
+  static BufferInternal safeBuffer(ByteBuf byteBuf) {
+    return buffer(VertxHandler.safeBuffer(byteBuf));
+  }
 
   /**
    * <p>

@@ -1,27 +1,34 @@
 import io.vertx.core.spi.VerticleFactory;
-import io.vertx.core.spi.VertxServiceProvider;
-import io.vertx.test.fakecluster.FakeClusterManager;
 import io.vertx.tests.deployment.ClasspathVerticleFactory;
 
-open module io.vertx.tests {
+open module io.vertx.core.tests {
+
   requires io.vertx.codegen.api;
   requires io.vertx.core;
   requires io.vertx.core.logging;
-  requires assertj.core;
-  requires org.hamcrest;
+
+  requires static assertj.core;
+  requires static org.hamcrest;
+
   requires junit;
   requires java.management;
   requires java.logging;
 
   requires org.slf4j;
 
-  requires apacheds.protocol.dns;
-  requires apacheds.i18n;
-  requires mina.core;
-  requires apacheds.protocol.shared;
-  requires com.fasterxml.jackson.annotation;
-  requires com.fasterxml.jackson.core;
-  requires com.fasterxml.jackson.databind;
+  requires static apacheds.protocol.dns;
+  requires static apacheds.i18n;
+  requires static mina.core;
+  requires static apacheds.protocol.shared;
+
+  requires static org.apache.logging.log4j.core;
+
+  requires static jmh.core;
+
+  requires transitive com.fasterxml.jackson.core;
+  requires static com.fasterxml.jackson.annotation;
+  requires static com.fasterxml.jackson.databind;
+
   requires io.netty.common;
   requires io.netty.buffer;
   requires io.netty.transport;
@@ -32,10 +39,20 @@ open module io.vertx.tests {
   requires io.netty.codec.haproxy;
   requires io.netty.codec.http2;
   requires io.netty.resolver.dns;
-  requires jmh.core;
-  requires org.apache.logging.log4j.core;
 
-  provides VertxServiceProvider with FakeClusterManager;
   provides VerticleFactory with ClasspathVerticleFactory, io.vertx.tests.vertx.AccessEventBusFromInitVerticleFactory;
+
+  exports io.vertx.test.core;
+  exports io.vertx.test.fakecluster;
+  exports io.vertx.test.fakedns;
+  exports io.vertx.test.fakeloadbalancer;
+  exports io.vertx.test.fakemetrics;
+  exports io.vertx.test.fakeresolver;
+  exports io.vertx.test.fakestream;
+  exports io.vertx.test.faketracer;
+  exports io.vertx.test.http;
+  exports io.vertx.test.netty;
+  exports io.vertx.test.proxy;
+  exports io.vertx.test.tls;
 
 }

@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertTrue;
 
 public class FileDescriptorLeakDetectorRule implements TestRule {
 
@@ -93,7 +93,7 @@ public class FileDescriptorLeakDetectorRule implements TestRule {
 
         long averageEvaluations = getAverage(iterations);
         System.out.println("*** Open file descriptor open file descriptors average " + averageEvaluations);
-        assertThat(averageEvaluations).isLessThanOrEqualTo(maxBaseLine);
+        assertTrue(averageEvaluations <= maxBaseLine);
       }
     };
   }

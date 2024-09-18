@@ -63,6 +63,7 @@ public class VertxBootstrapTest {
     VertxBootstrap factory = VertxBootstrap.create().init();
     CompletableFuture<Vertx> fut = new CompletableFuture<>();
     factory.init();
+    factory.clusterManager(new FakeClusterManager());
     factory.clusteredVertx().onComplete(ar -> {
       if (ar.succeeded()) {
         fut.complete(ar.result());

@@ -858,7 +858,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
   }
 
   private void handleResponseChunk(Stream stream, ByteBuf chunk) {
-    Buffer buff = BufferInternal.buffer(VertxHandler.safeBuffer(chunk));
+    Buffer buff = BufferInternal.safeBuffer(chunk);
     int len = buff.length();
     stream.bytesRead += len;
     stream.handleChunk(buff);

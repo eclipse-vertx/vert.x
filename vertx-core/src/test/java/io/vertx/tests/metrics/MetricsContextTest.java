@@ -27,6 +27,7 @@ import io.vertx.core.spi.observability.HttpRequest;
 import io.vertx.core.spi.observability.HttpResponse;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
+import io.vertx.test.fakecluster.FakeClusterManager;
 import io.vertx.test.http.HttpTestBase;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -77,6 +78,7 @@ public class MetricsContextTest extends VertxTestBase {
       .withClusterManager(getClusterManager())
       .withMetrics(factory);
     builder
+      .withClusterManager(new FakeClusterManager())
       .buildClustered()
       .onComplete(onSuccess(vertx -> {
         assertSame(testThread, metricsThread.get());
