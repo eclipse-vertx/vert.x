@@ -43,32 +43,26 @@ public final class VertxHandler<C extends VertxConnection> extends ChannelDuplex
   }
 
   /**
-   * Copy and release the {@code buf} when necessary.
+   * Pooled {@code byteBuf} are copied and released, otherwise it is returned as is.
    *
-   * <p> This methods assuming the has full ownership of the buffer.
-   *
-   * <p> This method assumes that pooled buffers are allocated by {@code PooledByteBufAllocator}
-   *
-   * <p> The returned buffer will not need to be released and can be wrapped by a {@link io.vertx.core.buffer.Buffer}.
-   *
-   * @param buf the buffer
-   * @return a safe buffer to use
+   * @param byteBuf the buffer
+   * @return a buffer safe
    */
-  public static ByteBuf safeBuffer(ByteBuf buf) {
-    if (buf != Unpooled.EMPTY_BUFFER && (buf.alloc() instanceof PooledByteBufAllocator || buf instanceof CompositeByteBuf)) {
+  public static ByteBuf safeBuffer(ByteBuf byteBuf) {
+    if (byteBuf != Unpooled.EMPTY_BUFFER && (byteBuf.alloc() instanceof PooledByteBufAllocator || byteBuf instanceof CompositeByteBuf)) {
       try {
-        if (buf.isReadable()) {
-          ByteBuf buffer = VertxByteBufAllocator.DEFAULT.heapBuffer(buf.readableBytes());
-          buffer.writeBytes(buf, buf.readerIndex(), buf.readableBytes());
+        if (byteBuf.isReadable()) {
+          ByteBuf buffer = VertxByteBufAllocator.DEFAULT.heapBuffer(byteBuf.readableBytes());
+          buffer.writeBytes(byteBuf, byteBuf.readerIndex(), byteBuf.readableBytes());
           return buffer;
         } else {
           return Unpooled.EMPTY_BUFFER;
         }
       } finally {
-        buf.release();
+        byteBuf.release();
       }
     }
-    return buf;
+    return byteBuf;
   }
 
   /**

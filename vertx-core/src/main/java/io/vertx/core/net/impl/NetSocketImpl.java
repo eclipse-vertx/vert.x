@@ -395,9 +395,7 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
     @Override
     public void handle(Object msg) {
       if (msg instanceof ByteBuf) {
-        msg = VertxHandler.safeBuffer((ByteBuf) msg);
-        ByteBuf byteBuf = (ByteBuf) msg;
-        Buffer buffer = BufferInternal.buffer(byteBuf);
+        Buffer buffer = BufferInternal.safeBuffer((ByteBuf) msg);
         pending.write(buffer);
       } else {
         handleInvalid(msg);

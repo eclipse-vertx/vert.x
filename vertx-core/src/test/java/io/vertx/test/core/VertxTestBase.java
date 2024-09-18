@@ -175,6 +175,9 @@ public class VertxTestBase extends AsyncTestBase {
     if (created == null) {
       created = Collections.synchronizedList(new ArrayList<>());
     }
+    if (clusterManager == null) {
+      clusterManager = new FakeClusterManager();
+    }
     return createVertxBuilder(options)
       .withClusterManager(clusterManager)
       .buildClustered().andThen(event -> {
