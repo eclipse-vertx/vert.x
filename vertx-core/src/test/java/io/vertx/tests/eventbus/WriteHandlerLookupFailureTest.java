@@ -20,6 +20,7 @@ import io.vertx.core.internal.VertxBootstrap;
 import io.vertx.core.spi.cluster.impl.NodeSelector;
 import io.vertx.core.spi.cluster.impl.DefaultNodeSelector;
 import io.vertx.test.core.VertxTestBase;
+import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -49,7 +50,10 @@ public final class WriteHandlerLookupFailureTest extends VertxTestBase {
         promise.fail("Not implemented");
       }
     };
-    ((VertxBootstrapImpl)VertxBootstrap.create().options(options).init()).clusterNodeSelector(nodeSelector).clusteredVertx().onComplete(onSuccess(node -> {
+    ((VertxBootstrapImpl)VertxBootstrap.create().options(options).init())
+      .clusterManager(new FakeClusterManager())
+      .clusterNodeSelector(nodeSelector)
+      .clusteredVertx().onComplete(onSuccess(node -> {
       vertx = node;
       MessageProducer<String> sender = vertx.eventBus().sender("foo");
       sender.write("the_string").onComplete(onFailure(err -> {

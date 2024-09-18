@@ -68,16 +68,16 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
   }
 
   /**
-   * @return a case insensitive multi-map suited for HTTP header validation
+   * @return a case-insensitive multimap suited for HTTP header validation
    */
   public static HeadersMultiMap httpHeaders() {
     return new HeadersMultiMap(HTTP_VALIDATOR);
   }
 
   /**
-   * @return a all-purpose case insensitive multi-map that does not perform validation
+   * @return a all-purpose case-insensitive multimap that does not perform validation
    */
-  public static HeadersMultiMap headers() {
+  public static HeadersMultiMap caseInsensitive() {
     return new HeadersMultiMap();
   }
 

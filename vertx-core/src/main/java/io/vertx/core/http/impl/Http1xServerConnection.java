@@ -180,7 +180,7 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
       handleError(content);
       return;
     }
-    Buffer buffer = BufferInternal.buffer(VertxHandler.safeBuffer(content.content()));
+    Buffer buffer = BufferInternal.safeBuffer(content.content());
     Http1xServerRequest request = requestInProgress;
     request.handleContent(buffer);
     //TODO chunk trailers

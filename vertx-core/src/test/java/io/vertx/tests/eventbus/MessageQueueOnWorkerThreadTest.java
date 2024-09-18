@@ -17,6 +17,7 @@ import io.vertx.core.impl.VertxBootstrapImpl;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.impl.NodeSelector;
 import io.vertx.test.core.VertxTestBase;
+import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -37,7 +38,7 @@ public class MessageQueueOnWorkerThreadTest extends VertxTestBase {
   public void setUp() throws Exception {
     super.setUp();
     CustomNodeSelector selector = new CustomNodeSelector();
-    VertxBootstrapImpl factory = new VertxBootstrapImpl().init().clusterNodeSelector(selector);
+    VertxBootstrapImpl factory = new VertxBootstrapImpl().init().clusterManager(new FakeClusterManager()).clusterNodeSelector(selector);
     Future<Vertx> fut = factory.clusteredVertx();
     vertx = fut.await();
   }

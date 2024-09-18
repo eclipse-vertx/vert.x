@@ -378,10 +378,8 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
       if (msg instanceof DatagramPacket) {
         DatagramPacket packet = (DatagramPacket) msg;
         ByteBuf content = packet.content();
-        if (content.isDirect())  {
-          content = VertxHandler.safeBuffer(content);
-        }
-        handlePacket(new DatagramPacketImpl(packet.sender(), BufferInternal.buffer(content)));
+        Buffer buffer = BufferInternal.safeBuffer(content);
+        handlePacket(new DatagramPacketImpl(packet.sender(), buffer));
       }
     }
 

@@ -20,6 +20,7 @@ import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeInfo;
 import io.vertx.core.spi.cluster.impl.NodeSelector;
 import io.vertx.test.core.VertxTestBase;
+import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
 
 import java.util.*;
@@ -45,7 +46,9 @@ public class CustomNodeSelectorTest extends VertxTestBase {
         return vertxOptions;
       })
       .map(options -> {
-        VertxBootstrap factory = ((VertxBootstrapImpl)VertxBootstrap.create().options(options).init()).clusterNodeSelector(new CustomNodeSelector());
+        VertxBootstrap factory = ((VertxBootstrapImpl)VertxBootstrap.create().options(options).init())
+          .clusterManager(new FakeClusterManager())
+          .clusterNodeSelector(new CustomNodeSelector());
         return factory.clusteredVertx();
       })
       .collect(collectingAndThen(toList(), Future::all));
