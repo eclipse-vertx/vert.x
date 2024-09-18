@@ -22,6 +22,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class VirtualThreadContextTest extends VertxTestBase {
@@ -238,5 +239,40 @@ public class VirtualThreadContextTest extends VertxTestBase {
       fail();
     } catch (IllegalStateException expected) {
     }
+  }
+
+  /**
+   * Shows that virtual threads are not awaken gracefully when the context is closed.
+   * Also displays another issue where Vert.x itself can not close smoothly due to the awaitTermination(10, SECONDS) call.
+   */
+  @Test
+  public void testVirtualThreadExitOnClose() {
+    Assume.assumeTrue(isVirtualThreadAvailable());
+    ContextInternal ctx = vertx.createVirtualThreadContext();
+    Promise<Void> promise = ctx.promise();
+    ctx.runOnContext(v -> {
+      Future.await(promise.future());
+    });
+    ctx.closeFuture().close().onFailure(this::fail);
+    await(10, TimeUnit.SECONDS);
+  }
+
+  @Test
+  public void testVirtualThreadStopRunOnClose() {
+    Assume.assumeTrue(isVirtualThreadAvailable());
+    ContextInternal ctx = vertx.createVirtualThreadContext();
+    ctx.runOnContext(v -> {
+      //totally legal in virtual threads
+      while (!Thread.currentThread().isInterrupted()) {
+        try {
+          Thread.sleep(500);
+        } catch (InterruptedException e) {
+          break;
+        }
+      }
+      testComplete();
+    });
+    ctx.closeFuture().close().onFailure(this::fail);
+    await(10, TimeUnit.SECONDS);
   }
 }
