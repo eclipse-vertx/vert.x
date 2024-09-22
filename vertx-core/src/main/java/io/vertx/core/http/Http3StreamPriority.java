@@ -9,6 +9,10 @@ public class Http3StreamPriority extends StreamPriorityBase {
     this.quicStreamPriority = quicStreamPriority;
   }
 
+  public Http3StreamPriority() {
+    this.quicStreamPriority = new QuicStreamPriority(0, false);
+  }
+
   public int urgency() {
     return this.quicStreamPriority.urgency();
   }
