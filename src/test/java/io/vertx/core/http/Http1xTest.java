@@ -4879,21 +4879,36 @@ public class Http1xTest extends HttpTest {
   public void testHttpServerWithIdleTimeoutSendChunkedFile() throws Exception {
     // Does not pass reliably in CI (timeout)
     Assume.assumeTrue(!vertx.isNativeTransportEnabled() && !Utils.isWindows());
-    int expected = 64 * 1024 * 1024; // We estimate this will take more than 200ms to transfer with a 1ms pause in chunks
-    File sent = TestUtils.tmpFile(".dat", expected);
-    server.close();
+    int expected = 32 * 1024 * 1024;
+    File file = TestUtils.tmpFile(".dat", expected);
+    // Estimate the delay to transfer a file with a 1ms pause in chunks
+    int delay = retrieveFileFromServer(file, createBaseServerOptions());
+    // Now test with timeout relative to this delay
+    int timeout = delay / 2;
+    delay = retrieveFileFromServer(file, createBaseServerOptions().setIdleTimeout(timeout).setIdleTimeoutUnit(TimeUnit.MILLISECONDS));
+    assertTrue(delay > timeout);
+  }
+
+  private int retrieveFileFromServer(File file, HttpServerOptions options) throws Exception {
+    server.close().toCompletionStage().toCompletableFuture().get(20, TimeUnit.SECONDS);
     server = vertx
-      .createHttpServer(createBaseServerOptions().setIdleTimeout(1000).setIdleTimeoutUnit(TimeUnit.MILLISECONDS))
+      .createHttpServer(options)
       .requestHandler(
         req -> {
-          req.response().sendFile(sent.getAbsolutePath());
+          req.response().sendFile(file.getAbsolutePath());
         });
     startServer(testAddress);
-    client.request(requestOptions)
-      .onComplete(onSuccess(req -> {
-        req.send(onSuccess(resp -> {
-          long now = System.currentTimeMillis();
-          int[] length = {0};
+    long now = System.currentTimeMillis();
+    Integer len = getFile().toCompletionStage().toCompletableFuture().get(20, TimeUnit.SECONDS);
+    assertEquals((int)len, file.length());
+    return (int) (System.currentTimeMillis() - now);
+  }
+
+  private Future<Integer> getFile() {
+    int[] length = {0};
+    return client.request(requestOptions)
+      .compose(req -> req.send()
+        .compose(resp -> {
           resp.handler(buff -> {
             length[0] += buff.length();
             resp.pause();
@@ -4902,14 +4917,9 @@ public class Http1xTest extends HttpTest {
             });
           });
           resp.exceptionHandler(this::fail);
-          resp.endHandler(v -> {
-            assertEquals(expected, length[0]);
-            assertTrue(System.currentTimeMillis() - now > 1000);
-            testComplete();
-          });
-        }));
-      }));
-    await();
+          return resp.end();
+        }))
+      .map(v -> length[0]);
   }
 
   @Test
