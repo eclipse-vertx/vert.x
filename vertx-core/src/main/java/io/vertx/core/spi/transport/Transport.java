@@ -172,8 +172,10 @@ public interface Transport {
   }
 
   default void configure(NetServerOptions options, boolean domainSocket, ServerBootstrap bootstrap) {
-    bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
-    if (!domainSocket) {
+    if(!options.isHttp3()) {
+      bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
+    }
+    if (!domainSocket && !options.isHttp3()) {
       bootstrap.childOption(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
       bootstrap.childOption(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
     }
