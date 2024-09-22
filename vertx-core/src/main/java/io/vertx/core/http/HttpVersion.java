@@ -12,6 +12,9 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.impl.Arguments;
+
+import java.util.Set;
 
 /**
  * Represents the version of the HTTP protocol.
@@ -33,6 +36,8 @@ public enum HttpVersion {
 
   private final String alpnName;
 
+  private static final Set<HttpVersion> VALID_VERSIONS = Set.of(HTTP_1_0, HTTP_1_1, HTTP_2, HTTP_3);
+
   HttpVersion(String alpnName) {
     this.alpnName = alpnName;
   }
@@ -42,5 +47,9 @@ public enum HttpVersion {
    */
   public String alpnName() {
     return alpnName;
+  }
+
+  public static void validateProtocolVersion(HttpVersion protocolVersion) {
+    Arguments.require(HttpVersion.VALID_VERSIONS.contains(protocolVersion), "Protocol version is not valid!");
   }
 }

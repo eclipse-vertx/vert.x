@@ -157,6 +157,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     if (protocolVersion == null) {
       throw new IllegalArgumentException("protocolVersion must not be null");
     }
+    HttpVersion.validateProtocolVersion(protocolVersion);
     this.protocolVersion = protocolVersion;
     return this;
   }
