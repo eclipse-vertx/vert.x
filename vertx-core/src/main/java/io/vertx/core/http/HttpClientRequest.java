@@ -520,13 +520,13 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    * @param streamPriority the priority of this request's stream
    */
   @Fluent
-  default HttpClientRequest setStreamPriority(StreamPriority streamPriority) {
+  default HttpClientRequest setStreamPriority(StreamPriorityBase streamPriority) {
       return this;
   }
 
   /**
    * @return the priority of the associated HTTP/2 stream for HTTP/2 otherwise {@code null}
    */
-  StreamPriority getStreamPriority();
+  StreamPriorityBase getStreamPriority();
 
 }

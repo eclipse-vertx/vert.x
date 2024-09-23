@@ -10,17 +10,23 @@
  */
 package io.vertx.core.http.impl;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.EventLoop;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
+import io.netty.handler.codec.http2.EmptyHttp2Headers;
 import io.netty.handler.codec.http2.Http2Headers;
+import io.netty.handler.codec.http2.Http2Stream;
+import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
+import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
@@ -32,7 +38,8 @@ import io.vertx.core.tracing.TracingPolicy;
 
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
-class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
+class Http2ServerStream extends VertxHttpStreamBase<Http2ServerConnection, Http2Stream> {
+  private static final MultiMap EMPTY = new Http2HeadersAdaptor(EmptyHttp2Headers.INSTANCE);
 
   protected final Http2Headers headers;
   protected final String scheme;
@@ -102,7 +109,7 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
   }
 
   @Override
-  void onHeaders(Http2Headers headers, StreamPriority streamPriority) {
+  void onHeaders(VertxHttpHeaders headers, StreamPriorityBase streamPriority) {
     if (streamPriority != null) {
       priority(streamPriority);
     }
@@ -110,12 +117,12 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
     CharSequence value = headers.get(HttpHeaderNames.EXPECT);
     if (conn.options.isHandle100ContinueAutomatically() &&
       ((value != null && HttpHeaderValues.CONTINUE.equals(value)) ||
-        headers.contains(HttpHeaderNames.EXPECT, HttpHeaderValues.CONTINUE))) {
+        headers.contains(String.valueOf(HttpHeaderNames.EXPECT), String.valueOf(HttpHeaderValues.CONTINUE)))) {
       request.response().writeContinue();
     }
     VertxTracer tracer = context.tracer();
     if (tracer != null) {
-      trace = tracer.receiveRequest(context, SpanKind.RPC, tracingPolicy, request, method().name(), new Http2HeadersAdaptor(headers), HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
+      trace = tracer.receiveRequest(context, SpanKind.RPC, tracingPolicy, request, method().name(), headers.toHeaderAdapter(), HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
     }
     request.dispatch(conn.requestHandler);
   }
@@ -133,7 +140,7 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
   }
 
   @Override
-  void doWriteHeaders(Http2Headers headers, boolean end, boolean checkFlush, Promise<Void> promise) {
+  void doWriteHeaders(VertxHttpHeaders headers, boolean end, boolean checkFlush, Promise<Void> promise) {
     if (Metrics.METRICS_ENABLED && !end) {
       HttpServerMetrics metrics = conn.metrics();
       if (metrics != null) {
@@ -192,7 +199,7 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
   }
 
   @Override
-  void handlePriorityChange(StreamPriority newPriority) {
+  void handlePriorityChange(StreamPriorityBase newPriority) {
     request.handlePriorityChange(newPriority);
   }
 
@@ -255,5 +262,73 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
     if (metrics != null && !responseEnded) {
       metrics.requestRouted(metric, route);
     }
+  }
+
+  @Override
+  protected void consumeCredits(Http2Stream stream, int len) {
+    conn.consumeCredits(stream, len);
+  }
+
+  @Override
+  public void writeFrame(Http2Stream stream, byte type, short flags, ByteBuf payload, Promise<Void> promise) {
+    conn.handler.writeFrame(stream, type, flags, payload, (FutureListener<Void>) promise);
+  }
+  @Override
+  public void writeHeaders(Http2Stream stream, VertxHttpHeaders headers, boolean end, StreamPriorityBase priority,
+                           boolean checkFlush, FutureListener<Void> promise) {
+    conn.handler.writeHeaders(stream, headers, end, priority.getDependency(), priority.getWeight(), priority.isExclusive(),
+      checkFlush, promise);
+  }
+
+  @Override
+  public void writePriorityFrame(StreamPriorityBase priority) {
+    conn.handler.writePriority(stream, priority.getDependency(), priority.getWeight(), priority.isExclusive());
+  }
+
+  @Override
+  public void writeData_(Http2Stream stream, ByteBuf chunk, boolean end, FutureListener<Void> promise) {
+    conn.handler.writeData(stream, chunk, end, promise);
+  }
+
+  @Override
+  public void writeReset_(int streamId, long code) {
+    conn.handler.writeReset(streamId, code);
+  }
+
+  @Override
+  public void init_(VertxHttpStreamBase vertxHttpStream, Http2Stream stream) {
+    this.stream = stream;
+    this.writable = this.conn.handler.encoder().flowController().isWritable(this.stream);
+    stream.setProperty(conn.streamKey, vertxHttpStream);
+  }
+
+  @Override
+  public synchronized int getStreamId() {
+    return stream != null ? stream.id() : -1;
+  }
+
+  @Override
+  public boolean remoteSideOpen(Http2Stream stream) {
+    return stream.state().remoteSideOpen();
+  }
+
+  @Override
+  public MultiMap getEmptyHeaders() {
+    return EMPTY;
+  }
+
+  @Override
+  public boolean isWritable_() {
+    return writable;
+  }
+
+  @Override
+  public boolean isTrailersReceived() {
+    return stream.isTrailersReceived();
+  }
+
+  @Override
+  protected StreamPriorityBase createDefaultStreamPriority() {
+    return HttpUtils.DEFAULT_STREAM_PRIORITY;
   }
 }

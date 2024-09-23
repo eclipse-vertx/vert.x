@@ -3130,8 +3130,8 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testStreamPriority() throws Exception {
-    StreamPriority requestStreamPriority = new StreamPriority().setDependency(123).setWeight((short)45).setExclusive(true);
-    StreamPriority responseStreamPriority = new StreamPriority().setDependency(153).setWeight((short)75).setExclusive(false);
+    StreamPriorityBase requestStreamPriority = new Http2StreamPriority().setDependency(123).setWeight((short)45).setExclusive(true);
+    StreamPriorityBase responseStreamPriority = new Http2StreamPriority().setDependency(153).setWeight((short)75).setExclusive(false);
     waitFor(4);
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
@@ -3187,10 +3187,10 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testStreamPriorityChange() throws Exception {
-    StreamPriority requestStreamPriority = new StreamPriority().setDependency(123).setWeight((short) 45).setExclusive(true);
-    StreamPriority requestStreamPriority2 = new StreamPriority().setDependency(223).setWeight((short) 145).setExclusive(false);
-    StreamPriority responseStreamPriority = new StreamPriority().setDependency(153).setWeight((short) 75).setExclusive(false);
-    StreamPriority responseStreamPriority2 = new StreamPriority().setDependency(253).setWeight((short) 175).setExclusive(true);
+    StreamPriorityBase requestStreamPriority = new Http2StreamPriority().setDependency(123).setWeight((short) 45).setExclusive(true);
+    StreamPriorityBase requestStreamPriority2 = new Http2StreamPriority().setDependency(223).setWeight((short) 145).setExclusive(false);
+    StreamPriorityBase responseStreamPriority = new Http2StreamPriority().setDependency(153).setWeight((short) 75).setExclusive(false);
+    StreamPriorityBase responseStreamPriority2 = new Http2StreamPriority().setDependency(253).setWeight((short) 175).setExclusive(true);
     waitFor(6);
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
@@ -3275,8 +3275,8 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testStreamPriorityNoChange() throws Exception {
-    StreamPriority requestStreamPriority = new StreamPriority().setDependency(123).setWeight((short)45).setExclusive(true);
-    StreamPriority responseStreamPriority = new StreamPriority().setDependency(153).setWeight((short)75).setExclusive(false);
+    StreamPriorityBase requestStreamPriority = new Http2StreamPriority().setDependency(123).setWeight((short)45).setExclusive(true);
+    StreamPriorityBase responseStreamPriority = new Http2StreamPriority().setDependency(153).setWeight((short)75).setExclusive(false);
     waitFor(4);
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();

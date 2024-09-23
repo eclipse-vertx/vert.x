@@ -163,7 +163,14 @@ public interface HttpConnection {
   /**
    * @return the latest server settings acknowledged by the remote endpoint - this is not implemented for HTTP/1.x
    */
-  Http2Settings settings();
+  default Http2Settings settings() {
+    return httpSettings().getHttp2Settings();
+  }
+
+  /**
+   * @return the latest server settings acknowledged by the remote endpoint
+   */
+  HttpSettings httpSettings();
 
   /**
    * Send to the remote endpoint an update of this endpoint settings
@@ -175,12 +182,32 @@ public interface HttpConnection {
    * @param settings the new settings
    * @return a future completed when the settings have been acknowledged by the remote endpoint
    */
-  Future<Void> updateSettings(Http2Settings settings);
+  default Future<Void> updateSettings(Http2Settings settings) {
+    return updateHttpSettings(new HttpSettings(settings));
+  }
+
+  /**
+   * Send to the remote endpoint an update of this endpoint settings
+   * <p/>
+   * The {@code completionHandler} will be notified when the remote endpoint has acknowledged the settings.
+   * <p/>
+   *
+   * @param settings the new settings
+   * @return a future completed when the settings have been acknowledged by the remote endpoint
+   */
+  Future<Void> updateHttpSettings(HttpSettings settings);
 
   /**
    * @return the current remote endpoint settings for this connection - this is not implemented for HTTP/1.x
    */
-  Http2Settings remoteSettings();
+  default Http2Settings remoteSettings() {
+    return remoteHttpSettings().getHttp2Settings();
+  }
+
+  /**
+   * @return the current remote endpoint settings for this connection
+   */
+  HttpSettings remoteHttpSettings();
 
   /**
    * Set an handler that is called when remote endpoint {@link Http2Settings} are updated.
@@ -191,7 +218,18 @@ public interface HttpConnection {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpConnection remoteSettingsHandler(Handler<Http2Settings> handler);
+  default HttpConnection remoteSettingsHandler(Handler<Http2Settings> handler) {
+    return remoteHttpSettingsHandler(result -> handler.handle(result.getHttp2Settings()));
+  }
+
+  /**
+   * Set an handler that is called when remote endpoint {@link HttpSettings} are updated.
+   * <p/>
+   * @param handler the handler for remote endpoint settings
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpConnection remoteHttpSettingsHandler(Handler<HttpSettings> handler);
 
   /**
    * Send a {@literal PING} frame to the remote endpoint.

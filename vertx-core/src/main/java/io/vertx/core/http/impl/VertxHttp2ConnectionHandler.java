@@ -23,6 +23,8 @@ import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.FutureListener;
 import io.netty.util.concurrent.Promise;
 import io.vertx.core.Handler;
+import io.vertx.core.http.HttpSettings;
+import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.GoAway;
 import io.vertx.core.net.impl.ShutdownEvent;
@@ -43,7 +45,7 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   private Handler<C> addHandler;
   private Handler<C> removeHandler;
   private final boolean useDecompressor;
-  private final Http2Settings initialSettings;
+  private final HttpSettings initialSettings;
   public boolean upgraded;
 
   public VertxHttp2ConnectionHandler(
@@ -51,8 +53,8 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
       boolean useDecompressor,
       Http2ConnectionDecoder decoder,
       Http2ConnectionEncoder encoder,
-      Http2Settings initialSettings) {
-    super(decoder, encoder, initialSettings);
+      HttpSettings initialSettings) {
+    super(decoder, encoder, initialSettings.toNettyHttp2Settings());
     this.connectionFactory = connectionFactory;
     this.useDecompressor = useDecompressor;
     this.initialSettings = initialSettings;
@@ -75,7 +77,7 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
     return chctx;
   }
 
-  public Http2Settings initialSettings() {
+  public HttpSettings initialSettings() {
     return initialSettings;
   }
 
@@ -220,9 +222,9 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
 
   //
 
-  void writeHeaders(Http2Stream stream, Http2Headers headers, boolean end, int streamDependency, short weight, boolean exclusive, boolean checkFlush, FutureListener<Void> listener) {
+  void writeHeaders(Http2Stream stream, VertxHttpHeaders headers, boolean end, int streamDependency, short weight, boolean exclusive, boolean checkFlush, FutureListener<Void> listener) {
     ChannelPromise promise = listener == null ? chctx.voidPromise() : chctx.newPromise().addListener(listener);
-    encoder().writeHeaders(chctx, stream.id(), headers, streamDependency, weight, exclusive, 0, end, promise);
+    encoder().writeHeaders(chctx, stream.id(), headers.getHeaders(), streamDependency, weight, exclusive, 0, end, promise);
     if (checkFlush) {
       checkFlush();
     }

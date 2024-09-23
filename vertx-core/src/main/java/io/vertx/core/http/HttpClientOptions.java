@@ -164,11 +164,11 @@ public class HttpClientOptions extends ClientOptionsBase {
   private boolean decompressionSupported;
   private String defaultHost;
   private int defaultPort;
-  private HttpVersion protocolVersion;
   private int maxChunkSize;
   private int maxInitialLineLength;
   private int maxHeaderSize;
   private Http2Settings initialSettings;
+  private Http3Settings initialHttp3Settings;
   private List<HttpVersion> alpnVersions;
   private boolean http2ClearTextUpgrade;
   private boolean http2ClearTextUpgradeWithPreflightRequest;
@@ -217,11 +217,11 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.decompressionSupported = other.decompressionSupported;
     this.defaultHost = other.defaultHost;
     this.defaultPort = other.defaultPort;
-    this.protocolVersion = other.protocolVersion;
     this.maxChunkSize = other.maxChunkSize;
     this.maxInitialLineLength = other.getMaxInitialLineLength();
     this.maxHeaderSize = other.getMaxHeaderSize();
     this.initialSettings = other.initialSettings != null ? new Http2Settings(other.initialSettings) : null;
+    this.initialHttp3Settings = other.initialHttp3Settings != null ? new Http3Settings(other.initialHttp3Settings) : null;
     this.alpnVersions = other.alpnVersions != null ? new ArrayList<>(other.alpnVersions) : null;
     this.http2ClearTextUpgrade = other.http2ClearTextUpgrade;
     this.http2ClearTextUpgradeWithPreflightRequest = other.http2ClearTextUpgradeWithPreflightRequest;
@@ -267,11 +267,11 @@ public class HttpClientOptions extends ClientOptionsBase {
     decompressionSupported = DEFAULT_DECOMPRESSION_SUPPORTED;
     defaultHost = DEFAULT_DEFAULT_HOST;
     defaultPort = DEFAULT_DEFAULT_PORT;
-    protocolVersion = DEFAULT_PROTOCOL_VERSION;
     maxChunkSize = DEFAULT_MAX_CHUNK_SIZE;
     maxInitialLineLength = DEFAULT_MAX_INITIAL_LINE_LENGTH;
     maxHeaderSize = DEFAULT_MAX_HEADER_SIZE;
     initialSettings = new Http2Settings();
+    initialHttp3Settings = new Http3Settings();
     alpnVersions = new ArrayList<>(DEFAULT_ALPN_VERSIONS);
     http2ClearTextUpgrade = DEFAULT_HTTP2_CLEAR_TEXT_UPGRADE;
     http2ClearTextUpgradeWithPreflightRequest = DEFAULT_HTTP2_CLEAR_TEXT_UPGRADE_WITH_PREFLIGHT_REQUEST;
@@ -692,26 +692,9 @@ public class HttpClientOptions extends ClientOptionsBase {
     return this;
   }
 
-  /**
-   * Get the protocol version.
-   *
-   * @return the protocol version
-   */
-  public HttpVersion getProtocolVersion() {
-    return protocolVersion;
-  }
-
-  /**
-   * Set the protocol version.
-   *
-   * @param protocolVersion the protocol version
-   * @return a reference to this, so the API can be used fluently
-   */
+  @Override
   public HttpClientOptions setProtocolVersion(HttpVersion protocolVersion) {
-    if (protocolVersion == null) {
-      throw new IllegalArgumentException("protocolVersion must not be null");
-    }
-    this.protocolVersion = protocolVersion;
+    super.setProtocolVersion(protocolVersion);
     return this;
   }
 
@@ -784,6 +767,24 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public HttpClientOptions setInitialSettings(Http2Settings settings) {
     this.initialSettings = settings;
+    return this;
+  }
+
+  /**
+   * @return the initial HTTP/3 connection settings
+   */
+  public Http3Settings getInitialHttp3Settings() {
+    return initialHttp3Settings;
+  }
+
+  /**
+   * Set the HTTP/3 connection settings immediately sent by to the server when the client connects.
+   *
+   * @param settings the settings value
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setInitialHttp3Settings(Http3Settings settings) {
+    this.initialHttp3Settings = settings;
     return this;
   }
 

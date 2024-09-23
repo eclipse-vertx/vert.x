@@ -29,12 +29,9 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.*;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.buffer.VertxByteBufAllocator;
-import io.vertx.core.http.GoAway;
-import io.vertx.core.http.HttpClosedException;
-import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.StreamPriority;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.VertxInternal;
@@ -61,11 +58,13 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     return buffer;
   }
 
+  protected abstract void onHeadersRead(int streamId, Http2Headers headers, StreamPriorityBase streamPriority, boolean endOfStream);
+
   protected final ChannelHandlerContext handlerContext;
   protected final VertxHttp2ConnectionHandler handler;
   protected final Http2Connection.PropertyKey streamKey;
   private boolean shutdown;
-  private Handler<io.vertx.core.http.Http2Settings> remoteSettingsHandler;
+  private Handler<HttpSettings> remoteSettingsHandler;
   private final ArrayDeque<Handler<Void>> updateSettingsHandlers = new ArrayDeque<>();
   private final ArrayDeque<Promise<Buffer>> pongHandlers = new ArrayDeque<>();
   private Http2Settings localSettings;
@@ -84,10 +83,10 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     this.windowSize = handler.connection().local().flowController().windowSize(handler.connection().connectionStream());
     this.maxConcurrentStreams = io.vertx.core.http.Http2Settings.DEFAULT_MAX_CONCURRENT_STREAMS;
     this.streamKey = handler.connection().newKey();
-    this.localSettings = handler.initialSettings();
+    this.localSettings = handler.initialSettings().toNettyHttp2Settings();
   }
 
-  VertxInternal vertx() {
+  public VertxInternal vertx() {
     return vertx;
   }
 
@@ -102,7 +101,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   synchronized void onConnectionError(Throwable cause) {
-    ArrayList<VertxHttp2Stream> streams = new ArrayList<>();
+    ArrayList<VertxHttpStreamBase> streams = new ArrayList<>();
     try {
       handler.connection().forEachActiveStream(stream -> {
         streams.add(stream.getProperty(streamKey));
@@ -111,13 +110,13 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     } catch (Http2Exception e) {
       log.error("Could not get the list of active streams", e);
     }
-    for (VertxHttp2Stream stream : streams) {
+    for (VertxHttpStreamBase stream : streams) {
       stream.context.dispatch(v -> stream.handleException(cause));
     }
     handleException(cause);
   }
 
-  VertxHttp2Stream<?> stream(int id) {
+  VertxHttpStreamBase<?, ?> stream(int id) {
     Http2Stream s = handler.connection().stream(id);
     if (s == null) {
       return null;
@@ -126,21 +125,21 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   void onStreamError(int streamId, Throwable cause) {
-    VertxHttp2Stream stream = stream(streamId);
+    VertxHttpStreamBase<?, ?> stream = stream(streamId);
     if (stream != null) {
       stream.onException(cause);
     }
   }
 
   void onStreamWritabilityChanged(Http2Stream s) {
-    VertxHttp2Stream stream = s.getProperty(streamKey);
+    VertxHttpStreamBase<?, ?> stream = s.getProperty(streamKey);
     if (stream != null) {
       stream.onWritabilityChanged();
     }
   }
 
   void onStreamClosed(Http2Stream s) {
-    VertxHttp2Stream stream = s.getProperty(streamKey);
+    VertxHttpStreamBase<?, ?> stream = s.getProperty(streamKey);
     if (stream != null) {
       boolean active = chctx.channel().isActive();
       if (goAwayStatus != null) {
@@ -191,9 +190,9 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   public void onPriorityRead(ChannelHandlerContext ctx, int streamId, int streamDependency, short weight, boolean exclusive) {
-      VertxHttp2Stream stream = stream(streamId);
+    VertxHttpStreamBase<?, ?> stream = stream(streamId);
       if (stream != null) {
-        StreamPriority streamPriority = new StreamPriority()
+        StreamPriorityBase streamPriority = new Http2StreamPriority()
           .setDependency(streamDependency)
           .setWeight(weight)
           .setExclusive(exclusive);
@@ -203,7 +202,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endOfStream) throws Http2Exception {
-    StreamPriority streamPriority = new StreamPriority()
+    StreamPriorityBase streamPriority = new Http2StreamPriority()
       .setDependency(streamDependency)
       .setWeight(weight)
       .setExclusive(exclusive);
@@ -214,8 +213,6 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int padding, boolean endOfStream) throws Http2Exception {
     onHeadersRead(streamId, headers, null, endOfStream);
   }
-
-  protected abstract void onHeadersRead(int streamId, Http2Headers headers, StreamPriority streamPriority, boolean endOfStream);
 
   @Override
   public void onSettingsAckRead(ChannelHandlerContext ctx) {
@@ -235,7 +232,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   @Override
   public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) {
     boolean changed;
-    Handler<io.vertx.core.http.Http2Settings> handler;
+    Handler<HttpSettings> handler;
     synchronized (this) {
       Long val = settings.maxConcurrentStreams();
       if (val != null) {
@@ -248,11 +245,11 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
       } else {
         changed = false;
       }
-      remoteSettings = settings;
+      remoteSettings = new HttpSettings(settings).toNettyHttp2Settings();
       handler = remoteSettingsHandler;
     }
     if (handler != null) {
-      context.dispatch(HttpUtils.toVertxSettings(settings), handler);
+      context.dispatch(new HttpSettings(settings), handler);
     }
     if (changed) {
       concurrencyChanged(maxConcurrentStreams);
@@ -293,7 +290,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   @Override
   public void onUnknownFrame(ChannelHandlerContext ctx, byte frameType, int streamId,
                              Http2Flags flags, ByteBuf payload) {
-    VertxHttp2Stream stream = stream(streamId);
+    VertxHttpStreamBase<?, ?> stream = stream(streamId);
     if (stream != null) {
       Buffer buff = BufferInternal.buffer(safeBuffer(payload));
       stream.onCustomFrame(new HttpFrameImpl(frameType, flags.value(), buff));
@@ -302,7 +299,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   public void onRstStreamRead(ChannelHandlerContext ctx, int streamId, long errorCode) {
-    VertxHttp2Stream stream = stream(streamId);
+    VertxHttpStreamBase<?, ?> stream = stream(streamId);
     if (stream != null) {
       stream.onReset(errorCode);
     }
@@ -310,7 +307,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) {
-    VertxHttp2Stream stream = stream(streamId);
+    VertxHttpStreamBase<?, ?> stream = stream(streamId);
     if (stream != null) {
       data = safeBuffer(data);
       Buffer buff = BufferInternal.buffer(data);
@@ -403,24 +400,24 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public synchronized HttpConnection remoteSettingsHandler(Handler<io.vertx.core.http.Http2Settings> handler) {
-    remoteSettingsHandler = handler;
+  public HttpConnection remoteHttpSettingsHandler(Handler<HttpSettings> handler) {
+    this.remoteSettingsHandler = handler;
     return this;
   }
 
   @Override
-  public synchronized io.vertx.core.http.Http2Settings remoteSettings() {
-    return HttpUtils.toVertxSettings(remoteSettings);
+  public HttpSettings remoteHttpSettings() {
+    return new HttpSettings(remoteSettings);
   }
 
   @Override
-  public synchronized io.vertx.core.http.Http2Settings settings() {
-    return HttpUtils.toVertxSettings(localSettings);
+  public HttpSettings httpSettings() {
+    return new HttpSettings(localSettings);
   }
 
   @Override
-  public Future<Void> updateSettings(io.vertx.core.http.Http2Settings settings) {
-    return updateSettings(HttpUtils.fromVertxSettings(settings));
+  public Future<Void> updateHttpSettings(HttpSettings settings) {
+    return updateSettings(settings.toNettyHttp2Settings());
   }
 
   protected Future<Void> updateSettings(Http2Settings settingsUpdate) {

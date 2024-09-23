@@ -17,6 +17,7 @@ import io.netty.channel.*;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
 import io.vertx.core.datagram.DatagramSocketOptions;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.net.ClientOptionsBase;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
@@ -150,7 +151,7 @@ public interface Transport {
   }
 
   default void configure(ClientOptionsBase options, int connectTimeout, boolean domainSocket, Bootstrap bootstrap) {
-    if (!domainSocket) {
+    if (!domainSocket && options.getProtocolVersion() != HttpVersion.HTTP_3) {
       bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
       bootstrap.option(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
       bootstrap.option(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
@@ -175,8 +176,10 @@ public interface Transport {
   }
 
   default void configure(NetServerOptions options, boolean domainSocket, ServerBootstrap bootstrap) {
-    bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
-    if (!domainSocket) {
+    if(!options.isHttp3()) {
+      bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
+    }
+    if (!domainSocket && !options.isHttp3()) {
       bootstrap.childOption(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
       bootstrap.childOption(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
     }

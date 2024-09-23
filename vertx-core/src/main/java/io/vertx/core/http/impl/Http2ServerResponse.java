@@ -25,13 +25,9 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.*;
+import io.vertx.core.http.impl.headers.VertxHttp2Headers;
 import io.vertx.core.internal.buffer.BufferInternal;
-import io.vertx.core.http.Cookie;
-import io.vertx.core.http.HttpHeaders;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.http.StreamPriority;
-import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.net.HostAndPort;
@@ -318,7 +314,10 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     Promise<Void> promise = stream.context.promise();
     synchronized (conn) {
       checkHeadWritten();
-      stream.writeHeaders(new DefaultHttp2Headers().status(HttpResponseStatus.CONTINUE.codeAsText()), true, false, true, promise);
+      DefaultHttp2Headers defaultHttp2Headers = new DefaultHttp2Headers();
+      defaultHttp2Headers.status(HttpResponseStatus.CONTINUE.codeAsText());
+      stream.writeHeaders(new VertxHttp2Headers(defaultHttp2Headers), true, false,
+        true, promise);
     }
     return promise.future();
   }
@@ -334,7 +333,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     synchronized (conn) {
       checkHeadWritten();
     }
-    stream.writeHeaders(http2Headers, true, false, true, promise);
+    stream.writeHeaders(new VertxHttp2Headers(http2Headers), true, false, true, promise);
     return promise.future();
   }
 
@@ -416,7 +415,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
         fut = stream.context.succeededFuture();
       }
       if (end && trailers != null) {
-        stream.writeHeaders(trailers, false, true, true, null);
+        stream.writeHeaders(new VertxHttp2Headers(trailers), false, true, true, null);
       }
       bodyEndHandler = this.bodyEndHandler;
       endHandler = this.endHandler;
@@ -450,7 +449,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       }
       prepareHeaders();
       headWritten = true;
-      stream.writeHeaders(headers, true, end, checkFlush, null);
+      stream.writeHeaders(new VertxHttp2Headers(headers), true, end, checkFlush, null);
       return true;
     } else {
       return false;
@@ -661,7 +660,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public HttpServerResponse setStreamPriority(StreamPriority priority) {
+  public HttpServerResponse setStreamPriority(StreamPriorityBase priority) {
     stream.updatePriority(priority);
     return this;
   }

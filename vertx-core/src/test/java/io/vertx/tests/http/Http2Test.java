@@ -415,7 +415,7 @@ public class Http2Test extends HttpTest {
     server.requestHandler(req -> {
       assertEquals(requestStreamWeight, req.streamPriority().getWeight());
       assertEquals(requestStreamDependency, req.streamPriority().getDependency());
-      req.response().setStreamPriority(new StreamPriority()
+      req.response().setStreamPriority(new Http2StreamPriority()
         .setDependency(responseStreamDependency)
         .setWeight(responseStreamWeight)
         .setExclusive(false));
@@ -427,7 +427,7 @@ public class Http2Test extends HttpTest {
     client = vertx.createHttpClient(createBaseClientOptions());
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req
-        .setStreamPriority(new StreamPriority()
+        .setStreamPriority(new Http2StreamPriority()
           .setDependency(requestStreamDependency)
           .setWeight(requestStreamWeight)
           .setExclusive(false))
@@ -461,12 +461,12 @@ public class Http2Test extends HttpTest {
       });
       assertEquals(requestStreamWeight, req.streamPriority().getWeight());
       assertEquals(requestStreamDependency, req.streamPriority().getDependency());
-      req.response().setStreamPriority(new StreamPriority()
+      req.response().setStreamPriority(new Http2StreamPriority()
         .setDependency(responseStreamDependency)
         .setWeight(responseStreamWeight)
         .setExclusive(false));
       req.response().write("hello");
-      req.response().setStreamPriority(new StreamPriority()
+      req.response().setStreamPriority(new Http2StreamPriority()
         .setDependency(responseStreamDependency2)
         .setWeight(responseStreamWeight2)
         .setExclusive(false));
@@ -479,7 +479,7 @@ public class Http2Test extends HttpTest {
     client = vertx.createHttpClient(createBaseClientOptions());
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req
-        .setStreamPriority(new StreamPriority()
+        .setStreamPriority(new Http2StreamPriority()
           .setDependency(requestStreamDependency)
           .setWeight(requestStreamWeight)
           .setExclusive(false))
@@ -499,7 +499,7 @@ public class Http2Test extends HttpTest {
       req
         .sendHead()
         .onComplete(h -> {
-          req.setStreamPriority(new StreamPriority()
+          req.setStreamPriority(new Http2StreamPriority()
             .setDependency(requestStreamDependency2)
             .setWeight(requestStreamWeight2)
             .setExclusive(false));
@@ -537,14 +537,14 @@ public class Http2Test extends HttpTest {
             complete();
           });
         }));
-      req.setStreamPriority(new StreamPriority()
+      req.setStreamPriority(new Http2StreamPriority()
         .setDependency(dependency)
         .setWeight(weight)
         .setExclusive(exclusive));
       req
         .sendHead()
         .onComplete(h -> {
-        req.setStreamPriority(new StreamPriority()
+        req.setStreamPriority(new Http2StreamPriority()
           .setDependency(dependency)
           .setWeight(weight)
           .setExclusive(exclusive));
@@ -561,12 +561,12 @@ public class Http2Test extends HttpTest {
     boolean exclusive = false;
     waitFor(2);
     server.requestHandler(req -> {
-      req.response().setStreamPriority(new StreamPriority()
+      req.response().setStreamPriority(new Http2StreamPriority()
         .setDependency(dependency)
         .setWeight(weight)
         .setExclusive(exclusive));
       req.response().write("hello");
-      req.response().setStreamPriority(new StreamPriority()
+      req.response().setStreamPriority(new Http2StreamPriority()
         .setDependency(dependency)
         .setWeight(weight)
         .setExclusive(exclusive));
@@ -612,7 +612,7 @@ public class Http2Test extends HttpTest {
     client = vertx.createHttpClient(createBaseClientOptions());
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req
-        .setStreamPriority(new StreamPriority()
+        .setStreamPriority(new Http2StreamPriority()
           .setDependency(requestStreamDependency)
           .setWeight(requestStreamWeight)
           .setExclusive(false))
@@ -657,7 +657,7 @@ public class Http2Test extends HttpTest {
     waitFor(4);
     server.requestHandler(req -> {
       req.response().push(HttpMethod.GET, "/pushpath").onComplete(onSuccess(pushedResp -> {
-        pushedResp.setStreamPriority(new StreamPriority()
+        pushedResp.setStreamPriority(new Http2StreamPriority()
           .setDependency(pushStreamDependency)
           .setWeight(pushStreamWeight)
           .setExclusive(false));
@@ -709,7 +709,7 @@ public class Http2Test extends HttpTest {
             complete();
           }));
         }).setStreamPriority(
-          new StreamPriority()
+          new Http2StreamPriority()
             .setDependency(reqStreamDependency)
             .setWeight(reqStreamWeight)
             .setExclusive(false))
