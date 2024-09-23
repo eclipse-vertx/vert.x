@@ -11,31 +11,54 @@
 package io.vertx.core.internal.net;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 /**
+ * Various RFC3986 util methods.
+ *
  * @author <a href="mailto:plopes@redhat.com">Paulo Lopes</a>
  */
-public final class URIDecoder {
+public final class RFC3986 {
 
-  private URIDecoder() {
-    throw new RuntimeException("Static Class");
+  private RFC3986() {
   }
 
   /**
    * Decodes a segment of a URI encoded by a browser.
    *
-   * The string is expected to be encoded as per RFC 3986, Section 2. This is the encoding used by JavaScript functions
+   * <p>The string is expected to be encoded as per RFC 3986, Section 2. This is the encoding used by JavaScript functions
    * encodeURI and encodeURIComponent, but not escape. For example in this encoding, é (in Unicode U+00E9 or in
    * UTF-8 0xC3 0xA9) is encoded as %C3%A9 or %c3%a9.
    *
-   * Plus signs '+' will be handled as spaces and encoded using the default JDK URLEncoder class.
+   * <p>Plus signs '+' will be handled as spaces and encoded using the default JDK URLEncoder class.
    *
    * @param s string to decode
-   *
    * @return decoded string
    */
   public static String decodeURIComponent(String s) {
     return decodeURIComponent(s, true);
+  }
+
+  /**
+   * Decodes a segment of an URI encoded by a browser.
+   *
+   * <p>The string is expected to be encoded as per RFC 3986, Section 2. This is the encoding used by JavaScript functions
+   * encodeURI and encodeURIComponent, but not escape. For example in this encoding, é (in Unicode U+00E9 or in
+   * UTF-8 0xC3 0xA9) is encoded as %C3%A9 or %c3%a9.
+   *
+   * @param s string to decode
+   * @param plus whether to convert plus char into spaces
+   *
+   * @return decoded string
+   */
+  public static String decodeURIComponent(String s, boolean plus) {
+    Objects.requireNonNull(s);
+    int i = !plus ? s.indexOf('%') : indexOfPercentOrPlus(s);
+    if (i == -1) {
+      return s;
+    }
+    // pack the slowest path away
+    return decodeAndTransformURIComponent(s, i, plus);
   }
 
   private static int indexOfPercentOrPlus(String s) {
@@ -46,30 +69,6 @@ public final class URIDecoder {
       }
     }
     return -1;
-  }
-
-  /**
-   * Decodes a segment of an URI encoded by a browser.
-   *
-   * The string is expected to be encoded as per RFC 3986, Section 2. This is the encoding used by JavaScript functions
-   * encodeURI and encodeURIComponent, but not escape. For example in this encoding, é (in Unicode U+00E9 or in
-   * UTF-8 0xC3 0xA9) is encoded as %C3%A9 or %c3%a9.
-   *
-   * @param s string to decode
-   * @param plus weather or not to transform plus signs into spaces
-   *
-   * @return decoded string
-   */
-  public static String decodeURIComponent(String s, boolean plus) {
-    if (s == null) {
-      return null;
-    }
-    int i = !plus ? s.indexOf('%') : indexOfPercentOrPlus(s);
-    if (i == -1) {
-      return s;
-    }
-    // pack the slowest path away
-    return decodeAndTransformURIComponent(s, i, plus);
   }
 
   private static String decodeAndTransformURIComponent(String s, int i, boolean plus) {
@@ -126,5 +125,101 @@ public final class URIDecoder {
     } else {
       return Character.MAX_VALUE;
     }
+  }
+
+  /**
+   * Removed dots as per <a href="http://tools.ietf.org/html/rfc3986#section-5.2.4">rfc3986</a>.
+   *
+   * <p>There is 1 extra transformation that are not part of the spec but kept for backwards compatibility:
+   * double slash // will be converted to single slash.
+   *
+   * @param path raw path
+   * @return normalized path
+   */
+  public static String removeDotSegments(CharSequence path) {
+    Objects.requireNonNull(path);
+    final StringBuilder obuf = new StringBuilder(path.length());
+    int i = 0;
+    while (i < path.length()) {
+      // remove dots as described in
+      // http://tools.ietf.org/html/rfc3986#section-5.2.4
+      if (matches(path, i, "./")) {
+        i += 2;
+      } else if (matches(path, i, "../")) {
+        i += 3;
+      } else if (matches(path, i, "/./")) {
+        // preserve last slash
+        i += 2;
+      } else if (matches(path, i,"/.", true)) {
+        path = "/";
+        i = 0;
+      } else if (matches(path, i, "/../")) {
+        // preserve last slash
+        i += 3;
+        int pos = obuf.lastIndexOf("/");
+        if (pos != -1) {
+          obuf.delete(pos, obuf.length());
+        }
+      } else if (matches(path, i, "/..", true)) {
+        path = "/";
+        i = 0;
+        int pos = obuf.lastIndexOf("/");
+        if (pos != -1) {
+          obuf.delete(pos, obuf.length());
+        }
+      } else if (matches(path, i, ".", true) || matches(path, i, "..", true)) {
+        break;
+      } else {
+        if (path.charAt(i) == '/') {
+          i++;
+          // Not standard!!!
+          // but common // -> /
+          if (obuf.length() == 0 || obuf.charAt(obuf.length() - 1) != '/') {
+            obuf.append('/');
+          }
+        }
+        int pos = indexOfSlash(path, i);
+        if (pos != -1) {
+          obuf.append(path, i, pos);
+          i = pos;
+        } else {
+          obuf.append(path, i, path.length());
+          break;
+        }
+      }
+    }
+    return obuf.toString();
+  }
+
+  private static boolean matches(CharSequence path, int start, String what) {
+    return matches(path, start, what, false);
+  }
+
+  private static boolean matches(CharSequence path, int start, String what, boolean exact) {
+    if (exact) {
+      if (path.length() - start != what.length()) {
+        return false;
+      }
+    }
+
+    if (path.length() - start >= what.length()) {
+      for (int i = 0; i < what.length(); i++) {
+        if (path.charAt(start + i) != what.charAt(i)) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    return false;
+  }
+
+  private static int indexOfSlash(CharSequence str, int start) {
+    for (int i = start; i < str.length(); i++) {
+      if (str.charAt(i) == '/') {
+        return i;
+      }
+    }
+    return -1;
   }
 }

@@ -33,6 +33,7 @@ import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.net.RFC3986;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.impl.HostAndPortImpl;
 import io.vertx.core.spi.tracing.TagExtractor;
@@ -199,39 +200,6 @@ public final class HttpUtils {
   private HttpUtils() {
   }
 
-  private static int indexOfSlash(CharSequence str, int start) {
-    for (int i = start; i < str.length(); i++) {
-      if (str.charAt(i) == '/') {
-        return i;
-      }
-    }
-
-    return -1;
-  }
-
-  private static boolean matches(CharSequence path, int start, String what) {
-    return matches(path, start, what, false);
-  }
-
-  private static boolean matches(CharSequence path, int start, String what, boolean exact) {
-    if (exact) {
-      if (path.length() - start != what.length()) {
-        return false;
-      }
-    }
-
-    if (path.length() - start >= what.length()) {
-      for (int i = 0; i < what.length(); i++) {
-        if (path.charAt(start + i) != what.charAt(i)) {
-          return false;
-        }
-      }
-      return true;
-    }
-
-    return false;
-  }
-
   /**
    * Normalizes a path as per <a href="http://tools.ietf.org/html/rfc3986#section-5.2.4>rfc3986</a>.
    *
@@ -286,7 +254,7 @@ public final class HttpUtils {
     }
     // remove dots as described in
     // http://tools.ietf.org/html/rfc3986#section-5.2.4
-    return removeDots(ibuf);
+    return RFC3986.removeDotSegments(ibuf);
   }
 
   private static void decodeUnreservedChars(StringBuilder path, int start) {
@@ -340,77 +308,6 @@ public final class HttpUtils {
   }
 
   /**
-   * Removed dots as per <a href="http://tools.ietf.org/html/rfc3986#section-5.2.4>rfc3986</a>.
-   *
-   * There is 1 extra transformation that are not part of the spec but kept for backwards compatibility:
-   *
-   * double slash // will be converted to single slash.
-   *
-   * @param path raw path
-   * @return normalized path
-   */
-  public static String removeDots(CharSequence path) {
-
-    if (path == null) {
-      return null;
-    }
-
-    final StringBuilder obuf = new StringBuilder(path.length());
-
-    int i = 0;
-    while (i < path.length()) {
-      // remove dots as described in
-      // http://tools.ietf.org/html/rfc3986#section-5.2.4
-      if (matches(path, i, "./")) {
-        i += 2;
-      } else if (matches(path, i, "../")) {
-        i += 3;
-      } else if (matches(path, i, "/./")) {
-        // preserve last slash
-        i += 2;
-      } else if (matches(path, i,"/.", true)) {
-        path = "/";
-        i = 0;
-      } else if (matches(path, i, "/../")) {
-        // preserve last slash
-        i += 3;
-        int pos = obuf.lastIndexOf("/");
-        if (pos != -1) {
-          obuf.delete(pos, obuf.length());
-        }
-      } else if (matches(path, i, "/..", true)) {
-        path = "/";
-        i = 0;
-        int pos = obuf.lastIndexOf("/");
-        if (pos != -1) {
-          obuf.delete(pos, obuf.length());
-        }
-      } else if (matches(path, i, ".", true) || matches(path, i, "..", true)) {
-        break;
-      } else {
-        if (path.charAt(i) == '/') {
-          i++;
-          // Not standard!!!
-          // but common // -> /
-          if (obuf.length() == 0 || obuf.charAt(obuf.length() - 1) != '/') {
-            obuf.append('/');
-          }
-        }
-        int pos = indexOfSlash(path, i);
-        if (pos != -1) {
-          obuf.append(path, i, pos);
-          i = pos;
-        } else {
-          obuf.append(path, i, path.length());
-          break;
-        }
-      }
-    }
-
-    return obuf.toString();
-  }
-
-  /**
    * Resolve an URI reference as per <a href="http://tools.ietf.org/html/rfc3986#section-5.2.4>rfc3986</a>
    */
   public static URI resolveURIReference(String base, String ref) throws URISyntaxException {
@@ -429,7 +326,7 @@ public final class HttpUtils {
     if (_ref.getScheme() != null) {
       scheme = _ref.getScheme();
       authority = _ref.getAuthority();
-      path = removeDots(_ref.getRawPath());
+      path = RFC3986.removeDotSegments(_ref.getRawPath());
       query = _ref.getRawQuery();
     } else {
       if (_ref.getAuthority() != null) {
@@ -446,7 +343,7 @@ public final class HttpUtils {
           }
         } else {
           if (_ref.getRawPath().startsWith("/")) {
-            path = removeDots(_ref.getRawPath());
+            path = RFC3986.removeDotSegments(_ref.getRawPath());
           } else {
             // Merge paths
             String mergedPath;
@@ -461,7 +358,7 @@ public final class HttpUtils {
                 mergedPath = _ref.getRawPath();
               }
             }
-            path = removeDots(mergedPath);
+            path = RFC3986.removeDotSegments(mergedPath);
           }
           query = _ref.getRawQuery();
         }

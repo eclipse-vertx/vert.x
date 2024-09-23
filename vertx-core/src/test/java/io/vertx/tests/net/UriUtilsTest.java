@@ -15,14 +15,14 @@ import org.junit.Test;
 
 import java.net.URLEncoder;
 
-import static io.vertx.core.internal.net.URIDecoder.decodeURIComponent;
+import static io.vertx.core.internal.net.RFC3986.decodeURIComponent;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:plopes@redhat.com">Paulo Lopes</a>
  */
-public class URIDecoderTest {
+public class UriUtilsTest {
 
   @Test
   public void testDecode() throws Exception {
