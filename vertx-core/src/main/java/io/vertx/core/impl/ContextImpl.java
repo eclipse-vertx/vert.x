@@ -43,7 +43,7 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
   private final DeploymentContext deployment;
   private final CloseFuture closeFuture;
   private final ClassLoader tccl;
-  private final EventLoop eventLoop;
+  private final EventLoopExecutor eventLoop;
   private final ThreadingModel threadingModel;
   private final EventExecutor executor;
   private ConcurrentMap<Object, Object> data;
@@ -53,7 +53,7 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
 
   public ContextImpl(VertxInternal vertx,
                         Object[] locals,
-                        EventLoop eventLoop,
+                        EventLoopExecutor eventLoop,
                         ThreadingModel threadingModel,
                         EventExecutor executor,
                         WorkerPool workerPool,
@@ -96,7 +96,7 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
   }
 
   public EventLoop nettyEventLoop() {
-    return eventLoop;
+    return eventLoop.eventLoop;
   }
 
   public VertxInternal owner() {
@@ -106,6 +106,11 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
   @Override
   public <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, boolean ordered) {
     return workerPool.executeBlocking(this, blockingCodeHandler, ordered ? orderedTasks : null);
+  }
+
+  @Override
+  public EventExecutor eventLoop() {
+    return eventLoop;
   }
 
   @Override

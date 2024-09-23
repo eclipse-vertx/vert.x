@@ -97,7 +97,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
     this.conn = conn;
     this.context = context;
     this.request = request;
-    this.queue = new InboundMessageQueue<>(context.nettyEventLoop(), context) {
+    this.queue = new InboundMessageQueue<>(context.eventLoop(), context.executor()) {
       @Override
       protected void handleMessage(Object elt) {
         if (elt == InboundBuffer.END_SENTINEL) {

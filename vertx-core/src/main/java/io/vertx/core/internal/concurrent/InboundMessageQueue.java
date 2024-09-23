@@ -10,9 +10,8 @@
  */
 package io.vertx.core.internal.concurrent;
 
-import io.netty.channel.EventLoop;
-import io.vertx.core.ThreadingModel;
-import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.impl.EventLoopExecutor;
+import io.vertx.core.internal.EventExecutor;
 import io.vertx.core.streams.impl.InboundReadQueue;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
@@ -25,8 +24,8 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
 
   private static final AtomicLongFieldUpdater<InboundMessageQueue<?>> DEMAND_UPDATER = (AtomicLongFieldUpdater<InboundMessageQueue<?>>) (AtomicLongFieldUpdater)AtomicLongFieldUpdater.newUpdater(InboundMessageQueue.class, "demand");
 
-  private final ContextInternal context;
-  private final EventLoop eventLoop;
+  private final EventExecutor consumer;
+  private final EventExecutor producer;
   private final InboundReadQueue<M> readQueue;
 
   // Accessed by context thread
@@ -36,28 +35,34 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
   // Any thread
   private volatile long demand = Long.MAX_VALUE;
 
-  public InboundMessageQueue(EventLoop eventLoop, ContextInternal context) {
+  public InboundMessageQueue(EventExecutor producer, EventExecutor consumer) {
     InboundReadQueue.Factory readQueueFactory;
-    if (context.threadingModel() == ThreadingModel.EVENT_LOOP && context.nettyEventLoop() == eventLoop) {
+    if (consumer instanceof EventLoopExecutor && producer instanceof EventLoopExecutor && ((EventLoopExecutor)consumer).eventLoop() == ((EventLoopExecutor)producer).eventLoop()) {
       readQueueFactory = InboundReadQueue.SINGLE_THREADED;
     } else {
       readQueueFactory = InboundReadQueue.SPSC;
     }
     this.readQueue = readQueueFactory.create(this);
-    this.context = context;
-    this.eventLoop = eventLoop;
+    this.consumer = consumer;
+    this.producer = producer;
   }
 
-  public InboundMessageQueue(EventLoop eventLoop, ContextInternal context, int lowWaterMark, int highWaterMark) {
+  public InboundMessageQueue(EventExecutor producer, EventExecutor consumer, InboundReadQueue.Factory readQueueFactory) {
+    this.readQueue = readQueueFactory.create(this);
+    this.consumer = consumer;
+    this.producer = producer;
+  }
+
+  public InboundMessageQueue(EventExecutor producer, EventExecutor consumer, int lowWaterMark, int highWaterMark) {
     InboundReadQueue.Factory readQueueFactory;
-    if (context.threadingModel() == ThreadingModel.EVENT_LOOP && context.nettyEventLoop() == eventLoop) {
+    if (consumer instanceof EventLoopExecutor && producer instanceof EventLoopExecutor && ((EventLoopExecutor)consumer).eventLoop() == ((EventLoopExecutor)producer).eventLoop()) {
       readQueueFactory = InboundReadQueue.SINGLE_THREADED;
     } else {
       readQueueFactory = InboundReadQueue.SPSC;
     }
     this.readQueue = readQueueFactory.create(this, lowWaterMark, highWaterMark);
-    this.context = context;
-    this.eventLoop = eventLoop;
+    this.consumer = consumer;
+    this.producer = consumer;
   }
 
   @Override
@@ -101,7 +106,7 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
    * @return {@code true} when a {@link #drain()} should be called.
    */
   public final boolean add(M msg) {
-    assert eventLoop.inEventLoop();
+    assert producer.inThread();
     int res = readQueue.add(msg);
     if ((res & InboundReadQueue.QUEUE_UNWRITABLE_MASK) != 0) {
       handlePause();
@@ -139,11 +144,11 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
    * Schedule a drain operation on the context thread.
    */
   public final void drain() {
-    assert eventLoop.inEventLoop();
-    if (context.inThread()) {
+    assert producer.inThread();
+    if (consumer.inThread()) {
       drainInternal();
     } else {
-      context.execute(this::drainInternal);
+      consumer.execute(this::drainInternal);
     }
   }
 
@@ -152,7 +157,7 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
    */
   @Override
   public void run() {
-    assert context.inThread();
+    assert consumer.inThread();
     if (!draining && needsDrain) {
       drainInternal();
     }
@@ -164,7 +169,7 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
       int res = readQueue.drain();
       needsDrain = (res & InboundReadQueue.DRAIN_REQUIRED_MASK) != 0;
       if ((res & InboundReadQueue.QUEUE_WRITABLE_MASK) != 0) {
-        eventLoop.execute(this::handleResume);
+        producer.execute(this::handleResume);
       }
     } finally {
       draining = false;
@@ -198,8 +203,7 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
           break;
         }
       }
-      context
-        .executor()
+      consumer
         .execute(this);
     }
   }

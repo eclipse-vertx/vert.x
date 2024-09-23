@@ -491,6 +491,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     } else {
       ContextInternal ctx;
       EventLoop eventLoop = stickyEventLoop();
+      EventLoopExecutor eventLoopExecutor = new EventLoopExecutor(eventLoop);
       EventExecutor eventExecutor = null;
       if (eventExecutorProvider != null) {
         java.util.concurrent.Executor executor = eventExecutorProvider.eventExecutorFor(thread);
@@ -516,7 +517,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         }
       }
       if (eventExecutor != null) {
-        ctx = new ContextImpl(this, createContextLocals(), eventLoop, ThreadingModel.OTHER, eventExecutor, workerPool, new TaskQueue(), null, closeFuture, Thread.currentThread().getContextClassLoader());
+        ctx = new ContextImpl(this, createContextLocals(), eventLoopExecutor, ThreadingModel.OTHER, eventExecutor, workerPool, new TaskQueue(), null, closeFuture, Thread.currentThread().getContextClassLoader());
       } else {
         ctx = createEventLoopContext(eventLoop, workerPool, Thread.currentThread().getContextClassLoader());
       }
@@ -578,12 +579,13 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
                                    DeploymentContext deployment,
                                    ClassLoader tccl) {
     EventExecutor eventExecutor;
+    EventLoopExecutor eventLoopExecutor = new EventLoopExecutor(eventLoop);
     TaskQueue orderedTasks = new TaskQueue();
     WorkerPool wp;
     switch (threadingModel) {
       case EVENT_LOOP:
         wp = workerPool != null ? workerPool : this.workerPool;
-        eventExecutor = new EventLoopExecutor(eventLoop);
+        eventExecutor = eventLoopExecutor;
         break;
       case WORKER:
         wp = workerPool != null ? workerPool : this.workerPool;
@@ -601,7 +603,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
     return new ContextImpl(this,
       createContextLocals(),
-      eventLoop,
+      eventLoopExecutor,
       threadingModel,
       eventExecutor,
       wp,
@@ -693,7 +695,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         }
       } else {
         EventLoop eventLoop = stickyEventLoop();
-        return new ShadowContext(this, eventLoop, context);
+        return new ShadowContext(this, new EventLoopExecutor(eventLoop), context);
       }
     } else {
       WeakReference<ContextInternal> ref = stickyContext.get();
