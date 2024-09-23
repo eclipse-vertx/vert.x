@@ -95,7 +95,7 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
     this.metrics = metrics;
     this.messageHandler = new DataMessageHandler();
     this.negotiatedApplicationLayerProtocol = negotiatedApplicationLayerProtocol;
-    this.pending = new InboundMessageQueue<>(context.nettyEventLoop(), context) {
+    this.pending = new InboundMessageQueue<>(context.eventLoop(), context.executor()) {
       @Override
       protected void handleResume() {
         NetSocketImpl.this.doResume();

@@ -56,6 +56,11 @@ public interface ContextInternal extends Context {
   EventExecutor executor();
 
   /**
+   * @return the event loop executor of this context
+   */
+  EventExecutor eventLoop();
+
+  /**
    * Return the Netty EventLoop used by this Context. This can be used to integrate
    * a Netty Server with a Vert.x runtime, specially the Context part.
    *

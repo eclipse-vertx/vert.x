@@ -427,7 +427,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
       super(context, promise, id);
 
       this.conn = conn;
-      this.queue = new InboundMessageQueue<>(conn.context.nettyEventLoop(), context) {
+      this.queue = new InboundMessageQueue<>(conn.context.eventLoop(), context.executor()) {
         @Override
         protected void handleResume() {
           conn.doResume();
