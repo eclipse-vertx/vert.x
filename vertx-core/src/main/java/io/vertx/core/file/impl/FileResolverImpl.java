@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import static io.vertx.core.internal.net.URIDecoder.decodeURIComponent;
+import static io.vertx.core.internal.net.RFC3986.decodeURIComponent;
 
 /**
  * Sometimes the file resources of an application are bundled into jars, or are somewhere on the classpath but not
