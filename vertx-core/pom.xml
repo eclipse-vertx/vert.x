@@ -208,7 +208,6 @@
 
         <plugin>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.13.0</version>
           <executions>
             <execution>
               <id>default-compile</id>
@@ -233,7 +232,6 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>${maven.surefire.plugin.version}</version>
           <configuration>
             <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
             <useModulePath>${vertx.testUseModulePath}</useModulePath>
@@ -320,7 +318,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
-        <version>3.2.5</version>
         <configuration>
           <useModulePath>false</useModulePath>
         </configuration>
