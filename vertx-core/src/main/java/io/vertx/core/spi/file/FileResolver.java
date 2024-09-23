@@ -11,6 +11,9 @@
 
 package io.vertx.core.spi.file;
 
+import io.vertx.core.file.FileSystemOptions;
+import io.vertx.core.file.impl.FileResolverImpl;
+
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
@@ -30,6 +33,16 @@ import java.io.IOException;
  * @author <a href="https://github.com/rworsnop/">Rob Worsnop</a>
  */
 public interface FileResolver extends Closeable {
+
+  /**
+   * Create a file resolver.
+   *
+   * @param options the fs options
+   * @return the file resolver
+   */
+  static FileResolver fileResolver(FileSystemOptions options) {
+    return new FileResolverImpl(options);
+  }
 
   /**
    * Resolve the file for the specified {@code fileName}.
