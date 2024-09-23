@@ -67,7 +67,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
     this.conn = conn;
     this.vertx = conn.vertx();
     this.context = context;
-    this.inboundQueue = new InboundMessageQueue<>(conn.channel().eventLoop(), context) {
+    this.inboundQueue = new InboundMessageQueue<>(conn.context().eventLoop(), context.executor()) {
       @Override
       protected void handleMessage(Object item) {
         if (item instanceof MultiMap) {

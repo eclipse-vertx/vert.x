@@ -54,15 +54,20 @@ final class ShadowContext extends ContextBase {
 
   final VertxInternal owner;
   final ContextBase delegate;
-  private final EventLoop eventLoop;
+  private final EventLoopExecutor eventLoop;
   private final TaskQueue orderedTasks;
 
-  public ShadowContext(VertxInternal owner, EventLoop eventLoop, ContextInternal delegate) {
+  public ShadowContext(VertxInternal owner, EventLoopExecutor eventLoop, ContextInternal delegate) {
     super(((ContextBase)delegate).locals);
     this.owner = owner;
     this.eventLoop = eventLoop;
     this.delegate = (ContextBase) delegate;
     this.orderedTasks = new TaskQueue();
+  }
+
+  @Override
+  public EventExecutor eventLoop() {
+    return eventLoop;
   }
 
   @Override
@@ -72,7 +77,7 @@ final class ShadowContext extends ContextBase {
 
   @Override
   public EventLoop nettyEventLoop() {
-    return eventLoop;
+    return eventLoop.eventLoop;
   }
 
   @Override

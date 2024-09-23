@@ -71,6 +71,11 @@ final class DuplicatedContext extends ContextBase implements ContextInternal {
   }
 
   @Override
+  public EventExecutor eventLoop() {
+    return delegate.eventLoop();
+  }
+
+  @Override
   public EventExecutor executor() {
     return delegate.executor();
   }
