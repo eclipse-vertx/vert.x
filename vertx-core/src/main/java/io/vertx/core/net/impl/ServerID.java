@@ -16,7 +16,7 @@ import java.util.Objects;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class ServerID {
+public final class ServerID {
 
   private final int port;
   private final String host;
@@ -24,6 +24,14 @@ public class ServerID {
   public ServerID(int port, String host) {
     this.port = port;
     this.host = host;
+  }
+
+  public int port() {
+    return port;
+  }
+
+  public String host() {
+    return host;
   }
 
   @Override
