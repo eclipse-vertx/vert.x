@@ -96,7 +96,6 @@ module io.vertx.core {
 
   // Testing
 
-  exports io.vertx.core.impl to io.vertx.core.tests;
   exports io.vertx.core.impl.cpu to io.vertx.core.tests;
   exports io.vertx.core.impl.future to io.vertx.core.tests;
   exports io.vertx.core.impl.utils to io.vertx.core.tests;
@@ -117,5 +116,6 @@ module io.vertx.core {
   exports io.vertx.core.spi.cluster.impl.selector to io.vertx.core.tests;
   exports io.vertx.core.impl.verticle to io.vertx.core.tests;
   exports io.vertx.core.impl.deployment to io.vertx.core.tests;
+  exports io.vertx.core.impl;
 
 }
