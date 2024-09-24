@@ -42,6 +42,11 @@ open module io.vertx.core.tests {
 
   provides VerticleFactory with ClasspathVerticleFactory, io.vertx.tests.vertx.AccessEventBusFromInitVerticleFactory;
 
+  // Cluster manager implementations overrides them (TCK)
+  exports io.vertx.tests.ha;
+  exports io.vertx.tests.eventbus;
+  exports io.vertx.tests.shareddata;
+
   exports io.vertx.test.core;
   exports io.vertx.test.fakecluster;
   exports io.vertx.test.fakedns;
