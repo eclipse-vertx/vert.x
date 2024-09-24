@@ -14,6 +14,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketVersion;
@@ -475,7 +476,7 @@ public class ServerWebSocketHandshaker implements ServerWebSocket {
     Http1xServerResponse response = request.response();
     Object requestMetric = request.metric;
     try {
-      handshaker.handshake(channel, request.nettyRequest());
+      handshaker.handshake(channel, request.nettyRequest(), (HttpHeaders) response.headers(), channel.newPromise());
     } catch (Exception e) {
       rejectHandshake(BAD_REQUEST.code());
       throw e;
