@@ -11,30 +11,29 @@
 
 package io.vertx.core.net.impl;
 
-import java.io.Serializable;
 import java.util.Objects;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class ServerID implements Serializable {
+public class ServerID {
 
-  public int port;
-  public String host;
+  private final int port;
+  private final String host;
 
   public ServerID(int port, String host) {
     this.port = port;
     this.host = host;
   }
 
-  public ServerID() {
-  }
-
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof ServerID)) return false;
-
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof ServerID)) {
+      return false;
+    }
     ServerID that = (ServerID) o;
     return port == that.port && Objects.equals(host, that.host);
   }
