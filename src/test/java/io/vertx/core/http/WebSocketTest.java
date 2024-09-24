@@ -3940,4 +3940,32 @@ public class WebSocketTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testCustomResponseHeadersBeforeUpgrade() {
+    String path = "/some/path";
+    String message = "here is some text data";
+    String headerKey = "custom";
+    String headerValue = "value";
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).requestHandler(req -> {
+        req.response().headers().set(headerKey, headerValue);
+        req.toWebSocket()
+            .onComplete(event -> {
+              ServerWebSocket serverWebSocket = event.result();
+              serverWebSocket.accept();
+              serverWebSocket.writeFinalTextFrame(message);
+            });
+      });
+      server.listen(onSuccess(s -> {
+        client = vertx.createWebSocketClient();
+        client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, onSuccess(ws -> {
+          assertTrue(ws.headers().contains(headerKey));
+          assertEquals(headerValue, ws.headers().get(headerKey));
+          ws.handler(buff -> {
+            assertEquals(message, buff.toString("UTF-8"));
+            testComplete();
+          });
+        }));
+      }));
+      await();
+  }
 }
