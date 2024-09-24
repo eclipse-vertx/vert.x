@@ -14,20 +14,61 @@ package io.vertx.tests.http;
 
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.websocketx.*;
+import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.WebSocket13FrameDecoder;
+import io.netty.handler.codec.http.websocketx.WebSocket13FrameEncoder;
+import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.util.ReferenceCountUtil;
-import io.vertx.core.*;
-import io.vertx.core.http.*;
-import io.vertx.core.http.WebSocketFrame;
-import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Context;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
+import io.vertx.core.ThreadingModel;
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.internal.buffer.BufferInternal;
+import io.vertx.core.http.ClientAuth;
+import io.vertx.core.http.ClientWebSocket;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientAgent;
+import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.PoolOptions;
+import io.vertx.core.http.RequestOptions;
+import io.vertx.core.http.ServerWebSocket;
+import io.vertx.core.http.UpgradeRejectedException;
+import io.vertx.core.http.WebSocket;
+import io.vertx.core.http.WebSocketBase;
+import io.vertx.core.http.WebSocketClient;
+import io.vertx.core.http.WebSocketClientOptions;
+import io.vertx.core.http.WebSocketConnectOptions;
+import io.vertx.core.http.WebSocketFrame;
+import io.vertx.core.http.WebSocketFrameType;
+import io.vertx.core.http.WebsocketVersion;
 import io.vertx.core.http.impl.Http1xClientConnection;
 import io.vertx.core.http.impl.Http1xServerConnection;
 import io.vertx.core.http.impl.WebSocketInternal;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
-import io.vertx.core.net.*;
+import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.net.NetSocketInternal;
+import io.vertx.core.net.ClientSSLOptions;
+import io.vertx.core.net.NetServer;
+import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.test.core.CheckingSender;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
@@ -70,8 +111,14 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static io.vertx.test.http.HttpTestBase.*;
-import static io.vertx.test.core.TestUtils.*;
+import static io.vertx.test.core.TestUtils.assertIllegalStateException;
+import static io.vertx.test.core.TestUtils.assertNullPointerException;
+import static io.vertx.test.core.TestUtils.randomAlphaString;
+import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTPS_HOST;
+import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTPS_PORT;
+import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTP_HOST;
+import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTP_HOST_AND_PORT;
+import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTP_PORT;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -3971,6 +4018,34 @@ public class WebSocketTest extends VertxTestBase {
         ws.write(Buffer.buffer("ping"));
         ws.closeHandler(v -> {
           complete();
+        });
+      }));
+    await();
+  }
+
+  @Test
+  public void testCustomResponseHeadersBeforeUpgrade() throws InterruptedException {
+    String path = "/some/path";
+    String message = "here is some text data";
+    String headerKey = "custom";
+    String headerValue = "value";
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).requestHandler(req -> {
+      req.response().headers().set(headerKey, headerValue);
+      req.toWebSocket()
+        .onComplete(onSuccess(ws -> {
+          ws.accept();
+          ws.writeFinalTextFrame(message);
+        }));
+    });
+    awaitFuture(server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST));
+    client = vertx.createWebSocketClient();
+    client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path)
+      .onComplete(onSuccess(ws -> {
+        assertTrue(ws.headers().contains(headerKey));
+        assertEquals(headerValue, ws.headers().get(headerKey));
+        ws.handler(buff -> {
+          assertEquals(message, buff.toString("UTF-8"));
+          testComplete();
         });
       }));
     await();
