@@ -170,19 +170,19 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     } else if (evt instanceof IdleStateEvent) {
       connection.handleIdle((IdleStateEvent) evt);
     } else if (evt instanceof QuicDatagramExtensionEvent) {
-      logger.debug("Received event QuicDatagramExtensionEvent: {}", evt);
+      logger.debug("Received event QuicDatagramExtensionEvent");
       ctx.fireUserEventTriggered(evt);
     } else if (evt instanceof QuicStreamLimitChangedEvent) {
-      logger.debug("Received event QuicStreamLimitChangedEvent: {}", evt);
+      logger.debug("Received event QuicStreamLimitChangedEvent");
       ctx.fireUserEventTriggered(evt);
     } else if (evt instanceof QuicConnectionCloseEvent) {
-      logger.debug("Received event QuicConnectionCloseEvent: {}", evt);
+      logger.debug("Received event QuicConnectionCloseEvent");
       ctx.fireUserEventTriggered(evt);
     } else if (evt == ChannelInputShutdownEvent.INSTANCE) {
-      logger.debug("Received event ChannelInputShutdownEvent: {}", evt);
+      logger.debug("Received event ChannelInputShutdownEvent");
       channelInputClosed(ctx);
     } else if (evt == ChannelInputShutdownReadComplete.INSTANCE) {
-      logger.debug("Received event ChannelInputShutdownReadComplete: {}", evt);
+      logger.debug("Received event ChannelInputShutdownReadComplete");
       channelInputClosed(ctx);
     } else {
       logger.debug("Received unhandled event: {}", evt);
@@ -318,8 +318,12 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     return new Http3ServerConnectionHandler(new ChannelInitializer<QuicStreamChannel>() {
       @Override
       protected void initChannel(QuicStreamChannel ch) throws Exception {
+        logger.debug("Init QuicStreamChannel...");
+        ch.pipeline().addLast(new Http3FrameToHttpObjectCodec(true));
+        ch.pipeline().addLast(VertxHttp3ConnectionHandler.this);
       }
-    }, null, null, httpSettings.toNettyHttp3Settings(), false);
+      //TODO: correct the settings and streamHandlerIssue:
+    }, this.streamHandlerInternal, null, null/*httpSettings.toNettyHttp3Settings()*/, false);
   }
 
   private Http3ClientConnectionHandler createHttp3ClientConnectionHandler() {
