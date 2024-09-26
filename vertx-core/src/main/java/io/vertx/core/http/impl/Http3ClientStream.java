@@ -1,7 +1,6 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.incubator.codec.http3.DefaultHttp3Headers;
 import io.netty.incubator.codec.http3.Http3;
 import io.netty.incubator.codec.http3.Http3FrameToHttpObjectCodec;
@@ -9,7 +8,6 @@ import io.netty.incubator.codec.http3.Http3RequestStreamInitializer;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.netty.util.concurrent.FutureListener;
-import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -119,7 +117,7 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
   public void init_(VertxHttpStreamBase vertxHttpStream, QuicStreamChannel stream) {
     this.stream = stream;
     this.writable = stream.isWritable();
-    VertxHttp3ConnectionHandler.setHttp3ClientStream(stream, this);
+    VertxHttp3ConnectionHandler.setLocalControlVertxHttpStream(stream, this);
   }
 
   @Override
@@ -144,7 +142,7 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
 
   @Override
   public boolean isTrailersReceived() {
-    return false;  //TODO review
+    return false;  //TODO: review
   }
 
   @Override
