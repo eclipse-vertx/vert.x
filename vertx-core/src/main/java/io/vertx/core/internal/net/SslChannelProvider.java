@@ -21,10 +21,10 @@ import io.netty.incubator.codec.quic.InsecureQuicTokenHandler;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicSslContext;
 import io.netty.util.concurrent.ImmediateExecutor;
-import io.netty.util.internal.logging.InternalLogger;
-import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.logging.Logger;
+import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.SocketAddress;
 
@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit;
  * {@link SslContext} instances are cached and reused.
  */
 public class SslChannelProvider {
-  private static final InternalLogger logger = InternalLoggerFactory.getInstance(SslChannelProvider.class);
+  private static final Logger log = LoggerFactory.getLogger(SslChannelProvider.class);
 
   private final Executor workerPool;
   private final boolean sni;
@@ -93,11 +93,11 @@ public class SslChannelProvider {
   private ChannelHandler createServerSslHandler(boolean useAlpn, boolean http3, long sslHandshakeTimeout,
                                                 TimeUnit sslHandshakeTimeoutUnit,
                                                 ChannelInitializer<QuicChannel> handler) {
-    logger.debug("Creating Server Ssl Handler ... ");
+    log.debug("Creating Server Ssl Handler ... ");
     SslContext sslContext = sslContextProvider.sslServerContext(useAlpn, http3);
     Executor delegatedTaskExec = sslContextProvider.useWorkerPool() ? workerPool : ImmediateExecutor.INSTANCE;
     if (http3) {
-      logger.debug("Creating HTTP/3 Server Ssl Handler ... ");
+      log.debug("Creating HTTP/3 Server Ssl Handler ... ");
       Arguments.require(handler != null, "handler can't be null for http/3");
 
       // Todo: Make params configurable!
