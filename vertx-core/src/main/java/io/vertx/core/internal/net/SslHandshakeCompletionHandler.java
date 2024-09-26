@@ -60,7 +60,7 @@ public class SslHandshakeCompletionHandler extends ChannelInboundHandlerAdapter 
         promise.tryFailure(completion.cause());
       }
     } else {
-      log.debug("Received not handled event");
+      log.debug("Received unhandled event");
       ctx.fireUserEventTriggered(evt);
     }
   }
