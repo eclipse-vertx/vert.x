@@ -395,6 +395,7 @@ public abstract class ConnectionBase {
   }
 
   private ChannelHandler getHttp3SslHandler(ChannelHandlerContext chctx) {
+    //TODO: correct the following!
     if (chctx.channel() == null || chctx.channel().parent() == null || chctx.channel().parent().parent() == null)
       return null;
 
