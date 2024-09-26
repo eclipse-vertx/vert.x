@@ -15,16 +15,19 @@ import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.ReplyException;
+import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
-import io.vertx.test.core.ContextLocalHelper;
-import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.core.tracing.TracingPolicy;
+import io.vertx.test.core.ContextLocalHelper;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.BiConsumer;
@@ -83,7 +86,7 @@ public abstract class EventBusTracerTestBase extends VertxTestBase {
     private <T> String addressOf(T obj, TagExtractor<T> extractor) {
       int len = extractor.len(obj);
       for (int idx = 0;idx < len;idx++) {
-        if (extractor.name(obj, idx).equals("message_bus.destination")) {
+        if (extractor.name(obj, idx).equals("messaging.destination.name")) {
           String value = extractor.value(obj, idx);
           if (value.startsWith("__vertx")) {
             value = "generated";
