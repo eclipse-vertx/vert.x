@@ -80,7 +80,8 @@ public class VertxHttp3Headers extends VertxHttpHeadersBase<Http3Headers> implem
   public HttpHeaders toHttpHeaders() {
     HeadersMultiMap headers = HeadersMultiMap.httpHeaders();
     for (Map.Entry<CharSequence, CharSequence> header : this.headers) {
-      CharSequence name = Objects.requireNonNull(Http3Headers.PseudoHeaderName.getPseudoHeader(header.getKey())).name();
+      Http3Headers.PseudoHeaderName headerKey = Http3Headers.PseudoHeaderName.getPseudoHeader(header.getKey());
+      CharSequence name = headerKey != null ? headerKey.name() : header.getKey();
       headers.add(name, header.getValue());
     }
     return headers;
