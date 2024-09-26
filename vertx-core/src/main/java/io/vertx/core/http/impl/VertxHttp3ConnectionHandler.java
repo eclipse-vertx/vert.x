@@ -17,7 +17,6 @@ import io.netty.channel.*;
 import io.netty.channel.socket.ChannelInputShutdownEvent;
 import io.netty.channel.socket.ChannelInputShutdownReadComplete;
 import io.netty.handler.codec.http.*;
-import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.ssl.SslHandshakeCompletionEvent;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.incubator.codec.http3.*;
@@ -27,6 +26,8 @@ import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.netty.incubator.codec.quic.QuicStreamLimitChangedEvent;
 import io.netty.incubator.codec.quic.QuicStreamPriority;
 import io.netty.util.AttributeKey;
+import io.netty.util.CharsetUtil;
+import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.Future;
@@ -35,9 +36,10 @@ import io.netty.util.concurrent.Promise;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.vertx.core.Handler;
-import io.vertx.core.http.*;
-import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.GoAway;
+import io.vertx.core.http.HttpSettings;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
@@ -65,7 +67,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   private ChannelHandler streamHandlerInternal;
   private ChannelHandler userEventHandlerInternal;
 
-  public static final AttributeKey<Http3ClientStream> HTTP3_MY_STREAM_KEY = AttributeKey.valueOf(Http3ClientStream.class
+  public static final AttributeKey<VertxHttpStreamBase> HTTP3_MY_STREAM_KEY = AttributeKey.valueOf(VertxHttpStreamBase.class
     , "HTTP3MyStream");
 
   public VertxHttp3ConnectionHandler(
@@ -183,6 +185,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
       logger.debug("Received event ChannelInputShutdownReadComplete: {}", evt);
       channelInputClosed(ctx);
     } else {
+      logger.debug("Received unhandled event: {}", evt);
       ctx.fireUserEventTriggered(evt);
     }
   }
@@ -231,21 +234,25 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   public void channelRead(ChannelHandlerContext ctx, Object frame) throws Exception {
     read = true;
 
-    Http3ClientStream stream = getHttp3ClientStream(ctx);
+    VertxHttpStreamBase stream = getLocalControlVertxHttpStream(ctx);
 
     if (frame instanceof HttpResponse) {
+      logger.debug("Received HttpResponse frame: {}", frame);
       HttpResponse httpResp = (HttpResponse) frame;
       Http3Headers headers = new DefaultHttp3Headers();
       httpResp.headers().forEach(entry -> headers.add(entry.getKey(), entry.getValue()));
       headers.status(httpResp.status().codeAsText());
       connection.onHeadersRead(ctx, stream, headers, false);
     } else if (frame instanceof LastHttpContent) {
+      logger.debug("Received LastHttpContent frame: {}", frame);
       LastHttpContent last = (LastHttpContent) frame;
       connection.onDataRead(ctx, stream, last.content(), 0, true);
     } else if (frame instanceof HttpContent) {
+      logger.debug("Received HttpContent frame: {}", frame);
       HttpContent respBody = (HttpContent) frame;
       connection.onDataRead(ctx, stream, respBody.content(), 0, false);
     } else {
+      logger.debug("Received unhandled frame: {}", frame);
       super.channelRead(ctx, frame);
     }
   }
@@ -257,11 +264,11 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     super.channelReadComplete(ctx);
   }
 
-  private static Http3ClientStream getHttp3ClientStream(ChannelHandlerContext ctx) {
+  private static VertxHttpStreamBase getLocalControlVertxHttpStream(ChannelHandlerContext ctx) {
     return Http3.getLocalControlStream(ctx.channel().parent()).attr(HTTP3_MY_STREAM_KEY).get();
   }
 
-  static void setHttp3ClientStream(QuicStreamChannel quicStreamChannel, Http3ClientStream stream) {
+  static void setLocalControlVertxHttpStream(QuicStreamChannel quicStreamChannel, VertxHttpStreamBase stream) {
     Http3.getLocalControlStream(quicStreamChannel.parent()).attr(HTTP3_MY_STREAM_KEY).set(stream);
   }
 
