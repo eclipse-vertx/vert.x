@@ -241,7 +241,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
           ChannelInitializer<QuicChannel> handler = new ChannelInitializer<>() {
             @Override
             protected void initChannel(QuicChannel quicChannel) throws Exception {
-//            quicChannel.pipeline().addLast("ssl", serverHandler);
+              log.debug("Init quicChannel of QuicServerCodec");
               ChannelPromise p = quicChannel.newPromise();
               quicChannel.pipeline().addLast("handshaker", new SslHandshakeCompletionHandler(p));
               p.addListener(future -> {
@@ -255,9 +255,8 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
           };
 
           SslChannelProvider sslChannelProvider = new SslChannelProvider(vertx, sslContextProvider, sslOptions.isSni());
-          ChannelHandler serverHandler = sslChannelProvider.createServerHandler(options.isUseAlpn(), options.isHttp3(),
-            options.getSslHandshakeTimeout(), options.getSslHandshakeTimeoutUnit(), handler);
-          ch.pipeline().addLast("ssl", serverHandler);
+          ch.pipeline().addLast("ssl", sslChannelProvider.createServerHandler(options.isUseAlpn(), options.isHttp3(),
+            options.getSslHandshakeTimeout(), options.getSslHandshakeTimeoutUnit(), handler));
         } else {
           SslChannelProvider sslChannelProvider = new SslChannelProvider(vertx, sslContextProvider, sslOptions.isSni());
           ch.pipeline().addLast("ssl", sslChannelProvider.createServerHandler(options.isUseAlpn(), options.isHttp3(),
