@@ -233,7 +233,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
           ChannelInitializer<QuicChannel> handler = new ChannelInitializer<>() {
             @Override
             protected void initChannel(QuicChannel quicChannel) throws Exception {
-//            quicChannel.pipeline().addLast("ssl", serverHandler);
+              log.debug("Init quicChannel of QuicServerCodec");
               ChannelPromise p = quicChannel.newPromise();
               quicChannel.pipeline().addLast("handshaker", new SslHandshakeCompletionHandler(p));
               p.addListener(future -> {
