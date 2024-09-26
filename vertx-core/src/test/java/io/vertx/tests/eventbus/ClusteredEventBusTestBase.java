@@ -13,10 +13,8 @@ package io.vertx.tests.eventbus;
 
 import io.vertx.core.*;
 import io.vertx.core.eventbus.*;
-import io.vertx.core.spi.cluster.RegistrationListener;
 import io.vertx.tests.shareddata.AsyncMapTest;
 import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.core.spi.cluster.impl.NodeSelector;
 import io.vertx.core.spi.cluster.RegistrationUpdateEvent;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.fakecluster.FakeClusterManager;
@@ -125,16 +123,11 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
     CountDownLatch updateLatch = new CountDownLatch(3);
     startNodes(2, () -> new WrappedClusterManager(getClusterManager()) {
       @Override
-      public void registrationListener(RegistrationListener registrationListener) {
-        super.registrationListener(new WrappedNodeSelector((NodeSelector) registrationListener) {
-          @Override
-          public void registrationsUpdated(RegistrationUpdateEvent event) {
-            super.registrationsUpdated(event);
-            if (event.address().equals("foo") && event.registrations().isEmpty()) {
-              updateLatch.countDown();
-            }
-          }
-        });
+      public void registrationsUpdated(RegistrationUpdateEvent event) {
+        super.registrationsUpdated(event);
+        if (event.address().equals("foo") && event.registrations().isEmpty()) {
+          updateLatch.countDown();
+        }
       }
     });
     MessageConsumer<Object> consumer = vertices[0].eventBus().consumer("foo", msg -> msg.reply(msg.body()));
