@@ -17,6 +17,8 @@ import io.netty.handler.ssl.SslHandshakeCompletionEvent;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.Promise;
+import io.netty.util.internal.logging.InternalLogger;
+import io.netty.util.internal.logging.InternalLoggerFactory;
 
 /**
  * A handler that waits for SSL handshake completion and dispatch it to the server handler.
@@ -24,6 +26,7 @@ import io.netty.util.concurrent.Promise;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class SslHandshakeCompletionHandler extends ChannelInboundHandlerAdapter {
+  private static final InternalLogger logger = InternalLoggerFactory.getInstance(SslHandshakeCompletionHandler.class);
 
   /**
    * The channel attribute providing the SNI server name, this name is set upon handshake completion when available.
@@ -39,6 +42,7 @@ public class SslHandshakeCompletionHandler extends ChannelInboundHandlerAdapter 
   @Override
   public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
     if (evt instanceof SniCompletionEvent) {
+      logger.debug("Received event SniCompletionEvent: {}", evt);
       SniCompletionEvent completion = (SniCompletionEvent) evt;
       if (completion.isSuccess()) {
         Attribute<String> val = ctx.channel().attr(SERVER_NAME_ATTR);
@@ -47,6 +51,7 @@ public class SslHandshakeCompletionHandler extends ChannelInboundHandlerAdapter 
         promise.tryFailure(completion.cause());
       }
     } else if (evt instanceof SslHandshakeCompletionEvent) {
+      logger.debug("Received event SslHandshakeCompletionEvent: {}", evt);
       SslHandshakeCompletionEvent completion = (SslHandshakeCompletionEvent) evt;
       if (completion.isSuccess()) {
         ctx.pipeline().remove(this);
@@ -55,6 +60,7 @@ public class SslHandshakeCompletionHandler extends ChannelInboundHandlerAdapter 
         promise.tryFailure(completion.cause());
       }
     } else {
+      logger.debug("Received not handled event: {}", evt);
       ctx.fireUserEventTriggered(evt);
     }
   }
