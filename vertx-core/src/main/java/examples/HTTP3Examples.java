@@ -11,11 +11,15 @@
 
 package examples;
 
-import io.netty.incubator.codec.http3.DefaultHttp3SettingsFrame;
-import io.netty.incubator.codec.http3.Http3SettingsFrame;
-import io.netty.util.NetUtil;
+import io.netty.handler.ssl.util.SelfSignedCertificate;
+import io.netty.incubator.codec.http3.Http3;
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.http.*;
+import io.vertx.core.net.PemKeyCertOptions;
+
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
@@ -81,9 +85,79 @@ public class HTTP3Examples {
       .onFailure(Throwable::printStackTrace)
       .onComplete(event -> vertx.close())
     ;
+
+    try {
+      Thread.sleep(1_000_000);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
   }
 
-  public static void main(String[] args) {
-    new HTTP3Examples().example01(Vertx.vertx());
+  public void example02Server(Vertx vertx) throws Exception {
+    //TODO: set settings for http3
+//    Http3Settings settings = new Http3Settings();
+
+    HttpServerOptions options = new HttpServerOptions();
+
+    options.setAlpnVersions(List.of(
+      HttpVersion.HTTP_3,
+      HttpVersion.HTTP_3_27,
+      HttpVersion.HTTP_3_29,
+      HttpVersion.HTTP_3_30,
+      HttpVersion.HTTP_3_31,
+      HttpVersion.HTTP_3_32,
+      HttpVersion.HTTP_2,
+      HttpVersion.HTTP_1_1,
+      HttpVersion.HTTP_1_0
+    ));
+
+    options
+      .setIdleTimeout(600)
+      .setIdleTimeoutUnit(TimeUnit.SECONDS)
+      .setHttp3(true)
+      .setUseAlpn(true)
+      .setSsl(true)
+      .getSslOptions()
+      .setApplicationLayerProtocols(
+        List.of(Http3.supportedApplicationProtocols())
+      );
+
+    SelfSignedCertificate ssc = new SelfSignedCertificate();
+    options.setKeyCertOptions(new PemKeyCertOptions()
+      .setCertPath(ssc.certificate().getAbsolutePath())
+      .setKeyPath(ssc.privateKey().getAbsolutePath())
+    );
+
+
+    HttpServer server = vertx.createHttpServer(options);
+
+
+    server.requestHandler(request -> {
+      System.out.println("A request received from " + request.remoteAddress());
+    });
+
+    server.connectionHandler(connection -> {
+      System.out.println("A client connected");
+    });
+
+    server.exceptionHandler(Throwable::printStackTrace);
+
+    int port = 8090;
+    server.listen(port)
+      .onComplete(ar -> {
+        if (ar.succeeded()) {
+          System.out.println("HTTP/3 server is now listening on port: " + port);
+        } else {
+          ar.cause().printStackTrace();
+        }
+      });
+  }
+
+  public static void main(String[] args) throws Exception {
+    VertxOptions options = new VertxOptions()
+      .setBlockedThreadCheckInterval(1_000_000_000);
+
+    Vertx vertx = Vertx.vertx(options);
+    new HTTP3Examples().example02Server(vertx);
   }
 }
