@@ -10,6 +10,8 @@
  */
 package io.vertx.core.net.impl;
 
+import io.netty.bootstrap.AbstractBootstrap;
+import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.*;
@@ -21,22 +23,26 @@ import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.handler.traffic.GlobalTrafficShapingHandler;
+import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.util.concurrent.GenericFutureListener;
-import io.vertx.core.*;
+import io.vertx.core.Closeable;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.internal.CloseSequence;
 import io.vertx.core.impl.HostnameResolver;
+import io.vertx.core.internal.CloseSequence;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
-import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.internal.net.SslChannelProvider;
-import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.internal.net.SslHandshakeCompletionHandler;
+import io.vertx.core.internal.tls.SslContextManager;
+import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.*;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TCPMetrics;
@@ -231,18 +237,41 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     private void configurePipeline(Channel ch, SslContextProvider sslContextProvider,
                                    SslContextManager sslContextManager, ServerSSLOptions sslOptions) {
       if (options.isSsl()) {
-        SslChannelProvider sslChannelProvider = new SslChannelProvider(vertx, sslContextProvider, sslOptions.isSni());
-        ch.pipeline().addLast("ssl", sslChannelProvider.createServerHandler(options.isUseAlpn(), options.isHttp3(),
-          options.getSslHandshakeTimeout(), options.getSslHandshakeTimeoutUnit()));
-        ChannelPromise p = ch.newPromise();
-        ch.pipeline().addLast("handshaker", new SslHandshakeCompletionHandler(p));
-        p.addListener(future -> {
-          if (future.isSuccess()) {
-            connected(ch, sslContextManager, sslOptions);
-          } else {
-            handleException(future.cause());
-          }
-        });
+        if (options.isHttp3()) {
+          ChannelInitializer<QuicChannel> handler = new ChannelInitializer<>() {
+            @Override
+            protected void initChannel(QuicChannel quicChannel) throws Exception {
+//            quicChannel.pipeline().addLast("ssl", serverHandler);
+              ChannelPromise p = quicChannel.newPromise();
+              quicChannel.pipeline().addLast("handshaker", new SslHandshakeCompletionHandler(p));
+              p.addListener(future -> {
+                if (future.isSuccess()) {
+                  connected(quicChannel, sslContextManager, sslOptions);
+                } else {
+                  handleException(future.cause());
+                }
+              });
+            }
+          };
+
+          SslChannelProvider sslChannelProvider = new SslChannelProvider(vertx, sslContextProvider, sslOptions.isSni());
+          ChannelHandler serverHandler = sslChannelProvider.createServerHandler(options.isUseAlpn(), options.isHttp3(),
+            options.getSslHandshakeTimeout(), options.getSslHandshakeTimeoutUnit(), handler);
+          ch.pipeline().addLast("ssl", serverHandler);
+        } else {
+          SslChannelProvider sslChannelProvider = new SslChannelProvider(vertx, sslContextProvider, sslOptions.isSni());
+          ch.pipeline().addLast("ssl", sslChannelProvider.createServerHandler(options.isUseAlpn(), options.isHttp3(),
+            options.getSslHandshakeTimeout(), options.getSslHandshakeTimeoutUnit(), null));
+          ChannelPromise p = ch.newPromise();
+          ch.pipeline().addLast("handshaker", new SslHandshakeCompletionHandler(p));
+          p.addListener(future -> {
+            if (future.isSuccess()) {
+              connected(ch, sslContextManager, sslOptions);
+            } else {
+              handleException(future.cause());
+            }
+          });
+        }
       } else {
         connected(ch, sslContextManager, sslOptions);
       }
@@ -460,6 +489,10 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
         channelBalancer = new ServerChannelLoadBalancer(vertx.getAcceptorEventLoopGroup().next());
 
         //
+        if (options.isHttp3() && !options.isSsl()) {
+          return context.failedFuture("HTTP/3 requires SSL/TLS encryption. Please enable SSL to use HTTP/3.");
+        }
+
         if (options.isSsl() && options.getKeyCertOptions() == null && options.getTrustOptions() == null) {
           return context.failedFuture("Key/certificate is mandatory for SSL");
         }
@@ -475,7 +508,9 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
           ServerSSLOptions sslOptions = options.getSslOptions();
           configure(sslOptions);
           sslContextProvider = sslContextManager.resolveSslContextProvider(sslOptions, null,
-            sslOptions.getClientAuth(), sslOptions.getApplicationLayerProtocols(), listenContext).onComplete(ar -> {
+            sslOptions.getClientAuth(), sslOptions.getApplicationLayerProtocols(), listenContext);
+
+          sslContextProvider.onComplete(ar -> {
             if (ar.succeeded()) {
               bind(hostOrPath, context, bindAddress, localAddress, shared, promise, sharedNetServers, id);
             } else {
@@ -527,19 +562,10 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     ServerID id) {
     // Socket bind
     channelBalancer.addWorker(eventLoop, worker);
-    ServerBootstrap bootstrap = new ServerBootstrap();
-    bootstrap.group(vertx.getAcceptorEventLoopGroup(), channelBalancer.workers());
-    if (options.isSsl()) {
-      bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
-    } else {
-      bootstrap.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
-    }
-
-    bootstrap.childHandler(channelBalancer);
-    applyConnectionOptions(localAddress.isDomainSocket(), bootstrap);
+    AbstractBootstrap bootstrap = buildServerBootstrap(localAddress);
 
     // Actual bind
-    io.netty.util.concurrent.Future<Channel> bindFuture = resolveAndBind(context, bindAddress, bootstrap);
+    io.netty.util.concurrent.Future<Channel> bindFuture = resolveAndBind(context, bindAddress, bootstrap, options);
     bindFuture.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) res -> {
       if (res.isSuccess()) {
         Channel ch = res.getNow();
@@ -561,6 +587,28 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
         promise.fail(res.cause());
       }
     });
+  }
+
+  private AbstractBootstrap buildServerBootstrap(SocketAddress localAddress) {
+    if (options.isHttp3()) {
+      Bootstrap bootstrap = new Bootstrap();
+      bootstrap.group(eventLoop);
+      bootstrap.handler(channelBalancer);
+      applyConnectionOptions(bootstrap);
+
+      return bootstrap;
+    }
+    ServerBootstrap bootstrap = new ServerBootstrap();
+    bootstrap.group(vertx.getAcceptorEventLoopGroup(), channelBalancer.workers());
+    if (options.isSsl()) {
+      bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
+    } else {
+      bootstrap.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+    }
+
+    bootstrap.childHandler(channelBalancer);
+    applyConnectionOptions(localAddress.isDomainSocket(), bootstrap);
+    return bootstrap;
   }
 
   public boolean isListening() {
@@ -587,6 +635,10 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
    */
   private void applyConnectionOptions(boolean domainSocket, ServerBootstrap bootstrap) {
     vertx.transport().configure(options, domainSocket, bootstrap);
+  }
+
+  private void applyConnectionOptions(Bootstrap bootstrap) {
+    vertx.transport().configure(options, bootstrap);
   }
 
 
@@ -664,7 +716,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
         if (metrics != null) {
           a.addListener(cg -> metrics.close());
         }
-        a.addListener((PromiseInternal<Void>)done);
+        a.addListener((PromiseInternal<Void>) done);
       } else {
         done.complete();
       }
@@ -673,11 +725,12 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
 
   public static io.netty.util.concurrent.Future<Channel> resolveAndBind(ContextInternal context,
                                                                         SocketAddress socketAddress,
-                                                                        ServerBootstrap bootstrap) {
+                                                                        AbstractBootstrap bootstrap,
+                                                                        NetServerOptions options) {
     VertxInternal vertx = context.owner();
     io.netty.util.concurrent.Promise<Channel> promise = vertx.getAcceptorEventLoopGroup().next().newPromise();
     try {
-      bootstrap.channelFactory(vertx.transport().serverChannelFactory(socketAddress.isDomainSocket()));
+      setChannelFactory(socketAddress, bootstrap, options, vertx);
     } catch (Exception e) {
       promise.setFailure(e);
       return promise;
@@ -712,7 +765,17 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     return promise;
   }
 
-  private static void bind(ServerBootstrap bootstrap, InetAddress address, int port, io.netty.util.concurrent.Promise<Channel> promise) {
+  private static void setChannelFactory(SocketAddress socketAddress, AbstractBootstrap bootstrap,
+                                        NetServerOptions options, VertxInternal vertx) {
+    if (options.isHttp3()) {
+      bootstrap.channelFactory(() -> vertx.transport().datagramChannel());
+    } else {
+      bootstrap.channelFactory(vertx.transport().serverChannelFactory(socketAddress.isDomainSocket()));
+    }
+  }
+
+  private static void bind(AbstractBootstrap bootstrap, InetAddress address, int port,
+                           io.netty.util.concurrent.Promise<Channel> promise) {
     InetSocketAddress t = new InetSocketAddress(address, port);
     ChannelFuture future = bootstrap.bind(t);
     future.addListener(f -> {
