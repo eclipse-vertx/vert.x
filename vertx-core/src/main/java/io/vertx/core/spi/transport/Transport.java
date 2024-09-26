@@ -172,10 +172,8 @@ public interface Transport {
   }
 
   default void configure(NetServerOptions options, boolean domainSocket, ServerBootstrap bootstrap) {
-    if(!options.isHttp3()) {
-      bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
-    }
-    if (!domainSocket && !options.isHttp3()) {
+    bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
+    if (!domainSocket) {
       bootstrap.childOption(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
       bootstrap.childOption(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
     }
@@ -194,6 +192,12 @@ public interface Transport {
     }
     if (options.getAcceptBacklog() != -1) {
       bootstrap.option(ChannelOption.SO_BACKLOG, options.getAcceptBacklog());
+    }
+  }
+
+  default void configure(NetServerOptions options, Bootstrap serverBootstrap) {
+    if (options.getAcceptBacklog() != -1) {
+      serverBootstrap.option(ChannelOption.SO_BACKLOG, options.getAcceptBacklog());
     }
   }
 }
