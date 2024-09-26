@@ -53,7 +53,8 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
   }
 
   protected abstract void onHeadersRead(VertxHttpStreamBase<?, ?> stream, Http3Headers headers,
-                                        StreamPriorityBase streamPriority, boolean endOfStream);
+                                        StreamPriorityBase streamPriority, boolean endOfStream,
+                                        QuicStreamChannel streamChannel);
 
   protected final ChannelHandlerContext handlerContext;
   protected VertxHttp3ConnectionHandler<? extends Http3ConnectionBase> handler;
@@ -197,13 +198,13 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
       .setDependency(streamDependency)
       .setWeight(weight)
       .setExclusive(exclusive);
-    onHeadersRead(stream, headers, streamPriority, endOfStream);
+    onHeadersRead(stream, headers, streamPriority, endOfStream, null);
   }
 
 //  @Override
   public void onHeadersRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?> stream, Http3Headers headers,
                             int padding, boolean endOfStream) throws Http2Exception {
-    onHeadersRead(stream, headers, null, endOfStream);
+    onHeadersRead(stream, headers, null, endOfStream, null);
   }
 
 //  @Override
@@ -522,8 +523,8 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
 
   //  @Override
   public void onHeadersRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?> stream,
-                            Http3Headers headers, boolean endOfStream) throws Http2Exception {
-    onHeadersRead(stream, headers, null, endOfStream);
+                            Http3Headers headers, boolean endOfStream, QuicStreamChannel streamChannel) throws Http2Exception {
+    onHeadersRead(stream, headers, null, endOfStream, streamChannel);
   }
 
   // Private
