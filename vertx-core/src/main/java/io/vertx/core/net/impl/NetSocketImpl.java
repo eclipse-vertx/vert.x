@@ -332,7 +332,7 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
                 sslOptions.isHttp3(), clientSSLOptions.getSslHandshakeTimeout(), clientSSLOptions.getSslHandshakeTimeoutUnit());
             } else {
               sslHandler = provider.createServerHandler(sslOptions.isUseAlpn(), sslOptions.isHttp3(),
-                sslOptions.getSslHandshakeTimeout(), sslOptions.getSslHandshakeTimeoutUnit());
+                sslOptions.getSslHandshakeTimeout(), sslOptions.getSslHandshakeTimeoutUnit(), null);
             }
             chctx.pipeline().addFirst("ssl", sslHandler);
             channelPromise.addListener(p);
