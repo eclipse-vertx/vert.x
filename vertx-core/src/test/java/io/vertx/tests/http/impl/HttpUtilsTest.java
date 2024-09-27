@@ -12,6 +12,7 @@ package io.vertx.tests.http.impl;
 
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.impl.HttpUtils;
+import io.vertx.core.internal.net.RFC3986;
 import org.junit.Test;
 
 import java.net.URI;
@@ -92,104 +93,108 @@ public class HttpUtilsTest {
 
   @Test
   public void testNoLeadingSlash() throws Exception {
-    assertEquals("/path/with/no/leading/slash", HttpUtils.normalizePath("path/with/no/leading/slash"));
+    assertEquals("/path/with/no/leading/slash", RFC3986.normalizePath("path/with/no/leading/slash"));
   }
 
   @Test
   public void testNullPath() throws Exception {
-    assertNull(HttpUtils.normalizePath(null));
+    try {
+      RFC3986.normalizePath(null);
+      fail();
+    } catch (NullPointerException e) {
+    }
   }
 
   @Test
   public void testPathWithSpaces1() throws Exception {
     // this is a special case since only percent encoded values should be unescaped from the path
-    assertEquals("/foo+blah/eek", HttpUtils.normalizePath("/foo+blah/eek"));
+    assertEquals("/foo+blah/eek", RFC3986.normalizePath("/foo+blah/eek"));
   }
 
   @Test
   public void testPathWithSpaces2() throws Exception {
-    assertEquals("/foo%20blah/eek", HttpUtils.normalizePath("/foo%20blah/eek"));
+    assertEquals("/foo%20blah/eek", RFC3986.normalizePath("/foo%20blah/eek"));
   }
 
   @Test
   public void testDodgyPath1() throws Exception {
-    assertEquals("/blah", HttpUtils.normalizePath("/foo/../../blah"));
+    assertEquals("/blah", RFC3986.normalizePath("/foo/../../blah"));
   }
 
   @Test
   public void testDodgyPath2() throws Exception {
-    assertEquals("/blah", HttpUtils.normalizePath("/foo/../../../blah"));
+    assertEquals("/blah", RFC3986.normalizePath("/foo/../../../blah"));
   }
 
   @Test
   public void testDodgyPath3() throws Exception {
-    assertEquals("/blah", HttpUtils.normalizePath("/foo/../blah"));
+    assertEquals("/blah", RFC3986.normalizePath("/foo/../blah"));
   }
 
   @Test
   public void testDodgyPath4() throws Exception {
-    assertEquals("/blah", HttpUtils.normalizePath("/../blah"));
+    assertEquals("/blah", RFC3986.normalizePath("/../blah"));
   }
 
   @Test
   public void testMultipleSlashPath1() throws Exception {
-    assertEquals("/blah", HttpUtils.normalizePath("//blah"));
+    assertEquals("/blah", RFC3986.normalizePath("//blah"));
   }
 
   @Test
   public void testMultipleSlashPath2() throws Exception {
-    assertEquals("/blah", HttpUtils.normalizePath("///blah"));
+    assertEquals("/blah", RFC3986.normalizePath("///blah"));
   }
 
   @Test
   public void testMultipleSlashPath3() throws Exception {
-    assertEquals("/foo/blah", HttpUtils.normalizePath("/foo//blah"));
+    assertEquals("/foo/blah", RFC3986.normalizePath("/foo//blah"));
   }
 
   @Test
   public void testMultipleSlashPath4() throws Exception {
-    assertEquals("/foo/blah/", HttpUtils.normalizePath("/foo//blah///"));
+    assertEquals("/foo/blah/", RFC3986.normalizePath("/foo//blah///"));
   }
 
   @Test
   public void testSlashesAndDodgyPath1() throws Exception {
-    assertEquals("/blah", HttpUtils.normalizePath("//../blah"));
+    assertEquals("/blah", RFC3986.normalizePath("//../blah"));
   }
 
   @Test
   public void testSlashesAndDodgyPath2() throws Exception {
-    assertEquals("/blah", HttpUtils.normalizePath("/..//blah"));
+    assertEquals("/blah", RFC3986.normalizePath("/..//blah"));
   }
 
   @Test
   public void testSlashesAndDodgyPath3() throws Exception {
-    assertEquals("/blah", HttpUtils.normalizePath("//..//blah"));
+    assertEquals("/blah", RFC3986.normalizePath("//..//blah"));
   }
 
   @Test
   public void testDodgyPathEncoded() throws Exception {
-    assertEquals("/..%2Fblah", HttpUtils.normalizePath("/%2E%2E%2Fblah"));
+    assertEquals("/..%2Fblah", RFC3986.normalizePath("/%2E%2E%2Fblah"));
   }
 
   @Test
   public void testTrailingSlash() throws Exception {
-    assertEquals("/blah/", HttpUtils.normalizePath("/blah/"));
+    assertEquals("/blah/", RFC3986.normalizePath("/blah/"));
   }
 
   @Test
   public void testMultipleTrailingSlashes1() throws Exception {
-    assertEquals("/blah/", HttpUtils.normalizePath("/blah//"));
+    assertEquals("/blah/", RFC3986.normalizePath("/blah//"));
   }
 
   @Test
   public void testMultipleTrailingSlashes2() throws Exception {
-    assertEquals("/blah/", HttpUtils.normalizePath("/blah///"));
+    assertEquals("/blah/", RFC3986.normalizePath("/blah///"));
   }
 
   @Test
   public void testBadURL() throws Exception {
     try {
-      HttpUtils.normalizePath("/%7B%channel%%7D");
+      RFC3986.normalizePath("/%7B%channel%%7D");
       fail();
     } catch (IllegalArgumentException e) {
       // expected!
@@ -198,15 +203,15 @@ public class HttpUtilsTest {
 
   @Test
   public void testDoubleDot() throws Exception {
-    assertEquals("/foo/bar/abc..def", HttpUtils.normalizePath("/foo/bar/abc..def"));
+    assertEquals("/foo/bar/abc..def", RFC3986.normalizePath("/foo/bar/abc..def"));
   }
 
   @Test
   public void testSpec() throws Exception {
-    assertEquals("/a/g", HttpUtils.normalizePath("/a/b/c/./../../g"));
-    assertEquals("/mid/6", HttpUtils.normalizePath("mid/content=5/../6"));
-    assertEquals("/~username/", HttpUtils.normalizePath("/%7Eusername/"));
-    assertEquals("/b/", HttpUtils.normalizePath("/b/c/.."));
+    assertEquals("/a/g", RFC3986.normalizePath("/a/b/c/./../../g"));
+    assertEquals("/mid/6", RFC3986.normalizePath("mid/content=5/../6"));
+    assertEquals("/~username/", RFC3986.normalizePath("/%7Eusername/"));
+    assertEquals("/b/", RFC3986.normalizePath("/b/c/.."));
   }
 
   private void assertResolveUri(String expected, String base, String rel) throws Exception {
