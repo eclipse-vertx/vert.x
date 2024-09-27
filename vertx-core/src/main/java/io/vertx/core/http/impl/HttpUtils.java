@@ -68,27 +68,29 @@ public final class HttpUtils {
   static final int SC_SWITCHING_PROTOCOLS = 101;
   static final int SC_BAD_GATEWAY = 502;
 
-  static final TagExtractor<HttpServerRequest> SERVER_REQUEST_TAG_EXTRACTOR = new TagExtractor<HttpServerRequest>() {
+  static final TagExtractor<HttpServerRequest> SERVER_REQUEST_TAG_EXTRACTOR = new TagExtractor<>() {
     @Override
     public int len(HttpServerRequest req) {
       return req.query() == null ? 4 : 5;
     }
+
     @Override
     public String name(HttpServerRequest req, int index) {
       switch (index) {
         case 0:
           return "http.url";
         case 1:
-          return "http.method";
+          return "http.request.method";
         case 2:
-          return "http.scheme";
+          return "url.scheme";
         case 3:
-          return "http.path";
+          return "url.path";
         case 4:
-          return "http.query";
+          return "url.query";
       }
       throw new IndexOutOfBoundsException("Invalid tag index " + index);
     }
+
     @Override
     public String value(HttpServerRequest req, int index) {
       switch (index) {
@@ -107,42 +109,46 @@ public final class HttpUtils {
     }
   };
 
-  static final TagExtractor<HttpServerResponse> SERVER_RESPONSE_TAG_EXTRACTOR = new TagExtractor<HttpServerResponse>() {
+  static final TagExtractor<HttpServerResponse> SERVER_RESPONSE_TAG_EXTRACTOR = new TagExtractor<>() {
     @Override
     public int len(HttpServerResponse resp) {
       return 1;
     }
+
     @Override
     public String name(HttpServerResponse resp, int index) {
       if (index == 0) {
-        return "http.status_code";
+        return "http.response.status_code";
       }
       throw new IndexOutOfBoundsException("Invalid tag index " + index);
     }
+
     @Override
     public String value(HttpServerResponse resp, int index) {
       if (index == 0) {
-        return "" + resp.getStatusCode();
+        return Integer.toString(resp.getStatusCode());
       }
       throw new IndexOutOfBoundsException("Invalid tag index " + index);
     }
   };
 
-  static final TagExtractor<HttpRequestHead> CLIENT_HTTP_REQUEST_TAG_EXTRACTOR = new TagExtractor<HttpRequestHead>() {
+  static final TagExtractor<HttpRequestHead> CLIENT_HTTP_REQUEST_TAG_EXTRACTOR = new TagExtractor<>() {
     @Override
     public int len(HttpRequestHead req) {
       return 2;
     }
+
     @Override
     public String name(HttpRequestHead req, int index) {
       switch (index) {
         case 0:
-          return "http.url";
+          return "url.full";
         case 1:
-          return "http.method";
+          return "http.request.method";
       }
       throw new IndexOutOfBoundsException("Invalid tag index " + index);
     }
+
     @Override
     public String value(HttpRequestHead req, int index) {
       switch (index) {
@@ -155,22 +161,24 @@ public final class HttpUtils {
     }
   };
 
-  static final TagExtractor<HttpResponseHead> CLIENT_RESPONSE_TAG_EXTRACTOR = new TagExtractor<HttpResponseHead>() {
+  static final TagExtractor<HttpResponseHead> CLIENT_RESPONSE_TAG_EXTRACTOR = new TagExtractor<>() {
     @Override
     public int len(HttpResponseHead resp) {
       return 1;
     }
+
     @Override
     public String name(HttpResponseHead resp, int index) {
       if (index == 0) {
-        return "http.status_code";
+        return "http.response.status_code";
       }
       throw new IndexOutOfBoundsException("Invalid tag index " + index);
     }
+
     @Override
     public String value(HttpResponseHead resp, int index) {
       if (index == 0) {
-        return "" + resp.statusCode;
+        return Integer.toString(resp.statusCode);
       }
       throw new IndexOutOfBoundsException("Invalid tag index " + index);
     }
@@ -331,7 +339,7 @@ public final class HttpUtils {
         path = _ref.getRawPath();
         query = _ref.getRawQuery();
       } else {
-        if (_ref.getRawPath().length() == 0) {
+        if (_ref.getRawPath().isEmpty()) {
           path = base.getRawPath();
           if (_ref.getRawQuery() != null) {
             query = _ref.getRawQuery();
@@ -345,7 +353,7 @@ public final class HttpUtils {
             // Merge paths
             String mergedPath;
             String basePath = base.getRawPath();
-            if (base.getAuthority() != null && basePath.length() == 0) {
+            if (base.getAuthority() != null && basePath.isEmpty()) {
               mergedPath = "/" + _ref.getRawPath();
             } else {
               int index = basePath.lastIndexOf('/');
@@ -370,7 +378,7 @@ public final class HttpUtils {
    * Extract the path out of the uri.
    */
   static String parsePath(String uri) {
-    if (uri.length() == 0) {
+    if (uri.isEmpty()) {
       return "";
     }
     int i;
