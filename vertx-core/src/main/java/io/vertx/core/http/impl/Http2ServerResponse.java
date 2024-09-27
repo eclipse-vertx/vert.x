@@ -26,7 +26,6 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.headers.VertxHttp2Headers;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.internal.PromiseInternal;
@@ -558,7 +557,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
           putHeader(HttpHeaderNames.CONTENT_LENGTH, String.valueOf(contentLength));
         }
         if (headers.get(HttpHeaderNames.CONTENT_TYPE) == null) {
-          String contentType = MimeMapping.getMimeTypeForFilename(filename);
+          String contentType = MimeMapping.mimeTypeForFilename(filename);
           if (contentType != null) {
             putHeader(HttpHeaderNames.CONTENT_TYPE, contentType);
           }
