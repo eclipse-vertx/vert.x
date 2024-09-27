@@ -32,13 +32,14 @@ class MessageTagExtractor implements TagExtractor<Message<?>> {
 
   @Override
   public String name(Message<?> obj, int index) {
+    // https://opentelemetry.io/docs/specs/semconv/messaging/messaging-spans/
     switch (index) {
       case 0:
-        return "message_bus.destination";
+        return "messaging.destination.name";
       case 1:
-        return "message_bus.system";
+        return "messaging.system";
       case 2:
-        return "message_bus.operation";
+        return "messaging.operation.name";
     }
     throw new IndexOutOfBoundsException("Invalid tag index " + index);
   }
@@ -51,7 +52,7 @@ class MessageTagExtractor implements TagExtractor<Message<?>> {
       case 1:
         return "vertx-eventbus";
       case 2:
-        return "publish";
+        return obj.isSend() ? "send" : "publish";
     }
     throw new IndexOutOfBoundsException("Invalid tag index " + index);
   }
