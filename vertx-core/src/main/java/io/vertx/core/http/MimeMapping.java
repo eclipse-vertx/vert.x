@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl;
+package io.vertx.core.http;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -20,7 +20,7 @@ import java.util.Map;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class MimeMapping {
+public final class MimeMapping {
   private static final Map<String, String> m = new HashMap<>();
 
   static {
@@ -1013,14 +1013,23 @@ public class MimeMapping {
     m.put("ice", "x-conference/x-cooltalk");
   }
 
-  public static String getMimeTypeForExtension(String ext) {
+  /**
+   * @param ext the file name extension
+   * @return the matching mime type for a file extension (e.g. {@code .mkv}) or {@code null}
+   */
+  public static String mimeTypeForExtension(String ext) {
     return m.get(ext);
   }
-  public static String getMimeTypeForFilename(String filename) {
+
+  /**
+   * @param filename the file name
+   * @return the matching mime type for a file name or {@code null}, the file extension is used for lookup
+   */
+  public static String mimeTypeForFilename(String filename) {
     int li = filename.lastIndexOf('.');
     if (li != -1 && li != filename.length() - 1) {
-      String ext = filename.substring(li + 1, filename.length());
-      return MimeMapping.getMimeTypeForExtension(ext);
+      String ext = filename.substring(li + 1);
+      return mimeTypeForExtension(ext);
     }
     return null;
   }
