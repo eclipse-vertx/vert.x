@@ -60,7 +60,7 @@ import io.vertx.core.http.WebSocketFrameType;
 import io.vertx.core.http.WebsocketVersion;
 import io.vertx.core.http.impl.Http1xClientConnection;
 import io.vertx.core.http.impl.Http1xServerConnection;
-import io.vertx.core.http.impl.WebSocketInternal;
+import io.vertx.core.internal.http.WebSocketInternal;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
