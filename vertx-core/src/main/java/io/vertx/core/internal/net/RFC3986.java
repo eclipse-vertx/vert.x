@@ -222,4 +222,107 @@ public final class RFC3986 {
     }
     return -1;
   }
+
+  /**
+   * Normalizes a path as per <a href="http://tools.ietf.org/html/rfc3986#section-5.2.4>rfc3986</a>.
+   *
+   * There are 2 extra transformations that are not part of the spec but kept for backwards compatibility:
+   *
+   * double slash // will be converted to single slash and the path will always start with slash.
+   *
+   * Null paths are not normalized as nothing can be said about them.
+   *
+   * @param pathname raw path
+   * @return normalized path
+   */
+  public static String normalizePath(String pathname) {
+    // add trailing slash if not set
+    if (pathname.isEmpty()) {
+      return "/";
+    }
+
+    int indexOfFirstPercent = pathname.indexOf('%');
+    if (indexOfFirstPercent == -1) {
+      // no need to removeDots nor replace double slashes
+      if (pathname.indexOf('.') == -1 && pathname.indexOf("//") == -1) {
+        if (pathname.charAt(0) == '/') {
+          return pathname;
+        }
+        // See https://bugs.openjdk.org/browse/JDK-8085796
+        return "/" + pathname;
+      }
+    }
+    return normalizePathSlow(pathname, indexOfFirstPercent);
+  }
+
+  private static String normalizePathSlow(String pathname, int indexOfFirstPercent) {
+    final StringBuilder ibuf;
+    // Not standard!!!
+    if (pathname.charAt(0) != '/') {
+      ibuf = new StringBuilder(pathname.length() + 1);
+      ibuf.append('/');
+      if (indexOfFirstPercent != -1) {
+        indexOfFirstPercent++;
+      }
+    } else {
+      ibuf = new StringBuilder(pathname.length());
+    }
+    ibuf.append(pathname);
+    if (indexOfFirstPercent != -1) {
+      decodeUnreservedChars(ibuf, indexOfFirstPercent);
+    }
+    // remove dots as described in
+    // http://tools.ietf.org/html/rfc3986#section-5.2.4
+    return RFC3986.removeDotSegments(ibuf);
+  }
+
+  private static void decodeUnreservedChars(StringBuilder path, int start) {
+    while (start < path.length()) {
+      // decode unreserved chars described in
+      // http://tools.ietf.org/html/rfc3986#section-2.4
+      if (path.charAt(start) == '%') {
+        decodeUnreserved(path, start);
+      }
+
+      start++;
+    }
+  }
+
+  private static void decodeUnreserved(StringBuilder path, int start) {
+    if (start + 3 <= path.length()) {
+      // these are latin chars so there is no danger of falling into some special unicode char that requires more
+      // than 1 byte
+      final String escapeSequence = path.substring(start + 1, start + 3);
+      int unescaped;
+      try {
+        unescaped = Integer.parseInt(escapeSequence, 16);
+        if (unescaped < 0) {
+          throw new IllegalArgumentException("Invalid escape sequence: %" + escapeSequence);
+        }
+      } catch (NumberFormatException e) {
+        throw new IllegalArgumentException("Invalid escape sequence: %" + escapeSequence);
+      }
+      // validate if the octet is within the allowed ranges
+      if (
+        // ALPHA
+        (unescaped >= 0x41 && unescaped <= 0x5A) ||
+          (unescaped >= 0x61 && unescaped <= 0x7A) ||
+          // DIGIT
+          (unescaped >= 0x30 && unescaped <= 0x39) ||
+          // HYPHEN
+          (unescaped == 0x2D) ||
+          // PERIOD
+          (unescaped == 0x2E) ||
+          // UNDERSCORE
+          (unescaped == 0x5F) ||
+          // TILDE
+          (unescaped == 0x7E)) {
+
+        path.setCharAt(start, (char) unescaped);
+        path.delete(start + 1, start + 3);
+      }
+    } else {
+      throw new IllegalArgumentException("Invalid position for escape character: " + start);
+    }
+  }
 }
