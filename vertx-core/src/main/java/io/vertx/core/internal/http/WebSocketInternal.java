@@ -8,15 +8,16 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http.impl;
+package io.vertx.core.internal.http;
 
 import io.netty.channel.ChannelHandlerContext;
-import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.WebSocket;
-import io.vertx.core.http.WebSocketBase;
 
 public interface WebSocketInternal extends WebSocket {
 
+  /**
+   * @return the Netty channel handler context
+   */
   ChannelHandlerContext channelHandlerContext();
 
 }

@@ -33,6 +33,7 @@ import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
+import io.vertx.core.internal.http.WebSocketInternal;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.internal.concurrent.InboundMessageQueue;
 import io.vertx.core.net.impl.VertxConnection;
