@@ -97,6 +97,14 @@ public class FileResolverImpl implements FileResolver {
   }
 
   public File resolveFile(String fileName) {
+    int idx = fileName.length() - 1;
+    if (idx >= 0 && fileName.charAt(idx) == '/') {
+      fileName = fileName.substring(0, idx);
+    }
+    return resolveFile2(fileName);
+  }
+
+  public File resolveFile2(String fileName) {
     // First look for file with that name on disk
     File file = new File(fileName);
     boolean absolute = file.isAbsolute();
