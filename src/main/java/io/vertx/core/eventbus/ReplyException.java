@@ -27,6 +27,34 @@ public class ReplyException extends VertxException {
   private final int failureCode;
 
   /**
+   * Create a ReplyException with all attributes.
+   *
+   * @param failureType  the failure type
+   * @param failureCode  the failure code (e.g. 404)
+   * @param message  the failure message
+   */
+  public ReplyException(ReplyFailure failureType, int failureCode, String message, boolean noStackTrace) {
+    super(message, noStackTrace);
+    this.failureType = failureType;
+    this.failureCode = failureCode;
+  }
+
+  /**
+   * Create a ReplyException with all attributes, including cause.<br>
+   * Default {@link io.vertx.core.eventbus.impl.codecs.ReplyExceptionMessageCodec ReplyExceptionMessageCodec} doesn't support Cause!<br>
+   * This ctor is meant to be used for extension, together with a custom codec.
+   *
+   * @param failureType  the failure type
+   * @param failureCode  the failure code (e.g. 404)
+   * @param message  the failure message
+   */
+  protected ReplyException(ReplyFailure failureType, int failureCode, String message, Throwable cause, boolean noStackTrace) {
+    super(message, cause, noStackTrace);
+    this.failureType = failureType;
+    this.failureCode = failureCode;
+  }
+
+  /**
    * Create a ReplyException
    *
    * @param failureType  the failure type
@@ -34,9 +62,7 @@ public class ReplyException extends VertxException {
    * @param message  the failure message
    */
   public ReplyException(ReplyFailure failureType, int failureCode, String message) {
-      super(message);
-      this.failureType = failureType;
-      this.failureCode = failureCode;
+    this(failureType, failureCode, message, true);
   }
 
   /**
@@ -81,5 +107,4 @@ public class ReplyException extends VertxException {
     String message = getMessage();
     return "(" + failureType + "," + failureCode + ") " + (message != null ? message : "");
   }
-
 }
