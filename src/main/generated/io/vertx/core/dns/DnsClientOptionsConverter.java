@@ -50,6 +50,11 @@ public class DnsClientOptionsConverter {
             obj.setRecursionDesired((Boolean)member.getValue());
           }
           break;
+        case "ssl":
+          if (member.getValue() instanceof Boolean) {
+            obj.setSsl((Boolean)member.getValue());
+          }
+          break;
       }
     }
   }
@@ -69,5 +74,6 @@ public class DnsClientOptionsConverter {
     json.put("port", obj.getPort());
     json.put("queryTimeout", obj.getQueryTimeout());
     json.put("recursionDesired", obj.isRecursionDesired());
+    json.put("ssl", obj.isSsl());
   }
 }

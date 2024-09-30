@@ -37,6 +37,11 @@ public class DnsClientOptions {
   public static final String DEFAULT_HOST = null;
 
   /**
+   * The default value for the SSL = {@code false} (configured by {@link VertxOptions#getAddressResolverOptions()})
+   */
+  public static final boolean DEFAULT_SSL = false;
+
+  /**
    * The default value for the query timeout in millis = {@code 5000}
    */
   public static final long DEFAULT_QUERY_TIMEOUT = 5000;
@@ -58,6 +63,7 @@ public class DnsClientOptions {
 
   private int port = DEFAULT_PORT;
   private String host = DEFAULT_HOST;
+  private boolean ssl = DEFAULT_SSL;
   private long queryTimeout = DEFAULT_QUERY_TIMEOUT;
   private boolean logActivity = DEFAULT_LOG_ENABLED;
   private ByteBufFormat activityLogFormat = DEFAULT_LOG_ACTIVITY_FORMAT;
@@ -77,6 +83,7 @@ public class DnsClientOptions {
     logActivity = other.logActivity;
     activityLogFormat = other.activityLogFormat;
     recursionDesired = other.recursionDesired;
+    ssl = other.ssl;
   }
 
   /**
@@ -194,6 +201,25 @@ public class DnsClientOptions {
    */
   public DnsClientOptions setRecursionDesired(boolean recursionDesired) {
     this.recursionDesired = recursionDesired;
+    return this;
+  }
+
+  /**
+   * Get the ssl to be used by this client in requests.
+   *
+   * @return  the ssl
+   */
+  public boolean isSsl() {
+    return ssl;
+  }
+
+  /**
+   * Set the ssl to be used by this client in requests.
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  public DnsClientOptions setSsl(boolean ssl) {
+    this.ssl = ssl;
     return this;
   }
 
