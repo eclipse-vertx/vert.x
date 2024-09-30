@@ -14,13 +14,12 @@ open module io.vertx.core.tests {
   requires java.management;
   requires java.logging;
 
-  requires org.slf4j;
-
   requires static apacheds.protocol.dns;
   requires static apacheds.i18n;
   requires static mina.core;
   requires static apacheds.protocol.shared;
 
+  requires static org.slf4j;
   requires static org.apache.logging.log4j.core;
 
   requires static jmh.core;
