@@ -31,7 +31,6 @@
     <jmh.version>1.37</jmh.version>
     <vertx.testNativeTransport>false</vertx.testNativeTransport>
     <vertx.testDomainSockets>false</vertx.testDomainSockets>
-    <vertx.testUseModulePath>true</vertx.testUseModulePath>
   </properties>
 
   <dependencies>
@@ -234,7 +233,6 @@
           <artifactId>maven-surefire-plugin</artifactId>
           <configuration>
             <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
-            <useModulePath>${vertx.testUseModulePath}</useModulePath>
             <additionalClasspathElements>
               <!-- Can we remove this one ??? -->
               <additionalClasspathElement>${project.build.testSourceDirectory}</additionalClasspathElement>
@@ -660,7 +658,7 @@
       <properties>
         <vertx.testNativeTransport>true</vertx.testNativeTransport>
         <vertx.testDomainSockets>false</vertx.testDomainSockets>
-        <vertx.testUseModulePath>false</vertx.testUseModulePath>
+        <vertx.surefire.useModulePath>false</vertx.surefire.useModulePath>
       </properties>
     </profile>
 
@@ -670,7 +668,7 @@
       <properties>
         <vertx.testNativeTransport>true</vertx.testNativeTransport>
         <vertx.testDomainSockets>true</vertx.testDomainSockets>
-        <vertx.testUseModulePath>false</vertx.testUseModulePath>
+        <vertx.surefire.useModulePath>false</vertx.surefire.useModulePath>
       </properties>
     </profile>
 
