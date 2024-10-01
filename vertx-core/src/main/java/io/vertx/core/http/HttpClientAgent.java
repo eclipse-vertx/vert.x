@@ -1,9 +1,12 @@
 package io.vertx.core.http;
 
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
+import io.vertx.core.http.impl.DefaultRedirectHandler;
 import io.vertx.core.metrics.Measured;
 import io.vertx.core.net.ClientSSLOptions;
+import java.util.function.Function;
 
 /**
  * An asynchronous HTTP client.
@@ -33,6 +36,13 @@ import io.vertx.core.net.ClientSSLOptions;
  */
 @VertxGen
 public interface HttpClientAgent extends HttpClient, Measured {
+
+  /**
+   * Constant containing the default redirect handler of used by the client.
+   * This is useful for building redirect handlers that need to delegate to the default behavior.
+   */
+  @GenIgnore
+  Function<HttpClientResponse, Future<RequestOptions>> DEFAULT_REDIRECT_HANDLER = new DefaultRedirectHandler();
 
   /**
    * <p>Update the client with new SSL {@code options}, the update happens if the options object is valid and different
