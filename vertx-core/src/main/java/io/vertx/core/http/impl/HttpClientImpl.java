@@ -34,13 +34,10 @@ import io.vertx.core.net.endpoint.EndpointResolver;
 import io.vertx.core.spi.metrics.PoolMetrics;
 
 import java.lang.ref.WeakReference;
-import java.net.URI;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.regex.Pattern;
-
-import static io.vertx.core.http.HttpHeaders.*;
 
 /**
  * This class is thread-safe.
@@ -52,63 +49,10 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   // Pattern to check we are not dealing with an absoluate URI
   static final Pattern ABS_URI_START_PATTERN = Pattern.compile("^\\p{Alpha}[\\p{Alpha}\\p{Digit}+.\\-]*:");
 
-  private static final Function<HttpClientResponse, Future<RequestOptions>> DEFAULT_HANDLER = resp -> {
-    try {
-      int statusCode = resp.statusCode();
-      String location = resp.getHeader(HttpHeaders.LOCATION);
-      if (location != null && (statusCode == 301 || statusCode == 302 || statusCode == 303 || statusCode == 307 || statusCode == 308)) {
-        HttpMethod m = resp.request().getMethod();
-        if (statusCode == 303) {
-          m = HttpMethod.GET;
-        } else if (m != HttpMethod.GET && m != HttpMethod.HEAD) {
-          return null;
-        }
-        URI uri = HttpUtils.resolveURIReference(resp.request().absoluteURI(), location);
-        boolean ssl;
-        int port = uri.getPort();
-        String protocol = uri.getScheme();
-        char chend = protocol.charAt(protocol.length() - 1);
-        if (chend == 'p') {
-          ssl = false;
-          if (port == -1) {
-            port = 80;
-          }
-        } else if (chend == 's') {
-          ssl = true;
-          if (port == -1) {
-            port = 443;
-          }
-        } else {
-          return null;
-        }
-        String requestURI = uri.getPath();
-        if (requestURI == null || requestURI.isEmpty()) {
-          requestURI = "/";
-        }
-        String query = uri.getQuery();
-        if (query != null) {
-          requestURI += "?" + query;
-        }
-        RequestOptions options = new RequestOptions();
-        options.setMethod(m);
-        options.setHost(uri.getHost());
-        options.setPort(port);
-        options.setSsl(ssl);
-        options.setURI(requestURI);
-        options.setHeaders(resp.request().headers());
-        options.removeHeader(CONTENT_LENGTH);
-        return Future.succeededFuture(options);
-      }
-      return null;
-    } catch (Exception e) {
-      return Future.failedFuture(e);
-    }
-  };
-
   private final PoolOptions poolOptions;
   private final ResourceManager<EndpointKey, SharedHttpClientConnectionGroup> httpCM;
   private final EndpointResolverInternal endpointResolver;
-  private volatile Function<HttpClientResponse, Future<RequestOptions>> redirectHandler = DEFAULT_HANDLER;
+  private volatile Function<HttpClientResponse, Future<RequestOptions>> redirectHandler = DEFAULT_REDIRECT_HANDLER;
   private long timerID;
   private volatile Handler<HttpConnection> connectionHandler;
   private final Function<ContextInternal, ContextInternal> contextProvider;
@@ -223,7 +167,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
 
   public void redirectHandler(Function<HttpClientResponse, Future<RequestOptions>> handler) {
     if (handler == null) {
-      handler = DEFAULT_HANDLER;
+      handler = DEFAULT_REDIRECT_HANDLER;
     }
     redirectHandler = handler;
   }
@@ -487,4 +431,5 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     }
     return request;
   }
+
 }
