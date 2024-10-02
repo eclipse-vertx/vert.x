@@ -888,4 +888,28 @@ public final class HttpUtils {
     }
     return null;
   }
+
+  private static final String[] SMALL_POSITIVE_LONGS = new String[256];
+
+  /**
+   * This try hard to cache the first 256 positive longs as strings [0, 255] to avoid the cost of creating a new
+   * string for each of them.<br>
+   * The size/capacity of the cache is subject to change but this method is expected to be used for hot and frequent code paths.
+   */
+  public static String positiveLongToString(long value) {
+    if (value < 0) {
+      throw new IllegalArgumentException("contentLength must be >= 0");
+    }
+    if (value >= SMALL_POSITIVE_LONGS.length) {
+      return Long.toString(value);
+    }
+    final int index = (int) value;
+    String str = SMALL_POSITIVE_LONGS[index];
+    if (str == null) {
+      // it's ok to be racy here, String is immutable hence it benefits from safe publication!
+      str = Long.toString(value);
+      SMALL_POSITIVE_LONGS[index] = str;
+    }
+    return str;
+  }
 }

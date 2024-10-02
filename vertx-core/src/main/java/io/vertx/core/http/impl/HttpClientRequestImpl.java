@@ -435,7 +435,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private Future<Void> write(ByteBuf buff, boolean end) {
     if (end) {
       if (buff != null && requiresContentLength()) {
-        headers().set(CONTENT_LENGTH, String.valueOf(buff.readableBytes()));
+        headers().set(CONTENT_LENGTH, HttpUtils.positiveLongToString(buff.readableBytes()));
       }
     } else if (requiresContentLength()) {
       throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
