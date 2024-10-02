@@ -397,7 +397,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
         chunk = Unpooled.EMPTY_BUFFER;
       }
       if (end && !headWritten && needsContentLengthHeader()) {
-        headers().set(HttpHeaderNames.CONTENT_LENGTH, String.valueOf(chunk.readableBytes()));
+        headers().set(HttpHeaderNames.CONTENT_LENGTH, HttpUtils.positiveLongToString(chunk.readableBytes()));
       }
       boolean sent = checkSendHeaders(end && !hasBody && trailers == null, !hasBody);
       if (hasBody || (!sent && end)) {
@@ -545,7 +545,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
         long contentLength = Math.min(length, fileLength);
         // fail early before status code/headers are written to the response
         if (headers.get(HttpHeaderNames.CONTENT_LENGTH) == null) {
-          putHeader(HttpHeaderNames.CONTENT_LENGTH, String.valueOf(contentLength));
+          putHeader(HttpHeaderNames.CONTENT_LENGTH, HttpUtils.positiveLongToString(contentLength));
         }
         if (headers.get(HttpHeaderNames.CONTENT_TYPE) == null) {
           String contentType = MimeMapping.mimeTypeForFilename(filename);
