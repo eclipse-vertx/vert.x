@@ -84,32 +84,38 @@ public class HTTP3Examples {
         return req
           .end()
           .compose(res -> req
-            .response()
-            .onSuccess(resp -> {
-//              System.out.println("The returned headers are: " + resp.headers());
-              System.out.println("The returned Alt-Svc is: " + resp.headers().get(
-                "Alt-Svc"));
-            }).compose(HttpClientResponse::body).onSuccess(body ->{
-              if(body.toString().endsWith("google.log(\"rcm\"," +
-                "\"&ei=\"+c+\"&tgtved=\"+f+\"&jsname=\"+(a||\"\"))}}else F=a," +
-                "E=[c]}window.document.addEventListener(\"DOMContentLoaded\"," +
-                "function(){document.body.addEventListener(\"click\",G)});})" +
-                ".call(this);</script></body></html>"))
+              .response()
+              .onSuccess(resp -> {
+//              System.out.println("The returned headers are: " + resp
+//              .headers());
+                System.out.println("The returned Alt-Svc is: " + resp.headers().get(
+                  "Alt-Svc"));
+              }).compose(HttpClientResponse::body).onSuccess(body -> {
+                if (host.contains("google.com") && body.toString().endsWith(
+                  "google.log(\"rcm\"," +
+                  "\"&ei=\"+c+\"&tgtved=\"+f+\"&jsname=\"+(a||\"\"))}}else " +
+                  "F=a,E=[c]}window.document.addEventListener" +
+                  "(\"DOMContentLoaded\"," +
+                  "function(){document.body.addEventListener(\"click\",G)});" +
+                  "}).call(this);</script></body></html>")) {
                   System.out.println("The response received correctly: OK");
-              else
-                System.out.println("The response body is: " + body);
-            })
+                }
+                else {
+                  System.out.println("The response body is: " + body);
+                }
+                vertx.close();
+              })
           );
       })
       .onFailure(Throwable::printStackTrace)
       .onComplete(event -> vertx.close())
     ;
 
-    try {
-      Thread.sleep(1_000_000);
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
-    }
+//    try {
+//      Thread.sleep(1_000_000);
+//    } catch (InterruptedException e) {
+//      throw new RuntimeException(e);
+//    }
   }
 
   public void example02Server(Vertx vertx) throws Exception {
