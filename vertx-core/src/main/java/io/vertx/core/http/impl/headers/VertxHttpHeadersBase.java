@@ -3,11 +3,7 @@ package io.vertx.core.http.impl.headers;
 import io.netty.handler.codec.Headers;
 import io.vertx.core.MultiMap;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -27,13 +23,15 @@ public abstract class VertxHttpHeadersBase<H extends Headers<CharSequence, CharS
 
   @Override
   public MultiMap add(CharSequence name, CharSequence value) {
-    this.headers.add(String.valueOf(name), String.valueOf(value));
+    this.headers.add(name, value);
     return this;
   }
 
   @Override
   public String get(String name) {
-    return String.valueOf(this.headers.get(name));
+    Objects.requireNonNull(name, "name");
+    CharSequence ret = this.headers.get(name);
+    return ret != null ? ret.toString() : null;
   }
 
   @Override
@@ -66,22 +64,25 @@ public abstract class VertxHttpHeadersBase<H extends Headers<CharSequence, CharS
 
   @Override
   public String get(CharSequence name) {
-    return String.valueOf(this.headers.get(name));
+    Objects.requireNonNull(name, "name");
+    return this.get(name.toString());
   }
 
   @Override
   public boolean contains(CharSequence name) {
-    return this.headers.contains(String.valueOf(name));
+    return this.headers.contains(name);
   }
 
   @Override
   public List<String> getAll(String name) {
+    Objects.requireNonNull(name, "name");
     return headers.getAll(name).stream().map(CharSequence::toString).collect(Collectors.toList());
   }
 
   @Override
   public List<String> getAll(CharSequence name) {
-    return this.getAll(String.valueOf(name));
+    Objects.requireNonNull(name, "name");
+    return this.getAll(name.toString());
   }
 
   @Override
@@ -171,9 +172,7 @@ public abstract class VertxHttpHeadersBase<H extends Headers<CharSequence, CharS
   }
 
   @Override
-  public Iterator<Map.Entry<String, String>> iterator() {
-    Map<String, String> map = new HashMap<>();
-    this.headers.forEach(entry -> map.put(String.valueOf(entry.getKey()), String.valueOf(entry.getValue())));
-    return map.entrySet().iterator();
+  public Iterator iterator() {
+    return headers.iterator();
   }
 }
