@@ -46,6 +46,10 @@ public class HTTP3Examples {
 
     HttpClientOptions options = new HttpClientOptions().
       setSsl(true).
+      setIdleTimeout(1).
+      setReadIdleTimeout(1).
+      setWriteIdleTimeout(1).
+      setIdleTimeoutUnit(TimeUnit.HOURS).
       setUseAlpn(true).
       setForceSni(true).
       setDefaultHost(host).
@@ -54,9 +58,16 @@ public class HTTP3Examples {
       setTrustAll(true).
       setProtocolVersion(HttpVersion.HTTP_3);
 
+    options
+      .getSslOptions()
+      .setSslHandshakeTimeout(1)
+      .setSslHandshakeTimeoutUnit(TimeUnit.HOURS);
+
+
     HttpClient client = vertx.createHttpClient(options);
 
-    System.out.printf("Trying to fetch %s:%s%s\n", host, port, path);
+    System.out.print(String.format("Trying to fetch %s:%s%s\n", host, port,
+      path));
     client.request(HttpMethod.GET, port, host, path)
       .compose(req -> {
 
@@ -75,11 +86,19 @@ public class HTTP3Examples {
           .compose(res -> req
             .response()
             .onSuccess(resp -> {
-              System.out.println("The returned headers are: " + resp.headers());
+//              System.out.println("The returned headers are: " + resp.headers());
               System.out.println("The returned Alt-Svc is: " + resp.headers().get(
                 "Alt-Svc"));
-            }).compose(HttpClientResponse::body).onSuccess(body ->
-              System.out.println("The response body is: " + body.toString()))
+            }).compose(HttpClientResponse::body).onSuccess(body ->{
+              if(body.toString().endsWith("google.log(\"rcm\"," +
+                "\"&ei=\"+c+\"&tgtved=\"+f+\"&jsname=\"+(a||\"\"))}}else F=a," +
+                "E=[c]}window.document.addEventListener(\"DOMContentLoaded\"," +
+                "function(){document.body.addEventListener(\"click\",G)});})" +
+                ".call(this);</script></body></html>"))
+                  System.out.println("The response received correctly: OK");
+              else
+                System.out.println("The response body is: " + body);
+            })
           );
       })
       .onFailure(Throwable::printStackTrace)
@@ -112,15 +131,19 @@ public class HTTP3Examples {
     ));
 
     options
-      .setIdleTimeout(600)
-      .setIdleTimeoutUnit(TimeUnit.SECONDS)
+      .setIdleTimeout(1)
+      .setReadIdleTimeout(1)
+      .setWriteIdleTimeout(1)
+      .setIdleTimeoutUnit(TimeUnit.HOURS)
       .setHttp3(true)
       .setUseAlpn(true)
       .setSsl(true)
       .getSslOptions()
       .setApplicationLayerProtocols(
         List.of(Http3.supportedApplicationProtocols())
-      );
+      ).setSslHandshakeTimeout(1)
+      .setSslHandshakeTimeoutUnit(TimeUnit.HOURS)
+    ;
 
     SelfSignedCertificate ssc = new SelfSignedCertificate();
     options.setKeyCertOptions(new PemKeyCertOptions()
