@@ -25,6 +25,13 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
  */
 public class HTTP3Examples {
+  private final static String okText =
+    "\n  ____   _  __  \n"+
+    " / __ \\ | |/ /  \n"+
+    "| |  | ||   <   \n"+
+    "| |  | || |\\ \\  \n"+
+    "| |__| || | \\ \\ \n"+
+    " \\____/ |_|  \\_\\ \n";
 
   public void example01(Vertx vertx) {
 
@@ -93,14 +100,14 @@ public class HTTP3Examples {
               }).compose(HttpClientResponse::body).onSuccess(body -> {
                 if (host.contains("google.com") && body.toString().endsWith(
                   "google.log(\"rcm\"," +
-                  "\"&ei=\"+c+\"&tgtved=\"+f+\"&jsname=\"+(a||\"\"))}}else " +
-                  "F=a,E=[c]}window.document.addEventListener" +
-                  "(\"DOMContentLoaded\"," +
-                  "function(){document.body.addEventListener(\"click\",G)});" +
-                  "}).call(this);</script></body></html>")) {
-                  System.out.println("The response received correctly: OK");
-                }
-                else {
+                    "\"&ei=\"+c+\"&tgtved=\"+f+\"&jsname=\"+(a||\"\"))}}else " +
+                    "F=a,E=[c]}window.document.addEventListener" +
+                    "(\"DOMContentLoaded\"," +
+                    "function(){document.body.addEventListener(\"click\",G)})" +
+                    ";" +
+                    "}).call(this);</script></body></html>")) {
+                  System.out.println(okText);
+                } else {
                   System.out.println("The response body is: " + body);
                 }
                 vertx.close();
@@ -111,11 +118,11 @@ public class HTTP3Examples {
       .onComplete(event -> vertx.close())
     ;
 
-//    try {
-//      Thread.sleep(1_000_000);
-//    } catch (InterruptedException e) {
-//      throw new RuntimeException(e);
-//    }
+    try {
+      Thread.sleep(1_000_000);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   public void example02Server(Vertx vertx) throws Exception {
@@ -163,7 +170,12 @@ public class HTTP3Examples {
 
     server.requestHandler(request -> {
       System.out.println("A request received from " + request.remoteAddress());
+      request.body().onSuccess(buf -> {
+        System.out.println("request body is :  = " + buf.toString());
+      }).onFailure(Throwable::printStackTrace);
+      request.response().end(okText).onFailure(Throwable::printStackTrace);
     });
+
 
     server.connectionHandler(connection -> {
       System.out.println("A client connected");
@@ -188,5 +200,6 @@ public class HTTP3Examples {
 
     Vertx vertx = Vertx.vertx(options);
     new HTTP3Examples().example02Server(vertx);
+//    new HTTP3Examples().example01(vertx);
   }
 }
