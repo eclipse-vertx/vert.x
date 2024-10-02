@@ -10,10 +10,7 @@
  */
 package io.vertx.tests.deployment;
 
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
-import io.vertx.core.ThreadingModel;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.test.core.VertxTestBase;
@@ -24,8 +21,11 @@ import org.junit.Assume;
 import org.junit.Test;
 
 import java.lang.reflect.Method;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class VirtualThreadDeploymentTest extends VertxTestBase {
 
@@ -85,6 +85,39 @@ public class VirtualThreadDeploymentTest extends VertxTestBase {
       }
     }, new DeploymentOptions().setThreadingModel(ThreadingModel.VIRTUAL_THREAD));
     await();
+  }
+
+  @Test
+  public void testUndeployInterruptVirtualThreads() throws Exception {
+    int num = 16;
+    Promise<Void> p = Promise.promise();
+    AtomicReference<Thread> thread = new AtomicReference<>();
+    AtomicInteger interrupted = new AtomicInteger();
+    CountDownLatch latch = new CountDownLatch(num);
+    Assume.assumeTrue(isVirtualThreadAvailable());
+    String id = vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start() {
+        for (int i = 0;i < num;i++) {
+          vertx.runOnContext(v -> {
+            try {
+              thread.set(Thread.currentThread());
+              latch.countDown();
+              p.future().await();
+            } catch (Exception e) {
+              if (e instanceof InterruptedException) {
+                interrupted.incrementAndGet();
+              }
+            }
+          });
+        }
+      }
+    }, new DeploymentOptions().setThreadingModel(ThreadingModel.VIRTUAL_THREAD))
+      .await(20, TimeUnit.SECONDS);
+    latch.await(20, TimeUnit.SECONDS);
+    assertWaitUntil(() -> thread.get() != null && thread.get().getState() == Thread.State.WAITING);
+    vertx.undeploy(id).await(20, TimeUnit.SECONDS);
+    assertWaitUntil(() -> interrupted.get() == num);
   }
 
   @Test
