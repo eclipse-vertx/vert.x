@@ -12,7 +12,6 @@
 package io.vertx.core.internal;
 
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.spi.metrics.PoolMetrics;
@@ -61,51 +60,21 @@ public class WorkerPool {
     executor.shutdownNow();
   }
 
-  public <T> Future<T> executeBlocking(
-    ContextInternal context,
-    Callable<T> blockingCodeHandler,
-    TaskQueue queue) {
-    return internalExecuteBlocking(context, promise -> {
-      T result;
-      try {
-        result = blockingCodeHandler.call();
-      } catch (Throwable e) {
-        promise.fail(e);
-        return;
-      }
-      promise.complete(result);
-    }, this, queue);
-  }
-
-  private static <T> Future<T> internalExecuteBlocking(ContextInternal context, Handler<Promise<T>> blockingCodeHandler,
-                                                       WorkerPool workerPool, TaskQueue queue) {
-    PoolMetrics metrics = workerPool.metrics();
-    Object queueMetric = metrics != null ? metrics.enqueue() : null;
+  public <T> Future<T> executeBlocking(ContextInternal context, Callable<T> blockingCodeHandler, TaskQueue queue) {
     Promise<T> promise = context.promise();
     Future<T> fut = promise.future();
+    Object queueMetric = metrics != null ? metrics.enqueue() : null;
+    ExecuteBlockingTask<T> executeBlockingTask = new ExecuteBlockingTask<>(promise, context, queueMetric, metrics, blockingCodeHandler);
     try {
-      Runnable command = () -> {
-        Object execMetric = null;
-        if (metrics != null) {
-          metrics.dequeue(queueMetric);
-          execMetric = metrics.begin();
-        }
-        context.dispatch(promise, blockingCodeHandler);
-        if (metrics != null) {
-          metrics.end(execMetric);
-        }
-      };
-      Executor exec = workerPool.executor();
+      Executor exec = executor();
       if (queue != null) {
-        queue.execute(command, exec);
+        queue.execute(executeBlockingTask, exec);
       } else {
-        exec.execute(command);
+        exec.execute(executeBlockingTask);
       }
     } catch (RejectedExecutionException e) {
       // Pool is already shut down
-      if (metrics != null) {
-        metrics.dequeue(queueMetric);
-      }
+      executeBlockingTask.reject();
       throw e;
     }
     return fut;

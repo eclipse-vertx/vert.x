@@ -625,6 +625,43 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
                                    CloseFuture closeFuture,
                                    DeploymentContext deployment,
                                    ClassLoader tccl) {
+    if (closeFuture != null) {
+      closeFuture.add(completion -> {
+        TaskQueue.CloseResult closeResult = orderedTasks.close();
+        for (Runnable pendingTask : closeResult.pendingTasks()) {
+          if (pendingTask instanceof ExecuteBlockingTask) {
+            ExecuteBlockingTask<?> t = (ExecuteBlockingTask<?>) pendingTask;
+            t.reject();
+          }
+        }
+        if (!closeResult.suspendedThreads().isEmpty() || closeResult.activeThread() != null) {
+          Executor exec = virtualThreadExecutor != null ? virtualThreadExecutor : internalWorkerPool.executor();
+          exec
+            .execute(() -> {
+              // todo : rewrite this in master to avoid requiring the internal worker pool
+              // Maintain context invariant: serialize task execution
+              for (Thread suspendedThread : closeResult.suspendedThreads()) {
+                suspendedThread.interrupt();
+                try {
+                  suspendedThread.join(5_000);
+                } catch (InterruptedException ignore) {
+                }
+              }
+              Thread activeThread = closeResult.activeThread();
+              if (activeThread != null) {
+                activeThread.interrupt();
+                try {
+                  activeThread.join(5_000);
+                } catch (InterruptedException ignore) {
+                }
+              }
+              completion.complete();
+            });
+        } else {
+          completion.complete();
+        }
+      });
+    }
     return new ContextImpl(this,
       createContextLocals(),
       eventLoopExecutor,
