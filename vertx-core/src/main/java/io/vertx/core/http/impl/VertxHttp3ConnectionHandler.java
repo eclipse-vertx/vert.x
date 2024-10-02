@@ -16,9 +16,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.channel.socket.ChannelInputShutdownEvent;
 import io.netty.channel.socket.ChannelInputShutdownReadComplete;
-import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.ssl.SslHandshakeCompletionEvent;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.incubator.codec.http3.*;
@@ -69,7 +67,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
 
   public static final AttributeKey<VertxHttpStreamBase> HTTP3_MY_STREAM_KEY =
     AttributeKey.valueOf(VertxHttpStreamBase.class
-    , "HTTP3MyStream");
+      , "HTTP3MyStream");
 
   public VertxHttp3ConnectionHandler(
     Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory,
@@ -246,7 +244,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
   protected void channelRead(ChannelHandlerContext ctx, Http3HeadersFrame frame) throws Exception {
     VertxHttpStreamBase stream = getLocalControlVertxHttpStream(ctx);
     logger.debug("Received Http3HeadersFrame frame.");
-    connection.onHeadersRead(ctx, stream, frame.headers(), false, (QuicStreamChannel)ctx.channel());
+    connection.onHeadersRead(ctx, stream, frame.headers(), false, (QuicStreamChannel) ctx.channel());
   }
 
   @Override
@@ -301,10 +299,8 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
         } else if (msg instanceof DefaultHttp3UnknownFrame) {
           DefaultHttp3UnknownFrame http3UnknownFrame = (DefaultHttp3UnknownFrame) msg;
 
-          if(logger.isDebugEnabled()) {
-            byte[] arr = new byte[http3UnknownFrame.content().readableBytes()];
-            http3UnknownFrame.content().retain().readBytes(arr);
-            logger.debug("Received frame http3UnknownFrame with content: {}", arr);
+          if (logger.isDebugEnabled()) {
+            logger.debug("Received frame http3UnknownFrame : {}", byteBufToString(http3UnknownFrame.content()));
           }
           super.channelRead(ctx, msg);
         } else {
@@ -312,6 +308,12 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
         }
       }
     };
+  }
+
+  private String byteBufToString(ByteBuf content) {
+    byte[] arr = new byte[content.readableBytes()];
+    content.retain().readBytes(arr);
+    return new String(arr);
   }
 
   private Http3ServerConnectionHandler createHttp3ServerConnectionHandler() {
