@@ -13,6 +13,7 @@ package io.vertx.core;
 
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.core.impl.WorkerExecutor;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.impl.future.CompositeFutureImpl;
@@ -715,25 +716,25 @@ public interface Future<T> extends AsyncResult<T> {
     io.vertx.core.impl.WorkerExecutor executor = io.vertx.core.impl.WorkerExecutor.unwrapWorkerExecutor();
     CountDownLatch latch;
     if (executor != null) {
-      io.vertx.core.impl.WorkerExecutor.TaskController cont = executor.current();
-      onComplete(ar -> cont.resume());
-      latch = cont.suspend();
+      latch = executor.suspend(cont -> onComplete(ar -> cont.resume()));
     } else {
       latch = new CountDownLatch(1);
       onComplete(ar -> latch.countDown());
     }
-    try {
-      if (timeout >= 0) {
-        Objects.requireNonNull(unit);
-        if (!latch.await(timeout, unit)) {
-          throw new TimeoutException();
+    if (latch != null) {
+      try {
+        if (timeout >= 0) {
+          Objects.requireNonNull(unit);
+          if (!latch.await(timeout, unit)) {
+            throw new TimeoutException();
+          }
+        } else {
+          latch.await();
         }
-      } else {
-        latch.await();
+      } catch (InterruptedException e) {
+        Utils.throwAsUnchecked(e);
+        return null;
       }
-    } catch (InterruptedException e) {
-      Utils.throwAsUnchecked(e);
-      return null;
     }
     if (succeeded()) {
       return result();
