@@ -220,8 +220,20 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
     }
   }
 
-  public void writeData(QuicStreamChannel stream, ByteBuf chunk, boolean end, FutureListener<Void> promise) {
-    stream.write(chunk).addListener(promise);
+  public void writeData(QuicStreamChannel stream, ByteBuf chunk, boolean end, FutureListener<Void> listener) {
+    ChannelPromise promise = listener == null ? stream.voidPromise() : stream.newPromise().addListener(listener);
+    if (end) {
+      promise.unvoid().addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);
+    }
+    stream.write(new DefaultHttp3DataFrame(chunk), promise);
+
+    checkFlush();
+  }
+
+  protected void channelInputShutdown(ChannelHandlerContext ctx) {
+    VertxHttpStreamBase stream = getLocalControlVertxHttpStream(ctx);
+    connection.onDataRead(ctx, stream, Unpooled.buffer(), 0, true);
+    ctx.close();
   }
 
   private void checkFlush() {
@@ -234,7 +246,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
   protected void channelRead(ChannelHandlerContext ctx, Http3HeadersFrame frame) throws Exception {
     VertxHttpStreamBase stream = getLocalControlVertxHttpStream(ctx);
     logger.debug("Received Http3HeadersFrame frame.");
-    connection.onHeadersRead(ctx, stream, frame.headers(), 0, false);
+    connection.onHeadersRead(ctx, stream, frame.headers(), false, (QuicStreamChannel)ctx.channel());
   }
 
   @Override
@@ -307,7 +319,6 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
       @Override
       protected void initChannel(QuicStreamChannel ch) throws Exception {
         logger.debug("Init QuicStreamChannel...");
-        ch.pipeline().addLast(new Http3FrameToHttpObjectCodec(true));
         ch.pipeline().addLast(VertxHttp3ConnectionHandler.this);
       }
       //TODO: correct the settings and streamHandlerIssue:
