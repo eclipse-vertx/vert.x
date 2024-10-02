@@ -27,7 +27,6 @@ public class VirtualThreadHttpTest extends VertxTestBase {
 
   private VertxInternal vertx;
 
-  @Before
   public void setUp() throws Exception {
     super.setUp();
     vertx = (VertxInternal) super.vertx;
@@ -48,7 +47,7 @@ public class VirtualThreadHttpTest extends VertxTestBase {
         HttpClientResponse resp = Future.await(req.send());
         Buffer body = Future.await(resp.body());
         String bodyString = body.toString(StandardCharsets.UTF_8);
-        assertEquals("Hello World", body.toString());
+        assertEquals("Hello World", bodyString);
       }
       testComplete();
     });

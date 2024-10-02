@@ -10,12 +10,14 @@
  */
 package io.vertx.core.impl;
 
+import io.vertx.core.ThreadingModel;
 import io.vertx.core.Vertx;
 import io.vertx.core.spi.metrics.PoolMetrics;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 /**
  * Execute events on a worker pool.
@@ -25,18 +27,19 @@ import java.util.concurrent.TimeUnit;
 public class WorkerExecutor implements EventExecutor {
 
   public static io.vertx.core.impl.WorkerExecutor unwrapWorkerExecutor() {
-    ContextInternal ctx = (ContextInternal) Vertx.currentContext();
-    if (ctx != null) {
-      ctx = ctx.unwrap();
-      Executor executor = ctx.executor();
-      if (executor instanceof io.vertx.core.impl.WorkerExecutor) {
-        return (io.vertx.core.impl.WorkerExecutor) executor;
-      } else {
-        throw new IllegalStateException("Cannot be called on a Vert.x event-loop thread");
-      }
+    Thread thread = Thread.currentThread();
+    if (thread instanceof VertxThread) {
+      VertxThread vertxThread = (VertxThread) thread;
+      String msg = vertxThread.isWorker() ? "Cannot be called on a Vert.x worker thread" :
+        "Cannot be called on a Vert.x event-loop thread";
+      throw new IllegalStateException(msg);
     }
-    // Technically it works also for worker threads but we don't want to encourage this
-    throw new IllegalStateException("Not running from a Vert.x virtual thread");
+    ContextInternal ctx = VertxImpl.currentContext(thread);
+    if (ctx != null && ctx.threadingModel() == ThreadingModel.VIRTUAL_THREAD) {
+      return (io.vertx.core.impl.WorkerExecutor) ctx.executor();
+    } else {
+      return null;
+    }
   }
 
   private final WorkerPool workerPool;
@@ -78,17 +81,24 @@ public class WorkerExecutor implements EventExecutor {
   }
 
   /**
-   * See {@link TaskQueue#current()}.
+   * Suspend the current task execution until the task is resumed, the next task in the queue will be executed
+   * when there is one.
+   *
+   * <p>The {@code resumeAcceptor} argument is passed the continuation to resume the current task, this acceptor
+   * is guaranteed to be called before the task is actually suspended so the task can be eagerly resumed and avoid
+   * suspending the current task.
+   *
+   * @return the latch to wait for until the current task can resume
    */
-  public TaskController current() {
-    return orderedTasks.current();
+  public CountDownLatch suspend(Consumer<Continuation> resumeAcceptor) {
+    return orderedTasks.suspend(resumeAcceptor);
   }
 
-  public interface TaskController {
+  public interface Continuation {
 
     /**
      * Resume the task, the {@code callback} will be executed when the task is resumed, before the task thread
-     * is unparked.
+     * is un-parked.
      *
      * @param callback called when the task is resumed
      */
@@ -100,24 +110,5 @@ public class WorkerExecutor implements EventExecutor {
     default void resume() {
       resume(() -> {});
     }
-
-    /**
-     * Suspend the task execution and park the current thread until the task is resumed.
-     * The next task in the queue will be executed, when there is one.
-     *
-     * <p>When the task wants to be resumed, it should call {@link #resume}, this will be executed immediately if there
-     * is no other tasks being executed, otherwise it will be added first in the queue.
-     */
-    default void suspendAndAwaitResume() throws InterruptedException {
-      suspend().await();
-    }
-
-    /**
-     * Like {@link #suspendAndAwaitResume()} but does not await the task to be resumed.
-     *
-     * @return the latch to await
-     */
-    CountDownLatch suspend();
-
   }
 }

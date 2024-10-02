@@ -22,6 +22,7 @@ import io.vertx.core.impl.future.SucceededFuture;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -668,13 +669,14 @@ public interface Future<T> extends AsyncResult<T> {
    */
   static <T> T await(Future<T> future) {
     io.vertx.core.impl.WorkerExecutor executor = io.vertx.core.impl.WorkerExecutor.unwrapWorkerExecutor();
-    io.vertx.core.impl.WorkerExecutor.TaskController cont = executor.current();
-    future.onComplete(ar -> cont.resume());
-    try {
-      cont.suspendAndAwaitResume();
-    } catch (InterruptedException e) {
-      Utils.throwAsUnchecked(e);
-      return null;
+    CountDownLatch latch = executor.suspend(cont -> future.onComplete(ar -> cont.resume()));
+    if (latch != null) {
+      try {
+        latch.await();
+      } catch (InterruptedException e) {
+        Utils.throwAsUnchecked(e);
+        return null;
+      }
     }
     if (future.succeeded()) {
       return future.result();

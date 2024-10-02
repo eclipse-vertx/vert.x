@@ -231,6 +231,27 @@ public class ContextTest extends VertxTestBase {
   }
 
   @Test
+  public void testExecuteBlockingClose() {
+    CountDownLatch latch = new CountDownLatch(1);
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+    AtomicReference<Thread> thread = new AtomicReference<>();
+    Future<String> fut1 = ctx.executeBlocking(() -> {
+      thread.set(Thread.currentThread());
+      latch.await();
+      return "";
+    });
+    Future<String> fut2 = ctx.executeBlocking(() -> "");
+    assertWaitUntil(() -> thread.get() != null && thread.get().getState() == Thread.State.WAITING);
+    ctx.closeFuture().close();
+    assertWaitUntil(fut1::isComplete);
+    assertTrue(fut1.failed());
+    assertTrue(fut1.cause() instanceof InterruptedException);
+    assertWaitUntil(fut2::isComplete);
+    assertTrue(fut2.failed());
+    assertTrue(fut2.cause() instanceof RejectedExecutionException);
+  }
+
+  @Test
   public void testDefaultContextExceptionHandler() {
     RuntimeException failure = new RuntimeException();
     Context context = vertx.getOrCreateContext();
