@@ -126,8 +126,13 @@ public class HTTP3Examples {
   }
 
   public void example02Server(Vertx vertx) throws Exception {
-    //TODO: set settings for http3
-//    Http3Settings settings = new Http3Settings();
+    Http3Settings settings = new Http3Settings();
+    settings
+      .setQpackMaxTableCapacity(4096)
+      .setMaxFieldSectionSize(16384)
+      .setQpackMaxBlockedStreams(256)
+      .setEnableConnectProtocol(0)
+      .setH3Datagram(1);
 
     HttpServerOptions options = new HttpServerOptions();
 
@@ -148,6 +153,7 @@ public class HTTP3Examples {
       .setReadIdleTimeout(1)
       .setWriteIdleTimeout(1)
       .setIdleTimeoutUnit(TimeUnit.HOURS)
+      .setInitialHttp3Settings(settings)
       .setHttp3(true)
       .setUseAlpn(true)
       .setSsl(true)
