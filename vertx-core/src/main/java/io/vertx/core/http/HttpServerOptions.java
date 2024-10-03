@@ -423,6 +423,12 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
+  public HttpServerOptions setHttp3(boolean http3) {
+    super.setHttp3(http3);
+    return this;
+  }
+
+  @Override
   public HttpServerOptions setUseAlpn(boolean useAlpn) {
     super.setUseAlpn(useAlpn);
     return this;
