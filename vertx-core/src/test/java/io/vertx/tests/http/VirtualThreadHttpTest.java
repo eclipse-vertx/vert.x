@@ -17,7 +17,6 @@ import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Assume;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
@@ -27,7 +26,6 @@ public class VirtualThreadHttpTest extends VertxTestBase {
 
   private VertxInternal vertx;
 
-  @Before
   public void setUp() throws Exception {
     super.setUp();
     vertx = (VertxInternal) super.vertx;
