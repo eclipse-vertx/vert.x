@@ -138,14 +138,6 @@ public interface ContextInternal extends Context {
   }
 
   /**
-   * Like {@link #executeBlocking(Callable, boolean)} but uses the {@code queue} to order the tasks instead
-   * of the internal queue of this context.
-   */
-  default <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, TaskQueue queue) {
-    return workerPool().executeBlocking(this, blockingCodeHandler, queue);
-  }
-
-  /**
    * Execute an internal task on the internal blocking ordered executor.
    */
   default <T> Future<T> executeBlockingInternal(Callable<T> action) {
