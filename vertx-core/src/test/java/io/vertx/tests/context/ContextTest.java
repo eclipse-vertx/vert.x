@@ -337,19 +337,6 @@ public class ContextTest extends VertxTestBase {
     await();
   }
 
-  @Test
-  public void testInternalExecuteBlockingWithQueue() {
-    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
-    List<Consumer<Callable<Object>>> lst = new ArrayList<>();
-    for (int i = 0;i < 2;i++) {
-      TaskQueue queue = new TaskQueue();
-      lst.add(task -> {
-        context.executeBlocking(task, queue);
-      });
-    }
-    testInternalExecuteBlockingWithQueue(lst);
-  }
-
   public void testInternalExecuteBlockingWithQueue(List<Consumer<Callable<Object>>> lst) {
     AtomicReference<Thread>[] current = new AtomicReference[lst.size()];
     waitFor(lst.size());
