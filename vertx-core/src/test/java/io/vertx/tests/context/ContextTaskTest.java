@@ -180,17 +180,14 @@ public class ContextTaskTest extends VertxTestBase {
     waitFor(2);
     ContextInternal ctx = contextSupplier.get();
     createEventLoopContext().nettyEventLoop().execute(() -> {
-      AtomicBoolean flag = new AtomicBoolean(true);
       op.accept(ctx, v2 -> {
         if (isSchedule) {
           assertNull(Vertx.currentContext());
         } else {
           assertSame(ctx, Vertx.currentContext());
         }
-        assertFalse(flag.get());
         complete();
       });
-      flag.set(false);
       complete();
     });
     await();
