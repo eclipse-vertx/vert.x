@@ -49,7 +49,6 @@
     <junit.version>4.13.2</junit.version>
     <harmcrest.version>2.2</harmcrest.version>
     <assertj.version>3.4.1</assertj.version>
-    <jar.manifest>${project.basedir}/src/main/resources/META-INF/MANIFEST.MF</jar.manifest>
   </properties>
 
   <dependencyManagement>
