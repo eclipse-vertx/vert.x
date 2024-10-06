@@ -669,6 +669,9 @@ public interface Future<T> extends AsyncResult<T> {
    */
   static <T> T await(Future<T> future) {
     io.vertx.core.impl.WorkerExecutor executor = io.vertx.core.impl.WorkerExecutor.unwrapWorkerExecutor();
+    if (executor == null) {
+      throw new IllegalStateException();
+    }
     CountDownLatch latch = executor.suspend(cont -> future.onComplete(ar -> cont.resume()));
     if (latch != null) {
       try {

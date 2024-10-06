@@ -56,7 +56,7 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
   final TaskQueue internalOrderedTasks;
   final WorkerPool internalWorkerPool;
   final WorkerPool workerPool;
-  final TaskQueue orderedTasks;
+  final WorkerTaskQueue orderedTasks;
 
   public ContextImpl(VertxInternal vertx,
                      int localsLength,
@@ -65,7 +65,7 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
                      EventExecutor executor,
                      WorkerPool internalWorkerPool,
                      WorkerPool workerPool,
-                     TaskQueue orderedTasks,
+                     WorkerTaskQueue orderedTasks,
                      Deployment deployment,
                      CloseFuture closeFuture,
                      ClassLoader tccl) {
@@ -82,6 +82,14 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
     this.internalWorkerPool = internalWorkerPool;
     this.orderedTasks = orderedTasks;
     this.internalOrderedTasks = new TaskQueue();
+  }
+
+  public Future<Void> close() {
+    if (closeFuture == owner.closeFuture()) {
+      return Future.future(p -> orderedTasks.shutdown(eventLoop, p));
+    } else {
+      return closeFuture.close().eventually(() -> Future.<Void>future(p -> orderedTasks.shutdown(eventLoop, p)));
+    }
   }
 
   public Deployment getDeployment() {
@@ -201,29 +209,29 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
     Object queueMetric = metrics != null ? metrics.submitted() : null;
     Promise<T> promise = context.promise();
     Future<T> fut = promise.future();
-    try {
-      Runnable command = () -> {
-        Object execMetric = null;
-        if (metrics != null) {
-          execMetric = metrics.begin(queueMetric);
-        }
+    WorkerTask task = new WorkerTask(metrics, queueMetric) {
+      @Override
+      protected void execute() {
         context.dispatch(promise, blockingCodeHandler);
+      }
+      @Override
+      void reject() {
         if (metrics != null) {
-          metrics.end(execMetric, fut.succeeded());
+          metrics.rejected(queueMetric);
         }
-      };
+        promise.fail(new RejectedExecutionException());
+      }
+    };
+    try {
       Executor exec = workerPool.executor();
       if (queue != null) {
-        queue.execute(command, exec);
+        queue.execute(task, exec);
       } else {
-        exec.execute(command);
+        exec.execute(task);
       }
     } catch (RejectedExecutionException e) {
       // Pool is already shut down
-      if (metrics != null) {
-        metrics.rejected(queueMetric);
-      }
-      throw e;
+      task.reject();
     }
     return fut;
   }

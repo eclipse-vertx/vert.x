@@ -276,6 +276,13 @@ public interface ContextInternal extends Context {
   }
 
   /**
+   * Close this context, cleanup close future hooks then dispose pending ordered task queue.
+   *
+   * @return a future signalling close completion
+   */
+  Future<Void> close();
+
+  /**
    * Begin the execution of a task on this context.
    * <p>
    * The task execution is monitored by the blocked thread checker.

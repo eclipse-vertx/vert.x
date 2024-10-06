@@ -193,4 +193,9 @@ final class DuplicatedContext extends ContextBase implements ContextInternal {
   public boolean isDuplicate() {
     return true;
   }
+
+  @Override
+  public Future<Void> close() {
+    return Future.succeededFuture();
+  }
 }

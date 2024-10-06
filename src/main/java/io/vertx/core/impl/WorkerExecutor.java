@@ -60,24 +60,19 @@ public class WorkerExecutor implements EventExecutor {
   public void execute(Runnable command) {
     PoolMetrics metrics = workerPool.metrics();
     Object queueMetric = metrics != null ? metrics.submitted() : null;
-    orderedTasks.execute(() -> {
-      Object execMetric = null;
-      if (metrics != null) {
-        execMetric = metrics.begin(queueMetric);
-      }
-      try {
+    // Todo : collapse WorkerTask with context submitted task object
+    WorkerTask task = new WorkerTask(metrics, queueMetric) {
+      @Override
+      protected void execute() {
         inThread.set(true);
         try {
           command.run();
         } finally {
           inThread.remove();
         }
-      } finally {
-        if (metrics != null) {
-          metrics.end(execMetric, true);
-        }
       }
-    }, workerPool.executor());
+    };
+    orderedTasks.execute(task, workerPool.executor());
   }
 
   /**
