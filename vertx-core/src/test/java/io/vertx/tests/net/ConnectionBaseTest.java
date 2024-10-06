@@ -285,7 +285,7 @@ public class ConnectionBaseTest extends VertxTestBase {
 
   @Test
   public void testDrainReentrancy() throws Exception {
-    assumeTrue(TRANSPORT != Transport.IO_URING);
+    // assumeTrue(TRANSPORT != Transport.IO_URING);
     connectHandler = so -> {
       ChannelHandlerContext chctx = so.channelHandlerContext();
       chctx.pipeline().addBefore("handler", "myhandler", new ChannelDuplexHandler() {

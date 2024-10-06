@@ -1553,7 +1553,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
   }
 
   private void testProxy(ProxyType proxyType) throws Exception {
-    assumeTrue(TRANSPORT != Transport.IO_URING);
+    // assumeTrue(TRANSPORT != Transport.IO_URING);
     startProxy(null, proxyType);
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy(proxyType).pass();
     assertNotNull("connection didn't access the proxy", proxy.getLastUri());
@@ -1569,7 +1569,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
   }
 
   private void testProxyWithSNI(ProxyType proxyType) throws Exception {
-    assumeTrue(TRANSPORT != Transport.IO_URING);
+    // assumeTrue(TRANSPORT != Transport.IO_URING);
     startProxy(null, proxyType);
     Certificate cert = testTLS(Cert.NONE, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, Trust.NONE)
         .serverSni()
@@ -1585,7 +1585,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
   @Test
   // Check that proxy auth fails if it is missing
   public void testHttpsProxyAuthFail() throws Exception {
-    assumeTrue(TRANSPORT != Transport.IO_URING);
+    // assumeTrue(TRANSPORT != Transport.IO_URING);
     startProxy("username", ProxyType.HTTP);
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy(ProxyType.HTTP).fail();
   }
@@ -1593,7 +1593,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
   @Test
   // Access https server via connect proxy with proxy auth required
   public void testHttpsProxyAuth() throws Exception {
-    assumeTrue(TRANSPORT != Transport.IO_URING);
+    // assumeTrue(TRANSPORT != Transport.IO_URING);
     startProxy("username", ProxyType.HTTP);
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy(ProxyType.HTTP).useProxyAuth().pass();
     assertNotNull("connection didn't access the proxy", proxy.getLastUri());
@@ -1607,7 +1607,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
   // the hostname may resolve at the proxy if that is accessing another DNS
   // we simulate this by mapping the hostname to localhost:xxx in the test proxy code
   public void testHttpsProxyUnknownHost() throws Exception {
-    assumeTrue(TRANSPORT != Transport.IO_URING);
+    // assumeTrue(TRANSPORT != Transport.IO_URING);
     startProxy(null, ProxyType.HTTP);
     proxy.setForceUri(DEFAULT_HTTPS_HOST_AND_PORT);
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy(ProxyType.HTTP)

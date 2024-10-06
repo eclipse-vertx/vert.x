@@ -582,7 +582,7 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testSharedServersRoundRobin() throws Exception {
-    assumeTrue(TRANSPORT != Transport.IO_URING);
+    // assumeTrue(TRANSPORT != Transport.IO_URING);
 
     int numServers = VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE / 2- 1;
     int numConnections = numServers * 100;
