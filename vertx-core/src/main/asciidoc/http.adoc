@@ -1624,6 +1624,7 @@ connections already created for that server, otherwise it will add the request t
 Keep alive connections will be closed by the client automatically after a timeout. The timeout can be specified
 by the server using the `keep-alive` header:
 
+[source,http]
 ----
 keep-alive: timeout=30
 ----
