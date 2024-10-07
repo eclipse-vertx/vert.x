@@ -4,16 +4,12 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import java.util.Base64;
 
 /**
  * Converter and mapper for {@link io.vertx.core.net.SSLOptions}.
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.net.SSLOptions} original class using Vert.x codegen.
  */
 public class SSLOptionsConverter {
-
-  private static final Base64.Decoder BASE64_DECODER = Base64.getUrlDecoder();
-  private static final Base64.Encoder BASE64_ENCODER = Base64.getUrlEncoder().withoutPadding();
 
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, SSLOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
@@ -38,7 +34,7 @@ public class SSLOptionsConverter {
           if (member.getValue() instanceof JsonArray) {
             ((Iterable<Object>)member.getValue()).forEach( item -> {
               if (item instanceof String)
-                obj.addCrlValue(io.vertx.core.buffer.Buffer.buffer(BASE64_DECODER.decode((String)item)));
+                obj.addCrlValue(io.vertx.core.buffer.Buffer.fromJson((String)item));
             });
           }
           break;
@@ -103,7 +99,7 @@ public class SSLOptionsConverter {
     }
     if (obj.getCrlValues() != null) {
       JsonArray array = new JsonArray();
-      obj.getCrlValues().forEach(item -> array.add(BASE64_ENCODER.encodeToString(item.getBytes())));
+      obj.getCrlValues().forEach(item -> array.add(item.toJson()));
       json.put("crlValues", array);
     }
     json.put("useAlpn", obj.isUseAlpn());
