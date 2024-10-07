@@ -517,7 +517,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         }
       }
       if (eventExecutor != null) {
-        ctx = createContext(ThreadingModel.OTHER, eventLoopExecutor, eventExecutor, workerPool, new TaskQueue(), closeFuture, null, Thread.currentThread().getContextClassLoader());
+        ctx = createContext(ThreadingModel.OTHER, eventLoopExecutor, eventExecutor, workerPool, new WorkerTaskQueue(), closeFuture, null, Thread.currentThread().getContextClassLoader());
       } else {
         ctx = createEventLoopContext(eventLoop, workerPool, Thread.currentThread().getContextClassLoader());
       }
@@ -580,7 +580,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
                                    ClassLoader tccl) {
     EventExecutor eventExecutor;
     EventLoopExecutor eventLoopExecutor = new EventLoopExecutor(eventLoop);
-    TaskQueue orderedTasks = new TaskQueue();
+    WorkerTaskQueue orderedTasks = new WorkerTaskQueue();
     WorkerPool wp;
     switch (threadingModel) {
       case EVENT_LOOP:
@@ -608,47 +608,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
                                    EventLoopExecutor eventLoopExecutor,
                                    EventExecutor eventExecutor,
                                    WorkerPool workerPool,
-                                   TaskQueue orderedTasks,
+                                   WorkerTaskQueue orderedTasks,
                                    CloseFuture closeFuture,
                                    DeploymentContext deployment,
                                    ClassLoader tccl) {
-    if (closeFuture != null) {
-      closeFuture.add(completion -> {
-        TaskQueue.CloseResult closeResult = orderedTasks.close();
-        for (Runnable pendingTask : closeResult.pendingTasks()) {
-          if (pendingTask instanceof ExecuteBlockingTask) {
-            ExecuteBlockingTask<?> t = (ExecuteBlockingTask<?>) pendingTask;
-            t.reject();
-          }
-        }
-        if (!closeResult.suspendedThreads().isEmpty() || closeResult.activeThread() != null) {
-          Executor exec = virtualThreadExecutor != null ? virtualThreadExecutor : internalWorkerPool.executor();
-          exec
-            .execute(() -> {
-              // todo : rewrite this in master to avoid requiring the internal worker pool
-              // Maintain context invariant: serialize task execution
-              for (Thread suspendedThread : closeResult.suspendedThreads()) {
-                suspendedThread.interrupt();
-                try {
-                  suspendedThread.join(5_000);
-                } catch (InterruptedException ignore) {
-                }
-              }
-              Thread activeThread = closeResult.activeThread();
-              if (activeThread != null) {
-                activeThread.interrupt();
-                try {
-                  activeThread.join(5_000);
-                } catch (InterruptedException ignore) {
-                }
-              }
-              completion.complete();
-            });
-        } else {
-          completion.complete();
-        }
-      });
-    }
     return new ContextImpl(this,
       createContextLocals(),
       eventLoopExecutor,

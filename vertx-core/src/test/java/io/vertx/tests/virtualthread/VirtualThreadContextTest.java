@@ -273,7 +273,7 @@ public class VirtualThreadContextTest extends VertxTestBase {
       }
     });
     assertWaitUntil(() -> ref.get() != null && ref.get().getState() == Thread.State.WAITING);
-    ctx.closeFuture().close().await();
+    ctx.close().await();
     assertWaitUntil(interrupted::get);
   }
 
@@ -294,7 +294,7 @@ public class VirtualThreadContextTest extends VertxTestBase {
       }
     });
     assertWaitUntil(() -> ref.get() != null && ref.get().getState() == Thread.State.WAITING);
-    ctx.closeFuture().close().await();
+    ctx.close().await();
     assertWaitUntil(interrupted::get);
   }
 
@@ -341,7 +341,7 @@ public class VirtualThreadContextTest extends VertxTestBase {
       }
       return true;
     });
-    Future<Void> f = ctx.closeFuture().close();
+    Future<Void> f = ctx.close();
     for (int i = 0;i < num;i++) {
       try {
         l[i].await();

@@ -487,6 +487,13 @@ public interface ContextInternal extends Context {
   CloseFuture closeFuture();
 
   /**
+   * Close this context, cleanup close future hooks then dispose pending ordered task queue.
+   *
+   * @return a future signalling close completion
+   */
+  Future<Void> close();
+
+  /**
    * Add a close hook.
    *
    * <p> The {@code hook} will be called when the associated resource needs to be released. Hooks are useful

@@ -38,10 +38,11 @@ public class TaskQueue {
 
   // @protectedby tasks
   private final LinkedList<Task> tasks = new LinkedList<>();
-  private final Set<ContinuationTask> suspendedTasks = new HashSet<>();
+  private final Set<ContinuationTask> continuations = new HashSet<>();
   private boolean closed;
   private Executor currentExecutor;
   private Thread currentThread;
+  private ExecuteTask currentTask;
 
   private final Runnable runner;
 
@@ -65,6 +66,7 @@ public class TaskQueue {
           ContinuationTask resume = (ContinuationTask) task;
           currentExecutor = resume.executor;
           currentThread = resume.thread;
+          currentTask = resume.task;
           resume.latch.run();
           return;
         }
@@ -78,11 +80,13 @@ public class TaskQueue {
       }
       try {
         currentThread = Thread.currentThread();
+        currentTask = execute;
         execute.runnable.run();
       } catch (Throwable t) {
         log.error("Caught unexpected Throwable", t);
       } finally {
         currentThread = null;
+        currentTask = null;
       }
     }
   }
@@ -100,6 +104,7 @@ public class TaskQueue {
    * @throws IllegalStateException if the current thread is not currently being executed by the queue
    */
   private ContinuationTask continuationTask() {
+    ExecuteTask task;
     Thread thread;
     Executor executor;
     synchronized (tasks) {
@@ -108,8 +113,9 @@ public class TaskQueue {
       }
       thread = currentThread;
       executor = currentExecutor;
+      task = currentTask;
     }
-    return new ContinuationTask(thread, executor);
+    return new ContinuationTask(task, thread, executor);
   }
 
   /**
@@ -152,12 +158,20 @@ public class TaskQueue {
   public final static class CloseResult {
 
     private final Thread activeThread;
-    private final List<Runnable> pendingTasks;
+    private final Runnable activeTask;
+    private final List<Runnable> suspendedTasks;
     private final List<Thread> suspendedThreads;
+    private final List<Runnable> pendingTasks;
 
-    private CloseResult(Thread activeThread, List<Thread> suspendedThreads, List<Runnable> pendingTasks) {
+    private CloseResult(Thread activeThread,
+                        Runnable activeTask,
+                        List<Thread> suspendedThreads,
+                        List<Runnable> suspendedTasks,
+                        List<Runnable> pendingTasks) {
       this.activeThread = activeThread;
+      this.activeTask = activeTask;
       this.suspendedThreads = suspendedThreads;
+      this.suspendedTasks = suspendedTasks;
       this.pendingTasks = pendingTasks;
     }
 
@@ -166,6 +180,10 @@ public class TaskQueue {
      */
     public Thread activeThread() {
       return activeThread;
+    }
+
+    public Runnable activeTask() {
+      return activeTask;
     }
 
     /**
@@ -181,6 +199,13 @@ public class TaskQueue {
     public List<Thread> suspendedThreads() {
       return suspendedThreads;
     }
+
+    /**
+     * @return the list of suspended tasks
+     */
+    public List<Runnable> suspendedTasks() {
+      return suspendedTasks;
+    }
   }
 
   /**
@@ -191,12 +216,15 @@ public class TaskQueue {
   public CloseResult close() {
     List<Runnable> pendingTasks = Collections.emptyList();
     List<Thread> suspendedThreads;
-    Thread currentThread;
+    List<Runnable> suspendedTasks;
+    Thread activeThread;
+    Runnable activeTask;
     synchronized (tasks) {
       if (closed) {
         throw new IllegalStateException("Already closed");
       }
-      suspendedThreads = new ArrayList<>(suspendedTasks.size() + 1);
+      suspendedThreads = new ArrayList<>(continuations.size());
+      suspendedTasks = new ArrayList<>(continuations.size());
       for (Task t : tasks) {
         if (t instanceof ExecuteTask) {
           if (pendingTasks.isEmpty()) {
@@ -206,31 +234,36 @@ public class TaskQueue {
         } else if (t instanceof ContinuationTask) {
           ContinuationTask rt = (ContinuationTask) t;
           suspendedThreads.add(rt.thread);
+          suspendedTasks.add(rt.task.runnable);
         }
       }
       tasks.clear();
-      for (ContinuationTask task : suspendedTasks) {
-        suspendedThreads.add(task.thread);
+      for (ContinuationTask cont : continuations) {
+        suspendedThreads.add(cont.thread);
+        suspendedTasks.add(cont.task.runnable);
       }
-      suspendedTasks.clear();
-      currentThread = this.currentThread;
+      continuations.clear();
+      activeThread = currentThread;
+      activeTask = currentTask != null ? currentTask.runnable : null;
       currentExecutor = null;
       closed = true;
     }
-    return new CloseResult(currentThread, suspendedThreads, pendingTasks);
+    return new CloseResult(activeThread, activeTask, suspendedThreads, suspendedTasks, pendingTasks);
   }
 
   private class ContinuationTask extends CountDownLatch implements WorkerExecutor.Continuation, Task {
 
     private static final int ST_CREATED = 0, ST_SUSPENDED = 1, ST_RESUMED = 2;
 
+    private final ExecuteTask task;
     private final Thread thread;
     private final Executor executor;
     private int status;
     private Runnable latch;
 
-    public ContinuationTask(Thread thread, Executor executor) {
+    public ContinuationTask(ExecuteTask task, Thread thread, Executor executor) {
       super(1);
+      this.task = task;
       this.thread = thread;
       this.executor = executor;
       this.status = ST_CREATED;
@@ -244,7 +277,7 @@ public class TaskQueue {
         }
         switch (status) {
           case ST_SUSPENDED:
-            boolean removed = suspendedTasks.remove(this);
+            boolean removed = continuations.remove(this);
             assert removed;
             latch = () -> {
               callback.run();
@@ -256,11 +289,13 @@ public class TaskQueue {
             }
             currentExecutor = executor;
             currentThread = thread;
+            currentTask = task;
             break;
           case ST_CREATED:
             // The current task still owns the queue
             assert currentExecutor == executor;
             assert currentThread == thread;
+            assert currentTask == task;
             latch = callback;
             break;
           default:
@@ -290,9 +325,10 @@ public class TaskQueue {
             throw new IllegalStateException();
         }
         status = ST_SUSPENDED;
-        boolean added = suspendedTasks.add(this);
+        boolean added = continuations.add(this);
         assert added;
         currentThread = null;
+        currentTask = null;
       }
       executor.execute(runner);
       return true;
