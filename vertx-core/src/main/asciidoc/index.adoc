@@ -1025,7 +1025,28 @@ Vert.x can run with http://netty.io/wiki/native-transports.html[native transport
 NOTE: preferring native transport will not prevent the application to execute (for example if a JAR is missing).
 If your application requires native transport, you need to check {@link io.vertx.core.Vertx#isNativeTransportEnabled()}.
 
-=== Native Linux Transport
+You can also explicitly configure the transport to use:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#configureTransport()}
+----
+
+=== Native epoll
+
+You need to add the following dependency in your classpath:
+
+[source,xml]
+----
+<dependency>
+  <groupId>io.netty</groupId>
+  <artifactId>netty-transport-native-io_uring</artifactId>
+  <classifier>linux-x86_64</classifier>
+  <!--<version>Should align with netty version that Vert.x uses</version>-->
+</dependency>
+----
+
+=== Native io_uring
 
 You need to add the following dependency in your classpath:
 
@@ -1039,20 +1060,7 @@ You need to add the following dependency in your classpath:
 </dependency>
 ----
 
-Native on Linux gives you extra networking options:
-
-* `SO_REUSEPORT`
-* `TCP_QUICKACK`
-* `TCP_CORK`
-* `TCP_FASTOPEN`
-* `TCP_USER_TIMEOUT`
-
-[source,$lang]
-----
-{@link examples.CoreExamples#configureLinuxOptions}
-----
-
-=== Native BSD Transport
+=== Native kqueue
 
 You need to add the following dependency in your classpath:
 

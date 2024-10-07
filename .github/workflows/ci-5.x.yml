@@ -15,22 +15,36 @@ jobs:
         include:
           - os: ubuntu-latest
             jdk: 11
+            stable: true
           - os: ubuntu-latest
             jdk: 11
-            profile: '-PtestNativeTransport'
+            profile: '-PNativeEpoll'
+            stable: true
           - os: ubuntu-latest
             jdk: 11
-            profile: '-PtestDomainSockets'
+            profile: '-PNativeIoUring'
+            stable: false
+          - os: ubuntu-latest
+            jdk: 11
+            profile: '-PNativeEpoll+DomainSockets'
+            stable: true
           - os: ubuntu-latest
             jdk: 21
+            stable: true
           - os: windows-latest
             jdk: 11
+            stable: true
+#          - os: macos-latest
+#            jdk: 11
+#            profile: '-PNativeKQueue'
+#            stable: false
     uses: ./.github/workflows/ci.yml
     with:
       branch: ${{ github.event.pull_request.head.sha || github.ref_name }}
       jdk: ${{ matrix.jdk }}
       os: ${{ matrix.os }}
       profile: ${{ matrix.profile }}
+      stable: ${{ matrix.stable }}
     secrets: inherit
   Deploy:
     if: ${{ github.repository_owner == 'eclipse-vertx' && (github.event_name == 'push' || github.event_name == 'schedule') }}

@@ -114,7 +114,7 @@ public class NetTest extends VertxTestBase {
   public void setUp() throws Exception {
     super.setUp();
     if (USE_DOMAIN_SOCKETS) {
-      assertTrue("Native transport not enabled", USE_NATIVE_TRANSPORT);
+      assertTrue("Native transport not enabled", TRANSPORT.implementation().supportsDomainSockets());
       tmp = TestUtils.tmpFile(".sock");
       testAddress = SocketAddress.domainSocketAddress(tmp.getAbsolutePath());
     } else {
@@ -2103,7 +2103,7 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testClosingVertxCloseSharedServers() throws Exception {
     int numServers = 2;
-    Vertx vertx = Vertx.vertx(getOptions());
+    Vertx vertx = createVertx(getOptions());
     List<NetServerImpl> servers = new ArrayList<>();
     for (int i = 0;i < numServers;i++) {
       NetServer server = vertx.createNetServer().connectHandler(so -> {

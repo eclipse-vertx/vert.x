@@ -521,14 +521,14 @@ public class VertxOptions {
   }
 
   /**
-   * @return wether to prefer the native transport to the JDK transport
+   * @return whether to prefer the native transport to the NIO transport
    */
   public boolean getPreferNativeTransport() {
     return preferNativeTransport;
   }
 
   /**
-   * Set wether to prefer the native transport to the JDK transport.
+   * Set whether to prefer the native transport to the NIO transport.
    *
    * @param preferNativeTransport {@code true} to prefer the native transport
    * @return a reference to this, so the API can be used fluently

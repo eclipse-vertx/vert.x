@@ -43,7 +43,7 @@ import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.internal.threadchecker.BlockedThreadChecker;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.*;
-import io.vertx.core.impl.transports.JDKTransport;
+import io.vertx.core.impl.transports.NioTransport;
 import io.vertx.core.spi.context.executor.EventExecutorProvider;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.file.impl.FileSystemImpl;
@@ -370,7 +370,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public boolean isNativeTransportEnabled() {
-    return !(transport instanceof JDKTransport);
+    return !(transport instanceof NioTransport);
   }
 
   @Override
