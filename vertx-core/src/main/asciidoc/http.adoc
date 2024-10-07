@@ -526,7 +526,7 @@ Non keep-alive connections will be automatically closed by Vert.x when the respo
 Keep-alive connections are not automatically closed by Vert.x by default. If you want keep-alive connections to be
 closed after an idle time, then you configure {@link io.vertx.core.http.HttpServerOptions#setIdleTimeout}.
 
-HTTP/2 connections send a {@literal GOAWAY} frame before closing the response.
+HTTP/2 connections send a `GOAWAY` frame before closing the response.
 
 ==== Setting response headers
 
@@ -671,7 +671,7 @@ Here's an example:
 ----
 
 These frames are sent immediately and are not subject to flow control - when such frame is sent there it may be done
-before other {@literal DATA} frames.
+before other `DATA` frames.
 
 ==== Stream reset
 
@@ -1770,7 +1770,7 @@ NOTE: this only applies to the HTTP/2 protocol
 ==== Connection ping
 
 HTTP/2 connection ping is useful for determining the connection round-trip time or check the connection
-validity: {@link io.vertx.core.http.HttpConnection#ping} sends a {@literal PING} frame to the remote
+validity: {@link io.vertx.core.http.HttpConnection#ping} sends a `PING` frame to the remote
 endpoint:
 
 [source,$lang]
@@ -1778,7 +1778,7 @@ endpoint:
 {@link examples.HTTP2Examples#example23}
 ----
 
-Vert.x will send automatically an acknowledgement when a {@literal PING} frame is received,
+Vert.x will send automatically an acknowledgement when a `PING` frame is received,
 an handler can be set to be notified for each ping received:
 
 [source,$lang]
@@ -1793,9 +1793,9 @@ NOTE: this only applies to the HTTP/2 protocol
 
 ==== Connection shutdown and go away
 
-Calling {@link io.vertx.core.http.HttpConnection#shutdown()} will send a {@literal GOAWAY} frame to the
+Calling {@link io.vertx.core.http.HttpConnection#shutdown()} will send a `GOAWAY` frame to the
 remote side of the connection, asking it to stop creating streams: a client will stop doing new requests
-and a server will stop pushing responses. After the {@literal GOAWAY} frame is sent, the connection
+and a server will stop pushing responses. After the `GOAWAY` frame is sent, the connection
 waits some time (30 seconds by default) until all current streams closed and close the connection:
 
 [source,$lang]
@@ -1806,7 +1806,7 @@ waits some time (30 seconds by default) until all current streams closed and clo
 The {@link io.vertx.core.http.HttpConnection#shutdownHandler} notifies when all streams have been closed, the
 connection is not yet closed.
 
-It's possible to just send a {@literal GOAWAY} frame, the main difference with a shutdown is that
+It's possible to just send a `GOAWAY` frame, the main difference with a shutdown is that
 it will just tell the remote side of the connection to stop creating new streams without scheduling a connection
 close:
 
@@ -1815,7 +1815,7 @@ close:
 {@link examples.HTTP2Examples#example26}
 ----
 
-Conversely, it is also possible to be notified when {@literal GOAWAY} are received:
+Conversely, it is also possible to be notified when `GOAWAY` are received:
 
 [source,$lang]
 ----
@@ -1830,7 +1830,7 @@ have been closed and the connection can be closed:
 {@link examples.HTTP2Examples#example28}
 ----
 
-This applies also when a {@literal GOAWAY} is received.
+This applies also when a `GOAWAY` is received.
 
 NOTE: this only applies to the HTTP/2 protocol
 
@@ -1839,7 +1839,7 @@ NOTE: this only applies to the HTTP/2 protocol
 Connection {@link io.vertx.core.http.HttpConnection#close} closes the connection:
 
 - it closes the socket for HTTP/1.x
-- a shutdown with no delay for HTTP/2, the {@literal GOAWAY} frame will still be sent before the connection is closed.
+- a shutdown with no delay for HTTP/2, the `GOAWAY` frame will still be sent before the connection is closed.
 
 The {@link io.vertx.core.http.HttpConnection#closeHandler} notifies when a connection is closed.
 
