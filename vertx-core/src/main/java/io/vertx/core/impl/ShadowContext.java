@@ -141,6 +141,11 @@ final class ShadowContext extends ContextBase {
   }
 
   @Override
+  public Future<Void> close() {
+    return Future.succeededFuture();
+  }
+
+  @Override
   public <T> Future<@Nullable T> executeBlocking(Callable<T> blockingCodeHandler, boolean ordered) {
     return owner.getWorkerPool().executeBlocking(this, blockingCodeHandler, ordered ? orderedTasks : null);
   }

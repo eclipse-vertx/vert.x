@@ -13,11 +13,8 @@ package io.vertx.benchmarks;
 
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.Vertx;
-import io.vertx.core.impl.ContextImpl;
-import io.vertx.core.impl.EventLoopExecutor;
+import io.vertx.core.impl.*;
 import io.vertx.core.internal.EventExecutor;
-import io.vertx.core.impl.TaskQueue;
-import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.internal.ContextInternal;
 
 /**
@@ -45,7 +42,7 @@ public class BenchmarkContext {
       ThreadingModel.WORKER,
       EXECUTOR,
       impl.getWorkerPool(),
-      new TaskQueue(),
+      new WorkerTaskQueue(),
       null,
       null,
       Thread.currentThread().getContextClassLoader()

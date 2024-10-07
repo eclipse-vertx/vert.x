@@ -55,6 +55,11 @@ final class DuplicatedContext extends ContextBase implements ContextInternal {
   }
 
   @Override
+  public Future<Void> close() {
+    return Future.succeededFuture();
+  }
+
+  @Override
   public VertxTracer tracer() {
     return delegate.tracer();
   }

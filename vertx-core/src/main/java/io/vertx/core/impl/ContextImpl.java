@@ -49,18 +49,18 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
   private ConcurrentMap<Object, Object> data;
   private volatile Handler<Throwable> exceptionHandler;
   final WorkerPool workerPool;
-  final TaskQueue orderedTasks;
+  final WorkerTaskQueue orderedTasks;
 
   public ContextImpl(VertxInternal vertx,
-                        Object[] locals,
-                        EventLoopExecutor eventLoop,
-                        ThreadingModel threadingModel,
-                        EventExecutor executor,
-                        WorkerPool workerPool,
-                        TaskQueue orderedTasks,
-                        DeploymentContext deployment,
-                        CloseFuture closeFuture,
-                        ClassLoader tccl) {
+                     Object[] locals,
+                     EventLoopExecutor eventLoop,
+                     ThreadingModel threadingModel,
+                     EventExecutor executor,
+                     WorkerPool workerPool,
+                     WorkerTaskQueue orderedTasks,
+                     DeploymentContext deployment,
+                     CloseFuture closeFuture,
+                     ClassLoader tccl) {
     super(locals);
     JsonObject config = null;
     if (deployment != null) {
@@ -79,6 +79,14 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
     this.workerPool = workerPool;
     this.closeFuture = closeFuture;
     this.orderedTasks = orderedTasks;
+  }
+
+  public Future<Void> close() {
+    if (closeFuture == owner.closeFuture()) {
+      return Future.future(p -> orderedTasks.shutdown(eventLoop.eventLoop, p));
+    } else {
+      return closeFuture.close().eventually(() -> Future.<Void>future(p -> orderedTasks.shutdown(eventLoop.eventLoop, p)));
+    }
   }
 
   public DeploymentContext deployment() {
