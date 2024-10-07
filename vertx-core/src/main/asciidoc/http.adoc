@@ -1539,14 +1539,20 @@ To tell the http server which compression is supported by the client it will inc
 the supported compression algorithm as value. Multiple compression algorithms are supported. In case of Vert.x this
 will result in the following header added:
 
- Accept-Encoding: gzip, deflate
+[source,http]
+----
+Accept-Encoding: gzip, deflate
+----
 
 The server will choose then from one of these. You can detect if a server compressed the body by checking for the
 `Content-Encoding` header in the response sent back from it.
 
 If the body of the response was compressed via gzip it will include for example the following header:
 
- Content-Encoding: gzip
+[source,http]
+----
+Content-Encoding: gzip
+----
 
 To enable compression set {@link io.vertx.core.http.HttpClientOptions#setDecompressionSupported(boolean)} on the options
 used when creating the client.
@@ -1619,7 +1625,7 @@ Keep alive connections will be closed by the client automatically after a timeou
 by the server using the `keep-alive` header:
 
 ----
- keep-alive: timeout=30
+keep-alive: timeout=30
 ----
 
 You can set the default timeout using {@link io.vertx.core.http.HttpClientOptions#setKeepAliveTimeout(int)} - any
