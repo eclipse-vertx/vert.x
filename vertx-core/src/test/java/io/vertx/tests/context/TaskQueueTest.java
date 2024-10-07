@@ -243,6 +243,41 @@ public class TaskQueueTest extends AsyncTestBase {
   }
 
   @Test
+  public void testCloseSuspendedTasks() {
+    TaskQueue taskQueue = new TaskQueue();
+    Deque<Runnable> pending = new ConcurrentLinkedDeque<>();
+    Executor executor = pending::add;
+    Runnable task = taskQueue::suspend;
+    taskQueue.execute(task, executor);
+    assertEquals(1, pending.size());
+    pending.pop().run();
+    TaskQueue.CloseResult result = taskQueue.close();
+    assertEquals(1, result.suspendedTasks().size());
+    assertEquals(1, result.suspendedThreads().size());
+    assertSame(task, result.suspendedTasks().get(0));
+  }
+
+  @Test
+  public void testCloseResumingTasks() {
+    TaskQueue taskQueue = new TaskQueue();
+    Deque<Runnable> pending = new ConcurrentLinkedDeque<>();
+    Executor executor = pending::add;
+    AtomicReference<WorkerExecutor.Continuation> ref = new AtomicReference<>();
+    Runnable task = () -> taskQueue.suspend(ref::set);
+    taskQueue.execute(task, executor);
+    assertEquals(1, pending.size());
+    taskQueue.execute(() -> {}, command -> {
+      // Use different executor to queue resume
+    });
+    pending.pop().run();
+    ref.get().resume();
+    TaskQueue.CloseResult result = taskQueue.close();
+    assertEquals(1, result.suspendedTasks().size());
+    assertEquals(1, result.suspendedThreads().size());
+    assertSame(task, result.suspendedTasks().get(0));
+  }
+
+  @Test
   public void testCloseBeforeSuspend() {
     TaskQueue taskQueue = new TaskQueue();
     Deque<Runnable> pending = new ConcurrentLinkedDeque<>();

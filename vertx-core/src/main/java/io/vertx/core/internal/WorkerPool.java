@@ -64,17 +64,39 @@ public class WorkerPool {
     Promise<T> promise = context.promise();
     Future<T> fut = promise.future();
     Object queueMetric = metrics != null ? metrics.enqueue() : null;
-    ExecuteBlockingTask<T> executeBlockingTask = new ExecuteBlockingTask<>(promise, context, queueMetric, metrics, blockingCodeHandler);
+    WorkerTask task = new WorkerTask(metrics, queueMetric) {
+      @Override
+      protected void execute() {
+        ContextInternal prev = context.beginDispatch();
+        T result;
+        try {
+          result = blockingCodeHandler.call();
+        } catch (Throwable t) {
+          promise.fail(t);
+          return;
+        } finally {
+          context.endDispatch(prev);
+        }
+        promise.complete(result);
+      }
+      @Override
+      void reject() {
+        if (metrics != null) {
+          metrics.dequeue(queueMetric);
+        }
+        promise.fail(new RejectedExecutionException());
+      }
+    };
     try {
       Executor exec = executor();
       if (queue != null) {
-        queue.execute(executeBlockingTask, exec);
+        queue.execute(task, exec);
       } else {
-        exec.execute(executeBlockingTask);
+        exec.execute(task);
       }
     } catch (RejectedExecutionException e) {
       // Pool is already shut down
-      executeBlockingTask.reject();
+      task.reject();
       throw e;
     }
     return fut;
