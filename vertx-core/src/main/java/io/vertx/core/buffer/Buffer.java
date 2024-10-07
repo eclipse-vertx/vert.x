@@ -19,6 +19,7 @@ import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.json.impl.JsonUtil;
 import io.vertx.core.shareddata.ClusterSerializable;
 import io.vertx.core.shareddata.Shareable;
 
@@ -37,6 +38,16 @@ import java.nio.charset.Charset;
  */
 @DataObject
 public interface Buffer extends ClusterSerializable, Shareable {
+
+  /**
+   * Create a buffer from the base 64 URL encoded {@code value}
+   * @param value the base64 encoded value
+   * @return the buffer
+   */
+  static Buffer fromJson(String value) {
+    byte[] bytes = JsonUtil.BASE64_DECODER.decode(value);
+    return buffer(bytes);
+  }
 
   /**
    * Create a new, empty buffer.
@@ -128,11 +139,10 @@ public interface Buffer extends ClusterSerializable, Shareable {
   }
 
   /**
-   * @deprecated instead use {@link #toJsonValue()}
+   * Encode the buffer bytes to their base 64 URL encoded representation.
    */
-  @Deprecated
-  default Object toJson() {
-    return toJsonValue();
+  default String toJson() {
+    return JsonUtil.BASE64_ENCODER.encodeToString(getBytes());
   }
 
   /**
