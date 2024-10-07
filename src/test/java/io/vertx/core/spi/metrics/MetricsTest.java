@@ -957,7 +957,7 @@ public class MetricsTest extends VertxTestBase {
     assertTrue(hadWaitingQueue.get());
     assertTrue(hadRunning.get());
 
-    assertEquals(metrics.numberOfIdleThreads(), getOptions().getWorkerPoolSize());
+    assertWaitUntil(() -> metrics.numberOfIdleThreads() == getOptions().getWorkerPoolSize());
     assertEquals(metrics.numberOfRunningTasks(), 0);
     assertEquals(metrics.numberOfWaitingTasks(), 0);
   }

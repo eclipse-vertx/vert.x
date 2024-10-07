@@ -199,6 +199,10 @@ class FakeContext implements ContextInternal {
 
   @Override
   public <T> void putLocal(ContextLocal<T> key, AccessMode accessMode, T value) {
+  }
 
+  @Override
+  public Future<Void> close() {
+    throw new UnsupportedOperationException();
   }
 }

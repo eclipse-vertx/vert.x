@@ -51,9 +51,9 @@ public class CloseFuture implements Closeable {
    *
    * @param hook the hook to add
    */
-  public synchronized void add(Closeable hook) {
+  public synchronized boolean add(Closeable hook) {
     if (closed) {
-      throw new IllegalStateException();
+      return false;
     }
     if (hook instanceof CloseFuture) {
       // Close future might be closed independently, so we optimize and remove the hooks when
@@ -72,6 +72,7 @@ public class CloseFuture implements Closeable {
       }
       hooks.put(hook, this);
     }
+    return true;
   }
 
   /**

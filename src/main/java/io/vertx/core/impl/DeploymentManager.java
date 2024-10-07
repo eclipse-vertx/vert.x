@@ -200,7 +200,7 @@ public class DeploymentManager {
           context = vertx.createVirtualThreadContext(deployment, closeFuture, tccl);
           break;
       }
-      VerticleHolder holder = new VerticleHolder(verticle, context, closeFuture);
+      VerticleHolder holder = new VerticleHolder(verticle, context);
       deployment.addVerticle(holder);
       context.runOnContext(v -> {
         try {
@@ -241,16 +241,14 @@ public class DeploymentManager {
 
     final Verticle verticle;
     final ContextImpl context;
-    final CloseFuture closeFuture;
 
-    VerticleHolder(Verticle verticle, ContextImpl context, CloseFuture closeFuture) {
+    VerticleHolder(Verticle verticle, ContextImpl context) {
       this.verticle = verticle;
       this.context = context;
-      this.closeFuture = closeFuture;
     }
 
     void close(Handler<AsyncResult<Void>> completionHandler) {
-      closeFuture.close().onComplete(completionHandler);
+      context.close().onComplete(completionHandler);
     }
   }
 
