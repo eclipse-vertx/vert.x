@@ -145,7 +145,7 @@ public class Deployment {
           context = vertx.createEventLoopContext(deployment, closeFuture, workerPool, tccl);
           break;
       }
-      Instance instance = new Instance(verticle, context, closeFuture);
+      Instance instance = new Instance(verticle, context);
       Promise<Object> startPromise = context.promise();
       instance.startPromise = startPromise;
       instances.add(instance);
@@ -184,7 +184,7 @@ public class Deployment {
       Promise<Object> startPromise = instance.startPromise;
       if (startPromise != null) {
         if (startPromise.tryFail(new VertxException("Verticle un-deployed", true))) {
-          undeployFutures.add(instance.closeFuture.future());
+          undeployFutures.add(instance.context.closeFuture().future());
         }
       } else {
         ContextInternal context = instance.context;
@@ -217,7 +217,7 @@ public class Deployment {
   public Future<?> cleanup() {
     List<Future<?>> futs = new ArrayList<>();
     for (Instance instance : instances) {
-      futs.add(instance.closeFuture.close());
+      futs.add(instance.context.closeFuture().close());
     }
     Future<?> fut = Future.join(futs);
     if (workerPool != null) {
@@ -231,17 +231,15 @@ public class Deployment {
 
     final Deployable deployable;
     final ContextInternal context;
-    final CloseFuture closeFuture;
     Promise<Object> startPromise;
 
-    Instance(Deployable deployable, ContextInternal context, CloseFuture closeFuture) {
+    Instance(Deployable deployable, ContextInternal context) {
       this.deployable = deployable;
       this.context = context;
-      this.closeFuture = closeFuture;
     }
 
     Future<Void> close() {
-      return closeFuture.close();
+      return context.close();
     }
   }
 }

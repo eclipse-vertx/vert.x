@@ -8,6 +8,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -44,9 +45,9 @@ public class TaskQueueTest extends AsyncTestBase {
     super.tearDown();
   }
 
-  private void suspendAndAwaitResume(WorkerExecutor.TaskController controller) {
+  private void suspendAndAwaitResume(CountDownLatch suspend) {
     try {
-      controller.suspendAndAwaitResume();
+      suspend.await();
     } catch (InterruptedException e) {
       fail(e);
     }
@@ -75,8 +76,8 @@ public class TaskQueueTest extends AsyncTestBase {
         assertNotSame(current, Thread.currentThread());
         testComplete();
       }, executor);
-      WorkerExecutor.TaskController cont = taskQueue.current();
-      suspendAndAwaitResume(cont);
+      CountDownLatch suspend = taskQueue.suspend();
+      suspendAndAwaitResume(suspend);
     }, executor);
     await();
   }
@@ -84,16 +85,17 @@ public class TaskQueueTest extends AsyncTestBase {
   @Test
   public void testResumeFromAnotherThread() {
     taskQueue.execute(() -> {
-      WorkerExecutor.TaskController continuation = taskQueue.current();
-      new Thread(() -> {
-        try {
-          Thread.sleep(100);
-        } catch (InterruptedException e) {
-          throw new RuntimeException(e);
-        }
-        continuation.resume();
-        suspendAndAwaitResume(continuation);
-      }).start();
+      CountDownLatch suspend = taskQueue.suspend(cont -> {
+        new Thread(() -> {
+          try {
+            Thread.sleep(100);
+          } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+          }
+          cont.resume();
+        }).start();
+      });
+      suspendAndAwaitResume(suspend);
       testComplete();
     }, executor);
     await();
@@ -102,7 +104,8 @@ public class TaskQueueTest extends AsyncTestBase {
   @Test
   public void testResumeFromContextThread() {
     taskQueue.execute(() -> {
-      WorkerExecutor.TaskController continuation = taskQueue.current();
+      WorkerExecutor.Continuation[] cont = new WorkerExecutor.Continuation[1];
+      CountDownLatch latch = taskQueue.suspend(c -> cont[0] = c);
       taskQueue.execute(() -> {
         // Make sure the awaiting thread will block on the internal future before resolving it (could use thread status)
         try {
@@ -110,9 +113,9 @@ public class TaskQueueTest extends AsyncTestBase {
         } catch (InterruptedException e) {
           throw new RuntimeException(e);
         }
-        continuation.resume();
+        cont[0].resume();
       }, executor);
-      suspendAndAwaitResume(continuation);
+      suspendAndAwaitResume(latch);
       testComplete();
     }, executor);
     await();
@@ -121,47 +124,27 @@ public class TaskQueueTest extends AsyncTestBase {
   @Test
   public void testResumeWhenIdle() {
     taskQueue.execute(() -> {
-      WorkerExecutor.TaskController cont = taskQueue.current();
       AtomicReference<Thread> ref = new AtomicReference<>();
-      new Thread(() -> {
-        Thread th;
-        while ((th = ref.get()) == null) {
-          try {
-            Thread.sleep(1);
-          } catch (InterruptedException ignore) {
+      CountDownLatch cont = taskQueue.suspend(c -> {
+        new Thread(() -> {
+          Thread th;
+          while ((th = ref.get()) == null) {
+            try {
+              Thread.sleep(1);
+            } catch (InterruptedException ignore) {
+            }
           }
-        }
-        try {
-          th.join(2_000);
-        } catch (InterruptedException ignore) {
-          ignore.printStackTrace(System.out);
-        }
-        cont.resume();
-      }).start();
+          try {
+            th.join(2_000);
+          } catch (InterruptedException ignore) {
+            ignore.printStackTrace(System.out);
+          }
+          c.resume();
+        }).start();
+      });
       taskQueue.execute(() -> ref.set(Thread.currentThread()), executor);
       suspendAndAwaitResume(cont);
       testComplete();
-    }, executor);
-    await();
-  }
-
-  @Test
-  public void testRaceResumeBeforeSuspend() {
-    AtomicInteger seq = new AtomicInteger();
-    taskQueue.execute(() -> {
-      taskQueue.execute(() -> {
-        WorkerExecutor.TaskController cont = taskQueue.current();
-        cont.resume(() -> {
-          assertEquals(1, seq.getAndIncrement());
-        });
-        assertEquals(0, seq.getAndIncrement());
-        suspendAndAwaitResume(cont);
-        assertEquals(2, seq.getAndIncrement());
-      }, executor);
-      taskQueue.execute(() -> {
-        assertEquals(3, seq.getAndIncrement());
-        testComplete();
-      }, executor);
     }, executor);
     await();
   }
@@ -172,16 +155,19 @@ public class TaskQueueTest extends AsyncTestBase {
   public void testUnscheduleRace2() {
     AtomicInteger seq = new AtomicInteger();
     taskQueue.execute(() -> {
+      assertEquals("vert.x-0", Thread.currentThread().getName());
       CompletableFuture<Void> cf = new CompletableFuture<>();
       taskQueue.execute(() -> {
         assertEquals("vert.x-0", Thread.currentThread().getName());
         assertEquals(0, seq.getAndIncrement());
-        WorkerExecutor.TaskController cont = taskQueue.current();
-        cf.whenComplete((v, e) -> cont.resume(() -> {
-          assertEquals("vert.x-1", Thread.currentThread().getName());
-          assertEquals(2, seq.getAndIncrement());
-        }));
-        suspendAndAwaitResume(cont);
+        CountDownLatch latch = taskQueue.suspend(c -> {
+          cf.whenComplete((v, e) -> c.resume(() -> {
+            assertEquals("vert.x-1", Thread.currentThread().getName());
+            assertEquals(2, seq.getAndIncrement());
+          }));
+        });
+        suspendAndAwaitResume(latch);
+        assertEquals(3, seq.getAndIncrement());
       }, executor);
       AtomicBoolean enqueued = new AtomicBoolean();
       taskQueue.execute(() -> {
@@ -194,7 +180,7 @@ public class TaskQueueTest extends AsyncTestBase {
       }, executor);
       taskQueue.execute(() -> {
         assertEquals("vert.x-0", Thread.currentThread().getName());
-        assertEquals(3, seq.getAndIncrement());
+        assertEquals(4, seq.getAndIncrement());
         testComplete();
       }, executor);
       enqueued.set(true);
@@ -214,5 +200,159 @@ public class TaskQueueTest extends AsyncTestBase {
     ).isInstanceOf(RejectedExecutionException.class);
 
     Assertions.assertThat(taskQueue.isEmpty()).isTrue();
+  }
+
+  @Test
+  public void testClosePendingTasks() {
+    TaskQueue taskQueue = new TaskQueue();
+    Deque<Runnable> pending = new ConcurrentLinkedDeque<>();
+    Executor executor = pending::add;
+    Runnable task = () -> {
+    };
+    taskQueue.execute(task, executor);
+    assertEquals(1, pending.size());
+    TaskQueue.CloseResult result = taskQueue.close();
+    assertEquals(1, result.pendingTasks().size());
+    assertSame(task, result.pendingTasks().get(0));
+  }
+
+  @Test
+  public void testCloseSuspendedTasks() {
+    TaskQueue taskQueue = new TaskQueue();
+    Deque<Runnable> pending = new ConcurrentLinkedDeque<>();
+    Executor executor = pending::add;
+    Runnable task = taskQueue::suspend;
+    taskQueue.execute(task, executor);
+    assertEquals(1, pending.size());
+    pending.pop().run();
+    TaskQueue.CloseResult result = taskQueue.close();
+    assertEquals(1, result.suspendedTasks().size());
+    assertEquals(1, result.suspendedThreads().size());
+    assertSame(task, result.suspendedTasks().get(0));
+  }
+
+  @Test
+  public void testCloseResumingTasks() {
+    TaskQueue taskQueue = new TaskQueue();
+    Deque<Runnable> pending = new ConcurrentLinkedDeque<>();
+    Executor executor = pending::add;
+    AtomicReference<WorkerExecutor.Continuation> ref = new AtomicReference<>();
+    Runnable task = () -> taskQueue.suspend(ref::set);
+    taskQueue.execute(task, executor);
+    assertEquals(1, pending.size());
+    taskQueue.execute(() -> {}, command -> {
+      // Use different executor to queue resume
+    });
+    pending.pop().run();
+    ref.get().resume();
+    TaskQueue.CloseResult result = taskQueue.close();
+    assertEquals(1, result.suspendedTasks().size());
+    assertEquals(1, result.suspendedThreads().size());
+    assertSame(task, result.suspendedTasks().get(0));
+  }
+
+  @Test
+  public void testCloseBeforeSuspend() {
+    TaskQueue taskQueue = new TaskQueue();
+    Deque<Runnable> pending = new ConcurrentLinkedDeque<>();
+    Executor exec = pending::add;
+    AtomicReference<TaskQueue.CloseResult> result = new AtomicReference<>();
+    taskQueue.execute(() -> {
+      Thread th = new Thread(() -> {
+        result.set(taskQueue.close());
+      });
+      th.start();
+      try {
+        th.join();
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+      CountDownLatch cont = taskQueue.suspend();
+      assertNull(cont);
+    }, exec);
+    Runnable t = pending.pop();
+    t.run();
+    assertTrue(result.get().suspendedThreads().isEmpty());
+    assertNotNull(result.get().activeThread());
+  }
+
+  @Test
+  public void testCloseBeforeResumeExecution() {
+    TaskQueue taskQueue = new TaskQueue();
+    Deque<Runnable> pending = new ConcurrentLinkedDeque<>();
+    Executor exec = pending::add;
+    taskQueue.execute(() -> {
+      taskQueue.suspend(c -> c.resume());
+      taskQueue.close();
+    }, exec);
+    Runnable t = pending.pop();
+    t.run();
+    assertEquals(0, pending.size());
+  }
+
+  @Test
+  public void testCloseBetweenSuspendAndAwait() {
+    TaskQueue taskQueue = new TaskQueue();
+    Deque<Runnable> pending = new ConcurrentLinkedDeque<>();
+    Executor exec = pending::add;
+    AtomicBoolean interrupted = new AtomicBoolean();
+    taskQueue.execute(() -> {
+      CountDownLatch latch = taskQueue.suspend();
+      AtomicBoolean closed = new AtomicBoolean();
+      Thread th = new Thread(() -> {
+        TaskQueue.CloseResult res = taskQueue.close();
+        res.suspendedThreads().get(0).interrupt();
+        closed.set(true);
+      });
+      th.start();
+      while (!closed.get()) {
+        Thread.yield();
+      }
+      try {
+        latch.await();
+      } catch (InterruptedException e) {
+        interrupted.set(true);
+      }
+    }, exec);
+    Runnable t = pending.pop();
+    t.run();
+    assertTrue(interrupted.get());
+  }
+
+  @Test
+  public void testSubmitAfterClose() {
+    TaskQueue taskQueue = new TaskQueue();
+    taskQueue.close();
+    Deque<Runnable> pending = new ConcurrentLinkedDeque<>();
+    Executor exec = pending::add;
+    try {
+      taskQueue.execute(() -> {
+
+      }, exec);
+      fail();
+    } catch (RejectedExecutionException expected) {
+    }
+    assertEquals(0, pending.size());
+  }
+
+  @Test
+  public void testSuspendAfterResume() {
+    AtomicInteger seq = new AtomicInteger();
+    TaskQueue taskQueue = new TaskQueue();
+    Deque<Runnable> pending = new ConcurrentLinkedDeque<>();
+    Executor exec = pending::add;
+    taskQueue.execute(() -> {
+      assertEquals(0, seq.getAndIncrement());
+      taskQueue.execute(() -> {
+        assertEquals(2, seq.getAndIncrement());
+      }, executor);
+      CountDownLatch latch = taskQueue.suspend(cont -> {
+        assertEquals(1, seq.getAndIncrement());
+        cont.resume();
+      });
+      assertNull(latch);
+    }, exec);
+    pending.poll().run();
+    assertEquals(2, seq.get());
   }
 }

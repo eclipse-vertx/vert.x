@@ -517,7 +517,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         }
       }
       if (eventExecutor != null) {
-        ctx = new ContextImpl(this, createContextLocals(), eventLoopExecutor, ThreadingModel.OTHER, eventExecutor, workerPool, new TaskQueue(), null, closeFuture, Thread.currentThread().getContextClassLoader());
+        ctx = createContext(ThreadingModel.OTHER, eventLoopExecutor, eventExecutor, workerPool, new WorkerTaskQueue(), closeFuture, null, Thread.currentThread().getContextClassLoader());
       } else {
         ctx = createEventLoopContext(eventLoop, workerPool, Thread.currentThread().getContextClassLoader());
       }
@@ -580,7 +580,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
                                    ClassLoader tccl) {
     EventExecutor eventExecutor;
     EventLoopExecutor eventLoopExecutor = new EventLoopExecutor(eventLoop);
-    TaskQueue orderedTasks = new TaskQueue();
+    WorkerTaskQueue orderedTasks = new WorkerTaskQueue();
     WorkerPool wp;
     switch (threadingModel) {
       case EVENT_LOOP:
@@ -601,12 +601,23 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       default:
         throw new UnsupportedOperationException();
     }
+    return createContext(threadingModel, eventLoopExecutor, eventExecutor, wp, orderedTasks, closeFuture, deployment, tccl);
+  }
+
+  public ContextImpl createContext(ThreadingModel threadingModel,
+                                   EventLoopExecutor eventLoopExecutor,
+                                   EventExecutor eventExecutor,
+                                   WorkerPool workerPool,
+                                   WorkerTaskQueue orderedTasks,
+                                   CloseFuture closeFuture,
+                                   DeploymentContext deployment,
+                                   ClassLoader tccl) {
     return new ContextImpl(this,
       createContextLocals(),
       eventLoopExecutor,
       threadingModel,
       eventExecutor,
-      wp,
+      workerPool,
       orderedTasks,
       deployment,
       closeFuture,

@@ -14,10 +14,11 @@ package io.vertx.core.impl;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 
-import java.util.LinkedList;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.function.Consumer;
 
 /**
  * A task queue that always run all tasks in order. The executor to run the tasks is passed
@@ -37,8 +38,11 @@ public class TaskQueue {
 
   // @protectedby tasks
   private final LinkedList<Task> tasks = new LinkedList<>();
+  private final Set<ContinuationTask> continuations = new HashSet<>();
+  private boolean closed;
   private Executor currentExecutor;
   private Thread currentThread;
+  private ExecuteTask currentTask;
 
   private final Runnable runner;
 
@@ -50,15 +54,19 @@ public class TaskQueue {
     for (; ; ) {
       final ExecuteTask execute;
       synchronized (tasks) {
+        if (closed) {
+          return;
+        }
         Task task = tasks.poll();
         if (task == null) {
           currentExecutor = null;
           return;
         }
-        if (task instanceof ResumeTask) {
-          ResumeTask resume = (ResumeTask) task;
+        if (task instanceof ContinuationTask) {
+          ContinuationTask resume = (ContinuationTask) task;
           currentExecutor = resume.executor;
           currentThread = resume.thread;
+          currentTask = resume.task;
           resume.latch.run();
           return;
         }
@@ -72,22 +80,31 @@ public class TaskQueue {
       }
       try {
         currentThread = Thread.currentThread();
+        currentTask = execute;
         execute.runnable.run();
       } catch (Throwable t) {
         log.error("Caught unexpected Throwable", t);
       } finally {
         currentThread = null;
+        currentTask = null;
       }
     }
   }
 
   /**
-   * Return a controller for the current task.
+   * A task of this queue.
+   */
+  private interface Task {
+  }
+
+  /**
+   * Return a continuation task for the current task execution.
    *
    * @return the controller
    * @throws IllegalStateException if the current thread is not currently being executed by the queue
    */
-  public WorkerExecutor.TaskController current() {
+  private ContinuationTask continuationTask() {
+    ExecuteTask task;
     Thread thread;
     Executor executor;
     synchronized (tasks) {
@@ -96,43 +113,9 @@ public class TaskQueue {
       }
       thread = currentThread;
       executor = currentExecutor;
+      task = currentTask;
     }
-    return new WorkerExecutor.TaskController() {
-
-      final CountDownLatch latch = new CountDownLatch(1);
-
-      @Override
-      public void resume(Runnable callback) {
-        Runnable task = () -> {
-          callback.run();
-          latch.countDown();
-        };
-        synchronized (tasks) {
-          if (currentExecutor != null) {
-            tasks.addFirst(new ResumeTask(task, executor, thread));
-            return;
-          }
-          currentExecutor = executor;
-          currentThread = thread;
-        }
-        task.run();
-      }
-
-      @Override
-      public CountDownLatch suspend() {
-        if (Thread.currentThread() != thread) {
-          throw new IllegalStateException();
-        }
-        synchronized (tasks) {
-          if (currentThread == null || currentThread != Thread.currentThread()) {
-            throw new IllegalStateException();
-          }
-          currentThread = null;
-        }
-        executor.execute(runner);
-        return latch;
-      }
-    };
+    return new ContinuationTask(task, thread, executor);
   }
 
   /**
@@ -140,8 +123,11 @@ public class TaskQueue {
    *
    * @param task the task to run.
    */
-  public void execute(Runnable task, Executor executor) {
+  public void execute(Runnable task, Executor executor) throws RejectedExecutionException {
     synchronized (tasks) {
+      if (closed) {
+        throw new RejectedExecutionException("Closed");
+      }
       if (currentExecutor == null) {
         currentExecutor = executor;
         try {
@@ -167,9 +153,201 @@ public class TaskQueue {
   }
 
   /**
-   * A task of this queue.
+   * Structure holding the queue state at close time.
    */
-  private interface Task {
+  public final static class CloseResult {
+
+    private final Thread activeThread;
+    private final Runnable activeTask;
+    private final List<Runnable> suspendedTasks;
+    private final List<Thread> suspendedThreads;
+    private final List<Runnable> pendingTasks;
+
+    private CloseResult(Thread activeThread,
+                        Runnable activeTask,
+                        List<Thread> suspendedThreads,
+                        List<Runnable> suspendedTasks,
+                        List<Runnable> pendingTasks) {
+      this.activeThread = activeThread;
+      this.activeTask = activeTask;
+      this.suspendedThreads = suspendedThreads;
+      this.suspendedTasks = suspendedTasks;
+      this.pendingTasks = pendingTasks;
+    }
+
+    /**
+     * @return the thread that was active
+     */
+    public Thread activeThread() {
+      return activeThread;
+    }
+
+    public Runnable activeTask() {
+      return activeTask;
+    }
+
+    /**
+     * @return the list of pending tasks
+     */
+    public List<Runnable> pendingTasks() {
+      return pendingTasks;
+    }
+
+    /**
+     * @return the list of suspended threads
+     */
+    public List<Thread> suspendedThreads() {
+      return suspendedThreads;
+    }
+
+    /**
+     * @return the list of suspended tasks
+     */
+    public List<Runnable> suspendedTasks() {
+      return suspendedTasks;
+    }
+  }
+
+  /**
+   * Close the queue.
+   *
+   * @return a structure of suspended threads and pending tasks
+   */
+  public CloseResult close() {
+    List<Runnable> pendingTasks = Collections.emptyList();
+    List<Thread> suspendedThreads;
+    List<Runnable> suspendedTasks;
+    Thread activeThread;
+    Runnable activeTask;
+    synchronized (tasks) {
+      if (closed) {
+        throw new IllegalStateException("Already closed");
+      }
+      suspendedThreads = new ArrayList<>(continuations.size());
+      suspendedTasks = new ArrayList<>(continuations.size());
+      for (Task t : tasks) {
+        if (t instanceof ExecuteTask) {
+          if (pendingTasks.isEmpty()) {
+            pendingTasks = new LinkedList<>();
+          }
+          pendingTasks.add(((ExecuteTask)t).runnable);
+        } else if (t instanceof ContinuationTask) {
+          ContinuationTask rt = (ContinuationTask) t;
+          suspendedThreads.add(rt.thread);
+          suspendedTasks.add(rt.task.runnable);
+        }
+      }
+      tasks.clear();
+      for (ContinuationTask cont : continuations) {
+        suspendedThreads.add(cont.thread);
+        suspendedTasks.add(cont.task.runnable);
+      }
+      continuations.clear();
+      activeThread = currentThread;
+      activeTask = currentTask != null ? currentTask.runnable : null;
+      currentExecutor = null;
+      closed = true;
+    }
+    return new CloseResult(activeThread, activeTask, suspendedThreads, suspendedTasks, pendingTasks);
+  }
+
+  private class ContinuationTask extends CountDownLatch implements WorkerExecutor.Continuation, Task {
+
+    private static final int ST_CREATED = 0, ST_SUSPENDED = 1, ST_RESUMED = 2;
+
+    private final ExecuteTask task;
+    private final Thread thread;
+    private final Executor executor;
+    private int status;
+    private Runnable latch;
+
+    public ContinuationTask(ExecuteTask task, Thread thread, Executor executor) {
+      super(1);
+      this.task = task;
+      this.thread = thread;
+      this.executor = executor;
+      this.status = ST_CREATED;
+    }
+
+    @Override
+    public void resume(Runnable callback) {
+      synchronized (tasks) {
+        if (closed) {
+          return;
+        }
+        switch (status) {
+          case ST_SUSPENDED:
+            boolean removed = continuations.remove(this);
+            assert removed;
+            latch = () -> {
+              callback.run();
+              countDown();
+            };
+            if (currentExecutor != null) {
+              tasks.addFirst(this);
+              return;
+            }
+            currentExecutor = executor;
+            currentThread = thread;
+            currentTask = task;
+            break;
+          case ST_CREATED:
+            // The current task still owns the queue
+            assert currentExecutor == executor;
+            assert currentThread == thread;
+            assert currentTask == task;
+            latch = callback;
+            break;
+          default:
+            throw new IllegalStateException();
+        }
+        status = ST_RESUMED;
+      }
+      latch.run();
+    }
+
+    public boolean suspend() {
+      if (Thread.currentThread() != thread) {
+        throw new IllegalStateException();
+      }
+      synchronized (tasks) {
+        if (closed) {
+          return false;
+        }
+        if (currentThread == null || currentThread != thread) {
+          throw new IllegalStateException();
+        }
+        switch (status) {
+          case ST_RESUMED:
+            countDown();
+            return false;
+          case ST_SUSPENDED:
+            throw new IllegalStateException();
+        }
+        status = ST_SUSPENDED;
+        boolean added = continuations.add(this);
+        assert added;
+        currentThread = null;
+        currentTask = null;
+      }
+      executor.execute(runner);
+      return true;
+    }
+  }
+
+  public CountDownLatch suspend() {
+    return suspend(cont -> {});
+  }
+
+  public CountDownLatch suspend(Consumer<WorkerExecutor.Continuation> abc) {
+    ContinuationTask continuationTask = continuationTask();
+    abc.accept(continuationTask);
+    if (continuationTask.suspend()) {
+      return continuationTask;
+    } else {
+      // Closed
+      return null;
+    }
   }
 
   /**
@@ -181,20 +359,6 @@ public class TaskQueue {
     public ExecuteTask(Runnable runnable, Executor exec) {
       this.runnable = runnable;
       this.exec = exec;
-    }
-  }
-
-  /**
-   * Resume an existing task blocked on a thread
-   */
-  private static class ResumeTask implements Task {
-    private final Runnable latch;
-    private final Executor executor;
-    private final Thread thread;
-    ResumeTask(Runnable latch, Executor executor, Thread thread) {
-      this.latch = latch;
-      this.executor = executor;
-      this.thread = thread;
     }
   }
 }

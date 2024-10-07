@@ -241,6 +241,27 @@ public class ContextTest extends VertxTestBase {
   }
 
   @Test
+  public void testExecuteBlockingClose() {
+    CountDownLatch latch = new CountDownLatch(1);
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+    AtomicReference<Thread> thread = new AtomicReference<>();
+    Future<String> fut1 = ctx.executeBlocking(() -> {
+      thread.set(Thread.currentThread());
+      latch.await();
+      return "";
+    });
+    Future<String> fut2 = ctx.executeBlocking(() -> "");
+    assertWaitUntil(() -> thread.get() != null && thread.get().getState() == Thread.State.WAITING);
+    ctx.close();
+    assertWaitUntil(fut1::isComplete);
+    assertTrue(fut1.failed());
+    assertTrue(fut1.cause() instanceof InterruptedException);
+    assertWaitUntil(fut2::isComplete);
+    assertTrue(fut2.failed());
+    assertTrue(fut2.cause() instanceof RejectedExecutionException);
+  }
+
+  @Test
   public void testDefaultContextExceptionHandler() {
     RuntimeException failure = new RuntimeException();
     Context context = vertx.getOrCreateContext();
@@ -1114,5 +1135,57 @@ public class ContextTest extends VertxTestBase {
       });
     });
     await();
+  }
+
+  @Test
+  public void testInterruptActiveWorkerTask() throws Exception {
+    ContextInternal ctx = ((VertxInternal)vertx).createWorkerContext();
+    testInterruptTask(ctx, task -> {
+      ctx.runOnContext(v -> {
+        task.run();
+      });
+    });
+  }
+
+  @Test
+  public void testInterruptExecuteBlockingTask() throws Exception {
+    ContextInternal ctx = ((VertxInternal)vertx).createWorkerContext();
+    testInterruptTask(ctx, task -> {
+      ctx.executeBlocking(() -> {
+        task.run();
+        return null;
+      });
+    });
+  }
+
+  @Test
+  public void testInterruptSuspendedVirtualThreadTask() throws Exception {
+    Assume.assumeTrue(isVirtualThreadAvailable());
+    ContextInternal ctx = ((VertxInternal)vertx).createVirtualThreadContext();
+    testInterruptTask(ctx, (task) -> {
+      ctx.runOnContext(v -> {
+        task.run();
+      });
+    });
+  }
+
+  public void testInterruptTask(ContextInternal context, Consumer<Runnable> actor) throws Exception {
+    CountDownLatch blockingLatch = new CountDownLatch(1);
+    CountDownLatch closeLatch = new CountDownLatch(1);
+    AtomicBoolean interrupted = new AtomicBoolean();
+    actor.accept(() -> {
+      try {
+        closeLatch.countDown();
+        blockingLatch.await();
+      } catch (InterruptedException e) {
+        interrupted.set(true);
+      }
+    });
+    awaitLatch(closeLatch);
+    Future<Void> fut = context.close();
+    long now = System.currentTimeMillis();
+    fut.await(20, TimeUnit.SECONDS);
+    assertTrue((System.currentTimeMillis() - now) < 2000);
+    assertTrue(interrupted.get());
   }
 }

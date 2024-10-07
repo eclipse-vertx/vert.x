@@ -24,9 +24,14 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
-import java.util.concurrent.Executor;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class VirtualThreadContextTest extends VertxTestBase {
 
@@ -242,5 +247,110 @@ public class VirtualThreadContextTest extends VertxTestBase {
       fail();
     } catch (IllegalStateException expected) {
     }
+  }
+
+  @Test
+  public void testVirtualThreadInterruptOnClose() {
+    Assume.assumeTrue(isVirtualThreadAvailable());
+    ContextInternal ctx = vertx.createVirtualThreadContext();
+    ctx.exceptionHandler(err -> {
+
+    });
+    Promise<Void> promise = ctx.promise();
+    AtomicReference<Thread> ref = new AtomicReference<>();
+    AtomicBoolean interrupted = new AtomicBoolean();
+    ctx.runOnContext(v -> {
+      try {
+        ref.set(Thread.currentThread());
+        Future<Void> fut = promise.future();
+        fut.await();
+        fail();
+      } catch (Throwable e) {
+        if (e instanceof InterruptedException) {
+          interrupted.set(true);
+        }
+        throw e;
+      }
+    });
+    assertWaitUntil(() -> ref.get() != null && ref.get().getState() == Thread.State.WAITING);
+    ctx.close().await();
+    assertWaitUntil(interrupted::get);
+  }
+
+  @Test
+  public void testVirtualThreadInterruptOnClose2() {
+    Assume.assumeTrue(isVirtualThreadAvailable());
+    ContextInternal ctx = vertx.createVirtualThreadContext();
+    AtomicReference<Thread> ref = new AtomicReference<>();
+    AtomicBoolean interrupted = new AtomicBoolean();
+    CountDownLatch latch = new CountDownLatch(1);
+    ctx.runOnContext(v -> {
+      try {
+        ref.set(Thread.currentThread());
+        latch.await();
+        fail();
+      } catch (InterruptedException e) {
+        interrupted.set(true);
+      }
+    });
+    assertWaitUntil(() -> ref.get() != null && ref.get().getState() == Thread.State.WAITING);
+    ctx.close().await();
+    assertWaitUntil(interrupted::get);
+  }
+
+  @Test
+  public void testContextCloseContextSerialization() throws Exception {
+    int num = 4;
+    Assume.assumeTrue(isVirtualThreadAvailable());
+    ContextInternal ctx = vertx.createVirtualThreadContext();
+    Thread[] threads = new Thread[num];
+    List<Promise<Void>> promises = IntStream.range(0, num).mapToObj(idx -> Promise.<Void>promise()).collect(Collectors.toList());
+    Deque<CyclicBarrier> latches = new ConcurrentLinkedDeque<>();
+    CyclicBarrier[] l = new CyclicBarrier[num];
+    AtomicInteger count = new AtomicInteger();
+    for (int i = 0;i < num;i++) {
+      int idx = i;
+      CyclicBarrier latch = new CyclicBarrier(2);
+      l[i] = latch;
+      latches.add(latch);
+      ctx.runOnContext(v -> {
+        threads[idx] = Thread.currentThread();
+        try {
+          promises.get(idx).future().await();
+          fail();
+        } catch (Exception e) {
+          assertTrue(e instanceof InterruptedException);
+          CyclicBarrier barrier = latches.removeFirst();
+          int val = count.addAndGet(1);
+          assertTrue(val == 1);
+          try {
+            barrier.await();
+          } catch (Exception ex) {
+            throw new RuntimeException(ex);
+          } finally {
+            count.decrementAndGet();
+          }
+        }
+      });
+    }
+    assertWaitUntil(() -> {
+      for (Thread thread : threads) {
+        if (thread == null || thread.getState() != Thread.State.WAITING) {
+          return false;
+        }
+      }
+      return true;
+    });
+    Future<Void> f = ctx.close();
+    for (int i = 0;i < num;i++) {
+      try {
+        l[i].await();
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      } catch (BrokenBarrierException e) {
+        throw new RuntimeException(e);
+      }
+    }
+    f.await();
   }
 }
