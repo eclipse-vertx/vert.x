@@ -250,6 +250,9 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
   @Override
   protected void channelRead(ChannelHandlerContext ctx, Http3DataFrame frame) throws Exception {
     VertxHttpStreamBase stream = getLocalControlVertxHttpStream(ctx);
+    if (logger.isDebugEnabled()) {
+      logger.debug("Frame data is: {}", byteBufToString(frame.content()));
+    }
     connection.onDataRead(ctx, stream, frame.content(), 0, false);
   }
 
@@ -304,6 +307,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
           }
           super.channelRead(ctx, msg);
         } else {
+          logger.debug("Received unhandled frame type: {}", msg.getClass());
           super.channelRead(ctx, msg);
         }
       }
@@ -324,7 +328,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
         ch.pipeline().addLast(VertxHttp3ConnectionHandler.this);
       }
       //TODO: correct the settings and streamHandlerIssue:
-    }, this.streamHandlerInternal, null, null/*httpSettings.toNettyHttp3Settings()*/, false);
+    }, this.streamHandlerInternal, null, httpSettings.toNettyHttp3Settings(), false);
   }
 
   private Http3ClientConnectionHandler createHttp3ClientConnectionHandler() {
