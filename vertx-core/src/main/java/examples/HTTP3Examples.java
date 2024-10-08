@@ -36,7 +36,10 @@ public class HTTP3Examples {
   public void example01(Vertx vertx) {
 
     Http3Settings settings = new Http3Settings();
-    settings.setMaxFieldSectionSize(100000000000L);
+
+    settings.setQpackMaxTableCapacity(16384L);
+    settings.setMaxFieldSectionSize(16384L);
+    settings.setQpackMaxBlockedStreams(256L);
 
     String path = "/";
 //    String path = "/cdn-cgi/trace";
