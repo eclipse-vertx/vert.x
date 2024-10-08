@@ -406,13 +406,18 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   @Override
   public Future<Void> writeFrame(WebSocketFrame frame) {
     synchronized (conn) {
-      if (isClosed()) {
-        return context.failedFuture("WebSocket is closed");
-      }
-      PromiseInternal<Void> promise = context.promise();
-      conn.writeToChannel(encodeFrame((WebSocketFrameImpl) frame), promise);
-      return promise.future();
+      return unsafeWriteFrame((WebSocketFrameImpl) frame);
     }
+  }
+
+  protected final Future<Void> unsafeWriteFrame(WebSocketFrameImpl frame) {
+    assert Thread.holdsLock(conn);
+    if (unsafeIsClosed()) {
+      return context.failedFuture("WebSocket is closed");
+    }
+    PromiseInternal<Void> promise = context.promise();
+    conn.writeToChannel(encodeFrame(frame), promise);
+    return promise.future();
   }
 
   public final S writeFrame(WebSocketFrame frame, Handler<AsyncResult<Void>> handler) {
@@ -431,7 +436,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     writeFrame(new WebSocketFrameImpl(str));
   }
 
-  private io.netty.handler.codec.http.websocketx.WebSocketFrame encodeFrame(WebSocketFrameImpl frame) {
+  private static io.netty.handler.codec.http.websocketx.WebSocketFrame encodeFrame(WebSocketFrameImpl frame) {
     ByteBuf buf = safeBuffer(frame.getBinaryData());
     switch (frame.type()) {
       case BINARY:
@@ -459,8 +464,13 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   public boolean isClosed() {
     synchronized (conn) {
-      return closed || closeStatusCode != null;
+      return unsafeIsClosed();
     }
+  }
+
+  private boolean unsafeIsClosed() {
+    assert Thread.holdsLock(conn);
+    return closed || closeStatusCode != null;
   }
 
   void handleFrame(WebSocketFrameInternal frame) {
