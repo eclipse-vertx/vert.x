@@ -221,7 +221,8 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
   public void writeData(QuicStreamChannel stream, ByteBuf chunk, boolean end, FutureListener<Void> listener) {
     ChannelPromise promise = listener == null ? stream.voidPromise() : stream.newPromise().addListener(listener);
     if (end) {
-      promise.unvoid().addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);
+      //TODO: should be commented or not?
+//      promise.unvoid().addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);
     }
     stream.write(new DefaultHttp3DataFrame(chunk), promise);
 
