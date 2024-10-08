@@ -388,7 +388,8 @@ public class Http3Test extends HttpTest {
     client.request(new RequestOptions(requestOptions).setTimeout(10000))
       .compose(HttpClientRequest::send)
       .onComplete(onSuccess(resp -> {
-        assertEquals(Integer.MAX_VALUE, resp.request().connection().remoteSettings().getMaxHeaderListSize());
+        assertEquals(Http3Settings.DEFAULT_MAX_FIELD_SECTION_SIZE,
+          resp.request().connection().remoteHttpSettings().getHttp3Settings().getMaxFieldSectionSize());
         testComplete();
       }));
     await();
