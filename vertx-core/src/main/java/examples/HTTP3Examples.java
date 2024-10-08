@@ -35,12 +35,6 @@ public class HTTP3Examples {
 
   public void example01(Vertx vertx) {
 
-    Http3Settings settings = new Http3Settings();
-
-    settings.setQpackMaxTableCapacity(16384L);
-    settings.setMaxFieldSectionSize(16384L);
-    settings.setQpackMaxBlockedStreams(256L);
-
     String path = "/";
 //    String path = "/cdn-cgi/trace";
     int port = 443;
@@ -63,7 +57,6 @@ public class HTTP3Examples {
       setUseAlpn(true).
       setForceSni(true).
       setDefaultHost(host).
-      setInitialHttp3Settings(settings).
       setVerifyHost(false).
       setTrustAll(true).
       setProtocolVersion(HttpVersion.HTTP_3);
@@ -129,13 +122,6 @@ public class HTTP3Examples {
   }
 
   public void example02Server(Vertx vertx) throws Exception {
-    Http3Settings settings = new Http3Settings();
-    settings
-      .setQpackMaxTableCapacity(4096)
-      .setMaxFieldSectionSize(16384)
-      .setQpackMaxBlockedStreams(256)
-      .setEnableConnectProtocol(0)
-      .setH3Datagram(1);
 
     HttpServerOptions options = new HttpServerOptions();
 
@@ -156,7 +142,6 @@ public class HTTP3Examples {
       .setReadIdleTimeout(1)
       .setWriteIdleTimeout(1)
       .setIdleTimeoutUnit(TimeUnit.HOURS)
-      .setInitialHttp3Settings(settings)
       .setHttp3(true)
       .setUseAlpn(true)
       .setSsl(true)
