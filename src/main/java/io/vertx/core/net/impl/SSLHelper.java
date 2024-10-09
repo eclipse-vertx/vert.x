@@ -11,12 +11,15 @@
 
 package io.vertx.core.net.impl;
 
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.handler.ssl.OpenSsl;
 import io.netty.handler.ssl.SslProvider;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.ClientOptionsBase;
@@ -56,6 +59,27 @@ public class SSLHelper {
     CLIENT_AUTH_MAPPING.put(ClientAuth.REQUEST, io.netty.handler.ssl.ClientAuth.OPTIONAL);
     CLIENT_AUTH_MAPPING.put(ClientAuth.NONE, io.netty.handler.ssl.ClientAuth.NONE);
   }
+
+  ByteBufAllocator clientByteBufAllocator(SslContextProvider ctxProvider) {
+    if (usesJDKSSLWithPooledHeapBuffers(ctxProvider)) {
+      return PooledByteBufAllocator.DEFAULT;
+    }
+    return PartialPooledByteBufAllocator.INSTANCE;
+  }
+
+  ByteBufAllocator serverByteBufAllocator(SslContextProvider ctxProvider) {
+    if (!ssl || usesJDKSSLWithPooledHeapBuffers(ctxProvider)) {
+      return PooledByteBufAllocator.DEFAULT;
+    }
+    return PartialPooledByteBufAllocator.INSTANCE;
+  }
+
+  private boolean usesJDKSSLWithPooledHeapBuffers(SslContextProvider ctxProvider) {
+    return ssl && sslEngineOptions instanceof JdkSSLEngineOptions &&
+      ctxProvider.sslProvider() == SslProvider.JDK &&
+      ((JdkSSLEngineOptions) sslEngineOptions).isPooledHeapBuffers();
+  }
+
 
   /**
    * Resolve the ssl engine options to use for properly running the configured options.
@@ -149,11 +173,14 @@ public class SSLHelper {
 
   private class EngineConfig {
 
+    private final SslProvider sslProvider;
     private final SSLOptions sslOptions;
     private final Supplier<SslContextFactory> supplier;
     private final boolean useWorkerPool;
 
-    public EngineConfig(SSLOptions sslOptions, Supplier<SslContextFactory> supplier, boolean useWorkerPool) {
+    public EngineConfig(SslProvider sslProvider, SSLOptions sslOptions, Supplier<SslContextFactory> supplier,
+                        boolean useWorkerPool) {
+      this.sslProvider = sslProvider;
       this.sslOptions = sslOptions;
       this.supplier = supplier;
       this.useWorkerPool = useWorkerPool;
@@ -161,6 +188,7 @@ public class SSLHelper {
 
     SslContextProvider sslContextProvider() {
       return new SslContextProvider(
+        sslProvider,
         clientAuth,
         endpointIdentificationAlgorithm,
         applicationProtocols,
@@ -291,18 +319,26 @@ public class SSLHelper {
       }).compose(v2 -> ctx.<EngineConfig>executeBlockingInternal(p -> {
         Supplier<SslContextFactory> supplier;
         boolean useWorkerPool;
+        SslProvider sslProvider;
         try {
           SSLEngineOptions resolvedEngineOptions = resolveEngineOptions(sslEngineOptions, useAlpn);
           supplier = resolvedEngineOptions::sslContextFactory;
           useWorkerPool = resolvedEngineOptions.getUseWorkerThread();
+          if (resolvedEngineOptions instanceof JdkSSLEngineOptions) {
+            sslProvider = SslProvider.JDK;
+          } else if (resolvedEngineOptions instanceof OpenSSLEngineOptions) {
+            sslProvider = SslProvider.OPENSSL;
+          } else {
+            sslProvider = SslProvider.JDK;
+          }
         } catch (Exception e) {
           p.fail(e);
           return;
         }
-        p.complete(new EngineConfig(sslOptions, supplier, useWorkerPool));
+        p.complete(new EngineConfig(sslProvider, sslOptions, supplier, useWorkerPool));
       })).onComplete(promise);
     } else {
-      sslContextFactorySupplier = Future.succeededFuture(new EngineConfig(sslOptions, () -> new DefaultSslContextFactory(SslProvider.JDK, false), SSLEngineOptions.DEFAULT_USE_WORKER_POOL));
+      sslContextFactorySupplier = Future.succeededFuture(new EngineConfig(SslProvider.JDK, sslOptions, () -> new DefaultSslContextFactory(SslProvider.JDK, false), SSLEngineOptions.DEFAULT_USE_WORKER_POOL));
     }
     return sslContextFactorySupplier;
   }
