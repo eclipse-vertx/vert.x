@@ -199,6 +199,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
 
   public void writeHeaders(QuicStreamChannel stream, VertxHttpHeaders headers, boolean end, StreamPriorityBase priority,
                            boolean checkFlush, FutureListener<Void> listener) {
+    logger.debug("WriteHeaders called");
     stream.updatePriority(new QuicStreamPriority(priority.urgency(), priority.isIncremental()));
     Http3Headers http3Headers = headers.getHeaders();
 
@@ -229,12 +230,6 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
     checkFlush();
   }
 
-  protected void channelInputShutdown(ChannelHandlerContext ctx) {
-    VertxHttpStreamBase stream = getLocalControlVertxHttpStream(ctx);
-    connection.onDataRead(ctx, stream, Unpooled.buffer(), 0, true);
-    ctx.close();
-  }
-
   private void checkFlush() {
     if (!read) {
       chctx.channel().flush();
@@ -243,6 +238,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
 
   @Override
   protected void channelRead(ChannelHandlerContext ctx, Http3HeadersFrame frame) throws Exception {
+    read = true;
     VertxHttpStreamBase stream = getLocalControlVertxHttpStream(ctx);
     logger.debug("Received Http3HeadersFrame frame.");
     connection.onHeadersRead(ctx, stream, frame.headers(), false, (QuicStreamChannel) ctx.channel());
@@ -250,6 +246,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
 
   @Override
   protected void channelRead(ChannelHandlerContext ctx, Http3DataFrame frame) throws Exception {
+    read = true;
     VertxHttpStreamBase stream = getLocalControlVertxHttpStream(ctx);
     if (logger.isDebugEnabled()) {
       logger.debug("Frame data is: {}", byteBufToString(frame.content()));
@@ -257,15 +254,25 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
     connection.onDataRead(ctx, stream, frame.content(), 0, false);
   }
 
-  @Override
-  protected void channelInputClosed(ChannelHandlerContext ctx) throws Exception {
+  protected void channelInputShutdown(ChannelHandlerContext ctx) {
+    logger.debug("ChannelInputShutdown called");
     VertxHttpStreamBase stream = getLocalControlVertxHttpStream(ctx);
     connection.onDataRead(ctx, stream, Unpooled.buffer(), 0, true);
+    ctx.close();
+  }
+
+  @Override
+  protected void channelInputClosed(ChannelHandlerContext ctx) throws Exception {
+    logger.debug("ChannelInputClosed called");
+    VertxHttpStreamBase stream = getLocalControlVertxHttpStream(ctx);
+    connection.onDataRead(ctx, stream, Unpooled.buffer(), 0, true);
+    ctx.close();
   }
 
   @Override
   public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
     read = false;
+    logger.debug("ChannelReadComplete called");
     super.channelReadComplete(ctx);
   }
 
@@ -317,7 +324,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
 
   private String byteBufToString(ByteBuf content) {
     byte[] arr = new byte[content.readableBytes()];
-    content.retain().readBytes(arr);
+    content.getBytes(content.readerIndex(), arr);
     return new String(arr);
   }
 
