@@ -11,7 +11,6 @@
 
 package io.vertx.core.http;
 
-import io.netty.incubator.codec.http3.DefaultHttp3SettingsFrame;
 import io.netty.incubator.codec.http3.Http3SettingsFrame;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
@@ -35,6 +34,12 @@ import java.util.Set;
 @DataObject
 @JsonGen(publicConverter = false)
 public class Http3Settings {
+
+  public final static Set<Long> VALID_H3_SETTINGS_KEYS = Set.of(
+    Http3SettingsFrame.HTTP3_SETTINGS_QPACK_MAX_TABLE_CAPACITY,
+    Http3SettingsFrame.HTTP3_SETTINGS_MAX_FIELD_SECTION_SIZE,
+    Http3SettingsFrame.HTTP3_SETTINGS_QPACK_BLOCKED_STREAMS
+  );
 
   public final static long HTTP3_SETTINGS_ENABLE_CONNECT_PROTOCOL = 0x08;
   public final static long HTTP3_SETTINGS_H3_DATAGRAM = 0x33;
