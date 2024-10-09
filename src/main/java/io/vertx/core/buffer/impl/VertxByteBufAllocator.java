@@ -19,12 +19,15 @@ import io.netty.util.internal.PlatformDependent;
 
 public abstract class VertxByteBufAllocator extends AbstractByteBufAllocator {
 
+  private static final boolean REUSE_NETTY_ALLOCATOR = Boolean.getBoolean("vertx.reuseNettyAllocators");
+
   /**
-   * Vert.x pooled allocator.
+   * Vert.x pooled allocator. It should prefers direct buffers, unless {@link PlatformDependent#hasUnsafe()} is {@code false}.
    */
-  public static final ByteBufAllocator POOLED_ALLOCATOR = new PooledByteBufAllocator(true);
+  public static final ByteBufAllocator POOLED_ALLOCATOR = (REUSE_NETTY_ALLOCATOR && PooledByteBufAllocator.defaultPreferDirect()) ?
+    PooledByteBufAllocator.DEFAULT : new PooledByteBufAllocator(true);
   /**
-   * Vert.x shared unpooled allocator.
+   * Vert.x shared unpooled allocator. It prefers non-direct buffers.
    */
   public static final ByteBufAllocator UNPOOLED_ALLOCATOR = new UnpooledByteBufAllocator(false);
 
@@ -42,6 +45,10 @@ public abstract class VertxByteBufAllocator extends AbstractByteBufAllocator {
     }
   };
 
+  /**
+   * Vert.x shared unpooled heap buffers allocator.<br>
+   * Differently from {@link #UNPOOLED_ALLOCATOR}, its buffers are not reference-counted and array-backed.
+   */
   public static final VertxByteBufAllocator DEFAULT = PlatformDependent.hasUnsafe() ? UNSAFE_IMPL : IMPL;
 
   @Override
