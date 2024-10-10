@@ -17,7 +17,6 @@ import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.metrics.Measured;
-import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.TrafficShapingOptions;
@@ -77,6 +76,18 @@ public interface HttpServer extends Measured {
    */
   @Fluent
   HttpServer connectionHandler(Handler<HttpConnection> handler);
+
+  /**
+   * Set a handler for WebSocket handshake.
+   *
+   * <p>When an inbound HTTP request presents a WebSocket upgrade, this handler is called first. The handler
+   * can chose to {@link ServerWebSocketHandshake#accept()} or {@link ServerWebSocketHandshake#reject()} the request.</p>
+   *
+   * <p>Setting no handler, implicitly accepts any HTTP request connection presenting an upgrade header and upgrades it
+   * to a WebSocket.</p>
+   */
+  @Fluent
+  HttpServer webSocketHandshakeHandler(Handler<ServerWebSocketHandshake> handler);
 
   /**
    * Set an exception handler called for socket errors happening before the HTTP connection

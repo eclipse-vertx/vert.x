@@ -74,19 +74,4 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
     return query;
   }
 
-  @Override
-  public Future<Integer> setHandshake(Future<Integer> future) {
-    throw new IllegalStateException("WebSocket already sent");
-  }
-
-  @Override
-  public void accept() {
-    throw new IllegalStateException("WebSocket already sent");
-  }
-
-  @Override
-  public void reject(int sc) {
-    throw new IllegalStateException("WebSocket already sent");
-  }
-
 }

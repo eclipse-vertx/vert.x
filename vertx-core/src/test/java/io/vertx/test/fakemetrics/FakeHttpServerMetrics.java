@@ -29,11 +29,11 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class FakeHttpServerMetrics extends FakeTCPMetrics implements HttpServerMetrics<HttpServerMetric, WebSocketMetric, SocketMetric> {
 
-  private final ConcurrentMap<WebSocketBase, WebSocketMetric> webSockets = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, WebSocketMetric> webSockets = new ConcurrentHashMap<>();
   private final Set<HttpServerMetric> requests = ConcurrentHashMap.newKeySet();
 
   public WebSocketMetric getWebSocketMetric(ServerWebSocket ws) {
-    return webSockets.get(ws);
+    return webSockets.get(ws.path());
   }
 
   public HttpServerMetric getRequestMetric(HttpServerRequest request) {
@@ -86,7 +86,7 @@ public class FakeHttpServerMetrics extends FakeTCPMetrics implements HttpServerM
   @Override
   public WebSocketMetric connected(SocketMetric socketMetric, HttpServerMetric requestMetric, ServerWebSocket serverWebSocket) {
     WebSocketMetric metric = new WebSocketMetric(serverWebSocket);
-    if (webSockets.put(serverWebSocket, metric) != null) {
+    if (webSockets.put(serverWebSocket.path(), metric) != null) {
       throw new AssertionError();
     }
     return metric;
@@ -94,7 +94,7 @@ public class FakeHttpServerMetrics extends FakeTCPMetrics implements HttpServerM
 
   @Override
   public void disconnected(WebSocketMetric serverWebSocketMetric) {
-    webSockets.remove(serverWebSocketMetric.ws);
+    webSockets.remove(((ServerWebSocket)serverWebSocketMetric.ws).path());
   }
 
   @Override
