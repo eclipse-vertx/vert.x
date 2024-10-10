@@ -46,6 +46,7 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
   final HttpServerOptions options;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<ServerWebSocket> webSocketHandler;
+  private Handler<ServerWebSocketHandshake> webSocketHandhakeHandler;
   private Handler<HttpServerRequest> invalidRequestHandler;
   private Handler<HttpConnection> connectionHandler;
   private Handler<Throwable> exceptionHandler;
@@ -115,6 +116,15 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
       throw new IllegalStateException("Please set handler before server is listening");
     }
     webSocketHandler = handler;
+    return this;
+  }
+
+  @Override
+  public HttpServer webSocketHandshakeHandler(Handler<ServerWebSocketHandshake> handler) {
+    if (isListening()) {
+      throw new IllegalStateException("Please set handler before server is listening");
+    }
+    webSocketHandhakeHandler = handler;
     return this;
   }
 
@@ -196,6 +206,7 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
         requestHandler,
         invalidRequestHandler,
         webSocketHandler,
+        webSocketHandhakeHandler,
         connectionHandler,
         exceptionHandler);
       HttpServerConnectionInitializer initializer = new HttpServerConnectionInitializer(

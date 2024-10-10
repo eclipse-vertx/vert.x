@@ -36,7 +36,7 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-final class WebSocketConnection extends VertxConnection {
+final class WebSocketConnectionImpl extends VertxConnection {
 
   private final long closingTimeoutMS;
   private ScheduledFuture<?> closingTimeout;
@@ -48,7 +48,7 @@ final class WebSocketConnection extends VertxConnection {
   private Object closeReason;
   private boolean closeReceived;
 
-  WebSocketConnection(ContextInternal context, ChannelHandlerContext chctx, boolean server, long closingTimeoutMS, TCPMetrics metrics) {
+  WebSocketConnectionImpl(ContextInternal context, ChannelHandlerContext chctx, boolean server, long closingTimeoutMS, TCPMetrics metrics) {
     super(context, chctx);
     this.closingTimeoutMS = closingTimeoutMS;
     this.metrics = metrics;
@@ -59,7 +59,7 @@ final class WebSocketConnection extends VertxConnection {
     return webSocket;
   }
 
-  WebSocketConnection webSocket(WebSocketImplBase<?> webSocket) {
+  WebSocketConnectionImpl webSocket(WebSocketImplBase<?> webSocket) {
     this.webSocket = webSocket;
     return this;
   }

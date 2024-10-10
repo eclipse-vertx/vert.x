@@ -573,7 +573,6 @@ public class MetricsTest extends VertxTestBase {
     CountDownLatch latch = new CountDownLatch(1);
     server.webSocketHandler(ws -> {
       wsRef.set(ws);
-      ws.accept();
       FakeHttpServerMetrics metrics = FakeMetricsBase.getMetrics(server);
       WebSocketMetric metric = metrics.getWebSocketMetric(ws);
       assertNotNull(metric);
