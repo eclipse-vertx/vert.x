@@ -21,6 +21,10 @@ import org.junit.Assume;
 import org.junit.Test;
 
 import java.lang.reflect.Method;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -157,6 +161,48 @@ public class VirtualThreadDeploymentTest extends VertxTestBase {
     }
     await();
     Assert.assertEquals(5, max.get());
+  }
+  @Test
+  public void testHttpClientStopRequestInProgress() throws Exception {
+    Assume.assumeTrue(isVirtualThreadAvailable());
+    AtomicInteger inflight = new AtomicInteger();
+    vertx.createHttpServer().requestHandler(request -> {
+      inflight.incrementAndGet();
+    }).listen(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST);
+    int numReq = 10;
+    Set<Thread> threads = Collections.synchronizedSet(new HashSet<>());
+    Set<Thread> interruptedThreads = Collections.synchronizedSet(new HashSet<>());
+    String deploymentID = vertx.deployVerticle(new VerticleBase() {
+        HttpClient client;
+        @Override
+        public Future<?> start() throws Exception {
+          client = vertx.createHttpClient(new PoolOptions().setHttp1MaxSize(numReq));
+          for (int i = 0;i < numReq;i++) {
+            vertx.runOnContext(v -> {
+              threads.add(Thread.currentThread());
+              try {
+                client
+                  .request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, "localhost", "/")
+                  .compose(HttpClientRequest::send)
+                  .await();
+              } catch (Throwable e) {
+                if (e instanceof InterruptedException) {
+                  interruptedThreads.add(Thread.currentThread());
+                }
+              }
+            });
+          }
+          return super.start();
+        }
+        @Override
+        public Future<?> stop() {
+          return client.close();
+        }
+      }, new DeploymentOptions().setThreadingModel(ThreadingModel.VIRTUAL_THREAD))
+      .await();
+    assertWaitUntil(() -> inflight.get() == numReq);
+    vertx.undeploy(deploymentID).await();
+    assertEquals(threads, interruptedThreads);
   }
 
   @Test
