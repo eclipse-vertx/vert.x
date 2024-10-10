@@ -654,6 +654,28 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
       closeEvent = new ShutdownEvent(0, TimeUnit.SECONDS);
     }
     graceFuture = channelGroup.newCloseFuture();
+    listenContext.removeCloseHook(this);
+    Map<ServerID, NetServerInternal> servers = vertx.sharedTcpServers();
+    boolean hasHandlers;
+    synchronized (servers) {
+      ServerChannelLoadBalancer balancer = actualServer.channelBalancer;
+      balancer.removeWorker(eventLoop, worker);
+      hasHandlers = balancer.hasHandlers();
+    }
+    // THIS CAN BE RACY
+    if (hasHandlers) {
+      // The actual server still has handlers so we don't actually close it
+      broadcastShutdownEvent(completion);
+    } else {
+      Promise<Void> p2 = Promise.promise();
+      actualServer.actualClose(p2);
+      p2.future().onComplete(ar -> {
+        broadcastShutdownEvent(completion);
+      });
+    }
+  }
+
+  private void broadcastShutdownEvent(Promise<Void> completion) {
     for (Channel ch : channelGroup) {
       ch.pipeline().fireUserEventTriggered(closeEvent);
     }
@@ -685,28 +707,10 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
       return;
     }
     listening = false;
-    listenContext.removeCloseHook(this);
-    Map<ServerID, NetServerInternal> servers = vertx.sharedTcpServers();
-    boolean hasHandlers;
-    synchronized (servers) {
-      ServerChannelLoadBalancer balancer = actualServer.channelBalancer;
-      balancer.removeWorker(eventLoop, worker);
-      hasHandlers = balancer.hasHandlers();
-    }
-    channelGroup.close();
-    // THIS CAN BE RACY
-    if (hasHandlers) {
-      // The actual server still has handlers so we don't actually close it
-      completion.complete();
-    } else {
-      actualServer.actualClose(completion);
-    }
-    // TODO ADD THIS LATER AS IT  CAN SELF DEADLOCK TESTS AND WE DONT NEED IT RIGHT NOW
-//    .addListener(new GenericFutureListener<io.netty.util.concurrent.Future<? super Void>>() {
-//      @Override
-//      public void operationComplete(io.netty.util.concurrent.Future<? super Void> future) throws Exception {
-//      }
+    ChannelGroupFuture f = channelGroup.close();
+//    f.addListener(future -> {
 //    });
+    completion.complete();
   }
 
   private void actualClose(Promise<Void> done) {
