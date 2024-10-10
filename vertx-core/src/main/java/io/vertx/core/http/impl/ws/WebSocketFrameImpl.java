@@ -81,6 +81,15 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
   }
 
   /**
+   * Creates a new raw frame from with the specified encoded content.
+   */
+  public WebSocketFrameImpl(WebSocketFrameType type, byte[] utf8TextData, boolean isFinalFrame) {
+    this.type = type;
+    this.isFinalFrame = isFinalFrame;
+    this.binaryData = Unpooled.wrappedBuffer(utf8TextData);
+  }
+
+  /**
    * Creates a new text frame from with the specified string.
    */
   public WebSocketFrameImpl(String textData, boolean isFinalFrame) {
