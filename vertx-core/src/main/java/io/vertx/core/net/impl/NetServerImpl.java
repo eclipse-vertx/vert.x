@@ -139,13 +139,6 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     return closeSequence.close();
   }
 
-  public Future<Void> close() {
-    ContextInternal context = vertx.getOrCreateContext();
-    Promise<Void> promise = context.promise();
-    close(promise);
-    return promise.future();
-  }
-
   @Override
   public Future<NetServer> listen(SocketAddress localAddress) {
     return listen(vertx.getOrCreateContext(), localAddress);
@@ -169,7 +162,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
 
   @Override
   public synchronized void close(Promise<Void> completion) {
-    doClose(completion);
+    shutdown(0L, TimeUnit.SECONDS).onComplete(completion);
   }
 
   public boolean isClosed() {
@@ -583,18 +576,48 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     return actualServer != null ? actualServer.metrics : null;
   }
 
-  private void doShutdown(Promise<Void> p) {
+  private void doShutdown(Promise<Void> completion) {
+    if (!listening) {
+      completion.complete();
+      return;
+    }
     if (closeEvent == null) {
       closeEvent = new ShutdownEvent(0, TimeUnit.SECONDS);
     }
     graceFuture = channelGroup.newCloseFuture();
+    listenContext.removeCloseHook(this);
+    Map<ServerID, NetServerInternal> servers = vertx.sharedTcpServers();
+    boolean hasHandlers;
+    synchronized (servers) {
+      ServerChannelLoadBalancer balancer = actualServer.channelBalancer;
+      balancer.removeWorker(eventLoop, worker);
+      hasHandlers = balancer.hasHandlers();
+    }
+    // THIS CAN BE RACY
+    if (hasHandlers) {
+      // The actual server still has handlers so we don't actually close it
+      broadcastShutdownEvent(completion);
+    } else {
+      Promise<Void> p2 = Promise.promise();
+      actualServer.actualClose(p2);
+      p2.future().onComplete(ar -> {
+        broadcastShutdownEvent(completion);
+      });
+    }
+  }
+
+  private void broadcastShutdownEvent(Promise<Void> completion) {
     for (Channel ch : channelGroup) {
       ch.pipeline().fireUserEventTriggered(closeEvent);
     }
-    p.complete();
+    completion.complete();
   }
 
   private void doGrace(Promise<Void> completion) {
+    if (!listening) {
+      completion.complete();
+      return;
+    }
     if (closeEvent.timeout() > 0L) {
       long timerID = vertx.setTimer(closeEvent.timeUnit().toMillis(closeEvent.timeout()), v -> {
         completion.complete();
@@ -615,28 +638,10 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
       return;
     }
     listening = false;
-    listenContext.removeCloseHook(this);
-    Map<ServerID, NetServerInternal> servers = vertx.sharedTcpServers();
-    boolean hasHandlers;
-    synchronized (servers) {
-      ServerChannelLoadBalancer balancer = actualServer.channelBalancer;
-      balancer.removeWorker(eventLoop, worker);
-      hasHandlers = balancer.hasHandlers();
-    }
-    channelGroup.close();
-    // THIS CAN BE RACY
-    if (hasHandlers) {
-      // The actual server still has handlers so we don't actually close it
-      completion.complete();
-    } else {
-      actualServer.actualClose(completion);
-    }
-    // TODO ADD THIS LATER AS IT  CAN SELF DEADLOCK TESTS AND WE DONT NEED IT RIGHT NOW
-//    .addListener(new GenericFutureListener<io.netty.util.concurrent.Future<? super Void>>() {
-//      @Override
-//      public void operationComplete(io.netty.util.concurrent.Future<? super Void> future) throws Exception {
-//      }
+    ChannelGroupFuture f = channelGroup.close();
+//    f.addListener(future -> {
 //    });
+    completion.complete();
   }
 
   private void actualClose(Promise<Void> done) {
