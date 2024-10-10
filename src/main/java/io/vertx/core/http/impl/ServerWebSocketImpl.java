@@ -21,13 +21,14 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
-import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.*;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.WebSocketFrame;
+import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
+
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
 import static io.vertx.core.http.impl.HttpUtils.*;
@@ -44,6 +45,8 @@ import static io.vertx.core.spi.metrics.Metrics.*;
  */
 public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> implements ServerWebSocket {
 
+  private static final AtomicReferenceFieldUpdater<ServerWebSocketImpl, Integer> STATUS_UPDATER =
+    AtomicReferenceFieldUpdater.newUpdater(ServerWebSocketImpl.class, Integer.class, "status");
   private final Http1xServerConnection conn;
   private final long closingTimeoutMS;
   private final String scheme;
@@ -54,7 +57,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
   private final String query;
   private final WebSocketServerHandshaker handshaker;
   private Http1xServerRequest request;
-  private Integer status;
+  private volatile Integer status;
   private Promise<Integer> handshakePromise;
 
   ServerWebSocketImpl(ContextInternal context,
@@ -158,19 +161,17 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
   @Override
   public Future<Void> writeFrame(WebSocketFrame frame) {
     synchronized (conn) {
-      Boolean check = checkAccept();
+      // if lucky, tryHandshake will return true without any need of synchronization lock on connection
+      final Boolean check = tryHandshake(SC_SWITCHING_PROTOCOLS);
       if (check == null) {
         throw new IllegalStateException("Cannot write to WebSocket, it is pending accept or reject");
       }
       if (!check) {
         throw new IllegalStateException("Cannot write to WebSocket, it has been rejected");
       }
-      return super.writeFrame(frame);
+      // this is not going through super.writeFrame as we want to avoid synchronizing against the connection
+      return super.unsafeWriteFrame((WebSocketFrameImpl) frame);
     }
-  }
-
-  private Boolean checkAccept() {
-    return tryHandshake(SC_SWITCHING_PROTOCOLS);
   }
 
   private void handleHandshake(int sc) {
@@ -179,7 +180,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
         if (sc == SC_SWITCHING_PROTOCOLS) {
           doHandshake();
         } else {
-          status = sc;
+          STATUS_UPDATER.lazySet(this, sc);
           HttpUtils.sendError(conn.channel(), HttpResponseStatus.valueOf(sc));
         }
       }
@@ -198,7 +199,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
       request = null;
     }
     response.completeHandshake();
-    status = SWITCHING_PROTOCOLS.code();
+    STATUS_UPDATER.lazySet(this, SWITCHING_PROTOCOLS.code());
     subProtocol(handshaker.selectedSubprotocol());
     // remove compressor as its not needed anymore once connection was upgraded to websockets
     ChannelPipeline pipeline = channel.pipeline();
@@ -210,9 +211,19 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
   }
 
   Boolean tryHandshake(int sc) {
+    Integer status = this.status;
+    if (status != null) {
+      return status == sc;
+    }
     synchronized (conn) {
-      if (status == null && handshakePromise == null) {
+      assert status == null;
+      status = this.status;
+      if (status != null) {
+        return status == sc;
+      }
+      if (handshakePromise == null) {
         setHandshake(Future.succeededFuture(sc));
+        status = this.status;
       }
       return status == null ? null : status == sc;
     }
