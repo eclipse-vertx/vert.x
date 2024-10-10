@@ -139,13 +139,6 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     return closeSequence.close();
   }
 
-  public Future<Void> close() {
-    ContextInternal context = vertx.getOrCreateContext();
-    Promise<Void> promise = context.promise();
-    close(promise);
-    return promise.future();
-  }
-
   @Override
   public Future<NetServer> listen(SocketAddress localAddress) {
     return listen(vertx.getOrCreateContext(), localAddress);
@@ -169,7 +162,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
 
   @Override
   public synchronized void close(Promise<Void> completion) {
-    doClose(completion);
+    shutdown(0L, TimeUnit.SECONDS).onComplete(completion);
   }
 
   public boolean isClosed() {
@@ -583,7 +576,11 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     return actualServer != null ? actualServer.metrics : null;
   }
 
-  private void doShutdown(Promise<Void> p) {
+  private void doShutdown(Promise<Void> completion) {
+    if (!listening) {
+      completion.complete();
+      return;
+    }
     if (closeEvent == null) {
       closeEvent = new ShutdownEvent(0, TimeUnit.SECONDS);
     }
@@ -591,10 +588,14 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     for (Channel ch : channelGroup) {
       ch.pipeline().fireUserEventTriggered(closeEvent);
     }
-    p.complete();
+    completion.complete();
   }
 
   private void doGrace(Promise<Void> completion) {
+    if (!listening) {
+      completion.complete();
+      return;
+    }
     if (closeEvent.timeout() > 0L) {
       long timerID = vertx.setTimer(closeEvent.timeUnit().toMillis(closeEvent.timeout()), v -> {
         completion.complete();
