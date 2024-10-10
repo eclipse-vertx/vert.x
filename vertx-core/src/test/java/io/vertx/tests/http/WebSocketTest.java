@@ -1155,8 +1155,6 @@ public class WebSocketTest extends VertxTestBase {
     Buffer buff = Buffer.buffer("AAA");
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setWebSocketSubProtocols(serverSubProtocols)).webSocketHandler(ws -> {
       assertEquals(path, ws.path());
-      assertNull(ws.subProtocol());
-      ws.accept();
       assertEquals("commonproto", ws.subProtocol());
       ws.writeFrame(io.vertx.core.http.WebSocketFrame.binaryFrame(buff, true));
     });
@@ -1383,7 +1381,9 @@ public class WebSocketTest extends VertxTestBase {
 
     String path = "/some/path";
 
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).webSocketHandler(ws -> {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT))
+      .webSocketHandler(ws -> {})
+      .webSocketHandshakeHandler(ws -> {
       assertEquals(path, ws.path());
       if (rejectionStatus != null) {
         ws.reject(rejectionStatus);
@@ -1414,24 +1414,14 @@ public class WebSocketTest extends VertxTestBase {
   @Test
   public void testAsyncAccept() throws InterruptedException {
     AtomicBoolean resolved = new AtomicBoolean();
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).webSocketHandler(ws -> {
-      Promise<Integer> promise = Promise.promise();
-      ws.setHandshake(promise.future());
-      try {
-        ws.accept();
-        fail();
-      } catch (IllegalStateException ignore) {
-        // Expected
-      }
-      try {
-        ws.writeTextMessage("hello");
-        fail();
-      } catch (IllegalStateException ignore) {
-        // Expected
-      }
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT))
+      .webSocketHandler(ws -> {
+
+      })
+      .webSocketHandshakeHandler(handshake -> {
       vertx.setTimer(500, id -> {
         resolved.set(true);
-        promise.complete(101);
+        handshake.accept();
       });
     });
     awaitFuture(server.listen());
@@ -1440,33 +1430,6 @@ public class WebSocketTest extends VertxTestBase {
       assertTrue(resolved.get());
       testComplete();
     }));
-    await();
-  }
-
-  @Test
-  public void testCloseAsyncPending() throws InterruptedException {
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).webSocketHandler(ws -> {
-      Promise<Integer> promise = Promise.promise();
-      Future<Integer> result = ws.setHandshake(promise.future());
-      try {
-        ws.close();
-        fail();
-      } catch (IllegalStateException expected) {
-      }
-      promise.complete(101);
-      ws.close();
-//      assertTrue(result.isComplete());
-//      assertEquals(101, (int)result.result());
-    });
-    awaitFuture(server.listen());
-    client = vertx.createWebSocketClient();
-    vertx.runOnContext(v1 -> {
-      client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path").onComplete(onSuccess(ws -> {
-        ws.closeHandler(v2 -> {
-          testComplete();
-        });
-      }));
-    });
     await();
   }
 
@@ -1890,7 +1853,6 @@ public class WebSocketTest extends VertxTestBase {
     await();
   }
 
-  @Ignore
   @Test
   public void testReceiveHttpResponseHeadersOnClient() throws InterruptedException {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).requestHandler(req -> {
@@ -4033,7 +3995,6 @@ public class WebSocketTest extends VertxTestBase {
       req.response().headers().set(headerKey, headerValue);
       req.toWebSocket()
         .onComplete(onSuccess(ws -> {
-          ws.accept();
           ws.writeFinalTextFrame(message);
         }));
     });

@@ -994,8 +994,8 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
         }
         if (future.isSuccess()) {
 
-          VertxHandler<WebSocketConnection> handler = VertxHandler.create(ctx -> {
-            WebSocketConnection conn = new WebSocketConnection(context, ctx, false, TimeUnit.SECONDS.toMillis(options.getClosingTimeout()), client.metrics());
+          VertxHandler<WebSocketConnectionImpl> handler = VertxHandler.create(ctx -> {
+            WebSocketConnectionImpl conn = new WebSocketConnectionImpl(context, ctx, false, TimeUnit.SECONDS.toMillis(options.getClosingTimeout()), client.metrics());
             WebSocketImpl webSocket = new WebSocketImpl(
               context,
               conn,
