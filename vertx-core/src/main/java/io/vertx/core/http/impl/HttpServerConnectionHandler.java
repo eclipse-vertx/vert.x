@@ -21,6 +21,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
+import io.vertx.core.http.ServerWebSocketHandshake;
 import io.vertx.core.internal.ContextInternal;
 
 import java.util.ArrayList;
@@ -35,7 +36,8 @@ class HttpServerConnectionHandler implements Handler<HttpServerConnection> {
   final HttpServerImpl server;
   final Handler<HttpServerRequest> requestHandler;
   final Handler<HttpServerRequest> invalidRequestHandler;
-  final Handler<ServerWebSocket> wsHandler;
+  final Handler<ServerWebSocket> webSocketHandler;
+  final Handler<ServerWebSocketHandshake> webSocketHandshakeHandler;
   final Handler<HttpConnection> connectionHandler;
   final Handler<Throwable> exceptionHandler;
 
@@ -43,13 +45,15 @@ class HttpServerConnectionHandler implements Handler<HttpServerConnection> {
     HttpServerImpl server,
     Handler<HttpServerRequest> requestHandler,
     Handler<HttpServerRequest> invalidRequestHandler,
-    Handler<ServerWebSocket> wsHandler,
+    Handler<ServerWebSocket> webSocketHandler,
+    Handler<ServerWebSocketHandshake> webSocketHandshakeHandler,
     Handler<HttpConnection> connectionHandler,
     Handler<Throwable> exceptionHandler) {
     this.server = server;
     this.requestHandler = requestHandler;
     this.invalidRequestHandler = invalidRequestHandler == null ? HttpServerRequest.DEFAULT_INVALID_REQUEST_HANDLER : invalidRequestHandler;
-    this.wsHandler = wsHandler;
+    this.webSocketHandler = webSocketHandler;
+    this.webSocketHandshakeHandler = webSocketHandshakeHandler;
     this.connectionHandler = connectionHandler;
     this.exceptionHandler = exceptionHandler;
   }

@@ -94,61 +94,6 @@ public interface ServerWebSocket extends WebSocket {
   String query();
 
   /**
-   * Accept the WebSocket and terminate the WebSocket handshake.
-   * <p/>
-   * This method should be called from the WebSocket handler to explicitly accept the WebSocket and
-   * terminate the WebSocket handshake.
-   *
-   * @throws IllegalStateException when the WebSocket handshake is already set
-   */
-  void accept();
-
-  /**
-   * Reject the WebSocket.
-   * <p>
-   * Calling this method from the WebSocket handler when it is first passed to you gives you the opportunity to reject
-   * the WebSocket, which will cause the WebSocket handshake to fail by returning
-   * a {@literal 502} response code.
-   * <p>
-   * You might use this method, if for example you only want to accept WebSockets with a particular path.
-   *
-   * @throws IllegalStateException when the WebSocket handshake is already set
-   */
-  default void reject() {
-    // SC_BAD_GATEWAY
-    reject(502);
-  }
-
-  /**
-   * Like {@link #reject()} but with a {@code status}.
-   */
-  void reject(int status);
-
-  /**
-   * Set an asynchronous result for the handshake, upon completion of the specified {@code future}, the
-   * WebSocket will either be
-   *
-   * <ul>
-   *   <li>accepted when the {@code future} succeeds with the HTTP {@literal 101} status code</li>
-   *   <li>rejected when the {@code future} is succeeds with an HTTP status code different than {@literal 101}</li>
-   *   <li>rejected when the {@code future} fails with the HTTP status code {@code 500}</li>
-   * </ul>
-   *
-   * The provided future might be completed by the WebSocket itself, e.g calling the {@link #close()} method
-   * will try to accept the handshake and close the WebSocket afterward. Thus it is advised to try to complete
-   * the {@code future} with {@link Promise#tryComplete} or {@link Promise#tryFail}.
-   * <p>
-   * This method should be called from the WebSocket handler to explicitly set an asynchronous handshake.
-   * <p>
-   * Calling this method will override the {@code future} completion handler.
-   *
-   * @param future the future to complete with
-   * @return a future notified when the handshake has completed
-   * @throws IllegalStateException when the WebSocket has already an asynchronous result
-   */
-  Future<Integer> setHandshake(Future<Integer> future);
-
-  /**
    * {@inheritDoc}
    *
    * <p>
