@@ -23,6 +23,11 @@ public enum ThreadingModel {
   EVENT_LOOP,
 
   /**
+   * Tasks are scheduled on the current event-loop thread.
+   */
+  CURRENT_EVENT_LOOP,
+
+  /**
    * Tasks are scheduled on a worker pool of platform threads managed by the vertx instance.
    */
   WORKER,

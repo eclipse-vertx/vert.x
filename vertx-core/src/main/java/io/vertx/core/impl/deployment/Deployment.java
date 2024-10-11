@@ -141,6 +141,9 @@ public class Deployment {
             context = vertx.createVirtualThreadContext(deployment, closeFuture, workerLoop, tccl);
           }
           break;
+        case CURRENT_EVENT_LOOP:
+          context = vertx.createContext(ThreadingModel.CURRENT_EVENT_LOOP, vertx.getOrCreateContext().nettyEventLoop(),closeFuture, workerPool, deployment, tccl);
+          break;
         default:
           context = vertx.createEventLoopContext(deployment, closeFuture, workerPool, tccl);
           break;
