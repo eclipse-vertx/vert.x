@@ -22,6 +22,7 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.impl.future.FutureImpl;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
@@ -33,6 +34,7 @@ import java.security.cert.Certificate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
@@ -43,7 +45,7 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class ServerWebSocketHandshaker implements ServerWebSocketHandshake, ServerWebSocket {
+public class ServerWebSocketHandshaker extends FutureImpl<ServerWebSocket> implements ServerWebSocketHandshake, ServerWebSocket {
 
   private final Http1xServerRequest request;
   private final HttpServerOptions options;
@@ -51,6 +53,7 @@ public class ServerWebSocketHandshaker implements ServerWebSocketHandshake, Serv
   private boolean done;
 
   public ServerWebSocketHandshaker(Http1xServerRequest request, WebSocketServerHandshaker handshaker, HttpServerOptions options) {
+    super(request.context);
     this.request = request;
     this.handshaker = handshaker;
     this.options = options;
@@ -93,7 +96,6 @@ public class ServerWebSocketHandshaker implements ServerWebSocketHandshake, Serv
     try {
       ws = acceptHandshake();
     } catch (Exception e) {
-      e.printStackTrace(System.out);
       return rejectHandshake(BAD_REQUEST.code())
         .transform(ar -> {
           if (ar.succeeded()) {
@@ -104,7 +106,8 @@ public class ServerWebSocketHandshaker implements ServerWebSocketHandshake, Serv
           }
         });
     }
-    return request.context.succeededFuture(ws);
+    tryComplete(ws);
+    return this;
   }
 
   @Override
@@ -116,6 +119,7 @@ public class ServerWebSocketHandshaker implements ServerWebSocketHandshake, Serv
       }
       done = true;
     }
+    tryFail(new RejectedExecutionException()); // Not great but for now OK
     return rejectHandshake(sc);
   }
 

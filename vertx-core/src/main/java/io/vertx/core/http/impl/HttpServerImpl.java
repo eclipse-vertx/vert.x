@@ -172,7 +172,7 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
 
   @Override
   public synchronized Future<HttpServer> listen(SocketAddress address) {
-    if (requestHandler == null && webSocketHandler == null) {
+    if (requestHandler == null && webSocketHandler == null && webSocketHandhakeHandler == null) {
       throw new IllegalStateException("Set request or WebSocket handler first");
     }
     if (tcpServer != null) {
