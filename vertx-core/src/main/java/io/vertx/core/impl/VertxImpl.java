@@ -584,7 +584,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     WorkerPool wp;
     switch (threadingModel) {
       case EVENT_LOOP:
-      case CURRENT_EVENT_LOOP:
         wp = workerPool != null ? workerPool : this.workerPool;
         eventExecutor = eventLoopExecutor;
         break;

@@ -26,7 +26,7 @@ public class CurrentEventLoopDeploymentTest extends AbstractVerticleTest {
           assertNotSame(currentContext, context);
         }
 
-      }, new DeploymentOptions().setThreadingModel(ThreadingModel.CURRENT_EVENT_LOOP))
+      }, new DeploymentOptions().setReuseCurrentEventLoop(true))
       .onSuccess(this::assertNotNull)
       .onFailure(this::fail)
       .onComplete(s -> testComplete());
@@ -47,7 +47,7 @@ public class CurrentEventLoopDeploymentTest extends AbstractVerticleTest {
             return null;
           });
         }
-      }, new DeploymentOptions().setThreadingModel(ThreadingModel.CURRENT_EVENT_LOOP))
+      }, new DeploymentOptions().setReuseCurrentEventLoop(true))
       .onSuccess(this::assertNotNull)
       .onFailure(this::fail)
       .onComplete(s -> testComplete());
