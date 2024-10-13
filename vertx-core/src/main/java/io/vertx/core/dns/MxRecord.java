@@ -11,14 +11,14 @@
 
 package io.vertx.core.dns;
 
-import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.codegen.annotations.DataObject;
 
 /**
  * Represent a Mail-Exchange-Record (MX) which was resolved for a domain.
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-@VertxGen
+@DataObject
 public interface MxRecord {
 
   /**

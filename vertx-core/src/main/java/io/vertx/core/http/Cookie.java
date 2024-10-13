@@ -11,6 +11,7 @@
 
 package io.vertx.core.http;
 
+import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
@@ -21,7 +22,7 @@ import io.vertx.core.http.impl.CookieImpl;
  * <p>
  * All cookies must have a name and a value and can optionally have other fields set such as path, domain, etc.
  */
-@VertxGen
+@DataObject
 public interface Cookie {
 
   /**

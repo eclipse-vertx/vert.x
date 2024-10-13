@@ -12,6 +12,7 @@
 package io.vertx.core.parsetools;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.buffer.Buffer;
@@ -25,7 +26,7 @@ import java.time.Instant;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-@VertxGen
+@DataObject
 public interface JsonEvent {
 
   /**
