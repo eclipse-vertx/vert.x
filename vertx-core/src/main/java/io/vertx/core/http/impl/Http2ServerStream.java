@@ -165,7 +165,7 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
     if (METRICS_ENABLED) {
       HttpServerMetrics metrics = conn.metrics();
       if (metrics != null) {
-        metrics.responseEnd(metric, request.response(), bytesWritten());
+        context.dispatch(event -> metrics.responseEnd(metric, request.response(), bytesWritten()));
       }
     }
   }
@@ -213,7 +213,7 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
       HttpServerMetrics metrics = conn.metrics();
       // Null in case of push response : handle this case
       if (metrics != null && (!requestEnded || !responseEnded)) {
-        metrics.requestReset(metric);
+        context.dispatch(event -> metrics.requestReset(metric));
       }
     }
     request.onClose();

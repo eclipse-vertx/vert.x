@@ -610,7 +610,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
 
   private void reportRequestReset(Throwable err) {
     if (conn.metrics != null) {
-      conn.metrics.requestReset(metric);
+      context.dispatch(event -> conn.metrics.requestReset(metric));
     }
     VertxTracer tracer = context.tracer();
     if (tracer != null) {
