@@ -12,6 +12,7 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.CacheReturn;
+import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
@@ -31,7 +32,7 @@ import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @version $Rev: 2080 $, $Date: 2010-01-26 18:04:19 +0900 (Tue, 26 Jan 2010) $
  */
-@VertxGen
+@DataObject
 public interface WebSocketFrame {
 
   /**
