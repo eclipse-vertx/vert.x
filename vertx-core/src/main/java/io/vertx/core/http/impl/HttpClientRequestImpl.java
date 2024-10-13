@@ -33,15 +33,6 @@ import static io.vertx.core.http.HttpHeaders.CONTENT_LENGTH;
 import static io.vertx.core.http.impl.HttpClientImpl.ABS_URI_START_PATTERN;
 
 /**
- * This class is optimised for performance when used on the same event loop that is passed to the handler with.
- * However it can be used safely from other threads.
- *
- * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
- * we benefit from biased locking which makes the overhead of synchronized near zero.
- *
- * This class uses {@code this} for synchronization purpose. The {@link #client}  or{@link #stream} instead are
- * called must not be called under this lock to avoid deadlocks.
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HttpClientRequestImpl extends HttpClientRequestBase implements HttpClientRequest {

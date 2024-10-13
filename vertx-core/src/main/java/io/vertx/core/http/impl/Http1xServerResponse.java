@@ -49,15 +49,6 @@ import java.util.Set;
 import static io.vertx.core.http.HttpHeaders.*;
 
 /**
- *
- * This class is optimised for performance when used on the same event loop that is was passed to the handler with.
- * However it can be used safely from other threads.
- *
- * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
- * we benefit from biased locking which makes the overhead of synchronized near zero.
- *
- * It's important we don't have different locks for connection and request/response to avoid deadlock conditions
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class Http1xServerResponse implements HttpServerResponse, HttpResponse {

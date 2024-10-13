@@ -45,13 +45,6 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
- *
- * This class is optimised for performance when used on the same event loop that is was passed to the handler with.
- * However it can be used safely from other threads.
- *
- * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
- * we benefit from biased locking which makes the overhead of synchronized near zero.
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class NetSocketImpl extends VertxConnection implements NetSocketInternal {

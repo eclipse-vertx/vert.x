@@ -11,20 +11,13 @@
 
 package io.vertx.core.http.impl;
 
-import io.vertx.core.*;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.impl.VertxConnection;
 
 /**
- * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
- *
- * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
- * we benefit from biased locking which makes the overhead of synchronized near zero.
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
- *
  */
 public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> implements ServerWebSocket {
 

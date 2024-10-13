@@ -43,8 +43,6 @@ public class HandlerHolder<T> {
     return unregistered;
   }
 
-  // Because of biased locks the overhead of the synchronized lock should be very low as it's almost always
-  // called by the same event loop
   public synchronized boolean isRemoved() {
     return removed;
   }

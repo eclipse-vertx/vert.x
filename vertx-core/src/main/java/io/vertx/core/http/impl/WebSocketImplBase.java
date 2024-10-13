@@ -48,11 +48,6 @@ import java.util.concurrent.TimeUnit;
 import static io.vertx.core.net.impl.VertxHandler.*;
 
 /**
- * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
- * <p>
- * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
- * we benefit from biased locking which makes the overhead of synchronized near zero.
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @param <S> self return type
  */
