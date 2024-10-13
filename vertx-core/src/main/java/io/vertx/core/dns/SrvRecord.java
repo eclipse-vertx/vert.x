@@ -11,15 +11,15 @@
 
 package io.vertx.core.dns;
 
+import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.codegen.annotations.VertxGen;
 
 /**
  * Represent a Service-Record (SRV) which was resolved for a domain.
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-@VertxGen
+@DataObject
 public interface SrvRecord {
 
   /**

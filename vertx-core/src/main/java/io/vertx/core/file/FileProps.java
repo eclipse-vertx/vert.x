@@ -11,6 +11,7 @@
 
 package io.vertx.core.file;
 
+import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.VertxGen;
 
 /**
@@ -19,7 +20,7 @@ import io.vertx.codegen.annotations.VertxGen;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@VertxGen
+@DataObject
 public interface FileProps {
 
   /**
