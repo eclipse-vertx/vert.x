@@ -30,6 +30,7 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.TCPMetrics;
@@ -337,7 +338,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
           if (remoteAddress != null) {
             sslHandler = sslChannelProvider.createClientSslHandler(remoteAddress, serverName, false);
           } else {
-            sslHandler = sslChannelProvider.createServerHandler();
+            sslHandler = sslChannelProvider.createServerHandler(HostAndPort.fromSocketAddress(chctx.channel().remoteAddress()));
           }
           chctx.pipeline().addFirst("ssl", sslHandler);
         } else {

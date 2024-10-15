@@ -31,6 +31,7 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.impl.cgbystrom.FlashPolicyHandler;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.impl.*;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
@@ -129,7 +130,7 @@ public class HttpServerWorker implements BiConsumer<Channel, SslChannelProvider>
   private void configurePipeline(Channel ch, SslChannelProvider sslChannelProvider) {
     ChannelPipeline pipeline = ch.pipeline();
     if (options.isSsl()) {
-      pipeline.addLast("ssl", sslChannelProvider.createServerHandler());
+      pipeline.addLast("ssl", sslChannelProvider.createServerHandler(HostAndPort.fromSocketAddress(ch.remoteAddress())));
       ChannelPromise p = ch.newPromise();
       pipeline.addLast("handshaker", new SslHandshakeCompletionHandler(p));
       p.addListener(future -> {

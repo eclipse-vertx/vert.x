@@ -18,6 +18,7 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.util.AsyncMapping;
 import io.netty.util.concurrent.ImmediateExecutor;
 import io.vertx.core.VertxException;
+import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
 
 import javax.net.ssl.KeyManagerFactory;
@@ -143,25 +144,30 @@ public class SslChannelProvider {
     return sslHandler;
   }
 
-  public ChannelHandler createServerHandler() {
+  public ChannelHandler createServerHandler(HostAndPort remoteAddress) {
     if (sni) {
-      return createSniHandler();
+      return createSniHandler(remoteAddress);
     } else {
-      return createServerSslHandler(useAlpn);
+      return createServerSslHandler(useAlpn, remoteAddress);
     }
   }
 
-  private SslHandler createServerSslHandler(boolean useAlpn) {
+  private SslHandler createServerSslHandler(boolean useAlpn, HostAndPort remoteAddress) {
     SslContext sslContext = sslServerContext(useAlpn);
     Executor delegatedTaskExec = useWorkerPool ? workerPool : ImmediateExecutor.INSTANCE;
-    SslHandler sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, delegatedTaskExec);
+    SslHandler sslHandler;
+    if (remoteAddress != null) {
+      sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, remoteAddress.host(), remoteAddress.port(), delegatedTaskExec);
+    } else {
+      sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, delegatedTaskExec);
+    }
     sslHandler.setHandshakeTimeout(sslHandshakeTimeout, sslHandshakeTimeoutUnit);
     return sslHandler;
   }
 
-  private SniHandler createSniHandler() {
+  private SniHandler createSniHandler(HostAndPort remoteAddress) {
     Executor delegatedTaskExec = useWorkerPool ? workerPool : ImmediateExecutor.INSTANCE;
-    return new VertxSniHandler(serverNameMapping(), sslHandshakeTimeoutUnit.toMillis(sslHandshakeTimeout), delegatedTaskExec);
+    return new VertxSniHandler(serverNameMapping(), sslHandshakeTimeoutUnit.toMillis(sslHandshakeTimeout), delegatedTaskExec, remoteAddress);
   }
 
   private static int idx(boolean useAlpn) {
