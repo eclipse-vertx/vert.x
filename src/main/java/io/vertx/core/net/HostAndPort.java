@@ -1,8 +1,13 @@
 package io.vertx.core.net;
 
+import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.net.impl.HostAndPortImpl;
+
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 /**
  * A combination of host and port.
@@ -53,6 +58,24 @@ public interface HostAndPort {
    */
   static HostAndPort authority(String host) {
     return authority(host, -1);
+  }
+
+  /**
+   * Convert a {@link SocketAddress} to a {@link HostAndPort}.
+   * If the socket address is an {@link InetSocketAddress}, the hostString and port are used.
+   * Otherwise {@code null} is returned.
+   *
+   * @param socketAddress The socket address to convert
+   * @return The converted instance or {@code null} if not applicable.
+   */
+  @Nullable
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  static HostAndPort fromSocketAddress(SocketAddress socketAddress) {
+    if (socketAddress instanceof InetSocketAddress) {
+      InetSocketAddress inetSocketAddress = (InetSocketAddress) socketAddress;
+      return new HostAndPortImpl(inetSocketAddress.getHostString(), inetSocketAddress.getPort());
+    }
+    return null;
   }
 
   /**
