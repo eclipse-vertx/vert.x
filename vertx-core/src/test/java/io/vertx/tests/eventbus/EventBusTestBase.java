@@ -517,7 +517,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
       }
       assertTrue("Not an EL thread", Context.isOnEventLoopThread());
       complete();
-    }));
+    })).await();
 
     // On a EL context
     vertices[0].runOnContext(v -> {
@@ -550,7 +550,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
           complete();
         }));
       }
-    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER));
+    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER)).await();
 
     // Inside executeBlocking
     vertices[0].executeBlocking(() -> {
