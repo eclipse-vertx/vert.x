@@ -517,7 +517,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
       }
       assertTrue("Not an EL thread", Context.isOnEventLoopThread());
       complete();
-    }));
+    })).await();
 
     // On a EL context
     vertices[0].runOnContext(v -> {
