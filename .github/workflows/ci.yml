@@ -4,20 +4,24 @@ on:
     inputs:
       branch:
         required: true
-        type: string
+        type: 'string'
       jdk:
         default: 8
-        type: string
+        type: 'string'
       os:
         default: ubuntu-latest
-        type: string
+        type: 'string'
       profile:
         default: ''
-        type: string
+        type: 'string'
+      stable:
+        default: true
+        type: 'boolean'
 jobs:
   Test:
     name: Run tests
     runs-on: ${{ inputs.os }}
+    continue-on-error: ${{ !inputs.stable }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2

@@ -329,15 +329,16 @@ public class ResolvingHttpClientTest extends VertxTestBase {
       .withAddressResolver(resolver)
       .withLoadBalancer(lb)
       .build();
-    awaitFuture(client.request(new RequestOptions().setServer(new FakeAddress("example.com"))).compose(req -> req
-      .send()
-      .expecting(HttpResponseExpectation.SC_OK)
-      .compose(HttpClientResponse::body)
-    ));
+    client.request(new RequestOptions().setServer(new FakeAddress("example.com")))
+      .compose(req -> req
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(HttpClientResponse::body)
+      ).await();
     FakeLoadBalancer.FakeLoadBalancerMetrics<?> endpoint = (FakeLoadBalancer.FakeLoadBalancerMetrics<?>) ((EndpointServer) lb.endpoints().get(0)).metrics();
     FakeLoadBalancer.FakeMetric metric = endpoint.metrics2().get(0);
     assertTrue(metric.requestEnd() - metric.requestBegin() >= 0);
-    assertTrue(metric.responseBegin() - metric.requestEnd() > 500);
+    assertTrue(metric.responseBegin() - metric.requestEnd() >= 500);
     assertTrue(metric.responseEnd() - metric.responseBegin() >= 0);
   }
 

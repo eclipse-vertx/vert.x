@@ -16,7 +16,7 @@ import io.vertx.core.impl.VertxThread;
 import io.vertx.core.internal.VertxBootstrap;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.metrics.MetricsOptions;
-import io.vertx.core.impl.transports.JDKTransport;
+import io.vertx.core.impl.transports.NioTransport;
 import io.vertx.core.spi.transport.Transport;
 import io.vertx.core.spi.ExecutorServiceFactory;
 import io.vertx.core.spi.VertxMetricsFactory;
@@ -155,8 +155,8 @@ public class VertxBootstrapTest {
   @Test
   public void testFactoryTransportOverridesDefault() {
     VertxBootstrap factory = VertxBootstrap.create();
-    // JDK transport
-    Transport override = new JDKTransport() {
+    // NIO transport
+    Transport override = new NioTransport() {
     };
     factory.transport(override);
     factory.init();

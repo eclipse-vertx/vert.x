@@ -21,6 +21,7 @@ module io.vertx.core {
   // Optional
 
   requires static com.fasterxml.jackson.databind;
+  requires static io.netty.transport.classes.io_uring;
   requires static io.netty.transport.classes.epoll;
   requires static io.netty.transport.classes.kqueue;
   requires static io.netty.transport.unix.common;
@@ -42,7 +43,6 @@ module io.vertx.core {
   uses io.vertx.core.spi.VertxServiceProvider;
   uses io.vertx.core.spi.VerticleFactory;
   uses io.vertx.core.spi.JsonFactory;
-  uses io.vertx.core.spi.transport.Transport;
 
   // API
 
@@ -64,6 +64,7 @@ module io.vertx.core {
   exports io.vertx.core.streams;
   exports io.vertx.core.spi;
   exports io.vertx.core.file;
+  exports io.vertx.core.transport;
 
   // SPI
 
@@ -94,6 +95,7 @@ module io.vertx.core {
 
   // Testing
 
+  exports io.vertx.core.impl to io.vertx.core.tests;
   exports io.vertx.core.impl.cpu to io.vertx.core.tests;
   exports io.vertx.core.impl.future to io.vertx.core.tests;
   exports io.vertx.core.impl.utils to io.vertx.core.tests;
@@ -114,6 +116,5 @@ module io.vertx.core {
   exports io.vertx.core.spi.cluster.impl.selector to io.vertx.core.tests;
   exports io.vertx.core.impl.verticle to io.vertx.core.tests;
   exports io.vertx.core.impl.deployment to io.vertx.core.tests;
-  exports io.vertx.core.impl to io.vertx.core.tests;
 
 }
