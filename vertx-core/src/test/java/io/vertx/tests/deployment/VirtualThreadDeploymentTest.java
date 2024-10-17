@@ -76,6 +76,7 @@ public class VirtualThreadDeploymentTest extends VertxTestBase {
   @Test
   public void testExecuteBlocking() {
     Assume.assumeTrue(isVirtualThreadAvailable());
+    Promise<Void> p = Promise.promise();
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
       public void start() {
@@ -83,12 +84,17 @@ public class VirtualThreadDeploymentTest extends VertxTestBase {
           assertTrue(isVirtual(Thread.currentThread()));
           return Thread.currentThread().getName();
         });
-        String res = fut.await();
+        String res;
+        try {
+          res = fut.await();
+        } catch (Exception e) {
+          p.fail(e);
+          return;
+        }
         assertNotSame(Thread.currentThread().getName(), res);
-        testComplete();
+        p.complete();
       }
-    }, new DeploymentOptions().setThreadingModel(ThreadingModel.VIRTUAL_THREAD));
-    await();
+    }, new DeploymentOptions().setThreadingModel(ThreadingModel.VIRTUAL_THREAD)).await();
   }
 
   @Test
