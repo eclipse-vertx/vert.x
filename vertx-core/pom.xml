@@ -29,7 +29,7 @@
     <apacheds-protocol-dns.version>2.0.0.AM27</apacheds-protocol-dns.version>
     <generated.dir>${project.basedir}/src/main/generated</generated.dir>
     <jmh.version>1.37</jmh.version>
-    <vertx.testNativeTransport>false</vertx.testNativeTransport>
+    <vertx.testTransport>jdk</vertx.testTransport>
     <vertx.testDomainSockets>false</vertx.testDomainSockets>
   </properties>
 
@@ -86,6 +86,11 @@
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-transport-classes-epoll</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-transport-classes-io_uring</artifactId>
       <optional>true</optional>
     </dependency>
     <dependency>
@@ -247,7 +252,7 @@
               <buildDirectory>${project.build.directory}</buildDirectory>
               <vertx.version>${project.version}</vertx.version>
               <vertx.handle100Continue>true</vertx.handle100Continue>
-              <vertx.useNativeTransport>${vertx.testNativeTransport}</vertx.useNativeTransport>
+              <vertx.transport>${vertx.testTransport}</vertx.transport>
               <vertx.useDomainSockets>${vertx.testDomainSockets}</vertx.useDomainSockets>
               <vertx.threadChecks>true</vertx.threadChecks>
             </systemPropertyVariables>
@@ -360,29 +365,24 @@
                 <include>io/vertx/it/transport/TransportTest.java</include>
               </includes>
               <classpathDependencyExcludes>
+                <classpathDependencyExclude>io.netty:netty-transport-classes-io_uring</classpathDependencyExclude>
                 <classpathDependencyExclude>io.netty:netty-transport-classes-epoll</classpathDependencyExclude>
                 <classpathDependencyExclude>io.netty:netty-transport-classes-kqueue</classpathDependencyExclude>
               </classpathDependencyExcludes>
             </configuration>
           </execution>
           <execution>
-            <id>service-loaded-native</id>
+            <id>io_uring</id>
             <goals>
               <goal>integration-test</goal>
               <goal>verify</goal>
             </goals>
             <configuration>
               <includes>
-                <include>io/vertx/it/transport/ServiceLoadedTransportTest.java</include>
+                <include>io/vertx/it/transport/IoUringTest.java</include>
               </includes>
-              <additionalClasspathElements>
-                <additionalClasspathElement>${project.basedir}/src/test/classpath/customtransport</additionalClasspathElement>
-              </additionalClasspathElements>
               <classpathDependencyExcludes>
-                <classpathDependencyExclude>io.netty:netty-transport-native-epoll</classpathDependencyExclude>
                 <classpathDependencyExclude>io.netty:netty-transport-classes-epoll</classpathDependencyExclude>
-                <classpathDependencyExclude>io.netty:netty-transport-native-kqueue</classpathDependencyExclude>
-                <classpathDependencyExclude>io.netty:netty-transport-classes-kqueue</classpathDependencyExclude>
               </classpathDependencyExcludes>
             </configuration>
           </execution>
@@ -648,23 +648,48 @@
 
   <profiles>
 
-    <!-- Run tests with native transport -->
     <profile>
-      <id>testNativeTransport</id>
+      <id>NativeEpoll</id>
       <properties>
-        <vertx.testNativeTransport>true</vertx.testNativeTransport>
+        <vertx.testTransport>epoll</vertx.testTransport>
+        <vertx.testDomainSockets>false</vertx.testDomainSockets>
+        <vertx.testUseModulePath>false</vertx.testUseModulePath>
+      </properties>
+    </profile>
+
+    <profile>
+      <id>NativeIoUring</id>
+      <properties>
+        <vertx.testTransport>io_uring</vertx.testTransport>
         <vertx.testDomainSockets>false</vertx.testDomainSockets>
         <vertx.surefire.useModulePath>false</vertx.surefire.useModulePath>
       </properties>
     </profile>
 
-    <!-- Run tests with native transport and domain sockets -->
     <profile>
-      <id>testDomainSockets</id>
+      <id>NativeEpoll+DomainSockets</id>
       <properties>
-        <vertx.testNativeTransport>true</vertx.testNativeTransport>
+        <vertx.testTransport>epoll</vertx.testTransport>
         <vertx.testDomainSockets>true</vertx.testDomainSockets>
         <vertx.surefire.useModulePath>false</vertx.surefire.useModulePath>
+      </properties>
+    </profile>
+
+    <profile>
+      <id>NativeKQueue</id>
+      <properties>
+        <vertx.testTransport>kqueue</vertx.testTransport>
+        <vertx.testDomainSockets>false</vertx.testDomainSockets>
+        <vertx.testUseModulePath>false</vertx.testUseModulePath>
+      </properties>
+    </profile>
+
+    <profile>
+      <id>NativeKQueue+DomainSockets</id>
+      <properties>
+        <vertx.testTransport>kqueue</vertx.testTransport>
+        <vertx.testDomainSockets>true</vertx.testDomainSockets>
+        <vertx.testUseModulePath>false</vertx.testUseModulePath>
       </properties>
     </profile>
 
@@ -743,10 +768,11 @@
     </profile>
 
     <profile>
-      <id>linux</id>
+      <id>linux-x86_64</id>
       <activation>
         <os>
           <family>linux</family>
+          <arch>x86_64</arch>
         </os>
       </activation>
       <dependencies>
@@ -754,6 +780,60 @@
           <groupId>io.netty</groupId>
           <artifactId>netty-transport-native-epoll</artifactId>
           <classifier>linux-x86_64</classifier>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-transport-native-io_uring</artifactId>
+          <classifier>linux-x86_64</classifier>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+    </profile>
+
+    <profile>
+      <id>linux-amd64</id>
+      <activation>
+        <os>
+          <family>linux</family>
+          <arch>amd64</arch>
+        </os>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-transport-native-epoll</artifactId>
+          <classifier>linux-x86_64</classifier>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-transport-native-io_uring</artifactId>
+          <classifier>linux-x86_64</classifier>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+    </profile>
+
+    <profile>
+      <id>linux-aarch64</id>
+      <activation>
+        <os>
+          <family>linux</family>
+          <arch>aarch64</arch>
+        </os>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-transport-native-epoll</artifactId>
+          <classifier>linux-aarch_64</classifier>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-transport-native-io_uring</artifactId>
+          <classifier>linux-aarch_64</classifier>
           <scope>test</scope>
         </dependency>
       </dependencies>

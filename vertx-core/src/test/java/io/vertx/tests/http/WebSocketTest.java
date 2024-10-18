@@ -69,6 +69,7 @@ import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.transport.Transport;
 import io.vertx.test.core.CheckingSender;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
@@ -119,6 +120,7 @@ import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTPS_PORT;
 import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTP_HOST;
 import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTP_HOST_AND_PORT;
 import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTP_PORT;
+import static org.junit.Assume.assumeTrue;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -580,7 +582,6 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testSharedServersRoundRobin() throws Exception {
-
     int numServers = VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE / 2- 1;
     int numConnections = numServers * 100;
 
