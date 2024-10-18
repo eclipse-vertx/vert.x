@@ -45,6 +45,7 @@ import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.transport.Transport;
 import io.vertx.test.core.CheckingSender;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
@@ -96,6 +97,7 @@ import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTPS_PORT;
 import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTP_HOST;
 import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTP_HOST_AND_PORT;
 import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTP_PORT;
+import static org.junit.Assume.assumeTrue;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
