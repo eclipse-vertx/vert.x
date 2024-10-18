@@ -16,19 +16,14 @@ import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
+import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.net.ClientOptionsBase;
 import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.SocketAddressImpl;
-import io.vertx.core.impl.transports.NioTransport;
 
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.NetworkInterface;
-import java.net.SocketAddress;
-import java.net.SocketException;
+import java.net.*;
 import java.util.concurrent.ThreadFactory;
 
 /**
@@ -66,7 +61,7 @@ public interface Transport {
 
   default SocketAddress convert(io.vertx.core.net.SocketAddress address) {
     if (address.isDomainSocket()) {
-      throw new IllegalArgumentException("Domain socket are not supported by NIO transport, you need to use native transport to use them");
+      throw new IllegalArgumentException("Domain sockets require JDK 16 and above, or the usage of a native transport");
     } else {
       InetAddress ip = ((SocketAddressImpl) address).ipAddress();
       if (ip != null) {
@@ -176,8 +171,8 @@ public interface Transport {
   }
 
   default void configure(NetServerOptions options, boolean domainSocket, ServerBootstrap bootstrap) {
-    bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
     if (!domainSocket) {
+      bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
       bootstrap.childOption(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
       bootstrap.childOption(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
     }
