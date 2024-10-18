@@ -25,6 +25,7 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.net.impl.VertxConnection;
 import io.vertx.core.net.impl.VertxHandler;
+import io.vertx.core.transport.Transport;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Ignore;
@@ -40,6 +41,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
+
+import static org.junit.Assume.assumeTrue;
 
 public class ConnectionBaseTest extends VertxTestBase {
 
@@ -287,23 +290,26 @@ public class ConnectionBaseTest extends VertxTestBase {
       chctx.pipeline().addBefore("handler", "myhandler", new ChannelDuplexHandler() {
         int reentrant;
         @Override
-        public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+        public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
           assertEquals(0, reentrant++);
-          switch (msg.toString()) {
-            case "msg1":
-              // Fill outbound buffer
-              assertTrue(ctx.channel().isWritable());
-              ctx.write(BufferInternal.buffer(TestUtils.randomAlphaString((int)ctx.channel().bytesBeforeUnwritable())).getByteBuf());
-              assertFalse(ctx.channel().isWritable());
-              // Flush to trigger writability change
-              ctx.flush();
-              assertTrue(ctx.channel().isWritable());
-              break;
-            case "msg2":
-              testComplete();
-              break;
+          try {
+            switch (msg.toString()) {
+              case "msg1":
+                // Fill outbound buffer
+                assertTrue(ctx.channel().isWritable());
+                ChannelFuture f = ctx.write(BufferInternal.buffer(TestUtils.randomAlphaString((int) ctx.channel().bytesBeforeUnwritable())).getByteBuf());
+                assertFalse(ctx.channel().isWritable());
+                // Flush to trigger writability change
+                ctx.flush();
+                assertEquals(TRANSPORT != Transport.IO_URING, ctx.channel().isWritable());
+                break;
+              case "msg2":
+                testComplete();
+                break;
+            }
+          } finally {
+            reentrant--;
           }
-          reentrant--;
         }
       });
 

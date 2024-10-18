@@ -144,7 +144,7 @@ final class WebSocketConnectionImpl extends VertxConnection {
     if (timeout != null) {
       timeout.cancel(false);
     }
-    if (closePromise != null && !closePromise.isDone()) {
+    if (closePromise != null) {
       closePromise.setSuccess();
     }
     Object metric = null;
@@ -203,7 +203,9 @@ final class WebSocketConnectionImpl extends VertxConnection {
     ScheduledFuture<?> timeout = closingTimeout;
     if (timeout == null || timeout.cancel(false)) {
       closingTimeout = null;
-      super.handleClose(closeReason, closePromise);
+      ChannelPromise p = closePromise;
+      closePromise = null;
+      super.handleClose(closeReason, p);
     }
   }
 

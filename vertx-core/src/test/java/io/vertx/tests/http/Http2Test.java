@@ -901,18 +901,12 @@ public class Http2Test extends HttpTest {
         .compose(HttpClientResponse::body));
     f1.onComplete(onSuccess(v -> {
       Future<Buffer> f2 = client.request(new RequestOptions(requestOptions).setURI("/2"))
-        .compose(req -> {
-          System.out.println(req.connection());
-          return req.send()
-            .compose(HttpClientResponse::body);
-        });
+        .compose(req -> req.send()
+          .compose(HttpClientResponse::body));
       f2.onComplete(onFailure(v2 -> {
         Future<Buffer> f3 = client.request(new RequestOptions(requestOptions).setURI("/3"))
-          .compose(req -> {
-            System.out.println(req.connection());
-            return req.send()
-              .compose(HttpClientResponse::body);
-          });
+          .compose(req -> req.send()
+            .compose(HttpClientResponse::body));
         f3.onComplete(onSuccess(vvv -> {
           testComplete();
         }));

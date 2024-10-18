@@ -21,6 +21,7 @@ import io.vertx.core.impl.Utils;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetworkOptions;
 import io.vertx.core.streams.WriteStream;
+import io.vertx.core.transport.Transport;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.netty.TestLoggerFactory;
@@ -251,7 +252,7 @@ public class DatagramTest extends VertxTestBase {
 
   @Test
   public void testBroadcast() {
-    if (USE_NATIVE_TRANSPORT) {
+    if (TRANSPORT != Transport.NIO) {
       return;
     }
     peer1 = vertx.createDatagramSocket(new DatagramSocketOptions().setBroadcast(true));
@@ -318,7 +319,7 @@ public class DatagramTest extends VertxTestBase {
                                       DatagramSocketOptions options2,
                                       BiConsumer<String, Handler<AsyncResult<Void>>> join,
                                       BiConsumer<String, Handler<AsyncResult<Void>>> leave) {
-    if (USE_NATIVE_TRANSPORT) {
+    if (TRANSPORT != Transport.NIO) {
       return;
     }
     Buffer buffer = Buffer.buffer("HELLO");

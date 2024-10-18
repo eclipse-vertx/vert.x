@@ -25,24 +25,33 @@ public class Utils {
 
   private static final boolean isLinux;
   private static final boolean isWindows;
+  private static final boolean isOsx;
 
   static {
     isLinux = "linux".equals(PlatformDependent.normalizedOs());
     isWindows = PlatformDependent.isWindows();
+    isOsx = PlatformDependent.isOsx();
   }
 
   /**
-   * @return true, if running on Linux
+   * @return {@code true}, if running on Linux
    */
   public static boolean isLinux() {
     return isLinux;
   }
 
   /**
-   * @return true, if running on Windows
+   * @return {@code true}, if running on Windows
    */
   public static boolean isWindows() {
     return isWindows;
+  }
+
+  /**
+   * @return {@code true}, if running on Mac
+   */
+  public static boolean isOsx() {
+    return isOsx;
   }
 
   @SuppressWarnings("unchecked")

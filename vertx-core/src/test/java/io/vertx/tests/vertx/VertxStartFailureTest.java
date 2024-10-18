@@ -16,7 +16,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
-import io.vertx.core.impl.transports.JDKTransport;
+import io.vertx.core.impl.transports.NioTransport;
 import io.vertx.core.internal.VertxBootstrap;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.transport.Transport;
@@ -107,7 +107,7 @@ public class VertxStartFailureTest extends AsyncTestBase {
   private Throwable failStart(VertxOptions options, ClusterManager clusterManager) throws Exception {
     List<EventLoopGroup> loops = new ArrayList<>();
     CountDownLatch latch = new CountDownLatch(1);
-    Transport transport = new JDKTransport() {
+    Transport transport = new NioTransport() {
       @Override
       public EventLoopGroup eventLoopGroup(int type, int nThreads, ThreadFactory threadFactory, int ioRatio) {
         EventLoopGroup eventLoop = super.eventLoopGroup(type, nThreads, threadFactory, ioRatio);

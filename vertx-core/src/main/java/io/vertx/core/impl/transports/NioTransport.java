@@ -19,11 +19,11 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.vertx.core.spi.transport.Transport;
 
-public class JDKTransport implements Transport {
+public class NioTransport implements Transport {
   /**
-   * The JDK transport, always there.
+   * The NIO transport, always there.
    */
-  public static final Transport INSTANCE = new JDKTransport();
+  public static final Transport INSTANCE = new NioTransport();
 
   @Override
   public IoHandlerFactory ioHandlerFactory() {
@@ -54,7 +54,7 @@ public class JDKTransport implements Transport {
 
   public ChannelFactory<? extends ServerChannel> serverChannelFactory(boolean domainSocket) {
     if (domainSocket) {
-      throw new IllegalArgumentException();
+      throw new IllegalArgumentException("The Vertx instance must be created with the preferNativeTransport option set to true to create domain sockets");
     }
     return NioServerSocketChannel::new;
   }
