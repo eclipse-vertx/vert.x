@@ -4,16 +4,16 @@ on:
     inputs:
       branch:
         required: true
-        type: string
+        type: 'string'
       jdk:
         default: 8
-        type: string
+        type: 'string'
       os:
         default: ubuntu-latest
-        type: string
+        type: 'string'
       profile:
         default: ''
-        type: string
+        type: 'string'
 jobs:
   Test:
     name: Run tests

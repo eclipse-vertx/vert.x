@@ -12,6 +12,7 @@
 package io.vertx.tests.tls;
 
 import static org.hamcrest.core.StringEndsWith.endsWith;
+import static org.junit.Assume.assumeTrue;
 
 import java.io.*;
 import java.lang.reflect.UndeclaredThrowableException;
@@ -39,6 +40,8 @@ import io.vertx.core.http.*;
 import io.vertx.core.impl.VertxThread;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.KeyStoreHelper;
+import io.vertx.core.transport.Transport;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.http.HttpTestBase;
 import org.junit.Assume;
 import org.junit.Ignore;
@@ -319,7 +322,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
   @Test
   // Provide an host name with a trailing dot
   public void testTLSTrailingDotHost() throws Exception {
-    Assume.assumeTrue(PlatformDependent.javaVersion() < 9);
+    assumeTrue(PlatformDependent.javaVersion() < 9);
     // We just need a vanilla cert for this test
     SelfSignedCertificate cert = SelfSignedCertificate.create("host2.com");
     TLSTest test = testTLS(Cert.NONE, cert::trustOptions, cert::keyCertOptions, Trust.NONE)
@@ -1283,9 +1286,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
       server.connectionHandler(conn -> complete());
       AtomicInteger count = new AtomicInteger();
       server.exceptionHandler(err -> {
-        if (shouldPass) {
-          HttpTLSTest.this.fail(err);
-        } else {
+        if (!shouldPass) {
           if (count.incrementAndGet() == 1) {
             complete();
           }

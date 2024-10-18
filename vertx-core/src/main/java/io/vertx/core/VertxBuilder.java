@@ -7,6 +7,7 @@ import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.VertxTracerFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.transport.Transport;
 
 /**
  * A builder for creating Vert.x instances, allowing to configure Vert.x plugins:
@@ -63,6 +64,16 @@ public interface VertxBuilder {
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Fluent
   VertxBuilder withTracer(VertxTracerFactory factory);
+
+  /**
+   * Programmatically set the transport, this overrides {@link VertxOptions#setPreferNativeTransport(boolean)}
+   *
+   * @param transport the transport
+   * @return a reference to this, so the API can be used fluently
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @Fluent
+  VertxBuilder withTransport(Transport transport);
 
   /**
    * Programmatically set the cluster manager to be used when clustering.

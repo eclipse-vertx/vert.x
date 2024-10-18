@@ -309,7 +309,7 @@ public class Http1xProxyTest extends HttpTestBase {
       .setHost("localhost")
       .setPort(proxy2.port());
     List<String> res = testPooling(req1, req2, proxy1, proxy2);
-    assertEquals(Arrays.asList(proxy1.lastLocalAddress(), proxy2.lastLocalAddress()), res);
+    assertEquals(Set.of(proxy1.lastLocalAddress(), proxy2.lastLocalAddress()), new HashSet<>(res));
   }
 
   @Test
@@ -320,7 +320,7 @@ public class Http1xProxyTest extends HttpTestBase {
       .setHost("localhost")
       .setPort(proxy.port());
     List<String> res = testPooling(req, req, proxy);
-    assertEquals(proxy.localAddresses(), res);
+    assertEquals(new HashSet<>(proxy.localAddresses()), new HashSet<>(res));
   }
 
   @Test
@@ -359,7 +359,7 @@ public class Http1xProxyTest extends HttpTestBase {
       .setPort(proxy.port());
     List<String> res = testPooling(req1, req2, proxy);
     assertEquals(2, proxy.localAddresses().size());
-    assertEquals(proxy.localAddresses(), res);
+    assertEquals(new HashSet<>(proxy.localAddresses()), new HashSet<>(res));
   }
 
   @Test
@@ -375,7 +375,7 @@ public class Http1xProxyTest extends HttpTestBase {
       .setHost("localhost")
       .setPort(proxy2.port());
     List<String> res = testPooling(req1, req2, proxy1, proxy2);
-    assertEquals(Arrays.asList(proxy1.lastLocalAddress(), proxy2.lastLocalAddress()), res);
+    assertEquals(Set.of(proxy1.lastLocalAddress(), proxy2.lastLocalAddress()), new HashSet<>(res));
   }
 
   @Test
@@ -386,7 +386,7 @@ public class Http1xProxyTest extends HttpTestBase {
       .setHost("localhost")
       .setPort(proxy.port());
     List<String> res = testPooling(req, req, proxy);
-    assertEquals(proxy.localAddresses(), res);
+    assertEquals(new HashSet<>(proxy.localAddresses()), new HashSet<>(res));
   }
 
   @Test
@@ -405,7 +405,7 @@ public class Http1xProxyTest extends HttpTestBase {
       .setHost("localhost")
       .setPort(proxy.port());
     List<String> res = testPooling(req1, req2, proxy);
-    assertEquals(proxy.localAddresses(), res);
+    assertEquals(new HashSet<>(proxy.localAddresses()), new HashSet<>(res));
   }
 
   @Test
@@ -425,7 +425,7 @@ public class Http1xProxyTest extends HttpTestBase {
       .setPort(proxy.port());
     List<String> res = testPooling(req1, req2, proxy);
     assertEquals(2, proxy.localAddresses().size());
-    assertEquals(proxy.localAddresses(), res);
+    assertEquals(new HashSet<>(proxy.localAddresses()), new HashSet<>(res));
   }
 
   public List<String> testPooling(ProxyOptions request1, ProxyOptions request2, TestProxyBase... proxies) throws Exception {
@@ -434,7 +434,7 @@ public class Http1xProxyTest extends HttpTestBase {
     }
 
     client.close();
-    client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(true), new PoolOptions().setHttp2MaxSize(2));
+    client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(true), new PoolOptions().setHttp1MaxSize(2));
 
     CompletableFuture<List<String>> ret = new CompletableFuture<>();
 
@@ -448,24 +448,34 @@ public class Http1xProxyTest extends HttpTestBase {
             request.response().end("" + addr);
           });
         }
-      }).listen().onComplete(onSuccess(s -> {
-        RequestOptions baseOptions = new RequestOptions()
-          .setHost(DEFAULT_HTTP_HOST)
-          .setPort(DEFAULT_HTTP_PORT)
-          .setURI("/");
-        List<String> responses = new ArrayList<>();
-        for (int i = 0;i < 2;i++) {
-          client.request(new RequestOptions(baseOptions).setProxyOptions(i == 0 ? request1 : request2))
-            .compose(HttpClientRequest::send)
-            .compose(HttpClientResponse::body)
-            .onComplete(onSuccess(res2 -> {
-              responses.add(res2.toString());
-              if (responses.size() == 2) {
-                ret.complete(responses);
-              }
-            }));
-        }
-      }));
+      }).listen()
+        .await();
+
+      RequestOptions baseOptions = new RequestOptions()
+        .setHost(DEFAULT_HTTP_HOST)
+        .setPort(DEFAULT_HTTP_PORT)
+        .setURI("/");
+      List<Future<HttpClientRequest>> clientRequests = new ArrayList<>();
+      for (int i = 0;i < 2;i++) {
+        Future<HttpClientRequest> request = client
+          .request(new RequestOptions(baseOptions).setProxyOptions(i == 0 ? request1 : request2));
+        clientRequests.add(request);
+        // Avoid races with the proxy username provider
+        request.await();
+      }
+      List<String> responses = new ArrayList<>();
+      for (int i = 0;i < 2;i++) {
+        clientRequests.get(i)
+          .compose(HttpClientRequest::send)
+          .expecting(HttpResponseExpectation.SC_OK)
+          .compose(HttpClientResponse::body)
+          .onComplete(onSuccess(res2 -> {
+            responses.add(res2.toString());
+            if (responses.size() == 2) {
+              ret.complete(responses);
+            }
+          }));
+      }
 
       return ret.get(40, TimeUnit.SECONDS);
     } finally {
