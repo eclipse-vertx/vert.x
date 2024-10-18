@@ -262,12 +262,14 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
   private void reportResponseComplete() {
     Http1xServerRequest request = responseInProgress;
     if (metrics != null) {
-      flushBytesWritten();
-      if (request.reportMetricsFailed) {
-        metrics.requestReset(request.metric());
-      } else {
-        metrics.responseEnd(request.metric(), request.response(), request.response().bytesWritten());
-      }
+      request.context.dispatch(event -> {
+        flushBytesWritten();
+        if (request.reportMetricsFailed) {
+          metrics.requestReset(request.metric());
+        } else {
+          metrics.responseEnd(request.metric(), request.response(), request.response().bytesWritten());
+        }
+      });
     }
     VertxTracer tracer = context.tracer();
     Object trace = request.trace();
@@ -385,7 +387,7 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
           protected void handleClosed() {
             if (metrics != null) {
               Http1xServerRequest request = Http1xServerConnection.this.responseInProgress;
-              metrics.responseEnd(request.metric(), request.response(), request.response().bytesWritten());
+              request.context.dispatch(event -> metrics.responseEnd(request.metric(), request.response(), request.response().bytesWritten()));
             }
             super.handleClosed();
           }
