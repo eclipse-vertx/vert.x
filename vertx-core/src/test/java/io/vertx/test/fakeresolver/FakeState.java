@@ -6,9 +6,9 @@ public class FakeState<B> {
   final B endpoints;
   volatile boolean isValid;
 
-  FakeState(String name, B endpoints) {
+  FakeState(String name, B endpoints, boolean valid) {
     this.name = name;
     this.endpoints = endpoints;
-    this.isValid = true;
+    this.isValid = valid;
   }
 }

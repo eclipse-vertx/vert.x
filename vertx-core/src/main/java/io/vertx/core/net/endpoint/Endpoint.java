@@ -20,14 +20,14 @@ public interface Endpoint {
   /**
    * The servers capable of serving requests for this endpoint.
    */
-  List<EndpointServer> servers();
+  List<ServerEndpoint> servers();
 
   /**
    * Select a server.
    *
    * @return the selected server
    */
-  default EndpointServer selectServer() {
+  default ServerEndpoint selectServer() {
     return selectServer(null);
   }
 
@@ -37,6 +37,6 @@ public interface Endpoint {
    * @param key the routing key
    * @return the selected server
    */
-  EndpointServer selectServer(String key);
+  ServerEndpoint selectServer(String key);
 
 }

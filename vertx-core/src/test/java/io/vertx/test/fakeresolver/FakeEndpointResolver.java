@@ -5,7 +5,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.net.Address;
 import io.vertx.core.net.AddressResolver;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.endpoint.EndpointServer;
+import io.vertx.core.net.endpoint.ServerEndpoint;
 import io.vertx.core.spi.endpoint.EndpointResolver;
 import io.vertx.core.spi.endpoint.EndpointBuilder;
 
@@ -16,12 +16,22 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 public class FakeEndpointResolver<B> implements AddressResolver, EndpointResolver<FakeAddress, FakeEndpoint, FakeState<B>, B> {
 
+  public static class Endpoint {
+    final List<SocketAddress> addresses;
+    final boolean valid;
+    public Endpoint(List<SocketAddress> addresses, boolean valid) {
+      this.addresses = addresses;
+      this.valid = valid;
+    }
+  }
+
   class LazyFakeState {
     final String name;
-    volatile List<SocketAddress> endpoints;
+    volatile Supplier<Endpoint> endpointSupplier;
     AtomicReference<FakeState<B>> state = new AtomicReference<>();
     LazyFakeState(String name) {
       this.name = name;
@@ -31,8 +41,12 @@ public class FakeEndpointResolver<B> implements AddressResolver, EndpointResolve
   private final ConcurrentMap<String, LazyFakeState> map = new ConcurrentHashMap<>();
 
   public void registerAddress(String name, List<SocketAddress> endpoints) {
+    registerAddress(name, () -> new Endpoint(endpoints, true));
+  }
+
+  public void registerAddress(String name, Supplier<Endpoint> supplier) {
     LazyFakeState lazy = map.computeIfAbsent(name, LazyFakeState::new);
-    lazy.endpoints = endpoints;
+    lazy.endpointSupplier = supplier;
     FakeState prev = lazy.state.getAndSet(null);
     if (prev != null) {
       prev.isValid = false;
@@ -49,7 +63,7 @@ public class FakeEndpointResolver<B> implements AddressResolver, EndpointResolve
       Iterator s1 = ((Iterable) state.state.get().endpoints).iterator();
       List<FakeEndpoint> list = new ArrayList<>();
       for (Object o : ((Iterable) state.state.get().endpoints)) {
-        EndpointServer instance = (EndpointServer) o;
+        ServerEndpoint instance = (ServerEndpoint) o;
         list.add((FakeEndpoint) instance.unwrap());
       }
       return list;
@@ -71,11 +85,13 @@ public class FakeEndpointResolver<B> implements AddressResolver, EndpointResolve
   public Future<FakeState<B>> resolve(FakeAddress address, EndpointBuilder<B, FakeEndpoint> builder) {
     LazyFakeState state = map.get(address.name());
     if (state != null) {
-      if (state.state.get() == null) {
-        for (SocketAddress socketAddress : state.endpoints) {
+      FakeState<B> blah = state.state.get();
+      if (blah == null || !blah.isValid) {
+        Endpoint endpoint = state.endpointSupplier.get();
+        for (SocketAddress socketAddress : endpoint.addresses) {
           builder = builder.addServer(new FakeEndpoint(socketAddress));
         }
-        state.state.set(new FakeState<>(state.name, builder.build()));
+        state.state.set(new FakeState<>(state.name, builder.build(), endpoint.valid));
       }
       return Future.succeededFuture(state.state.get());
     } else {
