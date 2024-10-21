@@ -16,7 +16,6 @@ import javax.net.ssl.SSLContext;
 import org.junit.Test;
 
 import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.handler.ssl.SslProvider;
 import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
@@ -41,7 +40,7 @@ public class SSLAllocatorTest extends VertxTestBase {
     helper
       .buildContextProvider(new SSLOptions().setKeyCertOptions(Cert.CLIENT_JKS.get()).setTrustOptions(Trust.SERVER_JKS.get()), (ContextInternal) vertx.getOrCreateContext())
       .onComplete(onSuccess(provider -> {
-        assertSame(SslProvider.JDK, provider.sslProvider());
+        assertTrue(provider.jdkSSLProvider());
         assertSame(PartialPooledByteBufAllocator.INSTANCE, helper.clientByteBufAllocator(provider));
         assertSame(PartialPooledByteBufAllocator.INSTANCE, helper.serverByteBufAllocator(provider));
         testComplete();
@@ -61,7 +60,7 @@ public class SSLAllocatorTest extends VertxTestBase {
     helper
       .buildContextProvider(new SSLOptions().setKeyCertOptions(Cert.CLIENT_JKS.get()).setTrustOptions(Trust.SERVER_JKS.get()), (ContextInternal) vertx.getOrCreateContext())
       .onComplete(onSuccess(provider -> {
-        assertSame(SslProvider.JDK, provider.sslProvider());
+        assertTrue(provider.jdkSSLProvider());
         assertSame(PartialPooledByteBufAllocator.INSTANCE, helper.clientByteBufAllocator(provider));
         assertSame(PartialPooledByteBufAllocator.INSTANCE, helper.serverByteBufAllocator(provider));
         testComplete();
@@ -81,7 +80,7 @@ public class SSLAllocatorTest extends VertxTestBase {
     helper
       .buildContextProvider(new SSLOptions().setKeyCertOptions(Cert.CLIENT_JKS.get()).setTrustOptions(Trust.SERVER_JKS.get()), (ContextInternal) vertx.getOrCreateContext())
       .onComplete(onSuccess(provider -> {
-        assertSame(SslProvider.JDK, provider.sslProvider());
+        assertTrue(provider.jdkSSLProvider());
         assertSame(PooledByteBufAllocator.DEFAULT, helper.clientByteBufAllocator(provider));
         assertSame(PooledByteBufAllocator.DEFAULT, helper.serverByteBufAllocator(provider));
         testComplete();
@@ -133,7 +132,7 @@ public class SSLAllocatorTest extends VertxTestBase {
         .setPemKeyCertOptions(Cert.CLIENT_PEM.get()).setTrustOptions(Trust.SERVER_PEM.get()),
       null);
     helper.buildContextProvider(new SSLOptions().setKeyCertOptions(Cert.CLIENT_PEM.get()).setTrustOptions(Trust.SERVER_PEM.get()), (ContextInternal) vertx.getOrCreateContext()).onComplete(onSuccess(provider -> {
-      assertSame(SslProvider.OPENSSL, provider.sslProvider());
+      assertFalse(provider.jdkSSLProvider());
       assertSame(PartialPooledByteBufAllocator.INSTANCE, helper.clientByteBufAllocator(provider));
       assertSame(PartialPooledByteBufAllocator.INSTANCE, helper.serverByteBufAllocator(provider));
       testComplete();

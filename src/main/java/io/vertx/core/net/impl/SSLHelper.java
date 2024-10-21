@@ -76,7 +76,7 @@ public class SSLHelper {
 
   private boolean usesJDKSSLWithPooledHeapBuffers(SslContextProvider ctxProvider) {
     return ssl && sslEngineOptions instanceof JdkSSLEngineOptions &&
-      ctxProvider.sslProvider() == SslProvider.JDK &&
+      ctxProvider.jdkSSLProvider() &&
       ((JdkSSLEngineOptions) sslEngineOptions).isPooledHeapBuffers();
   }
 
@@ -173,14 +173,14 @@ public class SSLHelper {
 
   private class EngineConfig {
 
-    private final SslProvider sslProvider;
+    private final boolean jdkSSLProvider;
     private final SSLOptions sslOptions;
     private final Supplier<SslContextFactory> supplier;
     private final boolean useWorkerPool;
 
-    public EngineConfig(SslProvider sslProvider, SSLOptions sslOptions, Supplier<SslContextFactory> supplier,
+    public EngineConfig(boolean jdkSSLProvider, SSLOptions sslOptions, Supplier<SslContextFactory> supplier,
                         boolean useWorkerPool) {
-      this.sslProvider = sslProvider;
+      this.jdkSSLProvider = jdkSSLProvider;
       this.sslOptions = sslOptions;
       this.supplier = supplier;
       this.useWorkerPool = useWorkerPool;
@@ -188,7 +188,7 @@ public class SSLHelper {
 
     SslContextProvider sslContextProvider() {
       return new SslContextProvider(
-        sslProvider,
+        jdkSSLProvider,
         clientAuth,
         endpointIdentificationAlgorithm,
         applicationProtocols,
@@ -319,26 +319,20 @@ public class SSLHelper {
       }).compose(v2 -> ctx.<EngineConfig>executeBlockingInternal(p -> {
         Supplier<SslContextFactory> supplier;
         boolean useWorkerPool;
-        SslProvider sslProvider;
+        final boolean jdkSSLProvider;
         try {
           SSLEngineOptions resolvedEngineOptions = resolveEngineOptions(sslEngineOptions, useAlpn);
           supplier = resolvedEngineOptions::sslContextFactory;
           useWorkerPool = resolvedEngineOptions.getUseWorkerThread();
-          if (resolvedEngineOptions instanceof JdkSSLEngineOptions) {
-            sslProvider = SslProvider.JDK;
-          } else if (resolvedEngineOptions instanceof OpenSSLEngineOptions) {
-            sslProvider = SslProvider.OPENSSL;
-          } else {
-            sslProvider = SslProvider.JDK;
-          }
+          jdkSSLProvider = resolvedEngineOptions instanceof JdkSSLEngineOptions;
         } catch (Exception e) {
           p.fail(e);
           return;
         }
-        p.complete(new EngineConfig(sslProvider, sslOptions, supplier, useWorkerPool));
+        p.complete(new EngineConfig(jdkSSLProvider, sslOptions, supplier, useWorkerPool));
       })).onComplete(promise);
     } else {
-      sslContextFactorySupplier = Future.succeededFuture(new EngineConfig(SslProvider.JDK, sslOptions, () -> new DefaultSslContextFactory(SslProvider.JDK, false), SSLEngineOptions.DEFAULT_USE_WORKER_POOL));
+      sslContextFactorySupplier = Future.succeededFuture(new EngineConfig(true, sslOptions, () -> new DefaultSslContextFactory(SslProvider.JDK, false), SSLEngineOptions.DEFAULT_USE_WORKER_POOL));
     }
     return sslContextFactorySupplier;
   }
