@@ -13,7 +13,7 @@ package io.vertx.core.net.endpoint.impl;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.internal.net.endpoint.EndpointResolverInternal;
-import io.vertx.core.net.endpoint.EndpointServer;
+import io.vertx.core.net.endpoint.ServerEndpoint;
 import io.vertx.core.net.endpoint.ServerInteraction;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.endpoint.InteractionMetrics;
@@ -93,13 +93,13 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
       this.lastAccessed = lastAccessed;
     }
     @Override
-    public List<EndpointServer> servers() {
+    public List<ServerEndpoint> servers() {
       return endpointResolver.endpoint(state).servers;
     }
     public void close() {
       endpointResolver.dispose(state);
     }
-    private EndpointServer selectEndpoint(S state, String routingKey) {
+    private ServerEndpoint selectEndpoint(S state, String routingKey) {
       ListOfServers listOfServers = endpointResolver.endpoint(state);
       int idx;
       if (routingKey == null) {
@@ -112,8 +112,8 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
       }
       return null;
     }
-    public EndpointServer selectServer(String key) {
-      EndpointServer endpoint = selectEndpoint(state, key);
+    public ServerEndpoint selectServer(String key) {
+      ServerEndpoint endpoint = selectEndpoint(state, key);
       if (endpoint == null) {
         throw new IllegalStateException("No results for " + address );
       }
@@ -205,15 +205,15 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
     return sFuture.endpoint;
   }
 
-  private static class ListOfServers implements Iterable<EndpointServer> {
-    final List<EndpointServer> servers;
+  private static class ListOfServers implements Iterable<ServerEndpoint> {
+    final List<ServerEndpoint> servers;
     final ServerSelector selector;
-    private ListOfServers(List<EndpointServer> servers, ServerSelector selector) {
+    private ListOfServers(List<ServerEndpoint> servers, ServerSelector selector) {
       this.servers = servers;
       this.selector = selector;
     }
     @Override
-    public Iterator<EndpointServer> iterator() {
+    public Iterator<ServerEndpoint> iterator() {
       return servers.iterator();
     }
     @Override
@@ -222,12 +222,12 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
     }
   }
 
-  public class EndpointServerImpl implements EndpointServer {
+  public class ServerEndpointImpl implements ServerEndpoint {
     final AtomicLong lastAccessed;
     final String key;
     final N endpoint;
     final InteractionMetrics<?> metrics;
-    public EndpointServerImpl(AtomicLong lastAccessed, String key, N endpoint, InteractionMetrics<?> metrics) {
+    public ServerEndpointImpl(AtomicLong lastAccessed, String key, N endpoint, InteractionMetrics<?> metrics) {
       this.lastAccessed = lastAccessed;
       this.key = key;
       this.endpoint = endpoint;
@@ -288,14 +288,14 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
     EndpointBuilder<ListOfServers, N> builder = new EndpointBuilder<>() {
       @Override
       public EndpointBuilder<ListOfServers, N> addServer(N server, String key) {
-        List<EndpointServer> list = new ArrayList<>();
+        List<ServerEndpoint> list = new ArrayList<>();
         InteractionMetrics<?> metrics = loadBalancer.newMetrics();
-        list.add(new EndpointServerImpl(lastAccessed, key, server, metrics));
+        list.add(new ServerEndpointImpl(lastAccessed, key, server, metrics));
         return new EndpointBuilder<>() {
           @Override
           public EndpointBuilder<ListOfServers, N> addServer(N server, String key) {
             InteractionMetrics<?> metrics = loadBalancer.newMetrics();
-            list.add(new EndpointServerImpl(lastAccessed, key, server, metrics));
+            list.add(new ServerEndpointImpl(lastAccessed, key, server, metrics));
             return this;
           }
           @Override

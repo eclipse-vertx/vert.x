@@ -16,7 +16,7 @@ import io.vertx.core.net.Address;
 import io.vertx.core.net.AddressResolver;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.endpoint.Endpoint;
-import io.vertx.core.net.endpoint.EndpointServer;
+import io.vertx.core.net.endpoint.ServerEndpoint;
 import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakeresolver.FakeAddress;
@@ -47,7 +47,7 @@ public class MappingResolverTest extends VertxTestBase {
     FakeAddress lookup = new FakeAddress("svc");
     mapping = addr -> Collections.singletonList(SocketAddress.inetSocketAddress(80, addr.toString()));
     Endpoint endpoint = awaitFuture(endpointResolver.resolveEndpoint(lookup));
-    EndpointServer node = endpoint.selectServer();
+    ServerEndpoint node = endpoint.selectServer();
     assertEquals("ServiceName(svc)", node.address().host());
     assertEquals(80, node.address().port());
   }

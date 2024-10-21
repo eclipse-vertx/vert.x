@@ -20,7 +20,7 @@ import io.vertx.core.net.SocketAddress;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @VertxGen
-public interface EndpointServer {
+public interface ServerEndpoint {
 
   /**
    * @return the node key for hashing strategies
@@ -28,7 +28,7 @@ public interface EndpointServer {
   String key();
 
   /**
-   * @return the node socket address
+   * @return the server socket address
    */
   SocketAddress address();
 
