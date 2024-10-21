@@ -755,6 +755,21 @@
               </additionalClasspathElements>
             </configuration>
           </execution>
+          <execution>
+            <id>reuse-netty-allocators</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/ReuseNettyAllocatorsTest.java</include>
+              </includes>
+              <systemProperties>
+                <vertx.reuseNettyAllocators>true</vertx.reuseNettyAllocators>
+              </systemProperties>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
 
