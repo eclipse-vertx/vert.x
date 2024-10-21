@@ -80,7 +80,7 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
       return;
     }
     ManagedEndpoint resolved = resolveAddress(casted);
-    ((Future) resolved.endpoint).onComplete(promise);
+    resolved.endpoint.onComplete(promise);
   }
 
   private class EndpointImpl implements io.vertx.core.net.endpoint.Endpoint {
@@ -113,9 +113,6 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
       return null;
     }
     public EndpointServer selectServer(String key) {
-      if (!endpointResolver.isValid(state)) {
-        throw new IllegalStateException("Cannot resolve address " + address );
-      }
       EndpointServer endpoint = selectEndpoint(state, key);
       if (endpoint == null) {
         throw new IllegalStateException("No results for " + address );
@@ -128,6 +125,7 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
 
     private final Future<EndpointImpl> endpoint;
     private final AtomicBoolean disposed = new AtomicBoolean();
+    private boolean valid;
 
     public ManagedEndpoint(Future<EndpointImpl> endpoint) {
       super();
@@ -186,7 +184,15 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
   private final BiFunction<ManagedEndpoint, Boolean, Result> fn = (endpoint, created) -> new Result(endpoint.endpoint, endpoint, created);
 
   private ManagedEndpoint resolveAddress(A address) {
-    Result sFuture = endpointManager.withResource(address, provider, t -> true, fn);
+    Result sFuture = endpointManager.withResource(address, provider, managedEndpoint -> {
+      Future<EndpointImpl> fut = managedEndpoint.endpoint;
+      if (fut.succeeded()) {
+        EndpointImpl endpoint = fut.result();
+        return endpointResolver.isValid(endpoint.state);
+      } else {
+        return true;
+      }
+    }, fn);
     if (sFuture.created) {
       sFuture.fut.onFailure(err -> {
         if (sFuture.endpoint.disposed.compareAndSet(false, true)) {
