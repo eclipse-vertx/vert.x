@@ -33,13 +33,13 @@ public class LoadBalancingCornerCasesTest {
 
   @Test
   public void testCornerCases() {
-    List<EndpointServer> instances = new ArrayList<>();
+    List<ServerEndpoint> instances = new ArrayList<>();
     ServerSelector selector = loadBalancer.selector(instances);
     // Randomness is involved in some policies.
     for (int i = 0; i < 1000; i++) {
       assertEquals(-1, selector.select());
     }
-    EndpointServer instance = new EndpointServer() {
+    ServerEndpoint instance = new ServerEndpoint() {
       InteractionMetrics<?> metrics = loadBalancer.newMetrics();
       @Override
       public SocketAddress address() {

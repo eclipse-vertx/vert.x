@@ -5,7 +5,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.net.Address;
 import io.vertx.core.net.AddressResolver;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.endpoint.EndpointServer;
+import io.vertx.core.net.endpoint.ServerEndpoint;
 import io.vertx.core.spi.endpoint.EndpointResolver;
 import io.vertx.core.spi.endpoint.EndpointBuilder;
 
@@ -63,7 +63,7 @@ public class FakeEndpointResolver<B> implements AddressResolver, EndpointResolve
       Iterator s1 = ((Iterable) state.state.get().endpoints).iterator();
       List<FakeEndpoint> list = new ArrayList<>();
       for (Object o : ((Iterable) state.state.get().endpoints)) {
-        EndpointServer instance = (EndpointServer) o;
+        ServerEndpoint instance = (ServerEndpoint) o;
         list.add((FakeEndpoint) instance.unwrap());
       }
       return list;
