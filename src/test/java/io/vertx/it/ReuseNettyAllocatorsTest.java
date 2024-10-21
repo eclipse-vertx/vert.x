@@ -9,21 +9,21 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.buffer.impl;
-
-import org.junit.Assert;
-import org.junit.Test;
+package io.vertx.it;
 
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
+import io.vertx.core.buffer.impl.VertxByteBufAllocator;
+import org.junit.Assert;
+import org.junit.Test;
 
-public class VertxByteBufAllocatorTest {
+public class ReuseNettyAllocatorsTest {
 
   @Test
-  public void defaultShouldNotReuseExistingNettyPooledAllocators() {
-    Assert.assertNull(System.getProperty("vertx.reuseNettyAllocators"));
-    Assert.assertNotSame(PooledByteBufAllocator.DEFAULT, VertxByteBufAllocator.POOLED_ALLOCATOR);
-    Assert.assertNotSame(ByteBufAllocator.DEFAULT, VertxByteBufAllocator.POOLED_ALLOCATOR);
+  public void testVertxAllocatorsReuseNettyAllocators() {
+    Assert.assertEquals("true", System.getProperty("vertx.reuseNettyAllocators"));
+    Assert.assertSame(PooledByteBufAllocator.DEFAULT, VertxByteBufAllocator.POOLED_ALLOCATOR);
+    Assert.assertSame(ByteBufAllocator.DEFAULT, VertxByteBufAllocator.POOLED_ALLOCATOR);
     Assert.assertSame(ByteBufAllocator.DEFAULT, PooledByteBufAllocator.DEFAULT);
   }
 }
