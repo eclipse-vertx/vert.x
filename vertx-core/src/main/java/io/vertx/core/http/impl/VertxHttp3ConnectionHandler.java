@@ -178,9 +178,8 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
       logger.debug("Received event QuicConnectionCloseEvent");
       ctx.fireUserEventTriggered(evt);
     } else if (evt == ChannelInputShutdownEvent.INSTANCE) {
-      logger.debug("Received event ChannelInputShutdownEvent");
-      channelInputShutdown(ctx);
-      ctx.fireUserEventTriggered(evt);
+      logger.debug("Received event ChannelInputShutdownEvent! channelInputClosed() will be called!");
+      super.userEventTriggered(ctx, evt);
     } else if (evt == ChannelInputShutdownReadComplete.INSTANCE) {
       logger.debug("Received event ChannelInputShutdownReadComplete");
       ctx.fireUserEventTriggered(evt);
