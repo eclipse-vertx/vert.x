@@ -252,13 +252,6 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
     connection.onDataRead(ctx, stream, frame.content(), 0, false);
   }
 
-  protected void channelInputShutdown(ChannelHandlerContext ctx) {
-    logger.debug("ChannelInputShutdown called");
-    VertxHttpStreamBase stream = getLocalControlVertxHttpStream(ctx);
-    connection.onDataRead(ctx, stream, Unpooled.buffer(), 0, true);
-    ctx.close();
-  }
-
   @Override
   protected void channelInputClosed(ChannelHandlerContext ctx) throws Exception {
     logger.debug("ChannelInputClosed called");
