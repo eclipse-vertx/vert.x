@@ -192,22 +192,6 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
   }
 
 //  @Override
-  public void onHeadersRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?> stream, Http3Headers headers,
-                            int streamDependency, short weight, boolean exclusive, int padding, boolean endOfStream) throws Http2Exception {
-    StreamPriorityBase streamPriority = new Http2StreamPriority()
-      .setDependency(streamDependency)
-      .setWeight(weight)
-      .setExclusive(exclusive);
-    onHeadersRead(stream, headers, streamPriority, endOfStream, null);
-  }
-
-//  @Override
-  public void onHeadersRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?> stream, Http3Headers headers,
-                            int padding, boolean endOfStream) throws Http2Exception {
-    onHeadersRead(stream, headers, null, endOfStream, null);
-  }
-
-//  @Override
   public void onSettingsAckRead(ChannelHandlerContext ctx) {
     Handler<Void> handler;
     synchronized (this) {
