@@ -39,11 +39,7 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
     super(vertx, options);
 
     this.options = wsOptions;
-    this.webSocketCM = webSocketConnectionManager();
-  }
-
-  private ResourceManager<EndpointKey, WebSocketGroup> webSocketConnectionManager() {
-    return new ResourceManager<>();
+    this.webSocketCM = new ResourceManager<>();
   }
 
   protected void doShutdown(Promise<Void> p) {
