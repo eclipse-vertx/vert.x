@@ -77,8 +77,6 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
     this.httpSettings = httpSettings;
     connectFuture = new DefaultPromise<>(context.nettyEventLoop());
     this.isServer = isServer;
-    createStreamHandler();
-    createHttp3ConnectionHandler(isServer);
   }
 
   public Future<C> connectFuture() {
@@ -277,11 +275,6 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
 
   //  @Override
 
-  private void createHttp3ConnectionHandler(boolean isServer) {
-    this.connectionHandlerInternal = isServer ? createHttp3ServerConnectionHandler() :
-      createHttp3ClientConnectionHandler();
-  }
-
   private void createStreamHandler() {
     this.streamHandlerInternal = new ChannelInboundHandlerAdapter() {
       @Override
@@ -336,6 +329,12 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
   }
 
   public Http3ConnectionHandler getHttp3ConnectionHandler() {
+    if (connectionHandlerInternal == null) {
+      createStreamHandler();
+      connectionHandlerInternal = isServer ? createHttp3ServerConnectionHandler() :
+        createHttp3ClientConnectionHandler();
+    }
+
     return connectionHandlerInternal;
   }
 
