@@ -95,10 +95,13 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
     this.connection = connectionFactory.apply(this);
     this.connection.onSettingsRead(ctx, settings);
     this.settingsRead = true;
-    if (addHandler != null) {
-      addHandler.handle(connection);
+
+    if (isServer) {
+      if (addHandler != null) {
+        addHandler.handle(connection);
+      }
+      this.connectFuture.trySuccess(connection);
     }
-    this.connectFuture.trySuccess(connection);
   }
 
 
@@ -285,7 +288,8 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
           onSettingsRead(ctx, new HttpSettings(http3SettingsFrame));
           VertxHttp3ConnectionHandler.this.connection.updateHttpSettings(new HttpSettings(http3SettingsFrame));
 //          Thread.sleep(70000);
-          super.channelRead(ctx, msg);
+//          super.channelRead(ctx, msg);
+          ctx.close();
         } else if (msg instanceof DefaultHttp3GoAwayFrame) {
           super.channelRead(ctx, msg);
           DefaultHttp3GoAwayFrame http3GoAwayFrame = (DefaultHttp3GoAwayFrame) msg;
@@ -320,7 +324,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
         ch.pipeline().addLast(VertxHttp3ConnectionHandler.this);
       }
       //TODO: correct the settings and streamHandlerIssue:
-    }, this.streamHandlerInternal, null, httpSettings.toNettyHttp3Settings(), false);
+    }, this.streamHandlerInternal, null, null, true);
   }
 
   private Http3ClientConnectionHandler createHttp3ClientConnectionHandler() {
@@ -351,6 +355,26 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
         _writePriority(stream, urgency, incremental);
       });
     }
+  }
+
+  private boolean isFirstSettingsRead = true;
+  public ChannelHandler getQuicChannelHandler() {
+    return new ChannelInboundHandlerAdapter() {
+      @Override
+      public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+        if (!isServer) {
+          if (settingsRead && isFirstSettingsRead) {
+            if (addHandler != null) {
+              addHandler.handle(connection);
+            }
+            VertxHttp3ConnectionHandler.this.connectFuture.trySuccess(connection);
+            isFirstSettingsRead = false;
+          }
+          ctx.close();
+        }
+        super.channelReadComplete(ctx);
+      }
+    };
   }
 
   public HttpSettings initialSettings() {
