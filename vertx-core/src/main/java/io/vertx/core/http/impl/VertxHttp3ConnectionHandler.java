@@ -288,8 +288,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
           onSettingsRead(ctx, new HttpSettings(http3SettingsFrame));
           VertxHttp3ConnectionHandler.this.connection.updateHttpSettings(new HttpSettings(http3SettingsFrame));
 //          Thread.sleep(70000);
-//          super.channelRead(ctx, msg);
-          ctx.close();
+          super.channelRead(ctx, msg);
         } else if (msg instanceof DefaultHttp3GoAwayFrame) {
           super.channelRead(ctx, msg);
           DefaultHttp3GoAwayFrame http3GoAwayFrame = (DefaultHttp3GoAwayFrame) msg;
@@ -324,12 +323,12 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
         ch.pipeline().addLast(VertxHttp3ConnectionHandler.this);
       }
       //TODO: correct the settings and streamHandlerIssue:
-    }, this.streamHandlerInternal, null, null, true);
+    }, this.streamHandlerInternal, null, httpSettings.toNettyHttp3Settings(), true);
   }
 
   private Http3ClientConnectionHandler createHttp3ClientConnectionHandler() {
     return new Http3ClientConnectionHandler(this.streamHandlerInternal, null, null,
-      httpSettings.toNettyHttp3Settings(), false);
+      httpSettings.toNettyHttp3Settings(), true);
   }
 
   public Http3ConnectionHandler getHttp3ConnectionHandler() {
@@ -370,7 +369,6 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
             VertxHttp3ConnectionHandler.this.connectFuture.trySuccess(connection);
             isFirstSettingsRead = false;
           }
-          ctx.close();
         }
         super.channelReadComplete(ctx);
       }
