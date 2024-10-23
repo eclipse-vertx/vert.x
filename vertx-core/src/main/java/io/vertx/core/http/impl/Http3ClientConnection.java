@@ -231,6 +231,6 @@ class Http3ClientConnection extends Http3ConnectionBase implements HttpClientCon
 
   @Override
   public long activeStreams() {
-    throw new RuntimeException("We have no access to active streams in HTTP/3!");
+    return getActiveQuicStreamChannels().size();
   }
 }

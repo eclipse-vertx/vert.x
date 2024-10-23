@@ -157,9 +157,7 @@ public class Http3ServerConnection extends Http3ConnectionBase implements HttpSe
       contentEncoding);
     vertxStream.request = request;
     vertxStream.isConnect = request.method() == HttpMethod.CONNECT;
-/*
-    QuicStreamChannel stream = handler.connection().stream(streamId);
-*/
+    quicStreamChannels.put(streamChannel.streamId(), streamChannel);
     vertxStream.init(streamChannel);
   }
 

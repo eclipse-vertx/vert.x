@@ -20,11 +20,7 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.ssl.SslHandshakeCompletionEvent;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.incubator.codec.http3.*;
-import io.netty.incubator.codec.quic.QuicConnectionCloseEvent;
-import io.netty.incubator.codec.quic.QuicDatagramExtensionEvent;
-import io.netty.incubator.codec.quic.QuicStreamChannel;
-import io.netty.incubator.codec.quic.QuicStreamLimitChangedEvent;
-import io.netty.incubator.codec.quic.QuicStreamPriority;
+import io.netty.incubator.codec.quic.*;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.EventExecutor;
@@ -37,6 +33,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.http.GoAway;
 import io.vertx.core.http.HttpSettings;
 import io.vertx.core.http.StreamPriorityBase;
+import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
@@ -53,6 +50,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
 
   private final Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory;
   private C connection;
+  private QuicChannel quicChannel;
   private ChannelHandlerContext chctx;
   private final Promise<C> connectFuture;
   private boolean settingsRead;
@@ -136,10 +134,8 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
 
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-    logger.error("VertxHttp3ConnectionHandler caught exception!", cause);
-    cause.printStackTrace();
+    logger.debug("VertxHttp3ConnectionHandler caught exception!", cause);
     super.exceptionCaught(ctx, cause);
-    ctx.close();
   }
 
 
@@ -272,8 +268,16 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
     return Http3.getLocalControlStream(ctx.channel().parent()).attr(HTTP3_MY_STREAM_KEY).get();
   }
 
-  static void setLocalControlVertxHttpStream(QuicStreamChannel quicStreamChannel, VertxHttpStreamBase stream) {
-    Http3.getLocalControlStream(quicStreamChannel.parent()).attr(HTTP3_MY_STREAM_KEY).set(stream);
+  static void setLocalControlVertxHttpStream(QuicStreamChannel quicStreamChannel, VertxHttpStreamBase vertxHttpStream) {
+    Http3.getLocalControlStream(quicStreamChannel.parent()).attr(HTTP3_MY_STREAM_KEY).set(vertxHttpStream);
+  }
+
+  static VertxHttpStreamBase getStreamOfQuicStreamChannel(QuicStreamChannel quicStreamChannel) {
+    return quicStreamChannel.attr(Http3ConnectionBase.QUIC_CHANNEL_STREAM_KEY).get();
+  }
+
+  static void setStreamOfQuicStreamChannel(QuicStreamChannel quicStreamChannel, VertxHttpStreamBase vertxHttpStream) {
+    quicStreamChannel.attr(Http3ConnectionBase.QUIC_CHANNEL_STREAM_KEY).set(vertxHttpStream);
   }
 
   //  @Override
@@ -360,8 +364,39 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
   }
 
   private boolean isFirstSettingsRead = true;
+
+  @Override
+  protected void handleQuicException(ChannelHandlerContext ctx, QuicException exception) {
+    super.handleQuicException(ctx, exception);
+    Exception exception_ = exception;
+    if (exception.error() == QuicError.STREAM_RESET) {
+      exception_ = new StreamResetException(0, exception);
+    }
+    connection.onConnectionError(exception_);
+    if (!settingsRead) {
+      connectFuture.setFailure(exception_);
+    }
+    ctx.close();
+  }
+
+  @Override
+  protected void handleHttp3Exception(ChannelHandlerContext ctx, Http3Exception exception) {
+    super.handleHttp3Exception(ctx, exception);
+    connection.onConnectionError(exception);
+    if (!settingsRead) {
+      connectFuture.setFailure(exception);
+    }
+    ctx.close();
+  }
+
   public ChannelHandler getQuicChannelHandler() {
     return new ChannelInboundHandlerAdapter() {
+      @Override
+      public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        VertxHttp3ConnectionHandler.this.quicChannel = (QuicChannel) ctx.channel();
+        super.channelActive(ctx);
+      }
+
       @Override
       public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
         if (!isServer) {
@@ -396,8 +431,12 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
     return getHttp3ConnectionHandler().isGoAwayReceived();
   }
 
-  public C connection() {
-    return connection;
+  public QuicChannel connection() {
+    return quicChannel;
   }
 
+  public void writeReset(QuicStreamChannel quicStreamChannel, long code) {
+    quicStreamChannel.shutdownOutput((int) code, chctx.newPromise());
+    checkFlush();
+  }
 }
