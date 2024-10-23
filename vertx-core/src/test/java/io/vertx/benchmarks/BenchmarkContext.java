@@ -42,7 +42,6 @@ public class BenchmarkContext {
       ThreadingModel.WORKER,
       EXECUTOR,
       impl.getWorkerPool(),
-      new WorkerTaskQueue(),
       null,
       null,
       Thread.currentThread().getContextClassLoader()

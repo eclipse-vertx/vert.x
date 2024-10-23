@@ -131,27 +131,25 @@ public class NamedWorkerPoolTest extends VertxTestBase {
   public void testUseDifferentExecutorWithSameTaskQueue() throws Exception {
     int count = 10;
     waitFor(count);
-    vertx.deployVerticle(new AbstractVerticle() {
-      @Override
-      public void start() throws Exception {
-        WorkerExecutor exec = vertx.createSharedWorkerExecutor("vert.x-the-executor");
-        Thread startThread = Thread.currentThread();
-        AtomicReference<Thread> currentThread = new AtomicReference<>();
-        for (int i = 0;i < count;i++) {
-          int val = i;
-          exec.executeBlocking(() -> {
-            Thread current = Thread.currentThread();
-            assertNotSame(startThread, current);
-            if (val == 0) {
-              assertNull(currentThread.getAndSet(current));
-            } else {
-              assertSame(current, currentThread.get());
-            }
-            return null;
-          }, true).onComplete(onSuccess(v -> complete()));
+    WorkerExecutor exec = vertx.createSharedWorkerExecutor("vert.x-the-executor");
+    Thread startThread = Thread.currentThread();
+    AtomicReference<Thread> currentThread = new AtomicReference<>();
+    CountDownLatch latch = new CountDownLatch(1);
+    for (int i = 0;i < count;i++) {
+      int val = i;
+      exec.executeBlocking(() -> {
+        Thread current = Thread.currentThread();
+        assertNotSame(startThread, current);
+        if (val == 0) {
+          assertNull(currentThread.getAndSet(current));
+          awaitLatch(latch);
+        } else {
+          assertSame(current, currentThread.get());
         }
-      }
-    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER)).onComplete(onSuccess(v -> {}));
+        return null;
+      }, true).onComplete(onSuccess(v -> complete()));
+      latch.countDown();
+    }
     await();
   }
 

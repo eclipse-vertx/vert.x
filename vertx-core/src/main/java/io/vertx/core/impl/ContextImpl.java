@@ -49,7 +49,7 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
   private ConcurrentMap<Object, Object> data;
   private volatile Handler<Throwable> exceptionHandler;
   final WorkerPool workerPool;
-  final WorkerTaskQueue orderedTasks;
+  final WorkerTaskQueue executeBlockingTasks;
 
   public ContextImpl(VertxInternal vertx,
                      Object[] locals,
@@ -57,7 +57,6 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
                      ThreadingModel threadingModel,
                      EventExecutor executor,
                      WorkerPool workerPool,
-                     WorkerTaskQueue orderedTasks,
                      DeploymentContext deployment,
                      CloseFuture closeFuture,
                      ClassLoader tccl) {
@@ -78,15 +77,22 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
     this.owner = vertx;
     this.workerPool = workerPool;
     this.closeFuture = closeFuture;
-    this.orderedTasks = orderedTasks;
+    this.executeBlockingTasks = new WorkerTaskQueue();
   }
 
   public Future<Void> close() {
+    Future<Void> fut;
     if (closeFuture == owner.closeFuture()) {
-      return Future.future(p -> orderedTasks.shutdown(eventLoop.eventLoop, p));
+      fut = Future.succeededFuture();
     } else {
-      return closeFuture.close().eventually(() -> Future.<Void>future(p -> orderedTasks.shutdown(eventLoop.eventLoop, p)));
+      fut = closeFuture.close();
     }
+    fut = fut.eventually(() -> Future.<Void>future(p -> executeBlockingTasks.shutdown(eventLoop.eventLoop, p)));
+    if (executor instanceof WorkerExecutor) {
+      WorkerExecutor workerExec = (WorkerExecutor) executor;
+      fut = fut.eventually(() -> Future.<Void>future(p -> workerExec.taskQueue().shutdown(eventLoop.eventLoop, p)));
+    }
+    return fut;
   }
 
   public DeploymentContext deployment() {
@@ -113,7 +119,7 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
 
   @Override
   public <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, boolean ordered) {
-    return workerPool.executeBlocking(this, blockingCodeHandler, ordered ? orderedTasks : null);
+    return workerPool.executeBlocking(this, blockingCodeHandler, ordered ? executeBlockingTasks : null);
   }
 
   @Override
