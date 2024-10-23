@@ -26,6 +26,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
+import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
@@ -337,7 +338,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
           if (remoteAddress != null) {
             sslHandler = sslChannelProvider.createClientSslHandler(remoteAddress, serverName, false);
           } else {
-            sslHandler = sslChannelProvider.createServerHandler();
+            sslHandler = sslChannelProvider.createServerHandler(HttpUtils.socketAddressToHostAndPort(chctx.channel().remoteAddress()));
           }
           chctx.pipeline().addFirst("ssl", sslHandler);
         } else {

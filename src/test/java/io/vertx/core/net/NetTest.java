@@ -106,6 +106,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import static io.vertx.core.http.HttpTLSTest.testPeerHostServerCert;
 import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTPS_HOST;
 import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTPS_PORT;
 import static io.vertx.test.core.TestUtils.*;
@@ -4597,5 +4598,55 @@ public class NetTest extends VertxTestBase {
       fail();
     } catch (IllegalArgumentException ignore) {
     }
+  }
+
+  /**
+   * Test that for NetServer, the peer host and port info is available in the SSLEngine
+   * when the X509ExtendedKeyManager.chooseEngineServerAlias is called.
+   *
+   * @throws Exception if an error occurs
+   */
+  @Test
+  public void testTLSServerSSLEnginePeerHost() throws Exception {
+    testTLSServerSSLEnginePeerHostImpl(false);
+  }
+
+  /**
+   * Test that for NetServer with start TLS, the peer host and port info is available
+   * in the SSLEngine when the X509ExtendedKeyManager.chooseEngineServerAlias is called.
+   *
+   * @throws Exception if an error occurs
+   */
+  @Test
+  public void testStartTLSServerSSLEnginePeerHost() throws Exception {
+    testTLSServerSSLEnginePeerHostImpl(true);
+  }
+
+  private void testTLSServerSSLEnginePeerHostImpl(boolean startTLS) throws Exception {
+    AtomicBoolean called = new AtomicBoolean(false);
+    testTLS(Cert.NONE, Trust.SERVER_JKS, testPeerHostServerCert(Cert.SERVER_JKS, called), Trust.NONE,
+      false, false, true, startTLS);
+    assertTrue("X509ExtendedKeyManager.chooseEngineServerAlias is not called", called.get());
+  }
+
+  /**
+   * Test that for NetServer with SNI, the peer host and port info is available
+   * in the SSLEngine when the X509ExtendedKeyManager.chooseEngineServerAlias is called.
+   *
+   * @throws Exception if an error occurs
+   */
+  @Test
+  public void testSNIServerSSLEnginePeerHost() throws Exception {
+    AtomicBoolean called = new AtomicBoolean(false);
+    TLSTest test = new TLSTest()
+      .clientTrust(Trust.SNI_JKS_HOST2)
+      .address(SocketAddress.inetSocketAddress(DEFAULT_HTTPS_PORT, "host2.com"))
+      .serverCert(testPeerHostServerCert(Cert.SNI_JKS, called))
+      .sni(true);
+    test.run(true);
+    await();
+    assertEquals("host2.com", cnOf(test.clientPeerCert()));
+    assertEquals("host2.com", test.indicatedServerName);
+    assertTrue("X509ExtendedKeyManager.chooseEngineServerAlias is not called", called.get());
   }
 }

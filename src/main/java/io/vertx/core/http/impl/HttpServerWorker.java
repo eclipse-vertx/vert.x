@@ -129,7 +129,7 @@ public class HttpServerWorker implements BiConsumer<Channel, SslChannelProvider>
   private void configurePipeline(Channel ch, SslChannelProvider sslChannelProvider) {
     ChannelPipeline pipeline = ch.pipeline();
     if (options.isSsl()) {
-      pipeline.addLast("ssl", sslChannelProvider.createServerHandler());
+      pipeline.addLast("ssl", sslChannelProvider.createServerHandler(HttpUtils.socketAddressToHostAndPort(ch.remoteAddress())));
       ChannelPromise p = ch.newPromise();
       pipeline.addLast("handshaker", new SslHandshakeCompletionHandler(p));
       p.addListener(future -> {

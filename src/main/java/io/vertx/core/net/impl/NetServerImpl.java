@@ -14,7 +14,6 @@ package io.vertx.core.net.impl;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
-import io.netty.channel.EventLoopGroup;
 import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
@@ -26,6 +25,7 @@ import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
+import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
@@ -34,7 +34,6 @@ import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.TrafficShapingOptions;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
@@ -223,7 +222,7 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
 
     private void configurePipeline(Channel ch, SslChannelProvider sslChannelProvider) {
       if (options.isSsl()) {
-        ch.pipeline().addLast("ssl", sslChannelProvider.createServerHandler());
+        ch.pipeline().addLast("ssl", sslChannelProvider.createServerHandler(HttpUtils.socketAddressToHostAndPort(ch.remoteAddress())));
         ChannelPromise p = ch.newPromise();
         ch.pipeline().addLast("handshaker", new SslHandshakeCompletionHandler(p));
         p.addListener(future -> {
