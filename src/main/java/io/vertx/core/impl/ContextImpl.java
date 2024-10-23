@@ -56,7 +56,7 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
   final TaskQueue internalOrderedTasks;
   final WorkerPool internalWorkerPool;
   final WorkerPool workerPool;
-  final WorkerTaskQueue orderedTasks;
+  final WorkerTaskQueue executeBlockingTasks;
 
   public ContextImpl(VertxInternal vertx,
                      int localsLength,
@@ -65,7 +65,6 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
                      EventExecutor executor,
                      WorkerPool internalWorkerPool,
                      WorkerPool workerPool,
-                     WorkerTaskQueue orderedTasks,
                      Deployment deployment,
                      CloseFuture closeFuture,
                      ClassLoader tccl) {
@@ -80,16 +79,23 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
     this.workerPool = workerPool;
     this.closeFuture = closeFuture;
     this.internalWorkerPool = internalWorkerPool;
-    this.orderedTasks = orderedTasks;
+    this.executeBlockingTasks = new WorkerTaskQueue();
     this.internalOrderedTasks = new TaskQueue();
   }
 
   public Future<Void> close() {
+    Future<Void> fut;
     if (closeFuture == owner.closeFuture()) {
-      return Future.future(p -> orderedTasks.shutdown(eventLoop, p));
+      fut = Future.succeededFuture();
     } else {
-      return closeFuture.close().eventually(() -> Future.<Void>future(p -> orderedTasks.shutdown(eventLoop, p)));
+      fut = closeFuture.close();
     }
+    fut = fut.eventually(() -> Future.<Void>future(p -> executeBlockingTasks.shutdown(eventLoop, p)));
+    if (executor instanceof WorkerExecutor) {
+      WorkerExecutor workerExec = (WorkerExecutor) executor;
+      fut = fut.eventually(() -> Future.<Void>future(p -> workerExec.taskQueue().shutdown(eventLoop, p)));
+    }
+    return fut;
   }
 
   public Deployment getDeployment() {
@@ -136,12 +142,12 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
 
   @Override
   public <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered) {
-    return executeBlocking(this, blockingCodeHandler, workerPool, ordered ? orderedTasks : null);
+    return executeBlocking(this, blockingCodeHandler, workerPool, ordered ? executeBlockingTasks : null);
   }
 
   @Override
   public <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, boolean ordered) {
-    return executeBlocking(this, blockingCodeHandler, workerPool, ordered ? orderedTasks : null);
+    return executeBlocking(this, blockingCodeHandler, workerPool, ordered ? executeBlockingTasks : null);
   }
 
   @Override

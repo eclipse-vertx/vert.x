@@ -40,7 +40,6 @@ public class BenchmarkContext {
       EXECUTOR,
       impl.internalWorkerPool,
       impl.workerPool,
-      new WorkerTaskQueue(),
       null,
       null,
       Thread.currentThread().getContextClassLoader()
