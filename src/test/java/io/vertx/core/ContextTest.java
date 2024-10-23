@@ -442,6 +442,27 @@ public class ContextTest extends VertxTestBase {
   }
 
   @Test
+  public void testExecuteBlockingUseItsOwnTaskQueue() {
+    Context ctx = ((VertxInternal)vertx).createWorkerContext();
+    CountDownLatch latch = new CountDownLatch(1);
+    ctx.runOnContext(v -> {
+      ctx.executeBlocking(() -> {
+        latch.countDown();
+        return 0;
+      });
+      boolean timedOut;
+      try {
+        timedOut = !latch.await(10, TimeUnit.SECONDS);
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+      assertFalse(timedOut);
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
   public void testEventLoopContextDispatchReportsFailure() {
     ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
     RuntimeException failure = new RuntimeException();

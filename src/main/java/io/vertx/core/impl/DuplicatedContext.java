@@ -16,7 +16,6 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 
@@ -136,12 +135,12 @@ final class DuplicatedContext extends ContextBase implements ContextInternal {
 
   @Override
   public final <T> Future<T> executeBlocking(Handler<Promise<T>> action, boolean ordered) {
-    return ContextImpl.executeBlocking(this, action, delegate.workerPool, ordered ? delegate.orderedTasks : null);
+    return ContextImpl.executeBlocking(this, action, delegate.workerPool, ordered ? delegate.executeBlockingTasks : null);
   }
 
   @Override
   public final <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, boolean ordered) {
-    return ContextImpl.executeBlocking(this, blockingCodeHandler, delegate.workerPool, ordered ? delegate.orderedTasks : null);
+    return ContextImpl.executeBlocking(this, blockingCodeHandler, delegate.workerPool, ordered ? delegate.executeBlockingTasks : null);
   }
 
   @Override
