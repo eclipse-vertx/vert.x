@@ -112,10 +112,12 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
   }
 
   @Override
-  public void init_(VertxHttpStreamBase vertxHttpStream, QuicStreamChannel stream) {
-    this.stream = stream;
-    this.writable = stream.isWritable();
-    VertxHttp3ConnectionHandler.setLocalControlVertxHttpStream(stream, this);
+  public void init_(VertxHttpStreamBase vertxHttpStream, QuicStreamChannel quicStreamChannel) {
+    this.stream = quicStreamChannel;
+    this.writable = quicStreamChannel.isWritable();
+    this.conn.streams.put(quicStreamChannel.streamId(), quicStreamChannel);
+    VertxHttp3ConnectionHandler.setStreamOfQuicStreamChannel(quicStreamChannel, this);
+    VertxHttp3ConnectionHandler.setLocalControlVertxHttpStream(quicStreamChannel, this);
   }
 
   @Override
