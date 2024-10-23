@@ -289,14 +289,14 @@ class Http3ServerStream extends VertxHttpStreamBase<Http3ServerConnection, QuicS
 
   @Override
   public void writeReset_(int streamId, long code) {
-    stream.write(code);
+    conn.handler.writeReset(conn.quicStreamChannels.get(streamId), code);
   }
 
   @Override
   public void init_(VertxHttpStreamBase vertxHttpStream, QuicStreamChannel quicStreamChannel) {
     this.stream = quicStreamChannel;
     this.writable = quicStreamChannel.isWritable();
-    this.conn.streams.put(quicStreamChannel.streamId(), quicStreamChannel);
+    this.conn.quicStreamChannels.put(quicStreamChannel.streamId(), quicStreamChannel);
     VertxHttp3ConnectionHandler.setLocalControlVertxHttpStream(quicStreamChannel, this);
   }
 

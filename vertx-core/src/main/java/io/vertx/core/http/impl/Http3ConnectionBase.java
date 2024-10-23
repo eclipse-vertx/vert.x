@@ -13,6 +13,7 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
@@ -22,6 +23,9 @@ import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.incubator.codec.http3.Http3Headers;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
+import io.netty.util.AttributeKey;
+import io.netty.util.collection.LongObjectHashMap;
+import io.netty.util.collection.LongObjectMap;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -37,7 +41,10 @@ import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.impl.ConnectionBase;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
@@ -45,6 +52,11 @@ import java.util.concurrent.TimeUnit;
 public abstract class Http3ConnectionBase extends ConnectionBase implements HttpConnection {
 
   private static final Logger log = LoggerFactory.getLogger(Http3ConnectionBase.class);
+
+  public static final AttributeKey<VertxHttpStreamBase> QUIC_CHANNEL_STREAM_KEY =
+    AttributeKey.valueOf(VertxHttpStreamBase.class, "QUIC_CHANNEL_STREAM");
+
+  protected final LongObjectMap<QuicStreamChannel> quicStreamChannels = new LongObjectHashMap<>();
 
   private static ByteBuf safeBuffer(ByteBuf buf) {
     ByteBuf buffer = VertxByteBufAllocator.DEFAULT.heapBuffer(buf.readableBytes());
@@ -97,19 +109,18 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
   }
 
   synchronized void onConnectionError(Throwable cause) {
-//    ArrayList<VertxHttpStreamBase> streams = new ArrayList<>();
-//    try {
-//      handler.connection().forEachActiveStream(stream -> {
-//        streams.add(stream.getProperty(streamKey));
-//        return true;
-//      });
-//    } catch (Http2Exception e) {
-//      log.error("Could not get the list of active streams", e);
-//    }
-//    for (VertxHttpStreamBase stream : streams) {
-//      stream.context.dispatch(v -> stream.handleException(cause));
-//    }
+    ArrayList<VertxHttpStreamBase> vertxHttpStreams = new ArrayList<>();
+    getActiveQuicStreamChannels().forEach(quicStreamChannel -> {
+      vertxHttpStreams.add(VertxHttp3ConnectionHandler.getStreamOfQuicStreamChannel(quicStreamChannel));
+    });
+    for (VertxHttpStreamBase stream : vertxHttpStreams) {
+      stream.context.dispatch(v -> stream.handleException(cause));
+    }
     handleException(cause);
+  }
+
+  protected List<QuicStreamChannel> getActiveQuicStreamChannels() {
+    return quicStreamChannels.values().stream().filter(Channel::isActive).collect(Collectors.toList());
   }
 
 //  VertxHttpStreamBase<?, ?> stream(int id) {
@@ -519,7 +530,7 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
       if (shutdown) {
         return;
       }
-      Http3ConnectionBase conn = handler.connection();
+//      Http3ConnectionBase conn = handler.connection();
       if ((!handler.goAwayReceived() /*&& !conn.goAwaySent()*/) /*|| conn.numActiveStreams() > 0*/) {
         // TODO: correct these
         return;
