@@ -392,13 +392,10 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
   public ChannelHandler getQuicChannelHandler() {
     return new ChannelInboundHandlerAdapter() {
       @Override
-      public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        VertxHttp3ConnectionHandler.this.quicChannel = (QuicChannel) ctx.channel();
-        super.channelActive(ctx);
-      }
-
-      @Override
       public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+        if (VertxHttp3ConnectionHandler.this.quicChannel == null) {
+          VertxHttp3ConnectionHandler.this.quicChannel = (QuicChannel) ctx.channel();
+        }
         if (!isServer) {
           if (settingsRead && isFirstSettingsRead) {
             if (addHandler != null) {
@@ -436,7 +433,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
   }
 
   public void writeReset(QuicStreamChannel quicStreamChannel, long code) {
-    quicStreamChannel.shutdownOutput((int) code, chctx.newPromise());
-    checkFlush();
+    ChannelPromise promise = chctx.newPromise().addListener(future -> checkFlush());
+    quicStreamChannel.shutdownOutput((int) code, promise);
   }
 }
