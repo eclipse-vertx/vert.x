@@ -127,7 +127,7 @@ final class DuplicatedContext extends ContextBase implements ContextInternal {
 
   @Override
   public <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, boolean ordered) {
-    return delegate.workerPool.executeBlocking(this, blockingCodeHandler, ordered ? delegate.orderedTasks : null);
+    return delegate.workerPool.executeBlocking(this, blockingCodeHandler, ordered ? delegate.executeBlockingTasks : null);
   }
 
   @Override

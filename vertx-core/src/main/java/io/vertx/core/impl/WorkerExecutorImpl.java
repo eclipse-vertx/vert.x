@@ -62,7 +62,7 @@ class WorkerExecutorImpl implements MetricsProvider, WorkerExecutorInternal {
   public <T> Future<@Nullable T> executeBlocking(Callable<T> blockingCodeHandler, boolean ordered) {
     ContextInternal context = vertx.getOrCreateContext();
     ContextImpl impl = context instanceof DuplicatedContext ? ((DuplicatedContext)context).delegate : (ContextImpl) context;
-    return pool.executeBlocking(context, blockingCodeHandler, ordered ? impl.orderedTasks : null);
+    return pool.executeBlocking(context, blockingCodeHandler, ordered ? impl.executeBlockingTasks : null);
   }
 
   @Override

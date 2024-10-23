@@ -517,7 +517,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         }
       }
       if (eventExecutor != null) {
-        ctx = createContext(ThreadingModel.OTHER, eventLoopExecutor, eventExecutor, workerPool, new WorkerTaskQueue(), closeFuture, null, Thread.currentThread().getContextClassLoader());
+        ctx = createContext(ThreadingModel.OTHER, eventLoopExecutor, eventExecutor, workerPool, closeFuture, null, Thread.currentThread().getContextClassLoader());
       } else {
         ctx = createEventLoopContext(eventLoop, workerPool, Thread.currentThread().getContextClassLoader());
       }
@@ -580,7 +580,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
                                    ClassLoader tccl) {
     EventExecutor eventExecutor;
     EventLoopExecutor eventLoopExecutor = new EventLoopExecutor(eventLoop);
-    WorkerTaskQueue orderedTasks = new WorkerTaskQueue();
     WorkerPool wp;
     switch (threadingModel) {
       case EVENT_LOOP:
@@ -589,26 +588,25 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         break;
       case WORKER:
         wp = workerPool != null ? workerPool : this.workerPool;
-        eventExecutor = new WorkerExecutor(wp, orderedTasks);
+        eventExecutor = new WorkerExecutor(wp, new WorkerTaskQueue());
         break;
       case VIRTUAL_THREAD:
         if (!isVirtualThreadAvailable()) {
           throw new IllegalStateException("This Java runtime does not support virtual threads");
         }
         wp = virtualThreaWorkerPool;
-        eventExecutor = new WorkerExecutor(virtualThreaWorkerPool, orderedTasks);
+        eventExecutor = new WorkerExecutor(virtualThreaWorkerPool, new WorkerTaskQueue());
         break;
       default:
         throw new UnsupportedOperationException();
     }
-    return createContext(threadingModel, eventLoopExecutor, eventExecutor, wp, orderedTasks, closeFuture, deployment, tccl);
+    return createContext(threadingModel, eventLoopExecutor, eventExecutor, wp, closeFuture, deployment, tccl);
   }
 
   public ContextImpl createContext(ThreadingModel threadingModel,
                                    EventLoopExecutor eventLoopExecutor,
                                    EventExecutor eventExecutor,
                                    WorkerPool workerPool,
-                                   WorkerTaskQueue orderedTasks,
                                    CloseFuture closeFuture,
                                    DeploymentContext deployment,
                                    ClassLoader tccl) {
@@ -618,7 +616,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       threadingModel,
       eventExecutor,
       workerPool,
-      orderedTasks,
       deployment,
       closeFuture,
       disableTCCL ? null : tccl);
