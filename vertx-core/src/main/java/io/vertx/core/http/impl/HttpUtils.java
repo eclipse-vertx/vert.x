@@ -40,6 +40,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
@@ -818,5 +820,21 @@ public final class HttpUtils {
       }
     }
     return false;
+  }
+
+  /**
+   * Convert a {@link SocketAddress} to a {@link HostAndPort}.
+   * If the socket address is an {@link InetSocketAddress}, the hostString and port are used.
+   * Otherwise {@code null} is returned.
+   *
+   * @param socketAddress The socket address to convert
+   * @return The converted instance or {@code null} if not applicable.
+   */
+  public static HostAndPort socketAddressToHostAndPort(SocketAddress socketAddress) {
+    if (socketAddress instanceof InetSocketAddress) {
+      InetSocketAddress inetSocketAddress = (InetSocketAddress) socketAddress;
+      return new HostAndPortImpl(inetSocketAddress.getHostString(), inetSocketAddress.getPort());
+    }
+    return null;
   }
 }
