@@ -32,6 +32,8 @@ import io.vertx.core.Promise;
 import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.impl.HttpUtils;
+import io.vertx.core.internal.CloseSequence;
 import io.vertx.core.impl.HostnameResolver;
 import io.vertx.core.internal.CloseSequence;
 import io.vertx.core.internal.ContextInternal;
@@ -250,11 +252,11 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
 
           SslChannelProvider sslChannelProvider = new SslChannelProvider(vertx, sslContextProvider, sslOptions.isSni());
           ch.pipeline().addLast(SERVER_SSL_HANDLER_NAME, sslChannelProvider.createServerHandler(options.isUseAlpn(),
-            options.isHttp3(), options.getSslHandshakeTimeout(), options.getSslHandshakeTimeoutUnit(), handler));
+            options.isHttp3(), options.getSslHandshakeTimeout(), options.getSslHandshakeTimeoutUnit(), HttpUtils.socketAddressToHostAndPort(ch.remoteAddress()), handler);
         } else {
           SslChannelProvider sslChannelProvider = new SslChannelProvider(vertx, sslContextProvider, sslOptions.isSni());
           ch.pipeline().addLast(SERVER_SSL_HANDLER_NAME, sslChannelProvider.createServerHandler(options.isUseAlpn(),
-            options.isHttp3(), options.getSslHandshakeTimeout(), options.getSslHandshakeTimeoutUnit(), null));
+            options.isHttp3(), options.getSslHandshakeTimeout(), options.getSslHandshakeTimeoutUnit(), HttpUtils.socketAddressToHostAndPort(ch.remoteAddress()), null));
           ChannelPromise p = ch.newPromise();
           ch.pipeline().addLast("handshaker", new SslHandshakeCompletionHandler(p));
           p.addListener(future -> {
