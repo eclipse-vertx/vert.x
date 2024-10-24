@@ -50,8 +50,7 @@ public class CoreExamples {
   public void example4(HttpServerRequest request) {
     HttpServerResponse response = request.response();
     response.putHeader("Content-Type", "text/plain");
-    response.write("some text");
-    response.end();
+    response.end("some text");
   }
 
   public void example5(Vertx vertx) {
