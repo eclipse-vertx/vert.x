@@ -18,7 +18,6 @@ import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -71,11 +70,10 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
 
   Http2ServerRequest(Http2ServerStream stream,
                      String serverOrigin,
-                     Http2Headers headers,
-                     String contentEncoding) {
+                     Http2Headers headers) {
     this.context = stream.context;
     this.stream = stream;
-    this.response = new Http2ServerResponse(stream.conn, stream, false, contentEncoding);
+    this.response = new Http2ServerResponse(stream.conn, stream, false);
     this.serverOrigin = serverOrigin;
     this.headersMap = new Http2HeadersAdaptor(headers);
   }

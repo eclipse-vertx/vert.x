@@ -50,13 +50,14 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
 
   Http2ServerStream(Http2ServerConnection conn,
                     ContextInternal context,
+                    Http2Headers headers,
                     HttpMethod method,
                     String uri,
                     TracingPolicy tracingPolicy,
                     boolean halfClosedRemote) {
     super(conn, context);
 
-    this.headers = null;
+    this.headers = headers;
     this.method = method;
     this.uri = uri;
     this.scheme = null;

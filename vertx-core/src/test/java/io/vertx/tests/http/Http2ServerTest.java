@@ -2123,13 +2123,118 @@ public class Http2ServerTest extends Http2TestBase {
                 if (i == -1) {
                   break;
                 }
-                baos.write(i);;
+                baos.write(i);
               }
               decoded = baos.toString();
             } catch (IOException e) {
               fail(e);
               return;
             }
+            assertEquals(expected, decoded);
+            complete();
+          });
+          return super.onDataRead(ctx, streamId, data, padding, endOfStream);
+        }
+      });
+      int id = request.nextStreamId();
+      request.encoder.writeHeaders(request.context, id, GET("/").add("accept-encoding", "gzip"), 0, true, request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testResponseCompressionEnabledButResponseAlreadyCompressed() throws Exception {
+    waitFor(2);
+    String expected = TestUtils.randomAlphaString(1000);
+    server.close();
+    server = vertx.createHttpServer(serverOptions.setCompressionSupported(true));
+    server.requestHandler(req -> {
+      req.response().headers().set(HttpHeaderNames.CONTENT_ENCODING, "gzip");
+      try {
+        req.response().end(Buffer.buffer(TestUtils.compressGzip(expected)));
+      } catch (Exception e) {
+        fail(e);
+      }
+    });
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
+      request.decoder.frameListener(new Http2EventAdapter() {
+        @Override
+        public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+          vertx.runOnContext(v -> {
+            assertEquals("gzip", headers.get(HttpHeaderNames.CONTENT_ENCODING).toString());
+            complete();
+          });
+        }
+        @Override
+        public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+          byte[] bytes = new byte[data.readableBytes()];
+          data.readBytes(bytes);
+          vertx.runOnContext(v -> {
+            String decoded;
+            try {
+              GZIPInputStream in = new GZIPInputStream(new ByteArrayInputStream(bytes));
+              ByteArrayOutputStream baos = new ByteArrayOutputStream();
+              while (true) {
+                int i = in.read();
+                if (i == -1) {
+                  break;
+                }
+                baos.write(i);
+              }
+              decoded = baos.toString();
+            } catch (IOException e) {
+              fail(e);
+              return;
+            }
+            assertEquals(expected, decoded);
+            complete();
+          });
+          return super.onDataRead(ctx, streamId, data, padding, endOfStream);
+        }
+      });
+      int id = request.nextStreamId();
+      request.encoder.writeHeaders(request.context, id, GET("/").add("accept-encoding", "gzip"), 0, true, request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testResponseCompressionEnabledButExplicitlyDisabled() throws Exception {
+    waitFor(2);
+    String expected = TestUtils.randomAlphaString(1000);
+    server.close();
+    server = vertx.createHttpServer(serverOptions.setCompressionSupported(true));
+    server.requestHandler(req -> {
+      req.response().headers().set(HttpHeaderNames.CONTENT_ENCODING, "identity");
+      try {
+        req.response().end(expected);
+      } catch (Exception e) {
+        fail(e);
+      }
+    });
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
+      request.decoder.frameListener(new Http2EventAdapter() {
+        @Override
+        public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+          vertx.runOnContext(v -> {
+            assertFalse(headers.contains(HttpHeaderNames.CONTENT_ENCODING));
+            complete();
+          });
+        }
+        @Override
+        public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+          byte[] bytes = new byte[data.readableBytes()];
+          data.readBytes(bytes);
+          vertx.runOnContext(v -> {
+            String decoded = new String(bytes, StandardCharsets.UTF_8);
             assertEquals(expected, decoded);
             complete();
           });
