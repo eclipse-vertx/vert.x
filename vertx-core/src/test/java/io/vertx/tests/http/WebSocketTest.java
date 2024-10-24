@@ -32,32 +32,8 @@ import io.vertx.core.ThreadingModel;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.ClientAuth;
-import io.vertx.core.http.ClientWebSocket;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientAgent;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpClientResponse;
-import io.vertx.core.http.HttpHeaders;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.PoolOptions;
-import io.vertx.core.http.RequestOptions;
-import io.vertx.core.http.ServerWebSocket;
-import io.vertx.core.http.UpgradeRejectedException;
-import io.vertx.core.http.WebSocket;
-import io.vertx.core.http.WebSocketBase;
-import io.vertx.core.http.WebSocketClient;
-import io.vertx.core.http.WebSocketClientOptions;
-import io.vertx.core.http.WebSocketConnectOptions;
-import io.vertx.core.http.WebSocketFrame;
-import io.vertx.core.http.WebSocketFrameType;
-import io.vertx.core.http.WebsocketVersion;
+import io.vertx.core.http.*;
+import io.vertx.core.http.WebSocketVersion;
 import io.vertx.core.http.impl.Http1xClientConnection;
 import io.vertx.core.http.impl.Http1xServerConnection;
 import io.vertx.core.internal.http.WebSocketInternal;
@@ -69,7 +45,6 @@ import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.transport.Transport;
 import io.vertx.test.core.CheckingSender;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
@@ -165,117 +140,117 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testRejectHybi00() throws Exception {
-    testReject(WebsocketVersion.V00, null, 502, "Bad Gateway");
+    testReject(WebSocketVersion.V00, null, 502, "Bad Gateway");
   }
 
   @Test
   public void testRejectHybi08() throws Exception {
-    testReject(WebsocketVersion.V08, null, 502, "Bad Gateway");
+    testReject(WebSocketVersion.V08, null, 502, "Bad Gateway");
   }
 
   @Test
   public void testRejectWithStatusCode() throws Exception {
-    testReject(WebsocketVersion.V08, 404, 404, "Not Found");
+    testReject(WebSocketVersion.V08, 404, 404, "Not Found");
   }
 
   @Test
   public void testWSBinaryHybi00() throws Exception {
-    testWSFrames(true, WebsocketVersion.V00);
+    testWSFrames(true, WebSocketVersion.V00);
   }
 
   @Test
   public void testWSStringHybi00() throws Exception {
-    testWSFrames(false, WebsocketVersion.V00);
+    testWSFrames(false, WebSocketVersion.V00);
   }
 
   @Test
   public void testWSBinaryHybi08() throws Exception {
-    testWSFrames(true, WebsocketVersion.V08);
+    testWSFrames(true, WebSocketVersion.V08);
   }
 
   @Test
   public void testWSStringHybi08() throws Exception {
-    testWSFrames(false, WebsocketVersion.V08);
+    testWSFrames(false, WebSocketVersion.V08);
   }
 
   @Test
   public void testWSBinaryHybi17() throws Exception {
-    testWSFrames(true, WebsocketVersion.V13);
+    testWSFrames(true, WebSocketVersion.V13);
   }
 
   @Test
   public void testWSStringHybi17() throws Exception {
-    testWSFrames(false, WebsocketVersion.V13);
+    testWSFrames(false, WebSocketVersion.V13);
   }
 
   @Test
   public void testWSStreamsHybi00() throws Exception {
-    testWSWriteStream(WebsocketVersion.V00);
+    testWSWriteStream(WebSocketVersion.V00);
   }
 
   @Test
   public void testWSStreamsHybi08() throws Exception {
-    testWSWriteStream(WebsocketVersion.V08);
+    testWSWriteStream(WebSocketVersion.V08);
   }
 
   @Test
   public void testWSStreamsHybi17() throws Exception {
-    testWSWriteStream(WebsocketVersion.V13);
+    testWSWriteStream(WebSocketVersion.V13);
   }
 
   @Test
   public void testWriteFromConnectHybi00() throws Exception {
-    testWriteFromConnectHandler(WebsocketVersion.V00);
+    testWriteFromConnectHandler(WebSocketVersion.V00);
   }
 
   @Test
   public void testWriteFromConnectHybi08() throws Exception {
-    testWriteFromConnectHandler(WebsocketVersion.V08);
+    testWriteFromConnectHandler(WebSocketVersion.V08);
   }
 
   @Test
   public void testWriteFromConnectHybi17() throws Exception {
-    testWriteFromConnectHandler(WebsocketVersion.V13);
+    testWriteFromConnectHandler(WebSocketVersion.V13);
   }
 
   @Test
   public void testContinuationWriteFromConnectHybi08() throws Exception {
-    testContinuationWriteFromConnectHandler(WebsocketVersion.V08);
+    testContinuationWriteFromConnectHandler(WebSocketVersion.V08);
   }
 
   @Test
   public void testContinuationWriteFromConnectHybi17() throws Exception {
-    testContinuationWriteFromConnectHandler(WebsocketVersion.V13);
+    testContinuationWriteFromConnectHandler(WebSocketVersion.V13);
   }
 
   @Test
   public void testValidSubProtocolHybi00() throws Exception {
-    testValidSubProtocol(WebsocketVersion.V00);
+    testValidSubProtocol(WebSocketVersion.V00);
   }
 
   @Test
   public void testValidSubProtocolHybi08() throws Exception {
-    testValidSubProtocol(WebsocketVersion.V08);
+    testValidSubProtocol(WebSocketVersion.V08);
   }
 
   @Test
   public void testValidSubProtocolHybi17() throws Exception {
-    testValidSubProtocol(WebsocketVersion.V13);
+    testValidSubProtocol(WebSocketVersion.V13);
   }
 
   @Test
   public void testInvalidSubProtocolHybi00() throws Exception {
-    testInvalidSubProtocol(WebsocketVersion.V00);
+    testInvalidSubProtocol(WebSocketVersion.V00);
   }
 
   @Test
   public void testInvalidSubProtocolHybi08() throws Exception {
-    testInvalidSubProtocol(WebsocketVersion.V08);
+    testInvalidSubProtocol(WebSocketVersion.V08);
   }
 
   @Test
   public void testInvalidSubProtocolHybi17() throws Exception {
-    testInvalidSubProtocol(WebsocketVersion.V13);
+    testInvalidSubProtocol(WebSocketVersion.V13);
   }
 
   // TODO close and exception tests
@@ -689,7 +664,7 @@ public class WebSocketTest extends VertxTestBase {
     return req.toNetSocket();
   }
 
-  private void testWSWriteStream(WebsocketVersion version) throws Exception {
+  private void testWSWriteStream(WebSocketVersion version) throws Exception {
 
     String scheme = "http";
     String path = "/some/path";
@@ -740,14 +715,14 @@ public class WebSocketTest extends VertxTestBase {
     await();
   }
 
-  private void testWSFrames(boolean binary, WebsocketVersion version) throws Exception {
+  private void testWSFrames(boolean binary, WebSocketVersion version) throws Exception {
     String scheme = "http";
     String path = "/some/path";
     String query = "handshake=bar&wibble=eek";
     String uri = path + "?" + query;
 
     // version 0 doesn't support continuations so we just send 1 frame per message
-    int frames = version == WebsocketVersion.V00 ? 1: 10;
+    int frames = version == WebSocketVersion.V00 ? 1: 10;
 
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).webSocketHandler(ws -> {
       assertEquals(DEFAULT_HTTP_HOST, ws.authority().host());
@@ -809,7 +784,7 @@ public class WebSocketTest extends VertxTestBase {
 
       MultiMap headers = ws.headers();
       String webSocketLocation = headers.get("sec-websocket-location"); // HERE
-      if (version == WebsocketVersion.V00) {
+      if (version == WebSocketVersion.V00) {
         assertEquals("ws://" + DEFAULT_HTTP_HOST_AND_PORT + uri, webSocketLocation);
       } else {
         assertNull(webSocketLocation);
@@ -933,7 +908,7 @@ public class WebSocketTest extends VertxTestBase {
     await();
   }
 
-  private void testContinuationWriteFromConnectHandler(WebsocketVersion version) throws Exception {
+  private void testContinuationWriteFromConnectHandler(WebSocketVersion version) throws Exception {
     String path = "/some/path";
     String firstFrame = "AAA";
     String continuationFrame = "BBB";
@@ -983,7 +958,7 @@ public class WebSocketTest extends VertxTestBase {
     await();
   }
 
-  private void testWriteFromConnectHandler(WebsocketVersion version) throws Exception {
+  private void testWriteFromConnectHandler(WebSocketVersion version) throws Exception {
 
     String path = "/some/path";
     Buffer buff = Buffer.buffer("AAA");
@@ -1149,7 +1124,7 @@ public class WebSocketTest extends VertxTestBase {
     await();
   }
 
-  private void testValidSubProtocol(WebsocketVersion version) throws Exception {
+  private void testValidSubProtocol(WebSocketVersion version) throws Exception {
     String path = "/some/path";
     List<String> clientSubProtocols = Arrays.asList("clientproto", "commonproto");
     List<String> serverSubProtocols = Arrays.asList("serverproto", "commonproto");
@@ -1184,7 +1159,7 @@ public class WebSocketTest extends VertxTestBase {
     await();
   }
 
-  private void testInvalidSubProtocol(WebsocketVersion version) throws Exception {
+  private void testInvalidSubProtocol(WebSocketVersion version) throws Exception {
     String path = "/some/path";
     String subProtocol = "myprotocol";
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).addWebSocketSubProtocol("invalid")).webSocketHandler(ws -> {
@@ -1378,7 +1353,7 @@ public class WebSocketTest extends VertxTestBase {
     }));
   }
 
-  private void testReject(WebsocketVersion version, Integer rejectionStatus, int expectedRejectionStatus, String expectedBody) throws Exception {
+  private void testReject(WebSocketVersion version, Integer rejectionStatus, int expectedRejectionStatus, String expectedBody) throws Exception {
 
     String path = "/some/path";
 
@@ -1541,50 +1516,50 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testWriteMessageHybi00() throws InterruptedException {
-    testWriteMessage(256, WebsocketVersion.V00);
+    testWriteMessage(256, WebSocketVersion.V00);
   }
 
   @Test
   public void testWriteFragmentedMessage1Hybi00() throws InterruptedException {
-    testWriteMessage(65536 + 256, WebsocketVersion.V00);
+    testWriteMessage(65536 + 256, WebSocketVersion.V00);
   }
 
   @Test
   public void testWriteFragmentedMessage2Hybi00() throws InterruptedException {
-    testWriteMessage(65536 + 65536 + 256, WebsocketVersion.V00);
+    testWriteMessage(65536 + 65536 + 256, WebSocketVersion.V00);
   }
 
   @Test
   public void testWriteMessageHybi08() throws InterruptedException {
-    testWriteMessage(256, WebsocketVersion.V08);
+    testWriteMessage(256, WebSocketVersion.V08);
   }
 
   @Test
   public void testWriteFragmentedMessage1Hybi08() throws InterruptedException {
-    testWriteMessage(65536 + 256, WebsocketVersion.V08);
+    testWriteMessage(65536 + 256, WebSocketVersion.V08);
   }
 
   @Test
   public void testWriteFragmentedMessage2Hybi08() throws InterruptedException {
-    testWriteMessage(65536 + 65536 + 256, WebsocketVersion.V08);
+    testWriteMessage(65536 + 65536 + 256, WebSocketVersion.V08);
   }
 
   @Test
   public void testWriteMessageHybi17() throws InterruptedException {
-    testWriteMessage(256, WebsocketVersion.V13);
+    testWriteMessage(256, WebSocketVersion.V13);
   }
 
   @Test
   public void testWriteFragmentedMessage1Hybi17() throws InterruptedException {
-    testWriteMessage(65536 + 256, WebsocketVersion.V13);
+    testWriteMessage(65536 + 256, WebSocketVersion.V13);
   }
 
   @Test
   public void testWriteFragmentedMessage2Hybi17() throws InterruptedException {
-    testWriteMessage(65536 + 65536 + 256, WebsocketVersion.V13);
+    testWriteMessage(65536 + 65536 + 256, WebSocketVersion.V13);
   }
 
-  private void testWriteMessage(int size, WebsocketVersion version) throws InterruptedException {
+  private void testWriteMessage(int size, WebSocketVersion version) throws InterruptedException {
     client = vertx.createWebSocketClient();
     waitFor(2);
     String path = "/some/path";
@@ -1619,55 +1594,55 @@ public class WebSocketTest extends VertxTestBase {
   @Test
   public void testNonFragmentedTextMessage2Hybi00() throws InterruptedException {
       String messageToSend = randomAlphaString(256);
-      testWriteSingleTextMessage(messageToSend, WebsocketVersion.V00);
+      testWriteSingleTextMessage(messageToSend, WebSocketVersion.V00);
   }
 
   @Test
   public void testFragmentedTextMessage2Hybi07() throws InterruptedException {
     String messageToSend = randomAlphaString(65536 + 65536 + 256);
-    testWriteSingleTextMessage(messageToSend, WebsocketVersion.V07);
+    testWriteSingleTextMessage(messageToSend, WebSocketVersion.V07);
   }
 
   @Test
   public void testFragmentedTextMessage2Hybi08() throws InterruptedException {
     String messageToSend = randomAlphaString(65536 + 65536 + 256);
-    testWriteSingleTextMessage(messageToSend, WebsocketVersion.V08);
+    testWriteSingleTextMessage(messageToSend, WebSocketVersion.V08);
   }
 
   @Test
   public void testFragmentedTextMessage2Hybi13() throws InterruptedException {
     String messageToSend = randomAlphaString(65536 + 65536 + 256);
-    testWriteSingleTextMessage(messageToSend, WebsocketVersion.V13);
+    testWriteSingleTextMessage(messageToSend, WebSocketVersion.V13);
   }
 
   @Test
   public void testMaxLengthFragmentedTextMessage() throws InterruptedException {
     String messageToSend = randomAlphaString(HttpServerOptions.DEFAULT_MAX_WEBSOCKET_MESSAGE_SIZE);
-    testWriteSingleTextMessage(messageToSend, WebsocketVersion.V13);
+    testWriteSingleTextMessage(messageToSend, WebSocketVersion.V13);
   }
 
   @Test
   public void testFragmentedUnicodeTextMessage2Hybi07() throws InterruptedException {
     String messageToSend = TestUtils.randomUnicodeString(65536 + 256);
-    testWriteSingleTextMessage(messageToSend, WebsocketVersion.V07);
+    testWriteSingleTextMessage(messageToSend, WebSocketVersion.V07);
   }
 
   @Test
   public void testFragmentedUnicodeTextMessage2Hybi08() throws InterruptedException {
     String messageToSend = TestUtils.randomUnicodeString(65536 + 256);
-    testWriteSingleTextMessage(messageToSend, WebsocketVersion.V08);
+    testWriteSingleTextMessage(messageToSend, WebSocketVersion.V08);
   }
 
   @Test
   public void testFragmentedUnicodeTextMessage2Hybi13() throws InterruptedException {
     String messageToSend = TestUtils.randomUnicodeString(65536 + 256);
-    testWriteSingleTextMessage(messageToSend, WebsocketVersion.V13);
+    testWriteSingleTextMessage(messageToSend, WebSocketVersion.V13);
   }
 
   @Test
   public void testTooLargeMessage() throws InterruptedException {
     String messageToSend = randomAlphaString(WebSocketClientOptions.DEFAULT_MAX_MESSAGE_SIZE + 1);
-    SocketMessages socketMessages = testWriteTextMessages(Collections.singletonList(messageToSend), WebsocketVersion.V13);
+    SocketMessages socketMessages = testWriteTextMessages(Collections.singletonList(messageToSend), WebSocketVersion.V13);
     List<String> receivedMessages = socketMessages.getReceivedMessages();
     List<String> expectedMessages = Collections.emptyList();
     assertEquals("Should not have received any messages", expectedMessages, receivedMessages);
@@ -1685,13 +1660,13 @@ public class WebSocketTest extends VertxTestBase {
     String shortLastMessage = randomAlphaString(shortMessageLength);
     List<String> messagesToSend = Arrays.asList(shortFirstMessage, tooLongMiddleMessage, shortLastMessage);
 
-    SocketMessages socketMessages = testWriteTextMessages(messagesToSend, WebsocketVersion.V13);
+    SocketMessages socketMessages = testWriteTextMessages(messagesToSend, WebSocketVersion.V13);
     List<String> receivedMessages = socketMessages.getReceivedMessages();
     List<String> expectedMessages = Arrays.asList(shortFirstMessage, shortLastMessage);
     assertEquals("Incorrect received messages", expectedMessages, receivedMessages);
   }
 
-  private void testWriteSingleTextMessage(String messageToSend, WebsocketVersion version) throws InterruptedException {
+  private void testWriteSingleTextMessage(String messageToSend, WebSocketVersion version) throws InterruptedException {
     List<String> messagesToSend = Collections.singletonList(messageToSend);
     SocketMessages socketMessages = testWriteTextMessages(messagesToSend, version);
     assertEquals("Did not receive all messages", messagesToSend, socketMessages.getReceivedMessages());
@@ -1699,7 +1674,7 @@ public class WebSocketTest extends VertxTestBase {
     assertEquals("Should not have received any exceptions", expectedExceptions, socketMessages.getReceivedExceptions());
   }
 
-  private SocketMessages testWriteTextMessages(List<String> messagesToSend, WebsocketVersion version) throws InterruptedException {
+  private SocketMessages testWriteTextMessages(List<String> messagesToSend, WebSocketVersion version) throws InterruptedException {
     String path = "/some/path";
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).webSocketHandler(ws -> {
       for (String messageToSend : messagesToSend) {
@@ -3173,7 +3148,7 @@ public class WebSocketTest extends VertxTestBase {
       .setPort(DEFAULT_HTTP_PORT)
       .setHost(DEFAULT_HTTP_HOST)
       .setURI("/some/path")
-      .setVersion(WebsocketVersion.V13);
+      .setVersion(WebSocketVersion.V13);
     client = vertx.createWebSocketClient();
     vertx.runOnContext(v1 -> {
       client.connect(options).onComplete(onSuccess(ws -> {
@@ -3623,50 +3598,50 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testSetOriginHeaderV13() throws InterruptedException {
-    testOriginHeader(WebsocketVersion.V13, true, "http://www.example.com", HttpHeaders.ORIGIN, "http://www.example.com");
+    testOriginHeader(WebSocketVersion.V13, true, "http://www.example.com", HttpHeaders.ORIGIN, "http://www.example.com");
   }
 
   @Test
   public void testEnableOriginHeaderV13() throws InterruptedException {
-    testOriginHeader(WebsocketVersion.V13, true, null, HttpHeaders.ORIGIN, "http://" + DEFAULT_HTTP_HOST_AND_PORT);
+    testOriginHeader(WebSocketVersion.V13, true, null, HttpHeaders.ORIGIN, "http://" + DEFAULT_HTTP_HOST_AND_PORT);
   }
 
   @Test
   public void testDisableOriginHeaderV13() throws InterruptedException {
-    testOriginHeader(WebsocketVersion.V13, false, null, HttpHeaders.ORIGIN, null);
+    testOriginHeader(WebSocketVersion.V13, false, null, HttpHeaders.ORIGIN, null);
   }
 
   @Test
   public void testSetOriginHeaderV08() throws InterruptedException {
-    testOriginHeader(WebsocketVersion.V08, true, "http://www.example.com", HttpHeaderNames.SEC_WEBSOCKET_ORIGIN, "http://www.example.com");
+    testOriginHeader(WebSocketVersion.V08, true, "http://www.example.com", HttpHeaderNames.SEC_WEBSOCKET_ORIGIN, "http://www.example.com");
   }
 
   @Test
   public void testEnableOriginHeaderV08() throws InterruptedException {
-    testOriginHeader(WebsocketVersion.V08, true, null, HttpHeaderNames.SEC_WEBSOCKET_ORIGIN, "http://" + DEFAULT_HTTP_HOST_AND_PORT);
+    testOriginHeader(WebSocketVersion.V08, true, null, HttpHeaderNames.SEC_WEBSOCKET_ORIGIN, "http://" + DEFAULT_HTTP_HOST_AND_PORT);
   }
 
   @Test
   public void testDisableOriginHeaderV08() throws InterruptedException {
-    testOriginHeader(WebsocketVersion.V08, false, null, HttpHeaderNames.SEC_WEBSOCKET_ORIGIN, null);
+    testOriginHeader(WebSocketVersion.V08, false, null, HttpHeaderNames.SEC_WEBSOCKET_ORIGIN, null);
   }
 
   @Test
   public void testSetOriginHeaderV07() throws InterruptedException {
-    testOriginHeader(WebsocketVersion.V07, true, "http://www.example.com", HttpHeaderNames.SEC_WEBSOCKET_ORIGIN, "http://www.example.com");
+    testOriginHeader(WebSocketVersion.V07, true, "http://www.example.com", HttpHeaderNames.SEC_WEBSOCKET_ORIGIN, "http://www.example.com");
   }
 
   @Test
   public void testEnableOriginHeaderV07() throws InterruptedException {
-    testOriginHeader(WebsocketVersion.V07, true, null, HttpHeaderNames.SEC_WEBSOCKET_ORIGIN, "http://" + DEFAULT_HTTP_HOST_AND_PORT);
+    testOriginHeader(WebSocketVersion.V07, true, null, HttpHeaderNames.SEC_WEBSOCKET_ORIGIN, "http://" + DEFAULT_HTTP_HOST_AND_PORT);
   }
 
   @Test
   public void testDisableOriginHeaderV07() throws InterruptedException {
-    testOriginHeader(WebsocketVersion.V07, false, null, HttpHeaderNames.SEC_WEBSOCKET_ORIGIN, null);
+    testOriginHeader(WebSocketVersion.V07, false, null, HttpHeaderNames.SEC_WEBSOCKET_ORIGIN, null);
   }
 
-  private void testOriginHeader(WebsocketVersion version, boolean allow, String origin, CharSequence header, String expected) throws InterruptedException {
+  private void testOriginHeader(WebSocketVersion version, boolean allow, String origin, CharSequence header, String expected) throws InterruptedException {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST));
     server.webSocketHandler(ws -> {
       if (expected != null) {

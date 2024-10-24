@@ -19,6 +19,6 @@ import io.vertx.codegen.annotations.VertxGen;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public enum WebsocketVersion {
+public enum WebSocketVersion {
   V00, V07, V08, V13
 }

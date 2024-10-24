@@ -93,7 +93,7 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
     return webSocket(vertx.getOrCreateContext(), options);
   }
 
-  static WebSocketConnectOptions webSocketConnectOptionsAbs(String url, MultiMap headers, WebsocketVersion version, List<String> subProtocols) {
+  static WebSocketConnectOptions webSocketConnectOptionsAbs(String url, MultiMap headers, WebSocketVersion version, List<String> subProtocols) {
     URI uri;
     try {
       uri = new URI(url);
@@ -126,7 +126,7 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
       .setSubProtocols(subProtocols);
   }
 
-  public Future<WebSocket> webSocketAbs(String url, MultiMap headers, WebsocketVersion version, List<String> subProtocols) {
+  public Future<WebSocket> webSocketAbs(String url, MultiMap headers, WebSocketVersion version, List<String> subProtocols) {
     return webSocket(webSocketConnectOptionsAbs(url, headers, version, subProtocols));
   }
 
