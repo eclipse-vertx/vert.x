@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
   * Client WebSocket implementation
   */
-public class ClientWebSocketImpl implements ClientWebSocket {
+public class ClientWebSocketImpl implements ClientWebSocketInternal {
 
   private HttpClientBase client;
   private final AtomicReference<Promise<WebSocket>> connect = new AtomicReference<>();
@@ -48,7 +48,15 @@ public class ClientWebSocketImpl implements ClientWebSocket {
 
   @Override
   public Future<WebSocket> connect(WebSocketConnectOptions options) {
-    ContextInternal ctx = client.vertx().getOrCreateContext();
+    return connect(client.vertx().getOrCreateContext(), options);
+  }
+
+  @Override
+  public Future<WebSocket> connect(Context context, WebSocketConnectOptions options) {
+    return connect((ContextInternal) context, options);
+  }
+
+  private Future<WebSocket> connect(ContextInternal ctx, WebSocketConnectOptions options) {
     Promise<WebSocket> promise = ctx.promise();
     if (!connect.compareAndSet(null, promise)) {
       return ctx.failedFuture("Already connecting");
