@@ -172,16 +172,6 @@ public class HttpClientBase implements MetricsProvider, Closeable {
     webSocket(connectOptions, promise);
   }
 
-  Future<WebSocket> webSocket(ContextInternal ctx, WebSocketConnectOptions connectOptions) {
-    PromiseInternal<WebSocket> promise = ctx.promise();
-    webSocket(connectOptions, promise);
-    return promise.andThen(ar -> {
-      if (ar.succeeded()) {
-        ar.result().resume();
-      }
-    });
-  }
-
   private void webSocket(WebSocketConnectOptions connectOptions, PromiseInternal<WebSocket> promise) {
     ContextInternal ctx = promise.context();
     int port = getPort(connectOptions);
