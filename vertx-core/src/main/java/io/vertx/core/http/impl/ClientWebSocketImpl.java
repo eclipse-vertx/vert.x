@@ -10,11 +10,14 @@
  */
 package io.vertx.core.http.impl;
 
+import io.netty.channel.ChannelHandlerContext;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.http.ClientWebSocketInternal;
+import io.vertx.core.internal.http.WebSocketInternal;
 import io.vertx.core.net.SocketAddress;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -27,11 +30,11 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Client WebSocket implementation
  */
-public class ClientWebSocketImpl implements ClientWebSocket {
+public class ClientWebSocketImpl implements ClientWebSocketInternal {
 
-  private WebSocketClientImpl client;
+  private final WebSocketClientImpl client;
   private final AtomicReference<Promise<WebSocket>> connect = new AtomicReference<>();
-  private volatile WebSocket ws;
+  private volatile WebSocketInternal ws;
   private Handler<Throwable> exceptionHandler;
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
@@ -49,17 +52,25 @@ public class ClientWebSocketImpl implements ClientWebSocket {
 
   @Override
   public Future<WebSocket> connect(WebSocketConnectOptions options) {
-    ContextInternal ctx = client.vertx().getOrCreateContext();
-    Promise<WebSocket> promise = ctx.promise();
+    return connect(client.vertx().getOrCreateContext(), options);
+  }
+
+  @Override
+  public Future<WebSocket> connect(Context context, WebSocketConnectOptions options) {
+    return connect((ContextInternal) context, options);
+  }
+
+  private Future<WebSocket> connect(ContextInternal context, WebSocketConnectOptions options) {
+    Promise<WebSocket> promise = context.promise();
     if (!connect.compareAndSet(null, promise)) {
-      return ctx.failedFuture("Already connecting");
+      return context.failedFuture("Already connecting");
     }
-    client.webSocket(ctx, options, promise);
+    client.webSocket(context, options, promise);
     return promise
       .future()
       .andThen(ar -> {
         if (ar.succeeded()) {
-          WebSocket w = ar.result();
+          WebSocketInternal w = (WebSocketInternal) ar.result();
           ws = w;
           w.handler(dataHandler);
           w.binaryMessageHandler(binaryMessageHandler);
@@ -116,6 +127,11 @@ public class ClientWebSocketImpl implements ClientWebSocket {
       w.endHandler(handler);
     }
     return this;
+  }
+
+  @Override
+  public ChannelHandlerContext channelHandlerContext() {
+    return delegate().channelHandlerContext();
   }
 
   @Override
@@ -309,8 +325,8 @@ public class ClientWebSocketImpl implements ClientWebSocket {
     return delegate().writeQueueFull();
   }
 
-  private WebSocket delegate() {
-    WebSocket w = ws;
+  private WebSocketInternal delegate() {
+    WebSocketInternal w = ws;
     if (w == null) {
       throw new IllegalStateException("Not connected");
     }
