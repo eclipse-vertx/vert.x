@@ -64,10 +64,7 @@ public class VertxCompressorHttp2ConnectionEncoder implements Http2FrameWriter, 
   }
 
   private <T, R> R ifType(Object obj, Class<T> type, Function<T, R> then) {
-    if (type.isAssignableFrom(obj.getClass())) {
-      return then.apply(type.cast(obj));
-    }
-    return null;
+    return obj != null && type.isAssignableFrom(obj.getClass()) ? then.apply(type.cast(obj)) : null;
   }
 
   @Override
