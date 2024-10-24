@@ -19,7 +19,6 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.Address;
 import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.ProxyOptions;
-import io.vertx.core.net.SocketAddress;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -43,9 +42,9 @@ public class WebSocketConnectOptions extends RequestOptions {
   public static final ProxyOptions DEFAULT_PROXY_OPTIONS = null;
 
   /**
-   * The default WebSocket version = {@link WebsocketVersion#V13}
+   * The default WebSocket version = {@link WebSocketVersion#V13}
    */
-  public static final WebsocketVersion DEFAULT_VERSION = WebsocketVersion.V13;
+  public static final WebSocketVersion DEFAULT_VERSION = WebSocketVersion.V13;
 
   /**
    * The default WebSocket sub protocols = {@code null}
@@ -63,7 +62,7 @@ public class WebSocketConnectOptions extends RequestOptions {
   public static final boolean DEFAULT_REGISTER_WRITE_HANDLERS = false;
 
   private ProxyOptions proxyOptions;
-  private WebsocketVersion version;
+  private WebSocketVersion version;
   private List<String> subProtocols;
   private boolean allowOriginHeader;
   private boolean registerWriteHandlers;
@@ -93,7 +92,7 @@ public class WebSocketConnectOptions extends RequestOptions {
   /**
    * @return the WebSocket version
    */
-  public WebsocketVersion getVersion() {
+  public WebSocketVersion getVersion() {
     return version;
   }
 
@@ -102,7 +101,7 @@ public class WebSocketConnectOptions extends RequestOptions {
    *
    * @return a reference to this, so the API can be used fluently
    */
-  public WebSocketConnectOptions setVersion(WebsocketVersion version) {
+  public WebSocketConnectOptions setVersion(WebSocketVersion version) {
     this.version = version;
     return this;
   }

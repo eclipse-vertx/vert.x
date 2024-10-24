@@ -33,6 +33,7 @@ import io.netty.util.concurrent.FutureListener;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.WebSocketVersion;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
@@ -926,7 +927,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     MultiMap headers,
     boolean allowOriginHeader,
     WebSocketClientOptions options,
-    WebsocketVersion vers,
+    WebSocketVersion vers,
     List<String> subProtocols,
     long handshakeTimeout,
     boolean registerWriteHandlers,
@@ -938,9 +939,9 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
         // Netty requires an absolute url
         wsuri = new URI((ssl ? "https:" : "http:") + "//" + server.host() + ":" + server.port() + requestURI);
       }
-      WebSocketVersion version =
-         WebSocketVersion.valueOf((vers == null ?
-           WebSocketVersion.V13 : vers).toString());
+      io.netty.handler.codec.http.websocketx.WebSocketVersion version =
+         io.netty.handler.codec.http.websocketx.WebSocketVersion.valueOf((vers == null ?
+           io.netty.handler.codec.http.websocketx.WebSocketVersion.V13 : vers).toString());
       HttpHeaders nettyHeaders;
       if (headers != null) {
         nettyHeaders = new DefaultHttpHeaders();
@@ -1035,7 +1036,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
   }
 
   static WebSocketClientHandshaker newHandshaker(
-    URI webSocketURL, WebSocketVersion version, String subprotocol,
+    URI webSocketURL, io.netty.handler.codec.http.websocketx.WebSocketVersion version, String subprotocol,
     boolean allowExtensions, boolean allowOriginHeader, HttpHeaders customHeaders, int maxFramePayloadLength,
     boolean performMasking) {
     WebSocketDecoderConfig config = WebSocketDecoderConfig.newBuilder()
