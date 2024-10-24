@@ -29,6 +29,7 @@ import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
 
+import java.net.InetSocketAddress;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 

@@ -78,6 +78,7 @@ import static io.vertx.test.core.TestUtils.*;
 import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTPS_HOST;
 import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTPS_PORT;
 import static io.vertx.tests.tls.HttpTLSTest.testPeerHostServerCert;
+import static io.vertx.test.core.TestUtils.*;
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
