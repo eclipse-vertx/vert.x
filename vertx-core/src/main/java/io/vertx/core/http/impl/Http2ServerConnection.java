@@ -152,8 +152,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
   }
 
   private void initStream(int streamId, Http2ServerStream vertxStream) {
-    String contentEncoding = options.isCompressionSupported() ? determineContentEncoding(vertxStream.headers) : null;
-    Http2ServerRequest request = new Http2ServerRequest(vertxStream, serverOrigin, vertxStream.headers, contentEncoding);
+    Http2ServerRequest request = new Http2ServerRequest(vertxStream, serverOrigin, vertxStream.headers);
     vertxStream.request = request;
     vertxStream.isConnect = request.method() == HttpMethod.CONNECT;
     Http2Stream stream = handler.connection().stream(streamId);
@@ -219,10 +218,9 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
       if (future.isSuccess()) {
         synchronized (Http2ServerConnection.this) {
           int promisedStreamId = future.getNow();
-          String contentEncoding = determineContentEncoding(headers_);
           Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
-          Http2ServerStream vertxStream = new Http2ServerStream(this, context, method, path, options.getTracingPolicy(), true);
-          Push push = new Push(vertxStream, contentEncoding, promise);
+          Http2ServerStream vertxStream = new Http2ServerStream(this, context, headers_, method, path, options.getTracingPolicy(), true);
+          Push push = new Push(vertxStream, promise);
           vertxStream.request = push;
           push.stream.priority(streamPriority);
           push.stream.init(promisedStream);
@@ -253,11 +251,10 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     private final Promise<HttpServerResponse> promise;
 
     public Push(Http2ServerStream stream,
-                String contentEncoding,
                 Promise<HttpServerResponse> promise) {
       this.context = stream.context;
       this.stream = stream;
-      this.response = new Http2ServerResponse(stream.conn, stream, true, contentEncoding);
+      this.response = new Http2ServerResponse(stream.conn, stream, true);
       this.promise = promise;
     }
 
