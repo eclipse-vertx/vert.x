@@ -13,7 +13,7 @@ package io.vertx.tests.json;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpHeaders;
-import io.vertx.core.http.WebsocketVersion;
+import io.vertx.core.http.WebSocketVersion;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.EncodeException;
@@ -440,10 +440,10 @@ public class JsonCodecTest {
   @Test
   public void testEnumValue() {
     // just a random enum
-    Buffer json = mapper.toBuffer(WebsocketVersion.V13);
+    Buffer json = mapper.toBuffer(WebSocketVersion.V13);
     assertNotNull(json);
     assertEquals("\"V13\"", json.toString());
-    mapper.fromBuffer(json, WebsocketVersion.class);
+    mapper.fromBuffer(json, WebSocketVersion.class);
   }
 
   @Test

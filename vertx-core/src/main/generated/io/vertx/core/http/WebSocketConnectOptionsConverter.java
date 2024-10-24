@@ -16,7 +16,7 @@ public class WebSocketConnectOptionsConverter {
       switch (member.getKey()) {
         case "version":
           if (member.getValue() instanceof String) {
-            obj.setVersion(io.vertx.core.http.WebsocketVersion.valueOf((String)member.getValue()));
+            obj.setVersion(io.vertx.core.http.WebSocketVersion.valueOf((String)member.getValue()));
           }
           break;
         case "subProtocols":
