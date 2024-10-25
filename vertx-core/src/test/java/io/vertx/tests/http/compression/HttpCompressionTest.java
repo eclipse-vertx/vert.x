@@ -101,11 +101,7 @@ public abstract class HttpCompressionTest extends HttpTestBase {
       .onComplete(onSuccess(req -> {
         req.putHeader(HttpHeaders.ACCEPT_ENCODING, encoding());
         req.send().onComplete(onSuccess(resp -> {
-          if (req.version() != HttpVersion.HTTP_2) {
-            assertNull(resp.getHeader(HttpHeaders.CONTENT_ENCODING));
-          } else {
-            assertEquals(HttpHeaders.IDENTITY.toString(), resp.getHeader(HttpHeaders.CONTENT_ENCODING));
-          }
+          assertNull(resp.getHeader(HttpHeaders.CONTENT_ENCODING));
           resp.body().onComplete(onSuccess(responseBuffer -> {
             String responseBody = responseBuffer.toString(CharsetUtil.UTF_8);
             assertEquals(COMPRESS_TEST_STRING, responseBody);
