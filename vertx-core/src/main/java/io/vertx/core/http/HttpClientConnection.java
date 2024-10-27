@@ -10,6 +10,7 @@
  */
 package io.vertx.core.http;
 
+import io.vertx.codegen.annotations.Unstable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 
@@ -25,6 +26,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
+@Unstable
 @VertxGen
 public interface HttpClientConnection extends HttpConnection, HttpClient {
 

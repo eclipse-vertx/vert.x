@@ -11,6 +11,7 @@
 package io.vertx.core.net.endpoint;
 
 import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.codegen.annotations.Unstable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.net.SocketAddress;
 
@@ -19,6 +20,7 @@ import io.vertx.core.net.SocketAddress;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
+@Unstable
 @VertxGen
 public interface ServerEndpoint {
 
