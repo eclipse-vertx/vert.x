@@ -13,7 +13,6 @@ package io.vertx.core.file;
 
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.codegen.annotations.Unstable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -174,7 +173,6 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
    *
    * @return the lock if it can be acquired immediately, otherwise {@code null}
    */
-  @Unstable
   default @Nullable AsyncFileLock tryLock() {
     return tryLock(0, Long.MAX_VALUE, false);
   }
@@ -187,7 +185,6 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @param shared whether the lock should be shared
    * @return the lock if it can be acquired immediately, otherwise {@code null}
    */
-  @Unstable
   @Nullable AsyncFileLock tryLock(long position, long size, boolean shared);
 
   /**
@@ -195,7 +192,6 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
    *
    * @return a future indicating the completion of this operation
    */
-  @Unstable
   default Future<AsyncFileLock> lock() {
     return lock(0, Long.MAX_VALUE, false);
   }
@@ -208,7 +204,6 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @param shared whether the lock should be shared
    * @return a future indicating the completion of this operation
    */
-  @Unstable
   Future<AsyncFileLock> lock(long position, long size, boolean shared);
 
   /**
@@ -222,7 +217,6 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @param block the code block called after lock acquisition
    * @return the future returned by the {@code block}
    */
-  @Unstable
   default <T> Future<T> withLock(Supplier<Future<T>> block) {
     return withLock(0, Long.MAX_VALUE, false, block);
   }
@@ -241,7 +235,6 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @param block the code block called after lock acquisition
    * @return the future returned by the {@code block}
    */
-  @Unstable
   default <T> Future<T> withLock(long position, long size, boolean shared, Supplier<Future<T>> block) {
     return lock(position, size, shared)
       .compose(lock -> {
