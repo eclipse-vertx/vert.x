@@ -55,24 +55,6 @@ class Http3ServerStream extends VertxHttpStreamBase<Http3ServerConnection, QuicS
 
   Http3ServerStream(Http3ServerConnection conn,
                     ContextInternal context,
-                    HttpMethod method,
-                    String uri,
-                    TracingPolicy tracingPolicy,
-                    boolean halfClosedRemote) {
-    super(conn, context);
-
-    this.headers = null;
-    this.method = method;
-    this.uri = uri;
-    this.scheme = null;
-    this.hasAuthority = false;
-    this.authority = null;
-    this.tracingPolicy = tracingPolicy;
-    this.halfClosedRemote = halfClosedRemote;
-  }
-
-  Http3ServerStream(Http3ServerConnection conn,
-                    ContextInternal context,
                     VertxHttpHeaders headers,
                     String scheme,
                     boolean hasAuthority,
