@@ -36,7 +36,6 @@ import java.net.InetSocketAddress;
 import java.security.cert.Certificate;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -392,23 +391,16 @@ public abstract class ConnectionBase {
   }
 
   public boolean isSsl() {
-    return chctx.pipeline().get(SslHandler.class) != null || getHttp3SslHandler(chctx) != null;
+    return chctx.pipeline().get(SslHandler.class) != null || isHttp3SslHandler(chctx);
   }
 
-  private ChannelHandler getHttp3SslHandler(ChannelHandlerContext chctx) {
-    //TODO: correct the following!
-    if (chctx.channel() == null || chctx.channel().parent() == null || chctx.channel().parent().parent() == null)
-      return null;
+  private boolean isHttp3SslHandler(ChannelHandlerContext chctx) {
+    Channel channel = chctx.channel();
+    if (channel == null || channel.parent() == null || channel.parent().parent() == null)
+      return false;
 
-    ChannelPipeline pipeline = chctx.channel().parent().parent().pipeline();
-    for (Map.Entry<String, ChannelHandler> stringChannelHandlerEntry : pipeline) {
-      ChannelHandler handler = stringChannelHandlerEntry.getValue();
-      if (handler.getClass().getSimpleName().equals("QuicheQuicClientCodec")) {
-        return handler;
-      }
-    }
-
-    return null;
+    ChannelPipeline pipeline = channel.parent().parent().pipeline();
+    return pipeline.names().contains(ChannelProvider.CLIENT_SSL_HANDLER_NAME);
   }
 
   public boolean isTrafficShaped() {

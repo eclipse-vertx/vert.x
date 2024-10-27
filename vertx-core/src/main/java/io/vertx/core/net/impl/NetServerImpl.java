@@ -64,6 +64,7 @@ import java.util.concurrent.TimeUnit;
 public class NetServerImpl implements Closeable, MetricsProvider, NetServerInternal {
 
   private static final Logger log = LoggerFactory.getLogger(NetServerImpl.class);
+  public static final String SERVER_SSL_HANDLER_NAME = "ssl";
 
   private final VertxInternal vertx;
   private final NetServerOptions options;
@@ -255,12 +256,12 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
           };
 
           SslChannelProvider sslChannelProvider = new SslChannelProvider(vertx, sslContextProvider, sslOptions.isSni());
-          ch.pipeline().addLast("ssl", sslChannelProvider.createServerHandler(options.isUseAlpn(), options.isHttp3(),
-            options.getSslHandshakeTimeout(), options.getSslHandshakeTimeoutUnit(), handler));
+          ch.pipeline().addLast(SERVER_SSL_HANDLER_NAME, sslChannelProvider.createServerHandler(options.isUseAlpn(),
+            options.isHttp3(), options.getSslHandshakeTimeout(), options.getSslHandshakeTimeoutUnit(), handler));
         } else {
           SslChannelProvider sslChannelProvider = new SslChannelProvider(vertx, sslContextProvider, sslOptions.isSni());
-          ch.pipeline().addLast("ssl", sslChannelProvider.createServerHandler(options.isUseAlpn(), options.isHttp3(),
-            options.getSslHandshakeTimeout(), options.getSslHandshakeTimeoutUnit(), null));
+          ch.pipeline().addLast(SERVER_SSL_HANDLER_NAME, sslChannelProvider.createServerHandler(options.isUseAlpn(),
+            options.isHttp3(), options.getSslHandshakeTimeout(), options.getSslHandshakeTimeoutUnit(), null));
           ChannelPromise p = ch.newPromise();
           ch.pipeline().addLast("handshaker", new SslHandshakeCompletionHandler(p));
           p.addListener(future -> {

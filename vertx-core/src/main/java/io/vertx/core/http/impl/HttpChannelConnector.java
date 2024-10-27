@@ -119,9 +119,9 @@ public class HttpChannelConnector {
     // Remove all un-necessary handlers
     ChannelPipeline pipeline = so.channelHandlerContext().pipeline();
     List<ChannelHandler> removedHandlers = new ArrayList<>();
-    for (Map.Entry<String, ChannelHandler> stringChannelHandlerEntry : pipeline) {
-      ChannelHandler handler = stringChannelHandlerEntry.getValue();
-      if (!(handler instanceof SslHandler) && !(SSL_CHANNEL_NAME.equals(stringChannelHandlerEntry.getKey()))) {
+    for (Map.Entry<String, ChannelHandler> entry : pipeline) {
+      ChannelHandler handler = entry.getValue();
+      if (!(handler instanceof SslHandler) && !(CLIENT_SSL_HANDLER_NAME.equals(entry.getKey()))) {
         removedHandlers.add(handler);
       }
     }
