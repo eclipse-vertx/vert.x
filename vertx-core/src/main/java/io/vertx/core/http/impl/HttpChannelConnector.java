@@ -132,7 +132,7 @@ public class HttpChannelConnector {
     if (ssl) {
       String protocol = so.applicationLayerProtocol();
       if (useAlpn) {
-        if ("h3".equals(protocol)) {
+        if (protocol != null && protocol.startsWith("h3")) {
           applyHttp3ConnectionOptions(ch.pipeline());
           http3Connected(context, metric, ch, promise);
         } else if ("h2".equals(protocol)) {
