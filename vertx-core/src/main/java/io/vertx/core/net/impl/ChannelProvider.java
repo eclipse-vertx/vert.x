@@ -46,7 +46,7 @@ import java.net.InetSocketAddress;
  */
 public final class ChannelProvider {
 
-  public static final String SSL_CHANNEL_NAME = "ssl";
+  public static final String CLIENT_SSL_HANDLER_NAME = "ssl";
   private final Bootstrap bootstrap;
   private final SslContextProvider sslContextProvider;
   private final ContextInternal context;
@@ -128,7 +128,7 @@ public final class ChannelProvider {
         sslOptions.isUseAlpn(), sslOptions.isHttp3(), sslOptions.getSslHandshakeTimeout(),
         sslOptions.getSslHandshakeTimeoutUnit());
       ChannelPipeline pipeline = ch.pipeline();
-      pipeline.addLast(SSL_CHANNEL_NAME, sslHandler);
+      pipeline.addLast(CLIENT_SSL_HANDLER_NAME, sslHandler);
       if (version != HttpVersion.HTTP_3) {
         pipeline.addLast(new HttpSslHandshaker(context, handler, channelHandler, version, sslHandler,
           this::setApplicationProtocol));
