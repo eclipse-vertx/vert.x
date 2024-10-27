@@ -15,7 +15,6 @@ import io.netty.handler.codec.compression.CompressionOptions;
 import io.netty.handler.logging.ByteBufFormat;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
-import io.vertx.codegen.annotations.Unstable;
 import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
@@ -600,7 +599,6 @@ public class HttpServerOptions extends NetServerOptions {
   /**
    * @return the list of compressor to use
    */
-  @Unstable
   public List<CompressionOptions> getCompressors() {
     return compressors;
   }
@@ -611,7 +609,6 @@ public class HttpServerOptions extends NetServerOptions {
    * @see #setCompressors(List)
    * @return a reference to this, so the API can be used fluently
    */
-  @Unstable
   public HttpServerOptions addCompressor(CompressionOptions compressor) {
     if (compressors == null) {
       compressors = new ArrayList<>();
@@ -628,7 +625,6 @@ public class HttpServerOptions extends NetServerOptions {
    * @param compressors the list of compressors
    * @return a reference to this, so the API can be used fluently
    */
-  @Unstable
   public HttpServerOptions setCompressors(List<CompressionOptions> compressors) {
     this.compressors = compressors;
     return this;
