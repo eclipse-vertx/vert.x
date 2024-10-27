@@ -10,6 +10,7 @@
  */
 package io.vertx.core.net.endpoint;
 
+import io.vertx.codegen.annotations.Unstable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.net.Address;
@@ -19,6 +20,7 @@ import io.vertx.core.net.Address;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
+@Unstable
 @VertxGen
 public interface EndpointResolver {
 

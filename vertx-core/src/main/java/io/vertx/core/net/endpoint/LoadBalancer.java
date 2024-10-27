@@ -10,6 +10,7 @@
  */
 package io.vertx.core.net.endpoint;
 
+import io.vertx.codegen.annotations.Unstable;
 import io.vertx.core.net.endpoint.impl.ConsistentHashingSelector;
 import io.vertx.core.net.endpoint.impl.NoMetricsLoadBalancer;
 
@@ -25,6 +26,7 @@ import java.util.concurrent.ThreadLocalRandom;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
+@Unstable
 public interface LoadBalancer {
 
   /**
