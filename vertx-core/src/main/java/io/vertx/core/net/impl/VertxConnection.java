@@ -463,8 +463,8 @@ public class VertxConnection extends ConnectionBase {
       return;
     }
     paused = false;
-    if (pending != null) {
-      assert !read;
+    if (pending != null && !pending.isEmpty()) {
+      boolean end = !read;
       read = true;
       try {
         Object msg;
@@ -472,7 +472,9 @@ public class VertxConnection extends ConnectionBase {
           handleMessage(msg);
         }
       } finally {
-        endReadAndFlush();
+        if (end) {
+          endReadAndFlush();
+        }
         if (pending.isEmpty() && !autoRead) {
           autoRead = true;
           chctx.channel().config().setAutoRead(true);
