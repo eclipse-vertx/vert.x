@@ -634,4 +634,30 @@ public class ConnectionBaseTest extends VertxTestBase {
     ch.runPendingTasks();
     assertEquals(2, count.get());
   }
+
+  @Test
+  public void testResumeWhenReadInProgress() {
+    MessageFactory factory = new MessageFactory();
+    EmbeddedChannel ch = new EmbeddedChannel();
+    ChannelPipeline pipeline = ch.pipeline();
+    pipeline.addLast(VertxHandler.create(chctx -> new TestConnection(chctx)));
+    TestConnection connection = (TestConnection) pipeline.get(VertxHandler.class).getConnection();
+    AtomicInteger count = new AtomicInteger();
+    connection.handler = event -> count.incrementAndGet();
+    connection.pause();
+    pipeline.fireChannelRead(factory.next());
+    assertEquals(0, count.get());
+    Object expected = new Object();
+    connection.write(expected, false, ch.newPromise());
+    connection.resume();
+    assertEquals(0, count.get());
+    assertTrue(ch.hasPendingTasks());
+    ch.runPendingTasks();
+    assertEquals(1, count.get());
+    Object outbound = ch.readOutbound();
+    assertNull(outbound);
+    pipeline.fireChannelReadComplete();
+    outbound = ch.readOutbound();
+    assertSame(expected, outbound);
+  }
 }
