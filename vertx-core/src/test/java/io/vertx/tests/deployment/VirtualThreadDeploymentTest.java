@@ -192,9 +192,7 @@ public class VirtualThreadDeploymentTest extends VertxTestBase {
                   .compose(HttpClientRequest::send)
                   .await();
               } catch (Throwable e) {
-                if (e instanceof InterruptedException) {
-                  interruptedThreads.add(Thread.currentThread());
-                }
+                interruptedThreads.add(Thread.currentThread());
               }
             });
           }
