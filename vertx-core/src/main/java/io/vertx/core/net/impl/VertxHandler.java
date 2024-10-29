@@ -20,7 +20,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.vertx.core.Handler;
-import io.vertx.core.internal.buffer.VertxByteBufAllocator;
+import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 
 import java.util.function.Function;
 
