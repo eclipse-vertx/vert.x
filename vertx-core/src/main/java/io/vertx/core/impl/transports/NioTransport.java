@@ -28,17 +28,17 @@ public class NioTransport implements Transport {
    */
   public static final Transport INSTANCE = new NioTransport();
 
-  private final UnixDomainSocketJdkSupport unixDomainSocketJdkSupport = UnixDomainSocketJdkSupport.load();
+  private final UnixDomainSocketNioTransport unixDomainSocketNioTransport = UnixDomainSocketNioTransport.load();
 
   @Override
   public boolean supportsDomainSockets() {
-    return unixDomainSocketJdkSupport != null;
+    return unixDomainSocketNioTransport != null;
   }
 
   @Override
   public SocketAddress convert(io.vertx.core.net.SocketAddress address) {
-    if (address.isDomainSocket() && unixDomainSocketJdkSupport != null) {
-      return unixDomainSocketJdkSupport.convert(address);
+    if (address.isDomainSocket() && unixDomainSocketNioTransport != null) {
+      return unixDomainSocketNioTransport.convert(address);
     } else {
       return Transport.super.convert(address);
     }
@@ -46,8 +46,8 @@ public class NioTransport implements Transport {
 
   @Override
   public io.vertx.core.net.SocketAddress convert(SocketAddress address) {
-    if (unixDomainSocketJdkSupport != null && unixDomainSocketJdkSupport.isUnixDomainSocketAddress(address)) {
-      return unixDomainSocketJdkSupport.convert(address);
+    if (unixDomainSocketNioTransport != null && unixDomainSocketNioTransport.isUnixDomainSocketAddress(address)) {
+      return unixDomainSocketNioTransport.convert(address);
     }
     return Transport.super.convert(address);
   }
@@ -77,7 +77,7 @@ public class NioTransport implements Transport {
   @Override
   public ChannelFactory<? extends Channel> channelFactory(boolean domainSocket) {
     if (domainSocket) {
-      if (unixDomainSocketJdkSupport == null) {
+      if (unixDomainSocketNioTransport == null) {
         throw new IllegalArgumentException("Domain sockets require JDK 16 and above, or the usage of a native transport");
       }
       return NioDomainSocketChannel::new;
@@ -89,7 +89,7 @@ public class NioTransport implements Transport {
   @Override
   public ChannelFactory<? extends ServerChannel> serverChannelFactory(boolean domainSocket) {
     if (domainSocket) {
-      if (unixDomainSocketJdkSupport == null) {
+      if (unixDomainSocketNioTransport == null) {
         throw new IllegalArgumentException("Domain sockets require JDK 16 and above, or the usage of a native transport");
       }
       return NioServerDomainSocketChannel::new;
