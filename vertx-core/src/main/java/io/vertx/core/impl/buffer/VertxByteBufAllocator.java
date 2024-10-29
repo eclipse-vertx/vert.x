@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.internal.buffer;
+package io.vertx.core.impl.buffer;
 
 import io.netty.buffer.AbstractByteBufAllocator;
 import io.netty.buffer.ByteBuf;
@@ -25,8 +25,8 @@ public abstract class VertxByteBufAllocator extends AbstractByteBufAllocator {
    * Vert.x pooled allocator.
    */
   public static final ByteBufAllocator POOLED_ALLOCATOR = new PooledByteBufAllocator(true);
+
   /**
-   *
    * Vert.x shared un-pooled allocator.
    */
   public static final ByteBufAllocator UNPOOLED_ALLOCATOR = new UnpooledByteBufAllocator(false);
