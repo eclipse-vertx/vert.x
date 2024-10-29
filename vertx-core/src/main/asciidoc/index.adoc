@@ -1013,6 +1013,7 @@ You can add it to your classpath to improve the integration and remove the warni
 </profile>
 ----
 
+[#_native_transports]
 == Native transports
 
 Vert.x can run with http://netty.io/wiki/native-transports.html[native transports] (when available) on BSD (OSX) and Linux:
@@ -1022,7 +1023,7 @@ Vert.x can run with http://netty.io/wiki/native-transports.html[native transport
 {@link examples.CoreExamples#configureNative()}
 ----
 
-NOTE: preferring native transport will not prevent the application to execute (for example a native dependency might be missing). If your application requires native transport, you need to check {@link io.vertx.core.Vertx#isNativeTransportEnabled()}.
+NOTE: Preferring native transport will not prevent the application to execute (for example a native dependency might be missing).If your application requires native transport, you need to check {@link io.vertx.core.Vertx#isNativeTransportEnabled()}.
 
 You can also explicitly configure the transport to use:
 
@@ -1102,36 +1103,6 @@ Native on BSD gives you extra networking options:
 [source,$lang]
 ----
 {@link examples.CoreExamples#configureBSDOptions}
-----
-
-=== Domain sockets
-
-Natives provide domain sockets support for servers:
-
-[source,$lang]
-----
-{@link examples.CoreExamples#tcpServerWithDomainSockets}
-----
-
-or for http:
-
-[source,$lang]
-----
-{@link examples.CoreExamples#httpServerWithDomainSockets}
-----
-
-As well as clients:
-
-[source,$lang]
-----
-{@link examples.CoreExamples#tcpClientWithDomainSockets}
-----
-
-or for http:
-
-[source,$lang]
-----
-{@link examples.CoreExamples#httpClientWithDomainSockets}
 ----
 
 == Security notes

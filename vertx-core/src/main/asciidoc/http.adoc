@@ -120,6 +120,15 @@ For example:
 {@link examples.HTTPExamples#example5}
 ----
 
+=== Listening to Unix domain sockets
+
+When running on JDK 16+, or using a <<_native_transports,native transport>>, a server can listen to Unix domain sockets:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#httpServerWithDomainSockets}
+----
+
 === Getting notified of incoming requests
 
 To be notified when a request arrives you need to set a {@link io.vertx.core.http.HttpServer#requestHandler}:
@@ -872,21 +881,31 @@ the same preface from the server.
 The http server may not support HTTP/2, the actual version can be checked
 with {@link io.vertx.core.http.HttpClientResponse#version()} when the response arrives.
 
-When a clients connects to an HTTP/2 server, it sends to the server its {@link io.vertx.core.http.HttpClientOptions#getInitialSettings initial settings}.
+When a client connects to an HTTP/2 server, it sends to the server its {@link io.vertx.core.http.HttpClientOptions#getInitialSettings initial settings}.
 The settings define how the server can use the connection, the default initial settings for a client are the default
 values defined by the HTTP/2 RFC.
 
+=== Making connections to Unix domain sockets
+
+When running on JDK 16+, or using a <<_native_transports,native transport>>, a client can connect to Unix domain sockets:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#httpClientWithDomainSockets}
+----
+
 === Pool configuration
 
- For performance purpose, the client uses connection pooling when interacting with HTTP/1.1 servers. The pool creates up
- to 5 connections per server. You can override the pool configuration like this:
+For performance purpose, the client uses connection pooling when interacting with HTTP/1.1 servers.
+The pool creates up to 5 connections per server.
+You can override the pool configuration like this:
 
- [source,$lang]
- ----
- {@link examples.HTTPExamples#examplePoolConfiguration}
- ----
+[source,$lang]
+----
+{@link examples.HTTPExamples#examplePoolConfiguration}
+----
 
- You can configure various pool {@link io.vertx.core.http.PoolOptions options} as follows
+You can configure various pool {@link io.vertx.core.http.PoolOptions options} as follows
 
 - {@link io.vertx.core.http.PoolOptions options#setHttp1MaxSize} the maximum number of opened per HTTP/1.x server (5 by default)
 - {@link io.vertx.core.http.PoolOptions options#setHttp2MaxSize} the maximum number of opened per HTTP/2 server (1 by default), you *should* not change this value since a single HTTP/2 connection is capable of delivering the same performance level than multiple HTTP/1.x connections
