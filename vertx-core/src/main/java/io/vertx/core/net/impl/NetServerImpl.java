@@ -11,7 +11,6 @@
 package io.vertx.core.net.impl;
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
@@ -31,6 +30,7 @@ import io.vertx.core.impl.HostnameResolver;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.tls.SslContextManager;
@@ -508,7 +508,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     if (options.isSsl()) {
       bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
     } else {
-      bootstrap.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+      bootstrap.childOption(ChannelOption.ALLOCATOR, VertxByteBufAllocator.POOLED_ALLOCATOR);
     }
 
     bootstrap.childHandler(channelBalancer);

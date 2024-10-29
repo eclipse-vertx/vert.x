@@ -11,8 +11,7 @@
 
 package io.vertx.tests.net;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
+import io.netty.buffer.*;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
@@ -45,7 +44,6 @@ import io.vertx.core.net.impl.*;
 import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.spi.tls.SslContextFactory;
 import io.vertx.test.core.CheckingSender;
-import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.netty.TestLoggerFactory;
@@ -3636,7 +3634,7 @@ public class NetTest extends VertxTestBase {
           case 1:
             assertTrue(obj instanceof LastHttpContent);
             ByteBuf content = ((LastHttpContent) obj).content();
-            assertEquals(!expectSSL, content.isDirect());
+            assertTrue(content.isDirect());
             assertEquals(1, content.refCnt());
             String val = content.toString(StandardCharsets.UTF_8);
             assertTrue(content.release());
