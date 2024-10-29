@@ -118,5 +118,6 @@ module io.vertx.core {
   exports io.vertx.core.spi.cluster.impl.selector to io.vertx.core.tests;
   exports io.vertx.core.impl.verticle to io.vertx.core.tests;
   exports io.vertx.core.impl.deployment to io.vertx.core.tests;
+  exports io.vertx.core.impl.buffer to io.vertx.core.tests;
 
 }

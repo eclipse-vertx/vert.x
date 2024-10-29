@@ -18,7 +18,7 @@ import io.netty.util.CharsetUtil;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.impl.Arguments;
-import io.vertx.core.internal.buffer.VertxByteBufAllocator;
+import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
