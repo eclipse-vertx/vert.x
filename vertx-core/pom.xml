@@ -604,6 +604,51 @@
               </includes>
             </configuration>
           </execution>
+          <execution>
+            <id>adaptive-allocator</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/buffer/TcpAllocationTest.java</include>
+              </includes>
+              <systemProperties>
+                <io.netty.allocator.type>adaptive</io.netty.allocator.type>
+              </systemProperties>
+            </configuration>
+          </execution>
+          <execution>
+            <id>pooled-allocator</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/buffer/TcpAllocationTest.java</include>
+              </includes>
+              <systemProperties>
+                <io.netty.allocator.type>pooled</io.netty.allocator.type>
+              </systemProperties>
+            </configuration>
+          </execution>
+          <execution>
+            <id>unpooled-allocator</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/buffer/TcpAllocationTest.java</include>
+              </includes>
+              <systemProperties>
+                <io.netty.allocator.type>unpooled</io.netty.allocator.type>
+              </systemProperties>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
 

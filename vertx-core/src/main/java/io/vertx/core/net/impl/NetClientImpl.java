@@ -28,6 +28,7 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.CloseSequence;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.PromiseInternal;
+import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.net.NetClientInternal;
@@ -286,7 +287,7 @@ class NetClientImpl implements NetClientInternal {
       Objects.requireNonNull(connectHandler, "No null connectHandler accepted");
       Bootstrap bootstrap = new Bootstrap();
       bootstrap.group(eventLoop);
-      bootstrap.option(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
+      bootstrap.option(ChannelOption.ALLOCATOR, VertxByteBufAllocator.POOLED_ALLOCATOR);
 
       SocketAddress remoteAddress = connectOptions.getRemoteAddress();
       if (remoteAddress == null) {
