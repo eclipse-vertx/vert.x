@@ -11,10 +11,7 @@
 
 package io.vertx.core.net.impl;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.CompositeByteBuf;
-import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.buffer.Unpooled;
+import io.netty.buffer.*;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
@@ -49,7 +46,11 @@ public final class VertxHandler<C extends VertxConnection> extends ChannelDuplex
    * @return a buffer safe
    */
   public static ByteBuf safeBuffer(ByteBuf byteBuf) {
-    if (byteBuf != Unpooled.EMPTY_BUFFER && (byteBuf.alloc() instanceof PooledByteBufAllocator || byteBuf instanceof CompositeByteBuf)) {
+    Class<?> allocClass;
+    if (byteBuf != Unpooled.EMPTY_BUFFER &&
+            ((allocClass = byteBuf.alloc().getClass()) == AdaptiveByteBufAllocator.class
+          || allocClass == PooledByteBufAllocator.class
+          || byteBuf instanceof CompositeByteBuf)) {
       try {
         if (byteBuf.isReadable()) {
           ByteBuf buffer = VertxByteBufAllocator.DEFAULT.heapBuffer(byteBuf.readableBytes());

@@ -11,14 +11,15 @@
 
 package io.vertx.tests.buffer;
 
-import io.netty.buffer.ByteBuf;
+import io.netty.buffer.*;
 import io.vertx.core.buffer.impl.BufferImpl;
 import io.vertx.core.buffer.impl.VertxHeapByteBuf;
 import io.vertx.core.buffer.impl.VertxUnsafeHeapByteBuf;
+import io.vertx.core.impl.buffer.VertxByteBufAllocator;
+import io.vertx.core.internal.buffer.BufferInternal;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class VertxBufferTest {
 
@@ -62,4 +63,30 @@ public class VertxBufferTest {
     assertEquals(0, byteBuf.readerIndex());
   }
 
+  @Test
+  public void testSafeBuffer() {
+    assertCopyAndRelease(AdaptiveByteBufAllocator.DEFAULT.heapBuffer().writeByte('A'));
+    assertCopyAndRelease(AdaptiveByteBufAllocator.DEFAULT.directBuffer().writeByte('A'));
+    assertCopyAndRelease(PooledByteBufAllocator.DEFAULT.heapBuffer().writeByte('A'));
+    assertCopyAndRelease(PooledByteBufAllocator.DEFAULT.directBuffer().writeByte('A'));
+    assertCopyAndRelease(new CompositeByteBuf(UnpooledByteBufAllocator.DEFAULT, false, 10).writeByte('A'));
+    assertWrap(Unpooled.buffer().writeByte('A'));
+    assertWrap(VertxByteBufAllocator.DEFAULT.heapBuffer().writeByte('A'));
+    assertWrap(VertxByteBufAllocator.DEFAULT.directBuffer().writeByte('A'));
+    assertWrap(UnpooledByteBufAllocator.DEFAULT.heapBuffer().writeByte('A'));
+    assertWrap(UnpooledByteBufAllocator.DEFAULT.directBuffer().writeByte('A'));
+  }
+
+  private static void assertCopyAndRelease(ByteBuf bbuf) {
+    BufferImpl buffer = (BufferImpl) BufferInternal.safeBuffer(bbuf);
+    assertNotSame(bbuf, buffer.byteBuf());
+    assertEquals(0, bbuf.refCnt());
+  }
+
+  private static void assertWrap(ByteBuf bbuf) {
+    BufferImpl buffer = (BufferImpl) BufferInternal.safeBuffer(bbuf);
+    assertSame(bbuf, buffer.byteBuf());
+    assertEquals(1, bbuf.refCnt());
+    bbuf.release();
+  }
 }
