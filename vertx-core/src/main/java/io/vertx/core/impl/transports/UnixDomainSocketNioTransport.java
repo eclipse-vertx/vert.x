@@ -12,21 +12,21 @@ import java.nio.file.Path;
 
 import static java.lang.invoke.MethodType.methodType;
 
-class UnixDomainSocketJdkSupport {
+class UnixDomainSocketNioTransport {
 
-  private static final Logger LOG = LoggerFactory.getLogger(UnixDomainSocketJdkSupport.class);
+  private static final Logger LOG = LoggerFactory.getLogger(UnixDomainSocketNioTransport.class);
 
   private final Class<?> unixDomainSocketAddressClass;
   private final MethodHandle ofMethodHandle;
   private final MethodHandle getPathMethodHandle;
 
-  private UnixDomainSocketJdkSupport(Class<?> unixDomainSocketAddressClass, MethodHandle ofMethodHandle, MethodHandle getPathMethodHandle) {
+  private UnixDomainSocketNioTransport(Class<?> unixDomainSocketAddressClass, MethodHandle ofMethodHandle, MethodHandle getPathMethodHandle) {
     this.unixDomainSocketAddressClass = unixDomainSocketAddressClass;
     this.ofMethodHandle = ofMethodHandle;
     this.getPathMethodHandle = getPathMethodHandle;
   }
 
-  static UnixDomainSocketJdkSupport load() {
+  static UnixDomainSocketNioTransport load() {
     Class<?> unixDomainSocketAddressClass;
     MethodHandle ofMethodHandle;
     MethodHandle getPathMethodHandle;
@@ -36,7 +36,7 @@ class UnixDomainSocketJdkSupport {
         MethodHandles.Lookup lookup = MethodHandles.publicLookup();
         ofMethodHandle = lookup.findStatic(unixDomainSocketAddressClass, "of", methodType(unixDomainSocketAddressClass, Path.class));
         getPathMethodHandle = lookup.findVirtual(unixDomainSocketAddressClass, "getPath", methodType(Path.class));
-        return new UnixDomainSocketJdkSupport(unixDomainSocketAddressClass, ofMethodHandle, getPathMethodHandle);
+        return new UnixDomainSocketNioTransport(unixDomainSocketAddressClass, ofMethodHandle, getPathMethodHandle);
       } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException e) {
         LOG.warn("JDK Unix Domain Socket support is not available", e);
       }
