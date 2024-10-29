@@ -11,8 +11,7 @@
 
 package io.vertx.tests.net;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
+import io.netty.buffer.*;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpVersion;
@@ -44,7 +43,6 @@ import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.tls.SslContextFactory;
 import io.vertx.core.transport.Transport;
 import io.vertx.test.core.CheckingSender;
-import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.netty.TestLoggerFactory;
