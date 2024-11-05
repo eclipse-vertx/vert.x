@@ -364,7 +364,7 @@ public class VirtualThreadContextTest extends VertxTestBase {
         assertFalse(Thread.currentThread().isInterrupted());
       }
       try {
-        Promise.promise().future().await();
+        Future.await(Promise.promise().future());
         fail();
       } catch (Exception e) {
         assertEquals(InterruptedException.class, e.getClass());
@@ -374,6 +374,17 @@ public class VirtualThreadContextTest extends VertxTestBase {
     awaitLatch(latch);
     // Interrupts virtual thread
     ctx.close();
+    await();
+  }
+
+  @Test
+  public void testSubmitAfterClose() {
+    Assume.assumeTrue(isVirtualThreadAvailable());
+    ContextInternal ctx = vertx.createVirtualThreadContext();
+    ctx.close();
+    ctx.runOnContext(v -> {
+      testComplete();
+    });
     await();
   }
 }

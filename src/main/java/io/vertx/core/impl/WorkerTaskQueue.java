@@ -31,13 +31,6 @@ class WorkerTaskQueue extends TaskQueue {
   void shutdown(EventLoop executor, Promise<Void> completion) {
     TaskQueue.CloseResult closeResult = close();
 
-    // Reject all pending tasks
-    List<Runnable> pendingTasks = closeResult.pendingTasks();
-    for (Runnable pendingTask : pendingTasks) {
-      WorkerTask pendingWorkerTask = (WorkerTask) pendingTask;
-      pendingWorkerTask.reject();
-    }
-
     // Maintain context invariant: serialize task execution while interrupting tasks
     class InterruptSequence {
 
