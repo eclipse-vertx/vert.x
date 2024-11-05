@@ -683,8 +683,11 @@ public interface Future<T> extends AsyncResult<T> {
     }
     if (future.succeeded()) {
       return future.result();
-    } else {
+    } else if (future.failed()) {
       Utils.throwAsUnchecked(future.cause());
+      return null;
+    } else {
+      Utils.throwAsUnchecked(new InterruptedException("Context closed"));
       return null;
     }
   }
