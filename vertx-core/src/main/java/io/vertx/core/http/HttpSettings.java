@@ -32,6 +32,8 @@ public class HttpSettings {
   private HttpVersion version;
   private Http2Settings http2Settings;
   private Http3Settings http3Settings;
+  private io.netty.handler.codec.http2.Http2Settings nettyHttp2Settings;
+  private Http3SettingsFrame nettyHttp3Settings;
 
   public HttpSettings() {
   }
@@ -57,12 +59,12 @@ public class HttpSettings {
   }
 
   public HttpSettings(io.netty.handler.codec.http2.Http2Settings settings) {
-    this.http2Settings = HttpUtils.toVertxSettings(settings);
+    this.nettyHttp2Settings = settings;
     this.version = HttpVersion.HTTP_2;
   }
 
   public HttpSettings(Http3SettingsFrame nettyHttp3Settings) {
-    this.http3Settings = HttpUtils.toVertxSettings(nettyHttp3Settings);
+    this.nettyHttp3Settings = nettyHttp3Settings;
     this.version = HttpVersion.HTTP_3;
   }
 
@@ -81,6 +83,14 @@ public class HttpSettings {
 
   public Http3Settings getHttp3Settings() {
     return http3Settings;
+  }
+
+  public io.netty.handler.codec.http2.Http2Settings getNettyHttp2Settings() {
+    return nettyHttp2Settings;
+  }
+
+  public Http3SettingsFrame getNettyHttp3Settings() {
+    return nettyHttp3Settings;
   }
 
   public io.netty.handler.codec.http2.Http2Settings toNettyHttp2Settings() {
@@ -110,6 +120,30 @@ public class HttpSettings {
       return http3Settings.get(key);
     }
     return null;
+  }
+
+  public Long remove(Character key) {
+    if (version == HttpVersion.HTTP_2) {
+      return nettyHttp2Settings.remove(key);
+    }
+    if (version == HttpVersion.HTTP_3) {
+      throw new RuntimeException("Not implemented");
+    }
+    throw new RuntimeException("Not implemented");
+  }
+
+  public void putAll(HttpSettings settingsUpdate) {
+    if (version == HttpVersion.HTTP_2) {
+      settingsUpdate
+        .getNettyHttp2Settings()
+        .forEach((key, value) -> this.getNettyHttp2Settings().put(key, value));
+      return;
+    }
+    if (version == HttpVersion.HTTP_3) {
+      settingsUpdate
+        .getNettyHttp3Settings()
+        .forEach(entry -> this.getNettyHttp3Settings().put(entry.getKey(), entry.getValue()));
+    }
   }
 
   @Override
