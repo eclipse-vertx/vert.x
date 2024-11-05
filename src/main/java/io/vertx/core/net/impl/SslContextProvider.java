@@ -30,6 +30,7 @@ import java.util.function.Supplier;
  */
 public class SslContextProvider {
 
+  private final boolean jdkSSLProvider;
   private final Supplier<SslContextFactory> provider;
   private final Set<String> enabledProtocols;
   private final List<CRL> crls;
@@ -42,7 +43,8 @@ public class SslContextProvider {
   private final Function<String, KeyManagerFactory> keyManagerFactoryMapper;
   private final Function<String, TrustManager[]> trustManagerMapper;
 
-  public SslContextProvider(ClientAuth clientAuth,
+  public SslContextProvider(boolean jdkSSLProvider,
+                            ClientAuth clientAuth,
                             String endpointIdentificationAlgorithm,
                             List<String> applicationProtocols,
                             Set<String> enabledCipherSuites,
@@ -53,6 +55,7 @@ public class SslContextProvider {
                             Function<String, TrustManager[]> trustManagerMapper,
                             List<CRL> crls,
                             Supplier<SslContextFactory> provider) {
+    this.jdkSSLProvider = jdkSSLProvider;
     this.provider = provider;
     this.clientAuth = clientAuth;
     this.endpointIdentificationAlgorithm = endpointIdentificationAlgorithm;
@@ -64,6 +67,10 @@ public class SslContextProvider {
     this.keyManagerFactoryMapper = keyManagerFactoryMapper;
     this.trustManagerMapper = trustManagerMapper;
     this.crls = crls;
+  }
+
+  boolean jdkSSLProvider() {
+    return jdkSSLProvider;
   }
 
   public VertxSslContext createContext(boolean server,
