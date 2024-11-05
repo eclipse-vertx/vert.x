@@ -117,7 +117,6 @@ public interface Transport {
   ChannelFactory<? extends ServerChannel> serverChannelFactory(boolean domainSocket);
 
   default void configure(DatagramChannel channel, DatagramSocketOptions options) {
-    channel.config().setAllocator(PartialPooledByteBufAllocator.INSTANCE);
     if (options.getSendBufferSize() != -1) {
       channel.config().setSendBufferSize(options.getSendBufferSize());
     }
