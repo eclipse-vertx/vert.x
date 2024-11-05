@@ -54,7 +54,7 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
       Http2ConnectionDecoder decoder,
       Http2ConnectionEncoder encoder,
       HttpSettings initialSettings) {
-    super(decoder, encoder, initialSettings.toNettyHttp2Settings());
+    super(decoder, encoder, initialSettings.getNettyHttp2Settings());
     this.connectionFactory = connectionFactory;
     this.useDecompressor = useDecompressor;
     this.initialSettings = initialSettings;
@@ -310,7 +310,7 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
     checkFlush();
   }
 
-  ChannelFuture writeSettings(Http2Settings settingsUpdate) {
+  ChannelFuture writeSettings(HttpSettings settingsUpdate) {
     ChannelPromise promise = chctx.newPromise();
     EventExecutor executor = chctx.executor();
     if (executor.inEventLoop()) {
@@ -323,8 +323,8 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
     return promise;
   }
 
-  private void _writeSettings(Http2Settings settingsUpdate, ChannelPromise promise) {
-    encoder().writeSettings(chctx, settingsUpdate, promise);
+  private void _writeSettings(HttpSettings settingsUpdate, ChannelPromise promise) {
+    encoder().writeSettings(chctx, settingsUpdate.getNettyHttp2Settings(), promise);
     checkFlush();
   }
 

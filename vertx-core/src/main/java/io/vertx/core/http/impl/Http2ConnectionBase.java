@@ -70,8 +70,8 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   private Handler<HttpSettings> remoteSettingsHandler;
   private final ArrayDeque<Handler<Void>> updateSettingsHandlers = new ArrayDeque<>();
   private final ArrayDeque<Promise<Buffer>> pongHandlers = new ArrayDeque<>();
-  private Http2Settings localSettings;
-  private Http2Settings remoteSettings;
+  private HttpSettings localSettings;
+  private HttpSettings remoteSettings;
   private Handler<GoAway> goAwayHandler;
   private Handler<Void> shutdownHandler;
   private Handler<Buffer> pingHandler;
@@ -86,7 +86,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     this.windowSize = handler.connection().local().flowController().windowSize(handler.connection().connectionStream());
     this.maxConcurrentStreams = io.vertx.core.http.Http2Settings.DEFAULT_MAX_CONCURRENT_STREAMS;
     this.streamKey = handler.connection().newKey();
-    this.localSettings = handler.initialSettings().toNettyHttp2Settings();
+    this.localSettings = handler.initialSettings();
   }
 
   public VertxInternal vertx() {
@@ -248,7 +248,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
       } else {
         changed = false;
       }
-      remoteSettings = new HttpSettings(settings).toNettyHttp2Settings();
+      remoteSettings = new HttpSettings(settings);
       handler = remoteSettingsHandler;
     }
     if (handler != null) {
@@ -410,7 +410,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   public HttpSettings remoteHttpSettings() {
-    return new HttpSettings(remoteSettings);
+    return remoteSettings;
   }
 
   @Override
@@ -420,10 +420,10 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   public Future<Void> updateHttpSettings(HttpSettings settings) {
-    return updateSettings(settings.toNettyHttp2Settings());
+    return updateSettings(settings);
   }
 
-  protected Future<Void> updateSettings(Http2Settings settingsUpdate) {
+  protected Future<Void> updateSettings(HttpSettings settingsUpdate) {
     Http2Settings current = handler.decoder().localSettings();
     for (Map.Entry<Character, Long> entry : current.entrySet()) {
       Character key = entry.getKey();
