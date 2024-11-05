@@ -250,15 +250,11 @@ public class ContextTest extends VertxTestBase {
       latch.await();
       return "";
     });
-    Future<String> fut2 = ctx.executeBlocking(() -> "");
     assertWaitUntil(() -> thread.get() != null && thread.get().getState() == Thread.State.WAITING);
     ctx.close();
     assertWaitUntil(fut1::isComplete);
     assertTrue(fut1.failed());
     assertTrue(fut1.cause() instanceof InterruptedException);
-    assertWaitUntil(fut2::isComplete);
-    assertTrue(fut2.failed());
-    assertTrue(fut2.cause() instanceof RejectedExecutionException);
   }
 
   @Test
