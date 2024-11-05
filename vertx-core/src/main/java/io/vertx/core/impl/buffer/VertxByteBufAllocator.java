@@ -30,11 +30,6 @@ public abstract class VertxByteBufAllocator extends AbstractByteBufAllocator {
     POOLED_ALLOCATOR = pooledAllocator;
   }
 
-  /**
-   * Vert.x shared un-pooled allocator.
-   */
-  public static final ByteBufAllocator UNPOOLED_ALLOCATOR = new UnpooledByteBufAllocator(false);
-
   private static final VertxByteBufAllocator UNSAFE_IMPL = new VertxByteBufAllocator() {
     @Override
     protected ByteBuf newHeapBuffer(int initialCapacity, int maxCapacity) {
@@ -53,7 +48,7 @@ public abstract class VertxByteBufAllocator extends AbstractByteBufAllocator {
 
   @Override
   protected ByteBuf newDirectBuffer(int initialCapacity, int maxCapacity) {
-    return UNPOOLED_ALLOCATOR.directBuffer(initialCapacity, maxCapacity);
+    return UnpooledByteBufAllocator.DEFAULT.directBuffer(initialCapacity, maxCapacity);
   }
 
   @Override

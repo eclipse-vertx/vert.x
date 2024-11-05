@@ -19,7 +19,6 @@ import io.netty.channel.socket.InternetProtocolFamily;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.net.ClientOptionsBase;
 import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.impl.transports.NioTransport;
 
@@ -121,7 +120,6 @@ public interface Transport {
   ChannelFactory<? extends ServerChannel> serverChannelFactory(boolean domainSocket);
 
   default void configure(DatagramChannel channel, DatagramSocketOptions options) {
-    channel.config().setAllocator(PartialPooledByteBufAllocator.INSTANCE);
     if (options.getSendBufferSize() != -1) {
       channel.config().setSendBufferSize(options.getSendBufferSize());
     }

@@ -22,7 +22,6 @@ import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.handler.traffic.GlobalTrafficShapingHandler;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.*;
-import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.impl.HttpUtils;
@@ -507,13 +506,8 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     channelBalancer.addWorker(eventLoop, worker);
     ServerBootstrap bootstrap = new ServerBootstrap();
     bootstrap.group(vertx.getAcceptorEventLoopGroup(), channelBalancer.workers());
-    if (options.isSsl()) {
-      bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
-    } else {
-      bootstrap.childOption(ChannelOption.ALLOCATOR, VertxByteBufAllocator.POOLED_ALLOCATOR);
-    }
-
     bootstrap.childHandler(channelBalancer);
+    bootstrap.childOption(ChannelOption.ALLOCATOR, VertxByteBufAllocator.POOLED_ALLOCATOR);
     applyConnectionOptions(localAddress.isDomainSocket(), bootstrap);
 
     // Actual bind
