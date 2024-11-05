@@ -380,4 +380,15 @@ public class VirtualThreadContextTest extends VertxTestBase {
     ctx.close();
     await();
   }
+
+  @Test
+  public void testSubmitAfterClose() {
+    Assume.assumeTrue(isVirtualThreadAvailable());
+    ContextInternal ctx = vertx.createVirtualThreadContext();
+    ctx.close();
+    ctx.runOnContext(v -> {
+      testComplete();
+    });
+    await();
+  }
 }

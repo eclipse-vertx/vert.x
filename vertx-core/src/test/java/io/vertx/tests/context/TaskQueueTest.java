@@ -203,20 +203,6 @@ public class TaskQueueTest extends AsyncTestBase {
   }
 
   @Test
-  public void testClosePendingTasks() {
-    TaskQueue taskQueue = new TaskQueue();
-    Deque<Runnable> pending = new ConcurrentLinkedDeque<>();
-    Executor executor = pending::add;
-    Runnable task = () -> {
-    };
-    taskQueue.execute(task, executor);
-    assertEquals(1, pending.size());
-    TaskQueue.CloseResult result = taskQueue.close();
-    assertEquals(1, result.pendingTasks().size());
-    assertSame(task, result.pendingTasks().get(0));
-  }
-
-  @Test
   public void testCloseSuspendedTasks() {
     TaskQueue taskQueue = new TaskQueue();
     Deque<Runnable> pending = new ConcurrentLinkedDeque<>();
@@ -325,14 +311,10 @@ public class TaskQueueTest extends AsyncTestBase {
     taskQueue.close();
     Deque<Runnable> pending = new ConcurrentLinkedDeque<>();
     Executor exec = pending::add;
-    try {
-      taskQueue.execute(() -> {
+    taskQueue.execute(() -> {
 
-      }, exec);
-      fail();
-    } catch (RejectedExecutionException expected) {
-    }
-    assertEquals(0, pending.size());
+    }, exec);
+    assertEquals(1, pending.size());
   }
 
   @Test

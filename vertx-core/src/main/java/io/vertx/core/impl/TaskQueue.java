@@ -54,9 +54,6 @@ public class TaskQueue {
     for (; ; ) {
       final ExecuteTask execute;
       synchronized (tasks) {
-        if (closed) {
-          return;
-        }
         Task task = tasks.poll();
         if (task == null) {
           currentExecutor = null;
@@ -125,9 +122,6 @@ public class TaskQueue {
    */
   public void execute(Runnable task, Executor executor) throws RejectedExecutionException {
     synchronized (tasks) {
-      if (closed) {
-        throw new RejectedExecutionException("Closed");
-      }
       if (currentExecutor == null) {
         currentExecutor = executor;
         try {
@@ -161,18 +155,15 @@ public class TaskQueue {
     private final Runnable activeTask;
     private final List<Runnable> suspendedTasks;
     private final List<Thread> suspendedThreads;
-    private final List<Runnable> pendingTasks;
 
     private CloseResult(Thread activeThread,
                         Runnable activeTask,
                         List<Thread> suspendedThreads,
-                        List<Runnable> suspendedTasks,
-                        List<Runnable> pendingTasks) {
+                        List<Runnable> suspendedTasks) {
       this.activeThread = activeThread;
       this.activeTask = activeTask;
       this.suspendedThreads = suspendedThreads;
       this.suspendedTasks = suspendedTasks;
-      this.pendingTasks = pendingTasks;
     }
 
     /**
@@ -184,13 +175,6 @@ public class TaskQueue {
 
     public Runnable activeTask() {
       return activeTask;
-    }
-
-    /**
-     * @return the list of pending tasks
-     */
-    public List<Runnable> pendingTasks() {
-      return pendingTasks;
     }
 
     /**
@@ -214,7 +198,6 @@ public class TaskQueue {
    * @return a structure of suspended threads and pending tasks
    */
   public CloseResult close() {
-    List<Runnable> pendingTasks = Collections.emptyList();
     List<Thread> suspendedThreads;
     List<Runnable> suspendedTasks;
     Thread activeThread;
@@ -225,19 +208,16 @@ public class TaskQueue {
       }
       suspendedThreads = new ArrayList<>(continuations.size());
       suspendedTasks = new ArrayList<>(continuations.size());
-      for (Task t : tasks) {
-        if (t instanceof ExecuteTask) {
-          if (pendingTasks.isEmpty()) {
-            pendingTasks = new LinkedList<>();
-          }
-          pendingTasks.add(((ExecuteTask)t).runnable);
-        } else if (t instanceof ContinuationTask) {
-          ContinuationTask rt = (ContinuationTask) t;
-          suspendedThreads.add(rt.thread);
-          suspendedTasks.add(rt.task.runnable);
+      Iterator<Task> it = tasks.iterator();
+      while (it.hasNext()) {
+        Task task = it.next();
+        if (task instanceof ContinuationTask) {
+          ContinuationTask continuationTask = (ContinuationTask) task;
+          suspendedThreads.add(continuationTask.thread);
+          suspendedTasks.add(continuationTask.task.runnable);
+          it.remove();
         }
       }
-      tasks.clear();
       for (ContinuationTask cont : continuations) {
         suspendedThreads.add(cont.thread);
         suspendedTasks.add(cont.task.runnable);
@@ -248,7 +228,7 @@ public class TaskQueue {
       currentExecutor = null;
       closed = true;
     }
-    return new CloseResult(activeThread, activeTask, suspendedThreads, suspendedTasks, pendingTasks);
+    return new CloseResult(activeThread, activeTask, suspendedThreads, suspendedTasks);
   }
 
   private class ContinuationTask extends CountDownLatch implements WorkerExecutor.Continuation, Task {
