@@ -1,6 +1,6 @@
 == Writing TCP servers and clients
 
-Vert.x allows you to easily write non blocking TCP clients and servers.
+Vert.x allows you to easily write non-blocking TCP clients and servers.
 
 === Creating a TCP server
 
@@ -63,6 +63,15 @@ To find out the real port the server is listening on you can call {@link io.vert
 [source,$lang]
 ----
 {@link examples.NetExamples#example5_1}
+----
+
+=== Listening to Unix domain sockets
+
+When running on JDK 16+, or using a <<_native_transports,native transport>>, a server can listen to Unix domain sockets:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#tcpServerWithDomainSockets}
 ----
 
 === Getting notified of incoming connections
@@ -258,6 +267,15 @@ specifying the port and host of the server and a handler that will be called wit
 [source,$lang]
 ----
 {@link examples.NetExamples#example15}
+----
+
+=== Making connections to Unix domain sockets
+
+When running on JDK 16+, or using a <<_native_transports,native transport>>, a client can connect to Unix domain sockets:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#tcpClientWithDomainSockets}
 ----
 
 === Configuring connection attempts

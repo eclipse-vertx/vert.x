@@ -25,11 +25,11 @@ import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.CleanableHttpClient;
 import io.vertx.core.http.impl.HttpClientImpl;
-import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.http.HttpServerRequestInternal;
 import io.vertx.core.http.impl.ServerCookie;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.http.HttpServerRequestInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
 import io.vertx.core.streams.ReadStream;
@@ -68,6 +68,8 @@ import static io.vertx.core.http.HttpMethod.*;
 import static io.vertx.test.core.AssertExpectations.that;
 import static io.vertx.test.core.TestUtils.*;
 import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.junit.Assume.assumeFalse;
+import static org.junit.Assume.assumeTrue;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -184,10 +186,21 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testListenDomainSocketAddress() throws Exception {
-    Vertx vx = Vertx.vertx(new VertxOptions().setPreferNativeTransport(true));
-    Assume.assumeTrue("Native transport must be enabled", vx.isNativeTransportEnabled());
-    Assume.assumeTrue("Transport must support domain sockets", ((VertxInternal) vx).transport().supportsDomainSockets());
+  public void testListenDomainSocketAddressNative() throws Exception {
+    VertxInternal vx = (VertxInternal) Vertx.vertx(new VertxOptions().setPreferNativeTransport(true));
+    assumeTrue("Native transport must be enabled", vx.isNativeTransportEnabled());
+    testListenDomainSocketAddress(vx);
+  }
+
+  @Test
+  public void testListenDomainSocketAddressJdk() throws Exception {
+    VertxInternal vx = (VertxInternal) Vertx.vertx(new VertxOptions().setPreferNativeTransport(false));
+    assumeFalse("Native transport must not be enabled", vx.isNativeTransportEnabled());
+    testListenDomainSocketAddress(vx);
+  }
+
+  private void testListenDomainSocketAddress(VertxInternal vx) throws Exception {
+    assumeTrue("Transport must support domain sockets", vx.transport().supportsDomainSockets());
     int len = 3;
     waitFor(len * len);
     List<SocketAddress> addresses = new ArrayList<>();
@@ -277,7 +290,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testServerActualPortWhenSet() throws Exception {
-    Assume.assumeTrue(testAddress.isInetSocket());
+    assumeTrue(testAddress.isInetSocket());
     server.close();
     server
         .requestHandler(request -> {
@@ -303,7 +316,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testServerActualPortWhenZero() throws Exception {
-    Assume.assumeTrue(testAddress.isInetSocket());
+    assumeTrue(testAddress.isInetSocket());
     server.close();
     server = vertx.createHttpServer(createBaseServerOptions().setPort(0).setHost(DEFAULT_HTTP_HOST));
     server
@@ -330,7 +343,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testServerActualPortWhenZeroPassedInListen() throws Exception {
-    Assume.assumeTrue(testAddress.isInetSocket());
+    assumeTrue(testAddress.isInetSocket());
     server.close();
     server = vertx.createHttpServer(new HttpServerOptions(createBaseServerOptions()).setHost(DEFAULT_HTTP_HOST));
     server
@@ -357,7 +370,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testClientRequestOptionsSocketAddressOnly() throws Exception {
-    Assume.assumeTrue(testAddress.isInetSocket());
+    assumeTrue(testAddress.isInetSocket());
     Integer port = requestOptions.getPort();
     String host = requestOptions.getHost();
     server
@@ -4243,7 +4256,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testFollowRedirectLimit() throws Exception {
-    Assume.assumeTrue(testAddress.isInetSocket());
+    assumeTrue(testAddress.isInetSocket());
     AtomicInteger numberOfRequests = new AtomicInteger();
     server.requestHandler(req -> {
       int val = numberOfRequests.incrementAndGet();
@@ -4270,7 +4283,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testFollowRedirectPropagatesTimeout() throws Exception {
-    Assume.assumeTrue(testAddress.isInetSocket());
+    assumeTrue(testAddress.isInetSocket());
     AtomicInteger redirections = new AtomicInteger();
     server.requestHandler(req -> {
       switch (redirections.getAndIncrement()) {
@@ -4491,7 +4504,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testFollowRedirectEncodedParams() throws Exception {
-    Assume.assumeTrue(testAddress.isInetSocket());
+    assumeTrue(testAddress.isInetSocket());
     String value1 = "\ud55c\uae00", value2 = "A B+C", value3 = "123 \u20ac";
     server.requestHandler(req -> {
       switch (req.path()) {
@@ -6361,7 +6374,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testHAProxyProtocolVersion1Unknown() throws Exception {
-    Assume.assumeTrue(testAddress.isInetSocket());
+    assumeTrue(testAddress.isInetSocket());
     Buffer header = HAProxy.createVersion1UnknownProtocolHeader();
     testHAProxyProtocolAccepted(header, null, null);
   }
@@ -6392,7 +6405,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testHAProxyProtocolVersion2Unknown() throws Exception {
-    Assume.assumeTrue(testAddress.isInetSocket());
+    assumeTrue(testAddress.isInetSocket());
     Buffer header = HAProxy.createVersion2UnknownProtocolHeader();
     testHAProxyProtocolAccepted(header, null, null);
   }

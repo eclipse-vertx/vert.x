@@ -11,47 +11,41 @@
 
 package io.vertx.tests.net;
 
-import io.netty.buffer.*;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
-import io.netty.handler.codec.http.DefaultFullHttpRequest;
-import io.netty.handler.codec.http.DefaultFullHttpResponse;
-import io.netty.handler.codec.http.HttpClientCodec;
-import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.HttpVersion;
-import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.http.*;
 import io.netty.handler.ssl.ApplicationProtocolConfig;
 import io.netty.handler.ssl.IdentityCipherSuiteFilter;
 import io.netty.handler.ssl.JdkSslContext;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.internal.PlatformDependent;
+import io.vertx.core.Future;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.net.NetClientInternal;
+import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
-import io.vertx.core.net.impl.*;
-import io.vertx.core.internal.net.NetSocketInternal;
+import io.vertx.core.net.impl.CleanableNetClient;
+import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
+import io.vertx.core.net.impl.NetServerImpl;
+import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.tls.SslContextFactory;
 import io.vertx.test.core.CheckingSender;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.netty.TestLoggerFactory;
-import io.vertx.test.proxy.HAProxy;
-import io.vertx.test.proxy.HttpProxy;
-import io.vertx.test.proxy.Socks4Proxy;
-import io.vertx.test.proxy.SocksProxy;
-import io.vertx.test.proxy.TestProxyBase;
+import io.vertx.test.proxy.*;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 import org.junit.Assume;
@@ -60,23 +54,14 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.*;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -86,11 +71,13 @@ import java.util.function.Function;
 import java.util.function.LongPredicate;
 import java.util.function.Supplier;
 
+import static io.vertx.test.core.TestUtils.*;
 import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTPS_HOST;
 import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTPS_PORT;
-import static io.vertx.test.core.TestUtils.*;
 import static io.vertx.tests.tls.HttpTLSTest.testPeerHostServerCert;
 import static org.hamcrest.CoreMatchers.*;
+import static org.junit.Assume.assumeFalse;
+import static org.junit.Assume.assumeTrue;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -1387,7 +1374,7 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testTLSTrailingDotHost() throws Exception {
-    Assume.assumeTrue(PlatformDependent.javaVersion() < 9);
+    assumeTrue(PlatformDependent.javaVersion() < 9);
     // We just need a vanilla cert for this test
     SelfSignedCertificate cert = SelfSignedCertificate.create("host2.com");
     TLSTest test = new TLSTest()
@@ -1971,9 +1958,21 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
-  public void testListenDomainSocketAddress() throws Exception {
+  public void testListenDomainSocketAddressNative() throws Exception {
     VertxInternal vx = (VertxInternal) Vertx.vertx(new VertxOptions().setPreferNativeTransport(true));
-    Assume.assumeTrue("Transport must support domain sockets", vx.transport().supportsDomainSockets());
+    assumeTrue("Native transport must be enabled", vx.isNativeTransportEnabled());
+    testListenDomainSocketAddress(vx);
+  }
+
+  @Test
+  public void testListenDomainSocketAddressJdk() throws Exception {
+    VertxInternal vx = (VertxInternal) Vertx.vertx(new VertxOptions().setPreferNativeTransport(false));
+    assumeFalse("Native transport must not be enabled", vx.isNativeTransportEnabled());
+    testListenDomainSocketAddress(vx);
+  }
+
+  private void testListenDomainSocketAddress(VertxInternal vx) throws Exception {
+    assumeTrue("Transport must support domain sockets", vx.transport().supportsDomainSockets());
     int len = 3;
     waitFor(len * len);
     List<SocketAddress> addresses = new ArrayList<>();
@@ -3371,7 +3370,7 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testSelfSignedCertificate() throws Exception {
-    Assume.assumeTrue(PlatformDependent.javaVersion() < 9);
+    assumeTrue(PlatformDependent.javaVersion() < 9);
 
     CountDownLatch latch = new CountDownLatch(2);
 
@@ -4181,7 +4180,7 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testHAProxyProtocolConnectSSL() throws Exception {
-    Assume.assumeTrue(testAddress.isInetSocket());
+    assumeTrue(testAddress.isInetSocket());
     waitFor(2);
     SocketAddress remote = SocketAddress.inetSocketAddress(56324, "192.168.0.1");
     SocketAddress local = SocketAddress.inetSocketAddress(443, "192.168.0.11");
@@ -4243,7 +4242,7 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testHAProxyProtocolVersion1Unknown() throws Exception {
-    Assume.assumeTrue(testAddress.isInetSocket());
+    assumeTrue(testAddress.isInetSocket());
     Buffer header = HAProxy.createVersion1UnknownProtocolHeader();
     testHAProxyProtocolAccepted(header, null, null);
   }
@@ -4274,7 +4273,7 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testHAProxyProtocolVersion2Unknown() throws Exception {
-    Assume.assumeTrue(testAddress.isInetSocket());
+    assumeTrue(testAddress.isInetSocket());
     Buffer header = HAProxy.createVersion2UnknownProtocolHeader();
     testHAProxyProtocolAccepted(header, null, null);
   }
