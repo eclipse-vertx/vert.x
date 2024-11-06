@@ -10,9 +10,21 @@
  */
 package io.vertx.core.http.impl;
 
+import io.vertx.codegen.annotations.Nullable;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
+import io.vertx.core.http.ServerWebSocketHandshake;
+import io.vertx.core.net.HostAndPort;
+import io.vertx.core.net.SocketAddress;
+
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
+import java.security.cert.Certificate;
+import java.util.List;
 
 import static io.vertx.core.http.HttpHeaders.UPGRADE;
 import static io.vertx.core.http.HttpHeaders.WEBSOCKET;
@@ -39,19 +51,90 @@ public class Http1xServerRequestHandler implements Handler<HttpServerRequest> {
   public void handle(HttpServerRequest req) {
     Handler<ServerWebSocket> wsHandler = handlers.wsHandler;
     Handler<HttpServerRequest> reqHandler = handlers.requestHandler;
-    if (wsHandler != null ) {
+    Handler<ServerWebSocketHandshake> wsHandshakeHandler = handlers.wsHandshakeHandler;
+    if (wsHandler != null) {
       if (req.headers().contains(UPGRADE, WEBSOCKET, true) && handlers.server.wsAccept()) {
         // Missing upgrade header + null request handler will be handled when creating the handshake by sending a 400 error
         // handle((Http1xServerRequest) req, wsHandler);
-        ((Http1xServerRequest)req).webSocket().onComplete(ar -> {
-          if (ar.succeeded()) {
-            ServerWebSocketImpl ws = (ServerWebSocketImpl) ar.result();
-            wsHandler.handle(ws);
-            ws.tryHandshake(101);
-          } else {
-            // ????
-          }
-        });
+        Future<ServerWebSocket> fut = ((Http1xServerRequest) req).webSocket();
+        if (wsHandshakeHandler != null) {
+          fut.onComplete(ar -> {
+            if (ar.succeeded()) {
+              ServerWebSocket ws = ar.result();
+              Promise<Integer> promise = Promise.promise();
+              ws.setHandshake(promise.future());
+              wsHandshakeHandler.handle(new ServerWebSocketHandshake() {
+                @Override
+                public MultiMap headers() {
+                  return ws.headers();
+                }
+                @Override
+                public @Nullable String scheme() {
+                  return ws.scheme();
+                }
+                @Override
+                public @Nullable HostAndPort authority() {
+                  return ws.authority();
+                }
+                @Override
+                public String uri() {
+                  return ws.uri();
+                }
+                @Override
+                public String path() {
+                  return ws.path();
+                }
+                @Override
+                public @Nullable String query() {
+                  return ws.query();
+                }
+                @Override
+                public Future<ServerWebSocket> accept() {
+                  promise.complete(101);
+                  wsHandler.handle(ws);
+                  return Future.succeededFuture(ws);
+                }
+                @Override
+                public Future<Void> reject(int status) {
+                  promise.complete(status);
+                  return Future.succeededFuture();
+                }
+                @Override
+                public SocketAddress remoteAddress() {
+                  return ws.remoteAddress();
+                }
+                @Override
+                public SocketAddress localAddress() {
+                  return ws.localAddress();
+                }
+                @Override
+                public boolean isSsl() {
+                  return ws.isSsl();
+                }
+                @Override
+                public SSLSession sslSession() {
+                  return ws.sslSession();
+                }
+                @Override
+                public List<Certificate> peerCertificates() throws SSLPeerUnverifiedException {
+                  return ws.peerCertificates();
+                }
+              });
+            } else {
+
+            }
+          });
+        } else {
+          fut.onComplete(ar -> {
+            if (ar.succeeded()) {
+              ServerWebSocketImpl ws = (ServerWebSocketImpl) ar.result();
+              wsHandler.handle(ws);
+              ws.tryHandshake(101);
+            } else {
+              // ????
+            }
+          });
+        }
       } else {
         if (reqHandler != null) {
           reqHandler.handle(req);

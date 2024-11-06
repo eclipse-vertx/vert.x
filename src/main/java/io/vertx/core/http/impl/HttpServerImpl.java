@@ -56,6 +56,7 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
   private Handler<HttpServerRequest> invalidRequestHandler;
   private Handler<HttpConnection> connectionHandler;
   private Handler<Throwable> exceptionHandler;
+  private Handler<ServerWebSocketHandshake> webSocketHandshakeHandler;
 
   public HttpServerImpl(VertxInternal vertx, HttpServerOptions options) {
     super(vertx, options);
@@ -87,6 +88,12 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
   @Override
   public HttpServer webSocketHandler(Handler<ServerWebSocket> handler) {
     webSocketStream().handler(handler);
+    return this;
+  }
+
+  @Override
+  public HttpServer webSocketHandshakeHandler(Handler<ServerWebSocketHandshake> handler) {
+    webSocketHandshakeHandler = handler;
     return this;
   }
 
@@ -145,7 +152,14 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
     String host = address.isInetSocket() ? address.host() : "localhost";
     int port = address.port();
     String serverOrigin = (options.isSsl() ? "https" : "http") + "://" + host + ":" + port;
-    HttpServerConnectionHandler hello = new HttpServerConnectionHandler(this, requestStream.handler, invalidRequestHandler, wsStream.handler, connectionHandler, exceptionHandler == null ? DEFAULT_EXCEPTION_HANDLER : exceptionHandler);
+    HttpServerConnectionHandler hello = new HttpServerConnectionHandler(
+      this,
+      requestStream.handler,
+      invalidRequestHandler,
+      webSocketHandshakeHandler,
+      wsStream.handler,
+      connectionHandler,
+      exceptionHandler == null ? DEFAULT_EXCEPTION_HANDLER : exceptionHandler);
     Supplier<ContextInternal> streamContextSupplier = context::duplicate;
     return new HttpServerWorker(
       connContext,

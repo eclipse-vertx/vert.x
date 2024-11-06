@@ -120,6 +120,18 @@ public interface HttpServer extends Measured {
   HttpServer webSocketHandler(Handler<ServerWebSocket> handler);
 
   /**
+   * Set a handler for WebSocket handshake.
+   *
+   * <p>When an inbound HTTP request presents a WebSocket upgrade, this handler is called first. The handler
+   * can chose to {@link ServerWebSocketHandshake#accept()} or {@link ServerWebSocketHandshake#reject()} the request.</p>
+   *
+   * <p>Setting no handler, implicitly accepts any HTTP request connection presenting an upgrade header and upgrades it
+   * to a WebSocket.</p>
+   */
+  @Fluent
+  HttpServer webSocketHandshakeHandler(Handler<ServerWebSocketHandshake> handler);
+
+  /**
    * @return the WebSocket handler
    */
   @GenIgnore

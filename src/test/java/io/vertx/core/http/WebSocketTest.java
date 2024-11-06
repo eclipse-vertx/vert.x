@@ -131,18 +131,33 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   @Test
-  public void testRejectHybi00() throws Exception {
-    testReject(WebsocketVersion.V00, null, 502, "Bad Gateway");
+  public void testRejectHybi00_1() throws Exception {
+    testReject1(WebsocketVersion.V00, null, 502, "Bad Gateway");
   }
 
   @Test
-  public void testRejectHybi08() throws Exception {
-    testReject(WebsocketVersion.V08, null, 502, "Bad Gateway");
+  public void testRejectHybi08_1() throws Exception {
+    testReject1(WebsocketVersion.V08, null, 502, "Bad Gateway");
   }
 
   @Test
-  public void testRejectWithStatusCode() throws Exception {
-    testReject(WebsocketVersion.V08, 404, 404, "Not Found");
+  public void testRejectWithStatusCode_1() throws Exception {
+    testReject1(WebsocketVersion.V08, 404, 404, "Not Found");
+  }
+
+  @Test
+  public void testRejectHybi00_2() throws Exception {
+    testReject2(WebsocketVersion.V00, null, 502, "Bad Gateway");
+  }
+
+  @Test
+  public void testRejectHybi08_2() throws Exception {
+    testReject2(WebsocketVersion.V08, null, 502, "Bad Gateway");
+  }
+
+  @Test
+  public void testRejectWithStatusCode_2() throws Exception {
+    testReject2(WebsocketVersion.V08, 404, 404, "Not Found");
   }
 
   @Test
@@ -1353,24 +1368,45 @@ public class WebSocketTest extends VertxTestBase {
     }));
   }
 
-  private void testReject(WebsocketVersion version, Integer rejectionStatus, int expectedRejectionStatus, String expectedBody) throws Exception {
-
-    String path = "/some/path";
-
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).webSocketHandler(ws -> {
-      assertEquals(path, ws.path());
-      if (rejectionStatus != null) {
-        ws.reject(rejectionStatus);
-      } else {
-        ws.reject();
-      }
+  private void testReject1(WebsocketVersion version, Integer rejectionStatus, int expectedRejectionStatus, String expectedBody) throws Exception {
+    testReject(version, expectedRejectionStatus, expectedBody, server -> {
+      server.webSocketHandler(ws -> {
+        assertEquals("/some/path", ws.path());
+        if (rejectionStatus != null) {
+          ws.reject(rejectionStatus);
+        } else {
+          ws.reject();
+        }
+      });
     });
+  }
+
+  private void testReject2(WebsocketVersion version, Integer rejectionStatus, int expectedRejectionStatus, String expectedBody) throws Exception {
+    testReject(version, expectedRejectionStatus, expectedBody, server -> {
+      server.webSocketHandshakeHandler(handshake -> {
+        assertEquals("/some/path", handshake.path());
+        if (rejectionStatus != null) {
+          handshake.reject(rejectionStatus);
+        } else {
+          handshake.reject();
+        }
+      });
+      server.webSocketHandler(ws -> {
+
+      });
+    });
+  }
+
+  private void testReject(WebsocketVersion version, int expectedRejectionStatus, String expectedBody, Consumer<HttpServer> handler) throws Exception {
+
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
+    handler.accept(server);
 
     server.listen(onSuccess(s -> {
       WebSocketConnectOptions options = new WebSocketConnectOptions()
         .setPort(DEFAULT_HTTP_PORT)
         .setHost(DEFAULT_HTTP_HOST)
-        .setURI(path)
+        .setURI("/some/path")
         .setVersion(version);
       client = vertx.createWebSocketClient();
       client.connect(options, onFailure(t -> {
@@ -1386,7 +1422,29 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   @Test
-  public void testAsyncAccept() {
+  public void testAsyncAccept1() {
+    AtomicBoolean resolved = new AtomicBoolean();
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT))
+      .webSocketHandshakeHandler(handshake -> {
+        vertx.setTimer(500, id -> {
+          resolved.set(true);
+          handshake.accept();
+        });
+      })
+      .webSocketHandler(ws -> {
+    });
+    server.listen(onSuccess(s -> {
+      client = vertx.createWebSocketClient();
+      client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path", onSuccess(ws -> {
+        assertTrue(resolved.get());
+        testComplete();
+      }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testAsyncAccept2() {
     AtomicBoolean resolved = new AtomicBoolean();
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).webSocketHandler(ws -> {
       Promise<Integer> promise = Promise.promise();

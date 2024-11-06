@@ -130,7 +130,9 @@ public interface ServerWebSocket extends WebSocketBase {
    * terminate the WebSocket handshake.
    *
    * @throws IllegalStateException when the WebSocket handshake is already set
+   * @deprecated instead use {@link ServerWebSocketHandshake#accept()}
    */
+  @Deprecated
   void accept();
 
   /**
@@ -143,12 +145,17 @@ public interface ServerWebSocket extends WebSocketBase {
    * You might use this method, if for example you only want to accept WebSockets with a particular path.
    *
    * @throws IllegalStateException when the WebSocket handshake is already set
+   * @deprecated instead use {@link ServerWebSocketHandshake#reject()}
    */
+  @Deprecated
   void reject();
 
   /**
    * Like {@link #reject()} but with a {@code status}.
+   *
+   * @deprecated instead use {@link ServerWebSocketHandshake#reject(int)}
    */
+  @Deprecated
   void reject(int status);
 
   /**
@@ -172,12 +179,17 @@ public interface ServerWebSocket extends WebSocketBase {
    * @param future the future to complete with
    * @param handler the completion handler
    * @throws IllegalStateException when the WebSocket has already an asynchronous result
+   * @deprecated instead use {@link ServerWebSocketHandshake}
    */
+  @Deprecated
   void setHandshake(Future<Integer> future, Handler<AsyncResult<Integer>> handler);
 
   /**
    * Like {@link #setHandshake(Future, Handler)} but returns a {@code Future} of the asynchronous result
+   *
+   * @deprecated instead use {@link ServerWebSocketHandshake}
    */
+  @Deprecated
   Future<Integer> setHandshake(Future<Integer> future);
 
   /**
