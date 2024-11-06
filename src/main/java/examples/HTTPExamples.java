@@ -1047,29 +1047,39 @@ public class HTTPExamples {
 
   public void example52(HttpServer server) {
 
-    server.webSocketHandler(webSocket -> {
-      if (webSocket.path().equals("/myapi")) {
-        webSocket.reject();
-      } else {
+    server
+      .webSocketHandshakeHandler(handshake -> {
+        if (handshake.path().equals("/myapi")) {
+          handshake.reject();
+        } else {
+          handshake.accept();
+        }
+      })
+      .webSocketHandler(webSocket -> {
         // Do something
-      }
-    });
+      });
   }
 
   public void exampleAsynchronousHandshake(HttpServer server) {
-    server.webSocketHandler(webSocket -> {
-      Promise<Integer> promise = Promise.promise();
-      webSocket.setHandshake(promise.future());
-      authenticate(webSocket.headers(), ar -> {
-        if (ar.succeeded()) {
-          // Terminate the handshake with the status code 101 (Switching Protocol)
-          // Reject the handshake with 401 (Unauthorized)
-          promise.complete(ar.result() ? 101 : 401);
-        } else {
-          // Will send a 500 error
-          promise.fail(ar.cause());
-        }
-      });
+    server
+      .webSocketHandshakeHandler(handshake -> {
+        authenticate(handshake.headers(), ar -> {
+          if (ar.succeeded()) {
+            if (ar.result()) {
+              // Terminate the handshake with the status code 101 (Switching Protocol)
+              handshake.accept();
+            } else {
+              // Reject the handshake with 401 (Unauthorized)
+              handshake.reject(401);
+            }
+          } else {
+            // Will send a 500 error
+            handshake.reject(500);
+          }
+        });
+      })
+      .webSocketHandler(webSocket -> {
+        // Do something
     });
   }
 

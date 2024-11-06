@@ -1907,14 +1907,20 @@ When a WebSocket connection is made to the server, the handler will be called, p
 {@link examples.HTTPExamples#example51}
 ----
 
-You can choose to reject the WebSocket by calling {@link io.vertx.core.http.ServerWebSocket#reject()}.
+===== Server WebSocket handshake
+
+By default, the server accepts any inbound WebSocket.
+
+You can set a WebSocket handshake handler to control the outcome of a WebSocket handshake, i.e. accept or reject an incoming WebSocket.
+
+You can choose to reject the WebSocket by calling {@link io.vertx.core.http.ServerWebSocketHandshake#accept()} or {@link io.vertx.core.http.ServerWebSocketHandshake#reject()}.
 
 [source,$lang]
 ----
 {@link examples.HTTPExamples#example52}
 ----
 
-You can perform an asynchronous handshake by calling {@link io.vertx.core.http.ServerWebSocket#setHandshake} with a `Future`:
+You can perform an asynchronous handshake:
 
 [source,$lang]
 ----
