@@ -16,7 +16,6 @@ import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
-import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.net.ClientOptionsBase;
