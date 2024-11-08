@@ -17,11 +17,11 @@
   <parent>
     <groupId>io.vertx</groupId>
     <artifactId>vertx-core-aggregator</artifactId>
-    <version>5.0.0-SNAPSHOT</version>
+    <version>5.0.0.CR1</version>
   </parent>
 
   <artifactId>vertx-core</artifactId>
-  <version>5.0.0-SNAPSHOT</version>
+  <version>5.0.0.CR1</version>
 
   <name>Vert.x Core</name>
 
@@ -38,7 +38,7 @@
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-core-logging</artifactId>
-      <version>5.0.0-SNAPSHOT</version>
+      <version>5.0.0.CR1</version>
     </dependency>
 
     <!-- We depend on the specific Netty dependencies not netty-all to reduce the size of fatjars -->
