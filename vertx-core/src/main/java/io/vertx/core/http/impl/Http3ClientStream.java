@@ -54,12 +54,12 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
 
   @Override
   protected void createStreamInternal(int id, boolean b, Handler<AsyncResult<QuicStreamChannel>> onComplete) {
-    Http3.newRequestStream((QuicChannel) conn.channelHandlerContext().channel().parent(),
+    Http3.newRequestStream((QuicChannel) conn.channelHandlerContext().channel(),
       new Http3RequestStreamInitializer() {
         @Override
         protected void initRequestStream(QuicStreamChannel ch) {
           ch.pipeline()
-            .addLast(conn.handler);
+            .addLast(conn.handler.createStreamHandlerDelegate());
           onComplete.handle(Future.succeededFuture(ch));
         }
       });
@@ -117,7 +117,6 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
     this.writable = quicStreamChannel.isWritable();
     this.conn.quicStreamChannels.put(quicStreamChannel.streamId(), quicStreamChannel);
     VertxHttp3ConnectionHandler.setStreamOfQuicStreamChannel(quicStreamChannel, this);
-    VertxHttp3ConnectionHandler.setLocalControlVertxHttpStream(quicStreamChannel, this);
   }
 
   @Override

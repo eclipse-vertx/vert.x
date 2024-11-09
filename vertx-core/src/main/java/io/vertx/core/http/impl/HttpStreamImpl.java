@@ -236,7 +236,14 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
       headers.set(HttpHeaderNames.ACCEPT_ENCODING, Http1xClientConnection.determineCompressionAcceptEncoding());
     }
     try {
-      createStream(request, headers);
+      createStream(request, headers, channelStream_ -> {
+        if (buf != null) {
+          doWriteHeaders(headers, false, false, null);
+          doWriteData(buf, e, promise);
+        } else {
+          doWriteHeaders(headers, e, true, promise);
+        }
+      });
     } catch (HttpException ex) {
       promise.fail(ex);
       handleException(ex);
@@ -250,7 +257,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
     }
   }
 
-  private void createStream(HttpRequestHead head, VertxHttpHeaders headers) throws HttpException {
+  private void createStream(HttpRequestHead head, VertxHttpHeaders headers, Handler<S> onComplete) throws HttpException {
     int id = lastStreamCreated();
     if (id == 0) {
       id = 1;
@@ -275,6 +282,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
         trace = tracer.sendRequest(context, SpanKind.RPC, getTracingPolicy(), head, operation, headers_,
           HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
       }
+      onComplete.handle(streamX.result());
     });
   }
 
