@@ -194,6 +194,7 @@ public class Http3ServerConnection extends Http3ConnectionBase implements HttpSe
       stream0.onHeaders(new VertxHttp3Headers(headers), streamPriority);
     } else {
       // Http server request trailer - not implemented yet (in api)
+      stream0 = (Http3ServerStream) stream;
     }
     if (endOfStream) {
       stream0.onEnd();

@@ -249,8 +249,11 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
   protected void channelInputClosed(ChannelHandlerContext ctx) throws Exception {
     logger.debug("ChannelInputClosed called");
     VertxHttpStreamBase stream = getStreamOfQuicStreamChannel(ctx);
-    connection.onDataRead(ctx, stream, Unpooled.buffer(), 0, true);
-    ctx.close();
+    if (stream.isHeaderOnly() && !isServer) {
+      connection.onHeadersRead(ctx, stream, new DefaultHttp3Headers(), true, (QuicStreamChannel) ctx.channel());
+    } else {
+      connection.onDataRead(ctx, stream, Unpooled.buffer(), 0, true);
+    }
   }
 
   @Override
