@@ -48,20 +48,34 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
   protected boolean isConnect;
   private Throwable failure;
   private long reset = -1L;
+  private boolean headerOnly = true;
 
   protected S stream;
+
   protected abstract void consumeCredits(S stream, int len);
+
   protected abstract void writeFrame(S stream, byte type, short flags, ByteBuf payload, Promise<Void> promise);
+
   protected abstract void writeHeaders(S stream, VertxHttpHeaders headers, boolean end, StreamPriorityBase priority, boolean checkFlush, FutureListener<Void> promise);
+
   protected abstract void writePriorityFrame(StreamPriorityBase priority);
+
   protected abstract void writeData_(S stream, ByteBuf chunk, boolean end, FutureListener<Void> promise);
+
   protected abstract void writeReset_(int streamId, long code);
+
   protected abstract void init_(VertxHttpStreamBase vertxHttpStream, S stream);
+
   protected abstract int getStreamId();
+
   protected abstract boolean remoteSideOpen(S stream);
+
   protected abstract MultiMap getEmptyHeaders();
+
   protected abstract boolean isWritable_();
+
   protected abstract boolean isTrailersReceived();
+
   protected abstract StreamPriorityBase createDefaultStreamPriority();
 
   VertxHttpStreamBase(C conn, ContextInternal context) {
@@ -101,6 +115,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
           return false;
         }
       }
+
       @Override
       protected void handleDispose(MessageWrite messageWrite) {
         Throwable cause = failure;
@@ -109,6 +124,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
         }
         messageWrite.cancel(cause);
       }
+
       @Override
       protected void handleDrained() {
         context.emit(VertxHttpStreamBase.this, VertxHttpStreamBase::handleWriteQueueDrained);
@@ -157,6 +173,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
   }
 
   void onData(Buffer data) {
+    headerOnly = false;
     bytesRead += data.length();
     conn.reportBytesRead(data.length());
     inboundQueue.write(data);
@@ -248,6 +265,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
         public void write() {
           doWriteHeaders(headers, end, checkFlush, promise);
         }
+
         @Override
         public void cancel(Throwable cause) {
           promise.fail(cause);
@@ -284,6 +302,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
       public void write() {
         doWriteData(chunk, end, promise);
       }
+
       @Override
       public void cancel(Throwable cause) {
         promise.fail(cause);
@@ -312,7 +331,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
     if (end) {
       endWritten();
     }
-    writeData_(stream, chunk, end, (FutureListener<Void>)promise);
+    writeData_(stream, chunk, end, (FutureListener<Void>) promise);
   }
 
   final Future<Void> writeReset(long code) {
@@ -391,4 +410,9 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
 
   void handlePriorityChange(StreamPriorityBase newPriority) {
   }
+
+  public boolean isHeaderOnly() {
+    return headerOnly;
+  }
+
 }
