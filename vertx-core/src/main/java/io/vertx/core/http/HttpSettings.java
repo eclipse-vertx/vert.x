@@ -10,15 +10,12 @@
  */
 package io.vertx.core.http;
 
-import io.netty.incubator.codec.http3.DefaultHttp3SettingsFrame;
 import io.netty.incubator.codec.http3.Http3SettingsFrame;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
-
-import java.util.Map;
 
 /**
  * HTTP settings, is a general settings class for http2Settings and http3Settings.<p>
@@ -78,38 +75,23 @@ public class HttpSettings {
   }
 
   public Http2Settings getHttp2Settings() {
-    return http2Settings;
+    Arguments.require(version == HttpVersion.HTTP_2, "The settings is not for HTTP/2");
+    return http2Settings != null ? http2Settings : HttpUtils.toVertxSettings(nettyHttp2Settings);
   }
 
   public Http3Settings getHttp3Settings() {
-    return http3Settings;
+    Arguments.require(version == HttpVersion.HTTP_3, "The settings is not for HTTP/3");
+    return http3Settings != null ? http3Settings : HttpUtils.toVertxSettings(nettyHttp3Settings);
   }
 
   public io.netty.handler.codec.http2.Http2Settings getNettyHttp2Settings() {
-    return nettyHttp2Settings;
+    Arguments.require(version == HttpVersion.HTTP_2, "The settings is not for HTTP/2");
+    return nettyHttp2Settings != null ? nettyHttp2Settings : HttpUtils.fromVertxSettings(http2Settings);
   }
 
   public Http3SettingsFrame getNettyHttp3Settings() {
-    return nettyHttp3Settings;
-  }
-
-  public io.netty.handler.codec.http2.Http2Settings toNettyHttp2Settings() {
-    Arguments.require(version == HttpVersion.HTTP_2, "The settings is not for HTTP/2");
-    return HttpUtils.fromVertxSettings(http2Settings);
-  }
-
-  public Http3SettingsFrame toNettyHttp3Settings() {
     Arguments.require(version == HttpVersion.HTTP_3, "The settings is not for HTTP/3");
-    Http3SettingsFrame settings = HttpUtils.fromVertxSettings(http3Settings);
-
-    DefaultHttp3SettingsFrame localSettings = new DefaultHttp3SettingsFrame();
-    for (Map.Entry<Long, Long> entry : settings) {
-      if (Http3Settings.VALID_H3_SETTINGS_KEYS.contains(entry.getKey())) {
-        localSettings.put(entry.getKey(), entry.getValue());
-      }
-    }
-
-    return localSettings;
+    return nettyHttp3Settings != null ? nettyHttp3Settings : HttpUtils.fromVertxSettings(http3Settings);
   }
 
   public Long get(Character key) {

@@ -440,7 +440,11 @@ public final class HttpUtils {
     converted.put(Http3Settings.HTTP3_SETTINGS_H3_DATAGRAM, settings.getH3Datagram());
     converted.put(Http3Settings.HTTP3_SETTINGS_ENABLE_METADATA, settings.getEnableMetadata());
     if (settings.getExtraSettings() != null) {
-      settings.getExtraSettings().forEach((key, value) -> converted.put(key, value));
+      settings.getExtraSettings().forEach((key, value) -> {
+        if (Http3Settings.VALID_H3_SETTINGS_KEYS.contains(key)) {
+          converted.put(key, value);
+        }
+      });
     }
     return converted;
   }
