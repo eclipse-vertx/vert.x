@@ -115,7 +115,7 @@ public class Http3ServerRequest extends HttpServerRequestInternal implements Htt
       handler.handleException(failure);
     }
     if (upload instanceof NettyFileUpload) {
-      ((NettyFileUpload)upload).handleException(failure);
+      ((NettyFileUpload) upload).handleException(failure);
     }
   }
 
@@ -134,7 +134,7 @@ public class Http3ServerRequest extends HttpServerRequestInternal implements Htt
   public void handleData(Buffer data) {
     if (postRequestDecoder != null) {
       try {
-        postRequestDecoder.offer(new DefaultHttpContent(((BufferInternal)data).getByteBuf()));
+        postRequestDecoder.offer(new DefaultHttpContent(((BufferInternal) data).getByteBuf()));
       } catch (HttpPostRequestDecoder.ErrorDataDecoderException |
                HttpPostRequestDecoder.TooLongFormFieldException |
                HttpPostRequestDecoder.TooManyFormFieldsException e) {
@@ -355,6 +355,7 @@ public class Http3ServerRequest extends HttpServerRequestInternal implements Htt
   public String getParamsCharset() {
     return paramsCharset.name();
   }
+
   @Override
   public MultiMap params(boolean semicolonIsNormalChar) {
     synchronized (stream.conn) {
@@ -401,10 +402,12 @@ public class Http3ServerRequest extends HttpServerRequestInternal implements Htt
             throw new IllegalStateException("Request must have a content-type header to decode a multipart request");
           }
           if (!HttpUtils.isValidMultipartContentType(contentType)) {
-            throw new IllegalStateException("Request must have a valid content-type header to decode a multipart request");
+            throw new IllegalStateException("Request must have a valid content-type header to decode a multipart " +
+              "request");
           }
           if (!HttpUtils.isValidMultipartMethod(stream.method.toNetty())) {
-            throw new IllegalStateException("Request method must be one of POST, PUT, PATCH or DELETE to decode a multipart request");
+            throw new IllegalStateException("Request method must be one of POST, PUT, PATCH or DELETE to decode a " +
+              "multipart request");
           }
           HttpRequest req = new DefaultHttpRequest(
             io.netty.handler.codec.http.HttpVersion.HTTP_1_1,
@@ -416,7 +419,8 @@ public class Http3ServerRequest extends HttpServerRequestInternal implements Htt
           factory.setMaxLimit(options.getMaxFormAttributeSize());
           int maxFields = options.getMaxFormFields();
           int maxBufferedBytes = options.getMaxFormBufferedBytes();
-          postRequestDecoder = new HttpPostRequestDecoder(factory, req, HttpConstants.DEFAULT_CHARSET, maxFields, maxBufferedBytes);
+          postRequestDecoder = new HttpPostRequestDecoder(factory, req, HttpConstants.DEFAULT_CHARSET, maxFields,
+            maxBufferedBytes);
         }
       } else {
         postRequestDecoder = null;

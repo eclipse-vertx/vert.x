@@ -2,7 +2,6 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
@@ -42,7 +41,9 @@ abstract class HttpStream<C extends ConnectionBase, S> extends VertxHttpStreamBa
   protected Handler<Void> closeHandler;
 
   protected abstract HttpVersion version();
+
   protected abstract void recycle();
+
   protected abstract void metricsEnd(HttpStream<?, ?> stream);
 
   HttpStream(C conn, ContextInternal context, boolean push) {

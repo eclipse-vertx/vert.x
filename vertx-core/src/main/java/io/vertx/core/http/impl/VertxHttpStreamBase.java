@@ -54,7 +54,8 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
 
   protected abstract void writeFrame(S stream, byte type, short flags, ByteBuf payload, Promise<Void> promise);
 
-  protected abstract void writeHeaders(S stream, VertxHttpHeaders headers, boolean end, StreamPriorityBase priority, boolean checkFlush, FutureListener<Void> promise);
+  protected abstract void writeHeaders(S stream, VertxHttpHeaders headers, boolean end, StreamPriorityBase priority,
+                                       boolean checkFlush, FutureListener<Void> promise);
 
   protected abstract void writePriorityFrame(StreamPriorityBase priority);
 
@@ -248,7 +249,8 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
     writeFrame(stream, (byte) type, (short) flags, payload, promise);
   }
 
-  final void writeHeaders(VertxHttpHeaders headers, boolean first, boolean end, boolean checkFlush, Promise<Void> promise) {
+  final void writeHeaders(VertxHttpHeaders headers, boolean first, boolean end, boolean checkFlush,
+                          Promise<Void> promise) {
     if (first) {
       EventLoop eventLoop = conn.context().nettyEventLoop();
       if (eventLoop.inEventLoop()) {
