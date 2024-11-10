@@ -70,7 +70,7 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
 
   protected final ChannelHandlerContext handlerContext;
   protected VertxHttp3ConnectionHandler<? extends Http3ConnectionBase> handler;
-//  protected final Http2Connection.PropertyKey streamKey;
+  //  protected final Http2Connection.PropertyKey streamKey;
   private boolean shutdown;
   private Handler<HttpSettings> remoteSettingsHandler;
   private final ArrayDeque<Handler<Void>> updateSettingsHandlers = new ArrayDeque<>();
@@ -84,12 +84,15 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
   private int windowSize;
   private long maxConcurrentStreams;
 
-  public Http3ConnectionBase(ContextInternal context, VertxHttp3ConnectionHandler<? extends Http3ConnectionBase> handler) {
+  public Http3ConnectionBase(ContextInternal context,
+                             VertxHttp3ConnectionHandler<? extends Http3ConnectionBase> handler) {
     super(context, handler.context());
     this.handler = handler;
     this.handlerContext = chctx;
-    this.windowSize = -1;  //TODO: old code: handler.connection().local().flowController().windowSize(handler.connection().connectionStream());
-    this.maxConcurrentStreams = 0xFFFFFFFFL;  //TODO: old code: io.vertx.core.http.Http2Settings.DEFAULT_MAX_CONCURRENT_STREAMS;
+    this.windowSize = -1;  //TODO: old code: handler.connection().local().flowController().windowSize(handler
+    // .connection().connectionStream());
+    this.maxConcurrentStreams = 0xFFFFFFFFL;  //TODO: old code: io.vertx.core.http.Http2Settings
+    // .DEFAULT_MAX_CONCURRENT_STREAMS;
 //    this.streamKey = handler.connection().newKey();
     this.localSettings = handler.initialSettings();
   }
@@ -190,7 +193,7 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
 
   // Http3FrameListener
 
-//  @Override
+  //  @Override
   public void onPriorityRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?> stream, int streamDependency,
                              short weight, boolean exclusive) {
     if (stream != null) {
@@ -202,7 +205,7 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
     }
   }
 
-//  @Override
+  //  @Override
   public void onSettingsAckRead(ChannelHandlerContext ctx) {
     Handler<Void> handler;
     synchronized (this) {
@@ -217,7 +220,7 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
   protected void concurrencyChanged(long concurrency) {
   }
 
-//  @Override
+  //  @Override
   public void onSettingsRead(ChannelHandlerContext ctx, HttpSettings settings) {
     boolean changed;
     Handler<HttpSettings> handler;
@@ -245,7 +248,7 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
     }
   }
 
-//  @Override
+  //  @Override
   public void onPingRead(ChannelHandlerContext ctx, long data) throws Http2Exception {
     Handler<Buffer> handler = pingHandler;
     if (handler != null) {
@@ -254,7 +257,7 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
     }
   }
 
-//  @Override
+  //  @Override
   public void onPingAckRead(ChannelHandlerContext ctx, long data) {
     Promise<Buffer> handler = pongHandlers.poll();
     if (handler != null) {
@@ -263,16 +266,16 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
     }
   }
 
-//  @Override
+  //  @Override
   public void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId,
                                 Http2Headers headers, int padding) throws Http2Exception {
   }
 
-//  @Override
+  //  @Override
   public void onGoAwayRead(ChannelHandlerContext ctx, int lastStreamId, long errorCode, ByteBuf debugData) {
   }
 
-//  @Override
+  //  @Override
   public void onWindowUpdateRead(ChannelHandlerContext ctx, int streamId, int windowSizeIncrement) {
   }
 
@@ -286,7 +289,7 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
 //    }
 //  }
 
-//  @Override
+  //  @Override
   public void onRstStreamRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?> stream, long errorCode) {
 //    VertxHttpStreamBase<?, ?, Http2Headers> stream = stream(streamId);
     if (stream != null) {
@@ -294,9 +297,9 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
     }
   }
 
-//  @Override
+  //  @Override
   public int onDataRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?> stream,
-    ByteBuf data, int padding, boolean endOfStream) {
+                        ByteBuf data, int padding, boolean endOfStream) {
     if (stream != null) {
       data = safeBuffer(data);
       Buffer buff = BufferInternal.buffer(data);
@@ -535,7 +538,7 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
         // TODO: correct these
         return;
       }
-      shutdown  = true;
+      shutdown = true;
       shutdownHandler = this.shutdownHandler;
     }
     doShutdown(shutdownHandler);

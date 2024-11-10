@@ -102,7 +102,8 @@ class Http3ServerStream extends VertxHttpStreamBase<Http3ServerConnection, QuicS
     }
     VertxTracer tracer = context.tracer();
     if (tracer != null) {
-      trace = tracer.receiveRequest(context, SpanKind.RPC, tracingPolicy, request, method().name(), headers.toHeaderAdapter(), HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
+      trace = tracer.receiveRequest(context, SpanKind.RPC, tracingPolicy, request, method().name(),
+        headers.toHeaderAdapter(), HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
     }
     request.dispatch(conn.requestHandler);
   }
@@ -215,7 +216,8 @@ class Http3ServerStream extends VertxHttpStreamBase<Http3ServerConnection, QuicS
           failure = null;
         }
       }
-      tracer.sendResponse(context, failure == null ? request.response() : null, trace, failure, HttpUtils.SERVER_RESPONSE_TAG_EXTRACTOR);
+      tracer.sendResponse(context, failure == null ? request.response() : null, trace, failure,
+        HttpUtils.SERVER_RESPONSE_TAG_EXTRACTOR);
     }
     super.onClose();
   }
@@ -253,6 +255,7 @@ class Http3ServerStream extends VertxHttpStreamBase<Http3ServerConnection, QuicS
   public void writeFrame(QuicStreamChannel stream, byte type, short flags, ByteBuf payload, Promise<Void> promise) {
     stream.write(payload).addListener(context.promise(promise));
   }
+
   @Override
   public void writeHeaders(QuicStreamChannel stream, VertxHttpHeaders headers, boolean end, StreamPriorityBase priority,
                            boolean checkFlush, FutureListener<Void> promise) {

@@ -1,7 +1,6 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.EventLoop;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -13,7 +12,6 @@ import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.http.StreamResetException;
-import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
@@ -191,7 +189,8 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
   }
 
   @Override
-  public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriorityBase priority, boolean connect) {
+  public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end,
+                                StreamPriorityBase priority, boolean connect) {
     priority(priority);
     PromiseInternal<Void> promise = context.promise();
     write(new MessageWrite() {
@@ -199,6 +198,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
       public void write() {
         writeHeaders(request, buf, end, priority, connect, promise);
       }
+
       @Override
       public void cancel(Throwable cause) {
         promise.fail(cause);
@@ -207,7 +207,8 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
     return promise.future();
   }
 
-  private void writeHeaders(HttpRequestHead request, ByteBuf buf, boolean end, StreamPriorityBase priority, boolean connect, Promise<Void> promise) {
+  private void writeHeaders(HttpRequestHead request, ByteBuf buf, boolean end, StreamPriorityBase priority,
+                            boolean connect, Promise<Void> promise) {
     VertxHttpHeaders headers = createHttpHeadersWrapper();
     headers.method(request.method.name());
     boolean e;
@@ -231,7 +232,8 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
         headers.add(HttpUtils.toLowerCase(header.getKey()), header.getValue());
       }
     }
-    //TODO: check with old impl: if (conn.client.options().isDecompressionSupported() && headers.get(HttpHeaderNames.ACCEPT_ENCODING) == null) {
+    //TODO: check with old impl: if (conn.client.options().isDecompressionSupported() && headers.get(HttpHeaderNames
+    // .ACCEPT_ENCODING) == null) {
     if (isTryUseCompression() && headers.get(HttpHeaderNames.ACCEPT_ENCODING) == null) {
       headers.set(HttpHeaderNames.ACCEPT_ENCODING, Http1xClientConnection.determineCompressionAcceptEncoding());
     }
@@ -271,7 +273,9 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
         if (operation == null) {
           operation = headers.method().toString();
         }
-        //TODO: verify the following line with version 5.x: trace = tracer.sendRequest(context, SpanKind.RPC, conn.client.options().getTracingPolicy(), head, operation, headers_, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
+        //TODO: verify the following line with version 5.x: trace = tracer.sendRequest(context, SpanKind.RPC, conn
+        // .client.options().getTracingPolicy(), head, operation, headers_, HttpUtils
+        // .CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
         trace = tracer.sendRequest(context, SpanKind.RPC, getTracingPolicy(), head, operation, headers_,
           HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
       }

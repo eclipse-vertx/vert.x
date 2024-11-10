@@ -266,6 +266,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
   static VertxHttpStreamBase getStreamOfQuicStreamChannel(ChannelHandlerContext ctx) {
     return getStreamOfQuicStreamChannel((QuicStreamChannel) ctx.channel());
   }
+
   static VertxHttpStreamBase getStreamOfQuicStreamChannel(QuicStreamChannel quicStreamChannel) {
     return quicStreamChannel.attr(Http3ConnectionBase.QUIC_CHANNEL_STREAM_KEY).get();
   }

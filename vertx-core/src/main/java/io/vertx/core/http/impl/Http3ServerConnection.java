@@ -121,7 +121,8 @@ public class Http3ServerConnection extends Http3ConnectionBase implements HttpSe
   }
 
   String determineContentEncoding(VertxHttpHeaders headers) {
-    String acceptEncoding = headers.get(HttpHeaderNames.ACCEPT_ENCODING) != null ? headers.get(HttpHeaderNames.ACCEPT_ENCODING).toString() : null;
+    String acceptEncoding = headers.get(HttpHeaderNames.ACCEPT_ENCODING) != null ?
+      headers.get(HttpHeaderNames.ACCEPT_ENCODING).toString() : null;
     if (acceptEncoding != null && encodingDetector != null) {
       return encodingDetector.apply(acceptEncoding);
     }
@@ -184,7 +185,7 @@ public class Http3ServerConnection extends Http3ConnectionBase implements HttpSe
 //        stream = createStream(headers, true);
 //        upgraded = stream;
 //      } else {
-        stream0 = createStream(headers, endOfStream);
+      stream0 = createStream(headers, endOfStream);
 //      }
       if (isMalformedRequest(stream0)) {
 //        handler.writeReset(streamId, Http2Error.PROTOCOL_ERROR.code());
@@ -201,7 +202,8 @@ public class Http3ServerConnection extends Http3ConnectionBase implements HttpSe
     }
   }
 
-  void sendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriorityBase streamPriority, Promise<HttpServerResponse> promise) {
+  void sendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path,
+                StreamPriorityBase streamPriority, Promise<HttpServerResponse> promise) {
     EventLoop eventLoop = context.nettyEventLoop();
     if (eventLoop.inEventLoop()) {
       doSendPush(streamId, authority, method, headers, path, streamPriority, promise);
@@ -210,14 +212,17 @@ public class Http3ServerConnection extends Http3ConnectionBase implements HttpSe
     }
   }
 
-  private synchronized void doSendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriorityBase streamPriority, Promise<HttpServerResponse> promise) {
+  private synchronized void doSendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers,
+                                       String path, StreamPriorityBase streamPriority,
+                                       Promise<HttpServerResponse> promise) {
     boolean ssl = isSsl();
     VertxHttp3Headers headers_ = new VertxHttp3Headers();
     headers_.method(method.name());
     headers_.path(path);
     headers_.scheme(ssl ? "https" : "http");
     if (authority != null) {
-      String s = (ssl && authority.port() == 443) || (!ssl && authority.port() == 80) || authority.port() <= 0 ? authority.host() : authority.host() + ':' + authority.port();
+      String s = (ssl && authority.port() == 443) || (!ssl && authority.port() == 80) || authority.port() <= 0 ?
+        authority.host() : authority.host() + ':' + authority.port();
       headers_.authority(s);
     }
     if (headers != null) {
@@ -286,7 +291,7 @@ public class Http3ServerConnection extends Http3ConnectionBase implements HttpSe
     }
 
     @Override
-    public  void dispatch(Handler<HttpServerRequest> handler) {
+    public void dispatch(Handler<HttpServerRequest> handler) {
       throw new UnsupportedOperationException();
     }
 
@@ -298,14 +303,14 @@ public class Http3ServerConnection extends Http3ConnectionBase implements HttpSe
     }
 
     @Override
-    public  void handleException(Throwable cause) {
+    public void handleException(Throwable cause) {
       if (response != null) {
         response.handleException(cause);
       }
     }
 
     @Override
-    public  void handleClose() {
+    public void handleClose() {
       if (pendingPushes.remove(this)) {
         promise.fail("Push reset by client");
       } else {

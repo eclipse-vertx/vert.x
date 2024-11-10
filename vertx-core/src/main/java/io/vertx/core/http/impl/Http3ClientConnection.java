@@ -75,7 +75,8 @@ class Http3ClientConnection extends Http3ConnectionBase implements HttpClientCon
 
   public long concurrency() {
 //    long concurrency = remoteSettings().getMaxConcurrentStreams();
-//    long http2MaxConcurrency = client.options().getHttp2MultiplexingLimit() <= 0 ? Long.MAX_VALUE : client.options().getHttp2MultiplexingLimit();
+//    long http2MaxConcurrency = client.options().getHttp2MultiplexingLimit() <= 0 ? Long.MAX_VALUE : client.options
+//    ().getHttp2MultiplexingLimit();
 //    if (http2MaxConcurrency > 0) {
 //      concurrency = Math.min(concurrency, http2MaxConcurrency);
 //    }
@@ -183,7 +184,7 @@ class Http3ClientConnection extends Http3ConnectionBase implements HttpClientCon
   @Override
   protected void handleIdle(IdleStateEvent event) {
 //    if (handler.connection().local().numActiveStreams() > 0) {
-      super.handleIdle(event);
+    super.handleIdle(event);
 //    }
   }
 
@@ -215,7 +216,7 @@ class Http3ClientConnection extends Http3ConnectionBase implements HttpClientCon
         conn.setWindowSize(options.getHttp2ConnectionWindowSize());
       }
       if (metrics != null) {
-        if (!upgrade)  {
+        if (!upgrade) {
           met.endpointConnected(metrics);
         }
       }
