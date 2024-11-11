@@ -20,12 +20,14 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Http2ClientExample {
   public void example7Client(Vertx vertx) {
     HttpClientOptions options = new HttpClientOptions();
-//    options.setSsl(true);
+    options.setSsl(true);
     options.setUseAlpn(true);
+    options.setTrustAll(true);
     options.setAlpnVersions(List.of(HttpVersion.HTTP_2));
 
     HttpClient client = vertx.createHttpClient(options);
@@ -34,19 +36,30 @@ public class Http2ClientExample {
     int port = 8090;
     String host = "localhost";
 
+    AtomicInteger requests = new AtomicInteger();
 
-    client.request(HttpMethod.GET, port, host, path)
-      .compose(req -> req.send(" M1 "))
-      .compose(HttpClientResponse::body)
-      .onSuccess(body -> System.out.println("M1 The response body is: " + body))
-      .onFailure(Throwable::printStackTrace)
-    ;
-    client.request(HttpMethod.GET, port, host, path)
-      .compose(req -> req.send(" M2 "))
-      .compose(HttpClientResponse::body)
-      .onSuccess(body -> System.out.println("M2 The response body is: " + body))
-      .onFailure(Throwable::printStackTrace)
-    ;
+    int n = 5;
+
+    for (int i = 0; i < n; i++) {
+      int counter = i + 1;
+      client.request(HttpMethod.GET, port, host, path)
+        .compose(req -> req.send("Msg " + counter))
+        .compose(HttpClientResponse::body)
+        .onSuccess(body -> System.out.println(
+          "Msg" + counter + " response body is: " + body))
+        .onComplete(event -> requests.incrementAndGet())
+        .onFailure(Throwable::printStackTrace)
+      ;
+    }
+
+    while (requests.get() != n) {
+      try {
+        Thread.sleep(100);
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+    }
+    vertx.close();
 
   }
 
