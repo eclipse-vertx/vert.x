@@ -25,14 +25,6 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
  */
 public class HTTP3ClientExamples {
-  private final static String okText =
-    "\n  ____   _  __  \n"+
-    " / __ \\ | |/ /  \n"+
-    "| |  | ||   <   \n"+
-    "| |  | || |\\ \\  \n"+
-    "| |__| || | \\ \\ \n"+
-    " \\____/ |_|  \\_\\ \n";
-
   public void example02Local(Vertx vertx) {
 
     String path = "/";
