@@ -74,14 +74,7 @@ class Http3ClientConnection extends Http3ConnectionBase implements HttpClientCon
   }
 
   public long concurrency() {
-//    long concurrency = remoteSettings().getMaxConcurrentStreams();
-//    long http2MaxConcurrency = client.options().getHttp2MultiplexingLimit() <= 0 ? Long.MAX_VALUE : client.options
-//    ().getHttp2MultiplexingLimit();
-//    if (http2MaxConcurrency > 0) {
-//      concurrency = Math.min(concurrency, http2MaxConcurrency);
-//    }
-//    return concurrency;
-    return 5;
+    return handler.getInitialMaxStreamsBidirectional();
   }
 
 //  @Override
@@ -200,6 +193,7 @@ class Http3ClientConnection extends Http3ConnectionBase implements HttpClientCon
     VertxHttp3ConnectionHandler<Http3ClientConnection> handler =
       new VertxHttp3ConnectionHandlerBuilder<Http3ClientConnection>()
         .server(false)
+        .initialMaxStreamsBidirectional(options.getSslOptions().getInitialMaxStreamsBidirectional())
         .httpSettings(new HttpSettings(client.options().getInitialHttp3Settings()))
         .connectionFactory(connHandler -> {
           Http3ClientConnection conn = new Http3ClientConnection(client, context, connHandler, metrics, authority,

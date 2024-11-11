@@ -201,6 +201,7 @@ class HttpServerConnectionInitializer {
     VertxHttp3ConnectionHandler<Http3ServerConnection> handler =
       new VertxHttp3ConnectionHandlerBuilder<Http3ServerConnection>()
       .server(true)
+      .initialMaxStreamsBidirectional(options.getSslOptions().getInitialMaxStreamsBidirectional())
 //      .useCompression(compressionOptions)
 //      .gracefulShutdownTimeoutMillis(0)
 //      .decoderEnforceMaxRstFramesPerWindow(maxRstFramesPerWindow, secondsPerWindow)
