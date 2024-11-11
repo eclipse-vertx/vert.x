@@ -258,6 +258,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
     } else {
       connection.onDataRead(ctx, stream, Unpooled.buffer(), 0, true);
     }
+    connection.onStreamClosed(stream);
   }
 
   @Override
@@ -432,6 +433,22 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
         chctx = ctx;
         connectFuture = new DefaultPromise<>(ctx.executor());
         connection = connectionFactory.apply(VertxHttp3ConnectionHandler.this);
+      }
+
+      @Override
+      public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+        if (evt instanceof ShutdownEvent) {
+          ShutdownEvent shutdownEvt = (ShutdownEvent) evt;
+          logger.debug("Received QuicChannel event ShutdownEvent");
+          connection.shutdown(shutdownEvt.timeout(), shutdownEvt.timeUnit());
+        } else if (evt instanceof QuicConnectionCloseEvent) {
+          QuicConnectionCloseEvent connectionCloseEvt = (QuicConnectionCloseEvent) evt;
+          logger.debug("Received QuicChannel event QuicConnectionCloseEvent, error: {}, isApplicationClose: {}, isTlsError: {}, "
+            , connectionCloseEvt.error(), connectionCloseEvt.isApplicationClose(), connectionCloseEvt.isTlsError());
+          ctx.channel().close();
+          connection.handleClosed();
+        }
+        super.userEventTriggered(ctx, evt);
       }
     };
   }
