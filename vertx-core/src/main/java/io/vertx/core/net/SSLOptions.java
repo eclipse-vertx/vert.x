@@ -45,6 +45,11 @@ public class SSLOptions {
   public static final boolean DEFAULT_HTTP3 = false;
 
   /**
+   * Default use initialMaxStreamsBidirectional = 100
+   */
+  public static final long DEFAULT_INITIAL_MAX_STREAMS_BIDIRECTIONAL = 100;
+
+  /**
    * The default value of SSL handshake timeout = 10
    */
   public static final long DEFAULT_SSL_HANDSHAKE_TIMEOUT = 10L;
@@ -74,6 +79,7 @@ public class SSLOptions {
   private boolean http3;
   private Set<String> enabledSecureTransportProtocols;
   private List<String> applicationLayerProtocols;
+  private long initialMaxStreamsBidirectional;
 
   /**
    * Default constructor
@@ -97,6 +103,7 @@ public class SSLOptions {
     this.crlValues = new ArrayList<>(other.getCrlValues());
     this.useAlpn = other.useAlpn;
     this.http3 = other.http3;
+    this.initialMaxStreamsBidirectional = other.initialMaxStreamsBidirectional;
     this.enabledSecureTransportProtocols = other.getEnabledSecureTransportProtocols() == null ? new LinkedHashSet<>() : new LinkedHashSet<>(other.getEnabledSecureTransportProtocols());
     this.applicationLayerProtocols = other.getApplicationLayerProtocols() != null ? new ArrayList<>(other.getApplicationLayerProtocols()) : null;
   }
@@ -120,6 +127,7 @@ public class SSLOptions {
     crlValues = new ArrayList<>();
     useAlpn = DEFAULT_USE_ALPN;
     http3 = DEFAULT_HTTP3;
+    initialMaxStreamsBidirectional = DEFAULT_INITIAL_MAX_STREAMS_BIDIRECTIONAL;
     enabledSecureTransportProtocols = new LinkedHashSet<>(DEFAULT_ENABLED_SECURE_TRANSPORT_PROTOCOLS);
     applicationLayerProtocols = null;
   }
@@ -275,6 +283,23 @@ public class SSLOptions {
    */
   public SSLOptions setHttp3(boolean http3) {
     this.http3 = http3;
+    return this;
+  }
+
+  /**
+   * @return get HTTP/3 Initial Max Streams Bidirectional count
+   */
+  public long getInitialMaxStreamsBidirectional() {
+    return initialMaxStreamsBidirectional;
+  }
+
+  /**
+   * Set the HTTP/3 Initial Max Streams Bidirectional count.
+   *
+   * @param initialMaxStreamsBidirectional the initial max streams bidirectional count
+   */
+  public SSLOptions setInitialMaxStreamsBidirectional(long initialMaxStreamsBidirectional) {
+    this.initialMaxStreamsBidirectional = initialMaxStreamsBidirectional;
     return this;
   }
 

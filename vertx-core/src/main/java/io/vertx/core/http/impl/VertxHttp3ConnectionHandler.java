@@ -49,6 +49,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
   private static final InternalLogger logger = InternalLoggerFactory.getInstance(VertxHttp3ConnectionHandler.class);
 
   private final Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory;
+  private final long initialMaxStreamsBidirectional;
   private C connection;
   private QuicChannel quicChannel;
   private ChannelHandlerContext chctx;
@@ -70,10 +71,13 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
   public VertxHttp3ConnectionHandler(
     Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory,
     ContextInternal context,
-    HttpSettings httpSettings, boolean isServer) {
+    HttpSettings httpSettings,
+    boolean isServer,
+    long initialMaxStreamsBidirectional) {
     this.connectionFactory = connectionFactory;
     this.httpSettings = httpSettings;
     this.isServer = isServer;
+    this.initialMaxStreamsBidirectional = initialMaxStreamsBidirectional;
   }
 
   public Future<C> connectFuture() {
@@ -434,6 +438,10 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
 
   public HttpSettings initialSettings() {
     return httpSettings;
+  }
+
+  public long getInitialMaxStreamsBidirectional() {
+    return initialMaxStreamsBidirectional;
   }
 
   public void gracefulShutdownTimeoutMillis(long timeout) {
