@@ -18,7 +18,6 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.net.JdkSSLEngineOptions;
-import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 
 import java.security.cert.CertificateException;
@@ -73,27 +72,19 @@ public class Http2ServerExample {
       System.out.println("A request received from " + request.remoteAddress().host());
       request.body().onSuccess(body -> {
         System.out.println("body = " + body.toString());
+        request.response().end("!Hello World! for -> " + body);
       });
-      request.response().end("Hello World!");
     });
     server.connectionHandler(connection -> {
       System.out.println("A client connected");
     });
 
     server.listen();
-
-//    vertx.setTimer(500000, id -> vertx.close());
-    for (int i = 0; i < 1000; i++) {
-      try {
-        Thread.sleep(1000);
-      } catch (InterruptedException e) {
-        throw new RuntimeException(e);
-      }
-    }
   }
 
   public static void main(String[] args) {
-    Vertx vertx = Vertx.vertx(new VertxOptions().setBlockedThreadCheckInterval(1_000_000_000));
+    Vertx vertx =
+      Vertx.vertx(new VertxOptions().setBlockedThreadCheckInterval(1_000_000_000));
     new Http2ServerExample().example7Server(vertx);
   }
 }
