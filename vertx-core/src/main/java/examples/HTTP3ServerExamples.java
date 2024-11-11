@@ -27,14 +27,6 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
  */
 public class HTTP3ServerExamples {
-  private final static String okText =
-    "\n  ____   _  __  \n" +
-      " / __ \\ | |/ /  \n" +
-      "| |  | ||   <   \n" +
-      "| |  | || |\\ \\  \n" +
-      "| |__| || | \\ \\ \n" +
-      " \\____/ |_|  \\_\\ \n";
-
   public void example02Server(Vertx vertx) throws Exception {
 
     HttpServerOptions options = new HttpServerOptions();
@@ -52,6 +44,7 @@ public class HTTP3ServerExamples {
     ));
 
     options
+      .setPort(8090)
       .setIdleTimeout(1)
       .setReadIdleTimeout(1)
       .setWriteIdleTimeout(1)
@@ -72,18 +65,18 @@ public class HTTP3ServerExamples {
       .setKeyPath(ssc.privateKey().getAbsolutePath())
     );
 
-
     HttpServer server = vertx.createHttpServer(options);
-
 
     server.requestHandler(request -> {
       System.out.println("A request received from " + request.remoteAddress());
-      request.body().onSuccess(buf -> {
-        System.out.println("request body is :  = " + buf.toString());
-      }).onFailure(Throwable::printStackTrace);
-      request.response().end(okText).onFailure(Throwable::printStackTrace);
+      request
+        .body()
+        .onSuccess(body -> {
+          System.out.println("body = " + body.toString());
+          request.response().end("!Hello World! for -> " + body);
+        })
+        .onFailure(Throwable::printStackTrace);
     });
-
 
     server.connectionHandler(connection -> {
       System.out.println("A client connected");
@@ -91,15 +84,7 @@ public class HTTP3ServerExamples {
 
     server.exceptionHandler(Throwable::printStackTrace);
 
-    int port = 8090;
-    server.listen(port)
-      .onComplete(ar -> {
-        if (ar.succeeded()) {
-          System.out.println("HTTP/3 server is now listening on port: " + port);
-        } else {
-          ar.cause().printStackTrace();
-        }
-      });
+    server.listen();
   }
 
   public static void main(String[] args) throws Exception {

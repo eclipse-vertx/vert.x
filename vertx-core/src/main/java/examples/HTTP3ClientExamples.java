@@ -20,16 +20,13 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
  */
 public class HTTP3ClientExamples {
   public void example02Local(Vertx vertx) {
-
-    String path = "/";
-    int port = 8090;
-    String host = "localhost";
 
     HttpClientOptions options = new HttpClientOptions().
       setSsl(true).
@@ -39,7 +36,6 @@ public class HTTP3ClientExamples {
       setIdleTimeoutUnit(TimeUnit.HOURS).
       setUseAlpn(true).
       setForceSni(true).
-      setDefaultHost(host).
       setVerifyHost(false).
       setTrustAll(true).
       setProtocolVersion(HttpVersion.HTTP_3);
@@ -48,40 +44,42 @@ public class HTTP3ClientExamples {
       .getSslOptions()
       .setSslHandshakeTimeout(1)
       .setSslHandshakeTimeoutUnit(TimeUnit.HOURS);
-
-
     HttpClient client = vertx.createHttpClient(options);
 
-    System.out.print(String.format("Trying to fetch %s:%s%s\n", host, port,
-      path));
+    String path = "/";
+    int port = 8090;
+    String host = "localhost";
 
+    AtomicInteger requests = new AtomicInteger();
 
-    client.request(HttpMethod.GET, port, host, path)
-      .compose(req -> req.send(" M1 "))
-      .compose(HttpClientResponse::body)
-      .onSuccess(body -> System.out.println("M1 The response body is: " + body))
-      .onFailure(Throwable::printStackTrace)
-    ;
+    int n = 5;
 
-    client.request(HttpMethod.GET, port, host, path)
-      .compose(req -> req.send(" M2 "))
-      .compose(HttpClientResponse::body)
-      .onSuccess(body -> System.out.println("M2 The response body is: " + body))
-      .onFailure(Throwable::printStackTrace)
-    ;
-
-    try {
-      Thread.sleep(1_000_000);
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
+    for (int i = 0; i < n; i++) {
+      int counter = i + 1;
+      client.request(HttpMethod.GET, port, host, path)
+        .compose(req -> req.send("Msg " + counter))
+        .compose(HttpClientResponse::body)
+        .onSuccess(body -> System.out.println(
+          "Msg" + counter + " response body is: " + body))
+        .onComplete(event -> requests.incrementAndGet())
+        .onFailure(Throwable::printStackTrace)
+      ;
     }
+
+    while (requests.get() != n) {
+      try {
+        Thread.sleep(100);
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+    }
+    vertx.close();
+
   }
 
-  public static void main(String[] args) throws Exception {
-    VertxOptions options = new VertxOptions()
-      .setBlockedThreadCheckInterval(1_000_000_000);
-
-    Vertx vertx = Vertx.vertx(options);
+  public static void main(String[] args) {
+    Vertx vertx =
+      Vertx.vertx(new VertxOptions().setBlockedThreadCheckInterval(1_000_000_000));
     new HTTP3ClientExamples().example02Local(vertx);
   }
 }

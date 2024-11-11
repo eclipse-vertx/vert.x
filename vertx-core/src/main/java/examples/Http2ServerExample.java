@@ -70,21 +70,29 @@ public class Http2ServerExample {
 
     server.requestHandler(request -> {
       System.out.println("A request received from " + request.remoteAddress().host());
-      request.body().onSuccess(body -> {
-        System.out.println("body = " + body.toString());
-        request.response().end("!Hello World! for -> " + body);
-      });
+      request
+        .body()
+        .onSuccess(body -> {
+          System.out.println("body = " + body.toString());
+          request.response().end("!Hello World! for -> " + body);
+        })
+        .onFailure(Throwable::printStackTrace);
     });
+
     server.connectionHandler(connection -> {
       System.out.println("A client connected");
     });
 
+    server.exceptionHandler(Throwable::printStackTrace);
+
     server.listen();
   }
 
-  public static void main(String[] args) {
-    Vertx vertx =
-      Vertx.vertx(new VertxOptions().setBlockedThreadCheckInterval(1_000_000_000));
+  public static void main(String[] args) throws Exception {
+    VertxOptions options = new VertxOptions()
+      .setBlockedThreadCheckInterval(1_000_000_000);
+
+    Vertx vertx = Vertx.vertx(options);
     new Http2ServerExample().example7Server(vertx);
   }
 }
