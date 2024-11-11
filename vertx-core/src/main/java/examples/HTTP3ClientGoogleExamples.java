@@ -20,6 +20,7 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
@@ -73,6 +74,9 @@ public class HTTP3ClientGoogleExamples {
 
     System.out.print(String.format("Trying to fetch %s:%s%s\n", host, port,
       path));
+
+    AtomicBoolean finished = new AtomicBoolean(false);
+
     client.request(HttpMethod.GET, port, host, path)
       .compose(req -> {
 
@@ -114,19 +118,20 @@ public class HTTP3ClientGoogleExamples {
                 } else {
                   System.out.println("The response body is: " + body);
                 }
-                vertx.close();
+                finished.set(true);
               })
           );
       })
-      .onFailure(Throwable::printStackTrace)
-      .onComplete(event -> vertx.close())
-    ;
+      .onFailure(Throwable::printStackTrace);
 
-    try {
-      Thread.sleep(1_000_000);
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
+    while (!finished.get()) {
+      try {
+        Thread.sleep(100);
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
     }
+    vertx.close();
   }
 
   public static void main(String[] args) throws Exception {
