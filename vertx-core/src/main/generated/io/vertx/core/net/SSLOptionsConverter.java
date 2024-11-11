@@ -48,6 +48,11 @@ public class SSLOptionsConverter {
             obj.setHttp3((Boolean)member.getValue());
           }
           break;
+        case "initialMaxStreamsBidirectional":
+          if (member.getValue() instanceof Number) {
+            obj.setInitialMaxStreamsBidirectional(((Number)member.getValue()).longValue());
+          }
+          break;
         case "enabledSecureTransportProtocols":
           if (member.getValue() instanceof JsonArray) {
             java.util.LinkedHashSet<java.lang.String> list =  new java.util.LinkedHashSet<>();
@@ -104,6 +109,7 @@ public class SSLOptionsConverter {
     }
     json.put("useAlpn", obj.isUseAlpn());
     json.put("http3", obj.isHttp3());
+    json.put("initialMaxStreamsBidirectional", obj.getInitialMaxStreamsBidirectional());
     if (obj.getEnabledSecureTransportProtocols() != null) {
       JsonArray array = new JsonArray();
       obj.getEnabledSecureTransportProtocols().forEach(item -> array.add(item));
