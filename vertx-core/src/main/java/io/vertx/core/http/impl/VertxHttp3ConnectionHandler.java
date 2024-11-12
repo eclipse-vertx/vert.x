@@ -278,14 +278,15 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     return new Http3RequestStreamInboundHandler() {
       @Override
       protected void channelRead(ChannelHandlerContext ctx, Http3HeadersFrame frame) throws Exception {
+        logger.debug("Received Header frame for channelId: {}", ctx.channel().id());
         read = true;
         VertxHttpStreamBase stream = getStreamOfQuicStreamChannel(ctx);
-        logger.debug("Received Http3HeadersFrame frame.");
         connection.onHeadersRead(ctx, stream, frame.headers(), false, (QuicStreamChannel) ctx.channel());
       }
 
       @Override
       protected void channelRead(ChannelHandlerContext ctx, Http3DataFrame frame) throws Exception {
+        logger.debug("Received Data frame for channelId: {}", ctx.channel().id());
         read = true;
         VertxHttpStreamBase stream = getStreamOfQuicStreamChannel(ctx);
         if (logger.isDebugEnabled()) {
@@ -296,19 +297,22 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
 
       @Override
       protected void channelInputClosed(ChannelHandlerContext ctx) throws Exception {
-        logger.debug("ChannelInputClosed called");
+        logger.debug("ChannelInputClosed called for channelId: {}, streamId: {}", ctx.channel().id(),
+          ((QuicStreamChannel)ctx.channel()).streamId());
         VertxHttpStreamBase stream = getStreamOfQuicStreamChannel(ctx);
         if (stream.isHeaderOnly() && !isServer) {
           connection.onHeadersRead(ctx, stream, new DefaultHttp3Headers(), true, (QuicStreamChannel) ctx.channel());
         } else {
           connection.onDataRead(ctx, stream, Unpooled.buffer(), 0, true);
         }
+        connection.onStreamClosed(getStreamOfQuicStreamChannel(ctx));
       }
 
       @Override
       public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+        logger.debug("ChannelReadComplete called for channelId: {}, streamId: {}", ctx.channel().id(),
+          ((QuicStreamChannel)ctx.channel()).streamId());
         read = false;
-        logger.debug("ChannelReadComplete called");
         super.channelReadComplete(ctx);
       }
 
@@ -338,6 +342,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
 
       @Override
       public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+        logger.debug("userEventTriggered called for channelId: {}", ctx.channel().id());
         if (evt instanceof SslHandshakeCompletionEvent) {
           SslHandshakeCompletionEvent completion = (SslHandshakeCompletionEvent) evt;
           if (!completion.isSuccess()) {
@@ -371,6 +376,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
 
       @Override
       protected void channelRead(ChannelHandlerContext ctx, Http3UnknownFrame frame) {
+        logger.debug("Received Unknown frame for channelId: {}", ctx.channel().id());
         if (logger.isDebugEnabled()) {
           logger.debug("Received frame http3UnknownFrame : {}", byteBufToString(frame.content()));
         }
@@ -379,9 +385,8 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
 
       @Override
       public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        if (logger.isDebugEnabled()) {
-          logger.debug("Http3RequestStreamInboundHandler caught exception!", cause);
-        }
+        logger.debug("Http3RequestStreamInboundHandler caught exception on channelId : {}!",
+          ctx.channel().id(), cause);
         super.exceptionCaught(ctx, cause);
       }
     };
