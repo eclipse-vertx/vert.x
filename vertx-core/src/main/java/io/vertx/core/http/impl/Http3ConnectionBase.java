@@ -53,9 +53,6 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
 
   private static final Logger log = LoggerFactory.getLogger(Http3ConnectionBase.class);
 
-  public static final AttributeKey<VertxHttpStreamBase> QUIC_CHANNEL_STREAM_KEY =
-    AttributeKey.valueOf(VertxHttpStreamBase.class, "QUIC_CHANNEL_STREAM");
-
   protected final LongObjectMap<QuicStreamChannel> quicStreamChannels = new LongObjectHashMap<>();
 
   private static ByteBuf safeBuffer(ByteBuf buf) {
