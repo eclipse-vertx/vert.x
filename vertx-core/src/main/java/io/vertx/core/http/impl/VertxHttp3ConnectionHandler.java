@@ -63,10 +63,8 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
   private boolean read;
   private Http3ConnectionHandler connectionHandlerInternal;
   private ChannelHandler streamHandlerInternal;
-
-  public static final AttributeKey<VertxHttpStreamBase> HTTP3_MY_STREAM_KEY =
-    AttributeKey.valueOf(VertxHttpStreamBase.class
-      , "HTTP3MyStream");
+  private static final AttributeKey<VertxHttpStreamBase> QUIC_CHANNEL_STREAM_KEY =
+    AttributeKey.valueOf(VertxHttpStreamBase.class, "QUIC_CHANNEL_STREAM");
 
   public VertxHttp3ConnectionHandler(
     Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory,
@@ -272,11 +270,11 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
   }
 
   static VertxHttpStreamBase getStreamOfQuicStreamChannel(QuicStreamChannel quicStreamChannel) {
-    return quicStreamChannel.attr(Http3ConnectionBase.QUIC_CHANNEL_STREAM_KEY).get();
+    return quicStreamChannel.attr(QUIC_CHANNEL_STREAM_KEY).get();
   }
 
   static void setStreamOfQuicStreamChannel(QuicStreamChannel quicStreamChannel, VertxHttpStreamBase vertxHttpStream) {
-    quicStreamChannel.attr(Http3ConnectionBase.QUIC_CHANNEL_STREAM_KEY).set(vertxHttpStream);
+    quicStreamChannel.attr(QUIC_CHANNEL_STREAM_KEY).set(vertxHttpStream);
   }
 
   //  @Override
