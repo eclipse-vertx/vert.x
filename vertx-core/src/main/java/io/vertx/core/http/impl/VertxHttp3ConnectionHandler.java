@@ -45,7 +45,7 @@ import java.util.function.Function;
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
  */
-class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3RequestStreamInboundHandler {
+class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends ChannelInboundHandlerAdapter {
   private static final InternalLogger logger = InternalLoggerFactory.getInstance(VertxHttp3ConnectionHandler.class);
 
   private final Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory;
@@ -61,8 +61,6 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
   private final boolean isServer;
 
   private boolean read;
-  private Http3ConnectionHandler connectionHandlerInternal;
-  private ChannelHandler streamHandlerInternal;
   private static final AttributeKey<VertxHttpStreamBase> QUIC_CHANNEL_STREAM_KEY =
     AttributeKey.valueOf(VertxHttpStreamBase.class, "QUIC_CHANNEL_STREAM");
 
@@ -128,14 +126,48 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
     super.handlerAdded(ctx);
+    chctx = ctx;
+    connectFuture = new DefaultPromise<>(ctx.executor());
+    connection = connectionFactory.apply(VertxHttp3ConnectionHandler.this);
   }
 
   @Override
-  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
     logger.debug("VertxHttp3ConnectionHandler caught exception!", cause);
     super.exceptionCaught(ctx, cause);
   }
 
+  @Override
+  public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+    if (VertxHttp3ConnectionHandler.this.quicChannel == null) {
+      VertxHttp3ConnectionHandler.this.quicChannel = (QuicChannel) ctx.channel();
+    }
+    if (!isServer) {
+      if (settingsRead && isFirstSettingsRead) {
+        if (addHandler != null) {
+          addHandler.handle(connection);
+        }
+        VertxHttp3ConnectionHandler.this.connectFuture.trySuccess(connection);
+        isFirstSettingsRead = false;
+      }
+    }
+    super.channelReadComplete(ctx);
+  }
+
+  @Override
+  public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+    if (evt instanceof ShutdownEvent) {
+      ShutdownEvent shutdownEvt = (ShutdownEvent) evt;
+      logger.debug("Received QuicChannel event ShutdownEvent");
+      connection.shutdown(shutdownEvt.timeout(), shutdownEvt.timeUnit());
+    } else if (evt instanceof QuicConnectionCloseEvent) {
+      QuicConnectionCloseEvent connectionCloseEvt = (QuicConnectionCloseEvent) evt;
+      logger.debug("Received QuicChannel event QuicConnectionCloseEvent, error: {}, isApplicationClose: {}, isTlsError: {}, "
+        , connectionCloseEvt.error(), connectionCloseEvt.isApplicationClose(), connectionCloseEvt.isTlsError());
+      connection.handleClosed();
+    }
+    super.userEventTriggered(ctx, evt);
+  }
 
   @Override
   public void channelInactive(ChannelHandlerContext chctx) throws Exception {
@@ -151,39 +183,6 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
       connection.handleClosed();
     } else {
       super.channelInactive(chctx);
-    }
-  }
-
-  @Override
-  public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-    if (evt instanceof SslHandshakeCompletionEvent) {
-      SslHandshakeCompletionEvent completion = (SslHandshakeCompletionEvent) evt;
-      if (!completion.isSuccess()) {
-        connectFuture.tryFailure(completion.cause());
-      }
-    } else if (evt instanceof IdleStateEvent) {
-      connection.handleIdle((IdleStateEvent) evt);
-    } else if (evt instanceof QuicDatagramExtensionEvent) {
-      logger.debug("Received event QuicDatagramExtensionEvent");
-      ctx.fireUserEventTriggered(evt);
-    } else if (evt instanceof QuicStreamLimitChangedEvent) {
-      logger.debug("Received event QuicStreamLimitChangedEvent");
-      ctx.fireUserEventTriggered(evt);
-    } else if (evt instanceof QuicConnectionCloseEvent) {
-      logger.debug("Received event QuicConnectionCloseEvent");
-      ctx.fireUserEventTriggered(evt);
-    } else if (evt == ChannelInputShutdownEvent.INSTANCE) {
-      logger.debug("Received event ChannelInputShutdownEvent! channelInputClosed() will be called!");
-      super.userEventTriggered(ctx, evt);
-    } else if (evt == ChannelInputShutdownReadComplete.INSTANCE) {
-      logger.debug("Received event ChannelInputShutdownReadComplete");
-      ctx.fireUserEventTriggered(evt);
-    } else if (evt instanceof ShutdownEvent) {
-      logger.debug("Received event ShutdownEvent");
-      ctx.fireUserEventTriggered(evt);
-    } else {
-      logger.debug("Received unhandled event: {}", evt);
-      ctx.fireUserEventTriggered(evt);
     }
   }
 
@@ -229,42 +228,6 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
     }
   }
 
-  @Override
-  protected void channelRead(ChannelHandlerContext ctx, Http3HeadersFrame frame) throws Exception {
-    read = true;
-    VertxHttpStreamBase stream = getStreamOfQuicStreamChannel(ctx);
-    logger.debug("Received Http3HeadersFrame frame.");
-    connection.onHeadersRead(ctx, stream, frame.headers(), false, (QuicStreamChannel) ctx.channel());
-  }
-
-  @Override
-  protected void channelRead(ChannelHandlerContext ctx, Http3DataFrame frame) throws Exception {
-    read = true;
-    VertxHttpStreamBase stream = getStreamOfQuicStreamChannel(ctx);
-    if (logger.isDebugEnabled()) {
-      logger.debug("Frame data is: {}", byteBufToString(frame.content()));
-    }
-    connection.onDataRead(ctx, stream, frame.content(), 0, false);
-  }
-
-  @Override
-  protected void channelInputClosed(ChannelHandlerContext ctx) throws Exception {
-    logger.debug("ChannelInputClosed called");
-    VertxHttpStreamBase stream = getStreamOfQuicStreamChannel(ctx);
-    if (stream.isHeaderOnly() && !isServer) {
-      connection.onHeadersRead(ctx, stream, new DefaultHttp3Headers(), true, (QuicStreamChannel) ctx.channel());
-    } else {
-      connection.onDataRead(ctx, stream, Unpooled.buffer(), 0, true);
-    }
-  }
-
-  @Override
-  public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-    read = false;
-    logger.debug("ChannelReadComplete called");
-    super.channelReadComplete(ctx);
-  }
-
   static VertxHttpStreamBase getStreamOfQuicStreamChannel(ChannelHandlerContext ctx) {
     return getStreamOfQuicStreamChannel((QuicStreamChannel) ctx.channel());
   }
@@ -277,10 +240,8 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
     quicStreamChannel.attr(QUIC_CHANNEL_STREAM_KEY).set(vertxHttpStream);
   }
 
-  //  @Override
-
-  private void createStreamHandler() {
-    this.streamHandlerInternal = new ChannelInboundHandlerAdapter() {
+  private ChannelInboundHandlerAdapter createInboundControlStreamHandler() {
+    return new ChannelInboundHandlerAdapter() {
       @Override
       public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (msg instanceof DefaultHttp3SettingsFrame) {
@@ -313,21 +274,115 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
     };
   }
 
-  public ChannelInboundHandlerAdapter createStreamHandlerDelegate() {
-    return new ChannelInboundHandlerAdapter() {
+  public Http3RequestStreamInboundHandler createHttp3RequestStreamInboundHandler() {
+    return new Http3RequestStreamInboundHandler() {
       @Override
-      public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        VertxHttp3ConnectionHandler.this.channelRead(ctx, msg);
+      protected void channelRead(ChannelHandlerContext ctx, Http3HeadersFrame frame) throws Exception {
+        read = true;
+        VertxHttpStreamBase stream = getStreamOfQuicStreamChannel(ctx);
+        logger.debug("Received Http3HeadersFrame frame.");
+        connection.onHeadersRead(ctx, stream, frame.headers(), false, (QuicStreamChannel) ctx.channel());
+      }
+
+      @Override
+      protected void channelRead(ChannelHandlerContext ctx, Http3DataFrame frame) throws Exception {
+        read = true;
+        VertxHttpStreamBase stream = getStreamOfQuicStreamChannel(ctx);
+        if (logger.isDebugEnabled()) {
+          logger.debug("Frame data is: {}", byteBufToString(frame.content()));
+        }
+        connection.onDataRead(ctx, stream, frame.content(), 0, false);
+      }
+
+      @Override
+      protected void channelInputClosed(ChannelHandlerContext ctx) throws Exception {
+        logger.debug("ChannelInputClosed called");
+        VertxHttpStreamBase stream = getStreamOfQuicStreamChannel(ctx);
+        if (stream.isHeaderOnly() && !isServer) {
+          connection.onHeadersRead(ctx, stream, new DefaultHttp3Headers(), true, (QuicStreamChannel) ctx.channel());
+        } else {
+          connection.onDataRead(ctx, stream, Unpooled.buffer(), 0, true);
+        }
       }
 
       @Override
       public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-        VertxHttp3ConnectionHandler.this.channelReadComplete(ctx);
+        read = false;
+        logger.debug("ChannelReadComplete called");
+        super.channelReadComplete(ctx);
+      }
+
+      @Override
+      protected void handleQuicException(ChannelHandlerContext ctx, QuicException exception) {
+        super.handleQuicException(ctx, exception);
+        Exception exception_ = exception;
+        if (exception.error() == QuicError.STREAM_RESET) {
+          exception_ = new StreamResetException(0, exception);
+        }
+        connection.onConnectionError(exception_);
+        if (!settingsRead) {
+          connectFuture.setFailure(exception_);
+        }
+        ctx.close();
+      }
+
+      @Override
+      protected void handleHttp3Exception(ChannelHandlerContext ctx, Http3Exception exception) {
+        super.handleHttp3Exception(ctx, exception);
+        connection.onConnectionError(exception);
+        if (!settingsRead) {
+          connectFuture.setFailure(exception);
+        }
+        ctx.close();
       }
 
       @Override
       public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-        VertxHttp3ConnectionHandler.this.userEventTriggered(ctx, evt);
+        if (evt instanceof SslHandshakeCompletionEvent) {
+          SslHandshakeCompletionEvent completion = (SslHandshakeCompletionEvent) evt;
+          if (!completion.isSuccess()) {
+            connectFuture.tryFailure(completion.cause());
+          }
+        } else if (evt instanceof IdleStateEvent) {
+          connection.handleIdle((IdleStateEvent) evt);
+        } else if (evt instanceof QuicDatagramExtensionEvent) {
+          logger.debug("Received QuicStreamChannel event QuicDatagramExtensionEvent");
+          ctx.fireUserEventTriggered(evt);
+        } else if (evt instanceof QuicStreamLimitChangedEvent) {
+          logger.debug("Received QuicStreamChannel event QuicStreamLimitChangedEvent");
+          ctx.fireUserEventTriggered(evt);
+        } else if (evt instanceof QuicConnectionCloseEvent) {
+          logger.debug("Received QuicStreamChannel event QuicConnectionCloseEvent");
+          ctx.fireUserEventTriggered(evt);
+        } else if (evt == ChannelInputShutdownEvent.INSTANCE) {
+          logger.debug("Received QuicStreamChannel event ChannelInputShutdownEvent.");
+          super.userEventTriggered(ctx, evt);
+        } else if (evt == ChannelInputShutdownReadComplete.INSTANCE) {
+          logger.debug("Received QuicStreamChannel event ChannelInputShutdownReadComplete");
+          ctx.fireUserEventTriggered(evt);
+        } else if (evt instanceof ShutdownEvent) {
+          logger.debug("Received QuicStreamChannel event ShutdownEvent");
+          ctx.fireUserEventTriggered(evt);
+        } else {
+          logger.debug("Received QuicStreamChannel unhandled event: {}", evt);
+          ctx.fireUserEventTriggered(evt);
+        }
+      }
+
+      @Override
+      protected void channelRead(ChannelHandlerContext ctx, Http3UnknownFrame frame) {
+        if (logger.isDebugEnabled()) {
+          logger.debug("Received frame http3UnknownFrame : {}", byteBufToString(frame.content()));
+        }
+        super.channelRead(ctx, frame);
+      }
+
+      @Override
+      public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        if (logger.isDebugEnabled()) {
+          logger.debug("Http3RequestStreamInboundHandler caught exception!", cause);
+        }
+        super.exceptionCaught(ctx, cause);
       }
     };
   }
@@ -338,30 +393,24 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
     return new String(arr);
   }
 
+  public Http3ConnectionHandler getHttp3ConnectionHandler() {
+    return isServer ? createHttp3ServerConnectionHandler() : createHttp3ClientConnectionHandler();
+  }
+
   private Http3ServerConnectionHandler createHttp3ServerConnectionHandler() {
     return new Http3ServerConnectionHandler(new ChannelInitializer<QuicStreamChannel>() {
       @Override
       protected void initChannel(QuicStreamChannel ch) throws Exception {
         logger.debug("Init QuicStreamChannel...");
-        ch.pipeline().addLast(createStreamHandlerDelegate());
+        ch.pipeline().addLast(createHttp3RequestStreamInboundHandler());
       }
-      //TODO: correct the settings and streamHandlerIssue:
-    }, this.streamHandlerInternal, null, null, false);
+    }, createInboundControlStreamHandler(), null, null, false);
+    //TODO: correct the settings and streamHandlerIssue:
   }
 
   private Http3ClientConnectionHandler createHttp3ClientConnectionHandler() {
-    return new Http3ClientConnectionHandler(this.streamHandlerInternal, null, null,
+    return new Http3ClientConnectionHandler(createInboundControlStreamHandler(), null, null,
       null, false);
-  }
-
-  public Http3ConnectionHandler getHttp3ConnectionHandler() {
-    if (connectionHandlerInternal == null) {
-      createStreamHandler();
-      connectionHandlerInternal = isServer ? createHttp3ServerConnectionHandler() :
-        createHttp3ClientConnectionHandler();
-    }
-
-    return connectionHandlerInternal;
   }
 
   private void _writePriority(QuicStreamChannel stream, int urgency, boolean incremental) {
@@ -379,75 +428,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
     }
   }
 
-  private boolean isFirstSettingsRead = true;
-
-  @Override
-  protected void handleQuicException(ChannelHandlerContext ctx, QuicException exception) {
-    super.handleQuicException(ctx, exception);
-    Exception exception_ = exception;
-    if (exception.error() == QuicError.STREAM_RESET) {
-      exception_ = new StreamResetException(0, exception);
-    }
-    connection.onConnectionError(exception_);
-    if (!settingsRead) {
-      connectFuture.setFailure(exception_);
-    }
-    ctx.close();
-  }
-
-  @Override
-  protected void handleHttp3Exception(ChannelHandlerContext ctx, Http3Exception exception) {
-    super.handleHttp3Exception(ctx, exception);
-    connection.onConnectionError(exception);
-    if (!settingsRead) {
-      connectFuture.setFailure(exception);
-    }
-    ctx.close();
-  }
-
-  public ChannelHandler getQuicChannelHandler() {
-    return new ChannelInboundHandlerAdapter() {
-      @Override
-      public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-        if (VertxHttp3ConnectionHandler.this.quicChannel == null) {
-          VertxHttp3ConnectionHandler.this.quicChannel = (QuicChannel) ctx.channel();
-        }
-        if (!isServer) {
-          if (settingsRead && isFirstSettingsRead) {
-            if (addHandler != null) {
-              addHandler.handle(connection);
-            }
-            VertxHttp3ConnectionHandler.this.connectFuture.trySuccess(connection);
-            isFirstSettingsRead = false;
-          }
-        }
-        super.channelReadComplete(ctx);
-      }
-
-      @Override
-      public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
-        super.handlerAdded(ctx);
-        chctx = ctx;
-        connectFuture = new DefaultPromise<>(ctx.executor());
-        connection = connectionFactory.apply(VertxHttp3ConnectionHandler.this);
-      }
-
-      @Override
-      public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-        if (evt instanceof ShutdownEvent) {
-          ShutdownEvent shutdownEvt = (ShutdownEvent) evt;
-          logger.debug("Received QuicChannel event ShutdownEvent");
-          connection.shutdown(shutdownEvt.timeout(), shutdownEvt.timeUnit());
-        } else if (evt instanceof QuicConnectionCloseEvent) {
-          QuicConnectionCloseEvent connectionCloseEvt = (QuicConnectionCloseEvent) evt;
-          logger.debug("Received QuicChannel event QuicConnectionCloseEvent, error: {}, isApplicationClose: {}, isTlsError: {}, "
-            , connectionCloseEvt.error(), connectionCloseEvt.isApplicationClose(), connectionCloseEvt.isTlsError());
-          connection.handleClosed();
-        }
-        super.userEventTriggered(ctx, evt);
-      }
-    };
-  }
+  private boolean isFirstSettingsRead = true;  //TODO: remove me if it is possible
 
   public HttpSettings initialSettings() {
     return httpSettings;
@@ -468,7 +449,8 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Http3Re
   }
 
   public boolean goAwayReceived() {
-    return getHttp3ConnectionHandler().isGoAwayReceived();
+//    return getHttp3ConnectionHandler().isGoAwayReceived();
+    return false;
   }
 
   public QuicChannel connection() {

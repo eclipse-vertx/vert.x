@@ -59,7 +59,7 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
         @Override
         protected void initRequestStream(QuicStreamChannel ch) {
           ch.pipeline()
-            .addLast(conn.handler.createStreamHandlerDelegate());
+            .addLast(conn.handler.createHttp3RequestStreamInboundHandler());
           onComplete.handle(Future.succeededFuture(ch));
         }
       });
