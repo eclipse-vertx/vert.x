@@ -15,6 +15,7 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.impl.VertxBuilder;
+import io.vertx.core.impl.VertxBuilder.VertxBuilderBridge;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.tracing.VertxTracer;
 
@@ -40,9 +41,13 @@ public interface VertxLifecycleHooks {
    *
    * @param config the Vert.x options to use, in JSON format
    * @return the Vert.x builder instance
-   */
+   */  
   default VertxBuilder createVertxBuilder(JsonObject config) {
-    return config == null ? new VertxBuilder() : new VertxBuilder(config);
+	  final VertxBuilderBridge vertxBuilder = new VertxBuilder.VertxBuilderBridge();
+	  if (config != null)
+		  vertxBuilder.with(new VertxOptions(config));
+	  
+	  return vertxBuilder.internalBuilder();
   }
 
   /**

@@ -421,4 +421,72 @@ public class VertxBuilder {
       return JDKTransport.INSTANCE;
     }
   }
+  
+	public static class VertxBuilderBridge implements io.vertx.core.VertxBuilder {
+		VertxOptions options;
+		VertxTracerFactory tracerFactory;
+		VertxMetricsFactory metricsFactory;
+		ClusterManager clusterManager;
+
+		@Override
+		public io.vertx.core.VertxBuilder with(VertxOptions options) {
+			this.options = options;
+			return this;
+		}
+
+		@Override
+		public io.vertx.core.VertxBuilder withTracer(VertxTracerFactory factory) {
+			this.tracerFactory = factory;
+			return this;
+		}
+
+		@Override
+		public io.vertx.core.VertxBuilder withClusterManager(ClusterManager clusterManager) {
+			this.clusterManager = clusterManager;
+			return this;
+		}
+
+		@Override
+		public io.vertx.core.VertxBuilder withMetrics(VertxMetricsFactory factory) {
+			this.metricsFactory = factory;
+			return this;
+		}
+
+		@SuppressWarnings("deprecation")
+		public io.vertx.core.impl.VertxBuilder internalBuilder() {
+			VertxOptions opts = options != null ? options : new VertxOptions();
+			if (clusterManager != null) {
+				opts.setClusterManager(clusterManager);
+			}
+			if (metricsFactory != null) {
+				MetricsOptions metricsOptions = opts.getMetricsOptions();
+				if (metricsOptions != null) {
+					metricsOptions.setFactory(metricsFactory);
+				} else {
+					opts.setMetricsOptions(new MetricsOptions().setFactory(metricsFactory));
+				}
+				metricsOptions.setEnabled(true);
+			}
+			if (tracerFactory != null) {
+				TracingOptions tracingOptions = opts.getTracingOptions();
+				if (tracingOptions != null) {
+					tracingOptions.setFactory(tracerFactory);
+				} else {
+					opts.setTracingOptions(new TracingOptions().setFactory(tracerFactory));
+				}
+			}
+			return new io.vertx.core.impl.VertxBuilder(opts).init();
+		}
+
+		@Override
+		public Vertx build() {
+			return internalBuilder().vertx();
+		}
+
+		@Override
+		public Future<Vertx> buildClustered() {
+			return Future.future(p -> internalBuilder().clusteredVertx(p));
+		}
+	}
+  
 }

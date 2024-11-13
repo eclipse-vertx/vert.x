@@ -20,21 +20,16 @@ import io.vertx.core.dns.DnsClientOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.VertxBuilder.VertxBuilderBridge;
 import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.metrics.Measured;
-import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.spi.VerticleFactory;
-import io.vertx.core.spi.VertxMetricsFactory;
-import io.vertx.core.spi.VertxTracerFactory;
-import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.streams.ReadStream;
-import io.vertx.core.tracing.TracingOptions;
 
 import java.util.Objects;
 import java.util.Set;
@@ -72,64 +67,7 @@ import java.util.function.Supplier;
 public interface Vertx extends Measured {
 
   static VertxBuilder builder() {
-    return new io.vertx.core.VertxBuilder() {
-      VertxOptions options;
-      VertxTracerFactory tracerFactory;
-      VertxMetricsFactory metricsFactory;
-      ClusterManager clusterManager;
-      @Override
-      public VertxBuilder with(VertxOptions options) {
-        this.options = options;
-        return this;
-      }
-      @Override
-      public VertxBuilder withTracer(VertxTracerFactory factory) {
-        this.tracerFactory = factory;
-        return this;
-      }
-      @Override
-      public VertxBuilder withClusterManager(ClusterManager clusterManager) {
-        this.clusterManager = clusterManager;
-        return this;
-      }
-      @Override
-      public VertxBuilder withMetrics(VertxMetricsFactory factory) {
-        this.metricsFactory = factory;
-        return this;
-      }
-      private io.vertx.core.impl.VertxBuilder internalBuilder() {
-        VertxOptions opts = options != null ? options : new VertxOptions();
-        if (clusterManager != null) {
-          opts.setClusterManager(clusterManager);
-        }
-        if (metricsFactory != null) {
-          MetricsOptions metricsOptions = opts.getMetricsOptions();
-          if (metricsOptions != null) {
-            metricsOptions.setFactory(metricsFactory);
-          } else {
-            opts.setMetricsOptions(new MetricsOptions().setFactory(metricsFactory));
-          }
-          metricsOptions.setEnabled(true);
-        }
-        if (tracerFactory != null) {
-          TracingOptions tracingOptions = opts.getTracingOptions();
-          if (tracingOptions != null) {
-            tracingOptions.setFactory(tracerFactory);
-          } else {
-            opts.setTracingOptions(new TracingOptions().setFactory(tracerFactory));
-          }
-        }
-        return new io.vertx.core.impl.VertxBuilder(opts).init();
-      }
-      @Override
-      public Vertx build() {
-        return internalBuilder().vertx();
-      }
-      @Override
-      public Future<Vertx> buildClustered() {
-        return Future.future(p -> internalBuilder().clusteredVertx(p));
-      }
-    };
+    return new VertxBuilderBridge();
   }
 
   /**
