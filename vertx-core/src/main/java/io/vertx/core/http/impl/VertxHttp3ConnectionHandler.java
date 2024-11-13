@@ -91,13 +91,6 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   private void onSettingsRead(ChannelHandlerContext ctx, HttpSettings settings) {
     this.connection.onSettingsRead(ctx, settings);
     this.settingsRead = true;
-
-    if (isServer) {
-      if (addHandler != null) {
-        addHandler.handle(connection);
-      }
-      this.connectFuture.trySuccess(connection);
-    }
   }
 
 
@@ -129,27 +122,13 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     super.handlerAdded(ctx);
     chctx = ctx;
     connectFuture = new DefaultPromise<>(ctx.executor());
-    connection = connectionFactory.apply(VertxHttp3ConnectionHandler.this);
+    connection = connectionFactory.apply(this);
   }
 
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
     logger.debug("VertxHttp3ConnectionHandler caught exception!", cause);
     super.exceptionCaught(ctx, cause);
-  }
-
-  @Override
-  public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-    if (!isServer) {
-      if (settingsRead && isFirstSettingsRead) {
-        if (addHandler != null) {
-          addHandler.handle(connection);
-        }
-        VertxHttp3ConnectionHandler.this.connectFuture.trySuccess(connection);
-        isFirstSettingsRead = false;
-      }
-    }
-    super.channelReadComplete(ctx);
   }
 
   @Override
@@ -267,6 +246,17 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
           logger.debug("Received unhandled frame type: {}", msg.getClass());
           super.channelRead(ctx, msg);
         }
+      }
+
+      @Override
+      public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+        if (settingsRead && !connectFuture.isDone()) {
+          if (addHandler != null) {
+            addHandler.handle(connection);
+          }
+          connectFuture.trySuccess(connection);
+        }
+        super.channelReadComplete(ctx);
       }
     };
   }
@@ -429,8 +419,6 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
       });
     }
   }
-
-  private boolean isFirstSettingsRead = true;  //TODO: remove me if it is possible
 
   public HttpSettings initialSettings() {
     return httpSettings;
