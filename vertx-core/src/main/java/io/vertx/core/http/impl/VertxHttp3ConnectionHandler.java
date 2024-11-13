@@ -462,4 +462,15 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     ChannelPromise promise = chctx.newPromise().addListener(future -> checkFlush());
     quicStreamChannel.shutdownOutput((int) code, promise);
   }
+
+  public void createHttp3RequestStream(Handler<QuicStreamChannel> onComplete) {
+    Http3.newRequestStream((QuicChannel) chctx.channel(),
+      new Http3RequestStreamInitializer() {
+        @Override
+        protected void initRequestStream(QuicStreamChannel ch) {
+          ch.pipeline().addLast(createHttp3RequestStreamInboundHandler());
+          onComplete.handle(ch);
+        }
+      });
+  }
 }
