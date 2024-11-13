@@ -7,8 +7,6 @@ import io.netty.incubator.codec.http3.Http3RequestStreamInitializer;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.netty.util.concurrent.FutureListener;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
@@ -49,7 +47,7 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
 
   @Override
   int lastStreamCreated() {
-    return this.stream != null ? (int) this.stream.streamId() : 0;
+    return this.channelStream != null ? (int) this.channelStream.streamId() : 0;
   }
 
   @Override
@@ -98,7 +96,7 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
 
   @Override
   public void writePriorityFrame(StreamPriorityBase priority) {
-    conn.handler.writePriority(stream, priority.urgency(), priority.isIncremental());
+    conn.handler.writePriority(channelStream, priority.urgency(), priority.isIncremental());
   }
 
   @Override
@@ -113,7 +111,7 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
 
   @Override
   public void init_(VertxHttpStreamBase vertxHttpStream, QuicStreamChannel quicStreamChannel) {
-    this.stream = quicStreamChannel;
+    this.channelStream = quicStreamChannel;
     this.writable = quicStreamChannel.isWritable();
     this.conn.quicStreamChannels.put(quicStreamChannel.streamId(), quicStreamChannel);
     VertxHttp3ConnectionHandler.setStreamOfQuicStreamChannel(quicStreamChannel, this);
@@ -121,7 +119,7 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
 
   @Override
   public synchronized int getStreamId() {
-    return stream != null ? (int) stream.streamId() : -1;
+    return channelStream != null ? (int) channelStream.streamId() : -1;
   }
 
   @Override
