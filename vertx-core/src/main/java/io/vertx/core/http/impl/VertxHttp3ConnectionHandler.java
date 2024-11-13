@@ -51,7 +51,6 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   private final Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory;
   private final long initialMaxStreamsBidirectional;
   private C connection;
-  private QuicChannel quicChannel;
   private ChannelHandlerContext chctx;
   private Promise<C> connectFuture;
   private boolean settingsRead;
@@ -139,9 +138,6 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
 
   @Override
   public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-    if (VertxHttp3ConnectionHandler.this.quicChannel == null) {
-      VertxHttp3ConnectionHandler.this.quicChannel = (QuicChannel) ctx.channel();
-    }
     if (!isServer) {
       if (settingsRead && isFirstSettingsRead) {
         if (addHandler != null) {
@@ -459,7 +455,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   }
 
   public QuicChannel connection() {
-    return quicChannel;
+    return (QuicChannel) chctx.channel();
   }
 
   public void writeReset(QuicStreamChannel quicStreamChannel, long code) {
