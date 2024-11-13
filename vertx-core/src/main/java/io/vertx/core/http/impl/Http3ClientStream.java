@@ -2,9 +2,6 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.incubator.codec.http3.DefaultHttp3Headers;
-import io.netty.incubator.codec.http3.Http3;
-import io.netty.incubator.codec.http3.Http3RequestStreamInitializer;
-import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.Handler;
@@ -51,16 +48,8 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
   }
 
   @Override
-  protected void createStreamInternal(int id, boolean b, Handler<AsyncResult<QuicStreamChannel>> onComplete) {
-    Http3.newRequestStream((QuicChannel) conn.channelHandlerContext().channel(),
-      new Http3RequestStreamInitializer() {
-        @Override
-        protected void initRequestStream(QuicStreamChannel ch) {
-          ch.pipeline()
-            .addLast(conn.handler.createHttp3RequestStreamInboundHandler());
-          onComplete.handle(Future.succeededFuture(ch));
-        }
-      });
+  protected void createChannelStreamInternal(int id, boolean b, Handler<QuicStreamChannel> onComplete) {
+    conn.handler.createHttp3RequestStream(onComplete);
   }
 
   @Override
