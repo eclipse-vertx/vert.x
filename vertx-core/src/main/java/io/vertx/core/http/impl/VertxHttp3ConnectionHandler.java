@@ -127,23 +127,23 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
 
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-    logger.debug("VertxHttp3ConnectionHandler caught exception!", cause);
+    logger.debug("{} - VertxHttp3ConnectionHandler caught exception!", agentType, cause);
     super.exceptionCaught(ctx, cause);
   }
 
   @Override
   public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+    logger.debug("{} - Received QuicChannel event for channelId: {}, event: {}",
+      agentType, ctx.channel().id(), evt);
+
     if (evt instanceof ShutdownEvent) {
       ShutdownEvent shutdownEvt = (ShutdownEvent) evt;
-      logger.debug("Received QuicChannel event ShutdownEvent");
       connection.shutdown(shutdownEvt.timeout(), shutdownEvt.timeUnit());
     } else if (evt instanceof QuicConnectionCloseEvent) {
-      QuicConnectionCloseEvent connectionCloseEvt = (QuicConnectionCloseEvent) evt;
-      logger.debug("Received QuicChannel event QuicConnectionCloseEvent, error: {}, isApplicationClose: {}, isTlsError: {}, "
-        , connectionCloseEvt.error(), connectionCloseEvt.isApplicationClose(), connectionCloseEvt.isTlsError());
       connection.handleClosed();
+    } else {
+      super.userEventTriggered(ctx, evt);
     }
-    super.userEventTriggered(ctx, evt);
   }
 
   @Override
@@ -167,10 +167,12 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     connection.onGoAwayReceived(new GoAway().setErrorCode(errorCode).setLastStreamId(lastStreamId).setDebugData(BufferInternal.buffer(debugData)));
   }
 
-  public void writeHeaders(QuicStreamChannel stream, VertxHttpHeaders headers, boolean end, StreamPriorityBase priority,
-                           boolean checkFlush, FutureListener<Void> listener) {
-    logger.debug("WriteHeaders called");
-    stream.updatePriority(new QuicStreamPriority(priority.urgency(), priority.isIncremental()));
+  public void writeHeaders(QuicStreamChannel quicStreamChannel, VertxHttpHeaders headers, boolean end,
+                           StreamPriorityBase priority, boolean checkFlush, FutureListener<Void> listener) {
+    logger.debug("{} - Write header for QuicStreamChannel with channelId: {}, channelStreamId: {}",
+      agentType, quicStreamChannel.id(), quicStreamChannel.streamId());
+
+    quicStreamChannel.updatePriority(new QuicStreamPriority(priority.urgency(), priority.isIncremental()));
     Http3Headers http3Headers = headers.getHeaders();
 
     if (isServer) {
@@ -178,11 +180,11 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     } else {
       http3Headers.set(HttpHeaderNames.USER_AGENT, "Vertx Http3Client");
     }
-    ChannelPromise promise = listener == null ? stream.voidPromise() : stream.newPromise().addListener(listener);
+    ChannelPromise promise = listener == null ? quicStreamChannel.voidPromise() : quicStreamChannel.newPromise().addListener(listener);
     if (end) {
       promise.unvoid().addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);
     }
-    stream.write(new DefaultHttp3HeadersFrame(http3Headers), promise);
+    quicStreamChannel.write(new DefaultHttp3HeadersFrame(http3Headers), promise);
 
     if (checkFlush) {
       checkFlush();
@@ -223,7 +225,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
       public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (msg instanceof DefaultHttp3SettingsFrame) {
           DefaultHttp3SettingsFrame http3SettingsFrame = (DefaultHttp3SettingsFrame) msg;
-          logger.debug("Received frame http3SettingsFrame");
+          logger.debug("{} - Received frame http3SettingsFrame", agentType);
           onSettingsRead(ctx, new HttpSettings(http3SettingsFrame));
           VertxHttp3ConnectionHandler.this.connection.updateHttpSettings(new HttpSettings(http3SettingsFrame));
 //          Thread.sleep(70000);
@@ -233,17 +235,18 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
         } else if (msg instanceof DefaultHttp3GoAwayFrame) {
           super.channelRead(ctx, msg);
           DefaultHttp3GoAwayFrame http3GoAwayFrame = (DefaultHttp3GoAwayFrame) msg;
-          logger.debug("Received frame http3GoAwayFrame.");
+          logger.debug("{} - Received frame http3GoAwayFrame.", agentType);
           onGoAwayReceived((int) http3GoAwayFrame.id(), -1, Unpooled.EMPTY_BUFFER);
         } else if (msg instanceof DefaultHttp3UnknownFrame) {
           DefaultHttp3UnknownFrame http3UnknownFrame = (DefaultHttp3UnknownFrame) msg;
 
           if (logger.isDebugEnabled()) {
-            logger.debug("Received frame http3UnknownFrame : {}", byteBufToString(http3UnknownFrame.content()));
+            logger.debug("{} - Received frame http3UnknownFrame : {}", agentType,
+              byteBufToString(http3UnknownFrame.content()));
           }
           super.channelRead(ctx, msg);
         } else {
-          logger.debug("Received unhandled frame type: {}", msg.getClass());
+          logger.debug("{} - Received unhandled frame type: {}", agentType, msg.getClass());
           super.channelRead(ctx, msg);
         }
       }
@@ -265,7 +268,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     return new Http3RequestStreamInboundHandler() {
       @Override
       protected void channelRead(ChannelHandlerContext ctx, Http3HeadersFrame frame) throws Exception {
-        logger.debug("Received Header frame on {} for channelId: {}", agentType, ctx.channel().id());
+        logger.debug("{} - Received Header frame for channelId: {}", agentType, ctx.channel().id());
         read = true;
         VertxHttpStreamBase stream = getStreamOfQuicStreamChannel(ctx);
         connection.onHeadersRead(ctx, stream, frame.headers(), false, (QuicStreamChannel) ctx.channel());
@@ -273,18 +276,18 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
 
       @Override
       protected void channelRead(ChannelHandlerContext ctx, Http3DataFrame frame) throws Exception {
-        logger.debug("Received Data frame on {} for channelId: {}", agentType, ctx.channel().id());
+        logger.debug("{} - Received Data frame for channelId: {}", agentType, ctx.channel().id());
         read = true;
         VertxHttpStreamBase stream = getStreamOfQuicStreamChannel(ctx);
         if (logger.isDebugEnabled()) {
-          logger.debug("Frame data is: {}", byteBufToString(frame.content()));
+          logger.debug("{} - Frame data is: {}", agentType, byteBufToString(frame.content()));
         }
         connection.onDataRead(ctx, stream, frame.content(), 0, false);
       }
 
       @Override
       protected void channelInputClosed(ChannelHandlerContext ctx) throws Exception {
-        logger.debug("ChannelInputClosed called on {} for channelId: {}, streamId: {}", agentType, ctx.channel().id(),
+        logger.debug("{} - ChannelInputClosed called for channelId: {}, streamId: {}", agentType, ctx.channel().id(),
           ((QuicStreamChannel)ctx.channel()).streamId());
         VertxHttpStreamBase stream = getStreamOfQuicStreamChannel(ctx);
         if (stream.isHeaderOnly() && !isServer) {
@@ -297,8 +300,8 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
 
       @Override
       public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-        logger.debug("ChannelReadComplete called on {} for channelId: {}, streamId: {}", agentType, ctx.channel().id(),
-          ((QuicStreamChannel)ctx.channel()).streamId());
+        logger.debug("{} - ChannelReadComplete called for channelId: {}, streamId: {}", agentType,
+          ctx.channel().id(), ((QuicStreamChannel)ctx.channel()).streamId());
         read = false;
         super.channelReadComplete(ctx);
       }
@@ -328,51 +331,29 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
       }
 
       @Override
-      public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-        logger.debug("userEventTriggered called on {} for channelId: {}", agentType, ctx.channel().id());
-        if (evt instanceof SslHandshakeCompletionEvent) {
-          SslHandshakeCompletionEvent completion = (SslHandshakeCompletionEvent) evt;
-          if (!completion.isSuccess()) {
-            connectFuture.tryFailure(completion.cause());
-          }
-        } else if (evt instanceof IdleStateEvent) {
+      public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
+        logger.debug("{} - Received QuicStreamChannel event for channelId: {}, channelStreamId: {}, event: {}",
+          agentType, ctx.channel().id(), ((QuicStreamChannel)(ctx.channel())).streamId(), evt);
+
+        if (evt instanceof IdleStateEvent) {
           connection.handleIdle((IdleStateEvent) evt);
-        } else if (evt instanceof QuicDatagramExtensionEvent) {
-          logger.debug("Received QuicStreamChannel event QuicDatagramExtensionEvent");
-          ctx.fireUserEventTriggered(evt);
-        } else if (evt instanceof QuicStreamLimitChangedEvent) {
-          logger.debug("Received QuicStreamChannel event QuicStreamLimitChangedEvent");
-          ctx.fireUserEventTriggered(evt);
-        } else if (evt instanceof QuicConnectionCloseEvent) {
-          logger.debug("Received QuicStreamChannel event QuicConnectionCloseEvent");
-          ctx.fireUserEventTriggered(evt);
-        } else if (evt == ChannelInputShutdownEvent.INSTANCE) {
-          logger.debug("Received QuicStreamChannel event ChannelInputShutdownEvent.");
-          super.userEventTriggered(ctx, evt);
-        } else if (evt == ChannelInputShutdownReadComplete.INSTANCE) {
-          logger.debug("Received QuicStreamChannel event ChannelInputShutdownReadComplete");
-          ctx.fireUserEventTriggered(evt);
-        } else if (evt instanceof ShutdownEvent) {
-          logger.debug("Received QuicStreamChannel event ShutdownEvent");
-          ctx.fireUserEventTriggered(evt);
         } else {
-          logger.debug("Received QuicStreamChannel unhandled event: {}", evt);
           ctx.fireUserEventTriggered(evt);
         }
       }
 
       @Override
       protected void channelRead(ChannelHandlerContext ctx, Http3UnknownFrame frame) {
-        logger.debug("Received Unknown frame for channelId: {}", ctx.channel().id());
+        logger.debug("{} - Received Unknown frame for channelId: {}", agentType, ctx.channel().id());
         if (logger.isDebugEnabled()) {
-          logger.debug("Received frame http3UnknownFrame : {}", byteBufToString(frame.content()));
+          logger.debug("{} - Received frame http3UnknownFrame : {}", agentType, byteBufToString(frame.content()));
         }
         super.channelRead(ctx, frame);
       }
 
       @Override
       public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        logger.debug("Http3RequestStreamInboundHandler caught exception on channelId : {}!",
+        logger.debug("{} - Http3RequestStreamInboundHandler caught exception on channelId : {}!", agentType,
           ctx.channel().id(), cause);
         super.exceptionCaught(ctx, cause);
       }
@@ -393,7 +374,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     return new Http3ServerConnectionHandler(new ChannelInitializer<QuicStreamChannel>() {
       @Override
       protected void initChannel(QuicStreamChannel ch) throws Exception {
-        logger.debug("Init QuicStreamChannel...");
+        logger.debug("{} - Init QuicStreamChannel...", agentType);
         ch.pipeline().addLast(createHttp3RequestStreamInboundHandler());
       }
     }, createInboundControlStreamHandler(), null, null, false);
