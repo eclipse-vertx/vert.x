@@ -11,17 +11,24 @@
 
 package io.vertx.core.impl;
 
-import io.vertx.core.*;
-import io.vertx.core.impl.transports.EpollTransport;
-import io.vertx.core.impl.transports.JDKTransport;
-import io.vertx.core.impl.transports.KQueueTransport;
-import io.vertx.core.spi.file.FileResolver;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.ServiceHelper;
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.file.impl.FileResolverImpl;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.impl.transports.EpollTransport;
+import io.vertx.core.impl.transports.JDKTransport;
+import io.vertx.core.impl.transports.KQueueTransport;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.metrics.MetricsOptions;
-import io.vertx.core.spi.transport.Transport;
 import io.vertx.core.spi.ExecutorServiceFactory;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.VertxServiceProvider;
@@ -30,13 +37,11 @@ import io.vertx.core.spi.VertxTracerFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeSelector;
 import io.vertx.core.spi.cluster.impl.DefaultNodeSelector;
+import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
+import io.vertx.core.spi.transport.Transport;
 import io.vertx.core.tracing.TracingOptions;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
 
 /**
  * Vertx builder for creating vertx instances with SPI overrides.
@@ -475,17 +480,18 @@ public class VertxBuilder {
 					opts.setTracingOptions(new TracingOptions().setFactory(tracerFactory));
 				}
 			}
-			return new io.vertx.core.impl.VertxBuilder(opts).init();
+			
+			return new io.vertx.core.impl.VertxBuilder(opts); 
 		}
 
 		@Override
 		public Vertx build() {
-			return internalBuilder().vertx();
+			return internalBuilder().init().vertx();
 		}
 
 		@Override
 		public Future<Vertx> buildClustered() {
-			return Future.future(p -> internalBuilder().clusteredVertx(p));
+			return Future.future(p -> internalBuilder().init().clusteredVertx(p));
 		}
 	}
   
