@@ -58,6 +58,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   private Handler<C> removeHandler;
   private final HttpSettings httpSettings;
   private final boolean isServer;
+  private final String agentType;
 
   private boolean read;
   private static final AttributeKey<VertxHttpStreamBase> QUIC_CHANNEL_STREAM_KEY =
@@ -72,6 +73,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     this.connectionFactory = connectionFactory;
     this.httpSettings = httpSettings;
     this.isServer = isServer;
+    this.agentType = isServer ? "SERVER" : "CLIENT";
     this.initialMaxStreamsBidirectional = initialMaxStreamsBidirectional;
   }
 
@@ -269,11 +271,11 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     };
   }
 
-  public Http3RequestStreamInboundHandler createHttp3RequestStreamInboundHandler() {
+  private Http3RequestStreamInboundHandler createHttp3RequestStreamInboundHandler() {
     return new Http3RequestStreamInboundHandler() {
       @Override
       protected void channelRead(ChannelHandlerContext ctx, Http3HeadersFrame frame) throws Exception {
-        logger.debug("Received Header frame for channelId: {}", ctx.channel().id());
+        logger.debug("Received Header frame on {} for channelId: {}", agentType, ctx.channel().id());
         read = true;
         VertxHttpStreamBase stream = getStreamOfQuicStreamChannel(ctx);
         connection.onHeadersRead(ctx, stream, frame.headers(), false, (QuicStreamChannel) ctx.channel());
@@ -281,7 +283,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
 
       @Override
       protected void channelRead(ChannelHandlerContext ctx, Http3DataFrame frame) throws Exception {
-        logger.debug("Received Data frame for channelId: {}", ctx.channel().id());
+        logger.debug("Received Data frame on {} for channelId: {}", agentType, ctx.channel().id());
         read = true;
         VertxHttpStreamBase stream = getStreamOfQuicStreamChannel(ctx);
         if (logger.isDebugEnabled()) {
@@ -292,7 +294,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
 
       @Override
       protected void channelInputClosed(ChannelHandlerContext ctx) throws Exception {
-        logger.debug("ChannelInputClosed called for channelId: {}, streamId: {}", ctx.channel().id(),
+        logger.debug("ChannelInputClosed called on {} for channelId: {}, streamId: {}", agentType, ctx.channel().id(),
           ((QuicStreamChannel)ctx.channel()).streamId());
         VertxHttpStreamBase stream = getStreamOfQuicStreamChannel(ctx);
         if (stream.isHeaderOnly() && !isServer) {
@@ -305,7 +307,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
 
       @Override
       public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-        logger.debug("ChannelReadComplete called for channelId: {}, streamId: {}", ctx.channel().id(),
+        logger.debug("ChannelReadComplete called on {} for channelId: {}, streamId: {}", agentType, ctx.channel().id(),
           ((QuicStreamChannel)ctx.channel()).streamId());
         read = false;
         super.channelReadComplete(ctx);
@@ -337,7 +339,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
 
       @Override
       public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-        logger.debug("userEventTriggered called for channelId: {}", ctx.channel().id());
+        logger.debug("userEventTriggered called on {} for channelId: {}", agentType, ctx.channel().id());
         if (evt instanceof SslHandshakeCompletionEvent) {
           SslHandshakeCompletionEvent completion = (SslHandshakeCompletionEvent) evt;
           if (!completion.isSuccess()) {
