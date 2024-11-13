@@ -249,7 +249,6 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
           if (!isServer) {
             ctx.close();
           }
-          super.channelRead(ctx, msg);
         } else if (msg instanceof DefaultHttp3GoAwayFrame) {
           super.channelRead(ctx, msg);
           DefaultHttp3GoAwayFrame http3GoAwayFrame = (DefaultHttp3GoAwayFrame) msg;
