@@ -16,6 +16,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.timeout.IdleStateEvent;
@@ -91,6 +92,13 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   private void onSettingsRead(ChannelHandlerContext ctx, HttpSettings settings) {
     this.connection.onSettingsRead(ctx, settings);
     this.settingsRead = true;
+
+    if (isServer) {
+      if (addHandler != null) {
+        addHandler.handle(connection);
+      }
+      this.connectFuture.trySuccess(connection);
+    }
   }
 
 
@@ -256,11 +264,13 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
 
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-      if (settingsRead && !connectFuture.isDone()) {
-        if (addHandler != null) {
-          addHandler.handle(connection);
+      if (!isServer) {
+        if (settingsRead && !connectFuture.isDone()) {
+          if (addHandler != null) {
+            addHandler.handle(connection);
+          }
+          connectFuture.trySuccess(connection);
         }
-        connectFuture.trySuccess(connection);
       }
       super.channelReadComplete(ctx);
     }
@@ -301,6 +311,9 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
         connection.onHeadersRead(ctx, stream, new DefaultHttp3Headers(), true, (QuicStreamChannel) ctx.channel());
       } else {
         connection.onDataRead(ctx, stream, Unpooled.buffer(), 0, true);
+      }
+      if (!isServer) {
+        connection.onStreamClosed(getStreamOfQuicStreamChannel(ctx));
       }
     }
 
@@ -375,13 +388,11 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
 
   public Http3ConnectionHandler getHttp3ConnectionHandler() {
     if (isServer) {
-      StreamChannelInitializer initializer = new StreamChannelInitializer(new StreamChannelHandler(), agentType);
-      return new Http3ServerConnectionHandler(initializer, new ControlStreamChannelHandler(), null, null, false);
+      return new Http3ServerConnectionHandler(new StreamChannelInitializer(), new ControlStreamChannelHandler(), null
+        , null, false);
       //TODO: correct the settings and streamHandlerIssue:
     }
-
-    return new Http3ClientConnectionHandler(new ControlStreamChannelHandler(), null, null,
-      null, false);
+    return new Http3ClientConnectionHandler(new ControlStreamChannelHandler(), null, null, null, false);
   }
 
   private void _writePriority(QuicStreamChannel streamChannel, int urgency, boolean incremental) {
@@ -431,9 +442,30 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     streamChannel.shutdownOutput((int) code, promise);
   }
 
+  private class StreamChannelInitializer extends ChannelInitializer<QuicStreamChannel> {
+    private final Handler<QuicStreamChannel> onComplete;
+
+    public StreamChannelInitializer() {
+      this(null);
+    }
+
+    public StreamChannelInitializer(Handler<QuicStreamChannel> onComplete) {
+      this.onComplete = onComplete;
+    }
+
+    @Override
+    protected void initChannel(QuicStreamChannel streamChannel) {
+      logger.debug("{} - Initialize streamChannel with channelId: {}, streamId: ", agentType, streamChannel.id(),
+        streamChannel.streamId());
+
+      streamChannel.pipeline().addLast(new StreamChannelHandler());
+      if (onComplete != null) {
+        onComplete.handle(streamChannel);
+      }
+    }
+  }
+
   public void createHttp3RequestStream(Handler<QuicStreamChannel> onComplete) {
-    StreamChannelInitializer initializer = new StreamChannelInitializer(new StreamChannelHandler(), agentType,
-      onComplete);
-    Http3.newRequestStream((QuicChannel) chctx.channel(), initializer);
+    Http3.newRequestStream((QuicChannel) chctx.channel(), new StreamChannelInitializer(onComplete));
   }
 }
