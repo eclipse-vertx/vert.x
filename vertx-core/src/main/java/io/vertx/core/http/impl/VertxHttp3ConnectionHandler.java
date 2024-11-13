@@ -16,7 +16,6 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.timeout.IdleStateEvent;
@@ -135,7 +134,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   @Override
   public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
     logger.debug("{} - Received Connection event for channelId: {}, event: {}",
-      agentType, ctx.channel().id(), evt);
+      agentType, ctx.channel().id(), evt.getClass().getSimpleName());
 
     if (evt instanceof ShutdownEvent) {
       ShutdownEvent shutdownEvt = (ShutdownEvent) evt;
@@ -229,7 +228,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   private class ControlStreamChannelHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-      logger.debug("{} - channelRead() called with msg type: {}", agentType, msg.getClass());
+      logger.debug("{} - channelRead() called with msg type: {}", agentType, msg.getClass().getSimpleName());
 
       if (msg instanceof DefaultHttp3SettingsFrame) {
         DefaultHttp3SettingsFrame http3SettingsFrame = (DefaultHttp3SettingsFrame) msg;
@@ -342,7 +341,8 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
       logger.debug("{} - Received event for channelId: {}, channelStreamId: {}, event: {}",
-        agentType, ctx.channel().id(), ((QuicStreamChannel) (ctx.channel())).streamId(), evt);
+        agentType, ctx.channel().id(), ((QuicStreamChannel) (ctx.channel())).streamId(),
+        evt.getClass().getSimpleName());
 
       if (evt instanceof IdleStateEvent) {
         connection.handleIdle((IdleStateEvent) evt);
@@ -374,21 +374,12 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   }
 
   public Http3ConnectionHandler getHttp3ConnectionHandler() {
-    return isServer ? createHttp3ServerConnectionHandler() : createHttp3ClientConnectionHandler();
-  }
+    if (isServer) {
+      StreamChannelInitializer initializer = new StreamChannelInitializer(new StreamChannelHandler(), agentType);
+      return new Http3ServerConnectionHandler(initializer, new ControlStreamChannelHandler(), null, null, false);
+      //TODO: correct the settings and streamHandlerIssue:
+    }
 
-  private Http3ServerConnectionHandler createHttp3ServerConnectionHandler() {
-    return new Http3ServerConnectionHandler(new ChannelInitializer<QuicStreamChannel>() {
-      @Override
-      protected void initChannel(QuicStreamChannel streamChannel) throws Exception {
-        logger.debug("{} - Init StreamChannel...", agentType);
-        streamChannel.pipeline().addLast(new StreamChannelHandler());
-      }
-    }, new ControlStreamChannelHandler(), null, null, false);
-    //TODO: correct the settings and streamHandlerIssue:
-  }
-
-  private Http3ClientConnectionHandler createHttp3ClientConnectionHandler() {
     return new Http3ClientConnectionHandler(new ControlStreamChannelHandler(), null, null,
       null, false);
   }
@@ -440,21 +431,9 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     streamChannel.shutdownOutput((int) code, promise);
   }
 
-  private class StreamChannelInitializer extends Http3RequestStreamInitializer {
-    private final Handler<QuicStreamChannel> onComplete;
-
-    public StreamChannelInitializer(Handler<QuicStreamChannel> onComplete) {
-      this.onComplete = onComplete;
-    }
-
-    @Override
-    protected void initRequestStream(QuicStreamChannel streamChannel) {
-      streamChannel.pipeline().addLast(new StreamChannelHandler());
-      onComplete.handle(streamChannel);
-    }
-  }
-
   public void createHttp3RequestStream(Handler<QuicStreamChannel> onComplete) {
-    Http3.newRequestStream((QuicChannel) chctx.channel(), new StreamChannelInitializer(onComplete));
+    StreamChannelInitializer initializer = new StreamChannelInitializer(new StreamChannelHandler(), agentType,
+      onComplete);
+    Http3.newRequestStream((QuicChannel) chctx.channel(), initializer);
   }
 }
