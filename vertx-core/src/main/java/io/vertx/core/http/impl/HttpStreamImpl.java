@@ -2,7 +2,6 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpHeaderNames;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -31,7 +30,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
 
   abstract int lastStreamCreated();
 
-  protected abstract void createStreamInternal(int id, boolean b, Handler<AsyncResult<S>> onComplete) throws HttpException;
+  protected abstract void createChannelStreamInternal(int id, boolean b, Handler<S> onComplete) throws HttpException;
 
   protected abstract TracingPolicy getTracingPolicy();
 
@@ -261,8 +260,8 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
     }
     head.id = id;
     head.remoteAddress = conn.remoteAddress();
-    createStreamInternal(id, false, streamX -> {
-      init(streamX.result());
+    createChannelStreamInternal(id, false, channelStream -> {
+      init(channelStream);
       if (metrics() != null) {
         metric = metrics().requestBegin(headers.path().toString(), head);
       }
@@ -279,7 +278,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
         trace = tracer.sendRequest(context, SpanKind.RPC, getTracingPolicy(), head, operation, headers_,
           HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
       }
-      onComplete.handle(streamX.result());
+      onComplete.handle(channelStream);
     });
   }
 

@@ -48,7 +48,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
   protected boolean isConnect;
   private Throwable failure;
   private boolean headerOnly = true;
-  protected S stream;
+  protected S channelStream;
 
   protected abstract void consumeCredits(S stream, int len);
 
@@ -90,10 +90,10 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
           Buffer data = (Buffer) item;
           int len = data.length();
           conn.context.emit(null, v -> {
-            if (remoteSideOpen(stream)) {
+            if (remoteSideOpen(channelStream)) {
               // Handle the HTTP upgrade case
               // buffers are received by HTTP/1 and not accounted by HTTP/2
-              consumeCredits(stream, len);
+              consumeCredits(channelStream, len);
             }
           });
           handleData(data);
@@ -131,12 +131,12 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
     };
   }
 
-  void init(S stream) {
+  void init(S channelStream) {
     synchronized (this) {
-      this.stream = stream;
+      this.channelStream = channelStream;
     }
     this.writable = this.isWritable_();
-    this.init_(this, stream);
+    this.init_(this, channelStream);
   }
 
   void onClose() {
@@ -246,7 +246,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
   }
 
   private void doWriteFrame(int type, int flags, ByteBuf payload, Promise<Void> promise) {
-    writeFrame(stream, (byte) type, (short) flags, payload, promise);
+    writeFrame(channelStream, (byte) type, (short) flags, payload, promise);
   }
 
   final void writeHeaders(VertxHttpHeaders headers, boolean first, boolean end, boolean checkFlush,
@@ -277,7 +277,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
     if (end) {
       endWritten();
     }
-    writeHeaders(stream, headers, end, priority, checkFlush, (FutureListener<Void>) promise);
+    writeHeaders(channelStream, headers, end, priority, checkFlush, (FutureListener<Void>) promise);
   }
 
   protected void endWritten() {
@@ -310,7 +310,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
     if (end) {
       endWritten();
     }
-    writeData_(stream, chunk, end, (FutureListener<Void>) promise);
+    writeData_(channelStream, chunk, end, (FutureListener<Void>) promise);
   }
 
   final void writeReset(long code) {
@@ -370,7 +370,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
   synchronized void updatePriority(StreamPriorityBase priority) {
     if (!this.priority.equals(priority)) {
       this.priority = priority;
-      if (stream != null) {
+      if (channelStream != null) {
         writePriorityFrame(priority);
       }
     }
