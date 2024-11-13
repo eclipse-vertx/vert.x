@@ -352,7 +352,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     }
 
     @Override
-    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
       logger.debug("{} - Received event for channelId: {}, channelStreamId: {}, event: {}",
         agentType, ctx.channel().id(), ((QuicStreamChannel) (ctx.channel())).streamId(),
         evt.getClass().getSimpleName());
@@ -360,7 +360,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
       if (evt instanceof IdleStateEvent) {
         connection.handleIdle((IdleStateEvent) evt);
       } else {
-        ctx.fireUserEventTriggered(evt);
+        super.userEventTriggered(ctx, evt);
       }
     }
 
