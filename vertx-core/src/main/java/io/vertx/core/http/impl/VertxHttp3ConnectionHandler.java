@@ -148,7 +148,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
       ShutdownEvent shutdownEvt = (ShutdownEvent) evt;
       connection.shutdown(shutdownEvt.timeout(), shutdownEvt.timeUnit());
     } else if (evt instanceof QuicConnectionCloseEvent) {
-      connection.handleClosed();
+//      connection.handleClosed();
     } else {
       super.userEventTriggered(ctx, evt);
     }
