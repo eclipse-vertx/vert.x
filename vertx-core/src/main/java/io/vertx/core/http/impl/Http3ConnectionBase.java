@@ -23,7 +23,6 @@ import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.incubator.codec.http3.Http3Headers;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
-import io.netty.util.AttributeKey;
 import io.netty.util.collection.LongObjectHashMap;
 import io.netty.util.collection.LongObjectMap;
 import io.vertx.core.Future;
@@ -111,7 +110,7 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
   synchronized void onConnectionError(Throwable cause) {
     ArrayList<VertxHttpStreamBase> vertxHttpStreams = new ArrayList<>();
     getActiveQuicStreamChannels().forEach(quicStreamChannel -> {
-      vertxHttpStreams.add(VertxHttp3ConnectionHandler.getStreamOfQuicStreamChannel(quicStreamChannel));
+      vertxHttpStreams.add(VertxHttp3ConnectionHandler.getVertxStreamFromStreamChannel(quicStreamChannel));
     });
     for (VertxHttpStreamBase stream : vertxHttpStreams) {
       stream.context.dispatch(v -> stream.handleException(cause));

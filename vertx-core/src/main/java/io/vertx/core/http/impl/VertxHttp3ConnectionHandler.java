@@ -62,8 +62,8 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   private final String agentType;
 
   private boolean read;
-  private static final AttributeKey<VertxHttpStreamBase> QUIC_CHANNEL_STREAM_KEY =
-    AttributeKey.valueOf(VertxHttpStreamBase.class, "QUIC_CHANNEL_STREAM");
+  private static final AttributeKey<VertxHttpStreamBase> VERTX_STREAM_KEY =
+    AttributeKey.valueOf(VertxHttpStreamBase.class, "VERTX_CHANNEL_STREAM");
 
   public VertxHttp3ConnectionHandler(
     Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory,
@@ -221,16 +221,16 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     }
   }
 
-  static VertxHttpStreamBase getStreamOfQuicStreamChannel(ChannelHandlerContext ctx) {
-    return getStreamOfQuicStreamChannel((QuicStreamChannel) ctx.channel());
+  static VertxHttpStreamBase getVertxStreamFromStreamChannel(ChannelHandlerContext ctx) {
+    return getVertxStreamFromStreamChannel((QuicStreamChannel) ctx.channel());
   }
 
-  static VertxHttpStreamBase getStreamOfQuicStreamChannel(QuicStreamChannel streamChannel) {
-    return streamChannel.attr(QUIC_CHANNEL_STREAM_KEY).get();
+  static VertxHttpStreamBase getVertxStreamFromStreamChannel(QuicStreamChannel streamChannel) {
+    return streamChannel.attr(VERTX_STREAM_KEY).get();
   }
 
-  static void setStreamOfQuicStreamChannel(QuicStreamChannel streamChannel, VertxHttpStreamBase vertxHttpStream) {
-    streamChannel.attr(QUIC_CHANNEL_STREAM_KEY).set(vertxHttpStream);
+  static void setVertxStreamOnStreamChannel(QuicStreamChannel streamChannel, VertxHttpStreamBase vertxStream) {
+    streamChannel.attr(VERTX_STREAM_KEY).set(vertxStream);
   }
 
   private class ControlStreamChannelHandler extends ChannelInboundHandlerAdapter {
@@ -287,15 +287,15 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     protected void channelRead(ChannelHandlerContext ctx, Http3HeadersFrame frame) throws Exception {
       logger.debug("{} - Received Header frame for channelId: {}", agentType, ctx.channel().id());
       read = true;
-      VertxHttpStreamBase stream = getStreamOfQuicStreamChannel(ctx);
-      connection.onHeadersRead(ctx, stream, frame.headers(), false, (QuicStreamChannel) ctx.channel());
+      VertxHttpStreamBase vertxStream = getVertxStreamFromStreamChannel(ctx);
+      connection.onHeadersRead(ctx, vertxStream, frame.headers(), false, (QuicStreamChannel) ctx.channel());
     }
 
     @Override
     protected void channelRead(ChannelHandlerContext ctx, Http3DataFrame frame) throws Exception {
       logger.debug("{} - Received Data frame for channelId: {}", agentType, ctx.channel().id());
       read = true;
-      VertxHttpStreamBase vertxStream = getStreamOfQuicStreamChannel(ctx);
+      VertxHttpStreamBase vertxStream = getVertxStreamFromStreamChannel(ctx);
       if (logger.isDebugEnabled()) {
         logger.debug("{} - Frame data is: {}", agentType, byteBufToString(frame.content()));
       }
@@ -306,14 +306,14 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     protected void channelInputClosed(ChannelHandlerContext ctx) throws Exception {
       logger.debug("{} - ChannelInputClosed called for channelId: {}, streamId: {}", agentType, ctx.channel().id(),
         ((QuicStreamChannel) ctx.channel()).streamId());
-      VertxHttpStreamBase stream = getStreamOfQuicStreamChannel(ctx);
-      if (stream.isHeaderOnly() && !isServer) {
-        connection.onHeadersRead(ctx, stream, new DefaultHttp3Headers(), true, (QuicStreamChannel) ctx.channel());
+      VertxHttpStreamBase vertxStream = getVertxStreamFromStreamChannel(ctx);
+      if (vertxStream.isHeaderOnly() && !isServer) {
+        connection.onHeadersRead(ctx, vertxStream, new DefaultHttp3Headers(), true, (QuicStreamChannel) ctx.channel());
       } else {
-        connection.onDataRead(ctx, stream, Unpooled.buffer(), 0, true);
+        connection.onDataRead(ctx, vertxStream, Unpooled.buffer(), 0, true);
       }
       if (!isServer) {
-        connection.onStreamClosed(getStreamOfQuicStreamChannel(ctx));
+        connection.onStreamClosed(getVertxStreamFromStreamChannel(ctx));
       }
     }
 
@@ -465,7 +465,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     }
   }
 
-  public void createHttp3RequestStream(Handler<QuicStreamChannel> onComplete) {
+  public void createStreamChannel(Handler<QuicStreamChannel> onComplete) {
     Http3.newRequestStream((QuicChannel) chctx.channel(), new StreamChannelInitializer(onComplete));
   }
 }
