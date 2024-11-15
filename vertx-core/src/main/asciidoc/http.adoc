@@ -1694,7 +1694,7 @@ or close the client instance.
 Alternatively you can set idle timeout using {@link io.vertx.core.http.HttpClientOptions#setIdleTimeout(int)} - any
 connections not used within this timeout will be closed. Please note the idle timeout value is in seconds not milliseconds.
 
-==== Un-pooled client connections
+=== Un-pooled client connections
 
 Most HTTP interactions are performed using {@code HttpClientAgent} request/response API: the client obtains
 a connection from its pool of connections to perform a request.
