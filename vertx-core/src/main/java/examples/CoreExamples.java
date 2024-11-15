@@ -388,6 +388,13 @@ public class CoreExamples {
     vertx.cancelTimer(timerID);
   }
 
+  public void timerExample(Vertx vertx) {
+    // Create a timer
+    Timer timer = vertx.timer(10, TimeUnit.SECONDS);
+
+
+  }
+
   public void example18(String className, Exception exception) {
 
     // Note -these classes are Java only

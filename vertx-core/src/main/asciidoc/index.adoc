@@ -566,7 +566,7 @@ It's very common in Vert.x to want to perform an action after a delay, or period
 
 In standard verticles you can't just make the thread sleep to introduce a delay, as that will block the event loop thread.
 
-Instead you use Vert.x timers. Timers can be *one-shot* or *periodic*. We'll discuss both
+Instead, you use Vert.x timers. Timers can be *one-shot* or *periodic*. We'll discuss both
 
 ==== One-shot Timers
 
@@ -610,6 +610,12 @@ To cancel a periodic timer, call {@link io.vertx.core.Vertx#cancelTimer} specify
 ----
 {@link examples.CoreExamples#example17}
 ----
+
+==== Timer as a Future
+
+{@link io.vertx.core.Timer} combines one-shot timer and {@link {@link io.vertx.core.Future} in a single API.
+
+The future succeeds when the timer fires, conversely {@link io.vertx.core.Timer#cancel() cancelling} the timer fails the future.
 
 ==== Automatic clean-up in verticles
 
