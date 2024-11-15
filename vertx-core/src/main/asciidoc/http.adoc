@@ -1672,7 +1672,7 @@ fairness of the distribution of the client requests over the connections to the 
 HTTP/2 advocates to use a single connection to a server, by default the http client uses a single
 connection for each server, all the streams to the same server are multiplexed over the same connection.
 
-When the clients needs to use more than a single connection and use pooling, the {@link io.vertx.core.http.PoolOptions#setHttp2MaxSize(int)}
+When the client needs to use more than a single connection and use pooling, the {@link io.vertx.core.http.PoolOptions#setHttp2MaxSize(int)}
 shall be used.
 
 When it is desirable to limit the number of multiplexed streams per connection and use a connection
