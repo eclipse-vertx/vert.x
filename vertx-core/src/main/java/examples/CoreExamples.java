@@ -388,6 +388,20 @@ public class CoreExamples {
     vertx.cancelTimer(timerID);
   }
 
+  public void timerExample(Vertx vertx) {
+    // Create a timer
+    Future<String> timer = vertx
+      .timer(10, TimeUnit.SECONDS)
+      .map(v -> "Success");
+
+    timer.onSuccess(value -> {
+      System.out.println("Timer fired: " + value);
+    });
+    timer.onFailure(cause -> {
+      System.out.println("Timer cancelled: " + cause.getMessage());
+    });
+  }
+
   public void example18(String className, Exception exception) {
 
     // Note -these classes are Java only
