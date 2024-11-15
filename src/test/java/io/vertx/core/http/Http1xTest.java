@@ -1369,7 +1369,7 @@ public class Http1xTest extends HttpTest {
     NetClient client = vertx.createNetClient();
     client.connect(testAddress, onSuccess(so -> {
       so.write(
-        "PUT / HTTP/1.1 \r\n" +
+        "PUT / HTTP/1.1\r\n" +
           "connection: close\r\n" +
           "content-length: 1\r\n" +
           "\r\n");
@@ -1386,7 +1386,7 @@ public class Http1xTest extends HttpTest {
       Buffer response = Buffer.buffer();
       so.handler(response::appendBuffer);
       so.closeHandler(v -> {
-        assertTrue(response.toString().startsWith("HTTP/1.1 200 OK"));
+        assertTrue("Expected <" + response + "> to start with HTTP/1.1 200 OK", response.toString().startsWith("HTTP/1.1 200 OK"));
         testComplete();
       });
     }));
