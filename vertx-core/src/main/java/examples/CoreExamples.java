@@ -390,9 +390,16 @@ public class CoreExamples {
 
   public void timerExample(Vertx vertx) {
     // Create a timer
-    Timer timer = vertx.timer(10, TimeUnit.SECONDS);
+    Future<String> timer = vertx
+      .timer(10, TimeUnit.SECONDS)
+      .map(v -> "Success");
 
-
+    timer.onSuccess(value -> {
+      System.out.println("Timer fired: " + value);
+    });
+    timer.onFailure(cause -> {
+      System.out.println("Timer cancelled: " + cause.getMessage());
+    });
   }
 
   public void example18(String className, Exception exception) {

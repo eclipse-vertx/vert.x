@@ -615,6 +615,11 @@ To cancel a periodic timer, call {@link io.vertx.core.Vertx#cancelTimer} specify
 
 {@link io.vertx.core.Timer} combines one-shot timer and {@link {@link io.vertx.core.Future} in a single API.
 
+[source,$lang]
+----
+{@link examples.CoreExamples#timerExample}
+----
+
 The future succeeds when the timer fires, conversely {@link io.vertx.core.Timer#cancel() cancelling} the timer fails the future.
 
 ==== Automatic clean-up in verticles
