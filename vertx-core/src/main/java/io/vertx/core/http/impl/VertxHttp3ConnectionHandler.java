@@ -264,6 +264,8 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
 
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+      logger.debug("{} - ChannelReadComplete called for channelId: {}, streamId: {}", agentType,
+        ctx.channel().id(), ((QuicStreamChannel) ctx.channel()).streamId());
       if (!isServer) {
         if (settingsRead && !connectFuture.isDone()) {
           if (addHandler != null) {
