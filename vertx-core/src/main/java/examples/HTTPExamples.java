@@ -20,6 +20,7 @@ import io.vertx.core.file.FileSystem;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.*;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.NetServer;
 import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.ProxyOptions;
@@ -29,6 +30,7 @@ import io.vertx.core.streams.Pipe;
 import io.vertx.core.streams.ReadStream;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by tim on 09/01/15.
@@ -1357,6 +1359,39 @@ public class HTTPExamples {
 
   public static void compressorConfig() {
     GzipOptions gzip = StandardCompressionOptions.gzip(6, 15, 8);
+  }
+
+  public void serverShutdown(HttpServer server) {
+    server
+      .shutdown()
+      .onSuccess(res -> {
+        System.out.println("Server is now closed");
+      });
+  }
+
+  public void serverShutdownWithAmountOfTime(HttpServer server) {
+    server
+      .shutdown(60, TimeUnit.SECONDS)
+      .onSuccess(res -> {
+        System.out.println("Server is now closed");
+      });
+  }
+
+  public void example9(HttpServer server) {
+
+    server
+      .close()
+      .onSuccess(res -> {
+        System.out.println("Server is now closed");
+      });
+  }
+
+  public void shutdownHandler(HttpServer server) {
+    server.connectionHandler(conn -> {
+      conn.shutdownHandler(v -> {
+        // Perform clean-up
+      });
+    });
   }
 
   public static void httpClientSharing1(Vertx vertx) {
