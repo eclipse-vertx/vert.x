@@ -47,7 +47,6 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
   private long bytesWritten;
   protected boolean isConnect;
   private Throwable failure;
-  private boolean headerOnly = true;
   protected S channelStream;
 
   protected abstract void consumeCredits(S stream, int len);
@@ -171,7 +170,6 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
   }
 
   void onData(Buffer data) {
-    headerOnly = false;
     bytesRead += data.length();
     conn.reportBytesRead(data.length());
     inboundQueue.write(data);
@@ -377,10 +375,6 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
   }
 
   void handlePriorityChange(StreamPriorityBase newPriority) {
-  }
-
-  public boolean isHeaderOnly() {
-    return headerOnly;
   }
 
 }
