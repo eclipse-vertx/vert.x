@@ -192,13 +192,17 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     }
     ChannelPromise promise = listener == null ? streamChannel.voidPromise() :
       streamChannel.newPromise().addListener(listener);
-    if (end) {
+    if (end && !isServer) {
       promise.unvoid().addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);
     }
     streamChannel.write(new DefaultHttp3HeadersFrame(http3Headers), promise);
 
     if (checkFlush) {
       checkFlush();
+    }
+
+    if (end && isServer) {
+      streamChannel.close();
     }
   }
 
@@ -207,12 +211,16 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
       agentType, streamChannel.id(), streamChannel.streamId());
     ChannelPromise promise = listener == null ? streamChannel.voidPromise() :
       streamChannel.newPromise().addListener(listener);
-    if (end) {
+    if (end && !isServer) {
       promise.unvoid().addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);
     }
     streamChannel.write(new DefaultHttp3DataFrame(chunk), promise);
 
     checkFlush();
+
+    if (end && isServer) {
+      streamChannel.close();
+    }
   }
 
   private void checkFlush() {
@@ -309,14 +317,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
       logger.debug("{} - ChannelInputClosed called for channelId: {}, streamId: {}", agentType, ctx.channel().id(),
         ((QuicStreamChannel) ctx.channel()).streamId());
       VertxHttpStreamBase vertxStream = getVertxStreamFromStreamChannel(ctx);
-      if (vertxStream.isHeaderOnly() && !isServer) {
-        connection.onHeadersRead(ctx, vertxStream, new DefaultHttp3Headers(), true, (QuicStreamChannel) ctx.channel());
-      } else {
-        connection.onDataRead(ctx, vertxStream, Unpooled.buffer(), 0, true);
-      }
-      if (!isServer) {
-        connection.onStreamClosed(getVertxStreamFromStreamChannel(ctx));
-      }
+      vertxStream.onEnd();
     }
 
     @Override
