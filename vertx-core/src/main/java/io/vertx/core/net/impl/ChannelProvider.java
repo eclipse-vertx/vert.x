@@ -129,6 +129,7 @@ public final class ChannelProvider {
         sslOptions.getSslHandshakeTimeoutUnit());
       ChannelPipeline pipeline = ch.pipeline();
       pipeline.addLast(CLIENT_SSL_HANDLER_NAME, sslHandler);
+      pipeline.addLast(new ExceptionHandlingChannelHandler(channelHandler));
       if (version != HttpVersion.HTTP_3) {
         pipeline.addLast(new HttpSslHandshaker(context, handler, channelHandler, version, sslHandler,
           this::setApplicationProtocol));
@@ -149,7 +150,7 @@ public final class ChannelProvider {
     ChannelFuture fut = bootstrap.connect(vertx.transport().convert(remoteAddress));
     fut.addListener(res -> {
       if (!res.isSuccess()) {
-        channelHandler.setFailure(res.cause());
+        channelHandler.tryFailure(res.cause());
         return;
       }
       if (version != HttpVersion.HTTP_3) {
@@ -172,7 +173,7 @@ public final class ChannelProvider {
         .connect()
         .addListener((io.netty.util.concurrent.Future<QuicChannel> future) -> {
           if (!future.isSuccess()) {
-            channelHandler.setFailure(future.cause());
+            channelHandler.tryFailure(future.cause());
           }
         });
     });
@@ -251,7 +252,7 @@ public final class ChannelProvider {
 
               @Override
               public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-                channelHandler.setFailure(cause);
+                channelHandler.tryFailure(cause);
               }
             });
           }
@@ -260,11 +261,11 @@ public final class ChannelProvider {
 
         future.addListener(res -> {
           if (!res.isSuccess()) {
-            channelHandler.setFailure(res.cause());
+            channelHandler.tryFailure(res.cause());
           }
         });
       } else {
-        channelHandler.setFailure(dnsRes.cause());
+        channelHandler.tryFailure(dnsRes.cause());
       }
     });
   }
