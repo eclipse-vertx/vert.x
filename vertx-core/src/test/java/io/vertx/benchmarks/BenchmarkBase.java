@@ -29,9 +29,6 @@ import java.util.concurrent.TimeUnit;
 @Threads(1)
 @BenchmarkMode(Mode.Throughput)
 @Fork(value = 1, jvmArgs = {
-    "-XX:+UseBiasedLocking",
-    "-XX:BiasedLockingStartupDelay=0",
-    "-XX:+AggressiveOpts",
     "-Djmh.executor=CUSTOM",
     "-Djmh.executor.class=io.vertx.benchmarks.VertxExecutorService"
 })
