@@ -173,7 +173,6 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
   }
 
   void onData(Buffer data) {
-    headerOnly = false;
     bytesRead += data.length();
     conn.reportBytesRead(data.length());
     inboundQueue.write(data);
@@ -410,10 +409,6 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
   }
 
   void handlePriorityChange(StreamPriorityBase newPriority) {
-  }
-
-  public boolean isHeaderOnly() {
-    return headerOnly;
   }
 
 }
