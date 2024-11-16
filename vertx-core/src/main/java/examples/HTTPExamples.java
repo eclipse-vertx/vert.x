@@ -20,6 +20,7 @@ import io.vertx.core.file.FileSystem;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.*;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.NetServer;
 import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.ProxyOptions;
