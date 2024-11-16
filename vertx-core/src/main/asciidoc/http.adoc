@@ -1869,6 +1869,46 @@ Connection {@link io.vertx.core.http.HttpConnection#close} closes the connection
 
 The {@link io.vertx.core.http.HttpConnection#closeHandler} notifies when a connection is closed.
 
+=== Graceful shutdown
+
+HTTP server and client support graceful shutdown.
+
+You can shut down a {@link io.vertx.core.http.HttpServer#shutdown() server} or {@link io.vertx.core.http.HttpClient#shutdown() client}.
+
+Calling `shutdown` initiates the shut-down phase whereby the server or client are given the opportunity to perform clean-up actions.
+
+- A standalone HTTP server unbinds
+- A shared HTTP server is removed from the set of accepting servers
+- An HTTP client refuses to send any new requests
+
+When all connections inflight requests are processed, the server or client is then closed.
+
+In addition, HTTP/2 connections send a `GOAWAY` frame to signal the remote endpoint that the connection cannot be used anymore.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#serverShutdown}
+----
+
+Shut-down waits until all sockets are closed or the shut-down timeout fires. When the timeout fires, all sockets are
+forcibly closed.
+
+Each opened HTTP connections is notified with a shutdown event, allowing to perform cleanup before the
+actual connection is closed.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#shutdownHandler}
+----
+
+The default shut-down timeout is 30 seconds, you can override the timeout
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#serverShutdownWithAmountOfTime}
+----
+
+
 === Client sharing
 
 You can share an HTTP client between multiple verticles or instances of the same verticle. Such client should be created outside
