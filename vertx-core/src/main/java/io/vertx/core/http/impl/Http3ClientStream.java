@@ -18,6 +18,8 @@ import io.vertx.core.tracing.TracingPolicy;
 class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStreamChannel> {
   private static final MultiMap EMPTY = new Http3HeadersAdaptor(new DefaultHttp3Headers());
 
+  private int headerReceivedCount = 0;
+
   Http3ClientStream(Http3ClientConnection conn, ContextInternal context, boolean push) {
     super(conn, context, push);
   }
@@ -127,8 +129,14 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
   }
 
   @Override
+  void onHeaders(VertxHttpHeaders headers, StreamPriorityBase streamPriority) {
+    super.onHeaders(headers, streamPriority);
+    headerReceivedCount++;
+  }
+
+  @Override
   public boolean isTrailersReceived() {
-    return false;  //TODO: review
+    return headerReceivedCount > 0;
   }
 
   @Override
