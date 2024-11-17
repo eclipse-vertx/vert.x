@@ -185,11 +185,13 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     streamChannel.updatePriority(new QuicStreamPriority(priority.urgency(), priority.isIncremental()));
     Http3Headers http3Headers = headers.getHeaders();
 
+/*
     if (isServer) {
       http3Headers.set(HttpHeaderNames.USER_AGENT, "Vertx Http3Server");
     } else {
       http3Headers.set(HttpHeaderNames.USER_AGENT, "Vertx Http3Client");
     }
+*/
     ChannelPromise promise = listener == null ? streamChannel.voidPromise() :
       streamChannel.newPromise().addListener(listener);
     if (end && !isServer) {
