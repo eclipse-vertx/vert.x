@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package examples;
+package examples.h3devexamples;
 
 import io.netty.handler.ssl.util.SelfSignedCertificate;
 import io.netty.incubator.codec.http3.Http3;
@@ -26,8 +26,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
  */
-public class HTTP3ServerExamples {
-  public void example02Server(Vertx vertx) throws Exception {
+public class HTTP3ServerExamplesAsyncTestCase {
+  public void example03ServerAsync(Vertx vertx) throws Exception {
 
     HttpServerOptions options = new HttpServerOptions();
 
@@ -44,7 +44,6 @@ public class HTTP3ServerExamples {
     ));
 
     options
-      .setPort(8090)
       .setIdleTimeout(1)
       .setReadIdleTimeout(1)
       .setWriteIdleTimeout(1)
@@ -65,18 +64,16 @@ public class HTTP3ServerExamples {
       .setKeyPath(ssc.privateKey().getAbsolutePath())
     );
 
+
     HttpServer server = vertx.createHttpServer(options);
 
+
     server.requestHandler(request -> {
-      System.out.println("A request received from " + request.remoteAddress());
-      request
-        .body()
-        .onSuccess(body -> {
-          System.out.println("body = " + body.toString());
-          request.response().end("!Hello World! for -> " + body);
-        })
-        .onFailure(Throwable::printStackTrace);
+      runAsync(() -> {
+        request.response().end();
+      });
     });
+
 
     server.connectionHandler(connection -> {
       System.out.println("A client connected");
@@ -84,7 +81,25 @@ public class HTTP3ServerExamples {
 
     server.exceptionHandler(Throwable::printStackTrace);
 
-    server.listen();
+    int port = 8090;
+    server.listen(port)
+      .onComplete(ar -> {
+        if (ar.succeeded()) {
+          System.out.println("HTTP/3 server is now listening on port: " + port);
+        } else {
+          ar.cause().printStackTrace();
+        }
+      });
+  }
+
+  void runAsync(Runnable runnable) {
+    new Thread(() -> {
+      try {
+        runnable.run();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }).start();
   }
 
   public static void main(String[] args) throws Exception {
@@ -92,6 +107,6 @@ public class HTTP3ServerExamples {
       .setBlockedThreadCheckInterval(1_000_000_000);
 
     Vertx vertx = Vertx.vertx(options);
-    new HTTP3ServerExamples().example02Server(vertx);
+    new HTTP3ServerExamplesAsyncTestCase().example03ServerAsync(vertx);
   }
 }

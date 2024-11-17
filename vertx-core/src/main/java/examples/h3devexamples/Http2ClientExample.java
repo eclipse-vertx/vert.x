@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package examples;
+package examples.h3devexamples;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
@@ -19,31 +19,17 @@ import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 
-import java.util.concurrent.TimeUnit;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
- */
-public class HTTP3ClientExamples {
-  public void example02Local(Vertx vertx) {
+public class Http2ClientExample {
+  public void example7Client(Vertx vertx) {
+    HttpClientOptions options = new HttpClientOptions();
+    options.setSsl(true);
+    options.setUseAlpn(true);
+    options.setTrustAll(true);
+    options.setAlpnVersions(List.of(HttpVersion.HTTP_2));
 
-    HttpClientOptions options = new HttpClientOptions().
-      setSsl(true).
-      setIdleTimeout(1).
-      setReadIdleTimeout(1).
-      setWriteIdleTimeout(1).
-      setIdleTimeoutUnit(TimeUnit.HOURS).
-      setUseAlpn(true).
-      setForceSni(true).
-      setVerifyHost(false).
-      setTrustAll(true).
-      setProtocolVersion(HttpVersion.HTTP_3);
-
-    options
-      .getSslOptions()
-      .setSslHandshakeTimeout(1)
-      .setSslHandshakeTimeoutUnit(TimeUnit.HOURS);
     HttpClient client = vertx.createHttpClient(options);
 
     String path = "/";
@@ -80,6 +66,6 @@ public class HTTP3ClientExamples {
   public static void main(String[] args) {
     Vertx vertx =
       Vertx.vertx(new VertxOptions().setBlockedThreadCheckInterval(1_000_000_000));
-    new HTTP3ClientExamples().example02Local(vertx);
+    new Http2ClientExample().example7Client(vertx);
   }
 }

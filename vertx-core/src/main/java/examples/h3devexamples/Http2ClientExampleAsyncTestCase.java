@@ -9,20 +9,19 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package examples;
+package examples.h3devexamples;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class Http2ClientExample {
+public class Http2ClientExampleAsyncTestCase {
   public void example7Client(Vertx vertx) {
     HttpClientOptions options = new HttpClientOptions();
     options.setSsl(true);
@@ -38,19 +37,26 @@ public class Http2ClientExample {
 
     AtomicInteger requests = new AtomicInteger();
 
-    int n = 5;
+    int n = 1;
 
-    for (int i = 0; i < n; i++) {
-      int counter = i + 1;
-      client.request(HttpMethod.GET, port, host, path)
-        .compose(req -> req.send("Msg " + counter))
-        .compose(HttpClientResponse::body)
-        .onSuccess(body -> System.out.println(
-          "Msg" + counter + " response body is: " + body))
-        .onComplete(event -> requests.incrementAndGet())
-        .onFailure(Throwable::printStackTrace)
-      ;
-    }
+
+    client.request(HttpMethod.GET, port, host, path)
+      .compose(req -> {
+        System.out.println("sending request ...");
+        return req.send();
+      })
+      .compose(resp -> {
+          System.out.println("receiving resp ...");
+          assert 200 == resp.statusCode();
+          return resp.end();
+        }
+      )
+      .onSuccess(event -> {
+        System.out.println("testComplete() called! ");
+      })
+      .onComplete(event -> requests.incrementAndGet())
+      .onFailure(Throwable::printStackTrace)
+    ;
 
     while (requests.get() != n) {
       try {
@@ -66,6 +72,6 @@ public class Http2ClientExample {
   public static void main(String[] args) {
     Vertx vertx =
       Vertx.vertx(new VertxOptions().setBlockedThreadCheckInterval(1_000_000_000));
-    new Http2ClientExample().example7Client(vertx);
+    new Http2ClientExampleAsyncTestCase().example7Client(vertx);
   }
 }

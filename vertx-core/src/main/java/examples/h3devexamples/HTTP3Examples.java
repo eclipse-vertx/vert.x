@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package examples;
+package examples.h3devexamples;
 
 import io.netty.handler.ssl.util.SelfSignedCertificate;
 import io.netty.incubator.codec.http3.Http3;

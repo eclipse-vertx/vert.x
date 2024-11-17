@@ -9,64 +9,64 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package examples;
+package examples.h3devexamples;
 
 import io.netty.handler.ssl.util.SelfSignedCertificate;
-import io.netty.incubator.codec.http3.Http3;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.net.JdkSSLEngineOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 
+import java.security.cert.CertificateException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-/**
- * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
- */
-public class HTTP3ServerExamplesAsyncTestCase {
-  public void example03ServerAsync(Vertx vertx) throws Exception {
+public class Http2ServerExampleAsyncTestCase {
 
-    HttpServerOptions options = new HttpServerOptions();
+  public void example7Server(Vertx vertx) {
+    SelfSignedCertificate ssc = null;
+    try {
+      ssc = new SelfSignedCertificate();
+    } catch (CertificateException e) {
+      throw new RuntimeException(e);
+    }
 
-    options.setAlpnVersions(List.of(
-      HttpVersion.HTTP_3,
-      HttpVersion.HTTP_3_27,
-      HttpVersion.HTTP_3_29,
-      HttpVersion.HTTP_3_30,
-      HttpVersion.HTTP_3_31,
-      HttpVersion.HTTP_3_32,
-      HttpVersion.HTTP_2,
-      HttpVersion.HTTP_1_1,
-      HttpVersion.HTTP_1_0
-    ));
+    // Get the paths for the certificate and private key
+    String certPath = ssc.certificate().getAbsolutePath();
+    String keyPath = ssc.privateKey().getAbsolutePath();
 
-    options
-      .setIdleTimeout(1)
-      .setReadIdleTimeout(1)
-      .setWriteIdleTimeout(1)
-      .setIdleTimeoutUnit(TimeUnit.HOURS)
-      .setHttp3(true)
+//    JksOptions jksOptions = new JksOptions().setPath("tls/server-keystore" +
+//      ".jks").setPassword("wibble");
+
+    HttpServerOptions options = new HttpServerOptions()
+      .setPort(8090)
+      .setHost("localhost")
+      .setSslEngineOptions(new JdkSSLEngineOptions())
       .setUseAlpn(true)
+      .setAlpnVersions(List.of(HttpVersion.HTTP_2))
       .setSsl(true)
-      .getSslOptions()
-      .setApplicationLayerProtocols(
-        List.of(Http3.supportedApplicationProtocols())
-      ).setSslHandshakeTimeout(1)
+      .setSslHandshakeTimeout(1)
       .setSslHandshakeTimeoutUnit(TimeUnit.HOURS)
-    ;
 
-    SelfSignedCertificate ssc = new SelfSignedCertificate();
+//      .addEnabledCipherSuite("TLS_RSA_WITH_AES_128_CBC_SHA")
+//      .setKeyCertOptions(jksOptions)
+      ;
+
+
+//    HttpServerOptions options = new HttpServerOptions();
+//    options.setSsl(true);
+//    options.setUseAlpn(true);
+//    options.setAlpnVersions(List.of(HttpVersion.HTTP_2));
+
     options.setKeyCertOptions(new PemKeyCertOptions()
-      .setCertPath(ssc.certificate().getAbsolutePath())
-      .setKeyPath(ssc.privateKey().getAbsolutePath())
+      .setCertPath(certPath)
+      .setKeyPath(keyPath)
     );
 
-
     HttpServer server = vertx.createHttpServer(options);
-
 
     server.requestHandler(request -> {
       runAsync(() -> {
@@ -74,22 +74,13 @@ public class HTTP3ServerExamplesAsyncTestCase {
       });
     });
 
-
     server.connectionHandler(connection -> {
       System.out.println("A client connected");
     });
 
     server.exceptionHandler(Throwable::printStackTrace);
 
-    int port = 8090;
-    server.listen(port)
-      .onComplete(ar -> {
-        if (ar.succeeded()) {
-          System.out.println("HTTP/3 server is now listening on port: " + port);
-        } else {
-          ar.cause().printStackTrace();
-        }
-      });
+    server.listen();
   }
 
   void runAsync(Runnable runnable) {
@@ -101,12 +92,11 @@ public class HTTP3ServerExamplesAsyncTestCase {
       }
     }).start();
   }
-
   public static void main(String[] args) throws Exception {
     VertxOptions options = new VertxOptions()
       .setBlockedThreadCheckInterval(1_000_000_000);
 
     Vertx vertx = Vertx.vertx(options);
-    new HTTP3ServerExamplesAsyncTestCase().example03ServerAsync(vertx);
+    new Http2ServerExampleAsyncTestCase().example7Server(vertx);
   }
 }
