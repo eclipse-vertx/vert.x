@@ -43,9 +43,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 /**
- *
- * This class is thread-safe
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */

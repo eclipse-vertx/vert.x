@@ -29,8 +29,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
- * This class is thread-safe.
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HttpClientBase implements MetricsProvider, Closeable {

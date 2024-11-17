@@ -50,7 +50,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Base class for TCP servers
+ * Vert.x TCP server
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>

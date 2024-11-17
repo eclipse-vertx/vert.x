@@ -30,8 +30,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
- * This class is thread-safe
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HttpServerImpl implements HttpServer, MetricsProvider {
