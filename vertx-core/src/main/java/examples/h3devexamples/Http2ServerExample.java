@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package examples;
+package examples.h3devexamples;
 
 import io.netty.handler.ssl.util.SelfSignedCertificate;
 import io.vertx.core.Vertx;
@@ -24,7 +24,7 @@ import java.security.cert.CertificateException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-public class Http2ServerExampleAsyncTestCase {
+public class Http2ServerExample {
 
   public void example7Server(Vertx vertx) {
     SelfSignedCertificate ssc = null;
@@ -69,9 +69,14 @@ public class Http2ServerExampleAsyncTestCase {
     HttpServer server = vertx.createHttpServer(options);
 
     server.requestHandler(request -> {
-      runAsync(() -> {
-        request.response().end();
-      });
+      System.out.println("A request received from " + request.remoteAddress().host());
+      request
+        .body()
+        .onSuccess(body -> {
+          System.out.println("body = " + body.toString());
+          request.response().end("!Hello World! for -> " + body);
+        })
+        .onFailure(Throwable::printStackTrace);
     });
 
     server.connectionHandler(connection -> {
@@ -83,20 +88,11 @@ public class Http2ServerExampleAsyncTestCase {
     server.listen();
   }
 
-  void runAsync(Runnable runnable) {
-    new Thread(() -> {
-      try {
-        runnable.run();
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
-    }).start();
-  }
   public static void main(String[] args) throws Exception {
     VertxOptions options = new VertxOptions()
       .setBlockedThreadCheckInterval(1_000_000_000);
 
     Vertx vertx = Vertx.vertx(options);
-    new Http2ServerExampleAsyncTestCase().example7Server(vertx);
+    new Http2ServerExample().example7Server(vertx);
   }
 }

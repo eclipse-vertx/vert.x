@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package examples;
+package examples.h3devexamples;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
@@ -18,17 +18,31 @@ import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 
-import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class Http2ClientExampleAsyncTestCase {
-  public void example7Client(Vertx vertx) {
-    HttpClientOptions options = new HttpClientOptions();
-    options.setSsl(true);
-    options.setUseAlpn(true);
-    options.setTrustAll(true);
-    options.setAlpnVersions(List.of(HttpVersion.HTTP_2));
+/**
+ * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
+ */
+public class HTTP3ClientExamplesAsyncTestCase {
+  public void example03Local(Vertx vertx) {
 
+    HttpClientOptions options = new HttpClientOptions().
+      setSsl(true).
+      setIdleTimeout(1).
+      setReadIdleTimeout(1).
+      setWriteIdleTimeout(1).
+      setIdleTimeoutUnit(TimeUnit.HOURS).
+      setUseAlpn(true).
+      setForceSni(true).
+      setVerifyHost(false).
+      setTrustAll(true).
+      setProtocolVersion(HttpVersion.HTTP_3);
+
+    options
+      .getSslOptions()
+      .setSslHandshakeTimeout(1)
+      .setSslHandshakeTimeoutUnit(TimeUnit.HOURS);
     HttpClient client = vertx.createHttpClient(options);
 
     String path = "/";
@@ -39,14 +53,13 @@ public class Http2ClientExampleAsyncTestCase {
 
     int n = 1;
 
-
-    client.request(HttpMethod.GET, port, host, path)
+      client.request(HttpMethod.GET, port, host, path)
       .compose(req -> {
         System.out.println("sending request ...");
         return req.send();
       })
       .compose(resp -> {
-          System.out.println("receiving resp ...");
+        System.out.println("receiving resp ...");
           assert 200 == resp.statusCode();
           return resp.end();
         }
@@ -72,6 +85,6 @@ public class Http2ClientExampleAsyncTestCase {
   public static void main(String[] args) {
     Vertx vertx =
       Vertx.vertx(new VertxOptions().setBlockedThreadCheckInterval(1_000_000_000));
-    new Http2ClientExampleAsyncTestCase().example7Client(vertx);
+    new HTTP3ClientExamplesAsyncTestCase().example03Local(vertx);
   }
 }
