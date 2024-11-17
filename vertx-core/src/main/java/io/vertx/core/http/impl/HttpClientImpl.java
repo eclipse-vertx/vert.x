@@ -40,8 +40,6 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 
 /**
- * This class is thread-safe.
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HttpClientImpl extends HttpClientBase implements HttpClientInternal, MetricsProvider {

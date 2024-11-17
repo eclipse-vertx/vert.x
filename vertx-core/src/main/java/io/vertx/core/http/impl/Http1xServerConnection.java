@@ -55,8 +55,6 @@ import static io.netty.handler.codec.http.HttpVersion.*;
 import static io.vertx.core.spi.metrics.Metrics.*;
 
 /**
- *
- * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
  * </p>
  * The connection maintains two fields for tracking requests:
  * <ul>
