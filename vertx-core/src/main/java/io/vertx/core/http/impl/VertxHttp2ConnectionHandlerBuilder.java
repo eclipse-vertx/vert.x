@@ -16,7 +16,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.compression.CompressionOptions;
 import io.netty.handler.codec.http2.*;
 import io.netty.handler.logging.LogLevel;
-import io.vertx.core.http.HttpSettings;
 
 import java.util.function.Function;
 
@@ -151,12 +150,12 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
         encoder = new VertxCompressorHttp2ConnectionEncoder(encoder, compressionOptions);
       }
       VertxHttp2ConnectionHandler<C> handler = new VertxHttp2ConnectionHandler<>(connectionFactory, useDecompression,
-        decoder, encoder, new HttpSettings(initialSettings));
+        decoder, encoder, initialSettings);
       decoder.frameListener(handler);
       return handler;
     } else {
       VertxHttp2ConnectionHandler<C> handler = new VertxHttp2ConnectionHandler<>(connectionFactory, useDecompression,
-        decoder, encoder, new HttpSettings(initialSettings));
+        decoder, encoder, initialSettings);
       decoder.frameListener(handler);
       return handler;
     }

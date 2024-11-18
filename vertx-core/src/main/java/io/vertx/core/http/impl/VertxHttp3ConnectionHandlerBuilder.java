@@ -11,7 +11,7 @@
 
 package io.vertx.core.http.impl;
 
-import io.vertx.core.http.HttpSettings;
+import io.netty.incubator.codec.http3.Http3SettingsFrame;
 import io.vertx.core.internal.ContextInternal;
 
 import java.util.function.Function;
@@ -19,7 +19,7 @@ import java.util.function.Function;
 class VertxHttp3ConnectionHandlerBuilder<C extends Http3ConnectionBase> {
 
   private Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory;
-  private HttpSettings httpSettings;
+  private Http3SettingsFrame httpSettings;
   private boolean isServer;
   private long initialMaxStreamsBidirectional;
 
@@ -39,7 +39,7 @@ class VertxHttp3ConnectionHandlerBuilder<C extends Http3ConnectionBase> {
     return this;
   }
 
-  public VertxHttp3ConnectionHandlerBuilder<C> httpSettings(HttpSettings httpSettings) {
+  public VertxHttp3ConnectionHandlerBuilder<C> httpSettings(Http3SettingsFrame httpSettings) {
     this.httpSettings = httpSettings;
     return this;
   }

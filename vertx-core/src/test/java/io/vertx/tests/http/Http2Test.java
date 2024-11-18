@@ -70,7 +70,7 @@ public class Http2Test extends HttpCommonTest {
     });
     server.connectionHandler(conn -> {
       vertx.setTimer(500, id -> {
-        conn.updateSettings(new Http2Settings().setMaxConcurrentStreams(10));
+        conn.updateHttpSettings(new Http2Settings().setMaxConcurrentStreams(10));
       });
     });
     startServer(testAddress);
@@ -78,9 +78,9 @@ public class Http2Test extends HttpCommonTest {
     client = vertx.httpClientBuilder()
       .with(createBaseClientOptions())
       .withConnectHandler(conn -> {
-        assertEquals(0, conn.remoteSettings().getMaxConcurrentStreams());
-        conn.remoteSettingsHandler(settings -> {
-          assertEquals(10, conn.remoteSettings().getMaxConcurrentStreams());
+        assertEquals(0, ((Http2Settings) conn.remoteHttpSettings()).getMaxConcurrentStreams());
+        conn.remoteHttpSettingsHandler(settings -> {
+          assertEquals(10, ((Http2Settings) conn.remoteHttpSettings()).getMaxConcurrentStreams());
           complete();
         });
       })
@@ -103,7 +103,8 @@ public class Http2Test extends HttpCommonTest {
     client.request(new RequestOptions(requestOptions).setTimeout(10000))
       .compose(HttpClientRequest::send)
       .onComplete(onSuccess(resp -> {
-        assertEquals(Integer.MAX_VALUE, resp.request().connection().remoteSettings().getMaxHeaderListSize());
+        assertEquals(Integer.MAX_VALUE,
+          ((Http2Settings) resp.request().connection().remoteHttpSettings()).getMaxHeaderListSize());
         testComplete();
       }));
     await();
