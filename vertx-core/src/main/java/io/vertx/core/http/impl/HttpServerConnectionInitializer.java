@@ -206,7 +206,7 @@ class HttpServerConnectionInitializer {
 //      .gracefulShutdownTimeoutMillis(0)
 //      .decoderEnforceMaxRstFramesPerWindow(maxRstFramesPerWindow, secondsPerWindow)
 //      .useDecompression(options.isDecompressionSupported())
-      .httpSettings(new HttpSettings(options.getInitialHttp3Settings()) )
+      .httpSettings(HttpUtils.fromVertxSettings(options.getInitialHttp3Settings()))
       .connectionFactory(connHandler -> {
         Http3ServerConnection conn = new Http3ServerConnection(ctx, streamContextSupplier, serverOrigin, connHandler,
           encodingDetector, options, metrics);

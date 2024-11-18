@@ -57,7 +57,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   private boolean settingsRead;
   private Handler<C> addHandler;
   private Handler<C> removeHandler;
-  private final HttpSettings httpSettings;
+  private final Http3SettingsFrame httpSettings;
   private final boolean isServer;
   private final String agentType;
 
@@ -68,7 +68,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   public VertxHttp3ConnectionHandler(
     Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory,
     ContextInternal context,
-    HttpSettings httpSettings,
+    Http3SettingsFrame httpSettings,
     boolean isServer,
     long initialMaxStreamsBidirectional) {
     this.connectionFactory = connectionFactory;
@@ -89,7 +89,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     return chctx;
   }
 
-  private void onSettingsRead(ChannelHandlerContext ctx, HttpSettings settings) {
+  private void onSettingsRead(ChannelHandlerContext ctx, Http3SettingsFrame settings) {
     this.connection.onSettingsRead(ctx, settings);
     this.settingsRead = true;
 
@@ -250,8 +250,8 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
 
       if (msg instanceof DefaultHttp3SettingsFrame) {
         DefaultHttp3SettingsFrame http3SettingsFrame = (DefaultHttp3SettingsFrame) msg;
-        onSettingsRead(ctx, new HttpSettings(http3SettingsFrame));
-        VertxHttp3ConnectionHandler.this.connection.updateHttpSettings(new HttpSettings(http3SettingsFrame));
+        onSettingsRead(ctx, http3SettingsFrame);
+        VertxHttp3ConnectionHandler.this.connection.updateHttpSettings(HttpUtils.toVertxSettings(http3SettingsFrame));
 //          Thread.sleep(70000);
         if (!isServer) {
           ctx.close();
@@ -415,7 +415,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     }
   }
 
-  public HttpSettings initialSettings() {
+  public Http3SettingsFrame initialSettings() {
     return httpSettings;
   }
 

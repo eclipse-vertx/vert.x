@@ -33,7 +33,7 @@ import java.util.Set;
  */
 @DataObject
 @JsonGen(publicConverter = false)
-public class Http3Settings {
+public class Http3Settings extends HttpSettings {
 
   public final static Set<Long> VALID_H3_SETTINGS_KEYS = Set.of(
     Http3SettingsFrame.HTTP3_SETTINGS_QPACK_MAX_TABLE_CAPACITY,

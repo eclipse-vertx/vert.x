@@ -22,6 +22,7 @@ import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.incubator.codec.http3.Http3Headers;
+import io.netty.incubator.codec.http3.Http3SettingsFrame;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.netty.util.collection.LongObjectHashMap;
 import io.netty.util.collection.LongObjectMap;
@@ -71,8 +72,8 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
   private Handler<HttpSettings> remoteSettingsHandler;
   private final ArrayDeque<Handler<Void>> updateSettingsHandlers = new ArrayDeque<>();
   private final ArrayDeque<Promise<Buffer>> pongHandlers = new ArrayDeque<>();
-  private HttpSettings localSettings;
-  private HttpSettings remoteSettings;
+  private Http3SettingsFrame localSettings;
+  private Http3SettingsFrame remoteSettings;
   private Handler<GoAway> goAwayHandler;
   private Handler<Void> shutdownHandler;
   private Handler<Buffer> pingHandler;
@@ -217,7 +218,7 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
   }
 
   //  @Override
-  public void onSettingsRead(ChannelHandlerContext ctx, HttpSettings settings) {
+  public void onSettingsRead(ChannelHandlerContext ctx, Http3SettingsFrame settings) {
     boolean changed;
     Handler<HttpSettings> handler;
     synchronized (this) {
@@ -237,7 +238,7 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
       handler = remoteSettingsHandler;
     }
     if (handler != null) {
-      context.dispatch(settings, handler);
+      context.dispatch(HttpUtils.toVertxSettings(settings), handler);
     }
     if (changed) {
       concurrencyChanged(maxConcurrentStreams);
@@ -417,8 +418,8 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
   }
 
   @Override
-  public HttpSettings remoteHttpSettings() {
-    return remoteSettings;
+  public Http3Settings remoteHttpSettings() {
+    return HttpUtils.toVertxSettings(remoteSettings);
   }
 
   @Override
@@ -428,8 +429,8 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
   }
 
   @Override
-  public HttpSettings httpSettings() {
-    return localSettings;
+  public Http3Settings httpSettings() {
+    return HttpUtils.toVertxSettings(localSettings);
   }
 //  @Override
 //  public Future<Void> updateSettings(Http2Settings settings) {

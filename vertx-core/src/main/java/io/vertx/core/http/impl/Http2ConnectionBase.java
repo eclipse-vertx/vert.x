@@ -67,11 +67,11 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   protected final VertxHttp2ConnectionHandler handler;
   protected final Http2Connection.PropertyKey streamKey;
   private boolean shutdown;
-  private Handler<HttpSettings> remoteSettingsHandler;
+  private Handler<Http2Settings> remoteSettingsHandler;
   private final ArrayDeque<Handler<Void>> updateSettingsHandlers = new ArrayDeque<>();
   private final ArrayDeque<Promise<Buffer>> pongHandlers = new ArrayDeque<>();
-  private HttpSettings localSettings;
-  private HttpSettings remoteSettings;
+  private Http2Settings localSettings;
+  private Http2Settings remoteSettings;
   private Handler<GoAway> goAwayHandler;
   private Handler<Void> shutdownHandler;
   private Handler<Buffer> pingHandler;
@@ -235,7 +235,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   @Override
   public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) {
     boolean changed;
-    Handler<HttpSettings> handler;
+    Handler<Http2Settings> handler;
     synchronized (this) {
       Long val = settings.maxConcurrentStreams();
       if (val != null) {
@@ -248,11 +248,11 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
       } else {
         changed = false;
       }
-      remoteSettings = new HttpSettings(settings);
+      remoteSettings = settings;
       handler = remoteSettingsHandler;
     }
     if (handler != null) {
-      context.dispatch(new HttpSettings(settings), handler);
+      context.dispatch(settings, handler);
     }
     if (changed) {
       concurrencyChanged(maxConcurrentStreams);
@@ -404,26 +404,26 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   public HttpConnection remoteHttpSettingsHandler(Handler<HttpSettings> handler) {
-    this.remoteSettingsHandler = handler;
+    this.remoteSettingsHandler = http2Settings -> handler.handle(HttpUtils.toVertxSettings(http2Settings));
     return this;
   }
 
   @Override
-  public HttpSettings remoteHttpSettings() {
-    return remoteSettings;
+  public io.vertx.core.http.Http2Settings remoteHttpSettings() {
+    return HttpUtils.toVertxSettings(remoteSettings);
   }
 
   @Override
-  public HttpSettings httpSettings() {
-    return new HttpSettings(localSettings);
+  public io.vertx.core.http.Http2Settings httpSettings() {
+    return HttpUtils.toVertxSettings(localSettings);
   }
 
   @Override
   public Future<Void> updateHttpSettings(HttpSettings settings) {
-    return updateSettings(settings);
+    return updateSettings(HttpUtils.fromVertxSettings((io.vertx.core.http.Http2Settings) settings));
   }
 
-  protected Future<Void> updateSettings(HttpSettings settingsUpdate) {
+  protected Future<Void> updateSettings(Http2Settings settingsUpdate) {
     Http2Settings current = handler.decoder().localSettings();
     for (Map.Entry<Character, Long> entry : current.entrySet()) {
       Character key = entry.getKey();

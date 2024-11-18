@@ -31,7 +31,7 @@ import java.util.Map;
  */
 @DataObject
 @JsonGen(publicConverter = false)
-public class Http2Settings {
+public class Http2Settings extends HttpSettings {
 
   /**
    * Default HTTP/2 spec value for {@link #getHeaderTableSize} : {@code 4096}

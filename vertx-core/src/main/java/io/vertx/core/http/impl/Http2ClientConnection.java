@@ -72,7 +72,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   public long concurrency() {
-    long concurrency = remoteSettings().getMaxConcurrentStreams();
+    long concurrency = remoteHttpSettings().getMaxConcurrentStreams();
     long http2MaxConcurrency = client.options().getHttp2MultiplexingLimit() <= 0 ? Long.MAX_VALUE : client.options().getHttp2MultiplexingLimit();
     if (http2MaxConcurrency > 0) {
       concurrency = Math.min(concurrency, http2MaxConcurrency);

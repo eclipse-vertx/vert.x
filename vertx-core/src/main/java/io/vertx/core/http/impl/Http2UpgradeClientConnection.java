@@ -12,7 +12,6 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufHolder;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
@@ -62,7 +61,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
   private Handler<Buffer> pingHandler;
   private Handler<Void> evictionHandler;
   private Handler<Long> concurrencyChangeHandler;
-  private Handler<Http2Settings> remoteSettingsHandler;
+  private Handler<HttpSettings> remoteHttpSettingsHandler;
 
   Http2UpgradeClientConnection(HttpClientBase client, Http1xClientConnection connection) {
     this.client = client;
@@ -414,7 +413,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
               conn.pingHandler(upgradedConnection.pingHandler);
               conn.goAwayHandler(upgradedConnection.goAwayHandler);
               conn.shutdownHandler(upgradedConnection.shutdownHandler);
-              conn.remoteSettingsHandler(upgradedConnection.remoteSettingsHandler);
+              conn.remoteHttpSettingsHandler(upgradedConnection.remoteHttpSettingsHandler);
               conn.evictionHandler(upgradedConnection.evictionHandler);
               conn.concurrencyChangeHandler(upgradedConnection.concurrencyChangeHandler);
               Handler<Long> concurrencyChangeHandler = upgradedConnection.concurrencyChangeHandler;
@@ -423,7 +422,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
               upgradedConnection.pingHandler = null;
               upgradedConnection.goAwayHandler = null;
               upgradedConnection.shutdownHandler = null;
-              upgradedConnection.remoteSettingsHandler = null;
+              upgradedConnection.remoteHttpSettingsHandler = null;
               upgradedConnection.evictionHandler = null;
               upgradedConnection.concurrencyChangeHandler = null;
               concurrencyChangeHandler.handle(conn.concurrency());
@@ -807,7 +806,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
   @Override
   public HttpConnection remoteHttpSettingsHandler(Handler<HttpSettings> handler) {
     if (current instanceof Http1xClientConnection) {
-      remoteSettingsHandler = settings -> handler.handle(new HttpSettings(settings));
+      remoteHttpSettingsHandler = handler;
     } else {
       current.remoteHttpSettingsHandler(handler);
     }
@@ -891,8 +890,8 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
   }
 
   @Override
-  public HttpSettings httpSettings() {
-    return current.httpSettings();
+  public Http2Settings httpSettings() {
+    return (Http2Settings) current.httpSettings();
   }
 
   @Override

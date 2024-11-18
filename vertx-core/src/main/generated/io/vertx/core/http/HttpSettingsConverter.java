@@ -14,10 +14,6 @@ public class HttpSettingsConverter {
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, HttpSettings obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
-        case "http2Settings":
-          break;
-        case "http3Settings":
-          break;
       }
     }
   }
@@ -27,11 +23,5 @@ public class HttpSettingsConverter {
   }
 
    static void toJson(HttpSettings obj, java.util.Map<String, Object> json) {
-    if (obj.getHttp2Settings() != null) {
-      json.put("http2Settings", obj.getHttp2Settings().toJson());
-    }
-    if (obj.getHttp3Settings() != null) {
-      json.put("http3Settings", obj.getHttp3Settings().toJson());
-    }
   }
 }

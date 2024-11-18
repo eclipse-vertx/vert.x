@@ -238,7 +238,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     });
   }
 
-  protected io.vertx.core.Future<Void> updateSettings(HttpSettings settingsUpdate) {
+  protected io.vertx.core.Future<Void> updateSettings(Http2Settings settingsUpdate) {
     settingsUpdate.remove(Http2CodecUtil.SETTINGS_ENABLE_PUSH);
     return super.updateSettings(settingsUpdate);
   }

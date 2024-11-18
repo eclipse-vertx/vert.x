@@ -163,8 +163,9 @@ public interface HttpConnection {
   /**
    * @return the latest server settings acknowledged by the remote endpoint - this is not implemented for HTTP/1.x
    */
+  @Deprecated
   default Http2Settings settings() {
-    return httpSettings().getHttp2Settings();
+    return (Http2Settings) httpSettings();
   }
 
   /**
@@ -182,8 +183,9 @@ public interface HttpConnection {
    * @param settings the new settings
    * @return a future completed when the settings have been acknowledged by the remote endpoint
    */
+  @Deprecated
   default Future<Void> updateSettings(Http2Settings settings) {
-    return updateHttpSettings(new HttpSettings(settings));
+    return updateHttpSettings(settings);
   }
 
   /**
@@ -200,8 +202,9 @@ public interface HttpConnection {
   /**
    * @return the current remote endpoint settings for this connection - this is not implemented for HTTP/1.x
    */
+  @Deprecated
   default Http2Settings remoteSettings() {
-    return remoteHttpSettings().getHttp2Settings();
+    return (Http2Settings) remoteHttpSettings();
   }
 
   /**
@@ -217,9 +220,10 @@ public interface HttpConnection {
    * @param handler the handler for remote endpoint settings
    * @return a reference to this, so the API can be used fluently
    */
+  @Deprecated
   @Fluent
   default HttpConnection remoteSettingsHandler(Handler<Http2Settings> handler) {
-    return remoteHttpSettingsHandler(result -> handler.handle(result.getHttp2Settings()));
+    return remoteHttpSettingsHandler(result -> handler.handle((Http2Settings) result));
   }
 
   /**
