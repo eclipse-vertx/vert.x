@@ -58,7 +58,6 @@ public class Http2Test extends HttpCommonTest {
     return options.setInitialSettings(new Http2Settings().setMaxConcurrentStreams(maxConcurrentStreams));
   }
 
-  @Ignore //TODO: remove "ignore"
   @Test
   public void testInitialMaxConcurrentStreamZero() throws Exception {
     waitFor(2);
@@ -91,7 +90,6 @@ public class Http2Test extends HttpCommonTest {
     await();
   }
 
-  @Ignore //TODO: remove "ignore"
   @Test
   public void testMaxHaderListSize() throws Exception {
     server.close();
