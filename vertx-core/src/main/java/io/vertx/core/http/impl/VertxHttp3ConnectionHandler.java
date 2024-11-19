@@ -406,9 +406,9 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   public Http3ConnectionHandler getHttp3ConnectionHandler() {
     if (isServer) {
       return new Http3ServerConnectionHandler(new StreamChannelInitializer(), new ControlStreamChannelHandler(), null
-        , null, false);
+        , httpSettings, false);
     }
-    return new Http3ClientConnectionHandler(new ControlStreamChannelHandler(), null, null, null, false);
+    return new Http3ClientConnectionHandler(new ControlStreamChannelHandler(), null, null, httpSettings, false);
   }
 
   private void _writePriority(QuicStreamChannel streamChannel, int urgency, boolean incremental) {
