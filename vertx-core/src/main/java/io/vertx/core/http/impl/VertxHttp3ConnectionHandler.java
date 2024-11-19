@@ -18,7 +18,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPromise;
-import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.incubator.codec.http3.*;
 import io.netty.incubator.codec.quic.*;
@@ -32,7 +31,6 @@ import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.vertx.core.Handler;
 import io.vertx.core.http.GoAway;
-import io.vertx.core.http.HttpSettings;
 import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
@@ -243,6 +241,20 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     streamChannel.attr(VERTX_STREAM_KEY).set(vertxStream);
   }
 
+  public ChannelFuture writeSettings(Http3SettingsFrame settingsUpdate) {
+    QuicStreamChannel controlStreamChannel = Http3.getLocalControlStream(chctx.channel());
+    if (controlStreamChannel == null) {
+      return chctx.newFailedFuture(new Http3Exception(Http3ErrorCode.H3_SETTINGS_ERROR, null));
+    }
+
+    ChannelPromise promise = controlStreamChannel.newPromise();
+    promise.addListener(future -> logger.debug("{} - Write settings {} for channelId: {}, channelStreamId: {}",
+      agentType, future.isSuccess() ? "was successful" : "failed", controlStreamChannel.id(),
+      controlStreamChannel.streamId()));
+    controlStreamChannel.write(settingsUpdate, promise);
+    return promise;
+  }
+
   private class ControlStreamChannelHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -251,7 +263,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
       if (msg instanceof DefaultHttp3SettingsFrame) {
         DefaultHttp3SettingsFrame http3SettingsFrame = (DefaultHttp3SettingsFrame) msg;
         onSettingsRead(ctx, http3SettingsFrame);
-        VertxHttp3ConnectionHandler.this.connection.updateHttpSettings(HttpUtils.toVertxSettings(http3SettingsFrame));
+//        VertxHttp3ConnectionHandler.this.connection.updateHttpSettings(HttpUtils.toVertxSettings(http3SettingsFrame));
 //          Thread.sleep(70000);
         if (!isServer) {
           ctx.close();
@@ -395,7 +407,6 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     if (isServer) {
       return new Http3ServerConnectionHandler(new StreamChannelInitializer(), new ControlStreamChannelHandler(), null
         , null, false);
-      //TODO: correct the settings and streamHandlerIssue:
     }
     return new Http3ClientConnectionHandler(new ControlStreamChannelHandler(), null, null, null, false);
   }
