@@ -449,14 +449,47 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   }
 
   /**
-   * Does the JSON array contain the specified value? This method will scan the entire array until it finds a value
-   * or reaches the end.
+   * Returns {@code true} if this JSON Array contains the specified value.
+   * More formally, returns {@code true} if and only if this JSON array contains
+   * at least one entry {@code entry} such that {@code Objects.equals(value, entry)}.
    *
-   * @param value the value
+   * @param value the value whose presence in this JSON array is to be tested
    * @return true if it contains the value, false if not
    */
   public boolean contains(Object value) {
-    return list.contains(value);
+    return indexOf(value) >= 0;
+  }
+
+  /**
+   * Returns the index of the last occurrence of the specified value
+   * in this JSON array, or -1 if this JSON array does not contain the value.
+   * More formally, returns the highest index {@code i} such that
+   * {@code Objects.equals(value, get(i))},
+   * or -1 if there is no such index.
+   *
+   * @param value the value whose index in this JSON array is to be returned
+   * @return the index of the value in the array, or -1 if the value is not in the array
+   */
+  public int indexOf(Object value) {
+    // in case of JsonObject/JsonArray, the list might still contain an unwrapped Map/List, we need to check for both
+    if (value instanceof JsonObject) {
+      return indexOfFirst(value, ((JsonObject) value).getMap());
+    } else if (value instanceof JsonArray) {
+      return indexOfFirst(value, ((JsonArray) value).getList());
+    } else {
+      return list.indexOf(value);
+    }
+  }
+
+  private int indexOfFirst(Object value, Object value2) {
+    for (int i = 0; i < list.size(); i++) {
+      Object entry = list.get(i);
+      if (value.equals(entry) || value2.equals(entry)) {
+        return i;
+      }
+    }
+
+    return -1;
   }
 
   /**
