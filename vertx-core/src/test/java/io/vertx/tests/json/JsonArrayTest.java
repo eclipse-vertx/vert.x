@@ -658,6 +658,8 @@ public class JsonArrayTest {
     JsonArray arr = new JsonArray();
     jsonArray.add(obj);
     jsonArray.add(arr);
+    jsonArray.add(Map.of("foo", "bar"));
+    jsonArray.add(List.of("baz"));
     assertFalse(jsonArray.contains("eek"));
     assertFalse(jsonArray.contains(false));
     assertFalse(jsonArray.contains(321));
@@ -668,6 +670,8 @@ public class JsonArrayTest {
     assertTrue(jsonArray.contains(123));
     assertTrue(jsonArray.contains(obj));
     assertTrue(jsonArray.contains(arr));
+    assertTrue(jsonArray.contains(new JsonObject().put("foo", "bar")));
+    assertTrue(jsonArray.contains(new JsonArray().add("baz")));
   }
 
   @Test
