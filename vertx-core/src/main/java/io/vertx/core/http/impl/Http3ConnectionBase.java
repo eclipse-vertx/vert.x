@@ -21,6 +21,7 @@ import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.incubator.codec.http3.DefaultHttp3SettingsFrame;
 import io.netty.incubator.codec.http3.Http3Headers;
 import io.netty.incubator.codec.http3.Http3SettingsFrame;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
@@ -43,6 +44,7 @@ import io.vertx.core.net.impl.ConnectionBase;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -447,38 +449,45 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
   }
 
   @Override
-  public Future<Void> updateHttpSettings(HttpSettings settings) {
-//    Http2Settings current = handler.decoder().localSettings();
-//    for (Map.Entry<Character, Long> entry : current.entrySet()) {
-//      Character key = entry.getKey();
-//      if (Objects.equals(settingsUpdate.get(key), entry.getValue())) {
-//        settingsUpdate.remove(key);
-//      }
-//    }
-//    Handler<Void> pending = v -> {
-//      synchronized (Http2ConnectionBase.this) {
-//        localSettings.putAll(settingsUpdate);
-//      }
-//      if (completionHandler != null) {
-//        completionHandler.handle(Future.succeededFuture());
-//      }
-//    };
-//    updateSettingsHandlers.add(pending);
-//    handler.writeSettings(settingsUpdate).addListener(fut -> {
-//      if (!fut.isSuccess()) {
-//        synchronized (Http2ConnectionBase.this) {
-//          updateSettingsHandlers.remove(pending);
-//        }
-//        if (completionHandler != null) {
-//          completionHandler.handle(Future.failedFuture(fut.cause()));
-//        }
-//      }
-//    });
+  public Future<Void> updateHttpSettings(HttpSettings settingsUpdate0) {
+    Http3SettingsFrame settingsUpdate = HttpUtils.fromVertxSettings((Http3Settings) settingsUpdate0);
 
-    //TODO: impl this method
-    PromiseInternal<Void> promise = context.promise();
-    promise.tryComplete();
-    return promise;
+    Http3SettingsFrame settingsNew = new DefaultHttp3SettingsFrame();
+
+    Http3SettingsFrame current = handler.initialSettings();
+
+    current.iterator().forEachRemaining(entry -> {
+      Long key = entry.getKey();
+      if (!Objects.equals(settingsUpdate.get(key), entry.getValue())) {
+        settingsNew.put(key, entry.getValue());
+      }
+    });
+
+    Promise<Void> promise = context.promise();
+/*
+    Handler<Void> pending = v -> {
+      synchronized (Http3ConnectionBase.this) {
+        settingsNew.iterator().forEachRemaining(entry -> {
+          localSettings.put(entry.getKey(), entry.getValue());
+        });
+      }
+      promise.complete();
+    };
+    updateSettingsHandlers.add(pending);
+*/
+
+    handler.writeSettings(settingsUpdate).addListener(fut -> {
+      if (!fut.isSuccess()) {
+        synchronized (Http3ConnectionBase.this) {
+//          updateSettingsHandlers.remove(pending);
+        }
+        promise.fail(fut.cause());
+      } else {
+        promise.complete();
+      }
+    });
+
+    return promise.future();
   }
 
   @Override

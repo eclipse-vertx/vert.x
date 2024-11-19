@@ -86,13 +86,13 @@ public class Http3Test extends HttpCommonTest {
     waitFor(2);
     server.close();
     server =
-      vertx.createHttpServer(createBaseServerOptions().setInitialHttp3Settings(new Http3Settings()));
+      vertx.createHttpServer(createBaseServerOptions().setInitialHttp3Settings(new Http3Settings().setMaxFieldSectionSize(50000)));
     server.requestHandler(req -> {
       req.response().end();
     });
     server.connectionHandler(conn -> {
       vertx.setTimer(500, id -> {
-        conn.updateHttpSettings(new Http3Settings());
+        conn.updateHttpSettings(new Http3Settings().setMaxFieldSectionSize(10));
       });
     });
     startServer(testAddress);
@@ -100,9 +100,9 @@ public class Http3Test extends HttpCommonTest {
     client = vertx.httpClientBuilder()
       .with(createBaseClientOptions())
       .withConnectHandler(conn -> {
-//        assertEquals(0, ((Http3Settings) conn.remoteHttpSettings()).getMaxConcurrentStreams()); //TODO: correct err
+        assertEquals(50000, ((Http3Settings) conn.remoteHttpSettings()).getMaxFieldSectionSize());
         conn.remoteHttpSettingsHandler(settings -> {
-//          assertEquals(10, ((Http3Settings) conn.remoteHttpSettings()).getMaxConcurrentStreams()); //TODO: correct err
+          assertEquals(10, ((Http3Settings) conn.remoteHttpSettings()).getMaxFieldSectionSize());
           complete();
         });
       })
