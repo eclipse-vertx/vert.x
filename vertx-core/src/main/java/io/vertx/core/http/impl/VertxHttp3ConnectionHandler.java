@@ -247,8 +247,8 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     }
 
     ChannelPromise promise = controlStreamChannel.newPromise();
-    promise.addListener(future -> logger.debug("{} - Write settings {} for channelId: {}, streamId: {}",
-      agentType, future.isSuccess() ? "was successful" : "failed", controlStreamChannel.id(),
+    promise.addListener(future -> logger.debug("{} - Writing settings {} for channelId: {}, streamId: {}",
+      agentType, future.isSuccess() ? "succeeded" : "failed", controlStreamChannel.id(),
       controlStreamChannel.streamId()));
     controlStreamChannel.write(settingsUpdate, promise);
     return promise;
