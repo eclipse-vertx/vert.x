@@ -30,7 +30,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
 
   abstract int lastStreamCreated();
 
-  protected abstract void createChannelStreamInternal(int id, boolean b, Handler<S> onComplete) throws HttpException;
+  protected abstract void createStreamChannelInternal(int id, boolean b, Handler<S> onComplete) throws HttpException;
 
   protected abstract TracingPolicy getTracingPolicy();
 
@@ -237,7 +237,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
       headers.set(HttpHeaderNames.ACCEPT_ENCODING, Http1xClientConnection.determineCompressionAcceptEncoding());
     }
     try {
-      createStream(request, headers, channelStream_ -> {
+      createStream(request, headers, streamChannel_ -> {
         if (buf != null) {
           doWriteHeaders(headers, false, false, null);
           doWriteData(buf, e, promise);
@@ -260,8 +260,8 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
     }
     head.id = id;
     head.remoteAddress = conn.remoteAddress();
-    createChannelStreamInternal(id, false, channelStream -> {
-      init(channelStream);
+    createStreamChannelInternal(id, false, streamChannel -> {
+      init(streamChannel);
       if (metrics() != null) {
         metric = metrics().requestBegin(headers.path().toString(), head);
       }
@@ -278,7 +278,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
         trace = tracer.sendRequest(context, SpanKind.RPC, getTracingPolicy(), head, operation, headers_,
           HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
       }
-      onComplete.handle(channelStream);
+      onComplete.handle(streamChannel);
     });
   }
 

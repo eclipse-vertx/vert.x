@@ -49,7 +49,7 @@ class Http2ClientStream extends HttpStreamImpl<Http2ClientConnection, Http2Strea
   }
 
   @Override
-  protected void createChannelStreamInternal(int id, boolean b, Handler<Http2Stream> onComplete) throws HttpException {
+  protected void createStreamChannelInternal(int id, boolean b, Handler<Http2Stream> onComplete) throws HttpException {
     try {
       Http2Stream stream = this.conn.handler.encoder().connection().local().createStream(id, false);
       onComplete.handle(stream);
@@ -92,7 +92,7 @@ class Http2ClientStream extends HttpStreamImpl<Http2ClientConnection, Http2Strea
 
   @Override
   public void writePriorityFrame(StreamPriorityBase priority) {
-    conn.handler.writePriority(channelStream, priority.getDependency(), priority.getWeight(), priority.isExclusive());
+    conn.handler.writePriority(streamChannel, priority.getDependency(), priority.getWeight(), priority.isExclusive());
   }
 
   @Override
@@ -107,14 +107,14 @@ class Http2ClientStream extends HttpStreamImpl<Http2ClientConnection, Http2Strea
 
   @Override
   public void init_(VertxHttpStreamBase vertxHttpStream, Http2Stream http2Stream) {
-    this.channelStream = http2Stream;
-    this.writable = this.conn.handler.encoder().flowController().isWritable(this.channelStream);
+    this.streamChannel = http2Stream;
+    this.writable = this.conn.handler.encoder().flowController().isWritable(this.streamChannel);
     http2Stream.setProperty(conn.streamKey, vertxHttpStream);
   }
 
   @Override
   public synchronized int getStreamId() {
-    return channelStream != null ? channelStream.id() : -1;
+    return streamChannel != null ? streamChannel.id() : -1;
   }
 
   @Override
@@ -134,7 +134,7 @@ class Http2ClientStream extends HttpStreamImpl<Http2ClientConnection, Http2Strea
 
   @Override
   public boolean isTrailersReceived() {
-    return channelStream.isTrailersReceived();
+    return streamChannel.isTrailersReceived();
   }
 
   @Override

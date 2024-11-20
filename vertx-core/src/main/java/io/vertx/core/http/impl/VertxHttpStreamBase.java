@@ -94,7 +94,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
             if (remoteSideOpen(channelStream)) {
               // Handle the HTTP upgrade case
               // buffers are received by HTTP/1 and not accounted by HTTP/2
-              consumeCredits(channelStream, len);
+              consumeCredits(streamChannel, len);
             }
           });
           handleData(data);
@@ -132,12 +132,12 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
     };
   }
 
-  void init(S channelStream) {
+  void init(S streamChannel) {
     synchronized (this) {
-      this.channelStream = channelStream;
+      this.streamChannel = streamChannel;
     }
     this.writable = this.isWritable_();
-    this.init_(this, channelStream);
+    this.init_(this, streamChannel);
   }
 
   void onClose() {
@@ -247,7 +247,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
   }
 
   private void doWriteFrame(int type, int flags, ByteBuf payload, Promise<Void> promise) {
-    writeFrame(channelStream, (byte) type, (short) flags, payload, promise);
+    writeFrame(streamChannel, (byte) type, (short) flags, payload, promise);
   }
 
   final void writeHeaders(VertxHttpHeaders headers, boolean first, boolean end, boolean checkFlush,
@@ -290,7 +290,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
     if (end) {
       endWritten();
     }
-    writeHeaders(channelStream, headers, end, priority, checkFlush, (FutureListener<Void>) promise);
+    writeHeaders(streamChannel, headers, end, priority, checkFlush, (FutureListener<Void>) promise);
   }
 
   protected void endWritten() {
@@ -331,7 +331,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
     if (end) {
       endWritten();
     }
-    writeData_(channelStream, chunk, end, (FutureListener<Void>) promise);
+    writeData_(streamChannel, chunk, end, (FutureListener<Void>) promise);
   }
 
   final Future<Void> writeReset(long code) {
@@ -402,7 +402,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
   synchronized void updatePriority(StreamPriorityBase priority) {
     if (!this.priority.equals(priority)) {
       this.priority = priority;
-      if (channelStream != null) {
+      if (streamChannel != null) {
         writePriorityFrame(priority);
       }
     }
