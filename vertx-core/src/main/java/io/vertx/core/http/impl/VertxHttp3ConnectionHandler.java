@@ -184,44 +184,42 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     streamChannel.updatePriority(new QuicStreamPriority(priority.urgency(), priority.isIncremental()));
     Http3Headers http3Headers = headers.getHeaders();
 
-/*
-    if (isServer) {
-      http3Headers.set(HttpHeaderNames.USER_AGENT, "Vertx Http3Server");
-    } else {
-      http3Headers.set(HttpHeaderNames.USER_AGENT, "Vertx Http3Client");
+    ChannelPromise promise = streamChannel.newPromise();
+    if (listener != null) {
+      promise.addListener(listener);
     }
-*/
-    ChannelPromise promise = listener == null ? streamChannel.voidPromise() :
-      streamChannel.newPromise().addListener(listener);
-    if (end && !isServer) {
-      promise.unvoid().addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);
+
+    if (end) {
+      if (isServer) {
+        promise.addListener(future -> streamChannel.close());
+      } else {
+        promise.addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);
+      }
     }
     streamChannel.write(new DefaultHttp3HeadersFrame(http3Headers), promise);
 
     if (checkFlush) {
       checkFlush();
     }
-
-    if (end && isServer) {
-      streamChannel.close();
-    }
   }
 
   public void writeData(QuicStreamChannel streamChannel, ByteBuf chunk, boolean end, FutureListener<Void> listener) {
     logger.debug("{} - Write data for channelId: {}, streamId: {}",
       agentType, streamChannel.id(), streamChannel.streamId());
-    ChannelPromise promise = listener == null ? streamChannel.voidPromise() :
-      streamChannel.newPromise().addListener(listener);
-    if (end && !isServer) {
-      promise.unvoid().addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);
+    ChannelPromise promise = streamChannel.newPromise();
+    if (listener != null)
+      promise.addListener(listener);
+
+    if (end) {
+      if (isServer) {
+        promise.addListener(future -> streamChannel.close());
+      } else {
+        promise.addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);
+      }
     }
     streamChannel.write(new DefaultHttp3DataFrame(chunk), promise);
 
     checkFlush();
-
-    if (end && isServer) {
-      streamChannel.close();
-    }
   }
 
   private void checkFlush() {
