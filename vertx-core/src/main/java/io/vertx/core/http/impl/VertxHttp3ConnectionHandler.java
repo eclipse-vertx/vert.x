@@ -171,13 +171,13 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   }
 
   public void onGoAwayReceived(int lastStreamId, long errorCode, ByteBuf debugData) {
-    logger.debug("{} - onGoAwayReceived() called for channelStreamId: {}", agentType, lastStreamId);
+    logger.debug("{} - onGoAwayReceived() called for streamId: {}", agentType, lastStreamId);
     connection.onGoAwayReceived(new GoAway().setErrorCode(errorCode).setLastStreamId(lastStreamId).setDebugData(BufferInternal.buffer(debugData)));
   }
 
   public void writeHeaders(QuicStreamChannel streamChannel, VertxHttpHeaders headers, boolean end,
                            StreamPriorityBase priority, boolean checkFlush, FutureListener<Void> listener) {
-    logger.debug("{} - Write header for channelId: {}, channelStreamId: {}",
+    logger.debug("{} - Write header for channelId: {}, streamId: {}",
       agentType, streamChannel.id(), streamChannel.streamId());
 
     streamChannel.updatePriority(new QuicStreamPriority(priority.urgency(), priority.isIncremental()));
@@ -207,7 +207,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   }
 
   public void writeData(QuicStreamChannel streamChannel, ByteBuf chunk, boolean end, FutureListener<Void> listener) {
-    logger.debug("{} - Write data for channelId: {}, channelStreamId: {}",
+    logger.debug("{} - Write data for channelId: {}, streamId: {}",
       agentType, streamChannel.id(), streamChannel.streamId());
     ChannelPromise promise = listener == null ? streamChannel.voidPromise() :
       streamChannel.newPromise().addListener(listener);
@@ -248,7 +248,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     }
 
     ChannelPromise promise = controlStreamChannel.newPromise();
-    promise.addListener(future -> logger.debug("{} - Write settings {} for channelId: {}, channelStreamId: {}",
+    promise.addListener(future -> logger.debug("{} - Write settings {} for channelId: {}, streamId: {}",
       agentType, future.isSuccess() ? "was successful" : "failed", controlStreamChannel.id(),
       controlStreamChannel.streamId()));
     controlStreamChannel.write(settingsUpdate, promise);
@@ -256,6 +256,11 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   }
 
   private class ControlStreamChannelHandler extends ChannelInboundHandlerAdapter {
+    @Override
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+      super.userEventTriggered(ctx, evt);
+    }
+
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
       logger.debug("{} - channelRead() called with msg type: {}", agentType, msg.getClass().getSimpleName());
@@ -366,7 +371,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
 
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-      logger.debug("{} - Received event for channelId: {}, channelStreamId: {}, event: {}",
+      logger.debug("{} - Received event for channelId: {}, streamId: {}, event: {}",
         agentType, ctx.channel().id(), ((QuicStreamChannel) (ctx.channel())).streamId(),
         evt.getClass().getSimpleName());
 

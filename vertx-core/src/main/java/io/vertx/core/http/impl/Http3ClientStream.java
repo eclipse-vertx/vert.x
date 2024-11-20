@@ -46,11 +46,11 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
 
   @Override
   int lastStreamCreated() {
-    return this.channelStream != null ? (int) this.channelStream.streamId() : 0;
+    return this.streamChannel != null ? (int) this.streamChannel.streamId() : 0;
   }
 
   @Override
-  protected void createChannelStreamInternal(int id, boolean b, Handler<QuicStreamChannel> onComplete) {
+  protected void createStreamChannelInternal(int id, boolean b, Handler<QuicStreamChannel> onComplete) {
     conn.handler.createStreamChannel(onComplete);
   }
 
@@ -87,7 +87,7 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
 
   @Override
   public void writePriorityFrame(StreamPriorityBase priority) {
-    conn.handler.writePriority(channelStream, priority.urgency(), priority.isIncremental());
+    conn.handler.writePriority(streamChannel, priority.urgency(), priority.isIncremental());
   }
 
   @Override
@@ -102,7 +102,7 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
 
   @Override
   public void init_(VertxHttpStreamBase vertxHttpStream, QuicStreamChannel quicStreamChannel) {
-    this.channelStream = quicStreamChannel;
+    this.streamChannel = quicStreamChannel;
     this.writable = quicStreamChannel.isWritable();
     this.conn.quicStreamChannels.put(quicStreamChannel.streamId(), quicStreamChannel);
     VertxHttp3ConnectionHandler.setVertxStreamOnStreamChannel(quicStreamChannel, this);
@@ -110,7 +110,7 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
 
   @Override
   public synchronized int getStreamId() {
-    return channelStream != null ? (int) channelStream.streamId() : -1;
+    return streamChannel != null ? (int) streamChannel.streamId() : -1;
   }
 
   @Override

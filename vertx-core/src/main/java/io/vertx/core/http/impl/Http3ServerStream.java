@@ -264,7 +264,7 @@ class Http3ServerStream extends VertxHttpStreamBase<Http3ServerConnection, QuicS
 
   @Override
   public void writePriorityFrame(StreamPriorityBase priority) {
-    conn.handler.writePriority(channelStream, priority.urgency(), priority.isIncremental());
+    conn.handler.writePriority(streamChannel, priority.urgency(), priority.isIncremental());
   }
 
   @Override
@@ -279,7 +279,7 @@ class Http3ServerStream extends VertxHttpStreamBase<Http3ServerConnection, QuicS
 
   @Override
   public void init_(VertxHttpStreamBase vertxHttpStream, QuicStreamChannel quicStreamChannel) {
-    this.channelStream = quicStreamChannel;
+    this.streamChannel = quicStreamChannel;
     this.writable = quicStreamChannel.isWritable();
     this.conn.quicStreamChannels.put(quicStreamChannel.streamId(), quicStreamChannel);
     VertxHttp3ConnectionHandler.setVertxStreamOnStreamChannel(quicStreamChannel, this);
@@ -287,7 +287,7 @@ class Http3ServerStream extends VertxHttpStreamBase<Http3ServerConnection, QuicS
 
   @Override
   public synchronized int getStreamId() {
-    return channelStream != null ? (int) channelStream.streamId() : -1;
+    return streamChannel != null ? (int) streamChannel.streamId() : -1;
   }
 
   @Override
