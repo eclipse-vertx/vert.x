@@ -452,8 +452,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   }
 
   public boolean goAwayReceived() {
-//    return getHttp3ConnectionHandler().isGoAwayReceived();
-    return false;
+    return chctx.pipeline().get(Http3ConnectionHandler.class).isGoAwayReceived();
   }
 
   public QuicChannel connection() {
