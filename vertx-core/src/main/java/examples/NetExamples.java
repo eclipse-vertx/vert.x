@@ -12,7 +12,10 @@
 package examples;
 
 import io.netty.handler.logging.ByteBufFormat;
-import io.vertx.core.*;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Future;
+import io.vertx.core.VerticleBase;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.HttpServer;
@@ -172,12 +175,12 @@ public class NetExamples {
 
   public void example11(Vertx vertx) {
 
-    class MyVerticle extends AbstractVerticle {
+    class MyVerticle extends VerticleBase {
 
       NetServer server;
 
       @Override
-      public void start() throws Exception {
+      public Future<?> start() {
         server = vertx.createNetServer();
         server.connectHandler(socket -> {
           socket.handler(buffer -> {
@@ -185,7 +188,7 @@ public class NetExamples {
             socket.write(buffer);
           });
         });
-        server.listen(1234, "localhost");
+        return server.listen(1234, "localhost");
       }
     }
 
