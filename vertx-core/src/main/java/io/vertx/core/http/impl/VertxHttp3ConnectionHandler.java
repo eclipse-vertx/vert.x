@@ -22,6 +22,7 @@ import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.incubator.codec.http3.*;
 import io.netty.incubator.codec.quic.*;
 import io.netty.util.AttributeKey;
+import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.Future;
@@ -269,16 +270,19 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
         DefaultHttp3SettingsFrame http3SettingsFrame = (DefaultHttp3SettingsFrame) msg;
         onSettingsRead(ctx, http3SettingsFrame);
 //        VertxHttp3ConnectionHandler.this.connection.updateHttpSettings(HttpUtils.toVertxSettings(http3SettingsFrame));
+        ReferenceCountUtil.release(msg);
       } else if (msg instanceof DefaultHttp3GoAwayFrame) {
         super.channelRead(ctx, msg);
         DefaultHttp3GoAwayFrame http3GoAwayFrame = (DefaultHttp3GoAwayFrame) msg;
         onGoAwayReceived((int) http3GoAwayFrame.id(), -1, Unpooled.EMPTY_BUFFER);
+        ReferenceCountUtil.release(msg);
       } else if (msg instanceof DefaultHttp3UnknownFrame) {
         DefaultHttp3UnknownFrame http3UnknownFrame = (DefaultHttp3UnknownFrame) msg;
 
         if (logger.isDebugEnabled()) {
           logger.debug("{} - Received unknownFrame : {}", agentType, byteBufToString(http3UnknownFrame.content()));
         }
+        ReferenceCountUtil.release(msg);
         super.channelRead(ctx, msg);
       } else {
         super.channelRead(ctx, msg);
@@ -314,6 +318,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
       read = true;
       VertxHttpStreamBase vertxStream = getVertxStreamFromStreamChannel(ctx);
       connection.onHeadersRead(ctx, vertxStream, frame.headers(), false, (QuicStreamChannel) ctx.channel());
+      ReferenceCountUtil.release(frame);
     }
 
     @Override
@@ -325,6 +330,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
         logger.debug("{} - Frame data is: {}", agentType, byteBufToString(frame.content()));
       }
       connection.onDataRead(ctx, vertxStream, frame.content(), 0, false);
+      ReferenceCountUtil.release(frame);
     }
 
     @Override
