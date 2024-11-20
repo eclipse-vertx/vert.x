@@ -322,15 +322,15 @@ will automatically stop any running server when the verticle is un-deployed.
 
 === What happened to Vert.x 4 Verticle and AbstractVerticle contracts?
 
-The contract defined by `Verticle` and `AbstractVerticle` was not adapted anymore to Vert.x 5 future based model
+The contract defined by `Verticle` and `AbstractVerticle` wasn't convenient anymore with Vert.x 5 future based model:
 
 [source,java]
 ----
 {@link examples.CoreExamples#verticleContract}
 ----
 
-`Verticle` and `AbstractVerticle` are not deprecated in Vert.x 5 and it is fine to use them, however it is not the default
-recommended choice anymore.
+Nevertheless, `Verticle` and `AbstractVerticle` are not deprecated in Vert.x 5.
+It is fine to use them, however it is not the default recommended choice anymore.
 
 === Verticle Types
 
