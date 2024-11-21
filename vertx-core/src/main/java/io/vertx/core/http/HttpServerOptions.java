@@ -604,7 +604,7 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   /**
-   * Set the compression content size threshold if compression is enabled.
+   * Set the compression content size threshold if compression is enabled. This is only applicable for HTTP/1.x response bodies.
    * If the response content size in bytes is greater than this threshold, then the response is compressed. Otherwise, it is not compressed.
    *
    * @param compressionContentSizeThreshold integer greater than or equal to 0.

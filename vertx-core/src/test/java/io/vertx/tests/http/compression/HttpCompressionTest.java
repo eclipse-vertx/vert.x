@@ -35,7 +35,7 @@ import static io.vertx.core.http.HttpMethod.PUT;
 
 public abstract class HttpCompressionTest extends HttpTestBase {
 
-  private static final String COMPRESS_TEST_STRING = "/*\n" +
+  protected static final String COMPRESS_TEST_STRING = "/*\n" +
       " * Copyright (c) 2011-2016 The original author or authors\n" +
       " * ------------------------------------------------------\n" +
       " * All rights reserved. This program and the accompanying materials\n" +
@@ -51,7 +51,7 @@ public abstract class HttpCompressionTest extends HttpTestBase {
       " * You may elect to redistribute this code under either of these licenses.\n" +
       " */";
 
-  private Buffer compressedTestString;
+  protected Buffer compressedTestString;
 
   public HttpCompressionTest() {
   }
