@@ -12,8 +12,8 @@
 package io.vertx.core.impl.future;
 
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
 import io.vertx.core.CompositeFuture;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 
 /**
@@ -64,8 +64,12 @@ public class CompositeFutureImpl extends FutureImpl<CompositeFuture> implements 
 
   private void init() {
     for (Future<?> result : results) {
-      FutureInternal internal = (FutureInternal<?>) result;
-      internal.addListener(this);
+      if (result instanceof FutureInternal) {
+        FutureInternal internal = (FutureInternal<?>) result;
+        internal.addListener(this);
+      } else {
+        result.onComplete(this::onSuccess, this::onFailure);
+      }
     }
     Object o;
     synchronized (this) {
@@ -201,8 +205,10 @@ public class CompositeFutureImpl extends FutureImpl<CompositeFuture> implements 
 
   private void complete(Object result) {
     for (Future<?> r : results) {
-      FutureInternal internal = (FutureInternal<?>) r;
-      internal.removeListener(this);
+      if (r instanceof FutureInternal) {
+        FutureInternal internal = (FutureInternal<?>) r;
+        internal.removeListener(this);
+      }
     }
     if (result == this) {
       tryComplete(this);

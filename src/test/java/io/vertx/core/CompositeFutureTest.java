@@ -11,12 +11,9 @@
 
 package io.vertx.core;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 import io.vertx.core.impl.future.FutureImpl;
 import io.vertx.core.impl.future.Listener;
 import io.vertx.test.core.Repeat;
-
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.Test;
 
@@ -32,6 +29,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -573,5 +572,104 @@ public class CompositeFutureTest extends FutureTestBase {
     MonitoringFuture f = new MonitoringFuture();
     Future.any(f, Future.succeededFuture());
     assertEquals(Collections.emptySet(), f.listeners);
+  }
+
+  @Test
+  public void testCustomFuture() {
+    Promise<Void> p1 = Promise.promise();
+    Promise<Void> p2 = Promise.promise();
+    Promise<Void> p3 = Promise.promise();
+
+    CompositeFuture cf = Future.all(p1.future(), new MyFuture(p2), p3.future());
+
+    p1.complete(null);
+    p2.complete(null);
+    p3.complete(null);
+
+    assertTrue(cf.isComplete());
+  }
+
+  private static class MyFuture implements Future<Void> {
+
+    private final Future<Void> delegate;
+
+    private MyFuture(Promise<Void> promise) {
+      delegate = promise.future();
+    }
+
+    @Override
+    public boolean isComplete() {
+      return delegate.isComplete();
+    }
+
+    @Override
+    public Future<Void> onComplete(Handler<AsyncResult<Void>> handler) {
+      return delegate.onComplete(handler);
+    }
+
+    @Override
+    public Void result() {
+      return delegate.result();
+    }
+
+    @Override
+    public Throwable cause() {
+      return delegate.cause();
+    }
+
+    @Override
+    public boolean succeeded() {
+      return delegate.succeeded();
+    }
+
+    @Override
+    public boolean failed() {
+      return delegate.failed();
+    }
+
+    @Override
+    public <U> Future<U> compose(Function<Void, Future<U>> successMapper, Function<Throwable, Future<U>> failureMapper) {
+      return delegate.compose(successMapper, failureMapper);
+    }
+
+    @Override
+    public <U> Future<U> transform(Function<AsyncResult<Void>, Future<U>> mapper) {
+      return delegate.transform(mapper);
+    }
+
+    @Override
+    public <U> Future<Void> eventually(Function<Void, Future<U>> function) {
+      return delegate.eventually(function);
+    }
+
+    @Override
+    public <U> Future<U> map(Function<Void, U> mapper) {
+      return delegate.map(mapper);
+    }
+
+    @Override
+    public <V> Future<V> map(V value) {
+      return delegate.map(value);
+    }
+
+    @Override
+    public Future<Void> otherwise(Function<Throwable, Void> mapper) {
+      return delegate.otherwise(mapper);
+    }
+
+    @Override
+    public Future<Void> otherwise(Void value) {
+      return delegate.otherwise(value);
+    }
+
+    @Override
+    public Future<Void> expecting(Expectation<? super Void> expectation) {
+      return delegate.expecting(expectation);
+    }
+
+    @Override
+    public Future<Void> timeout(long delay, TimeUnit unit) {
+      return delegate.timeout(delay, unit);
+    }
   }
 }
