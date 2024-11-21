@@ -61,8 +61,12 @@ public class CompositeFutureImpl extends FutureImpl<CompositeFuture> implements 
 
   private void init() {
     for (Future<?> result : results) {
-      FutureBase internal = (FutureBase<?>) result;
-      internal.addListener(this);
+      if (result instanceof FutureBase) {
+        FutureBase internal = (FutureBase<?>) result;
+        internal.addListener(this);
+      } else {
+        result.onComplete(this);
+      }
     }
     Object o;
     synchronized (this) {
@@ -205,8 +209,10 @@ public class CompositeFutureImpl extends FutureImpl<CompositeFuture> implements 
 
   private void doComplete(Object result) {
     for (Future<?> r : results) {
-      FutureBase internal = (FutureBase<?>) r;
-      internal.removeListener(this);
+      if (r instanceof FutureBase) {
+        FutureBase internal = (FutureBase<?>) r;
+        internal.removeListener(this);
+      }
     }
     if (result == this) {
       tryComplete(this);
