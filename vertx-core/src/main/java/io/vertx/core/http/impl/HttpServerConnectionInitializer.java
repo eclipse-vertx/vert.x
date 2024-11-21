@@ -57,6 +57,7 @@ class HttpServerConnectionInitializer {
   private final Handler<Throwable> exceptionHandler;
   private final Object metric;
   private final CompressionOptions[] compressionOptions;
+  private final int compressionContentSizeThreshold;
   private final Function<String, String> encodingDetector;
 
   HttpServerConnectionInitializer(ContextInternal context,
@@ -92,6 +93,7 @@ class HttpServerConnectionInitializer {
     this.exceptionHandler = exceptionHandler;
     this.metric = metric;
     this.compressionOptions = compressionOptions;
+    this.compressionContentSizeThreshold = options.getCompressionContentSizeThreshold();
     this.encodingDetector = compressionOptions != null ? new EncodingDetector(options.getCompressionContentSizeThreshold(), compressionOptions)::determineEncoding : null;
   }
 
@@ -302,7 +304,7 @@ class HttpServerConnectionInitializer {
       pipeline.addBefore(name, "inflater", new HttpContentDecompressor(false));
     }
     if (options.isCompressionSupported()) {
-      pipeline.addBefore(name, "deflater", new HttpChunkContentCompressor(compressionOptions));
+      pipeline.addBefore(name, "deflater", new HttpChunkContentCompressor(compressionContentSizeThreshold, compressionOptions));
     }
   }
 
