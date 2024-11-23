@@ -7,18 +7,21 @@ import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.vertx.core.Handler;
 
+import java.util.function.Supplier;
+
 class StreamChannelInitializer extends ChannelInitializer<QuicStreamChannel> {
   private static final InternalLogger logger = InternalLoggerFactory.getInstance(StreamChannelInitializer.class);
-  private final ChannelHandler handler;
+  private final Supplier<ChannelHandler> channelHandlerSupplier;
   private final String agentType;
   private final Handler<QuicStreamChannel> onComplete;
 
-  public StreamChannelInitializer(ChannelHandler handler, String agentType) {
-    this(handler, agentType, null);
+  public StreamChannelInitializer(Supplier<ChannelHandler> channelHandlerSupplier, String agentType) {
+    this(channelHandlerSupplier, agentType, null);
   }
 
-  public StreamChannelInitializer(ChannelHandler handler, String agentType, Handler<QuicStreamChannel> onComplete) {
-    this.handler = handler;
+  public StreamChannelInitializer(Supplier<ChannelHandler> channelHandlerSupplier, String agentType,
+                                  Handler<QuicStreamChannel> onComplete) {
+    this.channelHandlerSupplier = channelHandlerSupplier;
     this.agentType = agentType;
     this.onComplete = onComplete;
   }
@@ -28,7 +31,7 @@ class StreamChannelInitializer extends ChannelInitializer<QuicStreamChannel> {
     logger.debug("{} - Initialize streamChannel with channelId: {}, streamId: ", agentType, streamChannel.id(),
       streamChannel.streamId());
 
-    streamChannel.pipeline().addLast(handler);
+    streamChannel.pipeline().addLast(channelHandlerSupplier.get());
     if (onComplete != null) {
       onComplete.handle(streamChannel);
     }
