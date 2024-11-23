@@ -413,7 +413,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
 
   public Http3ConnectionHandler getHttp3ConnectionHandler() {
     if (isServer) {
-      return new Http3ServerConnectionHandler(new StreamChannelInitializer(new StreamChannelHandler(), agentType),
+      return new Http3ServerConnectionHandler(new StreamChannelInitializer(StreamChannelHandler::new, agentType),
         new ControlStreamChannelHandler(), null, httpSettings, false);
     }
     return new Http3ClientConnectionHandler(new ControlStreamChannelHandler(), null, null, httpSettings, false);
@@ -467,6 +467,6 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
 
   public void createStreamChannel(Handler<QuicStreamChannel> onComplete) {
     Http3.newRequestStream((QuicChannel) chctx.channel(),
-      new StreamChannelInitializer(new StreamChannelHandler(), agentType, onComplete));
+      new StreamChannelInitializer(StreamChannelHandler::new, agentType, onComplete));
   }
 }
