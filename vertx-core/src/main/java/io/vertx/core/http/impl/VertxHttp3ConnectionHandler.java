@@ -87,17 +87,25 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     return chctx;
   }
 
-  private void onSettingsRead(ChannelHandlerContext ctx, Http3SettingsFrame settings) {
+  void onSettingsRead(ChannelHandlerContext ctx, Http3SettingsFrame settings) {
     this.connection.onSettingsRead(ctx, settings);
   }
 
-  private synchronized void onSettingsReadDone() {
+  synchronized void onSettingsReadDone() {
     if (settingsRead) {
       return;
     }
 
     settingsRead = true;
 
+    if (isServer) {
+      onConnectSuccessful();
+    } else {
+      chctx.executor().execute(this::onConnectSuccessful);
+    }
+  }
+
+  private void onConnectSuccessful() {
     if (addHandler != null) {
       addHandler.handle(connection);
     }
@@ -175,9 +183,10 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     }
   }
 
-  public void onGoAwayReceived(int lastStreamId, long errorCode, ByteBuf debugData) {
+  void onGoAwayReceived(DefaultHttp3GoAwayFrame http3GoAwayFrame) {
+    int lastStreamId = (int) http3GoAwayFrame.id();
     logger.debug("{} - onGoAwayReceived() called for streamId: {}", agentType, lastStreamId);
-    connection.onGoAwayReceived(new GoAway().setErrorCode(errorCode).setLastStreamId(lastStreamId).setDebugData(BufferInternal.buffer(debugData)));
+    connection.onGoAwayReceived(new GoAway().setErrorCode(-1).setLastStreamId(lastStreamId).setDebugData(BufferInternal.buffer(Unpooled.EMPTY_BUFFER)));
   }
 
   public void writeHeaders(QuicStreamChannel streamChannel, VertxHttpHeaders headers, boolean end,
@@ -258,59 +267,6 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     return promise;
   }
 
-  private class ControlStreamChannelHandler extends ChannelInboundHandlerAdapter {
-    @Override
-    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-      super.userEventTriggered(ctx, evt);
-    }
-
-    @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-      logger.debug("{} - channelRead() called with msg type: {}", agentType, msg.getClass().getSimpleName());
-
-      if (msg instanceof DefaultHttp3SettingsFrame) {
-        DefaultHttp3SettingsFrame http3SettingsFrame = (DefaultHttp3SettingsFrame) msg;
-        onSettingsRead(ctx, http3SettingsFrame);
-//        VertxHttp3ConnectionHandler.this.connection.updateHttpSettings(HttpUtils.toVertxSettings(http3SettingsFrame));
-        ReferenceCountUtil.release(msg);
-      } else if (msg instanceof DefaultHttp3GoAwayFrame) {
-        super.channelRead(ctx, msg);
-        DefaultHttp3GoAwayFrame http3GoAwayFrame = (DefaultHttp3GoAwayFrame) msg;
-        onGoAwayReceived((int) http3GoAwayFrame.id(), -1, Unpooled.EMPTY_BUFFER);
-        ReferenceCountUtil.release(msg);
-      } else if (msg instanceof DefaultHttp3UnknownFrame) {
-        DefaultHttp3UnknownFrame http3UnknownFrame = (DefaultHttp3UnknownFrame) msg;
-
-        if (logger.isDebugEnabled()) {
-          logger.debug("{} - Received unknownFrame : {}", agentType, byteBufToString(http3UnknownFrame.content()));
-        }
-        ReferenceCountUtil.release(msg);
-        super.channelRead(ctx, msg);
-      } else {
-        super.channelRead(ctx, msg);
-      }
-    }
-
-    @Override
-    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-      logger.debug("{} - ChannelReadComplete called for channelId: {}, streamId: {}", agentType,
-        ctx.channel().id(), ((QuicStreamChannel) ctx.channel()).streamId());
-      if (!settingsRead) {
-        if (isServer) {
-          VertxHttp3ConnectionHandler.this.onSettingsReadDone();
-        } else {
-          chctx.executor().execute(VertxHttp3ConnectionHandler.this::onSettingsReadDone);
-        }
-      }
-      super.channelReadComplete(ctx);
-    }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-      logger.debug("{} - Caught exception on channelId : {}!", agentType, ctx.channel().id(), cause);
-      super.exceptionCaught(ctx, cause);
-    }
-  }
 
   private class StreamChannelHandler extends Http3RequestStreamInboundHandler {
     @Override
@@ -414,9 +370,9 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   public Http3ConnectionHandler getHttp3ConnectionHandler() {
     if (isServer) {
       return new Http3ServerConnectionHandler(new StreamChannelInitializer(StreamChannelHandler::new, agentType),
-        new ControlStreamChannelHandler(), null, httpSettings, false);
+        new ControlStreamChannelHandler(this), null, httpSettings, false);
     }
-    return new Http3ClientConnectionHandler(new ControlStreamChannelHandler(), null, null, httpSettings, false);
+    return new Http3ClientConnectionHandler(new ControlStreamChannelHandler(this), null, null, httpSettings, false);
   }
 
   private void _writePriority(QuicStreamChannel streamChannel, int urgency, boolean incremental) {
@@ -468,5 +424,9 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   public void createStreamChannel(Handler<QuicStreamChannel> onComplete) {
     Http3.newRequestStream((QuicChannel) chctx.channel(),
       new StreamChannelInitializer(StreamChannelHandler::new, agentType, onComplete));
+  }
+
+  String getAgentType() {
+    return agentType;
   }
 }
