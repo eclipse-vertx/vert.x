@@ -164,7 +164,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
       } else if (evt instanceof IdleStateEvent) {
         connection.handleIdle((IdleStateEvent) evt);
       } else if (evt instanceof QuicConnectionCloseEvent) {
-//        connection.handleClosed();
+        connection.handleClosed();
       }
     }
   }
