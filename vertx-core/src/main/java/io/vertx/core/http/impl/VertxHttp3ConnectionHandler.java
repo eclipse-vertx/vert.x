@@ -153,16 +153,19 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
 
   @Override
   public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-    logger.debug("{} - Received Connection event for channelId: {}, event: {}",
+    logger.debug("{} - Received event for channelId: {}, event: {}",
       agentType, ctx.channel().id(), evt.getClass().getSimpleName());
-
-    if (evt instanceof ShutdownEvent) {
-      ShutdownEvent shutdownEvt = (ShutdownEvent) evt;
-      connection.shutdown(shutdownEvt.timeout(), shutdownEvt.timeUnit());
-    } else if (evt instanceof QuicConnectionCloseEvent) {
-//      connection.handleClosed();
-    } else {
+    try {
       super.userEventTriggered(ctx, evt);
+    } finally {
+      if (evt instanceof ShutdownEvent) {
+        ShutdownEvent shutdownEvt = (ShutdownEvent) evt;
+        connection.shutdown(shutdownEvt.timeout(), shutdownEvt.timeUnit());
+      } else if (evt instanceof IdleStateEvent) {
+        connection.handleIdle((IdleStateEvent) evt);
+      } else if (evt instanceof QuicConnectionCloseEvent) {
+//        connection.handleClosed();
+      }
     }
   }
 
@@ -340,17 +343,20 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
         agentType, ctx.channel().id(), ((QuicStreamChannel) (ctx.channel())).streamId(),
         evt.getClass().getSimpleName());
 
-      if (evt instanceof IdleStateEvent) {
-        connection.handleIdle((IdleStateEvent) evt);
-      } else if (evt instanceof ChannelInputShutdownEvent) {
+      if (evt == ChannelInputShutdownEvent.INSTANCE) {
         VertxHttpStreamBase vertxStream = getVertxStreamFromStreamChannel(ctx);
         if (vertxStream.getResetException() != null) {
           connection.onStreamClosed(vertxStream);
-        } else {
-          super.userEventTriggered(ctx, evt);
+          return;
         }
-      } else {
+      }
+
+      try {
         super.userEventTriggered(ctx, evt);
+      } finally {
+        if (evt instanceof IdleStateEvent) {
+          connection.handleIdle((IdleStateEvent) evt);
+        }
       }
     }
 
