@@ -403,12 +403,6 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     //TODO: implement
   }
 
-  public ChannelFuture writePing(long aLong) {
-    ChannelPromise promise = chctx.newPromise();
-    //TODO: implement
-    return promise;
-  }
-
   public boolean goAwayReceived() {
     return chctx.pipeline().get(Http3ConnectionHandler.class).isGoAwayReceived();
   }
