@@ -16,7 +16,6 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.incubator.codec.http3.*;
@@ -90,14 +89,19 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
 
   private void onSettingsRead(ChannelHandlerContext ctx, Http3SettingsFrame settings) {
     this.connection.onSettingsRead(ctx, settings);
-    this.settingsRead = true;
+  }
 
-    if (isServer) {
-      if (addHandler != null) {
-        addHandler.handle(connection);
-      }
-      this.connectFuture.trySuccess(connection);
+  private synchronized void onSettingsReadDone() {
+    if (settingsRead) {
+      return;
     }
+
+    settingsRead = true;
+
+    if (addHandler != null) {
+      addHandler.handle(connection);
+    }
+    this.connectFuture.trySuccess(connection);
   }
 
 
@@ -291,12 +295,11 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
       logger.debug("{} - ChannelReadComplete called for channelId: {}, streamId: {}", agentType,
         ctx.channel().id(), ((QuicStreamChannel) ctx.channel()).streamId());
-      if (!isServer) {
-        if (settingsRead && !connectFuture.isDone()) {
-          if (addHandler != null) {
-            addHandler.handle(connection);
-          }
-          connectFuture.trySuccess(connection);
+      if (!settingsRead) {
+        if (isServer) {
+          VertxHttp3ConnectionHandler.this.onSettingsReadDone();
+        } else {
+          chctx.executor().execute(VertxHttp3ConnectionHandler.this::onSettingsReadDone);
         }
       }
       super.channelReadComplete(ctx);
