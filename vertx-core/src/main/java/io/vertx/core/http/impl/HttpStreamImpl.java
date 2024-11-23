@@ -26,6 +26,8 @@ import java.util.function.BiConsumer;
 
 abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C, S> implements HttpClientStream {
 
+  private Throwable reset;
+
   protected abstract boolean isTryUseCompression();
 
   abstract int lastStreamCreated();
@@ -331,6 +333,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
 
   @Override
   public void reset(Throwable cause) {
+    reset = cause;
     long code;
     if (cause instanceof StreamResetException) {
       code = ((StreamResetException) cause).getCode();
@@ -345,5 +348,10 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
   @Override
   public HttpClientConnectionInternal connection() {
     return (HttpClientConnectionInternal) conn;
+  }
+
+  @Override
+  protected Throwable getResetException() {
+    return reset;
   }
 }

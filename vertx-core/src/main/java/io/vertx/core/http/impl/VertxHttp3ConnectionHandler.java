@@ -17,6 +17,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
+import io.netty.channel.socket.ChannelInputShutdownEvent;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.incubator.codec.http3.*;
 import io.netty.incubator.codec.quic.*;
@@ -341,6 +342,13 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
 
       if (evt instanceof IdleStateEvent) {
         connection.handleIdle((IdleStateEvent) evt);
+      } else if (evt instanceof ChannelInputShutdownEvent) {
+        VertxHttpStreamBase vertxStream = getVertxStreamFromStreamChannel(ctx);
+        if (vertxStream.getResetException() != null) {
+          connection.onStreamClosed(vertxStream);
+        } else {
+          super.userEventTriggered(ctx, evt);
+        }
       } else {
         super.userEventTriggered(ctx, evt);
       }

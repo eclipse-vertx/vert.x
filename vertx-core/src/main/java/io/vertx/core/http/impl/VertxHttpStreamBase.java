@@ -377,4 +377,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
   void handlePriorityChange(StreamPriorityBase newPriority) {
   }
 
+  protected Throwable getResetException() {
+    return null;
+  }
 }
