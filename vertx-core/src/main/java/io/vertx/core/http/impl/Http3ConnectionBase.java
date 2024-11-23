@@ -73,12 +73,10 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
   private boolean shutdown;
   private Handler<HttpSettings> remoteSettingsHandler;
   private final ArrayDeque<Handler<Void>> updateSettingsHandlers = new ArrayDeque<>();
-  private final ArrayDeque<Promise<Buffer>> pongHandlers = new ArrayDeque<>();
   private Http3SettingsFrame localSettings;
   private Http3SettingsFrame remoteSettings;
   private Handler<GoAway> goAwayHandler;
   private Handler<Void> shutdownHandler;
-  private Handler<Buffer> pingHandler;
   private GoAway goAwayStatus;
   private int windowSize;
   private long maxConcurrentStreams;
@@ -244,24 +242,6 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
     }
     if (changed) {
       concurrencyChanged(maxConcurrentStreams);
-    }
-  }
-
-  //  @Override
-  public void onPingRead(ChannelHandlerContext ctx, long data) throws Http2Exception {
-    Handler<Buffer> handler = pingHandler;
-    if (handler != null) {
-      Buffer buff = Buffer.buffer().appendLong(data);
-      context.dispatch(v -> handler.handle(buff));
-    }
-  }
-
-  //  @Override
-  public void onPingAckRead(ChannelHandlerContext ctx, long data) {
-    Promise<Buffer> handler = pongHandlers.poll();
-    if (handler != null) {
-      Buffer buff = Buffer.buffer().appendLong(data);
-      handler.complete(buff);
     }
   }
 
@@ -492,26 +472,12 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
 
   @Override
   public Future<Buffer> ping(Buffer data) {
-    if (data.length() != 8) {
-      throw new IllegalArgumentException("Ping data must be exactly 8 bytes");
-    }
-    Promise<Buffer> promise = context.promise();
-    handler.writePing(data.getLong(0)).addListener(fut -> {
-      if (fut.isSuccess()) {
-        synchronized (Http3ConnectionBase.this) {
-          pongHandlers.add(promise);
-        }
-      } else {
-        promise.fail(fut.cause());
-      }
-    });
-    return promise.future();
+    throw new UnsupportedOperationException("Ping is not supported in HTTP/3.");
   }
 
   @Override
-  public synchronized HttpConnection pingHandler(Handler<Buffer> handler) {
-    pingHandler = handler;
-    return this;
+  public HttpConnection pingHandler(Handler<Buffer> handler) {
+    throw new UnsupportedOperationException("Ping is not supported in HTTP/3.");
   }
 
   // Necessary to set the covariant return type
