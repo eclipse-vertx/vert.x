@@ -220,8 +220,9 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     logger.debug("{} - Write data for channelId: {}, streamId: {}",
       agentType, streamChannel.id(), streamChannel.streamId());
     ChannelPromise promise = streamChannel.newPromise();
-    if (listener != null)
+    if (listener != null) {
       promise.addListener(listener);
+    }
 
     if (end) {
       if (isServer) {
