@@ -10,13 +10,14 @@ import io.netty.util.ReferenceCountUtil;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 
-class ControlStreamChannelHandler extends ChannelInboundHandlerAdapter {
-  private static final InternalLogger logger = InternalLoggerFactory.getInstance(ControlStreamChannelHandler.class);
+class Http3ControlStreamChannelHandler extends ChannelInboundHandlerAdapter {
+  private static final InternalLogger logger =
+    InternalLoggerFactory.getInstance(Http3ControlStreamChannelHandler.class);
 
   private final VertxHttp3ConnectionHandler handler;
   private final String agentType;
 
-  public ControlStreamChannelHandler(VertxHttp3ConnectionHandler handler) {
+  public Http3ControlStreamChannelHandler(VertxHttp3ConnectionHandler handler) {
     this.handler = handler;
     this.agentType = handler.getAgentType();
   }
