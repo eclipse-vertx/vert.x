@@ -24,6 +24,8 @@ class Http3ControlStreamChannelHandler extends ChannelInboundHandlerAdapter {
 
   @Override
   public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+    logger.debug("{} - Received event for channelId: {}, event: {}", agentType, ctx.channel().id(),
+      evt.getClass().getSimpleName());
     super.userEventTriggered(ctx, evt);
   }
 
