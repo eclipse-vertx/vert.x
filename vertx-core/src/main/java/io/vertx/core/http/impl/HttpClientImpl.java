@@ -222,8 +222,8 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     Boolean ssl = connect.isSsl();
     boolean useSSL = ssl != null ? ssl : this.options.isSsl();
     boolean useAlpn = options.isUseAlpn();
-    if (!useAlpn && useSSL && this.options.getProtocolVersion() == HttpVersion.HTTP_2) {
-      return vertx.getOrCreateContext().failedFuture("Must enable ALPN when using H2");
+    if (!useAlpn && useSSL && (this.options.getProtocolVersion() == HttpVersion.HTTP_2 || this.options.getProtocolVersion() == HttpVersion.HTTP_3)) {
+      return vertx.getOrCreateContext().failedFuture("Must enable ALPN when using H2 or H3");
     }
     checkClosed();
     HttpChannelConnector connector = new HttpChannelConnector(
