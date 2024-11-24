@@ -11,26 +11,16 @@
 
 package io.vertx.tests.http.headers;
 
-import io.netty.incubator.codec.http3.DefaultHttp3Headers;
-import io.vertx.core.MultiMap;
 import io.vertx.core.http.impl.headers.Http3HeadersAdaptor;
-import org.junit.Before;
+import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
  */
 public class Http3HeadersAdaptorsTest extends HttpHeadersAdaptorsTestBase {
 
-  @Before
-  public void setUp() {
-    DefaultHttp3Headers headers = new DefaultHttp3Headers();
-    super.headers = headers;
-    super.map = new Http3HeadersAdaptor(headers);
-  }
-
   @Override
-  protected MultiMap newMultiMap() {
+  protected VertxHttpHeaders newMultiMap() {
     return new Http3HeadersAdaptor();
   }
-
 }
