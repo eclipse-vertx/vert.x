@@ -22,7 +22,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.headers.VertxHttp3Headers;
+import io.vertx.core.http.impl.headers.Http3HeadersAdaptor;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
@@ -143,7 +143,7 @@ public class Http3ServerConnection extends Http3ConnectionBase implements HttpSe
     return new Http3ServerStream(
       this,
       streamContextSupplier.get(),
-      new VertxHttp3Headers(headers),
+      new Http3HeadersAdaptor(headers),
       schemeHeader != null ? schemeHeader.toString() : null,
       authorityHeader != null,
       authority,
@@ -192,7 +192,7 @@ public class Http3ServerConnection extends Http3ConnectionBase implements HttpSe
         return;
       }
       initStream(streamChannel, stream0);
-      stream0.onHeaders(new VertxHttp3Headers(headers), streamPriority);
+      stream0.onHeaders(new Http3HeadersAdaptor(headers), streamPriority);
     } else {
       // Http server request trailer - not implemented yet (in api)
       stream0 = (Http3ServerStream) stream;
@@ -216,7 +216,7 @@ public class Http3ServerConnection extends Http3ConnectionBase implements HttpSe
                                        String path, StreamPriorityBase streamPriority,
                                        Promise<HttpServerResponse> promise) {
     boolean ssl = isSsl();
-    VertxHttp3Headers headers_ = new VertxHttp3Headers();
+    VertxHttpHeaders headers_ = new Http3HeadersAdaptor();
     headers_.method(method.name());
     headers_.path(path);
     headers_.scheme(ssl ? "https" : "http");

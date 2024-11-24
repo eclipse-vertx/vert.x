@@ -10,13 +10,12 @@ import io.vertx.core.Promise;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.http.impl.headers.Http3HeadersAdaptor;
-import io.vertx.core.http.impl.headers.VertxHttp3Headers;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.tracing.TracingPolicy;
 
 class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStreamChannel> {
-  private static final MultiMap EMPTY = new Http3HeadersAdaptor(new DefaultHttp3Headers());
+  private static final MultiMap EMPTY = new Http3HeadersAdaptor();
 
   private int headerReceivedCount = 0;
 
@@ -66,7 +65,7 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
 
   @Override
   VertxHttpHeaders createHttpHeadersWrapper() {
-    return new VertxHttp3Headers();
+    return new Http3HeadersAdaptor();
   }
 
   @Override

@@ -17,8 +17,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpStatusClass;
-import io.netty.handler.codec.http2.DefaultHttp2Headers;
-import io.netty.handler.codec.http2.Http2Headers;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -48,9 +46,9 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   private final ChannelHandlerContext ctx;
   private final Http2ServerConnection conn;
   private final boolean push;
-  private final Http2Headers headers = new DefaultHttp2Headers();
+  private final Http2HeadersAdaptor headers = new Http2HeadersAdaptor();
   private Http2HeadersAdaptor headersMap;
-  private Http2Headers trailers;
+  private Http2HeadersAdaptor trailers;
   private Http2HeadersAdaptor trailedMap;
   private boolean chunked;
   private boolean headWritten;
@@ -241,7 +239,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   public MultiMap trailers() {
     synchronized (conn) {
       if (trailedMap == null) {
-        trailedMap = new Http2HeadersAdaptor(trailers = new DefaultHttp2Headers());
+        trailedMap = new Http2HeadersAdaptor(trailers = new Http2HeadersAdaptor());
       }
       return trailedMap;
     }
@@ -310,9 +308,9 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     Promise<Void> promise = stream.context.promise();
     synchronized (conn) {
       checkHeadWritten();
-      DefaultHttp2Headers defaultHttp2Headers = new DefaultHttp2Headers();
-      defaultHttp2Headers.status(HttpResponseStatus.CONTINUE.codeAsText());
-      stream.writeHeaders(new VertxHttp2Headers(defaultHttp2Headers), true, false,
+      Http2HeadersAdaptor http2HeadersAdaptor = new Http2HeadersAdaptor();
+      http2HeadersAdaptor.status(HttpResponseStatus.CONTINUE.codeAsText());
+      stream.writeHeaders(http2HeadersAdaptor, true, false,
         true, promise);
     }
     return promise.future();
@@ -321,7 +319,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   @Override
   public Future<Void> writeEarlyHints(MultiMap headers) {
     PromiseInternal<Void> promise = stream.context.promise();
-    DefaultHttp2Headers http2Headers = new DefaultHttp2Headers();
+    Http2HeadersAdaptor http2Headers = new Http2HeadersAdaptor();
     for (Entry<String, String> header : headers) {
       http2Headers.add(header.getKey(), header.getValue());
     }
@@ -329,7 +327,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     synchronized (conn) {
       checkHeadWritten();
     }
-    stream.writeHeaders(new VertxHttp2Headers(http2Headers), true, false, true, promise);
+    stream.writeHeaders(http2Headers, true, false, true, promise);
     return promise.future();
   }
 
@@ -411,7 +409,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
         fut = stream.context.succeededFuture();
       }
       if (end && trailers != null) {
-        stream.writeHeaders(new VertxHttp2Headers(trailers), false, true, true, null);
+        stream.writeHeaders(new Http2HeadersAdaptor(trailers), false, true, true, null);
       }
       bodyEndHandler = this.bodyEndHandler;
       endHandler = this.endHandler;
@@ -445,7 +443,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       }
       prepareHeaders();
       headWritten = true;
-      stream.writeHeaders(new VertxHttp2Headers(headers), true, end, checkFlush, null);
+      stream.writeHeaders(new Http2HeadersAdaptor(headers), true, end, checkFlush, null);
       return true;
     } else {
       return false;

@@ -138,7 +138,7 @@ abstract class HttpStream<C extends ConnectionBase, S> extends VertxHttpStreamBa
       } else if (status == 103) {
         MultiMap headersMultiMap = HeadersMultiMap.httpHeaders();
         removeStatusHeaders(headers);
-        for (Map.Entry<CharSequence, CharSequence> header : headers.getIterable()) {
+        for (Map.Entry<String, String> header : headers) {
           headersMultiMap.add(header.getKey(), header.getValue());
         }
         onEarlyHints(headersMultiMap);
@@ -148,7 +148,7 @@ abstract class HttpStream<C extends ConnectionBase, S> extends VertxHttpStreamBa
         version(),
         status,
         statusMessage,
-        headers.toHeaderAdapter());
+        headers);
       removeStatusHeaders(headers);
 
       if (metrics() != null) {

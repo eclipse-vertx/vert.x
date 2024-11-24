@@ -30,7 +30,7 @@ public class Http3HeadersAdaptorsTest extends HttpHeadersAdaptorsTestBase {
 
   @Override
   protected MultiMap newMultiMap() {
-    return new Http3HeadersAdaptor(new DefaultHttp3Headers());
+    return new Http3HeadersAdaptor();
   }
 
 }
