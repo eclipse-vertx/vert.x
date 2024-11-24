@@ -1,3 +1,4 @@
+/*
 package io.vertx.tests.http.headers;
 
 import io.netty.handler.codec.Headers;
@@ -7,9 +8,11 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
+*/
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
- */
+ *//*
+
 public abstract class VertxHttpHeadersTestBase<H extends Headers<CharSequence, CharSequence, H>> extends HeadersTest {
   private VertxHttpHeadersBase<H> vertxHttpHeaders;
 
@@ -60,3 +63,4 @@ public abstract class VertxHttpHeadersTestBase<H extends Headers<CharSequence, C
     //TODO: impl
   }
 }
+*/

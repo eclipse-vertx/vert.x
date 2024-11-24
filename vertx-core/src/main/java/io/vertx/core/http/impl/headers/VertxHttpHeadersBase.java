@@ -1,3 +1,4 @@
+/*
 package io.vertx.core.http.impl.headers;
 
 import io.netty.handler.codec.Headers;
@@ -6,14 +7,18 @@ import io.vertx.core.MultiMap;
 import java.util.*;
 import java.util.stream.Collectors;
 
+*/
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
- */
+ *//*
+
 public abstract class VertxHttpHeadersBase<H extends Headers<CharSequence, CharSequence, H>> implements VertxHttpHeaders {
   protected H headers;
+  protected final HttpHeadersAdaptor<H>headersAdaptor;
 
-  public VertxHttpHeadersBase(H headers) {
+  public VertxHttpHeadersBase(H headers, HttpHeadersAdaptor<H>headersAdaptor) {
     this.headers = headers;
+    this.headersAdaptor = headersAdaptor;
   }
 
   @Override
@@ -23,156 +28,146 @@ public abstract class VertxHttpHeadersBase<H extends Headers<CharSequence, CharS
 
   @Override
   public MultiMap add(CharSequence name, CharSequence value) {
-    this.headers.add(name, value);
+    this.headersAdaptor.add(name, value);
     return this;
   }
 
   @Override
   public String get(String name) {
-    Objects.requireNonNull(name, "name");
-    CharSequence ret = this.headers.get(name);
-    return ret != null ? ret.toString() : null;
+    return headersAdaptor.get(name);
   }
 
   @Override
   public VertxHttpHeadersBase<H> set(String name, String value) {
-    this.headers.set(name, value);
+    this.headersAdaptor.set(name, value);
     return this;
   }
 
   @Override
   public VertxHttpHeadersBase<H> add(String name, String value) {
-    this.headers.add(name, value);
+    this.headersAdaptor.add(name, value);
     return this;
   }
 
   @Override
-  public boolean contains(String name, String value) {
+  public boolean contains(CharSequence name, CharSequence value) {
     return headers.contains(name, value);
   }
 
   @Override
   public VertxHttpHeadersBase<H> remove(String name) {
-    headers.remove(name);
+    headersAdaptor.remove(name);
     return this;
   }
 
-  @Override
-  public Iterable<Map.Entry<CharSequence, CharSequence>> getIterable() {
-    return headers;
+  public Iterator<Map.Entry<String, String>> iterator(){
+    return headersAdaptor.iterator();
   }
 
   @Override
   public String get(CharSequence name) {
-    Objects.requireNonNull(name, "name");
-    return this.get(name.toString());
+    return headersAdaptor.get(name);
   }
 
   @Override
   public boolean contains(CharSequence name) {
-    return this.headers.contains(name);
+    return this.headersAdaptor.contains(name);
   }
 
   @Override
   public List<String> getAll(String name) {
-    Objects.requireNonNull(name, "name");
-    return headers.getAll(name).stream().map(CharSequence::toString).collect(Collectors.toList());
+    return headersAdaptor.getAll(name);
   }
 
   @Override
   public List<String> getAll(CharSequence name) {
-    Objects.requireNonNull(name, "name");
-    return this.getAll(name.toString());
+    return headersAdaptor.getAll(name);
   }
 
   @Override
   public boolean contains(String name) {
-    return headers.contains(name);
+    return headersAdaptor.contains(name);
   }
 
   @Override
   public boolean isEmpty() {
-    return headers.isEmpty();
+    return headersAdaptor.isEmpty();
   }
 
   @Override
   public Set<String> names() {
-    return this.headers.names().stream().map(CharSequence::toString).collect(Collectors.toSet());
+    return this.headersAdaptor.names();
   }
 
   @Override
   public VertxHttpHeadersBase<H> add(String name, Iterable<String> values) {
-    this.headers.add(name, values);
+    this.headersAdaptor.add(name, values);
     return this;
   }
 
   @Override
   public MultiMap add(CharSequence name, Iterable<CharSequence> values) {
-    this.headers.add(name, values);
+    this.headersAdaptor.add(name, values);
     return this;
   }
 
   @Override
   public MultiMap addAll(MultiMap map) {
-    map.iterator().forEachRemaining(entry -> this.headers.add(entry.getKey(), entry.getValue()));
+    headersAdaptor.addAll(map);
     return this;
   }
 
   @Override
   public MultiMap addAll(Map<String, String> headers) {
-    headers.forEach((key, value) -> this.headers.add(key, value));
+    headersAdaptor.addAll(headers);
     return this;
   }
 
   @Override
   public MultiMap set(CharSequence name, CharSequence value) {
-    this.headers.set(name, value);
+    this.headersAdaptor.set(name, value);
     return this;
   }
 
   @Override
   public MultiMap set(String name, Iterable<String> values) {
-    this.headers.set(name, values);
+    this.headersAdaptor.set(name, values);
     return this;
   }
 
   @Override
   public MultiMap set(CharSequence name, Iterable<CharSequence> values) {
-    this.headers.set(name, values);
+    this.headersAdaptor.set(name, values);
     return this;
   }
 
   @Override
   public MultiMap setAll(MultiMap map) {
-    map.forEach((key, value) -> this.headers.set(key, value));
+    headersAdaptor.setAll(map);
     return this;
   }
 
   @Override
   public MultiMap setAll(Map<String, String> headers) {
-    headers.forEach((key, value) -> this.headers.set(key, value));
+    headersAdaptor.setAll(headers);
     return this;
   }
 
   @Override
   public MultiMap remove(CharSequence name) {
-    headers.remove(name);
+    headersAdaptor.remove(name);
     return this;
   }
 
   @Override
   public MultiMap clear() {
-    headers.clear();
+    headersAdaptor.clear();
     return this;
   }
 
   @Override
   public int size() {
-    return headers.size();
-  }
-
-  @Override
-  public Iterator iterator() {
-    return headers.iterator();
+    return headersAdaptor.size();
   }
 }
+*/
