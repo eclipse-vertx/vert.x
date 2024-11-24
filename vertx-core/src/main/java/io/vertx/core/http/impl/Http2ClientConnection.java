@@ -17,7 +17,6 @@ import io.netty.handler.timeout.IdleStateEvent;
 import io.vertx.core.*;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
-import io.vertx.core.http.impl.headers.VertxHttp2Headers;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.ClientMetrics;
@@ -174,7 +173,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   protected synchronized void onHeadersRead(int streamId, Http2Headers headers, StreamPriorityBase streamPriority, boolean endOfStream) {
     VertxHttpStreamBase<?, ?> stream = stream(streamId);
     if (!stream.isTrailersReceived()) {
-      stream.onHeaders(new VertxHttp2Headers(headers), streamPriority);
+      stream.onHeaders(new Http2HeadersAdaptor(headers), streamPriority);
       if (endOfStream) {
         stream.onEnd();
       }

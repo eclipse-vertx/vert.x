@@ -17,10 +17,8 @@ import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpSettings;
 import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.http.impl.headers.Http3HeadersAdaptor;
-import io.vertx.core.http.impl.headers.VertxHttp3Headers;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.ClientMetrics;
@@ -159,7 +157,7 @@ class Http3ClientConnection extends Http3ConnectionBase implements HttpClientCon
                                             StreamPriorityBase streamPriority, boolean endOfStream,
                                             QuicStreamChannel streamChannel) {
     if (!stream.isTrailersReceived()) {
-      stream.onHeaders(new VertxHttp3Headers(headers), streamPriority);
+      stream.onHeaders(new Http3HeadersAdaptor(headers), streamPriority);
       if (endOfStream) {
         stream.onEnd();
       }

@@ -1,10 +1,8 @@
 package io.vertx.core.http.impl.headers;
 
 import io.netty.handler.codec.Headers;
-import io.netty.handler.codec.http.HttpHeaders;
 import io.vertx.core.MultiMap;
 
-import java.util.Map;
 
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
@@ -13,32 +11,26 @@ public interface VertxHttpHeaders extends MultiMap {
 
   <T extends Headers<CharSequence, CharSequence, T>> T getHeaders();
 
-  Iterable<Map.Entry<CharSequence, CharSequence>> getIterable();
+  void method(CharSequence value);
 
-  void method(String value);
+  void authority(CharSequence authority);
 
-  void authority(String authority);
+  CharSequence authority();
 
-  String authority();
+  void path(CharSequence value);
 
-  void path(String value);
-
-  void scheme(String value);
+  void scheme(CharSequence value);
 
   CharSequence scheme();
 
-  String path();
+  CharSequence path();
 
-  String method();
+  CharSequence method();
 
-  String status();
+  CharSequence status();
 
   void status(CharSequence status);
 
-  MultiMap toHeaderAdapter();
-
-  HttpHeaders toHttpHeaders();
-
-  boolean contains(String name, String value);
+  boolean contains(CharSequence name, CharSequence value);
 
 }

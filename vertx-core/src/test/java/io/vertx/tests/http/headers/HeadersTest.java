@@ -640,7 +640,7 @@ public abstract class HeadersTest {
 
   @Test
   public void testSetAllOnExistingMapUsingMultiMapHttp2() {
-    MultiMap mainMap = new Http2HeadersAdaptor(new DefaultHttp2Headers());
+    MultiMap mainMap = new Http2HeadersAdaptor();
     mainMap.add("originalKey", "originalValue");
 
     MultiMap setAllMap = newMultiMap();
@@ -658,7 +658,7 @@ public abstract class HeadersTest {
 
   @Test
   public void testSetAllOnExistingMapUsingHashMapHttp2() {
-    MultiMap mainMap = new Http2HeadersAdaptor(new DefaultHttp2Headers());
+    MultiMap mainMap = new Http2HeadersAdaptor();
     mainMap.add("originalKey", "originalValue");
 
     Map<String,String> setAllMap = new HashMap<>();

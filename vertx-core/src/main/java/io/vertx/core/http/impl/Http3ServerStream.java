@@ -37,7 +37,7 @@ import io.vertx.core.tracing.TracingPolicy;
 import static io.vertx.core.spi.metrics.Metrics.*;
 
 class Http3ServerStream extends VertxHttpStreamBase<Http3ServerConnection, QuicStreamChannel> {
-  private static final MultiMap EMPTY = new Http3HeadersAdaptor(new DefaultHttp3Headers());
+  private static final MultiMap EMPTY = new Http3HeadersAdaptor();
 
   protected final VertxHttpHeaders headers;
   protected final String scheme;
@@ -103,7 +103,7 @@ class Http3ServerStream extends VertxHttpStreamBase<Http3ServerConnection, QuicS
     VertxTracer tracer = context.tracer();
     if (tracer != null) {
       trace = tracer.receiveRequest(context, SpanKind.RPC, tracingPolicy, request, method().name(),
-        headers.toHeaderAdapter(), HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
+        headers, HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
     }
     request.dispatch(conn.requestHandler);
   }

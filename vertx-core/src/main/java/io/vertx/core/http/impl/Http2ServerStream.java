@@ -122,7 +122,7 @@ class Http2ServerStream extends VertxHttpStreamBase<Http2ServerConnection, Http2
     }
     VertxTracer tracer = context.tracer();
     if (tracer != null) {
-      trace = tracer.receiveRequest(context, SpanKind.RPC, tracingPolicy, request, method().name(), headers.toHeaderAdapter(), HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
+      trace = tracer.receiveRequest(context, SpanKind.RPC, tracingPolicy, request, method().name(), headers, HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
     }
     request.dispatch(conn.requestHandler);
   }

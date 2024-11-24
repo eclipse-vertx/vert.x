@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-abstract class HttpHeadersAdaptor<T extends Headers<CharSequence, CharSequence, T>> implements MultiMap {
+abstract class HttpHeadersAdaptor<T extends Headers<CharSequence, CharSequence, T>> implements VertxHttpHeaders {
 
   protected final T headers;
   protected abstract boolean containsHeader(CharSequence name, CharSequence value, boolean caseInsensitive);

@@ -25,8 +25,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.headers.VertxHttp3Headers;
-import io.vertx.core.http.impl.headers.VertxHttpHeaders;
+import io.vertx.core.http.impl.headers.Http3HeadersAdaptor;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.net.HostAndPort;
@@ -49,10 +48,10 @@ public class Http3ServerResponse implements HttpServerResponse, HttpResponse {
   private final Http3ServerConnection conn;
   private final boolean push;
   private final String contentEncoding;
-  private final VertxHttpHeaders headers = new VertxHttp3Headers(new DefaultHttp3Headers());
-  private VertxHttpHeaders headersMap;
-  private VertxHttpHeaders trailers;
-  private VertxHttpHeaders trailedMap;
+  private final Http3HeadersAdaptor headers = new Http3HeadersAdaptor();
+  private Http3HeadersAdaptor headersMap;
+  private Http3HeadersAdaptor trailers;
+  private Http3HeadersAdaptor trailedMap;
   private boolean chunked;
   private boolean headWritten;
   private boolean ended;
@@ -198,7 +197,7 @@ public class Http3ServerResponse implements HttpServerResponse, HttpResponse {
   public MultiMap headers() {
     synchronized (conn) {
       if (headersMap == null) {
-        headersMap = new VertxHttp3Headers(headers.getHeaders());
+        headersMap = new Http3HeadersAdaptor(headers);
       }
       return headersMap;
     }
@@ -244,8 +243,8 @@ public class Http3ServerResponse implements HttpServerResponse, HttpResponse {
   public MultiMap trailers() {
     synchronized (conn) {
       if (trailedMap == null) {
-        trailers = new VertxHttp3Headers();
-        trailedMap = new VertxHttp3Headers(trailers.getHeaders());
+        trailers = new Http3HeadersAdaptor();
+        trailedMap = new Http3HeadersAdaptor(trailers);
       }
       return trailedMap;
     }
@@ -314,10 +313,9 @@ public class Http3ServerResponse implements HttpServerResponse, HttpResponse {
     Promise<Void> promise = stream.context.promise();
     synchronized (conn) {
       checkHeadWritten();
-      DefaultHttp3Headers defaultHttp3Headers = new DefaultHttp3Headers();
-      defaultHttp3Headers.status(HttpResponseStatus.CONTINUE.codeAsText());
-      stream.writeHeaders(new VertxHttp3Headers(defaultHttp3Headers), true, false,
-        true, promise);
+      Http3HeadersAdaptor http3HeadersAdaptor = new Http3HeadersAdaptor();
+      http3HeadersAdaptor.status(HttpResponseStatus.CONTINUE.codeAsText());
+      stream.writeHeaders(http3HeadersAdaptor, true, false, true, promise);
     }
     return promise.future();
   }
@@ -325,15 +323,15 @@ public class Http3ServerResponse implements HttpServerResponse, HttpResponse {
   @Override
   public Future<Void> writeEarlyHints(MultiMap headers) {
     PromiseInternal<Void> promise = stream.context.promise();
-    DefaultHttp3Headers http3Headers = new DefaultHttp3Headers();
+    Http3HeadersAdaptor http3HeadersAdaptor = new Http3HeadersAdaptor();
     for (Entry<String, String> header : headers) {
-      http3Headers.add(header.getKey(), header.getValue());
+      http3HeadersAdaptor.add(header.getKey(), header.getValue());
     }
-    http3Headers.status(HttpResponseStatus.EARLY_HINTS.codeAsText());
+    http3HeadersAdaptor.status(HttpResponseStatus.EARLY_HINTS.codeAsText());
     synchronized (conn) {
       checkHeadWritten();
     }
-    stream.writeHeaders(new VertxHttp3Headers(http3Headers), true, false, true, promise);
+    stream.writeHeaders(http3HeadersAdaptor, true, false, true, promise);
     return promise.future();
   }
 
@@ -415,7 +413,7 @@ public class Http3ServerResponse implements HttpServerResponse, HttpResponse {
         fut = stream.context.succeededFuture();
       }
       if (end && trailers != null) {
-        stream.writeHeaders(new VertxHttp3Headers(trailers.getHeaders()), false, true, true, null);
+        stream.writeHeaders(new Http3HeadersAdaptor(trailers), false, true, true, null);
       }
       bodyEndHandler = this.bodyEndHandler;
       endHandler = this.endHandler;

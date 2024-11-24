@@ -10,12 +10,21 @@
  */
 package io.vertx.core.http.impl.headers;
 
+import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Headers;
 
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
  */
 public class Http2HeadersAdaptor extends HttpHeadersAdaptor<Http2Headers> {
+
+  public Http2HeadersAdaptor() {
+    this(new DefaultHttp2Headers());
+  }
+
+  public Http2HeadersAdaptor(Http2HeadersAdaptor http2HeadersAdaptor) {
+    this(http2HeadersAdaptor.headers);
+  }
 
   public Http2HeadersAdaptor(Http2Headers headers) {
     super(headers);
@@ -25,4 +34,65 @@ public class Http2HeadersAdaptor extends HttpHeadersAdaptor<Http2Headers> {
   protected boolean containsHeader(CharSequence name, CharSequence value, boolean caseInsensitive) {
     return headers.contains(name, value, caseInsensitive);
   }
+
+  @Override
+  public void method(CharSequence value) {
+    this.headers.method(value);
+  }
+
+  @Override
+  public void authority(CharSequence authority) {
+    this.headers.authority(authority);
+  }
+
+  @Override
+  public CharSequence authority() {
+    return this.headers.authority();
+  }
+
+  @Override
+  public void path(CharSequence value) {
+    this.headers.path(value);
+  }
+
+  @Override
+  public void scheme(CharSequence value) {
+    this.headers.scheme(value);
+  }
+
+  @Override
+  public CharSequence path() {
+    return this.headers.path();
+  }
+
+  @Override
+  public CharSequence method() {
+    return this.headers.method();
+  }
+
+  @Override
+  public CharSequence status() {
+    return this.headers.status();
+  }
+
+  @Override
+  public void status(CharSequence status) {
+    this.headers.status(status);
+  }
+
+  @Override
+  public CharSequence scheme() {
+    return this.headers.scheme();
+  }
+
+  @Override
+  public boolean contains(CharSequence name, CharSequence value) {
+    return headers.contains(name, value);
+  }
+
+  @Override
+  public Http2Headers getHeaders() {
+    return headers;
+  }
+
 }

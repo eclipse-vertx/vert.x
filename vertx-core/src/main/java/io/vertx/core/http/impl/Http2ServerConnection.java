@@ -23,7 +23,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.headers.VertxHttp2Headers;
+import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
@@ -182,7 +182,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
         return;
       }
       initStream(streamId, stream);
-      stream.onHeaders(new VertxHttp2Headers(headers), streamPriority);
+      stream.onHeaders(new Http2HeadersAdaptor(headers), streamPriority);
     } else {
       // Http server request trailer - not implemented yet (in api)
     }

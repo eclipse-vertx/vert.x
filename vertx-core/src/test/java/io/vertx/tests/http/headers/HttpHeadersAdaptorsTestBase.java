@@ -12,7 +12,7 @@
 package io.vertx.tests.http.headers;
 
 import io.netty.handler.codec.DefaultHeaders;
-import io.vertx.core.MultiMap;
+import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -32,7 +32,7 @@ import static org.junit.Assert.assertTrue;
 public abstract class HttpHeadersAdaptorsTestBase extends HeadersTest {
 
   protected DefaultHeaders<CharSequence, CharSequence, ?> headers;
-  protected MultiMap map;
+  protected VertxHttpHeaders map;
 
   @Test
   public void testGetConvertUpperCase() {
@@ -98,5 +98,35 @@ public abstract class HttpHeadersAdaptorsTestBase extends HeadersTest {
 
   private void assertHeaderNames(String... expected) {
     assertEquals(new HashSet<>(Arrays.asList(expected)), headers.names().stream().map(CharSequence::toString).collect(Collectors.toSet()));
+  }
+
+  @Test
+  public void testMethod() {
+    map.method("GET");
+    assertEquals("GET", map.method());
+  }
+
+  @Test
+  public void testAuthority() {
+    map.authority("Auth");
+    assertEquals("Auth", map.authority());
+  }
+
+  @Test
+  public void testPath() {
+    map.path("Path");
+    assertEquals("Path", map.path());
+  }
+
+  @Test
+  public void testScheme() {
+    map.scheme("https");
+    assertEquals("https", map.scheme());
+  }
+
+  @Test
+  public void testStatus() {
+    map.status("100");
+    assertEquals("100", map.status());
   }
 }
