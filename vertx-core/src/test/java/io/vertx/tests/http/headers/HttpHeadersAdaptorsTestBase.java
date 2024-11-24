@@ -11,28 +11,29 @@
 
 package io.vertx.tests.http.headers;
 
-import io.netty.handler.codec.DefaultHeaders;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public abstract class HttpHeadersAdaptorsTestBase extends HeadersTest {
 
-  protected DefaultHeaders<CharSequence, CharSequence, ?> headers;
   protected VertxHttpHeaders map;
+
+  protected abstract VertxHttpHeaders newMultiMap();
+
+  @Before
+  public void setUp() {
+    this.map = newMultiMap();
+  }
 
   @Test
   public void testGetConvertUpperCase() {
@@ -59,18 +60,18 @@ public abstract class HttpHeadersAdaptorsTestBase extends HeadersTest {
   public void testSetConvertUpperCase() {
     map.set("Foo", "foo_value");
     map.set((CharSequence) "Bar", "bar_value");
-    map.set("Juu", (Iterable<String>)Collections.singletonList("juu_value"));
-    map.set("Daa", Collections.singletonList((CharSequence)"daa_value"));
-    assertHeaderNames("foo","bar", "juu", "daa");
+    map.set("Juu", (Iterable<String>) Collections.singletonList("juu_value"));
+    map.set("Daa", Collections.singletonList((CharSequence) "daa_value"));
+    assertHeaderNames("foo", "bar", "juu", "daa");
   }
 
   @Test
   public void testAddConvertUpperCase() {
     map.add("Foo", "foo_value");
     map.add((CharSequence) "Bar", "bar_value");
-    map.add("Juu", (Iterable<String>)Collections.singletonList("juu_value"));
-    map.add("Daa", Collections.singletonList((CharSequence)"daa_value"));
-    assertHeaderNames("foo","bar", "juu", "daa");
+    map.add("Juu", (Iterable<String>) Collections.singletonList("juu_value"));
+    map.add("Daa", Collections.singletonList((CharSequence) "daa_value"));
+    assertHeaderNames("foo", "bar", "juu", "daa");
   }
 
   @Test
@@ -91,13 +92,16 @@ public abstract class HttpHeadersAdaptorsTestBase extends HeadersTest {
     assertEquals("foo", entries.get(0).getKey());
     assertEquals("foo_value_1", entries.get(0).getValue());
     map.set("bar", "bar_value");
-    Map<String, String> collected = map.entries().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    Map<String, String> collected = map.entries().stream().collect(Collectors.toMap(Map.Entry::getKey,
+      Map.Entry::getValue));
     assertEquals("foo_value_1", collected.get("foo"));
     assertEquals("bar_value", collected.get("bar"));
   }
 
   private void assertHeaderNames(String... expected) {
-    assertEquals(new HashSet<>(Arrays.asList(expected)), headers.names().stream().map(CharSequence::toString).collect(Collectors.toSet()));
+    Set<String> keys = new HashSet<>();
+    map.iterator().forEachRemaining(entry -> keys.add(entry.getKey()));
+    assertEquals(new HashSet<>(Arrays.asList(expected)), keys);
   }
 
   @Test
