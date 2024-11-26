@@ -585,8 +585,10 @@ public abstract class HttpTest extends HttpTestBase {
     }
     String resource = absolute && path.isEmpty() ? "/" + path : path;
     server.requestHandler(req -> {
-      String expectedPath = req.method() == HttpMethod.CONNECT && req.version() == HttpVersion.HTTP_2 ? null : resource;
-      String expectedQuery = req.method() == HttpMethod.CONNECT && req.version() == HttpVersion.HTTP_2 ? null : query;
+      String expectedPath = req.method() == HttpMethod.CONNECT && HttpVersion.isFrameBased(req.version()) ? null :
+        resource;
+      String expectedQuery = req.method() == HttpMethod.CONNECT && HttpVersion.isFrameBased(req.version()) ? null :
+        query;
       assertEquals(expectedPath, req.path());
       assertEquals(method, req.method());
       assertEquals(expectedQuery, req.query());
