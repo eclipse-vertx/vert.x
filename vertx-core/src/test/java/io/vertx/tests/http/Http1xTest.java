@@ -5826,6 +5826,15 @@ public class Http1xTest extends HttpTest {
     assertEquals(expected, responses);
   }
 
+  @Override
+  protected HttpVersion clientAlpnProtocolVersion() {
+    return HttpVersion.HTTP_1_1;
+  }
+
+  @Override
+  protected HttpVersion serverAlpnProtocolVersion() {
+    return HttpVersion.HTTP_1_1;
+  }
 
   @Test
   public void testUnsolicitedMessagesAreTreatedAsInvalid() throws Exception {

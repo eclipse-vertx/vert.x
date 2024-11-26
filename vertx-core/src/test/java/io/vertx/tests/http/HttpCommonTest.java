@@ -41,8 +41,6 @@ import static io.vertx.test.core.AssertExpectations.*;
  */
 public abstract class HttpCommonTest extends HttpTest {
 
-  protected abstract HttpVersion clientAlpnProtocolVersion();
-  protected abstract HttpVersion serverAlpnProtocolVersion();
   protected abstract void addMoreOptions(HttpServerOptions opts);
   protected abstract HttpServerOptions setMaxConcurrentStreamsSettings(HttpServerOptions options,
                                                                        int maxConcurrentStreams);
