@@ -24,6 +24,7 @@ import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.VertxMetricsFactory;
+import io.vertx.core.spi.VertxTracerFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.transport.Transport;
 
@@ -111,9 +112,10 @@ public class CoreExamples {
     }
   }
 
-  public void vertxBuilder(VertxOptions options, VertxMetricsFactory metricsFactory) {
+  public void vertxBuilder(VertxOptions options, VertxMetricsFactory metricsFactory, VertxTracerFactory tracerFactory) {
     Vertx vertx = Vertx.builder()
       .with(options)
+      .withTracer(tracerFactory)
       .withMetrics(metricsFactory)
       .build();
   }

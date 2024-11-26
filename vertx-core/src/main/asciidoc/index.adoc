@@ -794,9 +794,19 @@ If you are using Vert.x from a Maven or Gradle project just add the cluster mana
 
 For more information on this, please consult https://vertx.io/docs/#clustering
 
-=== Programmatic SPI selection and configuration
+== Vert.x Builder
 
-The {@link io.vertx.core.VertxBuilder} gives you more control over the SPI selection and configuration.
+{@link io.vertx.core.Vertx#vertx()} and {@link io.vertx.core.Vertx#clusteredVertx(io.vertx.core.VertxOptions)} static
+methods are the easiest way obtain an instance of {@link io.vertx.core.Vertx}.
+
+You can also use the https://en.wikipedia.org/wiki/Builder_pattern[builder pattern] to create a `Vertx` instance. The builder
+lets you programmatically configure a few providers (SPI) which are usually loaded using `VertxOptions` and/or Java
+Service Loader plugins.
+
+- Native <<_native_transports, transport>>
+- Cluster manager
+- Tracing
+- Metrics instance
 
 [source,$lang]
 ----
