@@ -173,7 +173,7 @@ class SharedHttpClientConnectionGroup extends ManagedResource implements PoolCon
     }
 
     void acquire() {
-      pool.acquire(context, this, protocol == HttpVersion.HTTP_2 || protocol == HttpVersion.HTTP_3 ? 1 : 0)
+      pool.acquire(context, this, HttpVersion.isFrameBased(protocol) ? 1 : 0)
         .onComplete(this);
     }
   }

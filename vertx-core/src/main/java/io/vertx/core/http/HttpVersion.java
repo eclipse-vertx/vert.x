@@ -37,6 +37,7 @@ public enum HttpVersion {
   private final String alpnName;
 
   private static final Set<HttpVersion> VALID_VERSIONS = Set.of(HTTP_1_0, HTTP_1_1, HTTP_2, HTTP_3);
+  private static final Set<HttpVersion> FRAME_BASED_VERSIONS = Set.of(HTTP_2, HTTP_3);
 
   HttpVersion(String alpnName) {
     this.alpnName = alpnName;
@@ -51,5 +52,9 @@ public enum HttpVersion {
 
   public static void validateProtocolVersion(HttpVersion protocolVersion) {
     Arguments.require(HttpVersion.VALID_VERSIONS.contains(protocolVersion), "Protocol version is not valid!");
+  }
+
+  public static boolean isFrameBased(HttpVersion version) {
+    return FRAME_BASED_VERSIONS.contains(version);
   }
 }
