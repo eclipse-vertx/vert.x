@@ -5807,4 +5807,14 @@ public class Http1xTest extends HttpTest {
     expected.add("server-3");
     assertEquals(expected, responses);
   }
+
+  @Override
+  protected HttpVersion clientAlpnProtocolVersion() {
+    return HttpVersion.HTTP_1_1;
+  }
+
+  @Override
+  protected HttpVersion serverAlpnProtocolVersion() {
+    return HttpVersion.HTTP_1_1;
+  }
 }

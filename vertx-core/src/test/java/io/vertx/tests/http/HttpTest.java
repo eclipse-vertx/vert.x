@@ -74,6 +74,9 @@ import static org.hamcrest.CoreMatchers.instanceOf;
  */
 public abstract class HttpTest extends HttpTestBase {
 
+  protected abstract HttpVersion clientAlpnProtocolVersion();
+  protected abstract HttpVersion serverAlpnProtocolVersion();
+
   @Test
   public void testCloseMulti() throws Exception {
     int num = 4;
@@ -1733,7 +1736,7 @@ public abstract class HttpTest extends HttpTestBase {
         } else {
           theCode = code;
         }
-        if (statusMessage != null && resp.version() != HttpVersion.HTTP_2) {
+        if (statusMessage != null && !HttpVersion.isFrameBased(resp.version())) {
           assertEquals(statusMessage, resp.statusMessage());
         } else {
           assertEquals(HttpResponseStatus.valueOf(theCode).reasonPhrase(), resp.statusMessage());
@@ -1873,7 +1876,7 @@ public abstract class HttpTest extends HttpTestBase {
     server.requestHandler(req -> {
       try {
         req.response().setStatusMessage("hello\nworld");
-        assertEquals(HttpVersion.HTTP_2, req.version());
+        assertEquals(serverAlpnProtocolVersion(), req.version());
       } catch (IllegalArgumentException ignore) {
         assertEquals(HttpVersion.HTTP_1_1, req.version());
       }
@@ -6222,7 +6225,7 @@ public abstract class HttpTest extends HttpTestBase {
     waitFor(2);
     server.requestHandler(req -> {
       assertEquals(chunked ? null : contentLength, req.getHeader(HttpHeaders.CONTENT_LENGTH));
-      assertEquals(chunked & req.version() != HttpVersion.HTTP_2 ? HttpHeaders.CHUNKED.toString() : null, req.getHeader(HttpHeaders.TRANSFER_ENCODING));
+      assertEquals(chunked & HttpVersion.isFrameBased(req.version()) ? HttpHeaders.CHUNKED.toString() : null, req.getHeader(HttpHeaders.TRANSFER_ENCODING));
       req.bodyHandler(body -> {
         assertEquals(HttpMethod.PUT, req.method());
         assertEquals(Buffer.buffer(expected), body);
