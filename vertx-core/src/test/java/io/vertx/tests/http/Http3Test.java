@@ -13,19 +13,15 @@ package io.vertx.tests.http;
 
 import io.netty.incubator.codec.http3.Http3;
 import io.netty.incubator.codec.quic.QuicStreamPriority;
-import io.vertx.core.VertxOptions;
 import io.vertx.core.http.*;
-import io.vertx.core.net.ClientSSLOptions;
-import io.vertx.core.net.ConnectOptions;
-import io.vertx.core.net.JdkSSLEngineOptions;
-import io.vertx.core.net.NetClientOptions;
-import io.vertx.test.tls.Trust;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import javax.net.ssl.SSLHandshakeException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
@@ -446,4 +442,30 @@ public class Http3Test extends HttpCommonTest {
     await();
   }
 
+  @Test
+  public void testAppendToHttpChunks() throws Exception {
+    List<String> expected = Arrays.asList("chunk-1", "chunk-2", "chunk-3");
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      expected.forEach(resp::write);
+      resp.end(); // Will end an empty chunk
+    });
+    startServer(testAddress);
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req.send().onComplete(onSuccess(resp -> {
+        List<String> chunks = new ArrayList<>();
+        resp.handler(chunk -> {
+          chunk.appendString("-suffix");
+          chunks.add(chunk.toString());
+        });
+        resp.endHandler(v -> {
+          assertEquals(Stream.concat(expected.stream(), Stream.of(""))
+            .map(s -> s + "-suffix")
+            .collect(Collectors.toList()), chunks);
+          testComplete();
+        });
+      }));
+    }));
+    await();
+  }
 }
