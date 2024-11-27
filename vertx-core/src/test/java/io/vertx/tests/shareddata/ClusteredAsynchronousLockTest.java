@@ -30,19 +30,18 @@ import java.util.function.Consumer;
  */
 public class ClusteredAsynchronousLockTest extends AsynchronousLockTest {
 
-  @Override
-  protected ClusterManager getClusterManager() {
-    return new FakeClusterManager();
-  }
-
   protected final int numNodes = 3;
+  AtomicInteger pos = new AtomicInteger();
 
   public void setUp() throws Exception {
     super.setUp();
     startNodes(numNodes);
   }
 
-  AtomicInteger pos = new AtomicInteger();
+  @Override
+  protected ClusterManager getClusterManager() {
+    return new FakeClusterManager();
+  }
 
   @Override
   protected Vertx getVertx() {
