@@ -172,8 +172,8 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  public void reset(Throwable cause) {
-    delegate.reset(cause);
+  public Future<Void> reset(Throwable cause) {
+    return delegate.reset(cause);
   }
 
   @Override

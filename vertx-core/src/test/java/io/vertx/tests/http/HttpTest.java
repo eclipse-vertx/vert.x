@@ -4460,8 +4460,8 @@ public abstract class HttpTest extends HttpTestBase {
       public Future<Void> end(Buffer chunk) { throw new UnsupportedOperationException(); }
       public HttpClientRequest idleTimeout(long timeoutMs) { throw new UnsupportedOperationException(); }
       public HttpClientRequest pushHandler(Handler<HttpClientRequest> handler) { throw new UnsupportedOperationException(); }
-      public boolean reset(long code) { return false; }
-      public boolean reset(long code, Throwable cause) { return false; }
+      public Future<Void> reset(long code) { return Future.failedFuture(new UnsupportedOperationException()); }
+      public Future<Void> reset(long code, Throwable cause) { return Future.failedFuture(new UnsupportedOperationException()); }
       public HttpClientConnection connection() { throw new UnsupportedOperationException(); }
       public Future<Void> writeCustomFrame(int type, int flags, Buffer payload) { throw new UnsupportedOperationException(); }
       public boolean writeQueueFull() { throw new UnsupportedOperationException(); }
@@ -6281,7 +6281,7 @@ public abstract class HttpTest extends HttpTestBase {
     client = vertx.createHttpClient(createBaseClientOptions(), new PoolOptions().setHttp1MaxSize(1));
     Buffer chunk = Buffer.buffer(TestUtils.randomAlphaString(1024));
     client.request(requestOptions).onComplete(onSuccess(req1 -> {
-      assertTrue(req1.reset());
+      assertTrue(req1.reset().succeeded());
       new Thread(() -> {
         Context ctx = vertx.getOrCreateContext();
         ctx.runOnContext(v1 -> {

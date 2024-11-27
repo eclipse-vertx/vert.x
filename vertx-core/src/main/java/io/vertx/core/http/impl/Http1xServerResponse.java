@@ -693,14 +693,14 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public boolean reset(long code) {
+  public Future<Void> reset(long code) {
     synchronized (conn) {
       if (written) {
-        return false;
+        return context.failedFuture("Response written");
       }
     }
     conn.close();
-    return true;
+    return context.succeededFuture();
   }
 
   @Override

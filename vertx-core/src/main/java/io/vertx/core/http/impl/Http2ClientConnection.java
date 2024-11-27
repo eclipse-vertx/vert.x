@@ -208,7 +208,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       }
     }
 
-    Http2ClientConnection.this.handler.writeReset(promisedStreamId, Http2Error.CANCEL.code());
+    Http2ClientConnection.this.handler.writeReset(promisedStreamId, Http2Error.CANCEL.code(), null);
   }
 
   @Override

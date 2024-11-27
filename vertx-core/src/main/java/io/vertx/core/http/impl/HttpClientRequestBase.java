@@ -225,24 +225,23 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   @Override
-  public boolean reset(long code) {
+  public Future<Void> reset(long code) {
     return reset(new StreamResetException(code));
   }
 
   @Override
-  public boolean reset(long code, Throwable cause) {
+  public Future<Void> reset(long code, Throwable cause) {
     return reset(new StreamResetException(code, cause));
   }
 
-  private boolean reset(Throwable cause) {
+  private Future<Void> reset(Throwable cause) {
     synchronized (this) {
       if (reset != null) {
-        return false;
+        return context.failedFuture("Already reset");
       }
       reset = cause;
     }
-    stream.reset(cause);
-    return true;
+    return stream.reset(cause);
   }
 
   @Override

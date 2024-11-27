@@ -289,8 +289,9 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
     checkFlush();
   }
 
-  void writeReset(int streamId, long code) {
-    encoder().writeRstStream(chctx, streamId, code, chctx.newPromise());
+  void writeReset(int streamId, long code, FutureListener<Void> listener) {
+    ChannelPromise promise = listener == null ? chctx.voidPromise() : chctx.newPromise().addListener(listener);
+    encoder().writeRstStream(chctx, streamId, code, promise);
     checkFlush();
   }
 

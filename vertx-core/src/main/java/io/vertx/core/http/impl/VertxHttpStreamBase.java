@@ -24,6 +24,7 @@ import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.concurrent.InboundMessageQueue;
 import io.vertx.core.internal.concurrent.OutboundMessageQueue;
@@ -322,25 +323,28 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
     writeData_(streamChannel, chunk, end, (FutureListener<Void>) promise);
   }
 
-  final void writeReset(long code) {
+  final Future<Void> writeReset(long code) {
+    Promise<Void> promise = context.promise();
     EventLoop eventLoop = conn.context().nettyEventLoop();
     if (eventLoop.inEventLoop()) {
-      doWriteReset(code);
+      doWriteReset(code, promise);
     } else {
-      eventLoop.execute(() -> doWriteReset(code));
+      eventLoop.execute(() -> doWriteReset(code, promise));
     }
+    return promise.future();
   }
 
-  protected void doWriteReset(long code) {
+  protected void doWriteReset(long code, Promise<Void> promise) {
     int streamId;
     synchronized (this) {
       streamId = getStreamId();
     }
     if (streamId != -1) {
-      writeReset_(streamId, code);
+      writeReset_(streamId, code, (PromiseInternal<Void>) promise);
     } else {
       // Reset happening before stream allocation
       handleReset(code);
+      promise.complete();
     }
   }
 

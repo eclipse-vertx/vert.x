@@ -178,7 +178,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
         stream = createStream(headers, endOfStream);
       }
       if (isMalformedRequest(stream)) {
-        handler.writeReset(streamId, Http2Error.PROTOCOL_ERROR.code());
+        handler.writeReset(streamId, Http2Error.PROTOCOL_ERROR.code(), null);
         return;
       }
       initStream(streamId, stream);

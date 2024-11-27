@@ -228,8 +228,8 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
     }
 
     @Override
-    public void reset(Throwable cause) {
-      delegate.reset(cause);
+    public Future<Void> reset(Throwable cause) {
+      return delegate.reset(cause);
     }
 
     @Override
@@ -753,11 +753,11 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
     }
 
     @Override
-    public void reset(Throwable cause) {
+    public Future<Void> reset(Throwable cause) {
       if (upgradedStream != null) {
-        upgradedStream.reset(cause);
+        return upgradedStream.reset(cause);
       } else {
-        upgradingStream.reset(cause);
+        return upgradingStream.reset(cause);
       }
     }
 
