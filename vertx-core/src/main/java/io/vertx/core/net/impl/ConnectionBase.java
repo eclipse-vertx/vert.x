@@ -13,6 +13,7 @@ package io.vertx.core.net.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
+import io.netty.channel.socket.DatagramChannel;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.traffic.AbstractTrafficShapingHandler;
 import io.netty.util.AttributeKey;
@@ -396,11 +397,21 @@ public abstract class ConnectionBase {
 
   private boolean isHttp3SslHandler(ChannelHandlerContext chctx) {
     Channel channel = chctx.channel();
-    if (channel == null || channel.parent() == null || channel.parent().parent() == null)
-      return false;
+    ChannelPipeline pipeline = getDatagramChannelPipeline(channel);
+    return pipeline != null && pipeline.names().contains(ChannelProvider.CLIENT_SSL_HANDLER_NAME);
+  }
 
-    ChannelPipeline pipeline = channel.parent().parent().pipeline();
-    return pipeline.names().contains(ChannelProvider.CLIENT_SSL_HANDLER_NAME);
+  private ChannelPipeline getDatagramChannelPipeline(Channel channel) {
+    for (int i = 0; i < 3; i++) {
+      if (channel == null) {
+        return null;
+      }
+      if (channel instanceof DatagramChannel) {
+        return channel.pipeline();
+      }
+      channel = channel.parent();
+    }
+    return null;
   }
 
   public boolean isTrafficShaped() {
