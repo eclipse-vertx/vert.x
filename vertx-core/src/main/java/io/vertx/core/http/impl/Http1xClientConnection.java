@@ -318,11 +318,9 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
    * @return whether the stream should be considered as closed
    */
   private boolean reset(Stream stream) {
-    synchronized (this) {
-      if (!responses.contains(stream)) {
-        requests.remove(stream);
-        return true;
-      }
+    if (!responses.contains(stream)) {
+      requests.remove(stream);
+      return true;
     }
     close();
     return false;
@@ -582,28 +580,30 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
 
     @Override
-    public void reset(Throwable cause) {
-      synchronized (conn) {
-        if (reset) {
-          return;
-        }
-        reset = true;
-      }
+    public Future<Void> reset(Throwable cause) {
+      Promise<Void> promise = context.promise();
       EventLoop eventLoop = conn.context.nettyEventLoop();
       if (eventLoop.inEventLoop()) {
-        _reset(cause);
+        _reset(cause, promise);
       } else {
-        eventLoop.execute(() -> _reset(cause));
+        eventLoop.execute(() -> _reset(cause, promise));
       }
+      return promise.future();
     }
 
-    private void _reset(Throwable cause) {
+    private void _reset(Throwable cause, Promise<Void> promise) {
+      if (reset) {
+        promise.fail("Stream already reset");
+        return;
+      }
+      reset = true;
       boolean removed = conn.reset(this);
       if (removed) {
         context.execute(cause, this::handleClosed);
       } else {
         context.execute(cause, this::handleException);
       }
+      promise.complete();
     }
 
     @Override

@@ -608,9 +608,8 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public boolean reset(long code) {
-    stream.writeReset(code);
-    return true;
+  public Future<Void> reset(long code) {
+    return stream.writeReset(code);
   }
 
   @Override

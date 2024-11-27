@@ -468,7 +468,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   /**
    * Reset this HTTP/2 stream with the error code {@code 0}.
    */
-  default boolean reset() {
+  default Future<Void> reset() {
     return reset(0L);
   }
 
@@ -485,7 +485,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * @param code the error code
    * @return {@code true} when reset has been performed
    */
-  boolean reset(long code);
+  Future<Void> reset(long code);
 
   /**
    * Write an HTTP/2 frame to the response, allowing to extend the HTTP/2 protocol.<p>

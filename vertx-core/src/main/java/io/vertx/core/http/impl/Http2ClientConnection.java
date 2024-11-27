@@ -221,7 +221,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       }
     }
 
-    Http2ClientConnection.this.handler.writeReset(promisedStreamId, Http2Error.CANCEL.code());
+    Http2ClientConnection.this.handler.writeReset(promisedStreamId, Http2Error.CANCEL.code(), null);
   }
 
   //
@@ -283,9 +283,11 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    protected void doWriteReset(long code) {
+    protected void doWriteReset(long code, Promise<Void> promise) {
       if (!requestEnded || !responseEnded) {
-        super.doWriteReset(code);
+        super.doWriteReset(code, promise);
+      } else {
+        promise.fail("Request ended");
       }
     }
 
@@ -649,7 +651,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    public void reset(Throwable cause) {
+    public Future<Void> reset(Throwable cause) {
       long code;
       if (cause instanceof StreamResetException) {
         code = ((StreamResetException)cause).getCode();
@@ -658,7 +660,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       } else {
         code = 0L;
       }
-      conn.context.emit(code, this::writeReset);
+      return writeReset(code);
     }
 
     @Override

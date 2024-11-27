@@ -227,7 +227,7 @@ public class Http2Test extends HttpTest {
     startServer(testAddress);
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req.response().onComplete(onFailure(err -> complete()));
-      assertTrue(req.reset());
+      assertTrue(req.reset().succeeded());
     }));
     await();
   }
