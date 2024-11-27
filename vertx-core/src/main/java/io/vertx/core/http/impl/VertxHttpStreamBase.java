@@ -24,6 +24,7 @@ import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.concurrent.InboundMessageQueue;
 import io.vertx.core.internal.concurrent.OutboundMessageQueue;
@@ -370,10 +371,11 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
       streamId = getStreamId();
     }
     if (streamId != -1) {
-      writeReset_(streamId, code);
+      writeReset_(streamId, code, (PromiseInternal<Void>) promise);
     } else {
       // Reset happening before stream allocation
       handleReset(code);
+      promise.complete();
     }
     promise.complete();
   }

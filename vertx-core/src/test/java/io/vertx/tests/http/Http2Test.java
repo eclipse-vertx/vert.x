@@ -56,6 +56,193 @@ public class Http2Test extends HttpCommonTest {
   @Override
   protected HttpServerOptions setMaxConcurrentStreamsSettings(HttpServerOptions options, int maxConcurrentStreams) {
     return options.setInitialSettings(new Http2Settings().setMaxConcurrentStreams(maxConcurrentStreams));
+  void runAsync(Runnable runnable) {
+    new Thread(() -> {
+      try {
+        runnable.run();
+      } catch (Exception e) {
+        fail(e);
+      }
+    }).start();
+  }
+
+  @Test
+  public void testClientRequestWriteFromOtherThread() throws Exception {
+    disableThreadChecks();
+    CountDownLatch latch1 = new CountDownLatch(1);
+    CountDownLatch latch2 = new CountDownLatch(1);
+    server.requestHandler(req -> {
+      latch2.countDown();
+      req.endHandler(v -> {
+        req.response().end();
+      });
+    });
+    startServer(testAddress);
+    client.request(requestOptions)
+      .onComplete(onSuccess(req -> {
+        req.response().onComplete(onSuccess(resp -> {
+          assertEquals(200, resp.statusCode());
+          testComplete();
+        }));
+        req
+          .setChunked(true)
+          .sendHead();
+        new Thread(() -> {
+          try {
+            awaitLatch(latch2); // The next write won't be buffered
+          } catch (InterruptedException e) {
+            fail(e);
+            return;
+          }
+          req.write("hello ");
+          req.end("world");
+        }).start();
+      }));
+    await();
+  }
+
+  @Test
+  public void testServerOpenSSL() throws Exception {
+    HttpServerOptions opts = new HttpServerOptions()
+      .setPort(DEFAULT_HTTPS_PORT)
+      .setHost(DEFAULT_HTTPS_HOST)
+      .setUseAlpn(true)
+      .setSsl(true)
+      .addEnabledCipherSuite("TLS_RSA_WITH_AES_128_CBC_SHA") // Non Diffie-helman -> debuggable in wireshark
+      .setKeyCertOptions(Cert.SERVER_PEM.get())
+      .setSslEngineOptions(new OpenSSLEngineOptions());
+    server.close();
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions());
+    server = vertx.createHttpServer(opts);
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    startServer(testAddress);
+    client.request(requestOptions)
+      .compose(HttpClientRequest::send)
+      .onComplete(onSuccess(resp -> {
+        assertEquals(200, resp.statusCode());
+        testComplete();
+      }));
+    await();
+  }
+
+  @Test
+  public void testResetClientRequestNotYetSent() throws Exception {
+    server.close();
+    server = vertx.createHttpServer(createBaseServerOptions().setInitialSettings(new Http2Settings().setMaxConcurrentStreams(1)));
+    server.requestHandler(req -> {
+      fail();
+    });
+    startServer(testAddress);
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req.response().onComplete(onFailure(err -> complete()));
+      assertTrue(req.reset().succeeded());
+    }));
+    await();
+  }
+
+  @Test
+  public void testDiscardConnectionWhenChannelBecomesInactive() throws Exception {
+    AtomicInteger count = new AtomicInteger();
+    server.requestHandler(req -> {
+      if (count.getAndIncrement() == 0) {
+        req.connection().close();
+      } else {
+        req.response().end();
+      }
+    });
+    startServer(testAddress);
+    AtomicInteger closed = new AtomicInteger();
+    client.close();
+    client = vertx.httpClientBuilder()
+      .with(createBaseClientOptions())
+      .withConnectHandler(conn -> conn.closeHandler(v -> closed.incrementAndGet()))
+      .build();
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req.send().onComplete(onFailure(err -> {}));
+    }));
+    AsyncTestBase.assertWaitUntil(() -> closed.get() == 1);
+    client.request(requestOptions)
+      .compose(HttpClientRequest::send)
+      .onComplete(onSuccess(resp -> {
+        testComplete();
+      }));
+    await();
+  }
+
+  @Test
+  public void testClientDoesNotSupportAlpn() throws Exception {
+    waitFor(2);
+    server.requestHandler(req -> {
+      assertEquals(HttpVersion.HTTP_1_1, req.version());
+      req.response().end();
+      complete();
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions().setProtocolVersion(HttpVersion.HTTP_1_1).setUseAlpn(false));
+    client.request(requestOptions)
+      .compose(HttpClientRequest::send)
+      .onComplete(onSuccess(resp -> {
+        assertEquals(HttpVersion.HTTP_1_1, resp.version());
+        complete();
+      }));
+    await();
+  }
+
+  @Test
+  public void testServerDoesNotSupportAlpn() throws Exception {
+    waitFor(2);
+    server.close();
+    server = vertx.createHttpServer(createBaseServerOptions().setUseAlpn(false));
+    server.requestHandler(req -> {
+      assertEquals(HttpVersion.HTTP_1_1, req.version());
+      req.response().end();
+      complete();
+    });
+    startServer(testAddress);
+    client.request(requestOptions)
+      .compose(HttpClientRequest::send)
+      .onComplete(onSuccess(resp -> {
+        assertEquals(HttpVersion.HTTP_1_1, resp.version());
+        complete();
+      }));
+    await();
+  }
+
+  @Test
+  public void testClientMakeRequestHttp2WithSSLWithoutAlpn() throws Exception {
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions().setUseAlpn(false));
+    client.request(requestOptions).onComplete(onFailure(err -> testComplete()));
+    await();
+  }
+
+  @Test
+  public void testServePendingRequests() throws Exception {
+    int n = 10;
+    waitFor(n);
+    LinkedList<HttpServerRequest> requests = new LinkedList<>();
+    Set<HttpConnection> connections = new HashSet<>();
+    server.requestHandler(req -> {
+      requests.add(req);
+      connections.add(req.connection());
+      assertEquals(1, connections.size());
+      if (requests.size() == n) {
+        while (requests.size() > 0) {
+          requests.removeFirst().response().end();
+        }
+      }
+    });
+    startServer(testAddress);
+    for (int i = 0;i < n;i++) {
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        req.send().onComplete(onSuccess(resp -> complete()));
+      }));
+    }
+    await();
   }
 
   @Test
