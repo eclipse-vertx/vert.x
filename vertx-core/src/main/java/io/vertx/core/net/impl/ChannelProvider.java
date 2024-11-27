@@ -19,6 +19,7 @@ import io.netty.handler.proxy.ProxyHandler;
 import io.netty.handler.proxy.Socks4ProxyHandler;
 import io.netty.handler.proxy.Socks5ProxyHandler;
 import io.netty.incubator.codec.quic.QuicChannel;
+import io.netty.incubator.codec.quic.QuicClosedChannelException;
 import io.netty.resolver.NoopAddressResolverGroup;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.Promise;
@@ -173,7 +174,11 @@ public final class ChannelProvider {
         .connect()
         .addListener((io.netty.util.concurrent.Future<QuicChannel> future) -> {
           if (!future.isSuccess()) {
-            channelHandler.tryFailure(future.cause());
+            Throwable cause = future.cause();
+            if(future.cause() instanceof QuicClosedChannelException) {
+              cause = new ConnectTimeoutException(future.cause().getMessage());
+            }
+            channelHandler.tryFailure(cause);
           }
         });
     });
