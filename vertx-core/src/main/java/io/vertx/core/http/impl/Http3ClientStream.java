@@ -1,7 +1,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.incubator.codec.http3.DefaultHttp3Headers;
+import io.netty.incubator.codec.http3.Http3Headers;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.Handler;
@@ -16,8 +16,8 @@ import io.vertx.core.tracing.TracingPolicy;
 
 class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStreamChannel> {
   private static final MultiMap EMPTY = new Http3HeadersAdaptor();
-
   private int headerReceivedCount = 0;
+  private boolean trailersReceived = false;
 
   Http3ClientStream(Http3ClientConnection conn, ContextInternal context, boolean push) {
     super(conn, context, push);
@@ -130,16 +130,19 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
   @Override
   void onHeaders(VertxHttpHeaders headers, StreamPriorityBase streamPriority) {
     super.onHeaders(headers, streamPriority);
-    headerReceivedCount++;
-  }
-
-  @Override
-  public boolean isTrailersReceived() {
-    return headerReceivedCount > 0;
   }
 
   @Override
   public StreamPriorityBase createDefaultStreamPriority() {
     return HttpUtils.DEFAULT_QUIC_STREAM_PRIORITY;
+  }
+
+  public boolean isTrailersReceived() {
+    return trailersReceived;
+  }
+
+  public void determineIfTrailersReceived(Http3Headers headers) {
+    trailersReceived = headerReceivedCount > 0 && headers.method() == null && headers.status() == null;
+    headerReceivedCount++;
   }
 }

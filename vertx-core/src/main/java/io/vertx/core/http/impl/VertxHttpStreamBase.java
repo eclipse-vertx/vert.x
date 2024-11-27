@@ -14,6 +14,7 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.EventLoop;
+import io.netty.incubator.codec.http3.Http3Headers;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
@@ -184,6 +185,16 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
 
   void onEnd() {
     onEnd(getEmptyHeaders());
+  }
+
+  void onEnd(boolean headerReceived) {
+    if (headerReceived) {
+      if (!isTrailersReceived()) {
+        onEnd();
+      }
+    } else {
+      onEnd();
+    }
   }
 
   void onEnd(MultiMap trailers) {
@@ -379,5 +390,8 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
 
   protected Throwable getResetException() {
     return null;
+  }
+
+  public void determineIfTrailersReceived(Http3Headers headers) {
   }
 }
