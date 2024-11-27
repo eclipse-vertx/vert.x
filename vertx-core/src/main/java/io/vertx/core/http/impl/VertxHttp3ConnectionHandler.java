@@ -274,10 +274,13 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
 
 
   private class StreamChannelHandler extends Http3RequestStreamInboundHandler {
+    private boolean headerReceived = false;
+
     @Override
     protected void channelRead(ChannelHandlerContext ctx, Http3HeadersFrame frame) throws Exception {
       logger.debug("{} - Received Header frame for channelId: {}", agentType, ctx.channel().id());
       read = true;
+      headerReceived = true;
       VertxHttpStreamBase vertxStream = getVertxStreamFromStreamChannel(ctx);
       connection.onHeadersRead(ctx, vertxStream, frame.headers(), false, (QuicStreamChannel) ctx.channel());
       ReferenceCountUtil.release(frame);
@@ -287,11 +290,11 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     protected void channelRead(ChannelHandlerContext ctx, Http3DataFrame frame) throws Exception {
       logger.debug("{} - Received Data frame for channelId: {}", agentType, ctx.channel().id());
       read = true;
-      VertxHttpStreamBase vertxStream = getVertxStreamFromStreamChannel(ctx);
+      headerReceived = false;
       if (logger.isDebugEnabled()) {
         logger.debug("{} - Frame data is: {}", agentType, byteBufToString(frame.content()));
       }
-      connection.onDataRead(ctx, vertxStream, frame.content(), 0, false);
+      connection.onDataRead(ctx, getVertxStreamFromStreamChannel(ctx), frame.content(), 0, false);
       ReferenceCountUtil.release(frame);
     }
 
@@ -300,7 +303,9 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
       logger.debug("{} - ChannelInputClosed called for channelId: {}, streamId: {}", agentType, ctx.channel().id(),
         ((QuicStreamChannel) ctx.channel()).streamId());
       VertxHttpStreamBase vertxStream = getVertxStreamFromStreamChannel(ctx);
-      vertxStream.onEnd();
+      if(vertxStream != null) {
+        vertxStream.onEnd(headerReceived);
+      }
     }
 
     @Override
@@ -345,7 +350,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
 
       if (evt == ChannelInputShutdownEvent.INSTANCE) {
         VertxHttpStreamBase vertxStream = getVertxStreamFromStreamChannel(ctx);
-        if (vertxStream.getResetException() != null) {
+        if (vertxStream != null && vertxStream.getResetException() != null) {
           connection.onStreamClosed(vertxStream);
           return;
         }

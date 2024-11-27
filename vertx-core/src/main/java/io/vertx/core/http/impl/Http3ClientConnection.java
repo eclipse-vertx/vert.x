@@ -156,11 +156,9 @@ class Http3ClientConnection extends Http3ConnectionBase implements HttpClientCon
   protected synchronized void onHeadersRead(VertxHttpStreamBase<?, ?> stream, Http3Headers headers,
                                             StreamPriorityBase streamPriority, boolean endOfStream,
                                             QuicStreamChannel streamChannel) {
+    stream.determineIfTrailersReceived(headers);
     if (!stream.isTrailersReceived()) {
       stream.onHeaders(new Http3HeadersAdaptor(headers), streamPriority);
-      if (endOfStream) {
-        stream.onEnd();
-      }
     } else {
       stream.onEnd(new Http3HeadersAdaptor(headers));
     }
