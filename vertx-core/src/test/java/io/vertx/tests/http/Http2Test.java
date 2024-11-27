@@ -544,4 +544,44 @@ public class Http2Test extends HttpCommonTest {
     await();
   }
 
+  @Test
+  public void testClientDoesNotSupportAlpn() throws Exception {
+    waitFor(2);
+    server.requestHandler(req -> {
+      assertEquals(clientAlpnProtocolVersion(), req.version());
+      req.response().end();
+      complete();
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions().setProtocolVersion(clientAlpnProtocolVersion()).setUseAlpn(false));
+    client.request(requestOptions)
+      .compose(HttpClientRequest::send)
+      .onComplete(onSuccess(resp -> {
+        assertEquals(clientAlpnProtocolVersion(), resp.version());
+        complete();
+      }));
+    await();
+  }
+
+  @Test
+  public void testServerDoesNotSupportAlpn() throws Exception {
+    waitFor(2);
+    server.close();
+    server = vertx.createHttpServer(createBaseServerOptions().setUseAlpn(false));
+    server.requestHandler(req -> {
+      assertEquals(clientAlpnProtocolVersion(), req.version());
+      req.response().end();
+      complete();
+    });
+    startServer(testAddress);
+    client.request(requestOptions)
+      .compose(HttpClientRequest::send)
+      .onComplete(onSuccess(resp -> {
+        assertEquals(clientAlpnProtocolVersion(), resp.version());
+        complete();
+      }));
+    await();
+  }
+
 }
