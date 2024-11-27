@@ -307,7 +307,7 @@ class Http3ServerStream extends VertxHttpStreamBase<Http3ServerConnection, QuicS
 
   @Override
   public boolean isTrailersReceived() {
-    return false;  //TODO: review
+    return false;
   }
 
   @Override
