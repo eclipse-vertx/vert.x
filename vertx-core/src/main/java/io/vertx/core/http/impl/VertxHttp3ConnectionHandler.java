@@ -374,6 +374,15 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
       logger.debug("{} - Caught exception on channelId : {}!", agentType, ctx.channel().id(), cause);
       super.exceptionCaught(ctx, cause);
     }
+
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+      super.channelInactive(ctx);
+      VertxHttpStreamBase vertxStream = getVertxStreamFromStreamChannel(ctx);
+      if (vertxStream != null) {
+        connection.onStreamClosed(vertxStream);
+      }
+    }
   }
 
   private String byteBufToString(ByteBuf content) {
