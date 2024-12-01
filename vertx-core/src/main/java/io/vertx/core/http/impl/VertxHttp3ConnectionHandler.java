@@ -145,7 +145,8 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     super.handlerAdded(ctx);
     chctx = ctx;
 
-    chctx.channel().closeFuture().addListener(future -> writeGoAway());
+    chctx.channel().closeFuture().addListener(future -> writeGoAway());  //TODO: writeGoAway should be run after
+    // connectionBase.close() method. Already, it will be called on every channel close!
 
     connectFuture = new DefaultPromise<>(ctx.executor());
     connection = connectionFactory.apply(this);
