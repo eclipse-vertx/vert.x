@@ -64,6 +64,9 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   private static final AttributeKey<VertxHttpStreamBase> VERTX_STREAM_KEY =
     AttributeKey.valueOf(VertxHttpStreamBase.class, "VERTX_CHANNEL_STREAM");
 
+  private static final AttributeKey<Long> LAST_STREAM_ID_KEY =
+    AttributeKey.valueOf(Long.class, "VERTX_LAST_STREAM_ID");
+
   public VertxHttp3ConnectionHandler(
     Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory,
     ContextInternal context,
@@ -141,6 +144,9 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
     super.handlerAdded(ctx);
     chctx = ctx;
+
+    chctx.channel().closeFuture().addListener(future -> writeGoAway());
+
     connectFuture = new DefaultPromise<>(ctx.executor());
     connection = connectionFactory.apply(this);
   }
@@ -185,6 +191,10 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     } else {
       super.channelInactive(chctx);
     }
+  }
+
+  void onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
+    connection.onGoAwaySent(new GoAway().setErrorCode(errorCode).setLastStreamId(lastStreamId).setDebugData(BufferInternal.buffer(debugData)));
   }
 
   void onGoAwayReceived(DefaultHttp3GoAwayFrame http3GoAwayFrame) {
@@ -258,6 +268,14 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     streamChannel.attr(VERTX_STREAM_KEY).set(vertxStream);
   }
 
+  public static void setLastStreamIdOnConnection(QuicChannel quicChannel, long streamId) {
+    quicChannel.attr(LAST_STREAM_ID_KEY).set(streamId);
+  }
+
+  private Long getLastStreamIdOnConnection() {
+    return chctx.channel().attr(LAST_STREAM_ID_KEY).get();
+  }
+
   public ChannelFuture writeSettings(Http3SettingsFrame settingsUpdate) {
     QuicStreamChannel controlStreamChannel = Http3.getLocalControlStream(chctx.channel());
     if (controlStreamChannel == null) {
@@ -269,6 +287,25 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
       agentType, future.isSuccess() ? "succeeded" : "failed", controlStreamChannel.id(),
       controlStreamChannel.streamId()));
     controlStreamChannel.write(settingsUpdate, promise);
+    return promise;
+  }
+
+  public ChannelFuture writeGoAway() {
+    QuicStreamChannel controlStreamChannel = Http3.getLocalControlStream(chctx.channel());
+    if (controlStreamChannel == null) {
+      return chctx.newFailedFuture(new Http3Exception(Http3ErrorCode.H3_INTERNAL_ERROR, null));
+    }
+
+    ChannelPromise promise = controlStreamChannel.newPromise();
+    promise.addListener(future -> logger.debug("{} - Writing goAway {} for channelId: {}, streamId: {}",
+      agentType, future.isSuccess() ? "succeeded" : "failed", controlStreamChannel.id(),
+      controlStreamChannel.streamId()));
+
+    Long lastStreamId = getLastStreamIdOnConnection();
+    Http3GoAwayFrame goAwayFrame = new DefaultHttp3GoAwayFrame(lastStreamId);
+
+    controlStreamChannel.writeAndFlush(goAwayFrame, promise);
+    onGoAwaySent(Math.toIntExact(lastStreamId), 0, Unpooled.EMPTY_BUFFER);
     return promise;
   }
 
