@@ -24,6 +24,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -49,6 +50,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   private long bytesWritten;
   private int writeInProgress = 0;
   protected boolean isConnect;
+  private long reset = -1L;
 
   VertxHttp2Stream(C conn, ContextInternal context) {
     this.conn = conn;
@@ -178,7 +180,22 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     conn.handler.writeFrame(stream, (byte) type, (short) flags, payload);
   }
 
+  protected final boolean checkReset(Handler<AsyncResult<Void>> handler) {
+    long reset;
+    synchronized (this) {
+      reset = this.reset;
+      if (reset == -1L) {
+        return false;
+      }
+    }
+    handler.handle(context.failedFuture(new StreamResetException(reset)));
+    return true;
+  }
+
   final void writeHeaders(Http2Headers headers, boolean end, boolean checkFlush, Handler<AsyncResult<Void>> handler) {
+    if (checkReset(handler)) {
+      return;
+    }
     EventLoop eventLoop = conn.getContext().nettyEventLoop();
     synchronized (this) {
       if (shouldQueue(eventLoop)) {
@@ -205,6 +222,9 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   final void writeData(ByteBuf chunk, boolean end, Handler<AsyncResult<Void>> handler) {
+    if (checkReset(handler)) {
+      return;
+    }
     ContextInternal ctx = conn.getContext();
     EventLoop eventLoop = ctx.nettyEventLoop();
     synchronized (this) {
@@ -260,6 +280,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     int streamId;
     synchronized (this) {
       streamId = stream != null ? stream.id() : -1;
+      reset = code;
     }
     if (streamId != -1) {
       conn.handler.writeReset(streamId, code);
