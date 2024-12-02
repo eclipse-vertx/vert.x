@@ -5864,6 +5864,20 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testResetPartialClientRequest() throws Exception {
+    server.requestHandler(req -> {
+    });
+    startServer(testAddress);
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      assertTrue(req.reset().succeeded());
+      req.end("body").onComplete(onFailure(err -> {
+        testComplete();
+      }));
+    }));
+    await();
+  }
+
+  @Test
   public void testSimpleCookie() throws Exception {
     testCookies("foo=bar", req -> {
       assertEquals(1, req.cookieCount());

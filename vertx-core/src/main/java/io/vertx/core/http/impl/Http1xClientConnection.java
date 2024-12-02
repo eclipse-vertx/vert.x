@@ -317,7 +317,11 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
    * @param stream to reset
    * @return whether the stream should be considered as closed
    */
-  private boolean reset(Stream stream) {
+  private Boolean reset(Stream stream) {
+    if (stream.reset) {
+      return null;
+    }
+    stream.reset = true;
     if (!responses.contains(stream)) {
       requests.remove(stream);
       return true;
@@ -326,16 +330,20 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     return false;
   }
 
-  private void writeHead(Stream stream, HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, PromiseInternal<Void> handler) {
+  private void writeHead(Stream stream, HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, PromiseInternal<Void> listener) {
     writeToChannel(new MessageWrite() {
       @Override
       public void write() {
+        if (stream.reset) {
+          listener.fail("Stream reset");
+          return;
+        }
         stream.request = request;
-        beginRequest(stream, request, chunked, buf, end, connect, handler);
+        beginRequest(stream, request, chunked, buf, end, connect, listener);
       }
       @Override
       public void cancel(Throwable cause) {
-        handler.fail(cause);
+        listener.fail(cause);
       }
     });
   }
@@ -344,6 +352,10 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     writeToChannel(new MessageWrite() {
       @Override
       public void write() {
+        if (stream.reset) {
+          listener.fail("Stream reset");
+          return;
+        }
         writeBuffer(stream, buff, end, (FutureListener<Void>)listener);
       }
 
@@ -368,7 +380,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     private boolean responseEnded;
     private long bytesRead;
     private long bytesWritten;
-
+    private boolean reset;
 
     Stream(ContextInternal context, Promise<HttpClientStream> promise, int id) {
       this.context = context;
@@ -404,7 +416,6 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
 
     private final Http1xClientConnection conn;
     private final InboundMessageQueue<Object> queue;
-    private boolean reset;
     private boolean closed;
     private Handler<HttpResponseHead> headHandler;
     private Handler<Buffer> chunkHandler;
@@ -431,18 +442,16 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
         }
         @Override
         protected void handleMessage(Object item) {
-          if (!reset) {
-            if (item instanceof MultiMap) {
-              Handler<MultiMap> handler = endHandler;
-              if (handler != null) {
-                context.dispatch((MultiMap) item, handler);
-              }
-            } else {
-              Buffer buffer = (Buffer) item;
-              Handler<Buffer> handler = chunkHandler;
-              if (handler != null) {
-                context.dispatch(buffer, handler);
-              }
+          if (item instanceof MultiMap) {
+            Handler<MultiMap> handler = endHandler;
+            if (handler != null) {
+              context.dispatch((MultiMap) item, handler);
+            }
+          } else {
+            Buffer buffer = (Buffer) item;
+            Handler<Buffer> handler = chunkHandler;
+            if (handler != null) {
+              context.dispatch(buffer, handler);
             }
           }
         }
@@ -584,26 +593,24 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
       Promise<Void> promise = context.promise();
       EventLoop eventLoop = conn.context.nettyEventLoop();
       if (eventLoop.inEventLoop()) {
-        _reset(cause, promise);
+        reset(cause, promise);
       } else {
-        eventLoop.execute(() -> _reset(cause, promise));
+        eventLoop.execute(() -> reset(cause, promise));
       }
       return promise.future();
     }
 
-    private void _reset(Throwable cause, Promise<Void> promise) {
-      if (reset) {
+    private void reset(Throwable cause, Promise<Void> promise) {
+      Boolean removed = conn.reset(this);
+      if (removed == null) {
         promise.fail("Stream already reset");
-        return;
-      }
-      reset = true;
-      boolean removed = conn.reset(this);
-      if (removed) {
-        context.execute(cause, this::handleClosed);
       } else {
-        context.execute(cause, this::handleException);
-      }
-      promise.complete();
+        if (removed) {
+          context.execute(cause, this::handleClosed);
+        } else {
+          context.execute(cause, this::handleException);
+        }
+        promise.complete();      }
     }
 
     @Override
@@ -856,7 +863,9 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     Buffer buff = BufferInternal.safeBuffer(chunk);
     int len = buff.length();
     stream.bytesRead += len;
-    stream.handleChunk(buff);
+    if (!stream.reset) {
+      stream.handleChunk(buff);
+    }
   }
 
   private void handleResponseEnd(Stream stream, LastHttpContent trailer) {
@@ -908,7 +917,9 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
       checkLifecycle();
     }
     lastResponseReceivedTimestamp = System.currentTimeMillis();
-    stream.handleEnd(trailer);
+    if (!stream.reset) {
+      stream.handleEnd(trailer);
+    }
     if (stream.requestEnded) {
       stream.handleClosed(null);
     }
