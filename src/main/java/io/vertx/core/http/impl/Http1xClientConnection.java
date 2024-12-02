@@ -395,7 +395,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
 
     private final Http1xClientConnection conn;
     private final InboundBuffer<Object> queue;
-    private boolean reset;
+    private Throwable reset;
     private boolean closed;
     private Handler<HttpResponseHead> headHandler;
     private Handler<Buffer> chunkHandler;
@@ -414,7 +414,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       this.conn = conn;
       this.queue = new InboundBuffer<>(context, 5)
         .handler(item -> {
-          if (!reset) {
+          if (reset == null) {
             if (item instanceof MultiMap) {
               Handler<MultiMap> handler = endHandler;
               if (handler != null) {
@@ -526,7 +526,22 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       writeHead(request, chunked, buf, end, connect, handler == null ? null : context.promise(handler));
     }
 
+    private boolean checkReset(Handler<AsyncResult<Void>> handler) {
+      Throwable reset;
+      synchronized (this) {
+        reset = this.reset;
+        if (reset == null) {
+          return false;
+        }
+      }
+      handler.handle(context.failedFuture(reset));
+      return true;
+    }
+
     private void writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, Handler<AsyncResult<Void>> handler) {
+      if (checkReset(handler)) {
+        return;
+      }
       EventLoop eventLoop = conn.context.nettyEventLoop();
       synchronized (this) {
         if (shouldQueue(eventLoop)) {
@@ -537,12 +552,19 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
           return;
         }
       }
+      if (reset != null) {
+        handler.handle(context.failedFuture(reset));
+        return;
+      }
       ((Stream)this).request = request;
       conn.beginRequest(this, request, chunked, buf, end, connect, handler);
     }
 
     @Override
     public void writeBuffer(ByteBuf buff, boolean end, Handler<AsyncResult<Void>> handler) {
+      if (checkReset(handler)) {
+        return;
+      }
       if (buff != null || end) {
         FutureListener<Void> listener = handler == null ? null : context.promise(handler);
         writeBuffer(buff, end, listener);
@@ -636,10 +658,10 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     @Override
     public void reset(Throwable cause) {
       synchronized (conn) {
-        if (reset) {
+        if (reset != null) {
           return;
         }
-        reset = true;
+        reset = Objects.requireNonNull(cause);
       }
       EventLoop eventLoop = conn.context.nettyEventLoop();
       if (eventLoop.inEventLoop()) {

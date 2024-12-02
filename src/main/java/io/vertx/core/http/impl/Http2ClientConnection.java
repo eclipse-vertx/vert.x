@@ -546,6 +546,9 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
     @Override
     public void writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect, Handler<AsyncResult<Void>> handler) {
+      if (checkReset(handler)) {
+        return;
+      }
       priority(priority);
       ContextInternal ctx = conn.getContext();
       EventLoop eventLoop = ctx.nettyEventLoop();
@@ -629,6 +632,9 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
     @Override
     public void writeBuffer(ByteBuf buf, boolean end, Handler<AsyncResult<Void>> listener) {
+      if (checkReset(listener)) {
+        return;
+      }
       if (buf != null) {
         int size = buf.readableBytes();
         synchronized (this) {
