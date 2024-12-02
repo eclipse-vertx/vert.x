@@ -49,6 +49,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
   private long bytesWritten;
   protected boolean isConnect;
   private Throwable failure;
+  private long reset = -1L;
   protected S streamChannel;
 
   protected abstract void consumeCredits(S stream, int len);
@@ -152,6 +153,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
   }
 
   void onReset(long code) {
+    reset = code;
     context.emit(code, this::handleReset);
   }
 
@@ -284,6 +286,12 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
   }
 
   void doWriteHeaders(VertxHttpHeaders headers, boolean end, boolean checkFlush, Promise<Void> promise) {
+    if (reset != -1L) {
+      if (promise != null) {
+        promise.fail("Stream reset");
+      }
+      return;
+    }
     if (end) {
       endWritten();
     }
@@ -308,6 +316,10 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
   }
 
   void doWriteData(ByteBuf buf, boolean end, Promise<Void> promise) {
+    if (reset != -1L) {
+      promise.fail("Stream reset");
+      return;
+    }
     ByteBuf chunk;
     if (buf == null && end) {
       chunk = Unpooled.EMPTY_BUFFER;
@@ -324,6 +336,9 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
   }
 
   final Future<Void> writeReset(long code) {
+    if (code < 0L) {
+      throw new IllegalArgumentException("Invalid reset code value");
+    }
     Promise<Void> promise = context.promise();
     EventLoop eventLoop = conn.context().nettyEventLoop();
     if (eventLoop.inEventLoop()) {
@@ -335,6 +350,11 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
   }
 
   protected void doWriteReset(long code, Promise<Void> promise) {
+    if (reset != -1L) {
+      promise.fail("Stream already reset");
+      return;
+    }
+    reset = code;
     int streamId;
     synchronized (this) {
       streamId = getStreamId();
