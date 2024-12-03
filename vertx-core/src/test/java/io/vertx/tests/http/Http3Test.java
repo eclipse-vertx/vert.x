@@ -78,8 +78,8 @@ public class Http3Test extends HttpCommonTest {
 
   @Ignore
   @Test
-  public void testCloseMulti() throws Exception {
-    // This test was ignored because it udp is base on single connection.
+  public void testCloseMulti() {
+    // This test is ignored because UDP is based on a single connectionless protocol.
   }
 
   @Ignore //TODO: remove "ignore"
