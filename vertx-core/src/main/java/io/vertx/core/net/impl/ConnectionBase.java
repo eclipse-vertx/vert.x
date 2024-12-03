@@ -16,6 +16,7 @@ import io.netty.channel.*;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.traffic.AbstractTrafficShapingHandler;
+import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.FutureListener;
@@ -461,6 +462,11 @@ public abstract class ConnectionBase {
 
   private SocketAddress channelRemoteAddress() {
     java.net.SocketAddress addr = chctx.channel().remoteAddress();
+
+    if (chctx.channel() instanceof QuicChannel) {
+      addr = ((QuicChannel) chctx.channel()).remoteSocketAddress();
+    }
+
     return addr != null ? vertx.transport().convert(addr) : null;
   }
 
@@ -503,6 +509,11 @@ public abstract class ConnectionBase {
 
   private SocketAddress channelLocalAddress() {
     java.net.SocketAddress addr = chctx.channel().localAddress();
+
+    if (chctx.channel() instanceof QuicChannel) {
+      addr = ((QuicChannel) chctx.channel()).remoteSocketAddress();
+    }
+
     return addr != null ? vertx.transport().convert(addr) : null;
   }
 
