@@ -76,6 +76,12 @@ public class Http3Test extends HttpCommonTest {
     return options.setInitialHttp3Settings(new Http3Settings());
   }
 
+  @Ignore
+  @Test
+  public void testCloseMulti() throws Exception {
+    // This test was ignored because it udp is base on single connection.
+  }
+
   @Ignore //TODO: remove "ignore"
   @Test
   public void testInitialMaxConcurrentStreamZero() throws Exception {
