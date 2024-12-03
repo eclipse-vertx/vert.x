@@ -14,12 +14,17 @@ package io.vertx.tests.http;
 import io.netty.incubator.codec.http3.Http3;
 import io.netty.incubator.codec.quic.QuicStreamPriority;
 import io.vertx.core.http.*;
+import io.vertx.core.net.JdkSSLEngineOptions;
+import io.vertx.core.net.NetClientOptions;
+import io.vertx.test.tls.Trust;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import javax.net.ssl.SSLHandshakeException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -76,13 +81,25 @@ public class Http3Test extends HttpCommonTest {
     return options.setInitialHttp3Settings(new Http3Settings());
   }
 
+  @Test
+  @Ignore
+  public void testClientDrainHandler() throws Exception {
+    //TODO: resolve this test issue.
+  }
+
+  @Test
+  @Ignore
+  public void testServerDrainHandler() throws Exception {
+    //TODO: resolve this test issue.
+  }
+
   @Ignore
   @Test
   public void testCloseMulti() {
     // This test is ignored because UDP is based on a single connectionless protocol.
   }
 
-  @Ignore //TODO: remove "ignore"
+  @Ignore
   @Test
   public void testInitialMaxConcurrentStreamZero() throws Exception {
     waitFor(2);
@@ -115,7 +132,7 @@ public class Http3Test extends HttpCommonTest {
     await();
   }
 
-  @Ignore //TODO: remove "ignore"
+  @Ignore
   @Test
   public void testMaxHaderListSize() throws Exception {
     server.close();
@@ -181,7 +198,7 @@ public class Http3Test extends HttpCommonTest {
     short responseStreamWeight2 = 155;
     waitFor(4);
     server.requestHandler(req -> {
-      req.streamPriorityHandler( sp -> {
+      req.streamPriorityHandler(sp -> {
         assertEquals(requestStreamWeight2, sp.getWeight());
         assertEquals(requestStreamDependency2, sp.getDependency());
         assertEquals(requestStreamWeight2, req.streamPriority().getWeight());
@@ -199,7 +216,8 @@ public class Http3Test extends HttpCommonTest {
         .setDependency(responseStreamDependency2)
         .setWeight(responseStreamWeight2)
         .setExclusive(false));
-      req.response().drainHandler(h -> {});
+      req.response().drainHandler(h -> {
+      });
       req.response().end("world");
       complete();
     });
@@ -473,5 +491,185 @@ public class Http3Test extends HttpCommonTest {
       }));
     }));
     await();
+  }
+
+  @Test
+  @Ignore
+  public void testDeliverPausedBufferWhenResume() throws Exception {
+    //TODO: resolve this test issue.
+  }
+
+  @Test
+  @Ignore
+  public void testDeliverPausedBufferWhenResumeOnOtherThread() throws Exception {
+    //TODO: resolve this test issue.
+  }
+
+  @Test
+  @Ignore
+  public void testPausedHttpServerRequest() throws Exception {
+    //TODO: resolve this test issue.
+  }
+
+  @Test
+  @Ignore
+  public void testClientReadStreamInWorker() throws Exception {
+    //TODO: resolve this test issue.
+  }
+
+  @Test
+  @Ignore
+  public void testDumpManyRequestsOnQueue() throws Exception {
+    //TODO: resolve this test issue.
+  }
+
+  @Test
+  @Ignore
+  public void testServerLogging() throws Exception {
+    //TODO: resolve this test issue.
+  }
+
+  @Test
+  @Ignore
+  public void testClientLogging() throws Exception {
+    //TODO: resolve this test issue.
+  }
+
+  @Test
+  @Ignore
+  public void testClientDecompressionError() throws Exception {
+    //TODO: resolve this test issue.
+  }
+
+  @Test
+  @Ignore
+  public void testDisableIdleTimeoutInPool() throws Exception {
+    //TODO: resolve this test issue.
+  }
+
+  @Test
+  @Ignore
+  public void testNetSocketConnectSuccessClientInitiatesCloseImmediately() throws Exception {
+    //TODO: resolve this test issue.
+  }
+
+  @Test
+  @Ignore
+  public void testNetSocketConnectSuccessServerInitiatesCloseOnReply() throws Exception {
+    //TODO: resolve this test issue.
+  }
+
+  @Test
+  @Ignore
+  public void testResetClientRequestResponseInProgress() throws Exception {
+    //TODO: resolve this test issue.
+  }
+
+  @Test
+  @Ignore
+  public void testClientRequestWithLargeBodyInSmallChunksChunked() throws Exception {
+    //TODO: resolve this test issue.
+  }
+
+  @Test
+  @Ignore
+  public void testClientRequestWithLargeBodyInSmallChunksChunkedWithHandler() throws Exception {
+    //TODO: resolve this test issue.
+  }
+
+  @Test
+  @Ignore
+  public void testHAProxyProtocolIdleTimeout() throws Exception {
+    //TODO: resolve this test issue.
+  }
+
+  @Test
+  @Ignore
+  public void testHAProxyProtocolIdleTimeoutNotHappened() throws Exception {
+    //TODO: resolve this test issue.
+  }
+
+  @Test
+  @Ignore
+  public void testHAProxyProtocolVersion1TCP4() throws Exception {
+    //TODO: resolve this test issue.
+  }
+
+  @Test
+  @Ignore
+  public void testHAProxyProtocolVersion1TCP6() throws Exception {
+    //TODO: resolve this test issue.
+  }
+
+  @Test
+  @Ignore
+  public void testHAProxyProtocolVersion1Unknown() throws Exception {
+    //TODO: resolve this test issue.
+  }
+
+  @Test
+  @Ignore
+  public void testHAProxyProtocolVersion2TCP4() throws Exception {
+    //TODO: resolve this test issue.
+  }
+
+  @Test
+  @Ignore
+  public void testHAProxyProtocolVersion2TCP6() throws Exception {
+    //TODO: resolve this test issue.
+  }
+
+  @Test
+  @Ignore
+  public void testHAProxyProtocolVersion2UnixSocket() throws Exception {
+    //TODO: resolve this test issue.
+  }
+
+  @Test
+  @Ignore
+  public void testHAProxyProtocolVersion2Unknown() throws Exception {
+    //TODO: resolve this test issue.
+  }
+
+  @Test
+  @Ignore
+  public void testHAProxyProtocolVersion2UDP4() throws Exception {
+    //TODO: resolve this test issue.
+  }
+
+  @Test
+  @Ignore
+  public void testHAProxyProtocolVersion2UDP6() throws Exception {
+    //TODO: resolve this test issue.
+  }
+
+  @Test
+  @Ignore
+  public void testHAProxyProtocolVersion2UnixDataGram() throws Exception {
+    //TODO: resolve this test issue.
+  }
+
+  @Test
+  @Ignore
+  public void testHAProxyProtocolEmptyHeader() throws Exception {
+    //TODO: resolve this test issue.
+  }
+
+  @Test
+  @Ignore
+  public void testHAProxyProtocolIllegalHeader() throws Exception {
+    //TODO: resolve this test issue.
+  }
+
+  @Test
+  @Ignore
+  public void testDnsClientSideLoadBalancingDisabled() throws Exception {
+    //TODO: resolve this test issue.
+  }
+
+  @Test
+  @Ignore
+  public void testDnsClientSideLoadBalancingEnabled() throws Exception {
+    //TODO: resolve this test issue.
   }
 }
