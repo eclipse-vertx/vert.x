@@ -35,7 +35,6 @@ import javax.security.cert.X509Certificate;
 
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http2.Http2CodecUtil;
-import io.netty.incubator.codec.quic.QuicStreamPriority;
 import io.netty.util.NetUtil;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.vertx.core.Future;
@@ -582,15 +581,4 @@ public class TestUtils {
     return decoder.decode(s);
   }
 
-  public static StreamPriorityBase randomStreamPriority(HttpVersion version) {
-    if (version == HttpVersion.HTTP_3) {
-      return new Http3StreamPriority(new QuicStreamPriority(random.nextInt(100), randomBoolean()));
-    }
-    StreamPriority streamPriority = new StreamPriority().
-      setDependency(random.nextInt(100))
-      .setExclusive(randomBoolean())
-      .setWeight((short) random.nextInt(100));
-    return new Http2StreamPriority(streamPriority
-    );
-  }
 }
