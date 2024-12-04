@@ -127,7 +127,6 @@ public class Http3Test extends HttpCommonTest {
     await();
   }
 
-  @Ignore
   @Test
   public void testMaxHaderListSize() throws Exception {
     server.close();
