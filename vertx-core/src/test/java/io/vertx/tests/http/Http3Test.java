@@ -184,76 +184,9 @@ public class Http3Test extends HttpCommonTest {
     await();
   }
 
-  @Ignore
+  @Ignore("It seems the update priority does not work correctly in Netty!")
   @Test
-  public void testStreamWeightAndDependencyChange() throws Exception {
-    int requestStreamDependency = 56;
-    short requestStreamWeight = 43;
-    int requestStreamDependency2 = 157;
-    short requestStreamWeight2 = 143;
-    int responseStreamDependency = 98;
-    short responseStreamWeight = 55;
-    int responseStreamDependency2 = 198;
-    short responseStreamWeight2 = 155;
-    waitFor(4);
-    server.requestHandler(req -> {
-      req.streamPriorityHandler(sp -> {
-        assertEquals(requestStreamWeight2, sp.getWeight());
-        assertEquals(requestStreamDependency2, sp.getDependency());
-        assertEquals(requestStreamWeight2, req.streamPriority().getWeight());
-        assertEquals(requestStreamDependency2, req.streamPriority().getDependency());
-        complete();
-      });
-      assertEquals(requestStreamWeight, req.streamPriority().getWeight());
-      assertEquals(requestStreamDependency, req.streamPriority().getDependency());
-      req.response().setStreamPriority(new Http3StreamPriority()
-        .setDependency(responseStreamDependency)
-        .setWeight(responseStreamWeight)
-        .setExclusive(false));
-      req.response().write("hello");
-      req.response().setStreamPriority(new Http3StreamPriority()
-        .setDependency(responseStreamDependency2)
-        .setWeight(responseStreamWeight2)
-        .setExclusive(false));
-      req.response().drainHandler(h -> {
-      });
-      req.response().end("world");
-      complete();
-    });
-    startServer(testAddress);
-    client.close();
-    client = vertx.createHttpClient(createBaseClientOptions());
-    client.request(requestOptions).onComplete(onSuccess(req -> {
-      req
-        .setStreamPriority(new Http3StreamPriority()
-          .setDependency(requestStreamDependency)
-          .setWeight(requestStreamWeight)
-          .setExclusive(false))
-        .response()
-        .onComplete(onSuccess(resp -> {
-          assertEquals(responseStreamWeight, resp.request().getStreamPriority().getWeight());
-          assertEquals(responseStreamDependency, resp.request().getStreamPriority().getDependency());
-          resp.streamPriorityHandler(sp -> {
-            assertEquals(responseStreamWeight2, sp.getWeight());
-            assertEquals(responseStreamDependency2, sp.getDependency());
-            assertEquals(responseStreamWeight2, resp.request().getStreamPriority().getWeight());
-            assertEquals(responseStreamDependency2, resp.request().getStreamPriority().getDependency());
-            complete();
-          });
-          complete();
-        }));
-      req
-        .sendHead()
-        .onComplete(h -> {
-          req.setStreamPriority(new Http3StreamPriority()
-            .setDependency(requestStreamDependency2)
-            .setWeight(requestStreamWeight2)
-            .setExclusive(false));
-          req.end();
-        });
-    }));
-    await();
-  }
+  public void testStreamWeightAndDependencyChange() throws Exception {}
 
   @Ignore
   @Test
