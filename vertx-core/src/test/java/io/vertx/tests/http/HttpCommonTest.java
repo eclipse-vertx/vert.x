@@ -528,6 +528,54 @@ public abstract class HttpCommonTest extends HttpTest {
     await();
   }
 
+  @Test
+  public void testStreamWeightAndDependencyChange() throws Exception {
+    StreamPriorityBase requestStreamPriority = TestUtils.randomStreamPriority(serverAlpnProtocolVersion());
+    StreamPriorityBase requestStreamPriority2 = TestUtils.randomStreamPriority(serverAlpnProtocolVersion());
+    StreamPriorityBase responseStreamPriority = TestUtils.randomStreamPriority(serverAlpnProtocolVersion());
+    StreamPriorityBase responseStreamPriority2 = TestUtils.randomStreamPriority(serverAlpnProtocolVersion());
+    waitFor(4);
+    server.requestHandler(req -> {
+      req.streamPriorityHandler( sp -> {
+        assertEqualPriority(requestStreamPriority2, sp);
+        assertEqualPriority(requestStreamPriority2, req.streamPriority());
+        complete();
+      });
+      assertEqualPriority(requestStreamPriority, req.streamPriority());
+      req.response().setStreamPriority(responseStreamPriority.copy());
+      req.response().write("hello");
+      req.response().setStreamPriority(responseStreamPriority2.copy());
+      req.response().drainHandler(h -> {});
+      req.response().end("world");
+      complete();
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions());
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req
+        .setStreamPriority(requestStreamPriority.copy())
+        .response()
+        .onComplete(onSuccess(resp -> {
+          assertEqualPriority(responseStreamPriority, resp.request().getStreamPriority());
+          resp.streamPriorityHandler(sp -> {
+            assertEqualPriority(responseStreamPriority2, sp);
+            assertEqualPriority(responseStreamPriority2, resp.request().getStreamPriority());
+            complete();
+          });
+          complete();
+        }));
+      req
+        .sendHead()
+        .onComplete(h -> {
+          req.setStreamPriority(requestStreamPriority2.copy());
+          req.end();
+        });
+    }));
+    await();
+  }
+
+
   protected abstract void assertEqualPriority(StreamPriorityBase expectedStreamPriority,
                                               StreamPriorityBase actualStreamPriority);
 
