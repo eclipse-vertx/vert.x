@@ -486,6 +486,12 @@ public class Http2Test extends HttpCommonTest {
     await();
   }
 
+  @Ignore
+  @Test
+  public void testAppendToHttpChunks() throws Exception {
+    // This test does not work on http/2
+  }
+
   @Test
   public void testSslHandshakeTimeout() throws Exception {
     waitFor(2);

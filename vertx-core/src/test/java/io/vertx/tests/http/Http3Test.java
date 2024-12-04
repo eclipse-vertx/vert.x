@@ -460,32 +460,6 @@ public class Http3Test extends HttpCommonTest {
     await();
   }
 
-  @Test
-  public void testAppendToHttpChunks() throws Exception {
-    List<String> expected = Arrays.asList("chunk-1", "chunk-2", "chunk-3");
-    server.requestHandler(req -> {
-      HttpServerResponse resp = req.response();
-      expected.forEach(resp::write);
-      resp.end(); // Will end an empty chunk
-    });
-    startServer(testAddress);
-    client.request(requestOptions).onComplete(onSuccess(req -> {
-      req.send().onComplete(onSuccess(resp -> {
-        List<String> chunks = new ArrayList<>();
-        resp.handler(chunk -> {
-          chunk.appendString("-suffix");
-          chunks.add(chunk.toString());
-        });
-        resp.endHandler(v -> {
-          assertEquals(Stream.concat(expected.stream(), Stream.of(""))
-            .map(s -> s + "-suffix")
-            .collect(Collectors.toList()), chunks);
-          testComplete();
-        });
-      }));
-    }));
-    await();
-  }
 
   @Test
   @Ignore
