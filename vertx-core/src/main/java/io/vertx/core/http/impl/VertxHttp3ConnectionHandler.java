@@ -313,6 +313,8 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
 
   private class StreamChannelHandler extends Http3RequestStreamInboundHandler {
     private boolean headerReceived = false;
+/*
+    //TODO: commented because connection will be closed on file transfer.
     private int channelWritabilityChangedCounter = 0;
 
     @Override
@@ -325,6 +327,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
       connection.onStreamWritabilityChanged(getVertxStreamFromStreamChannel(ctx));
       super.channelWritabilityChanged(ctx);
     }
+*/
 
     @Override
     protected void channelRead(ChannelHandlerContext ctx, Http3HeadersFrame frame) throws Exception {
