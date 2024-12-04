@@ -59,6 +59,14 @@ public class Http2StreamPriority extends StreamPriorityBase {
   }
 
   @Override
+  public StreamPriorityBase copy() {
+    return new Http2StreamPriority()
+      .setDependency(this.getDependency())
+      .setExclusive(this.isExclusive())
+      .setWeight(this.getWeight());
+  }
+
+  @Override
   public String toString() {
     return this.streamPriority.toString();
   }

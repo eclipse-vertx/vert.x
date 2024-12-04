@@ -62,6 +62,11 @@ public class Http3StreamPriority extends StreamPriorityBase {
   }
 
   @Override
+  public StreamPriorityBase copy() {
+    return new Http3StreamPriority(new QuicStreamPriority(urgency(), isIncremental()));
+  }
+
+  @Override
   public String toString() {
     return this.quicStreamPriority.toString();
   }
