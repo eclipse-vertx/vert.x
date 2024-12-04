@@ -403,16 +403,8 @@ public abstract class ConnectionBase {
   }
 
   private ChannelPipeline getDatagramChannelPipeline(Channel channel) {
-    for (int i = 0; i < 3; i++) {
-      if (channel == null) {
-        return null;
-      }
-      if (channel instanceof DatagramChannel) {
-        return channel.pipeline();
-      }
-      channel = channel.parent();
-    }
-    return null;
+    channel = channel != null ? channel.parent() : null;
+    return channel instanceof DatagramChannel ? channel.pipeline() : null;
   }
 
   public boolean isTrafficShaped() {
