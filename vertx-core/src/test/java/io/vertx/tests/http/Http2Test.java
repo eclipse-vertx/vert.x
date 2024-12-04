@@ -93,7 +93,8 @@ public class Http2Test extends HttpCommonTest {
   @Test
   public void testMaxHaderListSize() throws Exception {
     server.close();
-    server = vertx.createHttpServer(createBaseServerOptions().setInitialSettings(new Http2Settings().setMaxHeaderListSize(Integer.MAX_VALUE)));
+    server =
+      vertx.createHttpServer(createBaseServerOptions().setInitialSettings(new Http2Settings().setMaxHeaderListSize(Integer.MAX_VALUE)));
     server.requestHandler(req -> {
       req.response().end();
     });
@@ -155,7 +156,7 @@ public class Http2Test extends HttpCommonTest {
     short responseStreamWeight2 = 155;
     waitFor(4);
     server.requestHandler(req -> {
-      req.streamPriorityHandler( sp -> {
+      req.streamPriorityHandler(sp -> {
         assertEquals(requestStreamWeight2, sp.getWeight());
         assertEquals(requestStreamDependency2, sp.getDependency());
         assertEquals(requestStreamWeight2, req.streamPriority().getWeight());
@@ -173,7 +174,8 @@ public class Http2Test extends HttpCommonTest {
         .setDependency(responseStreamDependency2)
         .setWeight(responseStreamWeight2)
         .setExclusive(false));
-      req.response().drainHandler(h -> {});
+      req.response().drainHandler(h -> {
+      });
       req.response().end("world");
       complete();
     });
@@ -474,7 +476,8 @@ public class Http2Test extends HttpCommonTest {
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2));
     client.request(new RequestOptions(requestOptions).setSsl(false)).onComplete(onSuccess(req -> {
-      req.response().onComplete(onFailure(err -> {}));
+      req.response().onComplete(onFailure(err -> {
+      }));
       req.setChunked(true);
       req.exceptionHandler(err -> {
         if (err instanceof TooLongFrameException) {
@@ -560,7 +563,8 @@ public class Http2Test extends HttpCommonTest {
     });
     startServer(testAddress);
     client.close();
-    client = vertx.createHttpClient(createBaseClientOptions().setProtocolVersion(clientAlpnProtocolVersion()).setUseAlpn(false));
+    client =
+      vertx.createHttpClient(createBaseClientOptions().setProtocolVersion(clientAlpnProtocolVersion()).setUseAlpn(false));
     client.request(requestOptions)
       .compose(HttpClientRequest::send)
       .onComplete(onSuccess(resp -> {
