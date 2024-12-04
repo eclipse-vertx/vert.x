@@ -151,39 +151,6 @@ public class Http3Test extends HttpCommonTest {
     await();
   }
 
-
-  @Ignore("It seems the update priority does not work correctly in Netty!")
-  @Test
-  public void testStreamUrgencyAndIncremental() throws Exception {
-    int requestStreamUrgency = 56;
-    boolean requestStreamIncremental = true;
-    int responseStreamUrgency = 98;
-    boolean responseStreamIncremental = false;
-    waitFor(2);
-    server.requestHandler(req -> {
-      assertEquals(requestStreamIncremental, req.streamPriority().isIncremental());
-      assertEquals(requestStreamUrgency, req.streamPriority().urgency());
-      req.response().setStreamPriority(new Http3StreamPriority(new QuicStreamPriority(responseStreamUrgency,
-        responseStreamIncremental)));
-      req.response().end();
-      complete();
-    });
-    startServer(testAddress);
-    client.close();
-    client = vertx.createHttpClient(createBaseClientOptions());
-    client.request(requestOptions).onComplete(onSuccess(req -> {
-      req
-        .setStreamPriority(new Http3StreamPriority(new QuicStreamPriority(requestStreamUrgency,
-          requestStreamIncremental)))
-        .send().onComplete(onSuccess(resp -> {
-          assertEquals(responseStreamIncremental, resp.request().getStreamPriority().isIncremental());
-          assertEquals(responseStreamUrgency, resp.request().getStreamPriority().urgency());
-          complete();
-        }));
-    }));
-    await();
-  }
-
   @Ignore("It seems the update priority does not work correctly in Netty!")
   @Test
   public void testStreamWeightAndDependencyChange() throws Exception {}
