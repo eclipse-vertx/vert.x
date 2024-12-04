@@ -58,6 +58,14 @@ public class Http2Test extends HttpCommonTest {
     return options.setInitialSettings(new Http2Settings().setMaxConcurrentStreams(maxConcurrentStreams));
   }
 
+  @Override
+  protected void assertEqualPriority(StreamPriorityBase expectedStreamPriority,
+                                     StreamPriorityBase actualStreamPriority) {
+    assertEquals(expectedStreamPriority.getWeight(), actualStreamPriority.getWeight());
+    assertEquals(expectedStreamPriority.getDependency(), actualStreamPriority.getDependency());
+    assertEquals(expectedStreamPriority.isExclusive(), actualStreamPriority.isExclusive());
+  }
+
   @Test
   public void testInitialMaxConcurrentStreamZero() throws Exception {
     waitFor(2);
@@ -108,40 +116,6 @@ public class Http2Test extends HttpCommonTest {
     await();
   }
 
-  @Test
-  public void testStreamWeightAndDependency() throws Exception {
-    int requestStreamDependency = 56;
-    short requestStreamWeight = 43;
-    int responseStreamDependency = 98;
-    short responseStreamWeight = 55;
-    waitFor(2);
-    server.requestHandler(req -> {
-      assertEquals(requestStreamWeight, req.streamPriority().getWeight());
-      assertEquals(requestStreamDependency, req.streamPriority().getDependency());
-      req.response().setStreamPriority(new Http2StreamPriority()
-        .setDependency(responseStreamDependency)
-        .setWeight(responseStreamWeight)
-        .setExclusive(false));
-      req.response().end();
-      complete();
-    });
-    startServer(testAddress);
-    client.close();
-    client = vertx.createHttpClient(createBaseClientOptions());
-    client.request(requestOptions).onComplete(onSuccess(req -> {
-      req
-        .setStreamPriority(new Http2StreamPriority()
-          .setDependency(requestStreamDependency)
-          .setWeight(requestStreamWeight)
-          .setExclusive(false))
-        .send().onComplete(onSuccess(resp -> {
-          assertEquals(responseStreamWeight, resp.request().getStreamPriority().getWeight());
-          assertEquals(responseStreamDependency, resp.request().getStreamPriority().getDependency());
-          complete();
-        }));
-    }));
-    await();
-  }
 
   @Test
   public void testStreamWeightAndDependencyChange() throws Exception {

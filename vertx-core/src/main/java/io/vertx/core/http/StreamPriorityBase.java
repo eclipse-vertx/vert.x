@@ -48,6 +48,10 @@ public class StreamPriorityBase {
   public StreamPriorityBase(JsonObject json) {
   }
 
+  public StreamPriorityBase copy() {
+    throw new RuntimeException("Not implemented in child class");
+  }
+
   public JsonObject toJson() {
     JsonObject json = new JsonObject();
     StreamPriorityBaseConverter.toJson(this, json);

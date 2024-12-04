@@ -21,6 +21,7 @@ import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.core.net.SSLEngineOptions;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.test.core.AsyncTestBase;
+import io.vertx.test.core.TestUtils;
 import io.vertx.test.tls.Cert;
 import org.junit.Test;
 
@@ -501,5 +502,34 @@ public abstract class HttpCommonTest extends HttpTest {
     }));
     await();
   }
+
+  @Test
+  public void testStreamWeightAndDependency() throws Exception {
+    StreamPriorityBase requestStreamPriority = TestUtils.randomStreamPriority(serverAlpnProtocolVersion());
+    StreamPriorityBase responseStreamPriority = TestUtils.randomStreamPriority(serverAlpnProtocolVersion());
+    waitFor(2);
+    server.requestHandler(req -> {
+      assertEqualPriority(requestStreamPriority, req.streamPriority());
+      req.response().setStreamPriority(responseStreamPriority.copy());
+      req.response().end();
+      complete();
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions());
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req
+        .setStreamPriority(requestStreamPriority.copy())
+        .send().onComplete(onSuccess(resp -> {
+          assertEqualPriority(responseStreamPriority, resp.request().getStreamPriority());
+          complete();
+        }));
+    }));
+    await();
+  }
+
+  protected abstract void assertEqualPriority(StreamPriorityBase expectedStreamPriority,
+                                              StreamPriorityBase actualStreamPriority);
+
 
 }
