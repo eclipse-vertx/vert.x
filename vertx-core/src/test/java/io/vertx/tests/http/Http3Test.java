@@ -599,96 +599,96 @@ public class Http3Test extends HttpCommonTest {
   @Test
   @Ignore
   public void testHAProxyProtocolIdleTimeout() throws Exception {
-    //TODO: resolve this test issue.
+    //TODO: Resolve this test issue. It fails on 5.x version, regardless of HTTP/3.
   }
 
   @Test
   @Ignore
   public void testHAProxyProtocolIdleTimeoutNotHappened() throws Exception {
-    //TODO: resolve this test issue.
+    //TODO: Resolve this test issue. It fails on 5.x version, regardless of HTTP/3.
   }
 
   @Test
   @Ignore
   public void testHAProxyProtocolVersion1TCP4() throws Exception {
-    //TODO: resolve this test issue.
+    //TODO: Resolve this test issue. It fails on 5.x version, regardless of HTTP/3.
   }
 
   @Test
   @Ignore
   public void testHAProxyProtocolVersion1TCP6() throws Exception {
-    //TODO: resolve this test issue.
+    //TODO: Resolve this test issue. It fails on 5.x version, regardless of HTTP/3.
   }
 
   @Test
   @Ignore
   public void testHAProxyProtocolVersion1Unknown() throws Exception {
-    //TODO: resolve this test issue.
+    //TODO: Resolve this test issue. It fails on 5.x version, regardless of HTTP/3.
   }
 
   @Test
   @Ignore
   public void testHAProxyProtocolVersion2TCP4() throws Exception {
-    //TODO: resolve this test issue.
+    //TODO: Resolve this test issue. It fails on 5.x version, regardless of HTTP/3.
   }
 
   @Test
   @Ignore
   public void testHAProxyProtocolVersion2TCP6() throws Exception {
-    //TODO: resolve this test issue.
+    //TODO: Resolve this test issue. It fails on 5.x version, regardless of HTTP/3.
   }
 
   @Test
   @Ignore
   public void testHAProxyProtocolVersion2UnixSocket() throws Exception {
-    //TODO: resolve this test issue.
+    //TODO: Resolve this test issue. It fails on 5.x version, regardless of HTTP/3.
   }
 
   @Test
   @Ignore
   public void testHAProxyProtocolVersion2Unknown() throws Exception {
-    //TODO: resolve this test issue.
+    //TODO: Resolve this test issue. It fails on 5.x version, regardless of HTTP/3.
   }
 
   @Test
   @Ignore
   public void testHAProxyProtocolVersion2UDP4() throws Exception {
-    //TODO: resolve this test issue.
+    //TODO: Resolve this test issue. It fails on 5.x version, regardless of HTTP/3.
   }
 
   @Test
   @Ignore
   public void testHAProxyProtocolVersion2UDP6() throws Exception {
-    //TODO: resolve this test issue.
+    //TODO: Resolve this test issue. It fails on 5.x version, regardless of HTTP/3.
   }
 
   @Test
   @Ignore
   public void testHAProxyProtocolVersion2UnixDataGram() throws Exception {
-    //TODO: resolve this test issue.
+    //TODO: Resolve this test issue. It fails on 5.x version, regardless of HTTP/3.
   }
 
   @Test
   @Ignore
   public void testHAProxyProtocolEmptyHeader() throws Exception {
-    //TODO: resolve this test issue.
+    //TODO: Resolve this test issue. It fails on 5.x version, regardless of HTTP/3.
   }
 
   @Test
   @Ignore
   public void testHAProxyProtocolIllegalHeader() throws Exception {
-    //TODO: resolve this test issue.
+    //TODO: Resolve this test issue. It fails on 5.x version, regardless of HTTP/3.
   }
 
   @Test
   @Ignore
   public void testDnsClientSideLoadBalancingDisabled() throws Exception {
-    //TODO: resolve this test issue.
+    //TODO: Resolve this test issue. It fails on 5.x version, regardless of HTTP/3.
   }
 
   @Test
   @Ignore
   public void testDnsClientSideLoadBalancingEnabled() throws Exception {
-    //TODO: resolve this test issue.
+    //TODO: Resolve this test issue. It fails on 5.x version, regardless of HTTP/3.
   }
 }
