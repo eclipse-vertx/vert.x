@@ -493,8 +493,8 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     return (QuicChannel) chctx.channel();
   }
 
-  public void writeReset(QuicStreamChannel streamChannel, long code) {
-    ChannelPromise promise = chctx.newPromise().addListener(future -> checkFlush());
+  public void writeReset(QuicStreamChannel streamChannel, long code, FutureListener<Void> listener) {
+    ChannelPromise promise = chctx.newPromise().addListener(future -> checkFlush()).addListener(listener);
     streamChannel.shutdownOutput((int) code, promise);
   }
 

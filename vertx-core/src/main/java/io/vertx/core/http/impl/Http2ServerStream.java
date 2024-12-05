@@ -293,8 +293,8 @@ class Http2ServerStream extends VertxHttpStreamBase<Http2ServerConnection, Http2
   }
 
   @Override
-  public void writeReset_(int streamId, long code) {
-    conn.handler.writeReset(streamId, code);
+  public void writeReset_(int streamId, long code, FutureListener<Void> listener) {
+    conn.handler.writeReset(streamId, code, listener);
   }
 
   @Override

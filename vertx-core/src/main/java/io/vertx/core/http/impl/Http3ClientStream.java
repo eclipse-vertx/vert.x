@@ -95,8 +95,8 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
   }
 
   @Override
-  public void writeReset_(int streamId, long code) {
-    conn.handler.writeReset(streamChannel, code);  //TODO: verify using streamChannel is correct
+  public void writeReset_(int streamId, long code, FutureListener<Void> listener) {
+    conn.handler.writeReset(streamChannel, code, listener);  //TODO: verify using streamChannel is correct
   }
 
   @Override

@@ -100,8 +100,8 @@ class Http2ClientStream extends HttpStreamImpl<Http2ClientConnection, Http2Strea
   }
 
   @Override
-  public void writeReset_(int streamId, long code) {
-    conn.handler.writeReset(streamId, code);
+  public void writeReset_(int streamId, long code, FutureListener<Void> listener) {
+    conn.handler.writeReset(streamId, code, listener);
   }
 
   @Override

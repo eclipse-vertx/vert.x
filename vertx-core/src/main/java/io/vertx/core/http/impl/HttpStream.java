@@ -84,9 +84,11 @@ abstract class HttpStream<C extends ConnectionBase, S> extends VertxHttpStreamBa
   }
 
   @Override
-  protected void doWriteReset(long code) {
+    protected void doWriteReset(long code, Promise<Void> promise) {
     if (!requestEnded || !responseEnded) {
-      super.doWriteReset(code);
+        super.doWriteReset(code, promise);
+      } else {
+        promise.fail("Request ended");
     }
   }
 
