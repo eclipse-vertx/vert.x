@@ -332,7 +332,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
   }
 
   @Override
-  public void reset(Throwable cause) {
+  public Future<Void> reset(Throwable cause) {
     reset = cause;
     long code;
     if (cause instanceof StreamResetException) {
@@ -342,7 +342,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
     } else {
       code = 0L;
     }
-    conn.context.emit(code, this::writeReset);
+    return writeReset(code);
   }
 
   @Override

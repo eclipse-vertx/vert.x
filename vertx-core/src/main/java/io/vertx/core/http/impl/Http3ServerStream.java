@@ -132,9 +132,9 @@ class Http3ServerStream extends VertxHttpStreamBase<Http3ServerConnection, QuicS
   }
 
   @Override
-  protected void doWriteReset(long code) {
+  protected void doWriteReset(long code, Promise<Void> promise) {
     if (!requestEnded || !responseEnded) {
-      super.doWriteReset(code);
+      super.doWriteReset(code, promise);
     }
   }
 
@@ -273,8 +273,8 @@ class Http3ServerStream extends VertxHttpStreamBase<Http3ServerConnection, QuicS
   }
 
   @Override
-  public void writeReset_(int streamId, long code) {
-    conn.handler.writeReset(streamChannel, code);  //TODO: verify using streamChannel is correct
+  public void writeReset_(int streamId, long code, FutureListener<Void> listener) {
+    conn.handler.writeReset(streamChannel, code, listener);  //TODO: verify using streamChannel is correct
   }
 
   @Override

@@ -64,7 +64,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
 
   protected abstract void writeData_(S stream, ByteBuf chunk, boolean end, FutureListener<Void> promise);
 
-  protected abstract void writeReset_(int streamId, long code);
+  protected abstract void writeReset_(int streamId, long code, FutureListener<Void> listener);
 
   protected abstract void init_(VertxHttpStreamBase vertxHttpStream, S stream);
 
