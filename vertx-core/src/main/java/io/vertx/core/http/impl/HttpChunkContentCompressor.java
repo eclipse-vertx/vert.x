@@ -26,8 +26,8 @@ import io.netty.handler.codec.http.HttpResponse;
  */
 final class HttpChunkContentCompressor extends HttpContentCompressor {
 
-  public HttpChunkContentCompressor(CompressionOptions... compressionOptions) {
-    super(0, compressionOptions);
+  public HttpChunkContentCompressor(int contentSizeThreshold, CompressionOptions... compressionOptions) {
+    super(contentSizeThreshold, compressionOptions);
   }
 
   @Override
