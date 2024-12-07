@@ -140,11 +140,6 @@ public class Http3Test extends HttpCommonTest {
     await();
   }
 
-  @Test
-  @Ignore
-  public void testDiscardConnectionWhenChannelBecomesInactive() throws Exception {
-    //TODO: resolve this test issue.
-  }
 
   @Test
   @Ignore
