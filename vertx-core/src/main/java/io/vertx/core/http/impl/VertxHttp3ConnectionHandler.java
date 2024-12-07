@@ -13,10 +13,7 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelPromise;
+import io.netty.channel.*;
 import io.netty.channel.socket.ChannelInputShutdownEvent;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.incubator.codec.http3.*;
@@ -145,8 +142,13 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     super.handlerAdded(ctx);
     chctx = ctx;
 
-    chctx.channel().closeFuture().addListener(future -> writeGoAway());  //TODO: writeGoAway should be run after
-    // connectionBase.close() method. Already, it will be called on every channel close!
+    chctx.channel().pipeline().addLast(new ChannelOutboundHandlerAdapter() {
+      @Override
+      public void close(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
+        writeGoAway();
+        super.close(ctx, promise);
+      }
+    });
 
     connectFuture = new DefaultPromise<>(ctx.executor());
     connection = connectionFactory.apply(this);
@@ -432,15 +434,6 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
       logger.debug("{} - Caught exception on channelId : {}!", agentType, ctx.channel().id(), cause);
       super.exceptionCaught(ctx, cause);
     }
-
-    @Override
-    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-      super.channelInactive(ctx);
-      VertxHttpStreamBase vertxStream = getVertxStreamFromStreamChannel(ctx);
-      if (vertxStream != null) {
-        connection.onStreamClosed(vertxStream);
-      }
-    }
   }
 
   private String byteBufToString(ByteBuf content) {
@@ -451,7 +444,8 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
 
   public Http3ConnectionHandler getHttp3ConnectionHandler() {
     if (isServer) {
-      return new Http3ServerConnectionHandler(new StreamChannelInitializer(StreamChannelHandler::new, agentType),
+      return new Http3ServerConnectionHandler(new StreamChannelInitializer(StreamChannelHandler::new, agentType,
+        () -> connection),
         new Http3ControlStreamChannelHandler(this), null, null, false);  //TODO: implement settings
     }
     return new Http3ClientConnectionHandler(new Http3ControlStreamChannelHandler(this), null, null, null,
@@ -500,7 +494,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
 
   public void createStreamChannel(Handler<QuicStreamChannel> onComplete) {
     Http3.newRequestStream((QuicChannel) chctx.channel(),
-      new StreamChannelInitializer(StreamChannelHandler::new, agentType, onComplete));
+      new StreamChannelInitializer(StreamChannelHandler::new, agentType, () -> connection, onComplete));
   }
 
   String getAgentType() {
