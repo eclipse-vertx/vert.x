@@ -76,16 +76,15 @@ class Http3ClientConnection extends Http3ConnectionBase implements HttpClientCon
     return handler.getInitialMaxStreamsBidirectional();
   }
 
-//  @Override
-//  boolean onGoAwaySent(GoAway goAway) {
-//    boolean goneAway = super.onGoAwaySent(goAway);
-//    if (goneAway) {
-//      // Eagerly evict from the pool
-//      tryEvict();
-//    }
-//    return goneAway;
-//  }
-//
+  @Override
+  boolean onGoAwaySent(GoAway goAway) {
+    boolean goneAway = super.onGoAwaySent(goAway);
+    if (goneAway) {
+      // Eagerly evict from the pool
+      tryEvict();
+    }
+    return goneAway;
+  }
 
   @Override
   boolean onGoAwayReceived(GoAway goAway) {
