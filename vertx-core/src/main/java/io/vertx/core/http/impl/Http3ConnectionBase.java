@@ -154,7 +154,6 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
       }
       stream.onClose();
     }
-    checkShutdown();
   }
 
   boolean onGoAwaySent(GoAway goAway) {
