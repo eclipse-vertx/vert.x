@@ -77,6 +77,11 @@ class Http3ClientConnection extends Http3ConnectionBase implements HttpClientCon
   }
 
   @Override
+  public long activeStreams() {
+    return getActiveQuicStreamChannels().size();
+  }
+
+  @Override
   boolean onGoAwaySent(GoAway goAway) {
     boolean goneAway = super.onGoAwaySent(goAway);
     if (goneAway) {
@@ -108,14 +113,14 @@ class Http3ClientConnection extends Http3ConnectionBase implements HttpClientCon
     }
   }
 
-//  @Override
-//  protected void concurrencyChanged(long concurrency) {
-//    int limit = client.options().getHttp2MultiplexingLimit();
-//    if (limit > 0) {
-//      concurrency = Math.min(concurrency, limit);
-//    }
-//    concurrencyChangeHandler.handle(concurrency);
-//  }
+  @Override
+  protected void concurrencyChanged(long concurrency) {
+    long limit = client.options().getSslOptions().getInitialMaxStreamsBidirectional();
+    if (limit > 0) {
+      concurrency = Math.min(concurrency, limit);
+    }
+    concurrencyChangeHandler.handle(concurrency);
+  }
 
   @Override
   public HttpClientMetrics metrics() {
@@ -219,10 +224,5 @@ class Http3ClientConnection extends Http3ConnectionBase implements HttpClientCon
       conn.tryEvict();
     });
     return handler;
-  }
-
-  @Override
-  public long activeStreams() {
-    return getActiveQuicStreamChannels().size();
   }
 }
