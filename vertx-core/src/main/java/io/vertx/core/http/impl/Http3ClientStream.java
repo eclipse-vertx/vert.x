@@ -14,6 +14,8 @@ import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.tracing.TracingPolicy;
 
+import static io.vertx.core.http.impl.Http3ServerStream.HTTP3_DATA_FRAME;
+
 class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStreamChannel> {
   private static final MultiMap EMPTY = new Http3HeadersAdaptor();
   private int headerReceivedCount = 0;
@@ -75,7 +77,11 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
 
   @Override
   public void writeFrame(QuicStreamChannel stream, byte type, short flags, ByteBuf payload, Promise<Void> promise) {
-    stream.write(payload);
+    if (HTTP3_DATA_FRAME.type() == type) {
+      conn.handler.writeData(stream, payload, false, (FutureListener<Void>) promise);
+      return;
+    }
+    throw new RuntimeException("Not supported type");
   }
 
   @Override

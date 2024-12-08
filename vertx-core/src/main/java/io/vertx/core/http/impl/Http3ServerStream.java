@@ -11,10 +11,12 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.EventLoop;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
-import io.netty.incubator.codec.http3.DefaultHttp3Headers;
+import io.netty.incubator.codec.http3.DefaultHttp3DataFrame;
+import io.netty.incubator.codec.http3.Http3DataFrame;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.MultiMap;
@@ -38,6 +40,7 @@ import static io.vertx.core.spi.metrics.Metrics.*;
 
 class Http3ServerStream extends VertxHttpStreamBase<Http3ServerConnection, QuicStreamChannel> {
   private static final MultiMap EMPTY = new Http3HeadersAdaptor();
+  static final Http3DataFrame HTTP3_DATA_FRAME = new DefaultHttp3DataFrame(Unpooled.EMPTY_BUFFER);
 
   protected final VertxHttpHeaders headers;
   protected final String scheme;
@@ -135,6 +138,8 @@ class Http3ServerStream extends VertxHttpStreamBase<Http3ServerConnection, QuicS
   protected void doWriteReset(long code, Promise<Void> promise) {
     if (!requestEnded || !responseEnded) {
       super.doWriteReset(code, promise);
+    } else {
+      promise.fail("Request ended");
     }
   }
 
@@ -253,7 +258,11 @@ class Http3ServerStream extends VertxHttpStreamBase<Http3ServerConnection, QuicS
 
   @Override
   public void writeFrame(QuicStreamChannel stream, byte type, short flags, ByteBuf payload, Promise<Void> promise) {
-    stream.write(payload).addListener(context.promise(promise));
+    if (HTTP3_DATA_FRAME.type() == type) {
+      conn.handler.writeData(stream, payload, false, (FutureListener<Void>) promise);
+      return;
+    }
+    throw new RuntimeException("Not supported type");
   }
 
   @Override
