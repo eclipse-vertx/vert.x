@@ -172,18 +172,22 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
   }
 
   boolean onGoAwayReceived(GoAway goAway) {
-    Handler<GoAway> handler;
+    Handler<GoAway> goAwayHandler;
+    Handler<Void> shutdownHandler;
     synchronized (this) {
       if (this.goAwayStatus != null) {
         return false;
       }
       this.goAwayStatus = goAway;
-      handler = goAwayHandler;
+      goAwayHandler = this.goAwayHandler;
+      shutdownHandler = this.shutdownHandler;
     }
-    if (handler != null) {
-      context.dispatch(new GoAway(goAway), handler);
+    if (goAwayHandler != null) {
+      context.dispatch(new GoAway(goAway), goAwayHandler);
     }
-    checkShutdown();
+    if (shutdownHandler != null) {
+      context.dispatch(shutdownHandler);
+    }
     return true;
   }
 
@@ -199,6 +203,12 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
         .setExclusive(exclusive);
       stream.onPriorityChange(streamPriority);
     }
+  }
+
+  //  @Override
+  public void onHeadersRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?> stream,
+                            Http3Headers headers, boolean endOfStream, QuicStreamChannel streamChannel) throws Http2Exception {
+    onHeadersRead(stream, headers, null, endOfStream, streamChannel);
   }
 
   //  @Override
@@ -222,7 +232,7 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
     Handler<HttpSettings> handler;
     synchronized (this) {
 //      Long val = settings.maxConcurrentStreams();  //TODO:
-      Long val = 5L;
+      Long val = 5L; //TODO: find the correct maxConcurrentStreams count for http3
       if (val != null) {
         if (remoteSettings != null) {
           changed = val != maxConcurrentStreams;
@@ -309,14 +319,12 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
   }
 
   @Override
-  public HttpConnection goAway(long errorCode, int lastStreamId, Buffer debugData) {
-//    if (errorCode < 0) {
-//      throw new IllegalArgumentException();
-//    }
-//    if (lastStreamId < 0) {
-//      lastStreamId = handler.connection().remote().lastStreamCreated();
-//    }
-//    handler.writeGoAway(errorCode, lastStreamId, debugData != null ? debugData.getByteBuf() : Unpooled.EMPTY_BUFFER);
+  public HttpConnection goAway(long errorCode, int lastStreamId_, Buffer debugData) {
+    long lastStreamId = lastStreamId_;
+    if (lastStreamId < 0) {
+      lastStreamId = handler.getLastStreamIdOnConnection();
+    }
+    handler.writeGoAway();
     return this;
   }
 
@@ -487,38 +495,6 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
 
   public void consumeCredits(QuicStreamChannel stream, int numBytes) {
 //    throw new RuntimeException("Method not implemented");
-  }
-
-
-  //  @Override
-  public void onHeadersRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?> stream,
-                            Http3Headers headers, boolean endOfStream, QuicStreamChannel streamChannel) throws Http2Exception {
-    onHeadersRead(stream, headers, null, endOfStream, streamChannel);
-  }
-
-  // Private
-
-  private void checkShutdown() {
-    Handler<Void> shutdownHandler;
-    synchronized (this) {
-      if (shutdown) {
-        return;
-      }
-//      Http3ConnectionBase conn = handler.connection();
-      if ((!handler.goAwayReceived() /*&& !conn.goAwaySent()*/) /*|| conn.numActiveStreams() > 0*/) {
-        // TODO: correct these
-        return;
-      }
-      shutdown = true;
-      shutdownHandler = this.shutdownHandler;
-    }
-    doShutdown(shutdownHandler);
-  }
-
-  protected void doShutdown(Handler<Void> shutdownHandler) {
-    if (shutdownHandler != null) {
-      context.dispatch(shutdownHandler);
-    }
   }
 
 }
