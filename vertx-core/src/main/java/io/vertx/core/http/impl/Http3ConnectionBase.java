@@ -324,7 +324,7 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
     if (lastStreamId < 0) {
       lastStreamId = handler.getLastStreamIdOnConnection();
     }
-    handler.writeGoAway();
+    handler.writeGoAway(errorCode, lastStreamId, debugData != null ? ((BufferInternal)debugData).getByteBuf() : Unpooled.EMPTY_BUFFER);
     return this;
   }
 
