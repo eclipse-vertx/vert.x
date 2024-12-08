@@ -141,7 +141,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     chctx.channel().pipeline().addLast(new ChannelOutboundHandlerAdapter() {
       @Override
       public void close(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
-        writeGoAway();
+        connection.goAway(0);
         super.close(ctx, promise);
       }
     });
@@ -280,7 +280,18 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     streamChannel.shutdownOutput((int) code, promise);
   }
 
-  void writeGoAway() {
+  void writeGoAway(long errorCode, long lastStreamId, ByteBuf debugData) {
+    EventExecutor executor = chctx.executor();
+    if (executor.inEventLoop()) {
+      _writeGoAway(errorCode, lastStreamId, debugData);
+    } else {
+      executor.execute(() -> {
+        _writeGoAway(errorCode, lastStreamId, debugData);
+      });
+    }
+  }
+
+  private void _writeGoAway(long errorCode, long lastStreamId, ByteBuf debugData) {
     QuicStreamChannel controlStreamChannel = Http3.getLocalControlStream(chctx.channel());
     assert controlStreamChannel != null;
 
@@ -289,10 +300,9 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
       agentType, future.isSuccess() ? "succeeded" : "failed", controlStreamChannel.id(),
       controlStreamChannel.streamId()));
 
-    Long lastStreamId = getLastStreamIdOnConnection();
     Http3GoAwayFrame goAwayFrame = new DefaultHttp3GoAwayFrame(lastStreamId);
 
-    onGoAwaySent(Math.toIntExact(lastStreamId), 0, Unpooled.EMPTY_BUFFER);
+    onGoAwaySent(Math.toIntExact(lastStreamId), errorCode, debugData);
     controlStreamChannel.write(goAwayFrame, promise);
     checkFlush();
   }
