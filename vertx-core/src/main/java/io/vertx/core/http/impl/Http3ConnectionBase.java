@@ -228,29 +228,13 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
 
   //  @Override
   public void onSettingsRead(ChannelHandlerContext ctx, Http3SettingsFrame settings) {
-    boolean changed;
     Handler<HttpSettings> handler;
     synchronized (this) {
-//      Long val = settings.maxConcurrentStreams();  //TODO:
-      Long val = 5L; //TODO: find the correct maxConcurrentStreams count for http3
-      if (val != null) {
-        if (remoteSettings != null) {
-          changed = val != maxConcurrentStreams;
-        } else {
-          changed = false;
-        }
-        maxConcurrentStreams = val;
-      } else {
-        changed = false;
-      }
       remoteSettings = settings;
       handler = remoteSettingsHandler;
     }
     if (handler != null) {
       context.dispatch(HttpUtils.toVertxSettings(settings), handler);
-    }
-    if (changed) {
-      concurrencyChanged(maxConcurrentStreams);
     }
   }
 
