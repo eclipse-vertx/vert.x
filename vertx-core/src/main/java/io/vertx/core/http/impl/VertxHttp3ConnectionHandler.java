@@ -161,24 +161,6 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   }
 
   @Override
-  public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-    logger.debug("{} - Received event for channelId: {}, event: {}",
-      agentType, ctx.channel().id(), evt.getClass().getSimpleName());
-    try {
-      super.userEventTriggered(ctx, evt);
-    } finally {
-      if (evt instanceof ShutdownEvent) {
-        ShutdownEvent shutdownEvt = (ShutdownEvent) evt;
-        connection.shutdown(shutdownEvt.timeout(), shutdownEvt.timeUnit());
-      } else if (evt instanceof IdleStateEvent) {
-        connection.handleIdle((IdleStateEvent) evt);
-      } else if (evt instanceof QuicConnectionCloseEvent) {
-        connection.handleClosed();
-      }
-    }
-  }
-
-  @Override
   public void channelInactive(ChannelHandlerContext ctx) throws Exception {
     logger.debug("{} - channelInactive() called for channelId: {}", agentType, ctx.channel().id());
     if (connection != null) {
@@ -193,6 +175,24 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
       connection.handleClosed();
     } else {
       super.channelInactive(chctx);
+    }
+  }
+
+  @Override
+  public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+    logger.debug("{} - Received event for channelId: {}, event: {}",
+      agentType, ctx.channel().id(), evt.getClass().getSimpleName());
+    try {
+      super.userEventTriggered(ctx, evt);
+    } finally {
+      if (evt instanceof ShutdownEvent) {
+        ShutdownEvent shutdownEvt = (ShutdownEvent) evt;
+        connection.shutdown(shutdownEvt.timeout(), shutdownEvt.timeUnit());
+      } else if (evt instanceof IdleStateEvent) {
+        connection.handleIdle((IdleStateEvent) evt);
+      } else if (evt instanceof QuicConnectionCloseEvent) {
+        connection.handleClosed();
+      }
     }
   }
 
@@ -275,22 +275,13 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     quicChannel.attr(LAST_STREAM_ID_KEY).set(streamId);
   }
 
-  private Long getLastStreamIdOnConnection() {
+  Long getLastStreamIdOnConnection() {
     return chctx.channel().attr(LAST_STREAM_ID_KEY).get();
   }
 
-  public ChannelFuture writeSettings(Http3SettingsFrame settingsUpdate) {
-    QuicStreamChannel controlStreamChannel = Http3.getLocalControlStream(chctx.channel());
-    if (controlStreamChannel == null) {
-      return chctx.newFailedFuture(new Http3Exception(Http3ErrorCode.H3_SETTINGS_ERROR, null));
-    }
-
-    ChannelPromise promise = controlStreamChannel.newPromise();
-    promise.addListener(future -> logger.debug("{} - Writing settings {} for channelId: {}, streamId: {}",
-      agentType, future.isSuccess() ? "succeeded" : "failed", controlStreamChannel.id(),
-      controlStreamChannel.streamId()));
-    controlStreamChannel.write(settingsUpdate, promise);
-    return promise;
+  public void writeReset(QuicStreamChannel streamChannel, long code, FutureListener<Void> listener) {
+    ChannelPromise promise = chctx.newPromise().addListener(future -> checkFlush()).addListener(listener);
+    streamChannel.shutdownOutput((int) code, promise);
   }
 
   public ChannelFuture writeGoAway() {
@@ -312,6 +303,33 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     return promise;
   }
 
+  ChannelFuture writeSettings(Http3SettingsFrame settingsUpdate) {
+    ChannelPromise promise = chctx.newPromise();
+    EventExecutor executor = chctx.executor();
+    if (executor.inEventLoop()) {
+      _writeSettings(settingsUpdate, promise);
+    } else {
+      executor.execute(() -> {
+        _writeSettings(settingsUpdate, promise);
+      });
+    }
+    return promise;
+  }
+
+  private void _writeSettings(Http3SettingsFrame settingsUpdate, ChannelPromise promise) {
+    QuicStreamChannel controlStreamChannel = Http3.getLocalControlStream(chctx.channel());
+    if (controlStreamChannel == null) {
+      promise.tryFailure(new Http3Exception(Http3ErrorCode.H3_SETTINGS_ERROR, null));
+      return;
+    }
+
+    promise.addListener(future -> logger.debug("{} - Writing settings {} for channelId: {}, streamId: {}",
+      agentType, future.isSuccess() ? "succeeded" : "failed", controlStreamChannel.id(),
+      controlStreamChannel.streamId()));
+    controlStreamChannel.write(settingsUpdate, promise);
+
+    checkFlush();
+  }
 
   private class StreamChannelHandler extends Http3RequestStreamInboundHandler {
     private boolean headerReceived = false;
@@ -487,10 +505,6 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     return (QuicChannel) chctx.channel();
   }
 
-  public void writeReset(QuicStreamChannel streamChannel, long code, FutureListener<Void> listener) {
-    ChannelPromise promise = chctx.newPromise().addListener(future -> checkFlush()).addListener(listener);
-    streamChannel.shutdownOutput((int) code, promise);
-  }
 
   public void createStreamChannel(Handler<QuicStreamChannel> onComplete) {
     Http3.newRequestStream((QuicChannel) chctx.channel(),
