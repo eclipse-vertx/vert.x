@@ -20,11 +20,7 @@ import io.netty.incubator.codec.http3.*;
 import io.netty.incubator.codec.quic.*;
 import io.netty.util.AttributeKey;
 import io.netty.util.ReferenceCountUtil;
-import io.netty.util.concurrent.DefaultPromise;
-import io.netty.util.concurrent.EventExecutor;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.FutureListener;
-import io.netty.util.concurrent.Promise;
+import io.netty.util.concurrent.*;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.vertx.core.Handler;
@@ -284,11 +280,9 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     streamChannel.shutdownOutput((int) code, promise);
   }
 
-  public ChannelFuture writeGoAway() {
+  void writeGoAway() {
     QuicStreamChannel controlStreamChannel = Http3.getLocalControlStream(chctx.channel());
-    if (controlStreamChannel == null) {
-      return chctx.newFailedFuture(new Http3Exception(Http3ErrorCode.H3_INTERNAL_ERROR, null));
-    }
+    assert controlStreamChannel != null;
 
     ChannelPromise promise = controlStreamChannel.newPromise();
     promise.addListener(future -> logger.debug("{} - Writing goAway {} for channelId: {}, streamId: {}",
@@ -298,9 +292,9 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     Long lastStreamId = getLastStreamIdOnConnection();
     Http3GoAwayFrame goAwayFrame = new DefaultHttp3GoAwayFrame(lastStreamId);
 
-    controlStreamChannel.writeAndFlush(goAwayFrame, promise);
     onGoAwaySent(Math.toIntExact(lastStreamId), 0, Unpooled.EMPTY_BUFFER);
-    return promise;
+    controlStreamChannel.write(goAwayFrame, promise);
+    checkFlush();
   }
 
   ChannelFuture writeSettings(Http3SettingsFrame settingsUpdate) {
