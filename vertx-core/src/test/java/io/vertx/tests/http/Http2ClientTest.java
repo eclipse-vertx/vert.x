@@ -27,6 +27,7 @@ import io.netty.util.AsciiString;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.http.Http2Settings;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.impl.Http2UpgradeClientConnection;
@@ -76,7 +77,7 @@ public class Http2ClientTest extends Http2TestBase {
         req.response().end();
       });
     }).connectionHandler(conn -> {
-      io.vertx.core.http.Http2Settings initialRemoteSettings = conn.remoteSettings();
+      io.vertx.core.http.Http2Settings initialRemoteSettings = (Http2Settings) conn.remoteHttpSettings();
       assertEquals(initialSettings.isPushEnabled(), initialRemoteSettings.isPushEnabled());
       assertEquals(initialSettings.getMaxHeaderListSize(), initialRemoteSettings.getMaxHeaderListSize());
       assertEquals(initialSettings.getMaxFrameSize(), initialRemoteSettings.getMaxFrameSize());
@@ -85,12 +86,13 @@ public class Http2ClientTest extends Http2TestBase {
       assertEquals(initialSettings.getHeaderTableSize(), initialRemoteSettings.getHeaderTableSize());
       assertEquals(initialSettings.get('\u0007'), initialRemoteSettings.get(7));
       Context ctx = Vertx.currentContext();
-      conn.remoteSettingsHandler(settings -> {
+      conn.remoteHttpSettingsHandler(settings0 -> {
         assertOnIOContext(ctx);
         switch (count.getAndIncrement()) {
           case 0:
             // find out why it fails sometimes ...
             // assertEquals(updatedSettings.pushEnabled(), settings.getEnablePush());
+            Http2Settings settings = (Http2Settings) settings0;
             assertEquals(updatedSettings.getMaxHeaderListSize(), settings.getMaxHeaderListSize());
             assertEquals(updatedSettings.getMaxFrameSize(), settings.getMaxFrameSize());
             assertEquals(updatedSettings.getInitialWindowSize(), settings.getInitialWindowSize());
@@ -112,7 +114,7 @@ public class Http2ClientTest extends Http2TestBase {
       .with(clientOptions.setInitialSettings(initialSettings))
       .withConnectHandler(conn -> {
         vertx.runOnContext(v -> {
-          conn.updateSettings(updatedSettings)
+          conn.updateHttpSettings(updatedSettings)
             .onComplete(onSuccess(v2 -> {
                 end.complete();
               })
@@ -155,7 +157,7 @@ public class Http2ClientTest extends Http2TestBase {
     Context otherContext = vertx.getOrCreateContext();
     server.connectionHandler(conn -> {
       otherContext.runOnContext(v -> {
-        conn.updateSettings(expectedSettings);
+        conn.updateHttpSettings(expectedSettings);
       });
     });
     server.requestHandler(req -> {
@@ -166,9 +168,10 @@ public class Http2ClientTest extends Http2TestBase {
     client = vertx.httpClientBuilder()
       .with(clientOptions)
       .withConnectHandler(conn -> {
-        conn.remoteSettingsHandler(settings -> {
+        conn.remoteHttpSettingsHandler(settings0 -> {
           switch (count.getAndIncrement()) {
             case 0:
+              Http2Settings settings = (Http2Settings) settings0;
               assertEquals(expectedSettings.getMaxHeaderListSize(), settings.getMaxHeaderListSize());
               assertEquals(expectedSettings.getMaxFrameSize(), settings.getMaxFrameSize());
               assertEquals(expectedSettings.getInitialWindowSize(), settings.getInitialWindowSize());
@@ -201,7 +204,7 @@ public class Http2ClientTest extends Http2TestBase {
         vertx.setTimer(30, id -> {
           HttpConnection conn = req.connection();
           if (max == 10) {
-            conn.updateSettings(new io.vertx.core.http.Http2Settings(conn.settings()).setMaxConcurrentStreams(max / 2));
+            conn.updateHttpSettings(((io.vertx.core.http.Http2Settings)(conn.httpSettings())).setMaxConcurrentStreams(max / 2));
             flipped.set(true);
           }
           requests.forEach(request -> request.response().end());
@@ -214,7 +217,7 @@ public class Http2ClientTest extends Http2TestBase {
     client = vertx.httpClientBuilder()
       .with(clientOptions)
       .withConnectHandler(conn -> {
-        conn.remoteSettingsHandler(settings -> {
+        conn.remoteHttpSettingsHandler(settings -> {
           conn.ping(Buffer.buffer("settings"));
         });
       })
@@ -619,7 +622,8 @@ public class Http2ClientTest extends Http2TestBase {
     client = vertx.httpClientBuilder()
       .with(clientOptions)
       .withConnectHandler(conn -> {
-        assertEquals(max == null ? 0xFFFFFFFFL : max, conn.remoteSettings().getMaxConcurrentStreams());
+        assertEquals(max == null ? 0xFFFFFFFFL : max,
+          ((Http2Settings) conn.remoteHttpSettings()).getMaxConcurrentStreams());
         latch.countDown();
       })
       .build();
@@ -2074,8 +2078,8 @@ public class Http2ClientTest extends Http2TestBase {
 
   @Test
   public void testStreamPriority() throws Exception {
-    StreamPriority requestStreamPriority = new StreamPriority().setDependency(123).setWeight((short)45).setExclusive(true);
-    StreamPriority responseStreamPriority = new StreamPriority().setDependency(153).setWeight((short)75).setExclusive(false);
+    StreamPriorityBase requestStreamPriority = new Http2StreamPriority().setDependency(123).setWeight((short)45).setExclusive(true);
+    StreamPriorityBase responseStreamPriority = new Http2StreamPriority().setDependency(153).setWeight((short)75).setExclusive(false);
     waitFor(2);
     ServerBootstrap bootstrap = createH2Server((decoder, encoder) -> new Http2EventAdapter() {
       @Override
@@ -2113,10 +2117,10 @@ public class Http2ClientTest extends Http2TestBase {
 
   @Test
   public void testStreamPriorityChange() throws Exception {
-    StreamPriority requestStreamPriority = new StreamPriority().setDependency(123).setWeight((short)45).setExclusive(true);
-    StreamPriority requestStreamPriority2 = new StreamPriority().setDependency(223).setWeight((short)145).setExclusive(false);
-    StreamPriority responseStreamPriority = new StreamPriority().setDependency(153).setWeight((short)75).setExclusive(false);
-    StreamPriority responseStreamPriority2 = new StreamPriority().setDependency(253).setWeight((short)175).setExclusive(true);
+    StreamPriorityBase requestStreamPriority = new Http2StreamPriority().setDependency(123).setWeight((short)45).setExclusive(true);
+    StreamPriorityBase requestStreamPriority2 = new Http2StreamPriority().setDependency(223).setWeight((short)145).setExclusive(false);
+    StreamPriorityBase responseStreamPriority = new Http2StreamPriority().setDependency(153).setWeight((short)75).setExclusive(false);
+    StreamPriorityBase responseStreamPriority2 = new Http2StreamPriority().setDependency(253).setWeight((short)175).setExclusive(true);
     waitFor(5);
     ServerBootstrap bootstrap = createH2Server((decoder, encoder) -> new Http2EventAdapter() {
       @Override
@@ -2193,7 +2197,7 @@ public class Http2ClientTest extends Http2TestBase {
   @Ignore("Cannot pass reliably for now (https://github.com/netty/netty/issues/9842)")
   @Test
   public void testClientStreamPriorityNoChange() throws Exception {
-    StreamPriority streamPriority = new StreamPriority().setDependency(123).setWeight((short)45).setExclusive(true);
+    StreamPriorityBase streamPriority = new Http2StreamPriority().setDependency(123).setWeight((short)45).setExclusive(true);
     waitFor(2);
     Promise<Void> latch = Promise.promise();
     ServerBootstrap bootstrap = createH2Server((decoder, encoder) -> new Http2EventAdapter() {
@@ -2251,7 +2255,7 @@ public class Http2ClientTest extends Http2TestBase {
   @Ignore("Cannot pass reliably for now (https://github.com/netty/netty/issues/9842)")
   @Test
   public void testServerStreamPriorityNoChange() throws Exception {
-    StreamPriority streamPriority = new StreamPriority().setDependency(123).setWeight((short)45).setExclusive(true);
+    StreamPriorityBase streamPriority = new Http2StreamPriority().setDependency(123).setWeight((short)45).setExclusive(true);
     waitFor(1);
     ServerBootstrap bootstrap = createH2Server((decoder, encoder) -> new Http2EventAdapter() {
       @Override

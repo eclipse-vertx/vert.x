@@ -127,5 +127,5 @@ public interface HttpClientResponse extends ReadStream<Buffer>, HttpResponseHead
    * @param handler the handler to be called when the stream priority changes
    */
   @Fluent
-  HttpClientResponse streamPriorityHandler(Handler<StreamPriority> handler);
+  HttpClientResponse streamPriorityHandler(Handler<StreamPriorityBase> handler);
 }

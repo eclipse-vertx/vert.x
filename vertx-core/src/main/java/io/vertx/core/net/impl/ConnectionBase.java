@@ -13,8 +13,10 @@ package io.vertx.core.net.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
+import io.netty.channel.socket.DatagramChannel;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.traffic.AbstractTrafficShapingHandler;
+import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.FutureListener;
@@ -62,7 +64,7 @@ public abstract class ConnectionBase {
 
   protected final VertxInternal vertx;
   protected final ChannelHandlerContext chctx;
-  protected final ContextInternal context;
+  public final ContextInternal context;
   private Handler<Throwable> exceptionHandler;
   private Handler<Void> closeHandler;
   private Object metric;
@@ -391,7 +393,18 @@ public abstract class ConnectionBase {
   }
 
   public boolean isSsl() {
-    return chctx.pipeline().get(SslHandler.class) != null;
+    return chctx.pipeline().get(SslHandler.class) != null || isHttp3SslHandler(chctx);
+  }
+
+  private boolean isHttp3SslHandler(ChannelHandlerContext chctx) {
+    Channel channel = chctx.channel();
+    ChannelPipeline pipeline = getDatagramChannelPipeline(channel);
+    return pipeline != null && pipeline.names().contains(ChannelProvider.CLIENT_SSL_HANDLER_NAME);
+  }
+
+  private ChannelPipeline getDatagramChannelPipeline(Channel channel) {
+    channel = channel != null ? channel.parent() : null;
+    return channel instanceof DatagramChannel ? channel.pipeline() : null;
   }
 
   public boolean isTrafficShaped() {
@@ -399,6 +412,7 @@ public abstract class ConnectionBase {
   }
 
   public SSLSession sslSession() {
+    //TODO: should return sslSession for http3.
     ChannelHandlerContext sslHandlerContext = chctx.pipeline().context(SslHandler.class);
     if (sslHandlerContext != null) {
       SslHandler sslHandler = (SslHandler) sslHandlerContext.handler();
@@ -440,6 +454,11 @@ public abstract class ConnectionBase {
 
   private SocketAddress channelRemoteAddress() {
     java.net.SocketAddress addr = chctx.channel().remoteAddress();
+
+    if (chctx.channel() instanceof QuicChannel) {
+      addr = ((QuicChannel) chctx.channel()).remoteSocketAddress();
+    }
+
     return addr != null ? vertx.transport().convert(addr) : null;
   }
 
@@ -482,6 +501,11 @@ public abstract class ConnectionBase {
 
   private SocketAddress channelLocalAddress() {
     java.net.SocketAddress addr = chctx.channel().localAddress();
+
+    if (chctx.channel() instanceof QuicChannel) {
+      addr = ((QuicChannel) chctx.channel()).remoteSocketAddress();
+    }
+
     return addr != null ? vertx.transport().convert(addr) : null;
   }
 
@@ -517,4 +541,7 @@ public abstract class ConnectionBase {
     }
   }
 
+  public VertxInternal vertx() {
+    return vertx;
+  }
 }

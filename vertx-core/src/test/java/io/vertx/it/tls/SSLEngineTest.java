@@ -105,7 +105,7 @@ public class SSLEngineTest extends HttpTestBase {
     NetServerInternal tcpServer = ((VertxInternal) vertx).sharedTcpServers().values().iterator().next();
     assertEquals(tcpServer.actualPort(), server.actualPort());
     SslContextProvider provider = tcpServer.sslContextProvider();
-    SslContext ctx = provider.createContext(false, false);
+    SslContext ctx = provider.createContext(false, false, false);
     switch (expectedSslContext != null ? expectedSslContext : "jdk") {
       case "jdk":
         assertTrue(ctx.sessionContext().getClass().getName().equals("sun.security.ssl.SSLSessionContextImpl"));

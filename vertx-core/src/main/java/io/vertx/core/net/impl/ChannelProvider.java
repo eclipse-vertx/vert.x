@@ -13,13 +13,18 @@ package io.vertx.core.net.impl;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
-import io.netty.handler.proxy.*;
-import io.netty.handler.ssl.SslHandler;
-import io.netty.handler.ssl.SslHandshakeCompletionEvent;
+import io.netty.handler.proxy.HttpProxyHandler;
+import io.netty.handler.proxy.ProxyConnectionEvent;
+import io.netty.handler.proxy.ProxyHandler;
+import io.netty.handler.proxy.Socks4ProxyHandler;
+import io.netty.handler.proxy.Socks5ProxyHandler;
+import io.netty.incubator.codec.quic.QuicChannel;
+import io.netty.incubator.codec.quic.QuicClosedChannelException;
 import io.netty.resolver.NoopAddressResolverGroup;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.Promise;
 import io.vertx.core.Handler;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.net.SslChannelProvider;
@@ -29,7 +34,6 @@ import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
 
-import javax.net.ssl.SSLHandshakeException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
@@ -43,12 +47,14 @@ import java.net.InetSocketAddress;
  */
 public final class ChannelProvider {
 
+  public static final String CLIENT_SSL_HANDLER_NAME = "ssl";
   private final Bootstrap bootstrap;
   private final SslContextProvider sslContextProvider;
   private final ContextInternal context;
   private ProxyOptions proxyOptions;
   private String applicationProtocol;
   private Handler<Channel> handler;
+  private HttpVersion version;
 
   public ChannelProvider(Bootstrap bootstrap,
                          SslContextProvider sslContextProvider,
@@ -66,6 +72,11 @@ public final class ChannelProvider {
    */
   public ChannelProvider proxyOptions(ProxyOptions proxyOptions) {
     this.proxyOptions = proxyOptions;
+    return this;
+  }
+
+  public ChannelProvider version(HttpVersion version) {
+    this.version = version;
     return this;
   }
 
@@ -95,7 +106,11 @@ public final class ChannelProvider {
 
   private void connect(Handler<Channel> handler, SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, ClientSSLOptions sslOptions, Promise<Channel> p) {
     try {
-      bootstrap.channelFactory(context.owner().transport().channelFactory(remoteAddress.isDomainSocket()));
+      if (version == HttpVersion.HTTP_3) {
+        bootstrap.channelFactory(() -> context.owner().transport().datagramChannel());
+      } else {
+        bootstrap.channelFactory(context.owner().transport().channelFactory(remoteAddress.isDomainSocket()));
+      }
     } catch (Exception e) {
       p.setFailure(e);
       return;
@@ -110,36 +125,16 @@ public final class ChannelProvider {
   private void initSSL(Handler<Channel> handler, SocketAddress peerAddress, String serverName, boolean ssl, ClientSSLOptions sslOptions, Channel ch, Promise<Channel> channelHandler) {
     if (ssl) {
       SslChannelProvider sslChannelProvider = new SslChannelProvider(context.owner(), sslContextProvider, false);
-      SslHandler sslHandler = sslChannelProvider.createClientSslHandler(peerAddress, serverName, sslOptions.isUseAlpn(), sslOptions.getSslHandshakeTimeout(), sslOptions.getSslHandshakeTimeoutUnit());
+      ChannelHandler sslHandler = sslChannelProvider.createClientSslHandler(peerAddress, serverName,
+        sslOptions.isUseAlpn(), sslOptions.isHttp3(), sslOptions.getSslHandshakeTimeout(),
+        sslOptions.getSslHandshakeTimeoutUnit());
       ChannelPipeline pipeline = ch.pipeline();
-      pipeline.addLast("ssl", sslHandler);
-      pipeline.addLast(new ChannelInboundHandlerAdapter() {
-        @Override
-        public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
-          if (evt instanceof SslHandshakeCompletionEvent) {
-            // Notify application
-            SslHandshakeCompletionEvent completion = (SslHandshakeCompletionEvent) evt;
-            if (completion.isSuccess()) {
-              // Remove from the pipeline after handshake result
-              ctx.pipeline().remove(this);
-              applicationProtocol = sslHandler.applicationProtocol();
-              if (handler != null) {
-                context.dispatch(ch, handler);
-              }
-              channelHandler.setSuccess(ctx.channel());
-            } else {
-              SSLHandshakeException sslException = new SSLHandshakeException("Failed to create SSL connection");
-              sslException.initCause(completion.cause());
-              channelHandler.setFailure(sslException);
-            }
-          }
-          ctx.fireUserEventTriggered(evt);
-        }
-        @Override
-        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-          // Ignore these exception as they will be reported to the handler
-        }
-      });
+      pipeline.addLast(CLIENT_SSL_HANDLER_NAME, sslHandler);
+      pipeline.addLast(new ExceptionHandlingChannelHandler(channelHandler));
+      if (version != HttpVersion.HTTP_3) {
+        pipeline.addLast(new HttpSslHandshaker(context, handler, channelHandler, version, sslHandler,
+          this::setApplicationProtocol));
+      }
     }
   }
 
@@ -147,7 +142,7 @@ public final class ChannelProvider {
   private void handleConnect(Handler<Channel> handler, SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, ClientSSLOptions sslOptions, Promise<Channel> channelHandler) {
     VertxInternal vertx = context.owner();
     bootstrap.resolver(vertx.nettyAddressResolverGroup());
-    bootstrap.handler(new ChannelInitializer<Channel>() {
+    bootstrap.handler(new ChannelInitializer<>() {
       @Override
       protected void initChannel(Channel ch) {
         initSSL(handler, peerAddress, serverName, ssl, sslOptions, ch, channelHandler);
@@ -155,18 +150,44 @@ public final class ChannelProvider {
     });
     ChannelFuture fut = bootstrap.connect(vertx.transport().convert(remoteAddress));
     fut.addListener(res -> {
-      if (res.isSuccess()) {
-        connected(handler, fut.channel(), ssl, channelHandler);
-      } else {
-        channelHandler.setFailure(res.cause());
+      if (!res.isSuccess()) {
+        channelHandler.tryFailure(res.cause());
+        return;
       }
+      if (version != HttpVersion.HTTP_3) {
+        connected(handler, fut.channel(), ssl, channelHandler);
+        return;
+      }
+      Channel nioDatagramChannel = fut.channel();
+
+      QuicChannel.newBootstrap(nioDatagramChannel)
+        .handler(new ChannelInitializer<>() {
+          @Override
+          protected void initChannel(Channel quicChannel) {
+            ChannelPipeline pipeline = quicChannel.pipeline();
+            pipeline.addLast(new HttpSslHandshaker(context, handler, channelHandler, HttpVersion.HTTP_3, null,
+              ChannelProvider.this::setApplicationProtocol));
+          }
+        })
+        .localAddress(nioDatagramChannel.localAddress())
+        .remoteAddress(nioDatagramChannel.remoteAddress())
+        .connect()
+        .addListener((io.netty.util.concurrent.Future<QuicChannel> future) -> {
+          if (!future.isSuccess()) {
+            Throwable cause = future.cause();
+            if(future.cause() instanceof QuicClosedChannelException) {
+              cause = new ConnectTimeoutException(future.cause().getMessage());
+            }
+            channelHandler.tryFailure(cause);
+          }
+        });
     });
   }
 
   /**
    * Signal we are connected to the remote server.
    *
-   * @param channel the channel
+   * @param channel        the channel
    * @param channelHandler the channel handler
    */
   private void connected(Handler<Channel> handler, Channel channel, boolean ssl, Promise<Channel> channelHandler) {
@@ -236,7 +257,7 @@ public final class ChannelProvider {
 
               @Override
               public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-                channelHandler.setFailure(cause);
+                channelHandler.tryFailure(cause);
               }
             });
           }
@@ -245,12 +266,16 @@ public final class ChannelProvider {
 
         future.addListener(res -> {
           if (!res.isSuccess()) {
-            channelHandler.setFailure(res.cause());
+            channelHandler.tryFailure(res.cause());
           }
         });
       } else {
-        channelHandler.setFailure(dnsRes.cause());
+        channelHandler.tryFailure(dnsRes.cause());
       }
     });
+  }
+
+  private void setApplicationProtocol(String applicationProtocol) {
+    this.applicationProtocol = applicationProtocol;
   }
 }
