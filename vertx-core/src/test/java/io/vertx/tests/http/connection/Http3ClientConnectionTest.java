@@ -13,18 +13,18 @@ package io.vertx.tests.http.connection;
 import io.vertx.core.http.Http3Settings;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.tests.http.Http3TestBase;
+import io.vertx.tests.http.HttpOptionsFactory;
 
 public class Http3ClientConnectionTest extends HttpClientConnectionTest {
 
   @Override
   protected HttpServerOptions createBaseServerOptions() {
-    return Http3TestBase.createHttp3ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST)
+    return HttpOptionsFactory.createHttp3ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST)
       .setInitialHttp3Settings(new Http3Settings());
   }
 
   @Override
   protected HttpClientOptions createBaseClientOptions() {
-    return Http3TestBase.createHttp3ClientOptions();
+    return HttpOptionsFactory.createHttp3ClientOptions();
   }
 }
