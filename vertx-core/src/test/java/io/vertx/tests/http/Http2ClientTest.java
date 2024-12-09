@@ -6,14 +6,13 @@ import io.vertx.core.http.HttpServerOptions;
 
 import java.util.concurrent.TimeUnit;
 
-import static io.vertx.tests.http.HttpOptionsFactory.*;
 
 public class Http2ClientTest extends HttpClientTest {
   @Override
   public void setUp() throws Exception {
     eventLoopGroups.clear();
-    serverOptions =  createHttp2ServerOptions(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST);
-    clientOptions = createHttp2ClientOptions();
+    serverOptions =  HttpOptionsFactory.createHttp2ServerOptions(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST);
+    clientOptions = HttpOptionsFactory.createHttp2ClientOptions();
     super.setUp();
   }
   @Override
