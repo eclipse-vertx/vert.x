@@ -31,12 +31,12 @@ public class Http2Test extends HttpCommonTest {
 
   @Override
   protected HttpServerOptions createBaseServerOptions() {
-    return Http2TestBase.createHttp2ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
+    return HttpOptionsFactory.createHttp2ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
   }
 
   @Override
   protected HttpClientOptions createBaseClientOptions() {
-    return Http2TestBase.createHttp2ClientOptions();
+    return HttpOptionsFactory.createHttp2ClientOptions();
   }
 
   @Override

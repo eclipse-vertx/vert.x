@@ -11,24 +11,40 @@
 
 package io.vertx.tests.http;
 
-import io.netty.channel.EventLoopGroup;
 import io.netty.incubator.codec.http3.Http3;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.net.JdkSSLEngineOptions;
-import io.vertx.test.http.HttpTestBase;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
- * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
+ * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http3TestBase extends HttpTestBase {
+public class HttpOptionsFactory {
+
+  public static HttpServerOptions createHttp2ServerOptions(int port, String host) {
+    return new HttpServerOptions()
+        .setPort(port)
+        .setHost(host)
+        .setSslEngineOptions(new JdkSSLEngineOptions())
+        .setUseAlpn(true)
+        .setSsl(true)
+        .addEnabledCipherSuite("TLS_RSA_WITH_AES_128_CBC_SHA") // Non Diffie-helman -> debuggable in wireshark
+        .setKeyCertOptions(Cert.SERVER_JKS.get());
+  };
+
+  public static HttpClientOptions createHttp2ClientOptions() {
+    return new HttpClientOptions()
+      .setSslEngineOptions(new JdkSSLEngineOptions())
+      .setUseAlpn(true)
+      .setSsl(true)
+      .setTrustOptions(Trust.SERVER_JKS.get())
+      .setProtocolVersion(HttpVersion.HTTP_2);
+  }
 
   public static HttpServerOptions createHttp3ServerOptions(int port, String host) {
     HttpServerOptions options = new HttpServerOptions();
@@ -61,7 +77,7 @@ public class Http3TestBase extends HttpTestBase {
         .addEnabledCipherSuite("TLS_RSA_WITH_AES_128_CBC_SHA") // Non Diffie-helman -> debuggable in wireshark
         .setKeyCertOptions(Cert.SERVER_JKS.get())
       ;
-  };
+  }
 
   public static HttpClientOptions createHttp3ClientOptions() {
     HttpClientOptions httpClientOptions = new HttpClientOptions();
@@ -77,40 +93,5 @@ public class Http3TestBase extends HttpTestBase {
       .setSsl(true)
       .setTrustOptions(Trust.SERVER_JKS.get())
       .setProtocolVersion(HttpVersion.HTTP_3);
-  }
-
-  protected HttpServerOptions serverOptions;
-  protected HttpClientOptions clientOptions;
-  protected List<EventLoopGroup> eventLoopGroups = new ArrayList<>();
-
-  @Override
-  public void setUp() throws Exception {
-    eventLoopGroups.clear();
-    serverOptions =  createHttp3ServerOptions(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST);
-    clientOptions = createHttp3ClientOptions();
-    super.setUp();
-  }
-
-  @Override
-  protected void configureDomainSockets() throws Exception {
-    // Nope
-  }
-
-  @Override
-  protected void tearDown() throws Exception {
-    super.tearDown();
-    for (EventLoopGroup eventLoopGroup : eventLoopGroups) {
-      eventLoopGroup.shutdownGracefully(0, 10, TimeUnit.SECONDS);
-    }
-  }
-
-  @Override
-  protected HttpServerOptions createBaseServerOptions() {
-    return serverOptions;
-  }
-
-  @Override
-  protected HttpClientOptions createBaseClientOptions() {
-    return clientOptions;
   }
 }

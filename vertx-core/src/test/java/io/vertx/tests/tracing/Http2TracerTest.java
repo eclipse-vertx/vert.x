@@ -13,7 +13,7 @@ package io.vertx.tests.tracing;
 import org.junit.Assert;
 import org.junit.Test;
 
-import io.vertx.tests.http.Http2TestBase;
+import io.vertx.tests.http.HttpOptionsFactory;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpVersion;
@@ -28,12 +28,12 @@ public class Http2TracerTest extends HttpTracerTestBase {
 
   @Override
   protected HttpServerOptions createBaseServerOptions() {
-    return Http2TestBase.createHttp2ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
+    return HttpOptionsFactory.createHttp2ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
   }
 
   @Override
   protected HttpClientOptions createBaseClientOptions() {
-    return Http2TestBase.createHttp2ClientOptions();
+    return HttpOptionsFactory.createHttp2ClientOptions();
   }
 
   @Test
