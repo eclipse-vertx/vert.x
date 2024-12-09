@@ -22,6 +22,7 @@ import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.CloseSequence;
 import io.vertx.core.internal.VertxInternal;
@@ -227,6 +228,7 @@ class NetClientImpl implements NetClientInternal {
     ContextInternal ctx = vertx.getOrCreateContext();
     synchronized (this) {
       this.sslOptions = options;
+      this.sslOptions.setHttp3(this.options.getProtocolVersion() == HttpVersion.HTTP_3);
     }
     return ctx.succeededFuture(true);
   }
@@ -246,6 +248,8 @@ class NetClientImpl implements NetClientInternal {
           connectHandler.fail("ClientSSLOptions must be provided when connecting to a TLS server");
           return;
         }
+        sslOptions.setHttp3(options.getProtocolVersion() == HttpVersion.HTTP_3);
+
         Future<SslContextProvider> fut;
         fut = sslContextManager.resolveSslContextProvider(
           sslOptions,
@@ -310,7 +314,7 @@ class NetClientImpl implements NetClientInternal {
       }
 
       ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslContextProvider, context)
-        .proxyOptions(proxyOptions);
+        .proxyOptions(proxyOptions).version(options.getProtocolVersion());;
 
       SocketAddress captured = remoteAddress;
 
