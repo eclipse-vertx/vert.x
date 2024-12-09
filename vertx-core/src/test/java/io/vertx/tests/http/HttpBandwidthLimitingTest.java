@@ -58,14 +58,18 @@ public class HttpBandwidthLimitingTest extends HttpTestBase {
 
     Function<Vertx, HttpServer> http1ServerFactory = (v) -> Providers.http1Server(v, INBOUND_LIMIT, OUTBOUND_LIMIT);
     Function<Vertx, HttpServer> http2ServerFactory = (v) -> Providers.http2Server(v, INBOUND_LIMIT, OUTBOUND_LIMIT);
+    Function<Vertx, HttpServer> http3ServerFactory = (v) -> Providers.http3Server(v, INBOUND_LIMIT, OUTBOUND_LIMIT);
     Function<Vertx, HttpServer> http1NonTrafficShapedServerFactory = (v) -> Providers.http1Server(v, 0, 0);
     Function<Vertx, HttpServer> http2NonTrafficShapedServerFactory = (v) -> Providers.http1Server(v, 0, 0);
+    Function<Vertx, HttpServer> http3NonTrafficShapedServerFactory = (v) -> Providers.http1Server(v, 0, 0);
     Function<Vertx, HttpClient> http1ClientFactory = (v) -> v.createHttpClient();
     Function<Vertx, HttpClient> http2ClientFactory = (v) -> v.createHttpClient(HttpOptionsFactory.createHttp2ClientOptions());
+    Function<Vertx, HttpClient> http3ClientFactory = (v) -> v.createHttpClient(HttpOptionsFactory.createHttp3ClientOptions());
 
     return Arrays.asList(new Object[][] {
       { 1.1, http1ServerFactory, http1ClientFactory, http1NonTrafficShapedServerFactory },
-      { 2.0, http2ServerFactory, http2ClientFactory, http2NonTrafficShapedServerFactory }
+      { 2.0, http2ServerFactory, http2ClientFactory, http2NonTrafficShapedServerFactory },
+      { 3.0, http3ServerFactory, http3ClientFactory, http3NonTrafficShapedServerFactory }
     });
   }
 
@@ -387,6 +391,18 @@ public class HttpBandwidthLimitingTest extends HttpTestBase {
 
     private static HttpServer http2Server(Vertx vertx, int inboundLimit, int outboundLimit) {
       HttpServerOptions options = HttpOptionsFactory.createHttp2ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
+
+      if (inboundLimit != 0 || outboundLimit != 0) {
+        options.setTrafficShapingOptions(new TrafficShapingOptions()
+                                           .setInboundGlobalBandwidth(inboundLimit)
+                                           .setOutboundGlobalBandwidth(outboundLimit));
+      }
+
+      return vertx.createHttpServer(options);
+    }
+
+    private static HttpServer http3Server(Vertx vertx, int inboundLimit, int outboundLimit) {
+      HttpServerOptions options = HttpOptionsFactory.createHttp3ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
 
       if (inboundLimit != 0 || outboundLimit != 0) {
         options.setTrafficShapingOptions(new TrafficShapingOptions()
