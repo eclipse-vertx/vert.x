@@ -10,22 +10,14 @@
  */
 package io.vertx.tests.http;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Function;
-
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
+import io.netty.channel.EventLoopGroup;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.vertx.core.*;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.net.TrafficShapingOptions;
+import io.vertx.test.core.TestUtils;
+import io.vertx.test.http.HttpTestBase;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -34,18 +26,29 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import io.netty.handler.codec.http.HttpHeaderNames;
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.test.core.TestUtils;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
+
 
 @RunWith(Parameterized.class)
-public class HttpBandwidthLimitingTest extends Http2TestBase {
+public class HttpBandwidthLimitingTest extends HttpTestBase {
 
   private static final int OUTBOUND_LIMIT = 64 * 1024;  // 64KB/s
   private static final int INBOUND_LIMIT = 64 * 1024;   // 64KB/s
   private static final int TEST_CONTENT_SIZE = 64 * 1024 * 4;   // 64 * 4 = 256KB
+
+  protected HttpServerOptions serverOptions;
+  protected HttpClientOptions clientOptions;
+  protected List<EventLoopGroup> eventLoopGroups = new ArrayList<>();
 
   private final File sampleF = new File(new File(TestUtils.MAVEN_TARGET_DIR, "test-classes"), "test_traffic.txt");
   private final Handlers HANDLERS = new Handlers();
@@ -58,7 +61,7 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
     Function<Vertx, HttpServer> http1NonTrafficShapedServerFactory = (v) -> Providers.http1Server(v, 0, 0);
     Function<Vertx, HttpServer> http2NonTrafficShapedServerFactory = (v) -> Providers.http1Server(v, 0, 0);
     Function<Vertx, HttpClient> http1ClientFactory = (v) -> v.createHttpClient();
-    Function<Vertx, HttpClient> http2ClientFactory = (v) -> v.createHttpClient(createHttp2ClientOptions());
+    Function<Vertx, HttpClient> http2ClientFactory = (v) -> v.createHttpClient(HttpOptionsFactory.createHttp2ClientOptions());
 
     return Arrays.asList(new Object[][] {
       { 1.1, http1ServerFactory, http1ClientFactory, http1NonTrafficShapedServerFactory },
@@ -66,9 +69,9 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
     });
   }
 
-  private Function<Vertx, HttpServer> serverFactory;
-  private Function<Vertx, HttpClientAgent> clientFactory;
-  private Function<Vertx, HttpServer> nonTrafficShapedServerFactory;
+  protected Function<Vertx, HttpServer> serverFactory;
+  protected Function<Vertx, HttpClientAgent> clientFactory;
+  protected Function<Vertx, HttpServer> nonTrafficShapedServerFactory;
 
   public HttpBandwidthLimitingTest(double protoVersion, Function<Vertx, HttpServer> serverFactory,
                                    Function<Vertx, HttpClientAgent> clientFactory,
@@ -77,13 +80,36 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
     this.clientFactory = clientFactory;
     this.nonTrafficShapedServerFactory = nonTrafficShapedServerFactory;
   }
-
   @Before
   public void setUp() throws Exception {
+    eventLoopGroups.clear();
+    serverOptions =  HttpOptionsFactory.createHttp2ServerOptions(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST);
+    clientOptions = HttpOptionsFactory.createHttp2ClientOptions();
     super.setUp();
-    server = serverFactory.apply(vertx);
-    client = clientFactory.apply(vertx);
   }
+  @Override
+  protected void configureDomainSockets() throws Exception {
+    // Nope
+  }
+
+  @Override
+  protected void tearDown() throws Exception {
+    super.tearDown();
+    for (EventLoopGroup eventLoopGroup : eventLoopGroups) {
+      eventLoopGroup.shutdownGracefully(0, 10, TimeUnit.SECONDS);
+    }
+  }
+
+  @Override
+  protected HttpServerOptions createBaseServerOptions() {
+    return serverOptions;
+  }
+
+  @Override
+  protected HttpClientOptions createBaseClientOptions() {
+    return clientOptions;
+  }
+
 
   @After
   public void after() throws InterruptedException
@@ -360,7 +386,7 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
     }
 
     private static HttpServer http2Server(Vertx vertx, int inboundLimit, int outboundLimit) {
-      HttpServerOptions options = createHttp2ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
+      HttpServerOptions options = HttpOptionsFactory.createHttp2ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
 
       if (inboundLimit != 0 || outboundLimit != 0) {
         options.setTrafficShapingOptions(new TrafficShapingOptions()
