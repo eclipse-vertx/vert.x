@@ -73,7 +73,7 @@ class Http3ClientConnection extends Http3ConnectionBase implements HttpClientCon
   }
 
   public long concurrency() {
-    long concurrency = client.options().getSslOptions().getInitialMaxStreamsBidirectional();
+    long concurrency = client.options().getSslOptions().getHttp3InitialMaxStreamsBidirectional();
     long http3MaxConcurrency = client.options().getHttp3MultiplexingLimit() <= 0 ? Long.MAX_VALUE : client.options().getHttp3MultiplexingLimit();
     if (http3MaxConcurrency > 0) {
       concurrency = Math.min(concurrency, http3MaxConcurrency);
@@ -120,7 +120,7 @@ class Http3ClientConnection extends Http3ConnectionBase implements HttpClientCon
 
   @Override
   protected void concurrencyChanged(long concurrency) {
-    long limit = client.options().getSslOptions().getInitialMaxStreamsBidirectional();
+    long limit = client.options().getSslOptions().getHttp3InitialMaxStreamsBidirectional();
     if (limit > 0) {
       concurrency = Math.min(concurrency, limit);
     }

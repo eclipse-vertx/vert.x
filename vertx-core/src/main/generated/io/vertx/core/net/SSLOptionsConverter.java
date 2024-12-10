@@ -48,9 +48,34 @@ public class SSLOptionsConverter {
             obj.setHttp3((Boolean)member.getValue());
           }
           break;
-        case "initialMaxStreamsBidirectional":
+        case "http3InitialMaxStreamsBidirectional":
           if (member.getValue() instanceof Number) {
-            obj.setInitialMaxStreamsBidirectional(((Number)member.getValue()).longValue());
+            obj.setHttp3InitialMaxStreamsBidirectional(((Number)member.getValue()).longValue());
+          }
+          break;
+        case "http3InitialMaxData":
+          if (member.getValue() instanceof Number) {
+            obj.setHttp3InitialMaxData(((Number)member.getValue()).longValue());
+          }
+          break;
+        case "http3InitialMaxStreamDataBidirectionalLocal":
+          if (member.getValue() instanceof Number) {
+            obj.setHttp3InitialMaxStreamDataBidirectionalLocal(((Number)member.getValue()).longValue());
+          }
+          break;
+        case "http3InitialMaxStreamDataBidirectionalRemote":
+          if (member.getValue() instanceof Number) {
+            obj.setHttp3InitialMaxStreamDataBidirectionalRemote(((Number)member.getValue()).longValue());
+          }
+          break;
+        case "http3InitialMaxStreamDataUnidirectional":
+          if (member.getValue() instanceof Number) {
+            obj.setHttp3InitialMaxStreamDataUnidirectional(((Number)member.getValue()).longValue());
+          }
+          break;
+        case "http3InitialMaxStreamsUnidirectional":
+          if (member.getValue() instanceof Number) {
+            obj.setHttp3InitialMaxStreamsUnidirectional(((Number)member.getValue()).longValue());
           }
           break;
         case "enabledSecureTransportProtocols":
@@ -109,7 +134,12 @@ public class SSLOptionsConverter {
     }
     json.put("useAlpn", obj.isUseAlpn());
     json.put("http3", obj.isHttp3());
-    json.put("initialMaxStreamsBidirectional", obj.getInitialMaxStreamsBidirectional());
+    json.put("http3InitialMaxStreamsBidirectional", obj.getHttp3InitialMaxStreamsBidirectional());
+    json.put("http3InitialMaxData", obj.getHttp3InitialMaxData());
+    json.put("http3InitialMaxStreamDataBidirectionalLocal", obj.getHttp3InitialMaxStreamDataBidirectionalLocal());
+    json.put("http3InitialMaxStreamDataBidirectionalRemote", obj.getHttp3InitialMaxStreamDataBidirectionalRemote());
+    json.put("http3InitialMaxStreamDataUnidirectional", obj.getHttp3InitialMaxStreamDataUnidirectional());
+    json.put("http3InitialMaxStreamsUnidirectional", obj.getHttp3InitialMaxStreamsUnidirectional());
     if (obj.getEnabledSecureTransportProtocols() != null) {
       JsonArray array = new JsonArray();
       obj.getEnabledSecureTransportProtocols().forEach(item -> array.add(item));
