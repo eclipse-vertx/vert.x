@@ -27,9 +27,9 @@ import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.HostAndPort;
+import io.vertx.core.net.SSLOptions;
 import io.vertx.core.net.SocketAddress;
 
-import java.net.InetSocketAddress;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
@@ -57,17 +57,16 @@ public class SslChannelProvider {
     return sslContextProvider;
   }
 
-  public ChannelHandler createClientSslHandler(SocketAddress peerAddress, String serverName, boolean useAlpn,
-                                               boolean http3,
-                                               long sslHandshakeTimeout, TimeUnit sslHandshakeTimeoutUnit) {
-    SslContext sslContext = sslContextProvider.sslClientContext(serverName, useAlpn, http3);
+  public ChannelHandler createClientSslHandler(SocketAddress peerAddress, String serverName, SSLOptions sslOptions) {
+    SslContext sslContext = sslContextProvider.sslClientContext(serverName, sslOptions.isUseAlpn(),
+      sslOptions.isHttp3());
     SslHandler sslHandler;
     Executor delegatedTaskExec = sslContextProvider.useWorkerPool() ? workerPool : ImmediateExecutor.INSTANCE;
-    if (http3) {
+    if (sslOptions.isHttp3()) {
       return Http3.newQuicClientCodecBuilder()
         .sslTaskExecutor(delegatedTaskExec)
         .sslContext((QuicSslContext) ((VertxSslContext) sslContext).unwrap())
-        .maxIdleTimeout(sslHandshakeTimeout, sslHandshakeTimeoutUnit)
+        .maxIdleTimeout(sslOptions.getSslHandshakeTimeout(), sslOptions.getSslHandshakeTimeoutUnit())
         .initialMaxData(10000000) // Todo: Make this value configurable!
         .initialMaxStreamDataBidirectionalLocal(1000000) // Todo: Make this value configurable!
         .initialMaxStreamsBidirectional(100)
@@ -79,7 +78,7 @@ public class SslChannelProvider {
     } else {
       sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, delegatedTaskExec);
     }
-    sslHandler.setHandshakeTimeout(sslHandshakeTimeout, sslHandshakeTimeoutUnit);
+    sslHandler.setHandshakeTimeout(sslOptions.getSslHandshakeTimeout(), sslOptions.getSslHandshakeTimeoutUnit());
     return sslHandler;
   }
 
