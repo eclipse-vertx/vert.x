@@ -10,6 +10,7 @@
  */
 package io.vertx.core.net;
 
+import io.netty.util.internal.ObjectUtil;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.json.annotations.JsonGen;
@@ -338,6 +339,7 @@ public class SSLOptions {
    * @param http3InitialMaxStreamsBidirectional the HTTP/3 initial max streams bidirectional count
    */
   public SSLOptions setHttp3InitialMaxStreamsBidirectional(long http3InitialMaxStreamsBidirectional) {
+    ObjectUtil.checkPositive(http3InitialMaxStreamsBidirectional, "http3InitialMaxStreamsBidirectional");
     this.http3InitialMaxStreamsBidirectional = http3InitialMaxStreamsBidirectional;
     return this;
   }
@@ -371,6 +373,7 @@ public class SSLOptions {
    * @param http3InitialMaxStreamDataBidirectionalLocal HTTP/3 initial max stream data bidirectional local
    */
   public SSLOptions setHttp3InitialMaxStreamDataBidirectionalLocal(long http3InitialMaxStreamDataBidirectionalLocal) {
+    ObjectUtil.checkPositive(http3InitialMaxStreamDataBidirectionalLocal, "http3InitialMaxStreamDataBidirectionalLocal");
     this.http3InitialMaxStreamDataBidirectionalLocal = http3InitialMaxStreamDataBidirectionalLocal;
     return this;
   }

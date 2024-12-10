@@ -10,7 +10,6 @@
  */
 package io.vertx.tests.http;
 
-import io.vertx.core.http.Http3Settings;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.test.http.HttpTestBase;
@@ -20,12 +19,11 @@ public class Http3ClientTimeoutTest extends HttpClientTimeoutTest {
   @Override
   protected HttpServerOptions createBaseServerOptions() {
     return HttpOptionsFactory
-      .createHttp3ServerOptions(HttpTestBase.DEFAULT_HTTPS_PORT, HttpTestBase.DEFAULT_HTTPS_HOST)
-      .setInitialHttp3Settings(new Http3Settings().setMaxFieldSectionSize(50000));
+      .createHttp3ServerOptions(HttpTestBase.DEFAULT_HTTPS_PORT, HttpTestBase.DEFAULT_HTTPS_HOST);
   }
 
   @Override
   protected HttpClientOptions createBaseClientOptions() {
-    return HttpOptionsFactory.createHttp3ClientOptions();
+    return HttpOptionsFactory.createHttp3ClientOptions().setHttp3MultiplexingLimit(5);
   }
 }
