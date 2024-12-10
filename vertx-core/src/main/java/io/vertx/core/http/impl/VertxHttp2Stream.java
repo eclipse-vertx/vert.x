@@ -325,12 +325,12 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
       streamId = stream != null ? stream.id() : -1;
     }
     if (streamId != -1) {
-      conn.handler.writeReset(streamId, code, (PromiseInternal<Void>) promise);
+      conn.handler.writeReset(streamId, code, null);
     } else {
       // Reset happening before stream allocation
       handleReset(code);
-      promise.complete();
     }
+    promise.complete();
   }
 
   void handleWriteQueueDrained() {
