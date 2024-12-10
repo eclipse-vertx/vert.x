@@ -149,6 +149,11 @@ public class HttpClientOptionsConverter {
             obj.setName((String)member.getValue());
           }
           break;
+        case "http3MultiplexingLimit":
+          if (member.getValue() instanceof Number) {
+            obj.setHttp3MultiplexingLimit(((Number)member.getValue()).intValue());
+          }
+          break;
       }
     }
   }
@@ -198,5 +203,6 @@ public class HttpClientOptionsConverter {
     if (obj.getName() != null) {
       json.put("name", obj.getName());
     }
+    json.put("http3MultiplexingLimit", obj.getHttp3MultiplexingLimit());
   }
 }
