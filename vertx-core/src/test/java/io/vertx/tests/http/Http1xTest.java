@@ -2818,7 +2818,7 @@ public class Http1xTest extends HttpTest {
       req1.response().onComplete(onFailure(err -> {
         // Should never happen
       }));
-      assertTrue(req1.reset(0));
+      assertTrue(req1.reset(0).succeeded());
       for (String uri : Arrays.asList("/second", "/third")) {
         client
           .request(new RequestOptions(requestOptions).setURI(uri))
@@ -3007,13 +3007,14 @@ public class Http1xTest extends HttpTest {
           .onComplete(onSuccess(req -> {
             req.response().onComplete(onFailure(err -> {
             }));
-            assertTrue(req.reset());
-            client.request(new RequestOptions(requestOptions).setURI("some-uri"))
-              .compose(HttpClientRequest::send)
-              .onComplete(resp -> {
-                assertEquals(1, numReq.get());
-                complete();
-              });
+            req.reset().onComplete(onSuccess(v2 -> {
+              client.request(new RequestOptions(requestOptions).setURI("some-uri"))
+                .compose(HttpClientRequest::send)
+                .onComplete(resp -> {
+                  assertEquals(1, numReq.get());
+                  complete();
+                });
+            }));
           }));
       });
       await();
@@ -3075,7 +3076,7 @@ public class Http1xTest extends HttpTest {
             req2
               .response().onComplete(onFailure(err -> complete()));
             req2.sendHead().onComplete(onSuccess(v -> {
-              assertTrue(req2.reset());
+              assertTrue(req2.reset().succeeded());
             }));
           });
       }));
@@ -3142,7 +3143,7 @@ public class Http1xTest extends HttpTest {
           req2.response().onComplete(onFailure(resp -> complete()));
           req2.sendHead();
           doReset.thenAccept(v2 -> {
-            assertTrue(req2.reset());
+            assertTrue(req2.reset().succeeded());
           });
         }));
       });
@@ -3230,11 +3231,11 @@ public class Http1xTest extends HttpTest {
                 }));
             });
             req1.sendHead().onComplete(v -> {
-              assertTrue(req1.reset());
+              assertTrue(req1.reset().succeeded());
             });
           } else {
             req1.sendHead().onComplete(v -> {
-              assertTrue(req1.reset());
+              assertTrue(req1.reset().succeeded());
             });
             client.request(new RequestOptions(requestOptions).setURI("/somepath"))
               .compose(req -> req
@@ -4859,21 +4860,36 @@ public class Http1xTest extends HttpTest {
   public void testHttpServerWithIdleTimeoutSendChunkedFile() throws Exception {
     // Does not pass reliably in CI (timeout)
     Assume.assumeTrue(!vertx.isNativeTransportEnabled() && !Utils.isWindows());
-    int expected = 64 * 1024 * 1024; // We estimate this will take more than 200ms to transfer with a 1ms pause in chunks
-    File sent = TestUtils.tmpFile(".dat", expected);
-    server.close();
+    int expected = 32 * 1024 * 1024;
+    File file = TestUtils.tmpFile(".dat", expected);
+    // Estimate the delay to transfer a file with a 1ms pause in chunks
+    int delay = retrieveFileFromServer(file, createBaseServerOptions());
+    // Now test with timeout relative to this delay
+    int timeout = delay / 2;
+    delay = retrieveFileFromServer(file, createBaseServerOptions().setIdleTimeout(timeout).setIdleTimeoutUnit(TimeUnit.MILLISECONDS));
+    assertTrue(delay > timeout);
+  }
+
+  private int retrieveFileFromServer(File file, HttpServerOptions options) throws Exception {
+    server.close().await();
     server = vertx
-      .createHttpServer(createBaseServerOptions().setIdleTimeout(1000).setIdleTimeoutUnit(TimeUnit.MILLISECONDS))
+      .createHttpServer(options)
       .requestHandler(
         req -> {
-          req.response().sendFile(sent.getAbsolutePath());
+          req.response().sendFile(file.getAbsolutePath());
         });
     startServer(testAddress);
-    client.request(requestOptions)
-      .onComplete(onSuccess(req -> {
-        req.send().onComplete(onSuccess(resp -> {
-          long now = System.currentTimeMillis();
-          int[] length = {0};
+    long now = System.currentTimeMillis();
+    Integer len = getFile().await();
+    assertEquals((int)len, file.length());
+    return (int) (System.currentTimeMillis() - now);
+  }
+
+  private Future<Integer> getFile() {
+    int[] length = {0};
+    return client.request(requestOptions)
+      .compose(req -> req.send()
+        .compose(resp -> {
           resp.handler(buff -> {
             length[0] += buff.length();
             resp.pause();
@@ -4882,14 +4898,9 @@ public class Http1xTest extends HttpTest {
             });
           });
           resp.exceptionHandler(this::fail);
-          resp.endHandler(v -> {
-            assertEquals(expected, length[0]);
-            assertTrue(System.currentTimeMillis() - now > 1000);
-            testComplete();
-          });
-        }));
-      }));
-    await();
+          return resp.end();
+        }))
+      .map(v -> length[0]);
   }
 
   @Test
@@ -5490,6 +5501,8 @@ public class Http1xTest extends HttpTest {
   private void testEmptyHostPortionOfHostHeader(String hostHeader, int expectedPort) throws Exception {
     server.requestHandler(req -> {
       assertEquals("", req.authority().host());
+      assertTrue(((HttpServerRequestInternal) req).isValidAuthority());
+      assertEquals("", req.authority().host());
       assertEquals(expectedPort, req.authority().port());
       req.response().end();
     });
@@ -5506,6 +5519,7 @@ public class Http1xTest extends HttpTest {
   public void testMissingHostHeader() throws Exception {
     server.requestHandler(req -> {
       assertEquals(null, req.authority());
+      assertFalse(((HttpServerRequestInternal) req).isValidAuthority());
       testComplete();
     });
     startServer(testAddress);

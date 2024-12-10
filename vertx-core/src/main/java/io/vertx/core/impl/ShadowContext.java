@@ -13,7 +13,7 @@ package io.vertx.core.impl;
 import io.netty.channel.EventLoop;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
-import io.vertx.core.impl.deployment.Deployment;
+import io.vertx.core.impl.deployment.DeploymentContext;
 import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.EventExecutor;
@@ -54,15 +54,20 @@ final class ShadowContext extends ContextBase {
 
   final VertxInternal owner;
   final ContextBase delegate;
-  private final EventLoop eventLoop;
+  private final EventLoopExecutor eventLoop;
   private final TaskQueue orderedTasks;
 
-  public ShadowContext(VertxInternal owner, EventLoop eventLoop, ContextInternal delegate) {
+  public ShadowContext(VertxInternal owner, EventLoopExecutor eventLoop, ContextInternal delegate) {
     super(((ContextBase)delegate).locals);
     this.owner = owner;
     this.eventLoop = eventLoop;
     this.delegate = (ContextBase) delegate;
     this.orderedTasks = new TaskQueue();
+  }
+
+  @Override
+  public EventExecutor eventLoop() {
+    return eventLoop;
   }
 
   @Override
@@ -72,11 +77,11 @@ final class ShadowContext extends ContextBase {
 
   @Override
   public EventLoop nettyEventLoop() {
-    return eventLoop;
+    return eventLoop.eventLoop;
   }
 
   @Override
-  public Deployment getDeployment() {
+  public DeploymentContext deployment() {
     return null;
   }
 
@@ -133,6 +138,11 @@ final class ShadowContext extends ContextBase {
   @Override
   public CloseFuture closeFuture() {
     return owner.closeFuture();
+  }
+
+  @Override
+  public Future<Void> close() {
+    return Future.succeededFuture();
   }
 
   @Override

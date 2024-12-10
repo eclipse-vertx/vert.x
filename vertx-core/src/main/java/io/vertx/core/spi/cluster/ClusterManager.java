@@ -52,14 +52,10 @@ public interface ClusterManager extends VertxServiceProvider {
 
   /**
    * Invoked before this cluster node tries to join the cluster.
-   * <p>
-   * Implementations must signal the provided {@code nodeSelector} when messaging handler registrations are added or removed
-   * by sending a {@link RegistrationUpdateEvent} with {@link NodeSelector#registrationsUpdated(RegistrationUpdateEvent)}.
    *
    * @param vertx        the Vert.x instance
-   * @param nodeSelector the {@link NodeSelector} that must receive {@link RegistrationUpdateEvent}.
    */
-  void init(Vertx vertx, NodeSelector nodeSelector);
+  void init(Vertx vertx);
 
   /**
    * Return an {@link AsyncMap} for the given {@code name}.
@@ -129,6 +125,14 @@ public interface ClusterManager extends VertxServiceProvider {
    * @return true if active, false otherwise
    */
   boolean isActive();
+
+  /**
+   * Implementations must signal the provided {@code registrationListener} when messaging handler registrations are added or removed
+   * by sending a {@link RegistrationUpdateEvent} with {@link RegistrationListener#registrationsUpdated(RegistrationUpdateEvent)}.
+   *
+   * @param registrationListener the registration listener
+   */
+  void registrationListener(RegistrationListener registrationListener);
 
   /**
    * Share a new messaging handler registration with other nodes in the cluster.

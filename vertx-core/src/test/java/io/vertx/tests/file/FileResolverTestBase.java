@@ -440,6 +440,15 @@ public abstract class FileResolverTestBase extends VertxTestBase {
   }
 
   @Test
+  public void testBugEndWithSlash() {
+    FileResolver resolver = ((VertxInternal) vertx).fileResolver();
+    File f = resolver.resolveFile("tree/");
+    assertNotNull(f);
+    assertTrue(f.isDirectory());
+    assertEquals("tree", f.getName());
+  }
+
+  @Test
   public void testReadFileInDirThenReadDirMultipleLevelsMissingResource() {
     Buffer buff = vertx.fileSystem().readFileBlocking("tree/a/b/c.txt");
     assertNotNull(buff);

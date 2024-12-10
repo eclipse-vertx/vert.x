@@ -12,9 +12,7 @@
 package io.vertx.core.impl;
 
 import io.vertx.core.*;
-import io.vertx.core.impl.transports.EpollTransport;
-import io.vertx.core.impl.transports.JDKTransport;
-import io.vertx.core.impl.transports.KQueueTransport;
+import io.vertx.core.impl.transports.NioTransport;
 import io.vertx.core.internal.VertxBootstrap;
 import io.vertx.core.spi.context.executor.EventExecutorProvider;
 import io.vertx.core.spi.file.FileResolver;
@@ -29,13 +27,12 @@ import io.vertx.core.spi.VertxServiceProvider;
 import io.vertx.core.spi.VertxThreadFactory;
 import io.vertx.core.spi.VertxTracerFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.core.spi.cluster.NodeSelector;
+import io.vertx.core.spi.cluster.impl.NodeSelector;
 import io.vertx.core.spi.cluster.impl.DefaultNodeSelector;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -50,7 +47,6 @@ public class VertxBootstrapImpl implements VertxBootstrap {
   private VertxOptions options;
   private JsonObject config;
   private Transport transport;
-  private Throwable transportUnavailabilityCause;
   private EventExecutorProvider eventExecutorProvider;
   private ClusterManager clusterManager;
   private NodeSelector clusterNodeSelector;
@@ -211,20 +207,34 @@ public class VertxBootstrapImpl implements VertxBootstrap {
     return this;
   }
 
-  public Vertx vertx() {
+  private VertxImpl instantiateVertx(ClusterManager clusterManager, NodeSelector nodeSelector) {
     checkBeforeInstantiating();
-    VertxImpl vertx = new VertxImpl(
+    Transport tr = transport;
+    Throwable transportUnavailabilityCause = null;
+    if (tr != null) {
+      if (!tr.isAvailable()) {
+        transportUnavailabilityCause = tr.unavailabilityCause();
+        tr = NioTransport.INSTANCE;
+      }
+    } else {
+      tr = NioTransport.INSTANCE;
+    }
+    return new VertxImpl(
       options,
-      null,
-      null,
+      clusterManager,
+      nodeSelector,
       metrics,
       tracer,
-      transport,
+      tr,
       transportUnavailabilityCause,
       fileResolver,
       threadFactory,
       executorServiceFactory,
       eventExecutorProvider);
+  }
+
+  public Vertx vertx() {
+    VertxImpl vertx = instantiateVertx(null, null);
     vertx.init();
     return vertx;
   }
@@ -233,22 +243,14 @@ public class VertxBootstrapImpl implements VertxBootstrap {
    * Build and return the clustered vertx instance
    */
   public Future<Vertx> clusteredVertx() {
-    checkBeforeInstantiating();
     if (clusterManager == null) {
       throw new IllegalStateException("No ClusterManagerFactory instances found on classpath");
     }
-    VertxImpl vertx = new VertxImpl(
-      options,
-      clusterManager,
-      clusterNodeSelector == null ? new DefaultNodeSelector() : clusterNodeSelector,
-      metrics,
-      tracer,
-      transport,
-      transportUnavailabilityCause,
-      fileResolver,
-      threadFactory,
-      executorServiceFactory,
-      eventExecutorProvider);
+    NodeSelector nodeSelector = clusterNodeSelector;
+    if (nodeSelector == null) {
+      nodeSelector = new DefaultNodeSelector();
+    }
+    VertxImpl vertx = instantiateVertx(clusterManager, nodeSelector);
     return vertx.initClustered(options);
   }
 
@@ -294,20 +296,6 @@ public class VertxBootstrapImpl implements VertxBootstrap {
   }
 
   private void initTransport() {
-    if (transport != null) {
-      return;
-    }
-    Transport t = findTransport(options.getPreferNativeTransport());
-    if (t != null) {
-      if (t.isAvailable()) {
-        transport = t;
-      } else {
-        transport = JDKTransport.INSTANCE;
-        transportUnavailabilityCause = t.unavailabilityCause();
-      }
-    } else {
-      transport = JDKTransport.INSTANCE;
-    }
   }
 
   private void initFileResolver() {
@@ -349,50 +337,6 @@ public class VertxBootstrapImpl implements VertxBootstrap {
       log.warn("Metrics options are configured but no metrics object is instantiated. " +
         "Make sure you have the VertxMetricsFactory in your classpath and META-INF/services/io.vertx.core.spi.VertxServiceProvider " +
         "contains the factory FQCN, or metricsOptions.getFactory() returns a non null value");
-    }
-  }
-
-  /**
-   * The native transport, it may be {@code null} or failed.
-   */
-  public static Transport nativeTransport() {
-    Transport transport = null;
-    try {
-      Transport epoll = new EpollTransport();
-      if (epoll.isAvailable()) {
-        return epoll;
-      } else {
-        transport = epoll;
-      }
-    } catch (Throwable ignore) {
-      // Jar not here
-    }
-    try {
-      Transport kqueue = new KQueueTransport();
-      if (kqueue.isAvailable()) {
-        return kqueue;
-      } else if (transport == null) {
-        transport = kqueue;
-      }
-    } catch (Throwable ignore) {
-      // Jar not here
-    }
-    return transport;
-  }
-
-  static Transport findTransport(boolean preferNative) {
-    if (preferNative) {
-      Collection<Transport> transports = ServiceHelper.loadFactories(Transport.class);
-      Iterator<Transport> it = transports.iterator();
-      while (it.hasNext()) {
-        Transport transport = it.next();
-        if (transport.isAvailable()) {
-          return transport;
-        }
-      }
-      return nativeTransport();
-    } else {
-      return JDKTransport.INSTANCE;
     }
   }
 }

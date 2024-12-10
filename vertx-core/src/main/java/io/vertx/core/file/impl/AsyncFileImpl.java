@@ -47,13 +47,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- *
- * This class is optimised for performance when used on the same event loop that is was passed to the handler with.
- * However it can be used safely from other threads.
- *
- * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
- * we benefit from biased locking which makes the overhead of synchronized near zero.
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class AsyncFileImpl implements AsyncFile {
@@ -131,9 +124,7 @@ public class AsyncFileImpl implements AsyncFile {
 
   @Override
   public Future<Void> end() {
-    Promise<Void> promise = context.promise();
-    closeInternal(promise);
-    return promise.future();
+    return close();
   }
 
   @Override
@@ -158,7 +149,7 @@ public class AsyncFileImpl implements AsyncFile {
   @Override
   public Future<Void> write(Buffer buffer, long position) {
     Promise<Void> promise = context.promise();
-    doWrite(buffer, position, promise);
+    doWrite(buffer, position, promise::handle);
     return promise.future();
   }
 
@@ -217,7 +208,7 @@ public class AsyncFileImpl implements AsyncFile {
   public synchronized Future<Void> write(Buffer buffer) {
     Promise<Void> promise = context.promise();
     int length = buffer.length();
-    doWrite(buffer, writePos, promise);
+    doWrite(buffer, writePos, promise::handle);
     writePos += length;
     return promise.future();
   }
@@ -299,7 +290,7 @@ public class AsyncFileImpl implements AsyncFile {
   @Override
   public Future<Void> flush() {
     Promise<Void> promise = context.promise();
-    doFlush(promise);
+    doFlush(promise::handle);
     return promise.future();
   }
 
@@ -525,14 +516,14 @@ public class AsyncFileImpl implements AsyncFile {
     }
   }
 
-  private void doClose(Handler<AsyncResult<Void>> handler) {
+  private void doClose(Promise<Void> handler) {
     context.<Void>executeBlockingInternal(() -> {
       ch.close();
       return null;
     }).onComplete(handler);
   }
 
-  private synchronized void closeInternal(Handler<AsyncResult<Void>> handler) {
+  private synchronized void closeInternal(Promise<Void> handler) {
     check();
 
     closed = true;

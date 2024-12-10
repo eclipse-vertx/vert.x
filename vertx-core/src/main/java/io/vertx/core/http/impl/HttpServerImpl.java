@@ -30,8 +30,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
- * This class is thread-safe
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HttpServerImpl implements HttpServer, MetricsProvider {
@@ -46,6 +44,7 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
   final HttpServerOptions options;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<ServerWebSocket> webSocketHandler;
+  private Handler<ServerWebSocketHandshake> webSocketHandhakeHandler;
   private Handler<HttpServerRequest> invalidRequestHandler;
   private Handler<HttpConnection> connectionHandler;
   private Handler<Throwable> exceptionHandler;
@@ -119,6 +118,15 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
   }
 
   @Override
+  public HttpServer webSocketHandshakeHandler(Handler<ServerWebSocketHandshake> handler) {
+    if (isListening()) {
+      throw new IllegalStateException("Please set handler before server is listening");
+    }
+    webSocketHandhakeHandler = handler;
+    return this;
+  }
+
+  @Override
   public synchronized Handler<HttpServerRequest> requestHandler() {
     return requestHandler;
   }
@@ -162,7 +170,7 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
 
   @Override
   public synchronized Future<HttpServer> listen(SocketAddress address) {
-    if (requestHandler == null && webSocketHandler == null) {
+    if (requestHandler == null && webSocketHandler == null && webSocketHandhakeHandler == null) {
       throw new IllegalStateException("Set request or WebSocket handler first");
     }
     if (tcpServer != null) {
@@ -196,6 +204,7 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
         requestHandler,
         invalidRequestHandler,
         webSocketHandler,
+        webSocketHandhakeHandler,
         connectionHandler,
         exceptionHandler);
       HttpServerConnectionInitializer initializer = new HttpServerConnectionInitializer(

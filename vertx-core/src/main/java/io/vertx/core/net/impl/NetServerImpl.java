@@ -11,7 +11,6 @@
 package io.vertx.core.net.impl;
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
@@ -23,14 +22,15 @@ import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.handler.traffic.GlobalTrafficShapingHandler;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.*;
-import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.CloseSequence;
 import io.vertx.core.impl.HostnameResolver;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.tls.SslContextManager;
@@ -50,7 +50,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Base class for TCP servers
+ * Vert.x TCP server
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -139,13 +139,6 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     return closeSequence.close();
   }
 
-  public Future<Void> close() {
-    ContextInternal context = vertx.getOrCreateContext();
-    Promise<Void> promise = context.promise();
-    close(promise);
-    return promise.future();
-  }
-
   @Override
   public Future<NetServer> listen(SocketAddress localAddress) {
     return listen(vertx.getOrCreateContext(), localAddress);
@@ -169,7 +162,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
 
   @Override
   public synchronized void close(Promise<Void> completion) {
-    doClose(completion);
+    shutdown(0L, TimeUnit.SECONDS).onComplete(completion);
   }
 
   public boolean isClosed() {
@@ -228,7 +221,8 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     private void configurePipeline(Channel ch, SslContextProvider sslContextProvider, SslContextManager sslContextManager, ServerSSLOptions sslOptions) {
       if (options.isSsl()) {
         SslChannelProvider sslChannelProvider = new SslChannelProvider(vertx, sslContextProvider, sslOptions.isSni());
-        ch.pipeline().addLast("ssl", sslChannelProvider.createServerHandler(options.isUseAlpn(), options.getSslHandshakeTimeout(), options.getSslHandshakeTimeoutUnit()));
+        ch.pipeline().addLast("ssl", sslChannelProvider.createServerHandler(options.isUseAlpn(), options.getSslHandshakeTimeout(),
+          options.getSslHandshakeTimeoutUnit(), HttpUtils.socketAddressToHostAndPort(ch.remoteAddress())));
         ChannelPromise p = ch.newPromise();
         ch.pipeline().addLast("handshaker", new SslHandshakeCompletionHandler(p));
         p.addListener(future -> {
@@ -512,13 +506,8 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     channelBalancer.addWorker(eventLoop, worker);
     ServerBootstrap bootstrap = new ServerBootstrap();
     bootstrap.group(vertx.getAcceptorEventLoopGroup(), channelBalancer.workers());
-    if (options.isSsl()) {
-      bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
-    } else {
-      bootstrap.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
-    }
-
     bootstrap.childHandler(channelBalancer);
+    bootstrap.childOption(ChannelOption.ALLOCATOR, VertxByteBufAllocator.POOLED_ALLOCATOR);
     applyConnectionOptions(localAddress.isDomainSocket(), bootstrap);
 
     // Actual bind
@@ -583,18 +572,48 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     return actualServer != null ? actualServer.metrics : null;
   }
 
-  private void doShutdown(Promise<Void> p) {
+  private void doShutdown(Promise<Void> completion) {
+    if (!listening) {
+      completion.complete();
+      return;
+    }
     if (closeEvent == null) {
       closeEvent = new ShutdownEvent(0, TimeUnit.SECONDS);
     }
     graceFuture = channelGroup.newCloseFuture();
+    listenContext.removeCloseHook(this);
+    Map<ServerID, NetServerInternal> servers = vertx.sharedTcpServers();
+    boolean hasHandlers;
+    synchronized (servers) {
+      ServerChannelLoadBalancer balancer = actualServer.channelBalancer;
+      balancer.removeWorker(eventLoop, worker);
+      hasHandlers = balancer.hasHandlers();
+    }
+    // THIS CAN BE RACY
+    if (hasHandlers) {
+      // The actual server still has handlers so we don't actually close it
+      broadcastShutdownEvent(completion);
+    } else {
+      Promise<Void> p2 = Promise.promise();
+      actualServer.actualClose(p2);
+      p2.future().onComplete(ar -> {
+        broadcastShutdownEvent(completion);
+      });
+    }
+  }
+
+  private void broadcastShutdownEvent(Promise<Void> completion) {
     for (Channel ch : channelGroup) {
       ch.pipeline().fireUserEventTriggered(closeEvent);
     }
-    p.complete();
+    completion.complete();
   }
 
   private void doGrace(Promise<Void> completion) {
+    if (!listening) {
+      completion.complete();
+      return;
+    }
     if (closeEvent.timeout() > 0L) {
       long timerID = vertx.setTimer(closeEvent.timeUnit().toMillis(closeEvent.timeout()), v -> {
         completion.complete();
@@ -615,28 +634,10 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
       return;
     }
     listening = false;
-    listenContext.removeCloseHook(this);
-    Map<ServerID, NetServerInternal> servers = vertx.sharedTcpServers();
-    boolean hasHandlers;
-    synchronized (servers) {
-      ServerChannelLoadBalancer balancer = actualServer.channelBalancer;
-      balancer.removeWorker(eventLoop, worker);
-      hasHandlers = balancer.hasHandlers();
-    }
-    channelGroup.close();
-    // THIS CAN BE RACY
-    if (hasHandlers) {
-      // The actual server still has handlers so we don't actually close it
-      completion.complete();
-    } else {
-      actualServer.actualClose(completion);
-    }
-    // TODO ADD THIS LATER AS IT  CAN SELF DEADLOCK TESTS AND WE DONT NEED IT RIGHT NOW
-//    .addListener(new GenericFutureListener<io.netty.util.concurrent.Future<? super Void>>() {
-//      @Override
-//      public void operationComplete(io.netty.util.concurrent.Future<? super Void> future) throws Exception {
-//      }
+    ChannelGroupFuture f = channelGroup.close();
+//    f.addListener(future -> {
 //    });
+    completion.complete();
   }
 
   private void actualClose(Promise<Void> done) {

@@ -26,7 +26,7 @@ import java.io.File;
 import java.net.URL;
 import java.util.Collections;
 
-import static io.vertx.core.internal.net.URIDecoder.decodeURIComponent;
+import static io.vertx.core.internal.net.RFC3986.decodeURIComponent;
 
 /**
  *

@@ -229,8 +229,8 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
     }
 
     @Override
-    public void reset(Throwable cause) {
-      delegate.reset(cause);
+    public Future<Void> reset(Throwable cause) {
+      return delegate.reset(cause);
     }
 
     @Override
@@ -514,7 +514,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
                              boolean end,
                              StreamPriority priority,
                              boolean connect,
-                             Handler<AsyncResult<Void>> handler) {
+                             Promise<Void> promise) {
       EventExecutor exec = upgradingConnection.channelHandlerContext().executor();
       if (exec.inEventLoop()) {
         upgradingStream.writeHead(head, chunked, buf, end, priority, connect);
@@ -523,7 +523,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
           pipeline.fireUserEventTriggered(SEND_BUFFERED_MESSAGES);
         }
       } else {
-        exec.execute(() -> doWriteHead(head, chunked, buf, end, priority, connect, handler));
+        exec.execute(() -> doWriteHead(head, chunked, buf, end, priority, connect, promise));
       }
     }
 
@@ -749,11 +749,11 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
     }
 
     @Override
-    public void reset(Throwable cause) {
+    public Future<Void> reset(Throwable cause) {
       if (upgradedStream != null) {
-        upgradedStream.reset(cause);
+        return upgradedStream.reset(cause);
       } else {
-        upgradingStream.reset(cause);
+        return upgradingStream.reset(cause);
       }
     }
 

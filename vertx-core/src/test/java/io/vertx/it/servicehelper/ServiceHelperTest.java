@@ -11,7 +11,7 @@
 
 package io.vertx.it.servicehelper;
 
-import io.vertx.core.ServiceHelper;
+import io.vertx.core.impl.ServiceHelper;
 import io.vertx.test.core.TestUtils;
 import org.junit.Test;
 

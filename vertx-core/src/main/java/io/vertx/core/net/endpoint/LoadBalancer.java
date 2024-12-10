@@ -10,6 +10,7 @@
  */
 package io.vertx.core.net.endpoint;
 
+import io.vertx.codegen.annotations.Unstable;
 import io.vertx.core.net.endpoint.impl.ConsistentHashingSelector;
 import io.vertx.core.net.endpoint.impl.NoMetricsLoadBalancer;
 
@@ -25,6 +26,7 @@ import java.util.concurrent.ThreadLocalRandom;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
+@Unstable
 public interface LoadBalancer {
 
   /**
@@ -58,7 +60,7 @@ public interface LoadBalancer {
     int numberOfRequests = Integer.MAX_VALUE;
     int selected = -1;
     int idx = 0;
-    for (EndpointServer node : servers) {
+    for (ServerEndpoint node : servers) {
       int val = ((DefaultInteractionMetrics)node.metrics()).numberOfInflightRequests();
       if (val < numberOfRequests) {
         numberOfRequests = val;
@@ -125,6 +127,6 @@ public interface LoadBalancer {
    * @param listOfServers the list of servers
    * @return the selector
    */
-  ServerSelector selector(List<? extends EndpointServer> listOfServers);
+  ServerSelector selector(List<? extends ServerEndpoint> listOfServers);
 
 }

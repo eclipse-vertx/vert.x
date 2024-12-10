@@ -10,14 +10,11 @@
  */
 package io.vertx.core.impl.verticle;
 
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
-import io.vertx.core.ServiceHelper;
-import io.vertx.core.Verticle;
-import io.vertx.core.impl.*;
-import io.vertx.core.impl.deployment.Deployable;
+import io.vertx.core.*;
 import io.vertx.core.impl.deployment.Deployment;
+import io.vertx.core.impl.ServiceHelper;
+import io.vertx.core.impl.*;
+import io.vertx.core.impl.deployment.DeploymentContext;
 import io.vertx.core.impl.deployment.DeploymentManager;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
@@ -151,40 +148,40 @@ public class VerticleManager {
     return str.substring(pos + 1);
   }
 
-  public Future<Deployment> deployVerticle(String identifier,
-                                           DeploymentOptions options) {
+  public Future<DeploymentContext> deployVerticle(String identifier,
+                                                  DeploymentOptions options) {
     ContextInternal callingContext = vertx.getOrCreateContext();
     ClassLoader loader = options.getClassLoader();
     if (loader == null) {
       loader = getCurrentClassLoader();
     }
-    return doDeployVerticle(identifier, options, callingContext, callingContext, loader);
+    return deployVerticle(identifier, options, callingContext, callingContext, loader);
   }
 
-  private Future<Deployment> doDeployVerticle(String identifier,
-                                          DeploymentOptions options,
-                                          ContextInternal parentContext,
-                                          ContextInternal callingContext,
-                                          ClassLoader cl) {
+  private Future<DeploymentContext> deployVerticle(String identifier,
+                                                   DeploymentOptions options,
+                                                   ContextInternal parentContext,
+                                                   ContextInternal callingContext,
+                                                   ClassLoader cl) {
     List<VerticleFactory> verticleFactories = resolveFactories(identifier);
     Iterator<VerticleFactory> iter = verticleFactories.iterator();
-    return doDeployVerticle(iter, null, identifier, options, parentContext, callingContext, cl);
+    return deployVerticle(iter, null, identifier, options, parentContext, callingContext, cl);
   }
 
 
-  private Future<Deployment> doDeployVerticle(Iterator<VerticleFactory> iter,
-                                              Throwable prevErr,
-                                              String identifier,
-                                              DeploymentOptions options,
-                                              ContextInternal parentContext,
-                                              ContextInternal callingContext,
-                                              ClassLoader cl) {
+  private Future<DeploymentContext> deployVerticle(Iterator<VerticleFactory> iter,
+                                                   Throwable prevErr,
+                                                   String identifier,
+                                                   DeploymentOptions options,
+                                                   ContextInternal parentContext,
+                                                   ContextInternal callingContext,
+                                                   ClassLoader cl) {
     if (iter.hasNext()) {
       VerticleFactory verticleFactory = iter.next();
-      return doDeployVerticle(verticleFactory, identifier, options, parentContext, callingContext, cl)
+      return deployVerticle(verticleFactory, identifier, options, parentContext, callingContext, cl)
       .recover(err -> {
         // Try the next one
-        return doDeployVerticle(iter, err, identifier, options, parentContext, callingContext, cl);
+        return deployVerticle(iter, err, identifier, options, parentContext, callingContext, cl);
       });
     } else {
       if (prevErr != null) {
@@ -197,23 +194,38 @@ public class VerticleManager {
     }
   }
 
-  private Future<Deployment> doDeployVerticle(VerticleFactory verticleFactory,
-                                              String identifier,
-                                              DeploymentOptions options,
-                                              ContextInternal parentContext,
-                                              ContextInternal callingContext,
-                                              ClassLoader cl) {
-    Promise<Callable<Verticle>> p = callingContext.promise();
+  private Future<DeploymentContext> deployVerticle(VerticleFactory verticleFactory,
+                                                   String identifier,
+                                                   DeploymentOptions options,
+                                                   ContextInternal parentContext,
+                                                   ContextInternal callingContext,
+                                                   ClassLoader cl) {
+    Promise<Callable<? extends Deployable>> p = callingContext.promise();
     try {
-      verticleFactory.createVerticle(identifier, cl, p);
+      verticleFactory.createVerticle2(identifier, cl, p);
     } catch (Exception e) {
-      return Future.failedFuture(e);
+      return callingContext.failedFuture(e);
     }
     return p.future()
-      .compose(callable -> deployVerticle(options, v -> identifier, parentContext, callingContext, cl, callable));
+      .compose(callable -> deployVerticle(options, v -> identifier, parentContext.deployment(), callingContext, cl, callable));
   }
 
-  static ClassLoader getCurrentClassLoader() {
+  private Future<DeploymentContext> deployVerticle(DeploymentOptions options,
+                                                  Function<Deployable, String> identifierProvider,
+                                                  DeploymentContext parent,
+                                                  ContextInternal callingContext,
+                                                  ClassLoader tccl,
+                                                  Callable<? extends Deployable> verticleSupplier) {
+    Deployment verticleDeployable;
+    try {
+      verticleDeployable = Deployment.deployment(vertx, log, options, identifierProvider, tccl, verticleSupplier);
+    } catch (Exception e) {
+      return callingContext.failedFuture(e);
+    }
+    return deploymentManager.deploy(parent, callingContext, verticleDeployable);
+  }
+
+  private static ClassLoader getCurrentClassLoader() {
     ClassLoader cl = Thread.currentThread().getContextClassLoader();
     if (cl == null) {
       cl = VerticleManager.class.getClassLoader();
@@ -221,42 +233,4 @@ public class VerticleManager {
     return cl;
   }
 
-  public Future<String> deployVerticle2(ContextInternal parentContext, Callable<Verticle> verticleSupplier, DeploymentOptions options) {
-    if (options.getInstances() < 1) {
-      throw new IllegalArgumentException("Can't specify < 1 instances to deploy");
-    }
-    options.checkIsolationNotDefined();
-    ClassLoader cl = options.getClassLoader();
-    if (cl == null) {
-      cl = Thread.currentThread().getContextClassLoader();
-      if (cl == null) {
-        cl = getClass().getClassLoader();
-      }
-    }
-    return deployVerticle(
-      options,
-      v -> "java:" + v.getClass().getName(),
-      parentContext,
-      parentContext,
-      cl,
-      verticleSupplier)
-      .map(Deployment::deploymentID);
-  }
-  public Future<Deployment> deployVerticle(DeploymentOptions options,
-                                           Function<Verticle, String> identifierProvider,
-                                           ContextInternal parentContext,
-                                           ContextInternal callingContext,
-                                           ClassLoader tccl,
-                                           Callable<Verticle> verticleSupplier) {
-
-
-    Deployable verticleDeployable;
-    try {
-      verticleDeployable = VerticleDeployable.deployable(vertx, log, options, identifierProvider, tccl, verticleSupplier);
-    } catch (Exception e) {
-      return callingContext.failedFuture(e);
-    }
-
-    return deploymentManager.deploy(options, parentContext, callingContext, verticleDeployable);
-  }
 }

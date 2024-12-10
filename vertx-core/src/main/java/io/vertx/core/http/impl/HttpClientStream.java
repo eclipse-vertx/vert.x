@@ -80,7 +80,7 @@ public interface HttpClientStream extends WriteStream<Buffer> {
   void doPause();
   void doFetch(long amount);
 
-  void reset(Throwable cause);
+  Future<Void> reset(Throwable cause);
 
   StreamPriority priority();
   void updatePriority(StreamPriority streamPriority);

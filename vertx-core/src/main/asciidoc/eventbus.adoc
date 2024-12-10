@@ -311,7 +311,7 @@ If you're creating your Vert.x instance programmatically, you get a clustered ev
 {@link examples.EventBusExamples#example12}
 ----
 
-You should also make sure you have one of the link:/docs/#clustering[{@link io.vertx.core.spi.cluster.ClusterManager} implementations] on your classpath.
+You should also make sure you have one of the {@link io.vertx.core.spi.cluster.ClusterManager} implementations on your classpath.
 
 === Automatic clean-up in verticles
 

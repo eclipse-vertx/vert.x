@@ -50,13 +50,14 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
 
   Http2ServerStream(Http2ServerConnection conn,
                     ContextInternal context,
+                    Http2Headers headers,
                     HttpMethod method,
                     String uri,
                     TracingPolicy tracingPolicy,
                     boolean halfClosedRemote) {
     super(conn, context);
 
-    this.headers = null;
+    this.headers = headers;
     this.method = method;
     this.uri = uri;
     this.scheme = null;
@@ -144,9 +145,11 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
   }
 
   @Override
-  protected void doWriteReset(long code) {
+  protected void doWriteReset(long code, Promise<Void> promise) {
     if (!requestEnded || !responseEnded) {
-      super.doWriteReset(code);
+      super.doWriteReset(code, promise);
+    } else {
+      promise.fail("Request ended");
     }
   }
 

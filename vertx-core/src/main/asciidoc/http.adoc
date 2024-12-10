@@ -120,6 +120,15 @@ For example:
 {@link examples.HTTPExamples#example5}
 ----
 
+=== Listening to Unix domain sockets
+
+When running on JDK 16+, or using a <<_native_transports,native transport>>, a server can listen to Unix domain sockets:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#httpServerWithDomainSockets}
+----
+
 === Getting notified of incoming requests
 
 To be notified when a request arrives you need to set a {@link io.vertx.core.http.HttpServer#requestHandler}:
@@ -383,13 +392,15 @@ Here's an example of querying and adding cookies:
 
 ==== Handling compressed body
 
-Vert.x can handle compressed body payloads which are encoded by the client with the _deflate_, _gzip_ or _brotli_
+Vert.x can handle compressed body payloads which are encoded by the client with the _deflate_, _gzip_, _snappy_ or _brotli_
 algorithms.
 
 To enable decompression set {@link io.vertx.core.http.HttpServerOptions#setDecompressionSupported(boolean)} on the
 options when creating the server.
 
-You need to have Brotli4j on the classpath to decompress Brotli:
+Snappy is supported without external dependencies.
+
+You need to have Brotli4j on the classpath to decompress Brotli, and Zstd-jni for Zstandard:
 
 * Maven (in your `pom.xml`):
 
@@ -400,6 +411,11 @@ You need to have Brotli4j on the classpath to decompress Brotli:
   <artifactId>brotli4j</artifactId>
   <version>${brotli4j.version}</version>
 </dependency>
+<dependency>
+  <groupId>com.github.luben</groupId>
+  <artifactId>zstd-jni</artifactId>
+  <version>${zstd-jini.version}</version>
+</dependency>
 ----
 * Gradle (in your `build.gradle` file):
 
@@ -408,6 +424,7 @@ You need to have Brotli4j on the classpath to decompress Brotli:
 dependencies {
   implementation 'com.aayushatharva.brotli4j:brotli4j:${brotli4j.version}'
   runtimeOnly 'com.aayushatharva.brotli4j:native-$system-and-arch:${brotli4j.version}'
+  implementation 'com.github.luben:zstd-jni:${zstd-jini.version}'
 }
 ----
 
@@ -518,7 +535,7 @@ Non keep-alive connections will be automatically closed by Vert.x when the respo
 Keep-alive connections are not automatically closed by Vert.x by default. If you want keep-alive connections to be
 closed after an idle time, then you configure {@link io.vertx.core.http.HttpServerOptions#setIdleTimeout}.
 
-HTTP/2 connections send a {@literal GOAWAY} frame before closing the response.
+HTTP/2 connections send a `GOAWAY` frame before closing the response.
 
 ==== Setting response headers
 
@@ -663,7 +680,7 @@ Here's an example:
 ----
 
 These frames are sent immediately and are not subject to flow control - when such frame is sent there it may be done
-before other {@literal DATA} frames.
+before other `DATA` frames.
 
 ==== Stream reset
 
@@ -779,7 +796,7 @@ For example, if set to '100', responses under 100 bytes will not be compressed. 
 
 Vert.x supports out of the box deflate and gzip.
 
-Brotli and zstandard can also be used.
+Brotli, snappy and zstandard can also be used.
 
 [source,$lang]
 ----
@@ -788,7 +805,7 @@ Brotli and zstandard can also be used.
 
 NOTE: use {@link io.netty.handler.codec.compression.StandardCompressionOptions} static methods to create {@link io.netty.handler.codec.compression.CompressionOptions}
 
-Brotli and zstandard libraries need to be added to the classpath.
+Brotli and zstandard libraries need to be added to the classpath, snappy is provided by default.
 
 * Maven (in your `pom.xml`):
 
@@ -868,21 +885,31 @@ the same preface from the server.
 The http server may not support HTTP/2, the actual version can be checked
 with {@link io.vertx.core.http.HttpClientResponse#version()} when the response arrives.
 
-When a clients connects to an HTTP/2 server, it sends to the server its {@link io.vertx.core.http.HttpClientOptions#getInitialSettings initial settings}.
+When a client connects to an HTTP/2 server, it sends to the server its {@link io.vertx.core.http.HttpClientOptions#getInitialSettings initial settings}.
 The settings define how the server can use the connection, the default initial settings for a client are the default
 values defined by the HTTP/2 RFC.
 
+=== Making connections to Unix domain sockets
+
+When running on JDK 16+, or using a <<_native_transports,native transport>>, a client can connect to Unix domain sockets:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#httpClientWithDomainSockets}
+----
+
 === Pool configuration
 
- For performance purpose, the client uses connection pooling when interacting with HTTP/1.1 servers. The pool creates up
- to 5 connections per server. You can override the pool configuration like this:
+For performance purpose, the client uses connection pooling when interacting with HTTP/1.1 servers.
+The pool creates up to 5 connections per server.
+You can override the pool configuration like this:
 
- [source,$lang]
- ----
- {@link examples.HTTPExamples#examplePoolConfiguration}
- ----
+[source,$lang]
+----
+{@link examples.HTTPExamples#examplePoolConfiguration}
+----
 
- You can configure various pool {@link io.vertx.core.http.PoolOptions options} as follows
+You can configure various pool {@link io.vertx.core.http.PoolOptions options} as follows
 
 - {@link io.vertx.core.http.PoolOptions options#setHttp1MaxSize} the maximum number of opened per HTTP/1.x server (5 by default)
 - {@link io.vertx.core.http.PoolOptions options#setHttp2MaxSize} the maximum number of opened per HTTP/2 server (1 by default), you *should* not change this value since a single HTTP/2 connection is capable of delivering the same performance level than multiple HTTP/1.x connections
@@ -1535,14 +1562,20 @@ To tell the http server which compression is supported by the client it will inc
 the supported compression algorithm as value. Multiple compression algorithms are supported. In case of Vert.x this
 will result in the following header added:
 
- Accept-Encoding: gzip, deflate
+[source,http]
+----
+Accept-Encoding: gzip, deflate
+----
 
 The server will choose then from one of these. You can detect if a server compressed the body by checking for the
 `Content-Encoding` header in the response sent back from it.
 
 If the body of the response was compressed via gzip it will include for example the following header:
 
- Content-Encoding: gzip
+[source,http]
+----
+Content-Encoding: gzip
+----
 
 To enable compression set {@link io.vertx.core.http.HttpClientOptions#setDecompressionSupported(boolean)} on the options
 used when creating the client.
@@ -1614,8 +1647,9 @@ connections already created for that server, otherwise it will add the request t
 Keep alive connections will be closed by the client automatically after a timeout. The timeout can be specified
 by the server using the `keep-alive` header:
 
+[source,http]
 ----
- keep-alive: timeout=30
+keep-alive: timeout=30
 ----
 
 You can set the default timeout using {@link io.vertx.core.http.HttpClientOptions#setKeepAliveTimeout(int)} - any
@@ -1642,7 +1676,7 @@ fairness of the distribution of the client requests over the connections to the 
 HTTP/2 advocates to use a single connection to a server, by default the http client uses a single
 connection for each server, all the streams to the same server are multiplexed over the same connection.
 
-When the clients needs to use more than a single connection and use pooling, the {@link io.vertx.core.http.PoolOptions#setHttp2MaxSize(int)}
+When the client needs to use more than a single connection and use pooling, the {@link io.vertx.core.http.PoolOptions#setHttp2MaxSize(int)}
 shall be used.
 
 When it is desirable to limit the number of multiplexed streams per connection and use a connection
@@ -1664,7 +1698,7 @@ or close the client instance.
 Alternatively you can set idle timeout using {@link io.vertx.core.http.HttpClientOptions#setIdleTimeout(int)} - any
 connections not used within this timeout will be closed. Please note the idle timeout value is in seconds not milliseconds.
 
-==== Un-pooled client connections
+=== Un-pooled client connections
 
 Most HTTP interactions are performed using {@code HttpClientAgent} request/response API: the client obtains
 a connection from its pool of connections to perform a request.
@@ -1766,7 +1800,7 @@ NOTE: this only applies to the HTTP/2 protocol
 ==== Connection ping
 
 HTTP/2 connection ping is useful for determining the connection round-trip time or check the connection
-validity: {@link io.vertx.core.http.HttpConnection#ping} sends a {@literal PING} frame to the remote
+validity: {@link io.vertx.core.http.HttpConnection#ping} sends a `PING` frame to the remote
 endpoint:
 
 [source,$lang]
@@ -1774,7 +1808,7 @@ endpoint:
 {@link examples.HTTP2Examples#example23}
 ----
 
-Vert.x will send automatically an acknowledgement when a {@literal PING} frame is received,
+Vert.x will send automatically an acknowledgement when a `PING` frame is received,
 an handler can be set to be notified for each ping received:
 
 [source,$lang]
@@ -1789,9 +1823,9 @@ NOTE: this only applies to the HTTP/2 protocol
 
 ==== Connection shutdown and go away
 
-Calling {@link io.vertx.core.http.HttpConnection#shutdown()} will send a {@literal GOAWAY} frame to the
+Calling {@link io.vertx.core.http.HttpConnection#shutdown()} will send a `GOAWAY` frame to the
 remote side of the connection, asking it to stop creating streams: a client will stop doing new requests
-and a server will stop pushing responses. After the {@literal GOAWAY} frame is sent, the connection
+and a server will stop pushing responses. After the `GOAWAY` frame is sent, the connection
 waits some time (30 seconds by default) until all current streams closed and close the connection:
 
 [source,$lang]
@@ -1802,7 +1836,7 @@ waits some time (30 seconds by default) until all current streams closed and clo
 The {@link io.vertx.core.http.HttpConnection#shutdownHandler} notifies when all streams have been closed, the
 connection is not yet closed.
 
-It's possible to just send a {@literal GOAWAY} frame, the main difference with a shutdown is that
+It's possible to just send a `GOAWAY` frame, the main difference with a shutdown is that
 it will just tell the remote side of the connection to stop creating new streams without scheduling a connection
 close:
 
@@ -1811,7 +1845,7 @@ close:
 {@link examples.HTTP2Examples#example26}
 ----
 
-Conversely, it is also possible to be notified when {@literal GOAWAY} are received:
+Conversely, it is also possible to be notified when `GOAWAY` are received:
 
 [source,$lang]
 ----
@@ -1826,7 +1860,7 @@ have been closed and the connection can be closed:
 {@link examples.HTTP2Examples#example28}
 ----
 
-This applies also when a {@literal GOAWAY} is received.
+This applies also when a `GOAWAY` is received.
 
 NOTE: this only applies to the HTTP/2 protocol
 
@@ -1835,9 +1869,49 @@ NOTE: this only applies to the HTTP/2 protocol
 Connection {@link io.vertx.core.http.HttpConnection#close} closes the connection:
 
 - it closes the socket for HTTP/1.x
-- a shutdown with no delay for HTTP/2, the {@literal GOAWAY} frame will still be sent before the connection is closed.
+- a shutdown with no delay for HTTP/2, the `GOAWAY` frame will still be sent before the connection is closed.
 
 The {@link io.vertx.core.http.HttpConnection#closeHandler} notifies when a connection is closed.
+
+=== Graceful shutdown
+
+HTTP server and client support graceful shutdown.
+
+You can shut down a {@link io.vertx.core.http.HttpServer#shutdown() server} or {@link io.vertx.core.http.HttpClient#shutdown() client}.
+
+Calling `shutdown` initiates the shut-down phase whereby the server or client are given the opportunity to perform clean-up actions.
+
+- A standalone HTTP server unbinds
+- A shared HTTP server is removed from the set of accepting servers
+- An HTTP client refuses to send any new requests
+
+When all connections inflight requests are processed, the server or client is then closed.
+
+In addition, HTTP/2 connections send a `GOAWAY` frame to signal the remote endpoint that the connection cannot be used anymore.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#serverShutdown}
+----
+
+Shut-down waits until all sockets are closed or the shut-down timeout fires. When the timeout fires, all sockets are
+forcibly closed.
+
+Each opened HTTP connections is notified with a shutdown event, allowing to perform cleanup before the
+actual connection is closed.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#shutdownHandler}
+----
+
+The default shut-down timeout is 30 seconds, you can override the timeout
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#serverShutdownWithAmountOfTime}
+----
+
 
 === Client sharing
 
@@ -1978,14 +2052,13 @@ When a WebSocket connection is made to the server, the handler will be called, p
 {@link examples.HTTPExamples#example51}
 ----
 
-You can choose to reject the WebSocket by calling {@link io.vertx.core.http.ServerWebSocket#reject()}.
+===== Server WebSocket handshake
 
-[source,$lang]
-----
-{@link examples.HTTPExamples#example52}
-----
+By default, the server accepts any inbound WebSocket.
 
-You can perform an asynchronous handshake by calling {@link io.vertx.core.http.ServerWebSocket#setHandshake} with a `Future`:
+You can set a WebSocket handshake handler to control the outcome of a WebSocket handshake, i.e. accept or reject an incoming WebSocket.
+
+You can choose to reject the WebSocket by calling {@link io.vertx.core.http.ServerWebSocketHandshake#accept()} or {@link io.vertx.core.http.ServerWebSocketHandshake#reject()}.
 
 [source,$lang]
 ----

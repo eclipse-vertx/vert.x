@@ -283,91 +283,54 @@ time. The different verticle instances communicate with each other by sending me
 
 === Writing Verticles
 
-Verticle classes must implement the {@link io.vertx.core.Verticle} interface.
+Verticle classes must implement the {@link io.vertx.core.Deployable} interface.
 
-They can implement it directly if you like but usually it's simpler to extend
-the abstract class {@link io.vertx.core.AbstractVerticle}.
+They can implement it directly if you like, but usually it's simpler to extend
+the abstract class {@link io.vertx.core.VerticleBase}.
 
 Here's an example verticle:
 
+[source,java]
 ----
-public class MyVerticle extends AbstractVerticle {
-
-  // Called when verticle is deployed
-  public void start() {
-  }
-
-  // Optional - called when verticle is undeployed
-  public void stop() {
-  }
-
-}
+{@link examples.CoreExamples#simplestVerticle}
 ----
 
 Normally you would override the start method like in the example above.
 
-When Vert.x deploys the verticle it will call the start method, and when the method has completed the verticle will
+When Vert.x deploys the verticle it will call the start method, and when future returned by the method has completed the verticle will
 be considered started.
 
-You can also optionally override the stop method. This will be called by Vert.x when the verticle is undeployed and when
-the method has completed the verticle will be considered stopped.
+You can also optionally override the stop method. This will be called by Vert.x when the verticle is un-deployed and when
+the future returned by the method has completed the verticle will be considered stopped.
 
-=== Asynchronous Verticle start and stop
+Here's a more elaborated example:
 
-Sometimes you want to do something in your verticle start-up which takes some time and you don't want the verticle to
-be considered deployed until that happens. For example you might want to start an HTTP server in the start method and
-propagate the asynchronous result of the server `listen` method.
-
-You can't block waiting for the HTTP server to bind in your start method as that would break the <<golden_rule, Golden Rule>>.
-
-So how can you do this?
-
-The way to do it is to implement the *asynchronous* start method. This version of the method takes a Future as a parameter.
-When the method returns the verticle will *not* be considered deployed.
-
-Some time later, after you've done everything you need to do (e.g. start the HTTP server), you can call complete
-on the Future (or fail) to signal that you're done.
-
-Here's an example:
-
+[source,java]
 ----
-public class MyVerticle extends AbstractVerticle {
-
-  private HttpServer server;
-
-  @Override
-  public void start(Promise<Void> startPromise) {
-    server = vertx.createHttpServer().requestHandler(req -> {
-      req.response()
-        .putHeader("content-type", "text/plain")
-        .end("Hello from Vert.x!");
-      });
-
-    // Now bind the server:
-    server.listen(8080)
-      .<Void>mapEmpty()
-      .onComplete(startPromise);
-  }
-}
+{@link examples.CoreExamples#httpServerVerticle}
 ----
 
-Similarly, there is an asynchronous version of the stop method too. You use this if you want to do some verticle
-cleanup that takes some time.
+You can even write a one-liner Verticle:
 
+[source,java]
 ----
-public class MyVerticle extends AbstractVerticle {
-
-  @Override
-  public void stop(Promise<Void> stopPromise) {
-    doSomethingThatTakesTime()
-      .<Void>mapEmpty()
-      .onComplete(stopPromise);
-  }
-}
+{@link examples.CoreExamples#oneLinerVerticle}
 ----
 
-INFO: You don't need to manually stop the HTTP server started by a verticle, in the verticle's stop method. Vert.x
-will automatically stop any running server when the verticle is undeployed.
+NOTE: You don't need to manually stop the HTTP server started by a verticle, in the verticle's stop method. Vert.x
+will automatically stop any running server when the verticle is un-deployed.
+
+=== What happened to Vert.x 4 Verticle and AbstractVerticle contracts?
+
+The contract defined by `Verticle` and `AbstractVerticle` wasn't convenient anymore with Vert.x 5 future based model:
+
+[source,java]
+----
+{@link examples.CoreExamples#verticleContract}
+----
+
+Nevertheless, `Verticle` and `AbstractVerticle` are not deprecated in Vert.x 5.
+It is fine to use them, however it is not the default recommended choice anymore.
 
 === Verticle Types
 
@@ -430,9 +393,7 @@ NOTE: this feature requires Java 21
 === Deploying verticles programmatically
 
 You can deploy a verticle using one of the {@link io.vertx.core.Vertx#deployVerticle} method, specifying a verticle
-name or you can pass in a verticle instance you have already created yourself.
-
-NOTE: Deploying Verticle *instances* is Java only.
+name, or you can pass in a verticle instance you have already created yourself.
 
 [source,java]
 ----
@@ -444,12 +405,7 @@ You can also deploy verticles by specifying the verticle *name*.
 The verticle name is used to look up the specific {@link io.vertx.core.spi.VerticleFactory} that will be used to
 instantiate the actual verticle instance(s).
 
-Different verticle factories are available for instantiating verticles in different languages and for various other
-reasons such as loading services and getting verticles from Maven at run-time.
-
-This allows you to deploy verticles written in any language from any other language that Vert.x supports.
-
-Here's an example of deploying some different types of verticles:
+Here's an example of deploying some a Java Verticle using its class name:
 
 [source,$lang]
 ----
@@ -461,20 +417,17 @@ Here's an example of deploying some different types of verticles:
 When deploying verticle(s) using a name, the name is used to select the actual verticle factory that will instantiate
 the verticle(s).
 
-Verticle names can have a prefix - which is a string followed by a colon, which if present will be used to look-up the factory, e.g.
+Verticle names can have a prefix - which is a string followed by a colon, which when present will be used to lookup the factory, e.g.
 
 [source]
 ----
- js:foo.js // Use the JavaScript verticle factory
  groovy:com.mycompany.SomeGroovyCompiledVerticle // Use the Groovy verticle factory
- service:com.mycompany:myorderservice // Uses the service verticle factory
 ----
 
-If no prefix is present, Vert.x will look for a suffix and use that to lookup the factory, e.g.
+When prefix is absent, Vert.x will look for a suffix and use that to lookup the factory, e.g.
 
 [source]
 ----
- foo.js // Will also use the JavaScript verticle factory
  SomeScript.groovy // Will use the Groovy verticle factory
 ----
 
@@ -503,9 +456,9 @@ The completion handler will be passed a result containing the deployment ID stri
 
 This deployment ID can be used later if you want to undeploy the deployment.
 
-=== Undeploying verticle deployments
+=== Un-deploying verticle deployments
 
-Deployments can be undeployed with {@link io.vertx.core.Vertx#undeploy}.
+Deployments can be un-deployed with {@link io.vertx.core.Vertx#undeploy}.
 
 Un-deployment is itself asynchronous so if you want to be notified when un-deployment is complete you can deploy specifying a completion handler:
 
@@ -516,15 +469,16 @@ Un-deployment is itself asynchronous so if you want to be notified when un-deplo
 
 === Specifying number of verticle instances
 
-When deploying a verticle using a verticle name, you can specify the number of verticle instances that you
-want to deploy:
+When deploying a verticle using a verticle, you can specify the number of verticle instances that you
+want to deploy, you also need to pass a `Callable<Deployable>` so Vert.x can instantiate your verticle
+instances.
 
 [source,$lang]
 ----
 {@link examples.CoreExamples#example12}
 ----
 
-This is useful for scaling easily across multiple cores. For example you might have a web-server verticle to deploy
+This is useful for scaling easily across multiple cores. For example, you might have a web-server verticle to deploy
 and multiple cores on your machine, so you want to deploy multiple instances to utilise all the cores.
 
 === Passing configuration to a verticle
@@ -612,7 +566,7 @@ It's very common in Vert.x to want to perform an action after a delay, or period
 
 In standard verticles you can't just make the thread sleep to introduce a delay, as that will block the event loop thread.
 
-Instead you use Vert.x timers. Timers can be *one-shot* or *periodic*. We'll discuss both
+Instead, you use Vert.x timers. Timers can be *one-shot* or *periodic*. We'll discuss both
 
 ==== One-shot Timers
 
@@ -656,6 +610,17 @@ To cancel a periodic timer, call {@link io.vertx.core.Vertx#cancelTimer} specify
 ----
 {@link examples.CoreExamples#example17}
 ----
+
+==== Timer as a Future
+
+{@link io.vertx.core.Timer} combines one-shot timer and {@link {@link io.vertx.core.Future} in a single API.
+
+[source,$lang]
+----
+{@link examples.CoreExamples#timerExample}
+----
+
+The future succeeds when the timer fires, conversely {@link io.vertx.core.Timer#cancel() cancelling} the timer fails the future.
 
 ==== Automatic clean-up in verticles
 
@@ -829,9 +794,19 @@ If you are using Vert.x from a Maven or Gradle project just add the cluster mana
 
 For more information on this, please consult https://vertx.io/docs/#clustering
 
-=== Programmatic SPI selection and configuration
+== Vert.x Builder
 
-The {@link io.vertx.core.VertxBuilder} gives you more control over the SPI selection and configuration.
+{@link io.vertx.core.Vertx#vertx()} and {@link io.vertx.core.Vertx#clusteredVertx(io.vertx.core.VertxOptions)} static
+methods are the easiest way obtain an instance of {@link io.vertx.core.Vertx}.
+
+You can also use the https://en.wikipedia.org/wiki/Builder_pattern[builder pattern] to create a `Vertx` instance. The builder
+lets you programmatically configure a few providers (SPI) which are usually loaded using `VertxOptions` and/or Java
+Service Loader plugins.
+
+- Native <<_native_transports, transport>>
+- Cluster manager
+- Tracing
+- Metrics instance
 
 [source,$lang]
 ----
@@ -1059,6 +1034,7 @@ You can add it to your classpath to improve the integration and remove the warni
 </profile>
 ----
 
+[#_native_transports]
 == Native transports
 
 Vert.x can run with http://netty.io/wiki/native-transports.html[native transports] (when available) on BSD (OSX) and Linux:
@@ -1068,10 +1044,24 @@ Vert.x can run with http://netty.io/wiki/native-transports.html[native transport
 {@link examples.CoreExamples#configureNative()}
 ----
 
-NOTE: preferring native transport will not prevent the application to execute (for example if a JAR is missing).
-If your application requires native transport, you need to check {@link io.vertx.core.Vertx#isNativeTransportEnabled()}.
+NOTE: Preferring native transport will not prevent the application to execute (for example a native dependency might be missing).If your application requires native transport, you need to check {@link io.vertx.core.Vertx#isNativeTransportEnabled()}.
 
-=== Native Linux Transport
+You can also explicitly configure the transport to use:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#configureTransport()}
+----
+
+=== Native epoll
+
+Native on Linux gives you extra networking options:
+
+* `SO_REUSEPORT`
+* `TCP_QUICKACK`
+* `TCP_CORK`
+* `TCP_FASTOPEN`
+* `TCP_USER_TIMEOUT`
 
 You need to add the following dependency in your classpath:
 
@@ -1085,20 +1075,21 @@ You need to add the following dependency in your classpath:
 </dependency>
 ----
 
-Native on Linux gives you extra networking options:
+=== Native io_uring
 
-* `SO_REUSEPORT`
-* `TCP_QUICKACK`
-* `TCP_CORK`
-* `TCP_FASTOPEN`
-* `TCP_USER_TIMEOUT`
+You need to add the following dependency in your classpath:
 
-[source,$lang]
+[source,xml]
 ----
-{@link examples.CoreExamples#configureLinuxOptions}
+<dependency>
+  <groupId>io.netty</groupId>
+  <classifier>linux-x86_64</classifier>
+  <artifactId>netty-transport-native-io_uring</artifactId>
+  <!--<version>Should align with netty version that Vert.x uses</version>-->
+</dependency>
 ----
 
-=== Native BSD Transport
+=== Native kqueue
 
 You need to add the following dependency in your classpath:
 
@@ -1133,36 +1124,6 @@ Native on BSD gives you extra networking options:
 [source,$lang]
 ----
 {@link examples.CoreExamples#configureBSDOptions}
-----
-
-=== Domain sockets
-
-Natives provide domain sockets support for servers:
-
-[source,$lang]
-----
-{@link examples.CoreExamples#tcpServerWithDomainSockets}
-----
-
-or for http:
-
-[source,$lang]
-----
-{@link examples.CoreExamples#httpServerWithDomainSockets}
-----
-
-As well as clients:
-
-[source,$lang]
-----
-{@link examples.CoreExamples#tcpClientWithDomainSockets}
-----
-
-or for http:
-
-[source,$lang]
-----
-{@link examples.CoreExamples#httpClientWithDomainSockets}
 ----
 
 == Security notes

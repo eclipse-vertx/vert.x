@@ -11,16 +11,12 @@
 
 package io.vertx.core.impl.future;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.CompositeFuture;
-import io.vertx.core.Handler;
-import io.vertx.core.internal.FutureInternal;
+import io.vertx.core.*;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class CompositeFutureImpl extends FutureImpl<CompositeFuture> implements CompositeFuture, Listener<Object> {
+public class CompositeFutureImpl extends FutureImpl<CompositeFuture> implements CompositeFuture, Completable<Object> {
 
   private static final int OP_ALL = 0;
   private static final int OP_ANY = 1;
@@ -46,7 +42,7 @@ public class CompositeFutureImpl extends FutureImpl<CompositeFuture> implements 
       composite.init();
     } else {
       composite = new CompositeFutureImpl(op, false, results);
-      composite.complete(composite);
+      composite.doComplete(composite);
     }
     return composite;
   }
@@ -65,8 +61,12 @@ public class CompositeFutureImpl extends FutureImpl<CompositeFuture> implements 
 
   private void init() {
     for (Future<?> result : results) {
-      FutureBase internal = (FutureBase<?>) result;
-      internal.addListener(this);
+      if (result instanceof FutureBase) {
+        FutureBase internal = (FutureBase<?>) result;
+        internal.addListener(this);
+      } else {
+        result.onComplete(this);
+      }
     }
     Object o;
     synchronized (this) {
@@ -76,11 +76,19 @@ public class CompositeFutureImpl extends FutureImpl<CompositeFuture> implements 
         return;
       }
     }
-    complete(o);
+    doComplete(o);
   }
 
   @Override
-  public void onSuccess(Object value) {
+  public void complete(Object result, Throwable failure) {
+    if (failure == null) {
+      onSuccess(result);
+    } else {
+      onFailure(failure);
+    }
+  }
+
+  private void onSuccess(Object value) {
     int len = results.length;
     Object completion;
     synchronized (this) {
@@ -112,11 +120,10 @@ public class CompositeFutureImpl extends FutureImpl<CompositeFuture> implements 
         return;
       }
     }
-    complete(completion);
+    doComplete(completion);
   }
 
-  @Override
-  public void onFailure(Throwable failure) {
+  private void onFailure(Throwable failure) {
     int len = results.length;
     Object completion;
     synchronized (this) {
@@ -148,7 +155,7 @@ public class CompositeFutureImpl extends FutureImpl<CompositeFuture> implements 
         return;
       }
     }
-    complete(completion);
+    doComplete(completion);
   }
 
   private Object anyFailureOrThis() {
@@ -200,10 +207,12 @@ public class CompositeFutureImpl extends FutureImpl<CompositeFuture> implements 
     return results.length;
   }
 
-  private void complete(Object result) {
+  private void doComplete(Object result) {
     for (Future<?> r : results) {
-      FutureBase internal = (FutureBase<?>) r;
-      internal.removeListener(this);
+      if (r instanceof FutureBase) {
+        FutureBase internal = (FutureBase<?>) r;
+        internal.removeListener(this);
+      }
     }
     if (result == this) {
       tryComplete(this);
@@ -218,12 +227,12 @@ public class CompositeFutureImpl extends FutureImpl<CompositeFuture> implements 
   }
 
   @Override
-  public CompositeFuture onSuccess(Handler<CompositeFuture> handler) {
+  public CompositeFuture onSuccess(Handler<? super CompositeFuture> handler) {
     return (CompositeFuture)super.onSuccess(handler);
   }
 
   @Override
-  public CompositeFuture onFailure(Handler<Throwable> handler) {
+  public CompositeFuture onFailure(Handler<? super Throwable> handler) {
     return (CompositeFuture)super.onFailure(handler);
   }
 

@@ -15,23 +15,23 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import io.vertx.core.net.*;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import io.vertx.core.transport.Transport;
+import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
@@ -49,12 +49,13 @@ public class NetBandwidthLimitingTest extends VertxTestBase {
 
   private SocketAddress testAddress;
   private NetClient client = null;
+  private final List<NetServer> servers = Collections.synchronizedList(new ArrayList<>());
 
   @Before
   public void setUp() throws Exception {
     super.setUp();
     if (USE_DOMAIN_SOCKETS) {
-      assertTrue("Native transport not enabled", USE_NATIVE_TRANSPORT);
+      assertTrue("Native transport not enabled", TRANSPORT.implementation().supportsDomainSockets());
       File tmp = TestUtils.tmpFile(".sock");
       testAddress = SocketAddress.domainSocketAddress(tmp.getAbsolutePath());
     } else {
@@ -63,21 +64,32 @@ public class NetBandwidthLimitingTest extends VertxTestBase {
     client = vertx.createNetClient();
   }
 
-  @After
-  public void after() throws InterruptedException {
-    CountDownLatch countDownLatch = new CountDownLatch(2);
-    client.close().onComplete(v -> countDownLatch.countDown());
-    vertx.close().onComplete(v -> countDownLatch.countDown());
-    awaitLatch(countDownLatch);
+  @Override
+  protected void tearDown() throws Exception {
+    if (client != null) {
+      try {
+        client.close().await();
+      } finally {
+        client = null;
+      }
+    }
+    while (!servers.isEmpty()) {
+      Iterator<NetServer> it = servers.iterator();
+      NetServer server = it.next();
+      it.remove();
+      server.close().await();
+    }
+    super.tearDown();
   }
 
   @Test
   public void sendBufferThrottled() {
+    Assume.assumeFalse(TRANSPORT == Transport.IO_URING);
     long startTime = System.nanoTime();
 
     Buffer expected = TestUtils.randomBuffer(64 * 1024 * 4);
     Buffer received = Buffer.buffer();
-    NetServer server = netServer(vertx);
+    NetServer server = netServer();
     server.connectHandler(sock -> {
       sock.handler(buf -> {
         sock.write(expected);
@@ -105,6 +117,7 @@ public class NetBandwidthLimitingTest extends VertxTestBase {
 
   @Test
   public void sendFileIsThrottled() throws Exception {
+    Assume.assumeFalse(TRANSPORT == Transport.IO_URING);
     long startTime = System.nanoTime();
 
     File fDir = testFolder.newFolder();
@@ -112,7 +125,7 @@ public class NetBandwidthLimitingTest extends VertxTestBase {
     File file = setupFile(fDir.toString(), "some-file.txt", content);
     Buffer expected = Buffer.buffer(content);
     Buffer received = Buffer.buffer();
-    NetServer server = netServer(vertx);
+    NetServer server = netServer();
     server.connectHandler(sock -> {
       sock.handler(buf -> {
         sock.sendFile(file.getAbsolutePath());
@@ -140,11 +153,12 @@ public class NetBandwidthLimitingTest extends VertxTestBase {
 
   @Test
   public void dataUploadIsThrottled() {
+    Assume.assumeFalse(TRANSPORT == Transport.IO_URING);
     long startTime = System.nanoTime();
 
     Buffer expected = TestUtils.randomBuffer(64 * 1024 * 4);
     Buffer received = Buffer.buffer();
-    NetServer server = netServer(vertx);
+    NetServer server = netServer();
     server.connectHandler(sock -> {
       sock.handler(buff -> {
         received.appendBuffer(buff);
@@ -159,20 +173,19 @@ public class NetBandwidthLimitingTest extends VertxTestBase {
       // Send some data to the client to trigger the buffer write
       sock.write("foo");
     });
-    Future<NetServer> result = server.listen(testAddress);
-    result.onComplete(onSuccess(resp -> {
-      Future<NetSocket> clientConnect = client.connect(testAddress);
-      clientConnect.onComplete(onSuccess(sock -> {
-        sock.handler(buf -> {
-          sock.write(expected);
-        });
-      }));
+    server.listen(testAddress).await();
+    Future<NetSocket> clientConnect = client.connect(testAddress);
+    clientConnect.onComplete(onSuccess(sock -> {
+      sock.handler(buf -> {
+        sock.write(expected);
+      });
     }));
     await();
   }
 
   @Test
   public void fileUploadIsThrottled() throws Exception {
+    Assume.assumeFalse(TRANSPORT == Transport.IO_URING);
     long startTime = System.nanoTime();
 
     File fDir = testFolder.newFolder();
@@ -180,7 +193,7 @@ public class NetBandwidthLimitingTest extends VertxTestBase {
     File file = setupFile(fDir.toString(), "some-file.txt", content);
     Buffer expected = Buffer.buffer(content);
     Buffer received = Buffer.buffer();
-    NetServer server = netServer(vertx);
+    NetServer server = netServer();
     server.connectHandler(sock -> {
       sock.handler(buff -> {
         received.appendBuffer(buff);
@@ -195,27 +208,26 @@ public class NetBandwidthLimitingTest extends VertxTestBase {
       // Send some data to the client to trigger the sendfile
       sock.write("foo");
     });
-    Future<NetServer> result = server.listen(testAddress);
-    result.onComplete(onSuccess(resp -> {
-      Future<NetSocket> clientConnect = client.connect(testAddress);
-      clientConnect.onComplete(onSuccess(sock -> {
-        sock.handler(buf -> {
-          sock.sendFile(file.getAbsolutePath());
-        });
-      }));
+    server.listen(testAddress).await();
+    Future<NetSocket> clientConnect = client.connect(testAddress);
+    clientConnect.onComplete(onSuccess(sock -> {
+      sock.handler(buf -> {
+        sock.sendFile(file.getAbsolutePath());
+      });
     }));
     await();
   }
 
   @Test
   public void testSendBufferIsTrafficShapedWithSharedServers() throws Exception {
+    Assume.assumeFalse(TRANSPORT == Transport.IO_URING);
     Buffer expected = TestUtils.randomBuffer(64 * 1024 * 4);
 
     int numEventLoops = 4; // We start a shared TCP server with 4 event-loops
     Future<String> listenLatch = vertx.deployVerticle(() -> new AbstractVerticle() {
       @Override
       public void start(Promise<Void> startPromise) {
-        NetServer testServer = netServer(vertx);
+        NetServer testServer = netServer();
         testServer.connectHandler(sock -> {
           sock.handler(buf -> {
             sock.write(expected);
@@ -252,11 +264,12 @@ public class NetBandwidthLimitingTest extends VertxTestBase {
 
   @Test
   public void testDynamicInboundRateUpdate() {
+    Assume.assumeFalse(TRANSPORT == Transport.IO_URING);
     long startTime = System.nanoTime();
 
     Buffer expected = TestUtils.randomBuffer(64 * 1024 * 4);
     Buffer received = Buffer.buffer();
-    NetServer server = netServer(vertx);
+    NetServer server = netServer();
 
     server.connectHandler(sock -> {
       sock.handler(buff -> {
@@ -271,7 +284,7 @@ public class NetBandwidthLimitingTest extends VertxTestBase {
       // Send some data to the client to trigger the buffer write
       sock.write("foo");
     });
-    Future<NetServer> result = server.listen(testAddress);
+    server.listen(testAddress).await();
 
     // update rate
     TrafficShapingOptions trafficOptions = new TrafficShapingOptions()
@@ -279,24 +292,23 @@ public class NetBandwidthLimitingTest extends VertxTestBase {
                                              .setInboundGlobalBandwidth(2 * INBOUND_LIMIT);
     server.updateTrafficShapingOptions(trafficOptions);
 
-    result.onComplete(onSuccess(resp -> {
-      Future<NetSocket> clientConnect = client.connect(testAddress);
-      clientConnect.onComplete(onSuccess(sock -> {
-        sock.handler(buf -> {
-          sock.write(expected);
-        });
-      }));
+    Future<NetSocket> clientConnect = client.connect(testAddress);
+    clientConnect.onComplete(onSuccess(sock -> {
+      sock.handler(buf -> {
+        sock.write(expected);
+      });
     }));
     await();
   }
 
   @Test
   public void testDynamicOutboundRateUpdate() {
+    Assume.assumeFalse(TRANSPORT == Transport.IO_URING);
     long startTime = System.nanoTime();
 
     Buffer expected = TestUtils.randomBuffer(64 * 1024 * 4);
     Buffer received = Buffer.buffer();
-    NetServer server = netServer(vertx);
+    NetServer server = netServer();
     server.connectHandler(sock -> {
       sock.handler(buf -> {
         sock.write(expected);
@@ -330,8 +342,9 @@ public class NetBandwidthLimitingTest extends VertxTestBase {
 
   @Test(expected = IllegalStateException.class)
   public void testRateUpdateWhenServerStartedWithoutTrafficShaping() {
+    Assume.assumeFalse(TRANSPORT == Transport.IO_URING);
     NetServerOptions options = new NetServerOptions().setHost(DEFAULT_HOST).setPort(DEFAULT_PORT);
-    NetServer testServer = vertx.createNetServer(options);
+    NetServer testServer = netServer(options);
 
     // update inbound rate to twice the limit
     TrafficShapingOptions trafficOptions = new TrafficShapingOptions()
@@ -368,15 +381,19 @@ public class NetBandwidthLimitingTest extends VertxTestBase {
     Assert.assertTrue(actualTimeInMillis <= expectedTimeInMillis + 2000); // +/- 2000 millis considered to be tolerant of time pauses during CI runs
   }
 
-  private NetServer netServer(Vertx vertx) {
-    NetServerOptions options = new NetServerOptions()
-                                  .setHost(DEFAULT_HOST)
-                                  .setPort(DEFAULT_PORT)
-                                  .setTrafficShapingOptions(new TrafficShapingOptions()
-                                                              .setInboundGlobalBandwidth(NetBandwidthLimitingTest.INBOUND_LIMIT)
-                                                              .setOutboundGlobalBandwidth(NetBandwidthLimitingTest.OUTBOUND_LIMIT));
+  private NetServer netServer() {
+    return netServer(new NetServerOptions()
+      .setHost(DEFAULT_HOST)
+      .setPort(DEFAULT_PORT)
+      .setTrafficShapingOptions(new TrafficShapingOptions()
+        .setInboundGlobalBandwidth(NetBandwidthLimitingTest.INBOUND_LIMIT)
+        .setOutboundGlobalBandwidth(NetBandwidthLimitingTest.OUTBOUND_LIMIT)));
+  }
 
-    return vertx.createNetServer(options);
+  private NetServer netServer(NetServerOptions options) {
+    NetServer server = vertx.createNetServer(options);
+    servers.add(server);
+    return server;
   }
 
   private File setupFile(String testDir, String fileName, String content) throws Exception {

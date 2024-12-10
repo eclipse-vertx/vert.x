@@ -11,7 +11,11 @@
 
 package io.vertx.core;
 
+import io.vertx.core.internal.ContextInternal;
+
 /**
+ * WARNING : this class is not deprecated, however we encourage instead to use {@link VerticleBase}
+ *
  * A verticle is a piece of code that can be deployed by Vert.x.
  * <p>
  * Use of verticles with Vert.x is entirely optional, but if you use them they provide an <i>actor-like</i>
@@ -26,7 +30,7 @@ package io.vertx.core;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface Verticle {
+public interface Verticle extends Deployable {
 
   /**
    * Get a reference to the Vert.x instance that deployed this verticle

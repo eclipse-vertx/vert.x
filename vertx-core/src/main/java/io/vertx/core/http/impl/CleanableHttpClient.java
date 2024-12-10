@@ -22,6 +22,7 @@ import io.vertx.core.spi.metrics.Metrics;
 import java.lang.ref.Cleaner;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * A lightweight proxy of Vert.x {@link HttpClient} that can be collected by the garbage collector and release
@@ -97,6 +98,11 @@ public class CleanableHttpClient implements HttpClientInternal {
   @Override
   public Metrics getMetrics() {
     return delegate.getMetrics();
+  }
+
+  @Override
+  public Function<HttpClientResponse, Future<RequestOptions>> redirectHandler() {
+    return delegate.redirectHandler();
   }
 
   @Override

@@ -25,13 +25,8 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.*;
 import io.vertx.core.internal.buffer.BufferInternal;
-import io.vertx.core.http.Cookie;
-import io.vertx.core.http.HttpHeaders;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.http.StreamPriority;
-import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.net.HostAndPort;
@@ -53,7 +48,6 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   private final ChannelHandlerContext ctx;
   private final Http2ServerConnection conn;
   private final boolean push;
-  private final String contentEncoding;
   private final Http2Headers headers = new DefaultHttp2Headers();
   private Http2HeadersAdaptor headersMap;
   private Http2Headers trailers;
@@ -75,13 +69,11 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
 
   public Http2ServerResponse(Http2ServerConnection conn,
                              Http2ServerStream stream,
-                             boolean push,
-                             String contentEncoding) {
+                             boolean push) {
     this.stream = stream;
     this.ctx = conn.handlerContext;
     this.conn = conn;
     this.push = push;
-    this.contentEncoding = contentEncoding;
   }
 
   boolean isPush() {
@@ -405,7 +397,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
         chunk = Unpooled.EMPTY_BUFFER;
       }
       if (end && !headWritten && needsContentLengthHeader()) {
-        headers().set(HttpHeaderNames.CONTENT_LENGTH, String.valueOf(chunk.readableBytes()));
+        headers().set(HttpHeaderNames.CONTENT_LENGTH, HttpUtils.positiveLongToString(chunk.readableBytes()));
       }
       boolean sent = checkSendHeaders(end && !hasBody && trailers == null, !hasBody);
       if (hasBody || (!sent && end)) {
@@ -459,9 +451,6 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
 
   private void prepareHeaders() {
     headers.status(status.codeAsText()); // Could be optimized for usual case ?
-    if (contentEncoding != null && headers.get(HttpHeaderNames.CONTENT_ENCODING) == null) {
-      headers.set(HttpHeaderNames.CONTENT_ENCODING, contentEncoding);
-    }
     // Sanitize
     if (stream.method == HttpMethod.HEAD || status == HttpResponseStatus.NOT_MODIFIED) {
       headers.remove(HttpHeaders.TRANSFER_ENCODING);
@@ -556,10 +545,10 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
         long contentLength = Math.min(length, fileLength);
         // fail early before status code/headers are written to the response
         if (headers.get(HttpHeaderNames.CONTENT_LENGTH) == null) {
-          putHeader(HttpHeaderNames.CONTENT_LENGTH, String.valueOf(contentLength));
+          putHeader(HttpHeaderNames.CONTENT_LENGTH, HttpUtils.positiveLongToString(contentLength));
         }
         if (headers.get(HttpHeaderNames.CONTENT_TYPE) == null) {
-          String contentType = MimeMapping.getMimeTypeForFilename(filename);
+          String contentType = MimeMapping.mimeTypeForFilename(filename);
           if (contentType != null) {
             putHeader(HttpHeaderNames.CONTENT_TYPE, contentType);
           }
@@ -619,9 +608,8 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public boolean reset(long code) {
-    stream.writeReset(code);
-    return true;
+  public Future<Void> reset(long code) {
+    return stream.writeReset(code);
   }
 
   @Override

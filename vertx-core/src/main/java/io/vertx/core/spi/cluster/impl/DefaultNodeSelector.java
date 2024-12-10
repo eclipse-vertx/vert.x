@@ -14,7 +14,6 @@ package io.vertx.core.spi.cluster.impl;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.core.spi.cluster.NodeSelector;
 import io.vertx.core.spi.cluster.RegistrationUpdateEvent;
 import io.vertx.core.spi.cluster.impl.selector.Selectors;
 

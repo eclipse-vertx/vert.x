@@ -1,6 +1,6 @@
 == Writing TCP servers and clients
 
-Vert.x allows you to easily write non blocking TCP clients and servers.
+Vert.x allows you to easily write non-blocking TCP clients and servers.
 
 === Creating a TCP server
 
@@ -63,6 +63,15 @@ To find out the real port the server is listening on you can call {@link io.vert
 [source,$lang]
 ----
 {@link examples.NetExamples#example5_1}
+----
+
+=== Listening to Unix domain sockets
+
+When running on JDK 16+, or using a <<_native_transports,native transport>>, a server can listen to Unix domain sockets:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#tcpServerWithDomainSockets}
 ----
 
 === Getting notified of incoming connections
@@ -168,29 +177,49 @@ A non SSL/TLS connection can be upgraded to SSL/TLS using {@link io.vertx.core.n
 The server or client must be configured for SSL/TLS for this to work correctly. Please see the <<ssl, chapter on SSL/TLS>>
 for more information.
 
-=== Closing a TCP Server
+=== TCP graceful shut down
 
-Call {@link io.vertx.core.net.NetServer#close()} to close the server. Closing the server closes any open connections
-and releases all server resources.
+You can shut down a {@link io.vertx.core.net.NetServer#shutdown() server} or {@link io.vertx.core.net.NetClient#shutdown() client}.
 
-The close is actually asynchronous and might not complete until some time after the call has returned.
-If you want to be notified when the actual close has completed then you can pass in a handler.
-
-This handler will then be called when the close has fully completed.
+Calling `shutdown` initiates the shut-down phase whereby the server or client are given the opportunity to perform clean-up actions
+and handle shutdown at the protocol level.
 
 [source,$lang]
 ----
-{@link examples.NetExamples#example9}
+{@link examples.NetExamples#serverShutdown}
 ----
 
-=== Client socket shutdown
+Shut-down waits until all sockets are closed or the shut-down timeout fires. When the timeout fires, all sockets are
+forcibly closed.
 
-When a client is closed with a grace period, each socket opened by the client will be notified with a shutdown event, to
-let the opportunity to perform a protocol level close before the actual socket close.
+Each opened socket is notified with a shutdown event, allowing to perform a protocol level close before the
+actual socket close.
 
 [source,$lang]
 ----
 {@link examples.NetExamples#shutdownHandler}
+----
+
+The default shut-down timeout is 30 seconds, you can override the amount of time
+
+[source,$lang]
+----
+{@link examples.NetExamples#serverShutdownWithAmountOfTime}
+----
+
+=== TCP close
+
+You can close a {@link io.vertx.core.net.NetServer#close() server} or {@link io.vertx.core.net.NetClient#close() client} to
+immediately close all open connections and releases all resources. Unlike `shutdown` there is not grace period.
+
+The close is actually asynchronous and might not complete until some time after the call has returned.
+You can use the returned future to be notified when the actual close has completed.
+
+This future is completed when the close has fully completed.
+
+[source,$lang]
+----
+{@link examples.NetExamples#example9}
 ----
 
 === Automatic clean-up in verticles
@@ -258,6 +287,15 @@ specifying the port and host of the server and a handler that will be called wit
 [source,$lang]
 ----
 {@link examples.NetExamples#example15}
+----
+
+=== Making connections to Unix domain sockets
+
+When running on JDK 16+, or using a <<_native_transports,native transport>>, a client can connect to Unix domain sockets:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#tcpClientWithDomainSockets}
 ----
 
 === Configuring connection attempts

@@ -31,9 +31,6 @@ abstract class ContextBase implements ContextInternal {
     this.locals = locals;
   }
 
-  @Override
-  public abstract EventExecutor executor();
-
   public ContextInternal beginDispatch() {
     VertxImpl vertx = (VertxImpl) owner();
     return vertx.beginDispatch(this);

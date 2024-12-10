@@ -26,6 +26,7 @@ import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.concurrent.InboundMessageQueue;
 import io.vertx.core.internal.concurrent.OutboundMessageQueue;
@@ -52,12 +53,13 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   private long bytesWritten;
   protected boolean isConnect;
   private Throwable failure;
+  private long reset = -1L;
 
   VertxHttp2Stream(C conn, ContextInternal context) {
     this.conn = conn;
     this.vertx = conn.vertx();
     this.context = context;
-    this.inboundQueue = new InboundMessageQueue<>(conn.channel().eventLoop(), context) {
+    this.inboundQueue = new InboundMessageQueue<>(conn.context().eventLoop(), context.executor()) {
       @Override
       protected void handleMessage(Object item) {
         if (item instanceof MultiMap) {
@@ -125,6 +127,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   void onReset(long code) {
+    reset = code;
     context.emit(code, this::handleReset);
   }
 
@@ -245,6 +248,12 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   void doWriteHeaders(Http2Headers headers, boolean end, boolean checkFlush, Promise<Void> promise) {
+    if (reset != -1L) {
+      if (promise != null) {
+        promise.fail("Stream reset");
+      }
+      return;
+    }
     if (end) {
       endWritten();
     }
@@ -272,6 +281,10 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   void doWriteData(ByteBuf buf, boolean end, Promise<Void> promise) {
+    if (reset != -1L) {
+      promise.fail("Stream reset");
+      return;
+    }
     ByteBuf chunk;
     if (buf == null && end) {
       chunk = Unpooled.EMPTY_BUFFER;
@@ -287,26 +300,37 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     conn.handler.writeData(stream, chunk, end, (FutureListener<Void>) promise);
   }
 
-  final void writeReset(long code) {
+  final Future<Void> writeReset(long code) {
+    if (code < 0L) {
+      throw new IllegalArgumentException("Invalid reset code value");
+    }
+    Promise<Void> promise = context.promise();
     EventLoop eventLoop = conn.context().nettyEventLoop();
     if (eventLoop.inEventLoop()) {
-      doWriteReset(code);
+      doWriteReset(code, promise);
     } else {
-      eventLoop.execute(() -> doWriteReset(code));
+      eventLoop.execute(() -> doWriteReset(code, promise));
     }
+    return promise.future();
   }
 
-  protected void doWriteReset(long code) {
+  protected void doWriteReset(long code, Promise<Void> promise) {
+    if (reset != -1L) {
+      promise.fail("Stream already reset");
+      return;
+    }
+    reset = code;
     int streamId;
     synchronized (this) {
       streamId = stream != null ? stream.id() : -1;
     }
     if (streamId != -1) {
-      conn.handler.writeReset(streamId, code);
+      conn.handler.writeReset(streamId, code, null);
     } else {
       // Reset happening before stream allocation
       handleReset(code);
     }
+    promise.complete();
   }
 
   void handleWriteQueueDrained() {

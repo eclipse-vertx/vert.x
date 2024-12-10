@@ -20,15 +20,17 @@ import io.vertx.core.file.FileSystem;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.*;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.NetServer;
 import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
-import io.vertx.core.net.endpoint.EndpointServer;
+import io.vertx.core.net.endpoint.ServerEndpoint;
 import io.vertx.core.streams.Pipe;
 import io.vertx.core.streams.ReadStream;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by tim on 09/01/15.
@@ -1049,29 +1051,20 @@ public class HTTPExamples {
     });
   }
 
-  public void example52(HttpServer server) {
-
-    server.webSocketHandler(webSocket -> {
-      if (webSocket.path().equals("/myapi")) {
-        webSocket.reject();
-      } else {
-        // Do something
-      }
-    });
-  }
-
   public void exampleAsynchronousHandshake(HttpServer server) {
-    server.webSocketHandler(webSocket -> {
-      Promise<Integer> promise = Promise.promise();
-      webSocket.setHandshake(promise.future());
-      authenticate(webSocket.headers(), ar -> {
+    server.webSocketHandshakeHandler(handshake -> {
+      authenticate(handshake.headers(), ar -> {
         if (ar.succeeded()) {
-          // Terminate the handshake with the status code 101 (Switching Protocol)
-          // Reject the handshake with 401 (Unauthorized)
-          promise.complete(ar.result() ? 101 : 401);
+          if (ar.result()) {
+            // Terminate the handshake with the status code 101 (Switching Protocol)
+            handshake.accept();
+          } else {
+            // Reject the handshake with 401 (Unauthorized)
+            handshake.reject(401);
+          }
         } else {
           // Will send a 500 error
-          promise.fail(ar.cause());
+          handshake.reject(500);
         }
       });
     });
@@ -1368,6 +1361,39 @@ public class HTTPExamples {
     GzipOptions gzip = StandardCompressionOptions.gzip(6, 15, 8);
   }
 
+  public void serverShutdown(HttpServer server) {
+    server
+      .shutdown()
+      .onSuccess(res -> {
+        System.out.println("Server is now closed");
+      });
+  }
+
+  public void serverShutdownWithAmountOfTime(HttpServer server) {
+    server
+      .shutdown(60, TimeUnit.SECONDS)
+      .onSuccess(res -> {
+        System.out.println("Server is now closed");
+      });
+  }
+
+  public void example9(HttpServer server) {
+
+    server
+      .close()
+      .onSuccess(res -> {
+        System.out.println("Server is now closed");
+      });
+  }
+
+  public void shutdownHandler(HttpServer server) {
+    server.connectionHandler(conn -> {
+      conn.shutdownHandler(v -> {
+        // Perform clean-up
+      });
+    });
+  }
+
   public static void httpClientSharing1(Vertx vertx) {
     HttpClientAgent client = vertx.createHttpClient(new HttpClientOptions().setShared(true));
     vertx.deployVerticle(() -> new AbstractVerticle() {
@@ -1457,7 +1483,7 @@ public class HTTPExamples {
       .build();
   }
 
-  private static int indexOfEndpoint(List<? extends EndpointServer> endpoints) {
+  private static int indexOfEndpoint(List<? extends ServerEndpoint> endpoints) {
     return 0;
   }
 

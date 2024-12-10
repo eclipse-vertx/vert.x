@@ -11,6 +11,7 @@
 
 package io.vertx.it.transport;
 
+import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.net.NetClient;
@@ -22,6 +23,8 @@ import org.junit.Test;
 
 import java.io.File;
 
+import static org.junit.Assume.assumeTrue;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -31,7 +34,9 @@ public class TransportTest extends AsyncTestBase {
 
   @Override
   protected void tearDown() throws Exception {
-    close(vertx);
+    if (vertx != null) {
+      close(vertx);
+    }
     super.tearDown();
   }
 
@@ -86,6 +91,7 @@ public class TransportTest extends AsyncTestBase {
 
   @Test
   public void testDomainSocketServer() throws Exception {
+    assumeTrue(PlatformDependent.javaVersion() < 16);
     File sock = TestUtils.tmpFile(".sock");
     vertx = Vertx.vertx();
     NetServer server = vertx.createNetServer();
@@ -93,7 +99,7 @@ public class TransportTest extends AsyncTestBase {
     server
       .listen(SocketAddress.domainSocketAddress(sock.getAbsolutePath()))
       .onComplete(onFailure(err -> {
-        assertEquals(err.getClass(), IllegalArgumentException.class);
+        assertEquals(IllegalArgumentException.class, err.getClass());
         testComplete();
       }));
     await();
@@ -101,12 +107,13 @@ public class TransportTest extends AsyncTestBase {
 
   @Test
   public void testDomainSocketClient() throws Exception {
+    assumeTrue(PlatformDependent.javaVersion() < 16);
     File sock = TestUtils.tmpFile(".sock");
     vertx = Vertx.vertx();
     NetClient client = vertx.createNetClient();
     client.connect(SocketAddress.domainSocketAddress(sock.getAbsolutePath()))
       .onComplete(onFailure(err -> {
-        assertEquals(err.getClass(), IllegalArgumentException.class);
+        assertEquals(IllegalArgumentException.class, err.getClass());
         testComplete();
       }));
     await();

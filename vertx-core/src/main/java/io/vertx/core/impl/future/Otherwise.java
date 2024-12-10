@@ -10,11 +10,12 @@
  */
 package io.vertx.core.impl.future;
 
+import io.vertx.core.Completable;
 import io.vertx.core.internal.ContextInternal;
 
 import java.util.function.Function;
 
-class Otherwise<T> extends Operation<T> implements Listener<T> {
+class Otherwise<T> extends Operation<T> implements Completable<T> {
 
   private final Function<Throwable, T> mapper;
 
@@ -24,19 +25,16 @@ class Otherwise<T> extends Operation<T> implements Listener<T> {
   }
 
   @Override
-  public void onSuccess(T value) {
-    tryComplete(value);
-  }
-
-  @Override
-  public void onFailure(Throwable failure) {
-    T result;
-    try {
-      result = mapper.apply(failure);
-    } catch (Throwable e) {
-      tryFail(e);
-      return;
+  public void complete(T result, Throwable failure) {
+    if (failure != null) {
+      try {
+        result = mapper.apply(failure);
+        failure = null;
+      } catch (Throwable e) {
+        result = null;
+        failure = e;
+      }
     }
-    tryComplete(result);
+    handleInternal(result, failure);
   }
 }

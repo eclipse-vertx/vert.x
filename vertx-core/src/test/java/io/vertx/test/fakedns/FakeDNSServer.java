@@ -333,7 +333,7 @@ public final class FakeDNSServer extends DnsServer {
     };
 
     UdpTransport udpTransport = new UdpTransport(ipAddress, port);
-    ((DatagramSessionConfig)udpTransport.getAcceptor().getSessionConfig()).setReuseAddress(true);
+    udpTransport.getAcceptor().getSessionConfig().setReuseAddress(true);
     TcpTransport tcpTransport = new TcpTransport(ipAddress, port);
     tcpTransport.getAcceptor().getSessionConfig().setReuseAddress(true);
 

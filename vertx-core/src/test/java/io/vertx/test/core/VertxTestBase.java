@@ -21,6 +21,7 @@ import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingOptions;
+import io.vertx.core.transport.Transport;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import junit.framework.AssertionFailedError;
 import org.junit.Assert;
@@ -31,6 +32,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -41,10 +43,75 @@ import java.util.function.Supplier;
  */
 public class VertxTestBase extends AsyncTestBase {
 
-  public static final boolean USE_NATIVE_TRANSPORT = Boolean.getBoolean("vertx.useNativeTransport");
+  public static final Transport TRANSPORT;
   public static final boolean USE_DOMAIN_SOCKETS = Boolean.getBoolean("vertx.useDomainSockets");
   public static final boolean USE_JAVA_MODULES = VertxTestBase.class.getModule().isNamed();
   private static final Logger log = LoggerFactory.getLogger(VertxTestBase.class);
+
+  static {
+
+    Transport transport = null;
+    String transportName = System.getProperty("vertx.transport");
+    if (transportName != null) {
+      String t = transportName.toLowerCase(Locale.ROOT);
+      switch (t) {
+        case "jdk":
+          transport = Transport.NIO;
+          break;
+        case "kqueue":
+          transport = Transport.KQUEUE;
+          break;
+        case "epoll":
+          transport = Transport.EPOLL;
+          break;
+        case "io_uring":
+          transport = Transport.IO_URING;
+          break;
+        default:
+          transport = new Transport() {
+            @Override
+            public String name() {
+              return transportName;
+            }
+            @Override
+            public boolean available() {
+              return false;
+            }
+            @Override
+            public Throwable unavailabilityCause() {
+              return new RuntimeException("Transport " + transportName + " does not exist");
+            }
+            @Override
+            public io.vertx.core.spi.transport.Transport implementation() {
+              throw new IllegalStateException("Transport " + transportName + " does not exist");
+            }
+          };
+      }
+      if (transport == null) {
+        transport = new Transport() {
+          @Override
+          public String name() {
+            return t;
+          }
+          @Override
+          public boolean available() {
+            return false;
+          }
+          @Override
+          public Throwable unavailabilityCause() {
+            return new IllegalStateException("Transport " + t + " not available");
+          }
+          @Override
+          public io.vertx.core.spi.transport.Transport implementation() {
+            return null;
+          }
+        };
+      }
+    } else {
+      transport = Transport.NIO;
+    }
+    TRANSPORT = transport;
+  }
 
   @Rule
   public RepeatRule repeatRule = new RepeatRule();
@@ -92,9 +159,7 @@ public class VertxTestBase extends AsyncTestBase {
   }
 
   protected VertxOptions getOptions() {
-    VertxOptions options = new VertxOptions();
-    options.setPreferNativeTransport(USE_NATIVE_TRANSPORT);
-    return options;
+    return new VertxOptions();
   }
 
   protected void tearDown() throws Exception {
@@ -107,8 +172,8 @@ public class VertxTestBase extends AsyncTestBase {
 
   protected void close(List<Vertx> instances) throws Exception {
     CountDownLatch latch = new CountDownLatch(instances.size());
-    for (Vertx clusteredVertx : instances) {
-      clusteredVertx.close().onComplete(ar -> {
+    for (Vertx instance : instances) {
+      instance.close().onComplete(ar -> {
         if (ar.failed()) {
           log.error("Failed to shutdown vert.x", ar.cause());
         }
@@ -141,11 +206,18 @@ public class VertxTestBase extends AsyncTestBase {
       builder.withMetrics(metrics);
       options = new VertxOptions(options).setMetricsOptions(new MetricsOptions().setEnabled(true));
     }
+    builder.withTransport(TRANSPORT);
     return builder.with(options);
   }
 
   protected Vertx createVertx(VertxOptions options) {
-    return createVertxBuilder(options).build();
+    Vertx vertx = createVertxBuilder(options).build();
+    if (TRANSPORT != Transport.NIO) {
+      if (!vertx.isNativeTransportEnabled()) {
+        fail(vertx.unavailableNativeTransportCause());
+      }
+    }
+    return vertx;
   }
 
   /**
@@ -167,21 +239,23 @@ public class VertxTestBase extends AsyncTestBase {
   /**
    * Create a blank new clustered Vert.x instance with @{@code options} closed when tear down executes.
    */
-  protected void clusteredVertx(VertxOptions options, Handler<AsyncResult<Vertx>> ar) {
-    clusteredVertx(options, getClusterManager(), ar);
+  protected Future<Vertx> clusteredVertx(VertxOptions options) {
+    return clusteredVertx(options, getClusterManager());
   }
 
-  protected void clusteredVertx(VertxOptions options, ClusterManager clusterManager, Handler<AsyncResult<Vertx>> ar) {
+  protected Future<Vertx> clusteredVertx(VertxOptions options, ClusterManager clusterManager) {
     if (created == null) {
       created = Collections.synchronizedList(new ArrayList<>());
     }
-    createVertxBuilder(options)
+    if (clusterManager == null) {
+      clusterManager = new FakeClusterManager();
+    }
+    return createVertxBuilder(options)
       .withClusterManager(clusterManager)
-      .buildClustered().onComplete(event -> {
+      .buildClustered().andThen(event -> {
         if (event.succeeded()) {
           created.add(event.result());
         }
-        ar.handle(event);
       });
   }
 
@@ -208,17 +282,18 @@ public class VertxTestBase extends AsyncTestBase {
       int index = i;
       VertxOptions toUse = new VertxOptions(options);
       toUse.getEventBusOptions().setHost("localhost").setPort(0);
-      clusteredVertx(toUse, clusterManagerSupplier.get(), ar -> {
-        try {
-          if (ar.failed()) {
-            ar.cause().printStackTrace();
+      clusteredVertx(toUse, clusterManagerSupplier.get())
+        .onComplete(ar -> {
+          try {
+            if (ar.failed()) {
+              ar.cause().printStackTrace();
+            }
+            assertTrue("Failed to start node", ar.succeeded());
+            vertices[index] = ar.result();
+          } finally {
+            latch.countDown();
           }
-          assertTrue("Failed to start node", ar.succeeded());
-          vertices[index] = ar.result();
-        } finally {
-          latch.countDown();
-        }
-      });
+        });
     }
     try {
       assertTrue(latch.await(2, TimeUnit.MINUTES));

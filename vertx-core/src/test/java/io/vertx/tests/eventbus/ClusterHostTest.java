@@ -11,6 +11,7 @@
 
 package io.vertx.tests.eventbus;
 
+import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.impl.Utils;
 import io.vertx.test.core.VertxTestBase;
@@ -33,9 +34,8 @@ public class ClusterHostTest extends VertxTestBase {
         return "127.0.0.3";
       }
     };
-    clusteredVertx(new VertxOptions(), clusterManager, onSuccess(clusteredVertx -> {
-      assertEquals("127.0.0.3", clusterManager.getNodeInfo().host());
-    }));
+    Vertx clusteredVertx = clusteredVertx(new VertxOptions(), clusterManager).await();
+    assertEquals("127.0.0.3", clusterManager.getNodeInfo().host());
   }
 
   @Test
@@ -51,9 +51,8 @@ public class ClusterHostTest extends VertxTestBase {
         return "127.0.0.3";
       }
     };
-    clusteredVertx(new VertxOptions(), clusterManager, onSuccess(clusteredVertx -> {
-      assertEquals("127.0.0.3", clusterManager.getNodeInfo().host());
-    }));
+    Vertx clusteredVertx = clusteredVertx(new VertxOptions(), clusterManager).await();
+    assertEquals("127.0.0.3", clusterManager.getNodeInfo().host());
   }
 
   @Test
@@ -71,8 +70,7 @@ public class ClusterHostTest extends VertxTestBase {
     };
     VertxOptions options = new VertxOptions();
     options.getEventBusOptions().setHost("127.0.0.4");
-    clusteredVertx(options, clusterManager, onSuccess(clusteredVertx -> {
-      assertEquals("127.0.0.4", clusterManager.getNodeInfo().host());
-    }));
+    Vertx clusteredVertx = clusteredVertx(options, clusterManager).await();
+    assertEquals("127.0.0.4", clusterManager.getNodeInfo().host());
   }
 }

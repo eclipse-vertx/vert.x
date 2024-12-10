@@ -10,6 +10,7 @@
  */
 package io.vertx.core.impl.future;
 
+import io.vertx.core.Completable;
 import io.vertx.core.internal.ContextInternal;
 
 import java.util.function.Function;
@@ -19,29 +20,28 @@ import java.util.function.Function;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class Mapping<T, U> extends Operation<U> implements Listener<T> {
+class Mapping<T, U> extends Operation<U> implements Completable<T> {
 
-  private final Function<T, U> successMapper;
+  private final Function<? super T, U> successMapper;
 
-  Mapping(ContextInternal context, Function<T, U> successMapper) {
+  Mapping(ContextInternal context, Function<? super T, U> successMapper) {
     super(context);
     this.successMapper = successMapper;
   }
 
   @Override
-  public void onSuccess(T value) {
+  public void complete(T value, Throwable failure) {
     U result;
-    try {
-      result = successMapper.apply(value);
-    } catch (Throwable e) {
-      tryFail(e);
-      return;
+    if (failure == null) {
+      try {
+        result = successMapper.apply(value);
+      } catch (Throwable e) {
+        result = null;
+        failure = e;
+      }
+    } else {
+      result = null;
     }
-    tryComplete(result);
-  }
-
-  @Override
-  public void onFailure(Throwable failure) {
-    tryFail(failure);
+    handleInternal(result, failure);
   }
 }

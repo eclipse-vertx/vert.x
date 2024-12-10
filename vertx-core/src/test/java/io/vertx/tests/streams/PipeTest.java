@@ -11,6 +11,7 @@
 package io.vertx.tests.streams;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
 import io.vertx.core.streams.Pipe;
@@ -273,7 +274,7 @@ public class PipeTest extends AsyncTestBase {
     FakeStream<Object> src = new FakeStream<>();
     Pipe<Object> pipe = src.pipe();
     List<AsyncResult<Void>> res = new ArrayList<>();
-    pipe.to(dst).onComplete(res::add);
+    pipe.to(dst).onComplete(event -> res.add(event));
     assertEquals(Collections.emptyList(), res);
     pipe.close();
     assertEquals(1, res.size());

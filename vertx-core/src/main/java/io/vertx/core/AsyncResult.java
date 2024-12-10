@@ -66,7 +66,7 @@ public interface AsyncResult<T> {
    * @param mapper the mapper function
    * @return the mapped async result
    */
-  default <U> AsyncResult<U> map(Function<T, U> mapper) {
+  default <U> AsyncResult<U> map(Function<? super T, U> mapper) {
     if (mapper == null) {
       throw new NullPointerException();
     }

@@ -857,7 +857,6 @@ public class HostnameResolutionTest extends VertxTestBase {
 
   }
 
-  @Ignore("timeout with jpms")
   @Test
   public void testRotationalServerSelection() throws Exception {
     testServerSelection(true, false);
@@ -895,15 +894,10 @@ public class HostnameResolutionTest extends VertxTestBase {
       }
       HostnameResolver resolver = new HostnameResolver(vertx, options);
       for (int i = 0; i < num; i++) {
-        CompletableFuture<InetAddress> result = new CompletableFuture<>();
-        resolver.resolveHostname("vertx.io").onComplete(ar -> {
-          if (ar.succeeded()) {
-            result.complete(ar.result());
-          } else {
-            result.completeExceptionally(ar.cause());
-          }
-        });
-        String resolved = result.get(10, TimeUnit.SECONDS).getHostAddress();
+        String resolved = resolver
+          .resolveHostname("vertx.io")
+          .await(10, TimeUnit.SECONDS)
+          .getHostAddress();
         int expected;
         if (rotateServers && !cache) {
           expected = 1 + i;

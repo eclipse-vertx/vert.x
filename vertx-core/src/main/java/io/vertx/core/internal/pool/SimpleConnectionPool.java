@@ -10,13 +10,9 @@
  */
 package io.vertx.core.internal.pool;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
+import io.vertx.core.*;
 import io.vertx.core.http.ConnectionPoolTooBusyException;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.impl.future.Listener;
 
 import java.util.AbstractList;
 import java.util.ArrayList;
@@ -379,7 +375,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
             } else {
               waiterFailure = Future.failedFuture(cause);
             }
-            removed.context.emit(waiterFailure, waiter.handler);
+            removed.context.emit(waiterFailure, waiter.handler::handle);
           }
           removed.result.fail(cause);
         }
@@ -702,12 +698,12 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
 
   static class LeaseImpl<C> implements Lease<C> {
 
-    private final Handler<AsyncResult<Lease<C>>> handler;
+    private final Promise<Lease<C>> handler;
     private final Slot<C> slot;
     private final C connection;
     private boolean recycled;
 
-    public LeaseImpl(Slot<C> slot, Handler<AsyncResult<Lease<C>>> handler) {
+    public LeaseImpl(Slot<C> slot, Promise<Lease<C>> handler) {
       this.handler = handler;
       this.slot = slot;
       this.connection = slot.connection;
@@ -815,7 +811,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
       return new Task() {
         @Override
         public void run() {
-          waiters.forEach(w -> w.context.emit(POOL_CLOSED, w.handler));
+          waiters.forEach(w -> w.context.emit(POOL_CLOSED, w.handler::handle));
           handler.handle(Future.succeededFuture(list));
         }
       };
@@ -932,7 +928,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
 
   static class LazyFuture<T> extends io.vertx.core.impl.future.FutureBase<T> implements Promise<T> {
 
-    private List<Listener<T>> handlers = new ArrayList<>();
+    private List<Completable<T>> handlers = new ArrayList<>();
     private Future<T> fut = null;
 
     @Override
@@ -953,17 +949,13 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
     @Override
     public void handle(AsyncResult<T> event) {
       Future<T> f = (Future<T>) event;
-      List<Listener<T>> h;
+      List<Completable<T>> h;
       synchronized (this) {
         fut = f;
         h = handlers;
       }
-      for (Listener<T> t : h) {
-        if (event.succeeded()) {
-          t.onSuccess(event.result());
-        } else {
-          t.onFailure(event.cause());
-        }
+      for (Completable<T> t : h) {
+        t.complete(event.result(), event.cause());
       }
     }
 
@@ -973,13 +965,9 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
     }
     @Override
     public Future<T> onComplete(Handler<AsyncResult<T>> handler) {
-      addListener(new Listener<T>() {
+      addListener(new Completable<T>() {
         @Override
-        public void onSuccess(T value) {
-          handler.handle(LazyFuture.this);
-        }
-        @Override
-        public void onFailure(Throwable failure) {
+        public void complete(T result, Throwable failure) {
           handler.handle(LazyFuture.this);
         }
       });
@@ -1002,7 +990,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
       return fut != null && fut.failed();
     }
     @Override
-    public void addListener(Listener<T> listener) {
+    public void addListener(Completable<T> listener) {
       Future<T> f;
       synchronized (this) {
         f = fut;
@@ -1011,14 +999,10 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
           return;
         }
       }
-      if (f.succeeded()) {
-        listener.onSuccess(f.result());
-      } else {
-        listener.onFailure(f.cause());
-      }
+      listener.complete(f.result(), f.cause());
     }
     @Override
-    public void removeListener(Listener<T> listener) {
+    public void removeListener(Completable<T> listener) {
       synchronized (this) {
         handlers.remove(listener);
       }

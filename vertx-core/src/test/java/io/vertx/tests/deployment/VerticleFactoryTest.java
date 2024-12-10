@@ -15,14 +15,27 @@ import io.vertx.core.*;
 import io.vertx.core.spi.VerticleFactory;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@RunWith(Parameterized.class)
 public class VerticleFactoryTest extends VertxTestBase {
+
+  @Parameterized.Parameter
+  public boolean legacy;
+
+  @Parameterized.Parameters(name = "{index}: implement new/old verticle factory={0}")
+  public static List<Object[]> params() {
+    return Arrays.asList(new Object[] {true}, new Object[] {false});
+  }
 
   public void setUp() throws Exception {
     super.setUp();
@@ -35,7 +48,7 @@ public class VerticleFactoryTest extends VertxTestBase {
   @Test
   public void testRegister() {
     assertTrue(vertx.verticleFactories().isEmpty());
-    VerticleFactory fact1 = new TestVerticleFactory("foo");
+    VerticleFactory fact1 = createTestVerticleFactory("foo");
     vertx.registerVerticleFactory(fact1);
     assertEquals(1, vertx.verticleFactories().size());
     assertTrue(vertx.verticleFactories().contains(fact1));
@@ -43,7 +56,7 @@ public class VerticleFactoryTest extends VertxTestBase {
 
   @Test
   public void testUnregister() {
-    VerticleFactory fact1 = new TestVerticleFactory("foo");
+    VerticleFactory fact1 = createTestVerticleFactory("foo");
     vertx.registerVerticleFactory(fact1);
     assertEquals(1, vertx.verticleFactories().size());
     assertTrue(vertx.verticleFactories().contains(fact1));
@@ -54,7 +67,7 @@ public class VerticleFactoryTest extends VertxTestBase {
 
   @Test
   public void testRegisterTwice() {
-    VerticleFactory fact1 = new TestVerticleFactory("foo");
+    VerticleFactory fact1 = createTestVerticleFactory("foo");
     vertx.registerVerticleFactory(fact1);
     try {
       vertx.registerVerticleFactory(fact1);
@@ -66,7 +79,7 @@ public class VerticleFactoryTest extends VertxTestBase {
 
   @Test
   public void testUnregisterTwice() {
-    VerticleFactory fact1 = new TestVerticleFactory("foo");
+    VerticleFactory fact1 = createTestVerticleFactory("foo");
     vertx.registerVerticleFactory(fact1);
     vertx.unregisterVerticleFactory(fact1);
     try {
@@ -79,7 +92,7 @@ public class VerticleFactoryTest extends VertxTestBase {
 
   @Test
   public void testUnregisterNoFact() {
-    VerticleFactory fact1 = new TestVerticleFactory("foo");
+    VerticleFactory fact1 = createTestVerticleFactory("foo");
     try {
       vertx.unregisterVerticleFactory(fact1);
       fail("Should throw exception");
@@ -90,8 +103,8 @@ public class VerticleFactoryTest extends VertxTestBase {
 
   @Test
   public void testRegisterUnregisterTwo() {
-    VerticleFactory fact1 = new TestVerticleFactory("foo");
-    VerticleFactory fact2 = new TestVerticleFactory("bar");
+    VerticleFactory fact1 = createTestVerticleFactory("foo");
+    VerticleFactory fact2 = createTestVerticleFactory("bar");
     vertx.registerVerticleFactory(fact1);
     assertEquals(1, vertx.verticleFactories().size());
     vertx.registerVerticleFactory(fact2);
@@ -113,9 +126,9 @@ public class VerticleFactoryTest extends VertxTestBase {
     TestVerticle verticle1 = new TestVerticle();
     TestVerticle verticle2 = new TestVerticle();
     TestVerticle verticle3 = new TestVerticle();
-    TestVerticleFactory fact1 = new TestVerticleFactory("aa", verticle1);
-    TestVerticleFactory fact2 = new TestVerticleFactory("bb", verticle2);
-    TestVerticleFactory fact3 = new TestVerticleFactory("cc", verticle3);
+    TestVerticleFactory fact1 = createTestVerticleFactory("aa", verticle1);
+    TestVerticleFactory fact2 = createTestVerticleFactory("bb", verticle2);
+    TestVerticleFactory fact3 = createTestVerticleFactory("cc", verticle3);
     vertx.registerVerticleFactory(fact1);
     vertx.registerVerticleFactory(fact2);
     vertx.registerVerticleFactory(fact3);
@@ -149,9 +162,9 @@ public class VerticleFactoryTest extends VertxTestBase {
     TestVerticle verticle1 = new TestVerticle();
     TestVerticle verticle2 = new TestVerticle();
     TestVerticle verticle3 = new TestVerticle();
-    TestVerticleFactory fact1 = new TestVerticleFactory("aa", verticle1);
-    TestVerticleFactory fact2 = new TestVerticleFactory("bb", verticle2);
-    TestVerticleFactory fact3 = new TestVerticleFactory("cc", verticle3);
+    TestVerticleFactory fact1 = createTestVerticleFactory("aa", verticle1);
+    TestVerticleFactory fact2 = createTestVerticleFactory("bb", verticle2);
+    TestVerticleFactory fact3 = createTestVerticleFactory("cc", verticle3);
     vertx.registerVerticleFactory(fact1);
     vertx.registerVerticleFactory(fact2);
     vertx.registerVerticleFactory(fact3);
@@ -184,8 +197,8 @@ public class VerticleFactoryTest extends VertxTestBase {
   public void testNoMatch() {
     TestVerticle verticle1 = new TestVerticle();
     TestVerticle verticle2 = new TestVerticle();
-    TestVerticleFactory fact1 = new TestVerticleFactory("aa", verticle1);
-    TestVerticleFactory fact2 = new TestVerticleFactory("bb", verticle2);
+    TestVerticleFactory fact1 = createTestVerticleFactory("aa", verticle1);
+    TestVerticleFactory fact2 = createTestVerticleFactory("bb", verticle2);
     vertx.registerVerticleFactory(fact1);
     vertx.registerVerticleFactory(fact2);
     String name1 = "cc:myverticle1";
@@ -202,11 +215,11 @@ public class VerticleFactoryTest extends VertxTestBase {
   @Test
   public void testOrdering() {
     TestVerticle verticle = new TestVerticle();
-    TestVerticleFactory fact2 = new TestVerticleFactory("aa", verticle, 2);
+    TestVerticleFactory fact2 = createTestVerticleFactory("aa", verticle, 2);
     vertx.registerVerticleFactory(fact2);
-    TestVerticleFactory fact1 = new TestVerticleFactory("aa", verticle, 1);
+    TestVerticleFactory fact1 = createTestVerticleFactory("aa", verticle, 1);
     vertx.registerVerticleFactory(fact1);
-    TestVerticleFactory fact3 = new TestVerticleFactory("aa", verticle, 3);
+    TestVerticleFactory fact3 = createTestVerticleFactory("aa", verticle, 3);
     vertx.registerVerticleFactory(fact3);
     vertx.deployVerticle("aa:someverticle").onComplete(onSuccess(res -> {
       assertEquals("aa:someverticle", fact1.identifier);
@@ -220,11 +233,11 @@ public class VerticleFactoryTest extends VertxTestBase {
   @Test
   public void testOrderingFailedInCreate() {
     TestVerticle verticle = new TestVerticle();
-    TestVerticleFactory fact2 = new TestVerticleFactory("aa", verticle, 2);
+    TestVerticleFactory fact2 = createTestVerticleFactory("aa", verticle, 2);
     vertx.registerVerticleFactory(fact2);
-    TestVerticleFactory fact1 = new TestVerticleFactory("aa", verticle, 1, true);
+    TestVerticleFactory fact1 = createTestVerticleFactory("aa", verticle, 1, true);
     vertx.registerVerticleFactory(fact1);
-    TestVerticleFactory fact3 = new TestVerticleFactory("aa", verticle, 3);
+    TestVerticleFactory fact3 = createTestVerticleFactory("aa", verticle, 3);
     vertx.registerVerticleFactory(fact3);
     vertx.deployVerticle("aa:someverticle").onComplete(onSuccess(res -> {
       assertEquals("aa:someverticle", fact2.identifier);
@@ -238,11 +251,11 @@ public class VerticleFactoryTest extends VertxTestBase {
   @Test
   public void testOrderingFailedInCreate2() {
     TestVerticle verticle = new TestVerticle();
-    TestVerticleFactory fact2 = new TestVerticleFactory("aa", verticle, 2, true);
+    TestVerticleFactory fact2 = createTestVerticleFactory("aa", verticle, 2, true);
     vertx.registerVerticleFactory(fact2);
-    TestVerticleFactory fact1 = new TestVerticleFactory("aa", verticle, 1, true);
+    TestVerticleFactory fact1 = createTestVerticleFactory("aa", verticle, 1, true);
     vertx.registerVerticleFactory(fact1);
-    TestVerticleFactory fact3 = new TestVerticleFactory("aa", verticle, 3);
+    TestVerticleFactory fact3 = createTestVerticleFactory("aa", verticle, 3);
     vertx.registerVerticleFactory(fact3);
     vertx.deployVerticle("aa:someverticle").onComplete(onSuccess(res -> {
       assertEquals("aa:someverticle", fact3.identifier);
@@ -256,11 +269,11 @@ public class VerticleFactoryTest extends VertxTestBase {
   @Test
   public void testOrderingFailedInCreateAll() {
     TestVerticle verticle = new TestVerticle();
-    TestVerticleFactory fact2 = new TestVerticleFactory("aa", verticle, 2, true);
+    TestVerticleFactory fact2 = createTestVerticleFactory("aa", verticle, 2, true);
     vertx.registerVerticleFactory(fact2);
-    TestVerticleFactory fact1 = new TestVerticleFactory("aa", verticle, 1, true);
+    TestVerticleFactory fact1 = createTestVerticleFactory("aa", verticle, 1, true);
     vertx.registerVerticleFactory(fact1);
-    TestVerticleFactory fact3 = new TestVerticleFactory("aa", verticle, 3, true);
+    TestVerticleFactory fact3 = createTestVerticleFactory("aa", verticle, 3, true);
     vertx.registerVerticleFactory(fact3);
     vertx.deployVerticle("aa:someverticle").onComplete(onFailure(err -> {
       assertTrue(err instanceof ClassNotFoundException);
@@ -294,12 +307,27 @@ public class VerticleFactoryTest extends VertxTestBase {
   }
 
 
-  class TestVerticleFactory implements VerticleFactory {
+  TestVerticleFactory createTestVerticleFactory(String prefix) {
+    return legacy ? new TestVerticleFactory.Vertx4(prefix) : new TestVerticleFactory.Vertx5(prefix);
+  }
+
+  TestVerticleFactory createTestVerticleFactory(String prefix, Verticle verticle) {
+    return legacy ? new TestVerticleFactory.Vertx4(prefix, verticle) : new TestVerticleFactory.Vertx5(prefix, verticle);
+  }
+
+  TestVerticleFactory createTestVerticleFactory(String prefix, Verticle verticle, int order) {
+    return legacy ? new TestVerticleFactory.Vertx4(prefix, verticle, order) : new TestVerticleFactory.Vertx5(prefix, verticle, order);
+  }
+
+  TestVerticleFactory createTestVerticleFactory(String prefix, Verticle verticle, int order, boolean failInCreate) {
+    return legacy ? new TestVerticleFactory.Vertx4(prefix, verticle, order, failInCreate) : new TestVerticleFactory.Vertx5(prefix, verticle, order, failInCreate);
+  }
+
+  abstract static class TestVerticleFactory implements VerticleFactory {
 
     String prefix;
     Verticle verticle;
     String identifier;
-    String isolationGroup;
 
     int order;
     boolean failInCreate;
@@ -344,20 +372,58 @@ public class VerticleFactoryTest extends VertxTestBase {
 
 
     @Override
-    public void createVerticle(String verticleName, ClassLoader classLoader, Promise<Callable<Verticle>> promise) {
-      if (failInCreate) {
-        promise.fail(new ClassNotFoundException("whatever"));
-        return;
-      }
-      this.identifier = verticleName;
-      this.createContext = Vertx.currentContext();
-      this.createWorkerThread = Context.isOnWorkerThread();
-      promise.complete(() -> verticle);
-    }
-
-    @Override
     public void close() {
 
+    }
+    static class Vertx4 extends TestVerticleFactory {
+      public Vertx4(String prefix) {
+        super(prefix);
+      }
+      public Vertx4(String prefix, Verticle verticle) {
+        super(prefix, verticle);
+      }
+      public Vertx4(String prefix, Verticle verticle, int order) {
+        super(prefix, verticle, order);
+      }
+      public Vertx4(String prefix, Verticle verticle, int order, boolean failInCreate) {
+        super(prefix, verticle, order, failInCreate);
+      }
+      @Override
+      public void createVerticle(String verticleName, ClassLoader classLoader, Promise<Callable<Verticle>> promise) {
+        if (failInCreate) {
+          promise.fail(new ClassNotFoundException("whatever"));
+          return;
+        }
+        this.identifier = verticleName;
+        this.createContext = Vertx.currentContext();
+        this.createWorkerThread = Context.isOnWorkerThread();
+        promise.complete(() -> verticle);
+      }
+    }
+    static class Vertx5 extends TestVerticleFactory {
+      public Vertx5(String prefix) {
+        super(prefix);
+      }
+      public Vertx5(String prefix, Verticle verticle) {
+        super(prefix, verticle);
+      }
+      public Vertx5(String prefix, Verticle verticle, int order) {
+        super(prefix, verticle, order);
+      }
+      public Vertx5(String prefix, Verticle verticle, int order, boolean failInCreate) {
+        super(prefix, verticle, order, failInCreate);
+      }
+      @Override
+      public void createVerticle2(String verticleName, ClassLoader classLoader, Promise<Callable<? extends Deployable>> promise) {
+        if (failInCreate) {
+          promise.fail(new ClassNotFoundException("whatever"));
+          return;
+        }
+        this.identifier = verticleName;
+        this.createContext = Vertx.currentContext();
+        this.createWorkerThread = Context.isOnWorkerThread();
+        promise.complete(() -> verticle);
+      }
     }
   }
 
@@ -381,18 +447,34 @@ public class VerticleFactoryTest extends VertxTestBase {
     ClassLoader loader = new ClassLoader(Thread.currentThread().getContextClassLoader()) {
     };
     AtomicReference<ClassLoader> createClassLoader = new AtomicReference<>();
-    VerticleFactory factory = new VerticleFactory() {
-      @Override
-      public String prefix() {
-        return "test";
-      }
-      @Override
-      public void createVerticle(String verticleName, ClassLoader classLoader, Promise<Callable<Verticle>> promise) {
-        createClassLoader.set(classLoader);
-        promise.complete(() -> new AbstractVerticle() {
-        });
-      }
-    };
+    VerticleFactory factory;
+    if (legacy) {
+      factory = new VerticleFactory() {
+        @Override
+        public String prefix() {
+          return "test";
+        }
+        @Override
+        public void createVerticle(String verticleName, ClassLoader classLoader, Promise<Callable<Verticle>> promise) {
+          createClassLoader.set(classLoader);
+          promise.complete(() -> new AbstractVerticle() {
+          });
+        }
+      };
+    } else {
+      factory = new VerticleFactory() {
+        @Override
+        public String prefix() {
+          return "test";
+        }
+        @Override
+        public void createVerticle2(String verticleName, ClassLoader classLoader, Promise<Callable<? extends Deployable>> promise) {
+          createClassLoader.set(classLoader);
+          promise.complete(() -> new AbstractVerticle() {
+          });
+        }
+      };
+    }
     vertx.registerVerticleFactory(factory);
     vertx.deployVerticle("test:foo", new DeploymentOptions().setClassLoader(loader)).onComplete(onSuccess(id -> {
       assertSame(loader, createClassLoader.get());

@@ -33,15 +33,6 @@ import static io.vertx.core.http.HttpHeaders.CONTENT_LENGTH;
 import static io.vertx.core.http.impl.HttpClientImpl.ABS_URI_START_PATTERN;
 
 /**
- * This class is optimised for performance when used on the same event loop that is passed to the handler with.
- * However it can be used safely from other threads.
- *
- * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
- * we benefit from biased locking which makes the overhead of synchronized near zero.
- *
- * This class uses {@code this} for synchronization purpose. The {@link #client}  or{@link #stream} instead are
- * called must not be called under this lock to avoid deadlocks.
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HttpClientRequestImpl extends HttpClientRequestBase implements HttpClientRequest {
@@ -335,7 +326,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     context.dispatch(handler);
   }
 
-  private void handleNextRequest(HttpClientRequest next, Handler<AsyncResult<HttpClientResponse>> handler, long timeoutMs) {
+  private void handleNextRequest(HttpClientRequest next, Promise<HttpClientResponse> handler, long timeoutMs) {
     next.response().onComplete(handler);
     next.exceptionHandler(exceptionHandler());
     exceptionHandler(null);
@@ -444,7 +435,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private Future<Void> write(ByteBuf buff, boolean end) {
     if (end) {
       if (buff != null && requiresContentLength()) {
-        headers().set(CONTENT_LENGTH, String.valueOf(buff.readableBytes()));
+        headers().set(CONTENT_LENGTH, HttpUtils.positiveLongToString(buff.readableBytes()));
       }
     } else if (requiresContentLength()) {
       throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "

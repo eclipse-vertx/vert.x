@@ -19,20 +19,36 @@ import io.vertx.core.Vertx;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class ClusteredAsyncMapTest extends AsyncMapTest {
 
-  int pos;
+  protected final int numNodes = 3;
+  AtomicInteger pos = new AtomicInteger();
+
+  public void setUp() throws Exception {
+    super.setUp();
+    startNodes(numNodes);
+  }
+
+  @Override
+  protected ClusterManager getClusterManager() {
+    return new FakeClusterManager();
+  }
 
   @Override
   protected Vertx getVertx() {
-    Vertx vertx = vertices[pos];
-    if (++pos == getNumNodes()) {
-      pos = 0;
-    }
-    return vertx;
+    int i = pos.incrementAndGet();
+    i = mod(i, numNodes);
+    return vertices[i];
+  }
+
+  private int mod(int idx, int size) {
+    int i = idx % size;
+    return i < 0 ? i + size : i;
   }
 
   @Test
@@ -59,17 +75,4 @@ public class ClusteredAsyncMapTest extends AsyncMapTest {
     await();
   }
 
-  public void setUp() throws Exception {
-    super.setUp();
-    startNodes(getNumNodes());
-  }
-
-  protected int getNumNodes() {
-    return 2;
-  }
-
-  @Override
-  protected ClusterManager getClusterManager() {
-    return new FakeClusterManager();
-  }
 }

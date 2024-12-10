@@ -15,7 +15,7 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.ThreadingModel;
-import io.vertx.core.impl.deployment.Deployment;
+import io.vertx.core.impl.deployment.DeploymentContext;
 import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.EventExecutor;
@@ -55,6 +55,11 @@ final class DuplicatedContext extends ContextBase implements ContextInternal {
   }
 
   @Override
+  public Future<Void> close() {
+    return Future.succeededFuture();
+  }
+
+  @Override
   public VertxTracer tracer() {
     return delegate.tracer();
   }
@@ -68,6 +73,11 @@ final class DuplicatedContext extends ContextBase implements ContextInternal {
   public Context exceptionHandler(Handler<Throwable> handler) {
     delegate.exceptionHandler(handler);
     return this;
+  }
+
+  @Override
+  public EventExecutor eventLoop() {
+    return delegate.eventLoop();
   }
 
   @Override
@@ -86,8 +96,8 @@ final class DuplicatedContext extends ContextBase implements ContextInternal {
   }
 
   @Override
-  public Deployment getDeployment() {
-    return delegate.getDeployment();
+  public DeploymentContext deployment() {
+    return delegate.deployment();
   }
 
   @Override
@@ -117,7 +127,7 @@ final class DuplicatedContext extends ContextBase implements ContextInternal {
 
   @Override
   public <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, boolean ordered) {
-    return delegate.workerPool.executeBlocking(this, blockingCodeHandler, ordered ? delegate.orderedTasks : null);
+    return delegate.workerPool.executeBlocking(this, blockingCodeHandler, ordered ? delegate.executeBlockingTasks : null);
   }
 
   @Override

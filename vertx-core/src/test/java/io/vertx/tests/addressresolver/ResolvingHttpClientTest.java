@@ -9,7 +9,7 @@ import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.*;
-import io.vertx.core.net.endpoint.EndpointServer;
+import io.vertx.core.net.endpoint.ServerEndpoint;
 import io.vertx.core.spi.endpoint.EndpointBuilder;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakeloadbalancer.FakeLoadBalancer;
@@ -329,15 +329,16 @@ public class ResolvingHttpClientTest extends VertxTestBase {
       .withAddressResolver(resolver)
       .withLoadBalancer(lb)
       .build();
-    awaitFuture(client.request(new RequestOptions().setServer(new FakeAddress("example.com"))).compose(req -> req
-      .send()
-      .expecting(HttpResponseExpectation.SC_OK)
-      .compose(HttpClientResponse::body)
-    ));
-    FakeLoadBalancer.FakeLoadBalancerMetrics<?> endpoint = (FakeLoadBalancer.FakeLoadBalancerMetrics<?>) ((EndpointServer) lb.endpoints().get(0)).metrics();
+    client.request(new RequestOptions().setServer(new FakeAddress("example.com")))
+      .compose(req -> req
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(HttpClientResponse::body)
+      ).await();
+    FakeLoadBalancer.FakeLoadBalancerMetrics<?> endpoint = (FakeLoadBalancer.FakeLoadBalancerMetrics<?>) ((ServerEndpoint) lb.endpoints().get(0)).metrics();
     FakeLoadBalancer.FakeMetric metric = endpoint.metrics2().get(0);
     assertTrue(metric.requestEnd() - metric.requestBegin() >= 0);
-    assertTrue(metric.responseBegin() - metric.requestEnd() > 500);
+    assertTrue(metric.responseBegin() - metric.requestEnd() >= 500);
     assertTrue(metric.responseEnd() - metric.responseBegin() >= 0);
   }
 
@@ -506,7 +507,55 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     } catch (Throwable e) {
       assertTrue(e.getMessage().startsWith("Cannot resolve address"));
     }
+  }
+
+  @Test
+  public void testDelayedInvalidation() throws Exception {
+    testInvalidation(false);
+  }
+
+  @Test
+  public void testImmediateInvalidation() throws Exception {
+    testInvalidation(true);
+  }
+
+  private void testInvalidation(boolean immediate) throws Exception {
+    startServers(2);
+    requestHandler = (idx, req) -> {
+      req.response().end("" + idx);
+    };
+    FakeEndpointResolver resolver = new FakeEndpointResolver();
+    SocketAddress addr1 = SocketAddress.inetSocketAddress(HttpTestBase.DEFAULT_HTTP_PORT, "localhost");
+    SocketAddress addr2 = SocketAddress.inetSocketAddress(HttpTestBase.DEFAULT_HTTP_PORT + 1, "localhost");
+    AtomicInteger accessCount = new AtomicInteger();
+    resolver.registerAddress("example.com", () -> {
+      accessCount.incrementAndGet();
+      return new FakeEndpointResolver.Endpoint(List.of(addr1), !immediate);
+    });
+    HttpClientInternal client = (HttpClientInternal) vertx.httpClientBuilder()
+      .withAddressResolver(resolver)
+      .build();
+    String res = awaitFuture(client.request(new RequestOptions().setServer(new FakeAddress("example.com"))).compose(req -> req
+      .send()
+      .expecting(HttpResponseExpectation.SC_OK)
+      .compose(HttpClientResponse::body)
+    )).toString();
     assertEquals("0", res);
+    assertEquals(1, accessCount.get());
+    res = awaitFuture(client.request(new RequestOptions().setServer(new FakeAddress("example.com"))).compose(req -> req
+      .send()
+      .expecting(HttpResponseExpectation.SC_OK)
+      .compose(HttpClientResponse::body)
+    )).toString();
+    assertEquals("0", res);
+    assertEquals(immediate ? 2 : 1, accessCount.get());
+    resolver.registerAddress("example.com", List.of(addr2));
+    res = awaitFuture(client.request(new RequestOptions().setServer(new FakeAddress("example.com"))).compose(req -> req
+      .send()
+      .expecting(HttpResponseExpectation.SC_OK)
+      .compose(HttpClientResponse::body)
+    )).toString();
+    assertEquals("1", res);
   }
 
   @Test

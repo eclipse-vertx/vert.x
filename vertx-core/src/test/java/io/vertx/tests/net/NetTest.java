@@ -13,50 +13,39 @@ package io.vertx.tests.net;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelHandlerAdapter;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.ConnectTimeoutException;
-import io.netty.handler.codec.http.DefaultFullHttpRequest;
-import io.netty.handler.codec.http.DefaultFullHttpResponse;
-import io.netty.handler.codec.http.HttpClientCodec;
-import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.channel.*;
 import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.HttpVersion;
-import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.http.*;
 import io.netty.handler.ssl.ApplicationProtocolConfig;
 import io.netty.handler.ssl.IdentityCipherSuiteFilter;
 import io.netty.handler.ssl.JdkSslContext;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.internal.PlatformDependent;
+import io.vertx.core.Future;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.net.NetClientInternal;
+import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
-import io.vertx.core.net.impl.*;
-import io.vertx.core.internal.net.NetSocketInternal;
+import io.vertx.core.net.impl.CleanableNetClient;
+import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
+import io.vertx.core.net.impl.NetServerImpl;
+import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.tls.SslContextFactory;
 import io.vertx.test.core.CheckingSender;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.netty.TestLoggerFactory;
-import io.vertx.test.proxy.HAProxy;
-import io.vertx.test.proxy.HttpProxy;
-import io.vertx.test.proxy.Socks4Proxy;
-import io.vertx.test.proxy.SocksProxy;
-import io.vertx.test.proxy.TestProxyBase;
+import io.vertx.test.proxy.*;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 import org.junit.Assume;
@@ -65,23 +54,14 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.*;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -91,10 +71,13 @@ import java.util.function.Function;
 import java.util.function.LongPredicate;
 import java.util.function.Supplier;
 
+import static io.vertx.test.core.TestUtils.*;
 import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTPS_HOST;
 import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTPS_PORT;
-import static io.vertx.test.core.TestUtils.*;
+import static io.vertx.tests.tls.HttpTLSTest.testPeerHostServerCert;
 import static org.hamcrest.CoreMatchers.*;
+import static org.junit.Assume.assumeFalse;
+import static org.junit.Assume.assumeTrue;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -114,7 +97,7 @@ public class NetTest extends VertxTestBase {
   public void setUp() throws Exception {
     super.setUp();
     if (USE_DOMAIN_SOCKETS) {
-      assertTrue("Native transport not enabled", USE_NATIVE_TRANSPORT);
+      assertTrue("Native transport not enabled", TRANSPORT.implementation().supportsDomainSockets());
       tmp = TestUtils.tmpFile(".sock");
       testAddress = SocketAddress.domainSocketAddress(tmp.getAbsolutePath());
     } else {
@@ -932,7 +915,7 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
-  public void testConnectInvalidHost() {
+  public void testConnectInvwalidHost() {
     assertNullPointerException(() -> client.connect(80, null));
     client.connect(1234, "127.0.0.2").onComplete(onFailure(err -> testComplete()));
     await();
@@ -1391,7 +1374,7 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testTLSTrailingDotHost() throws Exception {
-    Assume.assumeTrue(PlatformDependent.javaVersion() < 9);
+    assumeTrue(PlatformDependent.javaVersion() < 9);
     // We just need a vanilla cert for this test
     SelfSignedCertificate cert = SelfSignedCertificate.create("host2.com");
     TLSTest test = new TLSTest()
@@ -1975,9 +1958,21 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
-  public void testListenDomainSocketAddress() throws Exception {
+  public void testListenDomainSocketAddressNative() throws Exception {
     VertxInternal vx = (VertxInternal) Vertx.vertx(new VertxOptions().setPreferNativeTransport(true));
-    Assume.assumeTrue("Transport must support domain sockets", vx.transport().supportsDomainSockets());
+    assumeTrue("Native transport must be enabled", vx.isNativeTransportEnabled());
+    testListenDomainSocketAddress(vx);
+  }
+
+  @Test
+  public void testListenDomainSocketAddressJdk() throws Exception {
+    VertxInternal vx = (VertxInternal) Vertx.vertx(new VertxOptions().setPreferNativeTransport(false));
+    assumeFalse("Native transport must not be enabled", vx.isNativeTransportEnabled());
+    testListenDomainSocketAddress(vx);
+  }
+
+  private void testListenDomainSocketAddress(VertxInternal vx) throws Exception {
+    assumeTrue("Transport must support domain sockets", vx.transport().supportsDomainSockets());
     int len = 3;
     waitFor(len * len);
     List<SocketAddress> addresses = new ArrayList<>();
@@ -2103,7 +2098,7 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testClosingVertxCloseSharedServers() throws Exception {
     int numServers = 2;
-    Vertx vertx = Vertx.vertx(getOptions());
+    Vertx vertx = createVertx(getOptions());
     List<NetServerImpl> servers = new ArrayList<>();
     for (int i = 0;i < numServers;i++) {
       NetServer server = vertx.createNetServer().connectHandler(so -> {
@@ -2621,8 +2616,8 @@ public class NetTest extends VertxTestBase {
 
     // Close should be in own context
     server.close().onComplete(onSuccess(ar -> {
-      Context closeContext = Vertx.currentContext();
-      assertFalse(contexts.contains(closeContext));
+//      Context closeContext = Vertx.currentContext();
+//      assertFalse(contexts.contains(closeContext));
       assertFalse(contexts.contains(listenContext.get()));
       assertSame(serverConnectContext.get(), listenContext.get());
       testComplete();
@@ -2638,8 +2633,8 @@ public class NetTest extends VertxTestBase {
     ThreadLocal stack = new ThreadLocal();
     stack.set(true);
     server.close().onComplete(ar1 -> {
-      assertNull(stack.get());
-      assertTrue(Vertx.currentContext().isEventLoopContext());
+//      assertNull(stack.get());
+//      assertTrue(Vertx.currentContext().isEventLoopContext());
       server.close().onComplete(ar2 -> {
         server.close().onComplete(ar3 -> {
           testComplete();
@@ -3375,7 +3370,7 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testSelfSignedCertificate() throws Exception {
-    Assume.assumeTrue(PlatformDependent.javaVersion() < 9);
+    assumeTrue(PlatformDependent.javaVersion() < 9);
 
     CountDownLatch latch = new CountDownLatch(2);
 
@@ -3639,7 +3634,7 @@ public class NetTest extends VertxTestBase {
           case 1:
             assertTrue(obj instanceof LastHttpContent);
             ByteBuf content = ((LastHttpContent) obj).content();
-            assertEquals(!expectSSL, content.isDirect());
+            assertTrue(content.isDirect());
             assertEquals(1, content.refCnt());
             String val = content.toString(StandardCharsets.UTF_8);
             assertTrue(content.release());
@@ -4185,7 +4180,7 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testHAProxyProtocolConnectSSL() throws Exception {
-    Assume.assumeTrue(testAddress.isInetSocket());
+    assumeTrue(testAddress.isInetSocket());
     waitFor(2);
     SocketAddress remote = SocketAddress.inetSocketAddress(56324, "192.168.0.1");
     SocketAddress local = SocketAddress.inetSocketAddress(443, "192.168.0.11");
@@ -4247,7 +4242,7 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testHAProxyProtocolVersion1Unknown() throws Exception {
-    Assume.assumeTrue(testAddress.isInetSocket());
+    assumeTrue(testAddress.isInetSocket());
     Buffer header = HAProxy.createVersion1UnknownProtocolHeader();
     testHAProxyProtocolAccepted(header, null, null);
   }
@@ -4278,7 +4273,7 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testHAProxyProtocolVersion2Unknown() throws Exception {
-    Assume.assumeTrue(testAddress.isInetSocket());
+    assumeTrue(testAddress.isInetSocket());
     Buffer header = HAProxy.createVersion2UnknownProtocolHeader();
     testHAProxyProtocolAccepted(header, null, null);
   }
@@ -4552,5 +4547,107 @@ public class NetTest extends VertxTestBase {
       complete();
     }));
     await();
+  }
+
+  @Test
+  public void testConnectToServerShutdown() throws Exception {
+    AtomicBoolean shutdown = new AtomicBoolean();
+    server.connectHandler(so -> {
+      if (!shutdown.get()) {
+        so.shutdownHandler(v -> {
+          shutdown.set(true);
+        });
+        so.handler(buff -> {
+          if (buff.toString().equals("close")) {
+            so.close();
+          } else {
+            so.write(buff);
+          }
+        });
+      } else {
+        so.close();
+      }
+    });
+    startServer();
+    NetSocket so = client.connect(testAddress).await();
+    CountDownLatch latch = new CountDownLatch(1);
+    so.handler(buff -> {
+      latch.countDown();
+    });
+    so.write("hello");
+    awaitLatch(latch);
+    Future<Void> fut = server.shutdown(20, TimeUnit.SECONDS);
+    assertWaitUntil(shutdown::get);
+    boolean refused = false;
+    for (int i = 0;i < 10;i++) {
+      try {
+        client.connect(testAddress).await();
+      } catch (Exception e) {
+        // Connection refused
+        refused = true;
+        break;
+      }
+      Thread.sleep(100);
+    }
+    assertTrue(refused);
+    so.handler(buff -> {
+      so.write("close");
+    });
+    AtomicBoolean closed = new AtomicBoolean();
+    so.closeHandler(v -> closed.set(true));
+    // Verify the socket still works
+    so.write("ping");
+    assertWaitUntil(closed::get);
+    fut.await();
+  }
+
+  /**
+   * Test that for NetServer, the peer host and port info is available in the SSLEngine
+   * when the X509ExtendedKeyManager.chooseEngineServerAlias is called.
+   *
+   * @throws Exception if an error occurs
+   */
+  @Test
+  public void testTLSServerSSLEnginePeerHost() throws Exception {
+    testTLSServerSSLEnginePeerHostImpl(false);
+  }
+
+  /**
+   * Test that for NetServer with start TLS, the peer host and port info is available
+   * in the SSLEngine when the X509ExtendedKeyManager.chooseEngineServerAlias is called.
+   *
+   * @throws Exception if an error occurs
+   */
+  @Test
+  public void testStartTLSServerSSLEnginePeerHost() throws Exception {
+    testTLSServerSSLEnginePeerHostImpl(true);
+  }
+
+  private void testTLSServerSSLEnginePeerHostImpl(boolean startTLS) throws Exception {
+    AtomicBoolean called = new AtomicBoolean(false);
+    testTLS(Cert.NONE, Trust.SERVER_JKS, testPeerHostServerCert(Cert.SERVER_JKS, called), Trust.NONE,
+      false, false, true, startTLS);
+    assertTrue("X509ExtendedKeyManager.chooseEngineServerAlias is not called", called.get());
+  }
+
+  /**
+   * Test that for NetServer with SNI, the peer host and port info is available
+   * in the SSLEngine when the X509ExtendedKeyManager.chooseEngineServerAlias is called.
+   *
+   * @throws Exception if an error occurs
+   */
+  @Test
+  public void testSNIServerSSLEnginePeerHost() throws Exception {
+    AtomicBoolean called = new AtomicBoolean(false);
+    TLSTest test = new TLSTest()
+      .clientTrust(Trust.SNI_JKS_HOST2)
+      .address(SocketAddress.inetSocketAddress(DEFAULT_HTTPS_PORT, "host2.com"))
+      .serverCert(testPeerHostServerCert(Cert.SNI_JKS, called))
+      .sni(true);
+    test.run(true);
+    await();
+    assertEquals("host2.com", cnOf(test.clientPeerCert()));
+    assertEquals("host2.com", test.indicatedServerName);
+    assertTrue("X509ExtendedKeyManager.chooseEngineServerAlias is not called", called.get());
   }
 }

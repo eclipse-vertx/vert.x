@@ -10,10 +10,7 @@
  */
 package io.vertx.tests.deployment;
 
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
-import io.vertx.core.ThreadingModel;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.test.core.VertxTestBase;
@@ -24,8 +21,15 @@ import org.junit.Assume;
 import org.junit.Test;
 
 import java.lang.reflect.Method;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class VirtualThreadDeploymentTest extends VertxTestBase {
 
@@ -72,6 +76,7 @@ public class VirtualThreadDeploymentTest extends VertxTestBase {
   @Test
   public void testExecuteBlocking() {
     Assume.assumeTrue(isVirtualThreadAvailable());
+    Promise<Void> p = Promise.promise();
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
       public void start() {
@@ -79,12 +84,50 @@ public class VirtualThreadDeploymentTest extends VertxTestBase {
           assertTrue(isVirtual(Thread.currentThread()));
           return Thread.currentThread().getName();
         });
-        String res = fut.await();
+        String res;
+        try {
+          res = fut.await();
+        } catch (Exception e) {
+          p.fail(e);
+          return;
+        }
         assertNotSame(Thread.currentThread().getName(), res);
-        testComplete();
+        p.complete();
       }
-    }, new DeploymentOptions().setThreadingModel(ThreadingModel.VIRTUAL_THREAD));
-    await();
+    }, new DeploymentOptions().setThreadingModel(ThreadingModel.VIRTUAL_THREAD)).await();
+  }
+
+  @Test
+  public void testUndeployInterruptVirtualThreads() throws Exception {
+    int num = 16;
+    Promise<Void> p = Promise.promise();
+    AtomicReference<Thread> thread = new AtomicReference<>();
+    AtomicInteger interrupted = new AtomicInteger();
+    CountDownLatch latch = new CountDownLatch(num);
+    Assume.assumeTrue(isVirtualThreadAvailable());
+    String id = vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start() {
+        for (int i = 0;i < num;i++) {
+          vertx.runOnContext(v -> {
+            try {
+              thread.set(Thread.currentThread());
+              latch.countDown();
+              p.future().await();
+            } catch (Exception e) {
+              if (e instanceof InterruptedException) {
+                interrupted.incrementAndGet();
+              }
+            }
+          });
+        }
+      }
+    }, new DeploymentOptions().setThreadingModel(ThreadingModel.VIRTUAL_THREAD))
+      .await(20, TimeUnit.SECONDS);
+    latch.await(20, TimeUnit.SECONDS);
+    assertWaitUntil(() -> thread.get() != null && thread.get().getState() == Thread.State.WAITING);
+    vertx.undeploy(id).await(20, TimeUnit.SECONDS);
+    assertWaitUntil(() -> interrupted.get() == num);
   }
 
   @Test
@@ -124,6 +167,46 @@ public class VirtualThreadDeploymentTest extends VertxTestBase {
     }
     await();
     Assert.assertEquals(5, max.get());
+  }
+  @Test
+  public void testHttpClientStopRequestInProgress() throws Exception {
+    Assume.assumeTrue(isVirtualThreadAvailable());
+    AtomicInteger inflight = new AtomicInteger();
+    vertx.createHttpServer().requestHandler(request -> {
+      inflight.incrementAndGet();
+    }).listen(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST);
+    int numReq = 10;
+    Set<Thread> threads = Collections.synchronizedSet(new HashSet<>());
+    Set<Thread> interruptedThreads = Collections.synchronizedSet(new HashSet<>());
+    String deploymentID = vertx.deployVerticle(new VerticleBase() {
+        HttpClient client;
+        @Override
+        public Future<?> start() throws Exception {
+          client = vertx.createHttpClient(new PoolOptions().setHttp1MaxSize(numReq));
+          for (int i = 0;i < numReq;i++) {
+            vertx.runOnContext(v -> {
+              threads.add(Thread.currentThread());
+              try {
+                client
+                  .request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, "localhost", "/")
+                  .compose(HttpClientRequest::send)
+                  .await();
+              } catch (Throwable e) {
+                interruptedThreads.add(Thread.currentThread());
+              }
+            });
+          }
+          return super.start();
+        }
+        @Override
+        public Future<?> stop() {
+          return client.close();
+        }
+      }, new DeploymentOptions().setThreadingModel(ThreadingModel.VIRTUAL_THREAD))
+      .await();
+    assertWaitUntil(() -> inflight.get() == numReq);
+    vertx.undeploy(deploymentID).await();
+    assertEquals(threads, interruptedThreads);
   }
 
   @Test

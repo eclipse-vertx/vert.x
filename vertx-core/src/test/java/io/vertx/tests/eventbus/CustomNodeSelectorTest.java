@@ -18,9 +18,9 @@ import io.vertx.core.internal.VertxBootstrap;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeInfo;
-import io.vertx.core.spi.cluster.NodeSelector;
-import io.vertx.core.spi.cluster.RegistrationUpdateEvent;
+import io.vertx.core.spi.cluster.impl.NodeSelector;
 import io.vertx.test.core.VertxTestBase;
+import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
 
 import java.util.*;
@@ -46,7 +46,9 @@ public class CustomNodeSelectorTest extends VertxTestBase {
         return vertxOptions;
       })
       .map(options -> {
-        VertxBootstrap factory = ((VertxBootstrapImpl)VertxBootstrap.create().options(options).init()).clusterNodeSelector(new CustomNodeSelector());
+        VertxBootstrap factory = ((VertxBootstrapImpl)VertxBootstrap.create().options(options).init())
+          .clusterManager(new FakeClusterManager())
+          .clusterNodeSelector(new CustomNodeSelector());
         return factory.clusteredVertx();
       })
       .collect(collectingAndThen(toList(), Future::all));
@@ -131,14 +133,6 @@ public class CustomNodeSelectorTest extends VertxTestBase {
         }
         return res;
       }).onComplete(promise);
-    }
-
-    @Override
-    public void registrationsUpdated(RegistrationUpdateEvent event) {
-    }
-
-    @Override
-    public void registrationsLost() {
     }
   }
 }

@@ -12,9 +12,9 @@
 package examples;
 
 import io.netty.handler.logging.ByteBufFormat;
-import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
+import io.vertx.core.VerticleBase;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
@@ -116,30 +116,49 @@ public class NetExamples {
 
   }
 
+  public void serverShutdown(NetServer server) {
+    server
+      .shutdown()
+      .onSuccess(res -> {
+        System.out.println("Server is now closed");
+      });
+  }
+
+  public void serverShutdownWithAmountOfTime(NetServer server) {
+    server
+      .shutdown(60, TimeUnit.SECONDS)
+      .onSuccess(res -> {
+        System.out.println("Server is now closed");
+      });
+  }
+
   public void example9(NetServer server) {
 
     server
       .close()
-      .onComplete(res -> {
-        if (res.succeeded()) {
-          System.out.println("Server is now closed");
-        } else {
-          System.out.println("close failed");
-        }
+      .onSuccess(res -> {
+        System.out.println("Server is now closed");
       });
   }
 
-  public void shutdownHandler(NetClient client, SocketAddress server) {
-    client
-      .connect(server)
-      .onSuccess(so -> {
-      so.shutdownHandler(timeout -> {
-        // Notified when the client is closing
-      });
-    });
+  private static Buffer closeFrame() {
+    return null;
+  }
 
-    // A few moments later
-    client.shutdown(30, TimeUnit.SECONDS);
+  private static Future<?> closeFrameHandler(NetSocket so) {
+    return null;
+  }
+
+  public void shutdownHandler(NetSocket socket) {
+    socket.shutdownHandler(v -> {
+      socket
+        // Write close frame
+        .write(closeFrame())
+        // Wait until we receive the remote close frame
+        .compose(success -> closeFrameHandler(socket))
+        // Close the socket
+        .eventually(() -> socket.close());
+    });
   }
 
   public void example9_1(NetSocket socket) {
@@ -156,12 +175,12 @@ public class NetExamples {
 
   public void example11(Vertx vertx) {
 
-    class MyVerticle extends AbstractVerticle {
+    class MyVerticle extends VerticleBase {
 
       NetServer server;
 
       @Override
-      public void start() throws Exception {
+      public Future<?> start() {
         server = vertx.createNetServer();
         server.connectHandler(socket -> {
           socket.handler(buffer -> {
@@ -169,7 +188,7 @@ public class NetExamples {
             socket.write(buffer);
           });
         });
-        server.listen(1234, "localhost");
+        return server.listen(1234, "localhost");
       }
     }
 

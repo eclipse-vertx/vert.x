@@ -10,12 +10,15 @@
  */
 package io.vertx.core.net.endpoint;
 
+import io.vertx.codegen.annotations.Unstable;
+
 /**
  * Gather metrics for a request/response interaction with the server, this interface is write-only and used to report
  * usage to build statistics for a load balancing purpose.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
+@Unstable
 public interface InteractionMetrics<M> {
 
   InteractionMetrics<?> INSTANCE = new InteractionMetrics<>() {

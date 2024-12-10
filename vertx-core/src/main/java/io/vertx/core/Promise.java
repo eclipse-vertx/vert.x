@@ -16,6 +16,8 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.impl.NoStackTraceThrowable;
 import io.vertx.core.impl.future.PromiseImpl;
 
+import java.util.function.BiConsumer;
+
 /**
  * Represents the writable side of an action that may, or may not, have occurred yet.
  * <p>
@@ -27,7 +29,7 @@ import io.vertx.core.impl.future.PromiseImpl;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @VertxGen
-public interface Promise<T> extends Handler<AsyncResult<T>> {
+public interface Promise<T> extends Completable<T> {
 
   /**
    * Create a promise that hasn't completed yet
@@ -45,12 +47,20 @@ public interface Promise<T> extends Handler<AsyncResult<T>> {
    * @param asyncResult the async result to handle
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  @Override
   default void handle(AsyncResult<T> asyncResult) {
     if (asyncResult.succeeded()) {
       complete(asyncResult.result());
     } else {
       fail(asyncResult.cause());
+    }
+  }
+
+  @Override
+  default void complete(T result, Throwable failure) {
+    if (failure != null) {
+      handle(Future.failedFuture(failure));
+    } else {
+      handle(Future.succeededFuture(result));
     }
   }
 
@@ -75,31 +85,29 @@ public interface Promise<T> extends Handler<AsyncResult<T>> {
    */
   default void complete() {
     if (!tryComplete()) {
-      throw new IllegalStateException("Result is already complete");
+      throw new IllegalStateException("Promise already completed");
     }
   }
 
-  /**
-   * Set the failure. Any handler will be called, if there is one, and the future will be marked as completed.
-   *
-   * @param cause  the failure cause
-   * @throws IllegalStateException when the promise is already completed
-   */
-  default void fail(Throwable cause) {
-    if (!tryFail(cause)) {
-      throw new IllegalStateException("Result is already complete");
+  default void succeed(T result) {
+    if (!tryComplete(result)) {
+      throw new IllegalStateException("Promise already completed");
     }
   }
 
-  /**
-   * Calls {@link #fail(Throwable)} with the {@code message}.
-   *
-   * @param message  the failure message
-   * @throws IllegalStateException when the promise is already completed
-   */
+  default void succeed() {
+    complete(null, null);
+  }
+
+  default void fail(Throwable failure) {
+    if (!tryFail(failure)) {
+      throw new IllegalStateException("Promise already completed");
+    }
+  }
+
   default void fail(String message) {
     if (!tryFail(message)) {
-      throw new IllegalStateException("Result is already complete");
+      throw new IllegalStateException("Promise already completed");
     }
   }
 

@@ -12,28 +12,16 @@
 package io.vertx.tests.metrics;
 
 import io.vertx.core.Vertx;
-import io.vertx.core.VertxBuilder;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.metrics.MetricsOptions;
-import io.vertx.core.spi.VertxServiceProvider;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
-import io.vertx.test.fakemetrics.FakeVertxMetrics;
-import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.nio.file.Files;
-import java.util.Collections;
-import java.util.Enumeration;
 import java.util.Random;
-import java.util.function.Supplier;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -95,63 +83,5 @@ public class MetricsOptionsTest extends VertxTestBase {
       .withMetrics(new SimpleVertxMetricsFactory<>(metrics))
       .build();
     assertSame(metrics, ((VertxInternal) vertx).metricsSPI());
-  }
-
-  @Ignore("cannot pass with modules")
-  @Test
-  public void testMetricsFromServiceLoader() {
-    testMetricsFromServiceLoader(true);
-  }
-
-  @Ignore("cannot pass with modules")
-  @Test
-  public void testMetricsFromServiceLoaderDisabled() {
-    testMetricsFromServiceLoader(false);
-  }
-
-  private void testMetricsFromServiceLoader(boolean enabled) {
-    vertx.close();
-    MetricsOptions metricsOptions = new MetricsOptions().setEnabled(enabled);
-    VertxOptions options = new VertxOptions().setMetricsOptions(metricsOptions);
-    vertx = createVertxLoadingMetricsFromMetaInf(() -> Vertx.vertx(options), io.vertx.test.fakemetrics.FakeMetricsFactory.class);
-    VertxMetrics metrics = ((VertxInternal) vertx).metricsSPI();
-    if (enabled) {
-      assertNotNull(metrics);
-      assertTrue(metrics instanceof FakeVertxMetrics);
-      assertEquals(metricsOptions.isEnabled(), ((FakeVertxMetrics)metrics).options().isEnabled());
-    } else {
-      assertNull(metrics);
-    }
-  }
-
-  @Test
-  public void testSetMetricsInstanceTakesPrecedenceOverServiceLoader() {
-    VertxMetrics metrics = new VertxMetrics() {
-    };
-    vertx.close();
-    VertxBuilder builder = Vertx.builder()
-      .with(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)))
-      .withMetrics(new SimpleVertxMetricsFactory<>(metrics));
-    vertx = createVertxLoadingMetricsFromMetaInf(builder::build, io.vertx.test.fakemetrics.FakeMetricsFactory.class);
-    assertSame(metrics, ((VertxInternal) vertx).metricsSPI());
-  }
-
-  static Vertx createVertxLoadingMetricsFromMetaInf(Supplier<Vertx> supplier, Class<? extends VertxServiceProvider> factory) {
-    return TestUtils.runWithServiceLoader(VertxServiceProvider.class, factory, supplier);
-  }
-
-  public static ClassLoader createMetricsFromMetaInfLoader(String factoryFqn) {
-    return new URLClassLoader(new URL[0], Thread.currentThread().getContextClassLoader()) {
-      @Override
-      public Enumeration<URL> findResources(String name) throws IOException {
-        if (name.equals("META-INF/services/" + VertxServiceProvider.class.getName())) {
-          File f = File.createTempFile("vertx", ".txt");
-          f.deleteOnExit();
-          Files.write(f.toPath(), factoryFqn.getBytes());
-          return Collections.enumeration(Collections.singleton(f.toURI().toURL()));
-        }
-        return super.findResources(name);
-      }
-    };
   }
 }

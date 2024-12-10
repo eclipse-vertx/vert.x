@@ -13,13 +13,11 @@ package io.vertx.tests.deployment;
 
 import io.netty.channel.EventLoop;
 import io.vertx.core.*;
-import io.vertx.core.impl.verticle.VerticleDeployable;
-import io.vertx.core.internal.CloseFuture;
-import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.deployment.Deployment;
+import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.impl.deployment.DeploymentContext;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.json.JsonObject;
-import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Ignore;
@@ -333,9 +331,9 @@ public class DeploymentTest extends VertxTestBase {
 
   private void testDeployFromThrowableInStart(int startAction, Class<? extends Throwable> expectedThrowable) throws Exception {
     MyVerticle verticle = new MyVerticle();
+    MyVerticle verticle2 = new MyVerticle(startAction, MyVerticle.NOOP);
     vertx.deployVerticle(verticle).onComplete(onSuccess(v -> {
       Context ctx = Vertx.currentContext();
-      MyVerticle verticle2 = new MyVerticle(startAction, MyVerticle.NOOP);
       vertx.deployVerticle(verticle2).onComplete(onFailure(err -> {
         assertEquals(expectedThrowable, err.getClass());
         assertEquals("FooBar!", err.getMessage());
@@ -346,6 +344,7 @@ public class DeploymentTest extends VertxTestBase {
       }));
     }));
     await();
+    assertTrue(verticle2.completion.future().isComplete());
   }
 
   @Test
@@ -484,9 +483,9 @@ public class DeploymentTest extends VertxTestBase {
     assertTrue(vertx.deploymentIDs().isEmpty());
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test(expected = VertxException.class)
   public void testDeployInstanceSetInstances() throws Exception {
-    vertx.deployVerticle(new MyVerticle(), new DeploymentOptions().setInstances(2));
+    vertx.deployVerticle(new MyVerticle(), new DeploymentOptions().setInstances(2)).await();
   }
 
   @Test
@@ -537,8 +536,8 @@ public class DeploymentTest extends VertxTestBase {
     awaitLatch(deployLatch);
     assertWaitUntil(() -> deployCount.get() == numInstances);
     assertEquals(1, vertx.deploymentIDs().size());
-    Deployment deployment = ((VertxInternal) vertx).getDeployment(vertx.deploymentIDs().iterator().next());
-    Set<Verticle> verticles = ((VerticleDeployable)deployment.deployable()).verticles();
+    DeploymentContext deployment = ((VertxInternal) vertx).getDeployment(vertx.deploymentIDs().iterator().next());
+    Set<Deployable> verticles = ((Deployment)deployment.deployment()).instances();
     assertEquals(numInstances, verticles.size());
     CountDownLatch undeployLatch = new CountDownLatch(1);
     assertEquals(numInstances, deployCount.get());
@@ -1068,7 +1067,7 @@ public class DeploymentTest extends VertxTestBase {
     assertWaitUntil(() -> messageCount.get() == 3);
     assertEquals(9, totalReportedInstances.get());
     assertWaitUntil(() -> vertx.deploymentIDs().size() == 1);
-    Deployment deployment = ((VertxInternal) vertx).getDeployment(vertx.deploymentIDs().iterator().next());
+    DeploymentContext deployment = ((VertxInternal) vertx).getDeployment(vertx.deploymentIDs().iterator().next());
     awaitFuture(vertx.undeploy(deployment.deploymentID()));
   }
 
@@ -1350,11 +1349,23 @@ public class DeploymentTest extends VertxTestBase {
       @Override
       public void start(Promise<Void> startPromise) {
         this.startPromise = startPromise;
+        AtomicBoolean hookCompletion = new AtomicBoolean();
         ((ContextInternal)context).addCloseHook(completion -> {
           complete();
-          completion.complete();
+          new Thread(() -> {
+            try {
+              Thread.sleep(500);
+            } catch (InterruptedException e) {
+              fail(e);
+            }
+            hookCompletion.set(true);
+            completion.complete();
+          }).start();
         });
-        vertx.close().onComplete(onSuccess(v -> complete()));
+        vertx.close().onComplete(onSuccess(v -> {
+          assertTrue(hookCompletion.get());
+          complete();
+        }));
       }
       @Override
       public void stop(Promise<Void> stopPromise) {
@@ -1433,6 +1444,7 @@ public class DeploymentTest extends VertxTestBase {
     int stopAction;
     String deploymentID;
     JsonObject config;
+    Promise<Void> completion;
 
     MyVerticle() {
       this(NOOP, NOOP);
@@ -1445,6 +1457,10 @@ public class DeploymentTest extends VertxTestBase {
 
     @Override
     public void start() throws Exception {
+      ((ContextInternal)context).addCloseHook(promise -> {
+        completion = promise;
+        promise.complete();
+      });
       switch (startAction) {
         case THROW_EXCEPTION:
           throw new Exception("FooBar!");

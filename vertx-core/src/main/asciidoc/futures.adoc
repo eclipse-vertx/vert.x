@@ -21,15 +21,7 @@ They allow you to defer the action of providing a result.
 
 In most cases, you don't need to create promises yourself in a Vert.x application.
 <<_future_composition>> and <<_future_coordination>> provide you with the tools to transform and merge asynchronous results.
-
-However, if, in your codebase, you have legacy methods which use callbacks, you can leverage the fact that a promise extends {@link io.vertx.core.Handler io.vertx.core.Handler<io.vertx.core.AsyncResult>}:
-
-[source,$lang]
-----
-{@link examples.CoreExamples#promiseAsHandler}
-----
 ====
-
 [CAUTION]
 ====
 Terminal operations like `onSuccess`, `onFailure` and `onComplete` provide no guarantee whatsoever regarding the invocation order of callbacks.

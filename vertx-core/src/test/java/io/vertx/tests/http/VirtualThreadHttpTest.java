@@ -15,9 +15,9 @@ import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.PromiseInternal;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Assume;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
@@ -27,7 +27,6 @@ public class VirtualThreadHttpTest extends VertxTestBase {
 
   private VertxInternal vertx;
 
-  @Before
   public void setUp() throws Exception {
     super.setUp();
     vertx = (VertxInternal) super.vertx;
@@ -48,7 +47,7 @@ public class VirtualThreadHttpTest extends VertxTestBase {
         HttpClientResponse resp = req.send().await();
         Buffer body = resp.body().await();
         String bodyString = body.toString(StandardCharsets.UTF_8);
-        assertEquals("Hello World", body.toString());
+        assertEquals("Hello World", bodyString);
       }
       testComplete();
     });

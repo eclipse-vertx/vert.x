@@ -11,10 +11,7 @@
 
 package io.vertx.core;
 
-import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.GenIgnore;
-import io.vertx.codegen.annotations.Nullable;
-import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.codegen.annotations.*;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 
 import java.util.ArrayList;
@@ -34,7 +31,7 @@ import java.util.function.Predicate;
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@VertxGen
+@DataObject
 public interface MultiMap extends Iterable<Map.Entry<String, String>> {
 
   /**
@@ -43,7 +40,7 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
    * @return the multi-map
    */
   static MultiMap caseInsensitiveMultiMap() {
-    return HeadersMultiMap.headers();
+    return HeadersMultiMap.caseInsensitive();
   }
 
   @GenIgnore(GenIgnore.PERMITTED_TYPE)

@@ -10,6 +10,7 @@
  */
 package io.vertx.core.net;
 
+import io.vertx.codegen.annotations.Unstable;
 import io.vertx.core.Vertx;
 import io.vertx.core.net.impl.MappingResolver;
 import io.vertx.core.spi.endpoint.EndpointResolver;
@@ -20,6 +21,7 @@ import java.util.function.Function;
 /**
  * A provider for address resolver.
  */
+@Unstable
 public interface AddressResolver {
 
   /**

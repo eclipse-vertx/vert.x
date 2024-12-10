@@ -16,7 +16,6 @@ import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
-import io.vertx.core.json.JsonObject;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,8 +28,8 @@ public class DefaultDeploymentManager implements DeploymentManager {
   public static final Logger log = LoggerFactory.getLogger(DefaultDeploymentManager.class);
 
   private final VertxImpl vertx;
-  private final Map<String, Deployment> deploying = new HashMap<>();
-  private final Map<String, Deployment> deployments = new ConcurrentHashMap<>();
+  private final Map<String, DeploymentContext> deploying = new HashMap<>();
+  private final Map<String, DeploymentContext> deployments = new ConcurrentHashMap<>();
 
   public DefaultDeploymentManager(VertxImpl vertx) {
     this.vertx = vertx;
@@ -41,101 +40,97 @@ public class DefaultDeploymentManager implements DeploymentManager {
   }
 
   public Future<Void> undeploy(String deploymentID) {
-    Deployment deployment = deployments.get(deploymentID);
+    DeploymentContext deployment = deployments.get(deploymentID);
     ContextInternal currentContext = vertx.getOrCreateContext();
     if (deployment == null) {
       return currentContext.failedFuture(new IllegalStateException("Unknown deployment"));
     } else {
-      return deployment.doUndeploy(vertx.getOrCreateContext());
+      return deployment.undeploy(vertx.getOrCreateContext());
     }
   }
 
-  public Set<String> deployments() {
-    return Collections.unmodifiableSet(deployments.keySet());
+  public Collection<DeploymentContext> deployments() {
+    return new HashSet<>(deployments.values());
   }
 
-  public Deployment getDeployment(String deploymentID) {
+  public DeploymentContext getDeployment(String deploymentID) {
     return deployments.get(deploymentID);
   }
 
   public Future<Void> undeployAll() {
     // TODO timeout if it takes too long - e.g. async stop verticle fails to call future
-
+    List<Future<?>> completionList = new ArrayList<>();
     // We only deploy the top level verticles as the children will be undeployed when the parent is
     while (true) {
-      DeploymentImpl deployment;
+      DeploymentContextImpl deployment;
       synchronized (deploying) {
         if (deploying.isEmpty()) {
           break;
         }
-        Iterator<Map.Entry<String, Deployment>> it = deploying.entrySet().iterator();
-        Map.Entry<String, Deployment> entry = it.next();
+        Iterator<Map.Entry<String, DeploymentContext>> it = deploying.entrySet().iterator();
+        Map.Entry<String, DeploymentContext> entry = it.next();
         it.remove();
-        deployment = (DeploymentImpl) entry.getValue();
+        deployment = (DeploymentContextImpl) entry.getValue();
       }
-      deployment.deployable.undeploy().andThen(ar -> deployments.remove(deployment.deploymentID));
+      Future<?> f = deployment.deployment.undeploy();
+      completionList.add(f);
     }
     Set<String> deploymentIDs = new HashSet<>();
-    for (Map.Entry<String, Deployment> entry: deployments.entrySet()) {
+    for (Map.Entry<String, DeploymentContext> entry: deployments.entrySet()) {
       if (!entry.getValue().isChild()) {
         deploymentIDs.add(entry.getKey());
       }
     }
-    List<Future<?>> completionList = new ArrayList<>();
-    if (!deploymentIDs.isEmpty()) {
-      for (String deploymentID : deploymentIDs) {
-        Promise<Void> promise = Promise.promise();
-        completionList.add(promise.future());
-        undeploy(deploymentID).onComplete(ar -> {
-          if (ar.failed()) {
-            // Log but carry on regardless
-            log.error("Undeploy failed", ar.cause());
-          }
-          promise.handle(ar);
-        });
-      }
-      Promise<Void> promise = vertx.getOrCreateContext().promise();
-      Future.join(completionList).<Void>mapEmpty().onComplete(promise);
-      return promise.future();
-    } else {
-      return vertx.getOrCreateContext().succeededFuture();
+    for (String deploymentID : deploymentIDs) {
+      Promise<Void> promise = Promise.promise();
+      completionList.add(promise.future());
+      undeploy(deploymentID).onComplete(ar -> {
+        if (ar.failed()) {
+          // Log but carry on regardless
+          log.error("Undeploy failed", ar.cause());
+        }
+        promise.handle(ar);
+      });
     }
+    Promise<Void> promise = vertx.getOrCreateContext().promise();
+    Future.join(completionList).<Void>mapEmpty().onComplete(promise);
+    return promise.future();
   }
 
-  public Future<Deployment> deploy(DeploymentOptions options,
-                                      ContextInternal parentContext,
-                                      ContextInternal callingContext,
-                                      Deployable deployable) {
+  public Future<DeploymentContext> deploy(DeploymentContext parent,
+                                          ContextInternal callingContext,
+                                          Deployment deployment) {
     String deploymentID = generateDeploymentID();
-    Deployment parent = parentContext.getDeployment();
-    DeploymentImpl deployment = new DeploymentImpl(deployable, parent, deploymentID, options);
+    DeploymentContextImpl context = new DeploymentContextImpl(deployment, parent, deploymentID);
     synchronized (deploying) {
-      deploying.put(deploymentID, deployment);
+      deploying.put(deploymentID, context);
     }
-    Promise<Deployment> result = callingContext.promise();
-    Future<?> f = deployable.deploy(deployment);
+    Promise<DeploymentContext> result = callingContext.promise();
+    Future<?> f = deployment.deploy(context);
     f.onComplete(ar -> {
       if (ar.succeeded()) {
-        deployments.put(deploymentID, deployment);
+        deployments.put(deploymentID, context);
         if (parent != null) {
-          if (parent.addChild(deployment)) {
-            deployment.child = true;
+          if (parent.addChild(context)) {
+            context.child = true;
           } else {
             // Orphan
-            deployment
-              .doUndeploy(vertx.getOrCreateContext())
+            context
+              .undeploy(vertx.getOrCreateContext())
               .onComplete(ar2 -> {
                 result.fail("Deployment failed.Could not be added as child of parent deployment");
             });
             return;
           }
         }
+        boolean removedFromDeploying;
         synchronized (deploying) {
-          deploying.remove(deploymentID);
+          removedFromDeploying = (deploying.remove(deploymentID) != null);
         }
-        result.complete(deployment);
+        assert removedFromDeploying;
+        result.complete(context);
       } else {
-        deployment
+        context
           .rollback(callingContext)
           .onComplete(ar2 -> result.fail(ar.cause()));
       }
@@ -143,28 +138,23 @@ public class DefaultDeploymentManager implements DeploymentManager {
     return result.future();
   }
 
-  private class DeploymentImpl implements Deployment {
+  private class DeploymentContextImpl implements DeploymentContext {
 
     private static final int ST_DEPLOYED = 0, ST_UNDEPLOYING = 1, ST_UNDEPLOYED = 2;
 
-    private final Deployable deployable;
-    private final Deployment parent;
+    private final Deployment deployment;
+    private final DeploymentContext parent;
     private final String deploymentID;
-    private final JsonObject conf;
-    private final Set<Deployment> children = ConcurrentHashMap.newKeySet();
-    private final DeploymentOptions options;
+    private final Set<DeploymentContext> children = ConcurrentHashMap.newKeySet();
     private int status = ST_DEPLOYED;
     private volatile boolean child;
 
-    private DeploymentImpl(Deployable deployable,
-                           Deployment parent,
-                           String deploymentID,
-                           DeploymentOptions options) {
-      this.deployable = deployable;
+    private DeploymentContextImpl(Deployment deployment,
+                                  DeploymentContext parent,
+                                  String deploymentID) {
+      this.deployment = deployment;
       this.parent = parent;
       this.deploymentID = deploymentID;
-      this.conf = options.getConfig() != null ? options.getConfig().copy() : new JsonObject();
-      this.options = options;
     }
 
     private synchronized Future<?> rollback(ContextInternal callingContext) {
@@ -172,13 +162,13 @@ public class DefaultDeploymentManager implements DeploymentManager {
         status = ST_UNDEPLOYING;
         return doUndeployChildren(callingContext)
           .transform(childrenResult -> {
-            synchronized (DeploymentImpl.this) {
+            synchronized (DeploymentContextImpl.this) {
               status = ST_UNDEPLOYED;
             }
             if (childrenResult.failed()) {
               return (Future)childrenResult;
             } else {
-              return deployable.cleanup();
+              return deployment.cleanup();
             }
           });
       } else {
@@ -189,9 +179,9 @@ public class DefaultDeploymentManager implements DeploymentManager {
     private synchronized Future<?> doUndeployChildren(ContextInternal undeployingContext) {
       if (!children.isEmpty()) {
         List<Future<?>> childFuts = new ArrayList<>();
-        for (Deployment childDeployment: new HashSet<>(children)) {
+        for (DeploymentContext childDeployment: new HashSet<>(children)) {
           childFuts.add(childDeployment
-            .doUndeploy(undeployingContext)
+            .undeploy(undeployingContext)
             .andThen(ar -> children.remove(childDeployment)));
         }
         return Future.all(childFuts);
@@ -200,23 +190,23 @@ public class DefaultDeploymentManager implements DeploymentManager {
       }
     }
 
-    public synchronized Future<Void> doUndeploy(ContextInternal undeployingContext) {
+    public synchronized Future<Void> undeploy(ContextInternal undeployingContext) {
       if (status == ST_UNDEPLOYED) {
         return undeployingContext.failedFuture(new IllegalStateException("Already undeployed"));
       }
       if (!children.isEmpty()) {
         status = ST_UNDEPLOYING;
         return doUndeployChildren(undeployingContext)
-          .compose(v -> doUndeploy(undeployingContext));
+          .compose(v -> undeploy(undeployingContext));
       } else {
         status = ST_UNDEPLOYED;
         if (parent != null) {
           parent.removeChild(this);
         }
-        Future<?> undeployFutures = deployable
+        Future<?> undeployFutures = deployment
           .undeploy()
           .andThen(ar -> deployments.remove(deploymentID))
-          .eventually(deployable::cleanup);
+          .eventually(deployment::cleanup);
         return undeployingContext.future(p -> {
           undeployFutures.onComplete(ar -> {
             if (ar.succeeded()) {
@@ -230,22 +220,7 @@ public class DefaultDeploymentManager implements DeploymentManager {
     }
 
     @Override
-    public String identifier() {
-      return deployable.identifier();
-    }
-
-    @Override
-    public DeploymentOptions deploymentOptions() {
-      return options;
-    }
-
-    @Override
-    public JsonObject config() {
-      return conf;
-    }
-
-    @Override
-    public synchronized boolean addChild(Deployment deployment) {
+    public synchronized boolean addChild(DeploymentContext deployment) {
       if (status == ST_DEPLOYED) {
         children.add(deployment);
         return true;
@@ -255,13 +230,13 @@ public class DefaultDeploymentManager implements DeploymentManager {
     }
 
     @Override
-    public void removeChild(Deployment deployment) {
-      children.remove(deployment);
+    public boolean removeChild(DeploymentContext deployment) {
+      return children.remove(deployment);
     }
 
     @Override
-    public Deployable deployable() {
-      return deployable;
+    public Deployment deployment() {
+      return deployment;
     }
 
     @Override

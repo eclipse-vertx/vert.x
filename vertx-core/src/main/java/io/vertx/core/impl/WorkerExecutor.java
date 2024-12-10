@@ -10,17 +10,14 @@
  */
 package io.vertx.core.impl;
 
+import io.vertx.core.Future;
 import io.vertx.core.ThreadingModel;
-import io.vertx.core.Vertx;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.EventExecutor;
 import io.vertx.core.spi.metrics.PoolMetrics;
 
-import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 
 /**
  * Execute events on a worker pool.
@@ -46,10 +43,10 @@ public class WorkerExecutor implements EventExecutor {
   }
 
   private final WorkerPool workerPool;
-  private final TaskQueue orderedTasks;
+  private final WorkerTaskQueue orderedTasks;
   private final ThreadLocal<Boolean> inThread = new ThreadLocal<>();
 
-  public WorkerExecutor(WorkerPool workerPool, TaskQueue orderedTasks) {
+  public WorkerExecutor(WorkerPool workerPool, WorkerTaskQueue orderedTasks) {
     this.workerPool = workerPool;
     this.orderedTasks = orderedTasks;
   }
@@ -63,39 +60,44 @@ public class WorkerExecutor implements EventExecutor {
   public void execute(Runnable command) {
     PoolMetrics metrics = workerPool.metrics();
     Object queueMetric = metrics != null ? metrics.enqueue() : null;
-    orderedTasks.execute(() -> {
-      Object execMetric = null;
-      if (metrics != null) {
-        metrics.dequeue(queueMetric);
-        execMetric = metrics.begin();
-      }
-      try {
+    // Todo : collapse WorkerTask with context submitted task object
+    WorkerTask task = new WorkerTask(metrics, queueMetric) {
+      @Override
+      protected void execute() {
         inThread.set(true);
         try {
           command.run();
         } finally {
           inThread.remove();
         }
-      } finally {
-        if (metrics != null) {
-          metrics.end(execMetric);
-        }
       }
-    }, workerPool.executor());
+    };
+    orderedTasks.execute(task, workerPool.executor());
+  }
+
+  WorkerTaskQueue taskQueue() {
+    return orderedTasks;
   }
 
   /**
-   * See {@link TaskQueue#current()}.
+   * Suspend the current task execution until the task is resumed, the next task in the queue will be executed
+   * when there is one.
+   *
+   * <p>The {@code resumeAcceptor} argument is passed the continuation to resume the current task, this acceptor
+   * is guaranteed to be called before the task is actually suspended so the task can be eagerly resumed and avoid
+   * suspending the current task.
+   *
+   * @return the latch to wait for until the current task can resume
    */
-  public TaskController current() {
-    return orderedTasks.current();
+  public CountDownLatch suspend(Consumer<Continuation> resumeAcceptor) {
+    return orderedTasks.suspend(resumeAcceptor);
   }
 
-  public interface TaskController {
+  public interface Continuation {
 
     /**
      * Resume the task, the {@code callback} will be executed when the task is resumed, before the task thread
-     * is unparked.
+     * is un-parked.
      *
      * @param callback called when the task is resumed
      */
@@ -107,24 +109,5 @@ public class WorkerExecutor implements EventExecutor {
     default void resume() {
       resume(() -> {});
     }
-
-    /**
-     * Suspend the task execution and park the current thread until the task is resumed.
-     * The next task in the queue will be executed, when there is one.
-     *
-     * <p>When the task wants to be resumed, it should call {@link #resume}, this will be executed immediately if there
-     * is no other tasks being executed, otherwise it will be added first in the queue.
-     */
-    default void suspendAndAwaitResume() throws InterruptedException {
-      suspend().await();
-    }
-
-    /**
-     * Like {@link #suspendAndAwaitResume()} but does not await the task to be resumed.
-     *
-     * @return the latch to await
-     */
-    CountDownLatch suspend();
-
   }
 }

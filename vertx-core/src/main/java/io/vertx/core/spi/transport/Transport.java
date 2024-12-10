@@ -17,17 +17,12 @@ import io.netty.channel.*;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
 import io.vertx.core.datagram.DatagramSocketOptions;
+import io.vertx.core.impl.transports.NioTransport;
 import io.vertx.core.net.ClientOptionsBase;
 import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.SocketAddressImpl;
-import io.vertx.core.impl.transports.JDKTransport;
 
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.NetworkInterface;
-import java.net.SocketAddress;
-import java.net.SocketException;
+import java.net.*;
 import java.util.concurrent.ThreadFactory;
 
 /**
@@ -65,7 +60,7 @@ public interface Transport {
 
   default SocketAddress convert(io.vertx.core.net.SocketAddress address) {
     if (address.isDomainSocket()) {
-      throw new IllegalArgumentException("Domain socket are not supported by JDK transport, you need to use native transport to use them");
+      throw new IllegalArgumentException("Domain sockets require JDK 16 and above, or the usage of a native transport");
     } else {
       InetAddress ip = ((SocketAddressImpl) address).ipAddress();
       if (ip != null) {
@@ -84,6 +79,8 @@ public interface Transport {
     }
   }
 
+  IoHandlerFactory ioHandlerFactory();
+
   /**
    * @param type one of {@link #ACCEPTOR_EVENT_LOOP_GROUP} or {@link #IO_EVENT_LOOP_GROUP}.
    * @param nThreads the number of threads that will be used by this instance.
@@ -92,7 +89,9 @@ public interface Transport {
    *
    * @return a new event loop group
    */
-  EventLoopGroup eventLoopGroup(int type, int nThreads, ThreadFactory threadFactory, int ioRatio);
+  default EventLoopGroup eventLoopGroup(int type, int nThreads, ThreadFactory threadFactory, int ioRatio) {
+    return new MultiThreadIoEventLoopGroup(nThreads, threadFactory, ioHandlerFactory());
+  }
 
   /**
    * @return a new datagram channel
@@ -117,7 +116,6 @@ public interface Transport {
   ChannelFactory<? extends ServerChannel> serverChannelFactory(boolean domainSocket);
 
   default void configure(DatagramChannel channel, DatagramSocketOptions options) {
-    channel.config().setAllocator(PartialPooledByteBufAllocator.INSTANCE);
     if (options.getSendBufferSize() != -1) {
       channel.config().setSendBufferSize(options.getSendBufferSize());
     }
@@ -130,7 +128,7 @@ public interface Transport {
       channel.config().setTrafficClass(options.getTrafficClass());
     }
     channel.config().setBroadcast(options.isBroadcast());
-    if (this instanceof JDKTransport) {
+    if (this instanceof NioTransport) {
       channel.config().setLoopbackModeDisabled(options.isLoopbackModeDisabled());
       if (options.getMulticastTimeToLive() != -1) {
         channel.config().setTimeToLive(options.getMulticastTimeToLive());
@@ -171,8 +169,8 @@ public interface Transport {
   }
 
   default void configure(NetServerOptions options, boolean domainSocket, ServerBootstrap bootstrap) {
-    bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
     if (!domainSocket) {
+      bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
       bootstrap.childOption(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
       bootstrap.childOption(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
     }

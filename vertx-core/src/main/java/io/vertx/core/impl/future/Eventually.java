@@ -10,9 +10,9 @@
  */
 package io.vertx.core.impl.future;
 
+import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.FutureInternal;
 
 import java.util.function.Supplier;
 
@@ -21,7 +21,7 @@ import java.util.function.Supplier;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class Eventually<T, U> extends Operation<T> implements Listener<T> {
+class Eventually<T, U> extends Operation<T> implements Completable<T> {
 
   private final Supplier<Future<U>> supplier;
 
@@ -31,44 +31,14 @@ class Eventually<T, U> extends Operation<T> implements Listener<T> {
   }
 
   @Override
-  public void onSuccess(T value) {
+  public void complete(T result, Throwable failure) {
     FutureBase<U> future;
     try {
       future = (FutureBase<U>) supplier.get();
     } catch (Throwable e) {
-      tryFail(e);
+      handleInternal(null, failure);
       return;
     }
-    future.addListener(new Listener<U>() {
-      @Override
-      public void onSuccess(U ignore) {
-        tryComplete(value);
-      }
-      @Override
-      public void onFailure(Throwable ignore) {
-        tryComplete(value);
-      }
-    });
-  }
-
-  @Override
-  public void onFailure(Throwable failure) {
-    FutureBase<U> future;
-    try {
-      future = (FutureBase<U>) supplier.get();
-    } catch (Throwable e) {
-      tryFail(e);
-      return;
-    }
-    future.addListener(new Listener<U>() {
-      @Override
-      public void onSuccess(U ignore) {
-        tryFail(failure);
-      }
-      @Override
-      public void onFailure(Throwable ignore) {
-        tryFail(failure);
-      }
-    });
+    future.addListener((ignore, err1) -> handleInternal(result, failure));
   }
 }

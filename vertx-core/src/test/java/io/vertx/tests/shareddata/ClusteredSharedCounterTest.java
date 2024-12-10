@@ -19,21 +19,36 @@ import io.vertx.core.Vertx;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class ClusteredSharedCounterTest extends SharedCounterTest {
+
+  protected final int numNodes = 3;
+  AtomicInteger pos = new AtomicInteger();
+
+  public void setUp() throws Exception {
+    super.setUp();
+    startNodes(numNodes);
+  }
 
   @Override
   protected ClusterManager getClusterManager() {
     return new FakeClusterManager();
   }
 
-  protected final int numNodes = 2;
+  @Override
+  protected Vertx getVertx() {
+    int i = pos.incrementAndGet();
+    i = mod(i, numNodes);
+    return vertices[i];
+  }
 
-  public void setUp() throws Exception {
-    super.setUp();
-    startNodes(numNodes);
+  private int mod(int idx, int size) {
+    int i = idx % size;
+    return i < 0 ? i + size : i;
   }
 
   @Test
@@ -56,16 +71,5 @@ public class ClusteredSharedCounterTest extends SharedCounterTest {
     }));
     await();
   }
-
-  int pos;
-  @Override
-  protected Vertx getVertx() {
-    Vertx vertx = vertices[pos];
-    if (++pos == numNodes) {
-      pos = 0;
-    }
-    return vertx;
-  }
-
 
 }

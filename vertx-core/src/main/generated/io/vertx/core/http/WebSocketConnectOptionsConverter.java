@@ -4,7 +4,6 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import java.util.Base64;
 
 /**
  * Converter and mapper for {@link io.vertx.core.http.WebSocketConnectOptions}.
@@ -12,15 +11,12 @@ import java.util.Base64;
  */
 public class WebSocketConnectOptionsConverter {
 
-  private static final Base64.Decoder BASE64_DECODER = Base64.getUrlDecoder();
-  private static final Base64.Encoder BASE64_ENCODER = Base64.getUrlEncoder().withoutPadding();
-
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, WebSocketConnectOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
         case "version":
           if (member.getValue() instanceof String) {
-            obj.setVersion(io.vertx.core.http.WebsocketVersion.valueOf((String)member.getValue()));
+            obj.setVersion(io.vertx.core.http.WebSocketVersion.valueOf((String)member.getValue()));
           }
           break;
         case "subProtocols":

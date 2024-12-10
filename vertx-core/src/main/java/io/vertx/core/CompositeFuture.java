@@ -30,13 +30,13 @@ public interface CompositeFuture extends Future<CompositeFuture> {
   CompositeFuture onComplete(Handler<AsyncResult<CompositeFuture>> handler);
 
   @Override
-  default CompositeFuture onSuccess(Handler<CompositeFuture> handler) {
+  default CompositeFuture onSuccess(Handler<? super CompositeFuture> handler) {
     Future.super.onSuccess(handler);
     return this;
   }
 
   @Override
-  default CompositeFuture onFailure(Handler<Throwable> handler) {
+  default CompositeFuture onFailure(Handler<? super Throwable> handler) {
     Future.super.onFailure(handler);
     return this;
   }

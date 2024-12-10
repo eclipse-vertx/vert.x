@@ -23,11 +23,6 @@ import io.vertx.core.streams.ReadStream;
 import java.util.*;
 
 /*
- * This class is optimised for performance when used on the same event loop it was created on.
- * However it can be used safely from other threads.
- *
- * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
- * we benefit from biased locking which makes the overhead of synchronized near zero.
  */
 public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements MessageConsumer<T> {
 

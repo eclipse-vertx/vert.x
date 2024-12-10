@@ -172,6 +172,7 @@ public abstract class InboundReadQueue<E> {
    */
   protected abstract boolean wipCompareAndSet(long expect, long update);
   protected abstract long wipIncrementAndGet();
+  protected abstract long wipDecrementAndGet();
   protected abstract long wipGet();
   protected abstract long wipAddAndGet(long delta);
 
@@ -324,6 +325,11 @@ public abstract class InboundReadQueue<E> {
     }
 
     @Override
+    protected long wipDecrementAndGet() {
+      return --wip;
+    }
+
+    @Override
     protected long wipGet() {
       return wip;
     }
@@ -355,6 +361,11 @@ public abstract class InboundReadQueue<E> {
     @Override
     protected long wipIncrementAndGet() {
       return WIP_UPDATER.incrementAndGet(this);
+    }
+
+    @Override
+    protected long wipDecrementAndGet() {
+      return WIP_UPDATER.decrementAndGet(this);
     }
 
     @Override

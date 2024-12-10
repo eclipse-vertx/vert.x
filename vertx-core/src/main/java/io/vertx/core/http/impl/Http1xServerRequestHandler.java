@@ -13,6 +13,7 @@ package io.vertx.core.http.impl;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
+import io.vertx.core.http.ServerWebSocketHandshake;
 
 import static io.vertx.core.http.HttpHeaders.UPGRADE;
 import static io.vertx.core.http.HttpHeaders.WEBSOCKET;
@@ -37,19 +38,23 @@ public class Http1xServerRequestHandler implements Handler<HttpServerRequest> {
 
   @Override
   public void handle(HttpServerRequest req) {
-    Handler<ServerWebSocket> wsHandler = handlers.wsHandler;
+    Handler<ServerWebSocket> wsHandler = handlers.webSocketHandler;
+    Handler<ServerWebSocketHandshake> wsHandshakeHandler = handlers.webSocketHandshakeHandler;
     Handler<HttpServerRequest> reqHandler = handlers.requestHandler;
-    if (wsHandler != null ) {
+    if (wsHandler != null || wsHandshakeHandler != null) {
       if (req.headers().contains(UPGRADE, WEBSOCKET, true) && handlers.server.wsAccept()) {
         // Missing upgrade header + null request handler will be handled when creating the handshake by sending a 400 error
-        // handle((Http1xServerRequest) req, wsHandler);
-        ((Http1xServerRequest)req).webSocket().onComplete(ar -> {
+        ((Http1xServerRequest)req).webSocketHandshake().onComplete(ar -> {
           if (ar.succeeded()) {
-            ServerWebSocketHandshaker ws = (ServerWebSocketHandshaker) ar.result();
-            wsHandler.handle(ws);
-            ws.tryAccept();
-          } else {
-            // ????
+            ServerWebSocketHandshaker handshake = (ServerWebSocketHandshaker) ar.result();
+            if (wsHandshakeHandler == null) {
+              handshake.accept();
+            } else {
+              wsHandshakeHandler.handle(handshake);
+            }
+            if (wsHandler != null) {
+              handshake.onSuccess(wsHandler);
+            }
           }
         });
       } else {

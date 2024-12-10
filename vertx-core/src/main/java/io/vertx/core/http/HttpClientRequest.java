@@ -437,7 +437,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    *
    * @see #reset(long)
    */
-  default boolean reset() {
+  default Future<Void> reset() {
     return reset(0L);
   }
 
@@ -455,7 +455,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    * @param code the error code
    * @return {@code true} when reset has been performed
    */
-  boolean reset(long code);
+  Future<Void> reset(long code);
 
   /**
    * Reset this request:
@@ -472,7 +472,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    * @param cause an optional cause that can be attached to the error code
    * @return true when reset has been performed
    */
-  boolean reset(long code, Throwable cause);
+  Future<Void> reset(long code, Throwable cause);
 
   /**
    * @return the {@link HttpConnection} associated with this request

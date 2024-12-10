@@ -14,9 +14,10 @@ package io.vertx.tests.eventbus;
 import io.vertx.core.*;
 import io.vertx.core.eventbus.*;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.spi.cluster.RegistrationListener;
 import io.vertx.tests.shareddata.AsyncMapTest.SomeClusterSerializableObject;
 import io.vertx.tests.shareddata.AsyncMapTest.SomeSerializableObject;
-import io.vertx.core.spi.cluster.NodeSelector;
+import io.vertx.core.spi.cluster.impl.NodeSelector;
 import io.vertx.core.spi.cluster.RegistrationUpdateEvent;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.tls.Cert;
@@ -44,7 +45,7 @@ import java.util.stream.Stream;
 public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
 
   @Test
-  public void testLocalHandlerNotVisibleRemotely() throws Exception {
+  public void testLocalHandlerNotVisibleRemotely() {
     startNodes(2);
     vertices[1].eventBus().localConsumer(ADDRESS1).handler(msg -> {
       fail("Should not receive message");
@@ -395,21 +396,15 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     CountDownLatch updateLatch = new CountDownLatch(3);
     startNodes(2, () -> new WrappedClusterManager(getClusterManager()) {
       @Override
-      public void init(Vertx vertx, NodeSelector nodeSelector) {
-        super.init(vertx, new WrappedNodeSelector(nodeSelector) {
-          @Override
-          public void registrationsUpdated(RegistrationUpdateEvent event) {
-            super.registrationsUpdated(event);
-            if (event.address().equals(ADDRESS1) && event.registrations().size() == 1) {
-              updateLatch.countDown();
-            }
-          }
-
-          @Override
-          public boolean wantsUpdatesFor(String address) {
-            return true;
-          }
-        });
+      public void registrationsUpdated(RegistrationUpdateEvent event) {
+        super.registrationsUpdated(event);
+        if (event.address().equals(ADDRESS1) && event.registrations().size() == 1) {
+          updateLatch.countDown();
+        }
+      }
+      @Override
+      public boolean wantsUpdatesFor(String address) {
+        return true;
       }
     });
     waitFor(2);
@@ -485,17 +480,10 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
 
   @Test
   public void testSelectorWantsUpdates() {
-    AtomicReference<NodeSelector> nodeSelectorRef = new AtomicReference<>();
-    startNodes(1, () -> new WrappedClusterManager(getClusterManager()) {
-      @Override
-      public void init(Vertx vertx, NodeSelector nodeSelector) {
-        nodeSelectorRef.set(nodeSelector);
-        super.init(vertx, nodeSelector);
-      }
-    });
-    assertNotNull(nodeSelectorRef.get());
+    WrappedClusterManager wrapped = new WrappedClusterManager(getClusterManager());
+    startNodes(1, () -> wrapped);
     vertices[0].eventBus().consumer(ADDRESS1, msg -> {
-      assertTrue(nodeSelectorRef.get().wantsUpdatesFor(ADDRESS1));
+      assertTrue(wrapped.wantsUpdatesFor(ADDRESS1));
       testComplete();
     }).completion().onComplete(onSuccess(v -> vertices[0].eventBus().send(ADDRESS1, "foo")));
     await();
@@ -503,16 +491,9 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
 
   @Test
   public void testSelectorDoesNotWantUpdates() {
-    AtomicReference<NodeSelector> nodeSelectorRef = new AtomicReference<>();
-    startNodes(1, () -> new WrappedClusterManager(getClusterManager()) {
-      @Override
-      public void init(Vertx vertx, NodeSelector nodeSelector) {
-        nodeSelectorRef.set(nodeSelector);
-        super.init(vertx, nodeSelector);
-      }
-    });
-    assertNotNull(nodeSelectorRef.get());
-    assertFalse(nodeSelectorRef.get().wantsUpdatesFor(ADDRESS1));
+    WrappedClusterManager wrapped = new WrappedClusterManager(getClusterManager());
+    startNodes(1, () -> wrapped);
+    assertFalse(wrapped.wantsUpdatesFor(ADDRESS1));
   }
 
   @Test

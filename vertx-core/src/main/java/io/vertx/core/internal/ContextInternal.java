@@ -15,7 +15,7 @@ import io.netty.channel.EventLoop;
 import io.vertx.core.*;
 import io.vertx.core.Future;
 import io.vertx.core.impl.*;
-import io.vertx.core.impl.deployment.Deployment;
+import io.vertx.core.impl.deployment.DeploymentContext;
 import io.vertx.core.impl.future.FailedFuture;
 import io.vertx.core.impl.future.PromiseImpl;
 import io.vertx.core.impl.future.SucceededFuture;
@@ -54,6 +54,11 @@ public interface ContextInternal extends Context {
    * @return an event executor that schedule a task on this context, the thread executing the task will not be associated with this context
    */
   EventExecutor executor();
+
+  /**
+   * @return the event loop executor of this context
+   */
+  EventExecutor eventLoop();
 
   /**
    * Return the Netty EventLoop used by this Context. This can be used to integrate
@@ -133,14 +138,6 @@ public interface ContextInternal extends Context {
   }
 
   /**
-   * Like {@link #executeBlocking(Callable, boolean)} but uses the {@code queue} to order the tasks instead
-   * of the internal queue of this context.
-   */
-  default <T> Future<T> executeBlocking(Callable<T> blockingCodeHandler, TaskQueue queue) {
-    return workerPool().executeBlocking(this, blockingCodeHandler, queue);
-  }
-
-  /**
    * Execute an internal task on the internal blocking ordered executor.
    */
   default <T> Future<T> executeBlockingInternal(Callable<T> action) {
@@ -150,7 +147,7 @@ public interface ContextInternal extends Context {
   /**
    * @return the deployment associated with this context or {@code null}
    */
-  Deployment getDeployment();
+  DeploymentContext deployment();
 
   @Override
   VertxInternal owner();
@@ -471,30 +468,30 @@ public interface ContextInternal extends Context {
    * @return {@code true} when the context is associated with a deployment
    */
   default boolean isDeployment() {
-    return getDeployment() != null;
+    return deployment() != null;
   }
 
   default String deploymentID() {
-    Deployment deployment = getDeployment();
+    DeploymentContext deployment = deployment();
     return deployment != null ? deployment.deploymentID() : null;
   }
 
   default int getInstanceCount() {
-    Deployment deployment = getDeployment();
-
-    // the no verticle case
+    DeploymentContext deployment = deployment();
     if (deployment == null) {
       return 0;
     }
-
-    // the single verticle without an instance flag explicitly defined
-    if (deployment.deploymentOptions() == null) {
-      return 1;
-    }
-    return deployment.deploymentOptions().getInstances();
+    return deployment.deployment().options().getInstances();
   }
 
   CloseFuture closeFuture();
+
+  /**
+   * Close this context, cleanup close future hooks then dispose pending ordered task queue.
+   *
+   * @return a future signalling close completion
+   */
+  Future<Void> close();
 
   /**
    * Add a close hook.

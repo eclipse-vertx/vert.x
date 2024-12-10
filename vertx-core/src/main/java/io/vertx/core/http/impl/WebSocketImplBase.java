@@ -33,12 +33,14 @@ import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
+import io.vertx.core.internal.http.WebSocketInternal;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.internal.concurrent.InboundMessageQueue;
 import io.vertx.core.net.impl.VertxConnection;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
+import java.nio.charset.StandardCharsets;
 import java.security.cert.Certificate;
 import java.util.List;
 import java.util.UUID;
@@ -47,11 +49,6 @@ import java.util.concurrent.TimeUnit;
 import static io.vertx.core.net.impl.VertxHandler.*;
 
 /**
- * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
- * <p>
- * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
- * we benefit from biased locking which makes the overhead of synchronized near zero.
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @param <S> self return type
  */
@@ -102,7 +99,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
     this.context = context;
     this.maxWebSocketFrameSize = maxWebSocketFrameSize;
     this.maxWebSocketMessageSize = maxWebSocketMessageSize;
-    this.pending = new InboundMessageQueue<>(context.nettyEventLoop(), context) {
+    this.pending = new InboundMessageQueue<>(context.eventLoop(), context.executor()) {
       @Override
       protected void handleResume() {
         conn.doResume();
@@ -243,7 +240,13 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
 
   @Override
   public Future<Void> writeTextMessage(String text) {
-    return writePartialMessage(WebSocketFrameType.TEXT, Buffer.buffer(text), 0);
+    byte[] utf8Bytes = text.getBytes(StandardCharsets.UTF_8);
+    boolean isFinal = utf8Bytes.length <= maxWebSocketFrameSize;
+    if (isFinal) {
+      return writeFrame(new WebSocketFrameImpl(WebSocketFrameType.TEXT, utf8Bytes, true));
+    }
+    // we could save to copy the byte[] if the unsafe heap version of Netty ByteBuf could expose wrapping byte[] directly
+    return writePartialMessage(WebSocketFrameType.TEXT, Buffer.buffer(utf8Bytes), 0);
   }
 
   @Override

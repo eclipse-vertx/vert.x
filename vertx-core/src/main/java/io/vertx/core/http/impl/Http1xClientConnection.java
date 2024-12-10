@@ -33,6 +33,7 @@ import io.netty.util.concurrent.FutureListener;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.WebSocketVersion;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
@@ -61,12 +62,6 @@ import static io.netty.handler.codec.http.websocketx.WebSocketVersion.*;
 import static io.vertx.core.http.HttpHeaders.*;
 
 /**
- *
- * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
- *
- * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
- * we benefit from biased locking which makes the overhead of synchronized near zero.
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class Http1xClientConnection extends Http1xConnection implements HttpClientConnectionInternal {
@@ -216,7 +211,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
 
   static CharSequence determineCompressionAcceptEncoding() {
     if (isBrotliAvailable() && isZstdAvailable()) {
-      return DEFLATE_GZIP_ZSTD_BR;
+      return DEFLATE_GZIP_ZSTD_BR_SNAPPY;
     }
     else if (!isBrotliAvailable() && isZstdAvailable()) {
       return DEFLATE_GZIP_ZSTD;
@@ -322,27 +317,33 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
    * @param stream to reset
    * @return whether the stream should be considered as closed
    */
-  private boolean reset(Stream stream) {
-    synchronized (this) {
-      if (!responses.contains(stream)) {
-        requests.remove(stream);
-        return true;
-      }
+  private Boolean reset(Stream stream) {
+    if (stream.reset) {
+      return null;
+    }
+    stream.reset = true;
+    if (!responses.contains(stream)) {
+      requests.remove(stream);
+      return true;
     }
     close();
     return false;
   }
 
-  private void writeHead(Stream stream, HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, PromiseInternal<Void> handler) {
+  private void writeHead(Stream stream, HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, PromiseInternal<Void> listener) {
     writeToChannel(new MessageWrite() {
       @Override
       public void write() {
+        if (stream.reset) {
+          listener.fail("Stream reset");
+          return;
+        }
         stream.request = request;
-        beginRequest(stream, request, chunked, buf, end, connect, handler);
+        beginRequest(stream, request, chunked, buf, end, connect, listener);
       }
       @Override
       public void cancel(Throwable cause) {
-        handler.fail(cause);
+        listener.fail(cause);
       }
     });
   }
@@ -351,6 +352,10 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     writeToChannel(new MessageWrite() {
       @Override
       public void write() {
+        if (stream.reset) {
+          listener.fail("Stream reset");
+          return;
+        }
         writeBuffer(stream, buff, end, (FutureListener<Void>)listener);
       }
 
@@ -375,7 +380,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     private boolean responseEnded;
     private long bytesRead;
     private long bytesWritten;
-
+    private boolean reset;
 
     Stream(ContextInternal context, Promise<HttpClientStream> promise, int id) {
       this.context = context;
@@ -411,7 +416,6 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
 
     private final Http1xClientConnection conn;
     private final InboundMessageQueue<Object> queue;
-    private boolean reset;
     private boolean closed;
     private Handler<HttpResponseHead> headHandler;
     private Handler<Buffer> chunkHandler;
@@ -427,7 +431,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
       super(context, promise, id);
 
       this.conn = conn;
-      this.queue = new InboundMessageQueue<>(conn.context.nettyEventLoop(), context) {
+      this.queue = new InboundMessageQueue<>(conn.context.eventLoop(), context.executor()) {
         @Override
         protected void handleResume() {
           conn.doResume();
@@ -438,18 +442,16 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
         }
         @Override
         protected void handleMessage(Object item) {
-          if (!reset) {
-            if (item instanceof MultiMap) {
-              Handler<MultiMap> handler = endHandler;
-              if (handler != null) {
-                context.dispatch((MultiMap) item, handler);
-              }
-            } else {
-              Buffer buffer = (Buffer) item;
-              Handler<Buffer> handler = chunkHandler;
-              if (handler != null) {
-                context.dispatch(buffer, handler);
-              }
+          if (item instanceof MultiMap) {
+            Handler<MultiMap> handler = endHandler;
+            if (handler != null) {
+              context.dispatch((MultiMap) item, handler);
+            }
+          } else {
+            Buffer buffer = (Buffer) item;
+            Handler<Buffer> handler = chunkHandler;
+            if (handler != null) {
+              context.dispatch(buffer, handler);
             }
           }
         }
@@ -587,28 +589,28 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
 
     @Override
-    public void reset(Throwable cause) {
-      synchronized (conn) {
-        if (reset) {
-          return;
-        }
-        reset = true;
-      }
+    public Future<Void> reset(Throwable cause) {
+      Promise<Void> promise = context.promise();
       EventLoop eventLoop = conn.context.nettyEventLoop();
       if (eventLoop.inEventLoop()) {
-        _reset(cause);
+        reset(cause, promise);
       } else {
-        eventLoop.execute(() -> _reset(cause));
+        eventLoop.execute(() -> reset(cause, promise));
       }
+      return promise.future();
     }
 
-    private void _reset(Throwable cause) {
-      boolean removed = conn.reset(this);
-      if (removed) {
-        context.execute(cause, this::handleClosed);
+    private void reset(Throwable cause, Promise<Void> promise) {
+      Boolean removed = conn.reset(this);
+      if (removed == null) {
+        promise.fail("Stream already reset");
       } else {
-        context.execute(cause, this::handleException);
-      }
+        if (removed) {
+          context.execute(cause, this::handleClosed);
+        } else {
+          context.execute(cause, this::handleException);
+        }
+        promise.complete();      }
     }
 
     @Override
@@ -858,10 +860,12 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
   }
 
   private void handleResponseChunk(Stream stream, ByteBuf chunk) {
-    Buffer buff = BufferInternal.buffer(VertxHandler.safeBuffer(chunk));
+    Buffer buff = BufferInternal.safeBuffer(chunk);
     int len = buff.length();
     stream.bytesRead += len;
-    stream.handleChunk(buff);
+    if (!stream.reset) {
+      stream.handleChunk(buff);
+    }
   }
 
   private void handleResponseEnd(Stream stream, LastHttpContent trailer) {
@@ -913,7 +917,9 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
       checkLifecycle();
     }
     lastResponseReceivedTimestamp = System.currentTimeMillis();
-    stream.handleEnd(trailer);
+    if (!stream.reset) {
+      stream.handleEnd(trailer);
+    }
     if (stream.requestEnded) {
       stream.handleClosed(null);
     }
@@ -932,7 +938,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     MultiMap headers,
     boolean allowOriginHeader,
     WebSocketClientOptions options,
-    WebsocketVersion vers,
+    WebSocketVersion vers,
     List<String> subProtocols,
     long handshakeTimeout,
     boolean registerWriteHandlers,
@@ -944,9 +950,9 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
         // Netty requires an absolute url
         wsuri = new URI((ssl ? "https:" : "http:") + "//" + server.host() + ":" + server.port() + requestURI);
       }
-      WebSocketVersion version =
-         WebSocketVersion.valueOf((vers == null ?
-           WebSocketVersion.V13 : vers).toString());
+      io.netty.handler.codec.http.websocketx.WebSocketVersion version =
+         io.netty.handler.codec.http.websocketx.WebSocketVersion.valueOf((vers == null ?
+           io.netty.handler.codec.http.websocketx.WebSocketVersion.V13 : vers).toString());
       HttpHeaders nettyHeaders;
       if (headers != null) {
         nettyHeaders = new DefaultHttpHeaders();
@@ -994,8 +1000,8 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
         }
         if (future.isSuccess()) {
 
-          VertxHandler<WebSocketConnection> handler = VertxHandler.create(ctx -> {
-            WebSocketConnection conn = new WebSocketConnection(context, ctx, false, TimeUnit.SECONDS.toMillis(options.getClosingTimeout()), client.metrics());
+          VertxHandler<WebSocketConnectionImpl> handler = VertxHandler.create(ctx -> {
+            WebSocketConnectionImpl conn = new WebSocketConnectionImpl(context, ctx, false, TimeUnit.SECONDS.toMillis(options.getClosingTimeout()), client.metrics());
             WebSocketImpl webSocket = new WebSocketImpl(
               context,
               conn,
@@ -1041,7 +1047,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
   }
 
   static WebSocketClientHandshaker newHandshaker(
-    URI webSocketURL, WebSocketVersion version, String subprotocol,
+    URI webSocketURL, io.netty.handler.codec.http.websocketx.WebSocketVersion version, String subprotocol,
     boolean allowExtensions, boolean allowOriginHeader, HttpHeaders customHeaders, int maxFramePayloadLength,
     boolean performMasking) {
     WebSocketDecoderConfig config = WebSocketDecoderConfig.newBuilder()

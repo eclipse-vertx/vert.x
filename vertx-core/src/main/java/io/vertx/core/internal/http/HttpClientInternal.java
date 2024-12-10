@@ -18,6 +18,8 @@ import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.spi.metrics.MetricsProvider;
 
+import java.util.function.Function;
+
 /**
  * Http client internal API.
  */
@@ -27,6 +29,8 @@ public interface HttpClientInternal extends HttpClientAgent, MetricsProvider, Cl
    * @return the vertx, for use in package related classes only.
    */
   VertxInternal vertx();
+
+  Function<HttpClientResponse, Future<RequestOptions>> redirectHandler();
 
   HttpClientOptions options();
 

@@ -550,7 +550,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
           complete();
         }));
       }
-    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER));
+    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER)).await();
 
     // Inside executeBlocking
     vertices[0].executeBlocking(() -> {

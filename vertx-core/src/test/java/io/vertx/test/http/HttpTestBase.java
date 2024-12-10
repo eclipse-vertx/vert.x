@@ -15,6 +15,7 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.*;
+import io.vertx.core.impl.transports.TransportInternal;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.test.core.TestUtils;
@@ -74,7 +75,7 @@ public class HttpTestBase extends VertxTestBase {
    */
   protected void configureDomainSockets() throws Exception {
     if (USE_DOMAIN_SOCKETS) {
-      assertTrue("Native transport not enabled", USE_NATIVE_TRANSPORT);
+      assertTrue("Native transport not enabled", TRANSPORT.implementation().supportsDomainSockets());
       tmp = TestUtils.tmpFile(".sock");
       testAddress = SocketAddress.domainSocketAddress(tmp.getAbsolutePath());
       requestOptions.setServer(testAddress);

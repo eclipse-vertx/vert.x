@@ -31,6 +31,7 @@ import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.net.RFC3986;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.impl.HostAndPortImpl;
 import io.vertx.core.spi.tracing.TagExtractor;
@@ -39,6 +40,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
@@ -67,27 +70,29 @@ public final class HttpUtils {
   static final int SC_SWITCHING_PROTOCOLS = 101;
   static final int SC_BAD_GATEWAY = 502;
 
-  static final TagExtractor<HttpServerRequest> SERVER_REQUEST_TAG_EXTRACTOR = new TagExtractor<HttpServerRequest>() {
+  static final TagExtractor<HttpServerRequest> SERVER_REQUEST_TAG_EXTRACTOR = new TagExtractor<>() {
     @Override
     public int len(HttpServerRequest req) {
       return req.query() == null ? 4 : 5;
     }
+
     @Override
     public String name(HttpServerRequest req, int index) {
       switch (index) {
         case 0:
           return "http.url";
         case 1:
-          return "http.method";
+          return "http.request.method";
         case 2:
-          return "http.scheme";
+          return "url.scheme";
         case 3:
-          return "http.path";
+          return "url.path";
         case 4:
-          return "http.query";
+          return "url.query";
       }
       throw new IndexOutOfBoundsException("Invalid tag index " + index);
     }
+
     @Override
     public String value(HttpServerRequest req, int index) {
       switch (index) {
@@ -106,42 +111,46 @@ public final class HttpUtils {
     }
   };
 
-  static final TagExtractor<HttpServerResponse> SERVER_RESPONSE_TAG_EXTRACTOR = new TagExtractor<HttpServerResponse>() {
+  static final TagExtractor<HttpServerResponse> SERVER_RESPONSE_TAG_EXTRACTOR = new TagExtractor<>() {
     @Override
     public int len(HttpServerResponse resp) {
       return 1;
     }
+
     @Override
     public String name(HttpServerResponse resp, int index) {
       if (index == 0) {
-        return "http.status_code";
+        return "http.response.status_code";
       }
       throw new IndexOutOfBoundsException("Invalid tag index " + index);
     }
+
     @Override
     public String value(HttpServerResponse resp, int index) {
       if (index == 0) {
-        return "" + resp.getStatusCode();
+        return Integer.toString(resp.getStatusCode());
       }
       throw new IndexOutOfBoundsException("Invalid tag index " + index);
     }
   };
 
-  static final TagExtractor<HttpRequestHead> CLIENT_HTTP_REQUEST_TAG_EXTRACTOR = new TagExtractor<HttpRequestHead>() {
+  static final TagExtractor<HttpRequestHead> CLIENT_HTTP_REQUEST_TAG_EXTRACTOR = new TagExtractor<>() {
     @Override
     public int len(HttpRequestHead req) {
       return 2;
     }
+
     @Override
     public String name(HttpRequestHead req, int index) {
       switch (index) {
         case 0:
-          return "http.url";
+          return "url.full";
         case 1:
-          return "http.method";
+          return "http.request.method";
       }
       throw new IndexOutOfBoundsException("Invalid tag index " + index);
     }
+
     @Override
     public String value(HttpRequestHead req, int index) {
       switch (index) {
@@ -154,22 +163,24 @@ public final class HttpUtils {
     }
   };
 
-  static final TagExtractor<HttpResponseHead> CLIENT_RESPONSE_TAG_EXTRACTOR = new TagExtractor<HttpResponseHead>() {
+  static final TagExtractor<HttpResponseHead> CLIENT_RESPONSE_TAG_EXTRACTOR = new TagExtractor<>() {
     @Override
     public int len(HttpResponseHead resp) {
       return 1;
     }
+
     @Override
     public String name(HttpResponseHead resp, int index) {
       if (index == 0) {
-        return "http.status_code";
+        return "http.response.status_code";
       }
       throw new IndexOutOfBoundsException("Invalid tag index " + index);
     }
+
     @Override
     public String value(HttpResponseHead resp, int index) {
       if (index == 0) {
-        return "" + resp.statusCode;
+        return Integer.toString(resp.statusCode);
       }
       throw new IndexOutOfBoundsException("Invalid tag index " + index);
     }
@@ -196,217 +207,6 @@ public final class HttpUtils {
   private HttpUtils() {
   }
 
-  private static int indexOfSlash(CharSequence str, int start) {
-    for (int i = start; i < str.length(); i++) {
-      if (str.charAt(i) == '/') {
-        return i;
-      }
-    }
-
-    return -1;
-  }
-
-  private static boolean matches(CharSequence path, int start, String what) {
-    return matches(path, start, what, false);
-  }
-
-  private static boolean matches(CharSequence path, int start, String what, boolean exact) {
-    if (exact) {
-      if (path.length() - start != what.length()) {
-        return false;
-      }
-    }
-
-    if (path.length() - start >= what.length()) {
-      for (int i = 0; i < what.length(); i++) {
-        if (path.charAt(start + i) != what.charAt(i)) {
-          return false;
-        }
-      }
-      return true;
-    }
-
-    return false;
-  }
-
-  /**
-   * Normalizes a path as per <a href="http://tools.ietf.org/html/rfc3986#section-5.2.4>rfc3986</a>.
-   *
-   * There are 2 extra transformations that are not part of the spec but kept for backwards compatibility:
-   *
-   * double slash // will be converted to single slash and the path will always start with slash.
-   *
-   * Null paths are not normalized as nothing can be said about them.
-   *
-   * @param pathname raw path
-   * @return normalized path
-   */
-  public static String normalizePath(String pathname) {
-    if (pathname == null) {
-      return null;
-    }
-
-    // add trailing slash if not set
-    if (pathname.isEmpty()) {
-      return "/";
-    }
-
-    int indexOfFirstPercent = pathname.indexOf('%');
-    if (indexOfFirstPercent == -1) {
-      // no need to removeDots nor replace double slashes
-      if (pathname.indexOf('.') == -1 && pathname.indexOf("//") == -1) {
-        if (pathname.charAt(0) == '/') {
-          return pathname;
-        }
-        // See https://bugs.openjdk.org/browse/JDK-8085796
-        return "/" + pathname;
-      }
-    }
-    return normalizePathSlow(pathname, indexOfFirstPercent);
-  }
-
-  private static String normalizePathSlow(String pathname, int indexOfFirstPercent) {
-    final StringBuilder ibuf;
-    // Not standard!!!
-    if (pathname.charAt(0) != '/') {
-      ibuf = new StringBuilder(pathname.length() + 1);
-      ibuf.append('/');
-      if (indexOfFirstPercent != -1) {
-        indexOfFirstPercent++;
-      }
-    } else {
-      ibuf = new StringBuilder(pathname.length());
-    }
-    ibuf.append(pathname);
-    if (indexOfFirstPercent != -1) {
-      decodeUnreservedChars(ibuf, indexOfFirstPercent);
-    }
-    // remove dots as described in
-    // http://tools.ietf.org/html/rfc3986#section-5.2.4
-    return removeDots(ibuf);
-  }
-
-  private static void decodeUnreservedChars(StringBuilder path, int start) {
-    while (start < path.length()) {
-      // decode unreserved chars described in
-      // http://tools.ietf.org/html/rfc3986#section-2.4
-      if (path.charAt(start) == '%') {
-        decodeUnreserved(path, start);
-      }
-
-      start++;
-    }
-  }
-
-  private static void decodeUnreserved(StringBuilder path, int start) {
-    if (start + 3 <= path.length()) {
-      // these are latin chars so there is no danger of falling into some special unicode char that requires more
-      // than 1 byte
-      final String escapeSequence = path.substring(start + 1, start + 3);
-      int unescaped;
-      try {
-        unescaped = Integer.parseInt(escapeSequence, 16);
-        if (unescaped < 0) {
-          throw new IllegalArgumentException("Invalid escape sequence: %" + escapeSequence);
-        }
-      } catch (NumberFormatException e) {
-        throw new IllegalArgumentException("Invalid escape sequence: %" + escapeSequence);
-      }
-      // validate if the octet is within the allowed ranges
-      if (
-        // ALPHA
-        (unescaped >= 0x41 && unescaped <= 0x5A) ||
-          (unescaped >= 0x61 && unescaped <= 0x7A) ||
-          // DIGIT
-          (unescaped >= 0x30 && unescaped <= 0x39) ||
-          // HYPHEN
-          (unescaped == 0x2D) ||
-          // PERIOD
-          (unescaped == 0x2E) ||
-          // UNDERSCORE
-          (unescaped == 0x5F) ||
-          // TILDE
-          (unescaped == 0x7E)) {
-
-        path.setCharAt(start, (char) unescaped);
-        path.delete(start + 1, start + 3);
-      }
-    } else {
-      throw new IllegalArgumentException("Invalid position for escape character: " + start);
-    }
-  }
-
-  /**
-   * Removed dots as per <a href="http://tools.ietf.org/html/rfc3986#section-5.2.4>rfc3986</a>.
-   *
-   * There is 1 extra transformation that are not part of the spec but kept for backwards compatibility:
-   *
-   * double slash // will be converted to single slash.
-   *
-   * @param path raw path
-   * @return normalized path
-   */
-  public static String removeDots(CharSequence path) {
-
-    if (path == null) {
-      return null;
-    }
-
-    final StringBuilder obuf = new StringBuilder(path.length());
-
-    int i = 0;
-    while (i < path.length()) {
-      // remove dots as described in
-      // http://tools.ietf.org/html/rfc3986#section-5.2.4
-      if (matches(path, i, "./")) {
-        i += 2;
-      } else if (matches(path, i, "../")) {
-        i += 3;
-      } else if (matches(path, i, "/./")) {
-        // preserve last slash
-        i += 2;
-      } else if (matches(path, i,"/.", true)) {
-        path = "/";
-        i = 0;
-      } else if (matches(path, i, "/../")) {
-        // preserve last slash
-        i += 3;
-        int pos = obuf.lastIndexOf("/");
-        if (pos != -1) {
-          obuf.delete(pos, obuf.length());
-        }
-      } else if (matches(path, i, "/..", true)) {
-        path = "/";
-        i = 0;
-        int pos = obuf.lastIndexOf("/");
-        if (pos != -1) {
-          obuf.delete(pos, obuf.length());
-        }
-      } else if (matches(path, i, ".", true) || matches(path, i, "..", true)) {
-        break;
-      } else {
-        if (path.charAt(i) == '/') {
-          i++;
-          // Not standard!!!
-          // but common // -> /
-          if (obuf.length() == 0 || obuf.charAt(obuf.length() - 1) != '/') {
-            obuf.append('/');
-          }
-        }
-        int pos = indexOfSlash(path, i);
-        if (pos != -1) {
-          obuf.append(path, i, pos);
-          i = pos;
-        } else {
-          obuf.append(path, i, path.length());
-          break;
-        }
-      }
-    }
-
-    return obuf.toString();
-  }
-
   /**
    * Resolve an URI reference as per <a href="http://tools.ietf.org/html/rfc3986#section-5.2.4>rfc3986</a>
    */
@@ -426,7 +226,7 @@ public final class HttpUtils {
     if (_ref.getScheme() != null) {
       scheme = _ref.getScheme();
       authority = _ref.getAuthority();
-      path = removeDots(_ref.getRawPath());
+      path = RFC3986.removeDotSegments(_ref.getRawPath());
       query = _ref.getRawQuery();
     } else {
       if (_ref.getAuthority() != null) {
@@ -434,7 +234,7 @@ public final class HttpUtils {
         path = _ref.getRawPath();
         query = _ref.getRawQuery();
       } else {
-        if (_ref.getRawPath().length() == 0) {
+        if (_ref.getRawPath().isEmpty()) {
           path = base.getRawPath();
           if (_ref.getRawQuery() != null) {
             query = _ref.getRawQuery();
@@ -443,12 +243,12 @@ public final class HttpUtils {
           }
         } else {
           if (_ref.getRawPath().startsWith("/")) {
-            path = removeDots(_ref.getRawPath());
+            path = RFC3986.removeDotSegments(_ref.getRawPath());
           } else {
             // Merge paths
             String mergedPath;
             String basePath = base.getRawPath();
-            if (base.getAuthority() != null && basePath.length() == 0) {
+            if (base.getAuthority() != null && basePath.isEmpty()) {
               mergedPath = "/" + _ref.getRawPath();
             } else {
               int index = basePath.lastIndexOf('/');
@@ -458,7 +258,7 @@ public final class HttpUtils {
                 mergedPath = _ref.getRawPath();
               }
             }
-            path = removeDots(mergedPath);
+            path = RFC3986.removeDotSegments(mergedPath);
           }
           query = _ref.getRawQuery();
         }
@@ -473,7 +273,7 @@ public final class HttpUtils {
    * Extract the path out of the uri.
    */
   static String parsePath(String uri) {
-    if (uri.length() == 0) {
+    if (uri.isEmpty()) {
       return "";
     }
     int i;
@@ -1020,5 +820,45 @@ public final class HttpUtils {
       }
     }
     return false;
+  }
+
+  /**
+   * Convert a {@link SocketAddress} to a {@link HostAndPort}.
+   * If the socket address is an {@link InetSocketAddress}, the hostString and port are used.
+   * Otherwise {@code null} is returned.
+   *
+   * @param socketAddress The socket address to convert
+   * @return The converted instance or {@code null} if not applicable.
+   */
+  public static HostAndPort socketAddressToHostAndPort(SocketAddress socketAddress) {
+    if (socketAddress instanceof InetSocketAddress) {
+      InetSocketAddress inetSocketAddress = (InetSocketAddress) socketAddress;
+      return new HostAndPortImpl(inetSocketAddress.getHostString(), inetSocketAddress.getPort());
+    }
+    return null;
+  }
+
+  private static final String[] SMALL_POSITIVE_LONGS = new String[256];
+
+  /**
+   * This try hard to cache the first 256 positive longs as strings [0, 255] to avoid the cost of creating a new
+   * string for each of them.<br>
+   * The size/capacity of the cache is subject to change but this method is expected to be used for hot and frequent code paths.
+   */
+  public static String positiveLongToString(long value) {
+    if (value < 0) {
+      throw new IllegalArgumentException("contentLength must be >= 0");
+    }
+    if (value >= SMALL_POSITIVE_LONGS.length) {
+      return Long.toString(value);
+    }
+    final int index = (int) value;
+    String str = SMALL_POSITIVE_LONGS[index];
+    if (str == null) {
+      // it's ok to be racy here, String is immutable hence it benefits from safe publication!
+      str = Long.toString(value);
+      SMALL_POSITIVE_LONGS[index] = str;
+    }
+    return str;
   }
 }

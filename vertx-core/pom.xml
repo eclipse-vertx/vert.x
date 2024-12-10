@@ -26,12 +26,11 @@
   <name>Vert.x Core</name>
 
   <properties>
-    <apacheds-protocol-dns.version>2.0.0-M23</apacheds-protocol-dns.version>
+    <apacheds-protocol-dns.version>2.0.0.AM27</apacheds-protocol-dns.version>
     <generated.dir>${project.basedir}/src/main/generated</generated.dir>
     <jmh.version>1.37</jmh.version>
-    <vertx.testNativeTransport>false</vertx.testNativeTransport>
+    <vertx.testTransport>jdk</vertx.testTransport>
     <vertx.testDomainSockets>false</vertx.testDomainSockets>
-    <vertx.testUseModulePath>true</vertx.testUseModulePath>
   </properties>
 
   <dependencies>
@@ -65,10 +64,6 @@
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
-      <artifactId>netty-codec-compression</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.netty</groupId>
       <artifactId>netty-codec-http</artifactId>
     </dependency>
     <dependency>
@@ -91,6 +86,11 @@
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-transport-classes-epoll</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-transport-classes-io_uring</artifactId>
       <optional>true</optional>
     </dependency>
     <dependency>
@@ -208,14 +208,10 @@
 
         <plugin>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.13.0</version>
           <executions>
             <execution>
               <id>default-compile</id>
-              <phase>compile</phase>
               <configuration>
-                <!-- Like in 4.x but handled by maven-compiler-plugin natively -->
-                <generatedSourcesDirectory>${project.basedir}/src/main/generated</generatedSourcesDirectory>
                 <annotationProcessorPaths>
                   <annotationProcessorPath>
                     <groupId>io.vertx</groupId>
@@ -236,10 +232,8 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>${maven.surefire.plugin.version}</version>
           <configuration>
             <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
-            <useModulePath>${vertx.testUseModulePath}</useModulePath>
             <additionalClasspathElements>
               <!-- Can we remove this one ??? -->
               <additionalClasspathElement>${project.build.testSourceDirectory}</additionalClasspathElement>
@@ -258,7 +252,7 @@
               <buildDirectory>${project.build.directory}</buildDirectory>
               <vertx.version>${project.version}</vertx.version>
               <vertx.handle100Continue>true</vertx.handle100Continue>
-              <vertx.useNativeTransport>${vertx.testNativeTransport}</vertx.useNativeTransport>
+              <vertx.transport>${vertx.testTransport}</vertx.transport>
               <vertx.useDomainSockets>${vertx.testDomainSockets}</vertx.useDomainSockets>
               <vertx.threadChecks>true</vertx.threadChecks>
             </systemPropertyVariables>
@@ -323,7 +317,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
-        <version>3.2.5</version>
         <configuration>
           <useModulePath>false</useModulePath>
         </configuration>
@@ -372,29 +365,24 @@
                 <include>io/vertx/it/transport/TransportTest.java</include>
               </includes>
               <classpathDependencyExcludes>
+                <classpathDependencyExclude>io.netty:netty-transport-classes-io_uring</classpathDependencyExclude>
                 <classpathDependencyExclude>io.netty:netty-transport-classes-epoll</classpathDependencyExclude>
                 <classpathDependencyExclude>io.netty:netty-transport-classes-kqueue</classpathDependencyExclude>
               </classpathDependencyExcludes>
             </configuration>
           </execution>
           <execution>
-            <id>service-loaded-native</id>
+            <id>io_uring</id>
             <goals>
               <goal>integration-test</goal>
               <goal>verify</goal>
             </goals>
             <configuration>
               <includes>
-                <include>io/vertx/it/transport/ServiceLoadedTransportTest.java</include>
+                <include>io/vertx/it/transport/IoUringTest.java</include>
               </includes>
-              <additionalClasspathElements>
-                <additionalClasspathElement>${project.basedir}/src/test/classpath/customtransport</additionalClasspathElement>
-              </additionalClasspathElements>
               <classpathDependencyExcludes>
-                <classpathDependencyExclude>io.netty:netty-transport-native-epoll</classpathDependencyExclude>
                 <classpathDependencyExclude>io.netty:netty-transport-classes-epoll</classpathDependencyExclude>
-                <classpathDependencyExclude>io.netty:netty-transport-native-kqueue</classpathDependencyExclude>
-                <classpathDependencyExclude>io.netty:netty-transport-classes-kqueue</classpathDependencyExclude>
               </classpathDependencyExcludes>
             </configuration>
           </execution>
@@ -422,12 +410,8 @@
             </goals>
             <configuration>
               <includes>
-                <include>io/vertx/it/json/JsonTest.java</include>
+                <include>io/vertx/it/json/NoJacksonTest.java</include>
               </includes>
-              <systemProperties>
-                <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
-                <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
-              </systemProperties>
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-core</classpathDependencyExclude>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
@@ -444,10 +428,6 @@
               <includes>
                 <include>io/vertx/it/net/HAProxyTest.java</include>
               </includes>
-              <systemProperties>
-                <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
-                <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
-              </systemProperties>
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>io.netty:netty-codec-haproxy</classpathDependencyExclude>
               </classpathDependencyExcludes>
@@ -461,38 +441,60 @@
             </goals>
             <configuration>
               <includes>
-                <include>io/vertx/it/json/JsonCodecTest.java</include>
+                <include>io/vertx/it/json/NoDatabindTest.java</include>
               </includes>
-              <systemProperties>
-                <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
-                <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
-              </systemProperties>
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
               </classpathDependencyExcludes>
             </configuration>
           </execution>
           <execution>
-            <id>custom-json-codec</id>
+            <id>custom-json-factory</id>
             <goals>
               <goal>integration-test</goal>
               <goal>verify</goal>
             </goals>
             <configuration>
               <includes>
-                <include>io/vertx/it/json/CustomJsonCodecTest.java</include>
+                <include>io/vertx/it/json/CustomJsonFactoryTest.java</include>
               </includes>
-              <systemProperties>
-                <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
-                <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
-              </systemProperties>
               <additionalClasspathElements>
-                <additionalClasspathElement>${project.basedir}/src/test/classpath/customjsoncodec</additionalClasspathElement>
+                <additionalClasspathElement>${project.basedir}/src/test/classpath/customjsonfactory</additionalClasspathElement>
               </additionalClasspathElements>
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-core</classpathDependencyExclude>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
               </classpathDependencyExcludes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>json-factory-ordering</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/json/JsonFactoryOrdering.java</include>
+              </includes>
+              <additionalClasspathElements>
+                <additionalClasspathElement>${project.basedir}/src/test/classpath/jsonfactoryordering</additionalClasspathElement>
+              </additionalClasspathElements>
+            </configuration>
+          </execution>
+          <execution>
+            <id>metrics-service-loader</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/metrics/ServiceLoadedTest.java</include>
+              </includes>
+              <additionalClasspathElements>
+                <additionalClasspathElement>${project.basedir}/src/test/classpath/metrics</additionalClasspathElement>
+              </additionalClasspathElements>
             </configuration>
           </execution>
           <execution>
@@ -505,10 +507,6 @@
               <includes>
                 <include>io/vertx/it/vertx/VertxThreadFactoryTest.java</include>
               </includes>
-              <systemProperties>
-                <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
-                <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
-              </systemProperties>
               <additionalClasspathElements>
                 <additionalClasspathElement>${project.basedir}/src/test/classpath/customthreadfactory</additionalClasspathElement>
               </additionalClasspathElements>
@@ -524,10 +522,6 @@
               <includes>
                 <include>io/vertx/it/vertx/ExecutorServiceFactoryTest.java</include>
               </includes>
-              <systemProperties>
-                <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
-                <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
-              </systemProperties>
               <additionalClasspathElements>
                 <additionalClasspathElement>${project.basedir}/src/test/classpath/customexecutorservicefactory</additionalClasspathElement>
               </additionalClasspathElements>
@@ -558,10 +552,6 @@
               <includes>
                 <include>io/vertx/it/tracing/VertxTracerFactoryTest.java</include>
               </includes>
-              <systemProperties>
-                <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
-                <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
-              </systemProperties>
               <additionalClasspathElements>
                 <additionalClasspathElement>${project.basedir}/src/test/classpath/tracerfactory</additionalClasspathElement>
               </additionalClasspathElements>
@@ -607,6 +597,51 @@
               <includes>
                 <include>io/vertx/it/servicehelper/ServiceHelperTest.java</include>
               </includes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>adaptive-allocator</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/buffer/TcpAllocationTest.java</include>
+              </includes>
+              <systemProperties>
+                <io.netty.allocator.type>adaptive</io.netty.allocator.type>
+              </systemProperties>
+            </configuration>
+          </execution>
+          <execution>
+            <id>pooled-allocator</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/buffer/TcpAllocationTest.java</include>
+              </includes>
+              <systemProperties>
+                <io.netty.allocator.type>pooled</io.netty.allocator.type>
+              </systemProperties>
+            </configuration>
+          </execution>
+          <execution>
+            <id>unpooled-allocator</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/buffer/TcpAllocationTest.java</include>
+              </includes>
+              <systemProperties>
+                <io.netty.allocator.type>unpooled</io.netty.allocator.type>
+              </systemProperties>
             </configuration>
           </execution>
         </executions>
@@ -658,60 +693,49 @@
 
   <profiles>
 
-    <!-- Run tests with native transport -->
     <profile>
-      <id>testNativeTransport</id>
+      <id>NativeEpoll</id>
       <properties>
-        <vertx.testNativeTransport>true</vertx.testNativeTransport>
+        <vertx.testTransport>epoll</vertx.testTransport>
         <vertx.testDomainSockets>false</vertx.testDomainSockets>
         <vertx.testUseModulePath>false</vertx.testUseModulePath>
       </properties>
     </profile>
 
-    <!-- Run tests with native transport and domain sockets -->
     <profile>
-      <id>testDomainSockets</id>
+      <id>NativeIoUring</id>
       <properties>
-        <vertx.testNativeTransport>true</vertx.testNativeTransport>
+        <vertx.testTransport>io_uring</vertx.testTransport>
+        <vertx.testDomainSockets>false</vertx.testDomainSockets>
+        <vertx.surefire.useModulePath>false</vertx.surefire.useModulePath>
+      </properties>
+    </profile>
+
+    <profile>
+      <id>NativeEpoll+DomainSockets</id>
+      <properties>
+        <vertx.testTransport>epoll</vertx.testTransport>
         <vertx.testDomainSockets>true</vertx.testDomainSockets>
+        <vertx.surefire.useModulePath>false</vertx.surefire.useModulePath>
+      </properties>
+    </profile>
+
+    <profile>
+      <id>NativeKQueue</id>
+      <properties>
+        <vertx.testTransport>kqueue</vertx.testTransport>
+        <vertx.testDomainSockets>false</vertx.testDomainSockets>
         <vertx.testUseModulePath>false</vertx.testUseModulePath>
       </properties>
     </profile>
 
-    <!-- Documentation generation : activate with -Pdocs -->
     <profile>
-      <id>docs</id>
-      <build>
-        <plugins>
-          <!-- Transform the Asciidoctor to html -->
-          <plugin>
-            <groupId>org.asciidoctor</groupId>
-            <artifactId>asciidoctor-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <goals>
-                  <goal>process-asciidoc</goal>
-                </goals>
-                <configuration>
-                  <sourceDirectory>${project.build.directory}/asciidoc</sourceDirectory>
-                </configuration>
-                <phase>package</phase>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <artifactId>maven-javadoc-plugin</artifactId>
-            <executions>
-              <execution>
-                <phase>package</phase>
-                <goals>
-                  <goal>javadoc</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
+      <id>NativeKQueue+DomainSockets</id>
+      <properties>
+        <vertx.testTransport>kqueue</vertx.testTransport>
+        <vertx.testDomainSockets>true</vertx.testDomainSockets>
+        <vertx.testUseModulePath>false</vertx.testUseModulePath>
+      </properties>
     </profile>
 
     <profile>
@@ -789,10 +813,11 @@
     </profile>
 
     <profile>
-      <id>linux</id>
+      <id>linux-x86_64</id>
       <activation>
         <os>
           <family>linux</family>
+          <arch>x86_64</arch>
         </os>
       </activation>
       <dependencies>
@@ -800,6 +825,60 @@
           <groupId>io.netty</groupId>
           <artifactId>netty-transport-native-epoll</artifactId>
           <classifier>linux-x86_64</classifier>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-transport-native-io_uring</artifactId>
+          <classifier>linux-x86_64</classifier>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+    </profile>
+
+    <profile>
+      <id>linux-amd64</id>
+      <activation>
+        <os>
+          <family>linux</family>
+          <arch>amd64</arch>
+        </os>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-transport-native-epoll</artifactId>
+          <classifier>linux-x86_64</classifier>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-transport-native-io_uring</artifactId>
+          <classifier>linux-x86_64</classifier>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+    </profile>
+
+    <profile>
+      <id>linux-aarch64</id>
+      <activation>
+        <os>
+          <family>linux</family>
+          <arch>aarch64</arch>
+        </os>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-transport-native-epoll</artifactId>
+          <classifier>linux-aarch_64</classifier>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-transport-native-io_uring</artifactId>
+          <classifier>linux-aarch_64</classifier>
           <scope>test</scope>
         </dependency>
       </dependencies>

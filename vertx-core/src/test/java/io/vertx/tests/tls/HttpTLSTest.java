@@ -12,6 +12,7 @@
 package io.vertx.tests.tls;
 
 import static org.hamcrest.core.StringEndsWith.endsWith;
+import static org.junit.Assume.assumeTrue;
 
 import java.io.*;
 import java.lang.reflect.UndeclaredThrowableException;
@@ -27,8 +28,10 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -39,6 +42,8 @@ import io.vertx.core.http.*;
 import io.vertx.core.impl.VertxThread;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.KeyStoreHelper;
+import io.vertx.core.transport.Transport;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.http.HttpTestBase;
 import org.junit.Assume;
 import org.junit.Ignore;
@@ -319,7 +324,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
   @Test
   // Provide an host name with a trailing dot
   public void testTLSTrailingDotHost() throws Exception {
-    Assume.assumeTrue(PlatformDependent.javaVersion() < 9);
+    assumeTrue(PlatformDependent.javaVersion() < 9);
     // We just need a vanilla cert for this test
     SelfSignedCertificate cert = SelfSignedCertificate.create("host2.com");
     TLSTest test = testTLS(Cert.NONE, cert::trustOptions, cert::keyCertOptions, Trust.NONE)
@@ -370,14 +375,12 @@ public abstract class HttpTLSTest extends HttpTestBase {
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_MIM, Trust.NONE).clientVerifyHost().fail();
   }
 
-  @Ignore
   @Test
   // Test host verification with a CN matching localhost
   public void testTLSVerifyMatchingHostOpenSSL() throws Exception {
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).clientVerifyHost().clientOpenSSL().pass();
   }
 
-  @Ignore
   @Test
   // Test host verification with a CN NOT matching localhost
   public void testTLSVerifyNonMatchingHostOpenSSL() throws Exception {
@@ -386,63 +389,54 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
   // OpenSSL tests
 
-  @Ignore
   @Test
   // Server uses OpenSSL with JKS
   public void testTLSClientTrustServerCertJKSOpenSSL() throws Exception {
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).serverOpenSSL().pass();
   }
 
-  @Ignore
   @Test
   // Server uses OpenSSL with PKCS12
   public void testTLSClientTrustServerCertPKCS12OpenSSL() throws Exception {
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_PKCS12, Trust.NONE).serverOpenSSL().pass();
   }
 
-  @Ignore
   @Test
   // Server uses OpenSSL with PEM
   public void testTLSClientTrustServerCertPEMOpenSSL() throws Exception {
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_PEM, Trust.NONE).serverOpenSSL().pass();
   }
 
-  @Ignore
   @Test
   // Client trusts OpenSSL with PEM
   public void testTLSClientTrustServerCertWithJKSOpenSSL() throws Exception {
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).clientOpenSSL().pass();
   }
 
-  @Ignore
   @Test
   // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustServerCertWithPKCS12OpenSSL() throws Exception {
     testTLS(Cert.NONE, Trust.SERVER_PKCS12, Cert.SERVER_JKS, Trust.NONE).clientOpenSSL().pass();
   }
 
-  @Ignore
   @Test
   // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustServerCertWithPEMOpenSSL() throws Exception {
     testTLS(Cert.NONE, Trust.SERVER_PEM, Cert.SERVER_JKS, Trust.NONE).clientOpenSSL().pass();
   }
 
-  @Ignore
   @Test
   // Client specifies cert and it is required
   public void testTLSClientCertRequiredOpenSSL() throws Exception {
     testTLS(Cert.CLIENT_JKS, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.CLIENT_JKS).clientOpenSSL().requiresClientAuth().pass();
   }
 
-  @Ignore
   @Test
   // Client specifies cert and it is required
   public void testTLSClientCertPKCS12RequiredOpenSSL() throws Exception {
     testTLS(Cert.CLIENT_PKCS12, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.CLIENT_JKS).clientOpenSSL().requiresClientAuth().pass();
   }
 
-  @Ignore
   @Test
   // Client specifies cert and it is required
   public void testTLSClientCertPEMRequiredOpenSSL() throws Exception {
@@ -458,7 +452,6 @@ public abstract class HttpTLSTest extends HttpTestBase {
       .serverEnabledSecureTransportProtocol(new String[]{"TLSv1.3"}).pass();
   }
 
-  @Ignore
   @Test
   // TLSv1.3 with OpenSSL
   public void testTLSv1_3OpenSSL() throws Exception {
@@ -479,7 +472,6 @@ public abstract class HttpTLSTest extends HttpTestBase {
       .fail();
   }
 
-  @Ignore
   @Test
   // Disable TLSv1.3 with OpenSSL
   public void testDisableTLSv1_3OpenSSL() throws Exception {
@@ -500,7 +492,6 @@ public abstract class HttpTLSTest extends HttpTestBase {
       .fail();
   }
 
-  @Ignore
   @Test
   // Disable TLSv1.2 with OpenSSL
   public void testDisableTLSv1_2OpenSSL() throws Exception {
@@ -797,7 +788,6 @@ public abstract class HttpTLSTest extends HttpTestBase {
     assertEquals("host2.com", TestUtils.cnOf(cert));
   }
 
-  @Ignore
   @Test
   public void testSNIWithOpenSSL() throws Exception {
     Certificate cert = testTLS(Cert.NONE, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, Trust.NONE)
@@ -1298,9 +1288,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
       server.connectionHandler(conn -> complete());
       AtomicInteger count = new AtomicInteger();
       server.exceptionHandler(err -> {
-        if (shouldPass) {
-          HttpTLSTest.this.fail(err);
-        } else {
+        if (!shouldPass) {
           if (count.incrementAndGet() == 1) {
             complete();
           }
@@ -2130,6 +2118,195 @@ public abstract class HttpTLSTest extends HttpTestBase {
       assertTrue(numWorkers > 0);
     } else {
       // It is fine using worker threads in this case
+    }
+  }
+
+  /**
+   * Test that for HttpServer, the peer host and port info is available in the SSLEngine
+   * when the X509ExtendedKeyManager.chooseEngineServerAlias is called.
+   *
+   * @throws Exception if an error occurs
+   */
+  @Test
+  public void testTLSServerSSLEnginePeerHost() throws Exception {
+    AtomicBoolean called = new AtomicBoolean(false);
+    testTLS(Cert.NONE, Trust.SERVER_JKS, testPeerHostServerCert(Cert.SERVER_JKS, called), Trust.NONE).pass();
+    assertTrue("X509ExtendedKeyManager.chooseEngineServerAlias is not called", called.get());
+  }
+
+  /**
+   * Test that for HttpServer with SNI, the peer host and port info is available in the SSLEngine
+   * when the X509ExtendedKeyManager.chooseEngineServerAlias is called.
+   *
+   * @throws Exception if an error occurs
+   */
+  @Test
+  public void testSNIServerSSLEnginePeerHost() throws Exception {
+    AtomicBoolean called = new AtomicBoolean(false);
+    TLSTest test = testTLS(Cert.NONE, Trust.SNI_JKS_HOST2, testPeerHostServerCert(Cert.SNI_JKS, called), Trust.NONE)
+      .serverSni()
+      .requestOptions(new RequestOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT).setHost("host2.com"))
+      .pass();
+    assertEquals("host2.com", TestUtils.cnOf(test.clientPeerCert()));
+    assertEquals("host2.com", test.indicatedServerName);
+    assertTrue("X509ExtendedKeyManager.chooseEngineServerAlias is not called", called.get());
+  }
+
+  /**
+   * Create a {@link Cert} that will verify the peer host is not null and port is not -1 in the {@link SSLEngine}
+   * when the {@link X509ExtendedKeyManager#chooseEngineServerAlias(String, Principal[], SSLEngine)}
+   * is called.
+   *
+   * @param delegate The delegated Cert
+   * @param chooseEngineServerAliasCalled Will be set to true when the
+   * X509ExtendedKeyManager.chooseEngineServerAlias is called
+   * @return The {@link Cert}
+   */
+  public static Cert<KeyCertOptions> testPeerHostServerCert(Cert<? extends KeyCertOptions> delegate, AtomicBoolean chooseEngineServerAliasCalled) {
+    return testPeerHostServerCert(delegate, (peerHost, peerPort) -> {
+      chooseEngineServerAliasCalled.set(true);
+      if (peerHost == null || peerPort == -1) {
+        throw new RuntimeException("Missing peer host/port");
+      }
+    });
+  }
+
+  /**
+   * Create a {@link Cert} that will verify the peer host and port in the {@link SSLEngine}
+   * when the {@link X509ExtendedKeyManager#chooseEngineServerAlias(String, Principal[], SSLEngine)}
+   * is called.
+   *
+   * @param delegate The delegated Cert
+   * @param peerHostVerifier The consumer to verify the peer host and port when the
+   * X509ExtendedKeyManager.chooseEngineServerAlias is called
+   * @return The {@link Cert}
+   */
+  public static Cert<KeyCertOptions> testPeerHostServerCert(Cert<? extends KeyCertOptions> delegate, BiConsumer<String, Integer> peerHostVerifier) {
+    return () -> new VerifyServerPeerHostKeyCertOptions(delegate.get(), peerHostVerifier);
+  }
+
+  private static class VerifyServerPeerHostKeyCertOptions implements KeyCertOptions {
+    private final KeyCertOptions delegate;
+    private final BiConsumer<String, Integer> peerHostVerifier;
+
+    VerifyServerPeerHostKeyCertOptions(KeyCertOptions delegate, BiConsumer<String, Integer> peerHostVerifier) {
+      this.delegate = delegate;
+      this.peerHostVerifier = peerHostVerifier;
+    }
+
+    @Override
+    public KeyCertOptions copy() {
+      return new VerifyServerPeerHostKeyCertOptions(delegate.copy(), peerHostVerifier);
+    }
+
+    @Override
+    public KeyManagerFactory getKeyManagerFactory(Vertx vertx) throws Exception {
+      return new VerifyServerPeerHostKeyManagerFactory(delegate.getKeyManagerFactory(vertx), peerHostVerifier);
+    }
+
+    @Override
+    public Function<String, KeyManagerFactory> keyManagerFactoryMapper(Vertx vertx) throws Exception {
+      Function<String, KeyManagerFactory> mapper = delegate.keyManagerFactoryMapper(vertx);
+      return serverName -> new VerifyServerPeerHostKeyManagerFactory(mapper.apply(serverName), peerHostVerifier);
+    }
+  }
+
+  private static class VerifyServerPeerHostKeyManagerFactory extends KeyManagerFactory {
+    VerifyServerPeerHostKeyManagerFactory(KeyManagerFactory delegate, BiConsumer<String, Integer> peerHostVerifier) {
+      super(new KeyManagerFactorySpiWrapper(delegate, peerHostVerifier), delegate.getProvider(), delegate.getAlgorithm());
+    }
+
+    private static class KeyManagerFactorySpiWrapper extends KeyManagerFactorySpi {
+      private final KeyManagerFactory delegate;
+      private final BiConsumer<String, Integer> peerHostVerifier;
+
+      KeyManagerFactorySpiWrapper(KeyManagerFactory delegate, BiConsumer<String, Integer> peerHostVerifier) {
+        super();
+        this.delegate = delegate;
+        this.peerHostVerifier = peerHostVerifier;
+      }
+
+      @Override
+      protected void engineInit(KeyStore keyStore, char[] chars) throws KeyStoreException, NoSuchAlgorithmException, UnrecoverableKeyException {
+        delegate.init(keyStore, chars);
+      }
+
+      @Override
+      protected void engineInit(ManagerFactoryParameters managerFactoryParameters) throws InvalidAlgorithmParameterException {
+        delegate.init(managerFactoryParameters);
+      }
+
+      @Override
+      protected KeyManager[] engineGetKeyManagers() {
+        KeyManager[] keyManagers = delegate.getKeyManagers().clone();
+        for (int i = 0; i < keyManagers.length; ++i) {
+          KeyManager km = keyManagers[i];
+          if (km instanceof X509KeyManager) {
+            keyManagers[i] = new VerifyServerPeerHostKeyManager((X509KeyManager) km, peerHostVerifier);
+          }
+        }
+
+        return keyManagers;
+      }
+    }
+  }
+
+  private static class VerifyServerPeerHostKeyManager extends X509ExtendedKeyManager {
+    private final X509KeyManager delegate;
+    private final BiConsumer<String, Integer> peerHostVerifier;
+
+    VerifyServerPeerHostKeyManager(X509KeyManager delegate, BiConsumer<String, Integer> peerHostVerifier) {
+      this.delegate = delegate;
+      this.peerHostVerifier = peerHostVerifier;
+    }
+
+    @Override
+    public String chooseEngineClientAlias(String[] keyType, Principal[] issuers, SSLEngine engine) {
+      if (delegate instanceof X509ExtendedKeyManager) {
+        return ((X509ExtendedKeyManager) delegate).chooseEngineClientAlias(keyType, issuers, engine);
+      } else {
+        return delegate.chooseClientAlias(keyType, issuers, null);
+      }
+    }
+
+    @Override
+    public String chooseEngineServerAlias(String keyType, Principal[] issuers, SSLEngine engine) {
+      peerHostVerifier.accept(engine.getPeerHost(), engine.getPeerPort());
+      if (delegate instanceof X509ExtendedKeyManager) {
+        return ((X509ExtendedKeyManager) delegate).chooseEngineServerAlias(keyType, issuers, engine);
+      } else {
+        return delegate.chooseServerAlias(keyType, issuers, null);
+      }
+    }
+
+    @Override
+    public String chooseClientAlias(String[] keyType, Principal[] issuers, Socket socket) {
+      return delegate.chooseClientAlias(keyType, issuers, socket);
+    }
+
+    @Override
+    public String chooseServerAlias(String keyType, Principal[] issuers, Socket socket) {
+      return delegate.chooseServerAlias(keyType, issuers, socket);
+    }
+
+    @Override
+    public String[] getClientAliases(String s, Principal[] principals) {
+      return delegate.getClientAliases(s, principals);
+    }
+
+    @Override
+    public String[] getServerAliases(String s, Principal[] principals) {
+      return delegate.getServerAliases(s, principals);
+    }
+
+    @Override
+    public X509Certificate[] getCertificateChain(String s) {
+      return delegate.getCertificateChain(s);
+    }
+
+    @Override
+    public PrivateKey getPrivateKey(String s) {
+      return delegate.getPrivateKey(s);
     }
   }
 }

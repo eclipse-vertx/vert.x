@@ -11,8 +11,8 @@
 
 package io.vertx.core.datagram;
 
+import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.net.SocketAddress;
 
 /**
@@ -20,7 +20,7 @@ import io.vertx.core.net.SocketAddress;
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-@VertxGen
+@DataObject
 public interface DatagramPacket {
 
   /**

@@ -39,13 +39,13 @@ public class InboundMessageQueueTest extends VertxTestBase {
     private int size;
 
     public TestQueue(IntConsumer consumer) {
-      super(((ContextInternal) context).nettyEventLoop(), (ContextInternal) context);
+      super(((ContextInternal) context).eventLoop(), ((ContextInternal) context).executor());
       this.consumer = consumer;
       this.writable = true;
     }
 
     public TestQueue(IntConsumer consumer, int lwm, int hwm) {
-      super(((ContextInternal) context).nettyEventLoop(), (ContextInternal) context, lwm, hwm);
+      super(((ContextInternal) context).eventLoop(), ((ContextInternal) context).executor(), lwm, hwm);
       this.consumer = consumer;
       this.writable = true;
     }
