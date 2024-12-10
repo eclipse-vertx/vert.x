@@ -19,6 +19,7 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.incubator.codec.http3.Http3;
 import io.netty.incubator.codec.quic.InsecureQuicTokenHandler;
 import io.netty.incubator.codec.quic.QuicChannel;
+import io.netty.incubator.codec.quic.QuicCodecBuilder;
 import io.netty.incubator.codec.quic.QuicSslContext;
 import io.netty.util.concurrent.ImmediateExecutor;
 import io.vertx.core.impl.Arguments;
@@ -62,14 +63,8 @@ public class SslChannelProvider {
     SslHandler sslHandler;
     Executor delegatedTaskExec = sslContextProvider.useWorkerPool() ? workerPool : ImmediateExecutor.INSTANCE;
     if (sslOptions.isHttp3()) {
-      return Http3.newQuicClientCodecBuilder()
-        .sslTaskExecutor(delegatedTaskExec)
-        .sslContext((QuicSslContext) ((VertxSslContext) sslContext).unwrap())
-        .maxIdleTimeout(sslOptions.getSslHandshakeTimeout(), sslOptions.getSslHandshakeTimeoutUnit())
-        .initialMaxData(10000000) // Todo: Make this value configurable!
-        .initialMaxStreamDataBidirectionalLocal(1000000) // Todo: Make this value configurable!
-        .initialMaxStreamsBidirectional(sslOptions.getInitialMaxStreamsBidirectional())
-        .build();
+      return configureQuicCodecBuilder(Http3.newQuicClientCodecBuilder(), sslOptions, (VertxSslContext) sslContext,
+        delegatedTaskExec).build();
     }
     if (peerAddress != null && peerAddress.isInetSocket()) {
       sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, peerAddress.host(), peerAddress.port(),
@@ -99,14 +94,8 @@ public class SslChannelProvider {
       log.debug("Creating HTTP/3 Server Ssl Handler ... ");
       Arguments.require(handler != null, "handler can't be null for http/3");
 
-      // Todo: Make params configurable!
-      return Http3.newQuicServerCodecBuilder()
-        .sslContext((QuicSslContext) ((VertxSslContext) sslContext).unwrap())
-        .maxIdleTimeout(sslOptions.getSslHandshakeTimeout(), sslOptions.getSslHandshakeTimeoutUnit())
-        .initialMaxData(10000000)
-        .initialMaxStreamDataBidirectionalLocal(1000000)
-        .initialMaxStreamDataBidirectionalRemote(1000000)
-        .initialMaxStreamsBidirectional(sslOptions.getInitialMaxStreamsBidirectional())
+      return configureQuicCodecBuilder(Http3.newQuicServerCodecBuilder(), sslOptions, (VertxSslContext) sslContext,
+        delegatedTaskExec)
         .tokenHandler(InsecureQuicTokenHandler.INSTANCE)
         .handler(handler)
         .build();
@@ -129,6 +118,23 @@ public class SslChannelProvider {
     return new VertxSniHandler(sslContextProvider.serverNameMapping(delegatedTaskExec, sslOptions.isUseAlpn(),
       sslOptions.isHttp3()), sslOptions.getSslHandshakeTimeoutUnit().toMillis(sslOptions.getSslHandshakeTimeout()),
       delegatedTaskExec, remoteAddress);
+  }
+
+  private <T extends QuicCodecBuilder<T>> T configureQuicCodecBuilder(T quicCodecBuilder, SSLOptions sslOptions,
+                                                                      VertxSslContext sslContext,
+                                                                      Executor delegatedTaskExec) {
+    quicCodecBuilder
+      .sslTaskExecutor(delegatedTaskExec)
+      .sslContext((QuicSslContext) sslContext.unwrap())
+      .maxIdleTimeout(sslOptions.getSslHandshakeTimeout(), sslOptions.getSslHandshakeTimeoutUnit())
+      .initialMaxData(sslOptions.getHttp3InitialMaxData())
+      .initialMaxStreamsBidirectional(sslOptions.getHttp3InitialMaxStreamsBidirectional())
+      .initialMaxStreamDataBidirectionalLocal(sslOptions.getHttp3InitialMaxStreamDataBidirectionalLocal())
+      .initialMaxStreamDataBidirectionalRemote(sslOptions.getHttp3InitialMaxStreamDataBidirectionalRemote())
+      .initialMaxStreamsUnidirectional(sslOptions.getHttp3InitialMaxStreamsUnidirectional())
+      .initialMaxStreamDataUnidirectional(sslOptions.getHttp3InitialMaxStreamDataUnidirectional())
+    ;
+    return quicCodecBuilder;
   }
 
 }
