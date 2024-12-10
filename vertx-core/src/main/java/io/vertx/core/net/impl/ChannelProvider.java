@@ -125,9 +125,7 @@ public final class ChannelProvider {
   private void initSSL(Handler<Channel> handler, SocketAddress peerAddress, String serverName, boolean ssl, ClientSSLOptions sslOptions, Channel ch, Promise<Channel> channelHandler) {
     if (ssl) {
       SslChannelProvider sslChannelProvider = new SslChannelProvider(context.owner(), sslContextProvider, false);
-      ChannelHandler sslHandler = sslChannelProvider.createClientSslHandler(peerAddress, serverName,
-        sslOptions.isUseAlpn(), sslOptions.isHttp3(), sslOptions.getSslHandshakeTimeout(),
-        sslOptions.getSslHandshakeTimeoutUnit());
+      ChannelHandler sslHandler = sslChannelProvider.createClientSslHandler(peerAddress, serverName, sslOptions);
       ChannelPipeline pipeline = ch.pipeline();
       pipeline.addLast(CLIENT_SSL_HANDLER_NAME, sslHandler);
       pipeline.addLast(new ExceptionHandlingChannelHandler(channelHandler));

@@ -321,9 +321,7 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
             chctx.pipeline().addFirst("handshaker", new SslHandshakeCompletionHandler(channelPromise));
             ChannelHandler sslHandler;
             if (sslOptions instanceof ClientSSLOptions) {
-              ClientSSLOptions clientSSLOptions = (ClientSSLOptions) sslOptions;
-              sslHandler = provider.createClientSslHandler(remoteAddress, serverName, sslOptions.isUseAlpn(),
-                sslOptions.isHttp3(), clientSSLOptions.getSslHandshakeTimeout(), clientSSLOptions.getSslHandshakeTimeoutUnit());
+              sslHandler = provider.createClientSslHandler(remoteAddress, serverName, sslOptions);
             } else {
               sslHandler = provider.createServerHandler(sslOptions.isUseAlpn(), sslOptions.isHttp3(),
                 sslOptions.getSslHandshakeTimeout(), sslOptions.getSslHandshakeTimeoutUnit(), null, HttpUtils.socketAddressToHostAndPort(chctx.channel().remoteAddress());
