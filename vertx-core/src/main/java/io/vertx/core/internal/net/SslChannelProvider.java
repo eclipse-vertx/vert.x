@@ -68,7 +68,7 @@ public class SslChannelProvider {
         .maxIdleTimeout(sslOptions.getSslHandshakeTimeout(), sslOptions.getSslHandshakeTimeoutUnit())
         .initialMaxData(10000000) // Todo: Make this value configurable!
         .initialMaxStreamDataBidirectionalLocal(1000000) // Todo: Make this value configurable!
-        .initialMaxStreamsBidirectional(100)
+        .initialMaxStreamsBidirectional(sslOptions.getInitialMaxStreamsBidirectional())
         .build();
     }
     if (peerAddress != null && peerAddress.isInetSocket()) {
@@ -106,7 +106,7 @@ public class SslChannelProvider {
         .initialMaxData(10000000)
         .initialMaxStreamDataBidirectionalLocal(1000000)
         .initialMaxStreamDataBidirectionalRemote(1000000)
-        .initialMaxStreamsBidirectional(100)
+        .initialMaxStreamsBidirectional(sslOptions.getInitialMaxStreamsBidirectional())
         .tokenHandler(InsecureQuicTokenHandler.INSTANCE)
         .handler(handler)
         .build();
