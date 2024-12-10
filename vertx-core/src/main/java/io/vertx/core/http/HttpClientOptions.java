@@ -1016,8 +1016,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   /**
-   * @return the maximum number of concurrent streams for an HTTP/3 connection, {@code -1} means
-   * the value sent by the server
+   * @return the maximum number of concurrent streams for an HTTP/3 connection
    */
   public int getHttp3MultiplexingLimit() {
     return http3MultiplexingLimit;
@@ -1026,10 +1025,8 @@ public class HttpClientOptions extends ClientOptionsBase {
   /**
    * Set a client limit of the number concurrent streams for each HTTP/3 connection, this limits the number
    * of streams the client can create for a connection. The effective number of streams for a
-   * connection is the min of this value and the server's initial settings.
+   * connection is the min of this value and http3InitialMaxStreamDataUnidirectional and http3InitialMaxStreamsBidirectional.
    * <p/>
-   * Setting the value to {@code -1} means to use the value sent by the server's initial settings.
-   * {@code -1} is the default value.
    *
    * @param limit the maximum concurrent for an HTTP/3 connection
    * @return a reference to this, so the API can be used fluently
