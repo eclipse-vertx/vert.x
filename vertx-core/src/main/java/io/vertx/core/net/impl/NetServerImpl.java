@@ -248,13 +248,12 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
           };
 
           SslChannelProvider sslChannelProvider = new SslChannelProvider(vertx, sslContextProvider, sslOptions.isSni());
-          ChannelHandler serverHandler = sslChannelProvider.createServerHandler(options.isUseAlpn(), options.isHttp3(),
-            options.getSslHandshakeTimeout(), options.getSslHandshakeTimeoutUnit(), handler, HttpUtils.socketAddressToHostAndPort(ch.remoteAddress()));
-          ch.pipeline().addLast(SERVER_SSL_HANDLER_NAME, serverHandler);
+          ch.pipeline().addLast(SERVER_SSL_HANDLER_NAME, sslChannelProvider.createServerHandler(options.getSslOptions(),
+            HttpUtils.socketAddressToHostAndPort(ch.remoteAddress()), handler));
         } else {
           SslChannelProvider sslChannelProvider = new SslChannelProvider(vertx, sslContextProvider, sslOptions.isSni());
-          ch.pipeline().addLast(SERVER_SSL_HANDLER_NAME, sslChannelProvider.createServerHandler(options.isUseAlpn(),
-            options.isHttp3(), options.getSslHandshakeTimeout(), options.getSslHandshakeTimeoutUnit(), HttpUtils.socketAddressToHostAndPort(ch.remoteAddress()), null));
+          ch.pipeline().addLast(SERVER_SSL_HANDLER_NAME, sslChannelProvider.createServerHandler(options.getSslOptions(),
+            HttpUtils.socketAddressToHostAndPort(ch.remoteAddress()), null));
           ChannelPromise p = ch.newPromise();
           ch.pipeline().addLast("handshaker", new SslHandshakeCompletionHandler(p));
           p.addListener(future -> {
