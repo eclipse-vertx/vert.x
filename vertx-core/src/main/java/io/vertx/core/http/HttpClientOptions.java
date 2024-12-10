@@ -152,6 +152,11 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public static final String DEFAULT_NAME = "__vertx.DEFAULT";
 
+  /**
+   * The default maximum number of concurrent streams per connection for HTTP/3 = -1
+   */
+  public static final int DEFAULT_HTTP3_MULTIPLEXING_LIMIT = -1;
+
   private boolean verifyHost = true;
   private boolean keepAlive;
   private int keepAliveTimeout;
@@ -180,6 +185,8 @@ public class HttpClientOptions extends ClientOptionsBase {
 
   private boolean shared;
   private String name;
+
+  private int http3MultiplexingLimit;
 
   /**
    * Default constructor
@@ -231,6 +238,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.tracingPolicy = other.tracingPolicy;
     this.shared = other.shared;
     this.name = other.name;
+    this.http3MultiplexingLimit = other.http3MultiplexingLimit;
   }
 
   /**
@@ -281,6 +289,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     tracingPolicy = DEFAULT_TRACING_POLICY;
     shared = DEFAULT_SHARED;
     name = DEFAULT_NAME;
+    http3MultiplexingLimit = DEFAULT_HTTP3_MULTIPLEXING_LIMIT;
   }
 
   @Override
@@ -1003,6 +1012,33 @@ public class HttpClientOptions extends ClientOptionsBase {
   public HttpClientOptions setName(String name) {
     Objects.requireNonNull(name, "Client name cannot be null");
     this.name = name;
+    return this;
+  }
+
+  /**
+   * @return the maximum number of concurrent streams for an HTTP/3 connection, {@code -1} means
+   * the value sent by the server
+   */
+  public int getHttp3MultiplexingLimit() {
+    return http3MultiplexingLimit;
+  }
+
+  /**
+   * Set a client limit of the number concurrent streams for each HTTP/3 connection, this limits the number
+   * of streams the client can create for a connection. The effective number of streams for a
+   * connection is the min of this value and the server's initial settings.
+   * <p/>
+   * Setting the value to {@code -1} means to use the value sent by the server's initial settings.
+   * {@code -1} is the default value.
+   *
+   * @param limit the maximum concurrent for an HTTP/3 connection
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setHttp3MultiplexingLimit(int limit) {
+    if (limit == 0 || limit < -1) {
+      throw new IllegalArgumentException("maxPoolSize must be > 0 or -1 (disabled)");
+    }
+    this.http3MultiplexingLimit = limit;
     return this;
   }
 }
