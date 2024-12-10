@@ -21,7 +21,6 @@ class VertxHttp3ConnectionHandlerBuilder<C extends Http3ConnectionBase> {
   private Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory;
   private Http3SettingsFrame httpSettings;
   private boolean isServer;
-  private long initialMaxStreamsBidirectional;
 
   VertxHttp3ConnectionHandlerBuilder<C> connectionFactory(Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory) {
     this.connectionFactory = connectionFactory;
@@ -34,17 +33,12 @@ class VertxHttp3ConnectionHandlerBuilder<C extends Http3ConnectionBase> {
     return this;
   }
 
-  protected VertxHttp3ConnectionHandlerBuilder<C> initialMaxStreamsBidirectional(long initialMaxStreamsBidirectional) {
-    this.initialMaxStreamsBidirectional = initialMaxStreamsBidirectional;
-    return this;
-  }
-
   public VertxHttp3ConnectionHandlerBuilder<C> httpSettings(Http3SettingsFrame httpSettings) {
     this.httpSettings = httpSettings;
     return this;
   }
 
   protected VertxHttp3ConnectionHandler<C> build(ContextInternal context) {
-    return new VertxHttp3ConnectionHandler<>(connectionFactory, context, httpSettings, isServer, initialMaxStreamsBidirectional);
+    return new VertxHttp3ConnectionHandler<>(connectionFactory, context, httpSettings, isServer);
   }
 }
