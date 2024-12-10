@@ -31,7 +31,6 @@ import io.vertx.core.net.SSLOptions;
 import io.vertx.core.net.SocketAddress;
 
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Provider for Netty {@link SslHandler} and {@link SniHandler}.
@@ -82,30 +81,28 @@ public class SslChannelProvider {
     return sslHandler;
   }
 
-  public ChannelHandler createServerHandler(boolean useAlpn, boolean http3, long sslHandshakeTimeout,
-                                            TimeUnit sslHandshakeTimeoutUnit, HostAndPort remoteAddress,
+  public ChannelHandler createServerHandler(SSLOptions sslOptions, HostAndPort remoteAddress,
                                             ChannelInitializer<QuicChannel> handler) {
     if (sni) {
-      return createSniHandler(useAlpn, http3, sslHandshakeTimeout, sslHandshakeTimeoutUnit, remoteAddress);
+      return createSniHandler(sslOptions, remoteAddress);
     } else {
-      return createServerSslHandler(useAlpn, http3, sslHandshakeTimeout, sslHandshakeTimeoutUnit, handler, remoteAddress);
+      return createServerSslHandler(sslOptions, remoteAddress, handler);
     }
   }
 
-  private ChannelHandler createServerSslHandler(boolean useAlpn, boolean http3, long sslHandshakeTimeout,
-                                                TimeUnit sslHandshakeTimeoutUnit,
-                                                ChannelInitializer<QuicChannel> handler, HostAndPort remoteAddress) {
+  private ChannelHandler createServerSslHandler(SSLOptions sslOptions, HostAndPort remoteAddress,
+                                                ChannelInitializer<QuicChannel> handler) {
     log.debug("Creating Server Ssl Handler ... ");
-    SslContext sslContext = sslContextProvider.sslServerContext(useAlpn, http3);
+    SslContext sslContext = sslContextProvider.sslServerContext(sslOptions.isUseAlpn(), sslOptions.isHttp3());
     Executor delegatedTaskExec = sslContextProvider.useWorkerPool() ? workerPool : ImmediateExecutor.INSTANCE;
-    if (http3) {
+    if (sslOptions.isHttp3()) {
       log.debug("Creating HTTP/3 Server Ssl Handler ... ");
       Arguments.require(handler != null, "handler can't be null for http/3");
 
       // Todo: Make params configurable!
       return Http3.newQuicServerCodecBuilder()
         .sslContext((QuicSslContext) ((VertxSslContext) sslContext).unwrap())
-        .maxIdleTimeout(sslHandshakeTimeout, sslHandshakeTimeoutUnit)
+        .maxIdleTimeout(sslOptions.getSslHandshakeTimeout(), sslOptions.getSslHandshakeTimeoutUnit())
         .initialMaxData(10000000)
         .initialMaxStreamDataBidirectionalLocal(1000000)
         .initialMaxStreamDataBidirectionalRemote(1000000)
@@ -123,15 +120,15 @@ public class SslChannelProvider {
       sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, delegatedTaskExec);
     }
 
-    sslHandler.setHandshakeTimeout(sslHandshakeTimeout, sslHandshakeTimeoutUnit);
+    sslHandler.setHandshakeTimeout(sslOptions.getSslHandshakeTimeout(), sslOptions.getSslHandshakeTimeoutUnit());
     return sslHandler;
   }
 
-  private SniHandler createSniHandler(boolean useAlpn, boolean http3, long sslHandshakeTimeout,
-                                      TimeUnit sslHandshakeTimeoutUnit, HostAndPort remoteAddress) {
+  private SniHandler createSniHandler(SSLOptions sslOptions, HostAndPort remoteAddress) {
     Executor delegatedTaskExec = sslContextProvider.useWorkerPool() ? workerPool : ImmediateExecutor.INSTANCE;
-    return new VertxSniHandler(sslContextProvider.serverNameMapping(delegatedTaskExec, useAlpn, http3),
-      sslHandshakeTimeoutUnit.toMillis(sslHandshakeTimeout), delegatedTaskExec, remoteAddress);
+    return new VertxSniHandler(sslContextProvider.serverNameMapping(delegatedTaskExec, sslOptions.isUseAlpn(),
+      sslOptions.isHttp3()), sslOptions.getSslHandshakeTimeoutUnit().toMillis(sslOptions.getSslHandshakeTimeout()),
+      delegatedTaskExec, remoteAddress);
   }
 
 }
