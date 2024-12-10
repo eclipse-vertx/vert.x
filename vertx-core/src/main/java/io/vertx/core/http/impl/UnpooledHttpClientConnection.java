@@ -125,24 +125,23 @@ public class UnpooledHttpClientConnection implements HttpClientConnection {
   }
 
   @Override
-  public Http2Settings settings() {
-    return actual.settings();
+  public HttpSettings httpSettings() {
+    return actual.httpSettings();
   }
 
   @Override
-  public Future<Void> updateSettings(Http2Settings settings) {
-    return actual.updateSettings(settings);
+  public Future<Void> updateHttpSettings(HttpSettings settings) {
+    return actual.updateHttpSettings(settings);
   }
 
   @Override
-  public Http2Settings remoteSettings() {
-    return actual.remoteSettings();
+  public HttpSettings remoteHttpSettings() {
+    return actual.remoteHttpSettings();
   }
 
   @Override
-  @Fluent
-  public HttpConnection remoteSettingsHandler(Handler<Http2Settings> handler) {
-    return actual.remoteSettingsHandler(handler);
+  public HttpConnection remoteHttpSettingsHandler(Handler<HttpSettings> handler) {
+    return actual.remoteHttpSettingsHandler(handler);
   }
 
   @Override

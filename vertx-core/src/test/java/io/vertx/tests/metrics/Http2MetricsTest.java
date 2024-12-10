@@ -15,7 +15,7 @@ import io.vertx.core.http.*;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.fakemetrics.*;
 import io.vertx.test.http.HttpTestBase;
-import io.vertx.tests.http.Http2TestBase;
+import io.vertx.tests.http.HttpOptionsFactory;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -31,9 +31,9 @@ public class Http2MetricsTest extends HttpMetricsTestBase {
   public static Collection<Object[]> params() {
     ArrayList<Object[]> params = new ArrayList<>();
     // h2
-    params.add(new Object[] { Http2TestBase.createHttp2ClientOptions(), Http2TestBase.createHttp2ServerOptions(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST), ThreadingModel.EVENT_LOOP });
+    params.add(new Object[] { HttpOptionsFactory.createHttp2ClientOptions(), HttpOptionsFactory.createHttp2ServerOptions(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST), ThreadingModel.EVENT_LOOP });
     // h2 + worker
-    params.add(new Object[] { Http2TestBase.createHttp2ClientOptions(), Http2TestBase.createHttp2ServerOptions(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST), ThreadingModel.WORKER });
+    params.add(new Object[] { HttpOptionsFactory.createHttp2ClientOptions(), HttpOptionsFactory.createHttp2ServerOptions(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST), ThreadingModel.WORKER });
     // h2c with upgrade
     params.add(new Object[] { new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2).setHttp2ClearTextUpgrade(true), new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST), ThreadingModel.EVENT_LOOP  });
     // h2c direct
