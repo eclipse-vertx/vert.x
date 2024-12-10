@@ -92,13 +92,13 @@ public class Http3SettingsTest {
     for (Long key : keys) {
       assertEquals(settings.get(key), conv.get(key));
     }
-    assertEquals(settings.get(1000), conv.get(1000));
+    assertNull(conv.get(1000));
 
     settings = HttpUtils.toVertxSettings(conv);
     for (Long key : keys) {
       assertEquals(settings.get(key), conv.get(key));
     }
-    assertEquals(settings.get(1000), conv.get(1000));
+    assertNull(settings.get(1000));
   }
 
   @Test
