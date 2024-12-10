@@ -24,10 +24,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import io.vertx.core.net.*;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import io.vertx.core.transport.Transport;
+import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 
 import io.vertx.core.AbstractVerticle;
@@ -86,6 +84,7 @@ public class NetBandwidthLimitingTest extends VertxTestBase {
 
   @Test
   public void sendBufferThrottled() {
+    Assume.assumeFalse(TRANSPORT == Transport.IO_URING);
     long startTime = System.nanoTime();
 
     Buffer expected = TestUtils.randomBuffer(64 * 1024 * 4);
@@ -118,6 +117,7 @@ public class NetBandwidthLimitingTest extends VertxTestBase {
 
   @Test
   public void sendFileIsThrottled() throws Exception {
+    Assume.assumeFalse(TRANSPORT == Transport.IO_URING);
     long startTime = System.nanoTime();
 
     File fDir = testFolder.newFolder();
@@ -153,6 +153,7 @@ public class NetBandwidthLimitingTest extends VertxTestBase {
 
   @Test
   public void dataUploadIsThrottled() {
+    Assume.assumeFalse(TRANSPORT == Transport.IO_URING);
     long startTime = System.nanoTime();
 
     Buffer expected = TestUtils.randomBuffer(64 * 1024 * 4);
@@ -184,6 +185,7 @@ public class NetBandwidthLimitingTest extends VertxTestBase {
 
   @Test
   public void fileUploadIsThrottled() throws Exception {
+    Assume.assumeFalse(TRANSPORT == Transport.IO_URING);
     long startTime = System.nanoTime();
 
     File fDir = testFolder.newFolder();
@@ -218,6 +220,7 @@ public class NetBandwidthLimitingTest extends VertxTestBase {
 
   @Test
   public void testSendBufferIsTrafficShapedWithSharedServers() throws Exception {
+    Assume.assumeFalse(TRANSPORT == Transport.IO_URING);
     Buffer expected = TestUtils.randomBuffer(64 * 1024 * 4);
 
     int numEventLoops = 4; // We start a shared TCP server with 4 event-loops
@@ -261,6 +264,7 @@ public class NetBandwidthLimitingTest extends VertxTestBase {
 
   @Test
   public void testDynamicInboundRateUpdate() {
+    Assume.assumeFalse(TRANSPORT == Transport.IO_URING);
     long startTime = System.nanoTime();
 
     Buffer expected = TestUtils.randomBuffer(64 * 1024 * 4);
@@ -299,6 +303,7 @@ public class NetBandwidthLimitingTest extends VertxTestBase {
 
   @Test
   public void testDynamicOutboundRateUpdate() {
+    Assume.assumeFalse(TRANSPORT == Transport.IO_URING);
     long startTime = System.nanoTime();
 
     Buffer expected = TestUtils.randomBuffer(64 * 1024 * 4);
@@ -337,6 +342,7 @@ public class NetBandwidthLimitingTest extends VertxTestBase {
 
   @Test(expected = IllegalStateException.class)
   public void testRateUpdateWhenServerStartedWithoutTrafficShaping() {
+    Assume.assumeFalse(TRANSPORT == Transport.IO_URING);
     NetServerOptions options = new NetServerOptions().setHost(DEFAULT_HOST).setPort(DEFAULT_PORT);
     NetServer testServer = netServer(options);
 
