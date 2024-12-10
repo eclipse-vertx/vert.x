@@ -195,7 +195,6 @@ class Http3ClientConnection extends Http3ConnectionBase implements HttpClientCon
     VertxHttp3ConnectionHandler<Http3ClientConnection> handler =
       new VertxHttp3ConnectionHandlerBuilder<Http3ClientConnection>()
         .server(false)
-        .initialMaxStreamsBidirectional(options.getSslOptions().getInitialMaxStreamsBidirectional())
         .httpSettings(HttpUtils.fromVertxSettings(client.options().getInitialHttp3Settings()))
         .connectionFactory(connHandler -> {
           Http3ClientConnection conn = new Http3ClientConnection(client, context, connHandler, metrics, authority,
