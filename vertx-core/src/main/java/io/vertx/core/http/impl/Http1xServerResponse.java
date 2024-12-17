@@ -709,11 +709,6 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public Future<HttpServerResponse> push(HttpMethod method, String host, String path, MultiMap headers) {
-    return context.failedFuture("HTTP/1 does not support response push");
-  }
-
-  @Override
   public Future<Void> writeCustomFrame(int type, int flags, Buffer payload) {
     return context.failedFuture("HTTP/1 does not support custom frames");
   }
