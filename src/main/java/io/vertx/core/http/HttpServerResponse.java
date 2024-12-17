@@ -519,7 +519,10 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
 
   /**
    * Like {@link #push(HttpMethod, String, String, MultiMap, Handler)} with no headers.
+   *
+   * @deprecated instead use {@link #push(HttpMethod, HostAndPort, String, Handler)}
    */
+  @Deprecated
   @Fluent
   default HttpServerResponse push(HttpMethod method, String host, String path, Handler<AsyncResult<HttpServerResponse>> handler) {
     return push(method, host, path, null, handler);
@@ -527,8 +530,26 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
 
   /**
    * Same as {@link #push(HttpMethod, String, String, Handler)} but with an {@code handler} called when the operation completes
+   *
+   * @deprecated instead use {@link #push(HttpMethod, HostAndPort, String)}
    */
+  @Deprecated
   default Future<HttpServerResponse> push(HttpMethod method, String host, String path) {
+    return push(method, host, path, (MultiMap) null);
+  }
+
+  /**
+   * Like {@link #push(HttpMethod, String, String, MultiMap, Handler)} with no headers.
+   */
+  @Fluent
+  default HttpServerResponse push(HttpMethod method, HostAndPort host, String path, Handler<AsyncResult<HttpServerResponse>> handler) {
+    return push(method, host, path, null, handler);
+  }
+
+  /**
+   * Same as {@link #push(HttpMethod, String, String, Handler)} but with an {@code handler} called when the operation completes
+   */
+  default Future<HttpServerResponse> push(HttpMethod method, HostAndPort host, String path) {
     return push(method, host, path, (MultiMap) null);
   }
 
@@ -537,7 +558,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    */
   @Fluent
   default HttpServerResponse push(HttpMethod method, String path, MultiMap headers, Handler<AsyncResult<HttpServerResponse>> handler) {
-    return push(method, null, path, headers, handler);
+    return push(method, (String) null, path, headers, handler);
   }
 
   /**
@@ -552,14 +573,14 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    */
   @Fluent
   default HttpServerResponse push(HttpMethod method, String path, Handler<AsyncResult<HttpServerResponse>> handler) {
-    return push(method, null, path, null, handler);
+    return push(method, (String) null, path, null, handler);
   }
 
   /**
    * Same as {@link #push(HttpMethod, String, Handler)} but with an {@code handler} called when the operation completes
    */
   default Future<HttpServerResponse> push(HttpMethod method, String path) {
-    return push(method, null, path);
+    return push(method, (String) null, path);
   }
 
   /**
@@ -574,12 +595,13 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * Push can be sent only for peer initiated streams and if the response is not ended.
    *
    * @param method the method of the promised request
-   * @param authority the authority of the promised request
+   * @param host the authority of the promised request
    * @param path the path of the promised request
    * @param headers the headers of the promised request
    * @param handler the handler notified when the response can be written
    * @return a reference to this, so the API can be used fluently
    */
+  @Deprecated
   @Fluent
   default HttpServerResponse push(HttpMethod method, String host, String path, MultiMap headers, Handler<AsyncResult<HttpServerResponse>> handler) {
     Future<HttpServerResponse> fut = push(method, host, path, headers);
@@ -588,11 +610,6 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
     }
     return this;
   }
-
-  /**
-   * Same as {@link #push(HttpMethod, String, String, MultiMap, Handler)} but with an {@code handler} called when the operation completes
-   */
-  Future<HttpServerResponse> push(HttpMethod method, HostAndPort authority, String path, MultiMap headers);
 
   /**
    * Push a response to the client.<p/>
@@ -614,6 +631,38 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    */
   @Deprecated
   Future<HttpServerResponse> push(HttpMethod method, String host, String path, MultiMap headers);
+
+  /**
+   * Push a response to the client.<p/>
+   *
+   * The {@code handler} will be notified with a <i>success</i> when the push can be sent and with
+   * a <i>failure</i> when the client has disabled push or reset the push before it has been sent.<p/>
+   *
+   * The {@code handler} may be queued if the client has reduced the maximum number of streams the server can push
+   * concurrently.<p/>
+   *
+   * Push can be sent only for peer initiated streams and if the response is not ended.
+   *
+   * @param method the method of the promised request
+   * @param authority the authority of the promised request
+   * @param path the path of the promised request
+   * @param headers the headers of the promised request
+   * @param handler the handler notified when the response can be written
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  default HttpServerResponse push(HttpMethod method, HostAndPort authority, String path, MultiMap headers, Handler<AsyncResult<HttpServerResponse>> handler) {
+    Future<HttpServerResponse> fut = push(method, authority, path, headers);
+    if (handler != null) {
+      fut.onComplete(handler);
+    }
+    return this;
+  }
+
+  /**
+   * Same as {@link #push(HttpMethod, String, String, MultiMap, Handler)} but with an {@code handler} called when the operation completes
+   */
+  Future<HttpServerResponse> push(HttpMethod method, HostAndPort authority, String path, MultiMap headers);
 
   /**
    * Reset this HTTP/2 stream with the error code {@code 0}.
