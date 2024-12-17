@@ -28,7 +28,6 @@ import io.vertx.core.streams.ReadStream;
 
 import javax.net.ssl.SSLSession;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Represents a server-side HTTP request.
@@ -474,22 +473,6 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    */
   default int cookieCount() {
     return cookies().size();
-  }
-
-  /**
-   * @deprecated the implementation made a wrong assumption that cookies could be identified only by their name. The RFC
-   * states that the tuple of {@code <name, domain, path>} is the unique identifier.
-   *
-   * When more than one cookie has the same name, the map will hold that lost one to be parsed and any previously parsed
-   * value will be silently overwritten.
-   *
-   * @return a map of all the cookies.
-   */
-  @Deprecated
-  default Map<String, Cookie> cookieMap() {
-    return cookies()
-      .stream()
-      .collect(Collectors.toMap(Cookie::getName, cookie -> cookie));
   }
 
   /**
