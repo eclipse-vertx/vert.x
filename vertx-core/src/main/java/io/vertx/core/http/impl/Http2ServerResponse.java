@@ -630,26 +630,6 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public Future<HttpServerResponse> push(HttpMethod method, String authority, String path, MultiMap headers) {
-    if (push) {
-      throw new IllegalStateException("A push response cannot promise another push");
-    }
-    HostAndPort hostAndPort = null;
-    if (authority != null) {
-      hostAndPort = HostAndPort.parseAuthority(authority, -1);
-    }
-    if (hostAndPort == null) {
-      hostAndPort = stream.authority;
-    }
-    synchronized (conn) {
-      checkValid();
-    }
-    Promise<HttpServerResponse> promise = stream.context.promise();
-    conn.sendPush(stream.id(), hostAndPort, method, headers, path, stream.priority(), promise);
-    return promise.future();
-  }
-
-  @Override
   public HttpServerResponse setStreamPriority(StreamPriorityBase priority) {
     stream.updatePriority(priority);
     return this;
