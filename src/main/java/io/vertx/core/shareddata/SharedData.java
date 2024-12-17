@@ -11,6 +11,8 @@
 
 package io.vertx.core.shareddata;
 
+import java.util.Comparator;
+
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -192,5 +194,20 @@ public interface SharedData {
    * @return the map
    */
   <K, V> LocalMap<K, V> getLocalMap(String name);
+
+  /**
+   * Return a <strong>sorted</strong> {@link LocalMap} with the specific {@code name}. The given
+   * {@code comparator} is used to define the sort order.
+   * 
+   * <p>
+   * Calling this method twice with the same {@code name} will return the same {@link LocalSortedMap}
+   * instance. Calling this method with a different {@code comparator} has no effect to an existing 
+   * map.
+   * 
+   * @param  name the name of the map
+   * @param  comparator a {@link Comparator} to define the sort order of the map
+   * @return the map
+   */
+  <K extends Comparable<K>, V> LocalSortedMap<K, V> getLocalSortedMap(String name);
 
 }

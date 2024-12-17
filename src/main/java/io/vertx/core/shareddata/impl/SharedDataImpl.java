@@ -22,12 +22,14 @@ import io.vertx.core.shareddata.*;
 import io.vertx.core.spi.cluster.ClusterManager;
 
 import java.io.Serializable;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -42,6 +44,7 @@ public class SharedDataImpl implements SharedData {
   private final ConcurrentMap<String, LocalAsyncMapImpl<?, ?>> localAsyncMaps = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, Counter> localCounters = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, LocalMap<?, ?>> localMaps = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, LocalSortedMap<?, ?>> localSortedMaps = new ConcurrentHashMap<>();
 
   public SharedDataImpl(VertxInternal vertx, ClusterManager clusterManager) {
     this.vertx = vertx;
@@ -162,6 +165,21 @@ public class SharedDataImpl implements SharedData {
   @Override
   public <K, V> LocalMap<K, V> getLocalMap(String name) {
     return (LocalMap<K, V>) localMaps.computeIfAbsent(name, n -> new LocalMapImpl<>(n, localMaps));
+  }
+
+  /**
+   * Return a <strong>sorted</strong> map with the specific {@code name} and the
+   * given
+   * {@code comparator} defining the sort order. All incovations of this method
+   * with the
+   * same value of {@code name} are guaranteed to return the same
+   * {@link LocalSortedMap} instance.
+   */
+  @SuppressWarnings("unchecked")
+  @Override
+  public <K extends Comparable<K>, V> LocalSortedMap<K, V> getLocalSortedMap(String name) {
+    return (LocalSortedMap<K, V>) localSortedMaps.computeIfAbsent(name,
+        n -> new LocalSortedMapImpl<>(name, localSortedMaps));
   }
 
   @Override
