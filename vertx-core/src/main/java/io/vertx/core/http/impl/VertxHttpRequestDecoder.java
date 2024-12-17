@@ -11,9 +11,9 @@
 package io.vertx.core.http.impl;
 
 import io.netty.handler.codec.http.*;
-import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
+import io.vertx.core.internal.http.HttpHeadersInternal;
 
 /**
  * A request decoder using {@link HeadersMultiMap} which is faster than {@code DefaultHttpHeaders} used by the super class.
@@ -25,7 +25,7 @@ public class VertxHttpRequestDecoder extends HttpRequestDecoder {
       options.getMaxInitialLineLength(),
       options.getMaxHeaderSize(),
       options.getMaxChunkSize(),
-      !HttpHeaders.DISABLE_HTTP_HEADERS_VALIDATION,
+      !HttpHeadersInternal.DISABLE_HTTP_HEADERS_VALIDATION,
       options.getDecoderInitialBufferSize());
   }
 

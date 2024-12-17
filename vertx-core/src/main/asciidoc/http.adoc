@@ -358,7 +358,7 @@ to arbitrary places on your filesystem. See <<Security notes, security notes>> f
 ==== Handling cookies
 
 You use {@link io.vertx.core.http.HttpServerRequest#getCookie(String)} to retrieve
-a cookie by name, or use {@link io.vertx.core.http.HttpServerRequest#cookieMap()} to retrieve all the cookies.
+a cookie by name, or use {@link io.vertx.core.http.HttpServerRequest#cookies()} to retrieve all the cookies.
 
 To remove a cookie, use {@link io.vertx.core.http.HttpServerResponse#removeCookie(String)}.
 

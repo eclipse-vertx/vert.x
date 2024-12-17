@@ -19,7 +19,6 @@ import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
-import io.vertx.core.impl.SysProps;
 
 /**
  * Contains a bunch of useful HTTP headers stuff:
@@ -34,14 +33,6 @@ import io.vertx.core.impl.SysProps;
  */
 @VertxGen
 public interface HttpHeaders {
-
-  /** JVM system property that disables HTTP headers validation, don't use this in production. */
-  @Deprecated
-  String DISABLE_HTTP_HEADERS_VALIDATION_PROP_NAME = SysProps.DISABLE_HTTP_HEADERS_VALIDATION.name;
-
-  /** Constant that disables HTTP headers validation, this is a constant so the JIT can eliminate validation code. */
-  @Deprecated
-  boolean DISABLE_HTTP_HEADERS_VALIDATION = SysProps.DISABLE_HTTP_HEADERS_VALIDATION.getBoolean();
 
   /**
    * Accept header name
