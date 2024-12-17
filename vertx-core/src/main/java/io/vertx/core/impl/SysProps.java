@@ -10,6 +10,8 @@
  */
 package io.vertx.core.impl;
 
+import io.vertx.core.internal.http.HttpHeadersInternal;
+
 import java.io.File;
 
 /**
@@ -20,7 +22,7 @@ import java.io.File;
 public enum SysProps {
 
   /**
-   * Duplicate of {@link io.vertx.core.http.HttpHeaders#DISABLE_HTTP_HEADERS_VALIDATION}
+   * Duplicate of {@link HttpHeadersInternal#DISABLE_HTTP_HEADERS_VALIDATION}
    */
   DISABLE_HTTP_HEADERS_VALIDATION("vertx.disableHttpHeadersValidation"),
 

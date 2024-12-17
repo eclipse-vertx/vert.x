@@ -18,6 +18,7 @@ import io.netty.util.AsciiString;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.impl.HttpUtils;
+import io.vertx.core.internal.http.HttpHeadersInternal;
 
 import java.util.AbstractMap;
 import java.util.Arrays;
@@ -60,7 +61,7 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
   static final BiConsumer<CharSequence, CharSequence> HTTP_VALIDATOR;
 
   static {
-    if (!io.vertx.core.http.HttpHeaders.DISABLE_HTTP_HEADERS_VALIDATION) {
+    if (!HttpHeadersInternal.DISABLE_HTTP_HEADERS_VALIDATION) {
       HTTP_VALIDATOR = HttpUtils::validateHeader;
     } else {
       HTTP_VALIDATOR = null;

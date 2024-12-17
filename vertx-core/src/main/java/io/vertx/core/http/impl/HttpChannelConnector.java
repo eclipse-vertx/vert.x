@@ -212,7 +212,7 @@ public class HttpChannelConnector {
       options.getMaxHeaderSize(),
       options.getMaxChunkSize(),
       false,
-      !HttpHeaders.DISABLE_HTTP_HEADERS_VALIDATION,
+      !HttpHeadersInternal.DISABLE_HTTP_HEADERS_VALIDATION,
       options.getDecoderInitialBufferSize()));
     if (options.isDecompressionSupported()) {
       pipeline.addLast("inflater", new HttpContentDecompressor(false));
