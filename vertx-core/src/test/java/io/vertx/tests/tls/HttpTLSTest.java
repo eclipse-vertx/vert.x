@@ -37,6 +37,7 @@ import java.util.function.Supplier;
 
 import javax.net.ssl.*;
 
+import io.netty.incubator.codec.quic.QuicSslEngine;
 import io.vertx.core.*;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.VertxThread;
@@ -2271,7 +2272,11 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
     @Override
     public String chooseEngineServerAlias(String keyType, Principal[] issuers, SSLEngine engine) {
-      peerHostVerifier.accept(engine.getPeerHost(), engine.getPeerPort());
+      if (engine instanceof QuicSslEngine) {
+        peerHostVerifier.accept(engine.getSession().getPeerHost(), engine.getSession().getPeerPort());
+      } else {
+        peerHostVerifier.accept(engine.getPeerHost(), engine.getPeerPort());
+      }
       if (delegate instanceof X509ExtendedKeyManager) {
         return ((X509ExtendedKeyManager) delegate).chooseEngineServerAlias(keyType, issuers, engine);
       } else {
