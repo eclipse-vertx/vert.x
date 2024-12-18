@@ -98,8 +98,7 @@ public class SslChannelProvider {
       log.debug("Creating HTTP/3 Server Ssl Handler ... ");
       Arguments.require(handler != null, "handler can't be null for http/3");
 
-      return configureQuicCodecBuilder(Http3.newQuicServerCodecBuilder(), sslOptions,
-        delegatedTaskExec)
+      return configureQuicCodecBuilder(Http3.newQuicServerCodecBuilder(), sslOptions, delegatedTaskExec)
         .sslContext((QuicSslContext) ((VertxSslContext) sslContext).unwrap())
         .tokenHandler(InsecureQuicTokenHandler.INSTANCE)
         .handler(handler)
@@ -124,7 +123,7 @@ public class SslChannelProvider {
     if (sslOptions.isHttp3()) {
       QuicSslContext serverSslContextWithSni =
         QuicSslContextBuilder.buildForServerWithSni(sslContextProvider.serverNameMapping(sslOptions.isUseAlpn(),
-        sslOptions.isHttp3()));
+          sslOptions.isHttp3()));
 
       return configureQuicCodecBuilder(Http3.newQuicServerCodecBuilder(), sslOptions,
         delegatedTaskExec)
@@ -143,7 +142,7 @@ public class SslChannelProvider {
   }
 
   private static <T extends QuicCodecBuilder<T>> T configureQuicCodecBuilder(T quicCodecBuilder, SSLOptions sslOptions,
-                                                                      Executor delegatedTaskExec) {
+                                                                             Executor delegatedTaskExec) {
     quicCodecBuilder
       .sslTaskExecutor(delegatedTaskExec)
       .maxIdleTimeout(sslOptions.getSslHandshakeTimeout(), sslOptions.getSslHandshakeTimeoutUnit())
