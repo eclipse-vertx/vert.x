@@ -412,7 +412,10 @@ public abstract class ConnectionBase {
   }
 
   public SSLSession sslSession() {
-    //TODO: should return sslSession for http3.
+    if (isHttp3SslHandler(chctx)) {
+      return ((QuicChannel) chctx.channel()).sslEngine().getSession();
+    }
+
     ChannelHandlerContext sslHandlerContext = chctx.pipeline().context(SslHandler.class);
     if (sslHandlerContext != null) {
       SslHandler sslHandler = (SslHandler) sslHandlerContext.handler();
