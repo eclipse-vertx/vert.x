@@ -12,7 +12,9 @@ package io.vertx.core.internal.tls;
 
 import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslContext;
+import io.netty.incubator.codec.quic.QuicSslContext;
 import io.netty.util.AsyncMapping;
+import io.netty.util.Mapping;
 import io.vertx.core.VertxException;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.internal.net.VertxSslContext;
@@ -162,6 +164,22 @@ public class SslContextProvider {
         promise.setSuccess(sslContext);
       });
       return promise;
+    };
+  }
+
+  /**
+   * Server name for {@link SniHandler}
+   *
+   * @return the {@link Mapping}
+   */
+  public Mapping<? super String, ? extends QuicSslContext> serverNameMapping(boolean useAlpn, boolean http3) {
+    return (Mapping<String, QuicSslContext>) serverName -> {
+      try {
+        VertxSslContext sslContext = (VertxSslContext) sslContext(serverName, useAlpn, http3, true);
+        return (QuicSslContext) sslContext.unwrap();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
     };
   }
 
