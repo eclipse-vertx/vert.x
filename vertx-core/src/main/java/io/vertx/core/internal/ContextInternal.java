@@ -364,21 +364,27 @@ public interface ContextInternal extends Context {
     putLocal(key, accessMode, null);
   }
 
-  @Deprecated
+  /**
+   * @deprecated instead use {@link #getLocal(ContextLocal, AccessMode)}
+   */
+  @Deprecated(forRemoval = true)
   @SuppressWarnings("unchecked")
-  @Override
   default <T> T getLocal(Object key) {
     return (T) localContextData().get(key);
   }
 
-  @Deprecated
-  @Override
+  /**
+   * @deprecated instead use {@link #putLocal(ContextLocal, AccessMode, Object)}
+   */
+  @Deprecated(forRemoval = true)
   default void putLocal(Object key, Object value) {
     localContextData().put(key, value);
   }
 
-  @Deprecated
-  @Override
+  /**
+   * @deprecated instead use {@link #removeLocal(ContextLocal, AccessMode)}
+   */
+  @Deprecated(forRemoval = true)
   default boolean removeLocal(Object key) {
     return localContextData().remove(key) != null;
   }
