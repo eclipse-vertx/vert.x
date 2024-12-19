@@ -70,14 +70,6 @@ public class Http3TLSTest extends HttpTLSTest {
   @Override
   @Test
   @Ignore
-  public void testSNIForceSend() throws Exception {
-    //TODO: resolve this test issue.
-    super.testSNIForceSend();
-  }
-
-  @Override
-  @Test
-  @Ignore
   public void testDisableTLSv1_2() throws Exception {
     //TODO: resolve this test issue.
     super.testDisableTLSv1_2();
@@ -321,14 +313,6 @@ public class Http3TLSTest extends HttpTLSTest {
   public void testSniEngineUseWorkerThreads() throws Exception {
     //TODO: resolve this test issue.
     super.testSniEngineUseWorkerThreads();
-  }
-
-  @Override
-  @Test
-  @Ignore
-  public void testTLSServerSSLEnginePeerHost() throws Exception {
-    //TODO: resolve this test issue.
-    super.testTLSServerSSLEnginePeerHost();
   }
 
   @Override
