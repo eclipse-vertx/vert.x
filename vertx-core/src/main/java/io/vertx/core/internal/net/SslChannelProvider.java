@@ -98,8 +98,13 @@ public class SslChannelProvider {
       log.debug("Creating HTTP/3 Server Ssl Handler ... ");
       Arguments.require(handler != null, "handler can't be null for http/3");
 
+      QuicSslContext quicSslContext = (QuicSslContext) ((VertxSslContext) sslContext).unwrap();
       return configureQuicCodecBuilder(Http3.newQuicServerCodecBuilder(), sslOptions, delegatedTaskExec)
         .sslContext((QuicSslContext) ((VertxSslContext) sslContext).unwrap())
+        .sslEngineProvider(quicChannel -> {
+          InetSocketAddress address = ((InetSocketAddress) quicChannel.remoteSocketAddress());
+          return quicSslContext.newEngine(quicChannel.alloc(), address.getHostString(), address.getPort());
+        })
         .tokenHandler(InsecureQuicTokenHandler.INSTANCE)
         .handler(handler)
         .build();
