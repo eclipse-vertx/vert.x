@@ -39,6 +39,7 @@ import io.netty.handler.codec.http2.Http2EventAdapter;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Flags;
 import io.netty.handler.codec.http2.Http2FrameAdapter;
+import io.netty.handler.codec.http2.Http2FrameListener;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.codec.http2.Http2Stream;
@@ -1270,6 +1271,27 @@ public class Http2ServerTest extends Http2TestBase {
           request.context.flush();
         }
       });
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testHostHeaderInsteadOfAuthorityPseudoHeader() throws Exception {
+    // build the HTTP/2 headers, omit the ":authority" pseudo-header and include the "host" header instead
+    Http2Headers headers = new DefaultHttp2Headers().method("GET").scheme("https").path("/").set("host", DEFAULT_HTTPS_HOST_AND_PORT);
+    server.requestHandler(req -> {
+      // validate that the authority is properly populated
+      assertEquals(DEFAULT_HTTPS_HOST, req.authority().host());
+      assertEquals(DEFAULT_HTTPS_PORT, req.authority().port());
+      testComplete();
+    });
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
+      int id = request.nextStreamId();
+      Http2ConnectionEncoder encoder = request.encoder;
+      encoder.writeHeaders(request.context, id, headers, 0, true, request.context.newPromise());
     });
     fut.sync();
     await();
