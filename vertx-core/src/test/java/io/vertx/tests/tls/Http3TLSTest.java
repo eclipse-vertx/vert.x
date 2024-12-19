@@ -61,25 +61,22 @@ public class Http3TLSTest extends HttpTLSTest {
 
   @Override
   @Test
-  @Ignore
+  @Ignore("QUIC only supports TLSv1.3, so TLSv1.2 tests are not possible and protocol setting isn't possible in Netty.")
   public void testDisableTLSv1_2OpenSSL() throws Exception {
-    //TODO: resolve this test issue.
     super.testDisableTLSv1_2OpenSSL();
   }
 
   @Override
   @Test
-  @Ignore
+  @Ignore("QUIC only supports TLSv1.3, so TLSv1.2 tests are not possible and protocol setting isn't possible in Netty.")
   public void testDisableTLSv1_2() throws Exception {
-    //TODO: resolve this test issue.
     super.testDisableTLSv1_2();
   }
 
   @Override
   @Test
-  @Ignore
+  @Ignore("QUIC only supports TLSv1.3, so TLSv1.2 tests are not possible and protocol setting isn't possible in Netty.")
   public void testDisableTLSv1_3() throws Exception {
-    //TODO: resolve this test issue.
     super.testDisableTLSv1_3();
   }
 
@@ -141,9 +138,8 @@ public class Http3TLSTest extends HttpTLSTest {
 
   @Override
   @Test
-  @Ignore
+  @Ignore("QUIC only supports TLSv1.3, so TLSv1.2 tests are not possible and protocol setting isn't possible in Netty.")
   public void testDisableTLSv1_3OpenSSL() throws Exception {
-    //TODO: resolve this test issue.
     super.testDisableTLSv1_3OpenSSL();
   }
 
@@ -213,9 +209,8 @@ public class Http3TLSTest extends HttpTLSTest {
 
   @Override
   @Test
-  @Ignore
+  @Ignore("QUIC only supports TLSv1.3, so TLSv1.2 tests are not possible and protocol setting isn't possible in Netty.")
   public void testTLSNonMatchingProtocolVersions() throws Exception {
-    //TODO: resolve this test issue.
     super.testTLSNonMatchingProtocolVersions();
   }
 
