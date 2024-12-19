@@ -821,12 +821,12 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
   @Test
   public void testSNIForceSend() throws Exception {
-    TLSTest test = testTLS(Cert.NONE, Trust.SNI_JKS_HOST1, Cert.SNI_JKS, Trust.NONE)
+    TLSTest test = testTLS(Cert.NONE, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, Trust.NONE)
         .clientForceSni()
         .serverSni()
-        .requestOptions(new RequestOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT).setHost("host1"))
+        .requestOptions(new RequestOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT).setHost("host2.com"))
         .pass();
-    assertEquals("host1", test.indicatedServerName);
+    assertEquals("host2.com", test.indicatedServerName);
   }
 
   @Test
