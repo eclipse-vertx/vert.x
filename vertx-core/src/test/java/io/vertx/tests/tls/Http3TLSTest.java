@@ -53,14 +53,6 @@ public class Http3TLSTest extends HttpTLSTest {
 
   @Override
   @Test
-  @Ignore
-  public void testEngineUseEventLoopThread() throws Exception {
-    //TODO: resolve this test issue.
-    super.testEngineUseEventLoopThread();
-  }
-
-  @Override
-  @Test
   @Ignore("QUIC only supports TLSv1.3, so TLSv1.2 tests are not possible and protocol setting isn't possible in Netty.")
   public void testDisableTLSv1_2OpenSSL() throws Exception {
     super.testDisableTLSv1_2OpenSSL();
@@ -80,6 +72,43 @@ public class Http3TLSTest extends HttpTLSTest {
     super.testDisableTLSv1_3();
   }
 
+  @Override
+  @Test
+  @Ignore("QUIC only supports TLSv1.3, so TLSv1.2 tests are not possible and protocol setting isn't possible in Netty.")
+  public void testDisableTLSv1_3OpenSSL() throws Exception {
+    super.testDisableTLSv1_3OpenSSL();
+  }
+
+  @Override
+  @Test
+  @Ignore("QUIC only supports TLSv1.3, so TLSv1.2 tests are not possible and protocol setting isn't possible in Netty.")
+  public void testTLSNonMatchingProtocolVersions() throws Exception {
+    super.testTLSNonMatchingProtocolVersions();
+  }
+
+  @Override
+  @Test
+  @Ignore("QUIC only supports TLSv1.3, so TLSv1.2 tests are not possible and protocol setting isn't possible in Netty.")
+  public void testTLSInvalidProtocolVersion() throws Exception {
+    //TODO: resolve this test issue.
+    super.testTLSInvalidProtocolVersion();
+  }
+
+  @Override
+  @Test
+  @Ignore("Cipher suites cannot be modified in QUIC.")
+  public void testTLSNonMatchingCipherSuites() throws Exception {
+    //TODO: resolve this test issue.
+    super.testTLSNonMatchingCipherSuites();
+  }
+
+  @Override
+  @Test
+  @Ignore
+  public void testEngineUseEventLoopThread() throws Exception {
+    //TODO: resolve this test issue.
+    super.testEngineUseEventLoopThread();
+  }
 
   @Override
   @Test
@@ -97,20 +126,12 @@ public class Http3TLSTest extends HttpTLSTest {
     super.testSNISubjectAltenativeNameCNMatch1();
   }
 
-
   @Override
   @Test
   @Ignore
   public void testSNISubjectAltenativeNameCNMatch1PKCS12() throws Exception {
     //TODO: resolve this test issue.
     super.testSNISubjectAltenativeNameCNMatch1PKCS12();
-  }
-
-  @Override
-  @Test
-  @Ignore("QUIC only supports TLSv1.3, so TLSv1.2 tests are not possible and protocol setting isn't possible in Netty.")
-  public void testDisableTLSv1_3OpenSSL() throws Exception {
-    super.testDisableTLSv1_3OpenSSL();
   }
 
   @Override
@@ -156,19 +177,11 @@ public class Http3TLSTest extends HttpTLSTest {
 
   @Override
   @Test
-  @Ignore("QUIC only supports TLSv1.3, so TLSv1.2 tests are not possible and protocol setting isn't possible in Netty.")
-  public void testTLSNonMatchingProtocolVersions() throws Exception {
-    super.testTLSNonMatchingProtocolVersions();
-  }
-
-  @Override
-  @Test
   @Ignore
   public void testUpdateSSLOptions() throws Exception {
     //TODO: resolve this test issue.
     super.testUpdateSSLOptions();
   }
-
 
   @Override
   @Test
@@ -204,26 +217,10 @@ public class Http3TLSTest extends HttpTLSTest {
 
   @Override
   @Test
-  @Ignore("QUIC only supports TLSv1.3, so TLSv1.2 tests are not possible and protocol setting isn't possible in Netty.")
-  public void testTLSInvalidProtocolVersion() throws Exception {
-    //TODO: resolve this test issue.
-    super.testTLSInvalidProtocolVersion();
-  }
-
-  @Override
-  @Test
   @Ignore
   public void testEngineUseWorkerThreads() throws Exception {
     //TODO: resolve this test issue.
     super.testEngineUseWorkerThreads();
-  }
-
-  @Override
-  @Test
-  @Ignore("Cipher suites cannot be modified in QUIC.")
-  public void testTLSNonMatchingCipherSuites() throws Exception {
-    //TODO: resolve this test issue.
-    super.testTLSNonMatchingCipherSuites();
   }
 
   @Override
@@ -233,7 +230,6 @@ public class Http3TLSTest extends HttpTLSTest {
     //TODO: resolve this test issue.
     super.testUpdateSSLOptionsSamePathAndForce();
   }
-
 
   @Override
   @Test
