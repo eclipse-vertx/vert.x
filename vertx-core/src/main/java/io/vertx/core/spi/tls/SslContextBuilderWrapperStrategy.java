@@ -89,6 +89,17 @@ class QuicSslContextBuilderWrapper implements SslContextBuilderWrapperStrategy {
   }
 
   public void ciphers(Collection<String> cipherSuites) {
+    /*
+     *     Cipher suites cannot be modified in QUIC.
+     *     In the `QuicheQuicSslContext.java` file, the following method demonstrates that cipher suites are fixed:
+     *
+     *     public List<String> cipherSuites() {
+     *         return Arrays.asList("TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384");
+     *     }
+     *
+     *     This method returns a predefined list of cipher suites for TLS 1.3, and no mechanism is provided to modify
+     *     them.
+     */
   }
 
   public void applicationProtocolConfig(ApplicationProtocolConfig applicationProtocolConfig) {

@@ -280,7 +280,7 @@ public class Http3TLSTest extends HttpTLSTest {
 
   @Override
   @Test
-  @Ignore
+  @Ignore("Cipher suites cannot be modified in QUIC.")
   public void testTLSNonMatchingCipherSuites() throws Exception {
     //TODO: resolve this test issue.
     super.testTLSNonMatchingCipherSuites();
