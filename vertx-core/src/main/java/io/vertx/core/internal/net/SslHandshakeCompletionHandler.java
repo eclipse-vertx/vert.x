@@ -14,11 +14,14 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.ssl.SniCompletionEvent;
 import io.netty.handler.ssl.SslHandshakeCompletionEvent;
+import io.netty.incubator.codec.quic.QuicConnectionCloseEvent;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.Promise;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
+
+import javax.net.ssl.SSLHandshakeException;
 
 /**
  * A handler that waits for SSL handshake completion and dispatch it to the server handler.
@@ -58,6 +61,14 @@ public class SslHandshakeCompletionHandler extends ChannelInboundHandlerAdapter 
         promise.setSuccess(null);
       } else {
         promise.tryFailure(completion.cause());
+      }
+    } else if (evt instanceof QuicConnectionCloseEvent) {
+      log.debug("Received event QuicConnectionCloseEvent");
+      QuicConnectionCloseEvent closeEvt = (QuicConnectionCloseEvent) evt;
+      if (closeEvt.isTlsError()) {
+        promise.tryFailure(new SSLHandshakeException("QUIC connection terminated due to SSL/TLS error"));
+      } else {
+        ctx.fireUserEventTriggered(evt);
       }
     } else {
       log.debug("Received unhandled event");
