@@ -132,14 +132,6 @@ public class Http3TLSTest extends HttpTLSTest {
   @Override
   @Test
   @Ignore
-  public void testSNIUnknownServerName1() throws Exception {
-    //TODO: resolve this test issue.
-    super.testSNIUnknownServerName1();
-  }
-
-  @Override
-  @Test
-  @Ignore
   public void testSniEngineUseEventLoopThread() throws Exception {
     //TODO: resolve this test issue.
     super.testSniEngineUseEventLoopThread();
