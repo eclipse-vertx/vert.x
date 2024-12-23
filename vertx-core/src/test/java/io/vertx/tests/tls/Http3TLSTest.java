@@ -264,7 +264,7 @@ public class Http3TLSTest extends HttpTLSTest {
 
   @Override
   @Test
-  @Ignore
+  @Ignore("QUIC only supports TLSv1.3, so TLSv1.2 tests are not possible and protocol setting isn't possible in Netty.")
   public void testTLSInvalidProtocolVersion() throws Exception {
     //TODO: resolve this test issue.
     super.testTLSInvalidProtocolVersion();
