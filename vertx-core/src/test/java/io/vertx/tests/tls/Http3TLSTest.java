@@ -80,29 +80,6 @@ public class Http3TLSTest extends HttpTLSTest {
     super.testDisableTLSv1_3();
   }
 
-  @Override
-  @Test
-  @Ignore
-  public void testTLSClientRevokedServerCert() throws Exception {
-    //TODO: resolve this test issue.
-    super.testTLSClientRevokedServerCert();
-  }
-
-  @Override
-  @Test
-  @Ignore
-  public void testTLSVerifyNonMatchingHost() throws Exception {
-    //TODO: resolve this test issue.
-    super.testTLSVerifyNonMatchingHost();
-  }
-
-  @Override
-  @Test
-  @Ignore
-  public void testTLSClientUntrustedServerCertPEMRootCAWithPEMCA() throws Exception {
-    //TODO: resolve this test issue.
-    super.testTLSClientUntrustedServerCertPEMRootCAWithPEMCA();
-  }
 
   @Override
   @Test
@@ -120,13 +97,6 @@ public class Http3TLSTest extends HttpTLSTest {
     super.testSNISubjectAltenativeNameCNMatch1();
   }
 
-  @Override
-  @Test
-  @Ignore
-  public void testTLSVerifyNonMatchingHostOpenSSL() throws Exception {
-    //TODO: resolve this test issue.
-    super.testTLSVerifyNonMatchingHostOpenSSL();
-  }
 
   @Override
   @Test
@@ -183,21 +153,6 @@ public class Http3TLSTest extends HttpTLSTest {
     super.testSNIWithServerNameTrustFail();
   }
 
-  @Override
-  @Test
-  @Ignore
-  public void testSNIServerIgnoresExtension1() throws Exception {
-    //TODO: resolve this test issue.
-    super.testSNIServerIgnoresExtension1();
-  }
-
-  @Override
-  @Test
-  @Ignore
-  public void testTLSClientUntrustedServer() throws Exception {
-    //TODO: resolve this test issue.
-    super.testTLSClientUntrustedServer();
-  }
 
   @Override
   @Test
@@ -222,13 +177,6 @@ public class Http3TLSTest extends HttpTLSTest {
     super.testUpdateSSLOptions();
   }
 
-  @Override
-  @Test
-  @Ignore
-  public void testSNIDontSendServerNameForShortnames1() throws Exception {
-    //TODO: resolve this test issue.
-    super.testSNIDontSendServerNameForShortnames1();
-  }
 
   @Override
   @Test
@@ -294,13 +242,6 @@ public class Http3TLSTest extends HttpTLSTest {
     super.testUpdateSSLOptionsSamePathAndForce();
   }
 
-  @Override
-  @Test
-  @Ignore
-  public void testTLSClientUntrustedServerPEM() throws Exception {
-    //TODO: resolve this test issue.
-    super.testTLSClientUntrustedServerPEM();
-  }
 
   @Override
   @Test
