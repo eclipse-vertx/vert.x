@@ -90,7 +90,6 @@ public class Http3TLSTest extends HttpTLSTest {
   @Test
   @Ignore("QUIC only supports TLSv1.3, so TLSv1.2 tests are not possible and protocol setting isn't possible in Netty.")
   public void testTLSInvalidProtocolVersion() throws Exception {
-    //TODO: resolve this test issue.
     super.testTLSInvalidProtocolVersion();
   }
 
@@ -98,8 +97,17 @@ public class Http3TLSTest extends HttpTLSTest {
   @Test
   @Ignore("Cipher suites cannot be modified in QUIC.")
   public void testTLSNonMatchingCipherSuites() throws Exception {
-    //TODO: resolve this test issue.
     super.testTLSNonMatchingCipherSuites();
+  }
+
+  @Override
+  @Test
+  @Ignore("Trailing dots are not allowed in netty for QUIC.")
+  public void testSniWithTrailingDotHost() throws Exception {
+    /*
+     * QuicheQuicSslEngine.isValidHostNameForSNI() returns false for hostnames with trailing dots.
+     */
+    super.testSniWithTrailingDotHost();
   }
 
   @Override
@@ -237,14 +245,6 @@ public class Http3TLSTest extends HttpTLSTest {
   public void testSniEngineUseWorkerThreads() throws Exception {
     //TODO: resolve this test issue.
     super.testSniEngineUseWorkerThreads();
-  }
-
-  @Override
-  @Test
-  @Ignore
-  public void testSniWithTrailingDotHost() throws Exception {
-    //TODO: resolve this test issue.
-    super.testSniWithTrailingDotHost();
   }
 
   @Override
