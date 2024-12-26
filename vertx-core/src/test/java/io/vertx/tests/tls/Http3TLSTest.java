@@ -20,6 +20,8 @@ import io.vertx.test.tls.Trust;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.util.Arrays;
+
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
  */
@@ -29,7 +31,9 @@ public class Http3TLSTest extends HttpTLSTest {
   protected HttpServerOptions createBaseServerOptions() {
     HttpServerOptions serverOptions = new HttpServerOptions()
       .setPort(HttpTestBase.DEFAULT_HTTPS_PORT)
+      .setHost(DEFAULT_HTTP_HOST)
       .setHttp3(true)
+      .setAlpnVersions(Arrays.asList(HttpVersion.HTTP_3))
       .setUseAlpn(true)
       .setSsl(true);
 
@@ -113,14 +117,6 @@ public class Http3TLSTest extends HttpTLSTest {
   @Override
   @Test
   @Ignore
-  public void testEngineUseEventLoopThread() throws Exception {
-    //TODO: resolve this test issue.
-    super.testEngineUseEventLoopThread();
-  }
-
-  @Override
-  @Test
-  @Ignore
   public void testServerSharingUpdateSSLOptions() throws Exception {
     //TODO: resolve this test issue.
     super.testServerSharingUpdateSSLOptions();
@@ -156,14 +152,6 @@ public class Http3TLSTest extends HttpTLSTest {
   public void testSNIWithServerNameTrustFallbackFail() throws Exception {
     //TODO: resolve this test issue.
     super.testSNIWithServerNameTrustFallbackFail();
-  }
-
-  @Override
-  @Test
-  @Ignore
-  public void testSniEngineUseEventLoopThread() throws Exception {
-    //TODO: resolve this test issue.
-    super.testSniEngineUseEventLoopThread();
   }
 
   @Override
@@ -210,14 +198,6 @@ public class Http3TLSTest extends HttpTLSTest {
   @Override
   @Test
   @Ignore
-  public void testUpdateSSLOptionsSamePath() throws Exception {
-    //TODO: resolve this test issue.
-    super.testUpdateSSLOptionsSamePath();
-  }
-
-  @Override
-  @Test
-  @Ignore
   public void testHttpsSocks() throws Exception {
     //TODO: resolve this test issue.
     super.testHttpsSocks();
@@ -226,33 +206,9 @@ public class Http3TLSTest extends HttpTLSTest {
   @Override
   @Test
   @Ignore
-  public void testEngineUseWorkerThreads() throws Exception {
-    //TODO: resolve this test issue.
-    super.testEngineUseWorkerThreads();
-  }
-
-  @Override
-  @Test
-  @Ignore
   public void testUpdateSSLOptionsSamePathAndForce() throws Exception {
     //TODO: resolve this test issue.
     super.testUpdateSSLOptionsSamePathAndForce();
-  }
-
-  @Override
-  @Test
-  @Ignore
-  public void testSniEngineUseWorkerThreads() throws Exception {
-    //TODO: resolve this test issue.
-    super.testSniEngineUseWorkerThreads();
-  }
-
-  @Override
-  @Test
-  @Ignore
-  public void testUpdateWithInvalidSSLOptions() throws Exception {
-    //TODO: resolve this test issue.
-    super.testUpdateWithInvalidSSLOptions();
   }
 
   @Override
