@@ -43,8 +43,6 @@ import io.vertx.core.http.*;
 import io.vertx.core.impl.VertxThread;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.KeyStoreHelper;
-import io.vertx.core.transport.Transport;
-import io.vertx.test.core.Repeat;
 import io.vertx.test.http.HttpTestBase;
 import org.junit.Assume;
 import org.junit.Ignore;
@@ -1854,12 +1852,12 @@ public abstract class HttpTLSTest extends HttpTestBase {
   @Test
   public void testOverrideClientSSLOptions() throws Exception {
     server.close();
-    server = vertx.createHttpServer(new HttpServerOptions().setSsl(true).setKeyCertOptions(Cert.SERVER_JKS.get()));
+    server = vertx.createHttpServer(createBaseServerOptions().setSsl(true).setKeyCertOptions(Cert.SERVER_JKS.get()));
     server.requestHandler(request -> {
     });
     startServer(testAddress);
     client.close();
-    client = vertx.createHttpClient(new HttpClientOptions().setVerifyHost(false).setSsl(true).setTrustOptions(Trust.CLIENT_JKS.get()));
+    client = vertx.createHttpClient(createBaseClientOptions().setVerifyHost(false).setSsl(true).setTrustOptions(Trust.CLIENT_JKS.get()));
     client.request(requestOptions).onComplete(onFailure(err -> {
       client.request(new RequestOptions(requestOptions).setSslOptions(new ClientSSLOptions().setTrustOptions(Trust.SERVER_JKS.get())))
         .onComplete(onSuccess(request -> {
