@@ -162,23 +162,6 @@ public class Http3TLSTest extends HttpTLSTest {
     super.testSNIWithServerNameTrustFail();
   }
 
-
-  @Override
-  @Test
-  @Ignore
-  public void testConcurrentUpdateSSLOptions() throws Exception {
-    //TODO: resolve this test issue.
-    super.testConcurrentUpdateSSLOptions();
-  }
-
-  @Override
-  @Test
-  @Ignore
-  public void testUpdateSSLOptions() throws Exception {
-    //TODO: resolve this test issue.
-    super.testUpdateSSLOptions();
-  }
-
   @Override
   @Test
   @Ignore
@@ -201,14 +184,6 @@ public class Http3TLSTest extends HttpTLSTest {
   public void testHttpsSocks() throws Exception {
     //TODO: resolve this test issue.
     super.testHttpsSocks();
-  }
-
-  @Override
-  @Test
-  @Ignore
-  public void testUpdateSSLOptionsSamePathAndForce() throws Exception {
-    //TODO: resolve this test issue.
-    super.testUpdateSSLOptionsSamePathAndForce();
   }
 
   @Override

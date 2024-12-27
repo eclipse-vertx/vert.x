@@ -94,6 +94,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
   private Set<NetServerImpl> servers;
   private TCPMetrics<?> metrics;
   private volatile int actualPort;
+  private ChannelId datagramChannelId;
 
   public NetServerImpl(VertxInternal vertx, NetServerOptions options) {
 
@@ -249,6 +250,10 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
             }
           };
 
+          if (ch.pipeline().get(SERVER_SSL_HANDLER_NAME) != null) {
+            ch.pipeline().remove(SERVER_SSL_HANDLER_NAME);
+          }
+
           SslChannelProvider sslChannelProvider = new SslChannelProvider(vertx, sslContextProvider, sslOptions.isSni());
           ch.pipeline().addLast(SERVER_SSL_HANDLER_NAME, sslChannelProvider.createServerHandler(options.getSslOptions(),
             HttpUtils.socketAddressToHostAndPort(ch.remoteAddress()), handler));
@@ -384,6 +389,9 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
           updateInProgress = null;
           if (ar.succeeded()) {
             sslContextProvider = fut;
+            if (options.isHttp3() && datagramChannelId != null) {
+              worker.handle(channelGroup.find(datagramChannelId));
+            }
           }
         }
       });
@@ -474,6 +482,9 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
         initializer = new NetSocketInitializer(context, handler, exceptionHandler, trafficShapingHandler);
         worker = ch -> {
           // Should close if the channel group is closed actually or check that
+          if (options.isHttp3() && datagramChannelId == null) {
+            datagramChannelId = ch.id();
+          }
           channelGroup.add(ch);
           Future<SslContextProvider> scp = sslContextProvider;
           initializer.accept(ch, scp != null ? scp.result() : null, sslContextManager, options.getSslOptions());
