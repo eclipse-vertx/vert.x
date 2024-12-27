@@ -17,12 +17,12 @@ import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
+import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.handler.traffic.GlobalTrafficShapingHandler;
-import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.Closeable;
 import io.vertx.core.Future;
@@ -33,7 +33,6 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.CloseSequence;
 import io.vertx.core.impl.HostnameResolver;
-import io.vertx.core.internal.CloseSequence;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.VertxInternal;
@@ -94,7 +93,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
   private Set<NetServerImpl> servers;
   private TCPMetrics<?> metrics;
   private volatile int actualPort;
-  private ChannelId datagramChannelId;
+  private Channel datagramChannel;
 
   public NetServerImpl(VertxInternal vertx, NetServerOptions options) {
 
@@ -233,44 +232,20 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     private void configurePipeline(Channel ch, SslContextProvider sslContextProvider,
                                    SslContextManager sslContextManager, ServerSSLOptions sslOptions) {
       if (options.isSsl()) {
-        if (options.isHttp3()) {
-          ChannelInitializer<QuicChannel> handler = new ChannelInitializer<>() {
-            @Override
-            protected void initChannel(QuicChannel quicChannel) throws Exception {
-              log.debug("Init quicChannel of QuicServerCodec");
-              ChannelPromise p = quicChannel.newPromise();
-              quicChannel.pipeline().addLast("handshaker", new SslHandshakeCompletionHandler(p));
-              p.addListener(future -> {
-                if (future.isSuccess()) {
-                  connected(quicChannel, sslContextManager, sslOptions);
-                } else {
-                  handleException(future.cause());
-                }
-              });
-            }
-          };
-
-          if (ch.pipeline().get(SERVER_SSL_HANDLER_NAME) != null) {
-            ch.pipeline().remove(SERVER_SSL_HANDLER_NAME);
-          }
-
-          SslChannelProvider sslChannelProvider = new SslChannelProvider(vertx, sslContextProvider, sslOptions.isSni());
-          ch.pipeline().addLast(SERVER_SSL_HANDLER_NAME, sslChannelProvider.createServerHandler(options.getSslOptions(),
-            HttpUtils.socketAddressToHostAndPort(ch.remoteAddress()), handler));
-        } else {
-          SslChannelProvider sslChannelProvider = new SslChannelProvider(vertx, sslContextProvider, sslOptions.isSni());
-          ch.pipeline().addLast(SERVER_SSL_HANDLER_NAME, sslChannelProvider.createServerHandler(options.getSslOptions(),
-            HttpUtils.socketAddressToHostAndPort(ch.remoteAddress()), null));
-          ChannelPromise p = ch.newPromise();
-          ch.pipeline().addLast("handshaker", new SslHandshakeCompletionHandler(p));
-          p.addListener(future -> {
-            if (future.isSuccess()) {
-              connected(ch, sslContextManager, sslOptions);
-            } else {
-              handleException(future.cause());
-            }
-          });
+        if (!options.isHttp3()) {
+          configureChannelSslHandler(ch, sslContextProvider, null);
         }
+
+        ChannelPromise p = ch.newPromise();
+        ch.pipeline().addLast("handshaker", new SslHandshakeCompletionHandler(p));
+        p.addListener(future -> {
+          if (future.isSuccess()) {
+            connected(ch, sslContextManager, sslOptions);
+          } else {
+            handleException(future.cause());
+          }
+        });
+
       } else {
         connected(ch, sslContextManager, sslOptions);
       }
@@ -389,8 +364,8 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
           updateInProgress = null;
           if (ar.succeeded()) {
             sslContextProvider = fut;
-            if (options.isHttp3() && datagramChannelId != null) {
-              worker.handle(channelGroup.find(datagramChannelId));
+            if (options.isHttp3() && datagramChannel != null) {
+              configureChannelSslHandler(datagramChannel, sslContextProvider.result(), channelBalancer);
             }
           }
         }
@@ -482,9 +457,6 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
         initializer = new NetSocketInitializer(context, handler, exceptionHandler, trafficShapingHandler);
         worker = ch -> {
           // Should close if the channel group is closed actually or check that
-          if (options.isHttp3() && datagramChannelId == null) {
-            datagramChannelId = ch.id();
-          }
           channelGroup.add(ch);
           Future<SslContextProvider> scp = sslContextProvider;
           initializer.accept(ch, scp != null ? scp.result() : null, sslContextManager, options.getSslOptions());
@@ -598,7 +570,13 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     if (options.isHttp3()) {
       Bootstrap bootstrap = new Bootstrap();
       bootstrap.group(eventLoop);
-      bootstrap.handler(channelBalancer);
+      bootstrap.handler(new ChannelInitializer<NioDatagramChannel>() {
+        @Override
+        protected void initChannel(NioDatagramChannel ch) throws Exception {
+          datagramChannel = ch;
+          configureChannelSslHandler(datagramChannel, sslContextProvider.result(), NetServerImpl.this.channelBalancer);
+        }
+      });
       applyConnectionOptions(bootstrap);
 
       return bootstrap;
@@ -614,6 +592,17 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     bootstrap.childHandler(channelBalancer);
     applyConnectionOptions(localAddress.isDomainSocket(), bootstrap);
     return bootstrap;
+  }
+
+  private void configureChannelSslHandler(Channel channel, SslContextProvider sslContextProvider, ChannelInitializer http3ChannelInitializer) {
+    if (channel.pipeline().get(SERVER_SSL_HANDLER_NAME) != null) {
+      channel.pipeline().remove(SERVER_SSL_HANDLER_NAME);
+    }
+
+    SslChannelProvider sslChannelProvider = new SslChannelProvider(vertx, sslContextProvider,
+      options.isSni());
+    channel.pipeline().addLast(SERVER_SSL_HANDLER_NAME, sslChannelProvider.createServerHandler(options.getSslOptions(),
+      HttpUtils.socketAddressToHostAndPort(channel.remoteAddress()), http3ChannelInitializer));
   }
 
   public boolean isListening() {

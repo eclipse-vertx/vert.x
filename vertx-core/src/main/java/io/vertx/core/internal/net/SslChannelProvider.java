@@ -81,7 +81,7 @@ public class SslChannelProvider {
   }
 
   public ChannelHandler createServerHandler(SSLOptions sslOptions, HostAndPort remoteAddress,
-                                            ChannelInitializer<QuicChannel> handler) {
+                                            ChannelInitializer handler) {
     if (sni) {
       return createSniHandler(sslOptions, remoteAddress, handler);
     } else {
@@ -90,7 +90,7 @@ public class SslChannelProvider {
   }
 
   private ChannelHandler createServerSslHandler(SSLOptions sslOptions, HostAndPort remoteAddress,
-                                                ChannelInitializer<QuicChannel> handler) {
+                                                ChannelInitializer handler) {
     log.debug("Creating Server Ssl Handler ... ");
     SslContext sslContext = sslContextProvider.sslServerContext(sslOptions.isUseAlpn(), sslOptions.isHttp3());
     Executor delegatedTaskExec = sslContextProvider.useWorkerPool() ? workerPool : ImmediateExecutor.INSTANCE;
@@ -123,7 +123,7 @@ public class SslChannelProvider {
   }
 
   private ChannelHandler createSniHandler(SSLOptions sslOptions, HostAndPort remoteAddress,
-                                          ChannelInitializer<QuicChannel> handler) {
+                                          ChannelInitializer handler) {
     Executor delegatedTaskExec = sslContextProvider.useWorkerPool() ? workerPool : ImmediateExecutor.INSTANCE;
     if (sslOptions.isHttp3()) {
       QuicSslContext serverSslContextWithSni =
