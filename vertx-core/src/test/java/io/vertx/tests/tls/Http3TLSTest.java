@@ -117,14 +117,6 @@ public class Http3TLSTest extends HttpTLSTest {
   @Override
   @Test
   @Ignore
-  public void testServerSharingUpdateSSLOptions() throws Exception {
-    //TODO: resolve this test issue.
-    super.testServerSharingUpdateSSLOptions();
-  }
-
-  @Override
-  @Test
-  @Ignore
   public void testSNISubjectAltenativeNameCNMatch1() throws Exception {
     //TODO: resolve this test issue.
     super.testSNISubjectAltenativeNameCNMatch1();
