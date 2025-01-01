@@ -179,7 +179,7 @@ public abstract class HttpCommonTest extends HttpTest {
 
   @Test
   public void testServerOpenSSL() throws Exception {
-    HttpServerOptions opts = new HttpServerOptions()
+    HttpServerOptions opts = createBaseServerOptions()
       .setPort(DEFAULT_HTTPS_PORT)
       .setHost(DEFAULT_HTTPS_HOST)
       .setUseAlpn(true)
