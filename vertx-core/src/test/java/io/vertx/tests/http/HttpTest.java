@@ -2879,7 +2879,7 @@ public abstract class HttpTest extends HttpTestBase {
       /* Ask to be given a usable port, then use it exclusively so Vert.x can't use the port number */
       occupied = new ServerSocket(0);
       occupied.setReuseAddress(false);
-      server = vertx.createHttpServer(new HttpServerOptions().setPort(occupied.getLocalPort()));
+      server = vertx.createHttpServer(createBaseServerOptions().setPort(occupied.getLocalPort()));
       server.requestHandler(noOpHandler()).listen().onComplete(onFailure(server -> testComplete()));
       await();
     }finally {
@@ -2892,7 +2892,7 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testListenInvalidHost() {
     server.close();
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost("iqwjdoqiwjdoiqwdiojwd"));
+    server = vertx.createHttpServer(createBaseServerOptions().setPort(DEFAULT_HTTP_PORT).setHost("iqwjdoqiwjdoiqwdiojwd"));
     server.requestHandler(noOpHandler());
     server.listen().onComplete(onFailure(s -> testComplete()));
     await();
@@ -3280,7 +3280,7 @@ public abstract class HttpTest extends HttpTestBase {
           assertTrue(ctx.isEventLoopContext());
         }
         Thread thr = Thread.currentThread();
-        server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
+        server = vertx.createHttpServer(createBaseServerOptions().setPort(DEFAULT_HTTP_PORT));
         server.requestHandler(req -> {
           req.response().end();
           assertSameEventLoop(ctx, Vertx.currentContext());
@@ -3296,7 +3296,7 @@ public abstract class HttpTest extends HttpTestBase {
           if (!worker) {
             assertSame(thr, Thread.currentThread());
           }
-          client = vertx.createHttpClient(new HttpClientOptions());
+          client = vertx.createHttpClient(createBaseClientOptions());
           client
             .request(requestOptions)
             .compose(HttpClientRequest::send)
@@ -3490,7 +3490,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testMultipleServerClose() {
-    this.server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
+    this.server = vertx.createHttpServer(createBaseServerOptions().setPort(DEFAULT_HTTP_PORT));
     // We assume the endHandler and the close completion handler are invoked in the same context task
     ThreadLocal stack = new ThreadLocal();
     stack.set(true);
@@ -4977,7 +4977,7 @@ public abstract class HttpTest extends HttpTestBase {
     try {
       int poolSize = 2;
       client.close();
-      client = vertx.createHttpClient(new HttpClientOptions(), new PoolOptions().setHttp1MaxSize(poolSize));
+      client = vertx.createHttpClient(createBaseClientOptions(), new PoolOptions().setHttp1MaxSize(poolSize));
       AtomicInteger failures = new AtomicInteger();
       vertx.runOnContext(v -> {
         for (int i = 0; i < (poolSize + 1); i++) {
