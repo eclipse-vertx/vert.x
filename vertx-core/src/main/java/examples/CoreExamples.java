@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2025 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -73,9 +73,9 @@ public class CoreExamples {
     vertx.executeBlocking(() -> {
       // Call some blocking API that takes a significant amount of time to return
       return someAPI.blockingMethod("hello");
-    }).onComplete(res -> {
-      System.out.println("The result is: " + res.result());
-    });
+    })
+    .onSuccess(result -> System.out.println("The result is: " + result))
+    .onFailure(e -> e.printStackTrace());
   }
 
   public void workerExecutor1(Vertx vertx) {
@@ -83,9 +83,9 @@ public class CoreExamples {
     executor.executeBlocking(() -> {
       // Call some blocking API that takes a significant amount of time to return
       return someAPI.blockingMethod("hello");
-    }).onComplete(res -> {
-      System.out.println("The result is: " + res.result());
-    });
+    })
+    .onSuccess(result -> System.out.println("The result is: " + result))
+    .onFailure(e -> e.printStackTrace());
   }
 
   public void workerExecutor2(WorkerExecutor executor) {
@@ -127,7 +127,7 @@ public class CoreExamples {
       .buildClustered();
   }
 
-  public void exampleFuture1(Vertx vertx, Handler<HttpServerRequest> requestHandler) {
+  public void exampleFuture1(Vertx vertx) {
     FileSystem fs = vertx.fileSystem();
 
     Future<FileProps> future = fs.props("/my_file.txt");
@@ -140,6 +140,28 @@ public class CoreExamples {
         System.out.println("Failure: " + ar.cause().getMessage());
       }
     });
+  }
+
+  public void exampleFuture2(Vertx vertx) {
+    FileSystem fs = vertx.fileSystem();
+
+    Future<FileProps> future = fs.props("/my_file.txt");
+
+    future
+      .onSuccess((FileProps fileProps) -> {
+        System.out.println("File size = " + fileProps.size());
+      })
+      .onFailure((Throwable e) -> {
+        System.out.println("Failure: " + e.getMessage());
+      });
+  }
+
+  public void exampleFuture3(Vertx vertx) {
+    FileSystem fs = vertx.fileSystem();
+
+    fs.props("/my_file.txt")
+      .onSuccess(fileProps -> System.out.println("File size = " + fileProps.size()))
+      .onFailure(e -> System.out.println("Failure: " + e.getMessage()));
   }
 
   public void promiseCallbackOrder(Future<Void> future) {
@@ -170,19 +192,16 @@ public class CoreExamples {
       });
   }
 
-  public void exampleFuture2(Vertx vertx, Handler<HttpServerRequest> requestHandler) {
+  public void exampleFutureComposition2(Vertx vertx) {
+
     FileSystem fs = vertx.fileSystem();
 
-    Future<FileProps> future = fs.props("/my_file.txt");
-
-    future.onComplete((AsyncResult<FileProps> ar) -> {
-      if (ar.succeeded()) {
-        FileProps props = ar.result();
-        System.out.println("File size = " + props.size());
-      } else {
-        System.out.println("Failure: " + ar.cause().getMessage());
-      }
-    });
+    Future<Void> future = fs
+      .createFile("/foo")
+      // When the file is created (fut1), execute this:
+      .compose(v -> fs.writeFile("/foo", Buffer.buffer()))
+      // When the file is written (fut2), execute this:
+      .compose(v -> fs.move("/foo", "/bar"));
   }
 
   public void exampleFutureAll1(HttpServer httpServer, NetServer netServer) {
@@ -190,13 +209,13 @@ public class CoreExamples {
 
     Future<NetServer> netServerFuture = netServer.listen();
 
-    Future.all(httpServerFuture, netServerFuture).onComplete(ar -> {
-      if (ar.succeeded()) {
+    Future.all(httpServerFuture, netServerFuture)
+      .onSuccess(result -> {
         // All servers started
-      } else {
+      })
+      .onFailure(e -> {
         // At least one server failed
-      }
-    });
+      });
   }
 
   public void exampleFutureAll2(Future<?> future1, Future<?> future2, Future<?> future3) {
@@ -204,13 +223,13 @@ public class CoreExamples {
   }
 
   public void exampleFutureAny1(Future<String> future1, Future<String> future2) {
-    Future.any(future1, future2).onComplete(ar -> {
-      if (ar.succeeded()) {
+    Future.any(future1, future2)
+      .onSuccess(result -> {
         // At least one is succeeded
-      } else {
+      })
+      .onFailure(e -> {
         // All failed
-      }
-    });
+      });
   }
 
   public void exampleFutureAny2(Future<?> f1, Future<?> f2, Future<?> f3) {
@@ -218,13 +237,13 @@ public class CoreExamples {
   }
 
   public void exampleFutureJoin1(Future<?> future1, Future<?> future2, Future<?> future3) {
-    Future.join(future1, future2, future3).onComplete(ar -> {
-      if (ar.succeeded()) {
+    Future.join(future1, future2, future3)
+      .onSuccess(result -> {
         // All succeeded
-      } else {
+      })
+      .onFailure(e -> {
         // All completed and at least one failed
-      }
-    });
+      });
   }
 
   public void exampleFutureJoin2(Future<?> future1, Future<?> future2, Future<?> future3) {
@@ -286,13 +305,9 @@ public class CoreExamples {
         Future<String> future = bindService();
 
         // Requires to write
-        future.onComplete(ar -> {
-          if (ar.succeeded()) {
-            startPromise.complete();
-          } else {
-            startPromise.fail(ar.cause());
-          }
-        });
+        future
+          .onSuccess(x -> startPromise.complete())
+          .onFailure(startPromise::fail);
 
         // Or
         future
@@ -337,25 +352,15 @@ public class CoreExamples {
   public void example10(Vertx vertx) {
     vertx
       .deployVerticle(new MyOrderProcessorVerticle())
-      .onComplete(res -> {
-        if (res.succeeded()) {
-          System.out.println("Deployment id is: " + res.result());
-        } else {
-          System.out.println("Deployment failed!");
-        }
-      });
+      .onSuccess(deploymentID -> System.out.println("Deployment id is: " + deploymentID))
+      .onFailure(e -> System.out.println("Deployment failed: " + e.getMessage()));
   }
 
   public void example11(Vertx vertx, String deploymentID) {
     vertx
       .undeploy(deploymentID)
-      .onComplete(res -> {
-        if (res.succeeded()) {
-          System.out.println("Undeployed ok");
-        } else {
-          System.out.println("Undeploy failed!");
-        }
-      });
+      .onSuccess(x -> System.out.println("Undeployed ok"))
+      .onFailure(e -> System.out.println("Undeploy failed: " + e.getMessage()));
   }
 
   public void example12(Vertx vertx) {
@@ -527,12 +532,11 @@ public class CoreExamples {
       // Handle application
       })
       .listen(address)
-      .onComplete(ar -> {
-        if (ar.succeeded()) {
-          // Bound to socket
-        } else {
-          // Handle failure
-        }
+      .onSuccess(theNetServer -> {
+        // Bound to socket
+      })
+      .onFailure(e -> {
+        // Handle failure
       });
   }
 
@@ -547,12 +551,11 @@ public class CoreExamples {
         // Handle application
       })
       .listen(address)
-      .onComplete(ar -> {
-        if (ar.succeeded()) {
-          // Bound to socket
-        } else {
-          // Handle failure
-        }
+      .onSuccess(theHttpServer -> {
+        // Bound to socket
+      })
+      .onFailure(e -> {
+        // Handle failure
       });
   }
 
@@ -565,12 +568,11 @@ public class CoreExamples {
     // Connect to the server
     netClient
       .connect(addr)
-      .onComplete(ar -> {
-        if (ar.succeeded()) {
-          // Connected
-        } else {
-          // Handle failure
-        }
+      .onSuccess(netSocket -> {
+        // Connected
+      })
+      .onFailure(e -> {
+        // Handle failure
       });
   }
 
@@ -586,13 +588,13 @@ public class CoreExamples {
       .setHost("localhost")
       .setPort(8080)
       .setURI("/"))
-      .compose(request -> request.send().compose(HttpClientResponse::body))
-      .onComplete(ar -> {
-        if (ar.succeeded()) {
-          // Process response
-        } else {
-          // Handle failure
-        }
+      .compose(request -> request.send())
+      .compose(HttpClientResponse::body)
+      .onSuccess(buffer -> {
+        // Process response
+      })
+      .onFailure(e -> {
+        // Handle failure
       });
   }
 }
