@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2025 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -22,6 +22,7 @@ import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetServer;
+import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.VertxTracerFactory;
@@ -29,7 +30,9 @@ import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.transport.Transport;
 
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Created by tim on 08/01/15.
@@ -73,9 +76,8 @@ public class CoreExamples {
     vertx.executeBlocking(() -> {
       // Call some blocking API that takes a significant amount of time to return
       return someAPI.blockingMethod("hello");
-    }).onComplete(res -> {
-      System.out.println("The result is: " + res.result());
-    });
+    })
+    .onSuccess(result -> System.out.println("The result is: " + result));
   }
 
   public void workerExecutor1(Vertx vertx) {
@@ -83,9 +85,8 @@ public class CoreExamples {
     executor.executeBlocking(() -> {
       // Call some blocking API that takes a significant amount of time to return
       return someAPI.blockingMethod("hello");
-    }).onComplete(res -> {
-      System.out.println("The result is: " + res.result());
-    });
+    })
+    .onSuccess(result -> System.out.println("The result is: " + result));
   }
 
   public void workerExecutor2(WorkerExecutor executor) {
@@ -127,7 +128,7 @@ public class CoreExamples {
       .buildClustered();
   }
 
-  public void exampleFuture1(Vertx vertx, Handler<HttpServerRequest> requestHandler) {
+  public void exampleFuture1(Vertx vertx) {
     FileSystem fs = vertx.fileSystem();
 
     Future<FileProps> future = fs.props("/my_file.txt");
@@ -140,6 +141,36 @@ public class CoreExamples {
         System.out.println("Failure: " + ar.cause().getMessage());
       }
     });
+  }
+
+  public void exampleFuture2(Vertx vertx) {
+    FileSystem fs = vertx.fileSystem();
+
+    Future<FileProps> future = fs.props("/my_file.txt");
+
+    future
+      .onSuccess((FileProps fileProps) -> {
+        System.out.println("File size = " + fileProps.size());
+      })
+      .onFailure((Throwable e) -> {
+        System.out.println("Failure: " + e.getMessage());
+      });
+  }
+
+  public void exampleFuture3(Vertx vertx) {
+    FileSystem fs = vertx.fileSystem();
+
+    fs.props("/my_file.txt")
+      .onSuccess(fileProps -> System.out.println("File size = " + fileProps.size()))
+      .onFailure(e -> System.out.println("Failure: " + e.getMessage()));
+  }
+
+  public void exampleFuture4(Vertx vertx) {
+    FileSystem fs = vertx.fileSystem();
+
+    fs.props("/my_file.txt")
+      .onComplete(fileProps -> System.out.println("File size = " + fileProps.size()),
+          e -> System.out.println("Failure: " + e.getMessage()));
   }
 
   public void promiseCallbackOrder(Future<Void> future) {
@@ -170,61 +201,56 @@ public class CoreExamples {
       });
   }
 
-  public void exampleFuture2(Vertx vertx, Handler<HttpServerRequest> requestHandler) {
+  public void exampleFutureComposition2(Vertx vertx) {
+
     FileSystem fs = vertx.fileSystem();
 
-    Future<FileProps> future = fs.props("/my_file.txt");
-
-    future.onComplete((AsyncResult<FileProps> ar) -> {
-      if (ar.succeeded()) {
-        FileProps props = ar.result();
-        System.out.println("File size = " + props.size());
-      } else {
-        System.out.println("Failure: " + ar.cause().getMessage());
-      }
-    });
+    Future<Void> future = fs
+      .createFile("/foo")
+      // When the file is created (fut1), execute this:
+      .compose(v -> fs.writeFile("/foo", Buffer.buffer()))
+      // When the file is written (fut2), execute this:
+      .compose(v -> fs.move("/foo", "/bar"));
   }
 
-  public void exampleFutureAll1(HttpServer httpServer, NetServer netServer) {
+  public Future<?> exampleFutureAll1(HttpServer httpServer, NetServer netServer) {
     Future<HttpServer> httpServerFuture = httpServer.listen();
 
     Future<NetServer> netServerFuture = netServer.listen();
 
-    Future.all(httpServerFuture, netServerFuture).onComplete(ar -> {
-      if (ar.succeeded()) {
-        // All servers started
-      } else {
+    return Future.all(httpServerFuture, netServerFuture)
+      .onFailure(e -> {
         // At least one server failed
-      }
-    });
+      });
   }
 
   public void exampleFutureAll2(Future<?> future1, Future<?> future2, Future<?> future3) {
     Future.all(Arrays.asList(future1, future2, future3));
   }
 
-  public void exampleFutureAny1(Future<String> future1, Future<String> future2) {
-    Future.any(future1, future2).onComplete(ar -> {
-      if (ar.succeeded()) {
-        // At least one is succeeded
-      } else {
+  public Future<String> exampleFutureAny1(Future<String> future1, Future<String> future2) {
+    return Future.any(future1, future2)
+      .map(result ->  // At least one is succeeded
+             future1.succeeded() ? future1.result() : future2.result())
+      .onFailure(e -> {
         // All failed
-      }
-    });
+      });
   }
 
   public void exampleFutureAny2(Future<?> f1, Future<?> f2, Future<?> f3) {
     Future.any(Arrays.asList(f1, f2, f3));
   }
 
-  public void exampleFutureJoin1(Future<?> future1, Future<?> future2, Future<?> future3) {
-    Future.join(future1, future2, future3).onComplete(ar -> {
-      if (ar.succeeded()) {
-        // All succeeded
-      } else {
-        // All completed and at least one failed
-      }
-    });
+  public Future<String> exampleFutureJoin1(Future<String> future1, Future<String> future2, Future<String> future3) {
+    CompositeFuture compositeFuture = Future.join(future1, future2, future3);
+
+    return compositeFuture
+      .map(x -> {
+        // All completed, each is either succeeded or failed
+        return compositeFuture.<String>list().stream()
+            .filter(Objects::nonNull)  // failed have null
+            .collect(Collectors.joining(", "));
+      });
   }
 
   public void exampleFutureJoin2(Future<?> future1, Future<?> future2, Future<?> future3) {
@@ -296,6 +322,16 @@ public class CoreExamples {
 
         // Or
         future
+          .onSuccess(x -> startPromise.complete())
+          .onFailure(startPromise::fail);
+
+        // Or
+        future
+          .onComplete(x -> startPromise.complete(),
+              startPromise::fail);
+
+        // Or
+        future
           .<Void>mapEmpty()
           .onComplete(startPromise);
       }
@@ -334,28 +370,14 @@ public class CoreExamples {
 
   }
 
-  public void example10(Vertx vertx) {
-    vertx
+  public Future<String> example10(Vertx vertx) {
+    return vertx
       .deployVerticle(new MyOrderProcessorVerticle())
-      .onComplete(res -> {
-        if (res.succeeded()) {
-          System.out.println("Deployment id is: " + res.result());
-        } else {
-          System.out.println("Deployment failed!");
-        }
-      });
+      .onSuccess(deploymentID -> System.out.println("Deployment id is: " + deploymentID));
   }
 
   public void example11(Vertx vertx, String deploymentID) {
-    vertx
-      .undeploy(deploymentID)
-      .onComplete(res -> {
-        if (res.succeeded()) {
-          System.out.println("Undeployed ok");
-        } else {
-          System.out.println("Undeploy failed!");
-        }
-      });
+    vertx.undeploy(deploymentID);
   }
 
   public void example12(Vertx vertx) {
@@ -516,83 +538,61 @@ public class CoreExamples {
     vertx.createHttpServer(new HttpServerOptions().setReusePort(reusePort));
   }
 
-  public void tcpServerWithDomainSockets(Vertx vertx) {
+  public Future<NetServer> tcpServerWithDomainSockets(Vertx vertx) {
     NetServer netServer = vertx.createNetServer();
 
     // Only available when running on JDK16+, or using a native transport
     SocketAddress address = SocketAddress.domainSocketAddress("/var/tmp/myservice.sock");
 
-    netServer
+    return netServer
       .connectHandler(so -> {
-      // Handle application
+        // Handle application
       })
-      .listen(address)
-      .onComplete(ar -> {
-        if (ar.succeeded()) {
-          // Bound to socket
-        } else {
-          // Handle failure
-        }
-      });
+      .listen(address);
   }
 
-  public void httpServerWithDomainSockets(Vertx vertx) {
+  public Future<HttpServer> httpServerWithDomainSockets(Vertx vertx) {
     HttpServer httpServer = vertx.createHttpServer();
 
     // Only available when running on JDK16+, or using a native transport
     SocketAddress address = SocketAddress.domainSocketAddress("/var/tmp/myservice.sock");
 
-    httpServer
+    return httpServer
       .requestHandler(req -> {
         // Handle application
       })
-      .listen(address)
-      .onComplete(ar -> {
-        if (ar.succeeded()) {
-          // Bound to socket
-        } else {
-          // Handle failure
-        }
-      });
+      .listen(address);
   }
 
-  public void tcpClientWithDomainSockets(Vertx vertx) {
+  public Future<NetSocket> tcpClientWithDomainSockets(Vertx vertx) {
     NetClient netClient = vertx.createNetClient();
 
     // Only available when running on JDK16+, or using a native transport
     SocketAddress addr = SocketAddress.domainSocketAddress("/var/tmp/myservice.sock");
 
     // Connect to the server
-    netClient
-      .connect(addr)
-      .onComplete(ar -> {
-        if (ar.succeeded()) {
-          // Connected
-        } else {
-          // Handle failure
-        }
-      });
+    return netClient
+      .connect(addr);
   }
 
-  public void httpClientWithDomainSockets(Vertx vertx) {
+  private Future<Void> process(Buffer buffer, String parameter) {
+    return Future.succeededFuture();
+  }
+
+  public Future<Void> httpClientWithDomainSockets(Vertx vertx) {
     HttpClient httpClient = vertx.createHttpClient();
 
     // Only available when running on JDK16+, or using a native transport
     SocketAddress addr = SocketAddress.domainSocketAddress("/var/tmp/myservice.sock");
 
     // Send request to the server
-    httpClient.request(new RequestOptions()
+    return httpClient.request(new RequestOptions()
       .setServer(addr)
       .setHost("localhost")
       .setPort(8080)
       .setURI("/"))
-      .compose(request -> request.send().compose(HttpClientResponse::body))
-      .onComplete(ar -> {
-        if (ar.succeeded()) {
-          // Process response
-        } else {
-          // Handle failure
-        }
-      });
+      .compose(request -> request.send())
+      .compose(HttpClientResponse::body)
+      .compose(buffer -> process(buffer, "some parameter"));  // Process response
   }
 }
