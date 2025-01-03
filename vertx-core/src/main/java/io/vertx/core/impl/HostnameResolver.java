@@ -61,7 +61,7 @@ public class HostnameResolver implements AddressResolver {
       File f = new File("/etc/resolv.conf");
       try {
         if (f.exists() && f.isFile()) {
-          String conf = new String(Files.readAllBytes(f.toPath()));
+          String conf = Files.readString(f.toPath());
           int ndotsOption = parseNdotsOptionFromResolvConf(conf);
           if (ndotsOption != -1) {
             ndots = ndotsOption;
