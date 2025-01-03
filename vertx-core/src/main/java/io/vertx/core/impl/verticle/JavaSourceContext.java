@@ -67,7 +67,7 @@ public class JavaSourceContext {
    */
   private static String parsePackage(File file) {
     try {
-      String source = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
+      String source = Files.readString(file.toPath());
       // http://stackoverflow.com/questions/1657066/java-regular-expression-finding-comments-in-code
       source = source.replaceAll( "//.*|(\"(?:\\\\[^\"]|\\\\\"|.)*?\")|(?s)/\\*.*?\\*/", "$1 " );
       for (String line : source.split("\\r?\\n")) {
