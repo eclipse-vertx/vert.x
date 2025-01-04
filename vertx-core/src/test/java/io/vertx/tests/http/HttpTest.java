@@ -41,6 +41,9 @@ import io.vertx.test.fakestream.FakeStream;
 import io.vertx.test.http.HttpTestBase;
 import io.vertx.test.netty.TestLoggerFactory;
 import io.vertx.test.proxy.HAProxy;
+import io.vertx.test.socket.SocketConnection;
+import io.vertx.test.socket.TcpServerSocket;
+import io.vertx.test.socket.UdpDatagramSocket;
 import org.apache.directory.server.dns.messages.RecordClass;
 import org.apache.directory.server.dns.messages.RecordType;
 import org.apache.directory.server.dns.store.DnsAttribute;
@@ -50,7 +53,6 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.*;
-import java.net.ServerSocket;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
@@ -2867,10 +2869,10 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testListenInvalidPort() throws Exception {
     server.close();
-    ServerSocket occupied = null;
+    SocketConnection occupied = null;
     try{
       /* Ask to be given a usable port, then use it exclusively so Vert.x can't use the port number */
-      occupied = new ServerSocket(0);
+      occupied = serverAlpnProtocolVersion() == HttpVersion.HTTP_3 ? new UdpDatagramSocket() : new TcpServerSocket();
       occupied.setReuseAddress(false);
       server = vertx.createHttpServer(createBaseServerOptions().setPort(occupied.getLocalPort()));
       server.requestHandler(noOpHandler()).listen().onComplete(onFailure(server -> testComplete()));
