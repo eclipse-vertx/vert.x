@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2025 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -21,7 +21,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -55,6 +54,12 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
   @Override
   AsyncFile drainHandler(Handler<Void> handler);
 
+  /**
+   * Set an exception handler on the read stream and on the write stream.
+   *
+   * @param handler the handler
+   * @return a reference to this, so the API can be used fluently
+   */
   @Override
   AsyncFile exceptionHandler(Handler<Throwable> handler);
 
