@@ -50,19 +50,23 @@ import java.util.concurrent.ConcurrentMap;
  * middleware running on the actual context interacts with this context resources, middleware running on the shadow context
  * interacts with the shadow context resources.</p>
  */
-final class ShadowContext extends ContextBase {
+public final class ShadowContext extends ContextBase {
 
   final VertxInternal owner;
   final ContextBase delegate;
   private final EventLoopExecutor eventLoop;
-  private final TaskQueue orderedTasks;
+  final TaskQueue orderedTasks;
 
-  public ShadowContext(VertxInternal owner, EventLoopExecutor eventLoop, ContextInternal delegate) {
+  ShadowContext(VertxInternal owner, EventLoopExecutor eventLoop, ContextInternal delegate) {
     super(((ContextBase)delegate).locals);
     this.owner = owner;
     this.eventLoop = eventLoop;
     this.delegate = (ContextBase) delegate;
     this.orderedTasks = new TaskQueue();
+  }
+
+  public ContextInternal delegate() {
+    return delegate;
   }
 
   @Override
