@@ -1,11 +1,14 @@
 package io.vertx.tests.context;
 
 import io.netty.channel.EventLoop;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.LocalSeq;
+import io.vertx.core.impl.ShadowContext;
+import io.vertx.core.impl.VertxThread;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.NetClient;
@@ -40,6 +43,7 @@ public class ShadowContextTest extends AsyncTestBase {
     contextLocal = ContextLocal.registerLocal(Object.class);
     shadowVertx = (VertxInternal) Vertx.vertx();
     actualVertx = (VertxInternal) Vertx.vertx();
+    disableThreadChecks();
   }
 
   @Override
@@ -501,6 +505,31 @@ public class ShadowContextTest extends AsyncTestBase {
       // Maybe should not always be event-loop
       assertEquals(ThreadingModel.EVENT_LOOP, ctx.threadingModel());
       testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testWorkerExecutorExecuteBlocking() {
+    WorkerExecutor exec = shadowVertx.createSharedWorkerExecutor("abc");
+    ContextInternal actualCtx = actualVertx.getOrCreateContext();
+    actualCtx.runOnContext(v1 -> {
+      Thread expected = Thread.currentThread();
+      ContextInternal shadowCtx = shadowVertx.getOrCreateContext();
+      Future<Context> fut = exec.executeBlocking(() -> {
+        ShadowContext ctx = (ShadowContext) Vertx.currentContext();
+        assertNotSame(shadowCtx, ctx);
+        assertSame(actualCtx, ctx.delegate());
+        assertSame(shadowCtx.owner(), shadowVertx);
+        return ctx;
+      });
+      fut.onComplete(onSuccess(res -> {
+        ShadowContext ctx = (ShadowContext) Vertx.currentContext();
+        assertSame(res, ctx);
+        assertSame(shadowCtx.owner(), shadowVertx);
+        assertSame(expected, Thread.currentThread());
+        testComplete();
+      }));
     });
     await();
   }
