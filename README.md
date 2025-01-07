@@ -32,17 +32,18 @@ Tests can be run with specified HTTP port and/or HTTPS port.
 Vert.x supports native transport on BSD and Linux, to run the tests with native transport
 
 ```
-> mvn test -PtestNativeTransport
+> mvn test -PNativeEpoll
+> mvn test -PNativeIoUring
+> mvn test -PNativeKQueue
 ```
 
 Vert.x supports domain sockets on Linux exclusively, to run the tests with domain sockets
 
 ```
-> mvn test -PtestDomainSockets
+> mvn test -PNativeEpoll+DomainSockets
 ```
 
-Vert.x has a few integrations tests that run a differently configured JVM (classpath, system properties, etc....)
-for ALPN, native and logging
+Vert.x has integrations tests that run a differently configured JVM (classpath, system properties, etc....)
 
 ```
 > vertx verify -Dtest=FooTest # FooTest does not exists, its only purpose is to execute no tests during the test phase
