@@ -29,8 +29,8 @@
     <apacheds-protocol-dns.version>2.0.0.AM27</apacheds-protocol-dns.version>
     <generated.dir>${project.basedir}/src/main/generated</generated.dir>
     <jmh.version>1.37</jmh.version>
-    <vertx.testTransport>jdk</vertx.testTransport>
-    <vertx.testDomainSockets>false</vertx.testDomainSockets>
+    <vertx.surefire.nettyTransport>jdk</vertx.surefire.nettyTransport>
+    <vertx.surefire.useDomainSockets>false</vertx.surefire.useDomainSockets>
   </properties>
 
   <dependencies>
@@ -257,8 +257,8 @@
               <buildDirectory>${project.build.directory}</buildDirectory>
               <vertx.version>${project.version}</vertx.version>
               <vertx.handle100Continue>true</vertx.handle100Continue>
-              <vertx.transport>${vertx.testTransport}</vertx.transport>
-              <vertx.useDomainSockets>${vertx.testDomainSockets}</vertx.useDomainSockets>
+              <vertx.transport>${vertx.surefire.nettyTransport}</vertx.transport>
+              <vertx.useDomainSockets>${vertx.surefire.useDomainSockets}</vertx.useDomainSockets>
               <vertx.threadChecks>true</vertx.threadChecks>
             </systemPropertyVariables>
             <!-- Needs to be small enough to run in a EC2 1.7GB small instance -->
@@ -701,17 +701,17 @@
     <profile>
       <id>NativeEpoll</id>
       <properties>
-        <vertx.testTransport>epoll</vertx.testTransport>
-        <vertx.testDomainSockets>false</vertx.testDomainSockets>
-        <vertx.testUseModulePath>false</vertx.testUseModulePath>
+        <vertx.surefire.nettyTransport>epoll</vertx.surefire.nettyTransport>
+        <vertx.surefire.useDomainSockets>false</vertx.surefire.useDomainSockets>
+        <vertx.surefire.useModulePath>false</vertx.surefire.useModulePath>
       </properties>
     </profile>
 
     <profile>
       <id>NativeIoUring</id>
       <properties>
-        <vertx.testTransport>io_uring</vertx.testTransport>
-        <vertx.testDomainSockets>false</vertx.testDomainSockets>
+        <vertx.surefire.nettyTransport>io_uring</vertx.surefire.nettyTransport>
+        <vertx.surefire.useDomainSockets>false</vertx.surefire.useDomainSockets>
         <vertx.surefire.useModulePath>false</vertx.surefire.useModulePath>
       </properties>
     </profile>
@@ -719,8 +719,8 @@
     <profile>
       <id>NativeEpoll+DomainSockets</id>
       <properties>
-        <vertx.testTransport>epoll</vertx.testTransport>
-        <vertx.testDomainSockets>true</vertx.testDomainSockets>
+        <vertx.surefire.nettyTransport>epoll</vertx.surefire.nettyTransport>
+        <vertx.surefire.useDomainSockets>true</vertx.surefire.useDomainSockets>
         <vertx.surefire.useModulePath>false</vertx.surefire.useModulePath>
       </properties>
     </profile>
@@ -728,18 +728,18 @@
     <profile>
       <id>NativeKQueue</id>
       <properties>
-        <vertx.testTransport>kqueue</vertx.testTransport>
-        <vertx.testDomainSockets>false</vertx.testDomainSockets>
-        <vertx.testUseModulePath>false</vertx.testUseModulePath>
+        <vertx.surefire.nettyTransport>kqueue</vertx.surefire.nettyTransport>
+        <vertx.surefire.useDomainSockets>false</vertx.surefire.useDomainSockets>
+        <vertx.surefire.useModulePath>false</vertx.surefire.useModulePath>
       </properties>
     </profile>
 
     <profile>
       <id>NativeKQueue+DomainSockets</id>
       <properties>
-        <vertx.testTransport>kqueue</vertx.testTransport>
-        <vertx.testDomainSockets>true</vertx.testDomainSockets>
-        <vertx.testUseModulePath>false</vertx.testUseModulePath>
+        <vertx.surefire.nettyTransport>kqueue</vertx.surefire.nettyTransport>
+        <vertx.surefire.useDomainSockets>true</vertx.surefire.useDomainSockets>
+        <vertx.surefire.useModulePath>false</vertx.surefire.useModulePath>
       </properties>
     </profile>
 
