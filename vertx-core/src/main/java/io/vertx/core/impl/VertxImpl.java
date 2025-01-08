@@ -170,7 +170,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final Throwable transportUnavailabilityCause;
   private final VertxTracer tracer;
   private final ThreadLocal<WeakReference<EventLoop>> stickyEventLoop = new ThreadLocal<>();
-  private final ThreadLocal<WeakReference<ContextInternal>> stickyContext = new ThreadLocal<>();
   private final boolean disableTCCL;
   private final Boolean useDaemonThread;
 
@@ -521,7 +520,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       } else {
         ctx = createEventLoopContext(eventLoop, workerPool, Thread.currentThread().getContextClassLoader());
       }
-      stickyContext.set(new WeakReference<>(ctx));
       return ctx;
     }
   }
@@ -706,10 +704,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         return new ShadowContext(this, new EventLoopExecutor(eventLoop), context);
       }
     } else {
-      WeakReference<ContextInternal> ref = stickyContext.get();
-      if (ref != null) {
-        return ref.get();
-      }
       return null;
     }
   }
