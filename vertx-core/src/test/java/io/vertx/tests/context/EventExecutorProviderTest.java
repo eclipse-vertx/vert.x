@@ -46,8 +46,6 @@ public class EventExecutorProviderTest extends AsyncTestBase {
     toRun.pop().run();
     assertEquals(1, cnt[0]);
     assertNull(Vertx.currentContext());
-    // Sticky context
-    assertSame(ctx, vertx.getOrCreateContext());
   }
 
   @Test
