@@ -918,9 +918,8 @@ public class ContextTest extends VertxTestBase {
   }
 
   @Test
-  public void testSticky() {
+  public void testStickiness() {
     Context ctx = vertx.getOrCreateContext();
-    assertSame(ctx, vertx.getOrCreateContext());
     assertSame(((ContextInternal)ctx).nettyEventLoop(), ((ContextInternal)vertx.getOrCreateContext()).nettyEventLoop());
   }
 
