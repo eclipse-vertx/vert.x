@@ -38,6 +38,7 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.NetSocketInternal;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.CheckingSender;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.proxy.HAProxy;
@@ -47,7 +48,13 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -4025,5 +4032,89 @@ public class WebSocketTest extends VertxTestBase {
         }));
       }));
       await();
+  }
+
+  @Test
+  public void testPoolShouldNotStarveOnConnectError() throws Exception {
+
+    server = vertx.createHttpServer();
+
+    AtomicInteger accepted = new AtomicInteger();
+    server.webSocketHandler(ws -> {
+      assertTrue(accepted.getAndIncrement() == 0);
+    });
+
+    server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST).toCompletionStage().toCompletableFuture().get();
+
+    // This test requires a server socket to respond for the first connection
+    // Subsequent connections need to fail (connect error)
+    // Hence we need a custom proxy server in front of Vert.x HTTP server
+    InetAddress localhost = InetAddress.getByName("localhost");
+    ServerSocket proxy = new ServerSocket(0, 10, localhost);
+    int proxyPort = proxy.getLocalPort();
+
+    int maxConnections = 5;
+
+    client = vertx.createWebSocketClient(new WebSocketClientOptions()
+      .setMaxConnections(maxConnections)
+      .setConnectTimeout(4000));
+
+    Future<WebSocket> wsFut = client.connect(proxyPort, DEFAULT_HTTP_HOST, "/").andThen(onSuccess(v -> {
+    }));
+
+    Socket inbound = proxy.accept();
+    Socket outbound = new Socket();
+    outbound.connect(new InetSocketAddress(localhost, 8080));
+
+    class Pump extends Thread {
+      final InputStream src;
+      final OutputStream dst;
+      Pump(InputStream src, OutputStream dst) {
+        this.src = src;
+        this.dst = dst;
+      }
+      @Override
+      public void run() {
+        byte[] buffer = new byte[512];
+        while (true) {
+          try {
+            int l = src.read(buffer);
+            if (l == -1) {
+              break;
+            }
+            dst.write(buffer, 0, l);
+          } catch (IOException e) {
+            break;
+          }
+        }
+      }
+    }
+
+    Pump pump1 = new Pump(inbound.getInputStream(), outbound.getOutputStream());
+    Pump pump2 = new Pump(outbound.getInputStream(), inbound.getOutputStream());
+    pump1.start();
+    pump2.start();
+
+    // Finish handshake
+    wsFut.toCompletionStage().toCompletableFuture().get(10, TimeUnit.SECONDS);
+
+    proxy.close();
+
+    try {
+      int num = maxConnections + 10;
+      CountDownLatch latch = new CountDownLatch(num);
+      for (int i = 0;i < num;i++) {
+        client.connect(proxyPort, DEFAULT_HTTP_HOST, "/").onComplete(ar -> {
+          latch.countDown();
+        });
+      }
+
+      awaitLatch(latch, 10, TimeUnit.SECONDS);
+    } finally {
+      inbound.close();
+      outbound.close();
+      pump1.join(10_000);
+      pump2.join(10_000);
+    }
   }
 }

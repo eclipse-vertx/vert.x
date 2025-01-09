@@ -47,34 +47,26 @@ class WebSocketEndpoint extends ClientHttpEndpointBase<HttpClientConnection> {
     }
   }
 
-  private void tryConnect(ContextInternal ctx, Handler<AsyncResult<HttpClientConnection>> handler) {
+  private void connect(ContextInternal ctx, Handler<AsyncResult<HttpClientConnection>> handler) {
 
     class Listener implements Handler<AsyncResult<HttpClientConnection>> {
-
-      private void onEvict() {
-        decRefCount();
-        Waiter h;
-        synchronized (WebSocketEndpoint.this) {
-          if (--inflightConnections > maxPoolSize || waiters.isEmpty()) {
-            return;
-          }
-          h = waiters.poll();
-        }
-        tryConnect(h.context, h.handler);
-      }
 
       @Override
       public void handle(AsyncResult<HttpClientConnection> ar) {
         if (ar.succeeded()) {
           HttpClientConnection c = ar.result();
           if (incRefCount()) {
-            c.evictionHandler(v -> onEvict());
+            c.evictionHandler(v -> {
+              decRefCount();
+              release();
+            });
             handler.handle(Future.succeededFuture(c));
           } else {
             c.close();
             handler.handle(Future.failedFuture("Connection closed"));
           }
         } else {
+          release();
           handler.handle(Future.failedFuture(ar.cause()));
         }
       }
@@ -91,16 +83,33 @@ class WebSocketEndpoint extends ClientHttpEndpointBase<HttpClientConnection> {
       .httpConnect(eventLoopContext, new Listener());
   }
 
-  @Override
-  public void requestConnection2(ContextInternal ctx, long timeout, Handler<AsyncResult<HttpClientConnection>> handler) {
+  private void release() {
+    Waiter h;
+    synchronized (WebSocketEndpoint.this) {
+      if (--inflightConnections > maxPoolSize || waiters.isEmpty()) {
+        return;
+      }
+      h = waiters.poll();
+    }
+    connect(h.context, h.handler);
+  }
+
+  private boolean tryAcquire(ContextInternal ctx, Handler<AsyncResult<HttpClientConnection>> handler) {
     synchronized (this) {
       if (inflightConnections >= maxPoolSize) {
         waiters.add(new Waiter(handler, ctx));
-        return;
+        return false;
       }
       inflightConnections++;
     }
-    tryConnect(ctx, handler);
+    return true;
+  }
+
+  @Override
+  public void requestConnection2(ContextInternal ctx, long timeout, Handler<AsyncResult<HttpClientConnection>> handler) {
+    if (tryAcquire(ctx, handler)) {
+      connect(ctx, handler);
+    }
   }
 
   @Override
@@ -110,6 +119,7 @@ class WebSocketEndpoint extends ClientHttpEndpointBase<HttpClientConnection> {
 
   @Override
   public void close() {
+    System.out.println("CLOSING POOL " + waiters.size());
     super.close();
     synchronized (this) {
       waiters.forEach(waiter -> {
