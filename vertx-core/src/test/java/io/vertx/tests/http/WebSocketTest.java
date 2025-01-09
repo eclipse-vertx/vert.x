@@ -96,7 +96,6 @@ import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTPS_PORT;
 import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTP_HOST;
 import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTP_HOST_AND_PORT;
 import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTP_PORT;
-import static org.junit.Assume.assumeTrue;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
