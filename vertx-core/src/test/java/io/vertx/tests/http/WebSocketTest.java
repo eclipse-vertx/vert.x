@@ -46,6 +46,7 @@ import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.test.core.CheckingSender;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.http.HttpTestBase;
@@ -95,7 +96,6 @@ import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTPS_PORT;
 import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTP_HOST;
 import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTP_HOST_AND_PORT;
 import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTP_PORT;
-import static org.junit.Assume.assumeTrue;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -3986,5 +3986,47 @@ public class WebSocketTest extends VertxTestBase {
         });
       }));
     await();
+  }
+
+  @Test
+  public void testPoolShouldNotStarveOnConnectError() throws Exception {
+
+    server = vertx.createHttpServer();
+
+    CountDownLatch shutdownLatch = new CountDownLatch(1);
+    AtomicInteger accepted = new AtomicInteger();
+    server.webSocketHandler(ws -> {
+      ws.shutdownHandler(v -> shutdownLatch.countDown());
+      assertTrue(accepted.getAndIncrement() == 0);
+    });
+
+    server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST).toCompletionStage().toCompletableFuture().get();
+
+    int maxConnections = 5;
+
+    client = vertx.createWebSocketClient(new WebSocketClientOptions()
+      .setMaxConnections(maxConnections)
+      .setConnectTimeout(4000));
+
+    Future<WebSocket> wsFut = client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/").andThen(onSuccess(v -> {
+    }));
+
+    // Finish handshake
+    wsFut.toCompletionStage().toCompletableFuture().get(10, TimeUnit.SECONDS);
+
+    // This test requires a server socket to respond for the first connection
+    // Subsequent connections need to fail (connect error)
+    server.shutdown(30, TimeUnit.SECONDS);
+    awaitLatch(shutdownLatch);
+
+    int num = maxConnections + 10;
+    CountDownLatch latch = new CountDownLatch(num);
+    for (int i = 0;i < num;i++) {
+      client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/").onComplete(ar -> {
+        latch.countDown();
+      });
+    }
+
+    awaitLatch(latch, 10, TimeUnit.SECONDS);
   }
 }

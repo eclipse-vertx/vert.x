@@ -15,6 +15,7 @@ import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebSocketClientOptions;
 import io.vertx.core.http.WebSocketConnectOptions;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.resource.ManagedResource;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.PoolMetrics;
@@ -47,7 +48,6 @@ class WebSocketGroup extends ManagedResource {
   private final HttpChannelConnector connector;
   private final Deque<Waiter> waiters;
   private int inflightConnections;
-
   private final ClientMetrics clientMetrics;
   private final PoolMetrics poolMetrics;
 
@@ -72,19 +72,7 @@ class WebSocketGroup extends ManagedResource {
     return fut;
   }
 
-  private void onEvict() {
-    decRefCount();
-    Waiter h;
-    synchronized (WebSocketGroup.this) {
-      if (--inflightConnections > maxPoolSize || waiters.isEmpty()) {
-        return;
-      }
-      h = waiters.poll();
-    }
-    tryConnect(h.context, h.connectOptions).onComplete(h.promise);
-  }
-
-  private Future<WebSocket> tryConnect(ContextInternal ctx, WebSocketConnectOptions connectOptions) {
+  private void connect(ContextInternal ctx, WebSocketConnectOptions connectOptions, Promise<WebSocket> promise) {
     ContextInternal eventLoopContext;
     if (ctx.isEventLoopContext()) {
       eventLoopContext = ctx;
@@ -92,50 +80,80 @@ class WebSocketGroup extends ManagedResource {
       eventLoopContext = ctx.owner().createEventLoopContext(ctx.nettyEventLoop(), ctx.workerPool(), ctx.classLoader());
     }
     Future<HttpClientConnectionInternal> fut = connector.httpConnect(eventLoopContext);
-    return fut.compose(c -> {
-      if (!incRefCount()) {
-        c.close();
-        return Future.failedFuture(new VertxException("Connection closed", true));
-      }
-      long timeout = Math.max(connectOptions.getTimeout(), 0L);
-      if (connectOptions.getIdleTimeout() >= 0L) {
-        timeout = connectOptions.getIdleTimeout();
-      }
-      Http1xClientConnection ci = (Http1xClientConnection) c;
-      Promise<WebSocket> promise = ctx.promise();
-      ci.toWebSocket(
-        ctx,
-        connectOptions.getURI(),
-        connectOptions.getHeaders(),
-        connectOptions.getAllowOriginHeader(),
-        options,
-        connectOptions.getVersion(),
-        connectOptions.getSubProtocols(),
-        timeout,
-        connectOptions.isRegisterWriteHandlers(),
-        options.getMaxFrameSize(),
-        promise);
-      return promise.future().andThen(ar -> {
-        if (ar.succeeded()) {
-          WebSocketImpl wsi = (WebSocketImpl) ar.result();
-          wsi.evictionHandler(v -> onEvict());
-        } else {
-          onEvict();
+    fut.onComplete(ar -> {
+      if (ar.succeeded()) {
+        HttpClientConnectionInternal c = ar.result();
+        if (!incRefCount()) {
+          c.close();
+          promise.fail(new VertxException("Connection closed", true));
+          return;
         }
-      });
+        long timeout = Math.max(connectOptions.getTimeout(), 0L);
+        if (connectOptions.getIdleTimeout() >= 0L) {
+          timeout = connectOptions.getIdleTimeout();
+        }
+        Http1xClientConnection ci = (Http1xClientConnection) c;
+        ci.toWebSocket(
+          ctx,
+          connectOptions.getURI(),
+          connectOptions.getHeaders(),
+          connectOptions.getAllowOriginHeader(),
+          options,
+          connectOptions.getVersion(),
+          connectOptions.getSubProtocols(),
+          timeout,
+          connectOptions.isRegisterWriteHandlers(),
+          options.getMaxFrameSize(),
+          promise);
+      } else {
+        promise.fail(ar.cause());
+      }
     });
   }
 
-  protected Future<WebSocket> requestConnection2(ContextInternal ctx, WebSocketConnectOptions connectOptions, long timeout) {
+  private void release() {
+    Waiter waiter;
+    synchronized (WebSocketGroup.this) {
+      if (--inflightConnections > maxPoolSize || waiters.isEmpty()) {
+        return;
+      }
+      waiter = waiters.poll();
+    }
+    connect(waiter.context, waiter.connectOptions, waiter.promise);
+  }
+
+  private Future<WebSocket> tryAcquire(ContextInternal ctx, WebSocketConnectOptions options) {
     synchronized (this) {
       if (inflightConnections >= maxPoolSize) {
-        Waiter waiter = new Waiter(ctx, connectOptions);
+        Waiter waiter = new Waiter(ctx, options);
         waiters.add(waiter);
         return waiter.promise.future();
       }
       inflightConnections++;
     }
-    return tryConnect(ctx, connectOptions);
+    return null;
+  }
+
+  protected Future<WebSocket> requestConnection2(ContextInternal ctx, WebSocketConnectOptions connectOptions, long timeout) {
+    Future<WebSocket> res = tryAcquire(ctx, connectOptions);
+    if (res == null) {
+      PromiseInternal<WebSocket> promise = ctx.promise();
+      connect(ctx, connectOptions, promise);
+      res = promise.future();
+    }
+    res.andThen(ar -> {
+      if (ar.succeeded()) {
+        WebSocketImpl wsi = (WebSocketImpl) ar.result();
+        wsi.evictionHandler(v -> {
+          decRefCount();
+          release();
+        });
+      } else {
+        decRefCount();
+        release();
+      }
+    });
+    return res;
   }
 
   @Override
