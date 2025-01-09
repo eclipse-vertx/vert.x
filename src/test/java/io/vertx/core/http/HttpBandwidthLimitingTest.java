@@ -16,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -208,15 +209,30 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
   @Test
   public void testDynamicOutboundRateUpdateSharedServers() throws IOException, InterruptedException
   {
-    int numEventLoops = 5; // We start a shared TCP server with 2 event-loops
-    List<HttpServer> servers = new ArrayList<>();
+    int numEventLoops = 5; // We start a shared TCP server with 5 event-loops
+    List<HttpServer> servers = Collections.synchronizedList(new ArrayList<>());
     Future<String> listenLatch = vertx.deployVerticle(() -> new AbstractVerticle() {
       @Override
-      public void start(Promise<Void> startPromise) {
+      public void start(Promise<Void> startPromise) throws Exception
+      {
         HttpServer testServer = serverFactory.apply(vertx);
         servers.add(testServer);
         testServer.requestHandler(HANDLERS.getFile(sampleF))
-                  .listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST).<Void>mapEmpty().onComplete(startPromise);
+                  .listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST).onComplete(res -> {
+                    if (res.succeeded()) {
+                      // Apply traffic shaping options after the server has started
+                      TrafficShapingOptions updatedTrafficOptions = new TrafficShapingOptions()
+                                                                      .setInboundGlobalBandwidth(INBOUND_LIMIT)
+                                                                      .setOutboundGlobalBandwidth(2 * OUTBOUND_LIMIT);
+
+                      for (int i = 0; i < numEventLoops; i++) {
+                        servers.forEach(s -> s.updateTrafficShapingOptions(updatedTrafficOptions));
+                      }
+                      startPromise.complete();
+                    } else {
+                      startPromise.fail(res.cause());
+                    }
+                  });
       }
     }, new DeploymentOptions().setInstances(numEventLoops));
 
@@ -241,16 +257,9 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
       }
     }));
     awaitLatch(waitForResponse);
-    TrafficShapingOptions updatedTrafficOptions = new TrafficShapingOptions()
-                                             .setInboundGlobalBandwidth(INBOUND_LIMIT) // unchanged
-                                             .setOutboundGlobalBandwidth(2 * OUTBOUND_LIMIT);
-
-    for (int i = 0; i < numEventLoops; i++) {
-      servers.forEach(s -> s.updateTrafficShapingOptions(updatedTrafficOptions));
-    }
 
     long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime.get());
-    Assert.assertTrue(elapsedMillis > expectedTimeMillis(totalReceivedLength.get(), OUTBOUND_LIMIT));
+    Assert.assertTrue(elapsedMillis < expectedUpperBoundTimeMillis(totalReceivedLength.get(), OUTBOUND_LIMIT));
   }
 
   @Test
