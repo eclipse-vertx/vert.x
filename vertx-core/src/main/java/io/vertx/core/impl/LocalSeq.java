@@ -10,6 +10,11 @@
  */
 package io.vertx.core.impl;
 
+import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.spi.context.storage.ContextLocal;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -18,20 +23,22 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class LocalSeq {
 
   // 0 : reserved slot for local context map
-  private static final AtomicInteger seq = new AtomicInteger(1);
+  static final List<ContextLocal<?>> locals = new ArrayList<>();
+
+  static {
+    reset();
+  }
 
   /**
    * Hook for testing purposes
    */
-  public static void reset() {
-    seq.set((1));
+  public synchronized static void reset() {
+    // 0 : reserved slot for local context map
+    locals.clear();
+    locals.add(ContextInternal.LOCAL_MAP);
   }
 
-  static int get() {
-    return seq.get();
-  }
-
-  static int next() {
-    return seq.getAndIncrement();
+  synchronized static ContextLocal<?>[] get() {
+    return locals.toArray(new ContextLocal[0]);
   }
 }

@@ -30,6 +30,7 @@ import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.impl.NetServerInternal;
 import io.vertx.core.net.impl.ServerID;
+import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.core.spi.transport.Transport;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.spi.VerticleFactory;
@@ -42,9 +43,9 @@ import java.io.File;
 import java.lang.ref.Cleaner;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -383,6 +384,11 @@ public abstract class VertxWrapper implements VertxInternal {
   @Override
   public AddressResolverGroup<InetSocketAddress> nettyAddressResolverGroup() {
     return delegate.nettyAddressResolverGroup();
+  }
+
+  @Override
+  public List<ContextLocal<?>> contextLocals() {
+    return delegate.contextLocals();
   }
 
   @Override
