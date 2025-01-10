@@ -119,7 +119,6 @@ class WebSocketEndpoint extends ClientHttpEndpointBase<HttpClientConnection> {
 
   @Override
   public void close() {
-    System.out.println("CLOSING POOL " + waiters.size());
     super.close();
     synchronized (this) {
       waiters.forEach(waiter -> {
