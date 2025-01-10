@@ -36,7 +36,7 @@ import static io.vertx.core.impl.ContextImpl.setResultHandler;
  */
 public interface ContextInternal extends Context {
 
-  ContextLocal<ConcurrentMap<Object, Object>> LOCAL_MAP = new ContextLocalImpl<>(0);
+  ContextLocal<ConcurrentMap<Object, Object>> LOCAL_MAP = new ContextLocalImpl<>(0, ConcurrentHashMap::new);
 
   /**
    * @return the current context

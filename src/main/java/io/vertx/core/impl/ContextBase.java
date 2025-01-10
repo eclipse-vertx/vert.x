@@ -23,7 +23,7 @@ import java.util.function.Supplier;
  */
 class ContextBase extends AtomicReferenceArray<Object> {
 
-  private final int localsLength;
+  final int localsLength;
 
   ContextBase(int localsLength) {
     super(localsLength);

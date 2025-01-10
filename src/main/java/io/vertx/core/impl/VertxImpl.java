@@ -36,6 +36,7 @@ import io.vertx.core.http.impl.*;
 import io.vertx.core.impl.btc.BlockedThreadChecker;
 import io.vertx.core.net.impl.NetClientBuilder;
 import io.vertx.core.impl.transports.JDKTransport;
+import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.file.impl.FileSystemImpl;
 import io.vertx.core.file.impl.WindowsFileSystem;
@@ -77,6 +78,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -134,7 +136,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final FileResolver fileResolver;
   private final Map<ServerID, HttpServerImpl> sharedHttpServers = new HashMap<>();
   private final Map<ServerID, NetServerImpl> sharedNetServers = new HashMap<>();
-  private final int contextLocalsLength;
+  private final ContextLocal<?>[] contextLocals;
   final WorkerPool workerPool;
   final WorkerPool internalWorkerPool;
   final WorkerPool virtualThreaWorkerPool;
@@ -191,7 +193,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
     ThreadFactory virtualThreadFactory = virtualThreadFactory();
 
-    contextLocalsLength = LocalSeq.get();
+    contextLocals = LocalSeq.get();
     closeFuture = new CloseFuture(log);
     maxEventLoopExecTime = maxEventLoopExecuteTime;
     maxEventLoopExecTimeUnit = maxEventLoopExecuteTimeUnit;
@@ -580,7 +582,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
 
   private ContextImpl createContext(ThreadingModel threadingModel, EventLoop eventLoop, CloseFuture closeFuture, Deployment deployment, ClassLoader tccl, EventExecutor eventExecutor, WorkerPool wp) {
-    return new ContextImpl(this, contextLocalsLength, threadingModel, eventLoop, eventExecutor, internalWorkerPool, wp, deployment, closeFuture, disableTCCL ? null : tccl);
+    return new ContextImpl(this, contextLocals.length, threadingModel, eventLoop, eventExecutor, internalWorkerPool, wp, deployment, closeFuture, disableTCCL ? null : tccl);
   }
 
   @Override
@@ -788,6 +790,17 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         });
       });
     });
+  }
+
+  void duplicate(ContextBase src, ContextBase dst) {
+    for (int i = 0;i < contextLocals.length;i++) {
+      ContextLocalImpl<?> contextLocal = (ContextLocalImpl<?>) contextLocals[i];
+      Object local = src.get(i);
+      if (local != null) {
+        local = ((Function)contextLocal.duplicator).apply(local);
+      }
+      dst.set(i, local);
+    }
   }
 
   @Override
