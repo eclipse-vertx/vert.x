@@ -180,7 +180,9 @@ final class DuplicatedContext extends ContextBase implements ContextInternal {
 
   @Override
   public ContextInternal duplicate() {
-    return new DuplicatedContext(delegate);
+    DuplicatedContext duplicate = new DuplicatedContext(delegate);
+    delegate.owner().duplicate(this, duplicate);
+    return duplicate;
   }
 
   @Override
