@@ -38,7 +38,7 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
 
   static final boolean DISABLE_TIMINGS = SysProps.DISABLE_CONTEXT_TIMINGS.getBoolean();
 
-  private final VertxInternal owner;
+  private final VertxImpl owner;
   private final JsonObject config;
   private final DeploymentContext deployment;
   private final CloseFuture closeFuture;
@@ -51,7 +51,7 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
   final WorkerPool workerPool;
   final WorkerTaskQueue executeBlockingTasks;
 
-  public ContextImpl(VertxInternal vertx,
+  public ContextImpl(VertxImpl vertx,
                      Object[] locals,
                      EventLoopExecutor eventLoop,
                      ThreadingModel threadingModel,
@@ -113,7 +113,7 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
     return eventLoop.eventLoop;
   }
 
-  public VertxInternal owner() {
+  public VertxImpl owner() {
     return owner;
   }
 

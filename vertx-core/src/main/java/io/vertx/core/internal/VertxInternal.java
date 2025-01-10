@@ -23,6 +23,7 @@ import io.vertx.core.internal.threadchecker.BlockedThreadChecker;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.impl.NetServerInternal;
 import io.vertx.core.net.impl.ServerID;
+import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.core.spi.transport.Transport;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.file.FileResolver;
@@ -33,6 +34,7 @@ import java.io.File;
 import java.lang.ref.Cleaner;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -304,6 +306,11 @@ public interface VertxInternal extends Vertx {
    * @return the Netty {@code AddressResolverGroup} to use in a Netty {@code Bootstrap}
    */
   AddressResolverGroup<InetSocketAddress> nettyAddressResolverGroup();
+
+  /**
+   * @return an immutable list of this vertx instance context locals
+   */
+  List<ContextLocal<?>> contextLocals();
 
   BlockedThreadChecker blockedThreadChecker();
 

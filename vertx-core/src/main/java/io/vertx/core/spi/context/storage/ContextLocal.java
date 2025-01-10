@@ -14,6 +14,7 @@ import io.vertx.core.Context;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.ContextLocalImpl;
 
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -35,7 +36,16 @@ public interface ContextLocal<T> {
    * @return the context local storage
    */
   static <T> ContextLocal<T> registerLocal(Class<T> type) {
-    return new ContextLocalImpl<>();
+    return ContextLocalImpl.create(type, Function.identity());
+  }
+
+  /**
+   * Registers a context local storage.
+   *
+   * @return the context local storage
+   */
+  static <T> ContextLocal<T> registerLocal(Class<T> type, Function<T, T> duplicator) {
+    return ContextLocalImpl.create(type, duplicator);
   }
 
   /**

@@ -12,18 +12,27 @@ package io.vertx.core.impl;
 
 import io.vertx.core.spi.context.storage.ContextLocal;
 
+import java.util.function.Function;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class ContextLocalImpl<T> implements ContextLocal<T> {
 
-  final int index;
-
-  public ContextLocalImpl(int index) {
-    this.index = index;
+  public static <T> ContextLocal<T> create(Class<T> type, Function<T, T> duplicator) {
+    synchronized (LocalSeq.class) {
+      int idx = LocalSeq.locals.size();
+      ContextLocal<T> local = new ContextLocalImpl<>(idx, duplicator);
+      LocalSeq.locals.add(local);
+      return local;
+    }
   }
 
-  public ContextLocalImpl() {
-    this.index = LocalSeq.next();
+  final int index;
+  final Function<T, T> duplicator;
+
+  public ContextLocalImpl(int index, Function<T, T> duplicator) {
+    this.index = index;
+    this.duplicator = duplicator;
   }
 }
