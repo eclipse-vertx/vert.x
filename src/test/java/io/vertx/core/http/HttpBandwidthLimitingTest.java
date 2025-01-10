@@ -22,6 +22,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
@@ -225,10 +226,23 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
                                                                       .setInboundGlobalBandwidth(INBOUND_LIMIT)
                                                                       .setOutboundGlobalBandwidth(2 * OUTBOUND_LIMIT);
 
+                      List<Promise<Void>> promises = new ArrayList<>();
                       for (int i = 0; i < numEventLoops; i++) {
-                        servers.forEach(s -> s.updateTrafficShapingOptions(updatedTrafficOptions));
+                        servers.forEach(s -> {
+                          Promise<Void> promise = Promise.promise();
+                          try {
+                            s.updateTrafficShapingOptions(updatedTrafficOptions);
+                            promise.complete();
+                          } catch (Exception e) {
+                            promise.fail(e);
+                          }
+                          promises.add(promise);
+                        });
                       }
-                      startPromise.complete();
+                      // Ensure all traffic shaping updates complete before resolving the startPromise
+                      Future.all(promises.stream().map(Promise::future).collect(Collectors.toList()))
+                            .onSuccess(v -> startPromise.complete())
+                            .onFailure(startPromise::fail);
                     } else {
                       startPromise.fail(res.cause());
                     }
@@ -257,7 +271,6 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
       }
     }));
     awaitLatch(waitForResponse);
-
     long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime.get());
     Assert.assertTrue(elapsedMillis < expectedUpperBoundTimeMillis(totalReceivedLength.get(), OUTBOUND_LIMIT));
   }
