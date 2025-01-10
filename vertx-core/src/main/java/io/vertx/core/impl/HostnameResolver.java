@@ -45,35 +45,25 @@ public class HostnameResolver implements AddressResolver {
 
   private static final Logger log = LoggerFactory.getLogger(HostnameResolver.class);
 
-  private static Pattern resolvOption(String regex) {
-    return Pattern.compile("^[ \\t\\f]*options[^\n]+" + regex + "(?=$|\\s)", Pattern.MULTILINE);
-  }
-
-  private static final Pattern NDOTS_OPTIONS_PATTERN = resolvOption("ndots:[ \\t\\f]*(\\d)+");
-  private static final Pattern ROTATE_OPTIONS_PATTERN = resolvOption("rotate");
+  private static final String NDOTS_LABEL = "ndots:";
+  private static final String ROTATE_LABEL = "rotate";
+  private static final String OPTIONS_ROW_LABEL = "options";
   public static final int DEFAULT_NDOTS_RESOLV_OPTION;
   public static final boolean DEFAULT_ROTATE_RESOLV_OPTION;
 
+
+  private static final int DEFAULT_NDOTS = 1;
+  private static final boolean DEFAULT_ROTATE = false;
+
   static {
-    int ndots = 1;
-    boolean rotate = false;
     if (isLinux()) {
-      File f = new File("/etc/resolv.conf");
-      try {
-        if (f.exists() && f.isFile()) {
-          String conf = Files.readString(f.toPath());
-          int ndotsOption = parseNdotsOptionFromResolvConf(conf);
-          if (ndotsOption != -1) {
-            ndots = ndotsOption;
-          }
-          rotate = parseRotateOptionFromResolvConf(conf);
-        }
-      } catch (Throwable t) {
-        log.debug("Failed to load options from /etc/resolv/.conf", t);
-      }
+      ResolverOptions options = parseLinux(new File("/etc/resolv.conf"));
+      DEFAULT_NDOTS_RESOLV_OPTION = options.effectiveNdots();
+      DEFAULT_ROTATE_RESOLV_OPTION = options.isRotate();
+    } else {
+      DEFAULT_NDOTS_RESOLV_OPTION = DEFAULT_NDOTS;
+      DEFAULT_ROTATE_RESOLV_OPTION = DEFAULT_ROTATE;
     }
-    DEFAULT_NDOTS_RESOLV_OPTION = ndots;
-    DEFAULT_ROTATE_RESOLV_OPTION = rotate;
   }
 
   private final Vertx vertx;
@@ -129,18 +119,65 @@ public class HostnameResolver implements AddressResolver {
     return provider.close();
   }
 
-  public static int parseNdotsOptionFromResolvConf(String s) {
-    int ndots = -1;
-    Matcher matcher = NDOTS_OPTIONS_PATTERN.matcher(s);
-    while (matcher.find()) {
-      ndots = Integer.parseInt(matcher.group(1));
+  // visible for testing
+  public static ResolverOptions parseLinux(File f) {
+    try {
+      if (f.exists() && f.isFile()) {
+        return parseLinux(new String(Files.readAllBytes(f.toPath())));
+      }
+    } catch (Throwable t) {
+      log.debug("Failed to load options from /etc/resolv.conf", t);
     }
-    return ndots;
+    return new ResolverOptions(DEFAULT_NDOTS, DEFAULT_ROTATE);
   }
 
-  public static boolean parseRotateOptionFromResolvConf(String s) {
-    Matcher matcher = ROTATE_OPTIONS_PATTERN.matcher(s);
-    return matcher.find();
+  // exists mainly to facilitate testing
+  public static ResolverOptions parseLinux(String input) {
+    int ndots = -1;
+    boolean rotate = false;
+    try {
+      int optionsIndex = input.indexOf(OPTIONS_ROW_LABEL);
+      if (optionsIndex != -1) {
+        boolean isProperOptionsLabel = false;
+        if (optionsIndex == 0) {
+          isProperOptionsLabel = true;
+        } else if (Character.isWhitespace(input.charAt(optionsIndex - 1))) {
+            isProperOptionsLabel = true;
+        }
+        if (isProperOptionsLabel) {
+          String afterOptions = input.substring(optionsIndex + OPTIONS_ROW_LABEL.length());
+          int rotateIndex = afterOptions.indexOf(ROTATE_LABEL);
+          if (rotateIndex != -1) {
+            if (!containsNewLine(afterOptions.substring(0, rotateIndex))) {
+              rotate = true;
+            }
+          }
+          int ndotsIndex = afterOptions.indexOf(NDOTS_LABEL);
+          if (ndotsIndex != -1) {
+            if (!containsNewLine(afterOptions.substring(0, ndotsIndex))) {
+              Matcher matcher = Holder.NDOTS_PATTERN.matcher(afterOptions.substring(ndotsIndex));
+              while (matcher.find()) {
+                ndots = Integer.parseInt(matcher.group(1));
+              }
+            }
+          }
+        }
+      }
+    } catch (NumberFormatException e) {
+      log.debug("Failed to load options from /etc/resolv.conf", e);
+    }
+    return new ResolverOptions(ndots, rotate);
+  }
+
+  //TODO: this can easily be parallelized if necessary
+  private static boolean containsNewLine(String input) {
+    for (int i = 0; i < input.length(); i++) {
+      char c = input.charAt(i);
+      if (c == '\n') {
+        return true;
+      }
+    }
+    return false;
   }
 
   class Impl<L> implements EndpointResolver<SocketAddress, SocketAddress, L, L> {
@@ -189,5 +226,33 @@ public class HostnameResolver implements AddressResolver {
     @Override
     public void close() {
     }
+  }
+
+  public static class ResolverOptions {
+    private final int ndots;
+    private final boolean rotate;
+
+    public ResolverOptions(int ndots, boolean rotate) {
+      this.ndots = ndots;
+      this.rotate = rotate;
+    }
+
+    public int ndots() {
+      return ndots;
+    }
+
+    public int effectiveNdots() {
+      return ndots != -1 ? ndots : 1;
+    }
+
+    public boolean isRotate() {
+      return rotate;
+    }
+  }
+
+  // used in order to avoid initialization of the pattern when it's not really needed
+  private static class Holder {
+
+    private static final Pattern NDOTS_PATTERN = Pattern.compile("ndots:[ \\t\\f]*(\\d)+(?=$|\\s)");
   }
 }

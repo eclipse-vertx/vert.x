@@ -54,6 +54,11 @@ public class DeploymentOptionsConverter {
             obj.setMaxWorkerExecuteTimeUnit(java.util.concurrent.TimeUnit.valueOf((String)member.getValue()));
           }
           break;
+        case "exactDeploymentId":
+          if (member.getValue() instanceof String) {
+            obj.setExactDeploymentId((String)member.getValue());
+          }
+          break;
       }
     }
   }
@@ -78,6 +83,9 @@ public class DeploymentOptionsConverter {
     json.put("maxWorkerExecuteTime", obj.getMaxWorkerExecuteTime());
     if (obj.getMaxWorkerExecuteTimeUnit() != null) {
       json.put("maxWorkerExecuteTimeUnit", obj.getMaxWorkerExecuteTimeUnit().name());
+    }
+    if (obj.getExactDeploymentId() != null) {
+      json.put("exactDeploymentId", obj.getExactDeploymentId());
     }
   }
 }
