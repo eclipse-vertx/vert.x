@@ -948,6 +948,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
+  public List<ContextLocal<?>> contextLocals() {
+    return contextLocalsList;
+  }
+
+  @Override
   public FileResolver fileResolver() {
     return fileResolver;
   }
