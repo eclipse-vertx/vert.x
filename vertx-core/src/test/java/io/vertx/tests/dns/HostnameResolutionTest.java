@@ -34,8 +34,9 @@ import io.vertx.core.net.NetServerOptions;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakedns.FakeDNSServer;
+import java.io.BufferedReader;
+import java.io.StringReader;
 import org.junit.Assume;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -769,40 +770,40 @@ public class HostnameResolutionTest extends VertxTestBase {
 
   @Test
   public void testParseResolvConf() {
-    assertEquals(-1, HostnameResolver.parseNdotsOptionFromResolvConf("options"));
-    assertEquals(4, HostnameResolver.parseNdotsOptionFromResolvConf("options ndots: 4"));
-    assertEquals(4, HostnameResolver.parseNdotsOptionFromResolvConf("\noptions ndots: 4"));
-    assertEquals(-1, HostnameResolver.parseNdotsOptionFromResolvConf("boptions ndots: 4"));
-    assertEquals(4, HostnameResolver.parseNdotsOptionFromResolvConf(" options ndots: 4"));
-    assertEquals(4, HostnameResolver.parseNdotsOptionFromResolvConf("\toptions ndots: 4"));
-    assertEquals(4, HostnameResolver.parseNdotsOptionFromResolvConf("\foptions ndots: 4"));
-    assertEquals(4, HostnameResolver.parseNdotsOptionFromResolvConf("\n options ndots: 4"));
+    assertEquals(-1, HostnameResolver.parseLinux("options").getNdots());
+    assertEquals(4, HostnameResolver.parseLinux("options ndots: 4").getNdots());
+    assertEquals(4, HostnameResolver.parseLinux("\noptions ndots: 4").getNdots());
+    assertEquals(-1, HostnameResolver.parseLinux("boptions ndots: 4").getNdots());
+    assertEquals(4, HostnameResolver.parseLinux(" options ndots: 4").getNdots());
+    assertEquals(4, HostnameResolver.parseLinux("\toptions ndots: 4").getNdots());
+    assertEquals(4, HostnameResolver.parseLinux("\foptions ndots: 4").getNdots());
+    assertEquals(4, HostnameResolver.parseLinux("\n options ndots: 4").getNdots());
 
-    assertEquals(4, HostnameResolver.parseNdotsOptionFromResolvConf("options\tndots: 4"));
-    assertEquals(4, HostnameResolver.parseNdotsOptionFromResolvConf("options\fndots: 4"));
-    assertEquals(4, HostnameResolver.parseNdotsOptionFromResolvConf("options  ndots: 4"));
-    assertEquals(-1, HostnameResolver.parseNdotsOptionFromResolvConf("options\nndots: 4"));
+    assertEquals(4, HostnameResolver.parseLinux("options\tndots: 4").getNdots());
+    assertEquals(4, HostnameResolver.parseLinux("options\fndots: 4").getNdots());
+    assertEquals(4, HostnameResolver.parseLinux("options  ndots: 4").getNdots());
+    assertEquals(-1, HostnameResolver.parseLinux("options\nndots: 4").getNdots());
 
-    assertEquals(4, HostnameResolver.parseNdotsOptionFromResolvConf("options ndots:4"));
-    assertEquals(4, HostnameResolver.parseNdotsOptionFromResolvConf("options ndots:\t4"));
-    assertEquals(4, HostnameResolver.parseNdotsOptionFromResolvConf("options ndots:  4"));
-    assertEquals(-1, HostnameResolver.parseNdotsOptionFromResolvConf("options ndots:\n4"));
+    assertEquals(4, HostnameResolver.parseLinux("options ndots:4").getNdots());
+    assertEquals(4, HostnameResolver.parseLinux("options ndots:\t4").getNdots());
+    assertEquals(4, HostnameResolver.parseLinux("options ndots:  4").getNdots());
+    assertEquals(-1, HostnameResolver.parseLinux("options ndots:\n4").getNdots());
 
-    assertEquals(4, HostnameResolver.parseNdotsOptionFromResolvConf("options ndots:4 "));
-    assertEquals(4, HostnameResolver.parseNdotsOptionFromResolvConf("options ndots:4\t"));
-    assertEquals(4, HostnameResolver.parseNdotsOptionFromResolvConf("options ndots:4\f"));
-    assertEquals(4, HostnameResolver.parseNdotsOptionFromResolvConf("options ndots:4\n"));
-    assertEquals(4, HostnameResolver.parseNdotsOptionFromResolvConf("options ndots:4\r"));
-    assertEquals(-1, HostnameResolver.parseNdotsOptionFromResolvConf("options ndots:4_"));
+    assertEquals(4, HostnameResolver.parseLinux("options ndots:4 ").getNdots());
+    assertEquals(4, HostnameResolver.parseLinux("options ndots:4\t").getNdots());
+    assertEquals(4, HostnameResolver.parseLinux("options ndots:4\f").getNdots());
+    assertEquals(4, HostnameResolver.parseLinux("options ndots:4\n").getNdots());
+    assertEquals(4, HostnameResolver.parseLinux("options ndots:4\r").getNdots());
+    assertEquals(-1, HostnameResolver.parseLinux("options ndots:4_").getNdots());
 
-    assertEquals(2, HostnameResolver.parseNdotsOptionFromResolvConf("options ndots:4\noptions ndots:2"));
-    assertEquals(4, HostnameResolver.parseNdotsOptionFromResolvConf("options ndots:4 debug"));
-    assertEquals(4, HostnameResolver.parseNdotsOptionFromResolvConf("options debug ndots:4"));
+    assertEquals(2, HostnameResolver.parseLinux("options ndots:4\noptions ndots:2").getNdots());
+    assertEquals(4, HostnameResolver.parseLinux("options ndots:4 debug").getNdots());
+    assertEquals(4, HostnameResolver.parseLinux("options debug ndots:4").getNdots());
 
-    assertEquals(false, HostnameResolver.parseRotateOptionFromResolvConf("options"));
-    assertEquals(true, HostnameResolver.parseRotateOptionFromResolvConf("options rotate"));
-    assertEquals(true, HostnameResolver.parseRotateOptionFromResolvConf("options rotate\n"));
-    assertEquals(false, HostnameResolver.parseRotateOptionFromResolvConf("options\nrotate"));
+    assertEquals(false, HostnameResolver.parseLinux("options").isRotate());
+    assertEquals(true, HostnameResolver.parseLinux("options rotate").isRotate());
+    assertEquals(true, HostnameResolver.parseLinux("options rotate\n").isRotate());
+    assertEquals(false, HostnameResolver.parseLinux("options\nrotate").isRotate());
   }
 
   @Test
