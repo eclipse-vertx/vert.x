@@ -16,6 +16,16 @@ import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.incubator.codec.http3.DefaultHttp3UnknownFrame;
+import io.netty.incubator.codec.http3.Http3;
+import io.netty.incubator.codec.http3.Http3ClientConnectionHandler;
+import io.netty.incubator.codec.http3.Http3ConnectionHandler;
+import io.netty.incubator.codec.http3.Http3ServerConnectionHandler;
+import io.netty.incubator.codec.quic.QuicChannel;
+import io.netty.incubator.codec.quic.QuicStreamChannel;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
+import io.netty.util.concurrent.PromiseNotifier;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 
@@ -30,10 +40,20 @@ public final class VertxHandler<C extends VertxConnection> extends ChannelDuplex
     return new VertxHandler<>(connectionFactory);
   }
 
+  public static <C extends VertxConnection> VertxHandler<C> create(Function<ChannelHandlerContext, C> connectionFactory, boolean isHttp3, boolean isServer) {
+    VertxHandler<C> handler = new VertxHandler<>(connectionFactory);
+    handler.isHttp3 = isHttp3;
+    handler.isServer = isServer;
+    return handler;
+  }
+
   private final Function<ChannelHandlerContext, C> connectionFactory;
   private C conn;
   private Handler<C> addHandler;
   private Handler<C> removeHandler;
+  private boolean isHttp3;
+  private boolean isServer;
+  private ChannelHandlerContext ctx;
 
   private VertxHandler(Function<ChannelHandlerContext, C> connectionFactory) {
     this.connectionFactory = connectionFactory;
@@ -48,9 +68,9 @@ public final class VertxHandler<C extends VertxConnection> extends ChannelDuplex
   public static ByteBuf safeBuffer(ByteBuf byteBuf) {
     Class<?> allocClass;
     if (byteBuf != Unpooled.EMPTY_BUFFER &&
-            ((allocClass = byteBuf.alloc().getClass()) == AdaptiveByteBufAllocator.class
-          || allocClass == PooledByteBufAllocator.class
-          || byteBuf instanceof CompositeByteBuf)) {
+      ((allocClass = byteBuf.alloc().getClass()) == AdaptiveByteBufAllocator.class
+        || allocClass == PooledByteBufAllocator.class
+        || byteBuf instanceof CompositeByteBuf)) {
       try {
         if (byteBuf.isReadable()) {
           ByteBuf buffer = VertxByteBufAllocator.DEFAULT.heapBuffer(byteBuf.readableBytes());
@@ -144,7 +164,11 @@ public final class VertxHandler<C extends VertxConnection> extends ChannelDuplex
   }
 
   @Override
-  public void channelRead(ChannelHandlerContext chctx, Object msg) {
+  public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
+    if (isHttp3) {
+      super.channelRead(chctx, msg);
+      return;
+    }
     conn.read(msg);
   }
 
@@ -159,5 +183,48 @@ public final class VertxHandler<C extends VertxConnection> extends ChannelDuplex
       conn.handleIdle((IdleStateEvent) evt);
     }
     conn.handleEvent(evt);
+  }
+
+  public void setChannelHandlerContext(ChannelHandlerContext ctx) {
+    this.ctx = ctx;
+  }
+
+  public void write(ChannelHandlerContext chctx, Object msg, ChannelPromise promise, boolean flush) {
+    if (!isHttp3) {
+      if (flush) {
+        chctx.writeAndFlush(msg, promise);
+      } else {
+        chctx.write(msg, promise);
+      }
+      return;
+    }
+
+    if (isServer) {
+      write(msg, promise, flush);
+    } else {
+      Http3.newRequestStream((QuicChannel) chctx.channel(), new Http3StreamChannelHandler<>(this))
+        .addListener((GenericFutureListener<Future<QuicStreamChannel>>) future -> {
+          if (future.isSuccess()) {
+            write(msg, promise, flush);
+          } else {
+            exceptionCaught(chctx, future.cause());
+          }
+        });
+    }
+  }
+
+  private void write(Object msg, ChannelPromise promise, boolean flush) {
+    msg = new DefaultHttp3UnknownFrame(67, (ByteBuf) msg);
+
+    if (flush) {
+      ctx.writeAndFlush(msg, ctx.newPromise().addListener(new PromiseNotifier<>(promise)));
+    } else {
+      ctx.write(msg, ctx.newPromise().addListener(new PromiseNotifier<>(promise)));
+    }
+  }
+
+  public Http3ConnectionHandler createHttp3ConnectionHandler() {
+    return isServer ? new Http3ServerConnectionHandler(new Http3StreamChannelHandler<>(this)) :
+      new Http3ClientConnectionHandler();
   }
 }

@@ -401,7 +401,7 @@ class NetClientImpl implements NetClientInternal {
       sslOptions,
       metrics,
       applicationLayerProtocol,
-      registerWriteHandlers));
+      registerWriteHandlers), options.isHttp3(), false);
     handler.removeHandler(NetSocketImpl::unregisterEventBusHandler);
     handler.addHandler(sock -> {
       if (metrics != null) {
@@ -410,6 +410,10 @@ class NetClientImpl implements NetClientInternal {
       sock.registerEventBusHandler();
       connectHandler.complete(sock);
     });
+
+    if (options.isHttp3()) {
+      ch.pipeline().addLast("h3handler", handler.createHttp3ConnectionHandler());
+    }
     ch.pipeline().addLast("handler", handler);
   }
 
