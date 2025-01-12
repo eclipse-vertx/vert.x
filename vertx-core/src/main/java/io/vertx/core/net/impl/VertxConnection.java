@@ -274,10 +274,16 @@ public class VertxConnection extends ConnectionBase {
     }
     boolean flush = (!read && !draining) || forceFlush;
     needsFlush = !flush;
-    if (flush) {
-      chctx.writeAndFlush(msg, promise);
+
+    VertxHandler vertxHandler = chctx.pipeline().get(VertxHandler.class);
+    if (vertxHandler != null) {
+      vertxHandler.write(chctx, msg, promise, flush);
     } else {
-      chctx.write(msg, promise);
+      if (flush) {
+        chctx.writeAndFlush(msg, promise);
+      } else {
+        chctx.write(msg, promise);
+      }
     }
   }
 

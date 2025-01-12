@@ -264,7 +264,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
       initChannel(ch.pipeline(), options.isSsl());
       TCPMetrics<?> metrics = getMetrics();
       VertxHandler<NetSocketImpl> handler = VertxHandler.create(ctx -> new NetSocketImpl(context, ctx,
-        sslContextManager, sslOptions, metrics, options.isRegisterWriteHandler()));
+        sslContextManager, sslOptions, metrics, options.isRegisterWriteHandler()), options.isHttp3(), true);
       handler.removeHandler(NetSocketImpl::unregisterEventBusHandler);
       handler.addHandler(conn -> {
         if (metrics != null) {
@@ -273,6 +273,10 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
         conn.registerEventBusHandler();
         context.emit(conn, connectionHandler::handle);
       });
+
+      if (options.isHttp3()) {
+        ch.pipeline().addLast("h3handler", handler.createHttp3ConnectionHandler());
+      }
       ch.pipeline().addLast("handler", handler);
     }
   }

@@ -22,6 +22,7 @@ import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.incubator.codec.http3.Http3ServerConnectionHandler;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerOptions;
@@ -181,7 +182,7 @@ class HttpServerConnectionInitializer {
     VertxHttp3ConnectionHandler<Http3ServerConnection> handler = buildHttp3ConnectionHandler(context,
       connectionHandler);
     pipeline.replace(VertxHandler.class, "handler", handler.getHttp3ConnectionHandler());
-    pipeline.addLast(handler);
+    pipeline.replace(Http3ServerConnectionHandler.class, "h3handler", handler);
   }
 
   void configureHttp3Pipeline(ChannelPipeline pipeline) {
