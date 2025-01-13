@@ -13,6 +13,7 @@ package io.vertx.tests.http;
 
 import io.netty.incubator.codec.http3.Http3;
 import io.vertx.core.http.*;
+import io.vertx.core.net.NetClientOptions;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -26,6 +27,10 @@ public class Http3Test extends HttpCommonTest {
   @Override
   protected HttpServerOptions createBaseServerOptions() {
     return HttpOptionsFactory.createHttp3ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
+  }
+
+  protected NetClientOptions createNetClientOptions() {
+    return HttpOptionsFactory.createH3NetClientOptions();
   }
 
   @Override
@@ -89,8 +94,13 @@ public class Http3Test extends HttpCommonTest {
   @Ignore("This test is ignored because UDP is based on a single connectionless protocol.")
   @Test
   public void testCloseMulti() throws Exception {
-    //TODO: resolve this test issue.
     super.testCloseMulti();
+  }
+
+  @Ignore("This test assumes an HTTP/1.1 connection, which isn't compatible with HTTP/3")
+  @Test
+  public void testListenSocketAddress() throws Exception {
+    super.testListenSocketAddress();
   }
 
   @Ignore

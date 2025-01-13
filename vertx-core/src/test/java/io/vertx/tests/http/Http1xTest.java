@@ -70,6 +70,10 @@ public class Http1xTest extends HttpTest {
     return HttpVersion.HTTP_1_1;
   }
 
+  protected NetClientOptions createNetClientOptions() {
+    return HttpOptionsFactory.createH2NetClientOptions();
+  }
+
   @Override
   protected VertxOptions getOptions() {
     VertxOptions options = super.getOptions();
