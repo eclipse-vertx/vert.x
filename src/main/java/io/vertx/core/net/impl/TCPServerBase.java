@@ -153,23 +153,32 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
     if (options == null) {
       throw new IllegalArgumentException("Invalid null value passed for traffic shaping options update");
     }
-    if (trafficShapingHandler == null) {
-      throw new IllegalStateException("Unable to update traffic shaping options because the server was not configured " +
-                                      "to use traffic shaping during startup");
-    }
     TCPServerBase server = actualServer;
+    // Update the traffic shaping options only for the actual/main server
     if (server != null && server != this) {
       server.updateTrafficShapingOptions(options);
     } else {
-      long checkIntervalForStatsInMillis = options.getCheckIntervalForStatsTimeUnit().toMillis(options.getCheckIntervalForStats());
-      trafficShapingHandler.configure(options.getOutboundGlobalBandwidth(), options.getInboundGlobalBandwidth(), checkIntervalForStatsInMillis);
-
-      if (options.getPeakOutboundGlobalBandwidth() != 0) {
-        trafficShapingHandler.setMaxGlobalWriteSize(options.getPeakOutboundGlobalBandwidth());
+      if (trafficShapingHandler == null) {
+        throw new IllegalStateException("Unable to update traffic shaping options because the server was not configured " +
+                                        "to use traffic shaping during startup");
       }
-      if (options.getMaxDelayToWait() != 0) {
-        long maxDelayToWaitInMillis = options.getMaxDelayToWaitTimeUnit().toMillis(options.getMaxDelayToWait());
-        trafficShapingHandler.setMaxWriteDelay(maxDelayToWaitInMillis);
+
+      // Compare with existing traffic-shaping options to ensure they are updated only when they differ.
+      if(!options.equals(server.options.getTrafficShapingOptions())) {
+        server.options.setTrafficShapingOptions(options);
+        long checkIntervalForStatsInMillis = options.getCheckIntervalForStatsTimeUnit().toMillis(options.getCheckIntervalForStats());
+        trafficShapingHandler.configure(options.getOutboundGlobalBandwidth(), options.getInboundGlobalBandwidth(), checkIntervalForStatsInMillis);
+
+        if (options.getPeakOutboundGlobalBandwidth() != 0) {
+          trafficShapingHandler.setMaxGlobalWriteSize(options.getPeakOutboundGlobalBandwidth());
+        }
+        if (options.getMaxDelayToWait() != 0) {
+          long maxDelayToWaitInMillis = options.getMaxDelayToWaitTimeUnit().toMillis(options.getMaxDelayToWait());
+          trafficShapingHandler.setMaxWriteDelay(maxDelayToWaitInMillis);
+        }
+      }
+      else {
+        log.info("Not updating traffic shaping options as they have not changed");
       }
     }
   }
@@ -288,8 +297,10 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
       } else {
         // Server already exists with that host/port - we will use that
         actualServer = main;
-        metrics = main.metrics;
-        childHandler =  childHandler(listenContext, localAddress, main.trafficShapingHandler);
+        metrics = actualServer.metrics;
+        // Ensure the workers inherit the actual server's traffic-shaping handler
+        trafficShapingHandler = actualServer.trafficShapingHandler;
+        childHandler =  childHandler(listenContext, localAddress, actualServer.trafficShapingHandler);
         worker = ch -> childHandler.accept(ch, actualServer.sslChannelProvider.result().sslChannelProvider());
         actualServer.servers.add(this);
         actualServer.channelBalancer.addWorker(eventLoop, worker);

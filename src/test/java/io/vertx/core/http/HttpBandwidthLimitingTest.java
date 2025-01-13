@@ -13,13 +13,16 @@ package io.vertx.core.http;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
@@ -202,6 +205,74 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
     awaitLatch(waitForResponse);
     long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime.get());
     Assert.assertTrue(elapsedMillis > expectedTimeMillis(totalReceivedLength.get(), OUTBOUND_LIMIT)); // because there are simultaneous 2 requests
+  }
+
+  @Test
+  public void testDynamicOutboundRateUpdateSharedServers() throws IOException, InterruptedException
+  {
+    int numEventLoops = 5; // We start a shared TCP server with 5 event-loops
+    List<HttpServer> servers = Collections.synchronizedList(new ArrayList<>());
+    Future<String> listenLatch = vertx.deployVerticle(() -> new AbstractVerticle() {
+      @Override
+      public void start(Promise<Void> startPromise) throws Exception
+      {
+        HttpServer testServer = serverFactory.apply(vertx);
+        servers.add(testServer);
+        testServer.requestHandler(HANDLERS.getFile(sampleF))
+                  .listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST).onComplete(res -> {
+                    if (res.succeeded()) {
+                      // Apply traffic shaping options after the server has started
+                      TrafficShapingOptions updatedTrafficOptions = new TrafficShapingOptions()
+                                                                      .setInboundGlobalBandwidth(INBOUND_LIMIT)
+                                                                      .setOutboundGlobalBandwidth(2 * OUTBOUND_LIMIT);
+
+                      List<Promise<Void>> promises = new ArrayList<>();
+                      for (int i = 0; i < numEventLoops; i++) {
+                        servers.forEach(s -> {
+                          Promise<Void> promise = Promise.promise();
+                          try {
+                            s.updateTrafficShapingOptions(updatedTrafficOptions);
+                            promise.complete();
+                          } catch (Exception e) {
+                            promise.fail(e);
+                          }
+                          promises.add(promise);
+                        });
+                      }
+                      // Ensure all traffic shaping updates complete before resolving the startPromise
+                      Future.all(promises.stream().map(Promise::future).collect(Collectors.toList()))
+                            .onSuccess(v -> startPromise.complete())
+                            .onFailure(startPromise::fail);
+                    } else {
+                      startPromise.fail(res.cause());
+                    }
+                  });
+      }
+    }, new DeploymentOptions().setInstances(numEventLoops));
+
+    HttpClient testClient = clientFactory.apply(vertx);
+    CountDownLatch waitForResponse = new CountDownLatch(2);
+    AtomicLong startTime = new AtomicLong();
+    AtomicLong totalReceivedLength = new AtomicLong();
+    long expectedLength = Files.size(Paths.get(sampleF.getAbsolutePath()));
+    listenLatch.onComplete(onSuccess(v -> {
+      startTime.set(System.nanoTime());
+      for (int i = 0; i < 2; i++) {
+        testClient.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/get-file")
+                  .compose(req -> req.send()
+                                     .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+                                     .compose(HttpClientResponse::body))
+                  .onComplete(onSuccess(body -> {
+                    long receivedBytes = body.getBytes().length;
+                    totalReceivedLength.addAndGet(receivedBytes);
+                    Assert.assertEquals(expectedLength, receivedBytes);
+                    waitForResponse.countDown();
+                  }));
+      }
+    }));
+    awaitLatch(waitForResponse);
+    long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime.get());
+    Assert.assertTrue(elapsedMillis < expectedUpperBoundTimeMillis(totalReceivedLength.get(), OUTBOUND_LIMIT));
   }
 
   @Test
