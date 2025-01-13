@@ -37,6 +37,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 
 @RunWith(Parameterized.class)
@@ -232,6 +233,55 @@ public class HttpBandwidthLimitingTest extends HttpTestBase {
     awaitLatch(waitForResponse);
     long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime.get());
     Assert.assertTrue(elapsedMillis > expectedTimeMillis(totalReceivedLength.get(), OUTBOUND_LIMIT)); // because there are simultaneous 2 requests
+  }
+
+  @Test
+  public void testDynamicOutboundRateUpdateSharedServers() throws Exception {
+    int numEventLoops = 5; // We start a shared TCP server with 5 event-loops
+    List<HttpServer> servers = Collections.synchronizedList(new ArrayList<>());
+    vertx.deployVerticle(() -> ctx -> {
+        HttpServer testServer = serverFactory.apply(vertx);
+        servers.add(testServer);
+        return testServer
+          .requestHandler(HANDLERS.getFile(sampleF))
+          .listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
+      }, new DeploymentOptions().setInstances(numEventLoops))
+      .await(20, TimeUnit.SECONDS);
+
+    // Apply traffic shaping options after the server has started
+    TrafficShapingOptions updatedTrafficOptions = new TrafficShapingOptions()
+      .setInboundGlobalBandwidth(INBOUND_LIMIT)
+      .setOutboundGlobalBandwidth(2 * OUTBOUND_LIMIT);
+
+    List<Future<?>> promises;
+    promises = servers
+      .stream()
+      .map(server -> server.updateTrafficShapingOptions(updatedTrafficOptions))
+      .collect(Collectors.toList());
+    // Ensure all traffic shaping updates complete before resolving the startPromise
+    Future.all(promises).await(20, TimeUnit.SECONDS);
+
+    HttpClient testClient = clientFactory.apply(vertx);
+    CountDownLatch waitForResponse = new CountDownLatch(2);
+    AtomicLong startTime = new AtomicLong();
+    AtomicLong totalReceivedLength = new AtomicLong();
+    long expectedLength = Files.size(Paths.get(sampleF.getAbsolutePath()));
+    startTime.set(System.nanoTime());
+    for (int i = 0; i < 2; i++) {
+      testClient.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/get-file")
+        .compose(req -> req.send()
+          .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+          .compose(HttpClientResponse::body))
+        .onComplete(onSuccess(body -> {
+          long receivedBytes = body.getBytes().length;
+          totalReceivedLength.addAndGet(receivedBytes);
+          Assert.assertEquals(expectedLength, receivedBytes);
+          waitForResponse.countDown();
+        }));
+    }
+    awaitLatch(waitForResponse);
+    long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime.get());
+    Assert.assertTrue(elapsedMillis < expectedUpperBoundTimeMillis(totalReceivedLength.get(), OUTBOUND_LIMIT));
   }
 
   @Test
