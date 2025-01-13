@@ -16,6 +16,7 @@ import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.net.NetClientOptions;
 import io.vertx.test.core.TestUtils;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -32,6 +33,10 @@ public class Http2Test extends HttpCommonTest {
   @Override
   protected HttpServerOptions createBaseServerOptions() {
     return HttpOptionsFactory.createHttp2ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
+  }
+
+  protected NetClientOptions createNetClientOptions() {
+    return HttpOptionsFactory.createH2NetClientOptions();
   }
 
   @Override

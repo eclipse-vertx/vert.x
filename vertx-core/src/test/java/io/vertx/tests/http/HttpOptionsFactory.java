@@ -16,6 +16,7 @@ import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.net.JdkSSLEngineOptions;
+import io.vertx.core.net.NetClientOptions;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 
@@ -46,7 +47,31 @@ public class HttpOptionsFactory {
       .setProtocolVersion(HttpVersion.HTTP_2);
   }
 
-  public static HttpServerOptions createHttp3ServerOptions(int port, String host) {
+  public static NetClientOptions createH3NetClientOptions() {
+    NetClientOptions options = new NetClientOptions();
+    options
+      .setHttp3(true)
+      .getSslOptions()
+      .setApplicationLayerProtocols(
+        List.of(Http3.supportedApplicationProtocols())
+      );
+    options
+      .setSslEngineOptions(new JdkSSLEngineOptions())
+      .setUseAlpn(true)
+      .setSsl(true)
+      .setTrustAll(true)
+      .setHostnameVerificationAlgorithm("")
+//      .setTrustOptions(Trust.SERVER_JKS.get())
+      .setProtocolVersion(HttpVersion.HTTP_3);
+
+    return options;
+  }
+
+  public static NetClientOptions createH2NetClientOptions() {
+    return new NetClientOptions();
+  }
+
+    public static HttpServerOptions createHttp3ServerOptions(int port, String host) {
     HttpServerOptions options = new HttpServerOptions();
 
     options

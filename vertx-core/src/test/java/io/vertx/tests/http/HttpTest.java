@@ -80,6 +80,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   protected abstract HttpVersion clientAlpnProtocolVersion();
   protected abstract HttpVersion serverAlpnProtocolVersion();
+  protected abstract NetClientOptions createNetClientOptions();
 
   @Test
   public void testCloseMulti() throws Exception {
@@ -168,9 +169,9 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testListenSocketAddress() throws Exception {
-    NetClient netClient = vertx.createNetClient();
+    NetClient netClient = vertx.createNetClient(createNetClientOptions());
     server.close();
-    server = vertx.createHttpServer().requestHandler(req -> req.response().end());
+    server = vertx.createHttpServer(createBaseServerOptions()).requestHandler(req -> req.response().end());
     SocketAddress sockAddress = SocketAddress.inetSocketAddress(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
     startServer(sockAddress);
     netClient
