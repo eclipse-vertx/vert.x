@@ -349,21 +349,38 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     }
   }
 
-  public void updateTrafficShapingOptions(TrafficShapingOptions options) {
+  public Future<Boolean> updateTrafficShapingOptions(TrafficShapingOptions options) {
     if (options == null) {
       throw new IllegalArgumentException("Invalid null value passed for traffic shaping options update");
     }
-    if (trafficShapingHandler == null) {
-      throw new IllegalStateException("Unable to update traffic shaping options because the server was not configured " +
-                                      "to use traffic shaping during startup");
-    }
     NetServerImpl server = actualServer;
-    if (server != null && server != this) {
-      server.updateTrafficShapingOptions(options);
+    ContextInternal ctx = vertx.getOrCreateContext();
+    if (server == null) {
+      // Server not yet started
+      TrafficShapingOptions prev = this.options.getTrafficShapingOptions();
+      boolean updated = prev == null || !prev.equals(options);
+      this.options.setTrafficShapingOptions(options);
+      return ctx.succeededFuture(updated);
+    }
+    // Update the traffic shaping options only for the actual/main server
+    if (server != this) {
+      return server.updateTrafficShapingOptions(options);
     } else {
+      Promise<Boolean> promise = ctx.promise();
+      ctx.emit(v -> updateTrafficShapingOptions(options, promise));
+      return promise.future();
+    }
+  }
+
+  public void updateTrafficShapingOptions(TrafficShapingOptions options, Promise<Boolean> promise) {
+    if (trafficShapingHandler == null) {
+      promise.fail(new IllegalStateException("Unable to update traffic shaping options because the server was not configured " +
+        "to use traffic shaping during startup"));
+    } else if (!options.equals(this.options.getTrafficShapingOptions())) {
+      // Compare with existing traffic-shaping options to ensure they are updated only when they differ.
+      this.options.setTrafficShapingOptions(options);
       long checkIntervalForStatsInMillis = options.getCheckIntervalForStatsTimeUnit().toMillis(options.getCheckIntervalForStats());
       trafficShapingHandler.configure(options.getOutboundGlobalBandwidth(), options.getInboundGlobalBandwidth(), checkIntervalForStatsInMillis);
-
       if (options.getPeakOutboundGlobalBandwidth() != 0) {
         trafficShapingHandler.setMaxGlobalWriteSize(options.getPeakOutboundGlobalBandwidth());
       }
@@ -371,6 +388,10 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
         long maxDelayToWaitInMillis = options.getMaxDelayToWaitTimeUnit().toMillis(options.getMaxDelayToWait());
         trafficShapingHandler.setMaxWriteDelay(maxDelayToWaitInMillis);
       }
+      promise.complete(true);
+    } else {
+      log.info("Not updating traffic shaping options as they have not changed");
+      promise.complete(false);
     }
   }
 

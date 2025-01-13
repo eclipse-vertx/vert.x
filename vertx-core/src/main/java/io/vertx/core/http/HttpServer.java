@@ -144,12 +144,19 @@ public interface HttpServer extends Measured {
   Future<Boolean> updateSSLOptions(ServerSSLOptions options, boolean force);
 
   /**
-   * Update traffic shaping options {@code options}, the update happens if valid values are passed for traffic
-   * shaping options. This update happens synchronously and at best effort for rate update to take effect immediately.
+   * <p>Update the server with new traffic {@code options}, the update happens if the options object is valid and different
+   * from the existing options object.
+   *
+   * <p>The {@code options} object is compared using its {@code equals} method against the existing options to prevent
+   * an update when the objects are equals since loading options can be costly, this can happen for share TCP servers.
+   * When object are equals, setting {@code force} to {@code true} forces the update.
+   *
+   * <p>The boolean succeeded future result indicates whether the update occurred.
    *
    * @param options the new traffic shaping options
+   * @return a future signaling the update success
    */
-  void updateTrafficShapingOptions(TrafficShapingOptions options);
+  Future<Boolean> updateTrafficShapingOptions(TrafficShapingOptions options);
 
   /**
    * Tell the server to start listening. The server will listen on the port and host specified in the
