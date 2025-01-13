@@ -40,6 +40,7 @@ import java.util.function.Function;
  */
 class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends ChannelInboundHandlerAdapter {
   private static final InternalLogger logger = InternalLoggerFactory.getInstance(VertxHttp3ConnectionHandler.class);
+  private static final Handler<QuicStreamChannel> NULL_HANDLER = e -> {};
 
   private final Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory;
   private C connection;
@@ -463,8 +464,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
 
   public Http3ConnectionHandler getHttp3ConnectionHandler() {
     if (isServer) {
-      return new Http3ServerConnectionHandler(new StreamChannelInitializer(StreamChannelHandler::new, agentType,
-        () -> connection),
+      return new Http3ServerConnectionHandler(new StreamChannelInitializer(NULL_HANDLER),
         new Http3ControlStreamChannelHandler(this), null, null, false);  //TODO: implement settings
     }
     return new Http3ClientConnectionHandler(new Http3ControlStreamChannelHandler(this), null, null, null,
@@ -504,8 +504,29 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
 
 
   public void createStreamChannel(Handler<QuicStreamChannel> onComplete) {
-    Http3.newRequestStream((QuicChannel) chctx.channel(),
-      new StreamChannelInitializer(StreamChannelHandler::new, agentType, () -> connection, onComplete));
+    Http3.newRequestStream((QuicChannel) chctx.channel(), new StreamChannelInitializer(onComplete));
+  }
+
+  private class StreamChannelInitializer extends ChannelInitializer<QuicStreamChannel> {
+    private final Handler<QuicStreamChannel> onComplete;
+
+    private StreamChannelInitializer(Handler<QuicStreamChannel> onComplete) {
+      this.onComplete = onComplete;
+    }
+
+    @Override
+    protected void initChannel(QuicStreamChannel streamChannel) {
+      streamChannel.closeFuture().addListener(future -> handleOnStreamChannelClosed(streamChannel));
+      streamChannel.pipeline().addLast(new StreamChannelHandler());
+      onComplete.handle(streamChannel);
+    }
+  }
+
+  private void handleOnStreamChannelClosed(QuicStreamChannel streamChannel) {
+    VertxHttpStreamBase vertxStream = VertxHttp3ConnectionHandler.getVertxStreamFromStreamChannel(streamChannel);
+    if (vertxStream != null) {
+      connection.onStreamClosed(vertxStream);
+    }
   }
 
   String getAgentType() {
