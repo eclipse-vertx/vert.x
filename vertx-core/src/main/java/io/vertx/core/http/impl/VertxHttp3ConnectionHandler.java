@@ -13,14 +13,22 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.*;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelOutboundHandlerAdapter;
+import io.netty.channel.ChannelPromise;
 import io.netty.channel.socket.ChannelInputShutdownEvent;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.incubator.codec.http3.*;
 import io.netty.incubator.codec.quic.*;
 import io.netty.util.AttributeKey;
 import io.netty.util.ReferenceCountUtil;
-import io.netty.util.concurrent.*;
+import io.netty.util.concurrent.DefaultPromise;
+import io.netty.util.concurrent.EventExecutor;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.FutureListener;
+import io.netty.util.concurrent.Promise;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.vertx.core.Handler;
@@ -40,7 +48,8 @@ import java.util.function.Function;
  */
 class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends ChannelInboundHandlerAdapter {
   private static final InternalLogger logger = InternalLoggerFactory.getInstance(VertxHttp3ConnectionHandler.class);
-  private static final Handler<QuicStreamChannel> NULL_HANDLER = e -> {};
+  private static final Handler<QuicStreamChannel> NULL_HANDLER = e -> {
+  };
 
   private final Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory;
   private C connection;
@@ -344,7 +353,8 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
       if (channelWritabilityChangedCounter++ == 0) return;
 
       logger.debug("{} - ChannelWritabilityChanged called for channelId: {}, streamId: {} and counter is : {}",
-        agentType, ctx.channel().id(), ((QuicStreamChannel) ctx.channel()).streamId(), channelWritabilityChangedCounter);
+        agentType, ctx.channel().id(), ((QuicStreamChannel) ctx.channel()).streamId(),
+        channelWritabilityChangedCounter);
 
       connection.onStreamWritabilityChanged(getVertxStreamFromStreamChannel(ctx));
       super.channelWritabilityChanged(ctx);
@@ -378,7 +388,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
       logger.debug("{} - ChannelInputClosed called for channelId: {}, streamId: {}", agentType, ctx.channel().id(),
         ((QuicStreamChannel) ctx.channel()).streamId());
       VertxHttpStreamBase vertxStream = getVertxStreamFromStreamChannel(ctx);
-      if(vertxStream != null) {
+      if (vertxStream != null) {
         vertxStream.onEnd(headerReceived);
       }
     }
@@ -464,7 +474,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
 
   public Http3ConnectionHandler getHttp3ConnectionHandler() {
     if (isServer) {
-      return new Http3ServerConnectionHandler(new StreamChannelInitializer(NULL_HANDLER),
+      return new Http3ServerConnectionHandler(new ChannelInitializerWrapper<QuicStreamChannel>(ch -> initStreamChannel(ch, NULL_HANDLER)),
         new Http3ControlStreamChannelHandler(this), null, null, false);  //TODO: implement settings
     }
     return new Http3ClientConnectionHandler(new Http3ControlStreamChannelHandler(this), null, null, null,
@@ -504,22 +514,14 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
 
 
   public void createStreamChannel(Handler<QuicStreamChannel> onComplete) {
-    Http3.newRequestStream((QuicChannel) chctx.channel(), new StreamChannelInitializer(onComplete));
+    Http3.newRequestStream((QuicChannel) chctx.channel(),
+      new ChannelInitializerWrapper<QuicStreamChannel>(ch -> initStreamChannel(ch, onComplete)));
   }
 
-  private class StreamChannelInitializer extends ChannelInitializer<QuicStreamChannel> {
-    private final Handler<QuicStreamChannel> onComplete;
-
-    private StreamChannelInitializer(Handler<QuicStreamChannel> onComplete) {
-      this.onComplete = onComplete;
-    }
-
-    @Override
-    protected void initChannel(QuicStreamChannel streamChannel) {
-      streamChannel.closeFuture().addListener(future -> handleOnStreamChannelClosed(streamChannel));
-      streamChannel.pipeline().addLast(new StreamChannelHandler());
-      onComplete.handle(streamChannel);
-    }
+  protected void initStreamChannel(QuicStreamChannel streamChannel, Handler<QuicStreamChannel> onComplete) {
+    streamChannel.closeFuture().addListener(ignored -> handleOnStreamChannelClosed(streamChannel));
+    streamChannel.pipeline().addLast(new StreamChannelHandler());
+    onComplete.handle(streamChannel);
   }
 
   private void handleOnStreamChannelClosed(QuicStreamChannel streamChannel) {
