@@ -220,4 +220,28 @@ public class TrafficShapingOptions {
   public TimeUnit getCheckIntervalForStatsTimeUnit() {
     return checkIntervalForStatsTimeUnit;
   }
+
+  @Override
+  public boolean equals(Object obj) {
+    TrafficShapingOptions that = (TrafficShapingOptions) obj;
+    return inboundGlobalBandwidth == that.inboundGlobalBandwidth &&
+           outboundGlobalBandwidth == that.outboundGlobalBandwidth &&
+           peakOutboundGlobalBandwidth == that.peakOutboundGlobalBandwidth &&
+           maxDelayToWait == that.maxDelayToWait &&
+           maxDelayToWaitTimeUnit == that.maxDelayToWaitTimeUnit &&
+           checkIntervalForStats == that.checkIntervalForStats &&
+           checkIntervalForStatsTimeUnit == that.checkIntervalForStatsTimeUnit;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(inboundGlobalBandwidth,
+                        outboundGlobalBandwidth,
+                        peakOutboundGlobalBandwidth,
+                        maxDelayToWait,
+                        maxDelayToWaitTimeUnit,
+                        checkIntervalForStats,
+                        checkIntervalForStatsTimeUnit);
+  }
+
 }

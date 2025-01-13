@@ -73,7 +73,7 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
   }
 
   @Override
-  public void updateTrafficShapingOptions(TrafficShapingOptions options) {
+  public Future<Boolean> updateTrafficShapingOptions(TrafficShapingOptions options) {
     NetServer s;
     synchronized (this) {
       s = tcpServer;
@@ -81,7 +81,7 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
     if (s == null) {
       throw new IllegalStateException("Not listening");
     }
-    s.updateTrafficShapingOptions(options);
+    return s.updateTrafficShapingOptions(options);
   }
 
   @Override
