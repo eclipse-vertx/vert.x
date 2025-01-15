@@ -11,18 +11,18 @@
 
 package io.vertx.core.net.impl;
 
-import io.netty.buffer.*;
+import io.netty.buffer.AdaptiveByteBufAllocator;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.CompositeByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.timeout.IdleStateEvent;
-import io.netty.incubator.codec.http3.DefaultHttp3UnknownFrame;
-import io.netty.incubator.codec.http3.Http3;
-import io.netty.incubator.codec.http3.Http3ClientConnectionHandler;
-import io.netty.incubator.codec.http3.Http3ConnectionHandler;
-import io.netty.incubator.codec.http3.Http3ServerConnectionHandler;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
+import io.netty.incubator.codec.quic.QuicStreamType;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.PromiseNotifier;
@@ -166,6 +166,7 @@ public final class VertxHandler<C extends VertxConnection> extends ChannelDuplex
   @Override
   public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
     if (isHttp3) {
+      ((QuicStreamChannel) msg).pipeline().addLast(new StreamChannelHandler());
       super.channelRead(chctx, msg);
       return;
     }
@@ -202,7 +203,7 @@ public final class VertxHandler<C extends VertxConnection> extends ChannelDuplex
     if (isServer) {
       write(msg, promise, flush);
     } else {
-      Http3.newRequestStream((QuicChannel) chctx.channel(), new Http3StreamChannelHandler<>(this))
+      ((QuicChannel) chctx.channel()).createStream(QuicStreamType.BIDIRECTIONAL, new StreamChannelHandler())
         .addListener((GenericFutureListener<Future<QuicStreamChannel>>) future -> {
           if (future.isSuccess()) {
             write(msg, promise, flush);
@@ -214,8 +215,6 @@ public final class VertxHandler<C extends VertxConnection> extends ChannelDuplex
   }
 
   private void write(Object msg, ChannelPromise promise, boolean flush) {
-    msg = new DefaultHttp3UnknownFrame(67, (ByteBuf) msg);
-
     if (flush) {
       ctx.writeAndFlush(msg, ctx.newPromise().addListener(new PromiseNotifier<>(promise)));
     } else {
@@ -223,8 +222,21 @@ public final class VertxHandler<C extends VertxConnection> extends ChannelDuplex
     }
   }
 
-  public Http3ConnectionHandler createHttp3ConnectionHandler() {
-    return isServer ? new Http3ServerConnectionHandler(new Http3StreamChannelHandler<>(this)) :
-      new Http3ClientConnectionHandler();
+  private class StreamChannelHandler extends ChannelDuplexHandler {
+    @Override
+    public void handlerAdded(ChannelHandlerContext ctx) {
+      setChannelHandlerContext(ctx);
+    }
+
+    @Override
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+      conn.read(msg);
+    }
+
+    @Override
+    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+      VertxHandler.this.channelReadComplete(ctx);
+      super.channelReadComplete(ctx);
+    }
   }
 }
