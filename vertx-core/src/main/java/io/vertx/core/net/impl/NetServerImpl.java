@@ -274,9 +274,6 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
         context.emit(conn, connectionHandler::handle);
       });
 
-      if (options.isHttp3()) {
-        ch.pipeline().addLast("h3handler", handler.createHttp3ConnectionHandler());
-      }
       ch.pipeline().addLast("handler", handler);
     }
   }

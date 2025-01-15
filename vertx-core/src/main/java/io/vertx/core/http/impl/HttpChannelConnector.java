@@ -296,7 +296,7 @@ public class HttpChannelConnector {
         , authority, pooled);
       ch.pipeline().addLast("handler", clientHandler.getHttp3ConnectionHandler());
 //      ch.pipeline().addLast(clientHandler.getUserEventHandler());
-      ch.pipeline().addLast("h3handler", clientHandler);
+      ch.pipeline().addLast(clientHandler);
       ch.flush();
     } catch (Exception e) {
       connectFailed(ch, e, promise);

@@ -410,9 +410,6 @@ class NetClientImpl implements NetClientInternal {
       connectHandler.complete(sock);
     });
 
-    if (options.isHttp3()) {
-      ch.pipeline().addLast("h3handler", handler.createHttp3ConnectionHandler());
-    }
     ch.pipeline().addLast("handler", handler);
   }
 
