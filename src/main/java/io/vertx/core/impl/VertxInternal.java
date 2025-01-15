@@ -24,6 +24,7 @@ import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.net.impl.TCPServerBase;
+import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.core.spi.transport.Transport;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.file.FileResolver;
@@ -33,6 +34,7 @@ import io.vertx.core.spi.tracing.VertxTracer;
 import java.io.File;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
@@ -239,6 +241,11 @@ public interface VertxInternal extends Vertx {
    * @return the Netty {@code AddressResolverGroup} to use in a Netty {@code Bootstrap}
    */
   AddressResolverGroup<InetSocketAddress> nettyAddressResolverGroup();
+
+  /**
+   * @return an immutable list of this vertx instance context locals
+   */
+  List<ContextLocal<?>> contextLocals();
 
   BlockedThreadChecker blockedThreadChecker();
 

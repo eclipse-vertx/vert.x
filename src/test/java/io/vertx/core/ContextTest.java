@@ -1253,4 +1253,12 @@ public class ContextTest extends VertxTestBase {
     assertEquals("bar", duplicate.getLocal("foo"));
     assertEquals(expected, duplicate.getLocal(contextLocal));
   }
+
+  @Test
+  public void testContextLocals() {
+    List<ContextLocal<?>> locals = ((VertxInternal) vertx).contextLocals();
+    assertSame(ContextInternal.LOCAL_MAP, locals.get(0));
+    assertSame(contextLocal, locals.get(1));
+    assertSame(locals, ((VertxInternal) vertx).contextLocals());
+  }
 }
