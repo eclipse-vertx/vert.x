@@ -137,6 +137,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final Map<ServerID, HttpServerImpl> sharedHttpServers = new HashMap<>();
   private final Map<ServerID, NetServerImpl> sharedNetServers = new HashMap<>();
   private final ContextLocal<?>[] contextLocals;
+  private final List<ContextLocal<?>> contextLocalsList;
   final WorkerPool workerPool;
   final WorkerPool internalWorkerPool;
   final WorkerPool virtualThreaWorkerPool;
@@ -194,6 +195,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     ThreadFactory virtualThreadFactory = virtualThreadFactory();
 
     contextLocals = LocalSeq.get();
+    contextLocalsList = Collections.unmodifiableList(Arrays.asList(contextLocals));
     closeFuture = new CloseFuture(log);
     maxEventLoopExecTime = maxEventLoopExecuteTime;
     maxEventLoopExecTimeUnit = maxEventLoopExecuteTimeUnit;
@@ -992,6 +994,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public AddressResolverGroup<InetSocketAddress> nettyAddressResolverGroup() {
     return addressResolver.nettyAddressResolverGroup();
+  }
+
+  @Override
+  public List<ContextLocal<?>> contextLocals() {
+    return contextLocalsList;
   }
 
   @Override
