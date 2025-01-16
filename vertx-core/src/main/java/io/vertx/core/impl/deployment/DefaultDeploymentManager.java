@@ -36,7 +36,12 @@ public class DefaultDeploymentManager implements DeploymentManager {
   }
 
   private String generateDeploymentID() {
-    return UUID.randomUUID().toString();
+    if (vertx.isClustered() && vertx.haManager()!=null) {
+      // in this case we need a globally unique id
+      return UUID.randomUUID().toString();
+    }
+    // in the default case we want to generate the ID as fast as possible
+    return Long.valueOf(new Random().nextLong()).toString();
   }
 
   public Future<Void> undeploy(String deploymentID) {

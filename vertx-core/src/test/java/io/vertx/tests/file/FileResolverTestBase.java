@@ -22,6 +22,8 @@ import io.vertx.core.impl.Utils;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.http.HttpTestBase;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
@@ -484,6 +486,18 @@ public abstract class FileResolverTestBase extends VertxTestBase {
       } catch (Exception e) {
         fail("Expected a UUID");
       }
+    }
+  }
+
+  @Test
+  public void testGetTheExactCacheDirWithoutHacks() {
+    String cacheDir = new FileResolverImpl(new FileSystemOptions().setExactFileCacheDir(cacheBaseDir + "-exact")).cacheDir();
+    if (cacheDir != null) {
+      System.out.println(cacheDir);
+      assertTrue(cacheDir.startsWith(cacheBaseDir + "-"));
+      // strip the remaining
+      String remaining = cacheDir.substring(cacheBaseDir.length() + 1);
+      assertEquals(remaining, "exact");
     }
   }
 }

@@ -18,7 +18,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
@@ -27,8 +26,8 @@ import java.util.UUID;
 
 public class FileCache {
 
-  static FileCache setupCache(String fileCacheDir) {
-    FileCache cache = new FileCache(setupCacheDir(fileCacheDir));
+  static FileCache setupCache(String fileCacheDir, boolean isEffectiveValue) {
+    FileCache cache = new FileCache(setupCacheDir(fileCacheDir, isEffectiveValue));
     // Add shutdown hook to delete on exit
     cache.registerShutdownHook();
     return cache;
@@ -37,7 +36,7 @@ public class FileCache {
   /**
    * Prepares the cache directory to be used in the application.
    */
-  static File setupCacheDir(String fileCacheDir) {
+  static File setupCacheDir(String fileCacheDir, boolean isEffectiveValue) {
     // ensure that the argument doesn't end with separator
     if (fileCacheDir.endsWith(File.separator)) {
       fileCacheDir = fileCacheDir.substring(0, fileCacheDir.length() - File.separator.length());
@@ -45,8 +44,7 @@ public class FileCache {
 
     // the cacheDir will be suffixed a unique id to avoid eavesdropping from other processes/users
     // also this ensures that if process A deletes cacheDir, it won't affect process B
-    String cacheDirName = fileCacheDir + "-" + UUID.randomUUID();
-    File cacheDir = new File(cacheDirName);
+    File cacheDir = isEffectiveValue ? new File(fileCacheDir) : new File(fileCacheDir + "-" + UUID.randomUUID());
     // Create the cache directory
     try {
       if (Utils.isWindows()) {

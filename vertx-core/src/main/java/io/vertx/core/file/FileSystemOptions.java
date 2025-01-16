@@ -48,6 +48,7 @@ public class FileSystemOptions {
   private boolean classPathResolvingEnabled = DEFAULT_CLASS_PATH_RESOLVING_ENABLED;
   private boolean fileCachingEnabled = DEFAULT_FILE_CACHING_ENABLED;
   private String fileCacheDir = DEFAULT_FILE_CACHING_DIR;
+  private String exactFileCacheDir;
 
   /**
    * Default constructor
@@ -128,7 +129,7 @@ public class FileSystemOptions {
   }
 
   /**
-   * @return the configured file cache dir
+   * @return the base name of the configured file cache dir. Vert.x will append a random value to this when determining the effective value
    */
   public String getFileCacheDir() {
     return this.fileCacheDir;
@@ -147,6 +148,26 @@ public class FileSystemOptions {
     return this;
   }
 
+  /**
+   * @return the configured exact file cache dir to be used as is
+   */
+  public String getExactFileCacheDir() {
+    return this.exactFileCacheDir;
+  }
+
+  /**
+   * When vert.x reads a file that is packaged with the application it gets
+   * extracted to this directory first and subsequent reads will use the extracted
+   * file to get better IO performance.
+   *
+   * @param exactFileCacheDir the value
+   * @return a reference to this, so the API can be used fluently
+   */
+  public FileSystemOptions setExactFileCacheDir(String exactFileCacheDir) {
+    this.exactFileCacheDir = exactFileCacheDir;
+    return this;
+  }
+
 
   @Override
   public String toString() {
@@ -154,6 +175,7 @@ public class FileSystemOptions {
     "classPathResolvingEnabled=" + classPathResolvingEnabled +
     ", fileCachingEnabled=" + fileCachingEnabled +
     ", fileCacheDir=" + fileCacheDir +
+    ", exactFileCacheDir=" + exactFileCacheDir +
     '}';
   }
 }
