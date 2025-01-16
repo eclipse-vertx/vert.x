@@ -80,19 +80,19 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
   }
 
   /**
-   * Handle resume, executed on the event-loop thread.
+   * Handle resume, executed on the producer executor.
    */
   protected void handleResume() {
   }
 
   /**
-   * Handler pause, executed on the event-loop thread
+   * Handler pause, executed on the producer executor.
    */
   protected void handlePause() {
   }
 
   /**
-   * Handle a message, executed on the context thread
+   * Handle a message, executed on the consumer executor.
    *
    * @param msg the message
    */
