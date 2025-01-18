@@ -54,6 +54,11 @@ public class DeploymentOptionsConverter {
             obj.setMaxWorkerExecuteTimeUnit(java.util.concurrent.TimeUnit.valueOf((String)member.getValue()));
           }
           break;
+        case "reuseCurrentEventLoop":
+          if (member.getValue() instanceof Boolean) {
+            obj.setReuseCurrentEventLoop((Boolean)member.getValue());
+          }
+          break;
       }
     }
   }
@@ -79,5 +84,6 @@ public class DeploymentOptionsConverter {
     if (obj.getMaxWorkerExecuteTimeUnit() != null) {
       json.put("maxWorkerExecuteTimeUnit", obj.getMaxWorkerExecuteTimeUnit().name());
     }
+    json.put("reuseCurrentEventLoop", obj.getReuseCurrentEventLoop());
   }
 }
