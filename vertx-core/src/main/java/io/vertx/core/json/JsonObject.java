@@ -16,6 +16,7 @@ import io.vertx.core.shareddata.Shareable;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -24,13 +25,13 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
 /**
  * A representation of a <a href="http://json.org/">JSON</a> object in Java.
- *
+ * <p>
  * Unlike some other languages Java does not have a native understanding of JSON. To enable JSON to be used easily
  * in Vert.x code we use this class to encapsulate the notion of a JSON object.
- *
+ * <p>
  * The implementation adheres to the <a href="http://rfc-editor.org/rfc/rfc7493.txt">RFC-7493</a> to support Temporal
  * data types as well as binary data.
- *
+ * <p>
  * Please see the documentation for more information.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -430,6 +431,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @param key the key to return the value for
    * @return the value string representation or null if no value for that key
    */
+  @SuppressWarnings("rawtypes")
   public String getString(String key) {
     Objects.requireNonNull(key);
     Object val = map.get(key);
@@ -557,6 +559,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @return the value or null if no value for that key
    * @throws java.lang.ClassCastException if the value is not a JsonObject
    */
+  @SuppressWarnings({"rawtypes", "unchecked"})
   public JsonObject getJsonObject(String key) {
     Objects.requireNonNull(key);
     Object val = map.get(key);
@@ -573,6 +576,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @return the value or null if no value for that key
    * @throws java.lang.ClassCastException if the value is not a JsonArray
    */
+  @SuppressWarnings("rawtypes")
   public JsonArray getJsonArray(String key) {
     Objects.requireNonNull(key);
     Object val = map.get(key);
@@ -586,7 +590,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * Get the binary value with the specified key.
    * <p>
    * JSON itself has no notion of a binary, this extension complies to the RFC-7493, so this method assumes there is a
-   * String value with the key and it contains a Base64 encoded binary, which it decodes if found and returns.
+   * String value with the key, and it contains a Base64 encoded binary, which it decodes if found and returns.
    *
    * @param key the key to return the value for
    * @return the value or null if no value for that key
@@ -600,7 +604,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     if (val == null) {
       return null;
     }
-    // no-op if value is already an byte[]
+    // no-op if value is already a byte[]
     if (val instanceof byte[]) {
       return (byte[]) val;
     }
@@ -618,7 +622,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * Get the {@code Buffer} value with the specified key.
    * <p>
    * JSON itself has no notion of a binary, this extension complies to the RFC-7493, so this method assumes there is a
-   * String value with the key and it contains a Base64 encoded binary, which it decodes if found and returns.
+   * String value with the key, and it contains a Base64 encoded binary, which it decodes if found and returns.
    *
    * @param key the string to return the value for
    * @return the value or null if no value for that key
@@ -632,12 +636,12 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     if (val == null) {
       return null;
     }
-    // no-op if value is already an Buffer
+    // no-op if value is already a Buffer
     if (val instanceof Buffer) {
       return (Buffer) val;
     }
 
-    // wrap if value is already an byte[]
+    // wrap if value is already a byte[]
     if (val instanceof byte[]) {
       return Buffer.buffer((byte[]) val);
     }
@@ -652,9 +656,9 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * Get the instant value with the specified key.
    * <p>
    * JSON itself has no notion of a temporal types, this extension allows ISO 8601 string formatted dates with timezone
-   * always set to zero UTC offset, as denoted by the suffix "Z" to be parsed as a instant value.
+   * always set to zero UTC offset, as denoted by the suffix "Z" to be parsed as an instant value.
    * {@code YYYY-MM-DDTHH:mm:ss.sssZ} is the default format used by web browser scripting. This extension complies to
-   * the RFC-7493 with all the restrictions mentioned before. The method will then decode and return a instant value.
+   * the RFC-7493 with all the restrictions mentioned before. The method will then decode and return an instant value.
    *
    * @param key the key to return the value for
    * @return the value or null if no value for that key
@@ -995,8 +999,27 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @param depth depth of merge
    * @return a reference to this, so the API can be used fluently
    */
-  @SuppressWarnings("unchecked")
   public JsonObject mergeIn(JsonObject other, int depth) {
+    return mergeIn(other, depth, (oldVal, newVal) -> newVal);
+  }
+
+  /**
+   * Like {@link #mergeIn(JsonObject, int)}, but with a function that is applied to merge
+   * the <i>old</i> and <i>new</i> values when one of them doesn't denote a {@link JsonObject}.
+   * <p>
+   * Beware of the {@code mergeFunction} parameters: the objects supplied are the same as stored
+   * in the corresponding {@link JsonObject}.
+   * For example, a {@link JsonArray} could be denoted by a {@link List} or a {@link JsonArray}.
+   * Consequently, when not entirely sure of the content provided,
+   * it's safer to inspect the parameter types in the function implementation.
+   * <p>
+   * This method can be used when, for instance, when {@code null} values in the {@code other} map should be ignored:
+   *
+   * <pre> {@code
+   * config.mergeIn(other, Integer.MAX_VALUE, (oldVal, newVal) -> newVal != null ? newVal : MergeFunction.SKIP);
+   * }</pre>
+   */
+  public JsonObject mergeIn(JsonObject other, int depth, MergeFunction mergeFunction) {
     if (depth < 1) {
       return this;
     }
@@ -1004,25 +1027,53 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
       map.putAll(other.map);
       return this;
     }
-    for (Map.Entry<String, Object> e : other.map.entrySet()) {
-      if (e.getValue() == null) {
-        map.put(e.getKey(), null);
+    mergeIn(map, other.map, depth, mergeFunction);
+    return this;
+  }
+
+  /**
+   * A function used to merge {@link JsonObject} values.
+   *
+   * @see #mergeIn(JsonObject, int, MergeFunction)
+   */
+  @FunctionalInterface
+  public interface MergeFunction extends BiFunction<Object, Object, Object> {
+
+    /**
+     * Marker indicating the result of the function should be ignored.
+     */
+    Object SKIP = new Object();
+
+    @Override
+    Object apply(Object oldVal, Object newVal);
+  }
+
+  private static void mergeIn(Map<String, Object> target, Map<String, Object> other, int depth, MergeFunction mergeFunction) {
+    for (Map.Entry<String, Object> e : other.entrySet()) {
+      String key = e.getKey();
+      Object newVal = e.getValue();
+      Object oldVal = target.get(key);
+      Map<String, Object> oldMap = jsonMapOrNull(oldVal);
+      Map<String, Object> newMap = jsonMapOrNull(newVal);
+      if (oldMap != null && newMap != null) {
+        mergeIn(oldMap, newMap, depth - 1, mergeFunction);
       } else {
-        map.merge(e.getKey(), e.getValue(), (oldVal, newVal) -> {
-          if (oldVal instanceof Map) {
-            oldVal = new JsonObject((Map) oldVal);
-          }
-          if (newVal instanceof Map) {
-            newVal = new JsonObject((Map) newVal);
-          }
-          if (oldVal instanceof JsonObject && newVal instanceof JsonObject) {
-            return ((JsonObject) oldVal).mergeIn((JsonObject) newVal, depth - 1);
-          }
-          return newVal;
-        });
+        Object res = mergeFunction.apply(oldVal, newVal);
+        if (res != MergeFunction.SKIP) {
+          target.put(key, res);
+        }
       }
     }
-    return this;
+  }
+
+  @SuppressWarnings("unchecked")
+  private static Map<String, Object> jsonMapOrNull(Object val) {
+    if (val instanceof Map) {
+      return (Map<String, Object>) val;
+    } else if (val instanceof JsonObject) {
+      return ((JsonObject) val).map;
+    }
+    return null;
   }
 
   /**
@@ -1035,7 +1086,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   /**
-   * Encode this JSON object a a string, with whitespace to make the object easier to read by a human, or other
+   * Encode this JSON object a string, with whitespace to make the object easier to read by a human, or other
    * sentient organism.
    *
    * @return the pretty string encoding.
@@ -1091,7 +1142,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * Get the underlying {@code Map} as is.
    * <p>
    * This map may contain values that are not the types returned by the {@code JsonObject} and
-   * with an unpredictable representation of the value, e.g you might get a JSON object
+   * with an unpredictable representation of the value, e.g. you might get a JSON object
    * as a {@link JsonObject} or as a {@link Map}.
    *
    * @return the underlying Map.
@@ -1258,10 +1309,12 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     return pos + length + 4;
   }
 
+  @SuppressWarnings("unchecked")
   private void fromJson(String json) {
     map = Json.CODEC.fromString(json, Map.class);
   }
 
+  @SuppressWarnings("unchecked")
   private void fromBuffer(Buffer buf) {
     map = Json.CODEC.fromBuffer(buf, Map.class);
   }

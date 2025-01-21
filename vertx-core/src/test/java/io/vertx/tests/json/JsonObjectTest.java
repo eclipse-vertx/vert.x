@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static io.vertx.core.json.JsonObject.MergeFunction.SKIP;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static org.junit.Assert.*;
 
@@ -1258,6 +1259,26 @@ public class JsonObjectTest {
     assertEquals(2, obj1.getJsonObject("flurb").size());
     assertEquals("foo", obj1.getJsonObject("flurb").getString("eek"));
     assertEquals("flurb1", obj1.getJsonObject("flurb").getString("bar"));
+  }
+
+  @Test
+  public void testMergeWithFunction() {
+    JsonObject obj1 = new JsonObject()
+      .put("foo", new JsonObject())
+      .put("bar", new JsonArray().add(1));
+    JsonObject obj2 = new JsonObject()
+      .put("foo", null)
+      .put("bar", new JsonArray().add(2))
+      .put("baz", null);
+    obj1.mergeIn(obj2, 2, (oldValue, newValue) -> {
+      if (newValue == null) {
+        return SKIP;
+      }
+      return ((JsonArray) oldValue).addAll((JsonArray) newValue);
+    });
+    assertEquals(new JsonObject(), obj1.getJsonObject("foo"));
+    assertEquals(new JsonArray().add(1).add(2), obj1.getJsonArray("bar"));
+    assertFalse(obj1.containsKey("baz"));
   }
 
   @Test
