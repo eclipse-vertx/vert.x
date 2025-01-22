@@ -353,6 +353,12 @@ public interface HttpHeaders {
   CharSequence APPLICATION_X_WWW_FORM_URLENCODED = HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED;
 
   /**
+   * multipart/form-data header value
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  CharSequence MULTIPART_FORM_DATA = HttpHeaderValues.MULTIPART_FORM_DATA;
+
+  /**
    * chunked header value
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)

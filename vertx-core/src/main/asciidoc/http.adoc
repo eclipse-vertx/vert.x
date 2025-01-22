@@ -1130,6 +1130,31 @@ no need to set the `Content-Length` of the request up-front.
 {@link examples.HTTPExamples#example41}
 ----
 
+==== Form submissions
+
+You can send http form submissions bodies with the {@link io.vertx.core.http.HttpClientRequest#send(io.vertx.core.http.ClientForm)}
+variant.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#sendForm}
+----
+
+By default, the form is submitted with the `application/x-www-form-urlencoded` content type header. You can set
+the `content-type` header to `multipart/form-data` instead
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#sendMultipart}
+----
+
+If you want to upload files and send attributes, you can create a {@link io.vertx.core.http.ClientMultipartForm} instead.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#sendMultipartWithFileUpload}
+----
+
 ==== Request timeouts
 
 You can set an idle timeout to prevent your application from unresponsive servers using {@link io.vertx.core.http.RequestOptions#setIdleTimeout(long)} or {@link io.vertx.core.http.HttpClientRequest#idleTimeout(long)}. When the request does not return any data within the timeout period an exception will fail the result and the request will be reset.

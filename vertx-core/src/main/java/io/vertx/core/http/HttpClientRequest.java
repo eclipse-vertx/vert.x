@@ -313,7 +313,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
   /**
    * Send the request with an empty body.
    *
-   * @return a future notified when the last bytes of the request is written
+   * @return a future notified when the HTTP response is available
    */
   default Future<HttpClientResponse> send() {
     end();
@@ -323,7 +323,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
   /**
    * Send the request with a string {@code body}.
    *
-   * @return a future notified when the last bytes of the request is written
+   * @return a future notified when the HTTP response is available
    */
   default Future<HttpClientResponse> send(String body) {
     end(body);
@@ -333,7 +333,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
   /**
    * Send the request with a buffer {@code body}.
    *
-   * @return a future notified when the last bytes of the request is written
+   * @return a future notified when the HTTP response is available
    */
   default Future<HttpClientResponse> send(Buffer body) {
     end(body);
@@ -341,12 +341,21 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
   }
 
   /**
+   * Like {@link #send()} but with a {@code form}. The content will be set to {@code application/x-www-form-urlencoded}
+   * or {@code multipart/form-data} according to the nature of the form.
+   *
+   * @param form the form to send
+   * @return a future notified when the HTTP response is available
+   */
+  Future<HttpClientResponse> send(ClientForm form);
+
+  /**
    * Send the request with a stream {@code body}.
    *
    * <p> If the {@link HttpHeaders#CONTENT_LENGTH} is set then the request assumes this is the
    * length of the {stream}, otherwise the request will set a chunked {@link HttpHeaders#CONTENT_ENCODING}.
    *
-   * @return a future notified when the last bytes of the request is written
+   * @return a future notified when the HTTP response is available
    */
   default Future<HttpClientResponse> send(ReadStream<Buffer> body) {
     MultiMap headers = headers();
