@@ -171,6 +171,11 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
+  public Future<HttpClientResponse> send(ClientForm form) {
+    throw new IllegalStateException();
+  }
+
+  @Override
   public Future<HttpClientResponse> connect() {
     throw new IllegalStateException();
   }

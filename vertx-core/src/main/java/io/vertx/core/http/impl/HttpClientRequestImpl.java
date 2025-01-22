@@ -12,6 +12,8 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.multipart.HttpPostRequestEncoder;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
@@ -26,6 +28,7 @@ import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 
 import java.util.Base64;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -263,6 +266,47 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     }
     this.redirectHandler = handler;
     return this;
+  }
+
+  @Override
+  public Future<HttpClientResponse> send(ClientForm body) {
+    ClientMultipartFormImpl impl = (ClientMultipartFormImpl) body;
+    String contentType = headers != null ? headers.get(HttpHeaders.CONTENT_TYPE) : null;
+    boolean multipart;
+    if (contentType == null) {
+      multipart = impl.isMultipart();
+      contentType = multipart ? HttpHeaders.MULTIPART_FORM_DATA.toString() : HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED.toString();
+      putHeader(HttpHeaderNames.CONTENT_TYPE, contentType);
+    } else {
+      if (contentType.equalsIgnoreCase(HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED.toString())) {
+        if (impl.isMultipart()) {
+          throw new UnsupportedOperationException("handle me");
+        }
+        multipart = false;
+      } else if (contentType.equalsIgnoreCase(HttpHeaders.MULTIPART_FORM_DATA.toString())) {
+        multipart = true;
+      } else {
+        throw new UnsupportedOperationException("handle me");
+      }
+    }
+    boolean multipartMixed = impl.mixed();
+    HttpPostRequestEncoder.EncoderMode encoderMode = multipartMixed ? HttpPostRequestEncoder.EncoderMode.RFC1738 : HttpPostRequestEncoder.EncoderMode.HTML5;
+    ClientMultipartFormUpload form;
+    try {
+      form = new ClientMultipartFormUpload(context, impl, multipart, encoderMode);
+    } catch (Exception e) {
+      return context.failedFuture(e);
+    }
+    for (Map.Entry<String, String> header : form.headers()) {
+      if (header.getKey().equalsIgnoreCase(CONTENT_LENGTH.toString())) {
+        if (Integer.parseInt(header.getValue()) < 0) {
+          // Bug ?
+          continue;
+        }
+      }
+      putHeader(header.getKey(), header.getValue());
+    }
+    return send(form);
   }
 
   @Override

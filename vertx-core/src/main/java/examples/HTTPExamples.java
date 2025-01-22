@@ -557,6 +557,50 @@ public class HTTPExamples {
     request.end();
   }
 
+  public void sendForm(HttpClientRequest request) {
+    ClientForm form = ClientForm.form();
+    form.attribute("firstName", "Dale");
+    form.attribute("lastName", "Cooper");
+
+    // Submit the form as a form URL encoded body
+    request
+      .send(form)
+      .onSuccess(res -> {
+        // OK
+      });
+  }
+
+  public void sendMultipart(HttpClientRequest request) {
+    ClientForm form = ClientForm.form();
+    form.attribute("firstName", "Dale");
+    form.attribute("lastName", "Cooper");
+
+    // Submit the form as a multipart form body
+    request
+      .putHeader("content-type", "multipart/form-data")
+      .send(form)
+      .onSuccess(res -> {
+        // OK
+      });
+  }
+
+  public void sendMultipartWithFileUpload(HttpClientRequest request) {
+    ClientMultipartForm form = ClientMultipartForm.multipartForm()
+      .attribute("imageDescription", "a very nice image")
+      .binaryFileUpload(
+        "imageFile",
+        "image.jpg",
+        "/path/to/image",
+        "image/jpeg");
+
+    // Submit the form as a multipart form body
+    request
+      .send(form)
+      .onSuccess(res -> {
+        // OK
+      });
+  }
+
   public void clientIdleTimeout(HttpClient client, int port, String host, String uri, int timeoutMS) {
     Future<Buffer> fut = client
       .request(new RequestOptions()
