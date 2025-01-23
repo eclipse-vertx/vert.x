@@ -295,7 +295,8 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     try {
       form = new ClientMultipartFormUpload(context, impl, multipart, encoderMode);
     } catch (Exception e) {
-      return context.failedFuture(e);
+      reset(0, e);
+      return response();
     }
     for (Map.Entry<String, String> header : form.headers()) {
       if (header.getKey().equalsIgnoreCase(CONTENT_LENGTH.toString())) {
