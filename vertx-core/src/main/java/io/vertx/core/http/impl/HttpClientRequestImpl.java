@@ -272,30 +272,33 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   public Future<HttpClientResponse> send(ClientForm body) {
     ClientMultipartFormImpl impl = (ClientMultipartFormImpl) body;
     String contentType = headers != null ? headers.get(HttpHeaders.CONTENT_TYPE) : null;
-    boolean multipart;
-    if (contentType == null) {
-      multipart = impl.isMultipart();
-      contentType = multipart ? HttpHeaders.MULTIPART_FORM_DATA.toString() : HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED.toString();
-      putHeader(HttpHeaderNames.CONTENT_TYPE, contentType);
-    } else {
-      if (contentType.equalsIgnoreCase(HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED.toString())) {
-        if (impl.isMultipart()) {
-          throw new UnsupportedOperationException("handle me");
-        }
-        multipart = false;
-      } else if (contentType.equalsIgnoreCase(HttpHeaders.MULTIPART_FORM_DATA.toString())) {
-        multipart = true;
-      } else {
-        throw new UnsupportedOperationException("handle me");
-      }
-    }
     boolean multipartMixed = impl.mixed();
     HttpPostRequestEncoder.EncoderMode encoderMode = multipartMixed ? HttpPostRequestEncoder.EncoderMode.RFC1738 : HttpPostRequestEncoder.EncoderMode.HTML5;
     ClientMultipartFormUpload form;
     try {
+      boolean multipart;
+      if (contentType == null) {
+        multipart = impl.isMultipart();
+        contentType = multipart ? HttpHeaders.MULTIPART_FORM_DATA.toString() : HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED.toString();
+        putHeader(HttpHeaderNames.CONTENT_TYPE, contentType);
+      } else {
+        if (contentType.equalsIgnoreCase(HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED.toString())) {
+          if (impl.isMultipart()) {
+            throw new IllegalStateException("Multipart form requires multipart/form-data content type instead of "
+              + HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED);
+          }
+          multipart = false;
+        } else if (contentType.equalsIgnoreCase(HttpHeaders.MULTIPART_FORM_DATA.toString())) {
+          multipart = true;
+        } else {
+          throw new IllegalStateException("Sending form requires multipart/form-data or "
+            + HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED + " content type instead of " + contentType);
+        }
+      }
       form = new ClientMultipartFormUpload(context, impl, multipart, encoderMode);
     } catch (Exception e) {
-      return context.failedFuture(e);
+      reset(0, e);
+      return response();
     }
     for (Map.Entry<String, String> header : form.headers()) {
       if (header.getKey().equalsIgnoreCase(CONTENT_LENGTH.toString())) {

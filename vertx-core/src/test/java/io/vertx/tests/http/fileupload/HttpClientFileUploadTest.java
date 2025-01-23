@@ -1,6 +1,7 @@
 package io.vertx.tests.http.fileupload;
 
 import io.netty.handler.codec.http.multipart.HttpPostRequestEncoder;
+import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
@@ -355,18 +356,50 @@ public class HttpClientFileUploadTest extends HttpTestBase {
       fail();
     });
     startServer();
+    HttpClientRequest request = client
+      .request(new RequestOptions(requestOptions).putHeader("bla", Arrays.asList("1", "2")).setMethod(HttpMethod.POST))
+      .await();
+    Future<HttpClientResponse> response = request.send(ClientMultipartForm
+      .multipartForm()
+      .textFileUpload("file", "nonexistentFilename", "nonexistentPathname", "text/plain"));
     try {
-      client.request(new RequestOptions(requestOptions).putHeader("bla", Arrays.asList("1", "2")).setMethod(HttpMethod.POST))
-        .compose(req -> req
-          .send(ClientMultipartForm
-            .multipartForm()
-            .textFileUpload("file", "nonexistentFilename", "nonexistentPathname", "text/plain"))
+      response
           .expecting(HttpResponseExpectation.SC_OK)
-          .compose(HttpClientResponse::body))
+          .compose(HttpClientResponse::body)
         .await();
     } catch (Exception err) {
-      assertEquals(err.getClass(), HttpPostRequestEncoder.ErrorDataEncoderException.class);
-      assertEquals(err.getCause().getClass(), FileNotFoundException.class);
+      assertEquals(err.getClass(), StreamResetException.class);
+      assertEquals(err.getCause().getClass(), HttpPostRequestEncoder.ErrorDataEncoderException.class);
+      assertEquals(err.getCause().getCause().getClass(), FileNotFoundException.class);
+    }
+    assertTrue(request.response().failed());
+  }
+
+  @Test
+  public void testInvalidMultipartContentType() throws Exception {
+    testInvalidContentType(ClientMultipartForm.multipartForm(), HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED.toString());
+  }
+
+  @Test
+  public void testInvalidContentType() throws Exception {
+    testInvalidContentType(ClientMultipartForm.multipartForm(), HttpHeaders.TEXT_HTML.toString());
+  }
+
+  private void testInvalidContentType(ClientForm form, String contentType) throws Exception {
+    server.requestHandler(req -> {
+      fail();
+    });
+    startServer();
+    try {
+      client
+        .request(new RequestOptions(requestOptions)
+          .putHeader(HttpHeaders.CONTENT_TYPE, contentType)
+          .setMethod(HttpMethod.POST))
+        .compose(request -> request
+          .send(form))
+        .await();
+      fail();
+    } catch (Exception expected) {
     }
   }
 }
