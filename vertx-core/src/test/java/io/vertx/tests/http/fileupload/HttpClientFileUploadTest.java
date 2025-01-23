@@ -374,4 +374,32 @@ public class HttpClientFileUploadTest extends HttpTestBase {
     }
     assertTrue(request.response().failed());
   }
+
+  @Test
+  public void testInvalidMultipartContentType() throws Exception {
+    testInvalidContentType(ClientMultipartForm.multipartForm(), HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED.toString());
+  }
+
+  @Test
+  public void testInvalidContentType() throws Exception {
+    testInvalidContentType(ClientMultipartForm.multipartForm(), HttpHeaders.TEXT_HTML.toString());
+  }
+
+  private void testInvalidContentType(ClientForm form, String contentType) throws Exception {
+    server.requestHandler(req -> {
+      fail();
+    });
+    startServer();
+    try {
+      client
+        .request(new RequestOptions(requestOptions)
+          .putHeader(HttpHeaders.CONTENT_TYPE, contentType)
+          .setMethod(HttpMethod.POST))
+        .compose(request -> request
+          .send(form))
+        .await();
+      fail();
+    } catch (Exception expected) {
+    }
+  }
 }
