@@ -174,7 +174,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
     if (handler == null) {
       throw new NullPointerException();
     }
-    context.dispatch(msg, handler);
+    context.emit(msg, handler);
   }
 
   private void deliver(Handler<Message<T>> theHandler, Message<T> message) {
