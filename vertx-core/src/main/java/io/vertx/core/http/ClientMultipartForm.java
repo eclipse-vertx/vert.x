@@ -10,9 +10,7 @@
  */
 package io.vertx.core.http;
 
-import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.GenIgnore;
-import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.ClientMultipartFormImpl;
 
@@ -23,7 +21,7 @@ import java.nio.charset.Charset;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-@VertxGen
+@DataObject
 public interface ClientMultipartForm extends ClientForm {
 
   /**
@@ -36,20 +34,16 @@ public interface ClientMultipartForm extends ClientForm {
   /**
    * {@inheritDoc}
    */
-  @Fluent
   ClientMultipartForm attribute(String name, String value);
 
   /**
    * {@inheritDoc}
    */
-  @Fluent
   ClientMultipartForm charset(String charset);
 
   /**
    * {@inheritDoc}
    */
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  @Fluent
   ClientMultipartForm charset(Charset charset);
 
   /**
@@ -62,7 +56,6 @@ public interface ClientMultipartForm extends ClientForm {
    * @param allow {@code true} allows use of multipart mixed encoding
    * @return a reference to this, so the API can be used fluently
    */
-  @Fluent
   ClientMultipartForm mixed(boolean allow);
 
   /**
@@ -79,7 +72,6 @@ public interface ClientMultipartForm extends ClientForm {
    * @param content   the content of the file
    * @return a reference to this, so the API can be used fluently
    */
-  @Fluent
   ClientMultipartForm textFileUpload(String name, String filename, String mediaType, Buffer content);
 
   /**
@@ -91,7 +83,6 @@ public interface ClientMultipartForm extends ClientForm {
    * @param content   the content of the file
    * @return a reference to this, so the API can be used fluently
    */
-  @Fluent
   ClientMultipartForm binaryFileUpload(String name, String filename, String mediaType, Buffer content);
 
   /**
@@ -103,7 +94,6 @@ public interface ClientMultipartForm extends ClientForm {
    * @param pathname  the pathname of the file
    * @return a reference to this, so the API can be used fluently
    */
-  @Fluent
   ClientMultipartForm textFileUpload(String name, String filename, String mediaType, String pathname);
 
   /**
@@ -115,7 +105,6 @@ public interface ClientMultipartForm extends ClientForm {
    * @param pathname  the pathname of the file
    * @return a reference to this, so the API can be used fluently
    */
-  @Fluent
   ClientMultipartForm binaryFileUpload(String name, String filename, String mediaType, String pathname);
 
 }
