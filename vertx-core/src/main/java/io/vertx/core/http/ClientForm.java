@@ -10,9 +10,7 @@
  */
 package io.vertx.core.http;
 
-import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.GenIgnore;
-import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.impl.ClientMultipartFormImpl;
 
@@ -23,7 +21,7 @@ import java.util.Map;
 /**
  * A form: a container for attributes.
  */
-@VertxGen
+@DataObject
 public interface ClientForm {
 
   /**
@@ -48,7 +46,6 @@ public interface ClientForm {
     return form;
   }
 
-  @Fluent
   ClientForm attribute(String name, String value);
 
   /**
@@ -57,7 +54,6 @@ public interface ClientForm {
    * @param charset the charset to use
    * @return a reference to this, so the API can be used fluently
    */
-  @Fluent
   ClientForm charset(String charset);
 
   /**
@@ -66,14 +62,11 @@ public interface ClientForm {
    * @param charset the charset to use
    * @return a reference to this, so the API can be used fluently
    */
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  @Fluent
   ClientForm charset(Charset charset);
 
   /**
    * @return the charset to use when encoding the form
    */
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   Charset charset();
 
 }
