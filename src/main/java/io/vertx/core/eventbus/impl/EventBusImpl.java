@@ -15,6 +15,8 @@ import io.vertx.core.*;
 import io.vertx.core.eventbus.*;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.impl.utils.ConcurrentCyclicSequence;
 import io.vertx.core.spi.metrics.EventBusMetrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
@@ -22,10 +24,15 @@ import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.function.Function;
@@ -40,6 +47,7 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
   private static final AtomicReferenceFieldUpdater<EventBusImpl, Handler[]> OUTBOUND_INTERCEPTORS_UPDATER = AtomicReferenceFieldUpdater.newUpdater(EventBusImpl.class, Handler[].class, "outboundInterceptors");
   private static final AtomicReferenceFieldUpdater<EventBusImpl, Handler[]> INBOUND_INTERCEPTORS_UPDATER = AtomicReferenceFieldUpdater.newUpdater(EventBusImpl.class, Handler[].class, "inboundInterceptors");
 
+  static final Logger logger = LoggerFactory.getLogger(EventBusImpl.class);
   private volatile Handler<DeliveryContext>[] outboundInterceptors = new Handler[0];
   private volatile Handler<DeliveryContext>[] inboundInterceptors = new Handler[0];
   private final AtomicLong replySequence = new AtomicLong(0);
@@ -353,17 +361,46 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
   protected ReplyException deliverMessageLocally(MessageImpl msg) {
     ConcurrentCyclicSequence<HandlerHolder> handlers = handlerMap.get(msg.address());
     boolean messageLocal = isMessageLocal(msg);
+    boolean findingHandlerFailed = true;
     if (handlers != null) {
       if (msg.isSend()) {
         //Choose one
-        HandlerHolder holder = nextHandler(handlers, messageLocal);
+        HandlerHolder holder = nextHandler(handlers, messageLocal, null);
         if (metrics != null) {
           metrics.messageReceived(msg.address(), !msg.isSend(), messageLocal, holder != null ? 1 : 0);
         }
-        if (holder != null) {
-          holder.handler.receive(msg.copyBeforeReceive());
-        } else {
-          // RACY issue !!!!!
+        /*
+        In case the handler isn't able to enqueue the operation, we will try until we have exhausted all the handlers
+        before failing hard.
+         */
+        Set<HandlerHolder> blacklistedHandlers = null;
+        while(true) {
+          if (holder != null) {
+            try {
+              holder.handler.receive(msg.copyBeforeReceive());
+              findingHandlerFailed = false;
+            } catch (RejectedExecutionException e) {
+              if(blacklistedHandlers == null) {
+                blacklistedHandlers = new HashSet<>();
+              }
+              blacklistedHandlers.add(holder);
+              holder = nextHandler(handlers, messageLocal, blacklistedHandlers);
+              if(holder != null) {
+                if(logger.isDebugEnabled()) {
+                  logger.debug(String.format("Failed to enqueue message onto handler during send, will try another handler. Address: %s", msg.address()), e);
+                }
+                continue;
+              }
+              else {
+                if(logger.isDebugEnabled()) {
+                  logger.debug(String.format("Failed to enqueue message onto handler during send, no other handler found. Address: %s", msg.address()), e);
+                }
+              }
+            }
+          } else {
+            // RACY issue !!!!!
+          }
+          break;
         }
       } else {
         // Publish
@@ -372,21 +409,43 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
         }
         for (HandlerHolder holder: handlers) {
           if (messageLocal || !holder.isLocalOnly()) {
-            holder.handler.receive(msg.copyBeforeReceive());
+            try {
+              holder.handler.receive(msg.copyBeforeReceive());
+              findingHandlerFailed = false;
+            } catch (RejectedExecutionException e) {
+              if(logger.isDebugEnabled()) {
+                logger.debug(String.format("Failed to enqueue message onto handler during publish. Address: %s", msg.address()), e);
+              }
+            }
           }
         }
       }
-      return null;
-    } else {
+    }
+    if (findingHandlerFailed) {
       if (metrics != null) {
         metrics.messageReceived(msg.address(), !msg.isSend(), messageLocal, 0);
       }
       return new ReplyException(ReplyFailure.NO_HANDLERS, "No handlers for address " + msg.address);
     }
+    return null;
   }
 
-  protected HandlerHolder nextHandler(ConcurrentCyclicSequence<HandlerHolder> handlers, boolean messageLocal) {
-    return handlers.next();
+  protected HandlerHolder nextHandler(ConcurrentCyclicSequence<HandlerHolder> handlers, boolean messageLocal, Collection<HandlerHolder> blacklistedHandlers) {
+    return nextHandlerMessageLocal(handlers, blacklistedHandlers);
+  }
+
+  protected static HandlerHolder nextHandlerMessageLocal(ConcurrentCyclicSequence<HandlerHolder> handlers, Collection<HandlerHolder> blacklistedHandlers) {
+    if(blacklistedHandlers == null) {
+      return handlers.next();
+    }
+    final Iterator<HandlerHolder> iterator = handlers.iterator();
+    while (iterator.hasNext()) {
+      final HandlerHolder handlerHolder = iterator.next();
+      if(!blacklistedHandlers.contains(handlerHolder)) {
+        return handlerHolder;
+      }
+    }
+    return null;
   }
 
   protected void checkStarted() {
