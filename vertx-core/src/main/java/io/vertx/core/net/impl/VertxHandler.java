@@ -302,4 +302,8 @@ public final class VertxHandler<C extends VertxConnection> extends ChannelDuplex
       super.channelReadComplete(ctx);
     }
   }
+
+  public void setClientWithHttp3Framing(boolean clientWithHttp3Framing) {
+    this.clientWithHttp3Framing = clientWithHttp3Framing;
+  }
 }
