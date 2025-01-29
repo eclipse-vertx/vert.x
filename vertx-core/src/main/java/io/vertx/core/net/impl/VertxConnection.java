@@ -72,6 +72,7 @@ public class VertxConnection extends ConnectionBase {
   private boolean paused;
   private boolean autoRead;
   private ScheduledFuture<?> shutdownTimeout;
+  private WriteHandler writeHandler;
 
   public VertxConnection(ContextInternal context, ChannelHandlerContext chctx) {
     this(context, chctx, false);
@@ -589,5 +590,13 @@ public class VertxConnection extends ConnectionBase {
   public void doSetWriteQueueMaxSize(int size) {
     ChannelConfig config = chctx.channel().config();
     config.setWriteBufferWaterMark(new WriteBufferWaterMark(size / 2, size));
+  }
+
+  public void setWriteHandler(WriteHandler writeHandler) {
+    this.writeHandler = writeHandler;
+  }
+
+  public interface WriteHandler {
+    void write(ChannelHandlerContext chctx, Object msg, boolean flush, ChannelPromise promise);
   }
 }

@@ -13,28 +13,39 @@ package io.vertx.core.net.impl;
 
 import io.netty.buffer.AdaptiveByteBufAllocator;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufHolder;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.incubator.codec.http3.*;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.netty.incubator.codec.quic.QuicStreamType;
+import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.PromiseNotifier;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.buffer.VertxByteBufAllocator;
+import io.vertx.core.internal.logging.Logger;
+import io.vertx.core.internal.logging.LoggerFactory;
 
 import java.util.function.Function;
+
+import static io.vertx.core.net.impl.Http3Utils.*;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 public final class VertxHandler<C extends VertxConnection> extends ChannelDuplexHandler {
+  private static final Logger log = LoggerFactory.getLogger(VertxHandler.class);
 
   public static <C extends VertxConnection> VertxHandler<C> create(Function<ChannelHandlerContext, C> connectionFactory) {
     return new VertxHandler<>(connectionFactory);
@@ -53,7 +64,8 @@ public final class VertxHandler<C extends VertxConnection> extends ChannelDuplex
   private Handler<C> removeHandler;
   private boolean isHttp3;
   private boolean isServer;
-  private ChannelHandlerContext ctx;
+  private boolean clientWithHttp3Framing = true;
+  private ChannelHandlerContext streamChannelHandlerContext;
 
   private VertxHandler(Function<ChannelHandlerContext, C> connectionFactory) {
     this.connectionFactory = connectionFactory;
@@ -100,11 +112,26 @@ public final class VertxHandler<C extends VertxConnection> extends ChannelDuplex
 
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) {
-    setConnection(connectionFactory.apply(ctx));
+    if (isServer) {
+      ctx.pipeline().addLast("h3Handler", new Http3ServerConnectionHandler(new Http3FramedStreamChannelHandler()));
+    } else {
+      ctx.pipeline().addLast("h3Handler", new Http3ClientConnectionHandler());
+    }
+    ctx.pipeline().addLast(new ChannelInitializer<>() {
+      @Override
+      protected void initChannel(Channel ch) {
+        C connection = connectionFactory.apply(ctx);
+        connection.setWriteHandler(VertxHandler.this::write);
+        setConnection(connection);
+      }
+    });
   }
 
   @Override
-  public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
+  public void handlerRemoved(ChannelHandlerContext ctx) {
+    if (ctx.pipeline().get("h3Handler") != null && isServer) {
+      ctx.pipeline().remove("h3Handler");
+    }
     if (removeHandler != null) {
       Handler<C> handler = removeHandler;
       removeHandler = null;
@@ -165,9 +192,8 @@ public final class VertxHandler<C extends VertxConnection> extends ChannelDuplex
 
   @Override
   public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
-    if (isHttp3) {
-      ((QuicStreamChannel) msg).pipeline().addLast(new StreamChannelHandler());
-      super.channelRead(chctx, msg);
+    if (chctx.channel() instanceof QuicChannel) {
+      chctx.fireChannelRead(msg);
       return;
     }
     conn.read(msg);
@@ -186,12 +212,8 @@ public final class VertxHandler<C extends VertxConnection> extends ChannelDuplex
     conn.handleEvent(evt);
   }
 
-  public void setChannelHandlerContext(ChannelHandlerContext ctx) {
-    this.ctx = ctx;
-  }
-
-  public void write(ChannelHandlerContext chctx, Object msg, ChannelPromise promise, boolean flush) {
-    if (!isHttp3) {
+  public void write(ChannelHandlerContext chctx, Object msg, boolean flush, ChannelPromise promise) {
+    if (!(chctx.channel() instanceof QuicChannel)) {
       if (flush) {
         chctx.writeAndFlush(msg, promise);
       } else {
@@ -201,41 +223,82 @@ public final class VertxHandler<C extends VertxConnection> extends ChannelDuplex
     }
 
     if (isServer) {
-      write(msg, promise, flush);
+      writeHttp3(streamChannelHandlerContext.channel(), msg, promise, flush);
     } else {
-      ((QuicChannel) chctx.channel()).createStream(QuicStreamType.BIDIRECTIONAL, new StreamChannelHandler())
-        .addListener((GenericFutureListener<Future<QuicStreamChannel>>) future -> {
-          if (future.isSuccess()) {
-            write(msg, promise, flush);
-          } else {
-            exceptionCaught(chctx, future.cause());
-          }
-        });
+      Future<QuicStreamChannel> streamChannelFuture;
+      if (clientWithHttp3Framing) {  //TODO: clientWithHttp3Framing block should be removed
+        streamChannelFuture = Http3.newRequestStream(((QuicChannel) chctx.channel()), new Http3FramedStreamChannelHandler());
+      } else {
+        streamChannelFuture = ((QuicChannel) chctx.channel()).createStream(QuicStreamType.BIDIRECTIONAL, new ClientStreamChannelWithoutHttp3FramingHandler());
+      }
+      streamChannelFuture.addListener((GenericFutureListener<Future<QuicStreamChannel>>) streamChannelFuture0 -> {
+        if (streamChannelFuture0.isSuccess()) {
+          writeHttp3(streamChannelFuture0.get(), msg, promise, flush);
+        } else {
+          exceptionCaught(chctx, streamChannelFuture0.cause());
+        }
+      });
     }
   }
 
-  private void write(Object msg, ChannelPromise promise, boolean flush) {
+  private void writeHttp3(Channel channel, Object msg, ChannelPromise promise, boolean flush) {
+    if (isServer || clientWithHttp3Framing) {  //TODO: clientWithHttp3Framing block should be removed
+      msg = new DefaultHttp3UnknownFrame(MIN_RESERVED_FRAME_TYPE, (ByteBuf) msg);
+    } else {
+      ByteBuf content = (ByteBuf) msg;
+      ByteBuf out = channel.alloc().directBuffer();
+      writeVariableLengthInteger(out, MIN_RESERVED_FRAME_TYPE);
+      writeVariableLengthInteger(out, content.readableBytes());
+      msg = Unpooled.wrappedUnmodifiableBuffer(out, content.retain());
+    }
+
     if (flush) {
-      ctx.writeAndFlush(msg, ctx.newPromise().addListener(new PromiseNotifier<>(promise)));
+      channel.writeAndFlush(msg, channel.newPromise().addListener(new PromiseNotifier<>(promise)));
     } else {
-      ctx.write(msg, ctx.newPromise().addListener(new PromiseNotifier<>(promise)));
+      channel.write(msg, channel.newPromise().addListener(new PromiseNotifier<>(promise)));
     }
   }
 
-  private class StreamChannelHandler extends ChannelDuplexHandler {
+  private class ClientStreamChannelWithoutHttp3FramingHandler extends ChannelInboundHandlerAdapter {
+    @Override
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+      if (msg instanceof ByteBuf) {
+        ByteBuf buf = (ByteBuf) msg;
+        buf.readBytes(3);
+        ByteBuf buf1 = ctx.alloc().directBuffer().writeBytes(buf);
+        getConnection().read(buf1);
+        ReferenceCountUtil.release(buf);
+      } else {
+        super.channelRead(ctx, msg);
+      }
+    }
+  }
+
+  public class Http3FramedStreamChannelHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) {
-      setChannelHandlerContext(ctx);
+      if (isServer) {
+        streamChannelHandlerContext = ctx;
+      }
     }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-      conn.read(msg);
+      log.info("Received msg with class type: " + msg.getClass().getSimpleName());
+      if (msg instanceof ByteBufHolder) {
+        getConnection().read(((ByteBufHolder) msg).content());
+      } else if (msg instanceof ByteBuf){
+        getConnection().read(msg);
+      } else {
+        ReferenceCountUtil.release(msg);
+        VertxHandler.this.exceptionCaught(ctx,
+          new Http3Exception(Http3ErrorCode.H3_INTERNAL_ERROR, "Received unknown msg!"));
+      }
     }
 
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-      VertxHandler.this.channelReadComplete(ctx);
+      getConnection().endReadAndFlush();
       super.channelReadComplete(ctx);
     }
   }
