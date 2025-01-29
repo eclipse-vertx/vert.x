@@ -301,7 +301,8 @@ public class NamedWorkerPoolTest extends VertxTestBase {
         });
       }
     }, new DeploymentOptions().setWorkerPoolName(poolName));
-    assertWaitUntil(() -> thread.get() != null && thread.get().getState() == Thread.State.TERMINATED);
+    assertWaitUntil(() -> thread.get() != null);
+    assertWaitUntil(() -> thread.get().getState() == Thread.State.TERMINATED, 10000, "Unexpected thread state " + thread.get().getState());
   }
 
   @Test
