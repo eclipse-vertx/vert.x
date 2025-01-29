@@ -13,6 +13,7 @@ package io.vertx.tests.worker;
 
 import io.vertx.core.*;
 import io.vertx.core.impl.VertxThread;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
@@ -127,6 +128,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
     await();
   }
 
+  @Repeat(times = 1000)
   @Test
   public void testUseDifferentExecutorWithSameTaskQueue() {
     int count = 10;
