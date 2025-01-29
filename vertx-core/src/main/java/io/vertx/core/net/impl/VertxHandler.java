@@ -192,7 +192,7 @@ public final class VertxHandler<C extends VertxConnection> extends ChannelDuplex
 
   @Override
   public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
-    if (chctx.channel() instanceof QuicChannel) {
+    if (isHttp3) {
       chctx.fireChannelRead(msg);
       return;
     }
@@ -213,7 +213,7 @@ public final class VertxHandler<C extends VertxConnection> extends ChannelDuplex
   }
 
   public void write(ChannelHandlerContext chctx, Object msg, boolean flush, ChannelPromise promise) {
-    if (!(chctx.channel() instanceof QuicChannel)) {
+    if (!isHttp3) {
       if (flush) {
         chctx.writeAndFlush(msg, promise);
       } else {
