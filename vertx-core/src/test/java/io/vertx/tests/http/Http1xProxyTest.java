@@ -466,10 +466,11 @@ public class Http1xProxyTest extends HttpTestBase {
       List<String> responses = new ArrayList<>();
       for (int i = 0;i < 2;i++) {
         clientRequests.get(i)
-          .compose(HttpClientRequest::send)
-          .expecting(HttpResponseExpectation.SC_OK)
-          .compose(HttpClientResponse::body)
-          .onComplete(onSuccess(res2 -> {
+          .compose(req -> req
+            .send()
+            .expecting(HttpResponseExpectation.SC_OK)
+            .compose(HttpClientResponse::body)
+          ).onComplete(onSuccess(res2 -> {
             responses.add(res2.toString());
             if (responses.size() == 2) {
               ret.complete(responses);
