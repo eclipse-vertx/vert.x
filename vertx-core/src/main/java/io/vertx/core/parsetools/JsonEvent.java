@@ -11,10 +11,8 @@
 
 package io.vertx.core.parsetools;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
-import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -22,7 +20,7 @@ import io.vertx.core.json.JsonObject;
 import java.time.Instant;
 
 /**
- * A JSON event emited by the {@link JsonParser}.
+ * A JSON event emitted by the {@link JsonParser}.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -155,14 +153,5 @@ public interface JsonEvent {
    * @return the decoded value
    */
   <T> T mapTo(Class<T> type);
-
-  /**
-   * Decodes and returns the current value as the specified {@code type}.
-   *
-   * @param type the type to decode the value to
-   * @return the decoded value
-   */
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  <T> T mapTo(TypeReference<T> type);
 
 }

@@ -11,7 +11,6 @@
 
 package io.vertx.tests.parsetools;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.DecodeException;
@@ -603,16 +602,6 @@ public class JsonParserTest {
   }
 
     @Test
-    public void testObjectMappingWithTypeReference() {
-      JsonParser parser = JsonParser.newParser();
-      List<Object> values = new ArrayList<>();
-      parser.objectValueMode();
-      parser.handler(event ->   values.add(event.mapTo(new TypeReference<TheObject>() {})));
-      parser.handle(new JsonObject().put("f", "the-value").toBuffer());
-      assertEquals(Collections.singletonList(new TheObject("the-value")), values);
-    }
-
-    @Test
     public void testArrayMapping() {
       JsonParser parser = JsonParser.newParser();
       List<Object> values = new ArrayList<>();
@@ -641,17 +630,6 @@ public class JsonParserTest {
       }
       assertEquals(Collections.emptyList(), values);
       assertEquals(1, errors.size());
-    }
-
-    @Test
-    public void testArrayMappingWithTypeReference() {
-      JsonParser parser = JsonParser.newParser();
-      List<Object> values = new ArrayList<>();
-      parser.arrayValueMode();
-      parser.handler(event -> values.add(event.mapTo(new TypeReference<LinkedList<Long>>() {})));
-      parser.handle(new JsonArray().add(0).add(1).add(2).toBuffer());
-      assertEquals(Collections.singletonList(Arrays.asList(0L, 1L, 2L)), values);
-      assertEquals(LinkedList.class, values.get(0).getClass());
     }
 
   public static class TheObject {
