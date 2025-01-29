@@ -13,7 +13,6 @@ package io.vertx.core.json.jackson;
 
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.core.io.SegmentedStringWriter;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.core.util.BufferRecycler;
 import com.fasterxml.jackson.core.util.ByteArrayBuilder;
 import io.netty.buffer.ByteBufInputStream;
@@ -30,8 +29,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Writer;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Instant;
@@ -67,26 +64,14 @@ public class JacksonCodec implements JsonCodec {
     return fromParser(createParser(json), clazz);
   }
 
-  public <T> T fromString(String str, TypeReference<T> typeRef) throws DecodeException {
-    return fromString(str, classTypeOf(typeRef));
-  }
-
   @Override
   public <T> T fromBuffer(Buffer json, Class<T> clazz) throws DecodeException {
     return fromParser(createParser(json), clazz);
   }
 
-  public <T> T fromBuffer(Buffer buf, TypeReference<T> typeRef) throws DecodeException {
-    return fromBuffer(buf, classTypeOf(typeRef));
-  }
-
   @Override
   public <T> T fromValue(Object json, Class<T> toValueType) {
     throw new DecodeException("Mapping " + toValueType.getName() + "  is not available without Jackson Databind on the classpath");
-  }
-
-  public <T> T fromValue(Object json, TypeReference<T> type) {
-    throw new DecodeException("Mapping " + type.getType().getTypeName() + " is not available without Jackson Databind on the classpath");
   }
 
   @Override
@@ -378,17 +363,6 @@ public class JacksonCodec implements JsonCodec {
     }
   }
 
-  private static <T> Class<T> classTypeOf(TypeReference<T> typeRef) {
-    Type type = typeRef.getType();
-    if (type instanceof Class) {
-      return (Class<T>) type;
-    } else if (type instanceof ParameterizedType) {
-      return (Class<T>) ((ParameterizedType)type).getRawType();
-    } else {
-      throw new DecodeException();
-    }
-  }
-
   private static <T> T cast(Object o, Class<T> clazz) {
     if (o instanceof Map) {
       if (!clazz.isAssignableFrom(Map.class)) {
@@ -448,29 +422,5 @@ public class JacksonCodec implements JsonCodec {
       }
       return clazz.cast(o);
     }
-  }
-
-  /**
-   * Decode a given JSON string to a POJO of the given type.
-   * @param str the JSON string.
-   * @param type the type to map to.
-   * @param <T> the generic type.
-   * @return an instance of T
-   * @throws DecodeException when there is a parsing or invalid mapping.
-   */
-  public static <T> T decodeValue(String str, TypeReference<T> type) throws DecodeException {
-    return JacksonFactory.CODEC.fromString(str, type);
-  }
-
-  /**
-   * Decode a given JSON buffer to a POJO of the given class type.
-   * @param buf the JSON buffer.
-   * @param type the type to map to.
-   * @param <T> the generic type.
-   * @return an instance of T
-   * @throws DecodeException when there is a parsing or invalid mapping.
-   */
-  public static <T> T decodeValue(Buffer buf, TypeReference<T> type) throws DecodeException {
-    return JacksonFactory.CODEC.fromBuffer(buf, type);
   }
 }
