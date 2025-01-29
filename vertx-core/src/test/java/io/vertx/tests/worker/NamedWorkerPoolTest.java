@@ -13,6 +13,7 @@ package io.vertx.tests.worker;
 
 import io.vertx.core.*;
 import io.vertx.core.impl.VertxThread;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
@@ -127,30 +128,42 @@ public class NamedWorkerPoolTest extends VertxTestBase {
     await();
   }
 
+  @Repeat(times = 1000)
   @Test
   public void testUseDifferentExecutorWithSameTaskQueue() {
     int count = 10;
     waitFor(count);
-    WorkerExecutor exec = vertx.createSharedWorkerExecutor("vert.x-the-executor");
+    WorkerExecutor[] executors = new WorkerExecutor[count];
+    for (int i = 0;i < count;i++) {
+      executors[i] = vertx.createSharedWorkerExecutor("vert.x-the-executor");
+    }
     vertx.runOnContext(v1 -> {
       AtomicReference<Thread> currentThread = new AtomicReference<>();
       CountDownLatch latch = new CountDownLatch(1);
       for (int i = 0;i < count;i++) {
         int val = i;
-        exec.executeBlocking(() -> {
+        executors[i].executeBlocking(() -> {
           Thread current = Thread.currentThread();
           if (val == 0) {
             assertNull(currentThread.getAndSet(current));
             awaitLatch(latch);
           } else {
-            assertSame(current, currentThread.get());
+            assertSame("i = " + val, current, currentThread.get());
           }
           return null;
         }, true).onComplete(onSuccess(v2 -> complete()));
-        latch.countDown();
+        vertx.runOnContext(v -> {
+          latch.countDown();
+        });
       }
     });
-    await();
+    try {
+      await();
+    } finally {
+      for (WorkerExecutor exec : executors) {
+        exec.close().await();
+      }
+    }
   }
 
   @Test
