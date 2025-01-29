@@ -102,15 +102,6 @@ public class JsonEventImpl implements JsonEvent {
   }
 
   @Override
-  public <T> T mapTo(TypeReference<T> type) {
-    try {
-      return JacksonFactory.CODEC.fromValue(value, type);
-    } catch (Exception e) {
-      throw new DecodeException(e.getMessage(), e);
-    }
-  }
-
-  @Override
   public Integer integerValue() {
     if (value != null) {
       Number number = (Number) value;

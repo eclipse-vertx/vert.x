@@ -23,7 +23,6 @@ import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.jackson.DatabindCodec;
-import io.vertx.core.json.jackson.JacksonCodec;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
@@ -57,13 +56,15 @@ public class JacksonDatabindTest extends VertxTestBase {
     String json = Json.encode(Collections.singletonList(original));
     List<Pojo> correct;
 
-    correct = JacksonCodec.decodeValue(json, new TypeReference<List<Pojo>>() {
+    DatabindCodec databindCodec = new DatabindCodec();
+
+    correct = databindCodec.fromString(json, new TypeReference<List<Pojo>>() {
     });
     assertTrue(((List) correct).get(0) instanceof Pojo);
     assertEquals(original.value, correct.get(0).value);
 
     // same must apply if instead of string we use a buffer
-    correct = JacksonCodec.decodeValue(Buffer.buffer(json, "UTF8"), new TypeReference<List<Pojo>>() {
+    correct = databindCodec.fromBuffer(Buffer.buffer(json, "UTF8"), new TypeReference<List<Pojo>>() {
     });
     assertTrue(((List) correct).get(0) instanceof Pojo);
     assertEquals(original.value, correct.get(0).value);
