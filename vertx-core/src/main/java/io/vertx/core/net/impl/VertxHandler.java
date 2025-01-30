@@ -65,7 +65,7 @@ public final class VertxHandler<C extends VertxConnection> extends ChannelDuplex
   private boolean isHttp3;
   private boolean isServer;
   private boolean clientWithHttp3Framing = true;
-  private ChannelHandlerContext streamChannelHandlerContext;
+  private Channel streamChannel;
 
   private VertxHandler(Function<ChannelHandlerContext, C> connectionFactory) {
     this.connectionFactory = connectionFactory;
@@ -103,28 +103,31 @@ public final class VertxHandler<C extends VertxConnection> extends ChannelDuplex
    *
    * @param connection the connection
    */
-  private void setConnection(C connection) {
+  private void setConnection(C connection, boolean notifyAddHandler) {
     conn = connection;
-    if (addHandler != null) {
+    if (addHandler != null && notifyAddHandler) {
       addHandler.handle(connection);
     }
   }
 
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) {
-    if (isServer) {
-      ctx.pipeline().addLast("h3Handler", new Http3ServerConnectionHandler(new Http3FramedStreamChannelHandler()));
-    } else {
-      ctx.pipeline().addLast("h3Handler", new Http3ClientConnectionHandler());
-    }
-    ctx.pipeline().addLast(new ChannelInitializer<>() {
-      @Override
-      protected void initChannel(Channel ch) {
-        C connection = connectionFactory.apply(ctx);
-        connection.setWriteHandler(VertxHandler.this::write);
-        setConnection(connection);
+    if (isHttp3) {
+      if (isServer) {
+        ctx.pipeline().addLast("h3Handler", new Http3ServerConnectionHandler(new ChannelInitializer<QuicStreamChannel>() {
+          @Override
+          protected void initChannel(QuicStreamChannel ch) {
+            ch.pipeline().addLast(new Http3FramedStreamChannelHandler());
+          }
+        }));
+      } else {
+        ctx.pipeline().addLast("h3Handler", new Http3ClientConnectionHandler());
       }
-    });
+    }
+    C connection = connectionFactory.apply(ctx);
+    connection.setWriteHandler(VertxHandler.this::write);
+    boolean notifyAddHandler = !(isHttp3 && isServer);
+    setConnection(connection, notifyAddHandler);
   }
 
   @Override
@@ -223,7 +226,7 @@ public final class VertxHandler<C extends VertxConnection> extends ChannelDuplex
     }
 
     if (isServer) {
-      writeHttp3(streamChannelHandlerContext.channel(), msg, promise, flush);
+      writeHttp3(streamChannel, msg, promise, flush);
     } else {
       Future<QuicStreamChannel> streamChannelFuture;
       if (clientWithHttp3Framing) {  //TODO: clientWithHttp3Framing block should be removed
@@ -278,7 +281,8 @@ public final class VertxHandler<C extends VertxConnection> extends ChannelDuplex
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) {
       if (isServer) {
-        streamChannelHandlerContext = ctx;
+        VertxHandler.this.streamChannel = ctx.channel();
+        setConnection(conn, true);
       }
     }
 
