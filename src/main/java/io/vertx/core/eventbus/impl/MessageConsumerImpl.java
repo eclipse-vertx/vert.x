@@ -33,29 +33,26 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
 
   private static final Logger log = LoggerFactory.getLogger(MessageConsumerImpl.class);
 
-  private static final int DEFAULT_MAX_BUFFERED_MESSAGES = 1000;
-
   private final Vertx vertx;
   private final ContextInternal context;
-  private final EventBusImpl eventBus;
   private final String address;
   private final boolean localOnly;
   private Handler<Message<T>> handler;
   private Handler<AsyncResult<Void>> completionHandler;
   private Handler<Void> endHandler;
   private Handler<Message<T>> discardHandler;
-  private int maxBufferedMessages = DEFAULT_MAX_BUFFERED_MESSAGES;
+  private int maxBufferedMessages;
   private Queue<Message<T>> pending = new ArrayDeque<>(8);
   private long demand = Long.MAX_VALUE;
   private Promise<Void> result;
 
-  MessageConsumerImpl(Vertx vertx, ContextInternal context, EventBusImpl eventBus, String address, boolean localOnly) {
+  MessageConsumerImpl(Vertx vertx, ContextInternal context, EventBusImpl eventBus, String address, boolean localOnly, int maxBufferedMessages) {
     super(context, eventBus, address, false);
     this.vertx = vertx;
     this.context = context;
-    this.eventBus = eventBus;
     this.address = address;
     this.localOnly = localOnly;
+    this.maxBufferedMessages = maxBufferedMessages;
   }
 
   @Override
