@@ -315,7 +315,7 @@ public class OutboundWriteQueue<E> {
       pending = consume(consumed);
     } while (pending != 0 && overflow == null);
     boolean writabilityChanged = pending < lowWaterMark && writeQueueFull > 0;
-    long val = writeQueueFull << 4;
+    int val = (int)writeQueueFull << 4;
     if (writabilityChanged) {
       writeQueueFull = 0;
     }
