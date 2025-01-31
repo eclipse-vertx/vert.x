@@ -17,15 +17,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.function.Predicate;
 
 /**
  * A concurrent multi producers back-pressured queue fronting a single consumer back-pressured system.
  *
- * The queue lets multiple producers emit elements ({@link #add}/{@link #submit}) to the consumer with back-pressure
+ * The queue lets multiple producers emit elements ({@link #write}/{@link #submit}) to the consumer with back-pressure
  * to signal producers when they should stop emitting.
  *
  * <h3>Handling elements</h3>
@@ -36,7 +34,7 @@ import java.util.function.Predicate;
  *
  * <h3>Emitting elements</h3>
  *
- * Elements are emitted with {@link #add} and {@link #submit} methods.
+ * Elements are emitted with {@link #write} and {@link #submit} methods.
  *
  * <h4>Adding elements</h4>
  *
@@ -51,7 +49,7 @@ import java.util.function.Predicate;
  *
  * <h3>Queue ownership</h3>
  *
- * Some operation require to <i>own</i> the queue to execute them. We already mentioned that {@link #add} and {@link #submit}
+ * Some operation require to <i>own</i> the queue to execute them. We already mentioned that {@link #write} and {@link #submit}
  * attempts to get ownership of the queue, sometimes these methods will not release ownership when they exit, because the queue
  * expects another thread or another condition to be met to make progress. Emitting methods can return a signal indicating that
  * the queue should be drained to make progress: {@link #DRAIN_REQUIRED_MASK} signals the queue contains element that
@@ -63,7 +61,7 @@ import java.util.function.Predicate;
  * When a method returns a {@link #DRAIN_REQUIRED_MASK} signal, the {@link #drain()} should be called by the consumer thread
  *
  * <ul>
- *   <li>A consumer method ({@link #add}, {@link #drain}) emits this signal when the {@link #consumer} refuses an element,
+ *   <li>A consumer method ({@link #write}, {@link #drain}) emits this signal when the {@link #consumer} refuses an element,
  *   therefore {@link #drain()} should be called when the consumer can accept element again</li>
  *   <li>A producer method ({@link #submit}) emits this signal when it acquired the ownership of the queue to {@link #drain} the
  *   queue.</li>
@@ -84,10 +82,10 @@ import java.util.function.Predicate;
  * </ul>
  *
  * <p>When the internal queue grows above the {@link #highWaterMark}, the queue is considered as {@code unwritable}.
- * {@link #add}/{@link #submit} methods return {@link #QUEUE_UNWRITABLE_MASK} to signal producers should stop emitting.</p>
+ * {@link #write}/{@link #submit} methods return {@link #QUEUE_UNWRITABLE_MASK} to signal producers should stop emitting.</p>
  *
  * <p>After a drain if the internal queue has shrunk under {@link #lowWaterMark}, the queue is considered as {@code writable}.
- * {@link #add}/{@link #drain} methods return {@link #QUEUE_WRITABLE_MASK} to signal producers should start emitting. Note
+ * {@link #write}/{@link #drain} methods return {@link #QUEUE_WRITABLE_MASK} to signal producers should start emitting. Note
  * that the consumer thread handles this signal and should forward it to the producers.</p>
  *
  * <p>When {@link #QUEUE_WRITABLE_MASK} is signalled, the number of {@link #QUEUE_UNWRITABLE_MASK} signals emitted is encoded
@@ -198,6 +196,37 @@ public class OutboundWriteQueue<E> {
   }
 
   /**
+   * Let the producer thread add the {@code element} to the queue.
+   *
+   * A set of flags is returned
+   * <ul>
+   *   <li>When {@link #QUEUE_UNWRITABLE_MASK} is set, the queue is writable and new elements can be added to the queue,
+   *   otherwise no elements <i>should</i> be added to the queue nor submitted but it is a soft condition</li>
+   *   <li>When {@link #DRAIN_REQUIRED_MASK} is set, the producer has acquired the ownership of the queue and should
+   *   {@link #drain()} the queue.</li>
+   * </ul>
+   *
+   * @param element the element to add
+   * @return a bitset of [{@link #DRAIN_REQUIRED_MASK}, {@link #QUEUE_UNWRITABLE_MASK}] flags
+   */
+  public int add(E element) {
+    if (element == null) {
+      throw new NullPointerException();
+    }
+    if (wipCompareAndSet(0L, 1L)) {
+      overflow = element; // Do we need barrier ? should we always use the queue instead ???
+      return DRAIN_REQUIRED_MASK;
+    } else {
+      queue.add(element);
+      long val = wipIncrementAndGet();
+      if (val != 1) {
+        return val == highWaterMark ? QUEUE_UNWRITABLE_MASK : 0; // Check branch-less
+      }
+      return DRAIN_REQUIRED_MASK;
+    }
+  }
+
+  /**
    * Let the consumer thread add the {@code element} to the queue.
    *
    * A set of flags is returned
@@ -210,24 +239,12 @@ public class OutboundWriteQueue<E> {
    * @param element the element to add
    * @return a bitset of [{@link #DRAIN_REQUIRED_MASK}, {@link #QUEUE_UNWRITABLE_MASK}, {@link #QUEUE_WRITABLE_MASK}] flags
    */
-  public int add(E element) {
-    if (WIP_UPDATER.compareAndSet(this, 0, 1)) {
-      if (!consumer.test(element)) {
-        overflow = element;
-        return DRAIN_REQUIRED_MASK;
-      }
-      if (consume(1) == 0) {
-        return 0;
-      }
-      return drainLoop();
+  public int write(E element) {
+    int res = add(element);
+    if ((res & DRAIN_REQUIRED_MASK) != 0) {
+      return drain();
     } else {
-      queue.add(element);
-      long v = WIP_UPDATER.incrementAndGet(this);
-      if (v == 1) {
-        return drainLoop();
-      } else {
-        return v == highWaterMark ? QUEUE_UNWRITABLE_MASK : 0;
-      }
+      return res;
     }
   }
 
@@ -367,5 +384,25 @@ public class OutboundWriteQueue<E> {
       }
     }
     return elts;
+  }
+
+  protected boolean wipCompareAndSet(long expect, long update) {
+    return WIP_UPDATER.compareAndSet(this, expect, update);
+  }
+
+  protected long wipIncrementAndGet() {
+    return WIP_UPDATER.incrementAndGet(this);
+  }
+
+  protected long wipDecrementAndGet() {
+    return WIP_UPDATER.decrementAndGet(this);
+  }
+
+  protected long wipGet() {
+    return WIP_UPDATER.get(this);
+  }
+
+  protected long wipAddAndGet(long delta) {
+    return WIP_UPDATER.addAndGet(this, delta);
   }
 }
