@@ -166,7 +166,7 @@ public abstract class EventBusTracingTestBase extends VertxTestBase {
     });
     awaitLatch(latch);
     List<Span> finishedSpans = tracer.getFinishedSpans();
-    assertEquals(expected, finishedSpans.size());
+    assertWaitUntil(() -> finishedSpans.size() == expected);
     assertSingleTrace(finishedSpans);
     finishedSpans.forEach(span -> {
       assertEquals("send", span.operation);

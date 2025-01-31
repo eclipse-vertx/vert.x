@@ -1,3 +1,13 @@
+/*
+ * Copyright (c) 2011-2025 Contributors to the Eclipse Foundation
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
+ */
 package io.vertx.core.eventbus;
 
 import io.vertx.codegen.annotations.DataObject;
@@ -5,29 +15,54 @@ import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
 
+/**
+ * Options configuring the behavior of a event-bus message consumer.
+ *
+ * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ */
 @DataObject
 @JsonGen(publicConverter = false)
 public class MessageConsumerOptions {
 
+  /**
+   * The default number of max buffered messages = {@code 1000}
+   */
   public static final int DEFAULT_MAX_BUFFERED_MESSAGES = 1000;
+
+  /**
+   * The default consumer locality = {@code false}
+   */
   public static final boolean DEFAULT_LOCAL_ONLY = false;
 
   private String address;
   private boolean localOnly;
   private int maxBufferedMessages;
 
+  /**
+   * Default constructor
+   */
   public MessageConsumerOptions() {
     maxBufferedMessages = DEFAULT_MAX_BUFFERED_MESSAGES;
     localOnly = DEFAULT_LOCAL_ONLY;
   }
 
-  public MessageConsumerOptions(MessageConsumerOptions options) {
+  /**
+   * Copy constructor
+   *
+   * @param other The other {@code VertxOptions} to copy when creating this
+   */
+  public MessageConsumerOptions(MessageConsumerOptions other) {
     this();
-    maxBufferedMessages = options.getMaxBufferedMessages();
-    localOnly = options.isLocalOnly();
-    address = options.getAddress();
+    maxBufferedMessages = other.getMaxBufferedMessages();
+    localOnly = other.isLocalOnly();
+    address = other.getAddress();
   }
 
+  /**
+   * Create an instance from a {@link io.vertx.core.json.JsonObject}
+   *
+   * @param json the JsonObject to create it from
+   */
   public MessageConsumerOptions(JsonObject json) {
     this();
     MessageConsumerOptionsConverter.fromJson(json, this);

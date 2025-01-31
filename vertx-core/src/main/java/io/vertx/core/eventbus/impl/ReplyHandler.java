@@ -71,9 +71,8 @@ class ReplyHandler<T> extends HandlerRegistration<T> implements Handler<Long> {
   }
 
   @Override
-  protected boolean doReceive(Message<T> reply) {
+  protected void doReceive(Message<T> reply) {
     dispatch(null, reply, context);
-    return true;
   }
 
   void register() {

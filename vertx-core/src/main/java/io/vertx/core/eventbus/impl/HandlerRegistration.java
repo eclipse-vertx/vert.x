@@ -48,9 +48,7 @@ public abstract class HandlerRegistration<T> implements Closeable {
     context.executor().execute(() -> {
       // Need to check handler is still there - the handler might have been removed after the message were sent but
       // before it was received
-      if (!doReceive(msg)) {
-        discard(msg);
-      }
+      doReceive(msg);
     });
   }
 
@@ -58,7 +56,7 @@ public abstract class HandlerRegistration<T> implements Closeable {
     return address;
   }
 
-  protected abstract boolean doReceive(Message<T> msg);
+  protected abstract void doReceive(Message<T> msg);
 
   protected abstract void dispatch(Message<T> msg, ContextInternal context, Handler<Message<T>> handler);
 
@@ -97,7 +95,7 @@ public abstract class HandlerRegistration<T> implements Closeable {
     deliveryCtx.dispatch();
   }
 
-  void discard(Message<T> msg) {
+  void discardMessage(Message<T> msg) {
     if (bus.metrics != null) {
       bus.metrics.discardMessage(metric, ((MessageImpl)msg).isLocal(), msg);
     }

@@ -10,9 +10,11 @@
  */
 package io.vertx.tests.eventbus;
 
+import io.vertx.core.Handler;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
+import io.vertx.core.eventbus.impl.MessageConsumerImpl;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.metrics.EventBusMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
@@ -35,6 +37,8 @@ public class EventBusRegistrationRaceTest extends VertxTestBase {
 
   private static final int NUM_MSG = 300_000;
   private static String TEST_ADDR = "the-addr";
+
+  private static final Handler<Message<Object>> IGNORE_MSG = msg -> {};
 
   private final AtomicInteger count = new AtomicInteger();
 
@@ -83,7 +87,8 @@ public class EventBusRegistrationRaceTest extends VertxTestBase {
         Thread.yield();
       }
       count++;
-      MessageConsumer<Object> consumer = eventBus.consumer(TEST_ADDR, msg -> { });
+      MessageConsumerImpl<Object> consumer = (MessageConsumerImpl<Object>) eventBus.consumer(TEST_ADDR, IGNORE_MSG);
+      consumer.discardHandler(IGNORE_MSG);
       consumer.unregister();
     }
   }
