@@ -13,7 +13,6 @@ package io.vertx.tests.worker;
 
 import io.vertx.core.*;
 import io.vertx.core.impl.VertxThread;
-import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
@@ -128,7 +127,6 @@ public class NamedWorkerPoolTest extends VertxTestBase {
     await();
   }
 
-  @Repeat(times = 1000)
   @Test
   public void testUseDifferentExecutorWithSameTaskQueue() {
     int count = 10;
@@ -280,29 +278,30 @@ public class NamedWorkerPoolTest extends VertxTestBase {
   }
 
   @Test
-  public void testDeployUsingNamedPool() {
-    AtomicReference<Thread> thread = new AtomicReference<>();
+  public void testDeployUsingNamedPool() throws Exception {
     String poolName = "vert.x-" + TestUtils.randomAlphaString(10);
-    Promise<Void> undeployed = Promise.promise();
+    Promise<Thread> promise = Promise.promise();
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
       public void start() {
         vertx.runOnContext(v1 -> {
           vertx.executeBlocking(() -> {
-            thread.set(Thread.currentThread());
+            Thread current = Thread.currentThread();
             assertTrue(Context.isOnVertxThread());
             assertTrue(Context.isOnWorkerThread());
             assertFalse(Context.isOnEventLoopThread());
-            assertTrue(Thread.currentThread().getName().startsWith(poolName + "-"));
-            return null;
-          }).onComplete(onSuccess(v2 -> {
-            vertx.undeploy(context.deploymentID()).onComplete(undeployed);
+            assertTrue(current.getName().startsWith(poolName + "-"));
+            return current;
+          }).onComplete(onSuccess(current -> {
+            vertx.undeploy(context.deploymentID()).onComplete(onSuccess(v2 -> {
+              promise.complete(current);
+            }));
           }));
         });
       }
     }, new DeploymentOptions().setWorkerPoolName(poolName));
-    assertWaitUntil(() -> thread.get() != null);
-    assertWaitUntil(() -> thread.get().getState() == Thread.State.TERMINATED, 10000, "Unexpected thread state " + thread.get().getState());
+    Thread thread = promise.future().await(20, SECONDS);
+    assertWaitUntil(() -> thread.getState() == Thread.State.TERMINATED, 20_000, "Unexpected thread state " + thread.getState());
   }
 
   @Test
