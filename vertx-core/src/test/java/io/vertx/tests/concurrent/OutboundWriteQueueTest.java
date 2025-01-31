@@ -47,7 +47,7 @@ public class OutboundWriteQueueTest extends AsyncTestBase {
   }
 
   @Test
-  public void testAddFromOtherThread() {
+  public void testWriteFromOtherThread() {
     queue = new OutboundWriteQueue<>(elt -> {
       output.add(elt);
       return true;
@@ -61,32 +61,32 @@ public class OutboundWriteQueueTest extends AsyncTestBase {
   }
 
   @Test
-  public void testAddFromEventLoopThread() {
+  public void testWriteFromEventLoopThread() {
     queue = new OutboundWriteQueue<>(elt -> {
       output.add(elt);
       return true;
     });
     for (int i = 0;i < 10;i++) {
-      assertEquals(0, queue.add(i));
+      assertEquals(0, queue.write(i));
     }
     assertEquals(10, output.size());
   }
 
   @Test
-  public void testReentrantAdd() {
+  public void testReentrantWrite() {
     queue = new OutboundWriteQueue<>(elt -> {
       output.add(elt);
       if (elt < 9) {
-        queue.add(elt + 1);
+        queue.write(elt + 1);
       }
       return true;
     });
-    queue.add(0);
+    queue.write(0);
     assertEquals(range(0, 10), output);
   }
 
   @Test
-  public void testConcurrentAdd() {
+  public void testConcurrentWrite() {
     queue = new OutboundWriteQueue<>(elt -> {
       output.add(elt);
       if (elt < 9) {
@@ -101,18 +101,18 @@ public class OutboundWriteQueueTest extends AsyncTestBase {
       }
       return true;
     });
-    queue.add(0);
+    queue.write(0);
     assertEquals(range(0, 10), output);
   }
 
   @Test
   public void testOverflow() {
     queue = new OutboundWriteQueue<>(elt -> false);
-    assertEquals(DRAIN_REQUIRED_MASK, queue.add(0));
+    assertEquals(DRAIN_REQUIRED_MASK, queue.write(0));
     for (int i = 1;i < 15;i++) {
-      assertEquals(0, queue.add(i));
+      assertEquals(0, queue.write(i));
     }
-    assertEquals(QUEUE_UNWRITABLE_MASK, queue.add(15));
+    assertEquals(QUEUE_UNWRITABLE_MASK, queue.write(15));
   }
 
   @Test
@@ -120,13 +120,13 @@ public class OutboundWriteQueueTest extends AsyncTestBase {
     queue = new OutboundWriteQueue<>(elt -> {
       if (elt == 0) {
         for (int i = 1;i < 15;i++) {
-          assertEquals(0, queue.add(i));
+          assertEquals(0, queue.write(i));
         }
-        assertEquals(QUEUE_UNWRITABLE_MASK, queue.add(15));
+        assertEquals(QUEUE_UNWRITABLE_MASK, queue.write(15));
       }
       return false;
     });
-    assertEquals(DRAIN_REQUIRED_MASK, queue.add(0));
+    assertEquals(DRAIN_REQUIRED_MASK, queue.write(0));
   }
 
   @Test
@@ -134,17 +134,17 @@ public class OutboundWriteQueueTest extends AsyncTestBase {
     queue = new OutboundWriteQueue<>(elt -> {
       if (elt == 0) {
         for (int i = 1;i < 15;i++) {
-          assertEquals(0, queue.add(i));
+          assertEquals(0, queue.write(i));
         }
-        assertEquals(QUEUE_UNWRITABLE_MASK, queue.add(15));
+        assertEquals(QUEUE_UNWRITABLE_MASK, queue.write(15));
         return true;
       } else {
         return false;
       }
     });
-    int flags = queue.add(0);
+    int flags = queue.write(0);
     assertFlagsSet(flags, DRAIN_REQUIRED_MASK);
-    assertEquals(QUEUE_UNWRITABLE_MASK, queue.add(16));
+    assertEquals(QUEUE_UNWRITABLE_MASK, queue.write(16));
   }
 
   @Test
@@ -152,14 +152,14 @@ public class OutboundWriteQueueTest extends AsyncTestBase {
     queue = new OutboundWriteQueue<>(elt -> {
       if (elt == 0) {
         for (int i = 1;i < 3;i++) {
-          assertEquals(0, queue.add(i));
+          assertEquals(0, queue.write(i));
         }
         return true;
       } else {
         return false;
       }
     });
-    assertEquals(DRAIN_REQUIRED_MASK, queue.add(0));
+    assertEquals(DRAIN_REQUIRED_MASK, queue.write(0));
   }
 
   @Test
@@ -173,9 +173,9 @@ public class OutboundWriteQueueTest extends AsyncTestBase {
         return true;
       }
     });
-    assertEquals(DRAIN_REQUIRED_MASK, queue.add(0));
+    assertEquals(DRAIN_REQUIRED_MASK, queue.write(0));
     for (int i = 1;i < 5;i++) {
-      assertEquals(0, queue.add(i));
+      assertEquals(0, queue.write(i));
     }
     assertEquals(0, output.size());
     queue.drain();
@@ -208,7 +208,7 @@ public class OutboundWriteQueueTest extends AsyncTestBase {
           return false;
       }
     });
-    assertEquals(DRAIN_REQUIRED_MASK, queue.add(0));
+    assertEquals(DRAIN_REQUIRED_MASK, queue.write(0));
   }
 
   @Test
@@ -233,7 +233,7 @@ public class OutboundWriteQueueTest extends AsyncTestBase {
           return false;
       }
     });
-    int flags = queue.add(0);
+    int flags = queue.write(0);
     assertFlagsSet(flags, DRAIN_REQUIRED_MASK);
     assertFlagsClear(flags, QUEUE_WRITABLE_MASK, QUEUE_UNWRITABLE_MASK);
   }
@@ -286,7 +286,7 @@ public class OutboundWriteQueueTest extends AsyncTestBase {
       }
     });
     int count = 0;
-    while ((queue.add(count++) & QUEUE_UNWRITABLE_MASK) == 0) {
+    while ((queue.write(count++) & QUEUE_UNWRITABLE_MASK) == 0) {
     }
     assertEquals(16, count);
     demand.set(8);
@@ -301,7 +301,7 @@ public class OutboundWriteQueueTest extends AsyncTestBase {
   public void testClear() {
     queue = new OutboundWriteQueue<>(elt -> false);
     for (int i = 0;i < 5;i++) {
-      queue.add(i);
+      queue.write(i);
     }
     List<Integer> buffered = queue.clear();
     assertEquals(range(0, 5), buffered);
@@ -314,14 +314,14 @@ public class OutboundWriteQueueTest extends AsyncTestBase {
     queue = new OutboundWriteQueue<>(elt -> {
       switch (elt) {
         case 0:
-          while ((queue.add(++elt) & QUEUE_UNWRITABLE_MASK) != 0) {
+          while ((queue.write(++elt) & QUEUE_UNWRITABLE_MASK) != 0) {
           }
           return true;
         default:
           return !paused.get();
       }
     });
-    queue.add(0);
+    queue.write(0);
 //    eventLoop.execute(() -> {
 //      assertTrue(paused.getAndSet(false));
 //      queue.drain();
@@ -335,16 +335,16 @@ public class OutboundWriteQueueTest extends AsyncTestBase {
       switch (elt) {
         case 0:
           for (int i = 1;i < 15;i++) {
-            assertEquals(0, queue.add(i));
+            assertEquals(0, queue.write(i));
           }
-          int flags = queue.add(16);
+          int flags = queue.write(16);
           assertFlagsSet(flags, QUEUE_UNWRITABLE_MASK);
           assertFlagsClear(flags, QUEUE_WRITABLE_MASK, DRAIN_REQUIRED_MASK);
           break;
       }
       return true;
     });
-    int flags = queue.add(0);
+    int flags = queue.write(0);
     assertFlagsSet(flags, QUEUE_WRITABLE_MASK);
     assertFlagsClear(flags, QUEUE_UNWRITABLE_MASK, DRAIN_REQUIRED_MASK);
   }
@@ -374,7 +374,7 @@ public class OutboundWriteQueueTest extends AsyncTestBase {
         assertEquals(QUEUE_UNWRITABLE_MASK, queue.submit(16));
       }
     };
-    assertEquals(DRAIN_REQUIRED_MASK, queue.add(0));
+    assertEquals(DRAIN_REQUIRED_MASK, queue.write(0));
     behavior.set(1);
     int flags = queue.drain();
     assertFlagsSet(flags, QUEUE_WRITABLE_MASK);
@@ -390,7 +390,7 @@ public class OutboundWriteQueueTest extends AsyncTestBase {
           while (true) {
             if ((queue.submit(1) & QUEUE_UNWRITABLE_MASK) != 0) {
               wqf.incrementAndGet();
-              queue.add(2);
+              queue.write(2);
               break;
             }
           }
@@ -398,7 +398,7 @@ public class OutboundWriteQueueTest extends AsyncTestBase {
         case 1:
           return true;
         case 2:
-          queue.add(3);
+          queue.write(3);
           return true;
         case 3:
           while (true) {
@@ -416,10 +416,10 @@ public class OutboundWriteQueueTest extends AsyncTestBase {
     }) {
       @Override
       protected void hook2() {
-        queue.add(1);
+        queue.write(1);
       }
     };
-    int flags = queue.add(0);
+    int flags = queue.write(0);
     assertTrue((flags & QUEUE_WRITABLE_MASK) != 0);
     int count = numberOfUnwritableSignals(flags);
     assertEquals(0, wqf.addAndGet(-count));
@@ -500,12 +500,12 @@ public class OutboundWriteQueueTest extends AsyncTestBase {
   @Test
   public void testConditions() {
     queue = new OutboundWriteQueue<>(elt -> true, 1, 1);
-    assertEquals(0, queue.add(0));
+    assertEquals(0, queue.write(0));
     assertFlagsSet(queue.submit(0), QUEUE_UNWRITABLE_MASK, DRAIN_REQUIRED_MASK);
     assertFlagsSet(queue.drain(), QUEUE_WRITABLE_MASK);
 
     queue = new OutboundWriteQueue<>(elt -> true, 1, 2);
-    assertEquals(0, queue.add(0));
+    assertEquals(0, queue.write(0));
     assertFlagsSet(queue.submit(0), DRAIN_REQUIRED_MASK);
     assertFlagsSet(queue.submit(1), QUEUE_UNWRITABLE_MASK);
     assertFlagsSet(queue.drain(), QUEUE_WRITABLE_MASK);
@@ -528,7 +528,7 @@ public class OutboundWriteQueueTest extends AsyncTestBase {
   }
 
   @Test
-  public void testAddShouldNotReturnUnwritableWithOverflowSubmissions() {
+  public void testWriteShouldNotReturnUnwritableWithOverflowSubmissions() {
     queue = new OutboundWriteQueue<>(elt -> {
       if (elt == 0) {
         Thread th = new Thread(() -> {
@@ -546,6 +546,6 @@ public class OutboundWriteQueueTest extends AsyncTestBase {
       }
       return false;
     });
-    assertEquals(0, (queue.add(0) & QUEUE_UNWRITABLE_MASK));
+    assertEquals(0, (queue.write(0) & QUEUE_UNWRITABLE_MASK));
   }
 }

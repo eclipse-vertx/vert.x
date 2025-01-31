@@ -73,7 +73,7 @@ public class OutboundMessageQueue<M> implements Predicate<M> {
       }
       reentrant++;
       try {
-        flags = writeQueue.add(message);
+        flags = writeQueue.write(message);
         overflow |= (flags & OutboundWriteQueue.DRAIN_REQUIRED_MASK) != 0;
         if ((flags & OutboundWriteQueue.QUEUE_WRITABLE_MASK) != 0) {
           handleWriteQueueDrained(numberOfUnwritableSignals(flags));
