@@ -49,7 +49,7 @@ public abstract class HandlerRegistration<T> implements Closeable {
       // Need to check handler is still there - the handler might have been removed after the message were sent but
       // before it was received
       if (!doReceive(msg)) {
-        discard(msg);
+        discardMessage(msg);
       }
     });
   }
@@ -97,7 +97,7 @@ public abstract class HandlerRegistration<T> implements Closeable {
     deliveryCtx.dispatch();
   }
 
-  void discard(Message<T> msg) {
+  void discardMessage(Message<T> msg) {
     if (bus.metrics != null) {
       bus.metrics.discardMessage(metric, ((MessageImpl)msg).isLocal(), msg);
     }
