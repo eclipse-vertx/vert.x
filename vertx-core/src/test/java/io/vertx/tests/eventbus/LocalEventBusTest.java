@@ -19,6 +19,7 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.TestUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.*;
@@ -94,7 +95,8 @@ public class LocalEventBusTest extends EventBusTestBase {
     assertNullPointerException(() -> eb.publish(null, ""));
     assertNullPointerException(() -> eb.publish(null, "", new DeliveryOptions()));
     assertNullPointerException(() -> eb.publish("", "", null));
-    assertNullPointerException(() -> eb.consumer(null));
+    assertNullPointerException(() -> eb.consumer((String) null));
+    assertNullPointerException(() -> eb.consumer((MessageConsumerOptions) null));
     assertNullPointerException(() -> eb.localConsumer(null));
     assertNullPointerException(() -> eb.sender(null));
     assertNullPointerException(() -> eb.sender(null, new DeliveryOptions()));
@@ -954,7 +956,7 @@ public class LocalEventBusTest extends EventBusTestBase {
         testComplete();
       }
     };
-    MessageConsumer<String> reg = eb.<String>consumer(ADDRESS1).setMaxBufferedMessages(10);
+    MessageConsumer<String> reg = eb.<String>consumer(new MessageConsumerOptions().setAddress(ADDRESS1).setMaxBufferedMessages(10));
     ReadStream<?> controller = register.apply(reg, handler);
     ((MessageConsumerImpl<String>) reg).discardHandler(msg -> {
       assertEquals(data[10], msg.body());
@@ -985,7 +987,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     }
     List<String> received = Collections.synchronizedList(new ArrayList<>());
     CountDownLatch receiveLatch = new CountDownLatch(4);
-    MessageConsumerImpl<String> consumer = (MessageConsumerImpl<String>) eb.<String>consumer(ADDRESS1).setMaxBufferedMessages(5);
+    MessageConsumerImpl<String> consumer = (MessageConsumerImpl<String>) eb.<String>consumer(new MessageConsumerOptions().setAddress(ADDRESS1).setMaxBufferedMessages(5));
     streamSupplier.apply(consumer, e -> {
       received.add(e);
       receiveLatch.countDown();
@@ -1007,33 +1009,6 @@ public class LocalEventBusTest extends EventBusTestBase {
     awaitLatch(discardLatch);
     assertEquals(data.subList(0, 4), received);
     assertEquals(data.subList(data.size() - 2, data.size()), discarded);
-  }
-
-  @Test
-  public void testSetMaxBufferedMessageDropsMessages() {
-    MessageConsumer<Integer> consumer = eb.consumer(ADDRESS1);
-    consumer.handler(msg -> {
-      consumer.pause();
-      Context ctx = vertx.getOrCreateContext();
-      // Let enough time of the 20 messages to go in the consumer pending queue
-      vertx.setTimer(20, v -> {
-        AtomicInteger count = new AtomicInteger(1);
-        ((MessageConsumerImpl<Integer>)consumer).discardHandler(discarded -> {
-          int val = discarded.body();
-          assertEquals(count.getAndIncrement(), val);
-          if (val == 9) {
-            testComplete();
-          }
-        });
-        consumer.setMaxBufferedMessages(10);
-      });
-    });
-    vertx.runOnContext(v -> {
-      for (int i = 0;i < 20;i++) {
-        eb.send(ADDRESS1, i);
-      }
-    });
-    await();
   }
 
   @Test
@@ -1060,7 +1035,7 @@ public class LocalEventBusTest extends EventBusTestBase {
         throw new RuntimeException();
       }
     };
-    MessageConsumer<String> reg = eb.<String>consumer(ADDRESS1).setMaxBufferedMessages(10);
+    MessageConsumer<String> reg = eb.<String>consumer(new MessageConsumerOptions().setAddress(ADDRESS1).setMaxBufferedMessages(10));
     ReadStream<?> controller = register.apply(reg, handler);
     ((MessageConsumerImpl<String>) reg).discardHandler(msg -> {
       assertEquals(data[10], msg.body());
@@ -1383,13 +1358,6 @@ public class LocalEventBusTest extends EventBusTestBase {
   }
 
   @Test
-  public void testEarlyTimeoutWhenSetMaxBufferedMessages() {
-    testEarlyTimeoutOfBufferedMessages(
-      MessageConsumer::pause,
-      consumer -> consumer.setMaxBufferedMessages(0));
-  }
-
-  @Test
   public void testEarlyTimeoutOfBufferedMessagesOnHandlerUnregistration() {
     testEarlyTimeoutOfBufferedMessages(
       MessageConsumer::pause,
@@ -1398,8 +1366,7 @@ public class LocalEventBusTest extends EventBusTestBase {
 
   private void testEarlyTimeoutOfBufferedMessages(Consumer<MessageConsumer<?>> beforeRequest, Consumer<MessageConsumer<?>> afterRequest) {
     DeliveryOptions noTimeout = new DeliveryOptions().setSendTimeout(Long.MAX_VALUE);
-    MessageConsumer<?> consumer = vertx.eventBus().consumer(ADDRESS1);
-    consumer.setMaxBufferedMessages(1);
+    MessageConsumer<?> consumer = vertx.eventBus().consumer(new MessageConsumerOptions().setAddress(ADDRESS1).setMaxBufferedMessages(1));
     consumer.handler(message -> message.reply(null));
     ((MessageConsumerImpl<?>)consumer).discardHandler(msg -> {
       if (msg.body().equals(2)) {
@@ -1421,10 +1388,10 @@ public class LocalEventBusTest extends EventBusTestBase {
   @Test
   public void testEarlyTimeoutWhenMaxBufferedMessagesExceeded() {
     DeliveryOptions noTimeout = new DeliveryOptions().setSendTimeout(Long.MAX_VALUE);
-    MessageConsumer<?> consumer = vertx.eventBus().consumer(ADDRESS1);
+    MessageConsumer<?> consumer = vertx.eventBus().consumer(new MessageConsumerOptions().setAddress(ADDRESS1).setMaxBufferedMessages(0));
     consumer.handler(message -> fail());
     consumer.completion().onComplete(__ -> {
-      consumer.setMaxBufferedMessages(0).pause();
+      consumer.pause();
       vertx.eventBus().request(ADDRESS1, 1, noTimeout).onComplete(onFailure(err -> {
         assertTrue(err instanceof ReplyException);
         assertEquals(ReplyFailure.TIMEOUT, ((ReplyException) err).failureType());

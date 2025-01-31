@@ -14,7 +14,6 @@ package io.vertx.core.eventbus.impl;
 import io.vertx.core.*;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
-import io.vertx.core.impl.Arguments;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
@@ -28,13 +27,11 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
 
   private static final Logger log = LoggerFactory.getLogger(MessageConsumerImpl.class);
 
-  static final int DEFAULT_MAX_BUFFERED_MESSAGES = 1000;
-
   private final boolean localOnly;
   private Handler<Message<T>> handler;
   private Handler<Void> endHandler;
   private Handler<Message<T>> discardHandler;
-  private int maxBufferedMessages;
+  private final int maxBufferedMessages;
   private Queue<Message<T>> pending = new ArrayDeque<>(8);
   private long demand = Long.MAX_VALUE;
   private Promise<Void> result;
@@ -44,41 +41,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
     super(context, eventBus, address, false);
     this.localOnly = localOnly;
     this.result = context.promise();
-    this.maxBufferedMessages = DEFAULT_MAX_BUFFERED_MESSAGES;
-  }
-
-  @Override
-  public MessageConsumer<T> setMaxBufferedMessages(int maxBufferedMessages) {
-    Arguments.require(maxBufferedMessages >= 0, "Max buffered messages cannot be negative");
-    List<Message<T>> discarded;
-    Handler<Message<T>> discardHandler;
-    synchronized (this) {
-      this.maxBufferedMessages = maxBufferedMessages;
-      int overflow = pending.size() - maxBufferedMessages;
-      if (overflow <= 0) {
-        return this;
-      }
-      if (pending.isEmpty()) {
-        return this;
-      }
-      discardHandler = this.discardHandler;
-      discarded = new ArrayList<>(overflow);
-      while (pending.size() > maxBufferedMessages) {
-        discarded.add(pending.poll());
-      }
-    }
-    for (Message<T> msg : discarded) {
-      if (discardHandler != null) {
-        discardHandler.handle(msg);
-      }
-      discard(msg);
-    }
-    return this;
-  }
-
-  @Override
-  public synchronized int getMaxBufferedMessages() {
-    return maxBufferedMessages;
+    this.maxBufferedMessages = maxBufferedMessages;
   }
 
   @Override
