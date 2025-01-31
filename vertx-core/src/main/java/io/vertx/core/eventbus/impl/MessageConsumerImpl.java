@@ -15,13 +15,12 @@ import io.vertx.core.*;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.concurrent.InboundMessageChannel;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.streams.ReadStream;
 
-import java.util.*;
-
-/*
+/**
  */
 public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements MessageConsumer<T> {
 
@@ -32,16 +31,43 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
   private Handler<Void> endHandler;
   private Handler<Message<T>> discardHandler;
   private final int maxBufferedMessages;
-  private Queue<Message<T>> pending = new ArrayDeque<>(8);
-  private long demand = Long.MAX_VALUE;
+  private final InboundMessageChannel<Message<T>> pending;
   private Promise<Void> result;
   private boolean registered;
+  private boolean full;
 
   MessageConsumerImpl(ContextInternal context, EventBusImpl eventBus, String address, boolean localOnly, int maxBufferedMessages) {
     super(context, eventBus, address, false);
     this.localOnly = localOnly;
     this.result = context.promise();
     this.maxBufferedMessages = maxBufferedMessages;
+    this.pending = new InboundMessageChannel<>(context.executor(), context.executor(), maxBufferedMessages, maxBufferedMessages) {
+      @Override
+      protected void handleResume() {
+        full = false;
+      }
+      @Override
+      protected void handlePause() {
+        full = true;
+      }
+      @Override
+      protected void handleMessage(Message<T> msg) {
+        Handler<Message<T>> handler;
+        synchronized (MessageConsumerImpl.this) {
+          handler = MessageConsumerImpl.this.handler;
+        }
+        if (handler != null) {
+          dispatch(handler, msg, context.duplicate());
+        } else {
+          handleDiscard(msg, false);
+        }
+      }
+
+      @Override
+      protected void handleDispose(Message<T> msg) {
+        handleDiscard(msg, false);
+      }
+    };
   }
 
   @Override
@@ -55,18 +81,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
     if (endHandler != null) {
       endHandler.handle(null);
     }
-    if (pending.size() > 0) {
-      Queue<Message<T>> discarded = pending;
-      Handler<Message<T>> handler = discardHandler;
-      pending = new ArrayDeque<>(8);
-      for (Message<T> msg : discarded) {
-        discard(msg);
-        if (handler != null) {
-          context.emit(msg, handler);
-        }
-      }
-    }
-    discardHandler = null;
+    pending.close();
     Future<Void> fut = super.unregister();
     if (registered) {
       registered = false;
@@ -77,38 +92,29 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
     return fut;
   }
 
-  protected boolean doReceive(Message<T> message) {
-    Handler<Message<T>> theHandler;
-    synchronized (this) {
-      if (handler == null) {
-        return false;
+  private void handleDiscard(Message<T> message, boolean isFull) {
+    if (discardHandler != null) {
+      discardHandler.handle(message);
+    } else if (isFull) {
+      if (log.isWarnEnabled()) {
+        log.warn("Discarding message as more than " + maxBufferedMessages + " buffered in paused consumer. address: " + address);
       }
-      if (demand == 0L) {
-        if (pending.size() < maxBufferedMessages) {
-          pending.add(message);
-          return true;
-        } else {
-          discard(message);
-          if (discardHandler != null) {
-            discardHandler.handle(message);
-          } else {
-            log.warn("Discarding message as more than " + maxBufferedMessages + " buffered in paused consumer. address: " + address);
-          }
-        }
-        return true;
-      } else {
-        if (pending.size() > 0) {
-          pending.add(message);
-          message = pending.poll();
-        }
-        if (demand != Long.MAX_VALUE) {
-          demand--;
-        }
-        theHandler = handler;
+    } else {
+      if (log.isWarnEnabled()) {
+        log.warn("Discarding message since the consumer is not registered. address: " + address);
       }
     }
-    deliver(theHandler, message);
-    return true;
+
+    // Cleanup message
+    discardMessage(message);
+  }
+
+  protected void doReceive(Message<T> message) {
+    if (full) {
+      handleDiscard(message, true);
+    } else {
+      pending.write(message);
+    }
   }
 
   @Override
@@ -119,35 +125,8 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
     context.dispatch(msg, handler);
   }
 
-  private void deliver(Handler<Message<T>> theHandler, Message<T> message) {
-    // Handle the message outside the sync block
-    // https://bugs.eclipse.org/bugs/show_bug.cgi?id=473714
-    dispatch(theHandler, message, context.duplicate());
-    checkNextTick();
-  }
-
-  private synchronized void checkNextTick() {
-    // Check if there are more pending messages in the queue that can be processed next time around
-    if (!pending.isEmpty() && demand > 0L) {
-      context.nettyEventLoop().execute(() -> {
-        Message<T> message;
-        Handler<Message<T>> theHandler;
-        synchronized (MessageConsumerImpl.this) {
-          if (demand == 0L || (message = pending.poll()) == null) {
-            return;
-          }
-          if (demand != Long.MAX_VALUE) {
-            demand--;
-          }
-          theHandler = handler;
-        }
-        deliver(theHandler, message);
-      });
-    }
-  }
-
   /*
-   * Internal API for testing purposes.
+   * Internal API for testing purposes, handle dropped messages instead of logging them.
    */
   public synchronized void discardHandler(Handler<Message<T>> handler) {
     this.discardHandler = handler;
@@ -185,7 +164,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
 
   @Override
   public synchronized MessageConsumer<T> pause() {
-    demand = 0L;
+    pending.pause();
     return this;
   }
 
@@ -196,16 +175,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
 
   @Override
   public synchronized MessageConsumer<T> fetch(long amount) {
-    if (amount < 0) {
-      throw new IllegalArgumentException();
-    }
-    demand += amount;
-    if (demand < 0L) {
-      demand = Long.MAX_VALUE;
-    }
-    if (demand > 0L) {
-      checkNextTick();
-    }
+    pending.fetch(amount);
     return this;
   }
 

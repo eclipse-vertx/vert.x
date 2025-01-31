@@ -17,6 +17,7 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.eventbus.*;
+import io.vertx.core.eventbus.impl.MessageConsumerImpl;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
@@ -300,19 +301,34 @@ public class MetricsTest extends VertxTestBase {
   }
 
   @Test
-  public void testSignalMetricEventAfterUnregistration() {
+  public void testSignalMetricEventAfterUnregistration() throws Exception {
     FakeEventBusMetrics toMetrics = FakeMetricsBase.getMetrics(vertx.eventBus());
     int nums = 1000;
     List<HandlerMetric> metrics = new ArrayList<>();
     for (int i = 0;i < nums;i++) {
       String addr = ADDRESS1 + "-" + i;
-      MessageConsumer<Object> consumer = vertx.eventBus().consumer(addr);
-      consumer.handler(msg -> {
+      MessageConsumerImpl<Object> consumer = (MessageConsumerImpl<Object>) vertx.eventBus().consumer(addr);
+      consumer.handler(msg -> fail());
+      consumer.discardHandler(msg -> {
+        //
       });
       HandlerMetric metric = toMetrics.getRegistrations().stream().filter(m -> m.address.equals(addr)).findFirst().get();
       metrics.add(metric);
+      Context ctx = vertx.getOrCreateContext();
+      CountDownLatch l1 = new CountDownLatch(1);
+      CountDownLatch l2 = new CountDownLatch(1);
+      ctx.runOnContext(v -> {
+        l1.countDown();
+        try {
+          l2.await();
+        } catch (InterruptedException e) {
+          fail(e);
+        }
+      });
+      awaitLatch(l1);
       vertx.eventBus().send(addr, "the-msg");
       consumer.unregister();
+      l2.countDown();
     }
     assertWaitUntil(() -> metrics.stream().noneMatch(metric -> metric.discardCount.get() == 0 && metric.localDeliveredCount.get() == 0));
   }
