@@ -66,23 +66,6 @@ public interface MessageConsumer<T> extends ReadStream<Message<T>> {
   String address();
 
   /**
-   * Set the number of messages this registration will buffer when this stream is paused. The default
-   * value is <code>1000</code>.
-   * <p>
-   * When a new value is set, buffered messages may be discarded to reach the new value. The most recent
-   * messages will be kept.
-   *
-   * @param maxBufferedMessages the maximum number of messages that can be buffered
-   * @return this registration
-   */
-  MessageConsumer<T> setMaxBufferedMessages(int maxBufferedMessages);
-
-  /**
-   * @return the maximum number of messages that can be buffered when this stream is paused
-   */
-  int getMaxBufferedMessages();
-
-  /**
    * @return a future notified when the message consumer is registered
    */
   Future<Void> completion();

@@ -16,10 +16,7 @@ import io.netty.channel.EventLoopGroup;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
-import io.vertx.core.eventbus.DeliveryOptions;
-import io.vertx.core.eventbus.EventBus;
-import io.vertx.core.eventbus.MessageConsumer;
-import io.vertx.core.eventbus.ReplyFailure;
+import io.vertx.core.eventbus.*;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
@@ -264,13 +261,12 @@ public class MetricsTest extends VertxTestBase {
   }
 
   @Test
-  public void testDiscardOnOverflow1() throws Exception {
+  public void testDiscardOnOverflow() throws Exception {
     startNodes(2);
     Vertx from = vertices[0], to = vertices[1];
     FakeEventBusMetrics toMetrics = FakeMetricsBase.getMetrics(to.eventBus());
-    MessageConsumer<Object> consumer = to.eventBus().consumer(ADDRESS1);
     int num = 10;
-    consumer.setMaxBufferedMessages(num);
+    MessageConsumer<Object> consumer = to.eventBus().consumer(new MessageConsumerOptions().setAddress(ADDRESS1).setMaxBufferedMessages(num));
     consumer.pause();
     consumer.completion().onComplete(onSuccess(v -> {
       for (int i = 0;i < num;i++) {
@@ -282,28 +278,6 @@ public class MetricsTest extends VertxTestBase {
     waitUntil(() -> toMetrics.getRegistrations().size() == 1);
     HandlerMetric metric = toMetrics.getRegistrations().get(0);
     waitUntil(() -> metric.scheduleCount.get() == num + 1);
-    waitUntil(() -> metric.discardCount.get() == 1);
-  }
-
-  @Test
-  public void testDiscardOnOverflow2() {
-    startNodes(2);
-    Vertx from = vertices[0], to = vertices[1];
-    FakeEventBusMetrics toMetrics = FakeMetricsBase.getMetrics(to.eventBus());
-    MessageConsumer<Object> consumer = to.eventBus().consumer(ADDRESS1);
-    int num = 10;
-    consumer.setMaxBufferedMessages(num);
-    consumer.pause();
-    consumer.completion().onComplete(onSuccess(v -> {
-      for (int i = 0;i < num;i++) {
-        from.eventBus().send(ADDRESS1, "" + i);
-      }
-    }));
-    consumer.handler(msg -> fail());
-    waitUntil(() -> toMetrics.getRegistrations().size() == 1);
-    HandlerMetric metric = toMetrics.getRegistrations().get(0);
-    waitUntil(() -> metric.scheduleCount.get() == num);
-    consumer.setMaxBufferedMessages(num - 1);
     waitUntil(() -> metric.discardCount.get() == 1);
   }
 
