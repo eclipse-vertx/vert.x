@@ -117,6 +117,28 @@ public interface EventBus extends Measured {
   EventBus publish(String address, @Nullable Object message, DeliveryOptions options);
 
   /**
+   * Create a message consumer against the specified options address.
+   * <p>
+   * The returned consumer is not yet registered
+   * at the address, registration will be effective when {@link MessageConsumer#handler(io.vertx.core.Handler)}
+   * is called.
+   *
+   * @param options  the consumer options
+   * @return the event bus message consumer
+   */
+  <T> MessageConsumer<T> consumer(MessageConsumerOptions options);
+
+  /**
+   * Create a consumer and register it against the specified options address.
+   *
+   * @param options  the consumer options
+   * @param handler  the handler that will process the received messages
+   *
+   * @return the event bus message consumer
+   */
+  <T> MessageConsumer<T> consumer(MessageConsumerOptions options, Handler<Message<T>> handler);
+
+  /**
    * Create a message consumer against the specified address.
    * <p>
    * The returned consumer is not yet registered
