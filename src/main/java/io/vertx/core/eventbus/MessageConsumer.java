@@ -75,7 +75,9 @@ public interface MessageConsumer<T> extends ReadStream<Message<T>> {
    *
    * @param maxBufferedMessages the maximum number of messages that can be buffered
    * @return this registration
+   * @deprecated for removal, instead use {@link MessageConsumerOptions#setMaxBufferedMessages(int)}
    */
+  @Deprecated()
   MessageConsumer<T> setMaxBufferedMessages(int maxBufferedMessages);
 
   /**

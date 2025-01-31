@@ -89,8 +89,8 @@ public class LocalEventBusTest extends EventBusTestBase {
     assertNullPointerException(() -> eb.publish(null, ""));
     assertNullPointerException(() -> eb.publish(null, "", new DeliveryOptions()));
     assertNullPointerException(() -> eb.publish("", "", null));
-    assertNullPointerException(() -> eb.consumer(null));
-    assertNullPointerException(() -> eb.consumer(null, msg -> {}));
+    assertNullPointerException(() -> eb.consumer((String) null));
+    assertNullPointerException(() -> eb.consumer((String) null, msg -> {}));
     assertNullPointerException(() -> eb.consumer(ADDRESS1, null));
     assertNullPointerException(() -> eb.localConsumer(null));
     assertNullPointerException(() -> eb.localConsumer(null, msg -> {}));
