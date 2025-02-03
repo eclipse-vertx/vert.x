@@ -13,7 +13,7 @@ package io.vertx.tests.concurrent;
 import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.concurrent.InboundMessageQueue;
+import io.vertx.core.internal.concurrent.InboundMessageChannel;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
@@ -24,27 +24,27 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntConsumer;
 
-public class InboundMessageQueueTest extends VertxTestBase {
+public class InboundMessageChannelTest extends VertxTestBase {
 
   private volatile Runnable contextChecker;
   private Context context;
-  private TestQueue queue;
+  private TestChannel queue;
   private AtomicInteger sequence;
 
-  class TestQueue extends InboundMessageQueue<Integer> {
+  class TestChannel extends InboundMessageChannel<Integer> {
 
     final IntConsumer consumer;
     private Handler<Void> drainHandler;
     private boolean writable;
     private int size;
 
-    public TestQueue(IntConsumer consumer) {
+    public TestChannel(IntConsumer consumer) {
       super(((ContextInternal) context).eventLoop(), ((ContextInternal) context).executor());
       this.consumer = consumer;
       this.writable = true;
     }
 
-    public TestQueue(IntConsumer consumer, int lwm, int hwm) {
+    public TestChannel(IntConsumer consumer, int lwm, int hwm) {
       super(((ContextInternal) context).eventLoop(), ((ContextInternal) context).executor(), lwm, hwm);
       this.consumer = consumer;
       this.writable = true;
@@ -110,7 +110,7 @@ public class InboundMessageQueueTest extends VertxTestBase {
       return writable;
     }
 
-    TestQueue drainHandler(Handler<Void> handler) {
+    TestChannel drainHandler(Handler<Void> handler) {
       this.drainHandler = handler;
       return this;
     }
@@ -153,12 +153,12 @@ public class InboundMessageQueueTest extends VertxTestBase {
     await();
   }
 
-  private TestQueue buffer(IntConsumer consumer) {
-    return new TestQueue(consumer);
+  private TestChannel buffer(IntConsumer consumer) {
+    return new TestChannel(consumer);
   }
 
-  private TestQueue buffer(IntConsumer consumer, int lwm, int hwm) {
-    return new TestQueue(consumer, lwm, hwm);
+  private TestChannel buffer(IntConsumer consumer, int lwm, int hwm) {
+    return new TestChannel(consumer, lwm, hwm);
   }
 
   @Test

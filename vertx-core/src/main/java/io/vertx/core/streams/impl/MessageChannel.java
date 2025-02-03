@@ -18,88 +18,88 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.function.Predicate;
 
 /**
- * A concurrent back-pressured queue fronting a single consumer back-pressured system that comes with three flavors
+ * A concurrent back-pressured channel fronting a single consumer back-pressured system that comes with three flavors
  *
  * <ul>
- *   <li>{@link OutboundWriteQueue.MpSc multiple producer / single consumer}</li>
- *   <li>{@link OutboundWriteQueue.SpSc single producer / single consumer}</li>
- *   <li>{@link OutboundWriteQueue.SingleThread single thread producer and consumer}</li>
+ *   <li>{@link MessageChannel.MpSc multiple producer / single consumer}</li>
+ *   <li>{@link MessageChannel.SpSc single producer / single consumer}</li>
+ *   <li>{@link MessageChannel.SingleThread single thread producer and consumer}</li>
  * </ul>
  *
- * The queue let the producer ({@link #add}) elements to the consumer with back-pressure to signal the producer
+ * The channel lets the producer ({@link #add}) elements to the consumer with back-pressure to signal the producer
  * when it should stop emitting. The consumer should consume elements with {@link #drain()}.
  *
  * <h4>Producing elements</h4>
  *
- * <p>We call producer any thread allowed to call {@link #add(Object)} according to the queue flavor.</p>
+ * <p>We call producer any thread allowed to call {@link #add(Object)} according to the channel flavor.</p>
  *
- * <p>The producer adds elements to the queue with {@link #add}. When the producer adds an element to the queue it attempts
- * to acquire the ownership of the queue. When the producer acquires ownership, it must signal the consumer that the
- * queue needs to be drained.</p>
+ * <p>The producer adds elements to the channel with {@link #add}. When the producer adds an element to the channel it attempts
+ * to acquire the ownership of the channel. When the producer acquires ownership, it must signal the consumer that the
+ * channel needs to be drained.</p>
  *
  * <h3>Consuming element</h3>
  *
  * <p>The consumer uses a {@link Predicate} to handle an element and decide whether to accept it. When a consumer predicate
- * refuses an element, the queue will propose it again later when the consumer signals it can accept again.</p>
+ * refuses an element, the channel will propose it again later when the consumer signals it can accept again.</p>
  *
- * <p>The consumer drains elements from the queue with {@link #drain}. The consumer can only drain elements when it has
- * ownership of the queue. Ownership of the queue should be signaled by a producer thread that acquired it, or because
- * the {@link #drain()} indicated that the predicate refused an element and the queue should be drained again later.</p>.
+ * <p>The consumer drains elements from the channel with {@link #drain}. The consumer can only drain elements when it has
+ * ownership of the channel. Ownership of the channel should be signaled by a producer thread that acquired it, or because
+ * the {@link #drain()} indicated that the predicate refused an element and the channel should be drained again later.</p>.
  *
- * <h3>Queue ownership</h3>
+ * <h3>Channel ownership</h3>
  *
- * Queue interactions  ({@link #add} and {@link #drain}) returns a set of flags, one of them {@link #DRAIN_REQUIRED_MASK}
+ * Channel interactions  ({@link #add} and {@link #drain}) returns a set of flags, one of them {@link #DRAIN_REQUIRED_MASK}
  * is ownership. When such interaction returns the {@link #DRAIN_REQUIRED_MASK} bit set, ownership has been acquired and
  * drain should be attempted.
  *
  * <ul>
- *   <li>When {@link #add} acquires ownership, the producer should signal the consumer that the queue must be drained.</li>
- *   <li>{@link #drain} must be called only with ownership, its return code can maintain the ownership: the queue consumer
- *   predicate refused an element and the consumer keeps ownership of the queue.</li>
+ *   <li>When {@link #add} acquires ownership, the producer should signal the consumer that the channel must be drained.</li>
+ *   <li>{@link #drain} must be called only with ownership, its return code can maintain the ownership: the channel consumer
+ *   predicate refused an element and the consumer keeps ownership of the channel.</li>
  * </ul>
  *
  * <h3>Back-pressure</h3>
  *
  * <p>Producers emission flow cannot reliably be controlled by the consumer back-pressure probe since producers
  * emissions are transferred to the consumer thread: the consumer back-pressure controller does not take in account the
- * inflight elements between producers and consumer. This queue is designed to provide reliable signals to control
+ * inflight elements between producers and consumer. This channel is designed to provide reliable signals to control
  * producers emission based on the consumer back-pressure probe and the number of inflight elements between
  * producers and the consumer.</p>
  *
- * The queue maintains an internal queue of elements initially empty and can be filled when
+ * The channel maintains an internal queue of elements initially empty and can be filled when
  * <ul>
  *   <li>A producer thread {@link #add)} to the queue above the {@link #highWaterMark}</li>
  *   <li>the {@link #consumer} refuses an element</li>
  * </ul>
  *
  * <p>When the internal queue grows above {@link #highWaterMark}, the queue is considered as {@code unwritable}.
- * {@link #add} returns {@link #QUEUE_UNWRITABLE_MASK} to signal producers should stop emitting.</p>
+ * {@link #add} returns {@link #UNWRITABLE_MASK} to signal producers should stop emitting.</p>
  *
- * <p>After a drain if the internal queue has shrunk under {@link #lowWaterMark}, the queue is considered as {@code writable}.
- * {@link #add}/{@link #drain} methods return {@link #QUEUE_WRITABLE_MASK} to signal producers should start emitting again. Note
+ * <p>After a drain if the internal queue has shrunk under {@link #lowWaterMark}, the channel is considered as {@code writable}.
+ * {@link #add}/{@link #drain} methods return {@link #WRITABLE_MASK} to signal producers should start emitting again. Note
  * that the consumer thread handles this signal and should forward it to the producers.</p>
  *
- * <p>When {@link #QUEUE_WRITABLE_MASK} is signalled, the number of {@link #QUEUE_UNWRITABLE_MASK} signals emitted is encoded
+ * <p>When {@link #WRITABLE_MASK} is signalled, the number of {@link #UNWRITABLE_MASK} signals emitted is encoded
  * in the flags. This number allows the producer flow controller to correctly account the producer writability:
- * {@link #QUEUE_WRITABLE_MASK}/{@link #QUEUE_UNWRITABLE_MASK} signals are observed by different threads, therefore a good
- * practice to compute the queue writability is to increment/decrement an atomic counter for each signal received.</p>
+ * {@link #WRITABLE_MASK}/{@link #UNWRITABLE_MASK} signals are observed by different threads, therefore a good
+ * practice to compute the channel writability is to increment/decrement an atomic counter for each signal received.</p>
  */
-public abstract class OutboundWriteQueue<E> {
+public abstract class MessageChannel<E> {
 
   /**
-   * When the masked bit is set, the queue became unwritable, this triggers only when the queue transitions
+   * When the masked bit is set, the channel became unwritable, this triggers only when the channel transitions
    * from the <i>writable</i>> state to the <i>unwritable</i>> state.
    */
-  public static final int QUEUE_UNWRITABLE_MASK = 0x01;
+  public static final int UNWRITABLE_MASK = 0x01;
 
   /**
-   * When the masked bit is set, the queue became writable, this triggers only when the queue transitions
+   * When the masked bit is set, the channel became writable, this triggers only when the channel transitions
    * from the <i>unwritable</i>> state to the <i>writable</i> state.
    */
-  public static final int QUEUE_WRITABLE_MASK = 0x02;
+  public static final int WRITABLE_MASK = 0x02;
 
   /**
-   * When the masked bit is set, the caller has acquired the ownership of the queue and must drain it
+   * When the masked bit is set, the caller has acquired the ownership of the channel and must drain it
    * to attempt to release the ownership.
    */
   public static final int DRAIN_REQUIRED_MASK = 0x04;
@@ -126,7 +126,7 @@ public abstract class OutboundWriteQueue<E> {
 
   // The element refused by the consumer (null <=> overflow)
   // it is shared between producer/consumer and visibility is ensured with the ownership flag
-  // when the add method acquires ownership, it signals the consumer to drain the queue and therefore
+  // when the add method acquires ownership, it signals the consumer to drain the channel and therefore
   // implies a happens-before relationship:
   // 1. producer writes overflow
   // 2. producer signals consumer ownership
@@ -134,9 +134,9 @@ public abstract class OutboundWriteQueue<E> {
   private E overflow;
 
   // Consumer thread only
-  // The number of times the queue was observed to be unwritable, this is accessed from consumer
+  // The number of times the channel was observed to be unwritable, this is accessed from consumer
   // todo : false sharing between overflow and writeQueueFull
-  private int writeQueueFull;
+  private int numberOfUnwritableTimes;
 
   /**
    * Create a new instance.
@@ -148,7 +148,7 @@ public abstract class OutboundWriteQueue<E> {
    * @throws NullPointerException if consumer is null
    * @throws IllegalArgumentException if any mark violates the condition
    */
-  public OutboundWriteQueue(Queue<E> queue, Predicate<E> consumer, long lowWaterMark, long highWaterMark) {
+  public MessageChannel(Queue<E> queue, Predicate<E> consumer, long lowWaterMark, long highWaterMark) {
     Arguments.require(lowWaterMark > 0, "The low-water mark must be > 0");
     Arguments.require(lowWaterMark <= highWaterMark, "The high-water mark must greater or equals to the low-water mark");
     this.queue = queue;
@@ -158,32 +158,32 @@ public abstract class OutboundWriteQueue<E> {
   }
 
   /**
-   * @return the queue high-water mark
+   * @return the channel high-water mark
    */
   public long highWaterMark() {
     return highWaterMark;
   }
 
   /**
-   * @return the queue low-water mark
+   * @return the channel low-water mark
    */
   public long lowWaterMark() {
     return lowWaterMark;
   }
 
   /**
-   * Let the producer add an {@code element} to the queue.
+   * Let the producer add an {@code element} to the channel.
    *
    * A set of flags is returned
    * <ul>
-   *   <li>When {@link #QUEUE_UNWRITABLE_MASK} is set, the queue is writable and new elements can be added to the queue,
-   *   otherwise no elements <i>should</i> be added to the queue nor submitted but it is a soft condition</li>
-   *   <li>When {@link #DRAIN_REQUIRED_MASK} is set, the producer has acquired the ownership of the queue and should
-   *   {@link #drain()} the queue.</li>
+   *   <li>When {@link #UNWRITABLE_MASK} is set, the channel is writable and new elements can be added to the channel,
+   *   otherwise no elements <i>should</i> be added to the channel nor submitted, however it is a soft condition</li>
+   *   <li>When {@link #DRAIN_REQUIRED_MASK} is set, the producer has acquired the ownership of the channel and should
+   *   {@link #drain()} the channel.</li>
    * </ul>
    *
    * @param element the element to add
-   * @return a bitset of [{@link #DRAIN_REQUIRED_MASK}, {@link #QUEUE_UNWRITABLE_MASK}] flags
+   * @return a bitset of [{@link #DRAIN_REQUIRED_MASK}, {@link #UNWRITABLE_MASK}] flags
    */
   public int add(E element) {
     if (element == null) {
@@ -198,9 +198,9 @@ public abstract class OutboundWriteQueue<E> {
       val = wipIncrementAndGet();
     }
     if (val != 1) {
-      return val == highWaterMark ? QUEUE_UNWRITABLE_MASK : 0; // Check branch-less
+      return val == highWaterMark ? UNWRITABLE_MASK : 0; // Check branch-less
     }
-    return DRAIN_REQUIRED_MASK | (1 == highWaterMark ? QUEUE_UNWRITABLE_MASK : 0);
+    return DRAIN_REQUIRED_MASK | (1 == highWaterMark ? UNWRITABLE_MASK : 0);
   }
 
   /**
@@ -211,10 +211,10 @@ public abstract class OutboundWriteQueue<E> {
   }
 
   /**
-   * Let the consumer thread drain the queue until it becomes not writable or empty, this requires
-   * the ownership of the queue acquired by {@link #DRAIN_REQUIRED_MASK} flag.
+   * Let the consumer thread drain the channel until it becomes not writable or empty, this requires
+   * the ownership of the channel acquired by {@link #DRAIN_REQUIRED_MASK} flag.
    *
-   * @return a bitset of [{@link #DRAIN_REQUIRED_MASK}, {@link #QUEUE_WRITABLE_MASK}] flags
+   * @return a bitset of [{@link #DRAIN_REQUIRED_MASK}, {@link #WRITABLE_MASK}] flags
    */
   public int drain(long maxIter) {
     if (maxIter < 0L) {
@@ -244,22 +244,22 @@ public abstract class OutboundWriteQueue<E> {
    * The main drain loop, entering this loop requires a few conditions:
    * <ul>
    *   <li>{@link #overflow} must be {@code null}, the consumer still accepts elements</li>
-   *   <li>{@link #wip} is greater than zero (ownership of the queue)</li>
+   *   <li>{@link #wip} is greater than zero (ownership of the channel)</li>
    *   <li>only the consumer thread can execute it</li>
    * </ul>
    *
-   * The loop drains elements from the queue until
+   * The loop drains elements from the channel until
    *
    * <ul>
-   *   <li>the queue is empty (wip == 0) which releases the queue ownership</li>
+   *   <li>the channel is empty (wip == 0) which releases the channel ownership</li>
    *   <li>the {@link #consumer} rejects an element</li>
    * </ul>
    *
    * When the {@link #consumer} rejects an element, the rejected element is parked
-   * in the {@link #overflow} field and the queue ownership is not released. At this point
-   * the {@link #drain()} shall be called to try again to drain the queue.
+   * in the {@link #overflow} field and the channel ownership is not released. At this point
+   * the {@link #drain()} shall be called to try again to drain the channel.
    *
-   * @return a bitset of [{@link {@link #QUEUE_WRITABLE_MASK }, {@link #CONSUMER_PAUSED_MASK }}] flags
+   * @return a bitset of [{@link {@link #WRITABLE_MASK }, {@link #CONSUMER_PAUSED_MASK }}] flags
    */
   // Note : we can optimize this by passing pending as argument of this method to avoid the initial
   private int drainLoop(long maxIter) {
@@ -286,16 +286,16 @@ public abstract class OutboundWriteQueue<E> {
   }
 
   private int drainResult(int pending) {
-    boolean writabilityChanged = pending < lowWaterMark && writeQueueFull > 0;
-    int val = writeQueueFull;
+    boolean writabilityChanged = pending < lowWaterMark && numberOfUnwritableTimes > 0;
+    int val = numberOfUnwritableTimes;
     if (writabilityChanged) {
-      writeQueueFull = 0;
+      numberOfUnwritableTimes = 0;
     }
     return drainResult(val, pending, writabilityChanged);
   }
 
   /**
-   * Consume a number of elements from the queue, this method updates the queue {@link #writeQueueFull} counter.
+   * Consume a number of elements from the queue, this method updates the queue {@link #numberOfUnwritableTimes} counter.
    *
    * @param amount the amount to consume
    * @return the number of pending elements after consuming from the queue
@@ -304,7 +304,7 @@ public abstract class OutboundWriteQueue<E> {
     long pending = wipAddAndGet(-amount);
     long size = pending + amount;
     if (size >= highWaterMark && (size - amount) < highWaterMark) {
-      writeQueueFull++;
+      numberOfUnwritableTimes++;
     }
     return pending;
   }
@@ -314,13 +314,13 @@ public abstract class OutboundWriteQueue<E> {
   }
 
   /**
-   * Clear the queue and return all the removed elements.
+   * Clear the channel and return all the removed elements.
    *
    * @return the removed elements.
    */
   public final List<E> clear() {
     // From event loop thread
-    writeQueueFull = 0;
+    numberOfUnwritableTimes = 0;
     List<E> elts = new ArrayList<>();
     if (overflow != null) {
       elts.add(overflow);
@@ -340,7 +340,7 @@ public abstract class OutboundWriteQueue<E> {
   // Should be internal
   public static int drainResult(int numberOfUnwritableSignals, int numberOfPendingElements, boolean writable) {
     return
-      (writable ? QUEUE_WRITABLE_MASK : 0) |
+      (writable ? WRITABLE_MASK : 0) |
       (numberOfPendingElements > 0 ? DRAIN_REQUIRED_MASK : 0) |
       (numberOfPendingElements << 3) |
       numberOfUnwritableSignals << 16;
@@ -357,7 +357,7 @@ public abstract class OutboundWriteQueue<E> {
   }
 
   /**
-   * Returns the number of times {@link #QUEUE_UNWRITABLE_MASK} signals encoded in {@code value}
+   * Returns the number of times {@link #UNWRITABLE_MASK} signals encoded in {@code value}
    *
    * @param value the value
    * @return then number of unwritable signals
@@ -376,14 +376,14 @@ public abstract class OutboundWriteQueue<E> {
   protected abstract long wipAddAndGet(long delta);
 
   /**
-   * Factory for {@link OutboundWriteQueue}.
+   * Factory for {@link MessageChannel}.
    */
   public interface Factory {
-    <E> OutboundWriteQueue<E> create(Predicate<E> consumer, int lowWaterMark, int highWaterMark);
-    <E> OutboundWriteQueue<E> create(Predicate<E> consumer);
+    <E> MessageChannel<E> create(Predicate<E> consumer, int lowWaterMark, int highWaterMark);
+    <E> MessageChannel<E> create(Predicate<E> consumer);
   }
 
-  public static class SingleThread<E> extends OutboundWriteQueue<E> {
+  public static class SingleThread<E> extends MessageChannel<E> {
 
     private long wip;
 
@@ -425,19 +425,9 @@ public abstract class OutboundWriteQueue<E> {
     }
   }
 
-  /**
-   * {@inheritDoc}
-   *
-   * <h4>Submitting elements</h4>
-   *
-   * When a producer thread submits an element to the queue, the element is added to the queue to let the consumer
-   * thread handle it.
-   *
-   * @param <E>
-   */
-  public static class MpSc<E> extends OutboundWriteQueue<E> {
+  public static class MpSc<E> extends MessageChannel<E> {
 
-    private static final AtomicLongFieldUpdater<OutboundWriteQueue.MpSc<?>> WIP_UPDATER = (AtomicLongFieldUpdater<OutboundWriteQueue.MpSc<?>>) (AtomicLongFieldUpdater)AtomicLongFieldUpdater.newUpdater(OutboundWriteQueue.MpSc.class, "wip");
+    private static final AtomicLongFieldUpdater<MessageChannel.MpSc<?>> WIP_UPDATER = (AtomicLongFieldUpdater<MessageChannel.MpSc<?>>) (AtomicLongFieldUpdater)AtomicLongFieldUpdater.newUpdater(MessageChannel.MpSc.class, "wip");
 
     // Todo : check false sharing
     private volatile long wip;
@@ -450,17 +440,17 @@ public abstract class OutboundWriteQueue<E> {
     }
 
     /**
-     * Let the consumer thread add the {@code element} to the queue.
+     * Let the consumer thread add the {@code element} to the channel.
      *
      * A set of flags is returned
      * <ul>
-     *   <li>When {@link #QUEUE_UNWRITABLE_MASK} is set, the queue is writable and new elements can be added to the queue,
-     *   otherwise no elements <i>should</i> be added to the queue nor submitted but it is a soft condition</li>
-     *   <li>When {@link #DRAIN_REQUIRED_MASK} is set, the queue contains at least one element and must be drained</li>
+     *   <li>When {@link #UNWRITABLE_MASK} is set, the channel is writable and new elements can be added to the channel,
+     *   otherwise no elements <i>should</i> be added to the channel nor submitted but it is a soft condition</li>
+     *   <li>When {@link #DRAIN_REQUIRED_MASK} is set, the channel contains at least one element and must be drained</li>
      * </ul>
      *
      * @param element the element to add
-     * @return a bitset of [{@link #DRAIN_REQUIRED_MASK}, {@link #QUEUE_UNWRITABLE_MASK}, {@link #QUEUE_WRITABLE_MASK}] flags
+     * @return a bitset of [{@link #DRAIN_REQUIRED_MASK}, {@link #UNWRITABLE_MASK}, {@link #WRITABLE_MASK}] flags
      */
     public int write(E element) {
       int res = add(element);
@@ -497,9 +487,9 @@ public abstract class OutboundWriteQueue<E> {
     }
   }
 
-  public static class SpSc<E> extends OutboundWriteQueue<E> {
+  public static class SpSc<E> extends MessageChannel<E> {
 
-    private static final AtomicLongFieldUpdater<OutboundWriteQueue.SpSc<?>> WIP_UPDATER = (AtomicLongFieldUpdater<OutboundWriteQueue.SpSc<?>>) (AtomicLongFieldUpdater)AtomicLongFieldUpdater.newUpdater(OutboundWriteQueue.SpSc.class, "wip");
+    private static final AtomicLongFieldUpdater<MessageChannel.SpSc<?>> WIP_UPDATER = (AtomicLongFieldUpdater<MessageChannel.SpSc<?>>) (AtomicLongFieldUpdater)AtomicLongFieldUpdater.newUpdater(MessageChannel.SpSc.class, "wip");
 
     // Todo : check false sharing
     private volatile long wip;
@@ -538,43 +528,43 @@ public abstract class OutboundWriteQueue<E> {
   }
 
   /**
-   * Factory for a queue assuming distinct single consumer thread / single producer thread
+   * Factory for a channel assuming distinct single consumer thread / single producer thread
    */
   public static final Factory MPSC = new Factory() {
     @Override
-    public <T> OutboundWriteQueue<T> create(Predicate<T> consumer, int lowWaterMark, int highWaterMark) {
+    public <T> MessageChannel<T> create(Predicate<T> consumer, int lowWaterMark, int highWaterMark) {
       return new MpSc<>(consumer, lowWaterMark, highWaterMark);
     }
     @Override
-    public <T> OutboundWriteQueue<T> create(Predicate<T> consumer) {
+    public <T> MessageChannel<T> create(Predicate<T> consumer) {
       return new MpSc<>(consumer);
     }
   };
 
   /**
-   * Factory for a queue assuming distinct single consumer thread / single producer thread
+   * Factory for a channel assuming distinct single consumer thread / single producer thread
    */
   public static final Factory SPSC = new Factory() {
     @Override
-    public <T> OutboundWriteQueue<T> create(Predicate<T> consumer, int lowWaterMark, int highWaterMark) {
+    public <T> MessageChannel<T> create(Predicate<T> consumer, int lowWaterMark, int highWaterMark) {
       return new SpSc<>(consumer, lowWaterMark, highWaterMark);
     }
     @Override
-    public <T> OutboundWriteQueue<T> create(Predicate<T> consumer) {
+    public <T> MessageChannel<T> create(Predicate<T> consumer) {
       return new SpSc<>(consumer);
     }
   };
 
   /**
-   * Factory for a queue assuming a same single consumer thread / single producer thread
+   * Factory for a channel assuming a same single consumer thread / single producer thread
    */
   public static final Factory SINGLE_THREAD = new Factory() {
     @Override
-    public <T> OutboundWriteQueue<T> create(Predicate<T> consumer, int lowWaterMark, int highWaterMark) {
+    public <T> MessageChannel<T> create(Predicate<T> consumer, int lowWaterMark, int highWaterMark) {
       return new SingleThread<>(consumer, lowWaterMark, highWaterMark);
     }
     @Override
-    public <T> OutboundWriteQueue<T> create(Predicate<T> consumer) {
+    public <T> MessageChannel<T> create(Predicate<T> consumer) {
       return new SingleThread<>(consumer);
     }
   };
