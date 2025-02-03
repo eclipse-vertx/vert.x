@@ -19,6 +19,7 @@ import io.vertx.core.internal.logging.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -26,6 +27,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DefaultDeploymentManager implements DeploymentManager {
 
   public static final Logger log = LoggerFactory.getLogger(DefaultDeploymentManager.class);
+
+  private static final AtomicLong nextId = new AtomicLong();
 
   private final VertxImpl vertx;
   private final Map<String, DeploymentContext> deploying = new HashMap<>();
@@ -36,7 +39,11 @@ public class DefaultDeploymentManager implements DeploymentManager {
   }
 
   private String generateDeploymentID() {
-    return UUID.randomUUID().toString();
+    if (vertx.isClustered() && vertx.haManager()!=null) {
+      // in this case we need a globally unique id
+      return UUID.randomUUID().toString();
+    }
+    return Long.valueOf(nextId.incrementAndGet()).toString();
   }
 
   public Future<Void> undeploy(String deploymentID) {
