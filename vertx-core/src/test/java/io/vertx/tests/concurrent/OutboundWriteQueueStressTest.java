@@ -24,7 +24,7 @@ public class OutboundWriteQueueStressTest extends VertxTestBase {
   @Test
   public void testSimple() throws Exception {
     LongAdder counter = new LongAdder();
-    OutboundWriteQueue<Object> queue = new OutboundWriteQueue<>(foo -> {
+    OutboundWriteQueue.MpSc<Object> queue = new OutboundWriteQueue.MpSc<>(foo -> {
       counter.increment();
       return true;
     });
@@ -43,7 +43,7 @@ public class OutboundWriteQueueStressTest extends VertxTestBase {
         }
         for (int j = 0; j < numReps; j++) {
           for (int k = 0;k < numEmissions;k++) {
-            int flags = queue.submit(elt);
+            int flags = queue.add(elt);
             if ((flags & OutboundWriteQueue.DRAIN_REQUIRED_MASK) != 0) {
               flags = queue.drain();
               assertEquals(0, flags & (OutboundWriteQueue.DRAIN_REQUIRED_MASK));
@@ -72,7 +72,7 @@ public class OutboundWriteQueueStressTest extends VertxTestBase {
     int numProducers = VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE / 2;
     int numReps = 10000;
     int[] consumedLocal = new int[1];
-    OutboundWriteQueue<Object> queue = new OutboundWriteQueue<>(elt -> {
+    OutboundWriteQueue.MpSc<Object> queue = new OutboundWriteQueue.MpSc<>(elt -> {
       consumedLocal[0]++;
       return true;
     });
@@ -94,7 +94,7 @@ public class OutboundWriteQueueStressTest extends VertxTestBase {
         }
         int iter = numReps;
         while (iter-- > 0) {
-          int flags = queue.submit(val);
+          int flags = queue.add(val);
           if ((flags & OutboundWriteQueue.QUEUE_UNWRITABLE_MASK) != 0) {
             numOfUnwritableSignalsFromSubmit.incrementAndGet();
           }

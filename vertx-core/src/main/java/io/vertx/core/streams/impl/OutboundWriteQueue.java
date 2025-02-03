@@ -13,58 +13,49 @@ package io.vertx.core.streams.impl;
 import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.impl.Arguments;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.function.Predicate;
 
 /**
- * A concurrent multi producers back-pressured queue fronting a single consumer back-pressured system.
+ * A concurrent back-pressured queue fronting a single consumer back-pressured system that comes with three flavors
  *
- * The queue lets multiple producers emit elements ({@link #write}/{@link #submit}) to the consumer with back-pressure
- * to signal producers when they should stop emitting.
+ * <ul>
+ *   <li>{@link OutboundWriteQueue.MpSc multiple producer / single consumer}</li>
+ *   <li>{@link OutboundWriteQueue.SpSc single producer / single consumer}</li>
+ *   <li>{@link OutboundWriteQueue.SingleThread single thread producer and consumer}</li>
+ * </ul>
  *
- * <h3>Handling elements</h3>
+ * The queue let the producer ({@link #add}) elements to the consumer with back-pressure to signal the producer
+ * when it should stop emitting. The consumer should consume elements with {@link #drain()}.
  *
- * The consumer side uses a {@link Predicate} to handle elements and decide whether it can accept them. When a
- * consumer returns {@code false} it refuses the element and the queue will propose this element later when the
- * consumer signals it can accept elements again.
+ * <h4>Producing elements</h4>
  *
- * <h3>Emitting elements</h3>
+ * <p>We call producer any thread allowed to call {@link #add(Object)} according to the queue flavor.</p>
  *
- * Elements are emitted with {@link #write} and {@link #submit} methods.
+ * <p>The producer adds elements to the queue with {@link #add}. When the producer adds an element to the queue it attempts
+ * to acquire the ownership of the queue. When the producer acquires ownership, it must signal the consumer that the
+ * queue needs to be drained.</p>
  *
- * <h4>Adding elements</h4>
+ * <h3>Consuming element</h3>
  *
- * Only the consumer thread can add elements. When the consumer threads adds an element to the queue it tries
- * to get the ownership of the queue and directly invoke the {@link #consumer}. When ownership
- * is not acquired, the element is added to the queue, until it is handled by the consumer thread later.
+ * <p>The consumer uses a {@link Predicate} to handle an element and decide whether to accept it. When a consumer predicate
+ * refuses an element, the queue will propose it again later when the consumer signals it can accept again.</p>
  *
- * <h4>Submitting elements</h4>
- *
- * When a producer thread submits an element to the queue, the element is added to the queue to let the consumer
- * thread handle it.
+ * <p>The consumer drains elements from the queue with {@link #drain}. The consumer can only drain elements when it has
+ * ownership of the queue. Ownership of the queue should be signaled by a producer thread that acquired it, or because
+ * the {@link #drain()} indicated that the predicate refused an element and the queue should be drained again later.</p>.
  *
  * <h3>Queue ownership</h3>
  *
- * Some operation require to <i>own</i> the queue to execute them. We already mentioned that {@link #write} and {@link #submit}
- * attempts to get ownership of the queue, sometimes these methods will not release ownership when they exit, because the queue
- * expects another thread or another condition to be met to make progress. Emitting methods can return a signal indicating that
- * the queue should be drained to make progress: {@link #DRAIN_REQUIRED_MASK} signals the queue contains element that
- * shall be drained.
- *
- * <h3>Draining elements</h3>
- *
- * The {@link #drain} method tries to remove elements from the queue until the consumer refuses them or the queue becomes empty.
- * When a method returns a {@link #DRAIN_REQUIRED_MASK} signal, the {@link #drain()} should be called by the consumer thread
+ * Queue interactions  ({@link #add} and {@link #drain}) returns a set of flags, one of them {@link #DRAIN_REQUIRED_MASK}
+ * is ownership. When such interaction returns the {@link #DRAIN_REQUIRED_MASK} bit set, ownership has been acquired and
+ * drain should be attempted.
  *
  * <ul>
- *   <li>A consumer method ({@link #write}, {@link #drain}) emits this signal when the {@link #consumer} refuses an element,
- *   therefore {@link #drain()} should be called when the consumer can accept element again</li>
- *   <li>A producer method ({@link #submit}) emits this signal when it acquired the ownership of the queue to {@link #drain} the
- *   queue.</li>
+ *   <li>When {@link #add} acquires ownership, the producer should signal the consumer that the queue must be drained.</li>
+ *   <li>{@link #drain} must be called only with ownership, its return code can maintain the ownership: the queue consumer
+ *   predicate refused an element and the consumer keeps ownership of the queue.</li>
  * </ul>
  *
  * <h3>Back-pressure</h3>
@@ -77,15 +68,15 @@ import java.util.function.Predicate;
  *
  * The queue maintains an internal queue of elements initially empty and can be filled when
  * <ul>
- *   <li>producer threads {@link #submit)} to the queue above the {@link #highWaterMark}</li>
+ *   <li>A producer thread {@link #add)} to the queue above the {@link #highWaterMark}</li>
  *   <li>the {@link #consumer} refuses an element</li>
  * </ul>
  *
- * <p>When the internal queue grows above the {@link #highWaterMark}, the queue is considered as {@code unwritable}.
- * {@link #write}/{@link #submit} methods return {@link #QUEUE_UNWRITABLE_MASK} to signal producers should stop emitting.</p>
+ * <p>When the internal queue grows above {@link #highWaterMark}, the queue is considered as {@code unwritable}.
+ * {@link #add} returns {@link #QUEUE_UNWRITABLE_MASK} to signal producers should stop emitting.</p>
  *
  * <p>After a drain if the internal queue has shrunk under {@link #lowWaterMark}, the queue is considered as {@code writable}.
- * {@link #write}/{@link #drain} methods return {@link #QUEUE_WRITABLE_MASK} to signal producers should start emitting. Note
+ * {@link #add}/{@link #drain} methods return {@link #QUEUE_WRITABLE_MASK} to signal producers should start emitting again. Note
  * that the consumer thread handles this signal and should forward it to the producers.</p>
  *
  * <p>When {@link #QUEUE_WRITABLE_MASK} is signalled, the number of {@link #QUEUE_UNWRITABLE_MASK} signals emitted is encoded
@@ -93,17 +84,7 @@ import java.util.function.Predicate;
  * {@link #QUEUE_WRITABLE_MASK}/{@link #QUEUE_UNWRITABLE_MASK} signals are observed by different threads, therefore a good
  * practice to compute the queue writability is to increment/decrement an atomic counter for each signal received.</p>
  */
-public class OutboundWriteQueue<E> {
-
-  /**
-   * Returns the number of times {@link #QUEUE_UNWRITABLE_MASK} signals encoded in {@code value}
-   *
-   * @param value the value
-   * @return then number of unwritable signals
-   */
-  public static int numberOfUnwritableSignals(int value) {
-    return (value & ~0XF) >> 4;
-  }
+public abstract class OutboundWriteQueue<E> {
 
   /**
    * When the masked bit is set, the queue became unwritable, this triggers only when the queue transitions
@@ -133,49 +114,44 @@ public class OutboundWriteQueue<E> {
    */
   public static final int DEFAULT_LOW_WATER_MARK = 8;
 
-  private static final AtomicLongFieldUpdater<OutboundWriteQueue<?>> WIP_UPDATER = (AtomicLongFieldUpdater<OutboundWriteQueue<?>>) (AtomicLongFieldUpdater)AtomicLongFieldUpdater.newUpdater(OutboundWriteQueue.class, "wip");
-
   // Immutable
 
   private final Predicate<E> consumer;
-  private final long highWaterMark;
-  private final long lowWaterMark;
+  protected final long highWaterMark;
+  protected final long lowWaterMark;
 
   // Concurrent part accessed by any producer thread
 
-  private final Queue<E> queue = PlatformDependent.newMpscQueue();
-  private volatile long wip = 0L;
-
-  // Consumer thread only
+  final Queue<E> queue;
 
   // The element refused by the consumer (null <=> overflow)
+  // it is shared between producer/consumer and visibility is ensured with the ownership flag
+  // when the add method acquires ownership, it signals the consumer to drain the queue and therefore
+  // implies a happens-before relationship:
+  // 1. producer writes overflow
+  // 2. producer signals consumer ownership
+  // 3. consumer reads overflow
   private E overflow;
-  // The number of times the queue was observed to be unwritable
-  private long writeQueueFull;
+
+  // Consumer thread only
+  // The number of times the queue was observed to be unwritable, this is accessed from consumer
+  // todo : false sharing between overflow and writeQueueFull
+  private int writeQueueFull;
 
   /**
    * Create a new instance.
    *
    * @param consumer the predicate accepting the elements
-   * @throws NullPointerException if consumer is null
-   */
-  public OutboundWriteQueue(Predicate<E> consumer) {
-    this(consumer, DEFAULT_LOW_WATER_MARK, DEFAULT_HIGH_WATER_MARK);
-  }
-
-  /**
-   * Create a new instance.
-   *
-   * @param consumer the predicate accepting the elements
-   * @param lowWaterMark the low-water mark, must be zero or positive
+   * @param lowWaterMark the low-water mark, must be positive
    * @param highWaterMark the high-water mark, must be greater than the low-water mark
    *
    * @throws NullPointerException if consumer is null
    * @throws IllegalArgumentException if any mark violates the condition
    */
-  public OutboundWriteQueue(Predicate<E> consumer, long lowWaterMark, long highWaterMark) {
-    Arguments.require(lowWaterMark >= 0, "The low-water mark must be >= 0");
+  public OutboundWriteQueue(Queue<E> queue, Predicate<E> consumer, long lowWaterMark, long highWaterMark) {
+    Arguments.require(lowWaterMark > 0, "The low-water mark must be > 0");
     Arguments.require(lowWaterMark <= highWaterMark, "The high-water mark must greater or equals to the low-water mark");
+    this.queue = queue;
     this.consumer = Objects.requireNonNull(consumer, "Consumer must be not null");
     this.lowWaterMark = lowWaterMark;
     this.highWaterMark = highWaterMark;
@@ -196,7 +172,7 @@ public class OutboundWriteQueue<E> {
   }
 
   /**
-   * Let the producer thread add the {@code element} to the queue.
+   * Let the producer add an {@code element} to the queue.
    *
    * A set of flags is returned
    * <ul>
@@ -213,61 +189,25 @@ public class OutboundWriteQueue<E> {
     if (element == null) {
       throw new NullPointerException();
     }
+    long val;
     if (wipCompareAndSet(0L, 1L)) {
-      overflow = element; // Do we need barrier ? should we always use the queue instead ???
-      return DRAIN_REQUIRED_MASK;
+      overflow = element;
+      val = 1;
     } else {
       queue.add(element);
-      long val = wipIncrementAndGet();
-      if (val != 1) {
-        return val == highWaterMark ? QUEUE_UNWRITABLE_MASK : 0; // Check branch-less
-      }
-      return DRAIN_REQUIRED_MASK;
+      val = wipIncrementAndGet();
     }
+    if (val != 1) {
+      return val == highWaterMark ? QUEUE_UNWRITABLE_MASK : 0; // Check branch-less
+    }
+    return DRAIN_REQUIRED_MASK | (1 == highWaterMark ? QUEUE_UNWRITABLE_MASK : 0);
   }
 
   /**
-   * Let the consumer thread add the {@code element} to the queue.
-   *
-   * A set of flags is returned
-   * <ul>
-   *   <li>When {@link #QUEUE_UNWRITABLE_MASK} is set, the queue is writable and new elements can be added to the queue,
-   *   otherwise no elements <i>should</i> be added to the queue nor submitted but it is a soft condition</li>
-   *   <li>When {@link #DRAIN_REQUIRED_MASK} is set, the queue overflow</li>
-   * </ul>
-   *
-   * @param element the element to add
-   * @return a bitset of [{@link #DRAIN_REQUIRED_MASK}, {@link #QUEUE_UNWRITABLE_MASK}, {@link #QUEUE_WRITABLE_MASK}] flags
+   * Calls {@link #drain(long)} with {@code Long.MAX_VALUE}.
    */
-  public int write(E element) {
-    int res = add(element);
-    if ((res & DRAIN_REQUIRED_MASK) != 0) {
-      return drain();
-    } else {
-      return res;
-    }
-  }
-
-  /**
-   * Let a producer thread submit an {@code element} to the queue, no delivery is attempted. Submitting an element
-   * might acquire the ownership of the queue, when it happens a {@link #drain} operation should be called
-   * to drain the queue and release the ownership.
-   *
-   * @param element the element to submit
-   * @return a bitset of [{@link {@link #QUEUE_UNWRITABLE_MASK }, {@link #DRAIN_REQUIRED_MASK }}] flags
-   */
-  public int submit(E element) {
-    queue.add(element);
-    // winning this => overflow == null
-    long pending = WIP_UPDATER.incrementAndGet(this);
-    if (pending == highWaterMark) {
-      hook2();
-    }
-    return (pending == highWaterMark ? QUEUE_UNWRITABLE_MASK : 0) + ((pending == 1) ? DRAIN_REQUIRED_MASK : 0);
-  }
-
-  protected void hook2() {
-
+  public int drain() {
+    return drain(Long.MAX_VALUE);
   }
 
   /**
@@ -276,19 +216,28 @@ public class OutboundWriteQueue<E> {
    *
    * @return a bitset of [{@link #DRAIN_REQUIRED_MASK}, {@link #QUEUE_WRITABLE_MASK}] flags
    */
-  public int drain() {
+  public int drain(long maxIter) {
+    if (maxIter < 0L) {
+      throw new IllegalArgumentException();
+    }
+    if (maxIter == 0L) {
+      return 0; // Really ?
+    }
     E elt = overflow;
     if (elt != null) {
-      if (!consumer.test(overflow)) {
-        return DRAIN_REQUIRED_MASK;
+      if (!consumer.test(elt)) {
+        return drainResult((int)wipGet());
       }
       overflow = null;
-      if (consume(1) == 0) {
-        return 0;
+      if (consume(1) == 0L) {
+        return drainResult(0);
+      }
+      if (maxIter != Long.MAX_VALUE) {
+        maxIter--;
       }
     }
     hook();
-    return drainLoop();
+    return drainLoop(maxIter);
   }
 
   /**
@@ -313,34 +262,36 @@ public class OutboundWriteQueue<E> {
    * @return a bitset of [{@link {@link #QUEUE_WRITABLE_MASK }, {@link #CONSUMER_PAUSED_MASK }}] flags
    */
   // Note : we can optimize this by passing pending as argument of this method to avoid the initial
-  private int drainLoop() {
-    long pending = WIP_UPDATER.get(this);
-    if (pending == 0) {
-      throw new IllegalStateException();
-    }
+  private int drainLoop(long maxIter) {
+    E elt;
+    long pending = wipGet();
+//    if (pending == 0) {
+//      throw new IllegalStateException();
+//    }
     do {
       int consumed;
-      for (consumed = 0; consumed < pending; consumed++) {
-        E elt = queue.poll();
+      for (consumed = 0;consumed < pending && maxIter > 0L;consumed++) {
+        elt = queue.poll();
+        if (maxIter != Long.MAX_VALUE) {
+          maxIter--;
+        }
         if (!consumer.test(elt)) {
           overflow = elt;
           break;
         }
       }
-      // the trick is to decrement the wip at once on each iteration in order to count the number of times producers
-      // have observed a QUEUE_UNWRITABLE_MASK signal
       pending = consume(consumed);
-    } while (pending != 0 && overflow == null);
+    } while (pending != 0 && overflow == null && maxIter > 0L);
+    return drainResult((int)pending);
+  }
+
+  private int drainResult(int pending) {
     boolean writabilityChanged = pending < lowWaterMark && writeQueueFull > 0;
-    int val = (int)writeQueueFull << 4;
+    int val = writeQueueFull;
     if (writabilityChanged) {
       writeQueueFull = 0;
     }
-    int flags = 0;
-    flags |= overflow != null ? DRAIN_REQUIRED_MASK : 0;
-    flags |= writabilityChanged ? QUEUE_WRITABLE_MASK : 0;
-    flags |= val;
-    return flags;
+    return drainResult(val, pending, writabilityChanged);
   }
 
   /**
@@ -350,7 +301,7 @@ public class OutboundWriteQueue<E> {
    * @return the number of pending elements after consuming from the queue
    */
   private long consume(int amount) {
-    long pending = WIP_UPDATER.addAndGet(this, -amount);
+    long pending = wipAddAndGet(-amount);
     long size = pending + amount;
     if (size >= highWaterMark && (size - amount) < highWaterMark) {
       writeQueueFull++;
@@ -374,11 +325,11 @@ public class OutboundWriteQueue<E> {
     if (overflow != null) {
       elts.add(overflow);
       overflow = null;
-      if (WIP_UPDATER.decrementAndGet(this) == 0) {
+      if (wipDecrementAndGet() == 0) {
         return elts;
       }
     }
-    for (long pending = WIP_UPDATER.get(this);pending != 0;pending = WIP_UPDATER.addAndGet(this, -pending)) {
+    for (long pending = wipGet();pending != 0;pending = wipAddAndGet(-pending)) {
       for (int i = 0;i < pending;i++) {
         elts.add(queue.poll());
       }
@@ -386,23 +337,245 @@ public class OutboundWriteQueue<E> {
     return elts;
   }
 
-  protected boolean wipCompareAndSet(long expect, long update) {
-    return WIP_UPDATER.compareAndSet(this, expect, update);
+  // Should be internal
+  public static int drainResult(int numberOfUnwritableSignals, int numberOfPendingElements, boolean writable) {
+    return
+      (writable ? QUEUE_WRITABLE_MASK : 0) |
+      (numberOfPendingElements > 0 ? DRAIN_REQUIRED_MASK : 0) |
+      (numberOfPendingElements << 3) |
+      numberOfUnwritableSignals << 16;
   }
 
-  protected long wipIncrementAndGet() {
-    return WIP_UPDATER.incrementAndGet(this);
+  /**
+   * Returns the number of pending elements encoded in {@code value}
+   *
+   * @param value the value
+   * @return then number of unwritable signals
+   */
+  public static int numberOfPendingElements(int value) {
+    return (value & 0xFFF8) >> 3;
   }
 
-  protected long wipDecrementAndGet() {
-    return WIP_UPDATER.decrementAndGet(this);
+  /**
+   * Returns the number of times {@link #QUEUE_UNWRITABLE_MASK} signals encoded in {@code value}
+   *
+   * @param value the value
+   * @return then number of unwritable signals
+   */
+  public static int numberOfUnwritableSignals(int value) {
+    return (value & 0xFFFF0000) >> 16;
   }
 
-  protected long wipGet() {
-    return WIP_UPDATER.get(this);
+  /**
+   * WIP operations
+   */
+  protected abstract boolean wipCompareAndSet(long expect, long update);
+  protected abstract long wipIncrementAndGet();
+  protected abstract long wipDecrementAndGet();
+  protected abstract long wipGet();
+  protected abstract long wipAddAndGet(long delta);
+
+  /**
+   * Factory for {@link OutboundWriteQueue}.
+   */
+  public interface Factory {
+    <E> OutboundWriteQueue<E> create(Predicate<E> consumer, int lowWaterMark, int highWaterMark);
+    <E> OutboundWriteQueue<E> create(Predicate<E> consumer);
   }
 
-  protected long wipAddAndGet(long delta) {
-    return WIP_UPDATER.addAndGet(this, delta);
+  public static class SingleThread<E> extends OutboundWriteQueue<E> {
+
+    private long wip;
+
+    public SingleThread(Predicate<E> consumer) {
+      this(consumer, DEFAULT_LOW_WATER_MARK, DEFAULT_HIGH_WATER_MARK);
+    }
+
+    public SingleThread(Predicate<E> consumer, int lowWaterMark, int highWaterMark) {
+      super(new ArrayDeque<>(1), consumer, lowWaterMark, highWaterMark);
+    }
+
+    @Override
+    protected boolean wipCompareAndSet(long expect, long update) {
+      if (wip == expect) {
+        wip = update;
+        return true;
+      }
+      return false;
+    }
+
+    @Override
+    protected long wipIncrementAndGet() {
+      return ++wip;
+    }
+
+    @Override
+    protected long wipDecrementAndGet() {
+      return --wip;
+    }
+
+    @Override
+    protected long wipGet() {
+      return wip;
+    }
+
+    @Override
+    protected long wipAddAndGet(long delta) {
+      return wip += delta;
+    }
   }
+
+  /**
+   * {@inheritDoc}
+   *
+   * <h4>Submitting elements</h4>
+   *
+   * When a producer thread submits an element to the queue, the element is added to the queue to let the consumer
+   * thread handle it.
+   *
+   * @param <E>
+   */
+  public static class MpSc<E> extends OutboundWriteQueue<E> {
+
+    private static final AtomicLongFieldUpdater<OutboundWriteQueue.MpSc<?>> WIP_UPDATER = (AtomicLongFieldUpdater<OutboundWriteQueue.MpSc<?>>) (AtomicLongFieldUpdater)AtomicLongFieldUpdater.newUpdater(OutboundWriteQueue.MpSc.class, "wip");
+
+    // Todo : check false sharing
+    private volatile long wip;
+
+    public MpSc(Predicate<E> consumer) {
+      this(consumer, DEFAULT_LOW_WATER_MARK, DEFAULT_HIGH_WATER_MARK);
+    }
+    public MpSc(Predicate<E> consumer, int lowWaterMark, int highWaterMark) {
+      super(PlatformDependent.newMpscQueue(), consumer, lowWaterMark, highWaterMark);
+    }
+
+    /**
+     * Let the consumer thread add the {@code element} to the queue.
+     *
+     * A set of flags is returned
+     * <ul>
+     *   <li>When {@link #QUEUE_UNWRITABLE_MASK} is set, the queue is writable and new elements can be added to the queue,
+     *   otherwise no elements <i>should</i> be added to the queue nor submitted but it is a soft condition</li>
+     *   <li>When {@link #DRAIN_REQUIRED_MASK} is set, the queue contains at least one element and must be drained</li>
+     * </ul>
+     *
+     * @param element the element to add
+     * @return a bitset of [{@link #DRAIN_REQUIRED_MASK}, {@link #QUEUE_UNWRITABLE_MASK}, {@link #QUEUE_WRITABLE_MASK}] flags
+     */
+    public int write(E element) {
+      int res = add(element);
+      if ((res & DRAIN_REQUIRED_MASK) != 0) {
+        return drain();
+      } else {
+        return res;
+      }
+    }
+
+    @Override
+    protected boolean wipCompareAndSet(long expect, long update) {
+      return WIP_UPDATER.compareAndSet(this, expect, update);
+    }
+
+    @Override
+    protected long wipIncrementAndGet() {
+      return WIP_UPDATER.incrementAndGet(this);
+    }
+
+    @Override
+    protected long wipDecrementAndGet() {
+      return WIP_UPDATER.decrementAndGet(this);
+    }
+
+    @Override
+    protected long wipGet() {
+      return WIP_UPDATER.get(this);
+    }
+
+    @Override
+    protected long wipAddAndGet(long delta) {
+      return WIP_UPDATER.addAndGet(this, delta);
+    }
+  }
+
+  public static class SpSc<E> extends OutboundWriteQueue<E> {
+
+    private static final AtomicLongFieldUpdater<OutboundWriteQueue.SpSc<?>> WIP_UPDATER = (AtomicLongFieldUpdater<OutboundWriteQueue.SpSc<?>>) (AtomicLongFieldUpdater)AtomicLongFieldUpdater.newUpdater(OutboundWriteQueue.SpSc.class, "wip");
+
+    // Todo : check false sharing
+    private volatile long wip;
+
+    public SpSc(Predicate<E> consumer) {
+      this(consumer, DEFAULT_LOW_WATER_MARK, DEFAULT_HIGH_WATER_MARK);
+    }
+    public SpSc(Predicate<E> consumer, int lowWaterMark, int highWaterMark) {
+      super(PlatformDependent.newSpscQueue(), consumer, lowWaterMark, highWaterMark);
+    }
+
+    @Override
+    protected boolean wipCompareAndSet(long expect, long update) {
+      return WIP_UPDATER.compareAndSet(this, expect, update);
+    }
+
+    @Override
+    protected long wipIncrementAndGet() {
+      return WIP_UPDATER.incrementAndGet(this);
+    }
+
+    @Override
+    protected long wipDecrementAndGet() {
+      return WIP_UPDATER.decrementAndGet(this);
+    }
+
+    @Override
+    protected long wipGet() {
+      return WIP_UPDATER.get(this);
+    }
+
+    @Override
+    protected long wipAddAndGet(long delta) {
+      return WIP_UPDATER.addAndGet(this, delta);
+    }
+  }
+
+  /**
+   * Factory for a queue assuming distinct single consumer thread / single producer thread
+   */
+  public static final Factory MPSC = new Factory() {
+    @Override
+    public <T> OutboundWriteQueue<T> create(Predicate<T> consumer, int lowWaterMark, int highWaterMark) {
+      return new MpSc<>(consumer, lowWaterMark, highWaterMark);
+    }
+    @Override
+    public <T> OutboundWriteQueue<T> create(Predicate<T> consumer) {
+      return new MpSc<>(consumer);
+    }
+  };
+
+  /**
+   * Factory for a queue assuming distinct single consumer thread / single producer thread
+   */
+  public static final Factory SPSC = new Factory() {
+    @Override
+    public <T> OutboundWriteQueue<T> create(Predicate<T> consumer, int lowWaterMark, int highWaterMark) {
+      return new SpSc<>(consumer, lowWaterMark, highWaterMark);
+    }
+    @Override
+    public <T> OutboundWriteQueue<T> create(Predicate<T> consumer) {
+      return new SpSc<>(consumer);
+    }
+  };
+
+  /**
+   * Factory for a queue assuming a same single consumer thread / single producer thread
+   */
+  public static final Factory SINGLE_THREAD = new Factory() {
+    @Override
+    public <T> OutboundWriteQueue<T> create(Predicate<T> consumer, int lowWaterMark, int highWaterMark) {
+      return new SingleThread<>(consumer, lowWaterMark, highWaterMark);
+    }
+    @Override
+    public <T> OutboundWriteQueue<T> create(Predicate<T> consumer) {
+      return new SingleThread<>(consumer);
+    }
+  };
 }
