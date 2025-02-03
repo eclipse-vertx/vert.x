@@ -212,7 +212,7 @@ public abstract class InboundReadQueue<E> {
       overflow = element; // Do we need barrier ? should we always use the queue instead ???
       return DRAIN_REQUIRED_MASK;
     } else {
-      queue.offer(element);
+      queue.add(element);
       long val = wipIncrementAndGet();
       if (val != 1) {
         return val == highWaterMark ? QUEUE_UNWRITABLE_MASK : 0; // Check branch-less

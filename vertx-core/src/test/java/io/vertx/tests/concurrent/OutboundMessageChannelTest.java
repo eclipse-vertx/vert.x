@@ -12,23 +12,22 @@ package io.vertx.tests.concurrent;
 
 import io.netty.channel.EventLoop;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.concurrent.OutboundMessageQueue;
+import io.vertx.core.internal.concurrent.OutboundMessageChannel;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class OutboundMessageQueueTest extends VertxTestBase {
+public class OutboundMessageChannelTest extends VertxTestBase {
 
   private List<Integer> output = Collections.synchronizedList(new ArrayList<>());
-  private OutboundMessageQueue<Integer> queue;
+  private OutboundMessageChannel<Integer> queue;
   private EventLoop eventLoop;
 
   @Override
@@ -41,7 +40,7 @@ public class OutboundMessageQueueTest extends VertxTestBase {
 
   @Test
   public void testReentrantWriteAccept() {
-    queue = new OutboundMessageQueue<>(eventLoop) {
+    queue = new OutboundMessageChannel<>(eventLoop) {
       int reentrant = 0;
       @Override
       public boolean test(Integer msg) {
@@ -67,7 +66,7 @@ public class OutboundMessageQueueTest extends VertxTestBase {
 
   @Test
   public void testReentrantWriteReject() {
-    queue = new OutboundMessageQueue<>(eventLoop) {
+    queue = new OutboundMessageChannel<>(eventLoop) {
       int reentrant = 0;
       @Override
       public boolean test(Integer msg) {
@@ -94,7 +93,7 @@ public class OutboundMessageQueueTest extends VertxTestBase {
   @Test
   public void testReentrantOverflowThenDrain() {
     AtomicInteger drains = new AtomicInteger();
-    queue = new OutboundMessageQueue<>(eventLoop) {
+    queue = new OutboundMessageChannel<>(eventLoop) {
       int reentrant = 0;
       @Override
       public boolean test(Integer msg) {
@@ -118,7 +117,7 @@ public class OutboundMessageQueueTest extends VertxTestBase {
         }
       }
       @Override
-      protected void writeQueueDrained() {
+      protected void afterDrain() {
         drains.incrementAndGet();
       }
     };
@@ -132,7 +131,7 @@ public class OutboundMessageQueueTest extends VertxTestBase {
 
   @Test
   public void testReentrantClose() {
-    queue = new OutboundMessageQueue<>(eventLoop) {
+    queue = new OutboundMessageChannel<>(eventLoop) {
       @Override
       public boolean test(Integer msg) {
         if (msg == 0) {
@@ -161,7 +160,7 @@ public class OutboundMessageQueueTest extends VertxTestBase {
   @Test
   public void testCloseWhileDrainScheduled() {
     AtomicInteger drains = new AtomicInteger();
-    queue = new OutboundMessageQueue<>(eventLoop) {
+    queue = new OutboundMessageChannel<>(eventLoop) {
       @Override
       public boolean test(Integer msg) {
         return false;

@@ -32,7 +32,7 @@ import io.vertx.core.internal.http.HttpServerRequestInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.internal.concurrent.InboundMessageQueue;
+import io.vertx.core.internal.concurrent.InboundMessageChannel;
 import io.vertx.core.net.impl.HostAndPortImpl;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.tracing.SpanKind;
@@ -86,13 +86,13 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   private HttpPostRequestDecoder decoder;
   private boolean ended;
   private long bytesRead;
-  private final InboundMessageQueue<Object> queue;
+  private final InboundMessageChannel<Object> queue;
 
   Http1xServerRequest(Http1xServerConnection conn, HttpRequest request, ContextInternal context) {
     this.conn = conn;
     this.context = context;
     this.request = request;
-    this.queue = new InboundMessageQueue<>(context.eventLoop(), context.executor()) {
+    this.queue = new InboundMessageChannel<>(context.eventLoop(), context.executor()) {
       @Override
       protected void handleMessage(Object elt) {
         if (elt == InboundBuffer.END_SENTINEL) {
