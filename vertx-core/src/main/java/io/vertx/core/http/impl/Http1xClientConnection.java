@@ -41,7 +41,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
-import io.vertx.core.internal.concurrent.InboundMessageQueue;
+import io.vertx.core.internal.concurrent.InboundMessageChannel;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.*;
@@ -415,7 +415,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
   private static class StreamImpl extends Stream implements HttpClientStream {
 
     private final Http1xClientConnection conn;
-    private final InboundMessageQueue<Object> queue;
+    private final InboundMessageChannel<Object> queue;
     private boolean closed;
     private Handler<HttpResponseHead> headHandler;
     private Handler<Buffer> chunkHandler;
@@ -431,7 +431,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
       super(context, promise, id);
 
       this.conn = conn;
-      this.queue = new InboundMessageQueue<>(conn.context.eventLoop(), context.executor()) {
+      this.queue = new InboundMessageChannel<>(conn.context.eventLoop(), context.executor()) {
         @Override
         protected void handleResume() {
           conn.doResume();

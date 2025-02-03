@@ -24,7 +24,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.concurrent.OutboundMessageQueue;
+import io.vertx.core.internal.concurrent.OutboundMessageChannel;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 
@@ -57,7 +57,7 @@ public class VertxConnection extends ConnectionBase {
   private static final int MAX_REGION_SIZE = 1024 * 1024;
 
   public final VoidChannelPromise voidPromise;
-  private final OutboundMessageQueue<MessageWrite> messageQueue;
+  private final OutboundMessageChannel<MessageWrite> messageQueue;
   private Handler<Void> shutdownHandler;
 
   // State accessed exclusively from the event loop thread
@@ -73,7 +73,7 @@ public class VertxConnection extends ConnectionBase {
   public VertxConnection(ContextInternal context, ChannelHandlerContext chctx) {
     super(context, chctx);
     this.channelWritable = chctx.channel().isWritable();
-    this.messageQueue = new InternalMessageQueue(chctx.channel().eventLoop());
+    this.messageQueue = new InternalMessageChannel(chctx.channel().eventLoop());
     this.voidPromise = new VoidChannelPromise(chctx.channel(), false);
   }
 
@@ -409,11 +409,11 @@ public class VertxConnection extends ConnectionBase {
   }
 
   /**
-   * Version of {@link OutboundMessageQueue} accessing internal connection base state.
+   * Version of {@link OutboundMessageChannel} accessing internal connection base state.
    */
-  private class InternalMessageQueue extends OutboundMessageQueue<MessageWrite> implements Predicate<MessageWrite> {
+  private class InternalMessageChannel extends OutboundMessageChannel<MessageWrite> implements Predicate<MessageWrite> {
 
-    public InternalMessageQueue(EventLoop eventLoop) {
+    public InternalMessageChannel(EventLoop eventLoop) {
       super(eventLoop);
     }
 
@@ -447,7 +447,7 @@ public class VertxConnection extends ConnectionBase {
     }
 
     @Override
-    protected void writeQueueDrained() {
+    protected void afterDrain() {
       VertxConnection.this.handleWriteQueueDrained();
     }
   }

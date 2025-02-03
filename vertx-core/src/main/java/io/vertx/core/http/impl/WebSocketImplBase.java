@@ -35,7 +35,7 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.http.WebSocketInternal;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.internal.concurrent.InboundMessageQueue;
+import io.vertx.core.internal.concurrent.InboundMessageChannel;
 import io.vertx.core.net.impl.VertxConnection;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -62,7 +62,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   private final VertxConnection conn;
   private ChannelHandlerContext chctx;
   protected final ContextInternal context;
-  private final InboundMessageQueue<WebSocketFrameInternal> pending;
+  private final InboundMessageChannel<WebSocketFrameInternal> pending;
   private MessageConsumer binaryHandlerRegistration;
   private MessageConsumer textHandlerRegistration;
   private String subProtocol;
@@ -99,7 +99,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
     this.context = context;
     this.maxWebSocketFrameSize = maxWebSocketFrameSize;
     this.maxWebSocketMessageSize = maxWebSocketMessageSize;
-    this.pending = new InboundMessageQueue<>(context.eventLoop(), context.executor()) {
+    this.pending = new InboundMessageChannel<>(context.eventLoop(), context.executor()) {
       @Override
       protected void handleResume() {
         conn.doResume();

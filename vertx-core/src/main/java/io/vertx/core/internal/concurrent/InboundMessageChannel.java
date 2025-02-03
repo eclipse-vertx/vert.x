@@ -12,21 +12,21 @@ package io.vertx.core.internal.concurrent;
 
 import io.vertx.core.impl.EventLoopExecutor;
 import io.vertx.core.internal.EventExecutor;
-import io.vertx.core.streams.impl.OutboundWriteQueue;
+import io.vertx.core.streams.impl.MessageChannel;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.function.Predicate;
 
 /**
- * Inbound message queue for event-loop and read stream like structures.
+ * Inbound message channel for event-loop and read stream like structures.
  */
-public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
+public class InboundMessageChannel<M> implements Predicate<M>, Runnable {
 
-  private static final AtomicLongFieldUpdater<InboundMessageQueue<?>> DEMAND_UPDATER = (AtomicLongFieldUpdater<InboundMessageQueue<?>>) (AtomicLongFieldUpdater)AtomicLongFieldUpdater.newUpdater(InboundMessageQueue.class, "demand");
+  private static final AtomicLongFieldUpdater<InboundMessageChannel<?>> DEMAND_UPDATER = (AtomicLongFieldUpdater<InboundMessageChannel<?>>) (AtomicLongFieldUpdater)AtomicLongFieldUpdater.newUpdater(InboundMessageChannel.class, "demand");
 
   private final EventExecutor consumer;
   private final EventExecutor producer;
-  private final OutboundWriteQueue<M> readQueue;
+  private final MessageChannel<M> messageChannel;
 
   // Accessed by context thread
   private boolean needsDrain;
@@ -35,32 +35,32 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
   // Any thread
   private volatile long demand = Long.MAX_VALUE;
 
-  public InboundMessageQueue(EventExecutor producer, EventExecutor consumer) {
-    OutboundWriteQueue.Factory readQueueFactory;
+  public InboundMessageChannel(EventExecutor producer, EventExecutor consumer) {
+    MessageChannel.Factory messageChannelFactory;
     if (consumer instanceof EventLoopExecutor && producer instanceof EventLoopExecutor && ((EventLoopExecutor)consumer).eventLoop() == ((EventLoopExecutor)producer).eventLoop()) {
-      readQueueFactory = OutboundWriteQueue.SINGLE_THREAD;
+      messageChannelFactory = MessageChannel.SINGLE_THREAD;
     } else {
-      readQueueFactory = OutboundWriteQueue.SPSC;
+      messageChannelFactory = MessageChannel.SPSC;
     }
-    this.readQueue = readQueueFactory.create(this);
+    this.messageChannel = messageChannelFactory.create(this);
     this.consumer = consumer;
     this.producer = producer;
   }
 
-  public InboundMessageQueue(EventExecutor producer, EventExecutor consumer, OutboundWriteQueue.Factory readQueueFactory) {
-    this.readQueue = readQueueFactory.create(this);
+  public InboundMessageChannel(EventExecutor producer, EventExecutor consumer, MessageChannel.Factory messageChannelFactory) {
+    this.messageChannel = messageChannelFactory.create(this);
     this.consumer = consumer;
     this.producer = producer;
   }
 
-  public InboundMessageQueue(EventExecutor producer, EventExecutor consumer, int lowWaterMark, int highWaterMark) {
-    OutboundWriteQueue.Factory readQueueFactory;
+  public InboundMessageChannel(EventExecutor producer, EventExecutor consumer, int lowWaterMark, int highWaterMark) {
+    MessageChannel.Factory messageChannelFactory;
     if (consumer instanceof EventLoopExecutor && producer instanceof EventLoopExecutor && ((EventLoopExecutor)consumer).eventLoop() == ((EventLoopExecutor)producer).eventLoop()) {
-      readQueueFactory = OutboundWriteQueue.SINGLE_THREAD;
+      messageChannelFactory = MessageChannel.SINGLE_THREAD;
     } else {
-      readQueueFactory = OutboundWriteQueue.SPSC;
+      messageChannelFactory = MessageChannel.SPSC;
     }
-    this.readQueue = readQueueFactory.create(this, lowWaterMark, highWaterMark);
+    this.messageChannel = messageChannelFactory.create(this, lowWaterMark, highWaterMark);
     this.consumer = consumer;
     this.producer = consumer;
   }
@@ -100,18 +100,18 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
   }
 
   /**
-   * Add a message to the queue
+   * Add a message to the channel
    *
    * @param msg the message
    * @return {@code true} when a {@link #drain()} should be called.
    */
   public final boolean add(M msg) {
     assert producer.inThread();
-    int res = readQueue.add(msg);
-    if ((res & OutboundWriteQueue.QUEUE_UNWRITABLE_MASK) != 0) {
+    int res = messageChannel.add(msg);
+    if ((res & MessageChannel.UNWRITABLE_MASK) != 0) {
       handlePause();
     }
-    return (res & OutboundWriteQueue.DRAIN_REQUIRED_MASK) != 0;
+    return (res & MessageChannel.DRAIN_REQUIRED_MASK) != 0;
   }
 
   /**
@@ -166,9 +166,9 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
   private void drainInternal() {
     draining = true;
     try {
-      int res = readQueue.drain();
-      needsDrain = (res & OutboundWriteQueue.DRAIN_REQUIRED_MASK) != 0;
-      if ((res & OutboundWriteQueue.QUEUE_WRITABLE_MASK) != 0) {
+      int res = messageChannel.drain();
+      needsDrain = (res & MessageChannel.DRAIN_REQUIRED_MASK) != 0;
+      if ((res & MessageChannel.WRITABLE_MASK) != 0) {
         producer.execute(this::handleResume);
       }
     } finally {
