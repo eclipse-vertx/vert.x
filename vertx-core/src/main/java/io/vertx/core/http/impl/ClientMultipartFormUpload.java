@@ -20,7 +20,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
-import io.vertx.core.internal.concurrent.InboundMessageQueue;
+import io.vertx.core.internal.concurrent.InboundMessageChannel;
 import io.vertx.core.internal.http.HttpHeadersInternal;
 import io.vertx.core.streams.Pipe;
 import io.vertx.core.streams.ReadStream;
@@ -46,7 +46,7 @@ public class ClientMultipartFormUpload implements ReadStream<Buffer> {
   private Handler<Throwable> exceptionHandler;
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
-  private final InboundMessageQueue<Object> pending;
+  private final InboundMessageChannel<Object> pending;
   private boolean writable;
   private boolean ended;
   private final ContextInternal context;
@@ -57,7 +57,7 @@ public class ClientMultipartFormUpload implements ReadStream<Buffer> {
                                    HttpPostRequestEncoder.EncoderMode encoderMode) throws Exception {
     this.context = context;
     this.writable = true;
-    this.pending = new InboundMessageQueue<>(context.executor(), context.executor()) {
+    this.pending = new InboundMessageChannel<>(context.executor(), context.executor()) {
       @Override
       protected void handleResume() {
         writable = true;
