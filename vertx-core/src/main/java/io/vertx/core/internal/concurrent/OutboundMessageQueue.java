@@ -16,7 +16,7 @@ public class OutboundMessageQueue<M> implements Predicate<M> {
 
   private final EventLoop eventLoop;
   private final AtomicInteger numberOfUnwritableSignals = new AtomicInteger();
-  private final OutboundWriteQueue<M> writeQueue;
+  private final OutboundWriteQueue.MpSc<M> writeQueue;
   private volatile boolean eventuallyClosed;
 
   // State accessed exclusively by the event loop thread
@@ -31,7 +31,7 @@ public class OutboundMessageQueue<M> implements Predicate<M> {
    */
   public OutboundMessageQueue(EventLoop eventLoop, Predicate<M> predicate) {
     this.eventLoop = eventLoop;
-    this.writeQueue = new OutboundWriteQueue<>(predicate);
+    this.writeQueue = new OutboundWriteQueue.MpSc<>(predicate);
   }
 
   /**
@@ -41,7 +41,7 @@ public class OutboundMessageQueue<M> implements Predicate<M> {
    */
   public OutboundMessageQueue(EventLoop eventLoop) {
     this.eventLoop = eventLoop;
-    this.writeQueue = new OutboundWriteQueue<>(this);
+    this.writeQueue = new OutboundWriteQueue.MpSc<>(this);
   }
 
   @Override
@@ -73,10 +73,13 @@ public class OutboundMessageQueue<M> implements Predicate<M> {
       }
       reentrant++;
       try {
-        flags = writeQueue.write(message);
-        overflow |= (flags & OutboundWriteQueue.DRAIN_REQUIRED_MASK) != 0;
-        if ((flags & OutboundWriteQueue.QUEUE_WRITABLE_MASK) != 0) {
-          handleWriteQueueDrained(numberOfUnwritableSignals(flags));
+        flags = writeQueue.add(message);
+        if ((flags & OutboundWriteQueue.DRAIN_REQUIRED_MASK) != 0) {
+          flags = writeQueue.drain();
+          overflow |= (flags & OutboundWriteQueue.DRAIN_REQUIRED_MASK) != 0;
+          if ((flags & OutboundWriteQueue.QUEUE_WRITABLE_MASK) != 0) {
+            handleWriteQueueDrained(numberOfUnwritableSignals(flags));
+          }
         }
       } finally {
         reentrant--;
@@ -89,7 +92,7 @@ public class OutboundMessageQueue<M> implements Predicate<M> {
         disposeMessage(message);
         return true;
       }
-      flags = writeQueue.submit(message);
+      flags = writeQueue.add(message);
       if ((flags & OutboundWriteQueue.DRAIN_REQUIRED_MASK) != 0) {
         eventLoop.execute(this::drainWriteQueue);
       }

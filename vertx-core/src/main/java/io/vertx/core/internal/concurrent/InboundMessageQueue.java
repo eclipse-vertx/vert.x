@@ -12,7 +12,7 @@ package io.vertx.core.internal.concurrent;
 
 import io.vertx.core.impl.EventLoopExecutor;
 import io.vertx.core.internal.EventExecutor;
-import io.vertx.core.streams.impl.InboundReadQueue;
+import io.vertx.core.streams.impl.OutboundWriteQueue;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.function.Predicate;
@@ -26,7 +26,7 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
 
   private final EventExecutor consumer;
   private final EventExecutor producer;
-  private final InboundReadQueue<M> readQueue;
+  private final OutboundWriteQueue<M> readQueue;
 
   // Accessed by context thread
   private boolean needsDrain;
@@ -36,29 +36,29 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
   private volatile long demand = Long.MAX_VALUE;
 
   public InboundMessageQueue(EventExecutor producer, EventExecutor consumer) {
-    InboundReadQueue.Factory readQueueFactory;
+    OutboundWriteQueue.Factory readQueueFactory;
     if (consumer instanceof EventLoopExecutor && producer instanceof EventLoopExecutor && ((EventLoopExecutor)consumer).eventLoop() == ((EventLoopExecutor)producer).eventLoop()) {
-      readQueueFactory = InboundReadQueue.SINGLE_THREADED;
+      readQueueFactory = OutboundWriteQueue.SINGLE_THREAD;
     } else {
-      readQueueFactory = InboundReadQueue.SPSC;
+      readQueueFactory = OutboundWriteQueue.SPSC;
     }
     this.readQueue = readQueueFactory.create(this);
     this.consumer = consumer;
     this.producer = producer;
   }
 
-  public InboundMessageQueue(EventExecutor producer, EventExecutor consumer, InboundReadQueue.Factory readQueueFactory) {
+  public InboundMessageQueue(EventExecutor producer, EventExecutor consumer, OutboundWriteQueue.Factory readQueueFactory) {
     this.readQueue = readQueueFactory.create(this);
     this.consumer = consumer;
     this.producer = producer;
   }
 
   public InboundMessageQueue(EventExecutor producer, EventExecutor consumer, int lowWaterMark, int highWaterMark) {
-    InboundReadQueue.Factory readQueueFactory;
+    OutboundWriteQueue.Factory readQueueFactory;
     if (consumer instanceof EventLoopExecutor && producer instanceof EventLoopExecutor && ((EventLoopExecutor)consumer).eventLoop() == ((EventLoopExecutor)producer).eventLoop()) {
-      readQueueFactory = InboundReadQueue.SINGLE_THREADED;
+      readQueueFactory = OutboundWriteQueue.SINGLE_THREAD;
     } else {
-      readQueueFactory = InboundReadQueue.SPSC;
+      readQueueFactory = OutboundWriteQueue.SPSC;
     }
     this.readQueue = readQueueFactory.create(this, lowWaterMark, highWaterMark);
     this.consumer = consumer;
@@ -108,10 +108,10 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
   public final boolean add(M msg) {
     assert producer.inThread();
     int res = readQueue.add(msg);
-    if ((res & InboundReadQueue.QUEUE_UNWRITABLE_MASK) != 0) {
+    if ((res & OutboundWriteQueue.QUEUE_UNWRITABLE_MASK) != 0) {
       handlePause();
     }
-    return (res & InboundReadQueue.DRAIN_REQUIRED_MASK) != 0;
+    return (res & OutboundWriteQueue.DRAIN_REQUIRED_MASK) != 0;
   }
 
   /**
@@ -167,8 +167,8 @@ public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
     draining = true;
     try {
       int res = readQueue.drain();
-      needsDrain = (res & InboundReadQueue.DRAIN_REQUIRED_MASK) != 0;
-      if ((res & InboundReadQueue.QUEUE_WRITABLE_MASK) != 0) {
+      needsDrain = (res & OutboundWriteQueue.DRAIN_REQUIRED_MASK) != 0;
+      if ((res & OutboundWriteQueue.QUEUE_WRITABLE_MASK) != 0) {
         producer.execute(this::handleResume);
       }
     } finally {
