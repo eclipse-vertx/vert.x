@@ -142,7 +142,9 @@ public class Deployment {
           }
           break;
         default:
-          context = vertx.createEventLoopContext(deployment, closeFuture, workerPool, tccl);
+          context = options.getReuseCurrentEventLoop()
+            ? vertx.createEventLoopContext(vertx.getOrCreateContext().nettyEventLoop(), deployment,closeFuture,workerPool, tccl)
+            : vertx.createEventLoopContext(deployment, closeFuture, workerPool, tccl);
           break;
       }
       Instance instance = new Instance(verticle, context);
