@@ -14,6 +14,7 @@ import io.vertx.core.impl.EventLoopExecutor;
 import io.vertx.core.internal.EventExecutor;
 import io.vertx.core.streams.impl.MessageChannel;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.function.Predicate;
 
@@ -27,10 +28,12 @@ public class InboundMessageChannel<M> implements Predicate<M>, Runnable {
   private final EventExecutor consumer;
   private final EventExecutor producer;
   private final MessageChannel<M> messageChannel;
+  private volatile boolean eventuallyClosed;
 
   // Accessed by context thread
   private boolean needsDrain;
   private boolean draining;
+  private boolean closed;
 
   // Any thread
   private volatile long demand = Long.MAX_VALUE;
@@ -62,7 +65,7 @@ public class InboundMessageChannel<M> implements Predicate<M>, Runnable {
     }
     this.messageChannel = messageChannelFactory.create(this, lowWaterMark, highWaterMark);
     this.consumer = consumer;
-    this.producer = consumer;
+    this.producer = producer;
   }
 
   @Override
@@ -107,6 +110,10 @@ public class InboundMessageChannel<M> implements Predicate<M>, Runnable {
    */
   public final boolean add(M msg) {
     assert producer.inThread();
+    if (closed) {
+      disposeMessage(msg);
+      return false;
+    }
     int res = messageChannel.add(msg);
     if ((res & MessageChannel.UNWRITABLE_MASK) != 0) {
       handlePause();
@@ -169,7 +176,11 @@ public class InboundMessageChannel<M> implements Predicate<M>, Runnable {
       int res = messageChannel.drain();
       needsDrain = (res & MessageChannel.DRAIN_REQUIRED_MASK) != 0;
       if ((res & MessageChannel.WRITABLE_MASK) != 0) {
-        producer.execute(this::handleResume);
+        if (producer.inThread()) {
+          handleResume();
+        } else {
+          producer.execute(this::handleResume);
+        }
       }
     } finally {
       draining = false;
@@ -206,5 +217,33 @@ public class InboundMessageChannel<M> implements Predicate<M>, Runnable {
       consumer
         .execute(this);
     }
+  }
+
+  /**
+   * Close the queue.
+   */
+  public final void close() {
+//    assert(eventLoop.inEventLoop());
+    if (closed) {
+      return;
+    }
+    closed = true;
+    eventuallyClosed = true;
+    releaseMessages();
+  }
+
+  private void releaseMessages() {
+    List<M> messages = messageChannel.clear();
+    for (M elt : messages) {
+      disposeMessage(elt);
+    }
+  }
+
+  /**
+   * Release a message, this is called when the channel has been closed and message resource cleanup.
+   *
+   * @param msg the message
+   */
+  protected void disposeMessage(M msg) {
   }
 }
