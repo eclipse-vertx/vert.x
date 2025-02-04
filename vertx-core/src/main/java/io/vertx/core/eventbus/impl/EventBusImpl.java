@@ -16,6 +16,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.*;
+import io.vertx.core.impl.Arguments;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.impl.utils.ConcurrentCyclicSequence;
@@ -170,10 +171,26 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
   }
 
   @Override
+  public <T> MessageConsumer<T> consumer(MessageConsumerOptions options) {
+    checkStarted();
+    String address = options.getAddress();
+    Arguments.require(options.getAddress() != null, "Consumer address must not be null");
+    return new MessageConsumerImpl<>(vertx.getOrCreateContext(), this, address, options.isLocalOnly(), options.getMaxBufferedMessages());
+  }
+
+  @Override
+  public <T> MessageConsumer<T> consumer(MessageConsumerOptions options, Handler<Message<T>> handler) {
+    Objects.requireNonNull(handler, "handler");
+    MessageConsumer<T> consumer = consumer(options);
+    consumer.handler(handler);
+    return consumer;
+  }
+
+  @Override
   public <T> MessageConsumer<T> consumer(String address) {
     checkStarted();
     Objects.requireNonNull(address, "address");
-    return new MessageConsumerImpl<>(vertx.getOrCreateContext(), this, address, false);
+    return new MessageConsumerImpl<>(vertx.getOrCreateContext(), this, address, false, MessageConsumerOptions.DEFAULT_MAX_BUFFERED_MESSAGES);
   }
 
   @Override
@@ -188,7 +205,7 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
   public <T> MessageConsumer<T> localConsumer(String address) {
     checkStarted();
     Objects.requireNonNull(address, "address");
-    return new MessageConsumerImpl<>(vertx.getOrCreateContext(), this, address, true);
+    return new MessageConsumerImpl<>(vertx.getOrCreateContext(), this, address, true, MessageConsumerOptions.DEFAULT_MAX_BUFFERED_MESSAGES);
   }
 
   @Override
