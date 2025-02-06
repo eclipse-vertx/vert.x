@@ -23,6 +23,8 @@ import io.vertx.test.core.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.*;
@@ -151,19 +153,6 @@ public class JsonParserTest {
     assertEquals(Collections.emptyList(), objects);
     assertEquals(Collections.emptyList(), errors);
     assertEquals(1, endCount.get());
-  }
-
-  @Test
-  public void parseNumberFormatException() {
-    Buffer data = Buffer.buffer(Long.MAX_VALUE + "0");
-    try {
-      JsonParser.newParser().handler(val -> {}).write(data).end();
-      fail();
-    } catch (DecodeException expected) {
-    }
-    List<Throwable> errors = new ArrayList<>();
-    JsonParser.newParser().exceptionHandler(errors::add).handler(val -> {}).write(data).end();
-    assertEquals(1, errors.size());
   }
 
   @Test
@@ -343,8 +332,8 @@ public class JsonParserTest {
       assertFalse(event.isString());
       assertEquals(567, (long)event.integerValue());
       assertEquals(567L, (long)event.longValue());
-      assertEquals(567f, (float)event.floatValue(), 0.01f);
-      assertEquals(567d, (double)event.doubleValue(), 0.01d);
+      assertEquals(567f, event.floatValue(), 0.01f);
+      assertEquals(567d, event.doubleValue(), 0.01d);
       assertThrowCCE(event,
         JsonEvent::stringValue,
         JsonEvent::booleanValue,
@@ -369,6 +358,32 @@ public class JsonParserTest {
       assertEquals(567L, (long)event.longValue());
       assertEquals(567.45f, (float)event.floatValue(), 0.01f);
       assertEquals(567.45d, (double)event.doubleValue(), 0.01d);
+      assertThrowCCE(event,
+        JsonEvent::stringValue,
+        JsonEvent::booleanValue,
+        JsonEvent::binaryValue,
+        JsonEvent::instantValue,
+        JsonEvent::objectValue,
+        JsonEvent::arrayValue);
+    });
+  }
+
+  @Test
+  public void testBigInteger() {
+    String expected = "18446744073709551615";
+    testValue(expected, event -> {
+      BigInteger big = new BigInteger(expected);
+      assertEquals(big, event.value());
+      assertFalse(event.isArray());
+      assertFalse(event.isObject());
+      assertTrue(event.isNumber());
+      assertFalse(event.isNull());
+      assertFalse(event.isBoolean());
+      assertFalse(event.isString());
+      assertEquals(big.intValue(), (int)event.integerValue());
+      assertEquals(big.longValue(), (long)event.longValue());
+      assertEquals(big.floatValue(), event.floatValue(), 0.01f);
+      assertEquals(big.doubleValue(), event.doubleValue(), 0.01d);
       assertThrowCCE(event,
         JsonEvent::stringValue,
         JsonEvent::booleanValue,
