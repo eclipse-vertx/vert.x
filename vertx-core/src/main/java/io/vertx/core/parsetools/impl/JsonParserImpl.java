@@ -239,7 +239,12 @@ public class JsonParserImpl implements JsonParser {
         }
         case VALUE_NUMBER_INT: {
           try {
-            event = new JsonEventImpl(token, JsonEventType.VALUE, field, parser.getLongValue());
+            Number number = parser.getNumberValue();
+            if (number instanceof Integer) {
+              // Backward compat
+              number = (long) (int) number;
+            }
+            event = new JsonEventImpl(token, JsonEventType.VALUE, field, number);
           } catch (IOException e) {
             handle(e);
             continue;
