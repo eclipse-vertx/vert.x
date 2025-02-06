@@ -1436,4 +1436,27 @@ public class LocalEventBusTest extends EventBusTestBase {
     });
     await();
   }
+
+  @Test
+  public void testMessageConsumptionStayOnWorkerThreadAfterResume() {
+    ContextInternal worker = ((VertxInternal) vertx).createWorkerContext();
+    worker.runOnContext(v -> {
+      EventBus bus = vertx.eventBus();
+      AtomicBoolean enabled = new AtomicBoolean(false);
+      MessageConsumer<String> consumer = bus.consumer(ADDRESS1, msg -> {
+        assertTrue(enabled.get());
+        assertTrue(worker.inThread());
+        testComplete();
+      });
+      consumer.pause();
+      MessageProducer<String> sender = bus.sender(ADDRESS1);
+      sender.write("msg").onComplete(onSuccess(v2 -> {
+        worker.runOnContext(v3 -> {
+          enabled.set(true);
+          consumer.resume();
+        });
+      }));
+    });
+    await();
+  }
 }
