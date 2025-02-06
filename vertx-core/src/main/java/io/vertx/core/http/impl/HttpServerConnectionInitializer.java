@@ -22,11 +22,9 @@ import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
-import io.netty.incubator.codec.http3.Http3ServerConnectionHandler;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpSettings;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.net.SslChannelProvider;
@@ -39,6 +37,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
+
+import static io.vertx.core.net.impl.VertxHandler.*;
 
 /**
  * A channel initializer that takes care of configuring a blank channel for HTTP to Vert.x {@link io.vertx.core.http.HttpServerRequest}.
@@ -181,8 +181,8 @@ class HttpServerConnectionInitializer {
   private void configureHttp3Handler(ChannelPipeline pipeline) {
     VertxHttp3ConnectionHandler<Http3ServerConnection> handler = buildHttp3ConnectionHandler(context,
       connectionHandler);
-    pipeline.replace(VertxHandler.class, "handler", handler.getHttp3ConnectionHandler());
-    pipeline.addLast(handler);
+    pipeline.replace("handler", "handler", handler);
+    pipeline.addLast(H3_SRV_CONNECTION_HANDLER_NAME, handler.getHttp3ConnectionHandler());
   }
 
   void configureHttp3Pipeline(ChannelPipeline pipeline) {
