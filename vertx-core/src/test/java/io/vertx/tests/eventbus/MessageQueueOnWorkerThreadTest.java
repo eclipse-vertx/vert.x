@@ -12,10 +12,9 @@
 package io.vertx.tests.eventbus;
 
 import io.vertx.core.*;
-import io.vertx.core.eventbus.impl.clustered.Serializer;
 import io.vertx.core.impl.VertxBootstrapImpl;
-import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.core.spi.cluster.impl.NodeSelector;
+import io.vertx.core.spi.cluster.ClusteredNode;
+import io.vertx.core.eventbus.impl.clustered.NodeSelector;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
@@ -26,8 +25,6 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * This test verifies the {@link Serializer} mechanism works when used from a worker context or execute blocking.
- * <p>
  * See <a href="https://github.com/eclipse-vertx/vert.x/issues/4128">issue on GitHub</a>
  */
 public class MessageQueueOnWorkerThreadTest extends VertxTestBase {
@@ -75,11 +72,11 @@ public class MessageQueueOnWorkerThreadTest extends VertxTestBase {
   }
 
   private static class CustomNodeSelector implements NodeSelector {
-    ClusterManager clusterManager;
+    ClusteredNode clusterManager;
     String nodeId;
 
     @Override
-    public void init(Vertx vertx, ClusterManager clusterManager) {
+    public void init(ClusteredNode clusterManager) {
       this.clusterManager = clusterManager;
     }
 
@@ -89,17 +86,17 @@ public class MessageQueueOnWorkerThreadTest extends VertxTestBase {
     }
 
     @Override
-    public void selectForSend(String address, Promise<String> promise) {
+    public void selectForSend(String address, Completable<String> promise) {
       try {
         NANOSECONDS.sleep(150);
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
       }
-      promise.tryComplete(nodeId);
+      promise.succeed(nodeId);
     }
 
     @Override
-    public void selectForPublish(String address, Promise<Iterable<String>> promise) {
+    public void selectForPublish(String address, Completable<Iterable<String>> promise) {
       throw new UnsupportedOperationException();
     }
   }

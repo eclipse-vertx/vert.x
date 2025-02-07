@@ -16,9 +16,9 @@ import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.impl.VertxBootstrapImpl;
 import io.vertx.core.internal.VertxBootstrap;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.spi.cluster.ClusteredNode;
 import io.vertx.core.spi.cluster.NodeInfo;
-import io.vertx.core.spi.cluster.impl.NodeSelector;
+import io.vertx.core.eventbus.impl.clustered.NodeSelector;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
@@ -95,11 +95,11 @@ public class CustomNodeSelectorTest extends VertxTestBase {
   }
 
   private static class CustomNodeSelector implements NodeSelector {
-    private ClusterManager clusterManager;
+    private ClusteredNode clusterManager;
     private String rack;
 
     @Override
-    public void init(Vertx vertx, ClusterManager clusterManager) {
+    public void init(ClusteredNode clusterManager) {
       this.clusterManager = clusterManager;
     }
 
@@ -109,12 +109,12 @@ public class CustomNodeSelectorTest extends VertxTestBase {
     }
 
     @Override
-    public void selectForSend(String address, Promise<String> promise) {
+    public void selectForSend(String address, Completable<String> promise) {
       promise.fail("Not implemented");
     }
 
     @Override
-    public void selectForPublish(String address, Promise<Iterable<String>> promise) {
+    public void selectForPublish(String address, Completable<Iterable<String>> promise) {
       List<String> nodes = clusterManager.getNodes();
       CompositeFuture future = nodes.stream()
         .map(nodeId -> {

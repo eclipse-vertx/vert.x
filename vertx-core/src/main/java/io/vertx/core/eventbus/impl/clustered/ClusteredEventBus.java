@@ -36,7 +36,6 @@ import io.vertx.core.net.impl.NetClientBuilder;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeInfo;
-import io.vertx.core.spi.cluster.impl.NodeSelector;
 import io.vertx.core.spi.cluster.RegistrationInfo;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
@@ -220,25 +219,20 @@ public class ClusteredEventBus extends EventBusImpl {
     } else if (options.isLocalOnly()) {
       sendLocally(message, writePromise);
     } else {
-      Serializer serializer = Serializer.get(ctx);
       if (message.isSend()) {
-        Promise<String> promise = ctx.promise();
-        serializer.queue(message, nodeSelector::selectForSend, promise);
-        promise.future().onComplete(ar -> {
-          if (ar.succeeded()) {
-            sendToNode(ar.result(), message, writePromise);
+        nodeSelector.selectForSend(message.address(), (nodeId, failure) -> {
+          if (failure == null) {
+            sendToNode(nodeId, message, writePromise);
           } else {
-            sendOrPublishFailed(writePromise, ar.cause());
+            sendOrPublishFailed(writePromise, failure);
           }
         });
       } else {
-        Promise<Iterable<String>> promise = ctx.promise();
-        serializer.queue(message, nodeSelector::selectForPublish, promise);
-        promise.future().onComplete(ar -> {
-          if (ar.succeeded()) {
-            sendToNodes(ar.result(), message, writePromise);
+        nodeSelector.selectForPublish(message.address(), (nodeIds, failure) -> {
+          if (failure == null) {
+            sendToNodes(nodeIds, message, writePromise);
           } else {
-            sendOrPublishFailed(writePromise, ar.cause());
+            sendOrPublishFailed(writePromise, failure);
           }
         });
       }

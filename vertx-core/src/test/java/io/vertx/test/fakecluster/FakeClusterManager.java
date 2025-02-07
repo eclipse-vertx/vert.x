@@ -49,10 +49,19 @@ public class FakeClusterManager implements ClusterManager {
   private NodeListener nodeListener;
   private RegistrationListener registrationListener;
   private VertxInternal vertx;
+  private volatile long getRegistrationsLatency = 0L;
 
   @Override
   public void init(Vertx vertx) {
     this.vertx = (VertxInternal) vertx;
+  }
+
+  public long getRegistrationsLatency() {
+    return getRegistrationsLatency;
+  }
+
+  public void getRegistrationsLatency(long getRegistrationsLatency) {
+    this.getRegistrationsLatency = getRegistrationsLatency;
   }
 
   private static void doJoin(String nodeID, FakeClusterManager node) {
@@ -273,7 +282,15 @@ public class FakeClusterManager implements ClusterManager {
 
   @Override
   public void getRegistrations(String address, Promise<List<RegistrationInfo>> promise) {
-    promise.complete(registrations.get(address));
+    long delay = getRegistrationsLatency;
+    if (delay > 0L) {
+      vertx
+        .timer(delay)
+        .map(v -> registrations.get(address))
+        .onComplete(promise);
+    } else {
+      promise.succeed(registrations.get(address));
+    }
   }
 
   public static void reset() {
