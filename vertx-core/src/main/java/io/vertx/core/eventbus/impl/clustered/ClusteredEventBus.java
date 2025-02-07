@@ -13,7 +13,6 @@ package io.vertx.core.eventbus.impl.clustered;
 
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.eventbus.AddressHelper;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.EventBusOptions;
 import io.vertx.core.eventbus.MessageCodec;
@@ -41,6 +40,11 @@ import io.vertx.core.spi.cluster.impl.NodeSelector;
 import io.vertx.core.spi.cluster.RegistrationInfo;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.UUID;
@@ -86,7 +90,34 @@ public class ClusteredEventBus extends EventBusImpl {
     this.client = client;
   }
 
-  private NetClient createNetClient(VertxInternal vertx, NetClientOptions clientOptions) {
+    /**
+     * Pick a default address for clustered event bus when none was provided by either the user or the cluster manager.
+     */
+    public static String defaultAddress() {
+      Enumeration<NetworkInterface> nets;
+      try {
+        nets = NetworkInterface.getNetworkInterfaces();
+      } catch (SocketException e) {
+        return null;
+      }
+      NetworkInterface netinf;
+      while (nets.hasMoreElements()) {
+        netinf = nets.nextElement();
+
+        Enumeration<InetAddress> addresses = netinf.getInetAddresses();
+
+        while (addresses.hasMoreElements()) {
+          InetAddress address = addresses.nextElement();
+          if (!address.isAnyLocalAddress() && !address.isMulticastAddress()
+            && !(address instanceof Inet6Address)) {
+            return address.getHostAddress();
+          }
+        }
+      }
+      return null;
+    }
+
+    private NetClient createNetClient(VertxInternal vertx, NetClientOptions clientOptions) {
     NetClientBuilder builder = new NetClientBuilder(vertx, clientOptions);
     VertxMetrics metricsSPI = vertx.metricsSPI();
     if (metricsSPI != null) {
@@ -263,7 +294,7 @@ public class ClusteredEventBus extends EventBusImpl {
     if ((host = clusterManager.clusterHost()) != null) {
       return host;
     }
-    return AddressHelper.defaultAddress();
+    return defaultAddress();
   }
 
   private int getClusterPublicPort(int actualPort) {
