@@ -9,29 +9,23 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.spi.cluster.impl.selector;
+package io.vertx.core.eventbus.impl.clustered.selector;
 
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.IntUnaryOperator;
+import java.util.Collections;
 
 /**
  * @author Thomas Segismont
  */
-class Index implements IntUnaryOperator {
+public enum NullRoundRobinSelector implements RoundRobinSelector {
+  INSTANCE;
 
-  private final int max;
-  private final AtomicInteger idx = new AtomicInteger(0);
-
-  Index(int max) {
-    this.max = max;
-  }
-
-  int nextVal() {
-    return idx.getAndUpdate(this);
+  @Override
+  public String selectForSend() {
+    return null;
   }
 
   @Override
-  public int applyAsInt(int i) {
-    return i == max - 1 ? 0 : i + 1;
+  public Iterable<String> selectForPublish() {
+    return Collections.emptyList();
   }
 }

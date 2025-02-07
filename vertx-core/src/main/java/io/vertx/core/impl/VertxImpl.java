@@ -61,7 +61,7 @@ import io.vertx.core.spi.ExecutorServiceFactory;
 import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.VertxThreadFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.core.spi.cluster.impl.NodeSelector;
+import io.vertx.core.eventbus.impl.clustered.NodeSelector;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.io.File;
@@ -250,7 +250,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   Future<Vertx> initClustered(VertxOptions options) {
-    nodeSelector.init(this, clusterManager);
+    nodeSelector.init(clusterManager);
     clusterManager.registrationListener(nodeSelector);
     clusterManager.init(this);
     Promise<Void> initPromise = Promise.promise();

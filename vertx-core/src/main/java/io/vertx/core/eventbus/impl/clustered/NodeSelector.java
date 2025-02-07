@@ -9,11 +9,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.spi.cluster.impl;
+package io.vertx.core.eventbus.impl.clustered;
 
+import io.vertx.core.Completable;
 import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
-import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.spi.cluster.ClusteredNode;
 import io.vertx.core.spi.cluster.RegistrationListener;
 
 /**
@@ -27,7 +27,7 @@ public interface NodeSelector extends RegistrationListener {
   /**
    * Invoked before the {@code vertx} instance tries to join the cluster.
    */
-  void init(Vertx vertx, ClusterManager clusterManager);
+  void init(ClusteredNode clusterManager);
 
   /**
    * Invoked after the clustered {@link io.vertx.core.eventbus.EventBus} has started.
@@ -37,10 +37,15 @@ public interface NodeSelector extends RegistrationListener {
   /**
    * Select a node for sending the given {@code message}.
    *
+   * <p> The provided {@code promise} succeeds with a node id of selected node among the list of nodes available for the
+   * provided {@code address}, the value is {@code null} when the list of nodes is empty or is not know by the cluster
+   * manager.</p>
+   *
    * <p> The provided {@code promise} needs to be completed with {@link Promise#tryComplete} and {@link Promise#tryFail}
-   * as it might completed outside the selector.
+   * as it might be completed outside the selector.</p>
+   *
    */
-  void selectForSend(String address, Promise<String> promise);
+  void selectForSend(String address, Completable<String> promise);
 
   /**
    * Select a node for publishing the given {@code message}.
@@ -48,6 +53,6 @@ public interface NodeSelector extends RegistrationListener {
    * <p> The provided {@code promise} needs to be completed with {@link Promise#tryComplete} and {@link Promise#tryFail}
    * as it might completed outside the selector.
    */
-  void selectForPublish(String address, Promise<Iterable<String>> promise);
+  void selectForPublish(String address, Completable<Iterable<String>> promise);
 
 }

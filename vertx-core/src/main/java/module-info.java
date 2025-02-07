@@ -107,7 +107,6 @@ module io.vertx.core {
   exports io.vertx.core.streams.impl to io.vertx.core.tests;
   exports io.vertx.core.eventbus.impl to io.vertx.core.tests;
   exports io.vertx.core.eventbus.impl.clustered to io.vertx.core.tests;
-  exports io.vertx.core.spi.cluster.impl to io.vertx.core.tests;
   exports io.vertx.core.file.impl to io.vertx.core.tests;
   exports io.vertx.core.http.impl to io.vertx.core.tests;
   exports io.vertx.core.http.impl.headers to io.vertx.core.tests;
@@ -115,7 +114,7 @@ module io.vertx.core {
   exports io.vertx.core.json.pointer.impl to io.vertx.core.tests;
   exports io.vertx.core.impl.transports to io.vertx.core.tests;
   exports io.vertx.core.net.impl.pkcs1 to io.vertx.core.tests;
-  exports io.vertx.core.spi.cluster.impl.selector to io.vertx.core.tests;
+  exports io.vertx.core.eventbus.impl.clustered.selector to io.vertx.core.tests;
   exports io.vertx.core.impl.verticle to io.vertx.core.tests;
   exports io.vertx.core.impl.deployment to io.vertx.core.tests;
   exports io.vertx.core.impl.buffer to io.vertx.core.tests;

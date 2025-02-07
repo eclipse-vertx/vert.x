@@ -14,6 +14,7 @@ package io.vertx.core.impl;
 import io.vertx.core.*;
 import io.vertx.core.impl.transports.NioTransport;
 import io.vertx.core.internal.VertxBootstrap;
+import io.vertx.core.eventbus.impl.clustered.DefaultNodeSelector;
 import io.vertx.core.spi.context.executor.EventExecutorProvider;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.file.impl.FileResolverImpl;
@@ -27,8 +28,7 @@ import io.vertx.core.spi.VertxServiceProvider;
 import io.vertx.core.spi.VertxThreadFactory;
 import io.vertx.core.spi.VertxTracerFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.core.spi.cluster.impl.NodeSelector;
-import io.vertx.core.spi.cluster.impl.DefaultNodeSelector;
+import io.vertx.core.eventbus.impl.clustered.NodeSelector;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 

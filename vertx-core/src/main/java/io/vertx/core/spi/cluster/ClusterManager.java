@@ -41,7 +41,7 @@ import java.util.Map;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface ClusterManager extends VertxServiceProvider {
+public interface ClusterManager extends VertxServiceProvider, ClusteredNode {
 
   @Override
   default void init(VertxBootstrap builder) {
@@ -78,16 +78,6 @@ public interface ClusterManager extends VertxServiceProvider {
   void getCounter(String name, Promise<Counter> promise);
 
   /**
-   * Return the unique node identifier for this node.
-   */
-  String getNodeId();
-
-  /**
-   * Return a list of node identifiers corresponding to the nodes in the cluster.
-   */
-  List<String> getNodes();
-
-  /**
    * Set a listener that will be called when a node joins or leaves the cluster.
    */
   void nodeListener(NodeListener listener);
@@ -96,18 +86,6 @@ public interface ClusterManager extends VertxServiceProvider {
    * Store the details about this clustered node.
    */
   void setNodeInfo(NodeInfo nodeInfo, Promise<Void> promise);
-
-  /**
-   * Get details about this clustered node.
-   */
-  NodeInfo getNodeInfo();
-
-  /**
-   * Get details about a specific node in the cluster.
-   *
-   * @param nodeId the clustered node id
-   */
-  void getNodeInfo(String nodeId, Promise<NodeInfo> promise);
 
   /**
    * Join the cluster.
@@ -143,11 +121,6 @@ public interface ClusterManager extends VertxServiceProvider {
    * Signal removal of a messaging handler registration to other nodes in the cluster.
    */
   void removeRegistration(String address, RegistrationInfo registrationInfo, Promise<Void> promise);
-
-  /**
-   * Get the messaging handler currently registered in the cluster.
-   */
-  void getRegistrations(String address, Promise<List<RegistrationInfo>> promise);
 
   /**
    * If the cluster manager has its own server for data/membership, this returns the host it is listening to.
