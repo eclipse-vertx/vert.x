@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.spi.cluster.impl.selector;
+package io.vertx.core.eventbus.impl.clustered.selector;
 
 /**
  * @author Thomas Segismont

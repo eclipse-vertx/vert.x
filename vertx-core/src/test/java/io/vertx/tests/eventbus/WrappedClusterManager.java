@@ -11,13 +11,14 @@
 
 package io.vertx.tests.eventbus;
 
+import io.vertx.core.Completable;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.shareddata.AsyncMap;
 import io.vertx.core.shareddata.Counter;
 import io.vertx.core.shareddata.Lock;
 import io.vertx.core.spi.cluster.*;
-import io.vertx.core.spi.cluster.impl.NodeSelector;
+import io.vertx.core.eventbus.impl.clustered.NodeSelector;
 
 import java.util.List;
 import java.util.Map;
@@ -106,19 +107,19 @@ public class WrappedClusterManager implements ClusterManager {
     nodeSelector = (NodeSelector) registrationListener;
     NodeSelector interceptor = new NodeSelector() {
       @Override
-      public void init(Vertx vertx, ClusterManager clusterManager) {
-        nodeSelector.init(vertx, clusterManager);
+      public void init(ClusteredNode clusterManager) {
+        nodeSelector.init(clusterManager);
       }
       @Override
       public void eventBusStarted() {
         nodeSelector.eventBusStarted();
       }
       @Override
-      public void selectForSend(String address, Promise<String> promise) {
+      public void selectForSend(String address, Completable<String> promise) {
         nodeSelector.selectForSend(address, promise);
       }
       @Override
-      public void selectForPublish(String address, Promise<Iterable<String>> promise) {
+      public void selectForPublish(String address, Completable<Iterable<String>> promise) {
         nodeSelector.selectForPublish(address, promise);
       }
       @Override

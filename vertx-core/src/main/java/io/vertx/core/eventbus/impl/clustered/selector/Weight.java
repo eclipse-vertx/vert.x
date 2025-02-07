@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.spi.cluster.impl.selector;
+package io.vertx.core.eventbus.impl.clustered.selector;
 
 public class Weight implements Comparable<Weight> {
   private int value;
@@ -22,7 +22,7 @@ public class Weight implements Comparable<Weight> {
     return value;
   }
 
-  Weight increment() {
+  public Weight increment() {
     value++;
     return this;
   }

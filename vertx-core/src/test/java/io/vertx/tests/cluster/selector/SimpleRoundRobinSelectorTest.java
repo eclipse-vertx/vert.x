@@ -11,7 +11,7 @@
 
 package io.vertx.tests.cluster.selector;
 
-import io.vertx.core.spi.cluster.impl.selector.SimpleRoundRobinSelector;
+import io.vertx.core.eventbus.impl.clustered.selector.SimpleRoundRobinSelector;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
