@@ -13,6 +13,7 @@ package io.vertx.core.net.impl;
 
 import io.netty.buffer.AdaptiveByteBufAllocator;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufHolder;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.EmptyByteBuf;
@@ -22,7 +23,9 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPromise;
+import io.netty.handler.stream.ChunkedNioFile;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.incubator.codec.http3.*;
 import io.netty.incubator.codec.quic.QuicChannel;
@@ -66,7 +69,7 @@ public final class VertxHandler<C extends VertxConnection> extends ChannelDuplex
   private Handler<C> removeHandler;
   private boolean isHttp3;
   private boolean isServer;
-  private boolean clientWithHttp3Framing = false;
+  private boolean clientWithHttp3Framing = true;
   private Channel streamChannel;
 
   private VertxHandler(Function<ChannelHandlerContext, C> connectionFactory) {
@@ -120,7 +123,12 @@ public final class VertxHandler<C extends VertxConnection> extends ChannelDuplex
         setConnection(connectionFactory.apply(ctx));
 
         if (ctx.pipeline().get(H3_SRV_CONNECTION_HANDLER_NAME) == null) {
-          ctx.pipeline().addLast(H3_SRV_CONNECTION_HANDLER_NAME, new Http3ServerConnectionHandler(new Http3FramedStreamChannelHandler()));
+          ctx.pipeline().addLast(H3_SRV_CONNECTION_HANDLER_NAME, new Http3ServerConnectionHandler(new ChannelInitializer<>() {
+            @Override
+            protected void initChannel(Channel ch) {
+              ch.pipeline().addLast(new Http3FramedStreamChannelHandler());
+            }
+          }));
         }
       } else {
         ctx.pipeline().addLast(H3_CLIENT_CONNECTION_HANDLER_NAME, new Http3ClientConnectionHandler());
@@ -244,8 +252,19 @@ public final class VertxHandler<C extends VertxConnection> extends ChannelDuplex
   }
 
   private void writeHttp3(Channel channel, Object msg, ChannelPromise promise, boolean flush) {
-    if ((isServer || clientWithHttp3Framing) && !(msg instanceof EmptyByteBuf)) {  //TODO: clientWithHttp3Framing block should be removed
-      msg = new DefaultHttp3UnknownFrame(MIN_RESERVED_FRAME_TYPE, (ByteBuf) msg);
+    if ((isServer || clientWithHttp3Framing) && !(msg instanceof EmptyByteBuf)) {
+      //TODO: clientWithHttp3Framing block should be removed
+      if (msg instanceof ChunkedNioFile) {
+        ByteBufAllocator alloc = channel.alloc();
+        try {
+          ((ChunkedNioFile) msg).readChunk(alloc);
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
+        msg = alloc.buffer();
+      } else {
+        msg = new DefaultHttp3UnknownFrame(MIN_RESERVED_FRAME_TYPE, (ByteBuf) msg);
+      }
     } else {
       ByteBuf content = (ByteBuf) msg;
       ByteBuf out = channel.alloc().directBuffer();
