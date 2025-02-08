@@ -27,7 +27,10 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.stream.ChunkedNioFile;
 import io.netty.handler.timeout.IdleStateEvent;
-import io.netty.incubator.codec.http3.*;
+import io.netty.incubator.codec.http3.DefaultHttp3UnknownFrame;
+import io.netty.incubator.codec.http3.Http3;
+import io.netty.incubator.codec.http3.Http3ClientConnectionHandler;
+import io.netty.incubator.codec.http3.Http3ServerConnectionHandler;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.netty.incubator.codec.quic.QuicStreamType;
@@ -123,7 +126,8 @@ public final class VertxHandler<C extends VertxConnection> extends ChannelDuplex
         setConnection(connectionFactory.apply(ctx));
 
         if (ctx.pipeline().get(H3_SRV_CONNECTION_HANDLER_NAME) == null) {
-          ctx.pipeline().addLast(H3_SRV_CONNECTION_HANDLER_NAME, new Http3ServerConnectionHandler(new ChannelInitializer<>() {
+          ctx.pipeline().addLast(H3_SRV_CONNECTION_HANDLER_NAME,
+            new Http3ServerConnectionHandler(new ChannelInitializer<>() {
             @Override
             protected void initChannel(Channel ch) {
               ch.pipeline().addLast(new Http3FramedStreamChannelHandler());
@@ -237,9 +241,11 @@ public final class VertxHandler<C extends VertxConnection> extends ChannelDuplex
     } else {
       Future<QuicStreamChannel> streamChannelFuture;
       if (clientWithHttp3Framing) {  //TODO: clientWithHttp3Framing block should be removed
-        streamChannelFuture = Http3.newRequestStream(((QuicChannel) chctx.channel()), new Http3FramedStreamChannelHandler());
+        streamChannelFuture = Http3.newRequestStream(((QuicChannel) chctx.channel()),
+          new Http3FramedStreamChannelHandler());
       } else {
-        streamChannelFuture = ((QuicChannel) chctx.channel()).createStream(QuicStreamType.BIDIRECTIONAL, new ClientStreamChannelWithoutHttp3FramingHandler());
+        streamChannelFuture = ((QuicChannel) chctx.channel()).createStream(QuicStreamType.BIDIRECTIONAL,
+          new ClientStreamChannelWithoutHttp3FramingHandler());
       }
       streamChannelFuture.addListener((GenericFutureListener<Future<QuicStreamChannel>>) streamChannelFuture0 -> {
         if (streamChannelFuture0.isSuccess()) {
@@ -308,7 +314,7 @@ public final class VertxHandler<C extends VertxConnection> extends ChannelDuplex
       log.info((isServer ? "Server" : "Client") + ": Received msg with class type: " + msg.getClass().getSimpleName());
       if (msg instanceof ByteBufHolder) {
         getConnection().read(((ByteBufHolder) msg).content());
-      } else if (msg instanceof ByteBuf){
+      } else if (msg instanceof ByteBuf) {
         getConnection().read(msg);
       } else {
         super.channelRead(ctx, msg);
