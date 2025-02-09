@@ -64,7 +64,7 @@ public final class VertxHandler<C extends VertxConnection> extends ChannelDuplex
     return handler;
   }
 
-  public static final String H3_SRV_CONNECTION_HANDLER_NAME = "h3ServerHandler";
+  public static final String H3_SERVER_CONNECTION_HANDLER_NAME = "h3ServerHandler";
   public static final String H3_CLIENT_CONNECTION_HANDLER_NAME = "h3ClientHandler";
   private final Function<ChannelHandlerContext, C> connectionFactory;
   private C conn;
@@ -125,8 +125,8 @@ public final class VertxHandler<C extends VertxConnection> extends ChannelDuplex
       if (isServer) {
         setConnection(connectionFactory.apply(ctx));
 
-        if (ctx.pipeline().get(H3_SRV_CONNECTION_HANDLER_NAME) == null) {
-          ctx.pipeline().addLast(H3_SRV_CONNECTION_HANDLER_NAME,
+        if (ctx.pipeline().get(H3_SERVER_CONNECTION_HANDLER_NAME) == null) {
+          ctx.pipeline().addLast(H3_SERVER_CONNECTION_HANDLER_NAME,
             new Http3ServerConnectionHandler(new ChannelInitializer<>() {
             @Override
             protected void initChannel(Channel ch) {

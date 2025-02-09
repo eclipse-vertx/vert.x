@@ -182,7 +182,7 @@ class HttpServerConnectionInitializer {
     VertxHttp3ConnectionHandler<Http3ServerConnection> handler = buildHttp3ConnectionHandler(context,
       connectionHandler);
     pipeline.replace("handler", "handler", handler);
-    pipeline.addLast(H3_SRV_CONNECTION_HANDLER_NAME, handler.getHttp3ConnectionHandler());
+    pipeline.addLast(H3_SERVER_CONNECTION_HANDLER_NAME, handler.getHttp3ConnectionHandler());
   }
 
   void configureHttp3Pipeline(ChannelPipeline pipeline) {
