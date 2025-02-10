@@ -10,13 +10,35 @@
  */
 package io.vertx.tests.net;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPipeline;
+import io.netty.handler.codec.http.DefaultFullHttpRequest;
+import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.incubator.codec.http3.Http3FrameToHttpObjectCodec;
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Context;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Promise;
+import io.vertx.core.ThreadingModel;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.tests.http.HttpOptionsFactory;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.vertx.test.http.HttpTestBase.*;
 
@@ -89,13 +111,6 @@ public class Http3NetTest extends NetTest {
   @Ignore
   @Override
   @Test
-  public void testSniImplicitServerNameDisabledForShortname1() throws Exception {
-    super.testSniImplicitServerNameDisabledForShortname1();
-  }
-
-  @Ignore
-  @Override
-  @Test
   public void testClientSniMultipleServerName() throws Exception {
     super.testClientSniMultipleServerName();
   }
@@ -110,13 +125,6 @@ public class Http3NetTest extends NetTest {
   @Ignore
   @Override
   @Test
-  public void testServerCloseHandlersCloseFromServer() {
-    super.testServerCloseHandlersCloseFromServer();
-  }
-
-  @Ignore
-  @Override
-  @Test
   public void testWriteHandlerSuccess() throws Exception {
     super.testWriteHandlerSuccess();
   }
@@ -126,13 +134,6 @@ public class Http3NetTest extends NetTest {
   @Test
   public void testSniWithServerNameStartTLS() throws Exception {
     super.testSniWithServerNameStartTLS();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testClientLogging() throws Exception {
-    super.testClientLogging();
   }
 
   @Ignore
@@ -195,27 +196,6 @@ public class Http3NetTest extends NetTest {
   @Ignore
   @Override
   @Test
-  public void testServerShutdownOverride() throws Exception {
-    super.testServerShutdownOverride();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testSniWithServerNameTrustFallbackFail() {
-    super.testSniWithServerNameTrustFallbackFail();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testServerLogging() throws Exception {
-    super.testServerLogging();
-  }
-
-  @Ignore
-  @Override
-  @Test
   public void testNetClientInternal() throws Exception {
 
     super.testNetClientInternal_(HttpOptionsFactory.createH3HttpServerOptions(1234, "localhost"), false);
@@ -224,22 +204,8 @@ public class Http3NetTest extends NetTest {
   @Ignore
   @Override
   @Test
-  public void testServerNetSocketShouldBeClosedWhenTheClosedHandlerIsCalled() throws Exception {
-    super.testServerNetSocketShouldBeClosedWhenTheClosedHandlerIsCalled();
-  }
-
-  @Ignore
-  @Override
-  @Test
   public void testNetServerInternal() throws Exception {
     super.testNetServerInternal();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testServerWithIdleTimeoutSendChunkedFile() throws Exception {
-    super.testServerWithIdleTimeoutSendChunkedFile();
   }
 
   @Ignore
@@ -303,13 +269,6 @@ public class Http3NetTest extends NetTest {
   @Ignore
   @Override
   @Test
-  public void testListenOnPortNoHandler() {
-    super.testListenOnPortNoHandler();
-  }
-
-  @Ignore
-  @Override
-  @Test
   public void sendFileServerToClient() throws Exception {
     super.sendFileServerToClient();
   }
@@ -338,13 +297,6 @@ public class Http3NetTest extends NetTest {
   @Ignore
   @Override
   @Test
-  public void testHalfCloseCallsEndHandlerAfterBuffersAreDelivered() throws Exception {
-    super.testHalfCloseCallsEndHandlerAfterBuffersAreDelivered();
-  }
-
-  @Ignore
-  @Override
-  @Test
   public void testNetServerInternalTLS() throws Exception {
     super.testNetServerInternalTLS();
   }
@@ -366,13 +318,6 @@ public class Http3NetTest extends NetTest {
   @Ignore
   @Override
   @Test
-  public void testSniWithServerNameTrustFail() {
-    super.testSniWithServerNameTrustFail();
-  }
-
-  @Ignore
-  @Override
-  @Test
   public void testWorkerClient() throws Exception {
     super.testWorkerClient();
   }
@@ -387,64 +332,8 @@ public class Http3NetTest extends NetTest {
   @Ignore
   @Override
   @Test
-  public void testSniWithoutServerNameUsesTheFirstKeyStoreEntry2() throws Exception {
-    super.testSniWithoutServerNameUsesTheFirstKeyStoreEntry2();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testTLSClientUntrustedServer() throws Exception {
-    super.testTLSClientUntrustedServer();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testSniWithUnknownServer2() throws Exception {
-    super.testSniWithUnknownServer2();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testClientLocalAddress() {
-    super.testClientLocalAddress();
-  }
-
-  @Ignore
-  @Override
-  @Test
   public void testTLSHostnameCertCheckCorrect() {
     super.testTLSHostnameCertCheckCorrect();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testClientIdleTimeout1() {
-    super.testClientIdleTimeout1();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testClientIdleTimeout4() {
-    super.testClientIdleTimeout4();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testClientIdleTimeout5() {
-    super.testClientIdleTimeout5();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testClientWorkerMissBufferWhenBufferArriveBeforeConnectCallback() throws Exception {
-    super.testClientWorkerMissBufferWhenBufferArriveBeforeConnectCallback();
   }
 
   @Ignore
@@ -494,37 +383,8 @@ public class Http3NetTest extends NetTest {
   @Ignore
   @Override
   @Test
-  public void testFanout() throws Exception {
-    super.testFanout();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testListen() {
-    super.testListen();
-  }
-
-
-  @Ignore
-  @Override
-  @Test
-  public void testServerIdleTimeout6() {
-    super.testServerIdleTimeout6();
-  }
-
-  @Ignore
-  @Override
-  @Test
   public void testStartTLSClientTrustAll() throws Exception {
     super.testStartTLSClientTrustAll();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testNoLogging() throws Exception {
-    super.testNoLogging();
   }
 
   @Ignore
@@ -544,13 +404,6 @@ public class Http3NetTest extends NetTest {
   @Ignore
   @Override
   @Test
-  public void testClientCloseHandlersCloseFromServer() {
-    super.testClientCloseHandlersCloseFromServer();
-  }
-
-  @Ignore
-  @Override
-  @Test
   public void testMissingClientSSLOptions() throws Exception {
     super.testMissingClientSSLOptions();
   }
@@ -563,13 +416,6 @@ public class Http3NetTest extends NetTest {
   }
 
 
-  @Ignore
-  @Override
-  @Test
-  public void testReceiveMessageAfterExplicitClose() throws Exception {
-    super.testReceiveMessageAfterExplicitClose();
-  }
-
   //TODO: resolve group1
 
   @Ignore
@@ -577,13 +423,6 @@ public class Http3NetTest extends NetTest {
   @Test
   public void testClientMultiThreaded() throws Exception {
     super.testClientMultiThreaded();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testWorkerServer() {
-    super.testWorkerServer();
   }
 
   @Ignore
@@ -598,13 +437,6 @@ public class Http3NetTest extends NetTest {
   @Test
   public void testInVerticle() throws Exception {
     super.testInVerticle();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testAsyncWriteIsFlushed() throws Exception {
-    super.testAsyncWriteIsFlushed();
   }
 
   //TODO: resolve group2
@@ -768,142 +600,9 @@ public class Http3NetTest extends NetTest {
   }
 
 
-  //TODO: resolve group4
-
-
-  @Ignore
-  @Override
-  @Test
-  public void testTLSServerSSLEnginePeerHost() throws Exception {
-    super.testTLSServerSSLEnginePeerHost();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testTLSClientTrustAll() throws Exception {
-    super.testTLSClientTrustAll();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testTLSClientTrustServerCert() throws Exception {
-    super.testTLSClientTrustServerCert();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testTLSClientCertNotRequired() throws Exception {
-    super.testTLSClientCertNotRequired();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testTLSClientCertRequired() throws Exception {
-    super.testTLSClientCertRequired();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testTLSCipherSuites() throws Exception {
-    super.testTLSCipherSuites();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testSpecificTlsProtocolVersion() throws Exception {
-    super.testSpecificTlsProtocolVersion();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testSniWithoutServerNameUsesTheFirstKeyStoreEntry1() throws Exception {
-    super.testSniWithoutServerNameUsesTheFirstKeyStoreEntry1();
-  }
-
-
-  @Ignore
-  @Override
-  @Test
-  public void testSniWithTrailingDotHost() throws Exception {
-    super.testSniWithTrailingDotHost();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testClientShutdown() throws Exception {
-    super.testClientShutdown();
-  }
 
 
   //TODO: resolve group5
-
-
-  @Ignore
-  @Override
-  @Test
-  public void testClientShutdownOverride() throws Exception {
-    super.testClientShutdownOverride();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testServerIdleTimeout1() {
-    super.testServerIdleTimeout1();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testServerIdleTimeout2() {
-    super.testServerIdleTimeout2();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testServerIdleTimeout3() {
-    super.testServerIdleTimeout3();
-  }
-
-
-  @Ignore
-  @Override
-  @Test
-  public void testWriteSameBufferMoreThanOnce() throws Exception {
-    super.testWriteSameBufferMoreThanOnce();
-  }
-
-
-  @Ignore
-  @Override
-  @Test
-  public void testSniImplicitServerNameDisabledForShortname2() throws Exception {
-    super.testSniImplicitServerNameDisabledForShortname2();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testSNIServerSSLEnginePeerHost() throws Exception {
-    super.testSNIServerSSLEnginePeerHost();
-  }
-
-
-  @Ignore
-  @Override
-  @Test
-  public void testServerCertificateMultiple() throws Exception {
-    super.testServerCertificateMultiple();
-  }
 
   @Ignore
   @Override
@@ -920,31 +619,6 @@ public class Http3NetTest extends NetTest {
     super.testSniWithServerNameTrust();
   }
 
-
-  @Ignore
-  @Override
-  @Test
-  public void testServerCertificateMultipleWithKeyPassword() throws Exception {
-    super.testServerCertificateMultipleWithKeyPassword();
-  }
-
-
-  @Ignore
-  @Override
-  @Test
-  public void testSniImplicitServerName() throws Exception {
-    super.testSniImplicitServerName();
-  }
-
-
-  @Ignore
-  @Override
-  @Test
-  public void testSniWithUnknownServer1() throws Exception {
-    super.testSniWithUnknownServer1();
-  }
-
-
   @Ignore
   @Override
   @Test
@@ -952,5 +626,12 @@ public class Http3NetTest extends NetTest {
     super.testTLSHostnameCertCheckIncorrect();
   }
 
+
+  @Ignore
+  @Override
+  @Test
+  public void testClientShutdown() throws Exception {
+    super.testClientShutdown();
+  }
 
 }
