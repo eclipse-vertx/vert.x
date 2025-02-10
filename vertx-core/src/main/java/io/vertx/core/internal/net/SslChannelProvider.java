@@ -150,7 +150,7 @@ public class SslChannelProvider {
     quicCodecBuilder
       // Enabling this option allows sending unreliable, connectionless data over QUIC
       // via QUIC datagrams. It is required for VertxHandler and net socket to function properly.
-      .datagram(50000, 50000)
+      .datagram(2000000, 2000000)
 
       .sslTaskExecutor(delegatedTaskExec)
       .maxIdleTimeout(sslOptions.getSslHandshakeTimeout(), sslOptions.getSslHandshakeTimeoutUnit())
