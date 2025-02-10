@@ -18,7 +18,6 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.incubator.codec.http3.Http3;
 import io.netty.incubator.codec.quic.InsecureQuicTokenHandler;
-import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicCodecBuilder;
 import io.netty.incubator.codec.quic.QuicSslContext;
 import io.netty.incubator.codec.quic.QuicSslContextBuilder;
@@ -149,6 +148,10 @@ public class SslChannelProvider {
   private static <T extends QuicCodecBuilder<T>> T configureQuicCodecBuilder(T quicCodecBuilder, SSLOptions sslOptions,
                                                                              Executor delegatedTaskExec) {
     quicCodecBuilder
+      // Enabling this option allows sending unreliable, connectionless data over QUIC
+      // via QUIC datagrams. It is required for VertxHandler and net socket to function properly.
+      .datagram(50000, 50000)
+
       .sslTaskExecutor(delegatedTaskExec)
       .maxIdleTimeout(sslOptions.getSslHandshakeTimeout(), sslOptions.getSslHandshakeTimeoutUnit())
       .initialMaxData(sslOptions.getHttp3InitialMaxData())
