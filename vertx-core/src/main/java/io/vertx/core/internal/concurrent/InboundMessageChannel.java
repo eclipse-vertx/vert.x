@@ -72,16 +72,20 @@ public class InboundMessageChannel<M> implements Predicate<M>, Runnable {
 
   @Override
   public final boolean test(M msg) {
-    while (true) {
-      long d = DEMAND_UPDATER.get(this);
-      if (d == 0L) {
-        return false;
-      } else if (d == Long.MAX_VALUE || DEMAND_UPDATER.compareAndSet(this, d, d - 1)) {
-        break;
+    if (consumerClosed) {
+      return false;
+    } else {
+      while (true) {
+        long d = DEMAND_UPDATER.get(this);
+        if (d == 0L) {
+          return false;
+        } else if (d == Long.MAX_VALUE || DEMAND_UPDATER.compareAndSet(this, d, d - 1)) {
+          break;
+        }
       }
+      handleMessage(msg);
+      return true;
     }
-    handleMessage(msg);
-    return true;
   }
 
   /**
@@ -162,12 +166,16 @@ public class InboundMessageChannel<M> implements Predicate<M>, Runnable {
     draining = true;
     try {
       int res = messageChannel.drain();
-      needsDrain = (res & MessageChannel.DRAIN_REQUIRED_MASK) != 0;
-      if ((res & MessageChannel.WRITABLE_MASK) != 0) {
-        if (producer.inThread()) {
-          handleResume();
-        } else {
-          producer.execute(this::handleResume);
+      if (consumerClosed) {
+        releaseMessages();
+      } else {
+        needsDrain = (res & MessageChannel.DRAIN_REQUIRED_MASK) != 0;
+        if ((res & MessageChannel.WRITABLE_MASK) != 0) {
+          if (producer.inThread()) {
+            handleResume();
+          } else {
+            producer.execute(this::handleResume);
+          }
         }
       }
     } finally {
@@ -242,7 +250,9 @@ public class InboundMessageChannel<M> implements Predicate<M>, Runnable {
       return;
     }
     consumerClosed = true;
-    releaseMessages();
+    if (!draining) {
+      releaseMessages();
+    }
   }
 
   private void releaseMessages() {

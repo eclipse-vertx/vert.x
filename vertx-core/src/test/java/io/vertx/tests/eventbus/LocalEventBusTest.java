@@ -1459,4 +1459,27 @@ public class LocalEventBusTest extends EventBusTestBase {
     });
     await();
   }
+
+  @Test
+  public void testUnregisterInHandler() {
+    waitFor(2);
+    MessageConsumerImpl<Object> consumer = (MessageConsumerImpl<Object>) vertx.eventBus().consumer(ADDRESS1);
+    consumer.discardHandler(msg -> {
+      assertEquals("msg-2", msg.body());
+      complete();
+    });
+    consumer.handler(msg -> {
+      consumer.unregister();
+      vertx.runOnContext(v -> {
+        complete();
+      });
+    });
+    consumer.pause();
+    vertx.eventBus().send(ADDRESS1, "msg-1");
+    vertx.eventBus().send(ADDRESS1, "msg-2");
+    vertx.runOnContext(v -> {
+      consumer.resume();
+    });
+    await();
+  }
 }
