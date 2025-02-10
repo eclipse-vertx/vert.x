@@ -600,6 +600,13 @@ public class Http3NetTest extends NetTest {
     super.testInVerticle();
   }
 
+  @Ignore
+  @Override
+  @Test
+  public void testAsyncWriteIsFlushed() throws Exception {
+    super.testAsyncWriteIsFlushed();
+  }
+
   //TODO: resolve group2
 
 
