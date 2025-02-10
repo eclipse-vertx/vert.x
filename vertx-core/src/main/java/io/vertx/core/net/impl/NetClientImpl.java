@@ -400,7 +400,7 @@ class NetClientImpl implements NetClientInternal {
       sslOptions,
       metrics,
       applicationLayerProtocol,
-      registerWriteHandlers), options.isHttp3(), false);
+      registerWriteHandlers));
     handler.removeHandler(NetSocketImpl::unregisterEventBusHandler);
     handler.addHandler(sock -> {
       if (metrics != null) {

@@ -264,7 +264,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
       initChannel(ch.pipeline(), options.isSsl());
       TCPMetrics<?> metrics = getMetrics();
       VertxHandler<NetSocketImpl> handler = VertxHandler.create(ctx -> new NetSocketImpl(context, ctx,
-        sslContextManager, sslOptions, metrics, options.isRegisterWriteHandler()), options.isHttp3(), true);
+        sslContextManager, sslOptions, metrics, options.isRegisterWriteHandler()));
       handler.removeHandler(NetSocketImpl::unregisterEventBusHandler);
       handler.addHandler(conn -> {
         if (metrics != null) {

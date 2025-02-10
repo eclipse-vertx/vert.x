@@ -38,8 +38,6 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static io.vertx.core.net.impl.VertxHandler.*;
-
 /**
  * A channel initializer that takes care of configuring a blank channel for HTTP to Vert.x {@link io.vertx.core.http.HttpServerRequest}.
  *
@@ -182,7 +180,7 @@ class HttpServerConnectionInitializer {
     VertxHttp3ConnectionHandler<Http3ServerConnection> handler = buildHttp3ConnectionHandler(context,
       connectionHandler);
     pipeline.replace("handler", "handler", handler);
-    pipeline.addLast(H3_SERVER_CONNECTION_HANDLER_NAME, handler.getHttp3ConnectionHandler());
+    pipeline.addLast(handler.getHttp3ConnectionHandler());
   }
 
   void configureHttp3Pipeline(ChannelPipeline pipeline) {
