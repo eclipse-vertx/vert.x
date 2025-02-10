@@ -53,36 +53,6 @@ public class Http3NetTest extends NetTest {
   @Ignore
   @Override
   @Test
-  public void testClientIdleTimeout2() {
-    super.testClientIdleTimeout2();
-  }
-
-
-  @Ignore
-  @Override
-  @Test
-  public void testServerIdleTimeout4() {
-    super.testServerIdleTimeout4();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testClientIdleTimeout6() {
-    super.testClientIdleTimeout6();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testServerIdleTimeout5() {
-    super.testServerIdleTimeout5();
-  }
-
-
-  @Ignore
-  @Override
-  @Test
   public void testClientDrainHandler() {
     super.testClientDrainHandler();
   }
