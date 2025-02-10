@@ -69,7 +69,6 @@ public class VertxConnection extends ConnectionBase {
   private Deque<Object> pending;
   private boolean autoRead;
   private ScheduledFuture<?> shutdownTimeout;
-  private WriteHandler writeHandler;
 
   public VertxConnection(ContextInternal context, ChannelHandlerContext chctx) {
     super(context, chctx);
@@ -275,8 +274,11 @@ public class VertxConnection extends ConnectionBase {
     }
     boolean flush = (!read && !draining) || forceFlush;
     needsFlush = !flush;
-
-    writeHandler.write(chctx, msg, flush, promise);
+    if (flush) {
+      chctx.writeAndFlush(msg, promise);
+    } else {
+      chctx.write(msg, promise);
+    }
   }
 
   /**
@@ -484,13 +486,5 @@ public class VertxConnection extends ConnectionBase {
   public void doSetWriteQueueMaxSize(int size) {
     ChannelConfig config = chctx.channel().config();
     config.setWriteBufferWaterMark(new WriteBufferWaterMark(size / 2, size));
-  }
-
-  public void setWriteHandler(WriteHandler writeHandler) {
-    this.writeHandler = writeHandler;
-  }
-
-  public interface WriteHandler {
-    void write(ChannelHandlerContext chctx, Object msg, boolean flush, ChannelPromise promise);
   }
 }
