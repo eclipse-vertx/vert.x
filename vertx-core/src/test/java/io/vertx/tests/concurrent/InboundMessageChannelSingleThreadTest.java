@@ -295,7 +295,7 @@ public class InboundMessageChannelSingleThreadTest extends InboundMessageChannel
   }
 
   @Test
-  public void testReentrantClose() {
+  public void testWriteWhenClosing() {
     AtomicInteger emitted = new AtomicInteger();
     List<Integer> dropped = Collections.synchronizedList(new ArrayList<>());
     queue = new TestChannel(elt -> emitted.incrementAndGet(), 4, 4) {
@@ -315,5 +315,30 @@ public class InboundMessageChannelSingleThreadTest extends InboundMessageChannel
       assertEquals(Arrays.asList(0, 1), dropped);
       testComplete();
     });
+  }
+
+  @Test
+  public void testCloseWhenDraining() {
+    List<Integer> emitted = Collections.synchronizedList(new ArrayList<>());;
+    List<Integer> dropped = Collections.synchronizedList(new ArrayList<>());
+    queue = new TestChannel(elt -> {
+      emitted.add(elt);
+      if (elt == 0) {
+        queue.close();
+        assertEquals(Collections.emptyList(), dropped);
+      }
+    }, 4, 4) {
+      @Override
+      protected void handleDispose(Integer msg) {
+        dropped.add(msg);
+      }
+    };
+    producerTask(() -> {
+      queue.fill();
+      assertEquals(List.of(1, 2, 3), dropped);
+      assertEquals(List.of(0), emitted);
+      testComplete();
+    });
+    await();
   }
 }
