@@ -51,36 +51,26 @@ public class HttpOptionsFactory {
   public static NetServerOptions createH3NetServerOptions() {
     NetServerOptions options = new NetServerOptions();
     options
-      .setHttp3(true)
-      .getSslOptions()
-      .setApplicationLayerProtocols(
-        List.of(Http3.supportedApplicationProtocols())
-      );
-    options
-      .setSslEngineOptions(new JdkSSLEngineOptions())
       .setUseAlpn(true)
       .setSsl(true)
-      .addEnabledCipherSuite("TLS_RSA_WITH_AES_128_CBC_SHA")
       .setKeyCertOptions(Cert.SERVER_JKS.get())
-    ;
+      .setHttp3(true)
+      .getSslOptions()
+      .setApplicationLayerProtocols(List.of(Http3.supportedApplicationProtocols()));
     return options;
   }
 
   public static NetClientOptions createH3NetClientOptions() {
     NetClientOptions options = new NetClientOptions();
     options
-      .setHttp3(true)
-      .getSslOptions()
-      .setApplicationLayerProtocols(
-        List.of(Http3.supportedApplicationProtocols())
-      );
-    options
-      .setSslEngineOptions(new JdkSSLEngineOptions())
       .setUseAlpn(true)
       .setSsl(true)
       .setHostnameVerificationAlgorithm("")
+      .setProtocolVersion(HttpVersion.HTTP_3)
       .setTrustOptions(Trust.SERVER_JKS.get())
-      .setProtocolVersion(HttpVersion.HTTP_3);
+      .setHttp3(true)
+      .getSslOptions()
+      .setApplicationLayerProtocols(List.of(Http3.supportedApplicationProtocols()));
 
     return options;
   }
