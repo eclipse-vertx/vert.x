@@ -17,6 +17,7 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.net.JdkSSLEngineOptions;
 import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.NetServerOptions;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 
@@ -29,14 +30,14 @@ public class HttpOptionsFactory {
 
   public static HttpServerOptions createHttp2ServerOptions(int port, String host) {
     return new HttpServerOptions()
-        .setPort(port)
-        .setHost(host)
-        .setSslEngineOptions(new JdkSSLEngineOptions())
-        .setUseAlpn(true)
-        .setSsl(true)
-        .addEnabledCipherSuite("TLS_RSA_WITH_AES_128_CBC_SHA") // Non Diffie-helman -> debuggable in wireshark
-        .setKeyCertOptions(Cert.SERVER_JKS.get());
-  };
+      .setPort(port)
+      .setHost(host)
+      .setSslEngineOptions(new JdkSSLEngineOptions())
+      .setUseAlpn(true)
+      .setSsl(true)
+      .addEnabledCipherSuite("TLS_RSA_WITH_AES_128_CBC_SHA")
+      .setKeyCertOptions(Cert.SERVER_JKS.get());
+  }
 
   public static HttpClientOptions createHttp2ClientOptions() {
     return new HttpClientOptions()
@@ -45,6 +46,24 @@ public class HttpOptionsFactory {
       .setSsl(true)
       .setTrustOptions(Trust.SERVER_JKS.get())
       .setProtocolVersion(HttpVersion.HTTP_2);
+  }
+
+  public static NetServerOptions createH3NetServerOptions() {
+    NetServerOptions options = new NetServerOptions();
+    options
+      .setHttp3(true)
+      .getSslOptions()
+      .setApplicationLayerProtocols(
+        List.of(Http3.supportedApplicationProtocols())
+      );
+    options
+      .setSslEngineOptions(new JdkSSLEngineOptions())
+      .setUseAlpn(true)
+      .setSsl(true)
+      .addEnabledCipherSuite("TLS_RSA_WITH_AES_128_CBC_SHA")
+      .setKeyCertOptions(Cert.SERVER_JKS.get())
+    ;
+    return options;
   }
 
   public static NetClientOptions createH3NetClientOptions() {
@@ -59,9 +78,8 @@ public class HttpOptionsFactory {
       .setSslEngineOptions(new JdkSSLEngineOptions())
       .setUseAlpn(true)
       .setSsl(true)
-      .setTrustAll(true)
       .setHostnameVerificationAlgorithm("")
-//      .setTrustOptions(Trust.SERVER_JKS.get())
+      .setTrustOptions(Trust.SERVER_JKS.get())
       .setProtocolVersion(HttpVersion.HTTP_3);
 
     return options;
@@ -71,7 +89,7 @@ public class HttpOptionsFactory {
     return new NetClientOptions();
   }
 
-    public static HttpServerOptions createHttp3ServerOptions(int port, String host) {
+  public static HttpServerOptions createH3HttpServerOptions(int port, String host) {
     HttpServerOptions options = new HttpServerOptions();
 
     options
@@ -94,17 +112,17 @@ public class HttpOptionsFactory {
     ));
 
     return options
-        .setPort(port)
-        .setHost(host)
-        .setSslEngineOptions(new JdkSSLEngineOptions())
-        .setUseAlpn(true)
-        .setSsl(true)
-        .addEnabledCipherSuite("TLS_RSA_WITH_AES_128_CBC_SHA") // Non Diffie-helman -> debuggable in wireshark
-        .setKeyCertOptions(Cert.SERVER_JKS.get())
+      .setPort(port)
+      .setHost(host)
+      .setSslEngineOptions(new JdkSSLEngineOptions())
+      .setUseAlpn(true)
+      .setSsl(true)
+      .addEnabledCipherSuite("TLS_RSA_WITH_AES_128_CBC_SHA")
+      .setKeyCertOptions(Cert.SERVER_JKS.get())
       ;
   }
 
-  public static HttpClientOptions createHttp3ClientOptions() {
+  public static HttpClientOptions createH3HttpClientOptions() {
     HttpClientOptions httpClientOptions = new HttpClientOptions();
     httpClientOptions
       .setHttp3(true)

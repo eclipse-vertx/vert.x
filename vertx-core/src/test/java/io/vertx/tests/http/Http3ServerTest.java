@@ -12,8 +12,8 @@ public class Http3ServerTest extends HttpServerTest {
   @Override
   public void setUp() throws Exception {
     eventLoopGroups.clear();
-    serverOptions = HttpOptionsFactory.createHttp3ServerOptions(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST);
-    clientOptions = HttpOptionsFactory.createHttp3ClientOptions();
+    serverOptions = HttpOptionsFactory.createH3HttpServerOptions(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST);
+    clientOptions = HttpOptionsFactory.createH3HttpClientOptions();
     super.setUp();
   }
 
