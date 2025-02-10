@@ -21,12 +21,12 @@ public class Http3ClientResponseParserTest extends HttpClientResponseParserTest 
 
   @Override
   protected HttpServerOptions createBaseServerOptions() {
-    return HttpOptionsFactory.createHttp3ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
+    return HttpOptionsFactory.createH3HttpServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
   }
 
   @Override
   protected HttpClientOptions createBaseClientOptions() {
-    return HttpOptionsFactory.createHttp3ClientOptions();
+    return HttpOptionsFactory.createH3HttpClientOptions();
   }
 
 }
