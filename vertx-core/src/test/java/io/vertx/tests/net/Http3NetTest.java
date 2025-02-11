@@ -390,13 +390,6 @@ public class Http3NetTest extends NetTest {
   @Ignore
   @Override
   @Test
-  public void testServerOptions() {
-    super.testServerOptions();
-  }
-
-  @Ignore
-  @Override
-  @Test
   public void testHostVerificationHttpsNotMatching() {
     super.testHostVerificationHttpsNotMatching();
   }
