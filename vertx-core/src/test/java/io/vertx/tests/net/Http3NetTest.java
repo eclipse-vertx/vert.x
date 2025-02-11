@@ -65,6 +65,27 @@ public class Http3NetTest extends NetTest {
     return HttpOptionsFactory.createH3HttpClientOptions();
   }
 
+
+  @Ignore("Host shortnames are not allowed in netty for QUIC.")
+  @Override
+  @Test
+  public void testSniForceShortname() throws Exception {
+    /*
+     * QuicheQuicSslEngine.isValidHostNameForSNI() returns false for short hostnames.
+     */
+    super.testSniForceShortname();
+  }
+
+  @Override
+  @Test
+  public void testMissingClientSSLOptions() throws Exception {
+    NetClientOptions options = new NetClientOptions();
+    options.setProtocolVersion(io.vertx.core.http.HttpVersion.HTTP_3);
+    client = vertx.createNetClient(options);
+
+    super.testMissingClientSSLOptions();
+  }
+
   @Ignore
   @Override
   @Test
@@ -197,7 +218,6 @@ public class Http3NetTest extends NetTest {
   @Override
   @Test
   public void testNetClientInternal() throws Exception {
-
     super.testNetClientInternal_(HttpOptionsFactory.createH3HttpServerOptions(1234, "localhost"), false);
   }
 
@@ -285,13 +305,6 @@ public class Http3NetTest extends NetTest {
   @Test
   public void testReconnectAttemptsMany() {
     super.testReconnectAttemptsMany();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testSniForceShortname() throws Exception {
-    super.testSniForceShortname();
   }
 
   @Ignore
@@ -394,12 +407,6 @@ public class Http3NetTest extends NetTest {
     super.testHostVerificationHttpsNotMatching();
   }
 
-  @Ignore
-  @Override
-  @Test
-  public void testMissingClientSSLOptions() throws Exception {
-    super.testMissingClientSSLOptions();
-  }
 
   @Ignore
   @Override
