@@ -315,11 +315,19 @@ public abstract class NetTest extends VertxTestBase {
     assertEquals(rand, options.getIdleTimeout());
     assertIllegalArgumentException(() -> options.setIdleTimeout(-1));
 
-    assertFalse(options.isSsl());
+    if (options.isHttp3()) {
+      assertTrue(options.isSsl());
+    } else {
+      assertFalse(options.isSsl());
+    }
     assertEquals(options, options.setSsl(true));
     assertTrue(options.isSsl());
 
-    assertNull(options.getKeyCertOptions());
+    if (options.isHttp3()) {
+      assertNotNull(options.getKeyCertOptions());
+    } else {
+      assertNull(options.getKeyCertOptions());
+    }
     JksOptions keyStoreOptions = new JksOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
     assertEquals(options, options.setKeyCertOptions(keyStoreOptions));
     assertEquals(keyStoreOptions, options.getKeyCertOptions());
@@ -351,7 +359,11 @@ public abstract class NetTest extends VertxTestBase {
     assertTrue(options.getEnabledCipherSuites().contains("foo"));
     assertTrue(options.getEnabledCipherSuites().contains("bar"));
 
-    assertEquals(false, options.isUseAlpn());
+    if (options.isHttp3()) {
+      assertEquals(true, options.isUseAlpn());
+    } else {
+      assertEquals(false, options.isUseAlpn());
+    }
     assertEquals(options, options.setUseAlpn(true));
     assertEquals(true, options.isUseAlpn());
 
