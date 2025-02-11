@@ -188,7 +188,11 @@ public abstract class NetTest extends VertxTestBase {
     assertEquals(options, options.setIdleTimeout(rand));
     assertEquals(rand, options.getIdleTimeout());
 
-    assertFalse(options.isSsl());
+    if (options.isHttp3()) {
+      assertTrue(options.isSsl());
+    } else {
+      assertFalse(options.isSsl());
+    }
     assertEquals(options, options.setSsl(true));
     assertTrue(options.isSsl());
 
@@ -197,7 +201,11 @@ public abstract class NetTest extends VertxTestBase {
     assertEquals(options, options.setKeyCertOptions(keyStoreOptions));
     assertEquals(keyStoreOptions, options.getKeyCertOptions());
 
-    assertNull(options.getTrustOptions());
+    if (options.isHttp3()) {
+      assertNotNull(options.getTrustOptions());
+    } else {
+      assertNull(options.getTrustOptions());
+    }
     JksOptions trustStoreOptions = new JksOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
     assertEquals(options, options.setTrustOptions(trustStoreOptions));
     assertEquals(trustStoreOptions, options.getTrustOptions());
@@ -207,7 +215,11 @@ public abstract class NetTest extends VertxTestBase {
 //    assertTrue(options.isTrustAll());
 
     String randomAlphaString = TestUtils.randomAlphaString(10);
-    assertNull(options.getHostnameVerificationAlgorithm());
+    if (options.isHttp3()) {
+      assertEquals("", options.getHostnameVerificationAlgorithm());
+    } else {
+      assertEquals(null, options.getHostnameVerificationAlgorithm());
+    }
     assertEquals(options, options.setHostnameVerificationAlgorithm(randomAlphaString));
     assertEquals(randomAlphaString, options.getHostnameVerificationAlgorithm());
 
@@ -230,7 +242,12 @@ public abstract class NetTest extends VertxTestBase {
     assertTrue(options.getEnabledCipherSuites().contains("foo"));
     assertTrue(options.getEnabledCipherSuites().contains("bar"));
 
-    assertEquals(false, options.isUseAlpn());
+    if (options.isHttp3()) {
+      assertEquals(true, options.isUseAlpn());
+    } else {
+      assertEquals(false, options.isUseAlpn());
+    }
+
     assertEquals(options, options.setUseAlpn(true));
     assertEquals(true, options.isUseAlpn());
 
