@@ -428,13 +428,6 @@ public class Http3NetTest extends NetTest {
   @Ignore
   @Override
   @Test
-  public void testClientOptions() {
-    super.testClientOptions();
-  }
-
-  @Ignore
-  @Override
-  @Test
   public void testInVerticle() throws Exception {
     super.testInVerticle();
   }
