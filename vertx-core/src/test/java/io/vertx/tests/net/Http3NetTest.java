@@ -239,13 +239,6 @@ public class Http3NetTest extends NetTest {
   @Ignore
   @Override
   @Test
-  public void testDefaultServerOptionsJson() {
-    super.testDefaultServerOptionsJson();
-  }
-
-  @Ignore
-  @Override
-  @Test
   public void testWithSocks4LocalResolver() throws Exception {
     super.testWithSocks4LocalResolver();
   }
@@ -368,14 +361,6 @@ public class Http3NetTest extends NetTest {
   @Test
   public void testClientMissingHostnameVerificationAlgorithm3() {
     super.testClientMissingHostnameVerificationAlgorithm3();
-  }
-
-
-  @Ignore
-  @Override
-  @Test
-  public void testDefaultClientOptionsJson() {
-    super.testDefaultClientOptionsJson();
   }
 
   @Ignore
