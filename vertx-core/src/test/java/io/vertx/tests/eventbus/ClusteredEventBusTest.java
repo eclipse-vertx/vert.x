@@ -13,8 +13,15 @@ package io.vertx.tests.eventbus;
 
 import io.vertx.core.*;
 import io.vertx.core.eventbus.*;
+import io.vertx.core.eventbus.impl.clustered.ClusteredEventBus;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.SocketAddress;
+import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.spi.metrics.TCPMetrics;
+import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import io.vertx.tests.shareddata.AsyncMapTest.SomeClusterSerializableObject;
 import io.vertx.tests.shareddata.AsyncMapTest.SomeSerializableObject;
@@ -696,5 +703,54 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
       }
     });
     await();
+  }
+
+  @Test
+  public void testSocketCleanup() {
+    startNodes(1);
+    vertices[0].eventBus().consumer(ADDRESS1, msg -> {
+      msg.reply("pong");
+    });
+    AtomicInteger numberOfOutboundConnections = new AtomicInteger();
+    AtomicInteger numberOfInboundConnections = new AtomicInteger();
+    Vertx vertx = vertx(() -> Vertx.builder()
+      .withClusterManager(getClusterManager())
+      .withMetrics(options -> new VertxMetrics() {
+        @Override
+        public TCPMetrics<?> createNetClientMetrics(NetClientOptions options) {
+          return new TCPMetrics<>() {
+            @Override
+            public Object connected(SocketAddress remoteAddress, String remoteName) {
+              numberOfOutboundConnections.incrementAndGet();
+              return null;
+            }
+            @Override
+            public void disconnected(Object socketMetric, SocketAddress remoteAddress) {
+              numberOfOutboundConnections.decrementAndGet();
+            }
+          };
+        }
+        @Override
+        public TCPMetrics<?> createNetServerMetrics(NetServerOptions options, SocketAddress localAddress) {
+          return new TCPMetrics<>() {
+            @Override
+            public Object connected(SocketAddress remoteAddress, String remoteName) {
+              numberOfInboundConnections.incrementAndGet();
+              return null;
+            }
+            @Override
+            public void disconnected(Object socketMetric, SocketAddress remoteAddress) {
+              numberOfInboundConnections.decrementAndGet();
+            }
+          };
+        }
+      })
+      .buildClustered()
+      .await());
+    vertx.eventBus().request(ADDRESS1, "ping").await();
+    assertWaitUntil(() -> numberOfOutboundConnections.get() == 1 && numberOfInboundConnections.get() == 1);
+    ClusteredEventBus eventBus = (ClusteredEventBus) vertices[0].eventBus();
+    Future.future(eventBus::close).await();
+    assertWaitUntil(() -> numberOfOutboundConnections.get() == 0 && numberOfInboundConnections.get() == 0);
   }
 }
