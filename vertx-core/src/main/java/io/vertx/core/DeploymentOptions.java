@@ -32,6 +32,7 @@ public class DeploymentOptions {
   public static final boolean DEFAULT_WORKER = false;
   public static final boolean DEFAULT_HA = false;
   public static final int DEFAULT_INSTANCES = 1;
+  private static final String DEFAULT_EXACT_UUID = null;
 
   private JsonObject config;
   private ThreadingModel threadingModel;
@@ -42,6 +43,7 @@ public class DeploymentOptions {
   private int workerPoolSize;
   private long maxWorkerExecuteTime;
   private TimeUnit maxWorkerExecuteTimeUnit;
+  private String exactDeploymentId;
 
   /**
    * Default constructor
@@ -54,6 +56,7 @@ public class DeploymentOptions {
     this.workerPoolSize = VertxOptions.DEFAULT_WORKER_POOL_SIZE;
     this.maxWorkerExecuteTime = VertxOptions.DEFAULT_MAX_WORKER_EXECUTE_TIME;
     this.maxWorkerExecuteTimeUnit = VertxOptions.DEFAULT_MAX_WORKER_EXECUTE_TIME_UNIT;
+    this.exactDeploymentId = DEFAULT_EXACT_UUID;
   }
 
   /**
@@ -289,6 +292,18 @@ public class DeploymentOptions {
    */
   public DeploymentOptions setClassLoader(ClassLoader classLoader) {
     this.classLoader = classLoader;
+    return this;
+  }
+
+  /**
+   * @return The exact id to be used
+   */
+  public String getExactDeploymentId() {
+    return exactDeploymentId;
+  }
+
+  public DeploymentOptions setExactDeploymentId(String exactDeploymentId) {
+    this.exactDeploymentId = exactDeploymentId;
     return this;
   }
 
