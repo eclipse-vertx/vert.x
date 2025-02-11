@@ -143,7 +143,7 @@ public abstract class NetTest extends VertxTestBase {
 
   @Test
   public void testClientOptions() {
-    NetClientOptions options = createNetClientOptions();
+    NetClientOptions options = new NetClientOptions();
 
     assertEquals(NetworkOptions.DEFAULT_SEND_BUFFER_SIZE, options.getSendBufferSize());
     int rand = TestUtils.randomPositiveInt();
@@ -191,11 +191,7 @@ public abstract class NetTest extends VertxTestBase {
     assertEquals(options, options.setIdleTimeout(rand));
     assertEquals(rand, options.getIdleTimeout());
 
-    if (options.isHttp3()) {
-      assertTrue(options.isSsl());
-    } else {
-      assertFalse(options.isSsl());
-    }
+    assertFalse(options.isSsl());
     assertEquals(options, options.setSsl(true));
     assertTrue(options.isSsl());
 
@@ -204,11 +200,7 @@ public abstract class NetTest extends VertxTestBase {
     assertEquals(options, options.setKeyCertOptions(keyStoreOptions));
     assertEquals(keyStoreOptions, options.getKeyCertOptions());
 
-    if (options.isHttp3()) {
-      assertNotNull(options.getTrustOptions());
-    } else {
-      assertNull(options.getTrustOptions());
-    }
+    assertNull(options.getTrustOptions());
     JksOptions trustStoreOptions = new JksOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
     assertEquals(options, options.setTrustOptions(trustStoreOptions));
     assertEquals(trustStoreOptions, options.getTrustOptions());
@@ -218,11 +210,7 @@ public abstract class NetTest extends VertxTestBase {
 //    assertTrue(options.isTrustAll());
 
     String randomAlphaString = TestUtils.randomAlphaString(10);
-    if (options.isHttp3()) {
-      assertEquals("", options.getHostnameVerificationAlgorithm());
-    } else {
-      assertEquals(null, options.getHostnameVerificationAlgorithm());
-    }
+    assertNull(options.getHostnameVerificationAlgorithm());
     assertEquals(options, options.setHostnameVerificationAlgorithm(randomAlphaString));
     assertEquals(randomAlphaString, options.getHostnameVerificationAlgorithm());
 
@@ -245,12 +233,7 @@ public abstract class NetTest extends VertxTestBase {
     assertTrue(options.getEnabledCipherSuites().contains("foo"));
     assertTrue(options.getEnabledCipherSuites().contains("bar"));
 
-    if (options.isHttp3()) {
-      assertEquals(true, options.isUseAlpn());
-    } else {
-      assertEquals(false, options.isUseAlpn());
-    }
-
+    assertEquals(false, options.isUseAlpn());
     assertEquals(options, options.setUseAlpn(true));
     assertEquals(true, options.isUseAlpn());
 
@@ -269,7 +252,7 @@ public abstract class NetTest extends VertxTestBase {
 
   @Test
   public void testServerOptions() {
-    NetServerOptions options = createNetServerOptions();
+    NetServerOptions options = new NetServerOptions();
 
     assertEquals(NetworkOptions.DEFAULT_SEND_BUFFER_SIZE, options.getSendBufferSize());
     int rand = TestUtils.randomPositiveInt();
@@ -318,19 +301,11 @@ public abstract class NetTest extends VertxTestBase {
     assertEquals(rand, options.getIdleTimeout());
     assertIllegalArgumentException(() -> options.setIdleTimeout(-1));
 
-    if (options.isHttp3()) {
-      assertTrue(options.isSsl());
-    } else {
-      assertFalse(options.isSsl());
-    }
+    assertFalse(options.isSsl());
     assertEquals(options, options.setSsl(true));
     assertTrue(options.isSsl());
 
-    if (options.isHttp3()) {
-      assertNotNull(options.getKeyCertOptions());
-    } else {
-      assertNull(options.getKeyCertOptions());
-    }
+    assertNull(options.getKeyCertOptions());
     JksOptions keyStoreOptions = new JksOptions().setPath(TestUtils.randomAlphaString(100)).setPassword(TestUtils.randomAlphaString(100));
     assertEquals(options, options.setKeyCertOptions(keyStoreOptions));
     assertEquals(keyStoreOptions, options.getKeyCertOptions());
@@ -362,11 +337,7 @@ public abstract class NetTest extends VertxTestBase {
     assertTrue(options.getEnabledCipherSuites().contains("foo"));
     assertTrue(options.getEnabledCipherSuites().contains("bar"));
 
-    if (options.isHttp3()) {
-      assertEquals(true, options.isUseAlpn());
-    } else {
-      assertEquals(false, options.isUseAlpn());
-    }
+    assertEquals(false, options.isUseAlpn());
     assertEquals(options, options.setUseAlpn(true));
     assertEquals(true, options.isUseAlpn());
 
@@ -399,7 +370,7 @@ public abstract class NetTest extends VertxTestBase {
 
   @Test
   public void testCopyClientOptions() {
-    NetClientOptions options = createNetClientOptions();
+    NetClientOptions options = new NetClientOptions();
     int sendBufferSize = TestUtils.randomPositiveInt();
     int receiverBufferSize = TestUtils.randomPortInt();
     Random rand = new Random();
@@ -458,7 +429,7 @@ public abstract class NetTest extends VertxTestBase {
 
   @Test
   public void testDefaultClientOptionsJson() {
-    NetClientOptions def = createNetClientOptions();
+    NetClientOptions def = new NetClientOptions();
     NetClientOptions json = new NetClientOptions(new JsonObject());
     assertEquals(def.getReconnectAttempts(), json.getReconnectAttempts());
     assertEquals(def.getReconnectInterval(), json.getReconnectInterval());
@@ -608,7 +579,7 @@ public abstract class NetTest extends VertxTestBase {
 
   @Test
   public void testCopyServerOptions() {
-    NetServerOptions options = createNetServerOptions();
+    NetServerOptions options = new NetServerOptions();
     int sendBufferSize = TestUtils.randomPositiveInt();
     int receiverBufferSize = TestUtils.randomPortInt();
     Random rand = new Random();
@@ -671,7 +642,7 @@ public abstract class NetTest extends VertxTestBase {
   @Test
   @SuppressWarnings("deprecation")
   public void testDefaultServerOptionsJson() {
-    NetServerOptions def = createNetServerOptions();
+    NetServerOptions def = new NetServerOptions();
     NetServerOptions json = new NetServerOptions(new JsonObject());
     assertEquals(def.getCrlPaths(), json.getCrlPaths());
     assertEquals(def.getCrlValues(), json.getCrlValues());
