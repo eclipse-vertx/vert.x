@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<!--
+ *******************************************************************************
+ * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * https://www.eclipse.org/legal/epl-2.0/.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *   See git history
+ *******************************************************************************
+-->
+<develocity
+  xmlns="https://www.gradle.com/develocity-maven" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="https://www.gradle.com/develocity-maven https://www.gradle.com/schema/develocity-maven.xsd">
+  <server>
+    <url>https://develocity-staging.eclipse.org</url>
+  </server>
+  <projectId>rt.vertx</projectId>
+  <buildScan>
+    <obfuscation>
+      <ipAddresses>0.0.0.0</ipAddresses>
+    </obfuscation>
+    <publishing>
+      <onlyIf>
+        <![CDATA[authenticated]]>
+      </onlyIf>
+    </publishing>
+  </buildScan>
+  <buildCache>
+    <local>
+      <enabled>false</enabled>
+    </local>
+    <remote>
+      <enabled>false</enabled>
+      <storeEnabled>#{isTrue(env['CI'])}</storeEnabled>
+    </remote>
+  </buildCache>
+</develocity>
