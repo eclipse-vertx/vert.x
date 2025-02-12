@@ -97,33 +97,35 @@ public final class ClusteredEventBus extends EventBusImpl {
   }
 
   /**
-     * Pick a default address for clustered event bus when none was provided by either the user or the cluster manager.
-     */
-    private static String defaultAddress() {
-      Enumeration<NetworkInterface> nets;
-      try {
-        nets = NetworkInterface.getNetworkInterfaces();
-      } catch (SocketException e) {
-        return null;
-      }
-      NetworkInterface netinf;
-      while (nets.hasMoreElements()) {
-        netinf = nets.nextElement();
-
-        Enumeration<InetAddress> addresses = netinf.getInetAddresses();
-
-        while (addresses.hasMoreElements()) {
-          InetAddress address = addresses.nextElement();
-          if (!address.isAnyLocalAddress() && !address.isMulticastAddress()
-            && !(address instanceof Inet6Address)) {
-            return address.getHostAddress();
-          }
-        }
-      }
+   * Pick a default address for clustered event bus when none was provided by either the user or the cluster manager.
+   * 
+   * This is used by Vert.x launcher.
+   */
+  public static String defaultAddress() {
+    Enumeration<NetworkInterface> nets;
+    try {
+      nets = NetworkInterface.getNetworkInterfaces();
+    } catch (SocketException e) {
       return null;
     }
+    NetworkInterface netinf;
+    while (nets.hasMoreElements()) {
+      netinf = nets.nextElement();
 
-    private NetClient createNetClient(VertxInternal vertx, NetClientOptions clientOptions) {
+      Enumeration<InetAddress> addresses = netinf.getInetAddresses();
+
+      while (addresses.hasMoreElements()) {
+        InetAddress address = addresses.nextElement();
+        if (!address.isAnyLocalAddress() && !address.isMulticastAddress()
+          && !(address instanceof Inet6Address)) {
+          return address.getHostAddress();
+        }
+      }
+    }
+    return null;
+  }
+
+  private NetClient createNetClient(VertxInternal vertx, NetClientOptions clientOptions) {
     NetClientBuilder builder = new NetClientBuilder(vertx, clientOptions);
     VertxMetrics metricsSPI = vertx.metricsSPI();
     if (metricsSPI != null) {
