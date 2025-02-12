@@ -110,9 +110,6 @@ public class HTTP3ClientExamplesVertxHandler {
       part2.append("3".repeat(1200));
       part2.append("4".repeat(1200));
 
-//      soi.write(Buffer.buffer("Hello World Haji"));
-//      soi.write(Buffer.buffer("Hello World Haji2"));
-
       soi.write(Buffer.buffer(part1.toString()));
 //      soi.write(Buffer.buffer(part2.toString()));
       // soi.messageHandler(msg -> fail("Unexpected"));
@@ -126,7 +123,7 @@ public class HTTP3ClientExamplesVertxHandler {
 
         if(!byteBuf.isDirect()) throw new RuntimeException();
         if(1 != byteBuf.refCnt()) throw new RuntimeException();
-//        if(!"Hello World Haji".equals(byteBuf.toString(StandardCharsets.UTF_8))) throw new RuntimeException();
+//        if(!"Hello World".equals(byteBuf.toString(StandardCharsets.UTF_8))) throw new RuntimeException();
         if(!byteBuf.release()) throw new RuntimeException();
         if(0 != byteBuf.refCnt()) throw new RuntimeException();
         System.out.println("OK");
