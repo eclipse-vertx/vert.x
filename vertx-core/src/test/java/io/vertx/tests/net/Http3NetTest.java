@@ -76,6 +76,15 @@ public class Http3NetTest extends NetTest {
     super.testSniForceShortname();
   }
 
+  /**
+   * Returns the maximum acceptable packet size for UDP in HTTP/3.
+   * A value of 1000 is chosen to avoid exceeding packet limits as we do not split large messages.
+   */
+  @Override
+  protected int maxPacketSize() {
+    return 1000;
+  }
+
   @Override
   @Test
   public void testMissingClientSSLOptions() throws Exception {
@@ -408,13 +417,6 @@ public class Http3NetTest extends NetTest {
   @Test
   public void testClientMultiThreaded() throws Exception {
     super.testClientMultiThreaded();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testInVerticle() throws Exception {
-    super.testInVerticle();
   }
 
   //TODO: resolve group2

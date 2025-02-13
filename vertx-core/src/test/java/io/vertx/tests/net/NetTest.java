@@ -2563,7 +2563,7 @@ public abstract class NetTest extends VertxTestBase {
             if (!worker) {
               assertSame(thr, Thread.currentThread());
             }
-            Buffer buff = TestUtils.randomBuffer(10000);
+            Buffer buff = TestUtils.randomBuffer(maxPacketSize());
             sock.write(buff);
             Buffer brec = Buffer.buffer();
             sock.handler(rec -> {
@@ -2583,6 +2583,10 @@ public abstract class NetTest extends VertxTestBase {
     MyVerticle verticle = new MyVerticle();
     vertx.deployVerticle(verticle, new DeploymentOptions().setThreadingModel(worker ? ThreadingModel.WORKER : ThreadingModel.EVENT_LOOP));
     await();
+  }
+
+  protected int maxPacketSize() {
+    return 10000;
   }
 
   @Test
