@@ -43,7 +43,7 @@ import java.util.*;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface HttpServerRequest extends ReadStream<Buffer> {
+public interface HttpServerRequest extends ReadStream<Buffer>, HttpRequestHead {
 
   /**
    * The default invalid request handler, it uses the {@link #decoderResult()} cause and the request information
@@ -117,23 +117,6 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   String scheme();
 
   /**
-   * @return the URI of the request. This is usually a relative URI
-   */
-  String uri();
-
-  /**
-   * @return The path part of the uri. For example /somepath/somemorepath/someresource.foo
-   */
-  @Nullable
-  String path();
-
-  /**
-   * @return the query part of the uri. For example someparam=32&amp;someotherparam=x
-   */
-  @Nullable
-  String query();
-
-  /**
    * @return the request authority. For HTTP/2 the {@literal :authority} pseudo header is returned, for HTTP/1.x the
    *         {@literal Host} header is returned or {@code null} when no such header is present. When the authority
    *         string does not carry a port, the {@link HostAndPort#port()} returns {@code -1} to indicate the
@@ -153,34 +136,6 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    */
   @CacheReturn
   HttpServerResponse response();
-
-  /**
-   * @return the headers in the request.
-   */
-  @CacheReturn
-  MultiMap headers();
-
-  /**
-   * Return the first header value with the specified name
-   *
-   * @param headerName  the header name
-   * @return the header value
-   */
-  @Nullable
-  default String getHeader(String headerName) {
-    return headers().get(headerName);
-  }
-
-  /**
-   * Return the first header value with the specified name
-   *
-   * @param headerName  the header name
-   * @return the header value
-   */
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  default String getHeader(CharSequence headerName) {
-    return headers().get(headerName);
-  }
 
   /**
    * Override the charset to use for decoding the query parameter map, when none is set, {@code UTF8} is used.
