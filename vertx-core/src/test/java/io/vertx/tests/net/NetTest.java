@@ -88,7 +88,7 @@ import static org.junit.Assume.assumeTrue;
  */
 public abstract class NetTest extends VertxTestBase {
 
-  private SocketAddress testAddress;
+  protected SocketAddress testAddress;
   protected NetServer server;
   protected NetClient client;
   private TestProxyBase proxy;
@@ -3508,7 +3508,7 @@ public abstract class NetTest extends VertxTestBase {
 
   @Test
   public void testNetServerInternal() throws Exception {
-    testNetServerInternal_(new HttpClientOptions(), false);
+    testNetServerInternal_(createBaseClientOptions(), false);
   }
 
   @Test
@@ -3519,13 +3519,13 @@ public abstract class NetTest extends VertxTestBase {
       .setHost("localhost")
       .setSsl(true)
       .setKeyCertOptions(Cert.SERVER_JKS.get()));
-    testNetServerInternal_(new HttpClientOptions()
+    testNetServerInternal_(createBaseClientOptions()
       .setSsl(true)
       .setTrustOptions(Trust.SERVER_JKS.get())
     , true);
   }
 
-  private void testNetServerInternal_(HttpClientOptions clientOptions, boolean expectSSL) throws Exception {
+  protected void testNetServerInternal_(HttpClientOptions clientOptions, boolean expectSSL) throws Exception {
     waitFor(2);
     server.connectHandler(so -> {
       NetSocketInternal internal = (NetSocketInternal) so;
