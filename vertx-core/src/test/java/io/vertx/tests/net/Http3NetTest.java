@@ -11,26 +11,28 @@
 package io.vertx.tests.net;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
+import io.netty.handler.codec.http.DefaultHttpContent;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.incubator.codec.http3.Http3;
+import io.netty.incubator.codec.http3.Http3ClientConnectionHandler;
 import io.netty.incubator.codec.http3.Http3FrameToHttpObjectCodec;
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.Context;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Promise;
-import io.vertx.core.ThreadingModel;
-import io.vertx.core.buffer.Buffer;
+import io.netty.incubator.codec.quic.QuicChannel;
+import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.tests.http.HttpOptionsFactory;
 import org.junit.Ignore;
@@ -95,6 +97,77 @@ public class Http3NetTest extends NetTest {
     super.testMissingClientSSLOptions();
   }
 
+  protected void testNetClientInternal_(HttpServerOptions options, boolean expectSSL) throws Exception {
+    boolean http3ExpectSSL = true;
+    waitFor(7);
+    HttpServer server = vertx.createHttpServer(options);
+    server.requestHandler(req -> {
+      req.response().end("Hello World"); });
+    CountDownLatch latch = new CountDownLatch(1);
+    server.listen().onComplete(onSuccess(v -> {
+      latch.countDown();
+    }));
+    awaitLatch(latch);
+    client.connect(1234, "localhost").onComplete(onSuccess(so -> {
+      NetSocketInternal soInt = (NetSocketInternal) so;
+      assertEquals(http3ExpectSSL, soInt.isSsl());
+      ChannelHandlerContext chctx = soInt.channelHandlerContext();
+      ChannelPipeline pipeline = chctx.pipeline();
+      pipeline.addBefore("handler", "myHttp3ClientConnectionHandler", new Http3ClientConnectionHandler());
+      AtomicInteger status = new AtomicInteger();
+      soInt.handler(buff -> fail());
+      soInt.messageHandler(obj -> {
+        assertTrue(obj instanceof QuicStreamChannel);
+        complete();
+      });
+      DefaultFullHttpRequest message = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/somepath");
+      message.headers().add(HttpHeaderNames.HOST, "localhost");
+
+      Http3.newRequestStream((QuicChannel) soInt.channelHandlerContext().channel(), new ChannelInitializer<>() {
+        @Override
+        protected void initChannel(Channel ch) {
+          ch.pipeline().addLast("myHttp3FrameToHttpObjectCodec", new Http3FrameToHttpObjectCodec(false));
+          ch.pipeline().addLast("myHttpHandler", new ChannelInboundHandlerAdapter() {
+            @Override
+            public void channelRead(ChannelHandlerContext ctx, Object obj) {
+              switch (status.getAndIncrement()) {
+                case 0:
+                  assertTrue(obj instanceof HttpResponse);
+                  HttpResponse resp = (HttpResponse) obj;
+                  assertEquals(200, resp.status().code());
+                  complete();
+                  break;
+                case 1:
+                  assertTrue(obj instanceof DefaultHttpContent);
+                  ByteBuf content = ((DefaultHttpContent) obj).content();
+                  assertTrue(content.isDirect());
+                  assertEquals(1, content.refCnt());
+                  String val = content.toString(StandardCharsets.UTF_8);
+                  assertTrue(content.release());
+                  assertEquals("Hello World", val);
+                  complete();
+                  break;
+                case 2:
+                  assertSame(LastHttpContent.EMPTY_LAST_CONTENT, obj);
+                  complete();
+                  break;
+                default:
+                  fail();
+              }
+            }
+          });
+
+          ch.writeAndFlush(message).addListener(future -> {
+            if (future.isSuccess()) {
+              complete();
+            }
+          });
+        }
+      });
+    }));
+    await();
+  }
+
   @Ignore
   @Override
   @Test
@@ -114,14 +187,6 @@ public class Http3NetTest extends NetTest {
   @Test
   public void testServerDrainHandler() {
     super.testServerDrainHandler();
-  }
-
-
-  @Ignore
-  @Override
-  @Test
-  public void testNetClientInternalTLS() throws Exception {
-    super.testNetClientInternalTLS();
   }
 
   @Ignore
@@ -223,12 +288,6 @@ public class Http3NetTest extends NetTest {
     super.testTLSClientCertClientNotTrusted();
   }
 
-  @Ignore
-  @Override
-  @Test
-  public void testNetClientInternal() throws Exception {
-    super.testNetClientInternal_(HttpOptionsFactory.createH3HttpServerOptions(1234, "localhost"), false);
-  }
 
   @Ignore
   @Override

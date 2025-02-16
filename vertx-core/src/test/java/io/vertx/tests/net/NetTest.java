@@ -3564,7 +3564,7 @@ public abstract class NetTest extends VertxTestBase {
 
   @Test
   public void testNetClientInternal() throws Exception {
-    testNetClientInternal_(new HttpServerOptions().setHost("localhost").setPort(1234), false);
+    testNetClientInternal_(createBaseServerOptions().setHost("localhost").setPort(1234), false);
   }
 
   @Test
@@ -3621,14 +3621,14 @@ public abstract class NetTest extends VertxTestBase {
         }
       }));
 
-    testNetClientInternal_(new HttpServerOptions()
+    testNetClientInternal_(createBaseServerOptions()
       .setHost("localhost")
       .setPort(1234)
       .setSsl(true)
       .setKeyCertOptions(Cert.SERVER_JKS.get()), true);
   }
 
-  private void testNetClientInternal_(HttpServerOptions options, boolean expectSSL) throws Exception {
+  protected void testNetClientInternal_(HttpServerOptions options, boolean expectSSL) throws Exception {
     waitFor(2);
     HttpServer server = vertx.createHttpServer(options);
     server.requestHandler(req -> {
