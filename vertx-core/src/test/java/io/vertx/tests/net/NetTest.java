@@ -86,8 +86,8 @@ import static org.junit.Assume.assumeTrue;
 public abstract class NetTest extends VertxTestBase {
 
   private SocketAddress testAddress;
-  private NetServer server;
-  private NetClient client;
+  protected NetServer server;
+  protected NetClient client;
   private TestProxyBase proxy;
   private File tmp;
 
