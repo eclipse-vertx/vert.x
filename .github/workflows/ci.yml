@@ -29,4 +29,6 @@ jobs:
           java-version: ${{ inputs.jdk }}
           distribution: temurin
       - name: Run tests
-        run: mvn -s .github/maven-ci-settings.xml -q clean verify -B ${{ inputs.profile }}
+        run: mvn -s .github/maven-ci-settings.xml -q clean verify -B ${{ inputs.profile }} -D.scan.value.profile="${{ inputs.profile }}"
+        env:
+          DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_API_TOKEN }}
