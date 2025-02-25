@@ -266,7 +266,68 @@
             </excludes>
           </configuration>
         </plugin>
-
+        <plugin>
+          <groupId>com.gradle</groupId>
+          <artifactId>develocity-maven-extension</artifactId>
+          <configuration>
+            <develocity>
+              <plugins>
+                <plugin>
+                  <artifactId>maven-compiler-plugin</artifactId>
+                  <inputs>
+                    <fileSets>
+                      <fileSet>
+                        <name>asciidocSource</name>
+                        <paths>
+                          <path>${project.basedir}/src/main/asciidoc</path>
+                        </paths>
+                      </fileSet>
+                    </fileSets>
+                  </inputs>
+                  <outputs>
+                    <directories>
+                      <directory>
+                        <name>asciidocOutput</name>
+                        <path>${project.build.directory}/asciidoc/java</path>
+                      </directory>
+                    </directories>
+                  </outputs>
+                </plugin>
+                <plugin>
+                  <artifactId>maven-surefire-plugin</artifactId>
+                  <inputs>
+                    <fileSets>
+                      <fileSet>
+                        <name>buildDirectory</name>
+                        <paths>
+                          <path>${project.build.directory}</path>
+                        </paths>
+                      </fileSet>
+                    </fileSets>
+                  </inputs>
+                </plugin>
+                <plugin>
+                  <artifactId>maven-failsafe-plugin</artifactId>
+                  <executions>
+                    <execution>
+                      <id>connect-to-tls-trusted-server</id>
+                      <inputs>
+                        <fileSets>
+                          <fileSet>
+                            <name>javax.net.ssl.trustStore</name>
+                            <paths>
+                              <path>${project.basedir}/src/test/resources/tls/client-truststore-root-ca.jks</path>
+                            </paths>
+                          </fileSet>
+                        </fileSets>
+                      </inputs>
+                    </execution>
+                  </executions>
+                </plugin>
+              </plugins>
+            </develocity>
+          </configuration>
+        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
@@ -337,6 +398,8 @@
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>io.netty:netty-tcnative-boringssl-static</classpathDependencyExclude>
               </classpathDependencyExcludes>
+              <reportsDirectory>${project.build.directory}/ssl-engine-default-first-failsafe-reports</reportsDirectory>
+              <summaryFile>${project.build.directory}/ssl-engine-default-failsafe-reports/ssl-engine-default-summary.xml</summaryFile>
             </configuration>
           </execution>
           <execution>
@@ -352,6 +415,8 @@
               <systemProperties>
                 <vertx-test-alpn-openssl>true</vertx-test-alpn-openssl>
               </systemProperties>
+              <reportsDirectory>${project.build.directory}/ssl-engine-openssl-failsafe-reports</reportsDirectory>
+              <summaryFile>${project.build.directory}/ssl-engine-openssl-failsafe-reports/ssl-engine-openssl-openssl-summary.xml</summaryFile>
             </configuration>
           </execution>
           <execution>
@@ -369,6 +434,7 @@
                 <classpathDependencyExclude>io.netty:netty-transport-classes-epoll</classpathDependencyExclude>
                 <classpathDependencyExclude>io.netty:netty-transport-classes-kqueue</classpathDependencyExclude>
               </classpathDependencyExcludes>
+              <summaryFile>${project.build.directory}/failsafe-reports/no-native-summary.xml</summaryFile>
             </configuration>
           </execution>
           <execution>
@@ -384,6 +450,7 @@
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>io.netty:netty-transport-classes-epoll</classpathDependencyExclude>
               </classpathDependencyExcludes>
+              <summaryFile>${project.build.directory}/failsafe-reports/io-uring-summary.xml</summaryFile>
             </configuration>
           </execution>
           <execution>
@@ -400,6 +467,7 @@
                 <javax.net.ssl.trustStore>${project.basedir}/src/test/resources/tls/client-truststore-root-ca.jks</javax.net.ssl.trustStore>
                 <javax.net.ssl.trustStorePassword>wibble</javax.net.ssl.trustStorePassword>
               </systemProperties>
+              <summaryFile>${project.build.directory}/failsafe-reports/connect-to-tls-trusted-server-summary.xml</summaryFile>
             </configuration>
           </execution>
           <execution>
@@ -416,6 +484,7 @@
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-core</classpathDependencyExclude>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
               </classpathDependencyExcludes>
+              <summaryFile>${project.build.directory}/failsafe-reports/no-jackson-summary.xml</summaryFile>
             </configuration>
           </execution>
           <execution>
@@ -431,6 +500,7 @@
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>io.netty:netty-codec-haproxy</classpathDependencyExclude>
               </classpathDependencyExcludes>
+              <summaryFile>${project.build.directory}/failsafe-reports/no-haproxy-codec-summary.xml</summaryFile>
             </configuration>
           </execution>
           <execution>
@@ -446,6 +516,7 @@
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
               </classpathDependencyExcludes>
+              <summaryFile>${project.build.directory}/failsafe-reports/no-jackson-databind-summary.xml</summaryFile>
             </configuration>
           </execution>
           <execution>
@@ -465,6 +536,7 @@
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-core</classpathDependencyExclude>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
               </classpathDependencyExcludes>
+              <summaryFile>${project.build.directory}/failsafe-reports/custom-json-factory-summary.xml</summaryFile>
             </configuration>
           </execution>
           <execution>
@@ -480,6 +552,7 @@
               <additionalClasspathElements>
                 <additionalClasspathElement>${project.basedir}/src/test/classpath/jsonfactoryordering</additionalClasspathElement>
               </additionalClasspathElements>
+              <summaryFile>${project.build.directory}/failsafe-reports/json-factory-ordering-summary.xml</summaryFile>
             </configuration>
           </execution>
           <execution>
@@ -495,6 +568,7 @@
               <additionalClasspathElements>
                 <additionalClasspathElement>${project.basedir}/src/test/classpath/metrics</additionalClasspathElement>
               </additionalClasspathElements>
+              <summaryFile>${project.build.directory}/failsafe-reports/metrics-service-loader-summary.xml</summaryFile>
             </configuration>
           </execution>
           <execution>
@@ -510,6 +584,7 @@
               <additionalClasspathElements>
                 <additionalClasspathElement>${project.basedir}/src/test/classpath/customthreadfactory</additionalClasspathElement>
               </additionalClasspathElements>
+              <summaryFile>${project.build.directory}/failsafe-reports/custom-vertx-thread-factory-summary.xml</summaryFile>
             </configuration>
           </execution>
           <execution>
@@ -525,6 +600,7 @@
               <additionalClasspathElements>
                 <additionalClasspathElement>${project.basedir}/src/test/classpath/customexecutorservicefactory</additionalClasspathElement>
               </additionalClasspathElements>
+              <summaryFile>${project.build.directory}/failsafe-reports/custom-executor-service-factory-summary.xml</summaryFile>
             </configuration>
           </execution>
           <execution>
@@ -540,6 +616,7 @@
               <additionalClasspathElements>
                 <additionalClasspathElement>${project.basedir}/src/test/classpath/customeventexecutor</additionalClasspathElement>
               </additionalClasspathElements>
+              <summaryFile>${project.build.directory}/failsafe-reports/custom-event-executor-summary.xml</summaryFile>
             </configuration>
           </execution>
           <execution>
@@ -555,6 +632,7 @@
               <additionalClasspathElements>
                 <additionalClasspathElement>${project.basedir}/src/test/classpath/tracerfactory</additionalClasspathElement>
               </additionalClasspathElements>
+              <summaryFile>${project.build.directory}/failsafe-reports/custom-vertx-tracer-factory-summary.xml</summaryFile>
             </configuration>
           </execution>
           <execution>
@@ -570,6 +648,7 @@
               <additionalClasspathElements>
                 <additionalClasspathElement>${project.basedir}/src/test/classpath/customfileresolver</additionalClasspathElement>
               </additionalClasspathElements>
+              <summaryFile>${project.build.directory}/failsafe-reports/custom-file-resolver-factory-summary.xml</summaryFile>
             </configuration>
           </execution>
           <execution>
@@ -585,6 +664,7 @@
               <additionalClasspathElements>
                 <additionalClasspathElement>${project.basedir}/src/test/classpath/customcontextlocal</additionalClasspathElement>
               </additionalClasspathElements>
+              <summaryFile>${project.build.directory}/failsafe-reports/custom-context-local-summary.xml</summaryFile>
             </configuration>
           </execution>
           <execution>
@@ -597,6 +677,7 @@
               <includes>
                 <include>io/vertx/it/servicehelper/ServiceHelperTest.java</include>
               </includes>
+              <summaryFile>${project.build.directory}/failsafe-reports/service-helper-summary.xml</summaryFile>
             </configuration>
           </execution>
           <execution>
@@ -612,6 +693,7 @@
               <systemProperties>
                 <io.netty.allocator.type>adaptive</io.netty.allocator.type>
               </systemProperties>
+              <summaryFile>${project.build.directory}/failsafe-reports/adaptive-allocator-summary.xml</summaryFile>
             </configuration>
           </execution>
           <execution>
@@ -627,6 +709,8 @@
               <systemProperties>
                 <io.netty.allocator.type>pooled</io.netty.allocator.type>
               </systemProperties>
+              <reportsDirectory>${project.build.directory}/pooled-allocator-failsafe-reports</reportsDirectory>
+              <summaryFile>${project.build.directory}/pooled-allocator-failsafe-reports/pooled-allocator-summary.xml</summaryFile>
             </configuration>
           </execution>
           <execution>
@@ -642,6 +726,8 @@
               <systemProperties>
                 <io.netty.allocator.type>unpooled</io.netty.allocator.type>
               </systemProperties>
+              <reportsDirectory>${project.build.directory}/unpooled-allocator-failsafe-reports</reportsDirectory>
+              <summaryFile>${project.build.directory}/unpooled-allocator-failsafe-reports/unpooled-allocator-summary.xml</summaryFile>
             </configuration>
           </execution>
         </executions>
