@@ -29,6 +29,7 @@
         <![CDATA[authenticated]]>
       </onlyIf>
     </publishing>
+    <backgroundBuildScanUpload>#{isFalse(env['CI'])}</backgroundBuildScanUpload>
   </buildScan>
   <buildCache>
     <local>
