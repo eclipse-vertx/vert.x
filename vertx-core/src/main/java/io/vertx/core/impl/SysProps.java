@@ -13,6 +13,8 @@ package io.vertx.core.impl;
 import io.vertx.core.internal.http.HttpHeadersInternal;
 
 import java.io.File;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 
 /**
  * Vert.x known system properties.
@@ -86,6 +88,13 @@ public enum SysProps {
    */
   LOGGER_DELEGATE_FACTORY_CLASS_NAME("vertx.logger-delegate-factory-class-name"),
 
+  JACKSON_DEFAULT_READ_MAX_NESTING_DEPTH("vertx.jackson.defaultReadMaxNestingDepth"),
+  JACKSON_DEFAULT_READ_MAX_DOC_LEN("vertx.jackson.defaultReadMaxDocumentLength"),
+  JACKSON_DEFAULT_READ_MAX_NUM_LEN("vertx.jackson.defaultReadMaxNumberLength"),
+  JACKSON_DEFAULT_READ_MAX_STRING_LEN("vertx.jackson.defaultReadMaxStringLength"),
+  JACKSON_DEFAULT_READ_MAX_NAME_LEN("vertx.jackson.defaultReadMaxNameLength"),
+  JACKSON_DEFAULT_READ_MAX_TOKEN_COUNT("vertx.jackson.defaultMaxTokenCount"),
+
   ;
 
   public final String name;
@@ -96,6 +105,22 @@ public enum SysProps {
 
   public String get() {
     return System.getProperty(name);
+  }
+
+  public OptionalLong getAsLong() throws NumberFormatException {
+    String s = get();
+    if (s != null) {
+      return OptionalLong.of(Long.parseLong(s));
+    }
+    return OptionalLong.empty();
+  }
+
+  public OptionalInt getAsInt() throws NumberFormatException {
+    String s = get();
+    if (s != null) {
+      return OptionalInt.of(Integer.parseInt(s));
+    }
+    return OptionalInt.empty();
   }
 
   public boolean getBoolean() {

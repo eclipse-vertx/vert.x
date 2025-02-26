@@ -408,6 +408,26 @@
             </configuration>
           </execution>
           <execution>
+            <id>jackson-config-override</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/json/JacksonConfigOverrideTest.java</include>
+              </includes>
+              <systemProperties>
+                <vertx.jackson.defaultReadMaxNestingDepth>100</vertx.jackson.defaultReadMaxNestingDepth>
+                <vertx.jackson.defaultReadMaxDocumentLength>100</vertx.jackson.defaultReadMaxDocumentLength>
+                <vertx.jackson.defaultReadMaxNumberLength>100</vertx.jackson.defaultReadMaxNumberLength>
+                <vertx.jackson.defaultReadMaxStringLength>100</vertx.jackson.defaultReadMaxStringLength>
+                <vertx.jackson.defaultReadMaxNameLength>100</vertx.jackson.defaultReadMaxNameLength>
+                <vertx.jackson.defaultReadMaxTokenCount>100</vertx.jackson.defaultReadMaxTokenCount>
+              </systemProperties>
+            </configuration>
+          </execution>
+          <execution>
             <id>no-jackson</id>
             <goals>
               <goal>integration-test</goal>
