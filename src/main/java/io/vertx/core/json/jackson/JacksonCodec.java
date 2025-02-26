@@ -18,6 +18,8 @@ import com.fasterxml.jackson.core.util.BufferRecycler;
 import com.fasterxml.jackson.core.util.ByteArrayBuilder;
 import io.netty.buffer.ByteBufInputStream;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.EncodeException;
 import io.vertx.core.json.JsonArray;
@@ -35,10 +37,8 @@ import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.function.BiConsumer;
 
 import static io.vertx.core.json.impl.JsonUtil.BASE64_ENCODER;
 import static io.vertx.core.json.impl.JsonUtil.BASE64_DECODER;
@@ -49,10 +49,42 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
  */
 public class JacksonCodec implements JsonCodec {
 
+  private static final Logger log = LoggerFactory.getLogger(JacksonCodec.class);
+
   private static final class JacksonPoolHolder {
     // Use Initialization-on-demand holder idiom to lazy load the HybridJacksonPool only when we know that we are on Jackson 2.16+
     private static final Object pool = HybridJacksonPool.getInstance();
   }
+
+  private static void setLong(String propertyName, BiConsumer<StreamReadConstraints.Builder, Long> setter, StreamReadConstraints.Builder builder) throws NumberFormatException {
+    String propertyValue = System.getProperty(propertyName);
+    if (propertyValue != null) {
+      try {
+        long longValue = Long.parseLong(propertyValue);
+        setter.accept(builder, longValue);
+      } catch (IllegalArgumentException e) {
+        log.warn("Invalid " + propertyName + " system property value");
+      }
+    }
+  }
+
+  private static void setInt(String propertyName, BiConsumer<StreamReadConstraints.Builder, Integer> setter, StreamReadConstraints.Builder builder) throws NumberFormatException {
+    String propertyValue = System.getProperty(propertyName);
+    if (propertyValue != null) {
+      try {
+        int intValue = Integer.parseInt(propertyValue);
+        setter.accept(builder, intValue);
+      } catch (IllegalArgumentException e) {
+        log.warn("Invalid " + propertyName + " system property value");
+      }
+    }
+  }
+
+  private static final String JACKSON_DEFAULT_READ_MAX_NESTING_DEPTH = "vertx.jackson.defaultReadMaxNestingDepth";
+  private static final String JACKSON_DEFAULT_READ_MAX_DOC_LEN = "vertx.jackson.defaultReadMaxDocumentLength";
+  private static final String JACKSON_DEFAULT_READ_MAX_NUM_LEN = "vertx.jackson.defaultReadMaxNumberLength";
+  private static final String JACKSON_DEFAULT_READ_MAX_STRING_LEN = "vertx.jackson.defaultReadMaxStringLength";
+  private static final String JACKSON_DEFAULT_READ_MAX_NAME_LEN = "vertx.jackson.defaultReadMaxNameLength";
 
   static final boolean releaseToPool;
   static final JsonFactory factory;
@@ -61,6 +93,27 @@ public class JacksonCodec implements JsonCodec {
 
     boolean releaseToPoolValue = false;
     TSFBuilder<?, ?> builder = JsonFactory.builder();
+
+    // Build stream read constraints
+    StreamReadConstraints.Builder readConstraintsBuilder = StreamReadConstraints.builder();
+
+    // Build stream read constraints
+    setInt(JACKSON_DEFAULT_READ_MAX_NESTING_DEPTH, StreamReadConstraints.Builder::maxNestingDepth, readConstraintsBuilder);
+    try {
+      setLong(JACKSON_DEFAULT_READ_MAX_DOC_LEN, StreamReadConstraints.Builder::maxDocumentLength, readConstraintsBuilder);
+    } catch (Throwable e) {
+      // Jackson 2.15
+    }
+    setInt(JACKSON_DEFAULT_READ_MAX_NUM_LEN, StreamReadConstraints.Builder::maxNumberLength, readConstraintsBuilder);
+    setInt(JACKSON_DEFAULT_READ_MAX_STRING_LEN, StreamReadConstraints.Builder::maxStringLength, readConstraintsBuilder);
+    try {
+      setInt(JACKSON_DEFAULT_READ_MAX_NAME_LEN, StreamReadConstraints.Builder::maxNameLength, readConstraintsBuilder);
+    } catch (Throwable e) {
+      // Jackson 2.15
+    }
+
+    builder.streamReadConstraints(readConstraintsBuilder.build());
+
     try {
       // Use reflection to configure the recycler pool
       Method[] methods = builder.getClass().getMethods();
