@@ -17,7 +17,10 @@ import com.fasterxml.jackson.core.util.BufferRecycler;
 import com.fasterxml.jackson.core.util.ByteArrayBuilder;
 import io.netty.buffer.ByteBufInputStream;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.SysProps;
 import io.vertx.core.internal.buffer.BufferInternal;
+import io.vertx.core.internal.logging.Logger;
+import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.EncodeException;
 import io.vertx.core.json.JsonArray;
@@ -32,10 +35,7 @@ import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static io.vertx.core.json.impl.JsonUtil.BASE64_ENCODER;
 import static io.vertx.core.json.impl.JsonUtil.BASE64_DECODER;
@@ -46,10 +46,71 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
  */
 public class JacksonCodec implements JsonCodec {
 
+  private static final Logger log = LoggerFactory.getLogger(JacksonCodec.class);
+
   private static JsonFactory buildFactory() {
-    TSFBuilder<?, ?> builder = JsonFactory.builder();
-    builder.recyclerPool(HybridJacksonPool.getInstance());
-    return builder.build();
+    TSFBuilder<?, ?> tsfBuilder = JsonFactory.builder();
+
+    // Build stream read constraints
+    StreamReadConstraints.Builder readConstraintsBuilder = StreamReadConstraints.builder();
+    try {
+      OptionalInt override = SysProps.JACKSON_DEFAULT_READ_MAX_NESTING_DEPTH.getAsInt();
+      if (override.isPresent()) {
+        readConstraintsBuilder.maxNestingDepth(override.getAsInt());
+      }
+    } catch (IllegalArgumentException e) {
+      log.warn("Invalid " + SysProps.JACKSON_DEFAULT_READ_MAX_NESTING_DEPTH.name + " system property value, use " +
+        StreamReadConstraints.DEFAULT_MAX_DEPTH + " instead");
+    }
+    try {
+      OptionalLong override = SysProps.JACKSON_DEFAULT_READ_MAX_DOC_LEN.getAsLong();
+      if (override.isPresent()) {
+        readConstraintsBuilder.maxDocumentLength(override.getAsLong());
+      }
+    } catch (IllegalArgumentException e) {
+      log.warn("Invalid " + SysProps.JACKSON_DEFAULT_READ_MAX_DOC_LEN.name + " system property value, use " +
+        StreamReadConstraints.DEFAULT_MAX_DOC_LEN + " instead");
+    }
+    try {
+      OptionalInt override = SysProps.JACKSON_DEFAULT_READ_MAX_NUM_LEN.getAsInt();
+      if (override.isPresent()) {
+        readConstraintsBuilder.maxNumberLength(override.getAsInt());
+      }
+    } catch (IllegalArgumentException e) {
+      log.warn("Invalid " + SysProps.JACKSON_DEFAULT_READ_MAX_NUM_LEN.name + " system property value, use " +
+        StreamReadConstraints.DEFAULT_MAX_NUM_LEN + " instead");
+    }
+    try {
+      OptionalInt override = SysProps.JACKSON_DEFAULT_READ_MAX_STRING_LEN.getAsInt();
+      if (override.isPresent()) {
+        readConstraintsBuilder.maxStringLength(override.getAsInt());
+      }
+    } catch (IllegalArgumentException e) {
+      log.warn("Invalid " + SysProps.JACKSON_DEFAULT_READ_MAX_STRING_LEN.name + " system property value, use " +
+        StreamReadConstraints.DEFAULT_MAX_STRING_LEN + " instead");
+    }
+    try {
+      OptionalInt override = SysProps.JACKSON_DEFAULT_READ_MAX_NAME_LEN.getAsInt();
+      if (override.isPresent()) {
+        readConstraintsBuilder.maxNameLength(override.getAsInt());
+      }
+    } catch (IllegalArgumentException e) {
+      log.warn("Invalid " + SysProps.JACKSON_DEFAULT_READ_MAX_NAME_LEN.name + " system property value, use " +
+        StreamReadConstraints.DEFAULT_MAX_NAME_LEN + " instead");
+    }
+    try {
+      OptionalLong override = SysProps.JACKSON_DEFAULT_READ_MAX_TOKEN_COUNT.getAsLong();
+      if (override.isPresent()) {
+        readConstraintsBuilder.maxTokenCount(override.getAsLong());
+      }
+    } catch (IllegalArgumentException e) {
+      log.warn("Invalid " + SysProps.JACKSON_DEFAULT_READ_MAX_TOKEN_COUNT.name + " system property value, use " +
+        StreamReadConstraints.DEFAULT_MAX_TOKEN_COUNT + " instead");
+    }
+
+    tsfBuilder.streamReadConstraints(readConstraintsBuilder.build());
+    tsfBuilder.recyclerPool(HybridJacksonPool.getInstance());
+    return tsfBuilder.build();
   }
 
   static final JsonFactory factory = buildFactory();
