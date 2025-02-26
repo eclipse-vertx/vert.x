@@ -346,21 +346,20 @@ public class NamedWorkerPoolTest extends VertxTestBase {
   @Test
   public void testDeployWorkerUsingNamedPool() throws Exception {
     AtomicReference<Thread> thread = new AtomicReference<>();
-    AtomicReference<String> deployment = new AtomicReference<>();
     String poolName = "vert.x-" + TestUtils.randomAlphaString(10);
-    vertx.deployVerticle(new AbstractVerticle() {
+    String deploymentID = vertx.deployVerticle(new VerticleBase() {
       @Override
-      public void start() throws Exception {
+      public Future<?> start() throws Exception {
         thread.set(Thread.currentThread());
         assertTrue(Context.isOnVertxThread());
         assertTrue(Context.isOnWorkerThread());
         assertFalse(Context.isOnEventLoopThread());
         assertTrue(Thread.currentThread().getName().startsWith(poolName + "-"));
-        context.runOnContext(v -> {
-          vertx.undeploy(context.deploymentID());
-        });
+        return super.start();
       }
-    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER).setWorkerPoolName(poolName)).onComplete(onSuccess(deployment::set));
+    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER).setWorkerPoolName(poolName))
+      .await();
+    vertx.undeploy(deploymentID).await();
     assertWaitUntil(() -> thread.get() != null && thread.get().getState() == Thread.State.TERMINATED);
   }
 
