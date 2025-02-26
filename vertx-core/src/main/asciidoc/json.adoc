@@ -127,3 +127,21 @@ When you are unsure of the string validity then you should use instead `{@link i
 ----
 {@link examples.JsonExamples#example5}
 ----
+
+=== Jackson configuration
+
+==== Read constraint configuration
+
+Since Jackson 2.15, upper bound constraints have been added to limit the bytes cumulated when parsing a JSON input.
+
+You can override the default configuration of the underlying parsers used by Vert.x with the following system properties:
+
+- `vertx.jackson.defaultReadMaxNestingDepth`: Maximum Nesting depth
+- `vertx.jackson.defaultReadMaxDocumentLength`: Maximum Document length
+- `vertx.jackson.defaultReadMaxNumberLength`: Maximum Number value length
+- `vertx.jackson.defaultReadMaxStringLength`: Maximum String value length
+- `vertx.jackson.defaultReadMaxNameLength`: Maximum Property name length
+- `vertx.jackson.defaultMaxTokenCount`: Maximum Token count
+
+You can refer to https://javadoc.io/doc/com.fasterxml.jackson.core/jackson-core/latest/index.html[this] for more information.
+
