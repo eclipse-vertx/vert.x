@@ -14,6 +14,7 @@ import io.netty.handler.codec.Headers;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.impl.HttpUtils;
+import io.vertx.core.impl.SysProps;
 
 import java.util.AbstractList;
 import java.util.Iterator;
@@ -94,7 +95,7 @@ abstract class HttpHeadersAdaptor<T extends Headers<CharSequence, CharSequence, 
 
   @Override
   public MultiMap add(String name, String value) {
-    if (!io.vertx.core.http.HttpHeaders.DISABLE_HTTP_HEADERS_VALIDATION) {
+    if (!SysProps.DISABLE_HTTP_HEADERS_VALIDATION.getBoolean()) {
       HttpUtils.validateHeader(name, value);
     }
     headers.add(HttpUtils.toLowerCase(name), value);
@@ -103,7 +104,7 @@ abstract class HttpHeadersAdaptor<T extends Headers<CharSequence, CharSequence, 
 
   @Override
   public MultiMap add(String name, Iterable<String> values) {
-    if (!io.vertx.core.http.HttpHeaders.DISABLE_HTTP_HEADERS_VALIDATION) {
+    if (!SysProps.DISABLE_HTTP_HEADERS_VALIDATION.getBoolean()) {
       HttpUtils.validateHeader(name, values);
     }
     headers.add(HttpUtils.toLowerCase(name), values);
@@ -128,7 +129,7 @@ abstract class HttpHeadersAdaptor<T extends Headers<CharSequence, CharSequence, 
 
   @Override
   public MultiMap set(String name, String value) {
-    if (!io.vertx.core.http.HttpHeaders.DISABLE_HTTP_HEADERS_VALIDATION) {
+    if (!SysProps.DISABLE_HTTP_HEADERS_VALIDATION.getBoolean()) {
       HttpUtils.validateHeader(name, value);
     }
     name = (String) HttpUtils.toLowerCase(name);
@@ -142,7 +143,7 @@ abstract class HttpHeadersAdaptor<T extends Headers<CharSequence, CharSequence, 
 
   @Override
   public MultiMap set(String name, Iterable<String> values) {
-    if (!io.vertx.core.http.HttpHeaders.DISABLE_HTTP_HEADERS_VALIDATION) {
+    if (!SysProps.DISABLE_HTTP_HEADERS_VALIDATION.getBoolean()) {
       HttpUtils.validateHeader(name, values);
     }
     headers.set(HttpUtils.toLowerCase(name), values);
@@ -243,7 +244,7 @@ abstract class HttpHeadersAdaptor<T extends Headers<CharSequence, CharSequence, 
 
   @Override
   public MultiMap add(CharSequence name, CharSequence value) {
-    if (!io.vertx.core.http.HttpHeaders.DISABLE_HTTP_HEADERS_VALIDATION) {
+    if (!SysProps.DISABLE_HTTP_HEADERS_VALIDATION.getBoolean()) {
       HttpUtils.validateHeader(name, value);
     }
     headers.add(HttpUtils.toLowerCase(name), value);
@@ -252,7 +253,7 @@ abstract class HttpHeadersAdaptor<T extends Headers<CharSequence, CharSequence, 
 
   @Override
   public MultiMap add(CharSequence name, Iterable<CharSequence> values) {
-    if (!io.vertx.core.http.HttpHeaders.DISABLE_HTTP_HEADERS_VALIDATION) {
+    if (!SysProps.DISABLE_HTTP_HEADERS_VALIDATION.getBoolean()) {
       HttpUtils.validateHeader(name, values);
     }
     headers.add(HttpUtils.toLowerCase(name), values);
@@ -261,7 +262,7 @@ abstract class HttpHeadersAdaptor<T extends Headers<CharSequence, CharSequence, 
 
   @Override
   public MultiMap set(CharSequence name, CharSequence value) {
-    if (!io.vertx.core.http.HttpHeaders.DISABLE_HTTP_HEADERS_VALIDATION) {
+    if (!SysProps.DISABLE_HTTP_HEADERS_VALIDATION.getBoolean()) {
       HttpUtils.validateHeader(name, value);
     }
     name = HttpUtils.toLowerCase(name);
@@ -275,7 +276,7 @@ abstract class HttpHeadersAdaptor<T extends Headers<CharSequence, CharSequence, 
 
   @Override
   public MultiMap set(CharSequence name, Iterable<CharSequence> values) {
-    if (!io.vertx.core.http.HttpHeaders.DISABLE_HTTP_HEADERS_VALIDATION) {
+    if (!SysProps.DISABLE_HTTP_HEADERS_VALIDATION.getBoolean()) {
       HttpUtils.validateHeader(name, values);
     }
     headers.set(HttpUtils.toLowerCase(name), values);

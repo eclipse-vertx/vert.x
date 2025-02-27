@@ -56,6 +56,7 @@ import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.impl.Http1xOrH2CHandler;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.impl.Utils;
+import io.vertx.core.net.HostAndPort;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 import io.vertx.test.core.DetectFileDescriptorLeaks;
@@ -103,15 +104,15 @@ public abstract class HttpServerTest extends HttpTestBase {
     return new DefaultHttp2Headers().method(method).scheme(scheme).path(path);
   }
 
-  private static Http2Headers GET(String scheme, String path) {
+  static Http2Headers GET(String scheme, String path) {
     return headers("GET", scheme, path);
   }
 
-  private static Http2Headers GET(String path) {
+  static Http2Headers GET(String path) {
     return headers("GET", "https", path);
   }
 
-  private static Http2Headers POST(String path) {
+  static Http2Headers POST(String path) {
     return headers("POST", "https", path);
   }
 
@@ -1094,7 +1095,7 @@ public abstract class HttpServerTest extends HttpTestBase {
   @Test
   public void testPushPromiseOverrideAuthority() throws Exception {
     testPushPromise(GET("/").authority("whatever.com"), (resp, handler ) -> {
-      resp.push(HttpMethod.GET, "override.com", "/wibble").onComplete(handler);
+      resp.push(HttpMethod.GET, HostAndPort.authority("override.com"), "/wibble").onComplete(handler);
     }, headers -> {
       assertEquals("GET", headers.method().toString());
       assertEquals("https", headers.scheme().toString());
