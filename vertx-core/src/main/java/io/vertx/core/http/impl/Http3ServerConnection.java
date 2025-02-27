@@ -120,15 +120,6 @@ public class Http3ServerConnection extends Http3ConnectionBase implements HttpSe
     }
   }
 
-  String determineContentEncoding(VertxHttpHeaders headers) {
-    String acceptEncoding = headers.get(HttpHeaderNames.ACCEPT_ENCODING) != null ?
-      headers.get(HttpHeaderNames.ACCEPT_ENCODING).toString() : null;
-    if (acceptEncoding != null && encodingDetector != null) {
-      return encodingDetector.apply(acceptEncoding);
-    }
-    return null;
-  }
-
   private Http3ServerStream createStream(Http3Headers headers, boolean streamEnded) {
     CharSequence schemeHeader = headers.getAndRemove(HttpHeaders.PSEUDO_SCHEME);
     HostAndPort authority = null;
@@ -153,9 +144,7 @@ public class Http3ServerConnection extends Http3ConnectionBase implements HttpSe
   }
 
   private void initStream(QuicStreamChannel streamChannel, Http3ServerStream vertxStream) {
-    String contentEncoding = options.isCompressionSupported() ? determineContentEncoding(vertxStream.headers) : null;
-    Http3ServerRequest request = new Http3ServerRequest(vertxStream, serverOrigin, vertxStream.headers,
-      contentEncoding);
+    Http3ServerRequest request = new Http3ServerRequest(vertxStream, serverOrigin, vertxStream.headers);
     vertxStream.request = request;
     vertxStream.isConnect = request.method() == HttpMethod.CONNECT;
     quicStreamChannels.put(streamChannel.streamId(), streamChannel);
@@ -276,12 +265,10 @@ public class Http3ServerConnection extends Http3ConnectionBase implements HttpSe
     protected final Http3ServerResponse response;
     private final Promise<HttpServerResponse> promise;
 
-    public Push(Http3ServerStream stream,
-                String contentEncoding,
-                Promise<HttpServerResponse> promise) {
+    public Push(Http3ServerStream stream, Promise<HttpServerResponse> promise) {
       this.context = stream.context;
       this.stream = stream;
-      this.response = new Http3ServerResponse(stream.conn, stream, true, contentEncoding);
+      this.response = new Http3ServerResponse(stream.conn, stream, true);
       this.promise = promise;
     }
 
