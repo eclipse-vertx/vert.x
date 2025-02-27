@@ -18,9 +18,9 @@ jobs:
           - os: ubuntu-latest
             jdk: 11
             profile: '-PNativeEpoll'
-          - os: ubuntu-latest
-            jdk: 11
-            profile: '-PNativeIoUring'
+#          - os: ubuntu-latest
+#            jdk: 11
+#            profile: '-PNativeIoUring'
           - os: ubuntu-latest
             jdk: 11
             profile: '-PNativeEpoll+DomainSockets'
