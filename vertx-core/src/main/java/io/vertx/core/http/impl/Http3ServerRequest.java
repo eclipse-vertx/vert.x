@@ -70,11 +70,10 @@ public class Http3ServerRequest extends HttpServerRequestInternal implements Htt
 
   Http3ServerRequest(Http3ServerStream stream,
                      String serverOrigin,
-                     VertxHttpHeaders headers,
-                     String contentEncoding) {
+                     VertxHttpHeaders headers) {
     this.context = stream.context;
     this.stream = stream;
-    this.response = new Http3ServerResponse(stream.conn, stream, false, contentEncoding);
+    this.response = new Http3ServerResponse(stream.conn, stream, false);
     this.serverOrigin = serverOrigin;
     this.headersMap = headers;
   }
