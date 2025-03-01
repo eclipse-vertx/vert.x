@@ -11,13 +11,13 @@
 
 package io.vertx.tests.http;
 
-import io.netty.incubator.codec.http3.Http3;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.net.JdkSSLEngineOptions;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.impl.Http3Utils;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 
@@ -70,7 +70,7 @@ public class HttpOptionsFactory {
       .setTrustOptions(Trust.SERVER_JKS.get())
       .setHttp3(true)
       .getSslOptions()
-      .setApplicationLayerProtocols(List.of(Http3.supportedApplicationProtocols()));
+      .setApplicationLayerProtocols(Http3Utils.supportedApplicationProtocols());
 
     return options;
   }
@@ -85,9 +85,7 @@ public class HttpOptionsFactory {
     options
       .setHttp3(true)
       .getSslOptions()
-      .setApplicationLayerProtocols(
-        List.of(Http3.supportedApplicationProtocols())
-      );
+      .setApplicationLayerProtocols(Http3Utils.supportedApplicationProtocols());
 
     options.setAlpnVersions(List.of(
       HttpVersion.HTTP_3,
@@ -117,9 +115,7 @@ public class HttpOptionsFactory {
     httpClientOptions
       .setHttp3(true)
       .getSslOptions()
-      .setApplicationLayerProtocols(
-        List.of(Http3.supportedApplicationProtocols())
-      );
+      .setApplicationLayerProtocols(Http3Utils.supportedApplicationProtocols());
     return httpClientOptions
       .setSslEngineOptions(new JdkSSLEngineOptions())
       .setUseAlpn(true)

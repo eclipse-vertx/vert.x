@@ -21,7 +21,6 @@ import io.netty.handler.ssl.ApplicationProtocolConfig;
 import io.netty.handler.ssl.IdentityCipherSuiteFilter;
 import io.netty.handler.ssl.JdkSslContext;
 import io.netty.handler.timeout.IdleStateEvent;
-import io.netty.incubator.codec.http3.Http3FrameToHttpObjectCodec;
 import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.Future;
 import io.vertx.core.*;

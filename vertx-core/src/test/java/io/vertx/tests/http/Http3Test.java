@@ -11,9 +11,9 @@
 
 package io.vertx.tests.http;
 
-import io.netty.incubator.codec.http3.Http3;
 import io.vertx.core.http.*;
 import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.impl.Http3Utils;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -66,9 +66,7 @@ public class Http3Test extends HttpCommonTest {
 
     opts
       .getSslOptions()
-      .setApplicationLayerProtocols(
-        List.of(Http3.supportedApplicationProtocols())
-      );
+      .setApplicationLayerProtocols(Http3Utils.supportedApplicationProtocols());
   }
 
   @Override

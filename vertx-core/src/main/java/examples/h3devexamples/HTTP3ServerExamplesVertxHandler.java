@@ -13,12 +13,9 @@ package examples.h3devexamples;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.buffer.UnpooledHeapByteBuf;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
-import io.netty.incubator.codec.http3.Http3;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
-import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.internal.net.NetSocketInternal;
@@ -26,6 +23,7 @@ import io.vertx.core.net.JdkSSLEngineOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.PemKeyCertOptions;
+import io.vertx.core.net.impl.Http3Utils;
 
 import java.nio.charset.StandardCharsets;
 import java.security.cert.CertificateException;
@@ -43,9 +41,7 @@ public class HTTP3ServerExamplesVertxHandler {
     options
       .setHttp3(true)
       .getSslOptions()
-      .setApplicationLayerProtocols(
-        List.of(Http3.supportedApplicationProtocols())
-      );
+      .setApplicationLayerProtocols(Http3Utils.supportedApplicationProtocols());
     options
       .setSslEngineOptions(new JdkSSLEngineOptions())
       .setUseAlpn(true)
@@ -102,9 +98,8 @@ public class HTTP3ServerExamplesVertxHandler {
       .setUseAlpn(true)
       .setSsl(true)
       .getSslOptions()
-      .setApplicationLayerProtocols(
-        List.of(Http3.supportedApplicationProtocols())
-      ).setSslHandshakeTimeout(1)
+      .setApplicationLayerProtocols(Http3Utils.supportedApplicationProtocols())
+      .setSslHandshakeTimeout(1)
       .setSslHandshakeTimeoutUnit(TimeUnit.HOURS)
     ;
 

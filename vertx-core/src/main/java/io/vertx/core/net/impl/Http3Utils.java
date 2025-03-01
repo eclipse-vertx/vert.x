@@ -34,6 +34,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.internal.PromiseInternal;
 
 import java.net.InetSocketAddress;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.LongFunction;
@@ -59,6 +60,10 @@ public class Http3Utils {
 
   public static Http3FrameToHttpObjectCodec newServerFrameToHttpObjectCodec() {
     return new Http3FrameToHttpObjectCodec(true);
+  }
+
+  public static List<String> supportedApplicationProtocols() {
+    return List.of(Http3.supportedApplicationProtocols());
   }
 
   public static ChannelFuture newDatagramChannel(EventLoop eventLoop, InetSocketAddress remoteAddress,

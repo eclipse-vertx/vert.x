@@ -12,13 +12,13 @@
 package examples.h3devexamples;
 
 import io.netty.handler.ssl.util.SelfSignedCertificate;
-import io.netty.incubator.codec.http3.Http3;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.net.PemKeyCertOptions;
+import io.vertx.core.net.impl.Http3Utils;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -54,9 +54,8 @@ public class HTTP3ServerExamplesSni {
       .setSni(true)
       .setSsl(true)
       .getSslOptions()
-      .setApplicationLayerProtocols(
-        List.of(Http3.supportedApplicationProtocols())
-      ).setSslHandshakeTimeout(1)
+      .setApplicationLayerProtocols(Http3Utils.supportedApplicationProtocols())
+      .setSslHandshakeTimeout(1)
       .setSslHandshakeTimeoutUnit(TimeUnit.HOURS)
     ;
 
