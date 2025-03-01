@@ -5,7 +5,7 @@ import io.netty.handler.codec.http2.EmptyHttp2Headers;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.util.concurrent.FutureListener;
-import io.vertx.core.Handler;
+import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpVersion;
@@ -48,10 +48,9 @@ class Http2ClientStream extends HttpStreamImpl<Http2ClientConnection, Http2Strea
   }
 
   @Override
-  protected void createStreamChannelInternal(int id, boolean b, Handler<Http2Stream> onComplete) throws HttpException {
+  protected Future<Http2Stream> createStreamChannelInternal(int id, boolean b) throws HttpException {
     try {
-      Http2Stream stream = this.conn.handler.encoder().connection().local().createStream(id, false);
-      onComplete.handle(stream);
+      return Future.succeededFuture(this.conn.handler.encoder().connection().local().createStream(id, false));
     } catch (Http2Exception e) {
       throw new HttpException(e);
     }

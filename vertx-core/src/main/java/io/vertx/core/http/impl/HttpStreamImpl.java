@@ -32,7 +32,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
 
   abstract int lastStreamCreated();
 
-  protected abstract void createStreamChannelInternal(int id, boolean b, Handler<S> onComplete) throws HttpException;
+  protected abstract Future<S> createStreamChannelInternal(int id, boolean b) throws HttpException;
 
   protected abstract TracingPolicy getTracingPolicy();
 
@@ -262,7 +262,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
     }
     head.id = id;
     head.remoteAddress = conn.remoteAddress();
-    createStreamChannelInternal(id, false, streamChannel -> {
+    createStreamChannelInternal(id, false).onSuccess(streamChannel -> {
       init(streamChannel);
       if (metrics() != null) {
         metric = metrics().requestBegin(headers.path().toString(), head);
@@ -281,7 +281,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
           HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
       }
       onComplete.handle(streamChannel);
-    });
+    }).onFailure(this::handleException);
   }
 
   @Override

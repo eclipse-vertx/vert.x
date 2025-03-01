@@ -13,11 +13,7 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelOutboundHandlerAdapter;
-import io.netty.channel.ChannelPromise;
+import io.netty.channel.*;
 import io.netty.channel.socket.ChannelInputShutdownEvent;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.incubator.codec.http3.*;
@@ -39,6 +35,7 @@ import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.net.impl.ConnectionBase;
+import io.vertx.core.net.impl.Http3Utils;
 import io.vertx.core.net.impl.ShutdownEvent;
 
 import java.util.function.Function;
@@ -513,15 +510,11 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   }
 
 
-  public void createStreamChannel(Handler<QuicStreamChannel> onComplete) {
-    Http3.newRequestStream((QuicChannel) chctx.channel(),
-      new ChannelInitializerWrapper<QuicStreamChannel>(ch -> initStreamChannel(ch, onComplete)));
-  }
-
-  protected void initStreamChannel(QuicStreamChannel streamChannel, Handler<QuicStreamChannel> onComplete) {
-    streamChannel.closeFuture().addListener(ignored -> handleOnStreamChannelClosed(streamChannel));
-    streamChannel.pipeline().addLast(new StreamChannelHandler());
-    onComplete.handle(streamChannel);
+  public io.vertx.core.Future<QuicStreamChannel> createStreamChannel() {
+    return Http3Utils.newRequestStream((QuicChannel) chctx.channel(), streamChannel -> {
+      streamChannel.closeFuture().addListener(ignored -> handleOnStreamChannelClosed(streamChannel));
+      streamChannel.pipeline().addLast(new StreamChannelHandler());
+    });
   }
 
   private void handleOnStreamChannelClosed(QuicStreamChannel streamChannel) {
