@@ -12,7 +12,6 @@
 package examples.h3devexamples;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.incubator.codec.http3.Http3;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
@@ -22,8 +21,7 @@ import io.vertx.core.net.JdkSSLEngineOptions;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.SocketAddress;
-
-import java.util.List;
+import io.vertx.core.net.impl.Http3Utils;
 
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
@@ -34,9 +32,7 @@ public class HTTP3ClientExamplesVertxHandler {
     options
       .setHttp3(true)
       .getSslOptions()
-      .setApplicationLayerProtocols(
-        List.of(Http3.supportedApplicationProtocols())
-      );
+      .setApplicationLayerProtocols(Http3Utils.supportedApplicationProtocols());
     options
       .setSslEngineOptions(new JdkSSLEngineOptions())
       .setUseAlpn(true)
