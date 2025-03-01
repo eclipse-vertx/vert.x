@@ -17,6 +17,9 @@ import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.netty.incubator.codec.http3.Http3;
+import io.netty.incubator.codec.http3.Http3ClientConnectionHandler;
+import io.netty.incubator.codec.http3.Http3ServerConnectionHandler;
+import io.netty.incubator.codec.http3.Http3SettingsFrame;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicSslContext;
 import io.netty.incubator.codec.quic.QuicSslContextBuilder;
@@ -32,6 +35,7 @@ import io.vertx.core.internal.PromiseInternal;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.function.LongFunction;
 
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
@@ -39,6 +43,14 @@ import java.util.concurrent.TimeUnit;
 public class Http3Utils {
 
   private static final InternalLogger logger = InternalLoggerFactory.getInstance(Http3Utils.class);
+
+  public static Http3ServerConnectionHandlerBuilder newServerConnectionHandler() {
+    return new Http3ServerConnectionHandlerBuilder();
+  }
+
+  public static Http3ClientConnectionHandlerBuilder newClientConnectionHandler() {
+    return new Http3ClientConnectionHandlerBuilder();
+  }
 
   public static ChannelFuture newDatagramChannel(EventLoop eventLoop, InetSocketAddress remoteAddress,
                                                  ChannelHandler handler) {
@@ -68,7 +80,8 @@ public class Http3Utils {
     return newQuicChannel(channel, channelHandler);
   }
 
-  public static io.vertx.core.Future<QuicStreamChannel> newRequestStream(QuicChannel channel, Handler<QuicStreamChannel> handler) {
+  public static io.vertx.core.Future<QuicStreamChannel> newRequestStream(QuicChannel channel,
+                                                                         Handler<QuicStreamChannel> handler) {
     PromiseInternal<QuicStreamChannel> listener = (PromiseInternal) Promise.promise();
 
     Http3.newRequestStream(channel, new ChannelInitializer<QuicStreamChannel>() {
@@ -136,6 +149,86 @@ public class Http3Utils {
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
       logger.error(cause);
       ctx.close();
+    }
+  }
+
+  public static class Http3ServerConnectionHandlerBuilder {
+    private Handler<QuicStreamChannel> requestStreamHandler;
+    private ChannelHandler inboundControlStreamHandler;
+    private LongFunction<ChannelHandler> unknownInboundStreamHandlerFactory;
+    private Http3SettingsFrame localSettings;
+    private boolean disableQpackDynamicTable = true;
+
+    public Http3ServerConnectionHandlerBuilder requestStreamHandler(Handler<QuicStreamChannel> requestStreamHandler) {
+      this.requestStreamHandler = requestStreamHandler;
+      return this;
+    }
+
+    public Http3ServerConnectionHandlerBuilder inboundControlStreamHandler(ChannelHandler inboundControlStreamHandler) {
+      this.inboundControlStreamHandler = inboundControlStreamHandler;
+      return this;
+    }
+
+    public Http3ServerConnectionHandlerBuilder unknownInboundStreamHandlerFactory(LongFunction<ChannelHandler> unknownInboundStreamHandlerFactory) {
+      this.unknownInboundStreamHandlerFactory = unknownInboundStreamHandlerFactory;
+      return this;
+    }
+
+    public Http3ServerConnectionHandlerBuilder localSettings(Http3SettingsFrame localSettings) {
+      this.localSettings = localSettings;
+      return this;
+    }
+
+    public Http3ServerConnectionHandlerBuilder disableQpackDynamicTable(boolean disableQpackDynamicTable) {
+      this.disableQpackDynamicTable = disableQpackDynamicTable;
+      return this;
+    }
+
+    public Http3ServerConnectionHandler build() {
+      return new Http3ServerConnectionHandler(new ChannelInitializer<QuicStreamChannel>() {
+        @Override
+        protected void initChannel(QuicStreamChannel streamChannel) {
+          requestStreamHandler.handle(streamChannel);
+        }
+      }, inboundControlStreamHandler, unknownInboundStreamHandlerFactory, localSettings, disableQpackDynamicTable);
+    }
+  }
+
+  public static class Http3ClientConnectionHandlerBuilder {
+    private ChannelHandler inboundControlStreamHandler;
+    private LongFunction<ChannelHandler> pushStreamHandlerFactory;
+    private LongFunction<ChannelHandler> unknownInboundStreamHandlerFactory;
+    private Http3SettingsFrame localSettings;
+    private boolean disableQpackDynamicTable = true;
+
+    public Http3ClientConnectionHandlerBuilder inboundControlStreamHandler(ChannelHandler inboundControlStreamHandler) {
+      this.inboundControlStreamHandler = inboundControlStreamHandler;
+      return this;
+    }
+
+    public Http3ClientConnectionHandlerBuilder pushStreamHandlerFactory(LongFunction<ChannelHandler> pushStreamHandlerFactory) {
+      this.pushStreamHandlerFactory = pushStreamHandlerFactory;
+      return this;
+    }
+
+    public Http3ClientConnectionHandlerBuilder unknownInboundStreamHandlerFactory(LongFunction<ChannelHandler> unknownInboundStreamHandlerFactory) {
+      this.unknownInboundStreamHandlerFactory = unknownInboundStreamHandlerFactory;
+      return this;
+    }
+
+    public Http3ClientConnectionHandlerBuilder localSettings(Http3SettingsFrame localSettings) {
+      this.localSettings = localSettings;
+      return this;
+    }
+
+    public Http3ClientConnectionHandlerBuilder disableQpackDynamicTable(boolean disableQpackDynamicTable) {
+      this.disableQpackDynamicTable = disableQpackDynamicTable;
+      return this;
+    }
+
+    public Http3ClientConnectionHandler build() {
+      return new Http3ClientConnectionHandler(inboundControlStreamHandler, pushStreamHandlerFactory,
+        unknownInboundStreamHandlerFactory, localSettings, disableQpackDynamicTable);
     }
   }
 }

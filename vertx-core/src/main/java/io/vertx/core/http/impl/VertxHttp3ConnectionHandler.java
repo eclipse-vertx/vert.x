@@ -280,7 +280,10 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   }
 
   public void writeReset(QuicStreamChannel streamChannel, long code, FutureListener<Void> listener) {
-    ChannelPromise promise = chctx.newPromise().addListener(future -> checkFlush()).addListener(listener);
+    ChannelPromise promise = chctx.newPromise().addListener(future -> checkFlush());
+    if (listener != null) {
+      promise.addListener(listener);
+    }
     streamChannel.shutdownOutput((int) code, promise);
   }
 
@@ -470,12 +473,22 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   }
 
   public Http3ConnectionHandler getHttp3ConnectionHandler() {
+    //TODO: implement settings
     if (isServer) {
-      return new Http3ServerConnectionHandler(new ChannelInitializerWrapper<QuicStreamChannel>(ch -> initStreamChannel(ch, NULL_HANDLER)),
-        new Http3ControlStreamChannelHandler(this), null, null, false);  //TODO: implement settings
+      Handler<QuicStreamChannel> quicStreamChannelHandler = streamChannel -> {
+        streamChannel.closeFuture().addListener(ignored -> handleOnStreamChannelClosed(streamChannel));
+        streamChannel.pipeline().addLast(new StreamChannelHandler());
+      };
+      return Http3Utils
+        .newServerConnectionHandler()
+        .requestStreamHandler(quicStreamChannelHandler)
+        .inboundControlStreamHandler(new Http3ControlStreamChannelHandler(this))
+        .build();
     }
-    return new Http3ClientConnectionHandler(new Http3ControlStreamChannelHandler(this), null, null, null,
-      false);  //TODO: implement settings
+    return Http3Utils
+      .newClientConnectionHandler()
+      .inboundControlStreamHandler(new Http3ControlStreamChannelHandler(this))
+      .build();
   }
 
   private void _writePriority(QuicStreamChannel streamChannel, int urgency, boolean incremental) {
