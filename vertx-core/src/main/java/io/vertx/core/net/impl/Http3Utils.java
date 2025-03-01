@@ -20,11 +20,14 @@ import io.netty.incubator.codec.http3.Http3;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicSslContext;
 import io.netty.incubator.codec.quic.QuicSslContextBuilder;
+import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.netty.resolver.DefaultAddressResolverGroup;
 import io.netty.util.concurrent.Future;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
+import io.vertx.core.internal.PromiseInternal;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutionException;
@@ -63,6 +66,18 @@ public class Http3Utils {
       }
     };
     return newQuicChannel(channel, channelHandler);
+  }
+
+  public static io.vertx.core.Future<QuicStreamChannel> newRequestStream(QuicChannel channel, Handler<QuicStreamChannel> handler) {
+    PromiseInternal<QuicStreamChannel> listener = (PromiseInternal) Promise.promise();
+
+    Http3.newRequestStream(channel, new ChannelInitializer<QuicStreamChannel>() {
+      @Override
+      protected void initChannel(QuicStreamChannel quicStreamChannel) {
+        handler.handle(quicStreamChannel);
+      }
+    }).addListener(listener);
+    return listener;
   }
 
   public static ChannelHandler newClientSslContext() {
