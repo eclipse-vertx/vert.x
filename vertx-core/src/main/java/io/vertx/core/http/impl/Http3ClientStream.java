@@ -4,7 +4,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.incubator.codec.http3.Http3Headers;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.netty.util.concurrent.FutureListener;
-import io.vertx.core.Handler;
+import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpVersion;
@@ -14,7 +14,7 @@ import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.tracing.TracingPolicy;
 
-import static io.vertx.core.http.impl.Http3ServerStream.HTTP3_DATA_FRAME;
+import static io.vertx.core.http.impl.Http3ServerStream.*;
 
 class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStreamChannel> {
   private static final MultiMap EMPTY = new Http3HeadersAdaptor();
@@ -51,8 +51,8 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
   }
 
   @Override
-  protected void createStreamChannelInternal(int id, boolean b, Handler<QuicStreamChannel> onComplete) {
-    conn.handler.createStreamChannel(onComplete);
+  protected Future<QuicStreamChannel> createStreamChannelInternal(int id, boolean b) {
+    return conn.handler.createStreamChannel();
   }
 
   @Override
