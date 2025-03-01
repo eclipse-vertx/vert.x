@@ -480,13 +480,13 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
         streamChannel.pipeline().addLast(new StreamChannelHandler());
       };
       return Http3Utils
-        .newServerConnectionHandler()
+        .newServerConnectionHandlerBuilder()
         .requestStreamHandler(quicStreamChannelHandler)
         .inboundControlStreamHandler(new Http3ControlStreamChannelHandler(this))
         .build();
     }
     return Http3Utils
-      .newClientConnectionHandler()
+      .newClientConnectionHandlerBuilder()
       .inboundControlStreamHandler(new Http3ControlStreamChannelHandler(this))
       .build();
   }

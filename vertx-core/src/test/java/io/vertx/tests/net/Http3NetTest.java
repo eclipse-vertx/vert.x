@@ -15,17 +15,16 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.*;
 import io.netty.incubator.codec.http3.Http3ClientConnectionHandler;
-import io.netty.incubator.codec.http3.Http3ServerConnectionHandler;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
+import io.vertx.core.Handler;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.logging.Logger;
@@ -134,7 +133,7 @@ public class Http3NetTest extends NetTest {
 
       Http3Utils.newRequestStream((QuicChannel) soInt.channelHandlerContext().channel(),
         ch -> {
-          ch.pipeline().addLast("myHttp3FrameToHttpObjectCodec", Http3Utils.newHttp3ClientFrameToHttpObjectCodec());
+          ch.pipeline().addLast("myHttp3FrameToHttpObjectCodec", Http3Utils.newClientFrameToHttpObjectCodec());
           ch.pipeline().addLast("myHttpHandler", new ChannelInboundHandlerAdapter() {
             @Override
             public void channelRead(ChannelHandlerContext ctx, Object obj) {
@@ -179,6 +178,27 @@ public class Http3NetTest extends NetTest {
   protected void testNetServerInternal_(HttpClientOptions clientOptions, boolean expectSSL) throws Exception {
     waitFor(2);
 
+    Handler<QuicStreamChannel> requestStreamHandler = ch -> {
+      ch.pipeline().addLast("myHttp3FrameToHttpObjectCodec", Http3Utils.newServerFrameToHttpObjectCodec());
+      ch.pipeline().addLast(new ChannelDuplexHandler() {
+        @Override
+        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+          if (msg instanceof LastHttpContent) {
+            DefaultFullHttpResponse response = new DefaultFullHttpResponse(
+              HttpVersion.HTTP_1_1,
+              HttpResponseStatus.OK,
+              Unpooled.copiedBuffer("Hello World", StandardCharsets.UTF_8));
+            response.headers().set(HttpHeaderNames.CONTENT_LENGTH, "11");
+            ch.writeAndFlush(response).addListener(future -> {
+              if (future.isSuccess()) {
+                complete();
+              }
+            });
+          }
+        }
+      });
+    };
+
     server.connectHandler(so -> {
       NetSocketInternal internal = (NetSocketInternal) so;
       NetSocketImpl soi = (NetSocketImpl) so;
@@ -187,29 +207,7 @@ public class Http3NetTest extends NetTest {
       ChannelPipeline pipeline = soi.channel().pipeline();
 
       pipeline.replace("handler", "myHttp3ServerConnectionHandler",
-        new Http3ServerConnectionHandler(new ChannelInitializer<QuicStreamChannel>() {
-          @Override
-          protected void initChannel(QuicStreamChannel ch) {
-            ch.pipeline().addLast("myHttp3FrameToHttpObjectCodec", Http3Utils.newHttp3ServerFrameToHttpObjectCodec());
-            ch.pipeline().addLast(new ChannelDuplexHandler() {
-              @Override
-              public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-                if (msg instanceof LastHttpContent) {
-                  DefaultFullHttpResponse response = new DefaultFullHttpResponse(
-                    HttpVersion.HTTP_1_1,
-                    HttpResponseStatus.OK,
-                    Unpooled.copiedBuffer("Hello World", StandardCharsets.UTF_8));
-                  response.headers().set(HttpHeaderNames.CONTENT_LENGTH, "11");
-                  ch.writeAndFlush(response).addListener(future -> {
-                    if (future.isSuccess()) {
-                      complete();
-                    }
-                  });
-                }
-              }
-            });
-          }
-        }));
+        Http3Utils.newServerConnectionHandlerBuilder().requestStreamHandler(requestStreamHandler).build());
 
       internal.handler(buff -> fail());
       internal.messageHandler(obj -> {
