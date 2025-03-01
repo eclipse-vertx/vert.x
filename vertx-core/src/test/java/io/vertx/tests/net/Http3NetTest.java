@@ -12,37 +12,28 @@ package io.vertx.tests.net;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelDuplexHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPipeline;
-import io.netty.handler.codec.http.DefaultFullHttpRequest;
-import io.netty.handler.codec.http.DefaultFullHttpResponse;
-import io.netty.handler.codec.http.DefaultHttpContent;
-import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.channel.*;
 import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
-import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.http.*;
 import io.netty.incubator.codec.http3.Http3;
 import io.netty.incubator.codec.http3.Http3ClientConnectionHandler;
 import io.netty.incubator.codec.http3.Http3FrameToHttpObjectCodec;
 import io.netty.incubator.codec.http3.Http3ServerConnectionHandler;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpClientResponse;
-import io.vertx.core.http.HttpResponseExpectation;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
+import io.vertx.core.http.*;
+import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.logging.Logger;
+import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.net.NetSocketInternal;
-import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.*;
+import io.vertx.core.net.impl.Http3ProxyProvider;
 import io.vertx.core.net.impl.NetSocketImpl;
+import io.vertx.test.proxy.HttpProxy;
+import io.vertx.test.proxy.SocksProxy;
 import io.vertx.tests.http.HttpOptionsFactory;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -57,6 +48,9 @@ import static io.vertx.test.http.HttpTestBase.*;
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
  */
 public class Http3NetTest extends NetTest {
+
+  private static final Logger log = LoggerFactory.getLogger(Http3NetTest.class);
+
 
   protected NetServerOptions createNetServerOptions() {
     return HttpOptionsFactory.createH3NetServerOptions().setHost(testAddress.hostAddress()).setPort(testAddress.port());
@@ -76,6 +70,10 @@ public class Http3NetTest extends NetTest {
     return HttpOptionsFactory.createH3HttpClientOptions();
   }
 
+  @Override
+  protected SocksProxy createSocksProxy() {
+    return new SocksProxy().http3(true);
+  }
 
   @Ignore("Host shortnames are not allowed in netty for QUIC.")
   @Override
@@ -231,6 +229,74 @@ public class Http3NetTest extends NetTest {
         assertEquals("Hello World", body.toString());
         complete();
       }));
+    await();
+  }
+
+
+  @Test
+  public void testHttp3Socks5Proxy() throws Exception {
+    waitFor(3);
+    String clientText = "Hi, I'm client!";
+    String serverText = "Hi, I'm server";
+
+    CountDownLatch latch = new CountDownLatch(2);
+
+    server.connectHandler((NetSocket sock) -> {
+      complete();
+      sock.handler(buf -> {
+        byte[]arr = new byte[buf.length()];
+        buf.getBytes(arr);
+        log.info(" client msg = " + new String(arr));
+        assertEquals(clientText, new String(arr));
+        sock.write(serverText);
+        complete();
+      });
+    });
+    server.listen(server.actualPort(), "localhost").onComplete(onSuccess(v -> {
+      log.info("Server started!");
+      latch.countDown();
+    }));
+
+
+    proxy = createSocksProxy();
+    proxy.startProxy(vertx).onComplete(onSuccess(v -> {
+      latch.countDown();
+    }));
+
+    latch.await();
+
+    Http3ProxyProvider proxyProvider = new Http3ProxyProvider(((VertxInternal)vertx).nettyEventLoopGroup().next());
+
+    class ChannelInboundHandler extends ChannelInboundHandlerAdapter {
+      @Override
+      public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        ByteBuf msg0 = (ByteBuf) msg;
+        byte[] arr = new byte[msg0.readableBytes()];
+        msg0.copy().readBytes(arr);
+        log.info("Received msg is: " + new String(arr));
+        assertEquals(serverText, new String(arr));
+        super.channelRead(ctx, msg);
+      }
+
+      @Override
+      public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        log.error(cause);
+        ctx.close();
+        fail();
+      }
+    }
+
+    proxyProvider.createProxyQuicChannel("localhost", proxy.port(), "localhost", server.actualPort())
+      .addListener((GenericFutureListener<Future<QuicChannel>>) channelFuture -> {
+        QuicChannel quicChannel = channelFuture.get();
+        quicChannel.pipeline().addLast(new ChannelInboundHandler());
+        quicChannel.writeAndFlush(Unpooled.copiedBuffer(clientText.getBytes(StandardCharsets.UTF_8)))
+          .addListener(future -> {
+            assertTrue(future.isSuccess());
+            log.info("Wrote to server successfully.");
+            complete();
+          });
+      });
     await();
   }
 

@@ -40,7 +40,13 @@ public class Http3ProxyProvider {
     this.eventLoop = eventLoop;
   }
 
-  public Promise<QuicChannel> createProxyQuicChannel(InetSocketAddress proxyAddress,
+  public Promise<QuicChannel> createProxyQuicChannel(String proxyHost, int proxyPort,
+                                                     String remoteHost, int remotePort) {
+    return createProxyQuicChannel(new InetSocketAddress(proxyHost, proxyPort),
+      new InetSocketAddress(remoteHost, remotePort));
+  }
+
+    public Promise<QuicChannel> createProxyQuicChannel(InetSocketAddress proxyAddress,
                                                      InetSocketAddress remoteAddress) {
     Promise<QuicChannel> channelPromise = eventLoop.newPromise();
 
