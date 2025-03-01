@@ -31,6 +31,7 @@ import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.Http3ProxyProvider;
+import io.vertx.core.net.impl.Http3Utils;
 import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.test.proxy.HttpProxy;
 import io.vertx.test.proxy.SocksProxy;
@@ -105,7 +106,7 @@ public class Http3NetTest extends NetTest {
   }
 
   protected void testNetClientInternal_(HttpServerOptions options, boolean expectSSL) throws Exception {
-    waitFor(7);
+    waitFor(5);
     HttpServer server = vertx.createHttpServer(options);
     server.requestHandler(req -> {
       req.response().end("Hello World"); });
@@ -129,9 +130,8 @@ public class Http3NetTest extends NetTest {
       DefaultFullHttpRequest message = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/somepath");
       message.headers().add(HttpHeaderNames.HOST, "localhost");
 
-      Http3.newRequestStream((QuicChannel) soInt.channelHandlerContext().channel(), new ChannelInitializer<>() {
-        @Override
-        protected void initChannel(Channel ch) {
+      Http3Utils.newRequestStream((QuicChannel) soInt.channelHandlerContext().channel(),
+        ch -> {
           ch.pipeline().addLast("myHttp3FrameToHttpObjectCodec", new Http3FrameToHttpObjectCodec(false));
           ch.pipeline().addLast("myHttpHandler", new ChannelInboundHandlerAdapter() {
             @Override
@@ -168,8 +168,7 @@ public class Http3NetTest extends NetTest {
               complete();
             }
           });
-        }
-      });
+        });
     }));
     await();
   }
