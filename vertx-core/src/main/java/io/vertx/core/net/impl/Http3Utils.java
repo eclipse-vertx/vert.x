@@ -45,12 +45,20 @@ public class Http3Utils {
 
   private static final InternalLogger logger = InternalLoggerFactory.getInstance(Http3Utils.class);
 
-  public static Http3ServerConnectionHandlerBuilder newServerConnectionHandler() {
+  public static Http3ServerConnectionHandlerBuilder newServerConnectionHandlerBuilder() {
     return new Http3ServerConnectionHandlerBuilder();
   }
 
-  public static Http3ClientConnectionHandlerBuilder newClientConnectionHandler() {
+  public static Http3ClientConnectionHandlerBuilder newClientConnectionHandlerBuilder() {
     return new Http3ClientConnectionHandlerBuilder();
+  }
+
+  public static Http3FrameToHttpObjectCodec newClientFrameToHttpObjectCodec() {
+    return new Http3FrameToHttpObjectCodec(false);
+  }
+
+  public static Http3FrameToHttpObjectCodec newServerFrameToHttpObjectCodec() {
+    return new Http3FrameToHttpObjectCodec(true);
   }
 
   public static ChannelFuture newDatagramChannel(EventLoop eventLoop, InetSocketAddress remoteAddress,
@@ -79,14 +87,6 @@ public class Http3Utils {
       }
     };
     return newQuicChannel(channel, channelHandler);
-  }
-
-  public static Http3FrameToHttpObjectCodec newHttp3ClientFrameToHttpObjectCodec() {
-    return new Http3FrameToHttpObjectCodec(false);
-  }
-
-  public static Http3FrameToHttpObjectCodec newHttp3ServerFrameToHttpObjectCodec() {
-    return new Http3FrameToHttpObjectCodec(true);
   }
 
   public static io.vertx.core.Future<QuicStreamChannel> newRequestStream(QuicChannel channel,
