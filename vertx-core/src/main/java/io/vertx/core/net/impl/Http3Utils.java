@@ -18,6 +18,7 @@ import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.netty.incubator.codec.http3.Http3;
 import io.netty.incubator.codec.http3.Http3ClientConnectionHandler;
+import io.netty.incubator.codec.http3.Http3FrameToHttpObjectCodec;
 import io.netty.incubator.codec.http3.Http3ServerConnectionHandler;
 import io.netty.incubator.codec.http3.Http3SettingsFrame;
 import io.netty.incubator.codec.quic.QuicChannel;
@@ -78,6 +79,14 @@ public class Http3Utils {
       }
     };
     return newQuicChannel(channel, channelHandler);
+  }
+
+  public static Http3FrameToHttpObjectCodec newHttp3ClientFrameToHttpObjectCodec() {
+    return new Http3FrameToHttpObjectCodec(false);
+  }
+
+  public static Http3FrameToHttpObjectCodec newHttp3ServerFrameToHttpObjectCodec() {
+    return new Http3FrameToHttpObjectCodec(true);
   }
 
   public static io.vertx.core.Future<QuicStreamChannel> newRequestStream(QuicChannel channel,

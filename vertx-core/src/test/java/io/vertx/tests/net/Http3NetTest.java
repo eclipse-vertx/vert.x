@@ -12,13 +12,15 @@ package io.vertx.tests.net;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.*;
+import io.netty.channel.ChannelDuplexHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.*;
-import io.netty.incubator.codec.http3.Http3;
 import io.netty.incubator.codec.http3.Http3ClientConnectionHandler;
-import io.netty.incubator.codec.http3.Http3FrameToHttpObjectCodec;
 import io.netty.incubator.codec.http3.Http3ServerConnectionHandler;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
@@ -132,7 +134,7 @@ public class Http3NetTest extends NetTest {
 
       Http3Utils.newRequestStream((QuicChannel) soInt.channelHandlerContext().channel(),
         ch -> {
-          ch.pipeline().addLast("myHttp3FrameToHttpObjectCodec", new Http3FrameToHttpObjectCodec(false));
+          ch.pipeline().addLast("myHttp3FrameToHttpObjectCodec", Http3Utils.newHttp3ClientFrameToHttpObjectCodec());
           ch.pipeline().addLast("myHttpHandler", new ChannelInboundHandlerAdapter() {
             @Override
             public void channelRead(ChannelHandlerContext ctx, Object obj) {
@@ -188,7 +190,7 @@ public class Http3NetTest extends NetTest {
         new Http3ServerConnectionHandler(new ChannelInitializer<QuicStreamChannel>() {
           @Override
           protected void initChannel(QuicStreamChannel ch) {
-            ch.pipeline().addLast("myHttp3FrameToHttpObjectCodec", new Http3FrameToHttpObjectCodec(true));
+            ch.pipeline().addLast("myHttp3FrameToHttpObjectCodec", Http3Utils.newHttp3ServerFrameToHttpObjectCodec());
             ch.pipeline().addLast(new ChannelDuplexHandler() {
               @Override
               public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
