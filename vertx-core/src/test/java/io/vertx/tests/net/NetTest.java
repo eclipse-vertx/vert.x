@@ -88,7 +88,7 @@ public abstract class NetTest extends VertxTestBase {
   protected SocketAddress testAddress;
   protected NetServer server;
   protected NetClient client;
-  private TestProxyBase proxy;
+  protected TestProxyBase proxy;
   private File tmp;
 
   @Rule
@@ -101,6 +101,8 @@ public abstract class NetTest extends VertxTestBase {
   protected abstract HttpServerOptions createBaseServerOptions();
 
   protected abstract HttpClientOptions createBaseClientOptions();
+
+  protected abstract SocksProxy createSocksProxy();
 
   @Override
   public void setUp() throws Exception {

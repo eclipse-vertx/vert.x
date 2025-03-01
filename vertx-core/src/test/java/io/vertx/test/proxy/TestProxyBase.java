@@ -11,10 +11,12 @@
 
 package io.vertx.test.proxy;
 
+import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.net.SocketAddress;
+import io.vertx.core.internal.logging.Logger;
+import io.vertx.core.internal.logging.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -28,12 +30,14 @@ import java.util.function.Supplier;
  *
  */
 public abstract class TestProxyBase<P extends TestProxyBase<P>> {
+  private static final Logger log = LoggerFactory.getLogger(TestProxyBase.class);
 
   private Supplier<String> username;
   protected int port;
   protected String lastUri;
   protected String forceUri;
   protected List<String> localAddresses = Collections.synchronizedList(new ArrayList<>());
+  protected boolean http3 = false;
 
   public TestProxyBase() {
     port = defaultPort();
@@ -97,6 +101,15 @@ public abstract class TestProxyBase<P extends TestProxyBase<P>> {
     throw new UnsupportedOperationException();
   }
 
+  public P http3(boolean http3) {
+    this.http3 = http3;
+    return (P)this;
+  }
+
+  public boolean isHttp3() {
+    return http3;
+  }
+
   /**
    * force uri to connect to a given string (e.g. "localhost:4443") this is used to simulate a host that only resolves
    * on the proxy
@@ -109,6 +122,19 @@ public abstract class TestProxyBase<P extends TestProxyBase<P>> {
     throw new UnsupportedOperationException();
   }
 
+  public <T>Future<T> startProxy(Vertx vertx) {
+    return (Future<T>) start0(vertx).onComplete(event -> {
+      log.debug(TestProxyBase.this.getClass().getSimpleName() + " server started");
+    });
+  }
+
+  protected abstract<T> Future<T> start0(Vertx vertx);
+
+  /*
+    This method is deprecated. Please use the 'startProxy' method instead, as it returns the result of the operation,
+    allowing the user to inspect it. Additionally, the test can count down the status of the result
+   */
+  @Deprecated(since = "This method is deprecated. Please use the 'startProxy' method instead.")
   public abstract TestProxyBase start(Vertx vertx) throws Exception;
   public abstract void stop();
 

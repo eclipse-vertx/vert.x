@@ -12,9 +12,15 @@ package io.vertx.tests.net;
 
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.ProxyOptions;
+import io.vertx.core.net.ProxyType;
+import io.vertx.test.proxy.SocksProxy;
 import io.vertx.tests.http.HttpOptionsFactory;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import static io.vertx.test.http.HttpTestBase.*;
 
@@ -34,6 +40,11 @@ public class Http2NetTest extends NetTest {
   @Override
   protected HttpClientOptions createBaseClientOptions() {
     return HttpOptionsFactory.createHttp2ClientOptions();
+  }
+
+  @Override
+  protected SocksProxy createSocksProxy() {
+    return new SocksProxy();
   }
 
   @Override
