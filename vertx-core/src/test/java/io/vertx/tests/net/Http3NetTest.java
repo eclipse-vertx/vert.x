@@ -240,6 +240,7 @@ public class Http3NetTest extends NetTest {
 
     CountDownLatch latch = new CountDownLatch(2);
 
+    // Start of server part
     server.connectHandler((NetSocket sock) -> {
       complete();
       sock.handler(buf -> {
@@ -257,6 +258,7 @@ public class Http3NetTest extends NetTest {
     }));
 
 
+    // Start of proxy server part
     proxy = createSocksProxy();
     proxy.startProxy(vertx).onComplete(onSuccess(v -> {
       latch.countDown();
@@ -264,6 +266,7 @@ public class Http3NetTest extends NetTest {
 
     latch.await();
 
+    // Start of client part
     Http3ProxyProvider proxyProvider = new Http3ProxyProvider(((VertxInternal)vertx).nettyEventLoopGroup().next());
 
     class ChannelInboundHandler extends ChannelInboundHandlerAdapter {
@@ -287,6 +290,9 @@ public class Http3NetTest extends NetTest {
 
     proxyProvider.createProxyQuicChannel("localhost", proxy.port(), "localhost", server.actualPort())
       .addListener((GenericFutureListener<Future<QuicChannel>>) channelFuture -> {
+        if (!channelFuture.isSuccess()) {
+          throw new RuntimeException(channelFuture.cause());
+        }
         QuicChannel quicChannel = channelFuture.get();
         quicChannel.pipeline().addLast(new ChannelInboundHandler());
         quicChannel.writeAndFlush(Unpooled.copiedBuffer(clientText.getBytes(StandardCharsets.UTF_8)))
