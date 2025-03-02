@@ -58,7 +58,11 @@ public class Http3ProxyProvider {
             ch.pipeline().addLast("proxy", new VertxSocks5ProxyHandler(proxyAddress, remoteAddress));
           })
           .addListener((GenericFutureListener<Future<QuicChannel>>) future1 -> {
-            channelPromise.setSuccess(Http3Utils.getResultOrThrow(future1));
+            if (!future1.isSuccess()) {
+              channelPromise.setFailure(future1.cause());
+              return;
+            }
+            channelPromise.setSuccess(future1.get());
           });
       });
     return channelPromise;

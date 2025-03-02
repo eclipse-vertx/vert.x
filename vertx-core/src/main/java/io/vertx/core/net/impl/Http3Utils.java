@@ -35,7 +35,6 @@ import io.vertx.core.internal.PromiseInternal;
 
 import java.net.InetSocketAddress;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.LongFunction;
 
@@ -118,22 +117,6 @@ public class Http3Utils {
       .initialMaxData(10000000)
       .initialMaxStreamDataBidirectionalLocal(1000000)
       .build();
-  }
-
-  public static <V> V getResultOrThrow(Future<V> future) {
-    if (!future.isSuccess()) {
-      logger.error("There is an error in future.", future.cause());
-      throw new RuntimeException(future.cause());
-    }
-    try {
-      if (future instanceof ChannelFuture) {
-        return (V) ((ChannelPromise) future).channel();
-      }
-      return future.get();
-    } catch (InterruptedException | ExecutionException e) {
-      logger.error("There is an error in future.", e);
-      throw new RuntimeException(e);
-    }
   }
 
   public static class MyChannelInitializer extends ChannelInitializer<QuicChannel> {
