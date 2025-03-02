@@ -22,11 +22,14 @@ import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicClosedChannelException;
 import io.netty.resolver.NoopAddressResolverGroup;
 import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.Promise;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.logging.Logger;
+import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.net.SslChannelProvider;
 import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.ClientSSLOptions;
@@ -46,6 +49,7 @@ import java.net.InetSocketAddress;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public final class ChannelProvider {
+  private static final Logger log = LoggerFactory.getLogger(ChannelProvider.class);
 
   public static final String CLIENT_SSL_HANDLER_NAME = "ssl";
   private final Bootstrap bootstrap;
@@ -146,7 +150,8 @@ public final class ChannelProvider {
         initSSL(handler, peerAddress, serverName, ssl, sslOptions, ch, channelHandler);
       }
     });
-    ChannelFuture fut = bootstrap.connect(vertx.transport().convert(remoteAddress));
+    java.net.SocketAddress convert = vertx.transport().convert(remoteAddress);
+    ChannelFuture fut = bootstrap.connect(convert);
     fut.addListener(res -> {
       if (!res.isSuccess()) {
         channelHandler.tryFailure(res.cause());
@@ -191,11 +196,15 @@ public final class ChannelProvider {
   private void connected(Handler<Channel> handler, Channel channel, boolean ssl, Promise<Channel> channelHandler) {
     if (!ssl) {
       // No handshake
-      if (handler != null) {
-        context.dispatch(channel, handler);
-      }
-      channelHandler.setSuccess(channel);
+      connected(handler, channel, channelHandler);
     }
+  }
+
+  private void connected(Handler<Channel> handler, Channel channel, Promise<Channel> channelHandler) {
+    if (handler != null) {
+      context.dispatch(channel, handler);
+    }
+    channelHandler.setSuccess(channel);
   }
 
   /**
@@ -214,6 +223,43 @@ public final class ChannelProvider {
       if (dnsRes.succeeded()) {
         InetAddress address = dnsRes.result();
         InetSocketAddress proxyAddr = new InetSocketAddress(address, proxyPort);
+
+        if (sslOptions != null && sslOptions.isHttp3()) {
+          bootstrap.resolver(vertx.nettyAddressResolverGroup());
+          java.net.SocketAddress targetAddress = vertx.transport().convert(remoteAddress);
+
+          Http3ProxyProvider proxyProvider = new Http3ProxyProvider(context.nettyEventLoop());
+
+          proxyProvider.createProxyQuicChannel(proxyAddr, (InetSocketAddress) targetAddress)
+            .addListener((GenericFutureListener<Future<QuicChannel>>) channelFuture -> {
+              if (!channelFuture.isSuccess()) {
+                channelHandler.tryFailure(channelFuture.cause());
+                return;
+              }
+              QuicChannel ch = channelFuture.get();
+              ChannelPipeline pipeline = ch.pipeline();
+              pipeline.addLast(new ChannelInboundHandlerAdapter() {
+                @Override
+                public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
+                  if (evt instanceof ProxyConnectionEvent) {
+                    pipeline.remove("myProxyConnectedHandler");
+                    pipeline.remove("proxy");
+                    pipeline.remove(this);
+
+                    connected(handler, ctx.channel(), channelHandler);
+                  }
+                  ctx.fireUserEventTriggered(evt);
+                }
+
+                @Override
+                public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+                  channelHandler.tryFailure(cause);
+                }
+              });
+            });
+          return;
+        }
+
         ProxyHandler proxy;
 
         switch (proxyType) {

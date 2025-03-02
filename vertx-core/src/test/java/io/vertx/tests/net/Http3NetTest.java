@@ -231,7 +231,10 @@ public class Http3NetTest extends NetTest {
     await();
   }
 
-
+  /**
+   * This test case simulates the server, proxy server, and client, establishes connections between them, and verifies
+   * their functionality. It directly uses Http3ProxyProvider.
+   */
   @Test
   public void testHttp3Socks5Proxy() throws Exception {
     waitFor(3);
@@ -267,7 +270,7 @@ public class Http3NetTest extends NetTest {
     latch.await();
 
     // Start of client part
-    Http3ProxyProvider proxyProvider = new Http3ProxyProvider(((VertxInternal)vertx).nettyEventLoopGroup().next());
+    Http3ProxyProvider proxyProvider = new Http3ProxyProvider(((VertxInternal)vertx).getOrCreateContext().nettyEventLoop());
 
     class ChannelInboundHandler extends ChannelInboundHandlerAdapter {
       @Override
@@ -302,6 +305,58 @@ public class Http3NetTest extends NetTest {
             complete();
           });
       });
+    await();
+  }
+
+  @Test
+  public void testVertxHttp3Socks5Proxy() throws Exception {
+    waitFor(3);
+    String clientText = "Hi, I'm client!";
+    String serverText = "Hi, I'm server";
+
+    CountDownLatch latch = new CountDownLatch(2);
+
+    // Start of server part
+    server.connectHandler((NetSocket sock) -> {
+      complete();
+      sock.handler(buf -> {
+        byte[]arr = new byte[buf.length()];
+        buf.getBytes(arr);
+        log.info(" client msg = " + new String(arr));
+        assertEquals(clientText, new String(arr));
+        sock.write(serverText);
+        complete();
+      });
+    });
+    server.listen(1234, "localhost").onComplete(onSuccess(v -> {
+      log.info("Server started!");
+      latch.countDown();
+    }));
+
+
+    // Start of proxy server part
+    proxy = createSocksProxy();
+    proxy.startProxy(vertx).onComplete(onSuccess(v -> {
+      latch.countDown();
+    }));
+
+    latch.await();
+
+    // Start of client part
+
+    NetClientOptions clientOptions = createNetClientOptions()
+      .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5).setPort(proxy.port()))
+      ;
+    NetClient client = vertx.createNetClient(clientOptions);
+    client.connect(1234, "localhost").onComplete(onSuccess(so -> {
+      so.handler(buffer -> {
+        // make sure we have gone through the proxy
+        assertEquals("localhost:1234", proxy.getLastUri());
+        assertEquals(serverText, buffer.toString(StandardCharsets.UTF_8));
+        testComplete();
+      });
+      so.write(clientText);
+    }));
     await();
   }
 
