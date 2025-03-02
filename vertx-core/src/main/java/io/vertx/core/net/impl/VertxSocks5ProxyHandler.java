@@ -15,8 +15,8 @@ import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.proxy.Socks5ProxyHandler;
-import io.netty.util.internal.logging.InternalLogger;
-import io.netty.util.internal.logging.InternalLoggerFactory;
+import io.vertx.core.internal.logging.Logger;
+import io.vertx.core.internal.logging.LoggerFactory;
 
 import java.net.SocketAddress;
 
@@ -24,7 +24,8 @@ import java.net.SocketAddress;
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
  */
 public class VertxSocks5ProxyHandler extends ChannelDuplexHandler {
-  private static final InternalLogger logger = InternalLoggerFactory.getInstance(VertxSocks5ProxyHandler.class);
+  private static final Logger log = LoggerFactory.getLogger(VertxSocks5ProxyHandler.class);
+
   private final Socks5ProxyHandler proxy;
   private final SocketAddress remoteAddress;
 
@@ -36,13 +37,13 @@ public class VertxSocks5ProxyHandler extends ChannelDuplexHandler {
   @Override
   public final void connect(ChannelHandlerContext ctx, SocketAddress ignored, SocketAddress localAddress,
                             ChannelPromise promise) throws Exception {
-    logger.trace("Connect method called.");
+    log.trace("Connect method called.");
     proxy.connect(ctx, this.remoteAddress, localAddress, promise);
   }
 
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
-    logger.trace("handlerAdded method called.");
+    log.trace("handlerAdded method called.");
     proxy.handlerAdded(ctx);
   }
 

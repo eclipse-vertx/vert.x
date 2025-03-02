@@ -41,13 +41,13 @@ public class Http3ProxyProvider {
   }
 
   public Future<QuicChannel> createProxyQuicChannel(String proxyHost, int proxyPort,
-                                                                  String remoteHost, int remotePort) {
+                                                    String remoteHost, int remotePort) {
     return createProxyQuicChannel(new InetSocketAddress(proxyHost, proxyPort),
       new InetSocketAddress(remoteHost, remotePort));
   }
 
-    public Future<QuicChannel> createProxyQuicChannel(InetSocketAddress proxyAddress,
-                                                                    InetSocketAddress remoteAddress) {
+  public Future<QuicChannel> createProxyQuicChannel(InetSocketAddress proxyAddress,
+                                                    InetSocketAddress remoteAddress) {
     Promise<QuicChannel> channelPromise = eventLoop.newPromise();
 
     Http3Utils.newDatagramChannel(eventLoop, proxyAddress, Http3Utils.newClientSslContext())
