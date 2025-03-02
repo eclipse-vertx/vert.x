@@ -40,14 +40,14 @@ public class Http3ProxyProvider {
     this.eventLoop = eventLoop;
   }
 
-  public Promise<QuicChannel> createProxyQuicChannel(String proxyHost, int proxyPort,
-                                                     String remoteHost, int remotePort) {
+  public Future<QuicChannel> createProxyQuicChannel(String proxyHost, int proxyPort,
+                                                                  String remoteHost, int remotePort) {
     return createProxyQuicChannel(new InetSocketAddress(proxyHost, proxyPort),
       new InetSocketAddress(remoteHost, remotePort));
   }
 
-    public Promise<QuicChannel> createProxyQuicChannel(InetSocketAddress proxyAddress,
-                                                     InetSocketAddress remoteAddress) {
+    public Future<QuicChannel> createProxyQuicChannel(InetSocketAddress proxyAddress,
+                                                                    InetSocketAddress remoteAddress) {
     Promise<QuicChannel> channelPromise = eventLoop.newPromise();
 
     Http3Utils.newDatagramChannel(eventLoop, proxyAddress, Http3Utils.newClientSslContext())
