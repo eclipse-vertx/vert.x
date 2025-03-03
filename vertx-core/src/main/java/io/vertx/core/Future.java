@@ -716,7 +716,9 @@ public interface Future<T> extends AsyncResult<T> {
     io.vertx.core.impl.WorkerExecutor executor = io.vertx.core.impl.WorkerExecutor.unwrapWorkerExecutor();
     CountDownLatch latch;
     if (executor != null) {
-      latch = executor.suspend(cont -> onComplete(ar -> cont.resume()));
+      WorkerExecutor.Execution execution = executor.currentExecution();
+      onComplete(ar -> execution.resume());
+      latch = execution.trySuspend();
     } else {
       latch = new CountDownLatch(1);
       onComplete(ar -> latch.countDown());

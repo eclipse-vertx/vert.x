@@ -10,14 +10,12 @@
  */
 package io.vertx.core.impl;
 
-import io.vertx.core.Future;
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.EventExecutor;
 import io.vertx.core.spi.metrics.PoolMetrics;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.function.Consumer;
 
 /**
  * Execute events on a worker pool.
@@ -81,34 +79,41 @@ public class WorkerExecutor implements EventExecutor {
   }
 
   /**
-   * Suspend the current task execution until the task is resumed, the next task in the queue will be executed
-   * when there is one.
+   * Get the current execution of a task, so it can be suspended.
    *
-   * <p>The {@code resumeAcceptor} argument is passed the continuation to resume the current task, this acceptor
-   * is guaranteed to be called before the task is actually suspended so the task can be eagerly resumed and avoid
-   * suspending the current task.
-   *
-   * @return the latch to wait for until the current task can resume
+   * @return the current task
    */
-  public CountDownLatch suspend(Consumer<Continuation> resumeAcceptor) {
-    return orderedTasks.suspend(resumeAcceptor);
+  public Execution currentExecution() {
+    return orderedTasks.current();
   }
 
-  public interface Continuation {
+  public interface Execution {
+
+    /**
+     * Try to suspend the execution.
+     *
+     * <ul>
+     *  <li>When the operation succeeds, any queued task will be executed and a latch is returned, this latch should
+     *  be used to park the thread until it can resume the task.</li>
+     *  <li>When the operation fails, {@code null} is returned, it means that the task was already resumed.</li>
+     * </ul>
+     *
+     * @return the latch to wait for until the current task can resume or {@code null}
+     */
+    CountDownLatch trySuspend();
+
+    /**
+     * Like {@link #resume(Runnable)}.
+     */
+    void resume();
 
     /**
      * Resume the task, the {@code callback} will be executed when the task is resumed, before the task thread
      * is un-parked.
      *
-     * @param callback called when the task is resumed
+     * @param callback called after the task is resumed
      */
     void resume(Runnable callback);
 
-    /**
-     * Like {@link #resume(Runnable)}.
-     */
-    default void resume() {
-      resume(() -> {});
-    }
   }
 }
