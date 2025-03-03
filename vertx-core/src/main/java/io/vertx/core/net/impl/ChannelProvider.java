@@ -56,7 +56,6 @@ public final class ChannelProvider {
   private final SslContextProvider sslContextProvider;
   private final ContextInternal context;
   private ProxyOptions proxyOptions;
-  private String applicationProtocol;
   private Handler<Channel> handler;
   private HttpVersion version;
 
@@ -95,13 +94,6 @@ public final class ChannelProvider {
     return this;
   }
 
-  /**
-   * @return the application protocol resulting from the ALPN negotiation
-   */
-  public String applicationProtocol() {
-    return applicationProtocol;
-  }
-
   public Future<Channel> connect(SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, ClientSSLOptions sslOptions) {
     Promise<Channel> p = context.nettyEventLoop().newPromise();
     connect(handler, remoteAddress, peerAddress, serverName, ssl, sslOptions, p);
@@ -133,9 +125,19 @@ public final class ChannelProvider {
       ChannelPipeline pipeline = ch.pipeline();
       pipeline.addLast(CLIENT_SSL_HANDLER_NAME, sslHandler);
       pipeline.addLast(new ExceptionHandlingChannelHandler(channelHandler));
+
       if (version != HttpVersion.HTTP_3) {
-        pipeline.addLast(new HttpSslHandshaker(context, handler, channelHandler, version, sslHandler,
-          this::setApplicationProtocol));
+        Promise<ChannelHandlerContext> promise = context.nettyEventLoop().newPromise();
+        promise.addListener((GenericFutureListener<Future<ChannelHandlerContext>>) future -> {
+          if (!future.isSuccess()) {
+            channelHandler.setFailure(future.cause());
+            return;
+          }
+
+          ChannelHandlerContext ctx = future.get();
+          connected(ctx.channel(), channelHandler);
+        });
+        pipeline.addLast(new HttpSslHandshaker(promise));
       }
     }
   }
@@ -158,7 +160,9 @@ public final class ChannelProvider {
         return;
       }
       if (version != HttpVersion.HTTP_3) {
-        connected(handler, fut.channel(), ssl, channelHandler);
+        if (!ssl) {
+          connected(fut.channel(), channelHandler);
+        }
         return;
       }
       Channel nioDatagramChannel = fut.channel();
@@ -168,8 +172,18 @@ public final class ChannelProvider {
           @Override
           protected void initChannel(Channel quicChannel) {
             ChannelPipeline pipeline = quicChannel.pipeline();
-            pipeline.addLast(new HttpSslHandshaker(context, handler, channelHandler, HttpVersion.HTTP_3, null,
-              ChannelProvider.this::setApplicationProtocol));
+            Promise<ChannelHandlerContext> promise = context.nettyEventLoop().newPromise();
+            promise.addListener((GenericFutureListener<Future<ChannelHandlerContext>>) future -> {
+              if (!future.isSuccess()) {
+                channelHandler.setFailure(future.cause());
+                return;
+              }
+
+              ChannelHandlerContext ctx = future.get();
+              connected(ctx.channel(), channelHandler);
+            });
+
+            pipeline.addLast(new HttpSslHandshaker(promise));
           }
         })
         .localAddress(nioDatagramChannel.localAddress())
@@ -193,14 +207,7 @@ public final class ChannelProvider {
    * @param channel        the channel
    * @param channelHandler the channel handler
    */
-  private void connected(Handler<Channel> handler, Channel channel, boolean ssl, Promise<Channel> channelHandler) {
-    if (!ssl) {
-      // No handshake
-      connected(handler, channel, channelHandler);
-    }
-  }
-
-  private void connected(Handler<Channel> handler, Channel channel, Promise<Channel> channelHandler) {
+  private void connected(Channel channel, Promise<Channel> channelHandler) {
     if (handler != null) {
       context.dispatch(channel, handler);
     }
@@ -246,13 +253,14 @@ public final class ChannelProvider {
                     pipeline.remove("proxy");
                     pipeline.remove(this);
 
-                    connected(handler, ctx.channel(), channelHandler);
+                    connected(ctx.channel(), channelHandler);
                   }
                   ctx.fireUserEventTriggered(evt);
                 }
 
                 @Override
                 public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+                  log.error("Proxy connection failed!");
                   channelHandler.tryFailure(cause);
                 }
               });
@@ -294,7 +302,9 @@ public final class ChannelProvider {
                   pipeline.remove(proxy);
                   pipeline.remove(this);
                   initSSL(handler, peerAddress, serverName, ssl, sslOptions, ch, channelHandler);
-                  connected(handler, ch, ssl, channelHandler);
+                  if (!ssl) {
+                    connected(ch, channelHandler);
+                  }
                 }
                 ctx.fireUserEventTriggered(evt);
               }
@@ -317,9 +327,5 @@ public final class ChannelProvider {
         channelHandler.tryFailure(dnsRes.cause());
       }
     });
-  }
-
-  private void setApplicationProtocol(String applicationProtocol) {
-    this.applicationProtocol = applicationProtocol;
   }
 }

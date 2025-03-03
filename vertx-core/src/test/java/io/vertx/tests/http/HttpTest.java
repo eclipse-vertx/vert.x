@@ -81,6 +81,7 @@ public abstract class HttpTest extends HttpTestBase {
   protected abstract HttpVersion clientAlpnProtocolVersion();
   protected abstract HttpVersion serverAlpnProtocolVersion();
   protected abstract NetClientOptions createNetClientOptions();
+  protected abstract NetServerOptions createNetServerOptions();
 
   @Test
   public void testCloseMulti() throws Exception {
@@ -1598,7 +1599,7 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testServerExceptionHandlerOnClose() {
     waitFor(3);
-    vertx.createHttpServer().requestHandler(req -> {
+    vertx.createHttpServer(createBaseServerOptions()).requestHandler(req -> {
       HttpServerResponse resp = req.response();
       AtomicInteger reqExceptionHandlerCount = new AtomicInteger();
       AtomicInteger respExceptionHandlerCount = new AtomicInteger();
@@ -1634,7 +1635,7 @@ public abstract class HttpTest extends HttpTestBase {
         complete();
       });
     }).listen(testAddress).onComplete(onSuccess(ar -> {
-      HttpClient client = vertx.createHttpClient();
+      HttpClient client = vertx.createHttpClient(createBaseClientOptions());
       client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.PUT))
         .onComplete(onSuccess(req -> {
           req.setChunked(true);
@@ -5212,14 +5213,14 @@ public abstract class HttpTest extends HttpTestBase {
     Buffer buffer = TestUtils.randomBuffer(128);
     Buffer received = Buffer.buffer();
     CompletableFuture<Void> closeSocket = new CompletableFuture<>();
-    vertx.createNetServer(new NetServerOptions().setPort(1235).setHost("localhost")).connectHandler(socket -> {
+    vertx.createNetServer(createNetServerOptions().setPort(1235).setHost("localhost")).connectHandler(socket -> {
       socket.handler(socket::write);
       closeSocket.thenAccept(v -> {
         socket.close();
       });
     }).listen().onComplete(onSuccess(netServer -> {
       server.requestHandler(req -> {
-        vertx.createNetClient(new NetClientOptions()).connect(1235, "localhost").onComplete(onSuccess(dst -> {
+        vertx.createNetClient(createNetClientOptions()).connect(1235, "localhost").onComplete(onSuccess(dst -> {
 
           req.response().setStatusCode(sc);
           req.response().setStatusMessage("Connection established");
