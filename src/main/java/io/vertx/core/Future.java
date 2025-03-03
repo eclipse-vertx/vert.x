@@ -20,10 +20,8 @@ import io.vertx.core.impl.future.FailedFuture;
 import io.vertx.core.impl.future.SucceededFuture;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.Objects;
+import java.util.concurrent.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -668,14 +666,46 @@ public interface Future<T> extends AsyncResult<T> {
    * @throws IllegalStateException when called from an event-loop thread or a non Vert.x thread
    */
   static <T> T await(Future<T> future) {
-    io.vertx.core.impl.WorkerExecutor executor = io.vertx.core.impl.WorkerExecutor.unwrapWorkerExecutor();
-    if (executor == null) {
-      throw new IllegalStateException();
+    try {
+      return await(future, -1, null);
+    } catch (TimeoutException e) {
+      // Not a possible case
+      return null;
     }
-    CountDownLatch latch = executor.suspend(cont -> future.onComplete(ar -> cont.resume()));
+
+  }
+
+  /**
+   * Like {@link #await(Future)} but with a timeout.
+   *
+   * @param timeout the timeout
+   * @param unit the timeout unit
+   * @return the result
+   * @throws TimeoutException when the timeout fires before the future completes
+   * @throws IllegalStateException when called from a vertx event-loop or worker thread
+   */
+  public static <T> T await(Future<T> future, long timeout, TimeUnit unit) throws TimeoutException {
+    if (timeout >= 0L && unit == null) {
+      throw new NullPointerException();
+    }
+    io.vertx.core.impl.WorkerExecutor executor = io.vertx.core.impl.WorkerExecutor.unwrapWorkerExecutor();
+    CountDownLatch latch;
+    if (executor != null) {
+      latch = executor.suspend(cont -> future.onComplete(ar -> cont.resume()));
+    } else {
+      latch = new CountDownLatch(1);
+      future.onComplete(ar -> latch.countDown());
+    }
     if (latch != null) {
       try {
-        latch.await();
+        if (timeout >= 0) {
+          Objects.requireNonNull(unit);
+          if (!latch.await(timeout, unit)) {
+            throw new TimeoutException();
+          }
+        } else {
+          latch.await();
+        }
       } catch (InterruptedException e) {
         Utils.throwAsUnchecked(e);
         return null;
@@ -691,5 +721,4 @@ public interface Future<T> extends AsyncResult<T> {
       return null;
     }
   }
-
 }
