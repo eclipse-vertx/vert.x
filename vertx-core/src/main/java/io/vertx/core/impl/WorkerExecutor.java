@@ -35,7 +35,8 @@ public class WorkerExecutor implements EventExecutor {
       throw new IllegalStateException(msg);
     }
     ContextInternal ctx = VertxImpl.currentContext(thread);
-    if (ctx != null && ctx.threadingModel() == ThreadingModel.VIRTUAL_THREAD) {
+    if (ctx != null && ctx.inThread()) {
+      // It can only be a Vert.x virtual thread
       return (io.vertx.core.impl.WorkerExecutor) ctx.executor();
     } else {
       return null;
