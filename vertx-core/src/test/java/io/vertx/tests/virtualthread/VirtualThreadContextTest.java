@@ -10,6 +10,7 @@
  */
 package io.vertx.tests.virtualthread;
 
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
