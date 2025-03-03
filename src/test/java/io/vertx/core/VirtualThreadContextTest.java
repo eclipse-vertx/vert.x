@@ -387,4 +387,30 @@ public class VirtualThreadContextTest extends VertxTestBase {
     });
     await();
   }
+
+  @Test
+  public void testAwaitFromVirtualThreadExecuteBlocking() {
+    Assume.assumeTrue(isVirtualThreadAvailable());
+    Context ctx = vertx.createVirtualThreadContext();
+    ctx.executeBlocking(() -> {
+      Future.await(vertx.timer(20));
+      return "done";
+    }).onComplete(onSuccess(res -> {
+      assertEquals("done", res);
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testAwaitFromWorkerExecuteBlocking() {
+    Context ctx = vertx.getOrCreateContext();
+    ctx.executeBlocking(() -> {
+      Future.await(vertx.timer(20));
+      return "done";
+    }).onComplete(onFailure(res -> {
+      testComplete();
+    }));
+    await();
+  }
 }
