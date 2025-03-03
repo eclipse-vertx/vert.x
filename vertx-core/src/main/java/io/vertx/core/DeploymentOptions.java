@@ -32,6 +32,7 @@ public class DeploymentOptions {
   public static final boolean DEFAULT_WORKER = false;
   public static final boolean DEFAULT_HA = false;
   public static final int DEFAULT_INSTANCES = 1;
+  public static final boolean DEFAULT_REUSE_CURRENT_EVENT_LOOP = false;
 
   private JsonObject config;
   private ThreadingModel threadingModel;
@@ -42,6 +43,7 @@ public class DeploymentOptions {
   private int workerPoolSize;
   private long maxWorkerExecuteTime;
   private TimeUnit maxWorkerExecuteTimeUnit;
+  private boolean reuseCurrentEventLoop;
 
   /**
    * Default constructor
@@ -54,6 +56,7 @@ public class DeploymentOptions {
     this.workerPoolSize = VertxOptions.DEFAULT_WORKER_POOL_SIZE;
     this.maxWorkerExecuteTime = VertxOptions.DEFAULT_MAX_WORKER_EXECUTE_TIME;
     this.maxWorkerExecuteTimeUnit = VertxOptions.DEFAULT_MAX_WORKER_EXECUTE_TIME_UNIT;
+    this.reuseCurrentEventLoop = DEFAULT_REUSE_CURRENT_EVENT_LOOP;
   }
 
   /**
@@ -289,6 +292,26 @@ public class DeploymentOptions {
    */
   public DeploymentOptions setClassLoader(ClassLoader classLoader) {
     this.classLoader = classLoader;
+    return this;
+  }
+
+  /**
+   * @return true if the verticle should reuse the current event loop
+   */
+  public boolean getReuseCurrentEventLoop() {
+    return reuseCurrentEventLoop;
+  }
+
+  /**
+   * Set whether the verticle should reuse the current event loop
+   * <p> when reuseCurrentEventLoop is set to true, the verticle will be deployed on the current event loop.
+   * If no Context is set for the current thread, a Context will be created for the current thread.
+   *
+   * @param reuseCurrentEventLoop true if the verticle should reuse the current event loop
+   * @return a reference to this, so the API can be used fluently
+   */
+  public DeploymentOptions setReuseCurrentEventLoop(boolean reuseCurrentEventLoop) {
+    this.reuseCurrentEventLoop = reuseCurrentEventLoop;
     return this;
   }
 
