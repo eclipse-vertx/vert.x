@@ -10,9 +10,14 @@
  */
 package io.vertx.tests.streams;
 
+import io.vertx.core.Handler;
 import io.vertx.core.internal.streams.ReadStreamIterator;
+import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.AsyncTestBase;
+import io.vertx.test.core.Repeat;
+import io.vertx.test.core.RepeatRule;
 import io.vertx.test.fakestream.FakeStream;
+import org.junit.Rule;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -20,6 +25,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class IteratorTest extends AsyncTestBase {
 
@@ -100,11 +108,125 @@ public class IteratorTest extends AsyncTestBase {
     }
   }
 
+  @Rule
+  public RepeatRule rule = new RepeatRule();
+
+  @Repeat(times = 100)
   @Test
   public void testConcurrentReads() throws Exception {
     // While the iterator should not be used concurrently because of hasNext()/next() races
     // calling next() from multiple thread is possible
-    FakeStream<Integer> stream = new FakeStream<>();
+    class Stream implements ReadStream<Integer> {
+      private Handler<Integer> handler;
+      private Handler<Void> endHandler;
+      private long demand = Long.MAX_VALUE;
+      private final Lock lock = new ReentrantLock();
+      private final Condition producerSignal = lock.newCondition();
+      @Override
+      public ReadStream<Integer> exceptionHandler(Handler<Throwable> handler) {
+        return this;
+      }
+      public void write(Integer element) throws InterruptedException {
+        lock.lock();
+        Handler<Integer> h;
+        try {
+          while (true) {
+            long d = demand;
+            if (d > 0L) {
+              if (d != Long.MAX_VALUE) {
+                demand = d - 1;
+              }
+              h = handler;
+              break;
+            } else {
+              producerSignal.await();
+            }
+          }
+        } finally {
+          lock.unlock();
+        }
+        if (h != null) {
+          h.handle(element);
+        }
+      }
+      public void end() throws InterruptedException {
+        lock.lock();
+        Handler<Void> h;
+        try {
+          while (true) {
+            long d = demand;
+            if (d > 0L) {
+              h = endHandler;
+              break;
+            } else {
+              producerSignal.await();
+            }
+          }
+        } finally {
+          lock.unlock();
+        }
+        if (h != null) {
+          h.handle(null);
+        }
+      }
+      @Override
+      public ReadStream<Integer> handler(Handler<Integer> handler) {
+        lock.lock();
+        try {
+          this.handler = handler;
+        } finally {
+          lock.unlock();
+        }
+        return this;
+      }
+      @Override
+      public ReadStream<Integer> endHandler(Handler<Void> endHandler) {
+        lock.lock();
+        try {
+          this.endHandler = endHandler;
+        } finally {
+          lock.unlock();
+        }
+        return this;
+      }
+      @Override
+      public ReadStream<Integer> pause() {
+        lock.lock();
+        try {
+          demand = 0L;
+        } finally {
+          lock.unlock();
+        }
+        return this;
+      }
+      @Override
+      public ReadStream<Integer> resume() {
+        return fetch(Long.MAX_VALUE);
+      }
+      @Override
+      public ReadStream<Integer> fetch(long amount) {
+        if (amount < 0L) {
+          throw new IllegalArgumentException();
+        }
+        if (amount > 0L) {
+          lock.lock();
+          try {
+            long d = demand;
+            d += amount;
+            if (d < 0L) {
+              d = Long.MAX_VALUE;
+            }
+            demand = d;
+            producerSignal.signal();
+          } finally {
+            lock.unlock();
+          }
+        }
+        return this;
+      }
+    }
+
+    Stream stream = new Stream();
     Iterator<Integer> iterator = ReadStreamIterator.iterator(stream);
     int numThreads = 8;
     int numElements = 16384;
@@ -143,7 +265,14 @@ public class IteratorTest extends AsyncTestBase {
     ArrayList<Integer> list = new ArrayList<>();
     for (int i = 0;i < numThreads;i++) {
       Consumer consumer = consumers[i];
-      consumer.join();
+      consumer.join(1000);
+      if (consumer.getState() != Thread.State.TERMINATED) {
+        System.out.println("Could not join timely " + consumer + ":");
+        Exception where = new Exception();
+        where.setStackTrace(consumer.getStackTrace());
+        where.printStackTrace(System.out);
+        fail();
+      }
       list.addAll(consumer.consumed);
     }
     assertEquals(list.size(), numElements);
