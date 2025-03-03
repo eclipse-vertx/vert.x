@@ -18,7 +18,6 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.function.Consumer;
 
 /**
  * A task queue that always run all tasks in order. The executor to run the tasks is passed
@@ -231,7 +230,7 @@ public class TaskQueue {
     return new CloseResult(activeThread, activeTask, suspendedThreads, suspendedTasks);
   }
 
-  private class ContinuationTask extends CountDownLatch implements WorkerExecutor.Continuation, Task {
+  private class ContinuationTask extends CountDownLatch implements Task, WorkerExecutor.Execution {
 
     private static final int ST_CREATED = 0, ST_SUSPENDED = 1, ST_RESUMED = 2;
 
@@ -247,6 +246,11 @@ public class TaskQueue {
       this.thread = thread;
       this.executor = executor;
       this.status = ST_CREATED;
+    }
+
+    @Override
+    public void resume() {
+      resume(() -> {});
     }
 
     @Override
@@ -286,7 +290,16 @@ public class TaskQueue {
       latch.run();
     }
 
-    public boolean suspend() {
+    @Override
+    public CountDownLatch trySuspend() {
+      if (suspend()) {
+        return this;
+      } else {
+        return null;
+      }
+    }
+
+    private boolean suspend() {
       if (Thread.currentThread() != thread) {
         throw new IllegalStateException();
       }
@@ -315,19 +328,8 @@ public class TaskQueue {
     }
   }
 
-  public CountDownLatch suspend() {
-    return suspend(cont -> {});
-  }
-
-  public CountDownLatch suspend(Consumer<WorkerExecutor.Continuation> abc) {
-    ContinuationTask continuationTask = continuationTask();
-    abc.accept(continuationTask);
-    if (continuationTask.suspend()) {
-      return continuationTask;
-    } else {
-      // Closed
-      return null;
-    }
+  public WorkerExecutor.Execution current() {
+    return continuationTask();
   }
 
   /**
