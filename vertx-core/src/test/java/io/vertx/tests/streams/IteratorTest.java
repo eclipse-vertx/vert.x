@@ -11,6 +11,9 @@
 package io.vertx.tests.streams;
 
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
+import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.streams.ReadStreamIterator;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.AsyncTestBase;
@@ -18,13 +21,16 @@ import io.vertx.test.core.Repeat;
 import io.vertx.test.core.RepeatRule;
 import io.vertx.test.fakestream.FakeStream;
 import org.junit.Rule;
+import org.junit.Assume;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -276,5 +282,34 @@ public class IteratorTest extends AsyncTestBase {
       list.addAll(consumer.consumed);
     }
     assertEquals(list.size(), numElements);
+  }
+
+  @Test
+  public void testVirtualThread() {
+    VertxInternal vertx = (VertxInternal) Vertx.vertx();
+    try {
+      Assume.assumeTrue(vertx.isVirtualThreadAvailable());
+      doTestVirtualThread(vertx);
+    } finally {
+      vertx.close();
+    }
+  }
+
+  private void doTestVirtualThread(VertxInternal vertx) {
+    FakeStream<Integer> stream = new FakeStream<>();
+    Iterator<Integer> iterator = ReadStreamIterator.iterator(stream);
+    ContextInternal ctx = vertx.createVirtualThreadContext();
+    AtomicInteger seq = new AtomicInteger();
+    ctx.runOnContext(v1 -> {
+      ctx.runOnContext(v2 -> {
+        assertEquals(0, seq.getAndIncrement());
+        stream.write(0);
+      });
+      assertEquals(0, seq.get());
+      iterator.next();
+      assertEquals(1, seq.getAndIncrement());
+      testComplete();
+    });
+    await();
   }
 }
