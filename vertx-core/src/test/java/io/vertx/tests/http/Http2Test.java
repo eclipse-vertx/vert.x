@@ -17,6 +17,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.NetServerOptions;
 import io.vertx.test.core.TestUtils;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -37,6 +38,10 @@ public class Http2Test extends HttpCommonTest {
 
   protected NetClientOptions createNetClientOptions() {
     return HttpOptionsFactory.createH2NetClientOptions();
+  }
+
+  protected NetServerOptions createNetServerOptions() {
+    return HttpOptionsFactory.createH2NetServerOptions();
   }
 
   @Override

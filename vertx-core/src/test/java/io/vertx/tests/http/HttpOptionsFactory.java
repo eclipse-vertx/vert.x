@@ -79,6 +79,10 @@ public class HttpOptionsFactory {
     return new NetClientOptions();
   }
 
+  public static NetServerOptions createH2NetServerOptions() {
+    return new NetServerOptions();
+  }
+
   public static HttpServerOptions createH3HttpServerOptions(int port, String host) {
     HttpServerOptions options = new HttpServerOptions();
 

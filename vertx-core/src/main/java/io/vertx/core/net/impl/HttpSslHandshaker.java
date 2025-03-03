@@ -1,38 +1,18 @@
 package io.vertx.core.net.impl;
 
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.SslHandshakeCompletionEvent;
-import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.util.concurrent.Promise;
-import io.vertx.core.Handler;
-import io.vertx.core.http.HttpVersion;
-import io.vertx.core.internal.ContextInternal;
 
 import javax.net.ssl.SSLHandshakeException;
-import java.util.Objects;
 
 class HttpSslHandshaker extends ChannelInboundHandlerAdapter {
 
-  private final ContextInternal context;
-  private final Handler<Channel> handler;
-  private final Promise<Channel> channelHandler;
-  private final HttpVersion version;
-  private final ChannelHandler sslHandler;
-  private final Handler<String> applicationProtocolHandler;
+  private final Promise<ChannelHandlerContext> channelHandlerContextPromise;
 
-  public HttpSslHandshaker(ContextInternal context, Handler<Channel> handler, Promise<Channel> channelHandler,
-                           HttpVersion version, ChannelHandler sslHandler,
-                           Handler<String> applicationProtocolHandler) {
-    this.context = context;
-    this.handler = handler;
-    this.channelHandler = channelHandler;
-    this.version = version;
-    this.sslHandler = sslHandler;
-    this.applicationProtocolHandler = applicationProtocolHandler;
+  public HttpSslHandshaker(Promise<ChannelHandlerContext> channelHandlerContextPromise) {
+    this.channelHandlerContextPromise = channelHandlerContextPromise;
   }
 
   @Override
@@ -43,25 +23,14 @@ class HttpSslHandshaker extends ChannelInboundHandlerAdapter {
       if (completion.isSuccess()) {
         // Remove from the pipeline after handshake result
         ctx.pipeline().remove(this);
-        applicationProtocolHandler.handle(applicationProtocol(ctx));
-        if (handler != null) {
-          context.dispatch(ctx.channel(), handler);
-        }
-        channelHandler.setSuccess(ctx.channel());
+        channelHandlerContextPromise.setSuccess(ctx);
       } else {
         SSLHandshakeException sslException = new SSLHandshakeException("Failed to create SSL connection");
         sslException.initCause(completion.cause());
-        channelHandler.setFailure(sslException);
+        channelHandlerContextPromise.setFailure(sslException);
       }
     }
     ctx.fireUserEventTriggered(evt);
-  }
-
-  private String applicationProtocol(ChannelHandlerContext ctx) {
-    if (version == HttpVersion.HTTP_3) {
-      return Objects.requireNonNull(((QuicChannel) ctx.channel()).sslEngine()).getApplicationProtocol();
-    }
-    return ((SslHandler) sslHandler).applicationProtocol();
   }
 
   @Override

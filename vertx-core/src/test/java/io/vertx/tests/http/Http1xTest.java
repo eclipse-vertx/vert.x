@@ -76,6 +76,10 @@ public class Http1xTest extends HttpTest {
     return HttpOptionsFactory.createH2NetClientOptions();
   }
 
+  protected NetServerOptions createNetServerOptions() {
+    return HttpOptionsFactory.createH2NetServerOptions();
+  }
+
   @Override
   protected VertxOptions getOptions() {
     VertxOptions options = super.getOptions();
@@ -4013,7 +4017,7 @@ public class Http1xTest extends HttpTest {
         req.response().putHeader("keep-alive", "timeout=3").end();
       }
     });
-    testKeepAliveTimeout(new HttpClientOptions().setKeepAliveTimeout(30), new PoolOptions().setHttp1MaxSize(1), 1);
+    testKeepAliveTimeout(createBaseClientOptions().setKeepAliveTimeout(30), new PoolOptions().setHttp1MaxSize(1), 1);
   }
 
   @Test
@@ -4026,7 +4030,7 @@ public class Http1xTest extends HttpTest {
       }
       resp.end();
     });
-    testKeepAliveTimeout(new HttpClientOptions().setKeepAliveTimeout(30), new PoolOptions().setHttp1MaxSize(1), 2);
+    testKeepAliveTimeout(createBaseClientOptions().setKeepAliveTimeout(30), new PoolOptions().setHttp1MaxSize(1), 2);
   }
 
   @Test
@@ -4043,7 +4047,7 @@ public class Http1xTest extends HttpTest {
       resp.putHeader("keep-alive", "timeout=" + timeout);
       resp.end();
     });
-    testKeepAliveTimeout(new HttpClientOptions().setKeepAliveTimeout(30), new PoolOptions().setHttp1MaxSize(1), 2);
+    testKeepAliveTimeout(createBaseClientOptions().setKeepAliveTimeout(30), new PoolOptions().setHttp1MaxSize(1), 2);
   }
 
   @Test
