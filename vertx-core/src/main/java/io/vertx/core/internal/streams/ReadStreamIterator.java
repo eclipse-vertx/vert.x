@@ -13,12 +13,14 @@ package io.vertx.core.internal.streams;
 import io.vertx.core.Handler;
 import io.vertx.core.VertxException;
 import io.vertx.core.impl.Utils;
+import io.vertx.core.impl.WorkerExecutor;
 import io.vertx.core.streams.ReadStream;
 
 import java.util.ArrayDeque;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Queue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -116,14 +118,31 @@ public class ReadStreamIterator<E> implements Iterator<E>, Handler<E> {
         if (ended != null) {
           return false;
         }
-        try {
-          consumerProgress.await();
-        } catch (InterruptedException e) {
-          Utils.throwAsUnchecked(e);
-        }
+        awaitProgress();
       }
     } finally {
       lock.unlock();
+    }
+  }
+
+  private void awaitProgress() {
+    io.vertx.core.impl.WorkerExecutor executor = io.vertx.core.impl.WorkerExecutor.unwrapWorkerExecutor();
+    if (executor != null) {
+      WorkerExecutor.Execution execution = executor.currentExecution();
+      CountDownLatch latch = execution.trySuspend();
+      try {
+        consumerProgress.await();
+        execution.resume();
+        latch.await();
+      } catch (InterruptedException e) {
+        Utils.throwAsUnchecked(e);
+      }
+    } else {
+      try {
+        consumerProgress.await();
+      } catch (InterruptedException e) {
+        Utils.throwAsUnchecked(e);
+      }
     }
   }
 
@@ -145,11 +164,7 @@ public class ReadStreamIterator<E> implements Iterator<E>, Handler<E> {
             Utils.throwAsUnchecked(t);
           }
         }
-        try {
-          consumerProgress.await();
-        } catch (InterruptedException e) {
-          Utils.throwAsUnchecked(e);
-        }
+        awaitProgress();
       }
     } finally {
       lock.unlock();
