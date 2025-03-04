@@ -15,8 +15,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http2.Http2CodecUtil;
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.net.JdkSSLEngineOptions;
@@ -24,6 +23,7 @@ import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.core.net.SSLEngineOptions;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.test.core.AsyncTestBase;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.tls.Cert;
 import org.junit.Ignore;
@@ -1035,6 +1035,64 @@ public class Http2Test extends HttpTest {
           req.connection().close();
         }));
       }));
+
+    await();
+  }
+
+  @Repeat(times = 10)
+  @Test
+  public void testHttpClientDelayedWriteUponConnectionClose() throws Exception {
+
+    int numVerticles = 5;
+    int numWrites = 100;
+    int delayCloseMS = 50;
+
+    server.connectionHandler(conn -> {
+      vertx.setTimer(delayCloseMS, id -> {
+        conn.close();
+      });
+    });
+    server.requestHandler(req -> {
+      req.endHandler(v -> {
+        req.response().end();
+      });
+    });
+
+    startServer(testAddress);
+    waitFor(numVerticles);
+    vertx.deployVerticle(() -> new VerticleBase() {
+      int requestCount;
+      int ackCount;
+      @Override
+      public Future<?> start() throws Exception {
+        request();
+        return super.start();
+      }
+      private void request() {
+        requestCount++;
+        client.request(requestOptions)
+          .compose(req -> {
+            req.setChunked(true);
+            for (int i = 0;i < numWrites;i++) {
+              req.write("Hello").onComplete(ar -> {
+                ackCount++;
+              });
+            }
+            req.end();
+            return req.response().compose(HttpClientResponse::body);
+          })
+          .onComplete(ar -> {
+            if (ar.succeeded()) {
+              request();
+            } else {
+              vertx.setTimer(100, id -> {
+                assertEquals(requestCount * numWrites, ackCount);
+                complete();
+              });
+            }
+          });
+      }
+    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER).setInstances(numVerticles));
 
     await();
   }
