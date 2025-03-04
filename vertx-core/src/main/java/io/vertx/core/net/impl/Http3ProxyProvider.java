@@ -11,11 +11,7 @@
 
 package io.vertx.core.net.impl;
 
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelOutboundHandlerAdapter;
-import io.netty.channel.ChannelPromise;
-import io.netty.channel.EventLoop;
+import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicConnectionAddress;
@@ -24,6 +20,9 @@ import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.Promise;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
+import io.vertx.core.internal.Socks5ProxyHandler;
+import io.vertx.core.internal.logging.Logger;
+import io.vertx.core.internal.logging.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -33,6 +32,10 @@ import java.net.SocketAddress;
  */
 public class Http3ProxyProvider {
   private static final InternalLogger logger = InternalLoggerFactory.getInstance(Http3ProxyProvider.class);
+  public static final String CHANNEL_HANDLER_PROXY = "proxy";
+  public static final String CHANNEL_HANDLER_PROXY_CONNECTED = "myProxyConnectedHandler";
+
+  public static final boolean IS_NETTY_PROXY_HANDLER_ALTERED = true;
 
   private final EventLoop eventLoop;
 
@@ -40,22 +43,19 @@ public class Http3ProxyProvider {
     this.eventLoop = eventLoop;
   }
 
-  public Future<QuicChannel> createProxyQuicChannel(String proxyHost, int proxyPort,
-                                                    String remoteHost, int remotePort) {
-    return createProxyQuicChannel(new InetSocketAddress(proxyHost, proxyPort),
-      new InetSocketAddress(remoteHost, remotePort));
-  }
-
   public Future<QuicChannel> createProxyQuicChannel(InetSocketAddress proxyAddress,
                                                     InetSocketAddress remoteAddress) {
     Promise<QuicChannel> channelPromise = eventLoop.newPromise();
+    if (IS_NETTY_PROXY_HANDLER_ALTERED) {
+      return createProxyQuicChannel(proxyAddress, remoteAddress, channelPromise);
+    }
 
     Http3Utils.newDatagramChannel(eventLoop, proxyAddress, Http3Utils.newClientSslContext())
       .addListener((ChannelFutureListener) future -> {
         NioDatagramChannel channel = (NioDatagramChannel) future.channel();
         Http3Utils.newQuicChannel(channel, ch -> {
-            ch.pipeline().addLast("myProxyConnectedHandler", new ProxyConnectedHandler(channel));
-            ch.pipeline().addLast("proxy", new VertxSocks5ProxyHandler(proxyAddress, remoteAddress));
+            ch.pipeline().addLast(CHANNEL_HANDLER_PROXY_CONNECTED, new ProxyConnectedHandler(channel));
+            ch.pipeline().addLast(CHANNEL_HANDLER_PROXY, new VertxSocks5ProxyHandler(proxyAddress, remoteAddress));
           })
           .addListener((GenericFutureListener<Future<QuicChannel>>) future1 -> {
             if (!future1.isSuccess()) {
@@ -66,6 +66,13 @@ public class Http3ProxyProvider {
           });
       });
     return channelPromise;
+  }
+
+  public void removeProxyChannelHandlers(ChannelPipeline pipeline) {
+    if (pipeline.get(CHANNEL_HANDLER_PROXY_CONNECTED) != null) {
+      pipeline.remove(CHANNEL_HANDLER_PROXY_CONNECTED);
+    }
+    pipeline.remove(CHANNEL_HANDLER_PROXY);
   }
 
   private static class ProxyConnectedHandler extends ChannelOutboundHandlerAdapter {
@@ -84,6 +91,140 @@ public class Http3ProxyProvider {
           QuicConnectionAddress proxyAddress = newQuicChannelFut.get().remoteAddress();
           ctx.connect(proxyAddress, localAddress, promise);
         });
+    }
+  }
+
+  public Future<QuicChannel> createProxyQuicChannel(InetSocketAddress proxyAddress,
+                                                    InetSocketAddress remoteAddress, Promise<QuicChannel> channelPromise) {
+    Http3Utils.newDatagramChannel(eventLoop, proxyAddress, Http3Utils.newClientSslContext())
+      .addListener((ChannelFutureListener) future -> {
+        NioDatagramChannel channel = (NioDatagramChannel) future.channel();
+        Http3Utils.newQuicChannel(channel, ch -> {
+            ch.pipeline().addLast("proxy", new Socks5ProxyHandler(proxyAddress, remoteAddress));
+          })
+          .addListener((GenericFutureListener<Future<QuicChannel>>) future1 -> {
+            if (!future1.isSuccess()) {
+              channelPromise.setFailure(future1.cause());
+              return;
+            }
+            channelPromise.setSuccess(future1.get());
+          });
+      });
+    return channelPromise;
+  }
+
+  private static class VertxSocks5ProxyHandler extends ChannelDuplexHandler {
+    private static final Logger log = LoggerFactory.getLogger(VertxSocks5ProxyHandler.class);
+
+    private final io.netty.handler.proxy.Socks5ProxyHandler proxy;
+    private final SocketAddress remoteAddress;
+
+    public VertxSocks5ProxyHandler(SocketAddress proxyAddress, SocketAddress remoteAddress) {
+      this.proxy = new io.netty.handler.proxy.Socks5ProxyHandler(proxyAddress);
+      this.remoteAddress = remoteAddress;
+    }
+
+    @Override
+    public final void connect(ChannelHandlerContext ctx, SocketAddress ignored, SocketAddress localAddress,
+                              ChannelPromise promise) throws Exception {
+      log.trace("Connect method called.");
+      proxy.connect(ctx, this.remoteAddress, localAddress, promise);
+    }
+
+    @Override
+    public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+      log.trace("handlerAdded method called.");
+      proxy.handlerAdded(ctx);
+    }
+
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+      proxy.channelActive(ctx);
+    }
+
+    @Override
+    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+      proxy.write(ctx, msg, promise);
+    }
+
+    @Override
+    public void bind(ChannelHandlerContext ctx, SocketAddress localAddress, ChannelPromise promise) throws Exception {
+      proxy.bind(ctx, localAddress, promise);
+    }
+
+    @Override
+    public void disconnect(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
+      proxy.disconnect(ctx, promise);
+    }
+
+    @Override
+    public void close(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
+      proxy.close(ctx, promise);
+    }
+
+    @Override
+    public void deregister(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
+      proxy.deregister(ctx, promise);
+    }
+
+    @Override
+    public void read(ChannelHandlerContext ctx) throws Exception {
+      proxy.read(ctx);
+    }
+
+    @Override
+    public void flush(ChannelHandlerContext ctx) throws Exception {
+      proxy.flush(ctx);
+    }
+
+    @Override
+    public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
+      proxy.channelRegistered(ctx);
+    }
+
+    @Override
+    public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
+      proxy.channelUnregistered(ctx);
+    }
+
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+      proxy.channelInactive(ctx);
+    }
+
+    @Override
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+      proxy.channelRead(ctx, msg);
+    }
+
+    @Override
+    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+      proxy.channelReadComplete(ctx);
+    }
+
+    @Override
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+      proxy.userEventTriggered(ctx, evt);
+    }
+
+    @Override
+    public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
+      proxy.channelWritabilityChanged(ctx);
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+      proxy.exceptionCaught(ctx, cause);
+    }
+
+    @Override
+    public boolean isSharable() {
+      return proxy.isSharable();
+    }
+
+    @Override
+    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
+      proxy.handlerRemoved(ctx);
     }
   }
 }

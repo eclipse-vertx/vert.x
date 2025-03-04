@@ -249,8 +249,7 @@ public final class ChannelProvider {
                 @Override
                 public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
                   if (evt instanceof ProxyConnectionEvent) {
-                    pipeline.remove("myProxyConnectedHandler");
-                    pipeline.remove("proxy");
+                    proxyProvider.removeProxyChannelHandlers(pipeline);
                     pipeline.remove(this);
 
                     connected(ctx.channel(), channelHandler);
