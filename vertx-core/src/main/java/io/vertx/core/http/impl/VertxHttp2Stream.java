@@ -15,6 +15,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.EventLoop;
 import io.netty.handler.codec.http2.EmptyHttp2Headers;
+import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.util.concurrent.FutureListener;
@@ -253,6 +254,12 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
       }
       return;
     }
+    if (failure != null) {
+      if (promise != null) {
+        promise.fail(failure);
+      }
+      return;
+    }
     if (end) {
       endWritten();
     }
@@ -282,6 +289,10 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   void doWriteData(ByteBuf buf, boolean end, Promise<Void> promise) {
     if (reset != -1L) {
       promise.fail("Stream reset");
+      return;
+    }
+    if (failure != null) {
+      promise.fail(failure);
       return;
     }
     ByteBuf chunk;

@@ -603,7 +603,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         createStream(request, headers);
       } catch (Http2Exception ex) {
         promise.fail(ex);
-        handleException(ex);
+        onException(ex);
         return;
       }
       if (buf != null) {
