@@ -11,6 +11,7 @@
 
 package io.vertx.test.proxy;
 
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.logging.Logger;
@@ -53,14 +54,7 @@ public class Socks4Proxy extends TestProxyBase<Socks4Proxy> {
     return DEFAULT_PORT;
   }
 
-  /**
-   * Start the server.
-   *
-   * @param vertx
-   *          Vertx instance to use for creating the server and client
-   */
-  @Override
-  public Socks4Proxy start(Vertx vertx) throws Exception {
+  protected Future<NetServer> start0(Vertx vertx) {
     NetServerOptions options = new NetServerOptions();
     options.setHost("localhost").setPort(port);
     server = vertx.createNetServer(options);
@@ -121,8 +115,19 @@ public class Socks4Proxy extends TestProxyBase<Socks4Proxy> {
         }
       });
     });
+    return server.listen();
+  }
+  /**
+   * Start the server.
+   *
+   * @param vertx
+   *          Vertx instance to use for creating the server and client
+   */
+  @Deprecated(since = "This method is deprecated. Please use the 'startProxy' method instead.")
+  @Override
+  public Socks4Proxy start(Vertx vertx) throws Exception {
     CompletableFuture<Void> fut = new CompletableFuture<>();
-    server.listen().onComplete(ar -> {
+    start0(vertx).onComplete(ar -> {
       if (ar.succeeded()) {
         fut.complete(null);
       } else {

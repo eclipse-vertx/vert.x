@@ -23,6 +23,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
@@ -45,7 +46,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
   Handler<HttpServerRequest> requestHandler;
   private int concurrentStreams;
   private final ArrayDeque<Push> pendingPushes = new ArrayDeque<>(8);
-  private VertxHttp2Stream upgraded;
+  private VertxHttpStreamBase<?, ?> upgraded;
 
   Http2ServerConnection(
     ContextInternal context,
@@ -165,8 +166,8 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     vertxStream.init(stream);
   }
 
-  VertxHttp2Stream<?> stream(int id) {
-    VertxHttp2Stream<?> stream = super.stream(id);
+  VertxHttpStreamBase<?, ?> stream(int id) {
+    VertxHttpStreamBase<?, ?> stream = super.stream(id);
     if (stream == null && id == 1 && handler.upgraded) {
       return upgraded;
     }
@@ -174,7 +175,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
   }
 
   @Override
-  protected synchronized void onHeadersRead(int streamId, Http2Headers headers, StreamPriority streamPriority, boolean endOfStream) {
+  protected synchronized void onHeadersRead(int streamId, Http2Headers headers, StreamPriorityBase streamPriority, boolean endOfStream) {
     Http2ServerStream stream = (Http2ServerStream) stream(streamId);
     if (stream == null) {
       if (streamId == 1 && handler.upgraded) {
@@ -188,7 +189,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
         return;
       }
       initStream(streamId, stream);
-      stream.onHeaders(headers, streamPriority);
+      stream.onHeaders(new Http2HeadersAdaptor(headers), streamPriority);
     } else {
       // Http server request trailer - not implemented yet (in api)
     }
@@ -197,7 +198,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     }
   }
 
-  void sendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<HttpServerResponse> promise) {
+  void sendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriorityBase streamPriority, Promise<HttpServerResponse> promise) {
     EventLoop eventLoop = context.nettyEventLoop();
     if (eventLoop.inEventLoop()) {
       doSendPush(streamId, authority, method, headers, path, streamPriority, promise);
@@ -206,7 +207,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     }
   }
 
-  private synchronized void doSendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<HttpServerResponse> promise) {
+  private synchronized void doSendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriorityBase streamPriority, Promise<HttpServerResponse> promise) {
     boolean ssl = isSsl();
     Http2Headers headers_ = new DefaultHttp2Headers();
     headers_.method(method.name());

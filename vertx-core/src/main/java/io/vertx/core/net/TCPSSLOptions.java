@@ -582,6 +582,24 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   /**
+   * @return whether to use or not HTTP3
+   */
+  public boolean isHttp3() {
+    SSLOptions o = sslOptions;
+    return o != null && o.isHttp3();
+  }
+
+  /**
+   * Set the http3 usage.
+   *
+   * @param http3 true when http3 should be used
+   */
+  public TCPSSLOptions setHttp3(boolean http3) {
+    getOrCreateSSLOptions().setHttp3(http3);
+    return this;
+  }
+
+  /**
    * @return the SSL engine implementation to use
    */
   public SSLEngineOptions getSslEngineOptions() {

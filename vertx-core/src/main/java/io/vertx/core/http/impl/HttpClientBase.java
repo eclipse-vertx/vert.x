@@ -51,6 +51,17 @@ public class HttpClientBase implements MetricsProvider, Closeable {
     List<HttpVersion> alpnVersions = options.getAlpnVersions();
     if (alpnVersions == null || alpnVersions.isEmpty()) {
       switch (options.getProtocolVersion()) {
+        case HTTP_3:
+          alpnVersions = Arrays.asList(
+            HttpVersion.HTTP_3_27,
+            HttpVersion.HTTP_3_29,
+            HttpVersion.HTTP_3_30,
+            HttpVersion.HTTP_3_31,
+            HttpVersion.HTTP_3_32,
+            HttpVersion.HTTP_3,
+            HttpVersion.HTTP_2,
+            HttpVersion.HTTP_1_1);
+          break;
         case HTTP_2:
           alpnVersions = Arrays.asList(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1);
           break;

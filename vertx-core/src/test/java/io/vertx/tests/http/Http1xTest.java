@@ -61,6 +61,24 @@ import static io.vertx.test.core.TestUtils.*;
 public class Http1xTest extends HttpTest {
 
   @Override
+  protected HttpVersion clientAlpnProtocolVersion() {
+    return HttpVersion.HTTP_1_1;
+  }
+
+  @Override
+  protected HttpVersion serverAlpnProtocolVersion() {
+    return HttpVersion.HTTP_1_1;
+  }
+
+  protected NetClientOptions createNetClientOptions() {
+    return HttpOptionsFactory.createH2NetClientOptions();
+  }
+
+  protected NetServerOptions createNetServerOptions() {
+    return HttpOptionsFactory.createH2NetServerOptions();
+  }
+
+  @Override
   protected VertxOptions getOptions() {
     VertxOptions options = super.getOptions();
     options.getAddressResolverOptions().setHostsValue(Buffer.buffer("" +
@@ -3985,7 +4003,7 @@ public class Http1xTest extends HttpTest {
         req.response().putHeader("keep-alive", "timeout=3").end();
       }
     });
-    testKeepAliveTimeout(new HttpClientOptions().setKeepAliveTimeout(30), new PoolOptions().setHttp1MaxSize(1), 1);
+    testKeepAliveTimeout(createBaseClientOptions().setKeepAliveTimeout(30), new PoolOptions().setHttp1MaxSize(1), 1);
   }
 
   @Test
@@ -3998,7 +4016,7 @@ public class Http1xTest extends HttpTest {
       }
       resp.end();
     });
-    testKeepAliveTimeout(new HttpClientOptions().setKeepAliveTimeout(30), new PoolOptions().setHttp1MaxSize(1), 2);
+    testKeepAliveTimeout(createBaseClientOptions().setKeepAliveTimeout(30), new PoolOptions().setHttp1MaxSize(1), 2);
   }
 
   @Test
@@ -4015,7 +4033,7 @@ public class Http1xTest extends HttpTest {
       resp.putHeader("keep-alive", "timeout=" + timeout);
       resp.end();
     });
-    testKeepAliveTimeout(new HttpClientOptions().setKeepAliveTimeout(30), new PoolOptions().setHttp1MaxSize(1), 2);
+    testKeepAliveTimeout(createBaseClientOptions().setKeepAliveTimeout(30), new PoolOptions().setHttp1MaxSize(1), 2);
   }
 
   @Test
@@ -5811,4 +5829,5 @@ public class Http1xTest extends HttpTest {
     expected.add("server-3");
     assertEquals(expected, responses);
   }
+
 }
