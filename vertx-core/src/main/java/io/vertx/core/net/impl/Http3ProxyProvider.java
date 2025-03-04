@@ -32,8 +32,8 @@ import java.net.SocketAddress;
  */
 public class Http3ProxyProvider {
   private static final InternalLogger logger = InternalLoggerFactory.getInstance(Http3ProxyProvider.class);
-  public static final String CHANNEL_HANDLER_PROXY = "proxy";
-  public static final String CHANNEL_HANDLER_PROXY_CONNECTED = "myProxyConnectedHandler";
+  private static final String CHANNEL_HANDLER_PROXY = "proxy";
+  private static final String CHANNEL_HANDLER_PROXY_CONNECTED = "myProxyConnectedHandler";
 
   public static boolean IS_NETTY_PROXY_HANDLER_ALTERED = true;
 

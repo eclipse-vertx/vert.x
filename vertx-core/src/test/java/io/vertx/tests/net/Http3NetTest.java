@@ -92,6 +92,7 @@ public class Http3NetTest extends NetTest {
    * Returns the maximum acceptable packet size for UDP in HTTP/3.
    * A value of 1000 is chosen to avoid exceeding packet limits as we do not split large messages.
    */
+  //TODO: correct this issue
   @Override
   protected int maxPacketSize() {
     return 1000;
@@ -232,12 +233,24 @@ public class Http3NetTest extends NetTest {
     await();
   }
 
+  @Test
+  public void testHttp3Socks5Proxy() throws Exception {
+    Http3ProxyProvider.IS_NETTY_PROXY_HANDLER_ALTERED = false;
+    testHttp3Socks5Proxy_();
+  }
+
+  //TODO: This method is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
+  @Test
+  public void testHttp3Socks5ProxyWithAlteredNetty() throws Exception {
+    Http3ProxyProvider.IS_NETTY_PROXY_HANDLER_ALTERED = true;
+    testHttp3Socks5Proxy_();
+  }
+
   /**
    * This test case simulates the server, proxy server, and client, establishes connections between them, and verifies
    * their functionality. It directly uses Http3ProxyProvider.
    */
-  @Test
-  public void testHttp3Socks5Proxy() throws Exception {
+  private void testHttp3Socks5Proxy_() throws Exception {
     waitFor(3);
     String clientText = "Hi, I'm client!";
     String serverText = "Hi, I'm server";
@@ -313,6 +326,18 @@ public class Http3NetTest extends NetTest {
 
   @Test
   public void testVertxHttp3Socks5Proxy() throws Exception {
+    Http3ProxyProvider.IS_NETTY_PROXY_HANDLER_ALTERED = false;
+    testVertxHttp3Socks5Proxy_();
+  }
+
+  //TODO: This method is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
+  @Test
+  public void testVertxHttp3Socks5ProxyWithAlteredNetty() throws Exception {
+    Http3ProxyProvider.IS_NETTY_PROXY_HANDLER_ALTERED = true;
+    testVertxHttp3Socks5Proxy_();
+  }
+
+  private void testVertxHttp3Socks5Proxy_() throws Exception {
     waitFor(3);
     String clientText = "Hi, I'm client!";
     String serverText = "Hi, I'm server";
