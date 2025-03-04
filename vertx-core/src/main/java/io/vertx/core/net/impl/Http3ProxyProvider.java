@@ -20,7 +20,7 @@ import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.Promise;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
-import io.vertx.core.internal.Socks5ProxyHandler;
+import io.vertx.core.internal.proxy.Socks5ProxyHandler;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 

@@ -1,4 +1,4 @@
-package io.vertx.core.internal;
+package io.vertx.core.internal.proxy;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;

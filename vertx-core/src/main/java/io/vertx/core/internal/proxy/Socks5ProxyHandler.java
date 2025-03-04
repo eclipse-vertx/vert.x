@@ -1,4 +1,4 @@
-package io.vertx.core.internal;
+package io.vertx.core.internal.proxy;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
