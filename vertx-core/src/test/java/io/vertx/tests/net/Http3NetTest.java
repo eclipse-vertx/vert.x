@@ -40,6 +40,7 @@ import io.vertx.tests.http.HttpOptionsFactory;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -291,7 +292,9 @@ public class Http3NetTest extends NetTest {
       }
     }
 
-    proxyProvider.createProxyQuicChannel("localhost", proxy.port(), "localhost", server.actualPort())
+    InetSocketAddress proxyAddress = new InetSocketAddress("localhost", proxy.port());
+    InetSocketAddress remoteAddress = new InetSocketAddress("localhost", server.actualPort());
+    proxyProvider.createProxyQuicChannel(proxyAddress, remoteAddress)
       .addListener((GenericFutureListener<Future<QuicChannel>>) channelFuture -> {
         if (!channelFuture.isSuccess()) {
           throw new RuntimeException(channelFuture.cause());
