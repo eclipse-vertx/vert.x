@@ -168,10 +168,10 @@ public abstract class ProxyHandler extends ChannelDuplexHandler {
             ChannelHandlerContext ctx, SocketAddress remoteAddress, SocketAddress localAddress,
             ChannelPromise promise) throws Exception {
 
-      if (this.isDestinationSetOnInit) {
-        ctx.connect(remoteAddress, localAddress, promise);
-        return;
-      }
+        if (this.isDestinationSetOnInit) {
+          ctx.connect(remoteAddress, localAddress, promise);
+          return;
+        }
         if (destinationAddress != null) {
             promise.setFailure(new ConnectionPendingException());
             return;
