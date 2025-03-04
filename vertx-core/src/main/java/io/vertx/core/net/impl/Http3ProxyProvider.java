@@ -35,6 +35,7 @@ public class Http3ProxyProvider {
   private static final String CHANNEL_HANDLER_PROXY = "proxy";
   private static final String CHANNEL_HANDLER_PROXY_CONNECTED = "myProxyConnectedHandler";
 
+  //TODO: This var is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
   public static boolean IS_NETTY_PROXY_HANDLER_ALTERED = true;
 
   private final EventLoop eventLoop;
