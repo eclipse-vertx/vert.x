@@ -230,6 +230,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   static abstract class Stream extends VertxHttp2Stream<Http2ClientConnection> {
 
     private final boolean push;
+    protected Http2Exception createFailure;
     private HttpResponseHead response;
     protected Object metric;
     protected Object trace;
@@ -278,6 +279,10 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
     @Override
     void doWriteData(ByteBuf chunk, boolean end, Handler<AsyncResult<Void>> handler) {
+      if (createFailure != null) {
+        handler.handle(context.failedFuture(createFailure));
+        return;
+      }
       super.doWriteData(chunk, end, handler);
     }
 
@@ -559,14 +564,14 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       EventLoop eventLoop = ctx.nettyEventLoop();
       synchronized (this) {
         if (shouldQueue(eventLoop)) {
-          queueForWrite(eventLoop, () -> writeHeaders(request, buf, end, priority, connect, handler));
+          queueForWrite(eventLoop, () -> writeHeaders(request, buf, end, handler));
           return;
         }
       }
-      writeHeaders(request, buf, end, priority, connect, handler);
+      writeHeaders(request, buf, end, handler);
     }
 
-    private void writeHeaders(HttpRequestHead request, ByteBuf buf, boolean end, StreamPriority priority, boolean connect, Handler<AsyncResult<Void>> handler) {
+    private void writeHeaders(HttpRequestHead request, ByteBuf buf, boolean end, Handler<AsyncResult<Void>> handler) {
       Http2Headers headers = new DefaultHttp2Headers();
       headers.method(request.method.name());
       boolean e;
@@ -593,13 +598,12 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       if (conn.client.options().isDecompressionSupported() && headers.get(HttpHeaderNames.ACCEPT_ENCODING) == null) {
         headers.set(HttpHeaderNames.ACCEPT_ENCODING, Http1xClientConnection.determineCompressionAcceptEncoding());
       }
-      try {
-        createStream(request, headers);
-      } catch (Http2Exception ex) {
+      Http2Exception failure = createStream(request, headers);
+      if (failure != null) {
         if (handler != null) {
-          handler.handle(context.failedFuture(ex));
+          handler.handle(context.failedFuture(failure));
         }
-        handleException(ex);
+        handleException(failure);
         return;
       }
       if (buf != null) {
@@ -610,7 +614,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       }
     }
 
-    private void createStream(HttpRequestHead head, Http2Headers headers) throws Http2Exception {
+    private Http2Exception createStream(HttpRequestHead head, Http2Headers headers) {
       int id = this.conn.handler.encoder().connection().local().lastStreamCreated();
       if (id == 0) {
         id = 1;
@@ -619,7 +623,13 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       }
       head.id = id;
       head.remoteAddress = conn.remoteAddress();
-      Http2Stream stream = this.conn.handler.encoder().connection().local().createStream(id, false);
+      Http2Stream stream;
+      try {
+        stream = this.conn.handler.encoder().connection().local().createStream(id, false);
+      } catch (Http2Exception e) {
+        createFailure = e;
+        return e;
+      }
       init(stream);
       if (conn.metrics != null) {
         metric = conn.metrics.requestBegin(headers.path().toString(), head);
@@ -633,6 +643,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         }
         trace = tracer.sendRequest(context, SpanKind.RPC, conn.client.options().getTracingPolicy(), head, operation, headers_, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
       }
+      return null;
     }
 
     @Override
