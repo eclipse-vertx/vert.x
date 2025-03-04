@@ -35,7 +35,7 @@ public class Http3ProxyProvider {
   public static final String CHANNEL_HANDLER_PROXY = "proxy";
   public static final String CHANNEL_HANDLER_PROXY_CONNECTED = "myProxyConnectedHandler";
 
-  public static final boolean IS_NETTY_PROXY_HANDLER_ALTERED = true;
+  public static boolean IS_NETTY_PROXY_HANDLER_ALTERED = true;
 
   private final EventLoop eventLoop;
 
@@ -43,6 +43,34 @@ public class Http3ProxyProvider {
     this.eventLoop = eventLoop;
   }
 
+  public Future<QuicChannel> createProxyQuicChannel(InetSocketAddress proxyAddress,
+                                                    InetSocketAddress remoteAddress, Promise<QuicChannel> channelPromise) {
+    Http3Utils.newDatagramChannel(eventLoop, proxyAddress, Http3Utils.newClientSslContext())
+      .addListener((ChannelFutureListener) future -> {
+        NioDatagramChannel channel = (NioDatagramChannel) future.channel();
+        Http3Utils.newQuicChannel(channel, ch -> {
+            ch.pipeline().addLast("proxy", new Socks5ProxyHandler(proxyAddress, remoteAddress));
+          })
+          .addListener((GenericFutureListener<Future<QuicChannel>>) future1 -> {
+            if (!future1.isSuccess()) {
+              channelPromise.setFailure(future1.cause());
+              return;
+            }
+            channelPromise.setSuccess(future1.get());
+          });
+      });
+    return channelPromise;
+  }
+
+  public void removeProxyChannelHandlers(ChannelPipeline pipeline) {
+    if (pipeline.get(CHANNEL_HANDLER_PROXY_CONNECTED) != null) {
+      pipeline.remove(CHANNEL_HANDLER_PROXY_CONNECTED);
+    }
+    pipeline.remove(CHANNEL_HANDLER_PROXY);
+  }
+
+
+  //TODO: This method is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
   public Future<QuicChannel> createProxyQuicChannel(InetSocketAddress proxyAddress,
                                                     InetSocketAddress remoteAddress) {
     Promise<QuicChannel> channelPromise = eventLoop.newPromise();
@@ -68,13 +96,7 @@ public class Http3ProxyProvider {
     return channelPromise;
   }
 
-  public void removeProxyChannelHandlers(ChannelPipeline pipeline) {
-    if (pipeline.get(CHANNEL_HANDLER_PROXY_CONNECTED) != null) {
-      pipeline.remove(CHANNEL_HANDLER_PROXY_CONNECTED);
-    }
-    pipeline.remove(CHANNEL_HANDLER_PROXY);
-  }
-
+  //TODO: This class is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
   private static class ProxyConnectedHandler extends ChannelOutboundHandlerAdapter {
     private final NioDatagramChannel channel;
 
@@ -94,25 +116,7 @@ public class Http3ProxyProvider {
     }
   }
 
-  public Future<QuicChannel> createProxyQuicChannel(InetSocketAddress proxyAddress,
-                                                    InetSocketAddress remoteAddress, Promise<QuicChannel> channelPromise) {
-    Http3Utils.newDatagramChannel(eventLoop, proxyAddress, Http3Utils.newClientSslContext())
-      .addListener((ChannelFutureListener) future -> {
-        NioDatagramChannel channel = (NioDatagramChannel) future.channel();
-        Http3Utils.newQuicChannel(channel, ch -> {
-            ch.pipeline().addLast("proxy", new Socks5ProxyHandler(proxyAddress, remoteAddress));
-          })
-          .addListener((GenericFutureListener<Future<QuicChannel>>) future1 -> {
-            if (!future1.isSuccess()) {
-              channelPromise.setFailure(future1.cause());
-              return;
-            }
-            channelPromise.setSuccess(future1.get());
-          });
-      });
-    return channelPromise;
-  }
-
+  //TODO: This class is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
   private static class VertxSocks5ProxyHandler extends ChannelDuplexHandler {
     private static final Logger log = LoggerFactory.getLogger(VertxSocks5ProxyHandler.class);
 
