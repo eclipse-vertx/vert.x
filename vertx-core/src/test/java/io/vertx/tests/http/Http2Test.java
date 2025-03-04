@@ -788,6 +788,65 @@ public class Http2Test extends HttpCommonTest {
         assertEquals(clientAlpnProtocolVersion(), resp.version());
         complete();
       }));
+
+    await();
+  }
+
+  @Repeat(times = 10)
+  @Test
+  public void testHttpClientDelayedWriteUponConnectionClose() throws Exception {
+
+    int numVerticles = 5;
+    int numWrites = 100;
+    int delayCloseMS = 50;
+
+    server.connectionHandler(conn -> {
+      vertx.setTimer(delayCloseMS, id -> {
+        conn.close();
+      });
+    });
+    server.requestHandler(req -> {
+      req.endHandler(v -> {
+        req.response().end();
+      });
+    });
+
+    startServer(testAddress);
+    waitFor(numVerticles);
+    vertx.deployVerticle(() -> new VerticleBase() {
+      int requestCount;
+      int ackCount;
+      @Override
+      public Future<?> start() throws Exception {
+        request();
+        return super.start();
+      }
+      private void request() {
+        requestCount++;
+        client.request(requestOptions)
+          .compose(req -> {
+            req.setChunked(true);
+            for (int i = 0;i < numWrites;i++) {
+              req.write("Hello").onComplete(ar -> {
+                ackCount++;
+              });
+            }
+            req.end();
+            return req.response().compose(HttpClientResponse::body);
+          })
+          .onComplete(ar -> {
+            if (ar.succeeded()) {
+              request();
+            } else {
+              vertx.setTimer(100, id -> {
+                assertEquals(requestCount * numWrites, ackCount);
+                complete();
+              });
+            }
+          });
+      }
+    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER).setInstances(numVerticles));
+
     await();
   }
 

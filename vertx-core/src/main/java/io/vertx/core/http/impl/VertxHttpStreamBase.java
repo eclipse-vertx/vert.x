@@ -291,6 +291,12 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
       }
       return;
     }
+    if (failure != null) {
+      if (promise != null) {
+        promise.fail(failure);
+      }
+      return;
+    }
     if (end) {
       endWritten();
     }
@@ -317,6 +323,10 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
   void doWriteData(ByteBuf buf, boolean end, Promise<Void> promise) {
     if (reset != -1L) {
       promise.fail("Stream reset");
+      return;
+    }
+    if (failure != null) {
+      promise.fail(failure);
       return;
     }
     ByteBuf chunk;
