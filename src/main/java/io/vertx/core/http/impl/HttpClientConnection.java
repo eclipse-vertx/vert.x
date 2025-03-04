@@ -44,6 +44,14 @@ public interface HttpClientConnection extends HttpConnection {
   HttpClientConnection evictionHandler(Handler<Void> handler);
 
   /**
+   * Set a {@code handler} called when the connection receives invalid messages.
+   *
+   * @param handler the handler
+   * @return a reference to this, so the API can be used fluently
+   */
+  HttpClientConnection invalidMessageHandler(Handler<Object> handler);
+
+  /**
    * Set a {@code handler} called when the connection concurrency changes.
    * The handler is called with the new concurrency.
    *
