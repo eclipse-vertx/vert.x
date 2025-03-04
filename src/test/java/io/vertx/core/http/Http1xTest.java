@@ -5485,4 +5485,39 @@ public class Http1xTest extends HttpTest {
     }
     await();
   }
+
+  @Test
+  public void testUnsolicitedMessagesAreTreatedAsInvalid() throws Exception {
+    NetServer server = vertx
+      .createNetServer()
+      .connectHandler(so -> {
+        so.write("HTTP/1.1 200 OK\r\n" +
+          "Content-Type: text/plain\r\n" +
+          "Content-Length: 11\r\n" +
+          "\r\n" +
+          "Hello World");
+      });
+    server
+      .listen(testAddress)
+      .toCompletionStage()
+      .toCompletableFuture()
+      .get(20, TimeUnit.SECONDS);
+
+    HttpClient client = vertx.httpClientBuilder().withConnectHandler(conn -> {
+      List<Object> invalidMessages = new ArrayList<>();
+      ((HttpClientConnection) conn).invalidMessageHandler(invalidMessages::add);
+      conn.exceptionHandler(err -> {
+      });
+      conn.closeHandler(v -> {
+        assertEquals(2, invalidMessages.size());
+        assertTrue(invalidMessages.get(0) instanceof io.netty.handler.codec.http.HttpResponse);
+        assertTrue(invalidMessages.get(1) instanceof io.netty.handler.codec.http.LastHttpContent);
+        testComplete();
+      });
+    }).build();
+
+    client.request(requestOptions);
+
+    await();
+  }
 }

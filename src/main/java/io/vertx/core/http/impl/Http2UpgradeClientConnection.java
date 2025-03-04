@@ -60,6 +60,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
   private Handler<Throwable> exceptionHandler;
   private Handler<Buffer> pingHandler;
   private Handler<Void> evictionHandler;
+  private Handler<Object> invalidMessageHandler;
   private Handler<Long> concurrencyChangeHandler;
   private Handler<Http2Settings> remoteSettingsHandler;
 
@@ -868,6 +869,15 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
       evictionHandler = handler;
     }
     current.evictionHandler(handler);
+    return this;
+  }
+
+  @Override
+  public HttpClientConnection invalidMessageHandler(Handler<Object> handler) {
+    if (current instanceof Http1xClientConnection) {
+      invalidMessageHandler = handler;
+    }
+    current.invalidMessageHandler(handler);
     return this;
   }
 

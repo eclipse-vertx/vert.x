@@ -61,6 +61,11 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   @Override
+  public HttpClientConnection invalidMessageHandler(Handler<Object> handler) {
+    return this;
+  }
+
+  @Override
   public Http2ClientConnection concurrencyChangeHandler(Handler<Long> handler) {
     concurrencyChangeHandler = handler;
     return this;

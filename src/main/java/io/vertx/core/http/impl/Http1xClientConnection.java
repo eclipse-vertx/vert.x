@@ -75,10 +75,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
 
   private static final Logger log = LoggerFactory.getLogger(Http1xClientConnection.class);
 
-  private static final Handler<Object> INVALID_MSG_HANDLER = msg -> {
-    ReferenceCountUtil.release(msg);
-    throw new IllegalStateException("Invalid object " + msg);
-  };
+  private static final Handler<Object> INVALID_MSG_HANDLER = ReferenceCountUtil::release;
 
   private final HttpClientBase client;
   private final HttpClientOptions options;
@@ -134,6 +131,12 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   @Override
   public HttpClientConnection evictionHandler(Handler<Void> handler) {
     evictionHandler = handler;
+    return this;
+  }
+
+  @Override
+  public HttpClientConnection invalidMessageHandler(Handler<Object> handler) {
+    invalidMessageHandler = handler;
     return this;
   }
 
@@ -800,6 +803,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       handleWsFrame((WebSocketFrame) msg);
     } else {
       invalidMessageHandler.handle(msg);
+      fail(new VertxException("Received an invalid message: " + msg.getClass().getName()));
     }
   }
 
@@ -809,7 +813,8 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       stream = responses.peekFirst();
     }
     if (stream == null) {
-      fail(new VertxException("Received HTTP message with no request in progress"));
+      invalidMessageHandler.handle(obj);
+      fail(new VertxException("Received an HTTP message with no request in progress: " + obj.getClass().getName()));
     } else if (obj instanceof io.netty.handler.codec.http.HttpResponse) {
       io.netty.handler.codec.http.HttpResponse response = (io.netty.handler.codec.http.HttpResponse) obj;
       HttpVersion version;
@@ -892,9 +897,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     // removing this codec might fire pending buffers in the HTTP decoder
     // this happens when the channel reads the HTTP response and the following data in a single buffer
     Handler<Object> prev = invalidMessageHandler;
-    invalidMessageHandler = msg -> {
-      ReferenceCountUtil.release(msg);
-    };
+    invalidMessageHandler = INVALID_MSG_HANDLER;
     try {
       pipeline.remove("codec");
     } finally {
