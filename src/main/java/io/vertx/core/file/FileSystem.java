@@ -413,20 +413,57 @@ public interface FileSystem {
    * @param recursive  delete recursively?
    * @param handler  the handler that will be called on completion
    * @return a reference to this, so the API can be used fluently
+   * @deprecated instead use {@link #deleteRecursive(String, Handler)} or {@link #delete(String, Handler)}
    */
+  @Deprecated
   @Fluent
   FileSystem deleteRecursive(String path, boolean recursive, Handler<AsyncResult<Void>> handler);
 
   /**
    * Like {@link #deleteRecursive(String, boolean, Handler)} but returns a {@code Future} of the asynchronous result
+   *
+   * @deprecated instead use {@link #deleteRecursive(String)} or {@link #delete(String)}
    */
+  @Deprecated
   Future<Void> deleteRecursive(String path, boolean recursive);
 
   /**
    * Blocking version of {@link #deleteRecursive(String, boolean, Handler)}
+   *
+   * @deprecated instead use {@link #deleteRecursiveBlocking(String)} or {@link #deleteBlocking(String)}
    */
+  @Deprecated
   @Fluent
   FileSystem deleteRecursiveBlocking(String path, boolean recursive) ;
+
+  /**
+   * Deletes the file represented by the specified {@code path}, asynchronously.
+   * <p>
+   * If the path represents a directory then the directory and its contents will be deleted recursively.
+   *
+   * @param path  path to the file
+   * @param handler  the handler that will be called on completion
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  default FileSystem deleteRecursive(String path, Handler<AsyncResult<Void>> handler) {
+    return deleteRecursive(path, true, handler);
+  }
+
+  /**
+   * Like {@link #deleteRecursive(String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<Void> deleteRecursive(String path) {
+    return deleteRecursive(path, true);
+  }
+
+  /**
+   * Blocking version of {@link #deleteRecursive(String, Handler)}
+   */
+  @Fluent
+  default FileSystem deleteRecursiveBlocking(String path) {
+    return deleteRecursiveBlocking(path, true);
+  }
 
   /**
    * Create the directory represented by {@code path}, asynchronously.
