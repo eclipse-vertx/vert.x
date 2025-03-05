@@ -1262,7 +1262,7 @@ Chunked HTTP responses can also contain trailers - these are sent in the last ch
 
 You use {@link io.vertx.core.http.HttpClientResponse#trailers} to get the trailers. Trailers are also a {@link io.vertx.core.MultiMap}.
 
-==== Reading the request body
+==== Reading the response body
 
 The response handler is called when the headers of the response have been read from the wire.
 
@@ -1299,7 +1299,7 @@ is called with the entire body when the response has been fully read:
 The response {@link io.vertx.core.http.HttpClientResponse#endHandler} is called when the entire response body has been read
 or immediately after the headers have been read and the response handler has been called if there is no body.
 
-==== Request and response composition
+==== Request and response flow composition
 
 The client interface is very simple and follows this pattern:
 
@@ -1318,6 +1318,7 @@ on top of this client) you might consider if this client is too low level for yo
 The client API intentionally does not return a `Future<HttpClientResponse>` because setting a completion
 handler on the future can be racy when this is set outside the event-loop.
 
+.Potential race in request/response composition
 [source,$lang]
 ----
 {@link examples.HTTPExamples#exampleClientComposition01}
