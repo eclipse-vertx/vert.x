@@ -298,16 +298,15 @@ public interface FileSystem {
    * deleted recursively.
    *
    * @param path  path to the file
-   * @param recursive  delete recursively?
    * @return a future notified on completion
    */
-  Future<Void> deleteRecursive(String path, boolean recursive);
+  Future<Void> deleteRecursive(String path);
 
   /**
-   * Blocking version of {@link #deleteRecursive(String, boolean)}
+   * Blocking version of {@link #deleteRecursive(String)}
    */
   @Fluent
-  FileSystem deleteRecursiveBlocking(String path, boolean recursive) ;
+  FileSystem deleteRecursiveBlocking(String path) ;
 
   /**
    * Create the directory represented by {@code path}, asynchronously.
