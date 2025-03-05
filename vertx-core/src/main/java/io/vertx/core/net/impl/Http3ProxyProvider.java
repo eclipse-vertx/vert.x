@@ -13,6 +13,9 @@ package io.vertx.core.net.impl;
 
 import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioDatagramChannel;
+import io.netty.handler.proxy.HttpProxyHandler;
+import io.netty.handler.proxy.ProxyHandler;
+import io.netty.handler.proxy.Socks4ProxyHandler;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicConnectionAddress;
 import io.netty.util.concurrent.Future;
@@ -20,9 +23,10 @@ import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.Promise;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
-import io.vertx.core.internal.proxy.Socks5ProxyHandler;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
+import io.vertx.core.internal.proxy.Socks5ProxyHandler;
+import io.vertx.core.net.ProxyOptions;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -36,7 +40,7 @@ public class Http3ProxyProvider {
   private static final String CHANNEL_HANDLER_PROXY_CONNECTED = "myProxyConnectedHandler";
 
   //TODO: This var is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
-  public static boolean IS_NETTY_PROXY_HANDLER_ALTERED = true;
+  public static boolean IS_NETTY_PROXY_HANDLER_ALTERED = false;
 
   private final EventLoop eventLoop;
 
@@ -45,12 +49,13 @@ public class Http3ProxyProvider {
   }
 
   public Future<QuicChannel> createProxyQuicChannel(InetSocketAddress proxyAddress,
-                                                    InetSocketAddress remoteAddress, Promise<QuicChannel> channelPromise) {
+                                                    ChannelHandler proxyHandler,
+                                                    Promise<QuicChannel> channelPromise) {
     Http3Utils.newDatagramChannel(eventLoop, proxyAddress, Http3Utils.newClientSslContext())
       .addListener((ChannelFutureListener) future -> {
         NioDatagramChannel channel = (NioDatagramChannel) future.channel();
         Http3Utils.newQuicChannel(channel, ch -> {
-            ch.pipeline().addLast("proxy", new Socks5ProxyHandler(proxyAddress, remoteAddress));
+            ch.pipeline().addLast(CHANNEL_HANDLER_PROXY, proxyHandler);
           })
           .addListener((GenericFutureListener<Future<QuicChannel>>) future1 -> {
             if (!future1.isSuccess()) {
@@ -72,19 +77,24 @@ public class Http3ProxyProvider {
 
 
   //TODO: This method is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
-  public Future<QuicChannel> createProxyQuicChannel(InetSocketAddress proxyAddress,
-                                                    InetSocketAddress remoteAddress) {
+  public Future<QuicChannel> createProxyQuicChannel(InetSocketAddress proxyAddress, InetSocketAddress remoteAddress,
+                                                    ProxyOptions proxyOptions) {
     Promise<QuicChannel> channelPromise = eventLoop.newPromise();
     if (IS_NETTY_PROXY_HANDLER_ALTERED) {
-      return createProxyQuicChannel(proxyAddress, remoteAddress, channelPromise);
+      io.vertx.core.internal.proxy.ProxyHandler proxyHandler = selectProxyHandler2(proxyOptions, proxyAddress,
+        remoteAddress);
+      return createProxyQuicChannel(proxyAddress, proxyHandler, channelPromise);
     }
+
+    ProxyHandler proxyHandler = selectProxyHandler(proxyOptions, proxyAddress);
+    ProxyHandlerWrapper proxy = new ProxyHandlerWrapper(proxyHandler, remoteAddress);
 
     Http3Utils.newDatagramChannel(eventLoop, proxyAddress, Http3Utils.newClientSslContext())
       .addListener((ChannelFutureListener) future -> {
         NioDatagramChannel channel = (NioDatagramChannel) future.channel();
         Http3Utils.newQuicChannel(channel, ch -> {
             ch.pipeline().addLast(CHANNEL_HANDLER_PROXY_CONNECTED, new ProxyConnectedHandler(channel));
-            ch.pipeline().addLast(CHANNEL_HANDLER_PROXY, new VertxSocks5ProxyHandler(proxyAddress, remoteAddress));
+            ch.pipeline().addLast(CHANNEL_HANDLER_PROXY, proxy);
           })
           .addListener((GenericFutureListener<Future<QuicChannel>>) future1 -> {
             if (!future1.isSuccess()) {
@@ -117,15 +127,64 @@ public class Http3ProxyProvider {
     }
   }
 
-  //TODO: This class is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
-  private static class VertxSocks5ProxyHandler extends ChannelDuplexHandler {
-    private static final Logger log = LoggerFactory.getLogger(VertxSocks5ProxyHandler.class);
+  public io.netty.handler.proxy.ProxyHandler selectProxyHandler(ProxyOptions proxyOptions, InetSocketAddress proxyAddr) {
+    ProxyHandler proxy;
 
-    private final io.netty.handler.proxy.Socks5ProxyHandler proxy;
+    switch (proxyOptions.getType()) {
+      default:
+      case HTTP:
+        proxy = proxyOptions.getUsername() != null && proxyOptions.getPassword() != null
+          ? new HttpProxyHandler(proxyAddr, proxyOptions.getUsername(), proxyOptions.getPassword()) : new HttpProxyHandler(proxyAddr);
+        break;
+      case SOCKS5:
+        proxy = proxyOptions.getUsername() != null && proxyOptions.getPassword() != null
+          ? new io.netty.handler.proxy.Socks5ProxyHandler(proxyAddr, proxyOptions.getUsername(), proxyOptions.getPassword()) : new io.netty.handler.proxy.Socks5ProxyHandler(proxyAddr);
+        break;
+      case SOCKS4:
+        // SOCKS4 only supports a username and could authenticate the user via Ident
+        proxy = proxyOptions.getUsername() != null ? new Socks4ProxyHandler(proxyAddr, proxyOptions.getUsername())
+          : new Socks4ProxyHandler(proxyAddr);
+        break;
+    }
+    return proxy;
+  }
+
+  public io.vertx.core.internal.proxy.ProxyHandler selectProxyHandler2(ProxyOptions proxyOptions,
+                                                                       InetSocketAddress proxyAddr,
+                                                                       InetSocketAddress destinationAddr) {
+    io.vertx.core.internal.proxy.ProxyHandler proxy;
+
+    switch (proxyOptions.getType()) {
+      default:
+      case HTTP:
+        proxy = proxyOptions.getUsername() != null && proxyOptions.getPassword() != null
+          ? new io.vertx.core.internal.proxy.HttpProxyHandler(proxyAddr, destinationAddr, proxyOptions.getUsername(),
+          proxyOptions.getPassword()) : new io.vertx.core.internal.proxy.HttpProxyHandler(proxyAddr, destinationAddr);
+        break;
+      case SOCKS5:
+        proxy = proxyOptions.getUsername() != null && proxyOptions.getPassword() != null ?
+          new Socks5ProxyHandler(proxyAddr, destinationAddr, proxyOptions.getUsername(), proxyOptions.getPassword())
+          : new Socks5ProxyHandler(proxyAddr, destinationAddr);
+        break;
+      case SOCKS4:
+        // SOCKS4 only supports a username and could authenticate the user via Ident
+        proxy = proxyOptions.getUsername() != null ? new io.vertx.core.internal.proxy.Socks4ProxyHandler(proxyAddr,
+          destinationAddr, proxyOptions.getUsername())
+          : new io.vertx.core.internal.proxy.Socks4ProxyHandler(proxyAddr, destinationAddr);
+        break;
+    }
+    return proxy;
+  }
+
+  //TODO: This class is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
+  public static class ProxyHandlerWrapper extends ChannelDuplexHandler {
+    private static final Logger log = LoggerFactory.getLogger(ProxyHandlerWrapper.class);
+
+    private final io.netty.handler.proxy.ProxyHandler proxy;
     private final SocketAddress remoteAddress;
 
-    public VertxSocks5ProxyHandler(SocketAddress proxyAddress, SocketAddress remoteAddress) {
-      this.proxy = new io.netty.handler.proxy.Socks5ProxyHandler(proxyAddress);
+    public ProxyHandlerWrapper(io.netty.handler.proxy.ProxyHandler proxyHandler, SocketAddress remoteAddress) {
+      this.proxy = proxyHandler;
       this.remoteAddress = remoteAddress;
     }
 

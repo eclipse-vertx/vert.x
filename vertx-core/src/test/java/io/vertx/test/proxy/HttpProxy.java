@@ -66,9 +66,9 @@ public class HttpProxy extends TestProxyBase<HttpProxy> {
   }
 
   protected Future<HttpServer> start0(Vertx vertx) {
-    HttpServerOptions options = new HttpServerOptions();
+    HttpServerOptions options = createHttpServerOptions();
     options.setHost("localhost").setPort(port);
-    client = vertx.createNetClient();
+    client = vertx.createNetClient(createNetClientOptions());
     server = vertx.createHttpServer(options);
     server.requestHandler(request -> {
       HttpMethod method = request.method();
