@@ -755,7 +755,7 @@ public class HTTPExamples {
     Future<HttpClientResponse> get = client.get("some-uri");
 
     // Assuming we have a client that returns a future response
-    // assuging this is *not* on the event-loop
+    // assuming this is *not* on the event-loop
     // introduce a potential data race for the sake of this example
     Thread.sleep(100);
 
