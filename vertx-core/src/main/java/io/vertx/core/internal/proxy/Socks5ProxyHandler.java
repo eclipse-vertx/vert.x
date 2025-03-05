@@ -52,11 +52,13 @@ public final class Socks5ProxyHandler extends ProxyHandler {
     private String encoderName;
 
     public Socks5ProxyHandler(SocketAddress proxyAddress) {
-        this(proxyAddress, null, null, null);
+        this(proxyAddress, null, null);
     }
 
     public Socks5ProxyHandler(SocketAddress proxyAddress, String username, String password) {
-        this(proxyAddress, null, username, password);
+        super(proxyAddress);
+        this.username = normalizeCredentials(username);
+        this.password = normalizeCredentials(password);
     }
 
     public Socks5ProxyHandler(SocketAddress proxyAddress, SocketAddress destinationAddress) {
@@ -65,14 +67,8 @@ public final class Socks5ProxyHandler extends ProxyHandler {
 
     public Socks5ProxyHandler(SocketAddress proxyAddress, SocketAddress destinationAddress, String username, String password) {
         super(proxyAddress, destinationAddress);
-        if (username != null && username.isEmpty()) {
-            username = null;
-        }
-        if (password != null && password.isEmpty()) {
-            password = null;
-        }
-        this.username = username;
-        this.password = password;
+        this.username = normalizeCredentials(username);
+        this.password = normalizeCredentials(password);
     }
 
     @Override

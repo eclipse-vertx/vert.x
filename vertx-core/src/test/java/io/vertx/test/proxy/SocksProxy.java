@@ -190,14 +190,6 @@ public class SocksProxy extends TestProxyBase<SocksProxy> {
     return this;
   }
 
-  private NetClientOptions createNetClientOptions() {
-    return http3 ? HttpOptionsFactory.createH3NetClientOptions() : new NetClientOptions();
-  }
-
-  private NetServerOptions createNetServerOptions() {
-    return http3 ? HttpOptionsFactory.createH3NetServerOptions() : new NetServerOptions();
-  }
-
   private String toHex(Buffer buffer) {
     StringBuilder sb = new StringBuilder();
     for (int i = 0; i < buffer.length(); i++) {

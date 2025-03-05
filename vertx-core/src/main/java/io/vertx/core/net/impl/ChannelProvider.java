@@ -13,11 +13,8 @@ package io.vertx.core.net.impl;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
-import io.netty.handler.proxy.HttpProxyHandler;
 import io.netty.handler.proxy.ProxyConnectionEvent;
 import io.netty.handler.proxy.ProxyHandler;
-import io.netty.handler.proxy.Socks4ProxyHandler;
-import io.netty.handler.proxy.Socks5ProxyHandler;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicClosedChannelException;
 import io.netty.resolver.NoopAddressResolverGroup;
@@ -34,7 +31,6 @@ import io.vertx.core.internal.net.SslChannelProvider;
 import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.ProxyOptions;
-import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
 
 import java.net.InetAddress;
@@ -222,22 +218,18 @@ public final class ChannelProvider {
     final VertxInternal vertx = context.owner();
     final String proxyHost = proxyOptions.getHost();
     final int proxyPort = proxyOptions.getPort();
-    final String proxyUsername = proxyOptions.getUsername();
-    final String proxyPassword = proxyOptions.getPassword();
-    final ProxyType proxyType = proxyOptions.getType();
 
     vertx.resolveAddress(proxyHost).onComplete(dnsRes -> {
       if (dnsRes.succeeded()) {
         InetAddress address = dnsRes.result();
         InetSocketAddress proxyAddr = new InetSocketAddress(address, proxyPort);
+        Http3ProxyProvider proxyProvider = new Http3ProxyProvider(context.nettyEventLoop());
 
         if (sslOptions != null && sslOptions.isHttp3()) {
           bootstrap.resolver(vertx.nettyAddressResolverGroup());
           java.net.SocketAddress targetAddress = vertx.transport().convert(remoteAddress);
 
-          Http3ProxyProvider proxyProvider = new Http3ProxyProvider(context.nettyEventLoop());
-
-          proxyProvider.createProxyQuicChannel(proxyAddr, (InetSocketAddress) targetAddress)
+          proxyProvider.createProxyQuicChannel(proxyAddr, (InetSocketAddress) targetAddress, proxyOptions)
             .addListener((GenericFutureListener<Future<QuicChannel>>) channelFuture -> {
               if (!channelFuture.isSuccess()) {
                 channelHandler.tryFailure(channelFuture.cause());
@@ -267,27 +259,10 @@ public final class ChannelProvider {
           return;
         }
 
-        ProxyHandler proxy;
-
-        switch (proxyType) {
-          default:
-          case HTTP:
-            proxy = proxyUsername != null && proxyPassword != null
-              ? new HttpProxyHandler(proxyAddr, proxyUsername, proxyPassword) : new HttpProxyHandler(proxyAddr);
-            break;
-          case SOCKS5:
-            proxy = proxyUsername != null && proxyPassword != null
-              ? new Socks5ProxyHandler(proxyAddr, proxyUsername, proxyPassword) : new Socks5ProxyHandler(proxyAddr);
-            break;
-          case SOCKS4:
-            // SOCKS4 only supports a username and could authenticate the user via Ident
-            proxy = proxyUsername != null ? new Socks4ProxyHandler(proxyAddr, proxyUsername)
-              : new Socks4ProxyHandler(proxyAddr);
-            break;
-        }
 
         bootstrap.resolver(NoopAddressResolverGroup.INSTANCE);
         java.net.SocketAddress targetAddress = vertx.transport().convert(remoteAddress);
+        ProxyHandler proxy = proxyProvider.selectProxyHandler(proxyOptions, proxyAddr);
 
         bootstrap.handler(new ChannelInitializer<Channel>() {
           @Override

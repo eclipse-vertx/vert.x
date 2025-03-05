@@ -42,7 +42,7 @@ public abstract class ProxyHandler extends ChannelDuplexHandler {
     static final String AUTH_NONE = "none";
 
     private final SocketAddress proxyAddress;
-    private final boolean isDestinationSetOnInit;
+    private boolean isDestinationSetOnInit = false;
     private volatile SocketAddress destinationAddress;
     private volatile long connectTimeoutMillis = DEFAULT_CONNECT_TIMEOUT_MILLIS;
 
@@ -63,13 +63,13 @@ public abstract class ProxyHandler extends ChannelDuplexHandler {
     };
 
     protected ProxyHandler(SocketAddress proxyAddress) {
-        this(proxyAddress, null);
+        this.proxyAddress = ObjectUtil.checkNotNull(proxyAddress, "proxyAddress");
     }
 
     protected ProxyHandler(SocketAddress proxyAddress, SocketAddress destinationAddress) {
-        this.proxyAddress = ObjectUtil.checkNotNull(proxyAddress, "proxyAddress");
-        this.destinationAddress = destinationAddress;
-        this.isDestinationSetOnInit = destinationAddress != null;
+        this(proxyAddress);
+        this.destinationAddress = ObjectUtil.checkNotNull(destinationAddress, "destinationAddress");
+        this.isDestinationSetOnInit = true;
     }
 
     /**
@@ -455,5 +455,12 @@ public abstract class ProxyHandler extends ChannelDuplexHandler {
             }
             return ctx.executor();
         }
+    }
+
+    protected static String normalizeCredentials(String str) {
+      if (str != null && str.isEmpty()) {
+        return null;
+      }
+      return str;
     }
 }

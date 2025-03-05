@@ -84,6 +84,9 @@ public class HttpOptionsFactory {
   }
 
   public static HttpServerOptions createH3HttpServerOptions(int port, String host) {
+    return createH3HttpServerOptions().setPort(port).setHost(host);
+  }
+  public static HttpServerOptions createH3HttpServerOptions() {
     HttpServerOptions options = new HttpServerOptions();
 
     options
@@ -104,8 +107,6 @@ public class HttpOptionsFactory {
     ));
 
     return options
-      .setPort(port)
-      .setHost(host)
       .setSslEngineOptions(new JdkSSLEngineOptions())
       .setUseAlpn(true)
       .setSsl(true)

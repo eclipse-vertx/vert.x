@@ -35,10 +35,12 @@ import io.vertx.core.net.impl.Http3ProxyProvider;
 import io.vertx.core.net.impl.Http3Utils;
 import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.test.proxy.HttpProxy;
+import io.vertx.test.proxy.Socks4Proxy;
 import io.vertx.test.proxy.SocksProxy;
 import io.vertx.tests.http.HttpOptionsFactory;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -233,24 +235,56 @@ public class Http3NetTest extends NetTest {
     await();
   }
 
+  @Category(Http3ProxyProvider.class)
   @Test
-  public void testHttp3Socks5Proxy() throws Exception {
+  public void testH3Socks5Proxy() throws Exception {
     Http3ProxyProvider.IS_NETTY_PROXY_HANDLER_ALTERED = false;
-    testHttp3Socks5Proxy_();
+    testH3Proxy_(ProxyType.SOCKS5);
   }
 
   //TODO: This method is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
+  @Category(Http3ProxyProvider.class)
   @Test
-  public void testHttp3Socks5ProxyWithAlteredNetty() throws Exception {
+  public void testH3Socks5ProxyWithAlteredNetty() throws Exception {
     Http3ProxyProvider.IS_NETTY_PROXY_HANDLER_ALTERED = true;
-    testHttp3Socks5Proxy_();
+    testH3Proxy_(ProxyType.SOCKS5);
+  }
+
+  @Category(Http3ProxyProvider.class)
+  @Test
+  public void testH3Socks4Proxy() throws Exception {
+    Http3ProxyProvider.IS_NETTY_PROXY_HANDLER_ALTERED = false;
+    testH3Proxy_(ProxyType.SOCKS4);
+  }
+
+  //TODO: This method is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
+  @Category(Http3ProxyProvider.class)
+  @Test
+  public void testH3Socks4ProxyWithAlteredNetty() throws Exception {
+    Http3ProxyProvider.IS_NETTY_PROXY_HANDLER_ALTERED = true;
+    testH3Proxy_(ProxyType.SOCKS4);
+  }
+
+  @Category(Http3ProxyProvider.class)
+  @Test
+  public void testH3HttpProxy() throws Exception {
+    Http3ProxyProvider.IS_NETTY_PROXY_HANDLER_ALTERED = false;
+    testH3Proxy_(ProxyType.HTTP);
+  }
+
+  //TODO: This method is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
+  @Category(Http3ProxyProvider.class)
+  @Test
+  public void testH3HttpProxyWithAlteredNetty() throws Exception {
+    Http3ProxyProvider.IS_NETTY_PROXY_HANDLER_ALTERED = true;
+    testH3Proxy_(ProxyType.HTTP);
   }
 
   /**
    * This test case simulates the server, proxy server, and client, establishes connections between them, and verifies
    * their functionality. It directly uses Http3ProxyProvider.
    */
-  private void testHttp3Socks5Proxy_() throws Exception {
+  private void testH3Proxy_(ProxyType proxyType) throws Exception {
     waitFor(3);
     String clientText = "Hi, I'm client!";
     String serverText = "Hi, I'm server";
@@ -276,7 +310,20 @@ public class Http3NetTest extends NetTest {
 
 
     // Start of proxy server part
-    proxy = createSocksProxy();
+    switch (proxyType){
+      case HTTP:
+        proxy = new HttpProxy().http3(true);
+        break;
+      case SOCKS4:
+        proxy = new Socks4Proxy().http3(true);
+        break;
+      case SOCKS5:
+        proxy = new SocksProxy().http3(true);
+        break;
+      default:
+        throw new RuntimeException("Not Supported Proxy");
+    }
+
     proxy.startProxy(vertx).onComplete(onSuccess(v -> {
       latch.countDown();
     }));
@@ -307,7 +354,9 @@ public class Http3NetTest extends NetTest {
 
     InetSocketAddress proxyAddress = new InetSocketAddress("localhost", proxy.port());
     InetSocketAddress remoteAddress = new InetSocketAddress("localhost", server.actualPort());
-    proxyProvider.createProxyQuicChannel(proxyAddress, remoteAddress)
+
+    ProxyOptions proxyOptions = new ProxyOptions().setType(proxyType);
+    proxyProvider.createProxyQuicChannel(proxyAddress, remoteAddress, proxyOptions)
       .addListener((GenericFutureListener<Future<QuicChannel>>) channelFuture -> {
         if (!channelFuture.isSuccess()) {
           throw new RuntimeException(channelFuture.cause());
@@ -324,20 +373,52 @@ public class Http3NetTest extends NetTest {
     await();
   }
 
+  @Category(Http3ProxyProvider.class)
   @Test
-  public void testVertxHttp3Socks5Proxy() throws Exception {
+  public void testVertxH3Socks5Proxy() throws Exception {
     Http3ProxyProvider.IS_NETTY_PROXY_HANDLER_ALTERED = false;
-    testVertxHttp3Socks5Proxy_();
+    testVertxH3Proxy_(ProxyType.SOCKS5);
   }
 
   //TODO: This method is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
+  @Category(Http3ProxyProvider.class)
   @Test
-  public void testVertxHttp3Socks5ProxyWithAlteredNetty() throws Exception {
+  public void testVertxH3Socks5ProxyWithAlteredNetty() throws Exception {
     Http3ProxyProvider.IS_NETTY_PROXY_HANDLER_ALTERED = true;
-    testVertxHttp3Socks5Proxy_();
+    testVertxH3Proxy_(ProxyType.SOCKS5);
   }
 
-  private void testVertxHttp3Socks5Proxy_() throws Exception {
+  @Category(Http3ProxyProvider.class)
+  @Test
+  public void testVertxH3Socks4Proxy() throws Exception {
+    Http3ProxyProvider.IS_NETTY_PROXY_HANDLER_ALTERED = false;
+    testVertxH3Proxy_(ProxyType.SOCKS4);
+  }
+
+  //TODO: This method is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
+  @Category(Http3ProxyProvider.class)
+  @Test
+  public void testVertxH3Socks4ProxyWithAlteredNetty() throws Exception {
+    Http3ProxyProvider.IS_NETTY_PROXY_HANDLER_ALTERED = true;
+    testVertxH3Proxy_(ProxyType.SOCKS4);
+  }
+
+  @Category(Http3ProxyProvider.class)
+  @Test
+  public void testVertxH3HttpProxy() throws Exception {
+    Http3ProxyProvider.IS_NETTY_PROXY_HANDLER_ALTERED = false;
+    testVertxH3Proxy_(ProxyType.HTTP);
+  }
+
+  //TODO: This method is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
+  @Category(Http3ProxyProvider.class)
+  @Test
+  public void testVertxH3HttpProxyWithAlteredNetty() throws Exception {
+    Http3ProxyProvider.IS_NETTY_PROXY_HANDLER_ALTERED = true;
+    testVertxH3Proxy_(ProxyType.HTTP);
+  }
+
+  private void testVertxH3Proxy_(ProxyType proxyType) throws Exception {
     waitFor(3);
     String clientText = "Hi, I'm client!";
     String serverText = "Hi, I'm server";
@@ -363,7 +444,20 @@ public class Http3NetTest extends NetTest {
 
 
     // Start of proxy server part
-    proxy = createSocksProxy();
+    switch (proxyType){
+      case HTTP:
+        proxy = new HttpProxy().http3(true);
+        break;
+      case SOCKS4:
+        proxy = new Socks4Proxy().http3(true);
+        break;
+      case SOCKS5:
+        proxy = new SocksProxy().http3(true);
+        break;
+      default:
+        throw new RuntimeException("Not Supported Proxy");
+    }
+
     proxy.startProxy(vertx).onComplete(onSuccess(v -> {
       latch.countDown();
     }));
@@ -373,7 +467,7 @@ public class Http3NetTest extends NetTest {
     // Start of client part
 
     NetClientOptions clientOptions = createNetClientOptions()
-      .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5).setPort(proxy.port()))
+      .setProxyOptions(new ProxyOptions().setType(proxyType).setPort(proxy.port()))
       ;
     NetClient client = vertx.createNetClient(clientOptions);
     client.connect(1234, "localhost").onComplete(onSuccess(so -> {

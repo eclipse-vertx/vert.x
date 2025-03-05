@@ -55,7 +55,7 @@ public class Socks4Proxy extends TestProxyBase<Socks4Proxy> {
   }
 
   protected Future<NetServer> start0(Vertx vertx) {
-    NetServerOptions options = new NetServerOptions();
+    NetServerOptions options = createNetServerOptions();
     options.setHost("localhost").setPort(port);
     server = vertx.createNetServer(options);
     server.connectHandler(socket -> {
@@ -92,7 +92,7 @@ public class Socks4Proxy extends TestProxyBase<Socks4Proxy> {
             port = Integer.valueOf(forceUri.substring(forceUri.indexOf(':') + 1));
           }
           log.debug("connecting to " + host + ":" + port);
-          NetClient netClient = vertx.createNetClient(new NetClientOptions());
+          NetClient netClient = vertx.createNetClient(createNetClientOptions());
           netClient.connect(port, host).onComplete(result -> {
             if (result.succeeded()) {
               localAddresses.add(result.result().localAddress().toString());
