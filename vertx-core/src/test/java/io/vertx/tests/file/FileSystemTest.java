@@ -116,8 +116,8 @@ public class FileSystemTest extends VertxTestBase {
     assertNullPointerException(() -> vertx.fileSystem().readSymlinkBlocking(null));
     assertNullPointerException(() -> vertx.fileSystem().delete(null));
     assertNullPointerException(() -> vertx.fileSystem().deleteBlocking(null));
-    assertNullPointerException(() -> vertx.fileSystem().deleteRecursive(null, true));
-    assertNullPointerException(() -> vertx.fileSystem().deleteRecursiveBlocking(null, true));
+    assertNullPointerException(() -> vertx.fileSystem().deleteRecursive(null));
+    assertNullPointerException(() -> vertx.fileSystem().deleteRecursiveBlocking(null));
     assertNullPointerException(() -> vertx.fileSystem().mkdir(null));
     assertNullPointerException(() -> vertx.fileSystem().mkdirBlocking(null));
     assertNullPointerException(() -> vertx.fileSystem().mkdir(null, "ignored"));
@@ -827,7 +827,7 @@ public class FileSystemTest extends VertxTestBase {
   private void testDelete(String fileName, boolean recursive, boolean shouldPass,
                           Handler<Void> afterOK) {
     if (recursive) {
-      vertx.fileSystem().deleteRecursive(testDir + pathSep + fileName, recursive).onComplete(createHandler(shouldPass, afterOK));
+      vertx.fileSystem().deleteRecursive(testDir + pathSep + fileName).onComplete(createHandler(shouldPass, afterOK));
     } else {
       vertx.fileSystem().delete(testDir + pathSep + fileName).onComplete(createHandler(shouldPass, afterOK));
     }

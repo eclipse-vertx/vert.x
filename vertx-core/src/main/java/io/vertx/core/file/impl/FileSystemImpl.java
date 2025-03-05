@@ -220,12 +220,12 @@ public class FileSystemImpl implements FileSystem {
   }
 
   @Override
-  public Future<Void> deleteRecursive(String path, boolean recursive) {
-    return deleteInternal(path, recursive).run();
+  public Future<Void> deleteRecursive(String path) {
+    return deleteInternal(path, true).run();
   }
 
-  public FileSystem deleteRecursiveBlocking(String path, boolean recursive) {
-    deleteInternal(path, recursive).perform();
+  public FileSystem deleteRecursiveBlocking(String path) {
+    deleteInternal(path, true).perform();
     return this;
   }
 
