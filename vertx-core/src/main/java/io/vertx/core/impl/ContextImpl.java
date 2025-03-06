@@ -92,6 +92,9 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
     if (executor instanceof WorkerExecutor) {
       WorkerExecutor workerExec = (WorkerExecutor) executor;
       fut = fut.eventually(() -> Future.<Void>future(p -> workerExec.taskQueue().shutdown(eventLoop.eventLoop, p)));
+    } else if (executor instanceof VirtualThreadMountedOnEventLoopExecutor) {
+      VirtualThreadMountedOnEventLoopExecutor exec = (VirtualThreadMountedOnEventLoopExecutor) executor;
+      exec.close();
     }
     return fut;
   }

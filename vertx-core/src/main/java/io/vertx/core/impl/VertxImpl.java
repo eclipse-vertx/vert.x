@@ -612,6 +612,13 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         wp = virtualThreaWorkerPool;
         eventExecutor = new WorkerExecutor(virtualThreaWorkerPool, new WorkerTaskQueue());
         break;
+      case VIRTUAL_THREAD_MOUNTED_ON_EVENT_LOOP:
+        if (!isVirtualThreadAvailable()) {
+          throw new IllegalStateException("This Java runtime does not support virtual threads");
+        }
+        wp = virtualThreaWorkerPool;
+        eventExecutor = new VirtualThreadMountedOnEventLoopExecutor(eventLoop);
+        break;
       default:
         throw new UnsupportedOperationException();
     }

@@ -48,6 +48,9 @@
     <junit.version>4.13.2</junit.version>
     <harmcrest.version>2.2</harmcrest.version>
     <assertj.version>3.4.1</assertj.version>
+    <maven.compiler.source>23</maven.compiler.source>
+    <maven.compiler.target>23</maven.compiler.target>
+    <maven.compiler.release>23</maven.compiler.release>
   </properties>
 
   <dependencyManagement>

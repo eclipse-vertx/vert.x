@@ -160,6 +160,25 @@ public class DefaultDeployment implements Deployment {
               .build();
           }
           break;
+        case VIRTUAL_THREAD_MOUNTED_ON_EVENT_LOOP:
+          if (workerLoop == null) {
+            context = ((ContextBuilderImpl)vertx.contextBuilder())
+              .withThreadingModel(ThreadingModel.VIRTUAL_THREAD_MOUNTED_ON_EVENT_LOOP)
+              .withDeploymentContext(deployment)
+              .withCloseFuture(closeFuture)
+              .withClassLoader(tccl)
+              .build();
+            workerLoop = context.nettyEventLoop();
+          } else {
+            context = ((ContextBuilderImpl)vertx.contextBuilder())
+              .withThreadingModel(ThreadingModel.VIRTUAL_THREAD_MOUNTED_ON_EVENT_LOOP)
+              .withEventLoop(workerLoop)
+              .withDeploymentContext(deployment)
+              .withCloseFuture(closeFuture)
+              .withClassLoader(tccl)
+              .build();
+          }
+          break;
         default:
           context = contextBuilder
             .withWorkerPool(workerPool)

@@ -8,14 +8,13 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.tests.http;
+package io.vertx.tests.http.impl;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.PromiseInternal;
-import io.vertx.test.core.Repeat;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Assume;
 import org.junit.Test;
@@ -23,14 +22,16 @@ import org.junit.Test;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
-public class VirtualThreadHttpTest extends VertxTestBase {
+public abstract class VirtualThreadHttpTestBase extends VertxTestBase {
 
-  private VertxInternal vertx;
+  protected VertxInternal vertx;
 
   public void setUp() throws Exception {
     super.setUp();
     vertx = (VertxInternal) super.vertx;
   }
+
+  protected abstract ContextInternal createVirtualThreadContext();
 
   @Test
   public void testHttpClient1() throws Exception {
@@ -39,17 +40,19 @@ public class VirtualThreadHttpTest extends VertxTestBase {
     server.requestHandler(req -> {
       req.response().end("Hello World");
     });
+    int num = 100;
+    waitFor(num);
     server.listen(8088, "localhost").await(10, TimeUnit.SECONDS);
-    vertx.createVirtualThreadContext().runOnContext(v -> {
-      HttpClient client = vertx.createHttpClient();
-      for (int i = 0; i < 100; ++i) {
+    HttpClient client = vertx.createHttpClient();
+    createVirtualThreadContext().runOnContext(v -> {
+      for (int i = 0; i < num; ++i) {
         HttpClientRequest req = client.request(HttpMethod.GET, 8088, "localhost", "/").await();
         HttpClientResponse resp = req.send().await();
         Buffer body = resp.body().await();
         String bodyString = body.toString(StandardCharsets.UTF_8);
         assertEquals("Hello World", bodyString);
+        complete();
       }
-      testComplete();
     });
     await();
   }
@@ -64,7 +67,8 @@ public class VirtualThreadHttpTest extends VertxTestBase {
     });
     server.listen(8088, "localhost").await(10, TimeUnit.SECONDS);
     HttpClient client = vertx.createHttpClient();
-    vertx.createVirtualThreadContext().runOnContext(v -> {
+    ContextInternal createVirtualThreadContext = createVirtualThreadContext();
+    createVirtualThreadContext.runOnContext(v -> {
       for (int i = 0; i < 100; ++i) {
         client.request(HttpMethod.GET, 8088, "localhost", "/").onSuccess(req -> {
           HttpClientResponse resp = req.send().await();
