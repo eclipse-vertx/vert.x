@@ -10,6 +10,7 @@
  */
 package io.vertx.tests.http.impl;
 
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
@@ -21,6 +22,7 @@ import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class VirtualThreadHttpTestBase extends VertxTestBase {
 
@@ -114,5 +116,27 @@ public abstract class VirtualThreadHttpTestBase extends VertxTestBase {
       }
     });
     await();
+  }
+
+  @Test
+  public void testContinuationPreemption() {
+    ContextInternal ctx = vertx.createVirtualThreadContext();
+    Promise<Void> latch = ctx.promise();
+    AtomicInteger seq = new AtomicInteger();
+    ctx.runOnContext(v -> {
+      assertEquals(0, seq.getAndIncrement());
+      latch
+        .future()
+        .await();
+      assertEquals(2, seq.getAndIncrement());
+    });
+    ctx.runOnContext(v -> {
+      assertEquals(1, seq.getAndIncrement());
+      latch.succeed();
+    });
+    ctx.runOnContext(v -> {
+      assertEquals(3, seq.getAndIncrement());
+    });
+    assertWaitUntil(() -> seq.get() == 4);
   }
 }

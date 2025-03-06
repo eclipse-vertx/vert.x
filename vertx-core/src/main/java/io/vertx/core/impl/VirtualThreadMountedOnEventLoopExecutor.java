@@ -11,8 +11,12 @@
 package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
+import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.internal.EventExecutor;
 
+import java.util.Deque;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 
@@ -26,16 +30,31 @@ public class VirtualThreadMountedOnEventLoopExecutor implements EventExecutor {
   private final ThreadLocal<Boolean> inThread = new ThreadLocal<>();
   private final ExecutorService executor;
   private boolean closed;
+  private Queue<Runnable> continuations = PlatformDependent.newMpscQueue();
+
+  // Flag indicating a task submission
+  // Should use scoped values but requires enable preview flag which requires manual config in IDEA that does
+  // not seem to recognize the enablePreview flag of the Maven compiler (sadly)
+  private final ThreadLocal<Boolean> submission = new ThreadLocal<>();
 
   public VirtualThreadMountedOnEventLoopExecutor(EventLoop carrier) {
     ThreadFactory threadFactory = Thread.ofVirtual()
       .name("vert.x-virtual-thread-")
-      .scheduler(vTask -> {
-        if (carrier.inEventLoop()) {
-          vTask.run();
-        } else {
-          carrier.execute(vTask);
+      .scheduler(task -> {
+        boolean isContinuation = null == submission.get();
+        if (isContinuation) {
+          continuations.add(task);
         }
+        carrier.execute(() -> {
+          // Continuation, must be executed first
+          Runnable continuation;
+          while ((continuation = continuations.poll()) != null) {
+            continuation.run();
+          }
+          if (!isContinuation) {
+            task.run();
+          }
+        });
       }).factory();
     this.executor = new ThreadPerTaskExecutorService(threadFactory);
   }
@@ -50,14 +69,19 @@ public class VirtualThreadMountedOnEventLoopExecutor implements EventExecutor {
     if (closed) {
       throw new IllegalArgumentException();
     }
-    executor.execute(() -> {
-      inThread.set(true);
-      try {
-        command.run();
-      } finally {
-        inThread.remove();
-      }
-    });
+    submission.set(true); // Visible to scheduler, use a thread local because of concurrent executes
+    try {
+      executor.execute(() -> {
+        inThread.set(true);
+        try {
+          command.run();
+        } finally {
+          inThread.remove();
+        }
+      });
+    } finally {
+      submission.remove();
+    }
   }
 
   public void close() {
