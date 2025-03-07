@@ -41,6 +41,10 @@ public class VirtualThreadMountedOnEventLoopExecutor implements EventExecutor {
     ThreadFactory threadFactory = Thread.ofVirtual()
       .name("vert.x-virtual-thread-")
       .scheduler(task -> {
+//        if (carrier.inEventLoop()) {
+//          task.run();
+//          return;
+//        }
         boolean isContinuation = null == submission.get();
         if (isContinuation) {
           continuations.add(task);
