@@ -313,58 +313,6 @@ public interface ContextInternal extends Context {
   }
 
   /**
-   * Get some local data from the context.
-   *
-   * @param key  the key of the data
-   * @param <T>  the type of the data
-   * @return the local data
-   */
-  default <T> T getLocal(ContextLocal<T> key) {
-    return getLocal(key, AccessMode.CONCURRENT);
-  }
-
-  /**
-   * Get some local data from the context.
-   *
-   * @param key  the key of the data
-   * @param <T>  the type of the data
-   * @return the local data
-   */
-  <T> T getLocal(ContextLocal<T> key, AccessMode accessMode);
-
-  /**
-   * Get some local data from the context, when it does not exist the {@code initialValueSupplier} is called to obtain
-   * the initial value.
-   *
-   * <p> The {@code initialValueSupplier} might be called multiple times when multiple threads call this method concurrently.
-   *
-   * @param key  the key of the data
-   * @param initialValueSupplier the supplier of the initial value optionally called
-   * @param <T>  the type of the data
-   * @return the local data
-   */
-  <T> T getLocal(ContextLocal<T> key, AccessMode accessMode, Supplier<? extends T> initialValueSupplier);
-
-  /**
-   * Put some local data in the context.
-   * <p>
-   * This can be used to share data between different handlers that share a context
-   *
-   * @param key  the key of the data
-   * @param value  the data
-   */
-  <T> void putLocal(ContextLocal<T> key, AccessMode accessMode, T value);
-
-  /**
-   * Remove some local data from the context.
-   *
-   * @param key  the key to remove
-   */
-  default <T> void removeLocal(ContextLocal<T> key, AccessMode accessMode) {
-    putLocal(key, accessMode, null);
-  }
-
-  /**
    * @deprecated instead use {@link #getLocal(ContextLocal, AccessMode)}
    */
   @Deprecated(forRemoval = true)

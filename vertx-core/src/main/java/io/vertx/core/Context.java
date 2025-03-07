@@ -17,10 +17,13 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.impl.VertxThread;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.spi.context.storage.AccessMode;
+import io.vertx.core.spi.context.storage.ContextLocal;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 
 /**
  * The execution context of a {@link io.vertx.core.Handler} execution.
@@ -246,4 +249,100 @@ public interface Context {
   @Nullable
   Handler<Throwable> exceptionHandler();
 
+  /**
+   * Get local data associated with {@code key} using the concurrent access mode.
+   *
+   * @param key  the key of the data
+   * @param <T>  the type of the data
+   * @return the local data
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  default <T> T getLocal(ContextLocal<T> key) {
+    return getLocal(key, AccessMode.CONCURRENT);
+  }
+
+  /**
+   * <p>Get local data associated with {@code key} using the concurrent access mode.</p>
+   *
+   * <p>When it does not exist the {@code initialValueSupplier} is called to obtain the initial value.</p>
+   *
+   * <p> The {@code initialValueSupplier} might be called multiple times when multiple threads call this method concurrently.
+   *
+   * @param key  the key of the data
+   * @param initialValueSupplier the supplier of the initial value optionally called
+   * @param <T>  the type of the data
+   * @return the local data
+   */
+  @GenIgnore
+  default <T> T getLocal(ContextLocal<T> key, Supplier<? extends T> initialValueSupplier) {
+    return getLocal(key, AccessMode.CONCURRENT, initialValueSupplier);
+  }
+
+  /**
+   * <p>Associate local data with {@code key} using the concurrent access mode.</p>
+   *
+   * @param key  the key of the data
+   * @param value  the data
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  default <T> void putLocal(ContextLocal<T> key, T value) {
+    putLocal(key, AccessMode.CONCURRENT, value);
+  }
+
+  /**
+   * <p>Remove local data associated with {@code key} using the concurrent access mode.</p>
+   *
+   * @param key  the key to be removed
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  default <T> void removeLocal(ContextLocal<T> key) {
+    putLocal(key, null);
+  }
+
+  /**
+   * <p>Get local data associated with {@code key} using the specified access mode.</p>
+   *
+   * @param key  the key of the data
+   * @param accessMode the access mode
+   * @param <T>  the type of the data
+   * @return the local data
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  <T> T getLocal(ContextLocal<T> key, AccessMode accessMode);
+
+  /**
+   * <p>Get local data associated with {@code key} using the specified access mode.</p>
+   *
+   * <p>When it does not exist the {@code initialValueSupplier} is called to obtain the initial value.</p>
+   *
+   * <p> The {@code initialValueSupplier} might be called multiple times when multiple threads call this method concurrently.
+   *
+   * @param key  the key of the data
+   * @param initialValueSupplier the supplier of the initial value optionally called
+   * @param <T>  the type of the data
+   * @return the local data
+   */
+  @GenIgnore
+  <T> T getLocal(ContextLocal<T> key, AccessMode accessMode, Supplier<? extends T> initialValueSupplier);
+
+  /**
+   * <p>Associate local data with {@code key} using the specified access mode.</p>
+   *
+   * @param key  the key of the data
+   * @param accessMode the access mode
+   * @param value  the data
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  <T> void putLocal(ContextLocal<T> key, AccessMode accessMode, T value);
+
+  /**
+   * <p>Remove local data associated with {@code key} using the specified access mode.</p>
+   *
+   * @param key  the key to be removed
+   * @param accessMode the access mode
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  default <T> void removeLocal(ContextLocal<T> key, AccessMode accessMode) {
+    putLocal(key, accessMode, null);
+  }
 }
