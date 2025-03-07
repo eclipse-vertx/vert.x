@@ -17,6 +17,7 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.ThreadingModel;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.ContextInternal;
@@ -599,7 +600,11 @@ public class ConnectionBaseTest extends VertxTestBase {
 
   private <C extends VertxConnection> EmbeddedChannel channel(BiFunction<ContextInternal, ChannelHandlerContext, C> connectionFactory) {
     return new EmbeddedChannel(VertxHandler.create(chctx -> {
-      ContextInternal ctx = ((VertxInternal)vertx).createEventLoopContext(chctx.channel().eventLoop(), null, null);
+      ContextInternal ctx = ((VertxInternal)vertx)
+        .contextBuilder()
+        .withThreadingModel(ThreadingModel.EVENT_LOOP)
+        .withEventLoop(chctx.channel().eventLoop())
+        .build();
       return connectionFactory.apply(ctx, chctx);
     }));
   }
@@ -608,7 +613,10 @@ public class ConnectionBaseTest extends VertxTestBase {
     Handler<Message> handler;
     public TestConnection(ChannelHandlerContext chctx) {
       super(((VertxInternal)ConnectionBaseTest.this.vertx)
-        .createEventLoopContext((EventLoop) chctx.executor(), null, null), chctx);
+        .contextBuilder()
+        .withThreadingModel(ThreadingModel.EVENT_LOOP)
+        .withEventLoop((EventLoop) chctx.executor())
+        .build(), chctx);
     }
     @Override
     protected void handleMessage(Object msg) {

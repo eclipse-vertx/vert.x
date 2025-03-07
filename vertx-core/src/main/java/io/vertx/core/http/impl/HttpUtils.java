@@ -927,7 +927,7 @@ public final class HttpUtils {
 
   static Future<AsyncFile> resolveFile(ContextInternal context, String filename, long offset, long length) {
     VertxInternal vertx = context.owner();
-    File file_ = vertx.resolveFile(filename);
+    File file_ = vertx.fileResolver().resolve(filename);
     if (!file_.exists()) {
       return context.failedFuture(new FileNotFoundException());
     }

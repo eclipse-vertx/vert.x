@@ -15,7 +15,8 @@ import io.netty.channel.EventLoop;
 import io.vertx.core.*;
 import io.vertx.core.Future;
 import io.vertx.core.impl.*;
-import io.vertx.core.impl.deployment.DeploymentContext;
+import io.vertx.core.impl.deployment.Deployment;
+import io.vertx.core.internal.deployment.DeploymentContext;
 import io.vertx.core.impl.future.FailedFuture;
 import io.vertx.core.impl.future.PromiseImpl;
 import io.vertx.core.impl.future.SucceededFuture;
@@ -25,7 +26,6 @@ import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.Objects;
 import java.util.concurrent.*;
-import java.util.function.Supplier;
 
 /**
  * This interface provides an api for vert.x core internal use only
@@ -141,8 +141,13 @@ public interface ContextInternal extends Context {
    * Execute an internal task on the internal blocking ordered executor.
    */
   default <T> Future<T> executeBlockingInternal(Callable<T> action) {
-    return owner().getInternalWorkerPool().executeBlocking(this, action, null);
+    return ExecuteBlocking.executeBlocking(owner().internalWorkerPool(), this, action, null);
   }
+
+  /**
+   * @return the context worker pool
+   */
+  WorkerPool workerPool();
 
   /**
    * @return the deployment associated with this context or {@code null}
@@ -343,11 +348,6 @@ public interface ContextInternal extends Context {
   ClassLoader classLoader();
 
   /**
-   * @return the context worker pool
-   */
-  WorkerPool workerPool();
-
-  /**
    * @return the tracer for this context
    */
   VertxTracer tracer();
@@ -427,7 +427,7 @@ public interface ContextInternal extends Context {
 
   default String deploymentID() {
     DeploymentContext deployment = deployment();
-    return deployment != null ? deployment.deploymentID() : null;
+    return deployment != null ? deployment.id() : null;
   }
 
   default int getInstanceCount() {
@@ -435,7 +435,7 @@ public interface ContextInternal extends Context {
     if (deployment == null) {
       return 0;
     }
-    return deployment.deployment().options().getInstances();
+    return Deployment.unwrap(deployment).options().getInstances();
   }
 
   CloseFuture closeFuture();
@@ -488,4 +488,5 @@ public interface ContextInternal extends Context {
     return false;
   }
 
+  ContextBuilder toBuilder();
 }

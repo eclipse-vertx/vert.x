@@ -426,7 +426,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
       if (headWritten) {
         throw new IllegalStateException("Head already written");
       }
-      File file = vertx.resolveFile(filename);
+      File file = vertx.fileResolver().resolve(filename);
       RandomAccessFile raf;
       try {
         raf = new RandomAccessFile(file, "r");

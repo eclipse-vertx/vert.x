@@ -104,7 +104,7 @@ public abstract class FaultToleranceTest extends VertxTestBase {
   }
 
   protected void afterNodesKilled() throws Exception {
-    ClusterManager clusterManager = vertx.getClusterManager();
+    ClusterManager clusterManager = vertx.clusterManager();
     assertEqualsEventually("Remaining members", Integer.valueOf(2), () -> clusterManager.getNodes().size());
   }
 

@@ -76,7 +76,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
     AddressResolver<?> _addressResolver = addressResolver;
     if (_loadBalancer != null) {
       if (_addressResolver == null) {
-        _addressResolver = vertx.hostnameResolver();
+        _addressResolver = vertx.nameResolver();
       }
     } else {
       if (_addressResolver != null) {

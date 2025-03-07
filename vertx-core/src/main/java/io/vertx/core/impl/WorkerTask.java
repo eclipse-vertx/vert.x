@@ -21,13 +21,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class WorkerTask extends AtomicInteger implements Runnable {
+public abstract class WorkerTask extends AtomicInteger implements Runnable {
 
   private final PoolMetrics metrics;
   private final Object queueMetric;
   private Runnable onComplete;
 
-  WorkerTask(PoolMetrics metrics, Object queueMetric) {
+  public WorkerTask(PoolMetrics metrics, Object queueMetric) {
     this.metrics = metrics;
     this.queueMetric = queueMetric;
   }
@@ -72,7 +72,7 @@ abstract class WorkerTask extends AtomicInteger implements Runnable {
   /**
    * Reject the task.
    */
-  void reject() {
+  public void reject() {
   }
 
   protected abstract void execute();

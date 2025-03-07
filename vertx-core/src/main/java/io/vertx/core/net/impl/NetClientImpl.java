@@ -81,7 +81,7 @@ class NetClientImpl implements NetClientInternal {
     CloseSequence closeSequence1 = new CloseSequence(this::doClose, this::doGrace, this::doShutdown);
 
     this.vertx = vertx;
-    this.channelGroup = new DefaultChannelGroup(vertx.getAcceptorEventLoopGroup().next(), true);
+    this.channelGroup = new DefaultChannelGroup(vertx.acceptorEventLoopGroup().next(), true);
     this.options = new NetClientOptions(options);
     this.sslContextManager = new SslContextManager(SslContextManager.resolveEngineOptions(options.getSslEngineOptions(), options.isUseAlpn()));
     this.metrics = metrics;

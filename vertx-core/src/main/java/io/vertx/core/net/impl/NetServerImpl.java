@@ -32,7 +32,7 @@ import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.CloseSequence;
-import io.vertx.core.impl.HostnameResolver;
+import io.vertx.core.internal.resolver.NameResolver;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.VertxInternal;
@@ -297,7 +297,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
   }
 
   protected GlobalTrafficShapingHandler createTrafficShapingHandler() {
-    return createTrafficShapingHandler(vertx.getEventLoopGroup(), options.getTrafficShapingOptions());
+    return createTrafficShapingHandler(vertx.eventLoopGroup(), options.getTrafficShapingOptions());
   }
 
   private GlobalTrafficShapingHandler createTrafficShapingHandler(EventLoopGroup eventLoopGroup,
@@ -492,7 +492,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
         };
         servers = new HashSet<>();
         servers.add(this);
-        channelBalancer = new ServerChannelLoadBalancer(vertx.getAcceptorEventLoopGroup().next());
+        channelBalancer = new ServerChannelLoadBalancer(vertx.acceptorEventLoopGroup().next());
 
         //
         if (options.isHttp3() && !options.isSsl()) {
@@ -639,7 +639,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
   }
 
   private TCPMetrics<?> createMetrics(SocketAddress localAddress) {
-    VertxMetrics metrics = vertx.metricsSPI();
+    VertxMetrics metrics = vertx.metrics();
     if (metrics != null) {
       if (options instanceof HttpServerOptions) {
         return metrics.createHttpServerMetrics((HttpServerOptions) options, localAddress);
@@ -763,7 +763,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
                                                                         AbstractBootstrap bootstrap,
                                                                         NetServerOptions options) {
     VertxInternal vertx = context.owner();
-    io.netty.util.concurrent.Promise<Channel> promise = vertx.getAcceptorEventLoopGroup().next().newPromise();
+    io.netty.util.concurrent.Promise<Channel> promise = vertx.acceptorEventLoopGroup().next().newPromise();
     try {
       setChannelFactory(socketAddress, bootstrap, options, vertx);
     } catch (Exception e) {
@@ -785,9 +785,8 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
       if (impl.ipAddress() != null) {
         bind(bootstrap, impl.ipAddress(), socketAddress.port(), promise);
       } else {
-        HostnameResolver resolver = vertx.hostnameResolver();
-        io.netty.util.concurrent.Future<InetSocketAddress> fut = resolver.resolveHostname(context.nettyEventLoop(),
-          socketAddress.host());
+        NameResolver resolver = vertx.nameResolver();
+        io.netty.util.concurrent.Future<InetSocketAddress> fut = resolver.resolve(context.nettyEventLoop(), socketAddress.host());
         fut.addListener((GenericFutureListener<io.netty.util.concurrent.Future<InetSocketAddress>>) future -> {
           if (future.isSuccess()) {
             bind(bootstrap, future.getNow().getAddress(), socketAddress.port(), promise);

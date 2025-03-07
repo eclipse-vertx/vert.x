@@ -13,6 +13,7 @@ package io.vertx.core.impl.deployment;
 
 import io.vertx.core.*;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.deployment.DeploymentContext;
 
 import java.util.*;
 
@@ -29,7 +30,7 @@ public interface DeploymentManager {
 
   Collection<DeploymentContext> deployments();
 
-  DeploymentContext getDeployment(String deploymentID);
+  DeploymentContext deployment(String deploymentID);
 
   Future<Void> undeployAll();
 

@@ -420,12 +420,12 @@ public class PemKeyCertOptions implements KeyCertOptions {
     if (helper == null) {
       List<Buffer> keys = new ArrayList<>();
       for (String keyPath : keyPaths) {
-        keys.add(vertx.fileSystem().readFileBlocking(((VertxInternal)vertx).resolveFile(keyPath).getAbsolutePath()));
+        keys.add(vertx.fileSystem().readFileBlocking(((VertxInternal)vertx).fileResolver().resolve(keyPath).getAbsolutePath()));
       }
       keys.addAll(keyValues);
       List<Buffer> certs = new ArrayList<>();
       for (String certPath : certPaths) {
-        certs.add(vertx.fileSystem().readFileBlocking(((VertxInternal)vertx).resolveFile(certPath).getAbsolutePath()));
+        certs.add(vertx.fileSystem().readFileBlocking(((VertxInternal)vertx).fileResolver().resolve(certPath).getAbsolutePath()));
       }
       certs.addAll(certValues);
       helper = new KeyStoreHelper(KeyStoreHelper.loadKeyCert(keys, certs), KeyStoreHelper.DUMMY_PASSWORD, null);

@@ -52,7 +52,7 @@ public interface FileResolver extends Closeable {
    * @param fileName the name to resolve
    * @return a file resolved
    */
-  File resolveFile(String fileName);
+  File resolve(String fileName);
 
   /**
    * Close this file resolver, this is a blocking operation.

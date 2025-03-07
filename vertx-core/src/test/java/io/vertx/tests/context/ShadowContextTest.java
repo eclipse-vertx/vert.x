@@ -1,14 +1,12 @@
 package io.vertx.tests.context;
 
 import io.netty.channel.EventLoop;
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.LocalSeq;
 import io.vertx.core.impl.ShadowContext;
-import io.vertx.core.impl.VertxThread;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.NetClient;
@@ -494,7 +492,7 @@ public class ShadowContextTest extends AsyncTestBase {
 
   @Test
   public void testGetOrCreateContextFromUnassociatedWorkerThread() {
-    Executor executor = actualVertx.getWorkerPool().executor();
+    Executor executor = actualVertx.workerPool().executor();
     testGetOrCreateContextFromUnassociatedThread(executor);
   }
 

@@ -76,7 +76,11 @@ public final class ClusteredEventBus extends EventBusImpl {
     this.options = options.getEventBusOptions();
     this.clusterManager = clusterManager;
     this.nodeSelector = nodeSelector;
-    this.context = vertx.createEventLoopContext(null, new CloseFuture(), null, Thread.currentThread().getContextClassLoader());
+    this.context = vertx.contextBuilder()
+      .withThreadingModel(ThreadingModel.EVENT_LOOP)
+      .withClassLoader(Thread.currentThread().getContextClassLoader())
+      .withCloseFuture(new CloseFuture())
+      .build();
     this.client = client;
   }
 
@@ -98,7 +102,7 @@ public final class ClusteredEventBus extends EventBusImpl {
 
   /**
    * Pick a default address for clustered event bus when none was provided by either the user or the cluster manager.
-   * 
+   *
    * This is used by Vert.x launcher.
    */
   public static String defaultAddress() {
@@ -127,7 +131,7 @@ public final class ClusteredEventBus extends EventBusImpl {
 
   private NetClient createNetClient(VertxInternal vertx, NetClientOptions clientOptions) {
     NetClientBuilder builder = new NetClientBuilder(vertx, clientOptions);
-    VertxMetrics metricsSPI = vertx.metricsSPI();
+    VertxMetrics metricsSPI = vertx.metrics();
     if (metricsSPI != null) {
       builder.metrics(metricsSPI.createNetClientMetrics(clientOptions));
     }

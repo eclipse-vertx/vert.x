@@ -205,7 +205,7 @@ public class PemTrustOptions implements TrustOptions, Cloneable {
     if (helper == null) {
       Stream<Buffer> certValues = certPaths.
         stream().
-        map(path -> ((VertxInternal)vertx).resolveFile(path).getAbsolutePath()).
+        map(path -> ((VertxInternal)vertx).fileResolver().resolve(path).getAbsolutePath()).
         map(vertx.fileSystem()::readFileBlocking);
       certValues = Stream.concat(certValues, this.certValues.stream());
       helper = new KeyStoreHelper(KeyStoreHelper.loadCA(certValues), null, null);

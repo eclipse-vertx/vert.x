@@ -32,7 +32,7 @@ public class NodeInfoTest extends VertxTestBase {
   @Test
   public void testFailedFutureForUnknownNode() {
     startNodes(2);
-    ClusterManager clusterManager = ((VertxInternal) vertices[0]).getClusterManager();
+    ClusterManager clusterManager = ((VertxInternal) vertices[0]).clusterManager();
     // Create unknown node identifier
     String unknown = String.join("", clusterManager.getNodes());
     // Needed as callback might be done from non Vert.x thread

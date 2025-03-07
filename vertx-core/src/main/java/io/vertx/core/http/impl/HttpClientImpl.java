@@ -125,7 +125,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     return (key) -> {
       int maxPoolSize = Math.max(poolOptions.getHttp1MaxSize(), poolOptions.getHttp2MaxSize());
       ClientMetrics clientMetrics = HttpClientImpl.this.metrics != null ? HttpClientImpl.this.metrics.createEndpointMetrics(key.server, maxPoolSize) : null;
-      PoolMetrics poolMetrics = HttpClientImpl.this.metrics != null ? vertx.metricsSPI().createPoolMetrics("http", key.server.toString(), maxPoolSize) : null;
+      PoolMetrics poolMetrics = HttpClientImpl.this.metrics != null ? vertx.metrics().createPoolMetrics("http", key.server.toString(), maxPoolSize) : null;
       ProxyOptions proxyOptions = key.proxyOptions;
       if (proxyOptions != null && !key.ssl && proxyOptions.getType() == ProxyType.HTTP) {
         SocketAddress server = SocketAddress.inetSocketAddress(proxyOptions.getPort(), proxyOptions.getHost());

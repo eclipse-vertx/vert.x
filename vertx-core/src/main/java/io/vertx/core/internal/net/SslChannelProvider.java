@@ -31,7 +31,6 @@ import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SSLOptions;
 import io.vertx.core.net.SocketAddress;
 
-import java.net.InetSocketAddress;
 import java.util.concurrent.Executor;
 
 /**
@@ -49,7 +48,7 @@ public class SslChannelProvider {
   public SslChannelProvider(VertxInternal vertx,
                             SslContextProvider sslContextProvider,
                             boolean sni) {
-    this.workerPool = vertx.getInternalWorkerPool().executor();
+    this.workerPool = vertx.internalWorkerPool().executor();
     this.sni = sni;
     this.sslContextProvider = sslContextProvider;
   }

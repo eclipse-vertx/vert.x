@@ -11,11 +11,13 @@
 package io.vertx.tests.context;
 
 import io.vertx.core.Handler;
+import io.vertx.core.ThreadingModel;
 import io.vertx.core.Vertx;
+import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.impl.VertxThread;
-import io.vertx.core.impl.WorkerPool;
+import io.vertx.core.internal.WorkerPool;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
@@ -63,7 +65,12 @@ public class ContextTaskTest extends VertxTestBase {
   }
 
   private ContextInternal createWorkerContext() {
-    return ((VertxInternal) vertx).createWorkerContext(null, null, new WorkerPool(workerExecutor, null), Thread.currentThread().getContextClassLoader());
+    return ((VertxInternal) vertx).contextBuilder()
+      .withThreadingModel(ThreadingModel.WORKER)
+      .withCloseFuture(new CloseFuture())
+      .withWorkerPool(new WorkerPool(workerExecutor, null))
+      .withClassLoader(Thread.currentThread().getContextClassLoader())
+      .build();
   }
 
   // SCHEDULE + DISPATCH

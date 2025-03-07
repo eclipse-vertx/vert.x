@@ -14,6 +14,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.vertx.core.Handler;
+import io.vertx.core.ThreadingModel;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
@@ -48,7 +49,12 @@ public class Http1xServerConnectionTest extends VertxTestBase {
       new VertxHttpResponseEncoder());
     vertxChannel.config().setAllocator(new io.vertx.benchmarks.HttpServerHandlerBenchmark.Alloc());
 
-    ContextInternal context = vertx.createEventLoopContext(vertxChannel.eventLoop(), null, Thread.currentThread().getContextClassLoader());
+    ContextInternal context = vertx
+      .contextBuilder()
+      .withThreadingModel(ThreadingModel.EVENT_LOOP)
+      .withEventLoop(vertxChannel.eventLoop())
+      .withClassLoader(Thread.currentThread().getContextClassLoader())
+      .build();
 
 
     VertxHandler<Http1xServerConnection> handler = VertxHandler.create(chctx -> {

@@ -74,7 +74,7 @@ public class HttpClientBase implements MetricsProvider, Closeable {
     }
     this.alpnVersions = alpnVersions.stream().map(HttpVersion::alpnName).collect(Collectors.toUnmodifiableList());
     this.vertx = vertx;
-    this.metrics = vertx.metricsSPI() != null ? vertx.metricsSPI().createHttpClientMetrics(options) : null;
+    this.metrics = vertx.metrics() != null ? vertx.metrics().createHttpClientMetrics(options) : null;
     this.options = new HttpClientOptions(options);
     this.closeSequence = new CloseSequence(this::doClose, this::doShutdown);
     this.proxyFilter = options.getNonProxyHosts() != null ? ProxyFilter.nonProxyHosts(options.getNonProxyHosts()) : ProxyFilter.DEFAULT_PROXY_FILTER;

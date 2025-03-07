@@ -12,8 +12,10 @@ package io.vertx.tests.pool;
 
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.ThreadingModel;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.ConnectionPoolTooBusyException;
+import io.vertx.core.impl.ContextImpl;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.pool.*;
@@ -949,7 +951,7 @@ public class ConnectionPoolTest extends VertxTestBase {
 
   @Test
   public void testDefaultSelector() throws Exception {
-    ContextInternal context1 = vertx.createEventLoopContext();
+    ContextImpl context1 = (ContextImpl) vertx.createEventLoopContext();
     ConnectionManager mgr = new ConnectionManager();
     ConnectionPool<Connection> pool = ConnectionPool.pool(mgr, new int[] { 10 }, 10);
     CountDownLatch latch1 = new CountDownLatch(1);
@@ -974,7 +976,13 @@ public class ConnectionPoolTest extends VertxTestBase {
       }));
     awaitLatch(latch2);
     CountDownLatch latch3 = new CountDownLatch(1);
-    ContextInternal context2 = vertx.createEventLoopContext(context1.nettyEventLoop(), context1.workerPool(), context1.classLoader());
+    ContextInternal context2 = vertx
+      .contextBuilder()
+      .withThreadingModel(ThreadingModel.EVENT_LOOP)
+      .withEventLoop(context1.nettyEventLoop())
+      .withWorkerPool(context1.workerPool())
+      .withClassLoader(context1.classLoader())
+      .build();
     pool
       .acquire(context2, 0)
       .onComplete(onSuccess(lease -> {

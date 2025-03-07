@@ -93,9 +93,9 @@ public class AsyncFileImpl implements AsyncFile {
     try {
       if (options.getPerms() != null) {
         FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(options.getPerms()));
-        ch = AsynchronousFileChannel.open(file, opts, vertx.getWorkerPool().executor(), attrs);
+        ch = AsynchronousFileChannel.open(file, opts, vertx.workerPool().executor(), attrs);
       } else {
-        ch = AsynchronousFileChannel.open(file, opts, vertx.getWorkerPool().executor());
+        ch = AsynchronousFileChannel.open(file, opts, vertx.workerPool().executor());
       }
       if (options.isAppend()) writePos = ch.size();
     } catch (IOException e) {

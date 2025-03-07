@@ -13,9 +13,10 @@ package io.vertx.tests.deployment;
 
 import io.netty.channel.EventLoop;
 import io.vertx.core.*;
+import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.impl.deployment.Deployment;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.impl.deployment.DeploymentContext;
+import io.vertx.core.internal.deployment.DeploymentContext;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.test.core.TestUtils;
@@ -536,12 +537,12 @@ public class DeploymentTest extends VertxTestBase {
     awaitLatch(deployLatch);
     assertWaitUntil(() -> deployCount.get() == numInstances);
     assertEquals(1, vertx.deploymentIDs().size());
-    DeploymentContext deployment = ((VertxInternal) vertx).getDeployment(vertx.deploymentIDs().iterator().next());
-    Set<Deployable> verticles = ((Deployment)deployment.deployment()).instances();
+    DeploymentContext deployment = ((VertxImpl) vertx).deploymentManager().deployment(vertx.deploymentIDs().iterator().next());
+    Set<Deployable> verticles = Deployment.unwrap(deployment).instances();
     assertEquals(numInstances, verticles.size());
     CountDownLatch undeployLatch = new CountDownLatch(1);
     assertEquals(numInstances, deployCount.get());
-    vertx.undeploy(deployment.deploymentID()).onComplete(onSuccess(v -> {
+    vertx.undeploy(deployment.id()).onComplete(onSuccess(v -> {
       assertEquals(1, undeployHandlerCount.incrementAndGet());
       undeployLatch.countDown();
     }));
@@ -1067,8 +1068,8 @@ public class DeploymentTest extends VertxTestBase {
     assertWaitUntil(() -> messageCount.get() == 3);
     assertEquals(9, totalReportedInstances.get());
     assertWaitUntil(() -> vertx.deploymentIDs().size() == 1);
-    DeploymentContext deployment = ((VertxInternal) vertx).getDeployment(vertx.deploymentIDs().iterator().next());
-    awaitFuture(vertx.undeploy(deployment.deploymentID()));
+    DeploymentContext deployment = ((VertxImpl) vertx).deploymentManager().deployment(vertx.deploymentIDs().iterator().next());
+    awaitFuture(vertx.undeploy(deployment.id()));
   }
 
   @Test

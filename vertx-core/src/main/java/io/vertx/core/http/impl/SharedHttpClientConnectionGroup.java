@@ -10,10 +10,7 @@
  */
 package io.vertx.core.http.impl;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
+import io.vertx.core.*;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.internal.ContextInternal;
@@ -192,7 +189,7 @@ class SharedHttpClientConnectionGroup extends ManagedResource implements PoolCon
   private Future<Lease<HttpClientConnectionInternal>> requestConnection2(ContextInternal ctx, long timeout) {
     PromiseInternal<Lease<HttpClientConnectionInternal>> promise = ctx.promise();
     // ctx.workerPool() -> not sure we want that in a pool
-    ContextInternal connCtx = vertx.createEventLoopContext(ctx.nettyEventLoop(), ctx.workerPool(), ctx.classLoader());
+    ContextInternal connCtx = ctx.toBuilder().withThreadingModel(ThreadingModel.EVENT_LOOP).build();
     Request request = new Request(connCtx, client.options().getProtocolVersion(), timeout, promise);
     request.acquire();
     return promise.future();
