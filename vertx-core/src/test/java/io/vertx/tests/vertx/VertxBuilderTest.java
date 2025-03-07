@@ -30,6 +30,6 @@ public class VertxBuilderTest  extends AsyncTestBase {
   public void testMetricsFactoryDoesNotRequireOptions() {
     FakeVertxMetrics metrics = new FakeVertxMetrics();
     Vertx vertx = Vertx.builder().withMetrics(options -> metrics).build();
-    assertEquals(metrics, ((VertxInternal)vertx).metricsSPI());
+    assertEquals(metrics, ((VertxInternal)vertx).metrics());
   }
 }

@@ -442,8 +442,8 @@ public class FileSystemImpl implements FileSystem {
     return new BlockingAction<Void>() {
       public Void perform() {
         try {
-          Path source = vertx.resolveFile(from).toPath();
-          Path target = vertx.resolveFile(to).toPath();
+          Path source = resolveFile(from).toPath();
+          Path target = resolveFile(to).toPath();
           Files.copy(source, target, copyOptions);
         } catch (IOException e) {
           throw new FileSystemException(getFileCopyErrorMessage(from, to), e);
@@ -459,8 +459,8 @@ public class FileSystemImpl implements FileSystem {
     return new BlockingAction<Void>() {
       public Void perform() {
         try {
-          Path source = vertx.resolveFile(from).toPath();
-          Path target = vertx.resolveFile(to).toPath();
+          Path source = resolveFile(from).toPath();
+          Path target = resolveFile(to).toPath();
           if (recursive) {
             Files.walkFileTree(source, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE,
               new SimpleFileVisitor<Path>() {
@@ -504,8 +504,8 @@ public class FileSystemImpl implements FileSystem {
     return new BlockingAction<Void>() {
       public Void perform() {
         try {
-          Path source = vertx.resolveFile(from).toPath();
-          Path target = vertx.resolveFile(to).toPath();
+          Path source = resolveFile(from).toPath();
+          Path target = resolveFile(to).toPath();
           Files.move(source, target, copyOptions);
         } catch (IOException e) {
           throw new FileSystemException(getFileMoveErrorMessage(from, to), e);
@@ -520,7 +520,7 @@ public class FileSystemImpl implements FileSystem {
     return new BlockingAction<Void>() {
       public Void perform() {
         try {
-          String path = vertx.resolveFile(p).getAbsolutePath();
+          String path = resolveFile(p).getAbsolutePath();
           if (len < 0) {
             throw new FileSystemException("Cannot truncate file to size < 0");
           }
@@ -549,7 +549,7 @@ public class FileSystemImpl implements FileSystem {
     return new BlockingAction<Void>() {
       public Void perform() {
         try {
-          Path target = vertx.resolveFile(path).toPath();
+          Path target = resolveFile(path).toPath();
           if (dirPermissions != null) {
             Files.walkFileTree(target, new SimpleFileVisitor<Path>() {
               public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
@@ -582,7 +582,7 @@ public class FileSystemImpl implements FileSystem {
     return new BlockingAction<Void>() {
       public Void perform() {
         try {
-          Path target = vertx.resolveFile(path).toPath();
+          Path target = resolveFile(path).toPath();
           UserPrincipalLookupService service = target.getFileSystem().getUserPrincipalLookupService();
           UserPrincipal userPrincipal = user == null ? null : service.lookupPrincipalByName(user);
           GroupPrincipal groupPrincipal = group == null ? null : service.lookupPrincipalByGroupName(group);
@@ -620,7 +620,7 @@ public class FileSystemImpl implements FileSystem {
     return new BlockingAction<FileProps>() {
       public FileProps perform() {
         try {
-          Path target = vertx.resolveFile(path).toPath();
+          Path target = resolveFile(path).toPath();
           BasicFileAttributes attrs;
           if (followLinks) {
             attrs = Files.readAttributes(target, BasicFileAttributes.class);
@@ -649,8 +649,8 @@ public class FileSystemImpl implements FileSystem {
     return new BlockingAction<Void>() {
       public Void perform() {
         try {
-          Path source = vertx.resolveFile(link).toPath();
-          Path target = vertx.resolveFile(existing).toPath();
+          Path source = resolveFile(link).toPath();
+          Path target = resolveFile(existing).toPath();
           if (symbolic) {
             Files.createSymbolicLink(source, target);
           } else {
@@ -676,7 +676,7 @@ public class FileSystemImpl implements FileSystem {
     return new BlockingAction<String>() {
       public String perform() {
         try {
-          Path source = vertx.resolveFile(link).toPath();
+          Path source = resolveFile(link).toPath();
           return Files.readSymbolicLink(source).toString();
         } catch (IOException e) {
           throw new FileSystemException(getFileAccessErrorMessage("read", link), e);
@@ -694,7 +694,7 @@ public class FileSystemImpl implements FileSystem {
     return new BlockingAction<Void>() {
       public Void perform() {
         try {
-          Path source = vertx.resolveFile(path).toPath();
+          Path source = resolveFile(path).toPath();
           delete(source, recursive);
         } catch (IOException e) {
           throw new FileSystemException(getFileAccessErrorMessage("delete", path), e);
@@ -743,7 +743,7 @@ public class FileSystemImpl implements FileSystem {
     return new BlockingAction<Void>() {
       public Void perform() {
         try {
-          Path source = vertx.resolveFile(path).toPath();
+          Path source = resolveFile(path).toPath();
           if (createParents) {
             if (attrs != null) {
               Files.createDirectories(source, attrs);
@@ -772,7 +772,7 @@ public class FileSystemImpl implements FileSystem {
         try {
           Path tmpDir;
           if (parentDir != null) {
-            Path dir = vertx.resolveFile(parentDir).toPath();
+            Path dir = resolveFile(parentDir).toPath();
             if (attrs != null) {
               tmpDir = Files.createTempDirectory(dir, prefix, attrs);
             } else {
@@ -800,7 +800,7 @@ public class FileSystemImpl implements FileSystem {
         try {
           Path tmpFile;
           if (parentDir != null) {
-            Path dir = vertx.resolveFile(parentDir).toPath();
+            Path dir = resolveFile(parentDir).toPath();
             if (attrs != null) {
               tmpFile = Files.createTempFile(dir, prefix, suffix, attrs);
             } else {
@@ -833,7 +833,7 @@ public class FileSystemImpl implements FileSystem {
     return new BlockingAction<List<String>>() {
       public List<String> perform() {
         try {
-          File file = vertx.resolveFile(p);
+          File file = resolveFile(p);
           if (!file.exists()) {
             throw new FileSystemException("Cannot read directory " + file + ". Does not exist");
           }
@@ -874,7 +874,7 @@ public class FileSystemImpl implements FileSystem {
     return new BlockingAction<Buffer>() {
       public Buffer perform() {
         try {
-          Path target = vertx.resolveFile(path).toPath();
+          Path target = resolveFile(path).toPath();
           byte[] bytes = Files.readAllBytes(target);
           return Buffer.buffer(bytes);
         } catch (IOException e) {
@@ -890,7 +890,7 @@ public class FileSystemImpl implements FileSystem {
     return new BlockingAction<Void>() {
       public Void perform() {
         try {
-          Path target = vertx.resolveFile(path).toPath();
+          Path target = resolveFile(path).toPath();
           Files.write(target, data.getBytes());
           return null;
         } catch (IOException e) {
@@ -905,7 +905,7 @@ public class FileSystemImpl implements FileSystem {
     Objects.requireNonNull(options);
     return new BlockingAction<AsyncFile>() {
       public AsyncFile perform() {
-        String path = vertx.resolveFile(p).getAbsolutePath();
+        String path = resolveFile(p).getAbsolutePath();
         return doOpen(path, options, context);
       }
     };
@@ -925,7 +925,7 @@ public class FileSystemImpl implements FileSystem {
     return new BlockingAction<Void>() {
       public Void perform() {
         try {
-          Path target = vertx.resolveFile(p).toPath();
+          Path target = resolveFile(p).toPath();
           if (attrs != null) {
             Files.createFile(target, attrs);
           } else {
@@ -943,7 +943,7 @@ public class FileSystemImpl implements FileSystem {
     Objects.requireNonNull(path);
     return new BlockingAction<Boolean>() {
       public Boolean perform() {
-        File file = vertx.resolveFile(path);
+        File file = resolveFile(path);
         return file.exists();
       }
     };
@@ -954,7 +954,7 @@ public class FileSystemImpl implements FileSystem {
     return new BlockingAction<FileSystemProps>() {
       public FileSystemProps perform() {
         try {
-          Path target = vertx.resolveFile(path).toPath();
+          Path target = resolveFile(path).toPath();
           FileStore fs = Files.getFileStore(target);
           return new FileSystemPropsImpl(fs.name(), fs.getTotalSpace(), fs.getUnallocatedSpace(), fs.getUsableSpace());
         } catch (IOException e) {
@@ -962,6 +962,10 @@ public class FileSystemImpl implements FileSystem {
         }
       }
     };
+  }
+
+  private File resolveFile(String from) {
+    return vertx.fileResolver().resolve(from);
   }
 
   protected abstract class BlockingAction<T> implements Callable<T> {

@@ -13,11 +13,11 @@ package io.vertx.core.impl;
 import io.netty.channel.EventLoop;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
-import io.vertx.core.impl.deployment.DeploymentContext;
+import io.vertx.core.internal.WorkerPool;
+import io.vertx.core.internal.deployment.DeploymentContext;
 import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.EventExecutor;
-import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.tracing.VertxTracer;
 
@@ -52,12 +52,12 @@ import java.util.concurrent.ConcurrentMap;
  */
 public final class ShadowContext extends ContextBase {
 
-  final VertxInternal owner;
+  final VertxImpl owner;
   final ContextBase delegate;
   private final EventLoopExecutor eventLoop;
   final TaskQueue orderedTasks;
 
-  ShadowContext(VertxInternal owner, EventLoopExecutor eventLoop, ContextInternal delegate) {
+  ShadowContext(VertxImpl owner, EventLoopExecutor eventLoop, ContextInternal delegate) {
     super(((ContextBase)delegate).locals);
     this.owner = owner;
     this.eventLoop = eventLoop;
@@ -90,7 +90,7 @@ public final class ShadowContext extends ContextBase {
   }
 
   @Override
-  public VertxInternal owner() {
+  public VertxImpl owner() {
     return owner;
   }
 
@@ -112,7 +112,7 @@ public final class ShadowContext extends ContextBase {
 
   @Override
   public WorkerPool workerPool() {
-    return owner.getWorkerPool();
+    return owner.workerPool();
   }
 
   @Override
@@ -151,7 +151,7 @@ public final class ShadowContext extends ContextBase {
 
   @Override
   public <T> Future<@Nullable T> executeBlocking(Callable<T> blockingCodeHandler, boolean ordered) {
-    return owner.getWorkerPool().executeBlocking(this, blockingCodeHandler, ordered ? orderedTasks : null);
+    return ExecuteBlocking.executeBlocking(owner.workerPool(), this, blockingCodeHandler, ordered ? orderedTasks : null);
   }
 
   @Override

@@ -55,8 +55,12 @@ public class DnsClientImpl implements DnsClient {
       throw new IllegalArgumentException("Cannot resolve the host to a valid ip address");
     }
 
+    DnsAddressResolverProvider provider = DnsAddressResolverProvider.create(vertx, vertx.nameResolver().options()
+      .setServers(Collections.singletonList(dnsServer.getHostString() + ":" + dnsServer.getPort()))
+      .setOptResourceEnabled(false));
+
     this.options = new DnsClientOptions(options);
-    this.provider = vertx.dnsAddressResolverProvider(dnsServer);
+    this.provider = provider;
     this.vertx = vertx;
   }
 

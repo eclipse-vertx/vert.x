@@ -73,7 +73,7 @@ public class VertxBootstrapTest {
     });
     Vertx vertx = fut.get(10, TimeUnit.SECONDS);
     assertNotNull(vertx);
-    assertNotNull(((VertxInternal)vertx).getClusterManager());
+    assertNotNull(((VertxInternal)vertx).clusterManager());
   }
 
   @Test
@@ -85,7 +85,7 @@ public class VertxBootstrapTest {
       factory.metricsFactory(options -> metrics);
       factory.init();
       Vertx vertx = factory.vertx();
-      assertSame(metrics, ((VertxInternal)vertx).metricsSPI());
+      assertSame(metrics, ((VertxInternal)vertx).metrics());
     });
   }
 
@@ -149,7 +149,7 @@ public class VertxBootstrapTest {
       });
     });
     Vertx vertx = res.get(10, TimeUnit.SECONDS);
-    assertSame(clusterManager, ((VertxInternal)vertx).getClusterManager());
+    assertSame(clusterManager, ((VertxInternal)vertx).clusterManager());
   }
 
   @Test

@@ -96,7 +96,7 @@ public class FileResolverImpl implements FileResolver {
     }
   }
 
-  public File resolveFile(String fileName) {
+  public File resolve(String fileName) {
     int idx = fileName.length() - 1;
     if (idx >= 0 && fileName.charAt(idx) == '/') {
       fileName = fileName.substring(0, idx);

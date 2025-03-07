@@ -12,10 +12,12 @@ package io.vertx.core.impl.deployment;
 
 import io.netty.channel.EventLoop;
 import io.vertx.core.*;
+import io.vertx.core.impl.ContextBuilderImpl;
 import io.vertx.core.impl.VertxImpl;
-import io.vertx.core.impl.WorkerPool;
+import io.vertx.core.internal.WorkerPool;
 import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.deployment.DeploymentContext;
 import io.vertx.core.internal.logging.Logger;
 
 import java.util.*;
@@ -24,6 +26,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 
 public class Deployment {
+
+  public static Deployment unwrap(DeploymentContext ctx) {
+    return ((DefaultDeploymentManager.DeploymentContextImpl)ctx).deployment();
+  }
 
   public static Deployment deployment(VertxImpl vertx,
                                       Logger log,
@@ -127,22 +133,52 @@ public class Deployment {
       switch (threading) {
         case WORKER:
           if (workerLoop == null) {
-            context = vertx.createWorkerContext(deployment, closeFuture, workerPool, tccl);
+            context = ((ContextBuilderImpl)vertx.contextBuilder())
+              .withThreadingModel(ThreadingModel.WORKER)
+              .withDeploymentContext(deployment)
+              .withCloseFuture(closeFuture)
+              .withWorkerPool(workerPool)
+              .withClassLoader(tccl)
+              .build();
             workerLoop = context.nettyEventLoop();
           } else {
-            context = vertx.createWorkerContext(deployment, closeFuture, workerLoop, workerPool, tccl);
+            context = ((ContextBuilderImpl)vertx.contextBuilder())
+              .withThreadingModel(ThreadingModel.WORKER)
+              .withEventLoop(workerLoop)
+              .withDeploymentContext(deployment)
+              .withCloseFuture(closeFuture)
+              .withWorkerPool(workerPool)
+              .withClassLoader(tccl)
+              .build();
           }
           break;
         case VIRTUAL_THREAD:
           if (workerLoop == null) {
-            context = vertx.createVirtualThreadContext(deployment, closeFuture, tccl);
+            context = ((ContextBuilderImpl)vertx.contextBuilder())
+              .withThreadingModel(ThreadingModel.VIRTUAL_THREAD)
+              .withDeploymentContext(deployment)
+              .withCloseFuture(closeFuture)
+              .withClassLoader(tccl)
+              .build();
             workerLoop = context.nettyEventLoop();
           } else {
-            context = vertx.createVirtualThreadContext(deployment, closeFuture, workerLoop, tccl);
+            context = ((ContextBuilderImpl)vertx.contextBuilder())
+              .withThreadingModel(ThreadingModel.VIRTUAL_THREAD)
+              .withEventLoop(workerLoop)
+              .withDeploymentContext(deployment)
+              .withCloseFuture(closeFuture)
+              .withClassLoader(tccl)
+              .build();
           }
           break;
         default:
-          context = vertx.createEventLoopContext(deployment, closeFuture, workerPool, tccl);
+          context = ((ContextBuilderImpl)vertx.contextBuilder())
+            .withThreadingModel(ThreadingModel.EVENT_LOOP)
+            .withDeploymentContext(deployment)
+            .withCloseFuture(closeFuture)
+            .withWorkerPool(workerPool)
+            .withClassLoader(tccl)
+            .build();
           break;
       }
       Instance instance = new Instance(verticle, context);

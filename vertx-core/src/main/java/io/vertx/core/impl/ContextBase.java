@@ -11,8 +11,7 @@
 package io.vertx.core.impl;
 
 import io.vertx.core.Handler;
-import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.EventExecutor;
+import io.vertx.core.internal.*;
 import io.vertx.core.spi.context.storage.AccessMode;
 import io.vertx.core.spi.context.storage.ContextLocal;
 
@@ -32,12 +31,12 @@ abstract class ContextBase implements ContextInternal {
   }
 
   public ContextInternal beginDispatch() {
-    VertxImpl vertx = (VertxImpl) owner();
+    VertxImpl vertx = owner();
     return vertx.beginDispatch(this);
   }
 
   public void endDispatch(ContextInternal previous) {
-    VertxImpl vertx = (VertxImpl) owner();
+    VertxImpl vertx = owner();
     vertx.endDispatch(previous);
   }
 
@@ -115,4 +114,18 @@ abstract class ContextBase implements ContextInternal {
       executor().execute(() -> task.handle(argument));
     }
   }
+
+  @Override
+  public abstract VertxImpl owner();
+
+  @Override
+  public ContextBuilder toBuilder() {
+      return new ContextBuilderImpl(owner())
+        .withCloseFuture(closeFuture())
+        .withEventLoop(nettyEventLoop())
+        .withThreadingModel(threadingModel())
+        .withDeploymentContext(deployment())
+        .withWorkerPool(workerPool())
+        .withClassLoader(classLoader());
+    }
 }

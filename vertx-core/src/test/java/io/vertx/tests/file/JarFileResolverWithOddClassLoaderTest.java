@@ -23,7 +23,7 @@ public class JarFileResolverWithOddClassLoaderTest {
     try (FileResolver resolver = new FileResolverImpl()) {
       Thread.currentThread().setContextClassLoader(cl);
       String fileName = "META-INF/resources/_static/wc-chatbot/0.1.2/LICENSE";
-      File resolved = resolver.resolveFile(fileName);
+      File resolved = resolver.resolve(fileName);
       Assertions.assertThat(resolved).exists();
     } finally {
       Thread.currentThread().setContextClassLoader(orig);

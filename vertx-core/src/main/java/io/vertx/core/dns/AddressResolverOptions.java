@@ -14,11 +14,15 @@ package io.vertx.core.dns;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.impl.HostnameResolver;
+import io.vertx.core.internal.resolver.NameResolver;
 import io.vertx.core.json.JsonObject;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+
+import static io.vertx.core.impl.Utils.isLinux;
+import static io.vertx.core.internal.resolver.NameResolver.parseLinux;
 
 /**
  * Configuration options for Vert.x hostname resolver. The resolver uses the local <i>hosts</i> file and performs
@@ -29,6 +33,17 @@ import java.util.List;
 @DataObject
 @JsonGen(publicConverter = false)
 public class AddressResolverOptions {
+
+  static {
+    if (isLinux()) {
+      NameResolver.ResolverOptions options = parseLinux(new File("/etc/resolv.conf"));
+      DEFAULT_NDOTS = options.effectiveNdots();
+      DEFAULT_ROTATE_SERVERS = options.isRotate();
+    } else {
+      DEFAULT_NDOTS = 1;
+      DEFAULT_ROTATE_SERVERS = false;
+    }
+  }
 
   /**
    * The default list of DNS servers = null (uses system name server's list like resolve.conf otherwise Google Public DNS)
@@ -83,15 +98,15 @@ public class AddressResolverOptions {
   /**
    * The default ndots value = loads the value from the OS on Linux otherwise use the value 1
    */
-  public static final int DEFAULT_NDOTS = HostnameResolver.DEFAULT_NDOTS_RESOLV_OPTION;
+  public static final int DEFAULT_NDOTS;
 
   /**
    * The default servers rotate value = loads the value from the OS on Linux otherwise use the value false
    */
-  public static final boolean DEFAULT_ROTATE_SERVERS = HostnameResolver.DEFAULT_ROTATE_RESOLV_OPTION;
+  public static final boolean DEFAULT_ROTATE_SERVERS;
 
   /**
-   * The default round robin inet address = false
+   * The default round-robin inet address = false
    */
   public static final boolean DEFAULT_ROUND_ROBIN_INET_ADDRESS = false;
 

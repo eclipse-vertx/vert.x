@@ -146,7 +146,7 @@ public final class ChannelProvider {
 
   private void handleConnect(Handler<Channel> handler, SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, ClientSSLOptions sslOptions, Promise<Channel> channelHandler) {
     VertxInternal vertx = context.owner();
-    bootstrap.resolver(vertx.nettyAddressResolverGroup());
+    bootstrap.resolver(vertx.nameResolver().nettyAddressResolverGroup());
     bootstrap.handler(new ChannelInitializer<Channel>() {
       @Override
       protected void initChannel(Channel ch) {
@@ -191,7 +191,7 @@ public final class ChannelProvider {
     final String proxyPassword = proxyOptions.getPassword();
     final ProxyType proxyType = proxyOptions.getType();
 
-    vertx.resolveAddress(proxyHost).onComplete(dnsRes -> {
+    vertx.nameResolver().resolve(proxyHost).onComplete(dnsRes -> {
       if (dnsRes.succeeded()) {
         InetAddress address = dnsRes.result();
         InetSocketAddress proxyAddr = new InetSocketAddress(address, proxyPort);

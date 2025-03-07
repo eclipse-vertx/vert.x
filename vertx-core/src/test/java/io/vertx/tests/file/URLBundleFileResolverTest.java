@@ -28,12 +28,12 @@ public class URLBundleFileResolverTest extends JarFileResolverTest {
   public void testResolveURLBundle() {
     String fileName = "java/lang/Object.class";
     assertFalse(resolver.getFileCache().getFile(fileName).exists());
-    File file = resolver.resolveFile(fileName);
+    File file = resolver.resolve(fileName);
     assertTrue(file.exists());
     // cache.getFile should return the cached file.
     assertTrue(resolver.getFileCache().getFile(fileName).exists());
     // resolve again
-    file = resolver.resolveFile(fileName);
+    file = resolver.resolve(fileName);
     assertTrue(file.exists());
     assertTrue(resolver.getFileCache().getFile(fileName).exists());
   }

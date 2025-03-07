@@ -15,10 +15,7 @@ import io.netty.channel.EventLoop;
 import io.vertx.core.*;
 import io.vertx.core.Future;
 import io.vertx.core.impl.*;
-import io.vertx.core.internal.PromiseInternal;
-import io.vertx.core.internal.CloseFuture;
-import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.*;
 import io.vertx.core.spi.context.storage.AccessMode;
 import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.test.core.ContextLocalHelper;
@@ -50,7 +47,12 @@ public class ContextTest extends VertxTestBase {
   private ExecutorService workerExecutor;
 
   private ContextInternal createWorkerContext() {
-    return ((VertxInternal) vertx).createWorkerContext(null, new CloseFuture(), new WorkerPool(workerExecutor, null), Thread.currentThread().getContextClassLoader());
+    return ((VertxInternal) vertx).contextBuilder()
+      .withThreadingModel(ThreadingModel.WORKER)
+      .withCloseFuture(new CloseFuture())
+      .withWorkerPool(new WorkerPool(workerExecutor, null))
+      .withClassLoader(Thread.currentThread().getContextClassLoader())
+      .build();
   }
 
   @Override
@@ -1001,8 +1003,18 @@ public class ContextTest extends VertxTestBase {
     ClassLoader tccl1 = new URLClassLoader(new URL[0]);
     ClassLoader tccl2 = new URLClassLoader(new URL[0]);
     VertxImpl impl = (VertxImpl) vertx;
-    ContextInternal ctx1 = impl.createEventLoopContext(impl.getEventLoopGroup().next(), null, tccl1);
-    ContextInternal ctx2 = impl.createEventLoopContext(impl.getEventLoopGroup().next(), null, tccl2);
+    ContextInternal ctx1 = impl
+      .contextBuilder()
+      .withThreadingModel(ThreadingModel.EVENT_LOOP)
+      .withEventLoop(impl.eventLoopGroup().next())
+      .withClassLoader(tccl1)
+      .build();
+    ContextInternal ctx2 = impl
+      .contextBuilder()
+      .withThreadingModel(ThreadingModel.EVENT_LOOP)
+      .withEventLoop(impl.eventLoopGroup().next())
+      .withClassLoader(tccl2)
+      .build();
     AtomicInteger exec = new AtomicInteger();
     Thread thread = Thread.currentThread();
     ClassLoader current = thread.getContextClassLoader();

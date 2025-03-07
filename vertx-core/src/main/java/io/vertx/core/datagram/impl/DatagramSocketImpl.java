@@ -30,7 +30,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
-import io.vertx.core.impl.HostnameResolver;
+import io.vertx.core.internal.resolver.NameResolver;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.ContextInternal;
@@ -80,7 +80,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
     if (options.getLogActivity()) {
       channel.pipeline().addLast("logging", new LoggingHandler(options.getActivityLogDataFormat()));
     }
-    VertxMetrics metrics = vertx.metricsSPI();
+    VertxMetrics metrics = vertx.metrics();
     this.metrics = metrics != null ? metrics.createDatagramSocketMetrics(options) : null;
     this.channel = channel;
     this.context = context;
@@ -234,9 +234,9 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
   }
 
   private Future<DatagramSocket> listen(SocketAddress local) {
-    HostnameResolver resolver = context.owner().hostnameResolver();
+    NameResolver resolver = context.owner().nameResolver();
     PromiseInternal<Void> promise = context.promise();
-    io.netty.util.concurrent.Future<InetSocketAddress> f1 = resolver.resolveHostname(context.nettyEventLoop(), local.host());
+    io.netty.util.concurrent.Future<InetSocketAddress> f1 = resolver.resolve(context.nettyEventLoop(), local.host());
     f1.addListener((GenericFutureListener<io.netty.util.concurrent.Future<InetSocketAddress>>) res1 -> {
       if (res1.isSuccess()) {
         ChannelFuture f2 = channel.bind(new InetSocketAddress(res1.getNow().getAddress(), local.port()));
@@ -262,9 +262,9 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
     if (port < 0 || port > 65535) {
       throw new IllegalArgumentException("port out of range:" + port);
     }
-    HostnameResolver resolver = context.owner().hostnameResolver();
+    NameResolver resolver = context.owner().nameResolver();
     PromiseInternal<Void> promise = context.promise();
-    io.netty.util.concurrent.Future<InetSocketAddress> f1 = resolver.resolveHostname(context.nettyEventLoop(), host);
+    io.netty.util.concurrent.Future<InetSocketAddress> f1 = resolver.resolve(context.nettyEventLoop(), host);
     f1.addListener((GenericFutureListener<io.netty.util.concurrent.Future<InetSocketAddress>>) res1 -> {
       if (res1.isSuccess()) {
         ChannelFuture f2 = channel.writeAndFlush(new DatagramPacket(((BufferInternal)packet).getByteBuf(), new InetSocketAddress(f1.getNow().getAddress(), port)));

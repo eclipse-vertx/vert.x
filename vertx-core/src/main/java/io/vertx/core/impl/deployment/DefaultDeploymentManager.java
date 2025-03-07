@@ -14,6 +14,7 @@ package io.vertx.core.impl.deployment;
 import io.vertx.core.*;
 import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.deployment.DeploymentContext;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 
@@ -60,7 +61,7 @@ public class DefaultDeploymentManager implements DeploymentManager {
     return new HashSet<>(deployments.values());
   }
 
-  public DeploymentContext getDeployment(String deploymentID) {
+  public DeploymentContext deployment(String deploymentID) {
     return deployments.get(deploymentID);
   }
 
@@ -145,7 +146,7 @@ public class DefaultDeploymentManager implements DeploymentManager {
     return result.future();
   }
 
-  private class DeploymentContextImpl implements DeploymentContext {
+  class DeploymentContextImpl implements DeploymentContext {
 
     private static final int ST_DEPLOYED = 0, ST_UNDEPLOYING = 1, ST_UNDEPLOYED = 2;
 
@@ -241,7 +242,6 @@ public class DefaultDeploymentManager implements DeploymentManager {
       return children.remove(deployment);
     }
 
-    @Override
     public Deployment deployment() {
       return deployment;
     }
@@ -252,7 +252,7 @@ public class DefaultDeploymentManager implements DeploymentManager {
     }
 
     @Override
-    public String deploymentID() {
+    public String id() {
       return deploymentID;
     }
   }

@@ -108,7 +108,7 @@ public class ClusteredAsynchronousLockTest extends AsynchronousLockTest {
     testLockReleased(latch -> {
       VertxInternal vi = (VertxInternal) vertices[0];
       Promise<Void> promise = vi.getOrCreateContext().promise();
-      vi.getClusterManager().leave(promise);
+      vi.clusterManager().leave(promise);
       promise.future().onComplete(onSuccess(v -> {
         latch.countDown();
       }));

@@ -10,20 +10,16 @@
  */
 package io.vertx.core.internal;
 
-import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
-import io.netty.resolver.AddressResolverGroup;
 import io.vertx.core.*;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.dns.DnsClient;
 import io.vertx.core.dns.DnsClientOptions;
-import io.vertx.core.dns.impl.DnsAddressResolverProvider;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
-import io.vertx.core.impl.*;
-import io.vertx.core.impl.deployment.DeploymentContext;
+import io.vertx.core.internal.resolver.NameResolver;
 import io.vertx.core.internal.threadchecker.BlockedThreadChecker;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
@@ -39,10 +35,7 @@ import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 
-import java.io.File;
 import java.lang.ref.Cleaner;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -114,11 +107,6 @@ public abstract class VertxWrapper implements VertxInternal {
   @Override
   public EventBus eventBus() {
     return delegate.eventBus();
-  }
-
-  @Override
-  public DnsAddressResolverProvider dnsAddressResolverProvider(InetSocketAddress addr) {
-    return delegate.dnsAddressResolverProvider(addr);
   }
 
   @Override
@@ -232,13 +220,8 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public long maxEventLoopExecTime() {
-    return delegate.maxEventLoopExecTime();
-  }
-
-  @Override
-  public TimeUnit maxEventLoopExecTimeUnit() {
-    return delegate.maxEventLoopExecTimeUnit();
+  public ContextBuilder contextBuilder() {
+    return delegate.contextBuilder();
   }
 
   @Override
@@ -247,23 +230,23 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public EventLoopGroup getEventLoopGroup() {
-    return delegate.getEventLoopGroup();
+  public EventLoopGroup eventLoopGroup() {
+    return delegate.eventLoopGroup();
   }
 
   @Override
-  public EventLoopGroup getAcceptorEventLoopGroup() {
-    return delegate.getAcceptorEventLoopGroup();
+  public EventLoopGroup acceptorEventLoopGroup() {
+    return delegate.acceptorEventLoopGroup();
   }
 
   @Override
-  public WorkerPool getWorkerPool() {
-    return delegate.getWorkerPool();
+  public WorkerPool workerPool() {
+    return delegate.workerPool();
   }
 
   @Override
-  public WorkerPool getInternalWorkerPool() {
-    return delegate.getInternalWorkerPool();
+  public WorkerPool internalWorkerPool() {
+    return delegate.internalWorkerPool();
   }
 
   @Override
@@ -272,8 +255,8 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public VertxMetrics metricsSPI() {
-    return delegate.metricsSPI();
+  public VertxMetrics metrics() {
+    return delegate.metrics();
   }
 
   @Override
@@ -289,11 +272,6 @@ public abstract class VertxWrapper implements VertxInternal {
   @Override
   public ContextInternal getContext() {
     return delegate.getContext();
-  }
-
-  @Override
-  public ContextInternal createContext(ThreadingModel threadingModel, EventLoop eventLoop, CloseFuture closeFuture, WorkerPool workerPool, DeploymentContext deployment, ClassLoader tccl) {
-    return delegate.createContext(threadingModel, eventLoop, closeFuture, workerPool, deployment, tccl);
   }
 
   @Override
@@ -327,63 +305,18 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public void simulateKill() {
-    delegate.simulateKill();
+  public ClusterManager clusterManager() {
+    return delegate.clusterManager();
   }
 
   @Override
-  public DeploymentContext getDeployment(String deploymentID) {
-    return delegate.getDeployment(deploymentID);
-  }
-
-  @Override
-  public void failoverCompleteHandler(FailoverCompleteHandler failoverCompleteHandler) {
-    delegate.failoverCompleteHandler(failoverCompleteHandler);
-  }
-
-  @Override
-  public boolean isKilled() {
-    return delegate.isKilled();
-  }
-
-  @Override
-  public void failDuringFailover(boolean fail) {
-    delegate.failDuringFailover(fail);
-  }
-
-  @Override
-  public File resolveFile(String fileName) {
-    return delegate.resolveFile(fileName);
-  }
-
-  @Override
-  public ClusterManager getClusterManager() {
-    return delegate.getClusterManager();
-  }
-
-  @Override
-  public HAManager haManager() {
-    return delegate.haManager();
-  }
-
-  @Override
-  public Future<InetAddress> resolveAddress(String hostname) {
-    return delegate.resolveAddress(hostname);
-  }
-
-  @Override
-  public HostnameResolver hostnameResolver() {
-    return delegate.hostnameResolver();
+  public NameResolver nameResolver() {
+    return delegate.nameResolver();
   }
 
   @Override
   public FileResolver fileResolver() {
     return delegate.fileResolver();
-  }
-
-  @Override
-  public AddressResolverGroup<InetSocketAddress> nettyAddressResolverGroup() {
-    return delegate.nettyAddressResolverGroup();
   }
 
   @Override

@@ -70,7 +70,7 @@ public class DnsResolverTest extends VertxTestBase {
       return set;
     });
     super.setUp();
-    resolver = (EndpointResolver) ((VertxInternal)vertx).hostnameResolver().endpointResolver(vertx);
+    resolver = (EndpointResolver) ((VertxInternal)vertx).nameResolver().endpointResolver(vertx);
   }
 
   public void tearDown() throws Exception {

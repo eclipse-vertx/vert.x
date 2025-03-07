@@ -25,7 +25,7 @@ public class CustomFileResolver implements FileResolver {
   }
 
   @Override
-  public File resolveFile(String fileName) {
+  public File resolve(String fileName) {
     return new File(fileName);
   }
 }

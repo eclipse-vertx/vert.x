@@ -14,7 +14,7 @@ import io.vertx.core.*;
 import io.vertx.core.impl.deployment.Deployment;
 import io.vertx.core.impl.ServiceHelper;
 import io.vertx.core.impl.*;
-import io.vertx.core.impl.deployment.DeploymentContext;
+import io.vertx.core.internal.deployment.DeploymentContext;
 import io.vertx.core.impl.deployment.DeploymentManager;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
