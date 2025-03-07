@@ -11,8 +11,7 @@
 
 package io.vertx.core.dns;
 
-import io.vertx.core.impl.NoStackTraceThrowable;
-import java.util.Objects;
+import io.vertx.core.VertxException;
 
 /**
  * Exception which is used to notify the {@link io.vertx.core.AsyncResult}
@@ -20,14 +19,14 @@ import java.util.Objects;
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public final class DnsException extends NoStackTraceThrowable {
+public final class DnsException extends VertxException {
 
   private static final String ERROR_MESSAGE_PREFIX = "DNS query error occurred: ";
-  private DnsResponseCode code;
+
+  private final DnsResponseCode code;
 
   public DnsException(DnsResponseCode code) {
-    super(ERROR_MESSAGE_PREFIX + code);
-    Objects.requireNonNull(code, "code");
+    super(ERROR_MESSAGE_PREFIX + code, true);
     this.code = code;
   }
 

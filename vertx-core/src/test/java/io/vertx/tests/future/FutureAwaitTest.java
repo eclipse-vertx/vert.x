@@ -14,6 +14,7 @@ package io.vertx.tests.future;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
@@ -69,5 +70,17 @@ public class FutureAwaitTest extends VertxTestBase {
     } catch (TimeoutException expected) {
     }
     assertTrue((System.currentTimeMillis() - now) >= 100);
+  }
+
+  @Test
+  public void testAwaitNoStackTraceFailure() {
+    String msg = TestUtils.randomAlphaString(10);
+    Future<String> future = Future.failedFuture(msg);
+    try {
+      future.await();
+      fail();
+    } catch (Exception expected) {
+      assertSame(msg, expected.getMessage());
+    }
   }
 }
