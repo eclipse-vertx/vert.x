@@ -31,7 +31,6 @@ import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SSLOptions;
 import io.vertx.core.net.SocketAddress;
 
-import java.net.InetSocketAddress;
 import java.util.concurrent.Executor;
 
 /**
