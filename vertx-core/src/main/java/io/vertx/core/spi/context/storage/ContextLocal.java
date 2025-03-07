@@ -18,13 +18,40 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * A local storage for arbitrary data attached to a duplicated {@link Context}.
+ * <p>A local storage for arbitrary data attached to a {@link Context}.</p>
  *
  * <p>Local storage should be registered before creating a {@link io.vertx.core.Vertx} instance, once registered a
  * local storage cannot be unregistered.
  *
  * <p>It is recommended to initialize local storage as static fields of a {@link io.vertx.core.spi.VertxServiceProvider},
  * since providers are discovered before the capture of known local storages.
+ *
+ * <pre>{@code
+ * public class CustomLocal implements VertxServiceProvider {
+ *   public static final ContextLocal<CustomLocal> KEY = ContextLocal.registerLocal(CustomLocal.class);
+ *   ...
+ * }
+ * }</pre>
+ *
+ * <p>Such provider must then be declared as a <a href="https://docs.oracle.com/javase/tutorial/sound/SPI-intro.html">Java service provider</a>
+ * in {@code META/INF/services/io.vertx.core.spi.VertxServiceProvider} and optionally in a {@code module-info.java}.</p>
+ *
+ * <p>Context local can be used from a Vert.x {@link Context} with the following methods.</p>
+ *
+ * <ul>
+ *   <li>{@link Context#getLocal(ContextLocal)}</li>
+ *   <li>{@link Context#getLocal(ContextLocal, Supplier)}</li>
+ *   <li>{@link Context#putLocal(ContextLocal, Object)}</li>
+ *   <li>{@link Context#removeLocal(ContextLocal)}</li>
+ *   <li>{@link Context#getLocal(ContextLocal, AccessMode)}</li>
+ *   <li>{@link Context#getLocal(ContextLocal, AccessMode, Supplier)}</li>
+ *   <li>{@link Context#putLocal(ContextLocal, AccessMode, Object)}</li>
+ *   <li>{@link Context#removeLocal(ContextLocal, AccessMode)}</li>
+ * </ul>
+ *
+ * <pre>{@code
+ * context.putLocal(CustomLocal.KEY, new CustomLocal(...));
+ * }</pre>
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
