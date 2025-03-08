@@ -171,6 +171,13 @@ public interface VertxInternal extends Vertx {
   /**
    * @return event loop context
    */
+  default ContextInternal createEventLoopContext(EventLoop eventLoop, DeploymentContext deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
+    return createContext(ThreadingModel.EVENT_LOOP, eventLoop, closeFuture, workerPool, deployment, tccl);
+  }
+
+  /**
+   * @return event loop context
+   */
   default ContextInternal createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
     return createContext(ThreadingModel.EVENT_LOOP, eventLoop, workerPool, tccl);
   }
