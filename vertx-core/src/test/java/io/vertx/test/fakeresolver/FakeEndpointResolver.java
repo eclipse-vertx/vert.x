@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
-public class FakeEndpointResolver<B> implements AddressResolver, EndpointResolver<FakeAddress, FakeEndpoint, FakeState<B>, B> {
+public class FakeEndpointResolver<B> implements AddressResolver<FakeAddress>, EndpointResolver<FakeAddress, FakeEndpoint, FakeState<B>, B> {
 
   public static class Endpoint {
     final List<SocketAddress> addresses;
@@ -72,7 +72,7 @@ public class FakeEndpointResolver<B> implements AddressResolver, EndpointResolve
   }
 
   @Override
-  public EndpointResolver<?, ?, ?, ?> endpointResolver(Vertx vertx) {
+  public EndpointResolver<FakeAddress, ?, ?, ?> endpointResolver(Vertx vertx) {
     return this;
   }
 

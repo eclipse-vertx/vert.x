@@ -38,8 +38,9 @@ open module io.vertx.core.tests {
   requires static io.netty.codec.haproxy;
   requires io.netty.codec.http2;
   requires io.netty.resolver.dns;
+    requires commons.math3;
 
-  provides VerticleFactory with ClasspathVerticleFactory, io.vertx.tests.vertx.AccessEventBusFromInitVerticleFactory;
+    provides VerticleFactory with ClasspathVerticleFactory, io.vertx.tests.vertx.AccessEventBusFromInitVerticleFactory;
 
   // Cluster manager implementations overrides them (TCK)
   exports io.vertx.tests.ha;
