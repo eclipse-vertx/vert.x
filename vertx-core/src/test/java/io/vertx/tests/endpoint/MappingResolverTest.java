@@ -20,6 +20,7 @@ import io.vertx.core.net.endpoint.ServerEndpoint;
 import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakeresolver.FakeAddress;
+import org.apache.commons.math3.analysis.function.Add;
 import org.junit.Test;
 
 import java.util.*;
