@@ -41,7 +41,7 @@ import static io.vertx.core.impl.Utils.isLinux;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class HostnameResolver implements AddressResolver {
+public class HostnameResolver implements AddressResolver<SocketAddress> {
 
   private static final Logger log = LoggerFactory.getLogger(HostnameResolver.class);
 
@@ -77,7 +77,7 @@ public class HostnameResolver implements AddressResolver {
   }
 
   @Override
-  public EndpointResolver<?, ?, ?, ?> endpointResolver(Vertx vertx) {
+  public EndpointResolver<SocketAddress, ?, ?, ?> endpointResolver(Vertx vertx) {
     return new Impl();
   }
 

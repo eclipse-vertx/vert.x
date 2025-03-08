@@ -79,8 +79,8 @@ public interface HttpClientBuilder {
    *
    * @param resolver the address resolver
    */
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  HttpClientBuilder withAddressResolver(AddressResolver resolver);
+  @GenIgnore
+  HttpClientBuilder withAddressResolver(AddressResolver<?> resolver);
 
   /**
    * Configure the client to use a load balancer.

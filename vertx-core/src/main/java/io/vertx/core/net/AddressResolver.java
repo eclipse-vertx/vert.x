@@ -22,7 +22,7 @@ import java.util.function.Function;
  * A provider for address resolver.
  */
 @Unstable
-public interface AddressResolver {
+public interface AddressResolver<A extends Address> {
 
   /**
    * A simple synchronous resolver for demo and testing purposes.
@@ -40,7 +40,7 @@ public interface AddressResolver {
    * @param mapping the mapping function
    * @return an address resolver
    */
-  static AddressResolver mappingResolver(Function<Address, List<SocketAddress>> mapping) {
+  static <A extends Address> AddressResolver<A> mappingResolver(Function<A, List<SocketAddress>> mapping) {
     return vertx -> new MappingResolver<>(mapping);
   }
 
@@ -50,6 +50,6 @@ public interface AddressResolver {
    * @param vertx the vertx instance
    * @return the resolver
    */
-  EndpointResolver<?, ?, ?, ?> endpointResolver(Vertx vertx);
+  EndpointResolver<A, ?, ?, ?> endpointResolver(Vertx vertx);
 
 }

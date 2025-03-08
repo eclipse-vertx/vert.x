@@ -20,6 +20,7 @@ import io.vertx.core.net.endpoint.ServerEndpoint;
 import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakeresolver.FakeAddress;
+import org.apache.commons.math3.analysis.function.Add;
 import org.junit.Test;
 
 import java.util.*;
@@ -34,7 +35,7 @@ public class MappingResolverTest extends VertxTestBase {
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    AddressResolver ar = AddressResolver.mappingResolver(addr -> {
+    AddressResolver<?> ar = AddressResolver.mappingResolver(addr -> {
       Function<Address, List<SocketAddress>> m = mapping;
       return m != null ? m.apply(addr) : null;
     });
