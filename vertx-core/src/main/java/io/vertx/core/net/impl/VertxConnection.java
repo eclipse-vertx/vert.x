@@ -61,12 +61,12 @@ public class VertxConnection extends ConnectionBase {
   private Handler<Void> shutdownHandler;
 
   // State accessed exclusively from the event loop thread
+  private final Deque<Object> pending;
   private boolean read;
   private boolean needsFlush;
   private boolean draining;
   private boolean channelWritable;
   private boolean paused;
-  private Deque<Object> pending;
   private boolean autoRead;
   private ScheduledFuture<?> shutdownTimeout;
 
@@ -75,6 +75,8 @@ public class VertxConnection extends ConnectionBase {
     this.channelWritable = chctx.channel().isWritable();
     this.messageQueue = new InternalMessageChannel(chctx.channel().eventLoop());
     this.voidPromise = new VoidChannelPromise(chctx.channel(), false);
+    this.pending = new ArrayDeque<>();
+    this.autoRead = true;
   }
 
   public synchronized ConnectionBase shutdownHandler(@Nullable Handler<Void> handler) {
@@ -213,19 +215,6 @@ public class VertxConnection extends ConnectionBase {
   }
 
   /**
-   * This method is exclusively called by {@code VertxHandler} to signal read completion on the event-loop thread.
-   */
-  final void endReadAndFlush() {
-    if (read) {
-      read = false;
-      if (needsFlush) {
-        needsFlush = false;
-        chctx.flush();
-      }
-    }
-  }
-
-  /**
    * This method is exclusively called by {@code VertxHandler} to read a message on the event-loop thread.
    */
   final void read(Object msg) {
@@ -233,21 +222,72 @@ public class VertxConnection extends ConnectionBase {
     if (METRICS_ENABLED) {
       reportBytesRead(msg);
     }
-    if (paused) {
-      addPending(msg);
-      return;
-    }
-    handleMessage(msg);
+    pending.add(msg);
+    checkPendingMessages();
   }
 
-  private void addPending(Object msg) {
-    if (pending == null) {
-      pending = new ArrayDeque<>();
+  /**
+   * This method is exclusively called by {@code VertxHandler} to signal read completion on the event-loop thread.
+   */
+  final void readComplete() {
+    if (read) {
+      checkPendingMessages();
+      read = false;
+      checkFlush();
+      checkAutoRead();
     }
-    pending.add(msg);
-    if (pending.size() >= 8) {
-      autoRead = false;
-      chctx.channel().config().setAutoRead(false);
+  }
+
+  public final void doPause() {
+    assert chctx.executor().inEventLoop();
+    paused = true;
+  }
+
+  public final void doResume() {
+    assert chctx.executor().inEventLoop();
+    if (!paused) {
+      return;
+    }
+    paused = false;
+    if (!read && pending != null && !pending.isEmpty()) {
+      read = true;
+      try {
+        checkPendingMessages();
+      } finally {
+        read = false;
+        if (!draining) {
+          checkFlush();
+        }
+        checkAutoRead();
+      }
+    }
+  }
+
+  private void checkFlush() {
+    if (needsFlush) {
+      needsFlush = false;
+      chctx.flush();
+    }
+  }
+
+  private void checkAutoRead() {
+    if (autoRead) {
+      if (pending.size() >= 8) {
+        autoRead = false;
+        chctx.channel().config().setAutoRead(false);
+      }
+    } else {
+      if (pending.isEmpty()) {
+        autoRead = true;
+        chctx.channel().config().setAutoRead(true);
+      }
+    }
+  }
+
+  private void checkPendingMessages() {
+    Object msg;
+    while (!paused && (msg = pending.poll()) != null) {
+      handleMessage(msg);
     }
   }
 
@@ -440,46 +480,14 @@ public class VertxConnection extends ConnectionBase {
     @Override
     protected void stopDraining() {
       draining = false;
-      if (!read && needsFlush) {
-        needsFlush = false;
-        chctx.flush();
+      if (!read) {
+        checkFlush();
       }
     }
 
     @Override
     protected void afterDrain() {
       VertxConnection.this.handleWriteQueueDrained();
-    }
-  }
-
-  public final void doPause() {
-    assert chctx.executor().inEventLoop();
-    paused = true;
-  }
-
-  public final void doResume() {
-    assert chctx.executor().inEventLoop();
-    if (!paused) {
-      return;
-    }
-    paused = false;
-    if (pending != null && !pending.isEmpty()) {
-      boolean end = !read;
-      read = true;
-      try {
-        Object msg;
-        while (!paused && (msg = pending.poll()) != null) {
-          handleMessage(msg);
-        }
-      } finally {
-        if (end) {
-          endReadAndFlush();
-        }
-        if (pending.isEmpty() && !autoRead) {
-          autoRead = true;
-          chctx.channel().config().setAutoRead(true);
-        }
-      }
     }
   }
 
